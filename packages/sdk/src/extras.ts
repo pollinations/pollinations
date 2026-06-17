@@ -1,13 +1,12 @@
+import { Pollinations } from "./client.js";
 import type {
-    ImageGenerateOptions,
-    ImageResponse,
-    VideoGenerateOptions,
-    VideoResponse,
+    AudioBinaryResponse,
     ChatOptions,
     ChatResponse,
+    ImageResponse,
     Message,
+    VideoResponse,
 } from "./types.js";
-import { Pollinations } from "./client.js";
 
 export interface ImageResponseExt extends ImageResponse {
     /** Save image to file (Node.js only) */
@@ -28,6 +27,16 @@ export interface VideoResponseExt extends VideoResponse {
     toDataURL: () => string;
 }
 
+/** Extended audio response with helper methods */
+export interface AudioResponseExt extends AudioBinaryResponse {
+    /** Save audio to file (Node.js only) */
+    saveToFile: (path: string) => Promise<void>;
+    /** Get as base64 string */
+    toBase64: () => string;
+    /** Get as data URL (ready for audio src) */
+    toDataURL: () => string;
+}
+
 /** Extended chat response with extra metadata */
 export interface ChatResponseExt extends ChatResponse {
     /** The actual text content (shortcut) */
@@ -45,13 +54,6 @@ export interface ChatResponseExt extends ChatResponse {
     /** Request ID for tracking */
     requestId: string;
 }
-
-// ============================================================================
-// Progress Status Type
-// ============================================================================
-
-/** Typed progress status */
-export type ProgressStatus = "starting" | "generating" | "complete";
 
 // ============================================================================
 // Helper Functions
@@ -134,6 +136,19 @@ export function wrapVideoResponse(response: VideoResponse): VideoResponseExt {
     };
 }
 
+/** Wrap audio response with helper methods */
+export function wrapAudioResponse(
+    response: AudioBinaryResponse,
+): AudioResponseExt {
+    return {
+        ...response,
+        saveToFile: (path: string) => saveBufferToFile(response.buffer, path),
+        toBase64: () => arrayBufferToBase64(response.buffer),
+        toDataURL: () =>
+            `data:${response.contentType};base64,${arrayBufferToBase64(response.buffer)}`,
+    };
+}
+
 /** Wrap chat response with extra metadata */
 export function wrapChatResponse(response: ChatResponse): ChatResponseExt {
     const usage = response.usage;
@@ -150,106 +165,6 @@ export function wrapChatResponse(response: ChatResponse): ChatResponseExt {
         actualModel: response.model,
         requestId: response.id,
     };
-}
-
-// ============================================================================
-// Batch Generation (for different prompts) - WITH ERROR HANDLING
-// ============================================================================
-
-/** Result of a batch generation attempt */
-export interface BatchResult<T> {
-    success: boolean;
-    prompt?: string;
-    result?: T;
-    error?: Error;
-}
-
-/**
- * Generate multiple images from different prompts in parallel
- * Handles partial failures gracefully with detailed error info
- *
- * @example
- * ```ts
- * const results = await generateImages(['cat in space', 'dog underwater']);
- * results.forEach(r => {
- *   if (r.success) {
- *     console.log(`Generated: ${r.prompt}`);
- *   } else {
- *     console.error(`Failed: ${r.prompt}`, r.error);
- *   }
- * });
- * ```
- */
-export async function generateImages(
-    prompts: string[],
-    options?: ImageGenerateOptions,
-    client?: Pollinations,
-): Promise<BatchResult<ImageResponseExt>[]> {
-    const c = client || new Pollinations();
-
-    const results = await Promise.allSettled(
-        prompts.map(async (prompt) => ({
-            prompt,
-            result: wrapImageResponse(await c.image(prompt, options)),
-        })),
-    );
-
-    return results.map((settlement, index) => {
-        if (settlement.status === "fulfilled") {
-            return {
-                success: true,
-                prompt: settlement.value.prompt,
-                result: settlement.value.result,
-            };
-        } else {
-            return {
-                success: false,
-                prompt: prompts[index],
-                error:
-                    settlement.reason instanceof Error
-                        ? settlement.reason
-                        : new Error(String(settlement.reason)),
-            };
-        }
-    });
-}
-
-/**
- * Generate multiple videos from different prompts in parallel
- * Handles partial failures gracefully with detailed error info
- */
-export async function generateVideos(
-    prompts: string[],
-    options?: VideoGenerateOptions,
-    client?: Pollinations,
-): Promise<BatchResult<VideoResponseExt>[]> {
-    const c = client || new Pollinations();
-
-    const results = await Promise.allSettled(
-        prompts.map(async (prompt) => ({
-            prompt,
-            result: wrapVideoResponse(await c.video(prompt, options)),
-        })),
-    );
-
-    return results.map((settlement, index) => {
-        if (settlement.status === "fulfilled") {
-            return {
-                success: true,
-                prompt: settlement.value.prompt,
-                result: settlement.value.result,
-            };
-        } else {
-            return {
-                success: false,
-                prompt: prompts[index],
-                error:
-                    settlement.reason instanceof Error
-                        ? settlement.reason
-                        : new Error(String(settlement.reason)),
-            };
-        }
-    });
 }
 
 // ============================================================================
@@ -387,197 +302,5 @@ export class Conversation {
     /** Get message count */
     get length(): number {
         return this.messages.length;
-    }
-}
-
-// ============================================================================
-// Browser Helpers
-// ============================================================================
-
-/** Display an image in the DOM (browser only) */
-export async function showImage(
-    prompt: string,
-    container: string | HTMLElement,
-    options?: ImageGenerateOptions,
-    client?: Pollinations,
-): Promise<HTMLImageElement> {
-    if (typeof document === "undefined") {
-        throw new Error("showImage is only available in browsers");
-    }
-
-    const c = client || new Pollinations();
-    const img = document.createElement("img");
-    img.alt = prompt;
-    img.src = await c.imageUrl(prompt, options);
-
-    const target =
-        typeof container === "string"
-            ? document.querySelector(container)
-            : container;
-
-    if (!target) {
-        throw new Error(`Container not found: ${container}`);
-    }
-
-    target.appendChild(img);
-    return img;
-}
-
-/** Display an image from a generated response */
-export function displayImage(
-    response: ImageResponse | ImageResponseExt,
-    container: string | HTMLElement,
-): HTMLImageElement {
-    if (typeof document === "undefined") {
-        throw new Error("displayImage is only available in browsers");
-    }
-
-    const img = document.createElement("img");
-
-    // Check if it has toDataURL (extended response)
-    if ("toDataURL" in response) {
-        img.src = response.toDataURL();
-    } else {
-        img.src = `data:${response.contentType};base64,${arrayBufferToBase64(response.buffer)}`;
-    }
-
-    const target =
-        typeof container === "string"
-            ? document.querySelector(container)
-            : container;
-
-    if (!target) {
-        throw new Error(`Container not found: ${container}`);
-    }
-
-    target.appendChild(img);
-    return img;
-}
-
-// ============================================================================
-// Token Estimation (with disclaimers)
-// ============================================================================
-
-/**
- * Rough token estimation for planning purposes only.
- * This is a very approximate estimate (~4 chars per token for English text).
- *
- * **IMPORTANT**: Actual tokenization varies significantly by model and language.
- * Use this only for rough capacity planning, not for precise billing calculations.
- * For production billing, use actual token counts from API responses.
- *
- * @deprecated Consider using the `tokens` property on ChatResponseExt for actual counts
- */
-export function estimateTokens(text: string): number {
-    // Rough heuristic: ~4 characters per token for English
-    // Highly inaccurate for code, non-Latin scripts, etc.
-    return Math.ceil(text.length / 4);
-}
-
-/**
- * Estimate tokens for a message array (rough approximation)
- *
- * **IMPORTANT**: This is a very rough estimate. Actual token counts depend on model,
- * formatting, and tokenization algorithm. Use only for planning.
- *
- * @deprecated Use actual token counts from ChatResponseExt.tokens instead
- */
-export function estimateMessageTokens(messages: Message[]): {
-    estimated: number;
-    breakdown: { role: string; tokens: number }[];
-} {
-    const breakdown = messages.map((msg) => {
-        const content =
-            typeof msg.content === "string"
-                ? msg.content
-                : JSON.stringify(msg.content);
-        return {
-            role: msg.role,
-            tokens: estimateTokens(content) + 4, // +4 for role/formatting overhead
-        };
-    });
-
-    return {
-        estimated: breakdown.reduce((sum, b) => sum + b.tokens, 0) + 3, // +3 for message framing
-        breakdown,
-    };
-}
-
-// ============================================================================
-// Utility: Image Generation with Progress Tracking
-// ============================================================================
-
-/** Options for generation with progress tracking */
-export interface AwaitOptions {
-    /** Polling interval in ms (default: 1000) */
-    pollInterval?: number;
-    /** Timeout in ms (default: 300000 = 5 min) */
-    timeout?: number;
-    /** Progress callback - guaranteed to fire on complete/error */
-    onProgress?: (status: { elapsed: number; status: ProgressStatus }) => void;
-}
-
-/**
- * Generate image with typed progress tracking
- * Progress callback is guaranteed to be cleaned up even on errors
- *
- * @example
- * ```ts
- * const img = await generateImageWithProgress('A cat', {
- *   onProgress: (status) => {
- *     if (status.status === 'complete') console.log('Done!');
- *   }
- * });
- * ```
- */
-export async function generateImageWithProgress(
-    prompt: string,
-    options?: ImageGenerateOptions & AwaitOptions,
-    client?: Pollinations,
-): Promise<ImageResponseExt> {
-    const {
-        onProgress,
-        pollInterval = 1000,
-        timeout = 300000,
-        ...imageOptions
-    } = options || {};
-    const c = client || new Pollinations();
-    const startTime = Date.now();
-
-    if (onProgress) {
-        onProgress({ elapsed: 0, status: "starting" });
-    }
-
-    const progressInterval = onProgress
-        ? setInterval(() => {
-              const elapsed = Date.now() - startTime;
-              onProgress({ elapsed, status: "generating" });
-          }, pollInterval)
-        : null;
-
-    try {
-        const result = await Promise.race([
-            c.image(prompt, imageOptions),
-            new Promise<never>((_, reject) =>
-                setTimeout(
-                    () =>
-                        reject(
-                            new Error(`Generation timeout after ${timeout}ms`),
-                        ),
-                    timeout,
-                ),
-            ),
-        ]);
-
-        if (onProgress) {
-            onProgress({ elapsed: Date.now() - startTime, status: "complete" });
-        }
-
-        return wrapImageResponse(result);
-    } finally {
-        // Always clear interval - even on errors
-        if (progressInterval !== null) {
-            clearInterval(progressInterval);
-        }
     }
 }

@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { ERROR_BOUNDARY } from "../../copy/content/error";
 import { Button } from "./ui/button";
 
 interface ErrorBoundaryProps {
@@ -55,32 +56,33 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
         if (this.state.hasError) {
             // Fallback UI
             return (
-                <div className="min-h-screen flex items-center justify-center px-4 bg-surface-base">
-                    <div className="max-w-2xl w-full bg-surface-base border-r-4 border-b-4 border-border-brand shadow-shadow-brand-lg p-6 md:p-8">
-                        <h1 className="font-title text-3xl md:text-4xl font-black text-text-body-main mb-6">
-                            Something went wrong
+                <div className="min-h-screen flex items-center justify-center px-4 bg-cream">
+                    <div className="max-w-2xl w-full bg-primary-light border-r-4 border-b-4 border-dark shadow-dark-lg p-6 md:p-8">
+                        <h1 className="font-title text-3xl md:text-4xl font-black text-dark mb-6">
+                            {ERROR_BOUNDARY.title}
                         </h1>
 
                         <div className="space-y-4 mb-6">
-                            <p className="font-body text-base text-text-body-secondary leading-relaxed">
-                                We encountered an unexpected error. This has
-                                been logged and we'll look into it.
+                            <p className="font-body text-base text-muted leading-relaxed">
+                                {ERROR_BOUNDARY.body}
                             </p>
 
                             {import.meta.env.DEV && this.state.error && (
-                                <div className="bg-input-background p-4 font-mono text-xs">
-                                    <p className="font-black text-text-brand mb-2">
-                                        Error Details (dev mode):
+                                <div className="bg-white p-4 font-mono text-xs">
+                                    <p className="font-black text-dark mb-2">
+                                        {ERROR_BOUNDARY.devDetailsLabel}
                                     </p>
-                                    <p className="text-text-body-secondary mb-2">
+                                    <p className="text-muted mb-2">
                                         {this.state.error.toString()}
                                     </p>
                                     {this.state.errorInfo && (
                                         <details className="mt-2">
-                                            <summary className="cursor-pointer text-text-body-main hover:text-text-body-main">
-                                                Component Stack
+                                            <summary className="cursor-pointer text-dark hover:text-dark">
+                                                {
+                                                    ERROR_BOUNDARY.devComponentStack
+                                                }
                                             </summary>
-                                            <pre className="mt-2 text-text-caption whitespace-pre-wrap text-[10px]">
+                                            <pre className="mt-2 text-subtle whitespace-pre-wrap text-[10px]">
                                                 {
                                                     this.state.errorInfo
                                                         .componentStack
@@ -97,10 +99,10 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
                                 variant="primary"
                                 onClick={this.handleReset}
                             >
-                                Try Again
+                                {ERROR_BOUNDARY.tryAgainButton}
                             </Button>
                             <Button variant="secondary" as="a" href="/">
-                                Go Home
+                                {ERROR_BOUNDARY.goHomeButton}
                             </Button>
                         </div>
                     </div>

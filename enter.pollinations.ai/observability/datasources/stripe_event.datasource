@@ -1,0 +1,34 @@
+TOKEN tinybird_ingest APPEND
+TOKEN tinybird_read READ
+
+DESCRIPTION >
+Stripe checkout webhook events (payments) with full JSON payload
+
+SCHEMA >
+`timestamp` DateTime `json:$.timestamp` DEFAULT now(),
+`event_type` LowCardinality(String) `json:$.event_type` DEFAULT '',
+`event_id` String `json:$.event_id` DEFAULT '',
+`session_id` String `json:$.session_id` DEFAULT '',
+`user_id` String `json:$.user_id` DEFAULT '',
+`amount_cents` Int32 `json:$.amount_cents` DEFAULT 0,
+`currency` LowCardinality(String) `json:$.currency` DEFAULT '',
+`payment_status` LowCardinality(String) `json:$.payment_status` DEFAULT '',
+`payment_method` LowCardinality(String) `json:$.payment_method` DEFAULT '',
+`payment_method_raw` LowCardinality(String) `json:$.payment_method_raw` DEFAULT '',
+`payment_method_wallet` LowCardinality(String) `json:$.payment_method_wallet` DEFAULT '',
+`payment_methods_offered` String `json:$.payment_methods_offered` DEFAULT '',
+`presentment_currency` LowCardinality(String) `json:$.presentment_currency` DEFAULT '',
+`presentment_amount` UInt64 `json:$.presentment_amount` DEFAULT 0,
+`card_country` LowCardinality(String) `json:$.card_country` DEFAULT '',
+`card_brand` LowCardinality(String) `json:$.card_brand` DEFAULT '',
+`card_network` LowCardinality(String) `json:$.card_network` DEFAULT '',
+`risk_level` LowCardinality(String) `json:$.risk_level` DEFAULT '',
+`risk_score` UInt16 `json:$.risk_score` DEFAULT 0,
+`customer_email` String `json:$.customer_email` DEFAULT '',
+`livemode` UInt8 `json:$.livemode` DEFAULT 0,
+`payload` String `json:$.payload`
+
+ENGINE "MergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"
+ENGINE_SORTING_KEY "timestamp, event_type, user_id"
+ENGINE_PRIMARY_KEY "timestamp, event_type"

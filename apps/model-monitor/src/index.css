@@ -1,15 +1,7 @@
-@import "tailwindcss";
+@import "@pollinations/ui/app.css";
 
-:root {
-    --font-mono:
-        ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
-        "Liberation Mono", monospace;
-}
-
-body {
-    font-family: var(--font-mono);
-    background-color: #fafafa;
-    color: #1a1a1a;
-    margin: 0;
-    padding: 0;
+@media (min-width: 640px) {
+    .polli-model-monitor-title {
+        font-size: 3rem;
+    }
 }

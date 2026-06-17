@@ -1,30 +1,28 @@
-import { expect, test } from "vitest";
-import { calculateCost, calculatePrice } from "@shared/registry/registry.ts";
-import type {
-    TokenUsage,
-    ModelId,
-    ServiceId,
+import type { ModelName, Usage } from "@shared/registry/registry.ts";
+import {
+    calculateCost,
+    getPriceDefinition,
 } from "@shared/registry/registry.ts";
+import { priceToEventParams } from "@shared/schemas/generation-event.ts";
+import { expect, test } from "vitest";
 
 // Test image model cost tracking
 // Tests cost calculation properties without hardcoding specific values
 
 test("Image models should calculate costs proportionally to token count", () => {
-    const models: ModelId[] = [
+    const models: ModelName[] = [
         "flux",
         "nanobanana",
         "kontext",
-        "turbo",
+        "zimage",
         "seedream",
     ];
 
     for (const model of models) {
-        const usage1: TokenUsage = {
-            unit: "TOKENS",
+        const usage1: Usage = {
             completionImageTokens: 1,
         };
-        const usage10: TokenUsage = {
-            unit: "TOKENS",
+        const usage10: Usage = {
             completionImageTokens: 10,
         };
 
@@ -41,8 +39,7 @@ test("Image models should calculate costs proportionally to token count", () => 
 });
 
 test("Models with API costs should have non-zero operational costs", () => {
-    const usage: TokenUsage = {
-        unit: "TOKENS",
+    const usage: Usage = {
         completionImageTokens: 1,
     };
 
@@ -56,15 +53,14 @@ test("Models with API costs should have non-zero operational costs", () => {
 });
 
 test("Cost should be non-negative for all models", () => {
-    const models: ModelId[] = [
+    const models: ModelName[] = [
         "flux",
         "nanobanana",
         "kontext",
-        "turbo",
+        "zimage",
         "seedream",
     ];
-    const usage: TokenUsage = {
-        unit: "TOKENS",
+    const usage: Usage = {
         completionImageTokens: 1,
     };
 
@@ -77,8 +73,7 @@ test("Cost should be non-negative for all models", () => {
 });
 
 test("gptimage-large should calculate costs for image output tokens", () => {
-    const usage: TokenUsage = {
-        unit: "TOKENS",
+    const usage: Usage = {
         completionImageTokens: 1000,
     };
     const cost = calculateCost("gptimage-large", usage);
@@ -88,19 +83,17 @@ test("gptimage-large should calculate costs for image output tokens", () => {
 });
 
 test("gptimage-large should calculate costs for text input tokens", () => {
-    const usage: TokenUsage = {
-        unit: "TOKENS",
+    const usage: Usage = {
         promptTextTokens: 1000,
     };
     const cost = calculateCost("gptimage-large", usage);
-    // $8 per 1M tokens = $0.008 per 1K tokens
-    expect(cost.promptTextTokens).toBeCloseTo(0.008, 4);
-    expect(cost.totalCost).toBeCloseTo(0.008, 4);
+    // $5 per 1M tokens = $0.005 per 1K tokens
+    expect(cost.promptTextTokens).toBeCloseTo(0.005, 4);
+    expect(cost.totalCost).toBeCloseTo(0.005, 4);
 });
 
 test("gptimage-large should calculate costs for image input tokens", () => {
-    const usage: TokenUsage = {
-        unit: "TOKENS",
+    const usage: Usage = {
         promptImageTokens: 1000,
     };
     const cost = calculateCost("gptimage-large", usage);
@@ -109,15 +102,60 @@ test("gptimage-large should calculate costs for image input tokens", () => {
     expect(cost.totalCost).toBeCloseTo(0.008, 4);
 });
 
-test("gptimage-large combined input + output costs", () => {
-    const usage: TokenUsage = {
-        unit: "TOKENS",
+test("gptimage-large should calculate costs for text output tokens", () => {
+    const usage: Usage = {
+        completionTextTokens: 1000,
+    };
+    const cost = calculateCost("gptimage-large", usage);
+    // $10 per 1M tokens = $0.01 per 1K tokens
+    expect(cost.completionTextTokens).toBeCloseTo(0.01, 4);
+    expect(cost.totalCost).toBeCloseTo(0.01, 4);
+});
+
+test("gptimage-large combined text/image input + output costs", () => {
+    const usage: Usage = {
         promptTextTokens: 500,
         promptImageTokens: 3000, // Typical resized input ~3K tokens
+        completionTextTokens: 200,
         completionImageTokens: 1000,
     };
     const cost = calculateCost("gptimage-large", usage);
-    // Input: 500*$8/1M + 3000*$8/1M = $0.028
+    // Input: 500*$5/1M + 3000*$8/1M = $0.0265
+    // Text output: 200*$10/1M = $0.002
     // Output: 1000*$32/1M = $0.032
-    expect(cost.totalCost).toBeCloseTo(0.06, 4);
+    expect(cost.totalCost).toBeCloseTo(0.0605, 4);
+});
+
+test("nanobanana models calculate reasoning token costs", () => {
+    const usage: Usage = {
+        promptTextTokens: 11,
+        completionImageTokens: 1120,
+        completionReasoningTokens: 335,
+    };
+
+    const flashCost = calculateCost("nanobanana-2", usage);
+    expect(flashCost.completionReasoningTokens).toBeCloseTo(0.001005, 8);
+    expect(flashCost.totalCost).toBeGreaterThan(
+        flashCost.completionImageTokens || 0,
+    );
+
+    const proCost = calculateCost("nanobanana-pro", usage);
+    expect(proCost.completionReasoningTokens).toBeCloseTo(0.00402, 8);
+    expect(proCost.totalCost).toBeGreaterThan(
+        proCost.completionImageTokens || 0,
+    );
+});
+
+test("nanobanana reasoning token event prices use text output rates", () => {
+    const flashPrice = getPriceDefinition("nanobanana-2");
+    const flashEventPrices = priceToEventParams(flashPrice);
+    expect(flashEventPrices.tokenPriceCompletionReasoning).toBe(
+        flashPrice?.completionTextTokens,
+    );
+
+    const proPrice = getPriceDefinition("nanobanana-pro");
+    const proEventPrices = priceToEventParams(proPrice);
+    expect(proEventPrices.tokenPriceCompletionReasoning).toBe(
+        proPrice?.completionTextTokens,
+    );
 });

@@ -1,0 +1,14 @@
+{
+  "name": "opposite-prompt-bot",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "tsx bot.ts"
+  },
+  "dependencies": {
+    "axios": "^1.7.0",
+    "discord.js": "^14.16.0",
+    "dotenv": "^17.3.1",
+    "tsx": "^4.19.0"
+  }
+}

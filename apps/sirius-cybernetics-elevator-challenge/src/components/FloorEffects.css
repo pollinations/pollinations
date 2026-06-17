@@ -1,0 +1,215 @@
+/* =========================================
+ FLOOR EFFECTS - MATCHES FloorEffects.tsx
+ ========================================= */
+
+.floor-effects-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  z-index: 10;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.effect {
+  position: absolute;
+  pointer-events: none;
+  will-change: transform, opacity;
+  min-width: 4px;
+  min-height: 4px;
+}
+
+/* =========================================
+ ANIMATIONS
+ ========================================= */
+
+@keyframes soft-pulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.05); }
+}
+
+@keyframes gate-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0.1; }
+}
+
+@keyframes steam-rise {
+  0% { opacity: 0.3; transform: translateY(0) scale(0.8); }
+  50% { opacity: 0.5; }
+  100% { opacity: 0; transform: translateY(-30px) scale(1.5); }
+}
+
+@keyframes oil-drip-fall {
+  0% { opacity: 0.8; transform: translateY(0) scaleY(0.5); }
+  10% { opacity: 1; transform: translateY(2px) scaleY(1); }
+  90% { opacity: 1; transform: translateY(80px) scaleY(1.2); }
+  100% { opacity: 0; transform: translateY(90px) scaleY(0.2); }
+}
+
+@keyframes star-twinkle {
+  0%, 100% { opacity: 0.2; transform: scale(0.6); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes zero-g-float {
+  0%, 100% { transform: rotate(0deg) translate(0, 0); }
+  25% { transform: rotate(3deg) translate(5px, -5px); }
+  50% { transform: rotate(0deg) translate(0, -10px); }
+  75% { transform: rotate(-3deg) translate(-5px, -5px); }
+}
+
+/* =========================================
+ FLOOR 1: LOBBY
+ ========================================= */
+
+.effect.tea-steam {
+  width: 3vw;
+  height: 8vh;
+  min-width: 20px;
+  min-height: 40px;
+  background: radial-gradient(ellipse at center, rgba(255,255,255,0.4) 0%, transparent 70%);
+  filter: blur(4px);
+  animation: steam-rise 4s ease-out infinite;
+}
+
+.effect.monitor-pulse-soft {
+  width: 15vw;
+  height: 15vh;
+  min-width: 80px;
+  min-height: 80px;
+  background: radial-gradient(circle, rgba(147, 197, 253, 0.4) 0%, transparent 70%);
+  animation: soft-pulse 4s ease-in-out infinite;
+}
+
+.effect.gate-arrow-1,
+.effect.gate-arrow-2 {
+  width: 2vw;
+  height: 3vh;
+  min-width: 8px;
+  min-height: 12px;
+  background: radial-gradient(circle at center, rgba(167, 243, 208, 0.9) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: gate-blink 2s steps(1) infinite;
+}
+
+.effect.gate-arrow-2 {
+  animation-delay: 1s;
+}
+
+/* =========================================
+ FLOOR 2: MAINTENANCE
+ ========================================= */
+
+.effect.monitor-glow-red {
+  width: 10vw;
+  height: 12vh;
+  min-width: 60px;
+  min-height: 60px;
+  background: radial-gradient(ellipse at center, rgba(220, 38, 38, 0.7) 0%, transparent 75%);
+  animation: soft-pulse 3s ease-in-out infinite;
+}
+
+.effect.robot-eyes {
+  width: 2vw;
+  height: 2vh;
+  min-width: 8px;
+  min-height: 8px;
+  background: radial-gradient(ellipse at center, rgba(253, 224, 71, 0.9) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: gate-blink 0.5s steps(1) infinite;
+}
+
+.effect.oil-drip {
+  width: 4px;
+  height: 12px;
+  min-width: 4px;
+  min-height: 12px;
+  background: linear-gradient(to bottom, #5a4328, #3d2d1b);
+  border-radius: 2px;
+  animation: oil-drip-fall 2.5s ease-in infinite;
+}
+
+/* =========================================
+ FLOOR 3: CONTROL HUB
+ ========================================= */
+
+.effect.server-lights {
+  width: 8vw;
+  height: 15vh;
+  min-width: 50px;
+  min-height: 80px;
+  background: 
+    radial-gradient(circle at 30% 30%, rgba(52, 211, 153, 0.8) 0%, transparent 25%),
+    radial-gradient(circle at 70% 60%, rgba(248, 113, 113, 0.8) 0%, transparent 25%);
+  animation: soft-pulse 2s infinite alternate;
+}
+
+/* =========================================
+ FLOOR 4: CAFETERIA
+ ========================================= */
+
+.effect.vending-glow {
+  width: 18vw;
+  height: 35vh;
+  min-width: 100px;
+  min-height: 200px;
+  background: radial-gradient(ellipse at center, rgba(253, 224, 71, 0.3) 0%, transparent 70%);
+  animation: soft-pulse 5s ease-in-out infinite;
+}
+
+.effect.charging-battery {
+  width: 1.5vw;
+  height: 1.5vw;
+  min-width: 8px;
+  min-height: 8px;
+  background: #ef4444;
+  box-shadow: 0 0 10px 2px rgba(239, 68, 68, 0.8);
+  border-radius: 2px;
+  animation: gate-blink 1.5s steps(1) infinite;
+}
+
+/* =========================================
+ FLOOR 5: OBSERVATION
+ ========================================= */
+
+.effect.towel {
+  width: 8vw;
+  height: 8vw;
+  min-width: 60px;
+  min-height: 60px;
+  background: radial-gradient(circle at center, rgba(253, 224, 71, 0.2) 0%, transparent 60%);
+  animation: zero-g-float 12s ease-in-out infinite;
+}
+
+.effect.dont-panic-neon {
+  width: 15vw;
+  height: 25vh;
+  min-width: 100px;
+  min-height: 120px;
+  background: radial-gradient(ellipse at center, rgba(236, 72, 153, 0.5) 0%, transparent 75%);
+  animation: gate-blink 0.8s steps(1) infinite;
+}
+
+/* =========================================
+ SHARED: Star Twinkle (All Floors)
+ ========================================= */
+
+.effect.star-twinkle {
+  width: 3px;
+  height: 3px;
+  min-width: 3px;
+  min-height: 3px;
+  background: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 6px 1px rgba(255, 255, 255, 0.9);
+  animation: star-twinkle 4s ease-in-out infinite;
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .effect {
+    animation: none !important;
+  }
+}

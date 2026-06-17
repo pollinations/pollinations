@@ -34,9 +34,12 @@ export type VideoModel = string;
 /** Image quality options */
 export type ImageQuality = "low" | "medium" | "high" | "hd";
 
+/** Reasoning depth for supported image models */
+export type ImageReasoningMode = "fast" | "balanced" | "pro";
+
 /** Options for image generation */
 export interface ImageGenerateOptions extends RequestOptions {
-    /** Image model to use (default: 'flux') */
+    /** Image model to use (default: 'zimage') */
     model?: ImageModel;
     /** Image width in pixels (default: 1024) */
     width?: number;
@@ -44,16 +47,6 @@ export interface ImageGenerateOptions extends RequestOptions {
     height?: number;
     /** Seed for reproducible generation (default: random) */
     seed?: number;
-    /** Let AI enhance/improve your prompt (default: false) */
-    enhance?: boolean;
-    /** Negative prompt - what to avoid in the image */
-    negativePrompt?: string;
-    /** Keep generation private (default: false) */
-    private?: boolean;
-    /** Remove watermark logo (default: false) */
-    nologo?: boolean;
-    /** Don't show in public feed (default: false) */
-    nofeed?: boolean;
     /** Enable safety content filters (default: false) */
     safe?: boolean;
     /** Output quality (default: 'medium') */
@@ -64,6 +57,20 @@ export interface ImageGenerateOptions extends RequestOptions {
     transparent?: boolean;
     /** How closely to follow prompt, 1-20 (higher = stricter) */
     guidanceScale?: number;
+    /**
+     * Reasoning mode for supported image models.
+     * Booleans are accepted for backward compatibility: true = "pro",
+     * false = "balanced".
+     */
+    reasoning?: boolean | ImageReasoningMode;
+}
+
+/** Options for image editing (POST /v1/images/edits) */
+export interface ImageEditOptions extends RequestOptions {
+    /** Image model to use (default: 'flux') */
+    model?: ImageModel;
+    /** Source image URL(s) for editing */
+    image?: string | string[];
 }
 
 /** Response from image generation */
@@ -84,20 +91,16 @@ export interface ImageResponse {
 export interface VideoGenerateOptions extends RequestOptions {
     /** Video model to use (default: 'veo') */
     model?: VideoModel;
-    /** Duration in seconds (veo: 4,6,8; seedance: 2-10) */
+    /** Duration in seconds (1-30, varies by model) */
     duration?: number;
     /** Aspect ratio (e.g., '16:9', '9:16', '1:1') */
     aspectRatio?: string;
     /** Seed for reproducible generation */
     seed?: number;
-    /** Enable audio generation - veo only (default: false) */
+    /** Enable audio generation where supported by the selected video model */
     audio?: boolean;
-    /** Reference image URL(s) for image-to-video */
+    /** Reference image URL(s) for image-to-video. For video, image[0] is the start frame and image[1] is the end frame when supported. */
     referenceImage?: string | string[];
-    /** Keep generation private (default: false) */
-    private?: boolean;
-    /** Remove watermark logo (default: false) */
-    nologo?: boolean;
     /** Enable safety content filters (default: false) */
     safe?: boolean;
 }
@@ -437,16 +440,27 @@ export type AudioVoice = string;
 /** Audio format options */
 export type AudioFormat = "wav" | "mp3" | "flac" | "opus" | "pcm16";
 
-/** Options for audio generation */
-export interface AudioGenerateOptions {
+/** Dedicated audio/music model */
+export type AudioModel = "elevenlabs" | "elevenmusic" | "acestep" | string;
+
+/** Options for text-to-speech generation (GET /audio/{text} or POST /v1/audio/speech) */
+export interface AudioGenerateOptions extends RequestOptions {
     /** Voice to use (default: 'alloy') */
     voice?: AudioVoice;
-    /** Model to use (default: 'openai-audio') */
-    model?: TextModel;
-    /** Output format */
-    format?: AudioFormat;
+    /** Audio model to use (default: 'elevenlabs') */
+    model?: AudioModel;
+    /** Duration in seconds (for music models like elevenmusic, acestep) */
+    duration?: number;
     /** Seed for reproducibility */
     seed?: number;
+}
+
+/** Response from dedicated audio endpoints (binary audio data) */
+export interface AudioBinaryResponse {
+    /** The generated audio as a Buffer (Node.js) or ArrayBuffer (browser) */
+    buffer: ArrayBuffer;
+    /** Content type (audio/mpeg) */
+    contentType: string;
 }
 
 /** Audio response from chat with audio modality */
@@ -462,21 +476,352 @@ export interface AudioResponse {
 }
 
 // ============================================================================
+// Speech-to-Text (Transcription)
+// ============================================================================
+
+/** STT model options */
+export type TranscriptionModel =
+    | "whisper-large-v3"
+    | "whisper-1"
+    | "scribe"
+    | "universal-2"
+    | "universal-3-pro"
+    | string;
+
+/** Response format for transcription */
+export type TranscriptionResponseFormat =
+    | "json"
+    | "text"
+    | "verbose_json"
+    | "srt"
+    | "vtt";
+
+/** Options for speech-to-text transcription */
+export interface TranscribeOptions extends RequestOptions {
+    /** Model to use (default: 'whisper-large-v3') */
+    model?: TranscriptionModel;
+    /** Language code (ISO-639-1, e.g. 'en', 'fr') */
+    language?: string;
+    /** Response format (default: 'json') */
+    responseFormat?: TranscriptionResponseFormat;
+    /** Optional prompt to guide transcription style */
+    prompt?: string;
+    /** Temperature 0-1 for sampling */
+    temperature?: number;
+}
+
+/** Transcription response */
+export interface TranscriptionResponse {
+    /** Transcribed text */
+    text: string;
+}
+
+/** Verbose transcription response with word/segment details */
+export interface TranscriptionVerboseResponse extends TranscriptionResponse {
+    task: string;
+    language: string;
+    duration: number;
+    words?: Array<{ word: string; start: number; end: number }>;
+    segments?: Array<{ id: number; start: number; end: number; text: string }>;
+}
+
+// ============================================================================
+// Media Upload
+// ============================================================================
+
+/** Options for media upload */
+export interface UploadOptions extends RequestOptions {
+    /** Original filename (optional) */
+    name?: string;
+    /** Content type (auto-detected if omitted) */
+    contentType?: string;
+}
+
+/** Response from media upload */
+export interface UploadResponse {
+    /** Content-addressed hash ID */
+    id: string;
+    /** Public URL for the uploaded media */
+    url: string;
+    /** Content type of the uploaded file */
+    contentType: string;
+    /** File size in bytes */
+    size: number;
+    /** Whether the file was already uploaded (dedup) */
+    duplicate: boolean;
+}
+
+// ============================================================================
+// BYOP (Bring Your Own Pollen)
+// ============================================================================
+
+/** Account permission scopes */
+export type AccountPermission = "profile" | "usage" | "keys";
+
+/** Options for building a BYOP authorization URL */
+export interface AuthorizeOptions {
+    /** URL to redirect back to after authorization */
+    redirectUrl: string;
+    /** Your app's publishable key (shows app name to user) */
+    appKey?: string;
+    /** OAuth state value echoed back to the redirect URL */
+    state?: string;
+    /** Authorization host (defaults to https://enter.pollinations.ai) */
+    authBaseUrl?: string;
+    /** Restrict to specific models */
+    models?: string[];
+    /** Numeric pollen cap. Omit for the default cap. */
+    budget?: number;
+    /** Key lifetime in days (default: 30) */
+    expiry?: number;
+    /** Account permissions to request */
+    permissions?: AccountPermission[];
+}
+
+// ============================================================================
+// Account
+// ============================================================================
+
+/** User profile information */
+export interface AccountProfile {
+    githubUsername: string | null;
+    image: string | null;
+    /** Current tier level (e.g. `"spore"`, `"seed"`, `"flower"`, `"nectar"`). */
+    tier: string;
+    /** ISO 8601 timestamp of the next pollen refill. `null` for tiers with no refill. */
+    nextResetAt: string | null;
+    /** Only returned when the API key has the `profile` permission */
+    name?: string | null;
+    /** Only returned when the API key has the `profile` permission */
+    email?: string | null;
+}
+
+/** Account balance */
+export interface AccountBalance {
+    balance: number;
+}
+
+/** Usage record */
+export interface UsageRecord {
+    timestamp: string;
+    type: string;
+    model: string;
+    api_key: string;
+    api_key_type: string;
+    meter_source: string;
+    input_text_tokens: number;
+    input_cached_tokens: number;
+    input_audio_tokens: number;
+    input_audio_seconds: number;
+    input_image_tokens: number;
+    output_text_tokens: number;
+    output_reasoning_tokens: number;
+    output_audio_tokens: number;
+    output_audio_seconds: number;
+    output_image_tokens: number;
+    output_video_seconds: number;
+    cost_usd: number;
+    response_time_ms: number;
+}
+
+/** Usage response */
+export interface UsageResponse {
+    usage: UsageRecord[];
+    count: number;
+}
+
+/** Options for fetching usage */
+export interface UsageOptions {
+    /** Response format (default: 'json') */
+    format?: "json" | "csv";
+    /** Number of days to include, max 90 (default: 30) */
+    days?: number;
+    /** Max records to return, 1-50000 (default: 100). CSV exports are capped at 50000. */
+    limit?: number;
+    /** ISO timestamp cursor for pagination */
+    before?: string;
+    /** Exact period granularity */
+    granularity?: "day" | "week" | "month";
+    /** Exact period, e.g. YYYY-MM-DD, YYYY-WNN, or YYYY-MM */
+    period?: string;
+}
+
+/** Options for fetching current-key usage. CSV export is not supported here. */
+export type KeyUsageOptions = Omit<UsageOptions, "format">;
+
+/** Options for fetching daily usage */
+export interface DailyUsageOptions {
+    /** Response format (default: 'json') */
+    format?: "json" | "csv";
+    /** Number of days to include, max 90 (default: 90) */
+    days?: number;
+    /** Exact period granularity */
+    granularity?: "day" | "week" | "month";
+    /** Exact period, e.g. YYYY-MM-DD, YYYY-WNN, or YYYY-MM */
+    period?: string;
+    /** Filter to one or more API keys by id */
+    api_key_ids?: string[];
+}
+
+/** Daily usage summary */
+export interface DailyUsageRecord {
+    date: string;
+    model: string;
+    meter_source: string;
+    requests: number;
+    cost_usd: number;
+}
+
+/** Daily usage response */
+export interface DailyUsageResponse {
+    usage: DailyUsageRecord[];
+    count: number;
+}
+
+/** API key validation response */
+export interface KeyInfo {
+    valid: boolean;
+    type: string;
+    name?: string | null;
+    expiresAt?: string | null;
+    expiresIn?: number | null;
+    permissions?: {
+        models?: string[] | null;
+        account?: string[] | null;
+    };
+    pollenBudget?: number | null;
+    rateLimitEnabled?: boolean;
+}
+
+/** Detailed key record returned by GET /account/keys (list) */
+export interface AccountKey {
+    id: string;
+    name: string;
+    /** First few characters of the key (for identification) */
+    start?: string;
+    prefix: string;
+    type?: string;
+    createdAt: string;
+    expiresAt: string | null;
+    lastRequest: string | null;
+    permissions: {
+        tier?: string[];
+        models?: string[];
+        account?: string[];
+    } | null;
+    metadata: Record<string, unknown> | null;
+    pollenBalance: number | null;
+    enabled: boolean;
+}
+
+/** Key-scope permissions that can be granted on created keys. */
+export type KeyAccountPermission = "profile" | "usage" | "keys" | string;
+
+/** Options for POST /account/keys */
+export interface CreateKeyOptions {
+    /** Human-readable name */
+    name: string;
+    /** Key type (default: "secret") */
+    type?: "secret" | "publishable";
+    /** Expiry in seconds from creation */
+    expiresIn?: number;
+    /** Restrict to specific model IDs */
+    allowedModels?: string[];
+    /** Pollen budget cap */
+    pollenBudget?: number;
+    /**
+     * Account permissions to grant (e.g. `["profile", "usage"]`).
+     * Without this, scoped keys cannot read account state beyond their
+     * own key metadata, budget, and per-key usage.
+     * `"keys"` is auto-stripped server-side on the BYOP flow.
+     */
+    accountPermissions?: KeyAccountPermission[];
+    /**
+     * Allowed OAuth redirect URIs for publishable app keys. Required when
+     * creating a `publishable` key that drives the `/authorize` BYOP flow.
+     * Matching pins scheme, host, port, and path; one trailing slash is
+     * ignored; loopback ports are matched port-agnostically.
+     */
+    redirectUris?: string[];
+    /**
+     * Opt the publishable app key into developer earnings. Defaults to
+     * `false` server-side; only meaningful on `type: "publishable"` keys.
+     */
+    earningsEnabled?: boolean;
+}
+
+/**
+ * Response from POST /account/keys — includes the raw `key` value which
+ * is ONLY shown at creation time. Store it immediately.
+ */
+export interface CreatedKey {
+    id: string;
+    /** The secret key value. Only returned once at creation. */
+    key: string;
+    name: string;
+    type: string;
+    prefix: string;
+    expiresAt: string | null;
+    permissions: {
+        models?: string[];
+        account?: string[];
+    } | null;
+    pollenBudget: number | null;
+}
+
+// ============================================================================
 // Model Information
 // ============================================================================
 
 /** Model tier levels */
 export type ModelTier = "anonymous" | "seed" | "flower" | "nectar";
+/** Known model categories, in catalog display order. The canonical enum lives
+ * in shared/registry (ModelInfoSchema); categories the SDK doesn't know yet
+ * pass through the model catalog unfiltered and sort last. */
+export const MODEL_CATEGORIES = [
+    "image",
+    "video",
+    "text",
+    "audio",
+    "embedding",
+    "realtime",
+] as const;
+
+/** Model category */
+export type ModelCategory = (typeof MODEL_CATEGORIES)[number];
+
+/** Per-model video frame-control capabilities (video models only) */
+export type VideoCapability =
+    | "start_frame"
+    | "end_frame"
+    | "keyframes"
+    | "audio_output";
+
+/** Per-model agentic/text capabilities */
+export type ModelCapability =
+    | "tool_calling"
+    | "reasoning"
+    | "web_search"
+    | "code_execution";
 
 /** Model information */
 export interface ModelInfo {
+    id?: string;
     name: string;
+    /** Display name. Present on registry endpoints (/models, /text/models, …); absent on OpenAI-compatible /v1/models. */
+    title?: string;
+    category?: ModelCategory;
+    brand?: string;
     description?: string;
     aliases?: string[];
     tier?: ModelTier;
     community?: boolean;
     input_modalities?: string[];
     output_modalities?: string[];
+    video_capabilities?: VideoCapability[];
+    max_reference_images?: number;
+    max_reference_videos?: number;
+    capabilities?: ModelCapability[];
     tools?: boolean;
     vision?: boolean;
     audio?: boolean;
@@ -484,18 +829,91 @@ export interface ModelInfo {
     uncensored?: boolean;
     voices?: string[];
     maxInputChars?: number;
-    context_window?: number;
+    context_length?: number;
+    supported_endpoints?: string[];
     supportsSystemMessages?: boolean;
     is_specialized?: boolean;
-    pricing?: {
-        currency: "pollen";
-        input_token_price?: number;
-        output_token_price?: number;
-        cached_token_price?: number;
-        image_price?: number;
-        audio_input_price?: number;
-        audio_output_price?: number;
-    };
+    paid_only?: boolean;
+    pricing?: Record<string, string> & { currency: "pollen" };
+}
+
+// ============================================================================
+// Device Flow (OAuth)
+// ============================================================================
+
+/** Raw response from POST /api/device/code */
+export interface DeviceCodeResponse {
+    device_code: string;
+    user_code: string;
+    verification_uri_complete: string;
+    expires_in: number;
+    interval: number;
+}
+
+/** Raw response from POST /api/device/token (polling) */
+export interface DeviceTokenResponse {
+    access_token?: string;
+    error?: string;
+    error_description?: string;
+}
+
+/** Options for starting device flow */
+export interface AuthorizeDeviceOptions extends RequestOptions {
+    /** OAuth client ID. Defaults to the public polli CLI client. */
+    clientId?: string;
+    /** Space-separated scope string (default: "generate keys usage") */
+    scope?: string;
+}
+
+/**
+ * Handle returned by `authorizeDevice()` — surfaces the user-facing
+ * verification URL/code, and exposes `poll()` to block until approval.
+ */
+export interface DeviceAuthorization {
+    /** Short code the user types in the verification page */
+    userCode: string;
+    /** URL to open in a browser (includes the user code as a query param) */
+    verificationUri: string;
+    /** When the device code expires and polling must stop */
+    expiresAt: Date;
+    /** Block until the user approves. Resolves with an access token or throws. */
+    poll(): Promise<string>;
+}
+
+/** User identity returned by GET /api/device/userinfo */
+export interface UserInfo {
+    sub?: string;
+    name?: string;
+    email?: string;
+    githubUsername?: string;
+    tier?: string;
+    [key: string]: unknown;
+}
+
+// ============================================================================
+// Image Generation (OpenAI-compatible POST /v1/images/generations)
+// ============================================================================
+
+/** Options for POST /v1/images/generations */
+export interface ImageGenerateV1Options extends RequestOptions {
+    /** Image model to use (default: 'zimage') */
+    model?: ImageModel;
+    /** Size string like "1024x1024". Alternative to width + height. */
+    size?: string;
+    /** Image width in pixels (converted to `size` when both dimensions provided) */
+    width?: number;
+    /** Image height in pixels */
+    height?: number;
+    /** Number of images to generate (default: 1) */
+    n?: number;
+    /** Response format (default: server decides — usually b64_json) */
+    responseFormat?: "url" | "b64_json";
+    /** Reasoning mode for supported image models. Booleans are accepted for backward compatibility. */
+    reasoning?: boolean | ImageReasoningMode;
+    /** Seed for reproducible generation */
+    seed?: number;
+    /** Output quality */
+    quality?: ImageQuality;
 }
 
 // ============================================================================
@@ -504,12 +922,17 @@ export interface ModelInfo {
 
 /** API error details */
 export interface PollinationsErrorDetails {
-    code: "BAD_REQUEST" | "UNAUTHORIZED" | "INTERNAL_ERROR" | string;
+    code:
+        | "BAD_REQUEST"
+        | "UNAUTHORIZED"
+        | "INSUFFICIENT_BALANCE"
+        | "PERMISSION_DENIED"
+        | "INTERNAL_ERROR"
+        | string;
     message: string;
     timestamp: string;
     details?: Record<string, unknown>;
     requestId?: string;
-    cause?: unknown;
 }
 
 /** Pollinations SDK Error */

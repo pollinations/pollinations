@@ -77,25 +77,21 @@ wrangler tail --format json | tee logs.jsonl
 wrangler tail --format json | npx tsx scripts/format-logs.ts
 ```
 
-### image.pollinations.ai (EC2 systemd)
+### gen.pollinations.ai (image + text gateway)
+Image and text generation now run inside the gen Cloudflare Worker (the legacy EC2 `image-pollinations` and `text-pollinations` services are decommissioned). Use `wrangler tail` from `gen.pollinations.ai/`:
 ```bash
-# Real-time logs
-ssh enter-services "sudo journalctl -u image-pollinations.service -f"
-
-# Last 3 minutes
-ssh enter-services "sudo journalctl -u image-pollinations.service --since '3 minutes ago' --no-pager" > image-service-logs.txt
-
-# Recent errors only
-ssh enter-services "sudo journalctl -u image-pollinations.service -p err -n 50"
+cd gen.pollinations.ai
+wrangler tail --format json | tee gen-logs.jsonl
 ```
 
-### text.pollinations.ai (EC2 systemd)
+### Legacy anonymous image (OVH)
+Anonymous traffic to `image.pollinations.ai` still terminates on the OVH host:
 ```bash
 # Real-time logs
-ssh enter-services "sudo journalctl -u text-pollinations.service -f"
+ssh -i ~/.ssh/id_rsa_ovh ubuntu@57.130.31.42 "sudo journalctl -u image-pollinations -f"
 
 # Last 3 minutes
-ssh enter-services "sudo journalctl -u text-pollinations.service --since '3 minutes ago' --no-pager" > text-service-logs.txt
+ssh -i ~/.ssh/id_rsa_ovh ubuntu@57.130.31.42 "sudo journalctl -u image-pollinations --since '3 minutes ago' --no-pager" > legacy-image-logs.txt
 ```
 
 ---
@@ -146,42 +142,32 @@ AZURE_CONTENT_SAFETY_API_KEY=<new-key>
 
 # Environment Variables to Check
 
-## image.pollinations.ai
+Image and text env vars now live in the gen Worker secrets (`gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json`, SOPS-encrypted). Decrypt to inspect:
 ```bash
-ssh enter-services "cat /home/ubuntu/pollinations/image.pollinations.ai/.env | grep -E 'AZURE|GOOGLE|CLOUDFLARE'"
+sops -d gen.pollinations.ai/secrets/prod.vars.json | jq 'keys[] | select(test("AZURE|GOOGLE|CLOUDFLARE|OPENAI"))'
 ```
 
 Key variables:
 - `AZURE_CONTENT_SAFETY_ENDPOINT` - Azure Content Safety API endpoint
 - `AZURE_CONTENT_SAFETY_API_KEY` - Azure Content Safety API key
 - `GOOGLE_PROJECT_ID` - Google Cloud project for Vertex AI
-- `AZURE_MYCELI_FLUX_KONTEXT_ENDPOINT` - Azure Kontext model endpoint
-
-## text.pollinations.ai
-```bash
-ssh enter-services "cat /home/ubuntu/pollinations/text.pollinations.ai/.env | grep -E 'AZURE|OPENAI|GOOGLE'"
-```
+- `AZURE_MYCELI_PROD_SWEDEN_API_KEY` - Shared Azure API key (Kontext, GPT Image, GPT Image 1.5)
 
 ---
 
 # Updating Secrets
 
 Secrets are stored encrypted with SOPS:
-- `image.pollinations.ai/secrets/env.json`
-- `text.pollinations.ai/secrets/env.json`
+- `gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json`
+- `enter.pollinations.ai/secrets/{dev,staging,prod}.vars.json`
 
 To update:
 ```bash
 # Decrypt, edit, re-encrypt
-sops image.pollinations.ai/secrets/env.json
+sops gen.pollinations.ai/secrets/prod.vars.json
 
-# Deploy to server
-sops --output-type dotenv -d image.pollinations.ai/secrets/env.json > /tmp/image.env
-scp /tmp/image.env enter-services:/home/ubuntu/pollinations/image.pollinations.ai/.env
-rm /tmp/image.env
-
-# Restart service
-ssh enter-services "sudo systemctl restart image-pollinations.service"
+# Deploy to the gen Worker (secrets ship with the deploy)
+cd gen.pollinations.ai && npm run deploy
 ```
 
 ---
@@ -189,14 +175,11 @@ ssh enter-services "sudo systemctl restart image-pollinations.service"
 # Log Analysis Commands
 
 ```bash
-# Count errors by type
-grep -i "error" image-service-logs.txt | grep -oE "(Azure Flux Kontext|Vertex AI|No active translate|getaddrinfo ENOTFOUND)" | sort | uniq -c | sort -rn
+# Count errors by type (against captured wrangler-tail JSON)
+jq -r '.logs[]?.message[]? // .message? // empty' gen-logs.jsonl | grep -oE "(Azure Flux Kontext|Vertex AI|No active translate|getaddrinfo ENOTFOUND)" | sort | uniq -c | sort -rn
 
 # Find content filter rejections
-grep -i "Content rejected" image-service-logs.txt | sort | uniq -c
-
-# Check DNS resolution on server
-ssh enter-services "nslookup gptimagemain1-resource.cognitiveservices.azure.com"
+jq -r '.logs[]?.message[]? // .message? // empty' gen-logs.jsonl | grep -i "Content rejected" | sort | uniq -c
 ```
 
 ---
@@ -426,18 +409,31 @@ log.warn("Chat completions error {status}: {body}", {
 
 ## Tinybird Analytics (Alternative)
 
-For aggregated model health stats, query Tinybird directly:
+For aggregated model health stats, query Tinybird directly.
+
+> **⚠️ Use the prod read token from SOPS — do NOT use `.tinyb`.** The `.tinyb` in `enter.pollinations.ai/observability/` points to the **staging** workspace (`pollinations_enter_staging`), which has ~no real traffic, so prod queries come back empty. Get the prod token instead:
+> ```bash
+> TB=$(sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '.TINYBIRD_READ_TOKEN')
+> ```
+> This single token works for **both** pipes (`/v0/pipes/...`) and raw SQL (`/v0/sql`) against the prod workspace (`pollinations_enter`). The public read token in `apps/model-monitor/src/hooks/useModelMonitor.js` also works for pipes but is rotated periodically — pull it live, never hardcode (the one previously pinned in this skill went stale).
 
 ```bash
-# Get model health stats (last 5 minutes)
-curl "https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_health.json?token=$TINYBIRD_TOKEN" | jq '.data'
+H="https://api.europe-west2.gcp.tinybird.co"
 
-# Get detailed error breakdown
-curl "https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_errors.json?token=$TINYBIRD_TOKEN" | jq '.data'
+# Get model health stats — pass minutes (default pipe window is short; use 240 for last 4h)
+curl -s "$H/v0/pipes/model_health.json?token=$TB&minutes=240" | jq '.data'
+
+# Detailed server-side error breakdown (full messages, upstream status/body, user attribution)
+curl -s "$H/v0/pipes/recent_server_errors.json?token=$TB&minutes=240&limit=500" -o /tmp/errs.json
 ```
 
-The Tinybird token is a read-only public token found in:
-- `apps/model-monitor/src/hooks/useModelMonitor.js`
+**`model_health` columns** (note: NOT `error_count`/`error_rate`): `model`, `event_type`, `provider`, `model_used`, `total_requests`, `status_2xx`, `errors_4xx`, `errors_5xx`, `last_error_at`, `latency_p50_ms`, `latency_p95_ms`, `avg_latency_ms`, `last_request_at`. Sort by `errors_5xx` to find backend issues.
+
+**`recent_server_errors`** is the go-to pipe for root-causing (defined in `enter.pollinations.ai/observability/endpoints/recent_server_errors.pipe`, params `minutes` default 1440, `limit` default 200). It returns `timestamp, status, upstream_status, upstream_host, upstream_body, message, error_code, error_class, model_requested, route_path, user_id, user_tier, api_key_id`. There is **no** `model_errors` pipe.
+
+> **JSON quirk**: `recent_server_errors` rows contain raw newlines in `stack`/`message`, which break `jq`. Parse with Python instead: `python3 -c "import json; d=json.load(open('/tmp/errs.json'),strict=False); ..."`.
+
+> **Reading 5xx**: `upstream_status` reveals the true cause. `502 (up 429)` = provider throttle (e.g. Bedrock "Too many tokens" — account-level TPM quota, often a peak-traffic spike across many users, not one abuser). `502 (up 403)` from `api.openai.com` with `unsupported_country_region_territory` = Cloudflare egress PoP in an OpenAI-blocked country. `500 (up 500)` from Vertex/xAI = provider-side transient ("high load"/"Internal error") — no action.
 
 ---
 
@@ -469,13 +465,9 @@ The Tinybird token is a read-only public token found in:
      }' | jq '.result.events.events'
    ```
 
-4. **Check Backend Logs** - If error is from downstream service:
+4. **Check Gateway Logs** - Tail the gen Worker (image + text both run here):
    ```bash
-   # Image service
-   ssh enter-services "sudo journalctl -u image-pollinations.service --since '5 minutes ago'"
-   
-   # Text service
-   ssh enter-services "sudo journalctl -u text-pollinations.service --since '5 minutes ago'"
+   cd gen.pollinations.ai && wrangler tail --format json | tee gen-logs.jsonl
    ```
 
 5. **Test Model Directly** - Verify if model is actually broken:
@@ -517,29 +509,27 @@ Tinybird provides pre-aggregated model health stats and raw event data.
 
 ### Token Locations
 
-1. **Public read-only token** (for pipes only): `apps/model-monitor/src/hooks/useModelMonitor.js`
-2. **Admin token** (for raw SQL queries): `enter.pollinations.ai/observability/.tinyb` (in `token` field)
+- **Prod read token (use this)**: `enter.pollinations.ai/secrets/prod.vars.json` → `TINYBIRD_READ_TOKEN` (via SOPS). Works for both pipes and raw `/v0/sql` against prod (`pollinations_enter`).
+- **Public read token** (pipes only, rotates): `apps/model-monitor/src/hooks/useModelMonitor.js`.
+- **`.tinyb`** = **staging** workspace (`pollinations_enter_staging`) — empty of prod traffic. Only use for staging-specific debugging.
 
-### Basic Queries (Public Token)
+### Basic Queries
 
 ```bash
-# Public read-only token from apps/model-monitor
-TINYBIRD_TOKEN="p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICJmZTRjODM1Ni1iOTYwLTQ0ZTYtODE1Mi1kY2UwYjc0YzExNjQiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.Wc49vYoVYI_xd4JSsH_Fe8mJk7Oc9hx0IIldwc1a44g"
+# Prod read token from SOPS — works for pipes AND raw SQL
+TB=$(sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '.TINYBIRD_READ_TOKEN')
 
-# Get model health (last 5 min)
-curl -s "https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_health.json?token=$TINYBIRD_TOKEN" | jq '.data'
+# Get model health (last 4h)
+curl -s "https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_health.json?token=$TB&minutes=240" | jq '.data'
 ```
 
-### Raw SQL Queries (Admin Token)
+### Raw SQL Queries
 
-For querying the raw `generation_event` datasource, use the admin token from `.tinyb`:
+The prod `TINYBIRD_READ_TOKEN` above can query the raw `generation_event` datasource directly via `/v0/sql` (verified). Reuse `$TB`:
 
 ```bash
-# Get admin token from .tinyb file
-TINYBIRD_ADMIN_TOKEN=$(jq -r '.token' enter.pollinations.ai/observability/.tinyb)
-
 # Find users with frequent 403 errors (last 24 hours)
-curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TINYBIRD_ADMIN_TOKEN" \
+curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
   --data-urlencode "q=SELECT user_id, user_github_username, user_tier, count() as error_403_count 
 FROM generation_event 
 WHERE response_status = 403 
@@ -551,7 +541,7 @@ ORDER BY error_403_count DESC
 LIMIT 20"
 
 # Find users with 500 errors (actual backend issues)
-curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TINYBIRD_ADMIN_TOKEN" \
+curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
   --data-urlencode "q=SELECT user_github_username, model_requested, error_message, count() as error_count 
 FROM generation_event 
 WHERE response_status >= 500 
@@ -561,7 +551,7 @@ ORDER BY error_count DESC
 LIMIT 20"
 
 # Check specific user's recent errors
-curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TINYBIRD_ADMIN_TOKEN" \
+curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
   --data-urlencode "q=SELECT start_time, response_status, model_requested, error_message 
 FROM generation_event 
 WHERE user_github_username = 'USERNAME_HERE' 

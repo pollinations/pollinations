@@ -1,0 +1,80 @@
+name: Deploy App (Automatic)
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_name:
+        description: 'App to deploy (e.g., gsoc, virtual-makeup, chat)'
+        required: true
+        type: string
+  push:
+    branches: [main]
+    paths:
+      - 'apps/**'
+      - 'packages/sdk/**'
+      - 'packages/ui/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Detect app name
+        id: app
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            APP_CANDIDATES="${{ github.event.inputs.app_name }}"
+            PACKAGE_CANDIDATES=""
+          else
+            git fetch origin main --depth=2
+            CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} 2>/dev/null || \
+                      git diff --name-only origin/main~1 HEAD)
+            APP_CANDIDATES=$(echo "$CHANGED" | grep '^apps/[^/]*/' | sed 's|^apps/\([^/]*\)/.*|\1|' || true)
+            PACKAGE_CANDIDATES=$(CHANGED="$CHANGED" node .github/scripts/detect-package-consumers.js)
+          fi
+          
+          # Keep only directly changed apps registered in apps.json (source of truth).
+          # Package consumers are already emitted from apps.json by detect-package-consumers.js.
+          APPS=""
+          for app in $APP_CANDIDATES; do
+            if [ -n "$app" ] && node -e "const c=require('./apps/apps.json'); if(!c['$app']) process.exit(1);" 2>/dev/null; then
+              APPS="$APPS $app"
+            else
+              echo "⏭️ $app not in apps.json, skipping"
+            fi
+          done
+          APPS=$(printf "%s\n%s\n" "$APPS" "$PACKAGE_CANDIDATES" | xargs -n1 | sort -u | xargs)
+
+          if [ -z "$APPS" ]; then
+            echo "No registered apps changed, nothing to deploy"
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          echo "apps=$APPS" >> $GITHUB_OUTPUT
+          echo "skip=false" >> $GITHUB_OUTPUT
+
+      - name: Deploy
+        if: steps.app.outputs.skip != 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI_APPS }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
+          CLOUDFLARE_API_TOKEN_WORKER: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+          CLOUDFLARE_ACCOUNT_ID_WORKER: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
+          CLOUDFLARE_API_TOKEN_OLD: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID_OLD: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          for app in ${{ steps.app.outputs.apps }}; do
+            echo "::group::Deploy $app"
+            ./apps/_scripts/deploy.sh "$app"
+            echo "::endgroup::"
+          done

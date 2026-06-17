@@ -2,224 +2,196 @@
 
 ## App Submission Handling
 
-App submissions are now **fully automated** via the `app-review-submission.yml` workflow.
+Two-phase review via `app-review-submission.yml` (AI + human). Source of truth: `apps/APPS.md`.
 
-**Source of truth:** `apps/APPS.md` - A single markdown table with all apps.
+Flow: user opens issue with `TIER-APP` → workflow validates + AI generates preview → bot posts `APP_REVIEW_DATA` JSON + labels `TIER-APP-REVIEW` → maintainer adds `TIER-APP-APPROVED` → workflow prepends row to `apps/APPS.md`, opens PR with auto-merge, closes issue via `Fixes #NNN`.
 
-**How it works:**
+Label state machine:
+- `TIER-APP` → `TIER-APP-REJECTED` (duplicate/spore) | `TIER-APP-INCOMPLETE` (not registered) | `TIER-APP-REVIEW` → `TIER-APP-APPROVED` (merged) | `TIER-APP-REJECTED` (closed)
 
-1. User opens issue with `tier:review` label
-2. Workflow parses issue with AI, checks Enter registration
-3. If valid: fetches GitHub stars, AI generates emoji + description
-4. Prepends new row to `apps/APPS.md`, updates README with last 10 apps
-5. Creates PR automatically
+Manual edits: edit `apps/APPS.md`, run `node .github/scripts/app-update-greenhouse.js`.
 
-**Manual edits (if needed):**
+APPS.md columns: `Emoji | Name | Web_URL | Description (~80 chars) | Language (ISO code, no flags) | Category | Platform | GitHub (@user) | GitHub_ID | Repo | Stars (⭐N) | Discord | Other | Submitted_Date (issue created) | Issue_URL (#N) | Approved_Date (PR merged)`.
 
-- Edit `apps/APPS.md` directly
-- Run `node .github/scripts/app-update-readme.js` to refresh README
+Platforms (auto-detected; comma-separated for multi): `web` (default w/ URL), `android`, `ios` (App Store or routinehub.co), `windows`, `macos`, `desktop` (cross-platform), `cli`, `discord`, `telegram`, `whatsapp`, `library` (npm/PyPI/SDK), `browser-ext`, `roblox`, `wordpress`, `api` (default w/o URL).
 
-**Table format in APPS.md:**
+Categories: `image`, `video_audio`, `writing`, `chat`, `games`, `learn`, `bots`, `build`, `business`.
 
-```markdown
-| Emoji | Name     | Web_URL | Description                   | Language | Category | GitHub  | GitHub_ID | Repo                   | Stars | Discord | Other | Submitted  |
-| ----- | -------- | ------- | ----------------------------- | -------- | -------- | ------- | --------- | ---------------------- | ----- | ------- | ----- | ---------- |
-| 🎨    | App Name | url     | Brief description (~80 chars) |          | creative | @github | 12345678  | https://github.com/... | ⭐123 |         |       | 2025-01-01 |
-```
+## Discord
 
-**Categories:**
-
-- Vibes ✨ (`Vibes`): No-code / describe-to-code playgrounds and builders
-- Creative 🎨 (`Creative`): Turn prompts into images, video, music, design, slides
-- Games 🎲 (`Games`): AI-powered play, interactive fiction, puzzle & agent worlds
-- Dev_Tools 🛠️ (`Dev_Tools`): SDKs, integration libs, extensions, dashboards, MCP servers
-- Chat 💬 (`Chat`): Standalone chat UIs / multi-model playgrounds
-- Social_Bots 🤖 (`Social_Bots`): Discord / Telegram / WhatsApp / Roblox bots & NPCs
-- Learn 📚 (`Learn`): Tutorials, guides, style books & educational demos
-
-## Non-English Apps
-
-- Use ISO language code in the `Language` column (e.g., `zh-CN`, `es`, `pt-BR`, `ja`)
-- No flags in the table - use language codes only
-
-## Discord Configuration
-
-**pollinations.ai Discord Server:**
-
-- **Guild ID**: `885844321461485618`
-- **Server**: https://discord.gg/pollinations-ai-885844321461485618
-
-Use this guild ID when interacting with Discord MCP tools for announcements, community management, etc.
+Guild ID `885844321461485618` (https://discord.gg/pollinations-ai-885844321461485618) — use for Discord MCP tools.
 
 ## Repository Structure
 
-Key directories and their purposes:
-
-```
-pollinations/
-├── image.pollinations.ai/     # Image generation backend service
-├── text.pollinations.ai/      # Text generation backend service
-├── pollinations.ai/           # Main React frontend application
-├── packages/                  # Publishable npm packages
-│   ├── sdk/                   # @pollinations/sdk - Client library with React hooks
-│   └── mcp/                   # @pollinations/model-context-protocol - MCP server
-├── enter.pollinations.ai/     # Centralized auth gateway (ACTIVE)
-└── operations/                # Documentation and operations
-```
+- `enter.pollinations.ai/` — Auth gateway + billing (Cloudflare Worker)
+- `gen.pollinations.ai/` — Edge router + text generation Worker
+- `image.pollinations.ai/` — Image GPU/backend assets; public gateway code lives in `gen.pollinations.ai/`
+- `pollinations.ai/` — React frontend
+- `packages/sdk/` — `@pollinations/sdk` (client + React hooks)
+- `packages/mcp/` — `@pollinations/mcp` (MCP server; see `packages/mcp/AGENTS.md`)
+- `shared/` — auth, registry, IP queue; `shared/registry/` holds model registries
+- `apps/` — Community apps + `APPS.md`
+- `social/` — Discord/Reddit/GitHub automation
 
 ## API Gateway
 
-**Primary endpoint:** `https://gen.pollinations.ai`
+Primary: `https://gen.pollinations.ai` → routes to `enter.pollinations.ai` for auth/billing.
 
-All API requests go through `gen.pollinations.ai`, which routes to the `enter.pollinations.ai` gateway for authentication and billing.
+- Auth: `pk_` (frontend), `sk_` (backend). Keys: https://enter.pollinations.ai
+- Billing: Pollen credits ($1 ≈ 1 Pollen). Full docs: `./APIDOCS.md`
+- Services: Text (Portkey, multi-provider), Image (gen Worker dispatch to providers/GPU backends), Video (Wan/Veo/LTX), Audio (ElevenLabs, TTM)
+- Tiers: microbe → spore → seed → flower → router (nectar is legacy — still supported, no longer granted; see `enter.pollinations.ai/src/tier-config.ts`)
 
-- **Authentication**: Publishable keys (`pk_`) for frontend, Secret keys (`sk_`) for backend
-- **Billing**: Pollen credits ($1 ≈ 1 Pollen)
-- **Get API keys**: [enter.pollinations.ai](https://enter.pollinations.ai)
-- **Full API docs**: [APIDOCS.md](./APIDOCS.md)
+### Local Development
 
-## Model Context Protocol (MCP)
+Ports: enter `3000` (API at `/api/*`), gen `8788`. Run `npm run dev` per service.
 
-The `packages/mcp/` directory contains a Model Context Protocol server that allows AI agents to directly generate images, text, and audio using the pollinations.ai API.
+Image generation now runs inside `gen.pollinations.ai`; local image API tests should target the gen worker on port `8788`.
 
-For detailed implementation notes, design principles, and troubleshooting, see:
-
-- `packages/mcp/README.md` - Installation and usage
-- `packages/mcp/AGENTS.md` - Implementation guidelines and debugging
+Local API test:
+```bash
+curl "http://localhost:8788/image/test?model=flux" -H "Authorization: Bearer $TOKEN"
+curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKEN" ...
+```
 
 ## API Quick Reference
 
-### Image Generation
+- Image: `GET gen.pollinations.ai/image/{prompt}` (bearer token)
+- Text (OpenAI): `POST gen.pollinations.ai/v1/chat/completions` with `{model, messages}` (bearer token)
+- Simple text: `GET gen.pollinations.ai/text/{prompt}?key=...`
+- Audio: `GET gen.pollinations.ai/audio/{text}?voice=nova&key=...`
+- Models: `/image/models`, `/v1/models`
+- See `./APIDOCS.md`, `.claude/skills/enter-services/SKILL.md`
 
+## ⚠️ YAGNI — You Aren't Gonna Need It (CRITICAL)
+
+**Follow YAGNI religiously:**
+
+- Only implement what's needed now. Remove unused functions.
+- No speculative abstractions, "just in case" helpers, preemptive test utils/wrappers.
+- No backward-compat fallbacks — clean breaks beat bloat. When changing tokens/headers/APIs, update all consumers at once.
+- When user says "keep it simple" — one function, one price, one config. Simplest thing that works.
+
+## Tinybird Deployment Safety
+
+**CRITICAL — These rules apply whenever deploying to Tinybird:**
+
+- Two workspaces: `pollinations_enter` (prod) and `pollinations_enter_staging` (staging + dev + local). Pipes and datasources must be deployed to **both** — no CI auto-deploy yet, tracked in #11127.
+- Always deploy to **staging first**, verify, then prod. `tb --cloud deploy --wait` defaults to whichever workspace `.tinyb` points to (prod by default); override with `TB_TOKEN=<staging_admin_token>` for staging.
+- Validate first: `tb --cloud deploy --check --wait` (against both workspaces if either schema is in doubt)
+- Never `--allow-destructive-operations` without explicit permission
+- Never `tb push` (deprecated); use `tb --cloud deploy --wait`
+- Always `--cloud` (otherwise CLI hits Tinybird Local/Docker)
+- Run from `enter.pollinations.ai/observability`
+- Verify all consumers within a workspace before modifying a pipe (pipes are NOT cross-workspace; each workspace has its own copy)
+- Timeouts: use `uniq()` not `uniqExact()`; avoid CTE+JOIN; single-pass queries; for large time ranges use `start_date` parameter week-by-week
+- Full procedure: `.claude/skills/tinybird-deploy/SKILL.md`
+
+## Code Style & Workflow
+
+- Modern JS/TS, ES modules (all `.js` are ESM). Follow existing formatting. Comment complex logic.
+- Run `npx biome check --write <file>` after edits and before commits.
+- Before implementing: verify assumptions on web (APIs change), read related files, check related PRs/issues, check existing utilities in `shared/` before writing new ones (auth, queue, registry, SSE parsing, retry wrappers), confirm branch via `git branch --show-current`.
+- When continuing prior work: read relevant code first; identify clear next steps.
+- Don't reimplement existing logic — search first.
+- When adding a React browser/IIFE bundle, grep bundled dependencies'
+  published dist for `react/jsx-runtime` and `react-dom` imports before
+  choosing shim vs external; transitive deps such as `@ark-ui/react` Portal can
+  reintroduce externals the package source does not import.
+
+## Common Mistakes to Avoid
+
+**IMPORTANT — Agents often make these mistakes (learned from session history):**
+
+- Don't use `cd` in bash; use `cwd` parameter.
+- Don't run `pytest`; use `npm run test` or `npx vitest run`.
+- Don't create `.md` docs unless asked.
+- Always use absolute paths.
+- Don't edit files manually during a Claude Code session (busts cache).
+- Don't run `/compact` unless necessary (busts cache).
+- Don't let searches run wild — use targeted paths.
+- Don't modify test files to make tests pass — fix the code.
+- Run `npm run decrypt-vars` before tests in enter.pollinations.ai.
+- Test API keys in `enter.pollinations.ai/.testingtokens`.
+- Request PR reviews by including lowercase `polly` in a PR comment.
+
+## Testing
+
+Commands:
+- enter.pollinations.ai: `cd enter.pollinations.ai && npm run test` (vitest + CF Workers pool)
+- gen.pollinations.ai: `cd gen.pollinations.ai && npm run test` (vitest + CF Workers pool)
+- image.pollinations.ai: `cd image.pollinations.ai && npm run test` (vitest)
+
+Run individually — full suite is slow:
 ```bash
-curl 'https://gen.pollinations.ai/image/{prompt}' -H 'Authorization: Bearer YOUR_API_KEY'
+npx vitest run --testNamePattern="name"
+npx vitest run test/file.test.ts
 ```
 
-### Text Generation (OpenAI-compatible)
+- Test real code, not mocks — use direct imports. Don't create mock infrastructure.
+- Read existing tests before adding; prefer extending existing files; follow existing conventions.
+- Snapshots (enter): VCR-style, replayed by default. `TEST_VCR_MODE=record` to record; default `replay-or-record`.
+- `.testingtokens` contains: `ENTER_API_TOKEN_LOCAL`, `ENTER_API_TOKEN_REMOTE`, `ENTER_TOKEN`, `GITHUB_TOKEN`, `POLAR_ACCESS_TOKEN`.
+- Production API tests should hit `gen.pollinations.ai`.
 
-```bash
-curl 'https://gen.pollinations.ai/v1/chat/completions' \
-  -H 'Authorization: Bearer YOUR_API_KEY' \
-  -H 'Content-Type: application/json' \
-  -d '{"model": "openai", "messages": [{"role": "user", "content": "Hello"}]}'
-```
+## Architecture & Common Tasks
 
-### Simple Text
+- Frontend → `pollinations.ai/`; image/text/gen gateway → `gen.pollinations.ai/`; image GPU backends → `image.pollinations.ai/`; SDK/React → `packages/sdk/`; MCP → `packages/mcp/`.
+- Text models: add config in `gen.pollinations.ai/src/text/configs/modelConfigs.ts`, entry in `gen.pollinations.ai/src/text/availableModels.ts`. Provider configs (Portkey/Bedrock/OpenAI-compat) in `gen.pollinations.ai/src/text/configs/providerConfigs.ts`.
+- Image models: handler in `gen.pollinations.ai/src/image/`, register in `shared/registry/image.ts`.
+- Update API docs + model registry for new models.
+- API changes: maintain backward compatibility; document; handle errors.
+- API docs: strictly technical, no marketing; link dynamic endpoints (e.g. `/models`) vs hardcoded lists; no internal impl/env vars; minimal examples for both simplified and OpenAI-compatible endpoints.
+- Security: never expose keys/secrets; use env vars; validate input.
+- Temp scratch files go in `temp/` clearly labeled.
+- Shrinking large snapshots: video/image snapshots can be 10–30 MB because stream chunks store raw binary as text (`TextDecoder` output in `vcr.ts:289`). To shrink: replace `response.body.data` array with one tiny chunk `[{"data": "<minimal-bytes>", "delay": 1}]`. For mp4, a valid 20-byte ftyp box is `\x00\x00\x00\x14ftypisom\x00\x00\x00\x00isom` (use `bytes.decode('latin-1')` in Python). Tests only check headers/status, not media content.
 
-```bash
-curl 'https://gen.pollinations.ai/text/{prompt}?key=YOUR_API_KEY'
-```
+## Workflow Orchestration
 
-### Model Discovery
+- Plan mode for any non-trivial task (3+ steps or architectural). If things go sideways, STOP and re-plan. Write specs upfront.
+- Use subagents liberally for research, exploration, parallel analysis — one task per subagent.
+- After user correction: propose an AGENTS.md update capturing the pattern; iterate until mistake rate drops.
+- Never mark complete without proving it works — run tests, check logs, diff vs main when relevant.
+- Non-trivial changes: ask "is there a more elegant way?" If fix feels hacky, redo elegantly. Skip for obvious fixes.
+- Bug reports: just fix them — point at logs/errors/failing tests and resolve. Fix failing CI without being asked how.
 
-- **Image models**: `https://gen.pollinations.ai/image/models`
-- **Text models**: `https://gen.pollinations.ai/v1/models`
+## Task Management
 
-### Documentation
+1. Plan first (todos or plan mode). 2. Verify plan before implementing. 3. Track progress. 4. Summarize changes. 5. Capture lessons in AGENTS.md.
 
-- **[Full API Documentation](./APIDOCS.md)**
-- **[Enter Services Deployment](.claude/skills/enter-services/SKILL.md)** - Deploy and manage services on AWS EC2
+## Compact Instructions
 
-## Development Guidelines
+Preserve during compaction: modified files + line numbers, all code/diffs/impl details, test output + errors + command results, full plan + progress + pending, user preferences/corrections this session, architectural decisions + rationale.
 
-1. Code Style:
+## Core Principles
 
-   - Use modern JavaScript/TypeScript features
-   - Use ES modules (import/export) - all .js files are treated as ES modules
-   - Follow existing code formatting patterns
-   - Add descriptive comments for complex logic
+- Simplicity first — minimal code impact.
+- No laziness — find root causes, no temp fixes, senior standards.
+- Minimal impact — touch only what's necessary.
 
-2. Testing:
+## Git Workflow
 
-   - Add tests for new features in appropriate test directories
-   - Follow existing test patterns in /test directories
-   - **Test with real production code, not mocks** - Tests should validate actual behavior
-   - Avoid creating mock infrastructure - use direct function imports instead
-
-3. Documentation:
-
-   - Update API docs for new endpoints
-   - Add JSDoc comments for new functions
-   - Update README.md for user-facing changes
-   - **Avoid creating markdown documentation files while working** unless explicitly requested
-   - If temporary files are needed for testing/debugging, create them in a `temp/` folder clearly labeled as temporary
-
-4. YAGNI Principle (You Aren't Gonna Need It):
-
-   - **Don't keep code for "potential futures"** - Only implement what's needed now
-   - Remove unused functions, even if they "might be useful someday"
-   - If we need something later, we'll add it when we actually need it
-   - Example: Don't create test utilities or helper functions "just in case"
-   - Keep the codebase minimal and focused on current requirements
-
-5. Architecture Considerations:
-
-   - Frontend changes should be in pollinations.ai/
-   - Image generation in image.pollinations.ai/
-   - Text generation in text.pollinations.ai/
-   - SDK and React components in packages/sdk/
-   - AI assistant integrations in packages/mcp/
-
-6. Security:
-   - Never expose API keys or secrets
-   - Use environment variables for sensitive data
-   - Implement proper input validation
-
-## Common Tasks
-
-1. Adding New Models:
-
-   - Update models list in respective service
-   - Add model configuration
-   - Update API documentation
-
-2. Frontend Updates:
-
-   - Follow React best practices
-   - Use existing UI components
-   - Maintain responsive design
-
-3. API Changes:
-
-   - Maintain backward compatibility
-   - Update documentation
-   - Add appropriate error handling
-
-4. API Documentation Guidelines:
-   - Keep documentation strictly technical and user-focused
-   - Avoid marketing language or promotional content
-   - Link to dynamic endpoints (like /models) rather than hardcoding lists that may change
-   - Don't include internal implementation details or environment variables
-   - Focus on endpoints, parameters, and response formats
-   - For new features, document both simplified endpoints and OpenAI-compatible endpoints
-   - Include minimal, clear code examples that demonstrate basic usage
-
-# Git Workflow
-
-- If the user asks to send to git or something similar do all these steps:
-- Git status, diff, create branch, commit all, push and write a PR description
+- "send to git" = git status, diff, branch, commit all, push, PR description.
+- Verify branch: `git branch --show-current` and confirm if unsure (branch mix-ups are a recurring mistake).
+- Avoid force pushes (`--force`, `--force-with-lease`) — prefer follow-up commits.
+- Run biome check before committing.
+- If PR already merged: open a new branch/PR for follow-ups.
 
 ## Communication Style
 
-**All PRs, comments, issues: bullet points, <200 words, no fluff**
+Be concise. PRs/comments/issues: bullets, <200 words, no fluff.
 
-**PR Format:**
-
-- Use "- Adds X", "- Fix Y" format
-- 3-5 bullets for most PRs
-- Simple titles: "fix:", "feat:", "Add"
-- Reference: `repo:pollinations/pollinations author:eulervoid`
+- PRs: "- Adds X", "- Fix Y"; 3-5 bullets; titles "fix:"/"feat:"/"Add"; no marketing.
+- Issue comments: bullets only; facts not opinions; link code; be direct (no "I think"/"maybe").
+- Code reviews: focus on what needs improving; link specific lines; don't praise fine code or repeat obvious things.
 
 ## GitHub Labels
 
-- Only use established labels (check with `mcp1_list_issues`)
-- Avoid creating new labels unless part of broader strategy
-- Keep names consistent with existing patterns
+Only use established labels (check with `mcp1_list_issues`). Don't create new labels ad-hoc; keep names consistent.
 
 ## Contributor Attribution
 
-**Commit format:**
-
+Commit format:
 ```
 feat: add feature
 
@@ -227,6 +199,5 @@ Co-authored-by: username <user_id+username@users.noreply.github.com>
 Fixes #issue
 ```
 
-- Use "Fixes #issue" or "Addresses #issue" in PR descriptions
-- Email format: `{username} <{user_id}+{username}@users.noreply.github.com>`
-- Find user_id in issue API response
+- Use "Fixes #issue" or "Addresses #issue" in PRs.
+- Email: `{username} <{user_id}+{username}@users.noreply.github.com>` (user_id from issue API).

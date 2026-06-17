@@ -1,10 +1,16 @@
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
     defineWorkersConfig,
     readD1Migrations,
 } from "@cloudflare/vitest-pool-workers/config";
-import viteConfig from "./vite.config";
 import { loadEnv } from "vite";
+import tsconfigPaths from "vite-tsconfig-paths";
+import { configDefaults } from "vitest/config";
+
+const sharedSrc = fileURLToPath(new URL("../shared/", import.meta.url));
+const frontendSrc = fileURLToPath(new URL("./frontend/src/", import.meta.url));
+const enterSrc = fileURLToPath(new URL("./src/", import.meta.url));
 
 export default defineWorkersConfig(async ({ mode }) => {
     const migrationsPath = path.join(__dirname, "drizzle");
@@ -12,13 +18,21 @@ export default defineWorkersConfig(async ({ mode }) => {
     const env = loadEnv(mode, process.cwd(), "");
 
     return {
-        ...viteConfig,
+        plugins: [tsconfigPaths()],
+        resolve: {
+            dedupe: ["zod"],
+            alias: [
+                { find: /^@\/(.*)$/, replacement: `${enterSrc}$1` },
+                { find: /^@shared\/(.*)$/, replacement: `${sharedSrc}$1` },
+                { find: /^@frontend\/(.*)$/, replacement: `${frontendSrc}$1` },
+            ],
+        },
         test: {
-            globalSetup: ["./test/setup/snapshot-server.ts"],
             setupFiles: [
                 "./test/setup/apply-migrations.ts",
                 "./test/setup/rejection-handler.ts",
             ],
+            exclude: [...configDefaults.exclude, "test/e2e/**"],
             reporters: ["default"],
             teardownTimeout: 5000,
             poolOptions: {
@@ -31,8 +45,6 @@ export default defineWorkersConfig(async ({ mode }) => {
                     miniflare: {
                         bindings: {
                             TEST_MIGRATIONS: migrations,
-                            TEST_VCR_MODE:
-                                env.TEST_VCR_MODE || "replay-or-record",
                         },
                     },
                 },
@@ -42,7 +54,6 @@ export default defineWorkersConfig(async ({ mode }) => {
                     ssr: {
                         enabled: true,
                         include: [
-                            "@polar-sh/sdk",
                             "better-auth",
                             "kysely",
                             "drizzle-orm",

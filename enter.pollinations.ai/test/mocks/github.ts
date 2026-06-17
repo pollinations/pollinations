@@ -1,6 +1,9 @@
+import {
+    createHonoMockHandler,
+    type MockAPI,
+} from "@shared/test/mocks/fetch.ts";
 import { Hono } from "hono";
 import { createMiddleware } from "hono/factory";
-import { createHonoMockHandler, type MockAPI } from "./fetch";
 
 export type MockGithubState = {
     user: {

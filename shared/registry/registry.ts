@@ -1,74 +1,104 @@
-import { omit, safeRound } from "../utils";
+import { roundPollenLedgerAmount } from "../billing/precision.ts";
 import {
-    TEXT_SERVICES,
-    DEFAULT_TEXT_MODEL,
-    TextServiceId,
-    TextModelId,
-} from "./text";
+    AUDIO_SERVICES,
+    type AudioModelId,
+    type AudioModelName,
+} from "./audio";
+import {
+    EMBEDDING_SERVICES,
+    type EmbeddingModelId,
+    type EmbeddingServiceId,
+} from "./embeddings";
 import {
     IMAGE_SERVICES,
-    DEFAULT_IMAGE_MODEL,
-    ImageServiceId,
-    ImageModelId,
+    type ImageModelId,
+    type ImageModelName,
 } from "./image";
+import {
+    REALTIME_SERVICES,
+    type RealtimeModelId,
+    type RealtimeModelName,
+} from "./realtime";
+import { TEXT_SERVICES, type TextModelId, type TextModelName } from "./text";
 
-const PRECISION = 8;
+export type Category =
+    | "text"
+    | "image"
+    | "audio"
+    | "video"
+    | "embedding"
+    | "realtime";
 
 export type UsageType =
     | "promptTextTokens"
     | "promptCachedTokens"
+    | "promptCacheWriteTokens"
     | "promptAudioTokens"
+    | "promptAudioSeconds"
     | "promptImageTokens"
+    | "promptVideoTokens"
     | "completionTextTokens"
     | "completionReasoningTokens"
     | "completionAudioTokens"
+    | "completionAudioSeconds"
     | "completionImageTokens"
     | "completionVideoSeconds"
     | "completionVideoTokens";
 
-export type TokenUsage = {
-    unit: "TOKENS";
-} & { [K in UsageType]?: number };
+// Usage represents raw usage metrics (tokens, seconds, etc.)
+export type Usage = { [K in UsageType]?: number };
 
-export type DollarConvertedUsage = {
-    unit: "USD";
-} & { [K in UsageType]?: number };
-
-export type UsageCost = DollarConvertedUsage & {
+// USD-equivalent amounts per usage type, plus what Pollinations pays the provider.
+export type UsageCost = Usage & {
     totalCost: number;
 };
 
-export type UsagePrice = DollarConvertedUsage & {
+// Pollen amounts per usage type, plus what the user is billed.
+export type UsagePrice = Usage & {
     totalPrice: number;
 };
 
-export type UsageConversionDefinition = {
-    date: number;
-} & { [K in UsageType]?: number };
+// Provider cost rates in USD-equivalent per usage unit.
+export type CostDefinition = { [K in UsageType]?: number };
 
-export type CostDefinition = UsageConversionDefinition;
-export type PriceDefinition = UsageConversionDefinition;
+// User-facing charge rates in Pollen per usage unit, derived from cost × multiplier.
+export type PriceDefinition = CostDefinition;
 
-export type ModelDefinition = CostDefinition[];
+export type ModelId =
+    | ImageModelId
+    | TextModelId
+    | AudioModelId
+    | EmbeddingModelId
+    | RealtimeModelId;
+export type ModelName =
+    | ImageModelName
+    | TextModelName
+    | AudioModelName
+    | EmbeddingServiceId
+    | RealtimeModelName;
 
-// Pre-build MODEL_REGISTRY (modelId -> sorted cost definitions)
-// Uses lowercase keys for case-insensitive lookup (Azure returns lowercase model IDs)
-const MODEL_REGISTRY = Object.fromEntries(
-    Object.values({ ...TEXT_SERVICES, ...IMAGE_SERVICES }).map((service) => [
-        service.modelId.toLowerCase(),
-        sortDefinitions([...service.cost]),
-    ]),
-);
+export type VideoCapability =
+    | "start_frame"
+    | "end_frame"
+    | "keyframes"
+    | "audio_output";
 
-export type ModelId = ImageModelId | TextModelId;
-export type ServiceId = ImageServiceId | TextServiceId;
-
-export type ServiceDefinition<TModelId extends string = ModelId> = {
+export type ModelDefinition<TModelId extends string = ModelId> = {
     aliases: string[];
     modelId: TModelId;
     provider: string;
-    cost: CostDefinition[];
+    brand: string;
+    category: Category;
+    cost: CostDefinition;
+    // USD-cost to Pollen-price multiplier. Required on every model — there is
+    // no implicit default. Typical values: 1 (sold at cost) or 1.5 (paid markup).
+    priceMultiplier: number;
+    // Date the model was added to the registry (ms epoch). Set once, never updated.
+    addedDate: number;
     // User-facing metadata
+    title: string; // Human display name, e.g. "FLUX.1 Kontext"
+    // Backward compatibility: public descriptions currently include the title
+    // prefix ("Title - description"). Prefer `title` for display names.
     description?: string;
     inputModalities?: string[];
     outputModalities?: string[];
@@ -76,196 +106,187 @@ export type ServiceDefinition<TModelId extends string = ModelId> = {
     reasoning?: boolean;
     search?: boolean;
     codeExecution?: boolean;
-    contextWindow?: number;
+    contextLength?: number;
     voices?: string[];
     isSpecialized?: boolean;
-    persona?: boolean;
+    paidOnly?: boolean; // Models that require paid balance only
+    alpha?: boolean; // Experimental models with potential instability
+    hidden?: boolean; // Hidden from /models endpoints and dashboard, but still usable via API
+    videoCapabilities?: VideoCapability[]; // Video-only: which frame controls the provider supports
+    maxReferenceImages?: number; // Models with image input: effective accepted reference images
+    maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
 };
 
-/** Sorts the cost and price definitions by date, in descending order */
-function sortDefinitions<T extends UsageConversionDefinition>(
-    definitions: T[],
-): T[] {
-    return definitions.sort((a, b) => b.date - a.date);
-}
-
-// Helper: Convert token usage to dollar amounts
+// Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.
+// When a usage type is reported by upstream but the registry has no rate for it,
+// log a warning (so we know which (model, usageType) pair needs adding) and bill
+// that line as 0. Throwing here drops the whole tracking event and creates a
+// silent billing leak.
 function convertUsage(
-    usage: TokenUsage,
-    conversionDefinition: UsageConversionDefinition,
-): DollarConvertedUsage {
-    const amounts = omit(usage, "unit");
+    usage: Usage,
+    rateDefinition: CostDefinition,
+    model: string,
+): Usage {
     const convertedUsage = Object.fromEntries(
-        Object.entries(amounts).map(([usageType, amount]) => {
+        Object.entries(usage).map(([usageType, amount]) => {
             if (amount === 0) return [usageType, 0];
             const usageTypeWithFallback =
                 usageType === "completionReasoningTokens"
                     ? "completionTextTokens"
                     : usageType;
             const conversionRate =
-                conversionDefinition[usageTypeWithFallback as UsageType];
+                rateDefinition[usageTypeWithFallback as UsageType];
             if (conversionRate === undefined) {
-                throw new Error(
-                    `Failed to get conversion rate for usage type: ${usageType}`,
+                console.warn(
+                    `[registry] Missing conversion rate: model=${model.toString()} usageType=${usageType} amount=${amount} — billing 0 for this line`,
                 );
+                return [usageType, 0];
             }
-            const usageTypeCost = safeRound(amount * conversionRate, PRECISION);
-            return [usageType, usageTypeCost];
+            return [usageType, amount * conversionRate];
         }),
     );
-    return {
-        unit: "USD",
-        ...convertedUsage,
-    };
+    return convertedUsage as Usage;
 }
 
-// Generate SERVICE_REGISTRY with computed prices from costs
-type ServiceRegistryEntry = ServiceDefinition & {
-    price: PriceDefinition[];
-};
+function derivePrice(svc: ModelDefinition): PriceDefinition {
+    const m = svc.priceMultiplier;
+    if (m === 1) return svc.cost;
+    return Object.fromEntries(
+        Object.entries(svc.cost).map(([k, v]) => [k, (v as number) * m]),
+    ) as PriceDefinition;
+}
 
-const SERVICE_REGISTRY = Object.fromEntries(
-    Object.entries({ ...TEXT_SERVICES, ...IMAGE_SERVICES }).map(
-        ([name, service]) => [
-            name,
-            {
-                ...service,
-                price: sortDefinitions([...service.cost]),
-            } as ServiceRegistryEntry,
-        ],
-    ),
-) as Record<string, ServiceRegistryEntry>;
+const MODEL_REGISTRY = {
+    ...TEXT_SERVICES,
+    ...IMAGE_SERVICES,
+    ...AUDIO_SERVICES,
+    ...EMBEDDING_SERVICES,
+    ...REALTIME_SERVICES,
+} as Record<ModelName, ModelDefinition>;
 
 /**
- * Resolve a service ID from a name or alias
- * @param serviceId - Service name or alias
- * @returns Resolved service ID
- * @throws Error if service ID is not found
+ * Resolve a model name from a canonical name or alias
+ * @param model - Model name or alias
+ * @returns Resolved canonical model name
+ * @throws Error if model is not found
  */
-export function resolveServiceId(serviceId: string): ServiceId {
-    // Check if it's a direct service ID
-    if (SERVICE_REGISTRY[serviceId]) {
-        return serviceId as ServiceId;
+export function resolveModelName(model: string): ModelName {
+    if (MODEL_REGISTRY[model as ModelName]) {
+        return model as ModelName;
     }
-    // Search for alias in services
-    for (const [sid, service] of Object.entries(SERVICE_REGISTRY)) {
-        if (service.aliases.includes(serviceId)) {
-            return sid as ServiceId;
+    for (const [modelName, service] of Object.entries(MODEL_REGISTRY)) {
+        if (service.aliases.includes(model)) {
+            return modelName as ModelName;
         }
     }
     throw new Error(
-        `Invalid service or alias: "${serviceId}". Must be a valid service name or alias.`,
+        `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
     );
 }
 
 /**
- * Check if a model ID exists in the registry
+ * Get all public model names
  */
-export function isValidModel(modelId: ModelId): modelId is ModelId {
-    return !!MODEL_REGISTRY[modelId.toLowerCase()];
+export function getModels(): ModelName[] {
+    return Object.keys(MODEL_REGISTRY) as ModelName[];
 }
 
 /**
- * Check if a service ID exists in the registry
+ * Get text model names
  */
-export function isValidService(
-    serviceId: ServiceId | string,
-): serviceId is ServiceId {
-    return !!SERVICE_REGISTRY[serviceId];
+function getTextModels(): TextModelName[] {
+    return Object.keys(TEXT_SERVICES) as TextModelName[];
 }
 
 /**
- * Get all service IDs
+ * Get image model names
  */
-export function getServices(): ServiceId[] {
-    return Object.keys(SERVICE_REGISTRY) as ServiceId[];
+function getImageModels(): ImageModelName[] {
+    return Object.keys(IMAGE_SERVICES) as ImageModelName[];
 }
 
 /**
- * Get text service IDs
+ * Get audio model names
  */
-export function getTextServices(): ServiceId[] {
-    return Object.keys(TEXT_SERVICES) as ServiceId[];
+function getAudioModels(): AudioModelName[] {
+    return Object.keys(AUDIO_SERVICES) as AudioModelName[];
 }
 
-/**
- * Get image service IDs
- */
-export function getImageServices(): ServiceId[] {
-    return Object.keys(IMAGE_SERVICES) as ServiceId[];
+function filterVisible<TModelName extends ModelName>(
+    ids: TModelName[],
+): TModelName[] {
+    return ids.filter((id) => !MODEL_REGISTRY[id]?.hidden);
 }
 
-/**
- * Get service definition by ID
- */
-export function getServiceDefinition(
-    serviceId: ServiceId,
-): ServiceRegistryEntry {
-    return SERVICE_REGISTRY[serviceId];
-}
+export const getVisibleTextModels = () => filterVisible(getTextModels());
+export const getVisibleImageModels = () => filterVisible(getImageModels());
+export const getVisibleAudioModels = () => filterVisible(getAudioModels());
+export const getVisibleEmbeddingModels = () =>
+    filterVisible(Object.keys(EMBEDDING_SERVICES) as EmbeddingServiceId[]);
+export const getVisibleRealtimeModels = () =>
+    filterVisible(Object.keys(REALTIME_SERVICES) as RealtimeModelName[]);
 
 /**
- * Get aliases for a service
+ * Get a model definition from the bundled registry.
+ *
+ * This only covers built-in Pollinations models. Runtime models, such as
+ * community endpoints, should be resolved at the request boundary and then
+ * passed around as a `ModelDefinition`.
  */
-export function getServiceAliases(serviceId: ServiceId): readonly string[] {
-    const service = SERVICE_REGISTRY[serviceId];
-    return service?.aliases || [];
-}
-
-/**
- * Get model definition by ID
- */
-export function getModelDefinition(
-    modelId: string,
-): ModelDefinition | undefined {
-    return MODEL_REGISTRY[modelId.toLowerCase() as ModelId];
-}
-
-/**
- * Get active cost definition for a model
- */
-export function getActiveCostDefinition(
-    modelId: ModelId,
-    date: Date = new Date(),
-): CostDefinition | null {
-    const modelDefinition = MODEL_REGISTRY[modelId.toLowerCase()];
-    if (!modelDefinition) return null;
-    for (const definition of modelDefinition) {
-        if (definition.date < date.getTime()) return definition;
+export function getRegistryModelDefinition(model: ModelName): ModelDefinition {
+    const definition = MODEL_REGISTRY[model];
+    if (!definition) {
+        throw new Error(`Invalid model: "${model}"`);
     }
-    return null;
+    return definition;
+}
+
+export function getPriceDefinitionForModel(
+    svc: ModelDefinition<string>,
+): PriceDefinition {
+    return derivePrice(svc);
 }
 
 /**
- * Get active price definition for a service
+ * Get cost definition for a public model name
  */
-export function getActivePriceDefinition(
-    serviceId: ServiceId,
-    date: Date = new Date(),
-): PriceDefinition | null {
-    const serviceDefinition = SERVICE_REGISTRY[serviceId];
-    if (!serviceDefinition) return null;
-    for (const definition of serviceDefinition.price) {
-        if (definition.date < date.getTime()) return definition;
-    }
-    return null;
+export function getCostDefinition(model: ModelName): CostDefinition | null {
+    return MODEL_REGISTRY[model]?.cost ?? null;
 }
 
 /**
- * Calculate cost for a model based on token usage
+ * Get Pollen price definition for a public model name (cost × multiplier)
  */
-export function calculateCost(modelId: ModelId, usage: TokenUsage): UsageCost {
-    const costDefinition = getActiveCostDefinition(modelId);
+export function getPriceDefinition(model: ModelName): PriceDefinition | null {
+    const svc = MODEL_REGISTRY[model];
+    if (!svc) return null;
+    return getPriceDefinitionForModel(svc);
+}
+
+/**
+ * Calculate cost for a model based on usage
+ */
+export function calculateCost(model: ModelName, usage: Usage): UsageCost {
+    const costDefinition = getCostDefinition(model);
     if (!costDefinition)
         throw new Error(
-            `Failed to get current cost for model: ${modelId.toString()}`,
+            `Failed to get current cost for model: ${model.toString()}`,
         );
-    const usageCost = convertUsage(usage, costDefinition);
-    const totalCost = safeRound(
-        Object.values(omit(usageCost, "unit")).reduce(
-            (total, cost) => total + cost,
-        ),
-        PRECISION,
+    return calculateCostWithDefinition(model, usage, costDefinition);
+}
+
+/**
+ * Calculate cost from an explicit cost definition.
+ */
+export function calculateCostWithDefinition(
+    model: string,
+    usage: Usage,
+    costDefinition: CostDefinition,
+): UsageCost {
+    const usageCost = convertUsage(usage, costDefinition, model);
+    const totalCost = Object.values(usageCost).reduce(
+        (total, cost) => total + cost,
+        0,
     );
     return {
         ...usageCost,
@@ -274,28 +295,31 @@ export function calculateCost(modelId: ModelId, usage: TokenUsage): UsageCost {
 }
 
 /**
- * Calculate price for a service based on token usage
+ * Calculate price for a model based on usage
  */
-export function calculatePrice(
-    serviceId: ServiceId,
-    usage: TokenUsage,
-): UsagePrice {
-    const priceDefinition = getActivePriceDefinition(serviceId);
+export function calculatePrice(model: ModelName, usage: Usage): UsagePrice {
+    const priceDefinition = getPriceDefinition(model);
     if (!priceDefinition)
         throw new Error(
-            `Failed to get current price for service: ${serviceId.toString()}`,
+            `Failed to get current price for model: ${model.toString()}`,
         );
-    const usagePrice = convertUsage(usage, priceDefinition);
-    const totalPrice = safeRound(
-        Object.values(omit(usagePrice, "unit")).reduce(
-            (total, price) => total + price,
-        ),
-        PRECISION,
+    return calculatePriceWithDefinition(model, usage, priceDefinition);
+}
+
+/**
+ * Calculate price from an explicit price definition.
+ */
+export function calculatePriceWithDefinition(
+    model: string,
+    usage: Usage,
+    priceDefinition: PriceDefinition,
+): UsagePrice {
+    const usagePrice = convertUsage(usage, priceDefinition, model);
+    const totalPrice = roundPollenLedgerAmount(
+        Object.values(usagePrice).reduce((total, price) => total + price, 0),
     );
     return {
         ...usagePrice,
         totalPrice,
     };
 }
-
-// ModelInfo, getModelInfo, getTextModelsInfo, getImageModelsInfo are in model-info.ts

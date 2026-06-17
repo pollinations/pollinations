@@ -1,4 +1,17 @@
-import { Polar } from "@polar-sh/sdk";
+import { authAdditionalFields } from "@shared/auth/additional-fields.ts";
+import {
+    assertStagingAccess,
+    createApiKeyPlugin,
+    StagingAccessDeniedError,
+} from "@shared/auth/api-key.ts";
+import * as betterAuthSchema from "@shared/db/better-auth.ts";
+import {
+    account as accountTable,
+    user as userTable,
+} from "@shared/db/better-auth.ts";
+import { sendTierEventToTinybird } from "@shared/events.ts";
+import { AUTH_TRUSTED_ORIGINS } from "@shared/public-urls.ts";
+import { DEFAULT_TIER, getTierPollen } from "@shared/tier-config.ts";
 import {
     type BetterAuthOptions,
     type BetterAuthPlugin,
@@ -8,68 +21,13 @@ import {
 } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
-import { admin, apiKey, openAPI } from "better-auth/plugins";
+import { admin, openAPI } from "better-auth/plugins";
+import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import * as betterAuthSchema from "./db/schema/better-auth.ts";
-import { getLogger } from "@logtape/logtape";
 
-const log = getLogger(["auth", "polar"]);
-
-function addKeyPrefix(key: string) {
-    return `auth:${key}`;
-}
-
-export function createAuth(env: Cloudflare.Env) {
-    const polar = new Polar({
-        accessToken: env.POLAR_ACCESS_TOKEN,
-        server: env.POLAR_SERVER,
-    });
-
-    const defaultTierProductId = env.POLAR_PRODUCT_TIER_SPORE;
-
+export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const db = drizzle(env.DB);
-
-    const PUBLISHABLE_KEY_PREFIX = "pk";
-
-    const apiKeyPlugin = apiKey({
-        storage: "secondary-storage",
-        fallbackToDatabase: true,
-        enableMetadata: true,
-        defaultPrefix: PUBLISHABLE_KEY_PREFIX,
-        defaultKeyLength: 16, // Minimum key length for validation (matches custom generator)
-        minimumNameLength: 1, // Allow short hostnames (e.g., "x.ai")
-        maximumNameLength: 253, // DNS hostname max length
-        startingCharactersConfig: {
-            charactersLength: 10, // Store more characters for display (pk_xxxxxxxxxx...)
-        },
-        customKeyGenerator: (options: {
-            length: number;
-            prefix: string | undefined;
-        }) => {
-            // Publishable keys (pk_) are SHORT (16 chars), Secret keys (sk_) are LONG (32 chars)
-            const isPublishable = options.prefix === PUBLISHABLE_KEY_PREFIX;
-            const keyLength = isPublishable ? 16 : 32;
-            const chars =
-                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-            const randomBytes = crypto.getRandomValues(
-                new Uint8Array(keyLength),
-            );
-            const key = Array.from(
-                randomBytes,
-                (byte) => chars[byte % chars.length],
-            ).join("");
-            return options.prefix ? `${options.prefix}_${key}` : key;
-        },
-        keyExpiration: {
-            minExpiresIn: 0, // No minimum - allow any positive expiry
-            maxExpiresIn: 365, // Max 1 year
-        },
-        rateLimit: {
-            enabled: true,
-            timeWindow: 1000, // 1 second
-            maxRequests: 5, // 5 requests
-        },
-    });
+    const apiKeyPlugin = createApiKeyPlugin();
 
     const adminPlugin = admin({
         adminUserIds: ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv"],
@@ -80,41 +38,44 @@ export function createAuth(env: Cloudflare.Env) {
     });
 
     return betterAuth({
+        // Always anchor auth (callbacks, cookies, redirects) to the public
+        // Pollinations hostname, never the Myceli upstream. The proxy
+        // architecture treats *.myceli.ai as internal; direct auth flows
+        // against it are intentionally non-functional.
+        baseURL: env.BETTER_AUTH_URL,
         basePath: "/api/auth",
+        onAPIError: {
+            errorURL: "/error",
+        },
         database: drizzleAdapter(db, {
             schema: betterAuthSchema,
             provider: "sqlite",
         }),
-        secondaryStorage: {
-            get: async (key) => {
-                return await env.KV.get(addKeyPrefix(key));
-            },
-            set: async (key, value, ttl) => {
-                await env.KV.put(addKeyPrefix(key), value, {
-                    expirationTtl: ttl,
-                });
-            },
-            delete: async (key) => {
-                await env.KV.delete(addKeyPrefix(key));
-            },
+        advanced: {
+            // Configure background tasks for Cloudflare Workers
+            // Required for deferUpdates to work properly
+            backgroundTasks: ctx
+                ? {
+                      handler: (promise: Promise<unknown>) => {
+                          ctx.waitUntil(
+                              promise.catch(() => {
+                                  // Silently ignore - these are non-critical tracking updates
+                                  // (lastRequest, requestCount) that fail due to D1 contention
+                                  // under high concurrent load. Auth still works correctly.
+                              }),
+                          );
+                      },
+                  }
+                : undefined,
         },
-        trustedOrigins: ["https://enter.pollinations.ai", "http://localhost"],
+
+        trustedOrigins: [
+            ...AUTH_TRUSTED_ORIGINS,
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+        ],
         user: {
-            additionalFields: {
-                githubId: {
-                    type: "number",
-                    input: false,
-                },
-                githubUsername: {
-                    type: "string",
-                    input: false,
-                },
-                tier: {
-                    type: "string",
-                    defaultValue: "spore",
-                    input: false,
-                },
-            },
+            additionalFields: authAdditionalFields.user,
         },
         socialProviders: {
             github: {
@@ -129,7 +90,8 @@ export function createAuth(env: Cloudflare.Env) {
         plugins: [
             adminPlugin,
             apiKeyPlugin,
-            polarPlugin(polar, defaultTierProductId),
+            tierPlugin(env, ctx),
+            stagingAccessPlugin(env),
             openAPIPlugin,
         ],
         telemetry: { enabled: false },
@@ -140,25 +102,26 @@ export type Auth = ReturnType<typeof createAuth>;
 export type Session = Auth["$Infer"]["Session"]["session"];
 export type User = Auth["$Infer"]["Session"]["user"];
 
-function polarPlugin(
-    polar: Polar,
-    defaultTierProductId?: string,
+/**
+ * Plugin to initialize tier balance for new users in D1.
+ */
+function tierPlugin(
+    env: Cloudflare.Env,
+    executionCtx?: ExecutionContext,
 ): BetterAuthPlugin {
     return {
-        id: "polar",
-        init: () => ({
+        id: "tier",
+        init: (_ctx) => ({
             options: {
                 databaseHooks: {
                     user: {
                         create: {
-                            before: onBeforeUserCreate(polar),
-                            after: onAfterUserCreate(
-                                polar,
-                                defaultTierProductId,
-                            ),
+                            after: onAfterUserCreate(env, executionCtx),
                         },
-                        update: {
-                            after: onUserUpdate(polar),
+                    },
+                    session: {
+                        create: {
+                            after: onAfterSessionCreate(env, executionCtx),
                         },
                     },
                 },
@@ -167,150 +130,189 @@ function polarPlugin(
     } satisfies BetterAuthPlugin;
 }
 
-function onBeforeUserCreate(polar: Polar) {
-    return async (user: Partial<User>, ctx?: GenericEndpointContext) => {
-        const startTotal = Date.now();
-        if (!ctx) return;
-        try {
-            if (!user.email) {
-                throw new APIError("BAD_REQUEST", {
-                    message:
-                        "Polar customer creation failed: missing email address",
-                });
-            }
+/**
+ * Sync github_username on every login.
+ * GitHub usernames are mutable — users can rename their account.
+ * We fetch the current username from GitHub API using the immutable github_id
+ * and update D1 if it changed. Non-blocking via waitUntil.
+ *
+ * When github_id is missing from the user table (legacy rows), we resolve it
+ * from the account table and backfill so subsequent logins skip the fallback.
+ */
+function onAfterSessionCreate(
+    env: Cloudflare.Env,
+    executionCtx?: ExecutionContext,
+) {
+    return async (
+        session: { userId: string },
+        _ctx?: GenericEndpointContext | null,
+    ) => {
+        executionCtx?.waitUntil(
+            (async () => {
+                try {
+                    const db = drizzle(env.DB);
+                    const [user] = await db
+                        .select({
+                            githubId: userTable.githubId,
+                            githubUsername: userTable.githubUsername,
+                        })
+                        .from(userTable)
+                        .where(eq(userTable.id, session.userId))
+                        .limit(1);
 
-            // if the customer already exists, link the new account
-            const { result } = await polar.customers.list({
-                email: user.email,
-            });
+                    let githubId = user?.githubId;
 
-            const existingCustomer = result.items[0];
-            if (existingCustomer?.externalId) {
-                log.debug("onBeforeUserCreate linked existing - {duration}ms", {
-                    duration: Date.now() - startTotal,
-                });
-                return {
-                    data: {
-                        ...user,
-                        id: existingCustomer.externalId,
-                    },
-                };
-            }
+                    // Fallback: resolve github_id from the account table
+                    if (!githubId) {
+                        const [acct] = await db
+                            .select({ accountId: accountTable.accountId })
+                            .from(accountTable)
+                            .where(
+                                and(
+                                    eq(accountTable.userId, session.userId),
+                                    eq(accountTable.providerId, "github"),
+                                ),
+                            )
+                            .limit(1);
 
-            await polar.customers.create({
-                email: user.email,
-                name: user.name,
-                externalId: user.id,
-            });
+                        if (!acct?.accountId) return;
+                        githubId = Number(acct.accountId);
 
-            log.debug("onBeforeUserCreate created new - {duration}ms", {
-                duration: Date.now() - startTotal,
-            });
-            return {
-                data: user,
-            };
-        } catch (e: unknown) {
-            const messageOrError = e instanceof Error ? e.message : e;
-            log.error("onBeforeUserCreate ERROR {duration}ms: {error}", {
-                duration: Date.now() - startTotal,
-                error: messageOrError,
-            });
-            throw new APIError("INTERNAL_SERVER_ERROR", {
-                message: `Polar customer creation failed. Error: ${messageOrError}`,
-            });
-        }
+                        // Backfill so subsequent logins skip this fallback
+                        await db
+                            .update(userTable)
+                            .set({ githubId })
+                            .where(eq(userTable.id, session.userId));
+                    }
+
+                    const headers: Record<string, string> = {
+                        Accept: "application/vnd.github+json",
+                        "User-Agent": "pollinations-enter",
+                    };
+                    // Use OAuth app credentials for 5,000 req/hr (vs 60 unauthenticated)
+                    if (env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET) {
+                        headers.Authorization = `Basic ${btoa(`${env.GITHUB_CLIENT_ID}:${env.GITHUB_CLIENT_SECRET}`)}`;
+                    }
+                    const res = await fetch(
+                        `https://api.github.com/user/${githubId}`,
+                        { headers },
+                    );
+                    if (!res.ok) {
+                        console.error(
+                            `[username-sync] GitHub API ${res.status} for user ${githubId}`,
+                        );
+                        return;
+                    }
+
+                    const profile = (await res.json()) as { login: string };
+                    if (
+                        profile.login &&
+                        profile.login !== user?.githubUsername
+                    ) {
+                        await db
+                            .update(userTable)
+                            .set({ githubUsername: profile.login })
+                            .where(eq(userTable.id, session.userId));
+                    }
+                } catch (e) {
+                    console.error(
+                        "[username-sync] failed for session",
+                        session.userId,
+                        e,
+                    );
+                }
+            })(),
+        );
     };
 }
 
-function onAfterUserCreate(polar: Polar, defaultTierProductId?: string) {
-    return async (user: GenericUser, ctx?: GenericEndpointContext) => {
-        const startTotal = Date.now();
-        if (!ctx) return;
+/**
+ * Set initial tier balance in D1 after user creation.
+ * This guarantees new users get their default tier pollen.
+ */
+function onAfterUserCreate(
+    env: Cloudflare.Env,
+    executionCtx?: ExecutionContext,
+) {
+    return async (user: GenericUser, _ctx: GenericEndpointContext | null) => {
         try {
-            const { result } = await polar.customers.list({
-                email: user.email,
-            });
+            const db = drizzle(env.DB);
+            const tierBalance = getTierPollen(DEFAULT_TIER);
+            await db
+                .update(userTable)
+                .set({
+                    tierBalance,
+                    lastTierGrant: Date.now(),
+                })
+                .where(eq(userTable.id, user.id));
 
-            const existingCustomer = result.items[0];
-
-            if (existingCustomer && existingCustomer.externalId !== user.id) {
-                await polar.customers.update({
-                    id: existingCustomer.id,
-                    customerUpdate: {
-                        externalId: user.id,
+            // Log user registration event to Tinybird
+            // Use the ExecutionContext passed from createAuth, not better-auth's internal context
+            executionCtx?.waitUntil(
+                sendTierEventToTinybird(
+                    {
+                        event_type: "user_registration",
+                        environment: env.ENVIRONMENT || "unknown",
+                        user_id: user.id,
+                        tier: DEFAULT_TIER,
+                        pollen_amount: tierBalance,
                     },
-                });
-            }
-
-            // Auto-create subscription for new user's default tier
-            if (existingCustomer && defaultTierProductId) {
-                await ensureDefaultSubscription(
-                    polar,
-                    existingCustomer.id,
-                    defaultTierProductId,
-                    user.id,
-                    ctx.context.logger,
-                );
-            }
-
-            log.debug("onAfterUserCreate - {duration}ms", {
-                duration: Date.now() - startTotal,
-            });
-        } catch (e: unknown) {
-            const messageOrError = e instanceof Error ? e.message : e;
-            log.error("onAfterUserCreate ERROR {duration}ms: {error}", {
-                duration: Date.now() - startTotal,
-                error: messageOrError,
-            });
-            throw new APIError("INTERNAL_SERVER_ERROR", {
-                message: `Polar customer update failed. Error: ${messageOrError}`,
-            });
-        }
-    };
-}
-
-function onUserUpdate(polar: Polar) {
-    return async (user: GenericUser, ctx?: GenericEndpointContext) => {
-        if (!ctx) return;
-        try {
-            await polar.customers.updateExternal({
-                externalId: user.id,
-                customerUpdateExternalID: {
-                    email: user.email,
-                    name: user.name,
-                },
-            });
-        } catch (e: unknown) {
-            const messageOrError = e instanceof Error ? e.message : e;
-            ctx.context.logger.error(
-                `Polar customer update failed. Error: ${messageOrError}`,
+                    env.TINYBIRD_TIER_INGEST_URL,
+                    env.TINYBIRD_INGEST_TOKEN,
+                ),
             );
+        } catch (e: unknown) {
+            const messageOrError = e instanceof Error ? e.message : e;
+            throw new APIError("INTERNAL_SERVER_ERROR", {
+                message: `User tier initialization failed. Error: ${messageOrError}`,
+            });
         }
     };
 }
 
-async function ensureDefaultSubscription(
-    polar: Polar,
-    customerId: string,
-    productId: string,
-    userId: string,
-    logger: { info: (msg: string) => void; error: (msg: string) => void },
-): Promise<void> {
-    try {
-        const { result: subs } = await polar.subscriptions.list({
-            customerId,
-            active: true,
-            limit: 1,
-        });
-
-        if (subs.items.length === 0) {
-            await polar.subscriptions.create({
-                productId,
-                customerId,
-            });
-            logger.info(`Created default tier subscription for user ${userId}`);
-        }
-    } catch (error) {
-        logger.error(`Failed to create default subscription: ${error}`);
+/**
+ * Restricts new signups on staging to an allowlist of GitHub user IDs
+ * (immutable, unlike usernames). No-op outside staging.
+ *
+ * This is a thin UX layer only — it rejects disallowed users during OAuth
+ * before a `user` row is created, so /error shows "staging is invite-only"
+ * instead of a 403 after they think they're logged in. The actual security
+ * boundary is {@link assertStagingAccess} called per-request in
+ * `shared/auth/api-key.ts` and the per-service auth middleware, which is what
+ * blocks spend on the production provider keys held by staging-gen. See #11137.
+ */
+function stagingAccessPlugin(env: Cloudflare.Env): BetterAuthPlugin {
+    if (env.ENVIRONMENT !== "staging") {
+        return { id: "staging-access" };
     }
+    return {
+        id: "staging-access",
+        init: () => ({
+            options: {
+                databaseHooks: {
+                    user: {
+                        create: {
+                            before: async (user: GenericUser) => {
+                                try {
+                                    assertStagingAccess(env, {
+                                        githubId: (
+                                            user as { githubId?: number }
+                                        ).githubId,
+                                    });
+                                } catch (e) {
+                                    if (e instanceof StagingAccessDeniedError) {
+                                        throw new APIError("FORBIDDEN", {
+                                            message: e.message,
+                                        });
+                                    }
+                                    throw e;
+                                }
+                                return { data: user };
+                            },
+                        },
+                    },
+                },
+            } satisfies Partial<BetterAuthOptions>,
+        }),
+    } satisfies BetterAuthPlugin;
 }

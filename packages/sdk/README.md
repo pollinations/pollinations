@@ -5,11 +5,42 @@ Official SDK for [pollinations.ai](https://pollinations.ai) - Generate images, t
 [![npm version](https://img.shields.io/npm/v/@pollinations/sdk.svg)](https://www.npmjs.com/package/@pollinations/sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+> [!WARNING]
+> **The `alpha` release line (`5.1.0-alpha.x`) is unstable and breakage-prone.**
+> It ships the in-progress rebuild (model-catalog helper, `./client` subpath, provider changes) and its API may change between alpha versions without notice. The stable `latest` line is `5.0.0`. Opt into the alpha only deliberately, and pin an exact version.
+
 ## Installation
+
+Stable (recommended):
 
 ```bash
 npm install @pollinations/sdk
 ```
+
+Alpha (in-progress rebuild — pin an exact version):
+
+```bash
+npm install @pollinations/sdk@alpha
+# or pin exactly: npm install @pollinations/sdk@5.1.0-alpha.0
+```
+
+### CDN / `<script>` tag
+
+The SDK also ships a browser IIFE bundle for direct `<script>` use:
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/@pollinations/sdk"></script>
+<script>
+  const { generateImage, generateText } = Pollinations;
+  // ...
+</script>
+```
+
+The IIFE bundle exposes only the **API client** under the global
+`Pollinations`. The React subpath (`PolliProvider`, `useAuthState`, etc.)
+is shipped as ESM/CJS only — use a bundler (Vite, webpack, Next.js, etc.)
+to consume it. There's no IIFE entry for `./react` because every React
+app already has a build step.
 
 ## Quick Start
 
@@ -79,11 +110,13 @@ node my-first-ai.mjs
   // Generate image
   const image = await generateImage('a cute robot');
 
-  // Display both
-  document.body.innerHTML = `
-    <p>${text}</p>
-    <img src="${image.toDataURL()}">
-  `;
+  // Display both — build nodes instead of interpolating into innerHTML
+  // so model output cannot inject markup or script into the page.
+  const p = document.createElement('p');
+  p.textContent = text;
+  const img = document.createElement('img');
+  img.src = image.toDataURL();
+  document.body.replaceChildren(p, img);
 </script>
 ```
 
@@ -102,6 +135,118 @@ Or set the environment variable:
 export POLLINATIONS_API_KEY=your_api_key
 ```
 
+### OAuth device flow (CLI / headless)
+
+For CLI tools, scripts, or any environment without a browser redirect, use the OAuth device flow to let the user approve access without pasting a key:
+
+```javascript
+import { authorizeDevice, configure, userInfo } from '@pollinations/sdk';
+
+const auth = await authorizeDevice();
+console.log(`Open ${auth.verificationUri} and enter code: ${auth.userCode}`);
+
+const accessToken = await auth.poll(); // blocks until user approves
+configure({ apiKey: accessToken });
+
+const me = await userInfo();
+console.log(`Logged in as ${me.name} (${me.tier})`);
+```
+
+`authorizeDevice()` does NOT require an API key — it's how you get one.
+
+### React auth provider
+
+React apps can use the `@pollinations/sdk/react` subpath for shared login
+state. The provider only owns the session token and OAuth flow; account data is
+loaded by opt-in hooks.
+
+```tsx
+import {
+  PolliProvider,
+  useAccountProfile,
+  useAuth,
+} from '@pollinations/sdk/react';
+
+function AccountStatus() {
+  const { isLoggedIn, login, logout } = useAuth();
+  const { data: profile } = useAccountProfile({ enabled: isLoggedIn });
+
+  if (!isLoggedIn) {
+    return <button onClick={() => login()}>Log in</button>;
+  }
+
+  return (
+    <button onClick={logout}>
+      Log out{profile?.name ? ` ${profile.name}` : ''}
+    </button>
+  );
+}
+
+export function App() {
+  return (
+    <PolliProvider appKey="pk_your_publishable_key" permissions={['profile']}>
+      <AccountStatus />
+    </PolliProvider>
+  );
+}
+```
+
+Account hooks are intentionally separate from the provider: `useAccountProfile`,
+`useAccountBalance`, `useAccountKey`, and `useAccountKeyUsage` return the raw
+SDK response shapes plus `{ isLoading, error, refresh }`.
+
+#### SSR / Next.js App Router / RSC
+
+`PolliProvider` is **SSR-safe** but is a **client component** (it uses `useState` / `useEffect` and reads from `window.localStorage`):
+
+- **First paint contract**: state starts `null` on both server and client, so initial HTML always renders as logged-out. No hydration mismatch.
+- **Hydration**: after mount, the provider reads the session token from storage (default `localStorage`) and parses any `#api_key=…&state=…` fragment from an OAuth redirect. No account data is fetched until an account hook is mounted.
+- **Next.js App Router**: mount the provider inside a client component. Either put it in a file with `"use client"` at the top, or wrap a small client subtree from a server component:
+
+  ```tsx
+  // app/providers.tsx
+  "use client";
+  import { PolliProvider } from "@pollinations/sdk/react";
+  export function Providers({ children }: { children: React.ReactNode }) {
+    return <PolliProvider appKey="pk_…">{children}</PolliProvider>;
+  }
+
+  // app/layout.tsx (server component)
+  import { Providers } from "./providers";
+  export default function RootLayout({ children }) {
+    return <html><body><Providers>{children}</Providers></body></html>;
+  }
+  ```
+
+- **React Server Components**: `useAuth`, `useAuthState`, `useAuthActions`, and account hooks cannot be called from server components. Any component that reads auth state must be a client component.
+- **Custom storage**: pass a sync `StorageAdapter` if the default `localStorage` doesn't fit. Async backends (IndexedDB, RN AsyncStorage) are not supported — see the storage section below.
+
+### Managing API keys
+
+Programmatically create, list, and revoke keys for your account. Useful for BYOP ("bring your own pollen") flows, multi-tenant apps, and automation:
+
+```javascript
+import { listKeys, createKey, revokeKey } from '@pollinations/sdk';
+
+// List all keys on the account
+const keys = await listKeys();
+keys.forEach(k => console.log(k.name, k.prefix, k.enabled));
+
+// Create a scoped key (the raw value is only shown at creation)
+const created = await createKey({
+  name: 'my-bot',
+  type: 'secret',
+  pollenBudget: 1000,
+  accountPermissions: ['usage'],
+});
+console.log('Save now — will not be shown again:', created.key);
+
+// Revoke by id
+await revokeKey(created.id);
+```
+
+Without `accountPermissions`, scoped keys can generate media but cannot read account state (balance, usage).
+
 ## Image Generation
 
 ```javascript
@@ -109,7 +254,7 @@ import { generateImage, imageUrl } from '@pollinations/sdk';
 
 // Generate and save
 const image = await generateImage('a robot painting', {
-  model: 'flux',
+  model: 'zimage',
   width: 1920,
   height: 1080,
 });
@@ -131,20 +276,55 @@ const url = await imageUrl('a sunset');
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `model` | string | `'flux'` | Model to use |
+| `model` | string | `'zimage'` | Model to use |
 | `width` | number | `1024` | Width in pixels |
 | `height` | number | `1024` | Height in pixels |
 | `seed` | number | random | Reproducible results |
-| `enhance` | boolean | `false` | AI prompt enhancement |
-| `negativePrompt` | string | - | What to avoid in the image |
-| `nologo` | boolean | `false` | Remove watermark |
-| `private` | boolean | `false` | Keep generation private |
 | `safe` | boolean | `false` | Safety filter |
 | `quality` | string | `'medium'` | `'low'`, `'medium'`, `'high'`, `'hd'` |
 | `referenceImage` | string | - | URL for image-to-image |
 | `transparent` | boolean | `false` | Transparent background (PNG) |
 | `guidanceScale` | number | - | Prompt strictness (1-20) |
+| `reasoning` | boolean \| `'fast'` \| `'balanced'` \| `'pro'` | `'balanced'` | Reasoning mode for nanobanana models. Booleans are accepted for backward compatibility. |
 | `n` | number | `1` | Number of images |
+
+## Image Editing
+
+```javascript
+import { editImage } from '@pollinations/sdk';
+
+const result = await editImage('Make the sky purple', {
+  image: 'https://example.com/photo.jpg',
+  model: 'flux',
+});
+await result.saveToFile('edited.png');
+
+// Multiple source images
+const result2 = await editImage('Combine these two scenes', {
+  image: ['https://example.com/a.jpg', 'https://example.com/b.jpg'],
+});
+```
+
+## Image Generation (OpenAI-compatible)
+
+The `imageGenerate` helper wraps `POST /v1/images/generations` — useful when you need OpenAI SDK parity (size string, `n`, `response_format`) or want multiple images from a single call.
+
+```javascript
+import { imageGenerate } from '@pollinations/sdk';
+
+// Single image with OpenAI-style size string
+const img = await imageGenerate('A robot reading a book', {
+  size: '1024x1024',
+  model: 'flux',
+});
+await img.saveToFile('robot.png');
+
+// Multiple images in one request
+const imgs = await imageGenerate('A robot reading a book', { n: 3 });
+imgs.forEach((img, i) => img.saveToFile(`robot-${i}.png`));
+```
+
+For the simpler GET-based endpoint, see `generateImage` above.
 
 ## Text Generation
 
@@ -238,32 +418,37 @@ const videos = await generateVideo('ocean waves', { n: 2, duration: 4 });
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `model` | string | `'veo'` | `'veo'` or `'seedance'` |
-| `duration` | number | - | veo: 4, 6, or 8 sec / seedance: 2-10 sec |
+| `model` | string | `'veo'` | `'veo'`, `'seedance'`, `'wan'`, `'ltx-2'`, etc. |
+| `duration` | number | - | Duration in seconds (1-30, varies by model) |
 | `aspectRatio` | string | - | e.g. `'16:9'`, `'9:16'`, `'1:1'` |
 | `seed` | number | random | Reproducible results |
-| `audio` | boolean | `false` | Include audio (veo only) |
+| `audio` | boolean | `false` | Include audio (`wan` always has audio) |
 | `referenceImage` | string | - | URL for image-to-video |
-| `private` | boolean | `false` | Keep generation private |
-| `nologo` | boolean | `false` | Remove watermark |
 | `safe` | boolean | `false` | Safety filter |
 | `n` | number | `1` | Number of videos |
 
-## Audio (Text-to-Speech)
+## Audio (Text-to-Speech & Music)
 
 ```javascript
 import { generateAudio } from '@pollinations/sdk';
-import { writeFileSync } from 'fs';
 
-const audio = await generateAudio('Hello, welcome!', {
-  voice: 'nova',
+// Text-to-speech
+const speech = await generateAudio('Hello, welcome!', { voice: 'nova' });
+await speech.saveToFile('welcome.mp3');
+
+// Music generation
+const music = await generateAudio('upbeat jazz piano', {
+  model: 'elevenmusic',
+  duration: 30,
 });
+await music.saveToFile('jazz.mp3');
 
-// Save to file (Node.js)
-writeFileSync('welcome.mp3', Buffer.from(audio.data, 'base64'));
+// Get as base64 or data URL
+const base64 = speech.toBase64();
+const dataUrl = speech.toDataURL();
 
 // Play in browser
-const audioEl = new Audio(`data:audio/mp3;base64,${audio.data}`);
+const audioEl = new Audio(speech.toDataURL());
 audioEl.play();
 ```
 
@@ -271,11 +456,15 @@ audioEl.play();
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `voice` | string | `'alloy'` | Voice to use |
-| `model` | string | `'openai-audio'` | Model to use |
-| `format` | string | `'mp3'` | `'mp3'`, `'wav'`, `'flac'`, `'opus'`, `'pcm16'` |
+| `voice` | string | `'alloy'` | Voice to use (see voices below) |
+| `model` | string | `'elevenlabs'` | `'elevenlabs'`, `'elevenmusic'`, `'acestep'` |
+| `duration` | number | - | Duration in seconds (for music models) |
 | `seed` | number | random | Reproducible results |
 | `n` | number | `1` | Number of outputs |
+
+### Available Voices
+
+alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
 
 ## Vision (Image Input)
 
@@ -314,11 +503,13 @@ try {
 } catch (err) {
   if (err instanceof PollinationsError) {
     console.error(err.message);  // Error message
-    console.error(err.code);     // Error code
-    console.error(err.status);   // HTTP status
+    console.error(err.code);     // Error code (BAD_REQUEST, UNAUTHORIZED, INSUFFICIENT_BALANCE, etc.)
+    console.error(err.status);   // HTTP status (400, 401, 402, 403, 500)
   }
 }
 ```
+
+Common error codes: `400` invalid params, `401` missing/invalid key, `402` insufficient balance, `403` permission denied, `500` server error.
 
 ## Advanced: Client Class
 
@@ -352,6 +543,7 @@ import type {
 | Function | Description |
 |----------|-------------|
 | `generateImage(prompt, options?)` | Generate image(s) |
+| `editImage(prompt, options?)` | Edit image with prompt |
 | `imageUrl(prompt, options?)` | Get image URL |
 | `generateText(prompt, options?)` | Generate text |
 | `generateTextStream(prompt, options?)` | Stream text |
@@ -360,7 +552,9 @@ import type {
 | `conversation(options?)` | Create conversation |
 | `generateVideo(prompt, options?)` | Generate video(s) |
 | `videoUrl(prompt, options?)` | Get video URL |
-| `generateAudio(text, options?)` | Text to speech |
+| `generateAudio(text, options?)` | Text-to-speech / music |
+| `transcribe(audio, options?)` | Speech-to-text |
+| `upload(data, options?)` | Upload media |
 | `getTextModels()` | List text models |
 | `getImageModels()` | List image models |
 | `getModels()` | List all models |
@@ -412,7 +606,7 @@ const client = new Pollinations({
 ## Links
 
 - [Pollinations.AI](https://pollinations.ai)
-- [API Documentation](https://enter.pollinations.ai/api/docs) - Full API reference
+- [API Documentation](https://gen.pollinations.ai/docs) - Full API reference
 - [Get API Key](https://enter.pollinations.ai)
 - [Discord](https://discord.gg/pollinations-ai-885844321461485618)
 - [GitHub](https://github.com/pollinations/pollinations)

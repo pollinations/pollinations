@@ -1,0 +1,108 @@
+import { describe, expect, it } from "vitest";
+import { processParameters } from "../../../src/text/transforms/parameterProcessor.js";
+
+const messages = [{ role: "user" as const, content: "hello" }];
+const modelDef = { name: "test-model" };
+
+describe("processParameters", () => {
+    it("converts max_tokens to max_completion_tokens for Azure OpenAI models", () => {
+        const result = processParameters(messages, {
+            model: "gpt-5-nano",
+            max_tokens: 128,
+            modelConfig: {
+                provider: "azure-openai",
+                "azure-deployment-id": "gpt-5-nano",
+            },
+            modelDef,
+        });
+
+        expect(result.options.max_tokens).toBeUndefined();
+        expect(result.options.max_completion_tokens).toBe(128);
+    });
+
+    it("normalizes max_completion_tokens back to max_tokens for non-OpenAI Azure models", () => {
+        const result = processParameters(messages, {
+            model: "Mistral-Small-3.2-24B-Instruct-2506",
+            max_completion_tokens: 128,
+            modelConfig: {
+                provider: "azure-openai",
+                "azure-deployment-id": "Mistral-Small-3.2-24B-Instruct-2506",
+            },
+            modelDef,
+        });
+
+        expect(result.options.max_tokens).toBe(128);
+        expect(result.options.max_completion_tokens).toBeUndefined();
+    });
+
+    it("strips stream_options for non-OpenAI Azure models when streaming", () => {
+        const result = processParameters(messages, {
+            model: "grok-4.3",
+            stream: true,
+            modelConfig: {
+                provider: "azure-openai",
+                "azure-deployment-id": "grok-4.3",
+            },
+            modelDef,
+        });
+
+        expect(result.options.stream_options).toBeUndefined();
+    });
+
+    it("strips nullable stream_options for non-OpenAI Azure models", () => {
+        const result = processParameters(messages, {
+            model: "mistral-large",
+            stream_options: null as unknown as Record<string, unknown>,
+            modelConfig: {
+                provider: "azure-openai",
+                "azure-deployment-id": "Mistral-Large-3",
+            },
+            modelDef,
+        });
+
+        expect(result.options.stream_options).toBeUndefined();
+    });
+
+    it("keeps stream_options for OpenAI Azure models when streaming", () => {
+        const result = processParameters(messages, {
+            model: "gpt-5-nano",
+            stream: true,
+            modelConfig: {
+                provider: "azure-openai",
+                "azure-deployment-id": "gpt-5-nano",
+            },
+            modelDef,
+        });
+
+        expect(result.options.stream_options).toEqual({ include_usage: true });
+    });
+
+    it.each([
+        "us.anthropic.claude-opus-4-7",
+        "global.anthropic.claude-opus-4-8",
+    ])("strips temperature/top_p/top_k for %s", (model) => {
+        const result = processParameters(messages, {
+            model,
+            temperature: 0.7,
+            top_p: 0.9,
+            top_k: 40,
+            modelConfig: { provider: "bedrock" },
+            modelDef,
+        });
+
+        expect(result.options.temperature).toBeUndefined();
+        expect(result.options.top_p).toBeUndefined();
+        expect(result.options.top_k).toBeUndefined();
+    });
+
+    it("does not strip temperature for Claude Opus 4.6", () => {
+        const result = processParameters(messages, {
+            model: "us.anthropic.claude-opus-4-6-v1",
+            temperature: 0.7,
+            modelConfig: { provider: "bedrock" },
+            modelDef,
+        });
+
+        expect(result.options.temperature).toBe(0.7);
+    });
+});

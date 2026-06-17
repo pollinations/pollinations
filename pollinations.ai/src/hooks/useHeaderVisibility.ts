@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 export function useHeaderVisibility(threshold = 10) {
     const [showHeader, setShowHeader] = useState(true);
-    const lastScrollY = useRef(0);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -15,8 +14,6 @@ export function useHeaderVisibility(threshold = 10) {
                 // Hide as soon as we scroll down from top
                 setShowHeader(false);
             }
-
-            lastScrollY.current = currentScrollY;
         };
 
         window.addEventListener("scroll", handleScroll, { passive: true });

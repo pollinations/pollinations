@@ -25,6 +25,8 @@ Must run from the `pollinations` repo root with access to `enter.pollinations.ai
 - **generation_event**: Usage data with `user_tier`, `total_price`, `user_id`
 - Tracks all API requests with pricing and tier info
 
+> **Workspace**: Two workspaces exist now — `pollinations_enter` (prod) and `pollinations_enter_staging` (staging + dev + local). All queries below use a **prod** read token by design — staging contains no real revenue. The `environment = 'production'` filters below are redundant against prod-token queries (prod WS only has prod rows after the 2026-05-18 cleanup) but kept as defence-in-depth in case the token is later widened.
+
 ---
 
 # Quick Commands
@@ -42,7 +44,7 @@ export POLAR_ACCESS_TOKEN=$(grep POLAR_ACCESS_TOKEN enter.pollinations.ai/.testi
 ## Get Tinybird Token
 
 ```bash
-export TINYBIRD_TOKEN=$(sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '.TINYBIRD_ACCESS_TOKEN')
+export TINYBIRD_TOKEN=$(sops -d apps/operation/kpi/secrets/env.json | jq -r '.TINYBIRD_TOKEN')
 ```
 
 ---
@@ -159,7 +161,7 @@ Cross-references Polar pack purchasers with Tinybird tier data to show which tie
 
 # Notes
 
-- **Free tier spending** in Tinybird includes daily pollen allocation - not real revenue
+- **Free tier spending** in Tinybird includes tier pollen allocation - not real revenue
 - **Pack purchases** in Polar are actual paid revenue
 - Cross-reference by `external_id` (Polar) = `user_id` (Tinybird)
 - Polar API returns 307 redirects - use `curl -sL` to follow

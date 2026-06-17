@@ -1,5 +1,7 @@
 # Flux Schnell Server Dependencies
-# Note: PyTorch is installed separately with CUDA support via setup.sh
+# Note: PyTorch is installed separately with CUDA support (see setup.sh)
+# Note: nunchaku is installed from a prebuilt wheel in setup.sh —
+#       wheel bundles kernels for SM 7.5/8.0/8.6/8.9/120, no source build needed.
 
 # Core ML
 accelerate>=1.9

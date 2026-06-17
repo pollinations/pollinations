@@ -2,7 +2,7 @@ DESCRIPTION >
     Weekly cohort retention - tracks user retention week over week.
     Shows what percentage of users from each cohort returned in subsequent weeks.
 
-TOKEN model_usage READ
+TOKEN tinybird_read READ
 
 NODE cohort_base
 SQL >
@@ -12,7 +12,6 @@ SQL >
         toStartOfWeek(min(start_time), 1) AS cohort_week
     FROM generation_event
     WHERE start_time >= now() - INTERVAL {{Int32(weeks_back, 8)}} WEEK
-    AND environment = 'production'
     AND user_id != 'undefined'
     AND user_id != ''
     GROUP BY user_id
@@ -25,7 +24,6 @@ SQL >
         toStartOfWeek(start_time, 1) AS activity_week
     FROM generation_event
     WHERE start_time >= now() - INTERVAL {{Int32(weeks_back, 8)}} WEEK
-    AND environment = 'production'
     AND user_id != 'undefined'
     AND user_id != ''
 

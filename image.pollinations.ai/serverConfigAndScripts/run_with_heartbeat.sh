@@ -2,7 +2,7 @@
 
 # Default values
 HEARTBEAT_INTERVAL=30
-POLLINATIONS_URL="https://image.pollinations.ai/register"
+POLLINATIONS_URL="${REGISTER_URL:-https://gen.pollinations.ai/register}"
 
 # Function to get public IP
 get_public_ip() {
@@ -16,6 +16,7 @@ send_heartbeat() {
         url="http://${public_ip}:${PORT}"
         response=$(curl -s -X POST "$POLLINATIONS_URL" \
             -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${PLN_GPU_TOKEN}" \
             -d "{\"url\": \"$url\", \"type\": \"$TYPE\"}")
         if [ $? -eq 0 ]; then
             echo "[$(date)] Heartbeat sent successfully. URL: $url Type: $TYPE"

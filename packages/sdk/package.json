@@ -1,21 +1,25 @@
 {
   "name": "@pollinations/sdk",
-  "version": "4.0.1",
+  "version": "5.1.0-alpha.1",
   "description": "Official SDK for pollinations.ai - Generate images, videos, audio, and text with ease",
   "type": "module",
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "browser": "./dist/index.browser.min.js",
   "unpkg": "./dist/index.browser.min.js",
   "jsdelivr": "./dist/index.browser.min.js",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "browser": "./dist/index.browser.min.js",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
-    }
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "import": "./dist/react/index.js",
+      "require": "./dist/react/index.cjs"
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist"
@@ -24,6 +28,8 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "prepublishOnly": "npm run build",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [
@@ -47,7 +53,8 @@
     "img2img"
   ],
   "author": "pollinations.ai <hello@pollinations.ai>",
-  "contributors": [{
+  "contributors": [
+    {
       "name": "Itachi-1824",
       "email": "itachi@myceli.ai"
     },
@@ -63,19 +70,39 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/pollinations/pollinations",
+    "url": "git+https://github.com/pollinations/pollinations.git",
     "directory": "packages/sdk"
   },
   "homepage": "https://pollinations.ai",
   "bugs": {
     "url": "https://github.com/pollinations/pollinations/issues"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
     "node": ">=18.0.0"
   },
+  "peerDependencies": {
+    "react": "^18.2.0 || ^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/pollinations"
+  },
   "devDependencies": {
     "@types/node": "^20.10.0",
+    "@types/react": "^19.2.15",
+    "@types/react-test-renderer": "^19.1.0",
+    "react": "^19.2.5",
+    "react-test-renderer": "^19.2.5",
     "tsup": "^8.0.0",
-    "typescript": "^5.3.0"
+    "typescript": "^5.3.0",
+    "vitest": "^2.1.0"
   }
 }

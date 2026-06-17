@@ -1,0 +1,94 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap");
+
+/**
+ * CSS Variables - synced with theme.js
+ * For JS components, import from theme.js directly.
+ * These CSS vars are for global CSS usage.
+ */
+
+body {
+    margin: 0;
+    font-family: "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+:root {
+    --bot_status: #fbbc05;
+
+    /* ========== BACKGROUNDS ========== */
+    --bg-deep: #0c0f0a;
+    --bg-card: rgba(16, 24, 12, 0.8);
+    --bg-card-glass: rgba(255, 255, 255, 0.05);
+    --bg-overlay: rgba(12, 15, 10, 0.95);
+
+    /* ========== PRIMARY - LIME ========== */
+    --lime: #a3e635;
+    --lime-light: #bef264;
+    --lime-dim: rgba(163, 230, 53, 0.15);
+    --lime-border: rgba(163, 230, 53, 0.3);
+    --lime-glow: rgba(163, 230, 53, 0.6);
+
+    /* ========== SECONDARY - SAGE ========== */
+    --sage: #86efac;
+    --sage-dim: rgba(134, 239, 172, 0.15);
+    --sage-border: rgba(134, 239, 172, 0.3);
+
+    /* ========== TERTIARY - HONEY ========== */
+    --honey: #fbbf24;
+    --honey-dim: rgba(251, 191, 36, 0.15);
+    --honey-border: rgba(251, 191, 36, 0.3);
+
+    /* ========== ACCENT - LAVENDER ========== */
+    --lavender: #c4b5fd;
+    --lavender-light: #d8b4fe;
+    --lavender-dim: rgba(196, 181, 253, 0.15);
+    --lavender-border: rgba(168, 85, 247, 0.3);
+
+    /* ========== TEXT ========== */
+    --text-primary: #f5f5f4;
+    --text-secondary: rgba(245, 245, 244, 0.8);
+    --text-muted: rgba(245, 245, 244, 0.7);
+    --text-subtle: rgba(255, 255, 255, 0.5);
+
+    /* ========== BORDERS ========== */
+    --border-light: rgba(255, 255, 255, 0.1);
+    --border-medium: rgba(255, 255, 255, 0.15);
+    --border-strong: rgba(255, 255, 255, 0.2);
+    --border-hover: rgba(255, 255, 255, 0.3);
+
+    /* ========== STATUS COLORS ========== */
+    --success: #4ade80;
+    --success-bg: rgba(34, 197, 94, 0.1);
+    --success-border: rgba(34, 197, 94, 0.3);
+
+    --warning: #fbbf24;
+    --warning-bg: rgba(251, 191, 36, 0.1);
+    --warning-border: rgba(251, 191, 36, 0.3);
+
+    --error: #f87171;
+    --error-bg: rgba(239, 68, 68, 0.1);
+    --error-border: rgba(239, 68, 68, 0.3);
+
+    --info: #818cf8;
+    --info-bg: rgba(88, 101, 242, 0.15);
+    --info-border: rgba(88, 101, 242, 0.3);
+
+    --neutral: #d1d5db;
+    --neutral-bg: rgba(156, 163, 175, 0.1);
+    --neutral-border: rgba(156, 163, 175, 0.2);
+
+    /* ========== GRADIENTS ========== */
+    --gradient-card-accent: linear-gradient(90deg, #a3e635, #86efac, #fbbf24);
+    --gradient-text-heading: linear-gradient(to bottom right, #f5f5f4, #a1a1aa);
+    --gradient-bg-page: linear-gradient(
+        135deg,
+        #0c0f0a 0%,
+        #0f1410 50%,
+        #0c0f0a 100%
+    );
+
+    /* ========== FONTS ========== */
+    --font-body: "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-display: "Space Grotesk", "DM Sans", sans-serif;
+}

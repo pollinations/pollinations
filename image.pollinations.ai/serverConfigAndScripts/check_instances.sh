@@ -25,18 +25,18 @@ else
 fi
 
 log "----------------------------------------"
-log "Fetching registered servers from image.pollinations.ai/register..."
+log "Fetching registered servers from gen worker registry..."
 
-# Get the list of IPs from image.pollinations.ai/register and extract unique IPs
-registered_response=$(curl -s https://image.pollinations.ai/register)
+REGISTER_URL="${REGISTER_URL:-https://gen.pollinations.ai/register}"
+registered_response=$(curl -s "$REGISTER_URL")
 if [ $? -ne 0 ]; then
-    log "ERROR: Failed to fetch data from image.pollinations.ai/register"
+    log "ERROR: Failed to fetch data from $REGISTER_URL"
     exit 1
 fi
 
 registered_ips=$(echo "$registered_response" | jq -r '.[] | select(.type=="flux") | .url' | cut -d/ -f3 | cut -d: -f1 | sort -u)
 if [ -z "$registered_ips" ]; then
-    log "WARNING: No registered flux IPs found from image.pollinations.ai!"
+    log "WARNING: No registered flux IPs found from gen worker registry!"
 else
     log "Found the following registered flux IPs:"
     echo "$registered_ips" | while read -r ip; do

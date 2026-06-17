@@ -1,23 +1,15 @@
-# pollinations.ai Image Generation Service
+# pollinations.ai Image Backends
 
-Backend service powering image generation for pollinations.ai, accessed via **https://gen.pollinations.ai**.
+GPU backend assets and deployment scripts for image/video generation.
+The public API and gateway code live in `gen.pollinations.ai`.
 
 📚 **[API Documentation](../APIDOCS.md)** | 🔑 **[Get API Key](https://enter.pollinations.ai)**
 
 ## Development Setup
 
 ```bash
-# Clone and install
-git clone https://github.com/pollinations/pollinations
-cd pollinations/image.pollinations.ai
-npm install
-
-# Configure environment
-cp .env.example .env
-# Edit .env with your API keys
-
-# Run
-npm start
+# Run the public image API locally from the gen worker
+npm run dev:gen
 ```
 
 ## License

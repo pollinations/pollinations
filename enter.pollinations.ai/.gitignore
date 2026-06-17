@@ -1,10 +1,27 @@
 node_modules/
 dist/
+.vite/
 .pipelight/
 .wrangler/
 .dev.vars
+.dev.vars.local
+.dev.vars.override
 .dev.vars.prod
 .env
 *.log
 backups/
 prod_data*.sql
+
+# Abuse detection outputs (contain PII)
+scripts/abuse-detection/flagged-users*.csv
+scripts/abuse-detection/flagged-users*.md
+scripts/flagged-users*.csv
+scripts/flagged-users*.md
+abuse-report*.csv
+src/tier-progression/*-report.csv
+
+# Script outputs
+
+# GitHub user audit outputs (generated, contain user IDs)
+scripts/audit-*.json
+scripts/results/

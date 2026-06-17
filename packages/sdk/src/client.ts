@@ -1,21 +1,50 @@
+import { pollinationsErrorFromResponse } from "./error-response.js";
 import type {
-    PollinationsConfig,
-    ImageGenerateOptions,
-    ImageResponse,
-    VideoGenerateOptions,
-    VideoResponse,
-    TextGenerateOptions,
+    AccountBalance,
+    AccountKey,
+    AccountProfile,
+    AudioBinaryResponse,
+    AudioGenerateOptions,
+    AuthorizeDeviceOptions,
+    AuthorizeOptions,
     ChatOptions,
     ChatResponse,
     ChatStreamChunk,
-    AudioGenerateOptions,
+    CreatedKey,
+    CreateKeyOptions,
+    DailyUsageOptions,
+    DailyUsageResponse,
+    DeviceAuthorization,
+    DeviceCodeResponse,
+    DeviceTokenResponse,
+    ImageEditOptions,
+    ImageGenerateOptions,
+    ImageGenerateV1Options,
+    ImageResponse,
+    KeyInfo,
+    KeyUsageOptions,
     Message,
     ModelInfo,
-    PollinationsErrorDetails,
+    PollinationsConfig,
+    RequestOptions,
+    TextGenerateOptions,
+    TranscribeOptions,
+    TranscriptionResponse,
+    TranscriptionVerboseResponse,
+    UploadOptions,
+    UploadResponse,
+    UsageOptions,
+    UsageResponse,
+    UserInfo,
+    VideoGenerateOptions,
+    VideoResponse,
 } from "./types.js";
 import { PollinationsError } from "./types.js";
 
 const DEFAULT_BASE_URL = "https://gen.pollinations.ai";
+export const AUTH_BASE_URL = "https://enter.pollinations.ai";
+const DEVICE_FLOW_CLIENT_ID = "pk_NgBAArhUeGvSRFba";
+const DEVICE_FLOW_DEFAULT_SCOPE = "generate keys usage";
 const DEFAULT_MAX_RETRIES = 3;
 const MAX_INT32 = 2147483647;
 // Default timeouts in milliseconds
@@ -24,10 +53,7 @@ const DEFAULT_IMAGE_TIMEOUT = 600_000; // 10min for images
 const DEFAULT_VIDEO_TIMEOUT = 600_000; // 10min for videos
 
 // HTTP status codes that should NOT be retried
-const NON_RETRIABLE_CODES = [400, 401, 403, 404, 422];
-
-// Default Retry-After delay when header is missing (seconds)
-const DEFAULT_RETRY_AFTER = 60;
+const NON_RETRIABLE_CODES = [400, 401, 402, 403, 404, 422];
 
 // Helper to get env var (works in Node.js, Deno, Bun, and edge runtimes)
 function getEnvVar(name: string): string | undefined {
@@ -74,28 +100,7 @@ function getRetryDelay(attempt: number, retryAfterSeconds?: number): number {
     if (retryAfterSeconds !== undefined && retryAfterSeconds > 0) {
         return retryAfterSeconds * 1000;
     }
-    return Math.pow(2, attempt) * 1000;
-}
-
-// Parse Retry-After header (can be seconds or HTTP date)
-function parseRetryAfter(response: Response): number | undefined {
-    const retryAfter = response.headers.get("Retry-After");
-    if (!retryAfter) return undefined;
-
-    // Try parsing as number of seconds
-    const seconds = Number.parseInt(retryAfter, 10);
-    if (!Number.isNaN(seconds)) {
-        return seconds;
-    }
-
-    // Try parsing as HTTP date
-    const date = Date.parse(retryAfter);
-    if (!Number.isNaN(date)) {
-        const delayMs = date - Date.now();
-        return delayMs > 0 ? Math.ceil(delayMs / 1000) : undefined;
-    }
-
-    return undefined;
+    return 2 ** attempt * 1000;
 }
 
 // Check if an error should be retried
@@ -265,33 +270,7 @@ export class Pollinations {
     }
 
     private async handleErrorResponse(response: Response): Promise<never> {
-        let errorData: PollinationsErrorDetails | null = null;
-        try {
-            const json = (await response.json()) as {
-                error?: PollinationsErrorDetails;
-            };
-            if (json.error) {
-                errorData = json.error;
-            }
-        } catch {
-            // Response wasn't JSON
-        }
-
-        // Parse Retry-After header for rate limit errors
-        const retryAfter =
-            response.status === 429
-                ? (parseRetryAfter(response) ?? DEFAULT_RETRY_AFTER)
-                : undefined;
-
-        throw new PollinationsError(
-            errorData?.message ||
-                `Request failed with status ${response.status}`,
-            errorData?.code || "UNKNOWN_ERROR",
-            response.status,
-            errorData?.details,
-            errorData?.requestId,
-            retryAfter,
-        );
+        throw await pollinationsErrorFromResponse(response);
     }
 
     private buildQueryParams(
@@ -320,6 +299,52 @@ export class Pollinations {
         return searchParams.toString();
     }
 
+    /** Remove keys whose value is undefined (mutates and returns the body). */
+    private stripUndefined(
+        body: Record<string, unknown>,
+    ): Record<string, unknown> {
+        for (const key of Object.keys(body)) {
+            if (body[key] === undefined) delete body[key];
+        }
+        return body;
+    }
+
+    /**
+     * Run `fn` with exponential-backoff retries on retriable errors.
+     * `attempt` is passed into `fn` so callers can recompute per-attempt
+     * state (e.g. a fresh random seed) on each try.
+     */
+    private async withRetries<T>(
+        fn: (attempt: number) => Promise<T>,
+        fallbackMessage: string,
+    ): Promise<T> {
+        let lastError: Error = new Error(fallbackMessage);
+
+        for (let attempt = 0; attempt < this.maxRetries; attempt++) {
+            try {
+                return await fn(attempt);
+            } catch (err) {
+                lastError = err as Error;
+
+                // Don't retry non-retriable errors (400, 401, 403, 404, 422)
+                if (!isRetriableError(err)) {
+                    throw lastError;
+                }
+
+                if (attempt < this.maxRetries - 1) {
+                    // Use Retry-After from rate limit errors, otherwise exponential backoff
+                    const retryAfter =
+                        err instanceof PollinationsError
+                            ? err.retryAfter
+                            : undefined;
+                    await sleep(getRetryDelay(attempt, retryAfter));
+                }
+            }
+        }
+
+        throw lastError;
+    }
+
     // ============================================================================
     // Image Generation
     // ============================================================================
@@ -331,20 +356,16 @@ export class Pollinations {
         seed?: number,
     ): string {
         const params: Record<string, unknown> = {
-            model: options.model || "flux",
+            model: options.model || "zimage",
             width: options.width,
             height: options.height,
             seed: seed !== undefined ? seed : resolveSeed(options.seed),
-            enhance: options.enhance,
-            negative_prompt: options.negativePrompt,
-            private: options.private,
-            nologo: options.nologo,
-            nofeed: options.nofeed,
             safe: options.safe,
             quality: options.quality,
             image: options.referenceImage,
             transparent: options.transparent,
             guidance_scale: options.guidanceScale,
+            reasoning: options.reasoning,
         };
 
         const queryString = this.buildQueryParams(params);
@@ -393,76 +414,243 @@ export class Pollinations {
             );
         }
 
-        let lastError: Error = new Error(
-            "Unknown error during image generation",
-        );
-
-        for (let attempt = 0; attempt < this.maxRetries; attempt++) {
+        return this.withRetries(async (attempt) => {
             // Generate new seed for each retry (or use resolved seed on first attempt)
             const seed =
                 attempt === 0 ? resolveSeed(options.seed) : randomSeed();
             const url = this.buildImageUrl(prompt, options, seed);
 
-            try {
-                const response = await fetchWithTimeout(
-                    url,
-                    { headers: this.getHeaders() },
-                    this.imageTimeout,
-                    options.signal,
-                );
+            const response = await fetchWithTimeout(
+                url,
+                { headers: this.getHeaders() },
+                this.imageTimeout,
+                options.signal,
+            );
 
-                if (!response.ok) {
-                    await this.handleErrorResponse(response);
-                }
-
-                const buffer = await response.arrayBuffer();
-                const contentType =
-                    response.headers.get("content-type") || "image/jpeg";
-
-                return { buffer, contentType, url: stripKeyFromUrl(url) };
-            } catch (err) {
-                lastError = err as Error;
-
-                // Don't retry non-retriable errors (400, 401, 403, 404, 422)
-                if (!isRetriableError(err)) {
-                    throw lastError;
-                }
-
-                if (attempt < this.maxRetries - 1) {
-                    // Use Retry-After from rate limit errors, otherwise exponential backoff
-                    const retryAfter =
-                        err instanceof PollinationsError
-                            ? err.retryAfter
-                            : undefined;
-                    await sleep(getRetryDelay(attempt, retryAfter));
-                }
+            if (!response.ok) {
+                await this.handleErrorResponse(response);
             }
+
+            const buffer = await response.arrayBuffer();
+            const contentType =
+                response.headers.get("content-type") || "image/jpeg";
+
+            return { buffer, contentType, url: stripKeyFromUrl(url) };
+        }, "Unknown error during image generation");
+    }
+
+    // ============================================================================
+    // Image Editing
+    // ============================================================================
+
+    /**
+     * Edit an image using the OpenAI-compatible endpoint (POST /v1/images/edits).
+     * Accepts JSON with image URLs or multipart/form-data file uploads.
+     *
+     * @example
+     * ```ts
+     * const result = await pollinations.imageEdit('Make the sky purple', {
+     *   image: 'https://example.com/photo.jpg',
+     *   model: 'flux',
+     * });
+     * ```
+     */
+    async imageEdit(
+        prompt: string,
+        options: ImageEditOptions = {},
+    ): Promise<ImageResponse> {
+        if (!prompt || typeof prompt !== "string") {
+            throw new PollinationsError(
+                "Prompt is required and must be a string",
+                "INVALID_INPUT",
+                400,
+            );
         }
 
-        throw lastError;
+        const body: Record<string, unknown> = {
+            prompt,
+            model: options.model || "flux",
+        };
+
+        if (options.image) {
+            body.image = options.image;
+        }
+
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/v1/images/edits`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify(body),
+            },
+            this.imageTimeout,
+            options.signal,
+        );
+
+        if (!response.ok) {
+            await this.handleErrorResponse(response);
+        }
+
+        const json = (await response.json()) as {
+            data: Array<{ url?: string; b64_json?: string }>;
+        };
+
+        const item = json.data?.[0];
+        if (!item) {
+            throw new PollinationsError(
+                "No image data in response",
+                "NO_IMAGE",
+                500,
+            );
+        }
+
+        return this.resolveImageItem(
+            item,
+            options.signal,
+            "Unexpected response format from image edit",
+        );
+    }
+
+    // ============================================================================
+    // Image Generation (OpenAI-compatible POST /v1/images/generations)
+    // ============================================================================
+
+    /**
+     * Generate image(s) via the OpenAI-compatible POST endpoint.
+     * Supports multi-image requests (`n > 1`) and both `url` / `b64_json`
+     * response formats.
+     *
+     * Returns a single `ImageResponse` when `n === 1`, or an array otherwise.
+     *
+     * @example
+     * ```ts
+     * // Single image, size string (OpenAI style)
+     * const img = await pollinations.imageGenerate('A cute robot', {
+     *   size: '1024x1024',
+     *   model: 'flux',
+     * });
+     *
+     * // Multiple images
+     * const imgs = await pollinations.imageGenerate('A cute robot', { n: 3 });
+     * ```
+     */
+    async imageGenerate(
+        prompt: string,
+        options: ImageGenerateV1Options = {},
+    ): Promise<ImageResponse | ImageResponse[]> {
+        if (!prompt || typeof prompt !== "string") {
+            throw new PollinationsError(
+                "Prompt is required and must be a string",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+
+        // Resolve size: prefer explicit `size`, otherwise compose from width/height
+        let size = options.size;
+        if (!size && options.width && options.height) {
+            size = `${options.width}x${options.height}`;
+        }
+
+        const body: Record<string, unknown> = {
+            prompt,
+            model: options.model || "zimage",
+        };
+        if (size) body.size = size;
+        if (options.n !== undefined) body.n = options.n;
+        if (options.responseFormat)
+            body.response_format = options.responseFormat;
+        if (options.reasoning !== undefined) body.reasoning = options.reasoning;
+        if (options.seed !== undefined) body.seed = resolveSeed(options.seed);
+        if (options.quality) body.quality = options.quality;
+
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/v1/images/generations`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify(body),
+            },
+            this.imageTimeout,
+            options.signal,
+        );
+
+        if (!response.ok) {
+            await this.handleErrorResponse(response);
+        }
+
+        const json = (await response.json()) as {
+            data: Array<{ url?: string; b64_json?: string }>;
+        };
+
+        const items = json.data || [];
+        if (items.length === 0) {
+            throw new PollinationsError(
+                "No image data in response",
+                "NO_IMAGE",
+                500,
+            );
+        }
+
+        const results = await Promise.all(
+            items.map((item) => this.resolveImageItem(item, options.signal)),
+        );
+
+        // Unwrap when a single image was produced (most common case)
+        if (results.length === 1) {
+            const [single] = results;
+            if (single) return single;
+        }
+        return results;
+    }
+
+    /** Fetch-or-decode a single OpenAI-style image item into an ImageResponse */
+    private async resolveImageItem(
+        item: { url?: string; b64_json?: string },
+        signal?: AbortSignal,
+        invalidResponseMessage = "Unexpected image item shape in response",
+    ): Promise<ImageResponse> {
+        if (item.url) {
+            const imgResponse = await fetchWithTimeout(
+                item.url,
+                {},
+                this.imageTimeout,
+                signal,
+            );
+            const buffer = await imgResponse.arrayBuffer();
+            const contentType =
+                imgResponse.headers.get("content-type") || "image/png";
+            return { buffer, contentType, url: item.url };
+        }
+        if (item.b64_json) {
+            const binary = atob(item.b64_json);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+            return {
+                buffer: bytes.buffer as ArrayBuffer,
+                contentType: "image/png",
+                url: "",
+            };
+        }
+        throw new PollinationsError(
+            invalidResponseMessage,
+            "INVALID_RESPONSE",
+            500,
+        );
     }
 
     // ============================================================================
     // Video Generation
     // ============================================================================
 
-    private validateVideoDuration(model: string, duration?: number): void {
+    private validateVideoDuration(_model: string, duration?: number): void {
         if (duration === undefined) return;
 
-        const isVeo = model === "veo";
-        const isSeedance = model.startsWith("seedance");
-
-        if (isVeo && ![4, 6, 8].includes(duration)) {
+        if (duration < 1 || duration > 30) {
             throw new PollinationsError(
-                `Invalid duration for veo: ${duration}. Must be 4, 6, or 8 seconds.`,
-                "INVALID_DURATION",
-                400,
-            );
-        }
-
-        if (isSeedance && (duration < 2 || duration > 10)) {
-            throw new PollinationsError(
-                `Invalid duration for ${model}: ${duration}. Must be between 2-10 seconds.`,
+                `Invalid duration: ${duration}. Must be between 1-30 seconds.`,
                 "INVALID_DURATION",
                 400,
             );
@@ -485,15 +673,13 @@ export class Pollinations {
             seed: seed !== undefined ? seed : resolveSeed(options.seed),
             audio: options.audio,
             image: options.referenceImage,
-            private: options.private,
-            nologo: options.nologo,
             safe: options.safe,
         };
 
         const queryString = this.buildQueryParams(params);
         const encodedPrompt = encodeURIComponent(prompt);
 
-        return `${this.baseUrl}/image/${encodedPrompt}${queryString ? `?${queryString}` : ""}`;
+        return `${this.baseUrl}/video/${encodedPrompt}${queryString ? `?${queryString}` : ""}`;
     }
 
     /**
@@ -535,52 +721,28 @@ export class Pollinations {
             );
         }
 
-        let lastError: Error = new Error(
-            "Unknown error during video generation",
-        );
-
-        for (let attempt = 0; attempt < this.maxRetries; attempt++) {
+        return this.withRetries(async (attempt) => {
             const seed =
                 attempt === 0 ? resolveSeed(options.seed) : randomSeed();
             const url = this.buildVideoUrl(prompt, options, seed);
 
-            try {
-                const response = await fetchWithTimeout(
-                    url,
-                    { headers: this.getHeaders() },
-                    this.videoTimeout,
-                    options.signal,
-                );
+            const response = await fetchWithTimeout(
+                url,
+                { headers: this.getHeaders() },
+                this.videoTimeout,
+                options.signal,
+            );
 
-                if (!response.ok) {
-                    await this.handleErrorResponse(response);
-                }
-
-                const buffer = await response.arrayBuffer();
-                const contentType =
-                    response.headers.get("content-type") || "video/mp4";
-
-                return { buffer, contentType, url: stripKeyFromUrl(url) };
-            } catch (err) {
-                lastError = err as Error;
-
-                // Don't retry non-retriable errors (400, 401, 403, 404, 422)
-                if (!isRetriableError(err)) {
-                    throw lastError;
-                }
-
-                if (attempt < this.maxRetries - 1) {
-                    // Use Retry-After from rate limit errors, otherwise exponential backoff
-                    const retryAfter =
-                        err instanceof PollinationsError
-                            ? err.retryAfter
-                            : undefined;
-                    await sleep(getRetryDelay(attempt, retryAfter));
-                }
+            if (!response.ok) {
+                await this.handleErrorResponse(response);
             }
-        }
 
-        throw lastError;
+            const buffer = await response.arrayBuffer();
+            const contentType =
+                response.headers.get("content-type") || "video/mp4";
+
+            return { buffer, contentType, url: stripKeyFromUrl(url) };
+        }, "Unknown error during video generation");
     }
 
     // ============================================================================
@@ -609,11 +771,7 @@ export class Pollinations {
             );
         }
 
-        let lastError: Error = new Error(
-            "Unknown error during text generation",
-        );
-
-        for (let attempt = 0; attempt < this.maxRetries; attempt++) {
+        return this.withRetries(async (attempt) => {
             const seed =
                 attempt === 0 ? resolveSeed(options.seed) : randomSeed();
 
@@ -643,49 +801,26 @@ export class Pollinations {
                 body.response_format = { type: "json_object" };
             }
 
-            // Remove undefined values
-            Object.keys(body).forEach((key) => {
-                if (body[key] === undefined) delete body[key];
-            });
+            this.stripUndefined(body);
 
-            try {
-                const response = await fetchWithTimeout(
-                    `${this.baseUrl}/v1/chat/completions`,
-                    {
-                        method: "POST",
-                        headers: this.getHeaders("application/json"),
-                        body: JSON.stringify(body),
-                    },
-                    this.textTimeout,
-                    options.signal,
-                );
+            const response = await fetchWithTimeout(
+                `${this.baseUrl}/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: this.getHeaders("application/json"),
+                    body: JSON.stringify(body),
+                },
+                this.textTimeout,
+                options.signal,
+            );
 
-                if (!response.ok) {
-                    await this.handleErrorResponse(response);
-                }
-
-                const data = (await response.json()) as ChatResponse;
-                return data.choices[0]?.message?.content || "";
-            } catch (err) {
-                lastError = err as Error;
-
-                // Don't retry non-retriable errors (400, 401, 403, 404, 422)
-                if (!isRetriableError(err)) {
-                    throw lastError;
-                }
-
-                if (attempt < this.maxRetries - 1) {
-                    // Use Retry-After from rate limit errors, otherwise exponential backoff
-                    const retryAfter =
-                        err instanceof PollinationsError
-                            ? err.retryAfter
-                            : undefined;
-                    await sleep(getRetryDelay(attempt, retryAfter));
-                }
+            if (!response.ok) {
+                await this.handleErrorResponse(response);
             }
-        }
 
-        throw lastError;
+            const data = (await response.json()) as ChatResponse;
+            return data.choices[0]?.message?.content || "";
+        }, "Unknown error during text generation");
     }
 
     /**
@@ -734,56 +869,27 @@ export class Pollinations {
             body.response_format = { type: "json_object" };
         }
 
-        // Remove undefined values
-        Object.keys(body).forEach((key) => {
-            if (body[key] === undefined) delete body[key];
-        });
+        this.stripUndefined(body);
 
-        // Retry logic for connection establishment
-        let response: Response | null = null;
-        let lastError: Error = new Error("Unknown error during text stream");
+        // Retry connection establishment; the body is built once above.
+        const response = await this.withRetries(async () => {
+            const res = await fetchWithTimeout(
+                `${this.baseUrl}/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: this.getHeaders("application/json"),
+                    body: JSON.stringify(body),
+                },
+                this.textTimeout,
+                options.signal,
+            );
 
-        for (let attempt = 0; attempt < this.maxRetries; attempt++) {
-            try {
-                response = await fetchWithTimeout(
-                    `${this.baseUrl}/v1/chat/completions`,
-                    {
-                        method: "POST",
-                        headers: this.getHeaders("application/json"),
-                        body: JSON.stringify(body),
-                    },
-                    this.textTimeout,
-                    options.signal,
-                );
-
-                if (!response.ok) {
-                    await this.handleErrorResponse(response);
-                }
-
-                // Connection successful, break out of retry loop
-                break;
-            } catch (err) {
-                lastError = err as Error;
-
-                if (!isRetriableError(err)) {
-                    throw lastError;
-                }
-
-                if (attempt < this.maxRetries - 1) {
-                    const retryAfter =
-                        err instanceof PollinationsError
-                            ? err.retryAfter
-                            : undefined;
-                    await sleep(getRetryDelay(attempt, retryAfter));
-                } else {
-                    throw lastError;
-                }
+            if (!res.ok) {
+                await this.handleErrorResponse(res);
             }
-        }
 
-        if (!response) {
-            throw lastError;
-        }
+            return res;
+        }, "Unknown error during text stream");
 
         const reader = response.body?.getReader();
         if (!reader) {
@@ -819,6 +925,48 @@ export class Pollinations {
     // ============================================================================
 
     /**
+     * Build the shared chat-completions request body (undefined fields stripped).
+     * `seed` is passed in explicitly so callers control resolution:
+     * `chat()` passes a per-attempt resolved seed, `chatStream()` passes the
+     * raw `options.seed` unchanged.
+     */
+    private buildChatBody(
+        messages: Message[],
+        options: Omit<ChatOptions, "stream">,
+        { stream, seed }: { stream: boolean; seed: number | undefined },
+    ): Record<string, unknown> {
+        return this.stripUndefined({
+            messages,
+            model: options.model || "openai",
+            temperature: options.temperature,
+            top_p: options.topP,
+            max_tokens: options.maxTokens,
+            frequency_penalty: options.frequencyPenalty,
+            presence_penalty: options.presencePenalty,
+            repetition_penalty: options.repetitionPenalty,
+            stop: options.stop,
+            seed,
+            stream,
+            stream_options: options.streamOptions,
+            response_format: options.responseFormat,
+            tools: options.tools,
+            tool_choice: options.toolChoice,
+            parallel_tool_calls: options.parallelToolCalls,
+            thinking: options.thinking,
+            reasoning_effort: options.reasoningEffort,
+            thinking_budget: options.thinkingBudget,
+            modalities: options.modalities,
+            audio: options.audio,
+            user: options.user,
+            logit_bias: options.logitBias,
+            logprobs: options.logprobs,
+            top_logprobs: options.topLogprobs,
+            functions: options.functions,
+            function_call: options.functionCall,
+        });
+    }
+
+    /**
      * Create a chat completion (OpenAI-compatible).
      * Automatically retries up to 3 times with exponential backoff on retriable failures.
      *
@@ -842,88 +990,32 @@ export class Pollinations {
             );
         }
 
-        let lastError: Error = new Error(
-            "Unknown error during chat completion",
-        );
-
-        for (let attempt = 0; attempt < this.maxRetries; attempt++) {
+        return this.withRetries(async (attempt) => {
             const seed =
                 attempt === 0 ? resolveSeed(options.seed) : randomSeed();
 
-            const body: Record<string, unknown> = {
-                messages,
-                model: options.model || "openai",
-                temperature: options.temperature,
-                top_p: options.topP,
-                max_tokens: options.maxTokens,
-                frequency_penalty: options.frequencyPenalty,
-                presence_penalty: options.presencePenalty,
-                repetition_penalty: options.repetitionPenalty,
-                stop: options.stop,
-                seed,
+            const body = this.buildChatBody(messages, options, {
                 stream: false,
-                stream_options: options.streamOptions,
-                response_format: options.responseFormat,
-                tools: options.tools,
-                tool_choice: options.toolChoice,
-                parallel_tool_calls: options.parallelToolCalls,
-                thinking: options.thinking,
-                reasoning_effort: options.reasoningEffort,
-                thinking_budget: options.thinkingBudget,
-                modalities: options.modalities,
-                audio: options.audio,
-                user: options.user,
-                logit_bias: options.logitBias,
-                logprobs: options.logprobs,
-                top_logprobs: options.topLogprobs,
-                functions: options.functions,
-                function_call: options.functionCall,
-            };
-
-            // Remove undefined values
-            Object.keys(body).forEach((key) => {
-                if (body[key] === undefined) {
-                    delete body[key];
-                }
+                seed,
             });
 
-            try {
-                const response = await fetchWithTimeout(
-                    `${this.baseUrl}/v1/chat/completions`,
-                    {
-                        method: "POST",
-                        headers: this.getHeaders("application/json"),
-                        body: JSON.stringify(body),
-                    },
-                    this.textTimeout,
-                    options.signal,
-                );
+            const response = await fetchWithTimeout(
+                `${this.baseUrl}/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: this.getHeaders("application/json"),
+                    body: JSON.stringify(body),
+                },
+                this.textTimeout,
+                options.signal,
+            );
 
-                if (!response.ok) {
-                    await this.handleErrorResponse(response);
-                }
-
-                return response.json() as Promise<ChatResponse>;
-            } catch (err) {
-                lastError = err as Error;
-
-                // Don't retry non-retriable errors (400, 401, 403, 404, 422)
-                if (!isRetriableError(err)) {
-                    throw lastError;
-                }
-
-                if (attempt < this.maxRetries - 1) {
-                    // Use Retry-After from rate limit errors, otherwise exponential backoff
-                    const retryAfter =
-                        err instanceof PollinationsError
-                            ? err.retryAfter
-                            : undefined;
-                    await sleep(getRetryDelay(attempt, retryAfter));
-                }
+            if (!response.ok) {
+                await this.handleErrorResponse(response);
             }
-        }
 
-        throw lastError;
+            return response.json() as Promise<ChatResponse>;
+        }, "Unknown error during chat completion");
     }
 
     /**
@@ -952,88 +1044,32 @@ export class Pollinations {
             );
         }
 
-        const body: Record<string, unknown> = {
-            messages,
-            model: options.model || "openai",
-            temperature: options.temperature,
-            top_p: options.topP,
-            max_tokens: options.maxTokens,
-            frequency_penalty: options.frequencyPenalty,
-            presence_penalty: options.presencePenalty,
-            repetition_penalty: options.repetitionPenalty,
-            stop: options.stop,
-            seed: options.seed,
+        // chatStream preserves the raw seed (no per-attempt resolution) and
+        // builds the body once before the connection-retry loop.
+        const body = this.buildChatBody(messages, options, {
             stream: true,
-            stream_options: options.streamOptions,
-            response_format: options.responseFormat,
-            tools: options.tools,
-            tool_choice: options.toolChoice,
-            parallel_tool_calls: options.parallelToolCalls,
-            thinking: options.thinking,
-            reasoning_effort: options.reasoningEffort,
-            thinking_budget: options.thinkingBudget,
-            modalities: options.modalities,
-            audio: options.audio,
-            user: options.user,
-            logit_bias: options.logitBias,
-            logprobs: options.logprobs,
-            top_logprobs: options.topLogprobs,
-            functions: options.functions,
-            function_call: options.functionCall,
-        };
-
-        // Remove undefined values
-        Object.keys(body).forEach((key) => {
-            if (body[key] === undefined) {
-                delete body[key];
-            }
+            seed: options.seed,
         });
 
-        // Retry logic for connection establishment
-        let response: Response | null = null;
-        let lastError: Error = new Error("Unknown error during chat stream");
+        // Retry connection establishment; the body is built once above.
+        const response = await this.withRetries(async () => {
+            const res = await fetchWithTimeout(
+                `${this.baseUrl}/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: this.getHeaders("application/json"),
+                    body: JSON.stringify(body),
+                },
+                this.textTimeout,
+                options.signal,
+            );
 
-        for (let attempt = 0; attempt < this.maxRetries; attempt++) {
-            try {
-                response = await fetchWithTimeout(
-                    `${this.baseUrl}/v1/chat/completions`,
-                    {
-                        method: "POST",
-                        headers: this.getHeaders("application/json"),
-                        body: JSON.stringify(body),
-                    },
-                    this.textTimeout,
-                    options.signal,
-                );
-
-                if (!response.ok) {
-                    await this.handleErrorResponse(response);
-                }
-
-                // Connection successful, break out of retry loop
-                break;
-            } catch (err) {
-                lastError = err as Error;
-
-                if (!isRetriableError(err)) {
-                    throw lastError;
-                }
-
-                if (attempt < this.maxRetries - 1) {
-                    const retryAfter =
-                        err instanceof PollinationsError
-                            ? err.retryAfter
-                            : undefined;
-                    await sleep(getRetryDelay(attempt, retryAfter));
-                } else {
-                    throw lastError;
-                }
+            if (!res.ok) {
+                await this.handleErrorResponse(res);
             }
-        }
 
-        if (!response) {
-            throw lastError;
-        }
+            return res;
+        }, "Unknown error during chat stream");
 
         const reader = response.body?.getReader();
         if (!reader) {
@@ -1073,44 +1109,103 @@ export class Pollinations {
      *
      * @example
      * ```ts
-     * const response = await pollinations.audio('Hello, how are you today?', { voice: 'nova' });
-     * // response.data contains base64 audio, response.transcript contains the text
+     * // Text-to-speech
+     * const { buffer } = await pollinations.audio('Hello, how are you today?', { voice: 'nova' });
+     *
+     * // Music generation
+     * const { buffer } = await pollinations.audio('upbeat jazz', { model: 'elevenmusic', duration: 30 });
      * ```
      */
     async audio(
         text: string,
         options: AudioGenerateOptions = {},
-    ): Promise<{
-        transcript: string;
-        data: string;
-        id: string;
-        expiresAt: number;
-    }> {
-        const response = await this.chat([{ role: "user", content: text }], {
-            model: options.model || "openai-audio",
-            modalities: ["text", "audio"],
-            audio: {
-                voice: options.voice || "alloy",
-                format: options.format || "mp3",
-            },
-            seed: options.seed,
-        });
-
-        const audioData = response.choices[0]?.message?.audio;
-        if (!audioData) {
+    ): Promise<AudioBinaryResponse> {
+        if (!text || typeof text !== "string") {
             throw new PollinationsError(
-                "No audio in response",
-                "NO_AUDIO",
-                500,
+                "Text is required and must be a string",
+                "INVALID_INPUT",
+                400,
             );
         }
 
-        return {
-            transcript: audioData.transcript,
-            data: audioData.data,
-            id: audioData.id,
-            expiresAt: audioData.expires_at,
+        const params: Record<string, unknown> = {
+            voice: options.voice,
+            model: options.model,
+            duration: options.duration,
+            seed:
+                options.seed !== undefined
+                    ? resolveSeed(options.seed)
+                    : undefined,
         };
+
+        const queryString = this.buildQueryParams(params);
+        const encodedText = encodeURIComponent(text);
+        const url = `${this.baseUrl}/audio/${encodedText}${queryString ? `?${queryString}` : ""}`;
+
+        const response = await fetchWithTimeout(
+            url,
+            { headers: this.getHeaders() },
+            this.textTimeout,
+            options.signal,
+        );
+
+        if (!response.ok) {
+            await this.handleErrorResponse(response);
+        }
+
+        const buffer = await response.arrayBuffer();
+        const contentType =
+            response.headers.get("content-type") || "audio/mpeg";
+
+        return { buffer, contentType };
+    }
+
+    /**
+     * Generate speech using the OpenAI-compatible TTS endpoint (POST /v1/audio/speech).
+     *
+     * @example
+     * ```ts
+     * const { buffer } = await pollinations.audioSpeech('Hello world', { voice: 'nova' });
+     * ```
+     */
+    async audioSpeech(
+        text: string,
+        options: AudioGenerateOptions = {},
+    ): Promise<AudioBinaryResponse> {
+        if (!text || typeof text !== "string") {
+            throw new PollinationsError(
+                "Text is required and must be a string",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+
+        const body = {
+            input: text,
+            voice: options.voice || "alloy",
+            model: options.model || "elevenlabs",
+        };
+
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/v1/audio/speech`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify(body),
+            },
+            this.textTimeout,
+            options.signal,
+        );
+
+        if (!response.ok) {
+            await this.handleErrorResponse(response);
+        }
+
+        const buffer = await response.arrayBuffer();
+        const contentType =
+            response.headers.get("content-type") || "audio/mpeg";
+
+        return { buffer, contentType };
     }
 
     // ============================================================================
@@ -1183,5 +1278,589 @@ export class Pollinations {
         }
 
         return response.json() as Promise<ModelInfo[]>;
+    }
+
+    // ============================================================================
+    // Speech-to-Text (Transcription)
+    // ============================================================================
+
+    /**
+     * Transcribe audio to text
+     *
+     * @example
+     * ```ts
+     * // From a file (Node.js)
+     * import fs from 'fs';
+     * const audioBuffer = fs.readFileSync('speech.mp3');
+     * const result = await pollinations.transcribe(audioBuffer, { model: 'whisper-large-v3' });
+     * console.log(result.text);
+     *
+     * // From a Blob (browser)
+     * const result = await pollinations.transcribe(audioBlob);
+     * ```
+     */
+    async transcribe(
+        audio: ArrayBuffer | Blob,
+        options: TranscribeOptions & { responseFormat: "verbose_json" },
+    ): Promise<TranscriptionVerboseResponse>;
+    async transcribe(
+        audio: ArrayBuffer | Blob,
+        options?: TranscribeOptions,
+    ): Promise<TranscriptionResponse>;
+    async transcribe(
+        audio: ArrayBuffer | Blob,
+        options: TranscribeOptions = {},
+    ): Promise<TranscriptionResponse | TranscriptionVerboseResponse> {
+        const formData = new FormData();
+
+        // Convert ArrayBuffer to Blob if needed
+        const blob =
+            audio instanceof Blob
+                ? audio
+                : new Blob([audio], { type: "audio/mpeg" });
+
+        formData.append("file", blob, "audio.mp3");
+        formData.append("model", options.model || "whisper-large-v3");
+
+        if (options.language) formData.append("language", options.language);
+        if (options.responseFormat)
+            formData.append("response_format", options.responseFormat);
+        if (options.prompt) formData.append("prompt", options.prompt);
+        if (options.temperature !== undefined)
+            formData.append("temperature", String(options.temperature));
+
+        return this.withRetries<
+            TranscriptionResponse | TranscriptionVerboseResponse
+        >(async () => {
+            const headers = this.getHeaders();
+            // Don't set Content-Type - fetch sets it with boundary for FormData
+
+            const response = await fetchWithTimeout(
+                `${this.baseUrl}/v1/audio/transcriptions`,
+                {
+                    method: "POST",
+                    headers,
+                    body: formData,
+                },
+                this.textTimeout,
+                options.signal,
+            );
+
+            if (!response.ok) {
+                await this.handleErrorResponse(response);
+            }
+
+            if (
+                options.responseFormat === "text" ||
+                options.responseFormat === "srt" ||
+                options.responseFormat === "vtt"
+            ) {
+                const text = await response.text();
+                return { text };
+            }
+
+            return response.json() as Promise<
+                TranscriptionResponse | TranscriptionVerboseResponse
+            >;
+        }, "Unknown error during transcription");
+    }
+
+    // ============================================================================
+    // Media Upload
+    // ============================================================================
+
+    /**
+     * Upload media (image, audio, video) and get a public URL
+     *
+     * @example
+     * ```ts
+     * // Upload from ArrayBuffer
+     * const result = await pollinations.upload(imageBuffer, { contentType: 'image/jpeg' });
+     * console.log(result.url); // https://media.pollinations.ai/abc123...
+     *
+     * // Upload from Blob (browser)
+     * const result = await pollinations.upload(file);
+     * ```
+     */
+    async upload(
+        data: ArrayBuffer | Blob,
+        options: UploadOptions = {},
+    ): Promise<UploadResponse> {
+        const formData = new FormData();
+
+        const blob =
+            data instanceof Blob
+                ? data
+                : new Blob([data], {
+                      type: options.contentType || "application/octet-stream",
+                  });
+
+        formData.append("file", blob, options.name || "upload");
+
+        const headers = this.getHeaders();
+
+        return this.withRetries(async () => {
+            const response = await fetchWithTimeout(
+                `https://media.pollinations.ai/upload`,
+                {
+                    method: "POST",
+                    headers,
+                    body: formData,
+                },
+                this.imageTimeout,
+                options.signal,
+            );
+
+            if (!response.ok) {
+                await this.handleErrorResponse(response);
+            }
+
+            return response.json() as Promise<UploadResponse>;
+        }, "Unknown error during upload");
+    }
+
+    // ============================================================================
+    // BYOP (Bring Your Own Pollen)
+    // ============================================================================
+
+    /**
+     * Build a BYOP authorization URL.
+     * Redirect users here to grant your app access to their Pollen balance.
+     *
+     * @example
+     * ```ts
+     * const url = pollinations.authorizeUrl({
+     *   redirectUrl: 'https://myapp.com/callback',
+     *   models: ['flux', 'openai'],
+     *   budget: 10,
+     *   permissions: ['profile', 'usage'],
+     * });
+     * // Redirect user to this URL
+     * ```
+     *
+     * Omit `budget` for the default cap.
+     */
+    static authorizeUrl(options: AuthorizeOptions): string {
+        const params = new URLSearchParams();
+        params.set("redirect_uri", options.redirectUrl);
+
+        if (options.appKey) params.set("client_id", options.appKey);
+        if (options.state) params.set("state", options.state);
+        if (options.models?.length)
+            params.set("models", options.models.join(","));
+        if (options.budget !== undefined)
+            params.set("budget", String(options.budget));
+        if (options.expiry !== undefined)
+            params.set("expiry", String(options.expiry));
+        if (options.permissions?.length)
+            params.set("scope", options.permissions.join(" "));
+
+        return `${options.authBaseUrl ?? AUTH_BASE_URL}/authorize?${params.toString()}`;
+    }
+
+    authorizeUrl(options: AuthorizeOptions): string {
+        return Pollinations.authorizeUrl(options);
+    }
+
+    // ============================================================================
+    // Device Flow (OAuth) — headless / CLI authentication
+    // ============================================================================
+
+    /**
+     * Start an OAuth device-code flow for headless or CLI authentication.
+     *
+     * Returns a handle immediately containing a short `userCode` and a
+     * `verificationUri` the user opens in their browser. Call `poll()` to
+     * block until the user approves (or rejects / the code expires) — it
+     * resolves to the access token.
+     *
+     * Static: does NOT require an existing SDK instance or API key. Use
+     * the returned access token to construct a `Pollinations` client.
+     *
+     * @example
+     * ```ts
+     * const auth = await Pollinations.authorizeDevice();
+     * console.log(`Visit ${auth.verificationUri} and enter: ${auth.userCode}`);
+     * const accessToken = await auth.poll();
+     * const client = new Pollinations({ apiKey: accessToken });
+     * ```
+     */
+    static async authorizeDevice(
+        options: AuthorizeDeviceOptions = {},
+    ): Promise<DeviceAuthorization> {
+        const clientId = options.clientId || DEVICE_FLOW_CLIENT_ID;
+        const scope = options.scope || DEVICE_FLOW_DEFAULT_SCOPE;
+
+        const response = await fetch(`${AUTH_BASE_URL}/api/device/code`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ client_id: clientId, scope }),
+            signal: options.signal,
+        });
+
+        if (!response.ok) {
+            const text = await response.text().catch(() => "");
+            throw new PollinationsError(
+                `Failed to start device flow: ${response.status} ${text}`,
+                "DEVICE_FLOW_START_FAILED",
+                response.status,
+            );
+        }
+
+        const code = (await response.json()) as DeviceCodeResponse;
+        const expiresAt = new Date(Date.now() + code.expires_in * 1000);
+        const pollMs = Math.max(code.interval, 5) * 1000;
+
+        const poll = async (): Promise<string> => {
+            while (Date.now() < expiresAt.getTime()) {
+                await sleep(pollMs);
+                if (options.signal?.aborted) {
+                    throw new PollinationsError(
+                        "Device authorization cancelled",
+                        "CANCELLED",
+                        499,
+                    );
+                }
+
+                const tokenRes = await fetch(
+                    `${AUTH_BASE_URL}/api/device/token`,
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            device_code: code.device_code,
+                            grant_type:
+                                "urn:ietf:params:oauth:grant-type:device_code",
+                        }),
+                    },
+                );
+
+                const body = (await tokenRes
+                    .json()
+                    .catch(() => ({}))) as DeviceTokenResponse;
+
+                if (tokenRes.ok && body.access_token) {
+                    return body.access_token;
+                }
+                if (
+                    body.error === "authorization_pending" ||
+                    body.error === "slow_down"
+                ) {
+                    continue;
+                }
+                throw new PollinationsError(
+                    body.error_description ||
+                        body.error ||
+                        "Device flow failed",
+                    body.error || "DEVICE_FLOW_ERROR",
+                    400,
+                );
+            }
+            throw new PollinationsError(
+                "Device code expired. Call Pollinations.authorizeDevice() again.",
+                "EXPIRED_TOKEN",
+                400,
+            );
+        };
+
+        return {
+            userCode: code.user_code,
+            verificationUri: code.verification_uri_complete,
+            expiresAt,
+            poll,
+        };
+    }
+
+    /**
+     * Get the authenticated user's identity via GET /api/device/userinfo.
+     * Uses the API key on this client instance.
+     *
+     * @example
+     * ```ts
+     * const user = await pollinations.userInfo();
+     * console.log(user.name, user.tier);
+     * ```
+     */
+    async userInfo(options: RequestOptions = {}): Promise<UserInfo> {
+        const response = await fetchWithTimeout(
+            `${AUTH_BASE_URL}/api/device/userinfo`,
+            { headers: this.getHeaders() },
+            this.textTimeout,
+            options.signal,
+        );
+
+        if (!response.ok) await this.handleErrorResponse(response);
+        return response.json() as Promise<UserInfo>;
+    }
+
+    // ============================================================================
+    // Account
+    // ============================================================================
+
+    /**
+     * Get user profile information
+     *
+     * @example
+     * ```ts
+     * const profile = await pollinations.accountProfile();
+     * console.log(profile.githubUsername);
+     * ```
+     */
+    async accountProfile(): Promise<AccountProfile> {
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/account/profile`,
+            { headers: this.getHeaders() },
+            this.textTimeout,
+        );
+
+        if (!response.ok) await this.handleErrorResponse(response);
+        return response.json() as Promise<AccountProfile>;
+    }
+
+    /**
+     * Get account pollen balance
+     *
+     * @example
+     * ```ts
+     * const { balance } = await pollinations.accountBalance();
+     * console.log(`Balance: ${balance} pollen`);
+     * ```
+     */
+    async accountBalance(): Promise<AccountBalance> {
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/account/balance`,
+            { headers: this.getHeaders() },
+            this.textTimeout,
+        );
+
+        if (!response.ok) await this.handleErrorResponse(response);
+        return response.json() as Promise<AccountBalance>;
+    }
+
+    /**
+     * Get usage history
+     *
+     * @example
+     * ```ts
+     * const { usage } = await pollinations.accountUsage({ limit: 50 });
+     * usage.forEach(r => console.log(r.model, r.cost_usd));
+     * ```
+     */
+    async accountUsage(options: UsageOptions = {}): Promise<UsageResponse> {
+        const params = new URLSearchParams();
+        if (options.format) params.set("format", options.format);
+        if (options.days) params.set("days", String(options.days));
+        if (options.limit) params.set("limit", String(options.limit));
+        if (options.before) params.set("before", options.before);
+        if (options.granularity) params.set("granularity", options.granularity);
+        if (options.period) params.set("period", options.period);
+
+        const qs = params.toString();
+        const url = `${this.baseUrl}/account/usage${qs ? `?${qs}` : ""}`;
+
+        const response = await fetchWithTimeout(
+            url,
+            { headers: this.getHeaders() },
+            this.textTimeout,
+        );
+
+        if (!response.ok) await this.handleErrorResponse(response);
+        return response.json() as Promise<UsageResponse>;
+    }
+
+    /**
+     * Get daily aggregated usage
+     *
+     * @example
+     * ```ts
+     * const { usage } = await pollinations.accountUsageDaily();
+     * usage.forEach(r => console.log(r.date, r.requests, r.cost_usd));
+     * ```
+     */
+    async accountUsageDaily(
+        options: DailyUsageOptions = {},
+    ): Promise<DailyUsageResponse> {
+        const params = new URLSearchParams();
+        if (options.format) params.set("format", options.format);
+        if (options.days) params.set("days", String(options.days));
+        if (options.granularity) params.set("granularity", options.granularity);
+        if (options.period) params.set("period", options.period);
+        if (options.api_key_ids && options.api_key_ids.length > 0)
+            params.set("api_key_ids", options.api_key_ids.join(","));
+
+        const qs = params.toString();
+        const url = `${this.baseUrl}/account/usage/daily${qs ? `?${qs}` : ""}`;
+
+        const response = await fetchWithTimeout(
+            url,
+            { headers: this.getHeaders() },
+            this.textTimeout,
+        );
+
+        if (!response.ok) await this.handleErrorResponse(response);
+        return response.json() as Promise<DailyUsageResponse>;
+    }
+
+    /**
+     * Validate API key and get key information
+     *
+     * @example
+     * ```ts
+     * const keyInfo = await pollinations.validateKey();
+     * console.log(keyInfo.valid, keyInfo.type, keyInfo.permissions);
+     * ```
+     */
+    async validateKey(): Promise<KeyInfo> {
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/account/key`,
+            { headers: this.getHeaders() },
+            this.textTimeout,
+        );
+
+        if (!response.ok) await this.handleErrorResponse(response);
+        return response.json() as Promise<KeyInfo>;
+    }
+
+    /**
+     * Get usage history for the API key used by this client.
+     *
+     * @example
+     * ```ts
+     * const { usage } = await pollinations.accountKeyUsage({ limit: 50 });
+     * usage.forEach(r => console.log(r.model, r.cost_usd));
+     * ```
+     */
+    async accountKeyUsage(
+        options: KeyUsageOptions = {},
+    ): Promise<UsageResponse> {
+        const params = new URLSearchParams();
+        if (options.days) params.set("days", String(options.days));
+        if (options.limit) params.set("limit", String(options.limit));
+        if (options.before) params.set("before", options.before);
+        if (options.granularity) params.set("granularity", options.granularity);
+        if (options.period) params.set("period", options.period);
+
+        const qs = params.toString();
+        const url = `${this.baseUrl}/account/key/usage${qs ? `?${qs}` : ""}`;
+
+        const response = await fetchWithTimeout(
+            url,
+            { headers: this.getHeaders() },
+            this.textTimeout,
+        );
+
+        if (!response.ok) await this.handleErrorResponse(response);
+        return response.json() as Promise<UsageResponse>;
+    }
+
+    // ============================================================================
+    // Account Keys (CRUD)
+    // ============================================================================
+
+    /**
+     * List all API keys on the authenticated account.
+     *
+     * @example
+     * ```ts
+     * const keys = await pollinations.listKeys();
+     * keys.forEach(k => console.log(k.name, k.prefix, k.enabled));
+     * ```
+     */
+    async listKeys(options: RequestOptions = {}): Promise<AccountKey[]> {
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/account/keys`,
+            { headers: this.getHeaders() },
+            this.textTimeout,
+            options.signal,
+        );
+
+        if (!response.ok) await this.handleErrorResponse(response);
+        const body = (await response.json()) as { data?: AccountKey[] };
+        return body.data || [];
+    }
+
+    /**
+     * Create a new API key. The returned `key` field is ONLY shown once
+     * at creation — store it immediately.
+     *
+     * @example
+     * ```ts
+     * const created = await pollinations.createKey({
+     *   name: 'my-bot',
+     *   type: 'secret',
+     *   pollenBudget: 1000,
+     *   accountPermissions: ['usage'],
+     * });
+     * console.log('Save this now — it will not be shown again:', created.key);
+     * ```
+     */
+    async createKey(
+        options: CreateKeyOptions & RequestOptions,
+    ): Promise<CreatedKey> {
+        if (!options.name) {
+            throw new PollinationsError(
+                "name is required when creating a key",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+
+        const body: Record<string, unknown> = {
+            name: options.name,
+            type: options.type || "secret",
+        };
+        if (options.expiresIn !== undefined) body.expiresIn = options.expiresIn;
+        if (options.allowedModels) body.allowedModels = options.allowedModels;
+        if (options.pollenBudget !== undefined)
+            body.pollenBudget = options.pollenBudget;
+        if (options.accountPermissions)
+            body.accountPermissions = options.accountPermissions;
+        if (options.redirectUris) body.redirectUris = options.redirectUris;
+        if (options.earningsEnabled !== undefined)
+            body.earningsEnabled = options.earningsEnabled;
+
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/account/keys`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify(body),
+            },
+            this.textTimeout,
+            options.signal,
+        );
+
+        if (!response.ok) await this.handleErrorResponse(response);
+        return response.json() as Promise<CreatedKey>;
+    }
+
+    /**
+     * Revoke an API key by ID. The id comes from `listKeys()`.
+     *
+     * @example
+     * ```ts
+     * await pollinations.revokeKey('key_abc123');
+     * ```
+     */
+    async revokeKey(id: string, options: RequestOptions = {}): Promise<void> {
+        if (!id || typeof id !== "string") {
+            throw new PollinationsError(
+                "Key id is required",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/account/keys/${encodeURIComponent(id)}`,
+            {
+                method: "DELETE",
+                headers: this.getHeaders(),
+            },
+            this.textTimeout,
+            options.signal,
+        );
+
+        if (!response.ok) await this.handleErrorResponse(response);
     }
 }

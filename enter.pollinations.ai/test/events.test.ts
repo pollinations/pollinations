@@ -1,142 +1,58 @@
 import { env } from "cloudflare:test";
-import { test } from "./fixtures.ts";
-import { sendToTinybird, flattenBalances } from "@/events.ts";
-import { exponentialBackoffDelay } from "@/util.ts";
+import {
+    getTinybirdDatasourceIngestUrl,
+    sendErrorEventToTinybird,
+} from "@shared/events.ts";
+import { usageToEventParams } from "@shared/schemas/generation-event.ts";
+import { exponentialBackoffDelay } from "@shared/util.ts";
 import { expect } from "vitest";
+import { test } from "./fixtures.ts";
 
-test("sendToTinybird sends event to Tinybird API", async ({ log, mocks }) => {
-    await mocks.enable("tinybird");
-
-    const event = {
-        id: "test-event-id",
-        requestId: "test-request-id",
-        requestPath: "/api/generate/openai",
-        startTime: new Date(),
-        endTime: new Date(Date.now() + 100),
-        responseTime: 100,
-        responseStatus: 200,
-        environment: "test",
-        eventType: "generate.text" as const,
-        userId: "test-user-id",
-        userTier: "seed",
-        isBilledUsage: true,
-        modelRequested: "openai",
-        resolvedModelRequested: "openai",
-        modelUsed: "gpt-4o-mini",
-        modelProviderUsed: "azure-openai",
-        tokenPricePromptText: 0,
-        tokenPricePromptCached: 0,
-        tokenPricePromptAudio: 0,
-        tokenPricePromptImage: 0,
-        tokenPriceCompletionText: 0,
-        tokenPriceCompletionReasoning: 0,
-        tokenPriceCompletionAudio: 0,
-        tokenPriceCompletionImage: 0,
-        tokenPriceCompletionVideoSeconds: 0,
-        tokenPriceCompletionVideoTokens: 0,
-        tokenCountPromptText: 100,
-        tokenCountPromptCached: 0,
-        tokenCountPromptAudio: 0,
-        tokenCountPromptImage: 0,
-        tokenCountCompletionText: 50,
-        tokenCountCompletionReasoning: 0,
-        tokenCountCompletionAudio: 0,
-        tokenCountCompletionImage: 0,
-        tokenCountCompletionVideoSeconds: 0,
-        tokenCountCompletionVideoTokens: 0,
-        totalCost: 0.001,
-        totalPrice: 0.002,
-    };
-
-    await sendToTinybird(
-        event,
-        env.TINYBIRD_INGEST_URL,
-        env.TINYBIRD_INGEST_TOKEN,
-        log,
-    );
-
-    expect(mocks.tinybird.state.events).toHaveLength(1);
-    expect(mocks.tinybird.state.events[0].id).toBe("test-event-id");
-});
-
-test("sendToTinybird handles API errors gracefully", async ({ log, mocks }) => {
-    await mocks.enable("tinybird");
-
-    const event = {
-        id: "simulate_tinybird_error:test-event-id",
-        requestId: "test-request-id",
-        requestPath: "/api/generate/openai",
-        startTime: new Date(),
-        endTime: new Date(Date.now() + 100),
-        responseTime: 100,
-        responseStatus: 200,
-        environment: "test",
-        eventType: "generate.text" as const,
-        userId: "test-user-id",
-        userTier: "seed",
-        isBilledUsage: true,
-        modelRequested: "openai",
-        resolvedModelRequested: "openai",
-        modelUsed: "gpt-4o-mini",
-        modelProviderUsed: "azure-openai",
-        tokenPricePromptText: 0,
-        tokenPricePromptCached: 0,
-        tokenPricePromptAudio: 0,
-        tokenPricePromptImage: 0,
-        tokenPriceCompletionText: 0,
-        tokenPriceCompletionReasoning: 0,
-        tokenPriceCompletionAudio: 0,
-        tokenPriceCompletionImage: 0,
-        tokenPriceCompletionVideoSeconds: 0,
-        tokenPriceCompletionVideoTokens: 0,
-        tokenCountPromptText: 100,
-        tokenCountPromptCached: 0,
-        tokenCountPromptAudio: 0,
-        tokenCountPromptImage: 0,
-        tokenCountCompletionText: 50,
-        tokenCountCompletionReasoning: 0,
-        tokenCountCompletionAudio: 0,
-        tokenCountCompletionImage: 0,
-        tokenCountCompletionVideoSeconds: 0,
-        tokenCountCompletionVideoTokens: 0,
-        totalCost: 0.001,
-        totalPrice: 0.002,
-    };
-
-    // Should not throw - fire-and-forget with error logging
-    await sendToTinybird(
-        event,
-        env.TINYBIRD_INGEST_URL,
-        env.TINYBIRD_INGEST_TOKEN,
-        log,
-    );
-
-    // Event should not be in the mock state due to simulated error
-    expect(mocks.tinybird.state.events).toHaveLength(0);
-});
-
-test("flattenBalances converts meter slugs to balance keys", () => {
-    const balances = {
-        "v1:meter:tier": 100,
-        "v1:meter:pack": 50,
-    };
-
-    const flattened = flattenBalances(balances);
-
-    expect(flattened).toEqual({
-        pollenTierBalance: 100,
-        pollenPackBalance: 50,
+test("usageToEventParams preserves fractional seconds for video and audio durations", () => {
+    // LTX-2 produces durations of the form N + 1/24 (8n+1 frames at 24fps);
+    // ElevenLabs Music / Whisper-style STT produce non-integer second counts.
+    const params = usageToEventParams({
+        completionVideoSeconds: 5.041666666666667,
+        promptAudioSeconds: 12.5,
+        completionAudioSeconds: 7.25,
     });
+
+    expect(params.tokenCountCompletionVideoSeconds).toBe(5.041666666666667);
+    expect(params.tokenCountPromptAudioSeconds).toBe(12.5);
+    expect(params.tokenCountCompletionAudioSeconds).toBe(7.25);
 });
 
-test("flattenBalances handles null balances", () => {
-    const flattened = flattenBalances(null);
-    expect(flattened).toEqual({});
-});
+test("sendErrorEventToTinybird sends structured error events", async ({
+    log,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
 
-test("flattenBalances handles empty balances", () => {
-    const flattened = flattenBalances({});
-    expect(flattened).toEqual({});
+    await sendErrorEventToTinybird(
+        {
+            timestamp: new Date().toISOString(),
+            kind: "server_error",
+            severity: "error",
+            request_id: "req_123",
+            route_path: "/image/test",
+            method: "POST",
+            status: 502,
+            error_code: "BAD_GATEWAY",
+            error_class: "UpstreamError",
+            message: "Backend timeout",
+            stack: "Error: Backend timeout",
+        },
+        getTinybirdDatasourceIngestUrl(env.TINYBIRD_INGEST_URL, "error_event"),
+        env.TINYBIRD_INGEST_TOKEN,
+        log,
+    );
+
+    expect(mocks.tinybird.state.errorEvents).toHaveLength(1);
+    expect(mocks.tinybird.state.errorEvents[0]).toMatchObject({
+        route_path: "/image/test",
+        status: 502,
+        kind: "server_error",
+    });
 });
 
 test("Exponential backoff delay", async () => {

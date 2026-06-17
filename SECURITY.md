@@ -34,7 +34,7 @@ This policy covers everything in the [`pollinations/pollinations`](https://githu
 
 - The main `pollinations.ai` website and React frontend
 - Backend and CDN/caching systems for image and text generation
-- Model Context Protocol (MCP) server, bots, and direct integration hooks
+- Model Context Protocol (MCP), Software Development Kit (SDK), Pollinations-CLI & our community bots and server.
 
 _If you discover something in third-party code, let their maintainers know unless it’s a problem because of our integration._
 
@@ -75,9 +75,9 @@ for general questions, hop into a github discussion—but **never** share sensit
 
 ---
 
-## 🙏 thanks
+## 🙏 Thanks
 
-we can’t say this enough: **thank you** for helping make pollinations.ai a safer hub for creative ai. every tip, every report, every patch makes a real difference!
+We can’t say this enough: **thank you** for helping make pollinations.ai a safer hub for creative ai. every tip, every report, every patch makes a real difference!
 
 — with gratitude,  
 the pollinations.ai maintainers & community team
@@ -89,4 +89,4 @@ Always use private contact (email/Discord) as public posts may go unnoticed!
 
 ---
 
-_(Last updated: 2025-08-29)_
+_(Last updated: 2026-04-23)_

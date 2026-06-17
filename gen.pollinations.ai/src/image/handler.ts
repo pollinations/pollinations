@@ -1,8 +1,8 @@
+import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
-import { remapUpstreamStatus, UpstreamError } from "@/error.ts";
 import {
     getRegisteredServers,
     isValidType,
@@ -23,10 +23,8 @@ import {
 } from "./createAndReturnVideos.ts";
 import { getImageEnv, syncImageEnv } from "./env.ts";
 import { HttpError } from "./httpError.ts";
-import { normalizeAndTranslatePrompt } from "./normalizeAndTranslatePrompt.ts";
 import { type ImageParams, ImageParamsSchema } from "./params.ts";
-import { createProgressTracker } from "./progressBar.ts";
-import { sleep } from "./util.ts";
+import { sanitizeString, sleep } from "./util.ts";
 import {
     CONTENT_POLICY_ERROR_CODE,
     CONTENT_POLICY_STATUS,
@@ -71,14 +69,9 @@ export function syncImageEnvironment(env: CloudflareBindings): void {
 
 function createAuthResult(c: ImageContext): AuthResult {
     return {
-        authenticated: true,
         tokenAuth: Boolean(c.var.auth?.apiKey),
-        referrerAuth: false,
-        bypass: false,
-        reason: "GEN_GATEWAY",
         userId: c.var.auth?.user?.id || null,
         username: c.var.auth?.user?.githubUsername || null,
-        debugInfo: {},
     };
 }
 
@@ -359,33 +352,19 @@ async function generateImageResult(
     originalPrompt: string,
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
-    const requestId = c.get("requestId");
-    const progress = createProgressTracker().startRequest(requestId);
-
-    progress.updateBar(requestId, 20, "Prompt", "Normalizing...");
-    const { prompt } = await normalizeAndTranslatePrompt(
-        originalPrompt,
-        safeParams,
-    );
-    progress.updateBar(requestId, 30, "Prompt", "Normalized");
-    progress.setProcessing(requestId);
+    const prompt = sanitizeString(String(originalPrompt));
 
     const result = await createAndReturnImageCached(
         prompt,
         safeParams,
         originalPrompt,
-        progress,
-        requestId,
         createAuthResult(c),
     );
 
     if (result.isChild && result.isMature) {
-        progress.updateBar(requestId, 85, "Safety", "Additional review...");
         await sleep(5000);
     }
 
-    progress.completeBar(requestId, "Image generation complete");
-    progress.stop();
     return result;
 }
 
@@ -394,18 +373,7 @@ async function generateVideoResult(
     originalPrompt: string,
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> {
-    const requestId = c.get("requestId");
-    const progress = createProgressTracker().startRequest(requestId);
-    progress.setProcessing(requestId);
-    const result = await createAndReturnVideo(
-        originalPrompt,
-        safeParams,
-        progress,
-        requestId,
-    );
-    progress.completeBar(requestId, "Video generation complete");
-    progress.stop();
-    return result;
+    return createAndReturnVideo(originalPrompt, safeParams, c.get("requestId"));
 }
 
 export async function generateImageOrVideoResponse(

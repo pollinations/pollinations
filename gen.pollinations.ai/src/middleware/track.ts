@@ -1,4 +1,5 @@
 import { getLogger } from "@logtape/logtape";
+import type { ApiKeyType } from "@shared/auth/api-key-creation.ts";
 import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import {
@@ -12,6 +13,13 @@ import {
     truncateIpToSubnet,
 } from "@shared/client-ip.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
+import type { ErrorVariables } from "@shared/error.ts";
+import {
+    getDefaultErrorMessage,
+    getErrorCode,
+    UpstreamError,
+} from "@shared/error.ts";
+import { sendToTinybird } from "@shared/events.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import {
@@ -25,14 +33,14 @@ import {
     type UsagePrice,
 } from "@shared/registry/registry.ts";
 import {
+    FALLBACK_TARGET_HEADER,
     openaiUsageToUsage,
     parseUsageHeaders,
 } from "@shared/registry/usage-headers.ts";
 import type {
-    ApiKeyType,
     EventType,
     GenerationEventContentFilterParams,
-    InsertGenerationEvent,
+    TinybirdEvent as InsertGenerationEvent,
 } from "@shared/schemas/generation-event.ts";
 import {
     contentFilterResultsToEventParams,
@@ -46,6 +54,7 @@ import {
     ContentFilterResultSchema,
     ContentFilterSeveritySchema,
 } from "@shared/schemas/openai.ts";
+import { getRoutePath, removeUnset } from "@shared/util.ts";
 import { eq } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { drizzle } from "drizzle-orm/d1";
@@ -54,18 +63,11 @@ import type { HonoRequest } from "hono";
 import { createMiddleware } from "hono/factory";
 import { z } from "zod";
 import { mergeContentFilterResults } from "@/content-filter.ts";
-import type { ErrorVariables } from "@/env.ts";
-import {
-    getDefaultErrorMessage,
-    getErrorCode,
-    UpstreamError,
-} from "@/error.ts";
-import { sendToTinybird } from "@/events.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
-import { generateRandomId, getRoutePath, removeUnset } from "@/util.ts";
+import { generateRandomId, parseBooleanLike } from "@/util.ts";
 
 type ModelVariables = {
     model: {
@@ -93,6 +95,7 @@ type ResponseTrackingData = {
     responseOk: boolean;
     cacheData: CacheData;
     isBilledUsage: boolean;
+    fallbackUsed: boolean;
     modelUsed?: string;
     usage?: Usage;
     cost?: UsageCost;
@@ -390,6 +393,7 @@ async function trackResponse(
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
     const cacheInfo = extractCacheHeaders(response);
+    const fallbackUsed = parseFallbackUsed(response);
     const notBilled = (
         extra?: Partial<ResponseTrackingData>,
     ): ResponseTrackingData => ({
@@ -397,6 +401,7 @@ async function trackResponse(
         responseStatus: response.status,
         cacheData: cacheInfo,
         isBilledUsage: false,
+        fallbackUsed,
         ...extra,
     });
 
@@ -445,12 +450,23 @@ async function trackResponse(
         responseStatus: response.status,
         cacheData: cacheInfo,
         isBilledUsage: true,
+        fallbackUsed,
         cost,
         price,
         modelUsed: modelUsage.model,
         usage: modelUsage.usage,
         contentFilterResults,
     };
+}
+
+// Portkey reports the served target as "config.targets[N]" via the
+// x-fallback-target header (re-emitted from x-portkey-last-used-option-index).
+// A fallback fired whenever the served target is not the primary (index 0).
+function parseFallbackUsed(response: Response): boolean {
+    const target = response.headers.get(FALLBACK_TARGET_HEADER);
+    if (!target) return false;
+    const match = target.match(/\[(\d+)\]/);
+    return match ? Number(match[1]) > 0 : false;
 }
 
 // Resolve the per-event content-type expectation for billing. Returns null
@@ -602,6 +618,7 @@ function createTrackingEvent({
         resolvedModelRequested: requestTracking.resolvedModelRequested,
         modelUsed: responseTracking.modelUsed,
         modelProviderUsed: requestTracking.modelProvider,
+        fallbackUsed: responseTracking.fallbackUsed,
 
         isBilledUsage: responseTracking.isBilledUsage,
 
@@ -622,8 +639,8 @@ function createTrackingEvent({
 
 async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
     if (request.method === "GET") {
-        const stream = request.param("stream");
-        return z.safeParse(z.coerce.boolean(), stream).data || false;
+        // "stream" is a query param, not a route param.
+        return parseBooleanLike(request.query("stream")) ?? false;
     }
     if (request.method === "POST") {
         const contentType = request.header("content-type") || "";
@@ -638,7 +655,7 @@ async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
                     | undefined
             )?.stream;
             if (stream !== undefined) {
-                return z.safeParse(z.coerce.boolean(), stream).data || false;
+                return parseBooleanLike(stream) ?? false;
             }
         } catch {
             // Fall back to parsing a cloned raw body for routes without JSON validation.
@@ -647,7 +664,7 @@ async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
             const stream = (
                 (await request.raw.clone().json()) as { stream?: unknown }
             ).stream;
-            return z.safeParse(z.coerce.boolean(), stream).data || false;
+            return parseBooleanLike(stream) ?? false;
         } catch {
             return false;
         }
@@ -821,6 +838,12 @@ function safeUrl(url: string): URL | null {
     }
 }
 
+// Boolean moderation flags arrive as header strings ("true"/"false" via
+// String(value) in contentFilterResultsToHeaders), so parse them back here.
+const HeaderBooleanSchema = z
+    .enum(["true", "false"])
+    .transform((value) => value === "true");
+
 // biome-ignore format: custom formatting
 const ContentFilterResultHeadersSchema = z
     .object({
@@ -833,7 +856,7 @@ const ContentFilterResultHeadersSchema = z
         "x-moderation-prompt-violence-severity": 
             ContentFilterSeveritySchema.optional().catch(undefined),
         "x-moderation-prompt-jailbreak-detected": 
-            z.boolean().optional().catch(undefined),
+            HeaderBooleanSchema.optional().catch(undefined),
         "x-moderation-completion-hate-severity": 
             ContentFilterSeveritySchema.optional().catch(undefined),
         "x-moderation-completion-self-harm-severity":
@@ -843,9 +866,9 @@ const ContentFilterResultHeadersSchema = z
         "x-moderation-completion-violence-severity":
             ContentFilterSeveritySchema.optional().catch(undefined),
         "x-moderation-completion-protected-material-text-detected": 
-            z.boolean().optional().catch(undefined),
+            HeaderBooleanSchema.optional().catch(undefined),
         "x-moderation-completion-protected-material-code-detected": 
-            z.boolean().optional().catch(undefined),
+            HeaderBooleanSchema.optional().catch(undefined),
     })
     .transform((headers) => removeUnset({
         moderationPromptHateSeverity:

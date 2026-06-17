@@ -289,7 +289,6 @@ Supports streaming, function calling, vision (image input), structured outputs, 
 | `system_fingerprint` | `string` \| `null` | — |
 | `object` * | `"chat.completion"` | — |
 | `usage` | [`CompletionUsage`](#completionusage) | — |
-| `user_tier` | `"anonymous"` \| `"seed"` \| `"flower"` \| `"nectar"` | — |
 | `citations` | `string`[] | — |
 
 <sub>`*` = required field</sub>
@@ -378,9 +377,9 @@ This is a simplified alternative to the OpenAI-compatible `/v1/chat/completions`
 | `model` | `query` | `string` | Text model to use. See /v1/models or /text/models for the full list of available models. · default: `"openai"` |
 | `seed` | `query` | `integer` | Seed for reproducible results. Use -1 for random. · default: `0` · min: `-1` |
 | `system` | `query` | `string` | System prompt to set the model's behavior and context. Acts as initial instructions before the user prompt. |
-| `json` | `query` | `boolean` | When true, the model returns valid JSON. Useful for structured data extraction. · default: `false` |
+| `json` | `query` | `boolean` | When true, the model returns valid JSON. Useful for structured data extraction. |
 | `temperature` | `query` | `number` | Controls randomness. Lower values (e.g. 0.2) produce more focused output, higher values (e.g. 1.5) produce more creative output. Range: 0.0 to 2.0. |
-| `stream` | `query` | `boolean` | Stream the response as it's generated, using Server-Sent Events (SSE). Each chunk contains partial text. · default: `false` |
+| `stream` | `query` | `boolean` | Stream the response as it's generated, using Server-Sent Events (SSE). Each chunk contains partial text. |
 | `safe` | `query` | `string` \| `boolean` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
 
 <sub>`*` = required parameter</sub>
@@ -400,7 +399,7 @@ curl "https://gen.pollinations.ai/text/Write%20a%20haiku%20about%20coding?model=
 
 Generate an image from a text prompt. Returns JPEG or PNG.
 
-**Available models:** `kontext`, `nanobanana`, `nanobanana-2`, `nanobanana-pro`, `seedream5`, `seedream`, `seedream-pro`, `gptimage`, `gptimage-large`, `gpt-image-2`, `flux`, `zimage`, `wan-image`, `wan-image-pro`, `qwen-image`, `grok-imagine`, `grok-imagine-pro`, `klein`, `p-image`, `p-image-edit`, `nova-canvas`. `zimage` is the default.
+**Available models:** `kontext`, `nanobanana`, `nanobanana-2`, `nanobanana-pro`, `seedream5`, `seedream`, `seedream-pro`, `ideogram-v4-turbo`, `ideogram-v4-balanced`, `ideogram-v4-quality`, `gptimage`, `gptimage-large`, `gpt-image-2`, `flux`, `zimage`, `wan-image`, `wan-image-pro`, `qwen-image`, `grok-imagine`, `grok-imagine-pro`, `klein`, `p-image`, `p-image-edit`, `nova-canvas`. `zimage` is the default.
 
 Browse all available models and their capabilities at [`/image/models`](https://gen.pollinations.ai/image/models).
 
@@ -499,7 +498,7 @@ curl -X POST "https://gen.pollinations.ai/v1/images/edits" \
 
 Generate a video from a text prompt. Returns MP4.
 
-**Available models:** `veo`, `seedance-pro`, `seedance-2.0`, `wan`, `wan-fast`, `wan-pro`, `grok-video-pro`, `ltx-2`, `p-video-720p`, `p-video-1080p`, `nova-reel`.
+**Available models:** `veo`, `seedance-pro`, `seedance-2.0`, `wan`, `wan-fast`, `wan-pro`, `wan-pro-1080p`, `grok-video-pro`, `ltx-2`, `p-video-720p`, `p-video-1080p`, `nova-reel`.
 
 Use `duration` to set video length, `aspectRatio` for orientation, and `audio` where the selected model supports audio output.
 

@@ -34,12 +34,15 @@ CONFIG=$(node -e "
 OUTPUT_DIR=$(echo "$CONFIG" | node -e "const c=JSON.parse(require('fs').readFileSync(0,'utf8')); console.log(c.outputDir || 'dist')")
 BUILD_CMD=$(echo "$CONFIG" | node -e "const c=JSON.parse(require('fs').readFileSync(0,'utf8')); console.log(c.buildCommand || '')")
 SUBDOMAIN=$(echo "$CONFIG" | node -e "const c=JSON.parse(require('fs').readFileSync(0,'utf8')); console.log(c.subdomain || process.argv[1])" "$APP_NAME")
+DEPLOY_TARGET=$(echo "$CONFIG" | node -e "const c=JSON.parse(require('fs').readFileSync(0,'utf8')); console.log(c.deployTarget || 'pages')")
+WORKER_ENTRYPOINT=$(echo "$CONFIG" | node -e "const c=JSON.parse(require('fs').readFileSync(0,'utf8')); console.log(c.workerEntrypoint || 'worker.js')")
 PROJECT_NAME="apps-$SUBDOMAIN"
 
 echo "📦 App: $APP_NAME"
 echo "📋 Project: $PROJECT_NAME"
 echo "🌐 Subdomain: $SUBDOMAIN"
 echo "📁 Output: $OUTPUT_DIR"
+echo "🎯 Target: $DEPLOY_TARGET"
 
 # Apps ship committed brand assets (favicons/icons/OG/manifest). After an app
 # migrates to the design-system logo, regenerate them via tools/icons.
@@ -64,20 +67,29 @@ if [ -n "$BUILD_CMD" ] && [ "$BUILD_CMD" != "null" ]; then
     eval "$BUILD_CMD"
 fi
 
-# Step 4: Provision the Myceli origin before upload
-echo ""
-echo "☁️ Provisioning Myceli origin..."
-node "$SCRIPT_DIR/deploy-app.js" "$APP_NAME" --phase=origin
+if [ "$DEPLOY_TARGET" = "worker" ]; then
+    # Worker-backed apps define their Myceli origin route in wrangler.toml.
+    echo ""
+    echo "🚀 Deploying Cloudflare Worker..."
+    CLOUDFLARE_API_TOKEN="${CLOUDFLARE_API_TOKEN_WORKER:-$CLOUDFLARE_API_TOKEN}" \
+        CLOUDFLARE_ACCOUNT_ID="${CLOUDFLARE_ACCOUNT_ID_WORKER:-$CLOUDFLARE_ACCOUNT_ID}" \
+        npx wrangler deploy "$WORKER_ENTRYPOINT"
+else
+    # Step 4: Provision the Myceli origin before upload
+    echo ""
+    echo "☁️ Provisioning Myceli origin..."
+    node "$SCRIPT_DIR/deploy-app.js" "$APP_NAME" --phase=origin
 
-# Step 5: Upload content to Cloudflare Pages
-echo ""
-echo "🚀 Uploading to Cloudflare Pages..."
-npx wrangler pages deploy "$APP_PATH/$OUTPUT_DIR" \
-    --project-name="$PROJECT_NAME" \
-    --branch=production \
-    --commit-dirty=true
+    # Step 5: Upload content to Cloudflare Pages
+    echo ""
+    echo "🚀 Uploading to Cloudflare Pages..."
+    npx wrangler pages deploy "$APP_PATH/$OUTPUT_DIR" \
+        --project-name="$PROJECT_NAME" \
+        --branch=production \
+        --commit-dirty=true
+fi
 
-# Step 6: Gate on the Myceli origin before public cutover
+# Gate on the Myceli origin before public cutover
 echo ""
 echo "⏳ Waiting for https://$SUBDOMAIN.myceli.ai to serve..."
 for i in $(seq 1 30); do

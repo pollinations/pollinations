@@ -6,6 +6,7 @@ import {
     useRef,
     useState,
 } from "react";
+import { pollinationsErrorFromResponse } from "../error-response.js";
 import {
     fetchModelCatalog,
     type ModelCatalog,
@@ -86,56 +87,6 @@ function accountUrl(
 ): string {
     const qs = params?.toString();
     return `${apiBaseUrl.replace(/\/+$/, "")}${path}${qs ? `?${qs}` : ""}`;
-}
-
-async function pollinationsErrorFromResponse(
-    response: Response,
-): Promise<PollinationsError> {
-    let payload: unknown;
-    try {
-        payload = await response.json();
-    } catch {
-        payload = null;
-    }
-
-    const record =
-        payload && typeof payload === "object"
-            ? (payload as Record<string, unknown>)
-            : {};
-    const nested =
-        record.error && typeof record.error === "object"
-            ? (record.error as Record<string, unknown>)
-            : record;
-
-    const message =
-        typeof nested.message === "string"
-            ? nested.message
-            : response.statusText || `Request failed with ${response.status}`;
-    const code =
-        typeof nested.code === "string"
-            ? nested.code
-            : response.status === 401
-              ? "UNAUTHORIZED"
-              : "HTTP_ERROR";
-    const details =
-        nested.details && typeof nested.details === "object"
-            ? (nested.details as Record<string, unknown>)
-            : undefined;
-    const requestId =
-        typeof nested.requestId === "string" ? nested.requestId : undefined;
-    const retryAfterHeader = response.headers.get("retry-after");
-    const retryAfter = retryAfterHeader
-        ? Number.parseInt(retryAfterHeader, 10)
-        : undefined;
-
-    return new PollinationsError(
-        message,
-        code,
-        response.status,
-        details,
-        requestId,
-        Number.isFinite(retryAfter) ? retryAfter : undefined,
-    );
 }
 
 async function fetchAccountJson<T>(

@@ -25,9 +25,6 @@ const POLL_INTERVALS = {
     "60m": 60000, // 1 minute for stable 60m view
     "5m": 15000, // 15 seconds for live 5m view
 };
-const SPARKLINE_POINTS = 20; // Keep the last 20 poll snapshots for sparklines
-const TREND_SAMPLES = 8; // Compare against the oldest retained snapshot
-const MIN_TREND_SAMPLES = 4; // Need at least 4 snapshots before showing trends
 
 function resolveDisplayType(model) {
     if (model.category) return model.category;
@@ -58,39 +55,6 @@ function normalizeCatalogModel(model) {
     };
 }
 
-// Helper to extract metrics from stats
-function extractMetrics(stats) {
-    if (!stats) return null;
-    const total = stats.total_requests || 0;
-    const err5xx = stats.errors_5xx || 0;
-    return {
-        p95: stats.latency_p95_ms || 0,
-        err5xxPct: total > 0 ? (err5xx / total) * 100 : 0,
-        volume: total,
-    };
-}
-
-// Compute trend by comparing current metrics to the oldest retained snapshot
-function computeTrend(currentMetrics, samples) {
-    if (!currentMetrics || samples.length < MIN_TREND_SAMPLES) return null;
-
-    const oldest = samples[0]; // Oldest sample (up to 2 min ago)
-
-    const p95Change =
-        oldest.p95 > 0
-            ? ((currentMetrics.p95 - oldest.p95) / oldest.p95) * 100
-            : 0;
-
-    const err5xxChange = currentMetrics.err5xxPct - oldest.err5xxPct;
-
-    const volumeChange =
-        oldest.volume > 0
-            ? ((currentMetrics.volume - oldest.volume) / oldest.volume) * 100
-            : 0;
-
-    return { p95Change, err5xxChange, volumeChange };
-}
-
 export function useModelMonitor(aggregationWindow = "60m") {
     const pollInterval =
         POLL_INTERVALS[aggregationWindow] || POLL_INTERVALS["60m"];
@@ -103,10 +67,6 @@ export function useModelMonitor(aggregationWindow = "60m") {
     });
     const tinybirdConfigured = !!TINYBIRD_PUBLIC_READ_TOKEN;
     const intervalRef = useRef(null);
-
-    // History for trends and sparklines
-    const historyRef = useRef({}); // { modelKey: { prev: stats, sparkline: [{p95, err5xx, volume}, ...] } }
-    const lastFetchRef = useRef(null); // Track when we last processed data
 
     // Fetch model list from gen.pollinations.ai
     const fetchModels = useCallback(async () => {
@@ -165,57 +125,6 @@ export function useModelMonitor(aggregationWindow = "60m") {
 
     const modelStats = healthStats.filter((s) => s.model !== "undefined");
 
-    // Get history and compute trends for a model
-    const getModelTrend = useCallback((modelKey, stats) => {
-        if (!stats) return { trend: null, sparkline: [] };
-
-        const history = historyRef.current[modelKey] || {
-            samples: [],
-            sparkline: [],
-        };
-
-        // Extract current metrics and compute trend against oldest sample
-        const currentMetrics = extractMetrics(stats);
-        const trend = computeTrend(currentMetrics, history.samples);
-
-        return { trend, sparkline: history.sparkline };
-    }, []);
-
-    // Update history when new data arrives (moved to useEffect to avoid side effects in render)
-    useEffect(() => {
-        if (!lastUpdated || healthStats.length === 0) return;
-
-        // Check if this is new data
-        if (lastFetchRef.current === lastUpdated.getTime()) return;
-        lastFetchRef.current = lastUpdated.getTime();
-
-        const modelStatsForHistory = healthStats.filter(
-            (s) => s.model !== "undefined",
-        );
-
-        modelStatsForHistory.forEach((stats) => {
-            const modelKey = `${stats.event_type?.replace("generate.", "") || "unknown"}-${stats.model}`;
-            const history = historyRef.current[modelKey] || {
-                samples: [],
-                sparkline: [],
-            };
-
-            // Extract metrics for this sample
-            const metrics = extractMetrics(stats);
-
-            // Add to samples (keep the most recent poll snapshots)
-            const samples = [...history.samples, metrics].slice(-TREND_SAMPLES);
-
-            // Update sparkline with new point
-            const sparkline = [...history.sparkline, metrics].slice(
-                -SPARKLINE_POINTS,
-            );
-
-            // Save updated history
-            historyRef.current[modelKey] = { samples, sparkline };
-        });
-    }, [healthStats, lastUpdated]);
-
     const catalogModelsByName = useMemo(
         () =>
             models.reduce((acc, model) => {
@@ -226,25 +135,21 @@ export function useModelMonitor(aggregationWindow = "60m") {
         [models],
     );
 
-    // Merge models with health stats, trends, and sparklines.
+    // Merge models with health stats.
     // Use endpointType (original API endpoint) for Tinybird matching since
     // Tinybird reports e.g. generate.image for video models served from /image/models.
     const mergedModels = models.map((model) => {
         const statsType = model.endpointType || model.type;
-        const modelKey = `${statsType}-${model.name}`;
         const stats =
             modelStats.find(
                 (s) =>
                     s.model === model.name &&
                     s.event_type === `generate.${statsType}`,
             ) ?? null;
-        const { trend, sparkline } = getModelTrend(modelKey, stats);
         return {
             ...model,
             provider: model.provider || stats?.provider,
             stats,
-            trend,
-            sparkline,
         };
     });
 
@@ -259,9 +164,7 @@ export function useModelMonitor(aggregationWindow = "60m") {
     );
     const extraModels = unmatchedStats.map((s) => {
         const statsType = s.event_type?.replace("generate.", "") || "unknown";
-        const modelKey = `${statsType}-${s.model}`;
         const stats = s;
-        const { trend, sparkline } = getModelTrend(modelKey, stats);
         const sameNameMatches = catalogModelsByName[s.model] || [];
 
         let modelMeta;
@@ -300,8 +203,6 @@ export function useModelMonitor(aggregationWindow = "60m") {
         return {
             ...modelMeta,
             stats,
-            trend,
-            sparkline,
         };
     });
 

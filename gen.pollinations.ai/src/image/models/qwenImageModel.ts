@@ -1,196 +1,161 @@
+/**
+ * Alibaba Qwen-Image generation via Replicate.
+ *
+ * Moved off Alibaba DashScope (provider consolidation onto Replicate, which we
+ * already use for Seedream/Seedance). Replicate models:
+ *   - text-to-image → qwen/qwen-image            ($0.025/img)
+ *   - image editing → qwen/qwen-image-edit-plus  ($0.03/img, multi-image)
+ *
+ * We bill a single $0.03/img rate (registry), so the t2i path runs slightly
+ * under cost — acceptable, and avoids under-billing the edit path.
+ */
+
 import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
-import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
-import type { ProgressManager } from "../progressBar.ts";
-import { callDashScopeMultimodalImage } from "../utils/dashScopeImage.ts";
-import { downloadUserImage } from "../utils/imageDownload.ts";
+import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
+import { fetchUpstream } from "../utils/fetchUpstream.ts";
+import { toDataUri } from "../utils/imageDownload.ts";
+import {
+    ReplicateError,
+    runReplicatePrediction,
+} from "../utils/replicateClient.ts";
 
 const logOps = debug("pollinations:qwen-image:ops");
+const logError = debug("pollinations:qwen-image:error");
 
-const GENERATION_MODEL = "qwen-image-plus";
-const EDITING_MODEL = "qwen-image-edit-plus";
+const QWEN_T2I_MODEL = "qwen/qwen-image";
+const QWEN_EDIT_MODEL = "qwen/qwen-image-edit-plus";
 
-// DashScope only allows specific resolutions for qwen-image-plus
-const ALLOWED_SIZES: [number, number][] = [
-    [1664, 928],
-    [1472, 1104],
-    [1328, 1328],
-    [1104, 1472],
-    [928, 1664],
-];
+// qwen/qwen-image text-to-image aspect_ratio enum (verified against live
+// schema). Editing defaults to match_input_image, so no aspect mapping there.
+const QWEN_ASPECT_RATIOS = [
+    "1:1",
+    "16:9",
+    "9:16",
+    "4:3",
+    "3:4",
+    "3:2",
+    "2:3",
+] as const;
+type QwenAspectRatio = (typeof QWEN_ASPECT_RATIOS)[number];
+
+// qwen/qwen-image-edit-plus accepts a multi-image array; cap matches the prior
+// DashScope edit path and registry maxReferenceImages: 3.
+const QWEN_EDIT_MAX_IMAGES = 3;
 
 /**
- * Snap requested dimensions to the nearest allowed DashScope size
+ * Map ImageParams.aspectRatio to Qwen's enum. Supported values pass through;
+ * "adaptive"/"21:9"/"9:21"/unset round to the nearest enum by log-space ratio
+ * (qwen has no 21:9/9:21), preserving the permissive prior DashScope behavior.
  */
-function snapToAllowedSize(width: number, height: number): [number, number] {
-    const ratio = width / height;
-    let best = ALLOWED_SIZES[2]; // default to square
-    let bestDiff = Number.POSITIVE_INFINITY;
-    for (const size of ALLOWED_SIZES) {
-        const diff = Math.abs(size[0] / size[1] - ratio);
-        if (diff < bestDiff) {
-            bestDiff = diff;
-            best = size;
-        }
+function resolveAspectRatio(safeParams: ImageParams): QwenAspectRatio {
+    const requested = safeParams.aspectRatio;
+    if (
+        requested &&
+        requested !== "adaptive" &&
+        (QWEN_ASPECT_RATIOS as readonly string[]).includes(requested)
+    ) {
+        return requested as QwenAspectRatio;
     }
-    return best;
+    return closestRatioLogSpace(
+        safeParams.width || 1024,
+        safeParams.height || 1024,
+        QWEN_ASPECT_RATIOS,
+    );
 }
 
 /**
- * Generates an image using Alibaba DashScope Qwen-Image-Plus (text-to-image)
+ * Generates an image using Alibaba Qwen-Image via Replicate. Routes to the edit
+ * model when reference images are supplied, otherwise text-to-image.
  */
 export async function callQwenImageAPI(
     prompt: string,
     safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
 ): Promise<ImageGenerationResult> {
-    const apiKey = getImageEnv("DASHSCOPE_API_KEY");
-    if (!apiKey) {
-        throw new HttpError(
-            "DASHSCOPE_API_KEY is required for Qwen Image model",
-            500,
-        );
-    }
+    const images = safeParams.image ?? [];
+    const hasImage = images.length > 0;
+    const modelLabel = hasImage ? "Qwen Image Edit" : "Qwen Image";
 
-    const hasImage = safeParams.image?.length > 0;
+    let model: string;
+    let input: Record<string, unknown>;
 
     if (hasImage) {
-        return callQwenImageEditInternal(
-            prompt,
-            safeParams,
-            progress,
-            requestId,
-            apiKey,
+        const imageInput = await Promise.all(
+            images.slice(0, QWEN_EDIT_MAX_IMAGES).map(toDataUri),
         );
+        model = QWEN_EDIT_MODEL;
+        input = {
+            prompt,
+            image: imageInput,
+            output_format: "png",
+            ...(safeParams.seed !== undefined ? { seed: safeParams.seed } : {}),
+        };
+    } else {
+        model = QWEN_T2I_MODEL;
+        input = {
+            prompt,
+            aspect_ratio: resolveAspectRatio(safeParams),
+            output_format: "png",
+            ...(safeParams.seed !== undefined ? { seed: safeParams.seed } : {}),
+        };
     }
 
-    return callQwenImageGenerateInternal(
-        prompt,
-        safeParams,
-        progress,
-        requestId,
-        apiKey,
-    );
-}
+    logOps(`${modelLabel} input:`, {
+        ...input,
+        prompt: prompt.slice(0, 80),
+        image: hasImage ? `[${images.length} data uris]` : undefined,
+    });
 
-/**
- * Text-to-image generation via DashScope
- */
-async function callQwenImageGenerateInternal(
-    prompt: string,
-    safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
-    apiKey: string,
-): Promise<ImageGenerationResult> {
-    logOps("Calling Qwen Image Plus (text-to-image):", prompt);
-    progress.updateBar(
-        requestId,
-        35,
-        "Processing",
-        "Generating image with Qwen Image...",
-    );
-
-    const [w, h] = snapToAllowedSize(
-        safeParams.width || 1024,
-        safeParams.height || 1024,
-    );
-
-    const requestBody = {
-        model: GENERATION_MODEL,
-        input: {
-            messages: [
-                {
-                    role: "user",
-                    content: [{ text: prompt }],
-                },
-            ],
-        },
-        parameters: {
-            size: `${w}*${h}`,
-            n: 1,
-            prompt_extend: true,
-            watermark: false,
-        },
-    };
-
-    return callDashScopeMultimodalImage(
-        apiKey,
-        requestBody,
-        "qwen-image",
-        "Qwen Image",
-        progress,
-        requestId,
-    );
-}
-
-/**
- * Image editing via DashScope (supports 1-3 input images)
- */
-async function callQwenImageEditInternal(
-    prompt: string,
-    safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
-    apiKey: string,
-): Promise<ImageGenerationResult> {
-    const imageUrls = safeParams.image.slice(0, 3);
-
-    logOps(`Calling Qwen Image Edit (${imageUrls.length} image(s)):`, prompt);
-    progress.updateBar(
-        requestId,
-        25,
-        "Processing",
-        "Preparing images for Qwen Image Edit...",
-    );
-
-    // Download and encode images as base64 data URIs
-    const imageContent: Array<{ image: string }> = [];
-    for (const url of imageUrls) {
-        if (!url) continue;
-        const { buffer, mimeType } = await downloadUserImage(url);
-        imageContent.push({
-            image: `data:${mimeType};base64,${buffer.toString("base64")}`,
+    let outputUrls: string[];
+    try {
+        const result = await runReplicatePrediction<typeof input, string[]>({
+            model,
+            input,
         });
+        outputUrls = Array.isArray(result.output) ? result.output : [];
+        logOps(`${modelLabel} prediction succeeded:`, {
+            id: result.id,
+            predict_time: result.predictTimeSeconds,
+            output_count: outputUrls.length,
+        });
+    } catch (err) {
+        logError(`${modelLabel} prediction call failed:`, err);
+        if (err instanceof ReplicateError) {
+            throw new HttpError(
+                `${modelLabel} generation failed: ${err.message}`,
+                err.status ?? 500,
+            );
+        }
+        throw err;
     }
 
-    progress.updateBar(
-        requestId,
-        35,
-        "Processing",
-        "Generating edited image with Qwen...",
+    if (outputUrls.length === 0) {
+        throw new HttpError(`${modelLabel} returned no images`, 500);
+    }
+
+    const imageResponse = await fetchUpstream(outputUrls[0], {
+        errorLabel: `Failed to download ${modelLabel} output image`,
+    });
+    const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+    logOps(
+        `${modelLabel} image downloaded:`,
+        (imageBuffer.length / 1024).toFixed(1),
+        "KB",
     );
 
-    const width = safeParams.width || 1024;
-    const height = safeParams.height || 1024;
-
-    const requestBody = {
-        model: EDITING_MODEL,
-        input: {
-            messages: [
-                {
-                    role: "user",
-                    content: [...imageContent, { text: prompt }],
-                },
-            ],
-        },
-        parameters: {
-            size: `${width}*${height}`,
-            n: 1,
-            prompt_extend: true,
-            watermark: false,
+    return {
+        buffer: imageBuffer,
+        isMature: false,
+        isChild: false,
+        trackingData: {
+            actualModel: hasImage ? "qwen-image-edit" : "qwen-image",
+            // Flat per-image pricing on Replicate; report 1 image token.
+            usage: {
+                completionImageTokens: 1,
+                totalTokenCount: 1,
+            },
         },
     };
-
-    return callDashScopeMultimodalImage(
-        apiKey,
-        requestBody,
-        "qwen-image-edit",
-        "Qwen Image Edit",
-        progress,
-        requestId,
-    );
 }

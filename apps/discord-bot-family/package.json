@@ -2,7 +2,8 @@
   "name": "discord-bot-family",
   "version": "1.0.0",
   "scripts": {
-    "start": "./start-bots.sh",
+    "decrypt-vars": "sops decrypt secrets/env.json --output-type dotenv > .env",
+    "start": "./start-all.sh",
     "start-bot": "ts-node src-functional/cli.ts",
     "build": "tsc"
   },

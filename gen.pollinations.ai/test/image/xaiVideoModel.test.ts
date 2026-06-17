@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { syncImageEnv } from "../../src/image/env.ts";
 import { callXaiVideoAPI } from "../../src/image/models/xaiVideoModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
-import type { ProgressManager } from "../../src/image/progressBar.ts";
 
 const XAI_SUBMIT_URL = "https://api.x.ai/v1/videos/generations";
 const XAI_POLL_URL = "https://api.x.ai/v1/videos/vid-xai-test";
@@ -11,17 +10,6 @@ const VIDEO_URL = "https://video.example.com/xai-output.mp4";
 interface XaiRequest {
     url: string;
     body: Record<string, unknown>;
-}
-
-const asProgress = (progress: ReturnType<typeof makeProgress>) =>
-    progress as unknown as ProgressManager;
-
-function makeProgress() {
-    return {
-        updateBar: vi.fn(),
-        finishBar: vi.fn(),
-        removeBar: vi.fn(),
-    };
 }
 
 // width/height carry params.ts' square default (1024) that fires when the
@@ -86,12 +74,7 @@ async function submitAspectRatio(params: ImageParams): Promise<unknown> {
     const requests: XaiRequest[] = [];
     mockXaiFetch(requests);
 
-    await callXaiVideoAPI(
-        "a calm ocean at sunrise",
-        params,
-        asProgress(makeProgress()),
-        "req-xai-video",
-    );
+    await callXaiVideoAPI("a calm ocean at sunrise", params);
 
     expect(requests).toHaveLength(1);
     expect(requests[0].url).toBe(XAI_SUBMIT_URL);

@@ -134,6 +134,7 @@ def calculate_generation_dimensions(requested_width: int, requested_height: int)
 # Global model instances (initialized in lifespan)
 pipe = None
 heartbeat_task = None
+BACKEND_TOKEN = os.getenv("PLN_GPU_TOKEN")
 
 
 @asynccontextmanager
@@ -142,6 +143,9 @@ async def lifespan(app: FastAPI):
     global pipe, heartbeat_task
     
     logger.info("Starting up TwinFlow-Z-Image-Turbo server...")
+    if not BACKEND_TOKEN:
+        logger.critical("PLN_GPU_TOKEN not configured - refusing to start")
+        raise RuntimeError("PLN_GPU_TOKEN must be configured")
     
     # Load models
     load_model_time = time.time()
@@ -204,12 +208,7 @@ def verify_backend_token(
     
     Requires x-backend-token header validated against PLN_GPU_TOKEN env var.
     """
-    expected_token = os.getenv("PLN_GPU_TOKEN")
-    if not expected_token:
-        logger.error("PLN_GPU_TOKEN not configured - refusing request")
-        raise HTTPException(status_code=500, detail="Backend token is not configured")
-    
-    if x_backend_token != expected_token:
+    if x_backend_token != BACKEND_TOKEN:
         logger.warning("Invalid or missing backend token")
         raise HTTPException(status_code=403, detail="Unauthorized")
     return True

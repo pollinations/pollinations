@@ -38,6 +38,7 @@ class ImageRequest(BaseModel):
 
 pipe = None
 gpu_semaphore = asyncio.Semaphore(1)  # Serialize GPU inference to prevent CUDA hangs
+BACKEND_TOKEN = os.getenv("PLN_GPU_TOKEN")
 
 # Function to get public IP address
 def get_public_ip():
@@ -93,6 +94,9 @@ async def lifespan(app: FastAPI):
     # Startup
     global pipe
     heartbeat_task = None
+    if not BACKEND_TOKEN:
+        logger.critical("PLN_GPU_TOKEN not configured - refusing to start")
+        raise RuntimeError("PLN_GPU_TOKEN must be configured")
     try:
         print("Loading FLUX pipeline...")
         transformer = NunchakuFluxTransformer2dModel.from_pretrained(QUANT_MODEL_PATH)
@@ -199,12 +203,7 @@ def verify_backend_token(
     
     Requires x-backend-token header validated against PLN_GPU_TOKEN env var.
     """
-    expected_token = os.getenv("PLN_GPU_TOKEN")
-    if not expected_token:
-        logger.error("PLN_GPU_TOKEN not configured - refusing request")
-        raise HTTPException(status_code=500, detail="Backend token is not configured")
-    
-    if x_backend_token != expected_token:
+    if x_backend_token != BACKEND_TOKEN:
         logger.warning("Invalid or missing backend token")
         raise HTTPException(status_code=403, detail="Unauthorized")
     return True

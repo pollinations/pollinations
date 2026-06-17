@@ -69,6 +69,9 @@ def heartbeat_loop():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    if not PLN_TOKEN:
+        log.critical("PLN_GPU_TOKEN not configured - refusing to start")
+        raise RuntimeError("PLN_GPU_TOKEN must be configured")
     start_comfyui()
     threading.Thread(target=heartbeat_loop, daemon=True).start()
     log.info("Server ready on port %d", PORT)
@@ -79,12 +82,6 @@ app = FastAPI(title="LTX-2 Video Server", lifespan=lifespan)
 @app.middleware("http")
 async def verify_backend_token(request: Request, call_next):
     if request.url.path not in ("/health",):
-        if not PLN_TOKEN:
-            log.error("PLN_GPU_TOKEN not configured - refusing request")
-            return JSONResponse(
-                status_code=500,
-                content={"error": "Backend token is not configured"},
-            )
         token = request.headers.get("x-backend-token", "")
         if token != PLN_TOKEN:
             return JSONResponse(status_code=403, content={"error": "Unauthorized"})

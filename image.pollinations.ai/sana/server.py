@@ -41,6 +41,7 @@ def clamp_dims(w, h):
     return w, h
 
 pipe = None
+BACKEND_TOKEN = os.getenv("PLN_GPU_TOKEN")
 
 # --- Heartbeat registration ---
 
@@ -89,6 +90,9 @@ async def periodic_heartbeat():
 async def lifespan(app: FastAPI):
     global pipe
     from diffusers import SanaSprintPipeline
+    if not BACKEND_TOKEN:
+        logger.critical("PLN_GPU_TOKEN not configured - refusing to start")
+        raise RuntimeError("PLN_GPU_TOKEN must be configured")
     logger.info("Loading %s...", MODEL_ID)
     t0 = time.time()
     pipe = SanaSprintPipeline.from_pretrained(MODEL_ID, torch_dtype=torch.bfloat16, cache_dir=MODEL_CACHE).to("cuda")
@@ -119,11 +123,7 @@ app = FastAPI(title="SANA-Sprint", lifespan=lifespan)
 def verify_backend_token(
     x_backend_token: str = Header(None, alias="x-backend-token"),
 ):
-    expected_token = os.getenv("PLN_GPU_TOKEN")
-    if not expected_token:
-        logger.error("PLN_GPU_TOKEN not configured - refusing request")
-        raise HTTPException(status_code=500, detail="Backend token is not configured")
-    if x_backend_token != expected_token:
+    if x_backend_token != BACKEND_TOKEN:
         logger.warning("Invalid or missing backend token")
         raise HTTPException(status_code=403, detail="Unauthorized")
     return True

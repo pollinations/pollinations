@@ -127,7 +127,6 @@ const computeGameState = (messages: Message[]): GameState => {
         movesLeft: computeMovesLeft(messages, gameState.swapped),
     };
 
-    console.log("gameState", gameState);
     return gameState;
 };
 

@@ -398,9 +398,13 @@ export default function Index() {
                                     {messages
                                         // remove first message
                                         .slice(1)
-                                        .map((msg, _index) => (
+                                        .map((msg, index) => (
                                             <MessageDisplay
-                                                key={`${msg.persona}-${msg.message.slice(0, 20)}`}
+                                                // Append-only log: index is a
+                                                // stable, unique key. Content
+                                                // slices collide (e.g. repeated
+                                                // "Now arriving at floor…").
+                                                key={`${index}-${msg.persona}`}
                                                 msg={msg}
                                                 gameState={gameState}
                                             />

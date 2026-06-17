@@ -1,0 +1,128 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Sequential test 1771006194471"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "2085",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Fri, 13 Feb 2026 18:10:26 GMT",
+      "etag": "W/\"825-+KSDuy9YLE/VRfM1vnNjHyCfAdU\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "2240",
+      "x-usage-completion-text-tokens": "281",
+      "x-usage-prompt-text-tokens": "255"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "detected": false,
+                "filtered": false
+              },
+              "protected_material_text": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "Do you mean you want a mathematical/sequence analysis of the number 1771006194471? I can run several kinds of checks (primality/factoring, digit-patterns, randomness/run tests, OEIS search, base conversions, checksum tests, etc.). Quick findings to start with:\n\n- It's a 13-digit integer.\n- Sum of digits = 48, so it's divisible by 3. Indeed\n  1771006194471 = 3 × 590335398157\n- Not divisible by 2 or 5 (doesn't end in 0/2/4/6/8 or 0/5). The alternating-sum test for 11 gives 8, so not divisible by 11.\n- Digit frequencies: 0:2, 1:4, 4:2, 6:1, 7:3, 9:1 (other digits 2,3,5,8 absent).\n- Short repeats present: \"77\", \"00\", \"44\" (longest immediate repeat length = 2).\n\nWhat would you like next — try to factor the leftover 590,335,398,157, run a Miller–Rabin primality check, convert to binary/hex, search OEIS, or run randomness/run tests on the digit sequence?",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1771006194,
+        "id": "pllns_2f78ffe208c4b8edeadb6f75722353ad",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 2521,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 2240,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 255,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 2776
+        }
+      }
+    }
+  }
+}

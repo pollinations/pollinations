@@ -1,5 +1,6 @@
 import {
     MODEL_CATEGORIES,
+    type ModelCapability,
     type ModelCategory,
     type ModelInfo,
     PollinationsError,
@@ -23,6 +24,7 @@ export interface ModelCatalogItem {
     videoCapabilities: string[];
     maxReferenceImages?: number;
     maxReferenceVideos?: number;
+    capabilities: ModelCapability[];
     voices: string[];
     paidOnly: boolean;
     tools: boolean;
@@ -59,13 +61,9 @@ export function pricingEntries(
         .map(([key, value]) => [humanizePricingKey(key), value]);
 }
 
-function isModelCategory(value: unknown): value is ModelCategory {
-    return MODEL_CATEGORIES.includes(value as ModelCategory);
-}
-
 function normalizeModel(model: ModelInfo): ModelCatalogItem | null {
     const id = model.id ?? model.name;
-    if (!id || !model.title || !isModelCategory(model.category)) return null;
+    if (!id || !model.title || !model.category) return null;
 
     return {
         id,
@@ -80,6 +78,7 @@ function normalizeModel(model: ModelInfo): ModelCatalogItem | null {
         videoCapabilities: model.video_capabilities ?? [],
         maxReferenceImages: model.max_reference_images,
         maxReferenceVideos: model.max_reference_videos,
+        capabilities: model.capabilities ?? [],
         voices: model.voices ?? [],
         paidOnly: model.paid_only ?? false,
         tools: model.tools ?? false,
@@ -89,11 +88,15 @@ function normalizeModel(model: ModelInfo): ModelCatalogItem | null {
     };
 }
 
+function categoryRank(category: ModelCategory): number {
+    const idx = MODEL_CATEGORIES.indexOf(category);
+    // Categories the SDK doesn't know yet sort after the known ones.
+    return idx === -1 ? MODEL_CATEGORIES.length : idx;
+}
+
 function sortModels(models: ModelCatalogItem[]): ModelCatalogItem[] {
     return [...models].sort((a, b) => {
-        const delta =
-            MODEL_CATEGORIES.indexOf(a.category) -
-            MODEL_CATEGORIES.indexOf(b.category);
+        const delta = categoryRank(a.category) - categoryRank(b.category);
         if (delta !== 0) return delta;
         return a.id.localeCompare(b.id);
     });

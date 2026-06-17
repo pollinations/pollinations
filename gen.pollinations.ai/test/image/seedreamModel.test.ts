@@ -15,10 +15,6 @@ import {
     callSeedreamProAPI,
 } from "../../src/image/models/seedreamReplicateModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
-import type { ProgressManager } from "../../src/image/progressBar.ts";
-
-const asProgress = (m: ReturnType<typeof makeProgress>) =>
-    m as unknown as ProgressManager;
 
 interface ReplicateRequest {
     url: string;
@@ -54,21 +50,12 @@ function mockReplicateFetch(requests: ReplicateRequest[]) {
         });
 }
 
-const makeProgress = () => ({
-    updateBar: vi.fn(),
-    finishBar: vi.fn(),
-    removeBar: vi.fn(),
-});
-
 const baseParams: ImageParams = {
     model: "seedream",
     width: 1024,
     height: 1024,
     dimensionsExplicit: false,
     seed: 42,
-    enhance: false,
-    negative_prompt: "",
-    nofeed: false,
     safe: false,
     quality: "medium",
     image: [],
@@ -94,12 +81,7 @@ describe("seedreamReplicateModel - seedream 4.0", () => {
         const requests: ReplicateRequest[] = [];
         mockReplicateFetch(requests);
 
-        await callSeedreamAPI(
-            "test prompt",
-            baseParams,
-            asProgress(makeProgress()),
-            "req-seedream-1",
-        );
+        await callSeedreamAPI("test prompt", baseParams);
 
         expect(requests).toHaveLength(1);
         expect(requests[0].url).toBe(
@@ -124,12 +106,7 @@ describe("seedreamReplicateModel - seedream 4.0", () => {
     it("returns seedream as actualModel", async () => {
         mockReplicateFetch([]);
 
-        const result = await callSeedreamAPI(
-            "test prompt",
-            baseParams,
-            asProgress(makeProgress()),
-            "req-seedream-2",
-        );
+        const result = await callSeedreamAPI("test prompt", baseParams);
 
         expect(result.trackingData?.actualModel).toBe("seedream");
         expect(result.trackingData?.usage?.completionImageTokens).toBe(1);
@@ -146,14 +123,9 @@ describe("seedreamReplicateModel - seedream 4.0", () => {
             ),
         };
 
-        await expect(
-            callSeedreamAPI(
-                "test",
-                params,
-                asProgress(makeProgress()),
-                "req-seedream-overflow",
-            ),
-        ).rejects.toMatchObject({ status: 400 });
+        await expect(callSeedreamAPI("test", params)).rejects.toMatchObject({
+            status: 400,
+        });
     });
 });
 
@@ -168,12 +140,7 @@ describe("seedreamReplicateModel - seedream-pro 4.5", () => {
             width: 2048,
             height: 2048,
         };
-        await callSeedreamProAPI(
-            "test prompt",
-            params,
-            asProgress(makeProgress()),
-            "req-seedream-pro-1",
-        );
+        await callSeedreamProAPI("test prompt", params);
 
         expect(requests[0].url).toBe(
             "https://api.replicate.com/v1/models/bytedance/seedream-4.5/predictions",
@@ -196,12 +163,7 @@ describe("seedreamReplicateModel - seedream-pro 4.5", () => {
             model: "seedream-pro",
             image: ["https://example.com/ref.jpg"],
         };
-        await callSeedreamProAPI(
-            "test prompt",
-            params,
-            asProgress(makeProgress()),
-            "req-seedream-pro-i2i",
-        );
+        await callSeedreamProAPI("test prompt", params);
 
         // The Replicate POST is the request with a JSON body; example.com may
         // be fetched first by downloadUserImage. Find the Replicate POST.
@@ -224,12 +186,7 @@ describe("seedreamReplicateModel - seedream-pro 4.5", () => {
         mockReplicateFetch([]);
 
         const params: ImageParams = { ...baseParams, model: "seedream-pro" };
-        const result = await callSeedreamProAPI(
-            "test prompt",
-            params,
-            asProgress(makeProgress()),
-            "req-seedream-pro-2",
-        );
+        const result = await callSeedreamProAPI("test prompt", params);
 
         expect(result.trackingData?.actualModel).toBe("seedream-pro");
     });
@@ -244,14 +201,9 @@ describe("seedreamReplicateModel - aspect ratio mapping", () => {
             aspectRatio: "9:21",
         } as ImageParams;
 
-        await expect(
-            callSeedreamAPI(
-                "test",
-                params,
-                asProgress(makeProgress()),
-                "req-aspect-bad",
-            ),
-        ).rejects.toMatchObject({ status: 400 });
+        await expect(callSeedreamAPI("test", params)).rejects.toMatchObject({
+            status: 400,
+        });
     });
 
     it("maps 'adaptive' to match_input_image", async () => {
@@ -262,12 +214,7 @@ describe("seedreamReplicateModel - aspect ratio mapping", () => {
             ...baseParams,
             aspectRatio: "adaptive",
         } as ImageParams;
-        await callSeedreamAPI(
-            "test",
-            params,
-            asProgress(makeProgress()),
-            "req-aspect-adaptive",
-        );
+        await callSeedreamAPI("test", params);
 
         const input = (requests[0].body as { input: Record<string, unknown> })
             .input;
@@ -285,12 +232,7 @@ describe("seedreamReplicateModel - aspect ratio mapping", () => {
             width: 1792,
             height: 1024,
         };
-        await callSeedreamAPI(
-            "test",
-            params,
-            asProgress(makeProgress()),
-            "req-aspect-derived-16x9",
-        );
+        await callSeedreamAPI("test", params);
 
         const input = (requests[0].body as { input: Record<string, unknown> })
             .input;
@@ -306,12 +248,7 @@ describe("seedreamReplicateModel - aspect ratio mapping", () => {
             width: 720,
             height: 1280,
         };
-        await callSeedreamAPI(
-            "test",
-            params,
-            asProgress(makeProgress()),
-            "req-aspect-derived-9x16",
-        );
+        await callSeedreamAPI("test", params);
 
         const input = (requests[0].body as { input: Record<string, unknown> })
             .input;
@@ -330,12 +267,7 @@ describe("seedreamReplicateModel - seedream 4.0 custom-size mode", () => {
             height: 1024,
             dimensionsExplicit: true,
         };
-        await callSeedreamAPI(
-            "test prompt",
-            params,
-            asProgress(makeProgress()),
-            "req-custom-t2i",
-        );
+        await callSeedreamAPI("test prompt", params);
 
         const input = (requests[0].body as { input: Record<string, unknown> })
             .input;
@@ -359,12 +291,7 @@ describe("seedreamReplicateModel - seedream 4.0 custom-size mode", () => {
             height: 1024,
             dimensionsExplicit: true,
         };
-        await callSeedreamAPI(
-            "test",
-            params,
-            asProgress(makeProgress()),
-            "req-custom-onesided",
-        );
+        await callSeedreamAPI("test", params);
 
         const input = (requests[0].body as { input: Record<string, unknown> })
             .input;
@@ -384,12 +311,7 @@ describe("seedreamReplicateModel - seedream 4.0 custom-size mode", () => {
             dimensionsExplicit: true,
             image: ["https://example.com/ref.jpg"],
         };
-        await callSeedreamAPI(
-            "test",
-            params,
-            asProgress(makeProgress()),
-            "req-custom-i2i",
-        );
+        await callSeedreamAPI("test", params);
 
         const post = requests.find((r) =>
             r.url.includes("api.replicate.com/v1/models/bytedance/seedream-4/"),
@@ -410,12 +332,7 @@ describe("seedreamReplicateModel - seedream 4.0 custom-size mode", () => {
             image: ["https://example.com/ref.jpg"],
             // dimensionsExplicit defaults to false in baseParams
         };
-        await callSeedreamAPI(
-            "test",
-            params,
-            asProgress(makeProgress()),
-            "req-i2i-no-explicit",
-        );
+        await callSeedreamAPI("test", params);
 
         const post = requests.find((r) =>
             r.url.includes("api.replicate.com/v1/models/bytedance/seedream-4/"),
@@ -436,14 +353,9 @@ describe("seedreamReplicateModel - seedream 4.0 custom-size mode", () => {
             dimensionsExplicit: true,
         };
 
-        await expect(
-            callSeedreamAPI(
-                "test",
-                params,
-                asProgress(makeProgress()),
-                "req-custom-oob",
-            ),
-        ).rejects.toMatchObject({ status: 400 });
+        await expect(callSeedreamAPI("test", params)).rejects.toMatchObject({
+            status: 400,
+        });
     });
 
     it("seedream-pro (4.5) ignores dimensionsExplicit — no custom mode", async () => {
@@ -457,12 +369,7 @@ describe("seedreamReplicateModel - seedream 4.0 custom-size mode", () => {
             height: 1024,
             dimensionsExplicit: true,
         };
-        await callSeedreamProAPI(
-            "test",
-            params,
-            asProgress(makeProgress()),
-            "req-pro-no-custom",
-        );
+        await callSeedreamProAPI("test", params);
 
         const input = (requests[0].body as { input: Record<string, unknown> })
             .input;
@@ -487,12 +394,7 @@ describe("seedreamReplicateModel - seedream5 5.0 Lite", () => {
             width: 2048,
             height: 2048,
         };
-        await callSeedream5API(
-            "test prompt",
-            params,
-            asProgress(makeProgress()),
-            "req-seedream5-2k",
-        );
+        await callSeedream5API("test prompt", params);
 
         expect(requests).toHaveLength(1);
         expect(requests[0].url).toBe(
@@ -521,12 +423,7 @@ describe("seedreamReplicateModel - seedream5 5.0 Lite", () => {
             width: 4096,
             height: 2048,
         };
-        await callSeedream5API(
-            "test prompt",
-            params,
-            asProgress(makeProgress()),
-            "req-seedream5-3k",
-        );
+        await callSeedream5API("test prompt", params);
 
         const input = (requests[0].body as { input: Record<string, unknown> })
             .input;
@@ -544,12 +441,7 @@ describe("seedreamReplicateModel - seedream5 5.0 Lite", () => {
             height: 1024,
             dimensionsExplicit: true,
         };
-        await callSeedream5API(
-            "test",
-            params,
-            asProgress(makeProgress()),
-            "req-seedream5-no-custom",
-        );
+        await callSeedream5API("test", params);
 
         const input = (requests[0].body as { input: Record<string, unknown> })
             .input;
@@ -575,26 +467,16 @@ describe("seedreamReplicateModel - seedream5 5.0 Lite", () => {
             ),
         };
 
-        await expect(
-            callSeedream5API(
-                "test",
-                params,
-                asProgress(makeProgress()),
-                "req-seedream5-overflow",
-            ),
-        ).rejects.toMatchObject({ status: 400 });
+        await expect(callSeedream5API("test", params)).rejects.toMatchObject({
+            status: 400,
+        });
     });
 
     it("returns seedream5 as actualModel", async () => {
         mockReplicateFetch([]);
 
         const params: ImageParams = { ...baseParams, model: "seedream5" };
-        const result = await callSeedream5API(
-            "test prompt",
-            params,
-            asProgress(makeProgress()),
-            "req-seedream5-tracking",
-        );
+        const result = await callSeedream5API("test prompt", params);
 
         expect(result.trackingData?.actualModel).toBe("seedream5");
         expect(result.trackingData?.usage?.completionImageTokens).toBe(1);

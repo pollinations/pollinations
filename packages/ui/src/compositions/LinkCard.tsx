@@ -2,11 +2,8 @@ import type { PropsWithChildren } from "react";
 import { cn } from "../lib/cn.ts";
 import { ExternalLinkIcon } from "../primitives/icons/index.tsx";
 import { Surface } from "../primitives/Surface.tsx";
-import type { ThemeName } from "../theme.ts";
 
 type BaseLinkCardProps = {
-    /** Override the cascade theme for this card's subtree. */
-    theme?: ThemeName;
     external?: boolean;
     showIcon?: boolean;
     className?: string;
@@ -24,7 +21,6 @@ function isExternalHref(href: unknown): boolean {
 
 export function LinkCard<T extends React.ElementType = "a">({
     as,
-    theme,
     external,
     showIcon = true,
     className,
@@ -38,7 +34,6 @@ export function LinkCard<T extends React.ElementType = "a">({
 
     return (
         <Component
-            data-theme={theme}
             target={isExternal ? "_blank" : undefined}
             rel={isExternal ? "noopener noreferrer" : undefined}
             className={cn(
@@ -48,12 +43,11 @@ export function LinkCard<T extends React.ElementType = "a">({
             {...linkProps}
         >
             <Surface
-                theme={theme}
                 variant="card"
                 className={cn(
-                    "polli:relative polli:flex polli:h-full polli:flex-col polli:gap-2 polli:bg-white/80 polli:p-5",
+                    "polli:relative polli:flex polli:h-full polli:flex-col polli:gap-2 polli:bg-surface-opaque/80 polli:p-5",
                     showIcon && isExternal && "polli:pr-10",
-                    "polli:transition polli:group-hover:-translate-y-0.5 polli:group-hover:bg-white/95",
+                    "polli:transition polli:group-hover:-translate-y-0.5 polli:group-hover:bg-surface-opaque/95",
                     "polli:group-focus-visible:ring-2 polli:group-focus-visible:ring-theme-border",
                     surfaceClassName,
                 )}

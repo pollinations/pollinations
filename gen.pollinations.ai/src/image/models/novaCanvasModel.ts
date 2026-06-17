@@ -2,7 +2,6 @@ import debug from "debug";
 import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
-import type { ProgressManager } from "../progressBar.ts";
 import { base64ToBuffer, downloadUserImage } from "../utils/imageDownload.ts";
 
 const logOps = debug("pollinations:nova-canvas:ops");
@@ -59,8 +58,6 @@ function clampDimensions(
 export async function callNovaCanvasAPI(
     prompt: string,
     safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
 ): Promise<ImageGenerationResult> {
     const accessKeyId = getImageEnv("AWS_ACCESS_KEY_ID");
     const secretAccessKey = getImageEnv("AWS_SECRET_ACCESS_KEY");
@@ -90,13 +87,6 @@ export async function callNovaCanvasAPI(
         seed: safeParams.seed,
         hasImage: !!rawImageUrl,
     });
-
-    progress.updateBar(
-        requestId,
-        35,
-        "Processing",
-        `Generating with Nova Canvas (${mode === "IMAGE_VARIATION" ? "editing" : "text-to-image"})...`,
-    );
 
     // Dynamic import to avoid requiring the SDK at module load time
     const { BedrockRuntimeClient, InvokeModelCommand } = await import(
@@ -175,13 +165,6 @@ export async function callNovaCanvasAPI(
             "Nova Canvas image received, size:",
             (imageBuffer.length / 1024).toFixed(1),
             "KB",
-        );
-
-        progress.updateBar(
-            requestId,
-            90,
-            "Success",
-            "Image generation completed",
         );
 
         return {

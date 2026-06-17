@@ -47,16 +47,6 @@ export interface ImageGenerateOptions extends RequestOptions {
     height?: number;
     /** Seed for reproducible generation (default: random) */
     seed?: number;
-    /** Let AI enhance/improve your prompt (default: false) */
-    enhance?: boolean;
-    /** Negative prompt - what to avoid in the image */
-    negativePrompt?: string;
-    /** Keep generation private (default: false) */
-    private?: boolean;
-    /** Remove watermark logo (default: false) */
-    nologo?: boolean;
-    /** Don't show in public feed (default: false) */
-    nofeed?: boolean;
     /** Enable safety content filters (default: false) */
     safe?: boolean;
     /** Output quality (default: 'medium') */
@@ -111,10 +101,6 @@ export interface VideoGenerateOptions extends RequestOptions {
     audio?: boolean;
     /** Reference image URL(s) for image-to-video. For video, image[0] is the start frame and image[1] is the end frame when supported. */
     referenceImage?: string | string[];
-    /** Keep generation private (default: false) */
-    private?: boolean;
-    /** Remove watermark logo (default: false) */
-    nologo?: boolean;
     /** Enable safety content filters (default: false) */
     safe?: boolean;
 }
@@ -789,6 +775,20 @@ export interface CreatedKey {
 
 /** Model tier levels */
 export type ModelTier = "anonymous" | "seed" | "flower" | "nectar";
+/** Known model categories, in catalog display order. The canonical enum lives
+ * in shared/registry (ModelInfoSchema); categories the SDK doesn't know yet
+ * pass through the model catalog unfiltered and sort last. */
+export const MODEL_CATEGORIES = [
+    "image",
+    "video",
+    "text",
+    "audio",
+    "embedding",
+    "realtime",
+] as const;
+
+/** Model category */
+export type ModelCategory = (typeof MODEL_CATEGORIES)[number];
 
 /** Per-model video frame-control capabilities (video models only) */
 export type VideoCapability =
@@ -797,9 +797,21 @@ export type VideoCapability =
     | "keyframes"
     | "audio_output";
 
+/** Per-model agentic/text capabilities */
+export type ModelCapability =
+    | "tool_calling"
+    | "reasoning"
+    | "web_search"
+    | "code_execution";
+
 /** Model information */
 export interface ModelInfo {
+    id?: string;
     name: string;
+    /** Display name. Present on registry endpoints (/models, /text/models, …); absent on OpenAI-compatible /v1/models. */
+    title?: string;
+    category?: ModelCategory;
+    brand?: string;
     description?: string;
     aliases?: string[];
     tier?: ModelTier;
@@ -807,6 +819,9 @@ export interface ModelInfo {
     input_modalities?: string[];
     output_modalities?: string[];
     video_capabilities?: VideoCapability[];
+    max_reference_images?: number;
+    max_reference_videos?: number;
+    capabilities?: ModelCapability[];
     tools?: boolean;
     vision?: boolean;
     audio?: boolean;
@@ -815,17 +830,11 @@ export interface ModelInfo {
     voices?: string[];
     maxInputChars?: number;
     context_length?: number;
+    supported_endpoints?: string[];
     supportsSystemMessages?: boolean;
     is_specialized?: boolean;
-    pricing?: {
-        currency: "pollen";
-        input_token_price?: number;
-        output_token_price?: number;
-        cached_token_price?: number;
-        image_price?: number;
-        audio_input_price?: number;
-        audio_output_price?: number;
-    };
+    paid_only?: boolean;
+    pricing?: Record<string, string> & { currency: "pollen" };
 }
 
 // ============================================================================
@@ -905,8 +914,6 @@ export interface ImageGenerateV1Options extends RequestOptions {
     seed?: number;
     /** Output quality */
     quality?: ImageQuality;
-    /** Negative prompt - what to avoid */
-    negativePrompt?: string;
 }
 
 // ============================================================================

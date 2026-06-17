@@ -4,7 +4,6 @@ import { getModelDefinition } from "@shared/registry/registry.ts";
 import { getModelStats } from "@shared/utils/model-stats.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
-import { cached } from "@/cache";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
@@ -31,7 +30,7 @@ export async function checkBalance(
     const serviceDefinition = getModelDefinition(model.resolved);
     const isPaidOnly = serviceDefinition.paidOnly ?? false;
 
-    const stats = await getModelStats(env.KV, log, cached);
+    const stats = await getModelStats(env.KV, log);
     const estimatedCost = getEstimatedPrice(stats, model.resolved);
 
     const apiKeyBudget = auth.apiKey?.pollenBalance;

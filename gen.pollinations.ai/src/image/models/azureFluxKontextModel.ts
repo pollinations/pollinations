@@ -6,15 +6,12 @@ import type {
 import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
-import { sanitizeString } from "../translateIfNecessary.ts";
+import { sanitizeString } from "../util.ts";
 import {
     analyzeImageSafety,
-    analyzeTextSafety,
+    requireSafePrompt,
 } from "../utils/azureContentSafety.ts";
-import {
-    logGptImageError,
-    logGptImagePrompt,
-} from "../utils/gptImageLogger.ts";
+import { logGptImageError } from "../utils/gptImageLogger.ts";
 import {
     base64ToBuffer,
     bufferToUint8Array,
@@ -61,25 +58,7 @@ export async function callAzureFluxKontext(
     }
 
     logCloudflare("Checking prompt safety...");
-    const promptSafetyResult = await analyzeTextSafety(prompt);
-
-    // Log the prompt with safety analysis results
-    await logGptImagePrompt(prompt, safeParams, userInfo, promptSafetyResult);
-
-    if (!promptSafetyResult.safe) {
-        const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
-        logError("Azure Content Safety rejected prompt:", errorMessage);
-
-        const error = new HttpError(errorMessage, 400);
-        await logGptImageError(
-            prompt,
-            safeParams,
-            userInfo,
-            error,
-            promptSafetyResult,
-        );
-        throw error;
-    }
+    await requireSafePrompt(prompt, safeParams, userInfo);
 
     // Map safeParams to Azure API parameters
     const size = `${safeParams.width}x${safeParams.height}`;

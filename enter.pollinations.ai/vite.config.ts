@@ -8,7 +8,16 @@ import { defineConfig } from "vite";
 const frontendSrc = fileURLToPath(new URL("./frontend/src", import.meta.url));
 const sharedSrc = fileURLToPath(new URL("../shared", import.meta.url));
 
-export default defineConfig({
+// The origin that serves THIS deployment's static assets, so social-preview
+// image tags (og:image / twitter:image) resolve to the build's own amber card
+// instead of always pointing at production. og:url / canonical stay production
+// (content identity). `.env` is gitignored here, so this lives in the config.
+const publicOrigin = (mode: string) =>
+    mode === "staging"
+        ? "https://staging.enter.myceli.ai"
+        : "https://enter.pollinations.ai";
+
+export default defineConfig(({ mode }) => ({
     root: "frontend",
     server: {
         port: 3000,
@@ -21,7 +30,11 @@ export default defineConfig({
             "@frontend": frontendSrc,
             "@shared": sharedSrc,
         },
-        dedupe: ["zod"],
+        // react/react-dom must resolve to a single copy — enter pulls @pollinations/ui
+        // (and @shared) which resolve React from the repo-root node_modules, while
+        // enter's own code uses its local copy. Without dedupe that's two React
+        // instances → "Invalid hook call". Mirrors pollinations.ai's vite config.
+        dedupe: ["react", "react-dom", "zod"],
     },
     plugins: [
         tanstackRouter({
@@ -33,6 +46,12 @@ export default defineConfig({
         react(),
         tailwindcss(),
         cloudflare({ configPath: "../wrangler.toml" }),
+        {
+            // Swap %PUBLIC_ORIGIN% in index.html for this build's asset origin.
+            name: "enter-public-origin",
+            transformIndexHtml: (html) =>
+                html.replaceAll("%PUBLIC_ORIGIN%", publicOrigin(mode)),
+        },
     ],
     optimizeDeps: {
         esbuildOptions: {
@@ -45,4 +64,4 @@ export default defineConfig({
         outDir: "../dist",
         emptyOutDir: true,
     },
-});
+}));

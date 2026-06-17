@@ -5,10 +5,23 @@ Official SDK for [pollinations.ai](https://pollinations.ai) - Generate images, t
 [![npm version](https://img.shields.io/npm/v/@pollinations/sdk.svg)](https://www.npmjs.com/package/@pollinations/sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+> [!WARNING]
+> **The `alpha` release line (`5.1.0-alpha.x`) is unstable and breakage-prone.**
+> It ships the in-progress rebuild (model-catalog helper, `./client` subpath, provider changes) and its API may change between alpha versions without notice. The stable `latest` line is `5.0.0`. Opt into the alpha only deliberately, and pin an exact version.
+
 ## Installation
+
+Stable (recommended):
 
 ```bash
 npm install @pollinations/sdk
+```
+
+Alpha (in-progress rebuild — pin an exact version):
+
+```bash
+npm install @pollinations/sdk@alpha
+# or pin exactly: npm install @pollinations/sdk@5.1.0-alpha.0
 ```
 
 ### CDN / `<script>` tag
@@ -267,10 +280,6 @@ const url = await imageUrl('a sunset');
 | `width` | number | `1024` | Width in pixels |
 | `height` | number | `1024` | Height in pixels |
 | `seed` | number | random | Reproducible results |
-| `enhance` | boolean | `false` | AI prompt enhancement |
-| `negativePrompt` | string | - | What to avoid in the image |
-| `nologo` | boolean | `false` | Remove watermark |
-| `private` | boolean | `false` | Keep generation private |
 | `safe` | boolean | `false` | Safety filter |
 | `quality` | string | `'medium'` | `'low'`, `'medium'`, `'high'`, `'hd'` |
 | `referenceImage` | string | - | URL for image-to-image |
@@ -415,8 +424,6 @@ const videos = await generateVideo('ocean waves', { n: 2, duration: 4 });
 | `seed` | number | random | Reproducible results |
 | `audio` | boolean | `false` | Include audio (`wan` always has audio) |
 | `referenceImage` | string | - | URL for image-to-video |
-| `private` | boolean | `false` | Keep generation private |
-| `nologo` | boolean | `false` | Remove watermark |
 | `safe` | boolean | `false` | Safety filter |
 | `n` | number | `1` | Number of videos |
 

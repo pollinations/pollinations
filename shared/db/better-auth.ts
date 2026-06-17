@@ -6,7 +6,14 @@
 // and re-generating the schema including the indexes.
 
 import { relations, sql } from "drizzle-orm";
-import { sqliteTable, text, integer, real, index } from "drizzle-orm/sqlite-core";
+import {
+  sqliteTable,
+  text,
+  integer,
+  real,
+  index,
+  uniqueIndex,
+} from "drizzle-orm/sqlite-core";
 
 export const user = sqliteTable("user", {
   id: text("id").primaryKey(),
@@ -250,3 +257,32 @@ export const questPayoutCredits = sqliteTable("quest_payout_credits", {
   index("idx_quest_payout_credits_user_id").on(table.userId),
   index("idx_quest_payout_credits_quest_issue").on(table.questIssueNumber),
 ]);
+
+export const rewardGrants = sqliteTable("reward_grants", {
+  id: text("id").primaryKey(),
+  idempotencyKey: text("idempotency_key").notNull(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  source: text("source").notNull(),
+  questId: text("quest_id"),
+  amount: real("amount").notNull(),
+  balanceBucket: text("balance_bucket").notNull(),
+  sourceRef: text("source_ref"),
+  metadataJson: text("metadata_json"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+}, (table) => [
+  uniqueIndex("idx_reward_grants_idempotency_key").on(table.idempotencyKey),
+  index("idx_reward_grants_user_id").on(table.userId),
+  index("idx_reward_grants_source").on(table.source),
+  index("idx_reward_grants_quest_id").on(table.questId),
+]);
+
+export const rewardGrantsRelations = relations(rewardGrants, ({ one }) => ({
+  user: one(user, {
+    fields: [rewardGrants.userId],
+    references: [user.id],
+  }),
+}));

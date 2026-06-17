@@ -110,14 +110,47 @@ const grantCommand = command({
             UPDATE user
             SET pack_balance = COALESCE(pack_balance, 0) + ${amount}
             WHERE id = ${sqlString(user.id)} AND changes() = 1;
+            INSERT OR IGNORE INTO reward_grants (
+                id,
+                idempotency_key,
+                user_id,
+                source,
+                quest_id,
+                amount,
+                balance_bucket,
+                source_ref,
+                metadata_json,
+                created_at
+            )
+            SELECT
+                ${sqlString(crypto.randomUUID())},
+                ${sqlString(payoutKey)},
+                ${sqlString(user.id)},
+                'code_quest',
+                ${sqlString(`github:${questIssue}`)},
+                ${amount},
+                'pack',
+                ${sqlString(`pr:${prNumber}`)},
+                ${sqlString(
+                    JSON.stringify({
+                        questIssueNumber: questIssue,
+                        prNumber,
+                        role: "assignee",
+                        githubUsername: user.github_username,
+                    }),
+                )},
+                ${Date.now()}
+            WHERE changes() = 1;
         `;
 
         const raw = queryD1(env, sql);
         const result = JSON.parse(raw);
         const insertResult = Array.isArray(result) ? result[0] : result;
         const updateResult = Array.isArray(result) ? result[1] : null;
+        const grantResult = Array.isArray(result) ? result[2] : null;
         const inserted = Number(insertResult?.meta?.changes ?? 0);
         const updated = Number(updateResult?.meta?.changes ?? 0);
+        const grantInserted = Number(grantResult?.meta?.changes ?? 0);
         if (inserted === 0) {
             console.log(`DUPLICATE payout_key=${payoutKey}`);
             process.exit(3);
@@ -130,7 +163,7 @@ const grantCommand = command({
 
         const previous = user.pack_balance ?? 0;
         console.log(
-            `GRANTED payout_key=${payoutKey} user_id=${user.id} github_username=${user.github_username} previous=${previous} added=${amount} new=${previous + amount}`,
+            `GRANTED payout_key=${payoutKey} reward_grant=${grantInserted === 1 ? "inserted" : "skipped"} user_id=${user.id} github_username=${user.github_username} previous=${previous} added=${amount} new=${previous + amount}`,
         );
     },
 });

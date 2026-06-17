@@ -5,11 +5,13 @@ import {
 } from "@shared/auth/api-key-creation.ts";
 import {
     apikey as apikeyTable,
+    questPayoutCredits as questPayoutCreditsTable,
+    rewardGrants as rewardGrantsTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { getTierCadence, tierNames } from "@shared/tier-config.ts";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -38,6 +40,12 @@ const DEFAULT_DAILY_USAGE_DAYS = 90;
 const MAX_USAGE_DAYS = 90;
 const USAGE_CHUNK_DAYS = 30;
 const MAX_USAGE_EXPORT_ROWS = 50_000;
+const QUEST_REWARD_SOURCES = new Set([
+    "code_quest",
+    "quest",
+    "onboarding",
+    "spend",
+]);
 
 const SECONDS_PER_DAY = 86400;
 const USAGE_MIN_DATE = "2026-01-01";
@@ -151,6 +159,26 @@ const CreateKeySchema = z.object({
         ),
 });
 
+const accountQuestGrantSchema = z.object({
+    id: z.string(),
+    idempotencyKey: z.string(),
+    source: z.string(),
+    questId: z.string().nullable(),
+    amount: z.number(),
+    balanceBucket: z.string(),
+    sourceRef: z.string().nullable(),
+    metadata: z.record(z.string(), z.unknown()).nullable(),
+    createdAt: z.string(),
+    legacy: z.boolean(),
+    questIssueNumber: z.number().nullable(),
+    prNumber: z.number().nullable(),
+});
+
+const accountQuestResponseSchema = z.object({
+    totalPollen: z.number(),
+    grants: z.array(accountQuestGrantSchema),
+});
+
 // CSV escape helper
 const escapeCSV = (val: string | number | boolean | null) => {
     if (val === null || val === undefined) return "";
@@ -160,6 +188,37 @@ const escapeCSV = (val: string | number | boolean | null) => {
     }
     return str;
 };
+
+function parseGrantMetadata(
+    raw: string | null,
+): Record<string, unknown> | null {
+    if (!raw) return null;
+    try {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+            return parsed as Record<string, unknown>;
+        }
+    } catch {
+        return null;
+    }
+    return null;
+}
+
+function formatGrantTimestamp(value: Date | number | string): string {
+    if (value instanceof Date) return value.toISOString();
+    if (typeof value === "number") return new Date(value).toISOString();
+    return new Date(value).toISOString();
+}
+
+function requireUsagePermission(apiKey?: {
+    permissions?: Record<string, string[]>;
+}): void {
+    if (apiKey && !apiKey.permissions?.account?.includes("usage")) {
+        throw new HTTPException(403, {
+            message: "API key does not have 'account:usage' permission",
+        });
+    }
+}
 
 function formatTinybirdDateTime(date: Date): string {
     return date.toISOString().slice(0, 19).replace("T", " ");
@@ -1290,6 +1349,121 @@ export const accountRoutes = new Hono<Env>()
                 log.error("Error fetching earnings: {error}", { error });
                 return c.json({ error: "Failed to fetch earnings data" }, 500);
             }
+        },
+    )
+    .get(
+        "/quests",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Get Completed Quest Rewards",
+            description:
+                "Returns completed quest-style reward grants for the authenticated account. Includes generic reward grant rows and legacy GitHub quest payouts that have not been dual-written yet. Requires `account:usage` permission when using API keys.",
+            responses: {
+                200: {
+                    description: "Completed quest rewards",
+                    content: {
+                        "application/json": {
+                            schema: resolver(accountQuestResponseSchema),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+                403: {
+                    description:
+                        "Permission denied - API key missing `account:usage` permission",
+                },
+            },
+        }),
+        async (c) => {
+            await c.var.auth.requireAuthorization({
+                message: "Authentication required to view quest rewards",
+            });
+            const user = c.var.auth.requireUser();
+            requireUsagePermission(c.var.auth.apiKey);
+
+            const db = drizzle(c.env.DB);
+            const [rewardRows, legacyRows] = await Promise.all([
+                db
+                    .select({
+                        id: rewardGrantsTable.id,
+                        idempotencyKey: rewardGrantsTable.idempotencyKey,
+                        source: rewardGrantsTable.source,
+                        questId: rewardGrantsTable.questId,
+                        amount: rewardGrantsTable.amount,
+                        balanceBucket: rewardGrantsTable.balanceBucket,
+                        sourceRef: rewardGrantsTable.sourceRef,
+                        metadataJson: rewardGrantsTable.metadataJson,
+                        createdAt: rewardGrantsTable.createdAt,
+                    })
+                    .from(rewardGrantsTable)
+                    .where(eq(rewardGrantsTable.userId, user.id))
+                    .orderBy(desc(rewardGrantsTable.createdAt)),
+                db
+                    .select({
+                        payoutKey: questPayoutCreditsTable.payoutKey,
+                        questIssueNumber:
+                            questPayoutCreditsTable.questIssueNumber,
+                        prNumber: questPayoutCreditsTable.prNumber,
+                        role: questPayoutCreditsTable.role,
+                        githubUsername: questPayoutCreditsTable.githubUsername,
+                        pollenCredited: questPayoutCreditsTable.pollenCredited,
+                        createdAt: questPayoutCreditsTable.createdAt,
+                    })
+                    .from(questPayoutCreditsTable)
+                    .where(eq(questPayoutCreditsTable.userId, user.id))
+                    .orderBy(desc(questPayoutCreditsTable.createdAt)),
+            ]);
+
+            const rewardKeys = new Set(
+                rewardRows.map((row) => row.idempotencyKey),
+            );
+            const grants = [
+                ...rewardRows
+                    .filter((row) => QUEST_REWARD_SOURCES.has(row.source))
+                    .map((row) => ({
+                        id: row.id,
+                        idempotencyKey: row.idempotencyKey,
+                        source: row.source,
+                        questId: row.questId,
+                        amount: row.amount,
+                        balanceBucket: row.balanceBucket,
+                        sourceRef: row.sourceRef,
+                        metadata: parseGrantMetadata(row.metadataJson),
+                        createdAt: formatGrantTimestamp(row.createdAt),
+                        legacy: false,
+                        questIssueNumber: null,
+                        prNumber: null,
+                    })),
+                ...legacyRows
+                    .filter((row) => !rewardKeys.has(row.payoutKey))
+                    .map((row) => ({
+                        id: row.payoutKey,
+                        idempotencyKey: row.payoutKey,
+                        source: "code_quest",
+                        questId: `github:${row.questIssueNumber}`,
+                        amount: row.pollenCredited,
+                        balanceBucket: "pack",
+                        sourceRef: `pr:${row.prNumber}`,
+                        metadata: {
+                            role: row.role,
+                            githubUsername: row.githubUsername,
+                        },
+                        createdAt: formatGrantTimestamp(row.createdAt),
+                        legacy: true,
+                        questIssueNumber: row.questIssueNumber,
+                        prNumber: row.prNumber,
+                    })),
+            ].sort(
+                (left, right) =>
+                    Date.parse(right.createdAt) - Date.parse(left.createdAt),
+            );
+
+            const totalPollen = grants.reduce(
+                (total, grant) => total + grant.amount,
+                0,
+            );
+
+            return c.json({ totalPollen, grants });
         },
     )
     .get(

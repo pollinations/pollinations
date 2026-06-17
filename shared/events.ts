@@ -226,6 +226,61 @@ export async function sendTierEventToTinybird(
     }
 }
 
+// Real-time event for the reward_grant Tinybird datasource — analytics only,
+// emitted (worker context, via waitUntil) after a grantReward() succeeds. The
+// authoritative grant lives in D1 reward_grants; this event just gives live
+// dashboards lower latency than the daily d1_reward_grants snapshot.
+export type RewardGrantEvent = {
+    environment: string;
+    user_id: string;
+    source: string;
+    quest_id?: string;
+    pollen_credited: number;
+    balance_bucket: string;
+    source_ref?: string;
+    timestamp: string;
+};
+
+export async function sendRewardGrantEventToTinybird(
+    event: Omit<RewardGrantEvent, "timestamp">,
+    referenceIngestUrl: string | undefined,
+    tinybirdIngestToken: string | undefined,
+    log: Logger,
+): Promise<void> {
+    if (!referenceIngestUrl || !tinybirdIngestToken) {
+        log.warn("Tinybird ingest not configured, skipping reward_grant event");
+        return;
+    }
+    const url = getTinybirdDatasourceIngestUrl(
+        referenceIngestUrl,
+        "reward_grant",
+    );
+    const rewardGrantEvent: RewardGrantEvent = {
+        ...event,
+        timestamp: new Date().toISOString(),
+    };
+    const body = JSON.stringify(removeUnset(rewardGrantEvent));
+
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${tinybirdIngestToken}`,
+                "Content-Type": "application/x-ndjson",
+            },
+            body,
+            signal: AbortSignal.timeout(5000),
+        });
+        if (!response.ok) {
+            log.warn("Tinybird reward_grant ingest failed: status={status}", {
+                status: response.status,
+            });
+        }
+    } catch (error) {
+        log.warn("Tinybird reward_grant ingest failed: {error}", { error });
+    }
+}
+
 async function retryWithBackoff(
     attempt: number,
     log: Logger,

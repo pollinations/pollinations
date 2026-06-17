@@ -1,0 +1,21 @@
+TOKEN tinybird_ingest APPEND
+
+DESCRIPTION >
+    Real-time reward grant events (analytics only). Emitted from worker context
+    after grantReward() succeeds, so live quest dashboards don't wait for the
+    daily d1_reward_grants snapshot. The authoritative grant lives in D1
+    reward_grants; this is a derived, append-only event log.
+
+SCHEMA >
+    `environment` LowCardinality(String) `json:$.environment` DEFAULT 'undefined',
+    `user_id` String `json:$.user_id`,
+    `source` String `json:$.source`,
+    `quest_id` Nullable(String) `json:$.quest_id`,
+    `pollen_credited` Float64 `json:$.pollen_credited`,
+    `balance_bucket` String `json:$.balance_bucket`,
+    `source_ref` Nullable(String) `json:$.source_ref`,
+    `timestamp` DateTime `json:$.timestamp`
+
+ENGINE "MergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"
+ENGINE_SORTING_KEY "timestamp, environment, source"

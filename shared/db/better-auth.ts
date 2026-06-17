@@ -282,3 +282,31 @@ export const rewardGrants = sqliteTable("reward_grants", {
   index("idx_reward_grants_user_id").on(table.userId),
   index("idx_reward_grants_source").on(table.source),
 ]);
+
+// Data-driven quest catalog. Adding a product quest = inserting a row here
+// instead of editing call sites. Config table (like community_endpoint), read
+// synchronously when evaluating a trigger signal. The actual grant still flows
+// through grantReward()/reward_grants; this only declares what can be earned.
+export const questDefinitions = sqliteTable("quest_definitions", {
+  id: text("id").primaryKey(),
+  // Stable catalog key referenced by reward_grants.quest_id, e.g. "first_image".
+  key: text("key").notNull().unique(),
+  title: text("title").notNull(),
+  category: text("category"),
+  // Signal that can complete this quest, e.g.
+  // first_image | first_top_up | key_created | streak | referral | spend_threshold.
+  triggerType: text("trigger_type").notNull(),
+  rewardAmount: real("reward_amount").notNull(),
+  // Which bucket to credit: "tier" or "pack".
+  balanceBucket: text("balance_bucket").notNull().default("tier"),
+  // once | weekly | streak | tiered — how often it can be earned.
+  repeatability: text("repeatability").notNull().default("once"),
+  active: integer("active", { mode: "boolean" }).notNull().default(true),
+  // Optional JSON criteria (thresholds, windows) evaluated by checkAndGrantQuest.
+  criteriaJson: text("criteria_json"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+}, (table) => [
+  index("idx_quest_definitions_trigger_type").on(table.triggerType),
+]);

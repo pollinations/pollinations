@@ -198,3 +198,21 @@ export const getPersonaPrompt = (persona: Persona, gameState: GameState) => {
 export const getMarvinJoinMessage = (): string => {
     return "Marvin has joined the elevator. Now sit back and watch the fascinating interaction between these two Genuine People Personalities™...";
 };
+
+// Appended to a persona's system prompt during the autonomous Marvin↔elevator
+// conversation. Without this each bot tends to mirror the other's last line;
+// this tells it who it's talking to and to push the exchange forward.
+export const getAutonomousSuffix = (persona: Persona): string => {
+    const opponent = persona === "marvin" ? "the elevator" : "Marvin";
+    const goal =
+        persona === "marvin"
+            ? "You want to go DOWN. Try to talk the elevator down."
+            : "You want to go UP. Try to talk Marvin into wanting up.";
+    return `
+
+### Autonomous conversation
+You are now talking directly to ${opponent} — another Genuine People Personality™ robot, NOT the human. React to ${opponent}'s most recent line with your OWN fresh reply, in your own voice. ${goal}
+- NEVER repeat, echo, or quote ${opponent}'s words back. Say something new every turn.
+- Ignore lines prefixed with [Guide] — that is narration, not dialogue.
+- Keep it to 1 short sentence.`;
+};

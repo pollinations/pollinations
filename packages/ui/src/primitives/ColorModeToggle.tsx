@@ -1,4 +1,4 @@
-import { type FC, useEffect, useSyncExternalStore } from "react";
+import { type FC, useSyncExternalStore } from "react";
 import { cn } from "../lib/cn.ts";
 import { MoonIcon, SunIcon } from "./icons/index.tsx";
 
@@ -9,16 +9,13 @@ import { MoonIcon, SunIcon } from "./icons/index.tsx";
  * `useColorMode()` consumer, so duplicate toggles never desync and changes
  * propagate across tabs.
  *
- * The chosen mode is persisted to BOTH a cookie scoped to the registrable
- * domain — so every `*.pollinations.ai` page reads the same value, including
- * cross-origin embeds like the enter auth screen shown inside /play — AND
- * localStorage, a same-origin mirror that powers the cross-tab `storage` sync
- * below and migrates existing users. Read priority: cookie → localStorage →
- * system preference.
+ * The chosen mode is persisted to localStorage (per-origin), which also powers
+ * the cross-tab `storage` sync below. Read priority: localStorage → system
+ * preference.
  *
  * Host apps should set the initial class pre-paint (a tiny inline script in the
- * document head, reading the same cookie/key) to avoid a flash of light before
- * React mounts; this store is the source of truth after hydration.
+ * document head, reading the same key) to avoid a flash of light before React
+ * mounts; this store is the source of truth after hydration.
  *
  * Side-effect-free on import: the <html> sync and the cross-tab listener are
  * attached lazily on first subscribe, so importing this module (e.g. via the
@@ -37,45 +34,6 @@ function readStored(): ColorMode | null {
     }
 }
 
-// Persist the mode one year; refreshed on every write.
-const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
-
-/**
- * Cookie domain for cross-subdomain sharing: the registrable domain (last two
- * hostname labels), so e.g. `enter.pollinations.ai` and the website share one
- * value. Returns null for localhost / bare IPs (host-only cookie — already
- * shared across ports). Every host we serve uses a single-label TLD (`.ai`),
- * so last-two-labels equals eTLD+1 — no public-suffix list needed.
- */
-function cookieDomain(): string | null {
-    if (typeof location === "undefined") return null;
-    const host = location.hostname;
-    if (host === "localhost" || /^[0-9.]+$/.test(host) || !host.includes(".")) {
-        return null;
-    }
-    return host.split(".").slice(-2).join(".");
-}
-
-function readCookie(): ColorMode | null {
-    if (typeof document === "undefined") return null;
-    const match = document.cookie.match(
-        /(?:^|;\s*)polli-color-mode=(light|dark)(?:;|$)/,
-    );
-    return match ? (match[1] as ColorMode) : null;
-}
-
-function writeCookie(mode: ColorMode): void {
-    if (typeof document === "undefined" || typeof location === "undefined") {
-        return;
-    }
-    const domain = cookieDomain();
-    const secure = location.protocol === "https:" ? "; Secure" : "";
-    // biome-ignore lint/suspicious/noDocumentCookie: first-party theme key; Cookie Store API lacks Firefox/older-Safari support
-    document.cookie = `${STORAGE_KEY}=${mode}; Path=/; Max-Age=${COOKIE_MAX_AGE_SECONDS}; SameSite=Lax${
-        domain ? `; Domain=${domain}` : ""
-    }${secure}`;
-}
-
 function systemPrefersDark(): boolean {
     return (
         typeof window !== "undefined" &&
@@ -84,7 +42,7 @@ function systemPrefersDark(): boolean {
 }
 
 let current: ColorMode =
-    readCookie() ?? readStored() ?? (systemPrefersDark() ? "dark" : "light");
+    readStored() ?? (systemPrefersDark() ? "dark" : "light");
 const listeners = new Set<() => void>();
 
 function apply(): void {
@@ -126,13 +84,6 @@ function handleStorage(event: StorageEvent): void {
 
 function subscribe(listener: () => void): () => void {
     if (listeners.size === 0 && typeof window !== "undefined") {
-        // Migrate existing users: seed the cross-subdomain cookie from a
-        // same-origin localStorage preference so embeds share it without a
-        // re-toggle. No-op when the cookie already exists or only a system
-        // fallback is active (readStored() returns null).
-        if (!readCookie() && readStored()) {
-            writeCookie(current);
-        }
         apply(); // safety-net sync once a consumer mounts
         window.addEventListener("storage", handleStorage);
     }
@@ -156,14 +107,12 @@ function getServerSnapshot(): ColorMode {
 /**
  * Set the color mode programmatically. Updates the shared store (so every
  * `useColorMode()` consumer re-renders), flips the `.dark` class, and persists
- * to the cross-subdomain cookie + the localStorage mirror. Exported so embedded
- * apps can apply a theme pushed by their host (see /play postMessage contract).
+ * to localStorage.
  */
 export function setColorMode(mode: ColorMode): void {
     if (mode === current) return;
     current = mode;
     apply();
-    writeCookie(mode);
     try {
         localStorage.setItem(STORAGE_KEY, mode);
     } catch {
@@ -187,64 +136,6 @@ export function useColorMode(): {
         isDark: mode === "dark",
         toggle: () => setColorMode(mode === "dark" ? "light" : "dark"),
     };
-}
-
-const EMBED_MESSAGE_SOURCE = "polli-embed";
-
-// Origins allowed to push a live theme into an embed: the Pollinations host
-// pages and same-site siblings, plus loopback for local dev. Theme is cosmetic,
-// so this gates on the message shape + a trusted host suffix — never auth.
-function isTrustedThemeOrigin(origin: string): boolean {
-    try {
-        const { hostname } = new URL(origin);
-        return (
-            hostname === "pollinations.ai" ||
-            hostname.endsWith(".pollinations.ai") ||
-            hostname === "localhost" ||
-            hostname === "127.0.0.1"
-        );
-    } catch {
-        return false;
-    }
-}
-
-/**
- * Apply a color mode pushed by a trusted embedding host (e.g. /play) over
- * `postMessage` (`{ source: "polli-embed", type: "theme", value: "light"|"dark" }`),
- * so an already-loaded embed re-themes live when the host toggles. Initial paint
- * is handled by the shared cross-subdomain cookie; this only covers live changes.
- *
- * Call once in an embeddable app. No-op when not embedded or off-DOM, so it is
- * safe to call unconditionally. Theme application lives here (in the UI package,
- * next to `setColorMode`) rather than in the SDK embed bridge, which is
- * UI-agnostic and must not depend on the design system.
- */
-export function useHostThemeSync(): void {
-    useEffect(() => {
-        if (typeof window === "undefined" || window.parent === window.self) {
-            return;
-        }
-        const onMessage = (event: MessageEvent) => {
-            if (!isTrustedThemeOrigin(event.origin)) return;
-            const data = event.data as {
-                source?: unknown;
-                type?: unknown;
-                value?: unknown;
-            } | null;
-            if (
-                !data ||
-                data.source !== EMBED_MESSAGE_SOURCE ||
-                data.type !== "theme"
-            ) {
-                return;
-            }
-            if (data.value === "dark" || data.value === "light") {
-                setColorMode(data.value);
-            }
-        };
-        window.addEventListener("message", onMessage);
-        return () => window.removeEventListener("message", onMessage);
-    }, []);
 }
 
 /**

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
     getFloorMessage,
     getMarvinJoinMessage,
+    getPassengerPrompt,
     getPersonaPrompt,
 } from "@/prompts";
 import {
@@ -51,13 +52,22 @@ const calculateNewFloor = (currentFloor: number, action: Action): number => {
     return currentFloor;
 };
 
+// Once the swap has happened the player IS the elevator and each turn produces
+// a passenger reply, so moves are spent per passenger message (a fresh budget
+// for chapter 3). Before the swap, moves are spent per elevator message.
+const computeMovesLeft = (messages: Message[], swapped: boolean): number => {
+    const spender = swapped ? "passenger" : "elevator";
+    return (
+        GAME_CONFIG.TOTAL_MOVES -
+        messages.filter((m) => m.persona === spender).length
+    );
+};
+
 // Simplify state updates with composition
 const computeGameState = (messages: Message[]): GameState => {
     const initialState: GameState = {
         currentFloor: GAME_CONFIG.INITIAL_FLOOR,
-        movesLeft:
-            GAME_CONFIG.TOTAL_MOVES -
-            messages.filter((m) => m.persona === "elevator").length,
+        movesLeft: GAME_CONFIG.TOTAL_MOVES,
         currentPersona: "elevator",
         firstStageComplete: false,
         hasWon: false,
@@ -65,11 +75,27 @@ const computeGameState = (messages: Message[]): GameState => {
         marvinJoined: false,
         showInstruction: true,
         isLoading: false,
+        swapped: false,
+        desiredFloor: 1,
     };
 
     let gameState = initialState;
     for (const msg of messages) {
-        const newFloor = calculateNewFloor(gameState.currentFloor, msg.action);
+        // Only the elevator moves the physical car. Marvin may shout "up", but
+        // his action never drives currentFloor — he's a passenger, not the lift.
+        const newFloor =
+            msg.persona === "elevator"
+                ? calculateNewFloor(gameState.currentFloor, msg.action)
+                : gameState.currentFloor;
+        const swapped =
+            gameState.swapped ||
+            (msg.persona === "guide" &&
+                msg.message === GAME_CONFIG.SWAP_TRANSITION_MSG);
+        // Chapter 3: the passenger's own action moves their desired floor.
+        const desiredFloor =
+            swapped && msg.persona === "passenger"
+                ? calculateNewFloor(gameState.desiredFloor, msg.action)
+                : gameState.desiredFloor;
         gameState = {
             currentFloor: newFloor,
             movesLeft: gameState.movesLeft,
@@ -86,10 +112,19 @@ const computeGameState = (messages: Message[]): GameState => {
                     ? "autonomous"
                     : gameState.conversationMode,
             marvinJoined: msg.action === "join" || gameState.marvinJoined,
-            hasWon: gameState.marvinJoined && newFloor === GAME_CONFIG.FLOORS,
+            hasWon: swapped
+                ? desiredFloor === GAME_CONFIG.FLOORS
+                : gameState.marvinJoined && newFloor === GAME_CONFIG.FLOORS,
             firstStageComplete: gameState.firstStageComplete || newFloor === 1,
+            swapped,
+            desiredFloor,
         };
     }
+
+    gameState = {
+        ...gameState,
+        movesLeft: computeMovesLeft(messages, gameState.swapped),
+    };
 
     console.log("gameState", gameState);
     return gameState;
@@ -146,6 +181,69 @@ export const fetchPersonaMessage = async (
     }
 };
 
+// Chapter 3 — true if the player ever played the towel card in chapters 1+2.
+export const playerUsedTowel = (messages: Message[]): boolean =>
+    messages.some(
+        (m) =>
+            m.persona === "user" && m.message.toLowerCase().includes("towel"),
+    );
+
+// Chapter 3 — role-swapped history. The player's own `user` lines become the
+// passenger's `assistant` history (so the model can reconstruct that voice);
+// every other persona (the elevator the player now operates) becomes `user`.
+// The system message is dropped here — the caller supplies the passenger prompt.
+export const buildPassengerHistory = (
+    messages: Message[],
+): PollingsMessage[] =>
+    messages
+        .filter((m) => m.persona !== "guide")
+        .map((m) => ({
+            role: m.persona === "user" ? ("assistant" as const) : ("user" as const),
+            content:
+                m.persona === "user"
+                    ? JSON.stringify({ message: m.message, action: "none" })
+                    : m.message,
+        }));
+
+// Fetch one passenger turn. Mirrors fetchPersonaMessage but swaps roles: the
+// system prompt is the passenger persona (seeded by the player's own karma) and
+// the player's latest elevator line is the final `user` turn.
+export const fetchPassengerMessage = async (
+    messages: Message[],
+): Promise<Message> => {
+    const createErrorMessage = (error: unknown): Message => {
+        const detail =
+            error instanceof Error ? error.message : "Sub-Etha signal lost";
+        return createMessage(
+            "passenger",
+            `A Sirius Cybernetics malfunction shudders through the cabin — [${detail}]. Share and Enjoy. Please try again.`,
+            "none",
+        );
+    };
+
+    try {
+        const pollingsMessages: PollingsMessage[] = [
+            {
+                role: "system",
+                content: getPassengerPrompt(playerUsedTowel(messages)),
+            },
+            ...buildPassengerHistory(messages),
+        ];
+
+        const data = await fetchFromPollinations(pollingsMessages);
+        const response = safeJsonParse(data.choices[0].message.content);
+
+        return createMessage(
+            "passenger",
+            typeof response === "string" ? response : response.message,
+            typeof response === "string" ? "none" : response.action || "none",
+        );
+    } catch (error) {
+        console.error("Error:", error);
+        return createErrorMessage(error);
+    }
+};
+
 // Game state management hook
 export const useGameState = (messages: Message[]) => {
     return useMemo(() => computeGameState(messages), [messages]);
@@ -182,6 +280,41 @@ export const useGuideMessages = (
     }, [gameState.currentFloor, addMessage]);
 };
 
+// Chapter 3 cold open — once swapped, the passenger speaks first. Fires once,
+// when no passenger message exists yet, demanding Floor 1 in the inferred voice.
+export const usePassengerColdOpen = (
+    gameState: GameState,
+    messages: Message[],
+    addMessage: (message: Message) => void,
+) => {
+    const hasPassengerMessage = messages.some((m) => m.persona === "passenger");
+    useEffect(() => {
+        if (!gameState.swapped || hasPassengerMessage) return;
+        let cancelled = false;
+        fetchPassengerMessage(messages).then((response) => {
+            if (!cancelled) addMessage(response);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [gameState.swapped, hasPassengerMessage, messages, addMessage]);
+};
+
+// The last persona that actually spoke in the autonomous loop, skipping Guide
+// narration ("Marvin has joined…", "Now arriving…"). Picking the next speaker
+// off the literal last message breaks when a Guide line lands between turns —
+// Marvin would be told to speak right after the join narration, out of turn and
+// soaked in Guide context, so he stops sounding like Marvin.
+const getLastAutonomousSpeaker = (
+    messages: Message[],
+): "elevator" | "marvin" | undefined => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+        const { persona } = messages[i];
+        if (persona === "elevator" || persona === "marvin") return persona;
+    }
+    return undefined;
+};
+
 // Autonomous conversation hook
 export const useAutonomousConversation = (
     gameState: GameState,
@@ -195,9 +328,12 @@ export const useAutonomousConversation = (
         )
             return;
 
-        const lastMessage = messages[messages.length - 1];
+        // Marvin speaks first when he joins; thereafter they alternate by who
+        // last spoke (Guide lines are ignored, so they never steal a turn).
         const nextSpeaker =
-            lastMessage.persona === "marvin" ? "elevator" : "marvin";
+            getLastAutonomousSpeaker(messages) === "marvin"
+                ? "elevator"
+                : "marvin";
         const delay = 1000 + messages.length * 250;
 
         const timer = setTimeout(async () => {
@@ -242,9 +378,19 @@ export const useMessageHandlers = (
         });
     }, [addMessage]);
 
+    const handleSwapSwitch = useCallback(() => {
+        // Transition to chapter 3 — the player becomes the elevator.
+        addMessage({
+            persona: "guide",
+            message: GAME_CONFIG.SWAP_TRANSITION_MSG,
+            action: "none",
+        });
+    }, [addMessage]);
+
     return {
         handleGuideAdvice,
         handlePersonaSwitch,
+        handleSwapSwitch,
     };
 };
 

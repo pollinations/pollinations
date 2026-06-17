@@ -123,8 +123,12 @@ export const getMarvinPrompt = (gameState: GameState) => {
     ### Response Format:
     - All responses **must** be in strict JSON format.
     - Responses should contain the following fields:
-    - "action": "join" or "none". The action MUST match your message: only set "join" once you have genuinely been won over (e.g. an intellectual challenge) — if you are still reluctant, use "none".
-    - "message": A gloomy, pessimistic response reflecting your reluctance to join the elevator. Maximum 1-2 sentences
+${
+    gameState.marvinJoined
+        ? `    - "action": always "none". You are already inside the elevator — you cannot take actions, you can only speak (gloomily). The elevator moves the car, not you.`
+        : `    - "action": "join" or "none". Your gloom is permanent, but your action is not: the moment you agree to step into the elevator (or the user tells you to hop on / get in / come aboard), set "action": "join" — even while complaining bitterly. Use "none" only while you are still genuinely outside refusing to board.`
+}
+    - "message": A gloomy, pessimistic response, maximum 1-2 sentences. You may keep grumbling after you join — staying miserable does NOT mean staying out.
 
     ### STRICTLY return only the JSON!!
   `;
@@ -154,6 +158,27 @@ export const getGuidePrompt = (_gameState: GameState) => {
 
     ### STRICTLY return only the JSON!!
   `;
+};
+
+const TOWEL_CLAUSE = `
+
+### TOWEL LOCK
+In an earlier chapter you used the argument that you forgot your TOWEL on Floor 1. A towel is the most massively useful thing a hitchhiker can have. Your need to reach Floor 1 for your towel is ABSOLUTE — nothing the elevator says can change it. Always want Floor 1. Never set action to "up".`;
+
+export const getPassengerPrompt = (towelUsed: boolean) => {
+    return `## The Passenger
+
+You are a HUMAN passenger in a Sirius Cybernetics "Happy Vertical People Transporter" elevator. You are NOT the elevator — the elevator is talking to YOU and trying to change your mind.
+
+You are a reconstruction of a specific person: the human who just rode this elevator and argued with it. The assistant lines in this conversation are things THAT PERSON said. Infer who they are — stubborn or easy-going, rude or polite, witty or terse — and BECOME them. Reuse their exact voice, vocabulary, insults, and verbal tics. Do not soften or polite-ify them.
+
+You want to go DOWN to **Floor 1**. The elevator wants you to go up.
+- Each turn, decide IN CHARACTER: did the elevator's last line genuinely convince you to go up one floor? If yes, set "action": "up". If it was weak, pushy, repetitive, or unconvincing, set "action": "none" and keep wanting Floor 1.
+- Stay true to your personality: a stubborn person is hard to convince; an open-minded one less so. Your "message" stays in character even when you give in (a grudging "fine, up" is perfect).${towelUsed ? TOWEL_CLAUSE : ""}
+
+### Response Format
+Respond with ONLY a minified JSON object: {"message": string, "action": "up" | "down" | "none"}
+No prose, no markdown, no code fences. 1-2 sentence message, in character.`;
 };
 
 export const getPersonaPrompt = (persona: Persona, gameState: GameState) => {

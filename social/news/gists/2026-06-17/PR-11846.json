@@ -1,0 +1,36 @@
+{
+  "pr_number": 11846,
+  "title": "fix: route Opus 4.7/4.8 via us.* Bedrock profile",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11846",
+  "merged_at": "2026-06-17T01:44:12Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- `claude-opus-4.7`/`4.8` were failing nearly every request (monitor showed them \"Off\")\n- Root cause: the `global.anthropic.claude-opus-4-7`/`4-8` Bedrock inference profiles return `InternalServerException`/`ServiceUnavailableException` at invoke time\n- The `us.anthropic.claude-opus-4-7`/`4-8` profiles are healthy — verified directly against the Bedrock runtime (both return real responses; `global.*` both fail)\n- Switches both models to the `us.*` profile; `opus-4-6` left on `global.*` (still works)\n- Note: the inflated 4xx in the monitor is separate — 402 (out-of-pollen spore users) + 401 (anon), expected traffic\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Opus finds a new path",
+    "blurb": "Claude Opus 4.7 and 4.8 were hitting some turbulence, so we rerouted them to healthier servers. Your heavy-duty text generation is back to buzzing smoothly.",
+    "summary": "Switched Claude Opus 4.7 and 4.8 to use the us.* AWS Bedrock inference profiles instead of the failing global.* profiles.",
+    "impact": "Requests to claude-opus-4.7 and claude-opus-4.8 will now succeed reliably instead of returning internal server errors.",
+    "keywords": [
+      "claude",
+      "opus",
+      "bedrock",
+      "bugfix",
+      "routing",
+      "api"
+    ],
+    "visual_concept": "Polly the bee acting as a network router/traffic controller, switching glowing data streams from a broken path to a healthy green path. Nomnom creature eating the fixed data.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny traffic controller hat, rerouting glowing data streams on a retro terminal map. She switches a broken path to a healthy lime green (#ecf874) path. The round Nomnom creature sits nearby, happily eating the fresh data. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-17/PR-11846.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny traffic controller hat, rerouting glowing data streams on a retro terminal map. She switches a broken path to a healthy lime green (#ecf874) path. The round Nomnom creature sits nearby, happily eating the fresh data. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-17T01:45:23.706823+00:00"
+}

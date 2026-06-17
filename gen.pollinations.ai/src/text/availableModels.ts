@@ -30,7 +30,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gpt-5-nano-2025-08-07"],
     },
     {
-        name: "openai-large",
+        name: "gpt-5.4",
         config: portkeyConfig["gpt-5.4"],
     },
     {
@@ -38,7 +38,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gpt-5.4-mini"],
     },
     {
-        name: "gpt-5.5",
+        name: "openai-large",
         config: portkeyConfig["gpt-5.5"],
     },
     {
@@ -72,12 +72,12 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["stepfun/step-3.7-flash"],
     },
     {
-        name: "mistral",
+        name: "mistral-small-3.2",
         config: portkeyConfig["mistral-small-2503"],
         transform: stripCacheControl,
     },
     {
-        name: "mistral-4",
+        name: "mistral",
         config: portkeyConfig["mistral-small-2603"],
         transform: stripCacheControl,
     },
@@ -100,12 +100,12 @@ const models: ModelDefinition[] = [
         transform: pipe(stripCacheControl, stripReasoningEffort),
     },
     {
-        name: "grok-large",
+        name: "grok-4-20-reasoning",
         config: portkeyConfig["grok-4-20-reasoning"],
         transform: stripCacheControl,
     },
     {
-        name: "grok-4.3",
+        name: "grok-large",
         config: portkeyConfig["grok-4.3"],
         transform: stripCacheControl,
     },
@@ -126,7 +126,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["claude-sonnet-4-6"],
     },
     {
-        name: "claude-large",
+        name: "claude-opus-4.6",
         config: portkeyConfig["claude-opus-4-6"],
     },
     {
@@ -134,11 +134,11 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["claude-opus-4-7"],
     },
     {
-        name: "claude-opus-4.8",
+        name: "claude-large",
         config: portkeyConfig["claude-opus-4-8"],
     },
     {
-        name: "gemini",
+        name: "gemini-3-flash",
         config: portkeyConfig["gemini-3-flash-preview"],
         transform: pipe(
             sanitizeToolSchemas,
@@ -148,7 +148,7 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "gemini-3.5-flash",
+        name: "gemini",
         config: portkeyConfig["gemini-3.5-flash"],
         transform: pipe(
             sanitizeToolSchemas,
@@ -231,17 +231,17 @@ const models: ModelDefinition[] = [
         transform: createPerplexitySearchTransform("high"),
     },
     {
-        name: "kimi",
+        name: "kimi-k2.5",
         config: portkeyConfig["accounts/fireworks/models/kimi-k2p5"],
         transform: stripCacheControl,
     },
     {
-        name: "kimi-k2.6",
+        name: "kimi",
         config: portkeyConfig["accounts/fireworks/models/kimi-k2p6"],
         transform: stripCacheControl,
     },
     {
-        name: "kimi-k2.7-code",
+        name: "kimi-code",
         config: portkeyConfig["accounts/fireworks/models/kimi-k2p7-code"],
         transform: stripCacheControl,
     },
@@ -269,11 +269,11 @@ const models: ModelDefinition[] = [
         transform: stripCacheControl,
     },
     {
-        name: "minimax",
+        name: "minimax-m2.7",
         config: portkeyConfig["accounts/fireworks/models/minimax-m2p7"],
     },
     {
-        name: "minimax-m3",
+        name: "minimax",
         config: portkeyConfig["accounts/fireworks/models/minimax-m3"],
     },
     {

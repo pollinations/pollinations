@@ -1049,15 +1049,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "glm": {
-        aliases: [
-            "glm-5.2",
-            "glm-5p2",
-            "glm-5.1",
-            "glm-5p1",
-            "glm-5",
-            "glm-4.7",
-            "glm-4p7",
-        ],
+        aliases: ["glm-5.2", "glm-5p2"],
         modelId: "accounts/fireworks/models/glm-5p2",
         provider: "fireworks",
         brand: "Z.ai",

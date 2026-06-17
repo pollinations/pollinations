@@ -1,7 +1,4 @@
-import {
-    useAuthActions,
-    useEmbedHostCapabilities,
-} from "@pollinations/sdk/react";
+import { useAuthActions } from "@pollinations/sdk/react";
 import { ChevronIcon } from "../../primitives/ChevronIcon.tsx";
 import { Dropdown } from "../../primitives/Dropdown.tsx";
 import { DropdownItem } from "../../primitives/DropdownItem.tsx";
@@ -34,26 +31,10 @@ const defaultLabels: AppUserMenuLabels = {
     logout: "Log out from this app",
 };
 
-export function isEmbeddedContext(embedQueryParam = "embed"): boolean {
-    if (typeof window === "undefined") return false;
-    const search = new URLSearchParams(window.location.search);
-    if (search.get(embedQueryParam) === "1") return true;
-    try {
-        return window.self !== window.top;
-    } catch {
-        return true;
-    }
-}
-
 export function AppUserMenu({
     dashboardHref,
     labels: labelOverrides,
 }: AppUserMenuProps) {
-    const hostCapabilities = useEmbedHostCapabilities();
-    // A trusted embedding host (e.g. /play) advertises that it renders the auth
-    // control in its own chrome — so don't render it inside the iframe too.
-    if (hostCapabilities?.authControl) return null;
-
     return (
         <AppUserMenuContent
             dashboardHref={dashboardHref}

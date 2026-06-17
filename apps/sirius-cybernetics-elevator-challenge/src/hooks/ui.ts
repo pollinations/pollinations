@@ -7,13 +7,16 @@ const ENTER_URL = "https://enter.pollinations.ai";
 const API_BASE = "https://enter.pollinations.ai/api";
 const API_KEY_PREFIX = /^(sk_|plln_pk_|pk_)/;
 
-// deepseek best respects the elevator/Marvin resistance (keeps the game
-// challenging); reasoning_effort:"low" on each request keeps it responsive.
-export const DEFAULT_MODEL = "deepseek";
+// mistral is the default: fast (~1.2s) and reliably returns valid game JSON
+// on the real prompts. DeepSeek is kept as an option for its stubborn
+// in-character resistance, but it reasons heavily — on the long Guide prompt
+// "reasoning_effort: low" pushed replies past 10s, so api.ts now sends "none".
+export const DEFAULT_MODEL = "mistral";
 
 export const AVAILABLE_MODELS = [
-    { id: "deepseek", label: "DeepSeek" },
+    { id: "mistral", label: "Mistral" },
     { id: "openai", label: "OpenAI" },
+    { id: "deepseek", label: "DeepSeek" },
     { id: "claude-fast", label: "Claude" },
 ] as const;
 

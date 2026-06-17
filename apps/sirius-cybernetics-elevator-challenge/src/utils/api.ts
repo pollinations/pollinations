@@ -21,6 +21,9 @@ function createFetchRequest(
         body: JSON.stringify({
             messages,
             model: getStoredModel(),
+            // Cap reasoning so replies stay snappy. Harmless for non-reasoning
+            // models (openai); keeps reasoning models (deepseek) usable.
+            reasoning_effort: "low",
             response_format: jsonMode ? { type: "json_object" } : undefined,
             seed: Math.floor(Math.random() * 1000000),
         }),

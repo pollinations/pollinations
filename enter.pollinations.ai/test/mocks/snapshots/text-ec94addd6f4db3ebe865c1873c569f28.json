@@ -1,0 +1,128 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Different message 2 - 1771029779667"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "2287",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 14 Feb 2026 00:43:06 GMT",
+      "etag": "W/\"8ef-I+/uji3wqQ73aSC9ILPpgpx1ceU\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "320",
+      "x-usage-completion-text-tokens": "296",
+      "x-usage-prompt-text-tokens": "258"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "detected": false,
+                "filtered": false
+              },
+              "protected_material_text": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "Hey — can you tell me what you want me to do with \"Different message 2 - 1771029779667\"? A few quick possibilities I can help with:\n\n- Rewrite it (shorter, clearer, fancier)\n- Turn it into an email subject, push notification, or SMS\n- Generate multiple alternative messages with that ID included or removed\n- Explain or reformat the numeric ID (timestamp, UUID-style, etc.)\n- Localize/translate it into another language\n- Use it as a log entry or commit message and make it more descriptive\n\nIf any of those match, pick one. If you want me to just produce a handful of alternate phrasings right away, here are eight options in different tones:\n\n1. Different message #2 — 1771029779667\n2. Alternate message 2 (ID: 1771029779667)\n3. Message variant 2 — 1771029779667\n4. Different Message 2 — Reference: 1771029779667\n5. Diff Msg 2 | 1771029779667\n6. New version 2 — 1771029779667\n7. Update: Different message 2 — 1771029779667\n8. Different Msg 2 — UID 1771029779667\n\nWant more options tailored to a specific use (subject line, log, user-facing text)?",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1771029780,
+        "id": "pllns_4dcc249d4ec9dcd6824cddad00e84ea8",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 616,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 320,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 258,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 874
+        }
+      }
+    }
+  }
+}

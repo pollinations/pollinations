@@ -952,6 +952,32 @@ export const TEXT_SERVICES = {
         contextLength: 262000,
         isSpecialized: false,
     },
+    "kimi-k2.7-code": {
+        aliases: ["kimi-k2.7", "kimi-k2p7"],
+        modelId: "accounts/fireworks/models/kimi-k2p7-code",
+        provider: "fireworks",
+        brand: "Moonshot AI",
+        category: "text",
+        addedDate: new Date("2026-06-12").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            // Fireworks accounts/fireworks/models/kimi-k2p7-code rates (2026-06-14):
+            // prompt $0.95/M, completion $4.00/M, cache read $0.19/M.
+            promptTextTokens: perMillion(0.95),
+            promptCachedTokens: perMillion(0.19),
+            completionTextTokens: perMillion(4.0),
+        },
+        title: "Moonshot Kimi K2.7 Code",
+        description:
+            "Moonshot Kimi K2.7 Code - Agentic coding model with CoT reasoning",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 30, // Fireworks vision hard limit.
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
     "gemini-large": {
         aliases: ["gemini-3.1-pro", "gemini-2.5-pro"],
         modelId: "gemini-3.1-pro-preview",
@@ -1149,29 +1175,27 @@ export const TEXT_SERVICES = {
     },
     "minimax-m3": {
         aliases: ["minimax3", "minimax-3"],
-        modelId: "minimax/minimax-m3",
-        provider: "openrouter",
+        modelId: "accounts/fireworks/models/minimax-m3",
+        provider: "fireworks",
         brand: "MiniMax",
         category: "text",
         addedDate: new Date("2026-06-02").getTime(),
         priceMultiplier: 1,
         cost: {
-            // OpenRouter minimax/minimax-m3 effective rates (2026-06-02):
-            // currently a temporary 50% promo — prompt $0.30/M, completion
-            // $1.20/M, cache read $0.06/M. Base (post-promo) is double:
-            // $0.60/M, $2.40/M, $0.12/M — revisit when the promo ends.
+            // Fireworks accounts/fireworks/models/minimax-m3 rates (2026-06-14):
+            // prompt $0.30/M, completion $1.20/M, cache read $0.06/M.
             promptTextTokens: perMillion(0.3),
             promptCachedTokens: perMillion(0.06),
             completionTextTokens: perMillion(1.2),
         },
         title: "MiniMax M3",
-        description: "MiniMax M3 - Coding, agentic & 1M-context reasoning",
+        description: "MiniMax M3 - Coding, agentic & 512K-context reasoning",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 10, // OpenRouter image count varies by provider/model; Pollinations cap.
+        maxReferenceImages: 30, // Fireworks vision hard limit.
         tools: true,
         reasoning: true,
-        contextLength: 1048576,
+        contextLength: 524288,
         isSpecialized: false,
     },
     "mistral-large": {
@@ -1224,16 +1248,18 @@ export const TEXT_SERVICES = {
     },
     "qwen-coder-large": {
         aliases: ["qwen3-coder-next"],
-        modelId: "qwen3-coder-next",
-        provider: "alibaba",
+        modelId: "qwen/qwen3-coder-next",
+        provider: "openrouter",
         brand: "Qwen",
         category: "text",
         addedDate: new Date("2026-03-22").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
+        // Moved off Alibaba DashScope ($0.30/$1.50) to OpenRouter — same SKU,
+        // ~2.5x cheaper. OpenRouter routes to the cheapest live endpoint.
         cost: {
-            promptTextTokens: perMillion(0.3), // per 1M tokens
-            completionTextTokens: perMillion(1.5), // per 1M tokens
+            promptTextTokens: perMillion(0.11), // per 1M tokens
+            completionTextTokens: perMillion(0.8), // per 1M tokens
         },
         title: "Qwen3 Coder Next",
         description: "Qwen3 Coder Next - Advanced Code Generation",
@@ -1244,27 +1270,33 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "qwen-large": {
-        aliases: ["qwen3.6", "qwen3.6-plus", "qwen3p6-plus"],
-        modelId: "accounts/fireworks/models/qwen3p6-plus",
+        aliases: [
+            "qwen3.7",
+            "qwen3.7-plus",
+            "qwen3p7-plus",
+            "qwen3.6",
+            "qwen3.6-plus",
+            "qwen3p6-plus",
+        ],
+        modelId: "accounts/fireworks/models/qwen3p7-plus",
         provider: "fireworks",
         brand: "Qwen",
         category: "text",
-        addedDate: new Date("2026-03-22").getTime(),
+        addedDate: new Date("2026-06-12").getTime(),
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.5),
-            promptCachedTokens: perMillion(0.1),
-            completionTextTokens: perMillion(3.0),
+            promptTextTokens: perMillion(0.4),
+            promptCachedTokens: perMillion(0.08),
+            completionTextTokens: perMillion(1.6),
         },
-        title: "Qwen3.6 Plus",
-        description:
-            "Qwen3.6 Plus - 396B MoE Flagship with Reasoning (Fireworks)",
+        title: "Qwen3.7 Plus",
+        description: "Qwen3.7 Plus - Multimodal agent intelligence (Fireworks)",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 30, // Fireworks vision hard limit.
         tools: true,
         reasoning: true,
-        contextLength: 1048576,
+        contextLength: 262000,
         isSpecialized: false,
     },
     "qwen-vision": {

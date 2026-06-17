@@ -1,11 +1,9 @@
 import type { ComponentPropsWithoutRef, FC } from "react";
 import { cn } from "../lib/cn.ts";
 import { ScrollArea } from "../primitives/ScrollArea.tsx";
-import type { ThemeName } from "../theme.ts";
 
 type CodeBlockOwnProps = {
     code: string;
-    theme?: ThemeName;
     codeClassName?: string;
 };
 
@@ -14,14 +12,12 @@ export type CodeBlockProps = CodeBlockOwnProps &
 
 export const CodeBlock: FC<CodeBlockProps> = ({
     code,
-    theme,
     codeClassName,
     className,
     ...rest
 }) => (
     <ScrollArea
         {...rest}
-        theme={theme}
         axis="x"
         className={cn(
             "polli:rounded-lg polli:border polli:border-theme-border polli:bg-theme-bg-pale",

@@ -3,7 +3,6 @@ import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
-import type { ProgressManager } from "../progressBar.ts";
 import { closestAspectRatio } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 
@@ -28,8 +27,6 @@ const XAI_EDITS_URL = "https://api.x.ai/v1/images/edits";
 export async function callXaiImageAPI(
     prompt: string,
     safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
     modelId: string = "grok-imagine-image",
 ): Promise<ImageGenerationResult> {
     const apiKey = getImageEnv("XAI_API_KEY");
@@ -47,14 +44,6 @@ export async function callXaiImageAPI(
     logOps(
         `Calling xAI image API (${modelId}, ${isEditMode ? "edit" : "generate"} mode) with prompt:`,
         prompt,
-    );
-    progress.updateBar(
-        requestId,
-        35,
-        "Processing",
-        isEditMode
-            ? "Editing with Grok Imagine..."
-            : "Generating with Grok Imagine...",
     );
 
     const requestBody: Record<string, unknown> = {
@@ -96,18 +85,11 @@ export async function callXaiImageAPI(
     }
 
     logOps("Downloading result from URL:", result.url);
-    progress.updateBar(requestId, 70, "Processing", "Downloading result...");
 
     const imageResponse = await fetchUpstream(result.url, {
         errorLabel: "Failed to download xAI result",
     });
     const buffer = Buffer.from(await imageResponse.arrayBuffer());
-    progress.updateBar(
-        requestId,
-        90,
-        "Success",
-        "Grok Imagine generation completed",
-    );
 
     return {
         buffer,

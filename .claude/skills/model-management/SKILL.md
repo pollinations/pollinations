@@ -85,13 +85,33 @@ For pure model work (modelId, provider, registry modalities/aliases/description,
 
 ```bash
 # (Optional) Terminal 1 — Enter on 3000 — ONLY when your change touches Enter surfaces
-(cd enter.pollinations.ai && npm run decrypt-vars && npm run dev)
+(cd enter.pollinations.ai && npm run dev)
 
-# Terminal 2 — Gen on 8788 — required for all model tests
-(cd gen.pollinations.ai && npm run decrypt-vars && npx wrangler dev --port 8788)
+# Terminal 2 — Gen on 8788 — required for all model tests.
+# USE `npm run dev`, NOT bare `npx wrangler dev`. The dev script runs
+# `vite build` first; bare wrangler serves a STALE bundle (your registry/config
+# edits won't show — /v1/models returns old pricing) and skips
+# `--persist-to .wrangler/state` (so the seeded D1 below isn't used).
+(cd gen.pollinations.ai && npm run dev)
 
-# Terminal 3 — your tests
+# Terminal 3 — seed a known API key into gen's local D1, then source tokens.
+# Without this, e2e curls 401: gen validates Bearer tokens against its own local
+# D1, and better-auth stores keys hashed (base64url(sha256(key))) — it never
+# stores the plaintext of secret keys, so a token in _local/.env only works if
+# its hash is in THIS D1. `seed:local` inserts a key whose plaintext = your
+# _local/.env POLLINATIONS_TOKEN_LOCAL (idempotent; re-run after any D1 reset).
+(cd gen.pollinations.ai && npm run seed:local)
 source _local/.env
+```
+
+**End-to-end smoke test (must pass before any model PR):**
+```bash
+source _local/.env
+curl -s "http://localhost:8788/v1/chat/completions" \
+  -H "Authorization: Bearer $POLLINATIONS_TOKEN_LOCAL" -H "Content-Type: application/json" \
+  -d '{"model":"<your-model>","max_tokens":200,"messages":[{"role":"user","content":"Reply: OK"}]}' \
+  | jq '{finish:.choices[0].finish_reason, content:.choices[0].message.content}'
+# 200 + content → wiring + auth + billing path all live. 401 → re-run seed:local.
 ```
 
 ---
@@ -107,19 +127,18 @@ source _local/.env
 | Var | Purpose |
 |---|---|
 | `POLLINATIONS_TOKEN_PROD` | Prod enter `sk_` — calls against `gen.pollinations.ai` |
-| `POLLINATIONS_TOKEN_LOCAL` | Local enter `sk_` (seeded into local KV) — calls against `localhost:8788` |
+| `POLLINATIONS_TOKEN_LOCAL` | `sk_` for `localhost:8788`. **NOT auto-seeded** — its hash must be inserted into gen's local D1 via `cd gen.pollinations.ai && npm run seed:local` (seeds this exact token). Re-run after any D1 reset. |
 | `POLLINATIONS_TOKEN_STAGING` | Staging enter `sk_` — calls against staging deploys |
 | `TINYBIRD_READ_PROD` | Read token, prod workspace |
 | `TINYBIRD_READ_STAGING` | Read token, staging workspace — **also covers DEV** (local gen writes to the staging workspace via its `TINYBIRD_INGEST_URL` binding) |
 
 > **There are no "free" vs "paid" keys.** A key is a key. The `paidOnly` gate checks the user's `packBalance` (purchased Pollen pack balance), not the key prefix. To exercise the gate, use a token whose **owning user has `packBalance == 0`** — typically a freshly minted key (signup grants free Pollen, no pack) or one whose pack has been depleted. Don't confuse "free Pollen remaining" (signup grant, doesn't unlock paidOnly) with "pack balance" (purchased, does unlock).
 
-> **`_local/.env` token labels are not guaranteed to match where they actually validate.** Before assuming a 401 means "wrong/expired token," verify the token against gen's local D1 — only keys seeded in *gen's* `apikey` table validate there (enter's D1 is a separate sqlite, not shared with gen in local). Quick lookup (no secrets printed):
+> **A 401 on `localhost:8788` almost always means the local D1 has no row for your token — run `cd gen.pollinations.ai && npm run seed:local`.** Root cause: gen validates `Bearer` tokens against its OWN local D1 `apikey` table (`shared/auth/api-key.ts` → better-auth `verifyApiKey`; enter's D1 is a separate sqlite, not shared). better-auth stores keys hashed as `base64url(sha256(key))` and never stores the plaintext of secret keys, so a dashboard-minted key is unrecoverable and a `_local/.env` token only validates if its hash is in THIS D1. The D1 gets recreated (or came from another clone), so the hash is usually absent → 401. `seed:local` inserts a key whose plaintext = your `_local/.env` `POLLINATIONS_TOKEN_LOCAL` (and a flower-tier user with large balances, so paid-only + spend both pass). It's idempotent — re-run any time. Inspect what's seeded (no secrets printed):
 > ```bash
 > GEN_DB=gen.pollinations.ai/.wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite
-> sqlite3 $GEN_DB "SELECT name, start, prefix FROM apikey;"
+> sqlite3 $GEN_DB "SELECT name, start, enabled FROM apikey WHERE id='local-e2e-key';"
 > ```
-> Match each `POLLINATIONS_TOKEN_*` env var's first 6 chars against the `start` column — the env var named `_LOCAL` is not necessarily the one seeded locally. Pick whichever env var matches a row whose `name` looks like a local test key (e.g., `local-battle-test`, `local-e2e-test-key`).
 
 Provider/runtime secrets (Azure, OpenAI, OpenRouter API keys, etc.) belong in `gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json` via SOPS — never in `_local/.env`. See §11.
 

@@ -33,25 +33,31 @@ CONFIG=$(node -e "
 
 OUTPUT_DIR=$(echo "$CONFIG" | node -e "const c=JSON.parse(require('fs').readFileSync(0,'utf8')); console.log(c.outputDir || 'dist')")
 BUILD_CMD=$(echo "$CONFIG" | node -e "const c=JSON.parse(require('fs').readFileSync(0,'utf8')); console.log(c.buildCommand || '')")
-PROJECT_NAME="apps-$APP_NAME"
+SUBDOMAIN=$(echo "$CONFIG" | node -e "const c=JSON.parse(require('fs').readFileSync(0,'utf8')); console.log(c.subdomain || process.argv[1])" "$APP_NAME")
+DEPLOY_TARGET=$(echo "$CONFIG" | node -e "const c=JSON.parse(require('fs').readFileSync(0,'utf8')); console.log(c.deployTarget || 'pages')")
+WORKER_ENTRYPOINT=$(echo "$CONFIG" | node -e "const c=JSON.parse(require('fs').readFileSync(0,'utf8')); console.log(c.workerEntrypoint || 'worker.js')")
+PROJECT_NAME="apps-$SUBDOMAIN"
 
 echo "📦 App: $APP_NAME"
 echo "📋 Project: $PROJECT_NAME"
+echo "🌐 Subdomain: $SUBDOMAIN"
 echo "📁 Output: $OUTPUT_DIR"
+echo "🎯 Target: $DEPLOY_TARGET"
 
-# Step 1: Generate PWA assets
-echo ""
-echo "🎨 Generating PWA assets..."
-cd "$REPO_ROOT/tools/pwa-assets"
-npm install --silent
-node generate-apps-assets.js "$APP_NAME" || echo "⚠️ PWA assets generation failed (continuing)"
+# Apps ship committed brand assets (favicons/icons/OG/manifest). After an app
+# migrates to the design-system logo, regenerate them via tools/icons.
 
-# Step 2: Install dependencies
+# Install dependencies
 echo ""
 echo "📦 Installing dependencies..."
 cd "$APP_PATH"
 if [ -f "package.json" ]; then
     npm install --silent
+
+    if grep -qF "../../packages/" package.json; then
+        echo "📦 Installing monorepo package dependencies..."
+        npm install --silent --prefix "$REPO_ROOT"
+    fi
 fi
 
 # Step 3: Build
@@ -61,18 +67,64 @@ if [ -n "$BUILD_CMD" ] && [ "$BUILD_CMD" != "null" ]; then
     eval "$BUILD_CMD"
 fi
 
-# Step 4: Setup Cloudflare infrastructure
-echo ""
-echo "☁️ Setting up Cloudflare infrastructure..."
-node "$SCRIPT_DIR/deploy-app.js" "$APP_NAME"
+if [ "$DEPLOY_TARGET" = "worker" ]; then
+    # Worker-backed apps define their Myceli origin route in wrangler.toml.
+    echo ""
+    echo "🚀 Deploying Cloudflare Worker..."
+    CLOUDFLARE_API_TOKEN="${CLOUDFLARE_API_TOKEN_WORKER:-$CLOUDFLARE_API_TOKEN}" \
+        CLOUDFLARE_ACCOUNT_ID="${CLOUDFLARE_ACCOUNT_ID_WORKER:-$CLOUDFLARE_ACCOUNT_ID}" \
+        npx wrangler deploy "$WORKER_ENTRYPOINT"
+else
+    # Step 4: Provision the Myceli origin before upload
+    echo ""
+    echo "☁️ Provisioning Myceli origin..."
+    node "$SCRIPT_DIR/deploy-app.js" "$APP_NAME" --phase=origin
 
-# Step 5: Deploy to Cloudflare Pages
+    # Step 5: Upload content to Cloudflare Pages
+    echo ""
+    echo "🚀 Uploading to Cloudflare Pages..."
+    npx wrangler pages deploy "$APP_PATH/$OUTPUT_DIR" \
+        --project-name="$PROJECT_NAME" \
+        --branch=production \
+        --commit-dirty=true
+fi
+
+# Gate on the Myceli origin before public cutover
 echo ""
-echo "🚀 Deploying to Cloudflare Pages..."
-npx wrangler pages deploy "$APP_PATH/$OUTPUT_DIR" \
-    --project-name="$PROJECT_NAME" \
-    --branch=production \
-    --commit-dirty=true
+echo "⏳ Waiting for https://$SUBDOMAIN.myceli.ai to serve..."
+for i in $(seq 1 30); do
+    CODE=$(curl -s -o /dev/null -w '%{http_code}' "https://$SUBDOMAIN.myceli.ai" || echo "000")
+    if [ "$CODE" = "200" ]; then
+        echo "✅ Origin live"
+        break
+    fi
+    if [ "$i" = "30" ]; then
+        echo "❌ Origin not live (last: $CODE) — aborting before cutover"
+        exit 1
+    fi
+    sleep 10
+done
+
+# Step 7: Public cutover after origin verification
+echo ""
+echo "🔀 Cutting over public domain..."
+node "$SCRIPT_DIR/deploy-app.js" "$APP_NAME" --phase=cutover
+
+# Step 8: Verify the public URL serves through the proxy
+echo ""
+echo "⏳ Verifying https://$SUBDOMAIN.pollinations.ai ..."
+for i in $(seq 1 30); do
+    CODE=$(curl -s -o /dev/null -w '%{http_code}' "https://$SUBDOMAIN.pollinations.ai" || echo "000")
+    if [ "$CODE" = "200" ]; then
+        echo "✅ Public URL live"
+        break
+    fi
+    if [ "$i" = "30" ]; then
+        echo "❌ Public URL not serving (last: $CODE) — investigate before retrying"
+        exit 1
+    fi
+    sleep 10
+done
 
 echo ""
-echo "✅ Deployed: https://$APP_NAME.pollinations.ai"
+echo "✅ Deployed: https://$SUBDOMAIN.pollinations.ai (origin: https://$SUBDOMAIN.myceli.ai)"

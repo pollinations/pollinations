@@ -43,8 +43,6 @@ export interface TransformOptions {
     modalities?: string[];
     audio?: Record<string, unknown>;
     stream_options?: Record<string, unknown>;
-    isPrivate?: boolean;
-    referrer?: string;
     [key: string]: unknown;
 }
 
@@ -80,8 +78,10 @@ export interface ChatCompletion {
     citations?: string[];
     error?: string | { message?: string; status?: number; details?: unknown };
     stream?: boolean;
-    responseStream?: AsyncIterable<unknown> | ReadableStream | null;
+    responseStream?: ReadableStream | null;
     requestData?: unknown;
+    /** Portkey fallback target that served the call, e.g. "config.targets[1]". */
+    fallbackTarget?: string;
     [key: string]: unknown;
 }
 
@@ -93,7 +93,6 @@ export interface ServiceError extends Error {
     details?: unknown;
     model?: string;
     provider?: string;
-    originalProvider?: string;
     response?: { data?: unknown };
 }
 
@@ -108,8 +107,6 @@ export interface RequestData {
     repetition_penalty?: number;
     seed?: number;
     stream?: boolean;
-    isPrivate?: boolean;
-    referrer?: string;
     voice?: string;
     jsonMode?: boolean;
     tools?: unknown[];
@@ -133,9 +130,6 @@ export interface RequestData {
 /** Configuration for the generic OpenAI client. */
 export interface OpenAIClientConfig {
     endpoint: string | ((model: string, options: TransformOptions) => string);
-    authHeaderName?: string;
-    authHeaderValue?: () => string | undefined;
     defaultOptions?: Record<string, unknown>;
-    formatResponse?: ((...args: unknown[]) => unknown) | null;
     additionalHeaders?: Record<string, string>;
 }

@@ -1,4 +1,4 @@
-import { InfoTip } from "../ui/info-tip.tsx";
+import { InfoTip } from "@pollinations/ui";
 
 type Attribution = {
     appName?: string;
@@ -25,9 +25,7 @@ export function AppAttribution({
     const tipText = [
         "Same as copy-pasting an API key into their app.",
         "Only share with apps you trust.",
-    ]
-        .map((line) => `- ${line}`)
-        .join("\n");
+    ].join("\n");
     return (
         <>
             <p className="text-theme-text-strong">

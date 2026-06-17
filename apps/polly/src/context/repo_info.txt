@@ -55,7 +55,6 @@ Cached responses: FREE (no pollen deducted) | Headers: x-cache HIT/MISS
 
 Image: Azure Content Safety (hate, selfHarm, sexual, violence) blocks severity>=4 | mature+child detected = 15s delay | safe=true for extra filtering | fails-open
 Text: content filter tracking per generation | qwen-safety model for custom moderation
-Feed: public by default | nofeed=true or private=true to exclude
 
 ## Identity
 
@@ -65,12 +64,12 @@ Both accept standard OpenAI params.
 
 ## SDK & MCP
 
-SDK: `npm i @pollinations_ai/sdk` → generateImage, generateText, chat, Pollinations client
-MCP: `npx @pollinations_ai/mcp` → Claude Desktop compatible, 15+ tools
+SDK: `npm i @pollinations/sdk` → generateImage, generateText, chat, Pollinations client
+MCP: `npx @pollinations/mcp` → Claude Desktop compatible, 15+ tools
 
 ## Image Params
 
-width, height (default 1024) | seed (-1=random) | model | enhance (AI prompt enhancement) | negative_prompt | safe | quality (low|medium|high|hd) | image (ref URL for img2img) | transparent | guidance_scale (1-20) | nofeed/private
+width, height (default 1024) | seed (-1=random) | model | safe | quality (low|medium|high|hd) | image (ref URL for img2img) | transparent | guidance_scale (1-20)
 
 ## TTS Voices
 

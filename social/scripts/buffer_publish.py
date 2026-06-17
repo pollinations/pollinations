@@ -133,159 +133,94 @@ def create_buffer_post_with_retry(
     return {"success": False, "error": "Max retries exceeded"}
 
 
-def publish_linkedin_post(post_data: dict, access_token: str) -> bool:
-    """Publish a LinkedIn post via Buffer (scheduled delivery)"""
-    channel = get_channel_by_service(access_token, "linkedin")
-    if not channel:
-        return False
-
-    text = (post_data.get("text") or "").strip()
-    if not text:
-        print("Failed to publish: LinkedIn post text is empty")
-        return False
-
-    char_count = len(text)
-    if char_count > LINKEDIN_MAX_CHARS:
-        print(
-            f"Failed to publish: LinkedIn post is {char_count} chars, exceeds Buffer limit of {LINKEDIN_MAX_CHARS}"
-        )
-        return False
-
-    print(f"Publishing to LinkedIn ({channel.get('displayName', 'unknown')})...")
-    print(f"Post preview ({char_count} chars):")
-    print(f"---\n{text[:500]}{'...' if len(text) > 500 else ''}\n---")
-
-    # Get image URL if available
-    media = None
-    image_urls = get_post_image_urls(post_data)
-    if image_urls:
-        media = {"photo": image_urls[0]}
-        print(f"Including image: {image_urls[0][:100]}...")
-
-    # Verify image URLs are accessible (CDN propagation)
-    if media:
-        verify_image_urls([media["photo"]])
-
-    # Calculate next scheduled posting time
-    scheduled_at = get_next_scheduled_time("linkedin")
-
-    result = create_buffer_post_with_retry(
-        access_token=access_token,
-        channel_id=channel["id"],
-        text=text,
-        media=media,
-        scheduled_at=scheduled_at,
-    )
-
-    if result.get("success"):
-        print(f"Successfully {'scheduled' if scheduled_at else 'published'} to LinkedIn!")
-        return True
-    else:
-        print(f"Failed to publish: {result.get('error', 'Unknown error')}")
-        return False
-
-
-def publish_twitter_post(post_data: dict, access_token: str) -> bool:
-    """Publish a Twitter/X post via Buffer (scheduled delivery)"""
-    # Try both "twitter" and "x" service names (Buffer may use either)
-    channel = get_channel_by_service(access_token, "twitter")
-    if not channel:
-        channel = get_channel_by_service(access_token, "x")
-    if not channel:
-        return False
-
-    text = (post_data.get("text") or "").strip()
-    if not text:
-        print("Failed to publish: Twitter/X post text is empty")
-        return False
-
-    # Ensure under 280 chars
-    if len(text) > 280:
-        print(f"Warning: Tweet is {len(text)} chars, truncating...")
-        text = text[:277] + "..."
-
-    print(f"Publishing to Twitter/X ({channel.get('displayName', 'unknown')})...")
-    print(f"Tweet ({len(text)} chars):")
-    print(f"---\n{text}\n---")
-
-    # Get image URL if available
-    media = None
-    image_urls = get_post_image_urls(post_data)
-    if image_urls:
-        media = {"photo": image_urls[0]}
-        print(f"Including image: {image_urls[0][:100]}...")
-
-    # Verify image URLs are accessible (CDN propagation)
-    if media:
-        verify_image_urls([media["photo"]])
-
-    # Calculate next scheduled posting time
-    scheduled_at = get_next_scheduled_time("twitter")
-
-    result = create_buffer_post_with_retry(
-        access_token=access_token,
-        channel_id=channel["id"],
-        text=text,
-        media=media,
-        scheduled_at=scheduled_at,
-    )
-
-    if result.get("success"):
-        print(f"Successfully {'scheduled' if scheduled_at else 'published'} to Twitter/X!")
-        return True
-    else:
-        print(f"Failed to publish: {result.get('error', 'Unknown error')}")
-        return False
-
-
-def publish_instagram_post(post_data: dict, access_token: str) -> bool:
-    """Publish an Instagram post via Buffer (scheduled delivery)"""
-    channel = get_channel_by_service(access_token, "instagram")
-    if not channel:
-        return False
-
-    text = (post_data.get("text") or "").strip()
-    if not text:
-        print("Failed to publish: Instagram caption is empty")
-        return False
-
-    # Instagram caption limit is 2200 chars
-    if len(text) > 2200:
-        text = text[:2197] + "..."
-
-    print(f"Publishing to Instagram ({channel.get('displayName', 'unknown')})...")
-    print(f"Caption ({len(text)} chars):")
-    print(f"---\n{text[:500]}{'...' if len(text) > 500 else ''}\n---")
-
-    # Get image URLs from images array
-    media = None
-    image_urls = get_post_image_urls(post_data)
-    if image_urls:
-        media = {"photos": image_urls}
-        print(f"Including {len(image_urls)} image(s)")
-
+def _instagram_metadata(post_data: dict, image_urls: list) -> dict:
+    """Build Instagram post/carousel metadata block."""
     metadata_block = post_data.get("metadata") or {}
     stored_post_type = metadata_block.get("post_type")
     if stored_post_type == "carousel" or len(image_urls) > 1:
         instagram_type = "carousel"
     else:
         instagram_type = "post"
+    print(f"Instagram post type: {instagram_type}")
     # Verified against Buffer GraphQL introspection: InstagramPostMetadataInput.type uses PostType,
     # and PostType includes "post", "story", "reel", and "carousel".
-    metadata = {
+    return {
         "instagram": {
             "type": instagram_type,
             "shouldShareToFeed": True,
         }
     }
-    print(f"Instagram post type: {instagram_type}")
+
+
+def publish_post(
+    post_data: dict,
+    access_token: str,
+    *,
+    label: str,
+    services: tuple,
+    max_chars: int,
+    on_overflow: str = "reject",
+    multi_image: bool = False,
+    metadata_fn=None,
+) -> bool:
+    """Publish a post to one Buffer service (scheduled delivery).
+
+    Config-driven across LinkedIn/Twitter/Instagram. The per-service divergences:
+    - services: fallback service aliases tried in order (e.g. ("twitter", "x"))
+    - max_chars / on_overflow: "reject" returns False when over limit (LinkedIn);
+      "truncate" clips to max_chars-3 + "..." (Twitter/Instagram)
+    - multi_image: False sends {"photo": urls[0]}; True sends {"photos": urls} (carousel)
+    - metadata_fn: optional builder for the Buffer metadata block (Instagram only)
+    """
+    channel = None
+    for service in services:
+        channel = get_channel_by_service(access_token, service)
+        if channel:
+            break
+    if not channel:
+        return False
+
+    text = (post_data.get("text") or "").strip()
+    if not text:
+        print(f"Failed to publish: {label} post text is empty")
+        return False
+
+    char_count = len(text)
+    if char_count > max_chars:
+        if on_overflow == "reject":
+            print(
+                f"Failed to publish: {label} post is {char_count} chars, exceeds Buffer limit of {max_chars}"
+            )
+            return False
+        # truncate
+        print(f"Warning: {label} post is {char_count} chars, truncating...")
+        text = text[: max_chars - 3] + "..."
+
+    print(f"Publishing to {label} ({channel.get('displayName', 'unknown')})...")
+    print(f"Post preview ({len(text)} chars):")
+    print(f"---\n{text[:500]}{'...' if len(text) > 500 else ''}\n---")
+
+    # Get image URL(s) if available
+    media = None
+    metadata = None
+    image_urls = get_post_image_urls(post_data)
+    if image_urls:
+        if multi_image:
+            media = {"photos": image_urls}
+            print(f"Including {len(image_urls)} image(s)")
+        else:
+            media = {"photo": image_urls[0]}
+            print(f"Including image: {image_urls[0][:100]}...")
+
+    if metadata_fn:
+        metadata = metadata_fn(post_data, image_urls)
 
     # Verify image URLs are accessible (CDN propagation)
     if image_urls:
-        verify_image_urls(image_urls)
+        verify_image_urls(image_urls if multi_image else [image_urls[0]])
 
-    # Calculate next scheduled posting time
-    scheduled_at = get_next_scheduled_time("instagram")
+    # Calculate next scheduled posting time (keyed by primary service name)
+    scheduled_at = get_next_scheduled_time(services[0])
 
     result = create_buffer_post_with_retry(
         access_token=access_token,
@@ -297,30 +232,47 @@ def publish_instagram_post(post_data: dict, access_token: str) -> bool:
     )
 
     if result.get("success"):
-        print(f"Successfully {'scheduled' if scheduled_at else 'published'} to Instagram!")
+        print(f"Successfully {'scheduled' if scheduled_at else 'published'} to {label}!")
         return True
     else:
         print(f"Failed to publish: {result.get('error', 'Unknown error')}")
         return False
 
 
-def add_pr_comment(github_token: str, repo: str, pr_number: int, message: str):
-    """Add a comment to the PR"""
-    if not pr_number:
-        return
-
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {github_token}"
-    }
-
-    response = requests.post(
-        f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments",
-        headers=headers,
-        json={"body": message}
+def publish_linkedin_post(post_data: dict, access_token: str) -> bool:
+    """Publish a LinkedIn post via Buffer (rejects over-limit posts)."""
+    return publish_post(
+        post_data,
+        access_token,
+        label="LinkedIn",
+        services=("linkedin",),
+        max_chars=LINKEDIN_MAX_CHARS,
+        on_overflow="reject",
     )
 
-    if response.status_code in [200, 201]:
-        print(f"Added comment to PR #{pr_number}")
-    else:
-        print(f"Warning: Could not add PR comment: {response.status_code}")
+
+def publish_twitter_post(post_data: dict, access_token: str) -> bool:
+    """Publish a Twitter/X post via Buffer (truncates over-limit posts)."""
+    return publish_post(
+        post_data,
+        access_token,
+        label="Twitter/X",
+        # Try both "twitter" and "x" service names (Buffer may use either)
+        services=("twitter", "x"),
+        max_chars=280,
+        on_overflow="truncate",
+    )
+
+
+def publish_instagram_post(post_data: dict, access_token: str) -> bool:
+    """Publish an Instagram post/carousel via Buffer (truncates over-limit captions)."""
+    return publish_post(
+        post_data,
+        access_token,
+        label="Instagram",
+        services=("instagram",),
+        max_chars=2200,
+        on_overflow="truncate",
+        multi_image=True,
+        metadata_fn=_instagram_metadata,
+    )

@@ -1,4 +1,19 @@
-import { cn } from "@frontend/lib/cn.ts";
+import {
+    Button,
+    Collapsible,
+    cn,
+    MailIcon,
+    useScrollLock,
+} from "@pollinations/ui";
+import {
+    AuthInfoCard,
+    AuthModal,
+    AuthModalHeader,
+    AuthModalLoading,
+    ErrorBanner,
+} from "@pollinations/ui/auth";
+import { ModalityChip } from "@pollinations/ui/gen";
+import { formatPollen } from "@pollinations/ui/wallet";
 import {
     CONSENT_PERMISSIONS,
     getAuthorizeInitialPermissions,
@@ -10,26 +25,18 @@ import { apiClient } from "../../api.ts";
 import { authClient, type User } from "../../auth.ts";
 import { config } from "../../config.ts";
 import { useGitHubSignIn } from "../../hooks/use-github-sign-in.ts";
-import { useScrollLock } from "../../hooks/use-scroll-lock.ts";
 import { createKeyWithPermissions } from "../../lib/create-api-key.ts";
-import { formatPollen } from "../../lib/format-pollen.ts";
 import { AccountPermissionsInput } from "../keys/account-permissions-input.tsx";
 import { ExpiryDaysInput } from "../keys/expiry-days-input.tsx";
 import { useKeyPermissions } from "../keys/key-permissions.tsx";
 import { PollenBudgetInput } from "../keys/pollen-budget-input.tsx";
-import { getModalityColors } from "../models/modality-ui.ts";
-import { computeCategoryModalities } from "../models/model-categories.ts";
-import { Button } from "../ui/button.tsx";
-import { ChevronIcon } from "../ui/chevron-icon.tsx";
-import { Chip } from "../ui/chip.tsx";
-import { AppAttribution } from "./app-attribution.tsx";
+import { fetchModelCatalog } from "../models/model-catalog.ts";
 import {
-    AuthInfoCard,
-    AuthModal,
-    AuthModalHeader,
-    AuthModalLoading,
-    ErrorBanner,
-} from "./auth-modal.tsx";
+    computeCategoryModalities,
+    getModelCategoriesFromCatalog,
+    type ModelCategoryGroup,
+} from "../models/model-categories.ts";
+import { AppAttribution } from "./app-attribution.tsx";
 
 type Attribution = {
     found: boolean;
@@ -84,6 +91,10 @@ export function Authorize() {
         "pending" | "approved" | "denied"
     >("pending");
     const [totalBalance, setTotalBalance] = useState<number | null>(null);
+    const [permissionsExpanded, setPermissionsExpanded] = useState(false);
+    const [modelCategories, setModelCategories] = useState<
+        ModelCategoryGroup[]
+    >([]);
 
     const parsedRedirectUrl = redirect_url ? safeParseUrl(redirect_url) : null;
     const redirectHostname = parsedRedirectUrl?.hostname ?? "";
@@ -100,6 +111,7 @@ export function Authorize() {
 
     const modalities = computeCategoryModalities(
         keyPermissions.permissions.allowedModels,
+        modelCategories,
     );
     // Which optional scopes the caller requested. Stays constant once set —
     // unaffected by the user toggling a scope off in the Advanced panel.
@@ -118,6 +130,24 @@ export function Authorize() {
         (!app_key || redirectValidationState === "valid");
 
     useScrollLock();
+
+    useEffect(() => {
+        let cancelled = false;
+
+        fetchModelCatalog()
+            .then((models) => {
+                if (!cancelled) {
+                    setModelCategories(getModelCategoriesFromCatalog(models));
+                }
+            })
+            .catch(() => {
+                if (!cancelled) setModelCategories([]);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     useEffect(() => {
         setRedirectValidationState("unchecked");
@@ -402,7 +432,6 @@ export function Authorize() {
                                 as="button"
                                 onClick={signIn}
                                 disabled={isSigningIn}
-                                theme="amber"
                             >
                                 {isSigningIn
                                     ? "Signing in..."
@@ -507,25 +536,7 @@ export function Authorize() {
                                             className="flex h-5 w-4 shrink-0 items-center justify-center text-theme-text-soft"
                                             aria-hidden="true"
                                         >
-                                            <svg
-                                                viewBox="0 0 24 24"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeWidth={2.2}
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                className="h-4 w-4"
-                                            >
-                                                <title>Email</title>
-                                                <rect
-                                                    width="18"
-                                                    height="14"
-                                                    x="3"
-                                                    y="5"
-                                                    rx="2"
-                                                />
-                                                <path d="m3 7 9 6 9-6" />
-                                            </svg>
+                                            <MailIcon className="h-4 w-4" />
                                         </span>
                                         <span>See your name and email.</span>
                                     </li>
@@ -573,16 +584,13 @@ export function Authorize() {
                                             <span>Generate</span>
                                             <div className="flex items-center gap-1 flex-nowrap">
                                                 {modalities.map((m) => (
-                                                    <Chip
+                                                    <ModalityChip
                                                         key={m}
+                                                        modality={m}
                                                         size="sm"
-                                                        className={
-                                                            getModalityColors(m)
-                                                                ?.filled ?? ""
-                                                        }
                                                     >
                                                         {m}
-                                                    </Chip>
+                                                    </ModalityChip>
                                                 ))}
                                             </div>
                                         </div>
@@ -608,55 +616,51 @@ export function Authorize() {
                             </ul>
                         </div>
 
-                        <div className="-mx-6 px-10 py-4 border-t border-theme-border">
+                        <div className="-mx-6 px-10 py-4 border-t border-divider">
                             <PollenBudgetInput
                                 value={keyPermissions.permissions.pollenBudget}
                                 onChange={keyPermissions.setPollenBudget}
                                 inline
-                                theme="amber"
                             />
                         </div>
 
-                        <div className="-mx-6 px-10 py-4 border-t border-theme-border">
+                        <div className="-mx-6 px-10 py-4 border-t border-divider">
                             <ExpiryDaysInput
                                 value={keyPermissions.permissions.expiryDays}
                                 onChange={keyPermissions.setExpiryDays}
                                 inline
-                                theme="amber"
                             />
                         </div>
 
-                        <details className="group -mx-6 border-t border-theme-border">
-                            <summary className="cursor-pointer list-none px-3 py-3 flex items-center justify-end select-none">
-                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium text-theme-text-soft hover:bg-theme-bg-pale hover:text-theme-text-strong transition-colors">
-                                    Permissions
-                                    <ChevronIcon className="text-theme-text-soft group-open:rotate-180" />
+                        <Collapsible
+                            expanded={permissionsExpanded}
+                            onToggle={() => setPermissionsExpanded((v) => !v)}
+                            wrapperClassName="-mx-6 rounded-none border-x-0 border-b-0 border-divider bg-transparent"
+                            hoverClassName="hover:bg-theme-bg-pale"
+                            panelClassName="px-3 pb-3 pt-1 space-y-6"
+                            label={
+                                <span className="flex justify-end">
+                                    <span className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-medium text-theme-text-soft transition-colors hover:text-theme-text-strong">
+                                        Permissions
+                                    </span>
                                 </span>
-                            </summary>
-                            <div className="px-3 pb-3 pt-1 space-y-6">
-                                <AccountPermissionsInput
-                                    value={
-                                        keyPermissions.permissions
-                                            .accountPermissions
-                                    }
-                                    onChange={
-                                        keyPermissions.setAccountPermissions
-                                    }
-                                    allowedModels={
-                                        keyPermissions.permissions.allowedModels
-                                    }
-                                    onModelsChange={
-                                        keyPermissions.setAllowedModels
-                                    }
-                                    visiblePermissions={
-                                        visibleOptionalPermissions
-                                    }
-                                    theme="amber"
-                                    showApiName={false}
-                                    modelsInitiallyExpanded
-                                />
-                            </div>
-                        </details>
+                            }
+                        >
+                            <AccountPermissionsInput
+                                value={
+                                    keyPermissions.permissions
+                                        .accountPermissions
+                                }
+                                onChange={keyPermissions.setAccountPermissions}
+                                allowedModels={
+                                    keyPermissions.permissions.allowedModels
+                                }
+                                onModelsChange={keyPermissions.setAllowedModels}
+                                visiblePermissions={visibleOptionalPermissions}
+                                showApiName={false}
+                                modelsInitiallyExpanded
+                            />
+                        </Collapsible>
                     </div>
                 )}
             </div>
@@ -684,7 +688,6 @@ export function Authorize() {
                             as="button"
                             onClick={handleAuthorize}
                             disabled={!canAuthorize || isAuthorizing}
-                            theme="amber"
                         >
                             {isAuthorizing ? "Authorizing..." : "Authorize"}
                         </Button>

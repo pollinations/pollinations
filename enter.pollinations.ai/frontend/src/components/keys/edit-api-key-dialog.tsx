@@ -1,14 +1,20 @@
-import { Dialog } from "@ark-ui/react/dialog";
-import { Field } from "@ark-ui/react/field";
 import { apiClient } from "@frontend/api.ts";
-import { cn } from "@frontend/lib/cn.ts";
+import {
+    AppIcon,
+    Button,
+    Chip,
+    CopyButton,
+    cn,
+    Dialog,
+    DialogTitle,
+    Field,
+    GlobeIcon,
+    Input,
+    LockIcon,
+    ScrollArea,
+} from "@pollinations/ui";
 import type { FC } from "react";
 import { useState } from "react";
-import { Button } from "../ui/button.tsx";
-import { Chip } from "../ui/chip.tsx";
-import { Input } from "../ui/input.tsx";
-import { ScrollArea } from "../ui/scroll-area.tsx";
-import { Tooltip } from "../ui/tooltip.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 import { PublishableKeySettings } from "./publishable-key-settings.tsx";
 import type { ApiKey, ApiKeyUpdateParams } from "./types.ts";
@@ -58,7 +64,6 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [name, setName] = useState(apiKey.name || "");
     const [error, setError] = useState<string | null>(null);
-    const [copied, setCopied] = useState(false);
 
     const isPublishable = isPublishableKey(apiKey);
     const appKey = isAppKey(apiKey);
@@ -71,17 +76,6 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const [earningsEnabled, setEarningsEnabled] = useState(
         initialEarningsEnabled,
     );
-
-    async function handleCopyKey(): Promise<void> {
-        if (!plaintextKey) return;
-        try {
-            await navigator.clipboard.writeText(plaintextKey);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        } catch {
-            // Clipboard API may fail in some contexts
-        }
-    }
 
     const expiryDays = apiKey.expiresAt
         ? Math.ceil(
@@ -153,118 +147,118 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     }
 
     return (
-        <Dialog.Root open onOpenChange={({ open }) => !open && onClose()}>
-            <Dialog.Backdrop className="fixed inset-0 z-[100] bg-gray-950/50" />
-            <Dialog.Positioner className="fixed inset-0 z-[110] flex h-dvh items-start justify-center overflow-hidden p-4">
-                <Dialog.Content
-                    className={cn(
-                        "my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-lg border-2 shadow-lg",
-                        "border-blue-300 bg-white",
-                    )}
-                >
-                    <div className="shrink-0 p-6 pb-4">
-                        <Dialog.Title className="text-xl font-bold mb-4">
-                            {appKey ? "Edit App Key" : "Edit API Key"}
-                        </Dialog.Title>
+        <Dialog
+            open
+            onOpenChange={(open) => !open && onClose()}
+            contentClassName="flex max-h-[calc(100dvh-2rem)] flex-col"
+        >
+            <div className="shrink-0 p-6 pb-4">
+                <DialogTitle className="text-xl font-bold mb-4">
+                    {appKey ? "Edit App Key" : "Edit API Key"}
+                </DialogTitle>
 
-                        <div className="flex items-center gap-3">
-                            <Chip>
-                                {appKey
-                                    ? "🖥️ App"
-                                    : isPublishable
-                                      ? "🌐 Publishable"
-                                      : "🔒 Secret"}
-                            </Chip>
-                            {isPublishable && plaintextKey ? (
-                                <Tooltip
-                                    triggerAs="span"
-                                    content={
-                                        copied ? "Copied!" : "Click to copy"
-                                    }
-                                    className="inline-flex min-w-0"
-                                >
-                                    <button
-                                        type="button"
-                                        onClick={handleCopyKey}
-                                        className={cn(
-                                            "font-mono text-sm cursor-pointer transition-all",
-                                            copied
-                                                ? "text-blue-700 font-semibold"
-                                                : "text-blue-600 hover:text-blue-800 hover:underline",
-                                        )}
-                                    >
-                                        {copied ? "✓ Copied!" : plaintextKey}
-                                    </button>
-                                </Tooltip>
-                            ) : (
-                                <span className="font-mono text-sm text-gray-500">
-                                    {apiKey.start}...
-                                </span>
-                            )}
-                        </div>
-                    </div>
-
-                    <ScrollArea className="min-h-0 flex-1 overscroll-contain p-6 py-4 touch-pan-y [-webkit-overflow-scrolling:touch]">
-                        {error && (
-                            <div className="mb-4 rounded-xl bg-intent-danger-bg-light p-4 text-intent-danger-text">
-                                {error}
-                            </div>
+                <div className="flex items-center gap-3">
+                    <Chip>
+                        {appKey ? (
+                            <>
+                                <AppIcon className="h-4 w-4" />
+                                App
+                            </>
+                        ) : isPublishable ? (
+                            <>
+                                <GlobeIcon className="h-4 w-4" />
+                                Publishable
+                            </>
+                        ) : (
+                            <>
+                                <LockIcon className="h-4 w-4" />
+                                Secret
+                            </>
                         )}
-
-                        <div className="space-y-4">
-                            <Field.Root className="flex flex-col gap-2">
-                                <Field.Label className="text-sm font-semibold">
-                                    Name
-                                </Field.Label>
-                                <Input
-                                    type="text"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    className="w-full border-blue-200 bg-blue-50 focus-visible:border-blue-300 focus-visible:ring-blue-200"
-                                    placeholder="Enter API key name"
-                                    disabled={isSubmitting}
-                                />
-                            </Field.Root>
-
-                            {appKey && (
-                                <PublishableKeySettings
-                                    redirectUris={redirectUris}
-                                    onRedirectUrisChange={setRedirectUris}
-                                    earningsEnabled={earningsEnabled}
-                                    onEarningsEnabledChange={setEarningsEnabled}
-                                    disabled={isSubmitting}
-                                />
-                            )}
-
-                            {!isPublishable && (
-                                <KeyPermissionsInputs
-                                    value={keyPermissions}
-                                    disabled={isSubmitting}
-                                    inline
-                                />
-                            )}
-                        </div>
-                    </ScrollArea>
-
-                    <div className="flex gap-2 justify-end p-6 pt-4 shrink-0">
-                        <Button
-                            type="button"
-                            intent="danger"
-                            onClick={onClose}
-                            disabled={isSubmitting}
+                    </Chip>
+                    {isPublishable && plaintextKey ? (
+                        <CopyButton
+                            value={plaintextKey}
+                            tooltipClassName="inline-flex min-w-0"
+                            aria-label="Copy publishable API key"
+                            className={(copied) =>
+                                cn(
+                                    "font-mono text-sm cursor-pointer transition-all",
+                                    copied
+                                        ? "text-intent-success-text font-semibold"
+                                        : "text-theme-text-soft hover:text-theme-text-strong hover:underline",
+                                )
+                            }
                         >
-                            Cancel
-                        </Button>
-                        <Button
-                            type="button"
-                            onClick={handleSave}
-                            disabled={isSubmitting}
-                        >
-                            {isSubmitting ? "Saving..." : "Save"}
-                        </Button>
+                            {(copied) => (copied ? "Copied!" : plaintextKey)}
+                        </CopyButton>
+                    ) : (
+                        <span className="font-mono text-sm text-theme-text-muted">
+                            {apiKey.start}...
+                        </span>
+                    )}
+                </div>
+            </div>
+
+            <ScrollArea className="min-h-0 flex-1 overscroll-contain p-6 py-4 touch-pan-y [-webkit-overflow-scrolling:touch]">
+                {error && (
+                    <div className="mb-4 rounded-xl bg-intent-danger-bg-light p-4 text-intent-danger-text">
+                        {error}
                     </div>
-                </Dialog.Content>
-            </Dialog.Positioner>
-        </Dialog.Root>
+                )}
+
+                <div className="space-y-4">
+                    <Field.Root className="flex flex-col gap-2">
+                        <Field.Label className="text-sm font-semibold">
+                            Name
+                        </Field.Label>
+                        <Input
+                            type="text"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className="w-full"
+                            placeholder="Enter API key name"
+                            disabled={isSubmitting}
+                        />
+                    </Field.Root>
+
+                    {appKey && (
+                        <PublishableKeySettings
+                            redirectUris={redirectUris}
+                            onRedirectUrisChange={setRedirectUris}
+                            earningsEnabled={earningsEnabled}
+                            onEarningsEnabledChange={setEarningsEnabled}
+                            disabled={isSubmitting}
+                        />
+                    )}
+
+                    {!isPublishable && (
+                        <KeyPermissionsInputs
+                            value={keyPermissions}
+                            disabled={isSubmitting}
+                            inline
+                        />
+                    )}
+                </div>
+            </ScrollArea>
+
+            <div className="flex gap-2 justify-end p-6 pt-4 shrink-0">
+                <Button
+                    type="button"
+                    intent="danger"
+                    onClick={onClose}
+                    disabled={isSubmitting}
+                >
+                    Cancel
+                </Button>
+                <Button
+                    type="button"
+                    onClick={handleSave}
+                    disabled={isSubmitting}
+                >
+                    {isSubmitting ? "Saving..." : "Save"}
+                </Button>
+            </div>
+        </Dialog>
     );
 };

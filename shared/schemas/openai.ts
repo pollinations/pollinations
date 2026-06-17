@@ -489,9 +489,6 @@ export const PromptFilterResultSchema = z.array(
     }),
 );
 
-const UserTierSchema = z.literal(["anonymous", "seed", "flower", "nectar"]);
-export type UserTier = z.infer<typeof UserTierSchema>;
-
 const CompletionChoiceSchema = z.object({
     // Accept any string - backends may return various values (stop, length, error, max_tokens, etc.)
     finish_reason: z.string().nullable().optional(),
@@ -510,64 +507,12 @@ export const CreateChatCompletionResponseSchema = z.object({
     system_fingerprint: z.string().nullish(),
     object: z.literal("chat.completion"),
     usage: CompletionUsageSchema.optional(),
-    user_tier: UserTierSchema.optional(),
     citations: z.array(z.string()).optional(), // Perplexity citations
 });
 
 export type CreateChatCompletionResponse = z.infer<
     typeof CreateChatCompletionResponseSchema
 >;
-
-const ChatCompletionMessageToolCallChunkSchema = z.object({
-    index: z.number().int().nonnegative(),
-    id: z.string().optional(),
-    type: z.literal("function").optional(),
-    function: z
-        .object({
-            name: z.string().optional(),
-            arguments: z.string().optional(),
-        })
-        .optional(),
-});
-
-const ChatCompletionStreamResponseDeltaSchema = z.object({
-    content: z.string().nullable().optional(),
-    function_call: z
-        .object({
-            arguments: z.string().optional(),
-            name: z.string().optional(),
-        })
-        .optional(),
-    tool_calls: z.array(ChatCompletionMessageToolCallChunkSchema).optional(),
-    role: z.enum(["system", "user", "assistant", "tool"]).optional(),
-    // Reasoning/thinking fields for streaming
-    reasoning_content: z.string().optional(),
-    content_blocks: z.array(ChatCompletionMessageContentBlockSchema).optional(),
-});
-
-export const CreateChatCompletionStreamResponseSchema = z.object({
-    id: z.string(),
-    choices: z.array(
-        z.object({
-            delta: ChatCompletionStreamResponseDeltaSchema,
-            logprobs: ChatCompletionChoiceLogprobsSchema.optional(),
-            // Accept any string - backends may return various values
-            finish_reason: z.string().nullable().optional(),
-            index: z.number().int().nonnegative(),
-        }),
-    ),
-    created: z.number().int(),
-    model: z.string(),
-    system_fingerprint: z.string().nullish(),
-    object: z.literal("chat.completion.chunk"),
-    usage: z
-        .object({
-            completion_tokens: z.number().int(),
-            prompt_tokens: z.number().int(),
-            total_tokens: z.number().int(),
-        })
-        .optional(),
-});
 
 const OpenAIModelSchema = z
     .object({
@@ -649,7 +594,7 @@ export const CreateImageRequestSchema = z
             }),
         safe: SafeSchema,
     })
-    .passthrough() // Allow Pollinations extensions: seed, nologo, enhance, safe, etc.
+    .passthrough() // Allow Pollinations extensions: seed, safe, etc.
     .meta({ $id: "CreateImageRequest" });
 
 export type CreateImageRequest = z.infer<typeof CreateImageRequestSchema>;

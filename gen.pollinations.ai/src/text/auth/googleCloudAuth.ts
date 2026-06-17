@@ -5,7 +5,6 @@ const log = debug("pollinations:google-auth");
 const errorLog = debug("pollinations:google-auth:error");
 
 interface ServiceAccountKey {
-    project_id: string | undefined;
     private_key_id: string;
     private_key: string;
     client_email: string;
@@ -20,7 +19,6 @@ function getKeyData(): ServiceAccountKey | null {
     const privateKey = process.env.GOOGLE_PRIVATE_KEY;
     const privateKeyId = process.env.GOOGLE_PRIVATE_KEY_ID;
     const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
-    const projectId = process.env.GOOGLE_PROJECT_ID;
 
     if (!privateKey || !privateKeyId || !clientEmail) {
         errorLog(
@@ -30,7 +28,6 @@ function getKeyData(): ServiceAccountKey | null {
     }
 
     return {
-        project_id: projectId,
         private_key_id: privateKeyId,
         private_key: privateKey.replace(/\\n/g, "\n"),
         client_email: clientEmail,

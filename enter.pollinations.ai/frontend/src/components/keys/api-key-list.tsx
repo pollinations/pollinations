@@ -1,12 +1,21 @@
+import {
+    AppIcon,
+    Chip,
+    GlobeIcon,
+    IconButton,
+    KeyIcon,
+    LockIcon,
+    PencilIcon,
+    Section,
+    Surface,
+    TerminalIcon,
+    Tooltip,
+    XIcon,
+} from "@pollinations/ui";
 import { formatDistanceToNowStrict } from "date-fns";
 import type { FC } from "react";
 import { useState } from "react";
 import { genDocsUrl } from "../../config.ts";
-import { DashboardSection } from "../layout/dashboard-section.tsx";
-import { Chip } from "../ui/chip.tsx";
-import { IconButton } from "../ui/icon-button.tsx";
-import { Surface } from "../ui/surface.tsx";
-import { Tooltip } from "../ui/tooltip.tsx";
 import { ApiKeyDialog } from "./api-key-dialog.tsx";
 import { EditApiKeyDialog } from "./edit-api-key-dialog.tsx";
 import { DeleteConfirmation } from "./key-delete-confirmation.tsx";
@@ -75,15 +84,26 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         return (
             <Surface
                 key={apiKey.id}
-                className="transition-colors hover:bg-white/90"
+                className="transition-colors hover:bg-surface-opaque/90"
             >
                 <div className="flex items-center gap-2 mb-2">
                     <Chip size="sm">
-                        {isApp
-                            ? "🖥️ App"
-                            : isPublishable
-                              ? "🌐 Publishable"
-                              : "🔒 Secret"}
+                        {isApp ? (
+                            <>
+                                <AppIcon className="h-3.5 w-3.5" />
+                                App
+                            </>
+                        ) : isPublishable ? (
+                            <>
+                                <GlobeIcon className="h-3.5 w-3.5" />
+                                Publishable
+                            </>
+                        ) : (
+                            <>
+                                <LockIcon className="h-3.5 w-3.5" />
+                                Secret
+                            </>
+                        )}
                     </Chip>
                     <span className="text-sm font-medium truncate">
                         {apiKey.name}
@@ -95,31 +115,37 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             start={apiKey.start ?? ""}
                         />
                     ) : (
-                        <span className="font-mono text-xs text-gray-500 shrink-0">
+                        <span className="font-mono text-xs text-theme-text-muted shrink-0">
                             {apiKey.start}...
                         </span>
                     )}
                     <div className="flex gap-1 shrink-0 ml-2 items-center">
                         <IconButton
+                            intent="info"
                             title="Edit key"
+                            tooltip="Edit key"
+                            tooltipAlign="center"
+                            tooltipClampToViewport={false}
                             onClick={() => setEditingKey(apiKey)}
                         >
-                            ✎
+                            <PencilIcon className="h-4 w-4" />
                         </IconButton>
                         <IconButton
                             intent="danger"
                             title="Delete key"
+                            tooltip="Delete key"
+                            tooltipAlign="center"
+                            tooltipClampToViewport={false}
                             onClick={() => setDeleteId(apiKey.id)}
-                            className="text-lg"
                         >
-                            ×
+                            <XIcon className="h-4 w-4" />
                         </IconButton>
                     </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-4 text-xs">
                     <span>
-                        <span className="text-gray-400">Created: </span>
-                        <span className="text-gray-500">
+                        <span className="text-theme-text-muted">Created: </span>
+                        <span className="text-theme-text-muted">
                             {formatDistanceToNowStrict(apiKey.createdAt, {
                                 addSuffix: false,
                                 locale: shortLocale,
@@ -127,8 +153,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         </span>
                     </span>
                     <span>
-                        <span className="text-gray-400">Used: </span>
-                        <span className="text-gray-500">
+                        <span className="text-theme-text-muted">Used: </span>
+                        <span className="text-theme-text-muted">
                             {apiKey.lastRequest
                                 ? formatDistanceToNowStrict(
                                       new Date(apiKey.lastRequest),
@@ -142,26 +168,37 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     </span>
                     {isPublishable && primaryRedirectUri && (
                         <span className="inline-flex min-w-0 items-center gap-1">
-                            <span className="text-gray-400">Redirect: </span>
+                            <span className="text-theme-text-muted">
+                                Redirect:{" "}
+                            </span>
                             <a
                                 href={primaryRedirectUri}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="hover:underline truncate max-w-[200px] inline-block align-bottom text-blue-600"
+                                className="hover:underline truncate max-w-[200px] inline-block align-bottom text-theme-text-soft hover:text-theme-text-strong"
                             >
                                 {primaryRedirectUri.replace(/^https?:\/\//, "")}
                             </a>
                             {extraRedirectUriCount > 0 && (
                                 <Tooltip
-                                    content={redirectUrisMeta
-                                        .slice(1)
-                                        .map((uri) =>
-                                            uri.replace(/^https?:\/\//, ""),
-                                        )
-                                        .join("\n")}
+                                    content={
+                                        <span className="block whitespace-pre-line">
+                                            Additional redirects
+                                            {"\n"}
+                                            {redirectUrisMeta
+                                                .slice(1)
+                                                .map((uri) =>
+                                                    uri.replace(
+                                                        /^https?:\/\//,
+                                                        "",
+                                                    ),
+                                                )
+                                                .join("\n")}
+                                        </span>
+                                    }
                                     displayContents
                                 >
-                                    <Chip theme="blue" size="sm">
+                                    <Chip size="sm">
                                         +{extraRedirectUriCount}
                                     </Chip>
                                 </Tooltip>
@@ -170,14 +207,13 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     )}
                     {isApp && (
                         <Chip
-                            theme={earningsEnabled ? "green" : undefined}
+                            intent={earningsEnabled ? "success" : undefined}
                             size="sm"
                             className={
                                 earningsEnabled
                                     ? undefined
-                                    : "bg-gray-100 text-gray-500"
+                                    : "bg-ink-100 text-theme-text-muted"
                             }
-                            title="Developer earnings"
                         >
                             Earnings {earningsEnabled ? "on" : "off"}
                         </Chip>
@@ -193,7 +229,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 pollenBudget={apiKey.pollenBalance}
                             />
                             <span className="flex items-center gap-1">
-                                <span className="text-gray-400">
+                                <span className="text-theme-text-muted">
                                     Permissions:
                                 </span>
                                 <ModelsBadge permissions={apiKey.permissions} />
@@ -208,26 +244,30 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     return (
         <>
             <div className="flex flex-col gap-6">
-                <DashboardSection
+                <Section
                     title="API"
-                    theme="blue"
                     framed
                     action={
                         <ApiKeyDialog
                             onSubmit={onCreate}
                             onComplete={() => {}}
-                            triggerLabel="🔑 + API Key"
+                            triggerLabel={
+                                <span className="inline-flex items-center gap-1.5">
+                                    <KeyIcon className="h-4 w-4" />
+                                    Add Key
+                                </span>
+                            }
                         />
                     }
                 >
                     <div className="flex flex-col gap-3">
                         {!sortedApiKeys.length && (
                             <Surface className="p-6 text-center">
-                                <p className="text-2xl mb-2">🔑</p>
-                                <p className="font-semibold text-gray-900 text-lg mb-2">
+                                <KeyIcon className="mx-auto mb-2 h-8 w-8 text-theme-text-muted" />
+                                <p className="font-semibold text-ink-900 text-lg mb-2">
                                     Create your first API key
                                 </p>
-                                <p className="text-sm text-gray-600">
+                                <p className="text-sm text-theme-text-muted">
                                     Use API keys for your own private
                                     server-side integrations.
                                 </p>
@@ -235,61 +275,39 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         )}
                         {sortedApiKeys.map(renderKeyCard)}
                     </div>
-                    <p className="mt-5 flex items-start gap-1.5 border-t border-gray-200 pt-5 text-[13px] leading-snug text-gray-500">
+                    <p className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                         <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
                             For your own backend, scripts, and CLIs — billed to
                             your account.
                         </span>
                     </p>
-                </DashboardSection>
-                <DashboardSection
+                </Section>
+                <Section
                     title="App"
-                    theme="blue"
                     framed
                     action={
                         <ApiKeyDialog
                             onSubmit={onCreate}
                             onComplete={() => {}}
-                            triggerLabel="🖥️ + Add App"
+                            triggerLabel={
+                                <span className="inline-flex items-center gap-1.5">
+                                    <AppIcon className="h-4 w-4" />
+                                    Add App
+                                </span>
+                            }
                             simplified
                         />
                     }
                 >
                     <div className="flex flex-col gap-3">
-                        <Surface
-                            variant="card-themed"
-                            className="w-fit text-theme-text-strong"
-                        >
-                            <span className="font-body text-xs font-bold uppercase tracking-wide text-red-600 mr-1.5">
-                                New!
-                            </span>
-                            Turn on earnings to receive a share of pollen users
-                            spend in your app.{" "}
-                            <a
-                                href={genDocsUrl("#tag/bring-your-own-pollen")}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="font-medium text-blue-700 hover:text-blue-900"
-                            >
-                                <span className="underline underline-offset-2">
-                                    Read the guide
-                                </span>
-                                <span
-                                    aria-hidden="true"
-                                    className="no-underline ml-0.5"
-                                >
-                                    ↗
-                                </span>
-                            </a>
-                        </Surface>
                         {!sortedAppKeys.length && (
                             <Surface className="p-6 text-center">
-                                <p className="text-2xl mb-2">🖥️</p>
-                                <p className="font-semibold text-gray-900 text-lg mb-2">
+                                <AppIcon className="mx-auto mb-2 h-8 w-8 text-theme-text-muted" />
+                                <p className="font-semibold text-ink-900 text-lg mb-2">
                                     Create your first app key
                                 </p>
-                                <p className="text-sm text-gray-600">
+                                <p className="text-sm text-theme-text-muted">
                                     Use app keys when your users bring their own
                                     Pollinations account.
                                 </p>
@@ -297,14 +315,44 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         )}
                         {sortedAppKeys.map(renderKeyCard)}
                     </div>
-                    <p className="mt-5 flex items-start gap-1.5 border-t border-gray-200 pt-5 text-[13px] leading-snug text-gray-500">
-                        <AppIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            For apps where users sign in with their own
-                            Pollinations account and spend their own Pollen.
-                        </span>
-                    </p>
-                </DashboardSection>
+                    <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                        <p className="flex items-start gap-1.5">
+                            <AppIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                For apps where users sign in with their own
+                                Pollinations account and spend their own Pollen.
+                            </span>
+                        </p>
+                        <p className="flex items-start gap-1.5">
+                            <AppIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                <span className="font-bold uppercase tracking-wide text-intent-danger-text mr-1">
+                                    New!
+                                </span>
+                                Turn on earnings to receive a share of pollen
+                                users spend in your app.{" "}
+                                <a
+                                    href={genDocsUrl(
+                                        "#tag/bring-your-own-pollen",
+                                    )}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-medium text-theme-text-soft hover:text-theme-text-strong"
+                                >
+                                    <span className="underline underline-offset-2">
+                                        Read the guide
+                                    </span>
+                                    <span
+                                        aria-hidden="true"
+                                        className="no-underline ml-0.5"
+                                    >
+                                        ↗
+                                    </span>
+                                </a>
+                            </span>
+                        </p>
+                    </div>
+                </Section>
             </div>
             <DeleteConfirmation
                 deleteId={deleteId}
@@ -321,35 +369,3 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         </>
     );
 };
-
-const TerminalIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <polyline points="4 8 8 12 4 16" />
-        <line x1="12" y1="20" x2="20" y2="20" />
-    </svg>
-);
-
-const AppIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <rect x="2" y="4" width="20" height="14" rx="2" />
-        <path d="M2 20h20" />
-    </svg>
-);

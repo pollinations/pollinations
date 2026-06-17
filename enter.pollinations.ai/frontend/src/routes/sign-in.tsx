@@ -1,5 +1,6 @@
+import { Button, GitHubIcon } from "@pollinations/ui";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { authClient } from "../auth.ts";
 import {
     type DashboardPage,
@@ -9,9 +10,9 @@ import {
     DASHBOARD_NAV_ITEMS,
     isDashboardPage,
 } from "../components/layout/dashboard-theme.ts";
+import { usePageFromHash } from "../components/layout/use-page-from-hash.ts";
 import { Models } from "../components/models";
 import { NewsFaq } from "../components/news-faq";
-import { Button } from "../components/ui/button.tsx";
 
 const SIGNED_OUT_PAGES: ReadonlySet<DashboardPage> = new Set([
     "news-faq",
@@ -37,10 +38,9 @@ export const Route = createFileRoute("/sign-in")({
         const result = await authClient.getSession();
         if (result.data?.user) {
             // Check for pending redirect URL from authorize flow
-            const pendingRedirectUrl =
-                typeof window !== "undefined"
-                    ? localStorage.getItem("pending_redirect_url")
-                    : null;
+            const pendingRedirectUrl = localStorage.getItem(
+                "pending_redirect_url",
+            );
 
             if (pendingRedirectUrl) {
                 // Clear the stored URL and redirect to authorize
@@ -63,18 +63,7 @@ export const Route = createFileRoute("/sign-in")({
 
 function RouteComponent() {
     const [loading, setLoading] = useState(false);
-    const [activePage, setActivePage] = useState<DashboardPage>(() =>
-        pageFromHash(typeof window === "undefined" ? "" : window.location.hash),
-    );
-
-    useEffect(() => {
-        function syncPageFromHash(): void {
-            setActivePage(pageFromHash(window.location.hash));
-        }
-
-        window.addEventListener("hashchange", syncPageFromHash);
-        return () => window.removeEventListener("hashchange", syncPageFromHash);
-    }, []);
+    const [activePage, setActivePage] = usePageFromHash(pageFromHash);
 
     const handleSignIn = async () => {
         setLoading(true);
@@ -125,11 +114,12 @@ function SignedOutAccountArea({
     return (
         <Button
             as="button"
+            data-theme="accent"
             onClick={onSignIn}
             disabled={loading}
-            theme="amber"
-            className="w-full justify-center text-center"
+            className="w-full justify-center gap-2 text-center"
         >
+            <GitHubIcon className="h-4 w-4 shrink-0" />
             {loading ? "Signing in..." : "Sign in with GitHub"}
         </Button>
     );

@@ -1,19 +1,11 @@
-import { Field } from "@ark-ui/react";
-import { cn } from "@frontend/lib/cn.ts";
+import { Field, InfoTip, Input } from "@pollinations/ui";
 import type { FC } from "react";
-import { InfoTip } from "../ui/info-tip.tsx";
-import { Input } from "../ui/input.tsx";
-import {
-    getPermissionUiTheme,
-    type PermissionUiTheme,
-} from "./permission-ui.ts";
 
 type ExpiryDaysInputProps = {
     value: number | null;
     onChange: (value: number | null) => void;
     disabled?: boolean;
     inline?: boolean;
-    theme?: PermissionUiTheme;
 };
 
 /**
@@ -26,12 +18,7 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
     onChange,
     disabled = false,
     inline = false,
-    theme = "blue",
 }) => {
-    const {
-        input: { classes: inputClasses },
-    } = getPermissionUiTheme(theme);
-
     return (
         <Field.Root className={inline ? "flex items-center gap-3" : ""}>
             <Field.Label
@@ -55,11 +42,12 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
                         const val = e.target.value;
                         onChange(val === "" ? null : Number(val));
                     }}
-                    className={cn("input-number-clean w-[90px]", inputClasses)}
+                    className="w-[116px]"
+                    hideNumberSteppers
                     placeholder="Never"
                     disabled={disabled}
                 />
-                <span className="text-sm text-gray-500 w-12">days</span>
+                <span className="text-sm text-theme-text-muted w-12">days</span>
             </div>
         </Field.Root>
     );

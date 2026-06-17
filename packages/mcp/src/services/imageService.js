@@ -27,25 +27,25 @@ function buildQueryParams(params) {
     return result;
 }
 
-async function generateImageUrl(params) {
-    requireApiKey();
-
+/**
+ * Validate an image request and build its encoded prompt + query params.
+ * Shared by generateImage and generateImageUrl.
+ *
+ * @param {Object} params - Raw tool params
+ * @returns {Promise<{encodedPrompt: string, queryParams: Object}>}
+ */
+async function prepareImageRequest(params) {
     const {
         prompt,
         model,
         width,
         height,
         seed,
-        enhance,
-        negative_prompt,
         guidance_scale,
         quality,
         image,
         transparent,
-        nologo,
-        nofeed,
         safe,
-        private: isPrivate,
     } = params;
 
     if (!prompt || typeof prompt !== "string") {
@@ -68,17 +68,82 @@ async function generateImageUrl(params) {
         width,
         height,
         seed,
-        enhance,
-        negative_prompt,
         guidance_scale,
         quality,
         image,
         transparent,
-        nologo,
-        nofeed,
         safe,
-        private: isPrivate,
     });
+
+    return { encodedPrompt, queryParams };
+}
+
+/**
+ * Validate a video request (incl. per-model duration rules) and build its
+ * encoded prompt + query params. Shared by generateVideo and generateVideoUrl.
+ *
+ * @param {Object} params - Raw tool params
+ * @returns {Promise<{encodedPrompt: string, queryParams: Object}>}
+ */
+async function prepareVideoRequest(params) {
+    const {
+        prompt,
+        model = "veo",
+        duration,
+        aspectRatio,
+        audio,
+        image,
+        seed,
+        safe,
+    } = params;
+
+    if (!prompt || typeof prompt !== "string") {
+        throw new Error("Prompt is required and must be a string");
+    }
+
+    const validation = await validateVideoModel(model);
+    if (!validation.valid) {
+        throw new Error(
+            `${validation.error} Did you mean: ${validation.suggestions.join(", ")}? ` +
+                `Use listImageModels to see all ${validation.availableCount} available video models.`,
+        );
+    }
+
+    if (duration !== undefined) {
+        if (model === "veo" && ![4, 6, 8].includes(duration)) {
+            throw new Error(
+                "veo model only supports duration of 4, 6, or 8 seconds",
+            );
+        }
+        if (
+            (model === "seedance" || model === "seedance-pro") &&
+            (duration < 2 || duration > 10)
+        ) {
+            throw new Error(
+                "seedance models support duration between 2-10 seconds",
+            );
+        }
+    }
+
+    const encodedPrompt = encodeURIComponent(prompt);
+    const queryParams = buildQueryParams({
+        model,
+        duration,
+        aspectRatio,
+        audio,
+        image,
+        seed,
+        safe,
+    });
+
+    return { encodedPrompt, queryParams };
+}
+
+async function generateImageUrl(params) {
+    requireApiKey();
+
+    const { prompt, model, width, height, seed, quality } = params;
+    const { encodedPrompt, queryParams } = await prepareImageRequest(params);
 
     const authUrl = buildUrl(`/image/${encodedPrompt}`, queryParams, true);
 
@@ -134,55 +199,8 @@ async function generateImageUrl(params) {
 async function generateImage(params) {
     requireApiKey();
 
-    const {
-        prompt,
-        model,
-        width,
-        height,
-        seed,
-        enhance,
-        negative_prompt,
-        guidance_scale,
-        quality,
-        image,
-        transparent,
-        nologo,
-        nofeed,
-        safe,
-        private: isPrivate,
-    } = params;
-
-    if (!prompt || typeof prompt !== "string") {
-        throw new Error("Prompt is required and must be a string");
-    }
-
-    if (model) {
-        const validation = await validateImageModel(model);
-        if (!validation.valid) {
-            throw new Error(
-                `${validation.error} Did you mean: ${validation.suggestions.join(", ")}? ` +
-                    `Use listImageModels to see all ${validation.availableCount} available models.`,
-            );
-        }
-    }
-
-    const encodedPrompt = encodeURIComponent(prompt);
-    const queryParams = buildQueryParams({
-        model,
-        width,
-        height,
-        seed,
-        enhance,
-        negative_prompt,
-        guidance_scale,
-        quality,
-        image,
-        transparent,
-        nologo,
-        nofeed,
-        safe,
-        private: isPrivate,
-    });
+    const { prompt, model, width, height, seed, quality, transparent } = params;
+    const { encodedPrompt, queryParams } = await prepareImageRequest(params);
 
     const url = buildUrl(`/image/${encodedPrompt}`, queryParams);
 
@@ -197,7 +215,6 @@ async function generateImage(params) {
             height: height || 1024,
             seed,
             quality: quality || "medium",
-            enhance: enhance || false,
             transparent: transparent || false,
         };
 
@@ -222,16 +239,11 @@ async function generateImageBatch(params) {
         width,
         height,
         seed: baseSeed,
-        enhance,
-        negative_prompt,
         guidance_scale,
         quality,
         image,
         transparent,
-        nologo,
-        nofeed,
         safe,
-        private: isPrivate,
     } = params;
 
     if (!prompts || !Array.isArray(prompts) || prompts.length === 0) {
@@ -252,16 +264,11 @@ async function generateImageBatch(params) {
                 width,
                 height,
                 seed: baseSeed !== undefined ? baseSeed + index : undefined,
-                enhance,
-                negative_prompt,
                 guidance_scale,
                 quality,
                 image,
                 transparent,
-                nologo,
-                nofeed,
                 safe,
-                private: isPrivate,
             });
 
             const url = buildUrl(`/image/${encodedPrompt}`, queryParams);
@@ -334,53 +341,8 @@ async function generateVideo(params) {
         audio,
         image,
         seed,
-        nologo,
-        nofeed,
-        safe,
-        private: isPrivate,
     } = params;
-
-    if (!prompt || typeof prompt !== "string") {
-        throw new Error("Prompt is required and must be a string");
-    }
-
-    const validation = await validateVideoModel(model);
-    if (!validation.valid) {
-        throw new Error(
-            `${validation.error} Did you mean: ${validation.suggestions.join(", ")}? ` +
-                `Use listImageModels to see all ${validation.availableCount} available video models.`,
-        );
-    }
-
-    if (duration !== undefined) {
-        if (model === "veo" && ![4, 6, 8].includes(duration)) {
-            throw new Error(
-                "veo model only supports duration of 4, 6, or 8 seconds",
-            );
-        }
-        if (
-            (model === "seedance" || model === "seedance-pro") &&
-            (duration < 2 || duration > 10)
-        ) {
-            throw new Error(
-                "seedance models support duration between 2-10 seconds",
-            );
-        }
-    }
-
-    const encodedPrompt = encodeURIComponent(prompt);
-    const queryParams = buildQueryParams({
-        model,
-        duration,
-        aspectRatio,
-        audio,
-        image,
-        seed,
-        nologo,
-        nofeed,
-        safe,
-        private: isPrivate,
-    });
+    const { encodedPrompt, queryParams } = await prepareVideoRequest(params);
 
     const url = buildUrl(`/image/${encodedPrompt}`, queryParams);
 
@@ -428,53 +390,8 @@ async function generateVideoUrl(params) {
         audio,
         image,
         seed,
-        nologo,
-        nofeed,
-        safe,
-        private: isPrivate,
     } = params;
-
-    if (!prompt || typeof prompt !== "string") {
-        throw new Error("Prompt is required and must be a string");
-    }
-
-    const validation = await validateVideoModel(model);
-    if (!validation.valid) {
-        throw new Error(
-            `${validation.error} Did you mean: ${validation.suggestions.join(", ")}? ` +
-                `Use listImageModels to see all ${validation.availableCount} available video models.`,
-        );
-    }
-
-    if (duration !== undefined) {
-        if (model === "veo" && ![4, 6, 8].includes(duration)) {
-            throw new Error(
-                "veo model only supports duration of 4, 6, or 8 seconds",
-            );
-        }
-        if (
-            (model === "seedance" || model === "seedance-pro") &&
-            (duration < 2 || duration > 10)
-        ) {
-            throw new Error(
-                "seedance models support duration between 2-10 seconds",
-            );
-        }
-    }
-
-    const encodedPrompt = encodeURIComponent(prompt);
-    const queryParams = buildQueryParams({
-        model,
-        duration,
-        aspectRatio,
-        audio,
-        image,
-        seed,
-        nologo,
-        nofeed,
-        safe,
-        private: isPrivate,
-    });
+    const { encodedPrompt, queryParams } = await prepareVideoRequest(params);
 
     const authUrl = buildUrl(`/image/${encodedPrompt}`, queryParams, true);
 
@@ -689,18 +606,6 @@ const imageParamsSchema = {
         .describe(
             "Random seed for reproducible results (default: 42). Use same seed + prompt for identical images",
         ),
-    enhance: z
-        .boolean()
-        .optional()
-        .describe(
-            "Let AI improve your prompt for better results (default: false). Adds detail and style suggestions",
-        ),
-    negative_prompt: z
-        .string()
-        .optional()
-        .describe(
-            "What to avoid in the image (default: 'worst quality, blurry'). Example: 'blurry, low quality, text, watermark'",
-        ),
     guidance_scale: z
         .number()
         .min(1)
@@ -729,24 +634,12 @@ const imageParamsSchema = {
         .describe(
             "Generate with transparent background (default: false). Useful for logos, stickers, overlays",
         ),
-    nologo: z
-        .boolean()
-        .optional()
-        .describe("Remove Pollinations watermark from image (default: false)"),
-    nofeed: z
-        .boolean()
-        .optional()
-        .describe("Don't add image to public feed (default: false)"),
     safe: z
         .boolean()
         .optional()
         .describe(
             "Enable safety content filters (default: false). Blocks NSFW content",
         ),
-    private: z
-        .boolean()
-        .optional()
-        .describe("Hide image from public feeds/gallery (default: false)"),
 };
 
 const videoParamsSchema = {
@@ -798,22 +691,10 @@ const videoParamsSchema = {
         .min(0)
         .optional()
         .describe("Random seed for reproducible results"),
-    nologo: z
-        .boolean()
-        .optional()
-        .describe("Remove Pollinations watermark (default: false)"),
-    nofeed: z
-        .boolean()
-        .optional()
-        .describe("Don't add to public feed (default: false)"),
     safe: z
         .boolean()
         .optional()
         .describe("Enable safety content filters (default: false)"),
-    private: z
-        .boolean()
-        .optional()
-        .describe("Hide from public feeds (default: false)"),
 };
 
 export const imageTools = [
@@ -855,11 +736,6 @@ export const imageTools = [
                 .int()
                 .optional()
                 .describe("Base seed (incremented for each image)"),
-            enhance: z.boolean().optional().describe("Enhance all prompts"),
-            negative_prompt: z
-                .string()
-                .optional()
-                .describe("Negative prompt for all images"),
             guidance_scale: z
                 .number()
                 .optional()
@@ -876,13 +752,7 @@ export const imageTools = [
                 .boolean()
                 .optional()
                 .describe("Transparent background for all"),
-            nologo: z
-                .boolean()
-                .optional()
-                .describe("Remove watermark from all"),
-            nofeed: z.boolean().optional().describe("Don't add any to feed"),
             safe: z.boolean().optional().describe("Safety filters for all"),
-            private: z.boolean().optional().describe("Hide all from public"),
         },
         generateImageBatch,
     ],

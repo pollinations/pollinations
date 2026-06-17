@@ -9,7 +9,7 @@ Flow: user opens issue with `TIER-APP` → workflow validates + AI generates pre
 Label state machine:
 - `TIER-APP` → `TIER-APP-REJECTED` (duplicate/spore) | `TIER-APP-INCOMPLETE` (not registered) | `TIER-APP-REVIEW` → `TIER-APP-APPROVED` (merged) | `TIER-APP-REJECTED` (closed)
 
-Manual edits: edit `apps/APPS.md`, run `node .github/scripts/app-update-readme.js`.
+Manual edits: edit `apps/APPS.md`, run `node .github/scripts/app-update-greenhouse.js`.
 
 APPS.md columns: `Emoji | Name | Web_URL | Description (~80 chars) | Language (ISO code, no flags) | Category | Platform | GitHub (@user) | GitHub_ID | Repo | Stars (⭐N) | Discord | Other | Submitted_Date (issue created) | Issue_URL (#N) | Approved_Date (PR merged)`.
 
@@ -27,8 +27,8 @@ Guild ID `885844321461485618` (https://discord.gg/pollinations-ai-88584432146148
 - `gen.pollinations.ai/` — Edge router + text generation Worker
 - `image.pollinations.ai/` — Image GPU/backend assets; public gateway code lives in `gen.pollinations.ai/`
 - `pollinations.ai/` — React frontend
-- `packages/sdk/` — `@pollinations_ai/sdk` (client + React hooks)
-- `packages/mcp/` — `@pollinations_ai/model-context-protocol` (MCP server; see `packages/mcp/AGENTS.md`)
+- `packages/sdk/` — `@pollinations/sdk` (client + React hooks)
+- `packages/mcp/` — `@pollinations/mcp` (MCP server; see `packages/mcp/AGENTS.md`)
 - `shared/` — auth, registry, IP queue; `shared/registry/` holds model registries
 - `apps/` — Community apps + `APPS.md`
 - `social/` — Discord/Reddit/GitHub automation
@@ -94,6 +94,10 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Before implementing: verify assumptions on web (APIs change), read related files, check related PRs/issues, check existing utilities in `shared/` before writing new ones (auth, queue, registry, SSE parsing, retry wrappers), confirm branch via `git branch --show-current`.
 - When continuing prior work: read relevant code first; identify clear next steps.
 - Don't reimplement existing logic — search first.
+- When adding a React browser/IIFE bundle, grep bundled dependencies'
+  published dist for `react/jsx-runtime` and `react-dom` imports before
+  choosing shim vs external; transitive deps such as `@ark-ui/react` Portal can
+  reintroduce externals the package source does not import.
 
 ## Common Mistakes to Avoid
 
@@ -140,6 +144,7 @@ npx vitest run test/file.test.ts
 - API docs: strictly technical, no marketing; link dynamic endpoints (e.g. `/models`) vs hardcoded lists; no internal impl/env vars; minimal examples for both simplified and OpenAI-compatible endpoints.
 - Security: never expose keys/secrets; use env vars; validate input.
 - Temp scratch files go in `temp/` clearly labeled.
+- Shrinking large snapshots: video/image snapshots can be 10–30 MB because stream chunks store raw binary as text (`TextDecoder` output in `vcr.ts:289`). To shrink: replace `response.body.data` array with one tiny chunk `[{"data": "<minimal-bytes>", "delay": 1}]`. For mp4, a valid 20-byte ftyp box is `\x00\x00\x00\x14ftypisom\x00\x00\x00\x00isom` (use `bytes.decode('latin-1')` in Python). Tests only check headers/status, not media content.
 
 ## Workflow Orchestration
 

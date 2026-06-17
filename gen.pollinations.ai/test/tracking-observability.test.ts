@@ -37,8 +37,6 @@ function createTestApp(
             requireModelAccess: () => {},
         });
         c.set("balance", {
-            requirePositiveBalance: async () => {},
-            requirePaidBalance: async () => {},
             getBalance: async () => ({
                 tierBalance: 1,
                 packBalance: 0,
@@ -79,6 +77,114 @@ function createTestApp(
     );
 
     return app;
+}
+
+// App that returns a wrong content-type for the given event type, exercising
+// the not-billed content-type guards in trackResponse.
+function createWrongContentTypeApp(
+    consumePollen: (amount: number) => Promise<void>,
+    eventType: "generate.image" | "generate.text",
+    response: Response,
+) {
+    const app = new Hono<Env>();
+
+    app.use("*", requestId());
+    app.use("*", logger);
+    app.use("*", async (c, next) => {
+        c.set("auth", {
+            user: undefined,
+            requireAuthorization: async () => {},
+            requireUser: () => {
+                throw new Error("user should not be required in this test");
+            },
+            requireModelAccess: () => {},
+        });
+        c.set("balance", {
+            getBalance: async () => ({ tierBalance: 1, packBalance: 0 }),
+        });
+        c.set("frontendKeyRateLimit", { consumePollen });
+        c.set("model", { requested: "openai", resolved: "openai" });
+        await next();
+    });
+    app.all("/upstream", track(eventType), () => response.clone());
+
+    return app;
+}
+
+// App whose text response carries caller-supplied headers, used to assert that
+// the x-fallback-target worker header propagates into the Tinybird event.
+function createHeaderApp(extraHeaders: Record<string, string>) {
+    const app = new Hono<Env>();
+
+    app.use("*", requestId());
+    app.use("*", logger);
+    app.use("*", async (c, next) => {
+        c.set("auth", {
+            user: undefined,
+            requireAuthorization: async () => {},
+            requireUser: () => {
+                throw new Error("user should not be required in this test");
+            },
+            requireModelAccess: () => {},
+        });
+        c.set("balance", {
+            getBalance: async () => ({ tierBalance: 1, packBalance: 0 }),
+        });
+        c.set("frontendKeyRateLimit", { consumePollen: async () => {} });
+        c.set("model", { requested: "openai", resolved: "openai" });
+        await next();
+    });
+    app.post(
+        "/v1/chat/completions",
+        track("generate.text"),
+        () =>
+            new Response(JSON.stringify({ choices: [{ message: {} }] }), {
+                headers: {
+                    "content-type": "application/json",
+                    "x-model-used": "gpt-5-nano-2025-08-07",
+                    "x-usage-prompt-text-tokens": "10",
+                    "x-usage-completion-text-tokens": "5",
+                    ...extraHeaders,
+                },
+            }),
+    );
+
+    return app;
+}
+
+async function captureFallbackEvent(extraHeaders: Record<string, string>) {
+    const tinybirdRequests: Request[] = [];
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        tinybirdRequests.push(new Request(input, init));
+        return new Response("ok");
+    });
+
+    const ctx = createExecutionContext();
+    await createHeaderApp(extraHeaders).fetch(
+        new Request("https://gen.pollinations.ai/v1/chat/completions", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+                model: "openai",
+                stream: false,
+                messages: [{ role: "user", content: "test" }],
+            }),
+        }),
+        {
+            ENVIRONMENT: "test",
+            LOG_LEVEL: "debug",
+            LOG_FORMAT: "text",
+            BETTER_AUTH_SECRET: "test_secret",
+            TINYBIRD_INGEST_URL:
+                "https://tinybird.test/v0/events?name=generation_event",
+            TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+        } as CloudflareBindings,
+        ctx,
+    );
+    await waitOnExecutionContext(ctx);
+
+    expect(tinybirdRequests).toHaveLength(1);
+    return (await tinybirdRequests[0].json()) as { fallbackUsed?: boolean };
 }
 
 describe("tracking observability", () => {
@@ -215,5 +321,135 @@ describe("tracking observability", () => {
 
         expect(response.status).toBe(200);
         expect(enterFetch).not.toHaveBeenCalled();
+    });
+
+    it("does not bill image generation that returns a JSON (non-image) content-type", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+
+        // Upstream returned a JSON error body with HTTP 200 instead of an image.
+        const upstream = new Response(JSON.stringify({ error: "boom" }), {
+            headers: { "content-type": "application/json" },
+        });
+
+        const ctx = createExecutionContext();
+        const response = await createWrongContentTypeApp(
+            consumePollen,
+            "generate.image",
+            upstream,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/upstream", {
+                method: "GET",
+            }),
+            {
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+            eventType: "generate.image",
+            responseStatus: 200,
+            isBilledUsage: false,
+        });
+        expect(consumePollen).toHaveBeenCalledWith(0);
+    });
+
+    it("does not bill a streamed text request that returns a non-SSE content-type", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+
+        // stream: true was requested but upstream returned JSON, not SSE.
+        const upstream = new Response(JSON.stringify({ error: "boom" }), {
+            headers: {
+                "content-type": "application/json",
+                "x-model-used": "gpt-5-nano-2025-08-07",
+                "x-usage-prompt-text-tokens": "1000",
+                "x-usage-completion-text-tokens": "500",
+            },
+        });
+
+        const ctx = createExecutionContext();
+        const response = await createWrongContentTypeApp(
+            consumePollen,
+            "generate.text",
+            upstream,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/upstream", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai",
+                    stream: true,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+            eventType: "generate.text",
+            responseStatus: 200,
+            isBilledUsage: false,
+        });
+        expect(consumePollen).toHaveBeenCalledWith(0);
+    });
+
+    it("records fallbackUsed=true when Portkey served a non-primary target", async () => {
+        const event = await captureFallbackEvent({
+            "x-fallback-target": "config.targets[1]",
+        });
+        expect(event.fallbackUsed).toBe(true);
+    });
+
+    it("records fallbackUsed=false when Portkey served the primary target", async () => {
+        const event = await captureFallbackEvent({
+            "x-fallback-target": "config.targets[0]",
+        });
+        expect(event.fallbackUsed).toBe(false);
+    });
+
+    it("records fallbackUsed=false when no fallback header is present", async () => {
+        const event = await captureFallbackEvent({});
+        expect(event.fallbackUsed).toBe(false);
     });
 });

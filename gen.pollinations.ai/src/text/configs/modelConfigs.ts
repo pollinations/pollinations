@@ -2,8 +2,6 @@ import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
     createAzureModelConfig,
     createBedrockNativeConfig,
-    createDashScopeModelConfig,
-    createDeepInfraModelConfig,
     createFireworksModelConfig,
     createOpenRouterModelConfig,
     createOVHcloudMistralConfig,
@@ -31,6 +29,45 @@ function createVertexGeminiConfig(
         "vertex-region": region,
         "vertex-model-id": modelId,
         "strict-openai-compliance": "false",
+    });
+}
+
+/**
+ * Routes a Gemini model to Airforce, falling back to Vertex on failure.
+ * Same modelId on both targets → identical billing regardless of route.
+ * on_status_codes covers Airforce being out of balance (402), key/quota
+ * problems (401/403/404/429), server errors (5xx), and requests Airforce can't
+ * serve (400/422) — notably Gemini built-in tools like {type:"code_execution"},
+ * which 400 on Airforce and fall through to Vertex where they actually run.
+ * Failed attempts aren't billed, so falling back is always safe.
+ * The top-level `model` keeps resolveModelConfig from sending model:undefined.
+ */
+function createAirforceGeminiFallbackConfig(
+    airforceModelId: string,
+    vertexModelId: string,
+    vertexRegion: string,
+): PortkeyConfigFactory {
+    return () => ({
+        model: vertexModelId,
+        strategy: {
+            mode: "fallback",
+            on_status_codes: [400, 401, 402, 403, 404, 422, 429, 500, 502, 503],
+        },
+        targets: [
+            {
+                provider: "openai",
+                custom_host: "https://api.airforce/v1",
+                authKey: process.env.AIRFORCE_API_KEY,
+                override_params: { model: airforceModelId },
+            },
+            {
+                provider: "vertex-ai",
+                authKey: googleCloudAuth.getAccessToken,
+                vertex_project_id: process.env.GOOGLE_PROJECT_ID,
+                vertex_region: vertexRegion,
+                override_params: { model: vertexModelId },
+            },
+        ],
     });
 }
 
@@ -108,10 +145,12 @@ export const portkeyConfig: PortkeyConfigMap = {
             "grok-4.3",
         ),
 
-    // -- DeepInfra (Gemma) ----------------------------------------------------
-    "google/gemma-4-26B-A4B-it": () =>
-        createDeepInfraModelConfig({
-            model: "google/gemma-4-26B-A4B-it",
+    // -- OpenRouter (Gemma) ---------------------------------------------------
+    // Moved off DeepInfra: OpenRouter serves the same SKU ~cheaper ($0.06/$0.33
+    // posted vs $0.07/$0.34) and is credit-eligible.
+    "google/gemma-4-26b-a4b-it": () =>
+        createOpenRouterModelConfig({
+            model: "google/gemma-4-26b-a4b-it",
         }),
 
     // -- Fireworks AI (DeepSeek) ---------------------------------------------
@@ -132,6 +171,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "accounts/fireworks/models/kimi-k2p6": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/kimi-k2p6",
+        }),
+    "accounts/fireworks/models/kimi-k2p7-code": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/kimi-k2p7-code",
         }),
 
     // -- OpenRouter (Mistral Small 3.2, Mistral Small 4) ---------------------
@@ -158,14 +201,16 @@ export const portkeyConfig: PortkeyConfigMap = {
     // -- Claude via AWS Bedrock -----------------------------------------------
     "claude-sonnet-4-6": () =>
         createBedrockNativeConfig({
-            model: "us.anthropic.claude-sonnet-4-6",
+            model: "global.anthropic.claude-sonnet-4-6",
             defaultOptions: { max_tokens: 64000 },
         }),
     "claude-opus-4-6": () =>
         createBedrockNativeConfig({
-            model: "us.anthropic.claude-opus-4-6-v1",
+            model: "global.anthropic.claude-opus-4-6-v1",
             defaultOptions: { max_tokens: 128000 },
         }),
+    // global.* inference profiles for Opus 4.7/4.8 return Bedrock-side
+    // Internal/ServiceUnavailable errors; the us.* profiles are healthy.
     "claude-opus-4-7": () =>
         createBedrockNativeConfig({
             model: "us.anthropic.claude-opus-4-7",
@@ -173,23 +218,29 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
     "claude-opus-4-8": () =>
         createBedrockNativeConfig({
-            model: "global.anthropic.claude-opus-4-8",
+            model: "us.anthropic.claude-opus-4-8",
             defaultOptions: { max_tokens: 128000 },
         }),
     "claude-haiku-4-5": () =>
         createBedrockNativeConfig({
-            model: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+            model: "global.anthropic.claude-haiku-4-5-20251001-v1:0",
             defaultOptions: { max_tokens: 64000 },
         }),
 
     // -- AWS Bedrock (Nova) ---------------------------------------------------
     "nova-micro": () =>
-        createBedrockNativeConfig({ model: "amazon.nova-micro-v1:0" }),
+        createBedrockNativeConfig({ model: "us.amazon.nova-micro-v1:0" }),
     "nova-2-lite": () =>
         createBedrockNativeConfig({ model: "us.amazon.nova-2-lite-v1:0" }),
 
     // -- Google Vertex AI (Gemini) --------------------------------------------
     "gemini-3-flash-preview": createVertexGeminiConfig(
+        "gemini-3-flash-preview",
+        "global",
+    ),
+    // Airforce primary, Vertex fallback — same modelId, same billing.
+    "gemini-3-flash-airforce": createAirforceGeminiFallbackConfig(
+        "gemini-3-flash",
         "gemini-3-flash-preview",
         "global",
     ),
@@ -214,9 +265,9 @@ export const portkeyConfig: PortkeyConfigMap = {
         createPerplexityModelConfig({ model: "sonar-reasoning-pro" }),
 
     // -- Fireworks AI (Qwen) -----------------------------------------------------
-    "accounts/fireworks/models/qwen3p6-plus": () =>
+    "accounts/fireworks/models/qwen3p7-plus": () =>
         createFireworksModelConfig({
-            model: "accounts/fireworks/models/qwen3p6-plus",
+            model: "accounts/fireworks/models/qwen3p7-plus",
         }),
     "accounts/fireworks/models/glm-5p1": () =>
         createFireworksModelConfig({
@@ -225,6 +276,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "accounts/fireworks/models/minimax-m2p7": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/minimax-m2p7",
+        }),
+    "accounts/fireworks/models/minimax-m3": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/minimax-m3",
         }),
 
     // -- Azure (Myceli Prod — eastus, Meta Llama) ----------------------------
@@ -239,7 +294,6 @@ export const portkeyConfig: PortkeyConfigMap = {
             process.env.AZURE_MYCELI_PROD_API_KEY,
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Llama-4-Maverick-17B-128E-Instruct-FP8/chat/completions?api-version=2024-12-01-preview",
             "Llama-4-Maverick-17B-128E-Instruct-FP8",
-            undefined,
             { requiresBase64ImageUrls: true },
         ),
     // Llama 4 Scout is Marketplace SaaS pass-through on Azure (not
@@ -249,11 +303,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "meta-llama/llama-4-scout",
         }),
 
-    // -- Alibaba DashScope (Qwen) ---------------------------------------------
-    "qwen3-coder-next": () =>
-        createDashScopeModelConfig({ model: "qwen3-coder-next" }),
-
-    // -- OpenRouter (Qwen VL) -------------------------------------------------
+    // -- OpenRouter (Qwen Coder, Qwen VL) -------------------------------------
+    // Moved off Alibaba DashScope: OpenRouter serves the same SKU far cheaper
+    // ($0.11/$0.80 vs DashScope's $0.30/$1.50 per 1M tokens).
+    "qwen/qwen3-coder-next": () =>
+        createOpenRouterModelConfig({ model: "qwen/qwen3-coder-next" }),
     "qwen/qwen3-vl-30b-a3b-instruct": () =>
         createOpenRouterModelConfig({
             model: "qwen/qwen3-vl-30b-a3b-instruct",

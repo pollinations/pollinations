@@ -1,14 +1,27 @@
-# @pollinations_ai/sdk
+# @pollinations/sdk
 
 Official SDK for [pollinations.ai](https://pollinations.ai) - Generate images, text, audio, and video with one simple package.
 
-[![npm version](https://img.shields.io/npm/v/@pollinations_ai/sdk.svg)](https://www.npmjs.com/package/@pollinations_ai/sdk)
+[![npm version](https://img.shields.io/npm/v/@pollinations/sdk.svg)](https://www.npmjs.com/package/@pollinations/sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+> [!WARNING]
+> **The `alpha` release line (`5.1.0-alpha.x`) is unstable and breakage-prone.**
+> It ships the in-progress rebuild (model-catalog helper, `./client` subpath, provider changes) and its API may change between alpha versions without notice. The stable `latest` line is `5.0.0`. Opt into the alpha only deliberately, and pin an exact version.
 
 ## Installation
 
+Stable (recommended):
+
 ```bash
-npm install @pollinations_ai/sdk
+npm install @pollinations/sdk
+```
+
+Alpha (in-progress rebuild — pin an exact version):
+
+```bash
+npm install @pollinations/sdk@alpha
+# or pin exactly: npm install @pollinations/sdk@5.1.0-alpha.0
 ```
 
 ### CDN / `<script>` tag
@@ -16,7 +29,7 @@ npm install @pollinations_ai/sdk
 The SDK also ships a browser IIFE bundle for direct `<script>` use:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@pollinations_ai/sdk"></script>
+<script src="https://cdn.jsdelivr.net/npm/@pollinations/sdk"></script>
 <script>
   const { generateImage, generateText } = Pollinations;
   // ...
@@ -40,7 +53,7 @@ export POLLINATIONS_API_KEY=your_api_key
 Then:
 
 ```javascript
-import { generateImage, generateText } from '@pollinations_ai/sdk';
+import { generateImage, generateText } from '@pollinations/sdk';
 
 // Generate an image
 const image = await generateImage('a futuristic cityscape');
@@ -59,7 +72,7 @@ New to coding? Here's a complete file you can copy-paste and run:
 // save this as: my-first-ai.mjs
 // First run: export POLLINATIONS_API_KEY=your_api_key
 
-import { generateText, generateImage } from '@pollinations_ai/sdk';
+import { generateText, generateImage } from '@pollinations/sdk';
 
 async function main() {
   // Generate text
@@ -86,7 +99,7 @@ node my-first-ai.mjs
 
 ```html
 <script type="module">
-  import { configure, generateText, generateImage } from 'https://esm.sh/@pollinations_ai/sdk';
+  import { configure, generateText, generateImage } from 'https://esm.sh/@pollinations/sdk';
 
   // Set your API key
   configure({ apiKey: 'your_api_key' });
@@ -112,7 +125,7 @@ node my-first-ai.mjs
 An API key is required. Get one for free at **https://enter.pollinations.ai**
 
 ```javascript
-import { configure } from '@pollinations_ai/sdk';
+import { configure } from '@pollinations/sdk';
 
 configure({ apiKey: 'your_api_key' });
 ```
@@ -127,7 +140,7 @@ export POLLINATIONS_API_KEY=your_api_key
 For CLI tools, scripts, or any environment without a browser redirect, use the OAuth device flow to let the user approve access without pasting a key:
 
 ```javascript
-import { authorizeDevice, configure, userInfo } from '@pollinations_ai/sdk';
+import { authorizeDevice, configure, userInfo } from '@pollinations/sdk';
 
 const auth = await authorizeDevice();
 console.log(`Open ${auth.verificationUri} and enter code: ${auth.userCode}`);
@@ -143,7 +156,7 @@ console.log(`Logged in as ${me.name} (${me.tier})`);
 
 ### React auth provider
 
-React apps can use the `@pollinations_ai/sdk/react` subpath for shared login
+React apps can use the `@pollinations/sdk/react` subpath for shared login
 state. The provider only owns the session token and OAuth flow; account data is
 loaded by opt-in hooks.
 
@@ -152,7 +165,7 @@ import {
   PolliProvider,
   useAccountProfile,
   useAuth,
-} from '@pollinations_ai/sdk/react';
+} from '@pollinations/sdk/react';
 
 function AccountStatus() {
   const { isLoggedIn, login, logout } = useAuth();
@@ -193,7 +206,7 @@ SDK response shapes plus `{ isLoading, error, refresh }`.
   ```tsx
   // app/providers.tsx
   "use client";
-  import { PolliProvider } from "@pollinations_ai/sdk/react";
+  import { PolliProvider } from "@pollinations/sdk/react";
   export function Providers({ children }: { children: React.ReactNode }) {
     return <PolliProvider appKey="pk_…">{children}</PolliProvider>;
   }
@@ -213,7 +226,7 @@ SDK response shapes plus `{ isLoading, error, refresh }`.
 Programmatically create, list, and revoke keys for your account. Useful for BYOP ("bring your own pollen") flows, multi-tenant apps, and automation:
 
 ```javascript
-import { listKeys, createKey, revokeKey } from '@pollinations_ai/sdk';
+import { listKeys, createKey, revokeKey } from '@pollinations/sdk';
 
 // List all keys on the account
 const keys = await listKeys();
@@ -237,7 +250,7 @@ Without `accountPermissions`, scoped keys can generate media but cannot read acc
 ## Image Generation
 
 ```javascript
-import { generateImage, imageUrl } from '@pollinations_ai/sdk';
+import { generateImage, imageUrl } from '@pollinations/sdk';
 
 // Generate and save
 const image = await generateImage('a robot painting', {
@@ -267,10 +280,6 @@ const url = await imageUrl('a sunset');
 | `width` | number | `1024` | Width in pixels |
 | `height` | number | `1024` | Height in pixels |
 | `seed` | number | random | Reproducible results |
-| `enhance` | boolean | `false` | AI prompt enhancement |
-| `negativePrompt` | string | - | What to avoid in the image |
-| `nologo` | boolean | `false` | Remove watermark |
-| `private` | boolean | `false` | Keep generation private |
 | `safe` | boolean | `false` | Safety filter |
 | `quality` | string | `'medium'` | `'low'`, `'medium'`, `'high'`, `'hd'` |
 | `referenceImage` | string | - | URL for image-to-image |
@@ -282,7 +291,7 @@ const url = await imageUrl('a sunset');
 ## Image Editing
 
 ```javascript
-import { editImage } from '@pollinations_ai/sdk';
+import { editImage } from '@pollinations/sdk';
 
 const result = await editImage('Make the sky purple', {
   image: 'https://example.com/photo.jpg',
@@ -301,7 +310,7 @@ const result2 = await editImage('Combine these two scenes', {
 The `imageGenerate` helper wraps `POST /v1/images/generations` — useful when you need OpenAI SDK parity (size string, `n`, `response_format`) or want multiple images from a single call.
 
 ```javascript
-import { imageGenerate } from '@pollinations_ai/sdk';
+import { imageGenerate } from '@pollinations/sdk';
 
 // Single image with OpenAI-style size string
 const img = await imageGenerate('A robot reading a book', {
@@ -320,7 +329,7 @@ For the simpler GET-based endpoint, see `generateImage` above.
 ## Text Generation
 
 ```javascript
-import { generateText, generateTextStream } from '@pollinations_ai/sdk';
+import { generateText, generateTextStream } from '@pollinations/sdk';
 
 // Simple
 const text = await generateText('write a poem about coding');
@@ -365,7 +374,7 @@ console.log(result.actualModel); // actual model used
 ## Chat
 
 ```javascript
-import { chat, chatStream, conversation } from '@pollinations_ai/sdk';
+import { chat, chatStream, conversation } from '@pollinations/sdk';
 
 // Single message
 const response = await chat([
@@ -393,7 +402,7 @@ convo.clear(); // Reset conversation
 ## Video Generation
 
 ```javascript
-import { generateVideo } from '@pollinations_ai/sdk';
+import { generateVideo } from '@pollinations/sdk';
 
 const video = await generateVideo('a timelapse of clouds', {
   model: 'veo',
@@ -415,15 +424,13 @@ const videos = await generateVideo('ocean waves', { n: 2, duration: 4 });
 | `seed` | number | random | Reproducible results |
 | `audio` | boolean | `false` | Include audio (`wan` always has audio) |
 | `referenceImage` | string | - | URL for image-to-video |
-| `private` | boolean | `false` | Keep generation private |
-| `nologo` | boolean | `false` | Remove watermark |
 | `safe` | boolean | `false` | Safety filter |
 | `n` | number | `1` | Number of videos |
 
 ## Audio (Text-to-Speech & Music)
 
 ```javascript
-import { generateAudio } from '@pollinations_ai/sdk';
+import { generateAudio } from '@pollinations/sdk';
 
 // Text-to-speech
 const speech = await generateAudio('Hello, welcome!', { voice: 'nova' });
@@ -462,7 +469,7 @@ alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel
 ## Vision (Image Input)
 
 ```javascript
-import { chat } from '@pollinations_ai/sdk';
+import { chat } from '@pollinations/sdk';
 
 const response = await chat([
   {
@@ -478,7 +485,7 @@ const response = await chat([
 ## List Available Models
 
 ```javascript
-import { getTextModels, getImageModels } from '@pollinations_ai/sdk';
+import { getTextModels, getImageModels } from '@pollinations/sdk';
 
 const textModels = await getTextModels();
 const imageModels = await getImageModels();
@@ -489,7 +496,7 @@ console.log(textModels.map(m => m.name));
 ## Error Handling
 
 ```javascript
-import { generateImage, PollinationsError } from '@pollinations_ai/sdk';
+import { generateImage, PollinationsError } from '@pollinations/sdk';
 
 try {
   const image = await generateImage('test');
@@ -507,7 +514,7 @@ Common error codes: `400` invalid params, `401` missing/invalid key, `402` insuf
 ## Advanced: Client Class
 
 ```javascript
-import { Pollinations } from '@pollinations_ai/sdk';
+import { Pollinations } from '@pollinations/sdk';
 
 const client = new Pollinations({ apiKey: 'your_key' });
 
@@ -528,7 +535,7 @@ import type {
   Message,
   ImageResponseExt,
   ChatResponseExt,
-} from '@pollinations_ai/sdk';
+} from '@pollinations/sdk';
 ```
 
 ## API Reference
@@ -570,7 +577,7 @@ const base64 = image.toBase64();    // Raw base64 string
 Default timeouts: text/chat 5min, images 10min, videos 10min. For custom timeouts:
 
 ```javascript
-import { Pollinations } from '@pollinations_ai/sdk';
+import { Pollinations } from '@pollinations/sdk';
 
 const client = new Pollinations({
   timeout: 600000,       // 10 minutes for all requests
@@ -589,7 +596,7 @@ Publishable keys (`pk_`) have rate limits. Use a secret key (`sk_`) for unlimite
 The SDK automatically retries failed requests up to 3 times. To customize:
 
 ```javascript
-import { Pollinations } from '@pollinations_ai/sdk';
+import { Pollinations } from '@pollinations/sdk';
 
 const client = new Pollinations({
   maxRetries: 5,  // Retry up to 5 times

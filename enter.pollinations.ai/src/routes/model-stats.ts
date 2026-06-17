@@ -1,13 +1,13 @@
 /**
  * Public model stats endpoint for dashboard pricing display
- * Reuses the cached model stats from utils/model-stats.ts (used by track.ts)
+ * Reuses the cached model stats helper (shared with gen.pollinations.ai)
  * to avoid duplicate caching and Tinybird calls
  */
 
 import { getLogger } from "@logtape/logtape";
+import { getModelStats } from "@shared/utils/model-stats.ts";
 import { Hono } from "hono";
 import type { Env } from "../env.ts";
-import { getModelStats } from "../utils/model-stats.ts";
 
 export const modelStatsRoutes = new Hono<Env>().get("/", async (c) => {
     const log = getLogger(["enter", "model-stats"]);

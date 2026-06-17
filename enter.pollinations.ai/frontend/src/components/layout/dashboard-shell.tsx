@@ -1,29 +1,54 @@
-import { cn } from "@frontend/lib/cn.ts";
 import {
-    type FC,
-    type PropsWithChildren,
-    type ReactNode,
-    type RefObject,
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
+    BookIcon,
+    CheckIcon,
+    ChevronIcon,
+    ClipboardIcon,
+    ColorModeToggle,
+    CopyButton,
+    cn,
+    DiscordIcon,
+    Dropdown,
+    ExternalLinkIcon,
+    GenApiIcon,
+    GitHubIcon,
+    McpIcon,
+    MenuIcon,
+    NavItem,
+    ScrollArea,
+    TerminalIcon,
+    useScrollLock,
+    WalletIcon,
+    XIcon,
+} from "@pollinations/ui";
+import logoWordmarkUrl from "@pollinations/ui/assets/logo-wordmark.svg";
+import type {
+    ComponentType,
+    CSSProperties,
+    FC,
+    PropsWithChildren,
+    ReactNode,
+    RefObject,
 } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { genDocsUrl } from "../../config.ts";
-import { useScrollLock } from "../../hooks/use-scroll-lock.ts";
-import { ScrollArea } from "../ui/scroll-area.tsx";
-import {
-    DASHBOARD_NAV_ITEMS,
-    type DashboardPage,
-    dashboardThemeByPage,
-} from "./dashboard-theme.ts";
-import { User } from "./user.tsx";
+import { DASHBOARD_NAV_ITEMS, type DashboardPage } from "./dashboard-theme.ts";
 
 export type { DashboardPage } from "./dashboard-theme.ts";
 
+type DashboardNavItem = {
+    id: DashboardPage;
+    label: string;
+    icon: ComponentType<{ className?: string }>;
+};
+
+const brandWordmarkMask: CSSProperties = {
+    WebkitMask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
+    mask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
+};
+
 type DashboardShellProps = PropsWithChildren<{
     activePage: DashboardPage;
-    navItems?: typeof DASHBOARD_NAV_ITEMS;
+    navItems?: readonly DashboardNavItem[];
     githubUsername?: string;
     githubAvatarUrl?: string;
     onPageChange: (page: DashboardPage) => void;
@@ -31,6 +56,79 @@ type DashboardShellProps = PropsWithChildren<{
     accountArea?: ReactNode;
     walletArea?: ReactNode;
 }>;
+
+type BrandLink = {
+    href: string;
+    label: string;
+    icon: ReactNode;
+    text: string;
+    count?: string;
+};
+
+type SupportAction = {
+    label: string;
+    icon: ReactNode;
+    copyLabel: string;
+    idleIcon: ReactNode;
+    successIcon: ReactNode;
+    copyValue: string | (() => string | Promise<string>);
+};
+
+type SupportLink = {
+    label: string;
+    href: string;
+    icon?: ReactNode;
+};
+
+type FooterLink = {
+    label: string;
+    href: string;
+};
+
+type AccountMenuLink = {
+    href: string;
+    label: string;
+    icon: ReactNode;
+    ariaLabel?: string;
+};
+
+const brandLinks: readonly BrandLink[] = [
+    {
+        href: "https://github.com/pollinations/pollinations",
+        label: "Pollinations on GitHub",
+        icon: <GitHubIcon className="h-full w-full" />,
+        text: "github",
+        count: "4.4k",
+    },
+    {
+        href: "https://discord.gg/pollinations-ai-885844321461485618",
+        label: "Discord community",
+        icon: <DiscordIcon className="h-full w-full" />,
+        text: "discord",
+        count: "18k",
+    },
+];
+
+const footerLinks: readonly FooterLink[] = [
+    { label: "Terms", href: "https://pollinations.ai/terms" },
+    { label: "Privacy", href: "https://pollinations.ai/privacy" },
+    { label: "Refunds", href: "https://pollinations.ai/refunds" },
+];
+
+const accountMenuLinks: readonly AccountMenuLink[] = [
+    {
+        href: "https://discord.com/channels/885844321461485618/1432378056126894343",
+        label: "#pollen-beta",
+        icon: <DiscordIcon className="h-full w-full" />,
+        ariaLabel: "#pollen-beta Discord channel",
+    },
+    {
+        href: "https://github.com/pollinations/pollinations/issues",
+        label: "Report an issue",
+        icon: <GitHubIcon className="h-full w-full" />,
+        ariaLabel: "Report an issue on GitHub",
+    },
+];
 
 export const DashboardShell: FC<DashboardShellProps> = ({
     activePage,
@@ -48,7 +146,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     const menuButtonRef = useRef<HTMLButtonElement>(null);
     const mainScrollRef = useRef<HTMLDivElement>(null);
 
-    useDashboardBodyClass();
+    useDashboardShellBodyClass();
     useScrollLock(isDrawerOpen);
 
     const closeDrawer = useCallback(() => {
@@ -97,34 +195,90 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         scrollElement.scrollTo({ top: 0, behavior: "auto" });
     }, [activePage]);
 
-    function handlePageChange(page: DashboardPage): void {
+    function handleItemChange(page: DashboardPage): void {
         onPageChange(page);
         closeDrawer();
     }
+
+    const supportLinks: readonly SupportLink[] = [
+        {
+            label: "API",
+            href: `${genDocsUrl()}`,
+            icon: (
+                <GenApiIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
+            ),
+        },
+        {
+            label: "BYOP",
+            href: `${genDocsUrl()}#tag/byop`,
+            icon: (
+                <WalletIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
+            ),
+        },
+        {
+            label: "CLI",
+            href: `${genDocsUrl()}#tag/cli`,
+            icon: (
+                <TerminalIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
+            ),
+        },
+        {
+            label: "MCP Server",
+            href: `${genDocsUrl()}#tag/mcp-server`,
+            icon: (
+                <McpIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
+            ),
+        },
+    ];
+
+    const effectiveAccountArea =
+        accountArea ??
+        (githubUsername && onSignOut ? (
+            <AccountMenuButton
+                username={githubUsername}
+                avatarUrl={githubAvatarUrl ?? ""}
+                onSignOut={onSignOut}
+                links={accountMenuLinks}
+                className="w-full justify-start"
+            />
+        ) : null);
+
+    const supportAction: SupportAction = {
+        label: "Docs",
+        icon: <BookIcon className="h-4 w-4 shrink-0 text-theme-text-muted" />,
+        copyLabel: "Copy All",
+        // No colour on the icons — they inherit the button's text colour so they
+        // match the filled idle/copied states.
+        idleIcon: <ClipboardIcon className="h-3.5 w-3.5 shrink-0" />,
+        successIcon: <CheckIcon className="h-3.5 w-3.5 shrink-0" />,
+        copyValue: async () => {
+            const res = await fetch(`${genDocsUrl()}/llm.txt`);
+            return res.text();
+        },
+    };
 
     const rail = (
         <DashboardRail
             activePage={activePage}
             navItems={navItems}
-            githubUsername={githubUsername}
-            githubAvatarUrl={githubAvatarUrl}
-            onPageChange={handlePageChange}
-            onSignOut={onSignOut}
-            accountArea={accountArea}
+            supportAction={supportAction}
+            supportLinks={supportLinks}
+            accountArea={effectiveAccountArea}
             walletArea={walletArea}
+            onPageChange={handleItemChange}
         />
     );
 
     return (
-        <div className="flex h-dvh overflow-hidden bg-emerald-100 text-green-950">
+        <div className="flex h-dvh overflow-hidden bg-app-bg text-theme-text-strong">
             <div className="hidden md:block">{rail}</div>
             <div
                 ref={drawerRef}
                 className={cn(
                     "fixed inset-0 z-40 transition-[visibility] md:hidden",
                     isDrawerOpen
-                        ? "visible pointer-events-auto delay-0"
-                        : "invisible pointer-events-none delay-[420ms]",
+                        ? "pointer-events-auto visible delay-0"
+                        : "pointer-events-none invisible delay-[420ms]",
                 )}
                 aria-hidden={!isDrawerOpen}
                 inert={!isDrawerOpen}
@@ -132,7 +286,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 <button
                     type="button"
                     className={cn(
-                        "absolute inset-0 bg-green-950/25 transition-opacity ease-out",
+                        "absolute inset-0 bg-black/40 transition-opacity ease-out",
                         "duration-[420ms]",
                         isDrawerOpen ? "opacity-100" : "opacity-0",
                     )}
@@ -141,54 +295,38 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 />
                 <div
                     className={cn(
-                        "absolute inset-y-0 left-0 flex w-[min(20rem,86vw)] transform-gpu flex-col overflow-hidden border-r border-green-950/10 bg-emerald-100 shadow-xl transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
+                        "absolute inset-y-0 left-0 flex w-[min(20rem,86vw)] transform-gpu flex-col overflow-hidden border-r border-theme-text-strong/10 bg-app-bg shadow-xl transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
                         "duration-[420ms]",
                         isDrawerOpen ? "translate-x-0" : "-translate-x-full",
                     )}
                 >
-                    <div className="flex shrink-0 flex-col gap-2 border-b border-green-950/10 px-4 py-3">
+                    <div className="flex shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 px-4 py-3">
                         <div className="flex items-center justify-between gap-2">
-                            <Brand imageClassName="h-6 min-[390px]:h-7 sm:h-8" />
+                            <BrandMark size="drawer" />
                             <button
                                 type="button"
-                                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/70 text-green-950 hover:bg-white"
+                                className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
                                 onClick={closeDrawer}
                                 aria-label="Close navigation"
                             >
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    className="h-5 w-5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    aria-hidden="true"
-                                >
-                                    <path
-                                        d="M18 6 6 18M6 6l12 12"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                    />
-                                </svg>
+                                <XIcon className="h-5 w-5" />
                             </button>
                         </div>
-                        <BrandSocialChips />
+                        <BrandLinks links={brandLinks} />
                     </div>
                     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                         {rail}
                     </div>
                 </div>
             </div>
-            <div
-                className="flex min-w-0 flex-1 flex-col md:ml-60"
-                data-theme={dashboardThemeByPage[activePage]}
-            >
-                <MobileHeader
+            <div className="flex min-w-0 flex-1 flex-col md:ml-60">
+                <MobileMenuButton
                     buttonRef={menuButtonRef}
                     onOpen={() => setIsDrawerOpen(true)}
                 />
                 <ScrollArea
                     ref={mainScrollRef}
-                    className="min-h-0 min-w-0 flex-1 overscroll-contain px-4 pb-8 pt-6 md:px-6 md:pt-10"
+                    className="min-h-0 min-w-0 flex-1 overscroll-contain px-4 pt-14 pb-8 md:px-6 md:pt-10"
                 >
                     <main className="mx-auto flex max-w-[800px] flex-col gap-6">
                         {children}
@@ -199,492 +337,307 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     );
 };
 
-function useDashboardBodyClass(): void {
+function useDashboardShellBodyClass(): void {
     useEffect(() => {
-        document.documentElement.classList.add("dashboard-shell");
-        document.body.classList.add("dashboard-shell");
+        document.documentElement.classList.add("polli-ui-shell");
+        document.body.classList.add("polli-ui-shell");
         return () => {
-            document.documentElement.classList.remove("dashboard-shell");
-            document.body.classList.remove("dashboard-shell");
+            document.documentElement.classList.remove("polli-ui-shell");
+            document.body.classList.remove("polli-ui-shell");
         };
     }, []);
 }
 
 type DashboardRailProps = {
     activePage: DashboardPage;
-    navItems: typeof DASHBOARD_NAV_ITEMS;
-    githubUsername?: string;
-    githubAvatarUrl?: string;
-    onPageChange: (page: DashboardPage) => void;
-    onSignOut?: () => void;
+    navItems: readonly DashboardNavItem[];
+    supportAction: SupportAction;
+    supportLinks: readonly SupportLink[];
     accountArea?: ReactNode;
     walletArea?: ReactNode;
+    onPageChange: (page: DashboardPage) => void;
 };
 
 const DashboardRail: FC<DashboardRailProps> = ({
     activePage,
     navItems,
-    githubUsername,
-    githubAvatarUrl,
-    onPageChange,
-    onSignOut,
+    supportAction,
+    supportLinks,
     accountArea,
     walletArea,
-}) => {
-    const [docsCopied, setDocsCopied] = useState(false);
-    const handleCopyDocs = useCallback(async () => {
-        const res = await fetch(`${genDocsUrl()}/llm.txt`);
-        const text = await res.text();
-        await navigator.clipboard.writeText(text);
-        setDocsCopied(true);
-        setTimeout(() => setDocsCopied(false), 1200);
-    }, []);
-    return (
-        <aside
-            className="flex min-h-0 flex-1 flex-col px-2 py-4 md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-60 md:border-r md:border-green-950/10"
-            aria-label="Dashboard navigation"
+    onPageChange,
+}) => (
+    <aside
+        data-theme="neutral"
+        className="flex min-h-0 flex-1 flex-col px-2 py-4 md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-60 md:border-r md:border-theme-text-strong/10"
+        aria-label="Dashboard navigation"
+    >
+        <div className="hidden shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 pb-4 pl-1 md:flex">
+            <BrandMark size="desktop" />
+            <BrandLinks links={brandLinks} />
+        </div>
+        <ScrollArea
+            className="-mr-2 min-h-0 flex-1 pt-3"
+            style={
+                {
+                    "--polli-color-scrollbar-thumb":
+                        "color-mix(in oklab, var(--polli-color-text-muted) 65%, transparent)",
+                } as CSSProperties
+            }
         >
-            <div className="hidden shrink-0 flex-col gap-2 border-b border-green-950/10 pb-4 pl-1 md:flex">
-                <Brand imageClassName="h-6" />
-                <BrandSocialChips />
-            </div>
-            <ScrollArea
-                className="-mr-2 min-h-0 flex-1 pt-3"
-                style={
-                    {
-                        "--theme-scrollbar-thumb":
-                            "oklch(from var(--color-gray-400) l c h / 0.65)",
-                    } as React.CSSProperties
-                }
-            >
-                <nav className="flex flex-col gap-1 pr-2">
-                    {navItems.map((item) => (
-                        <NavButton
-                            key={item.id}
-                            item={item}
-                            active={activePage === item.id}
-                            onClick={() => onPageChange(item.id)}
-                        />
-                    ))}
-                    <div className="mt-2 border-t border-green-950/10 pt-3">
-                        <button
-                            type="button"
-                            onClick={handleCopyDocs}
-                            title="Copy full docs for LLMs"
-                            className="group flex w-full items-center justify-between gap-2 rounded-full px-3 py-2 text-left text-sm font-medium text-gray-900 transition-colors hover:bg-white/60 hover:text-gray-950"
-                        >
-                            <span className="flex items-center gap-2">
-                                <BookIcon className="h-4 w-4 shrink-0 text-gray-500" />
-                                Docs
-                            </span>
-                            {docsCopied ? (
-                                <CheckIcon className="h-4 w-4 shrink-0 text-green-700" />
-                            ) : (
-                                <ClipboardIcon className="h-4 w-4 shrink-0 text-gray-400 transition-colors group-hover:text-gray-600" />
-                            )}
-                        </button>
-                        <div className="ml-3.5 mt-0.5 flex flex-col gap-0.5 border-l border-green-950/10 pl-2">
-                            <DocLinkRow
-                                label="API"
-                                href={`${genDocsUrl()}`}
-                                icon={
-                                    <GenApiIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
-                                }
-                            />
-                            <DocLinkRow
-                                label="BYOP"
-                                href={`${genDocsUrl()}#tag/byop`}
-                                icon={
-                                    <WalletIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
-                                }
-                            />
-                            <DocLinkRow
-                                label="CLI"
-                                href={`${genDocsUrl()}#tag/cli`}
-                                icon={
-                                    <TerminalIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
-                                }
-                            />
-                            <DocLinkRow
-                                label="MCP Server"
-                                href={`${genDocsUrl()}#tag/mcp-server`}
-                                icon={
-                                    <McpIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
-                                }
-                            />
-                        </div>
-                    </div>
-                </nav>
-            </ScrollArea>
-            <div className="shrink-0 flex flex-col gap-2 border-t border-green-950/10 pt-4">
-                {walletArea && <div className="px-1">{walletArea}</div>}
-                {accountArea ??
-                    (githubUsername && onSignOut ? (
-                        <User
-                            githubUsername={githubUsername}
-                            githubAvatarUrl={githubAvatarUrl ?? ""}
-                            onSignOut={onSignOut}
-                            className="w-full justify-start"
-                            menuItems={<AccountMenuLinks />}
-                        />
-                    ) : null)}
-                <div className="flex flex-wrap gap-x-2 gap-y-1 px-3 text-xs leading-snug text-green-950/55">
-                    <a
-                        href="https://pollinations.ai/terms"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="transition-colors hover:text-green-950"
+            <nav className="flex flex-col gap-1 pr-2">
+                {navItems.map((item) => (
+                    <NavItem
+                        key={item.id}
+                        type="button"
+                        data-theme="accent"
+                        icon={item.icon}
+                        active={activePage === item.id}
+                        onClick={() => onPageChange(item.id)}
                     >
-                        Terms
-                    </a>
-                    <a
-                        href="https://pollinations.ai/privacy"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="transition-colors hover:text-green-950"
-                    >
-                        Privacy
-                    </a>
-                    <a
-                        href="https://pollinations.ai/refunds"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="transition-colors hover:text-green-950"
-                    >
-                        Refunds
-                    </a>
-                </div>
-                <div className="px-3 text-xs leading-none text-green-950/45">
-                    © 2026 Myceli.AI
-                </div>
-            </div>
-        </aside>
-    );
-};
+                        {item.label}
+                    </NavItem>
+                ))}
+                <DashboardSupport action={supportAction} links={supportLinks} />
+            </nav>
+        </ScrollArea>
+        <div className="flex shrink-0 flex-col gap-2 border-t border-theme-text-strong/10 pt-4">
+            {walletArea && <div className="px-1">{walletArea}</div>}
+            {accountArea}
+            <DashboardFooter links={footerLinks} note="© 2026 Myceli.AI" />
+        </div>
+    </aside>
+);
 
-type NavButtonProps = {
-    item: (typeof DASHBOARD_NAV_ITEMS)[number];
-    active: boolean;
-    onClick: () => void;
-};
-
-const NavButton: FC<NavButtonProps> = ({ item, active, onClick }) => {
-    return (
-        <button
-            type="button"
-            data-theme={item.theme}
-            className={cn(
-                "flex items-center gap-2 rounded-full px-3 py-2 text-left text-sm font-medium transition-colors",
-                active
-                    ? "bg-theme-bg-active text-theme-text-strong"
-                    : "text-gray-800 hover:bg-white/60 hover:text-gray-950",
-            )}
-            onClick={onClick}
-            aria-current={active ? "page" : undefined}
-        >
-            <span
-                className="h-2.5 w-2.5 shrink-0 rounded-full shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)] bg-theme-bg-hover"
-                aria-hidden="true"
-            />
-            {item.label}
-        </button>
-    );
-};
-
-const MobileHeader: FC<{
+const MobileMenuButton: FC<{
     buttonRef: RefObject<HTMLButtonElement | null>;
     onOpen: () => void;
-}> = ({ buttonRef, onOpen }) => {
-    return (
-        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-green-950/10 bg-emerald-100 px-4 py-3 md:hidden">
-            <button
-                ref={buttonRef}
-                type="button"
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/70 text-green-950 hover:bg-white"
-                onClick={onOpen}
-                aria-label="Open navigation"
-            >
-                <svg
-                    viewBox="0 0 24 24"
-                    className="h-5 w-5"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    aria-hidden="true"
-                >
-                    <path
-                        d="M4 7h16M4 12h16M4 17h16"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                    />
-                </svg>
-            </button>
-            <Brand imageClassName="h-6 min-[390px]:h-7 sm:h-8" />
-            <span className="h-9 w-9" aria-hidden="true" />
-        </header>
-    );
-};
+}> = ({ buttonRef, onOpen }) => (
+    <button
+        ref={buttonRef}
+        type="button"
+        className="fixed left-3 top-3 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque text-theme-text-strong shadow-md ring-1 ring-theme-text-strong/10 hover:bg-surface-opaque md:hidden"
+        onClick={onOpen}
+        aria-label="Open navigation"
+    >
+        <MenuIcon className="h-5 w-5" />
+    </button>
+);
 
-const Brand: FC<{ imageClassName?: string }> = ({ imageClassName }) => (
+const BrandMark: FC<{ size: "desktop" | "drawer" }> = ({ size }) => (
     <a
         href="https://pollinations.ai"
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center"
+        className="inline-flex items-center text-current"
+        aria-label="Pollinations"
     >
-        <img
-            src="/logo_text_black.svg"
-            alt="pollinations.ai"
-            className={cn("h-10 w-auto", imageClassName)}
+        <span className="sr-only">Pollinations</span>
+        <span
+            aria-hidden="true"
+            className={cn(
+                "block shrink-0 bg-current",
+                size === "desktop" ? "h-6 w-[195px]" : "h-5 w-[162px]",
+            )}
+            style={brandWordmarkMask}
         />
     </a>
 );
 
-const BrandSocialChips: FC = () => (
+const BrandLinks: FC<{ links: readonly BrandLink[] }> = ({ links }) => (
     <div className="flex items-center gap-1.5">
-        <BrandChip
-            href="https://github.com/pollinations/pollinations"
-            label="Pollinations on GitHub"
-            icon={<GitHubIcon />}
-            text="github"
-            count="4.4k"
-        />
-        <BrandChip
-            href="https://discord.gg/pollinations-ai-885844321461485618"
-            label="Discord community"
-            icon={<DiscordIcon />}
-            text="discord"
-            count="18k"
-        />
+        {links.map((link) => (
+            <BrandLinkRow key={link.href} {...link} />
+        ))}
     </div>
 );
 
-const BrandChip: FC<{
-    href: string;
-    label: string;
-    icon: ReactNode;
-    text: string;
-    count?: string;
-}> = ({ href, label, icon, text, count }) => (
+const BrandLinkRow: FC<BrandLink> = ({ href, label, icon, text, count }) => (
     <a
         href={href}
         target="_blank"
         rel="noopener noreferrer"
         aria-label={label}
-        className="inline-flex items-center gap-1.5 rounded-full border border-transparent bg-white/55 py-[3px] pl-[7px] pr-[10px] text-micro font-medium leading-none text-green-950/80 transition-colors hover:border-green-950/15 hover:bg-white hover:text-green-950"
+        className="inline-flex items-center gap-1.5 rounded-full border border-transparent bg-surface-opaque/55 py-[3px] pr-[10px] pl-[7px] text-micro font-medium leading-none text-theme-text-strong/80 transition-colors hover:border-theme-text-strong/15 hover:bg-surface-opaque hover:text-theme-text-strong"
     >
         <span className="h-[11px] w-[11px]">{icon}</span>
         <span className="-translate-y-px">{text}</span>
         {count && (
-            <span className="ml-0.5 border-l border-green-950/15 pl-1.5 font-mono text-micro text-green-950/55">
+            <span className="ml-0.5 border-l border-theme-text-strong/15 pl-1.5 font-mono text-micro text-theme-text-muted">
                 {count}
             </span>
         )}
     </a>
 );
 
-const AccountMenuLinks: FC = () => (
-    <div className="flex flex-col gap-1">
-        <AccountIconLink
-            href="https://discord.com/channels/885844321461485618/1432378056126894343"
-            label="#pollen-beta"
-            icon={<DiscordIcon />}
-            ariaLabel="#pollen-beta Discord channel"
-        />
-        <AccountIconLink
-            href="https://github.com/pollinations/pollinations/issues"
-            label="Report an issue"
-            icon={<GitHubIcon />}
-            ariaLabel="Report an issue on GitHub"
-        />
+const DashboardSupport: FC<{
+    action: SupportAction;
+    links: readonly SupportLink[];
+}> = ({ action, links }) => (
+    <div className="mt-2 border-t border-theme-text-strong/10 pt-3">
+        {/* "Docs" header on the left; a small labelled copy button on the right
+            (no tooltip — the visible label says what it does). */}
+        <div className="flex items-center justify-between gap-2 px-3 py-1">
+            <span className="flex items-center gap-2 text-sm font-medium text-ink-900">
+                {action.icon}
+                {action.label}
+            </span>
+            {/* accent over the neutral rail (matches the nav buttons) */}
+            <span data-theme="accent">
+                <CopyButton
+                    value={action.copyValue}
+                    copiedTimeoutMs={1500}
+                    tooltip={null}
+                    className={(copied) =>
+                        cn(
+                            "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
+                            copied
+                                ? "bg-intent-success-bg-light text-intent-success-text"
+                                : "bg-theme-bg-active text-theme-text-strong hover:bg-theme-bg-hover",
+                        )
+                    }
+                >
+                    {(copied) => (
+                        <>
+                            {copied ? action.successIcon : action.idleIcon}
+                            {copied ? "Copied" : action.copyLabel}
+                        </>
+                    )}
+                </CopyButton>
+            </span>
+        </div>
+        <div className="ml-3.5 mt-0.5 flex flex-col gap-0.5 border-l border-theme-text-strong/10 pl-2">
+            {links.map((link) => (
+                <SupportLinkRow key={link.href} {...link} />
+            ))}
+        </div>
     </div>
 );
 
-const AccountIconLink: FC<{
-    href: string;
-    label: string;
-    icon: ReactNode;
-    ariaLabel?: string;
-}> = ({ href, label, icon, ariaLabel }) => (
+const SupportLinkRow: FC<SupportLink> = ({ label, href, icon }) => (
+    <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="group flex items-center justify-between gap-2 rounded-full px-3 py-1.5 text-left text-xs font-medium text-ink-700 transition-colors hover:bg-surface-opaque/60 hover:text-ink-950"
+    >
+        <span className="flex items-center gap-2">
+            {icon}
+            {label}
+        </span>
+        <ExternalLinkIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted transition-colors group-hover:text-theme-text-base" />
+    </a>
+);
+
+const DashboardFooter: FC<{
+    links: readonly FooterLink[];
+    note?: ReactNode;
+}> = ({ links, note }) => (
+    <>
+        <div className="flex flex-wrap gap-x-2 gap-y-1 px-3 text-xs leading-snug text-theme-text-muted">
+            {links.map((link) => (
+                <a
+                    key={link.href}
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="transition-colors hover:text-theme-text-strong"
+                >
+                    {link.label}
+                </a>
+            ))}
+        </div>
+        <div className="flex items-center justify-between gap-2 pl-3 text-xs leading-none text-theme-text-muted">
+            <span>{note}</span>
+            {/* accent on the toggle's active icon, over the neutral rail */}
+            <span data-theme="accent">
+                <ColorModeToggle />
+            </span>
+        </div>
+    </>
+);
+
+type AccountMenuButtonProps = {
+    username: string;
+    avatarUrl: string;
+    onSignOut?: () => void;
+    links?: readonly AccountMenuLink[];
+    className?: string;
+};
+
+const AccountMenuButton: FC<AccountMenuButtonProps> = ({
+    username,
+    avatarUrl,
+    onSignOut,
+    links = [],
+    className,
+}) => (
+    <Dropdown
+        align="end"
+        className="w-[var(--reference-width)] min-w-0 p-1"
+        trigger={(open) => (
+            <button
+                type="button"
+                data-theme="accent"
+                className={cn(
+                    "flex min-w-0 flex-row items-center gap-2 self-center whitespace-nowrap rounded-full bg-theme-bg-active p-1 pr-3 transition-colors hover:bg-theme-bg-hover",
+                    className,
+                )}
+            >
+                <img
+                    src={avatarUrl}
+                    alt={`${username} avatar`}
+                    className="h-8 shrink-0 rounded-full"
+                />
+                <span className="min-w-0 flex-1 truncate text-left font-medium text-theme-text-strong">
+                    {username}
+                </span>
+                <ChevronIcon
+                    expanded={open}
+                    className="ml-auto h-4 w-4 shrink-0 text-theme-text-strong transition-transform duration-200 ease-out"
+                />
+            </button>
+        )}
+    >
+        {(close) => (
+            <>
+                {links.map((link) => (
+                    <AccountMenuLinkRow key={link.href} {...link} />
+                ))}
+                {links.length > 0 && (
+                    <div className="my-1 border-t border-divider" />
+                )}
+                <button
+                    type="button"
+                    onClick={() => {
+                        close();
+                        onSignOut?.();
+                    }}
+                    className="flex w-full cursor-pointer items-center rounded-lg px-3 py-2 text-left text-sm text-theme-text-strong hover:bg-theme-bg-hover focus:outline-none focus-visible:bg-theme-bg-hover"
+                >
+                    Sign Out
+                </button>
+            </>
+        )}
+    </Dropdown>
+);
+
+const AccountMenuLinkRow: FC<AccountMenuLink> = ({
+    href,
+    label,
+    icon,
+    ariaLabel,
+}) => (
     <a
         href={href}
         target="_blank"
         rel="noopener noreferrer"
         aria-label={ariaLabel ?? label}
-        className="flex items-center justify-start gap-2 rounded-lg px-3 py-2 text-sm font-medium text-amber-900 transition-colors hover:bg-amber-300 focus:outline-none focus-visible:bg-amber-300"
+        className="flex items-center justify-start gap-2 rounded-lg px-3 py-2 text-sm font-medium text-theme-text-strong transition-colors hover:bg-theme-bg-hover focus:outline-none focus-visible:bg-theme-bg-hover"
     >
         <span className="h-4 w-4 shrink-0" aria-hidden="true">
             {icon}
         </span>
         <span>{label}</span>
     </a>
-);
-
-const DiscordIcon: FC = () => (
-    <svg viewBox="0 0 24 24" className="h-full w-full" aria-hidden="true">
-        <path
-            fill="currentColor"
-            d="M20.32 4.37A19.8 19.8 0 0 0 15.36 2.83a.07.07 0 0 0-.08.04c-.21.38-.45.88-.62 1.27a18.27 18.27 0 0 0-5.52 0 12.84 12.84 0 0 0-.63-1.27.08.08 0 0 0-.08-.04A19.74 19.74 0 0 0 3.47 4.37a.07.07 0 0 0-.03.03C.31 9.07-.55 13.61-.13 18.1a.08.08 0 0 0 .03.06 19.9 19.9 0 0 0 6.08 3.07.08.08 0 0 0 .09-.03c.47-.64.88-1.31 1.24-2.02a.08.08 0 0 0-.04-.1 13.08 13.08 0 0 1-1.9-.91.08.08 0 0 1-.01-.13c.13-.1.25-.2.37-.29a.07.07 0 0 1 .08-.01 14.24 14.24 0 0 0 12.38 0 .07.07 0 0 1 .08.01c.12.1.25.2.38.3a.08.08 0 0 1-.01.12 12.22 12.22 0 0 1-1.9.9.08.08 0 0 0-.04.11c.36.7.77 1.38 1.23 2.02a.08.08 0 0 0 .1.03 19.84 19.84 0 0 0 6.08-3.07.08.08 0 0 0 .03-.05c.5-5.2-.84-9.7-3.77-13.71a.06.06 0 0 0-.03-.03ZM8.02 15.37c-1.18 0-2.16-1.08-2.16-2.4 0-1.32.96-2.4 2.16-2.4 1.2 0 2.18 1.09 2.16 2.4 0 1.32-.96 2.4-2.16 2.4Zm7.96 0c-1.18 0-2.16-1.08-2.16-2.4 0-1.32.96-2.4 2.16-2.4 1.2 0 2.18 1.09 2.16 2.4 0 1.32-.95 2.4-2.16 2.4Z"
-        />
-    </svg>
-);
-
-const GitHubIcon: FC = () => (
-    <svg viewBox="0 0 24 24" className="h-full w-full" aria-hidden="true">
-        <path
-            fill="currentColor"
-            d="M12 .5A11.5 11.5 0 0 0 8.36 22.9c.58.11.79-.25.79-.56v-2.16c-3.21.7-3.89-1.38-3.89-1.38-.53-1.34-1.29-1.7-1.29-1.7-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.04 1.76 2.71 1.25 3.37.96.11-.75.4-1.25.74-1.54-2.56-.29-5.26-1.28-5.26-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.06 0 0 .97-.31 3.16 1.18a10.88 10.88 0 0 1 5.76 0c2.19-1.49 3.15-1.18 3.15-1.18.63 1.6.23 2.77.11 3.06.74.81 1.19 1.84 1.19 3.1 0 4.43-2.7 5.4-5.27 5.69.41.36.78 1.06.78 2.14v3.19c0 .31.21.68.8.56A11.5 11.5 0 0 0 12 .5Z"
-        />
-    </svg>
-);
-
-const BookIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <path d="M4 4h5a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4z" />
-        <path d="M20 4h-5a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h6z" />
-    </svg>
-);
-
-const WalletIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <path d="M3 7a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v2H5a2 2 0 0 0-2 2V7Z" />
-        <path d="M3 11a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6Z" />
-        <circle cx="17" cy="14" r="1.25" fill="currentColor" />
-    </svg>
-);
-
-const TerminalIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <polyline points="4 8 8 12 4 16" />
-        <line x1="12" y1="20" x2="20" y2="20" />
-    </svg>
-);
-
-const McpIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <rect x="2" y="7" width="8" height="10" rx="1.5" />
-        <rect x="14" y="7" width="8" height="10" rx="1.5" />
-        <path d="M10 12h4" />
-    </svg>
-);
-
-const ClipboardIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <rect x="9" y="9" width="13" height="13" rx="2" />
-        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-    </svg>
-);
-
-const CheckIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <polyline points="20 6 9 17 4 12" />
-    </svg>
-);
-
-const GenApiIcon: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-    >
-        <path d="m8 3 4 1.5L16 3v18l-4-1.5L8 21z" />
-        <path d="M8 3v18M16 3v18" />
-    </svg>
-);
-
-type DocLinkRowProps = {
-    label: string;
-    href: string;
-    icon: ReactNode;
-};
-
-const DocLinkRow: FC<DocLinkRowProps> = ({ label, href, icon }) => (
-    <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="group flex items-center justify-between gap-2 rounded-full px-3 py-1.5 text-left text-xs font-medium text-gray-700 transition-colors hover:bg-white/60 hover:text-gray-950"
-    >
-        <span className="flex items-center gap-2">
-            {icon}
-            {label}
-        </span>
-        <ExternalLinkArrow className="h-3.5 w-3.5 shrink-0 text-gray-400 transition-colors group-hover:text-gray-600" />
-    </a>
-);
-
-const ExternalLinkArrow: FC<{ className?: string }> = ({ className }) => (
-    <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        aria-hidden="true"
-    >
-        <path
-            d="M7 17 17 7M9 7h8v8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        />
-    </svg>
 );

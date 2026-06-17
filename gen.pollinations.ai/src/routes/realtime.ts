@@ -1,9 +1,16 @@
-import { getUserBalance } from "@shared/billing/balance.ts";
+import { getUserBalance, payerBucketToMeter } from "@shared/billing/balance.ts";
 import {
     handleBalanceDeduction,
     type MarkupResolution,
 } from "@shared/billing/track-helpers.ts";
-import { getRealClientIp } from "@shared/client-ip.ts";
+import {
+    bytesToHex,
+    getRealClientIp,
+    hashIp,
+    stripIPv4MappedPrefix,
+    truncateIpToSubnet,
+} from "@shared/client-ip.ts";
+import { sendToTinybird } from "@shared/events.ts";
 import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
 import {
     calculateCost,
@@ -20,16 +27,16 @@ import {
     type TinybirdEvent,
     usageToEventParams,
 } from "@shared/schemas/generation-event.ts";
+import { getRoutePath } from "@shared/util.ts";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
-import { sendToTinybird } from "@/events.ts";
 import {
     type RealtimeRequestQueryParams,
     RealtimeUsageSchema,
 } from "@/schemas/realtime.ts";
-import { generateRandomId, getRoutePath } from "@/util.ts";
+import { generateRandomId } from "@/util.ts";
 import { checkBalance } from "@/utils/generation-access.ts";
 
 // Azure OpenAI realtime endpoint. The gpt-realtime-2 deployment lives on the
@@ -89,12 +96,6 @@ function requireAllowedModel(c: Context<Env>, model: string): void {
             message: `Model '${model}' is not allowed for this API key`,
         });
     }
-}
-
-function bytesToHex(bytes: ArrayBuffer): string {
-    return Array.from(new Uint8Array(bytes))
-        .map((byte) => byte.toString(16).padStart(2, "0"))
-        .join("");
 }
 
 async function createSafetyIdentifier(
@@ -362,50 +363,6 @@ function redactCredentialQueryParams(url: URL): string {
     return redacted.toString();
 }
 
-async function hashIp(
-    ip: string | undefined,
-    salt: string,
-): Promise<string | undefined> {
-    if (!ip) return undefined;
-    const data = new TextEncoder().encode(`${salt}:${ip}`);
-    return bytesToHex(await crypto.subtle.digest("SHA-256", data));
-}
-
-function stripIPv4MappedPrefix(ip: string): string {
-    const match = ip.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/i);
-    return match ? match[1] : ip;
-}
-
-function expandIPv6(ip: string): string {
-    if (!ip.includes("::")) {
-        return ip
-            .split(":")
-            .map((group) => group.padStart(4, "0"))
-            .join(":");
-    }
-    const halves = ip.split("::");
-    const left = halves[0] ? halves[0].split(":") : [];
-    const right = halves[1] ? halves[1].split(":") : [];
-    const middle = Array(8 - left.length - right.length).fill("0000");
-    return [...left, ...middle, ...right]
-        .map((group) => group.padStart(4, "0"))
-        .join(":");
-}
-
-function truncateIpToSubnet(ip: string | undefined): string | undefined {
-    if (!ip) return undefined;
-    const normalized = stripIPv4MappedPrefix(ip);
-    if (normalized.includes(".")) {
-        const parts = normalized.split(".");
-        if (parts.length === 4) return `${parts[0]}.${parts[1]}.${parts[2]}.0`;
-    }
-    if (normalized.includes(":")) {
-        const groups = expandIPv6(normalized).split(":");
-        return `${groups[0]}:${groups[1]}:${groups[2]}::`;
-    }
-    return undefined;
-}
-
 function getPostDeductionBalances(
     payerBucket: "tier" | "pack" | null,
     balances: { tierBalance: number; packBalance: number },
@@ -414,9 +371,7 @@ function getPostDeductionBalances(
         return {};
     }
     return {
-        selectedMeterId: `local:${payerBucket}`,
-        selectedMeterSlug:
-            payerBucket === "tier" ? "v1:meter:tier" : "v1:meter:pack",
+        ...payerBucketToMeter(payerBucket),
         balances: {
             "v1:meter:tier": balances.tierBalance,
             "v1:meter:pack": balances.packBalance,

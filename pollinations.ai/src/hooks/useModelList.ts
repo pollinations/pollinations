@@ -1,10 +1,3 @@
-import {
-    getModelDefinition,
-    getVisibleAudioModels,
-    getVisibleImageModels,
-    getVisibleTextModels,
-    type ModelName,
-} from "@shared/registry/registry";
 import { useCallback, useMemo, useState } from "react";
 import { API_BASE } from "../api.config";
 import { useCachedFetch } from "./useCachedFetch";
@@ -16,6 +9,7 @@ const AUDIO_MODELS_URL = `${API_BASE}/audio/models`;
 export interface Model {
     id: string;
     name: string;
+    title: string;
     description?: string;
     type: "image" | "text" | "audio";
     hasImageInput: boolean;
@@ -39,61 +33,33 @@ interface UseModelListReturn {
     allModels: Model[];
 }
 
-// Convert a registry model definition to a UI model
-function serviceToModel(
-    serviceId: ModelName,
-    type: "image" | "text" | "audio",
-): Model {
-    const def = getModelDefinition(serviceId);
-    return {
-        id: serviceId as string,
-        name: serviceId as string,
-        description: def.description,
-        type,
-        hasImageInput: def.inputModalities?.includes("image") || false,
-        hasAudioOutput: def.outputModalities?.includes("audio") || false,
-        hasVideoOutput: def.outputModalities?.includes("video") || false,
-        inputModalities: def.inputModalities,
-        outputModalities: def.outputModalities,
-        voices: def.voices,
-        paid_only: def.paidOnly,
-    };
-}
-
-// Build the full model lists from the shared registry (instant, no fetch)
-const REGISTRY_IMAGE_MODELS: Model[] = getVisibleImageModels().map((id) =>
-    serviceToModel(id, "image"),
-);
-const REGISTRY_TEXT_MODELS: Model[] = getVisibleTextModels()
-    .filter((id) => !getModelDefinition(id).outputModalities?.includes("audio"))
-    .map((id) => serviceToModel(id, "text"));
-const REGISTRY_AUDIO_MODELS: Model[] = [
-    // Audio models from text services (output_modalities includes "audio")
-    ...getVisibleTextModels()
-        .filter((id) =>
-            getModelDefinition(id).outputModalities?.includes("audio"),
-        )
-        .map((id) => serviceToModel(id, "audio")),
-    // Dedicated audio services
-    ...getVisibleAudioModels().map((id) => serviceToModel(id, "audio")),
-];
-const ALL_MODELS: Model[] = [
-    ...REGISTRY_IMAGE_MODELS,
-    ...REGISTRY_TEXT_MODELS,
-    ...REGISTRY_AUDIO_MODELS,
-];
-
-const CACHE_KEY_PREFIX = "pollinations:allowedModels:";
+const CACHE_KEY_PREFIX = "pollinations:modelList:v2:";
 const TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 type RawModel =
-    | { id?: string; name?: string; output_modalities?: string[] }
+    | {
+          id?: string;
+          name?: string;
+          title?: string;
+          description?: string;
+          input_modalities?: string[];
+          output_modalities?: string[];
+          voices?: string[];
+          paid_only?: boolean;
+      }
     | string;
 
 interface AllowedModelsData {
     image: string[];
     text: string[];
     audio: string[];
+}
+
+interface ModelListData {
+    imageModels: Model[];
+    textModels: Model[];
+    audioModels: Model[];
+    allowed: AllowedModelsData;
 }
 
 function extractIds(
@@ -104,6 +70,78 @@ function extractIds(
 
 function hasAudioOutput(m: RawModel): boolean {
     return typeof m !== "string" && !!m.output_modalities?.includes("audio");
+}
+
+function modelId(model: RawModel): string {
+    return typeof model === "string" ? model : model.id || model.name || "";
+}
+
+function apiModelToModel(model: RawModel, type: Model["type"]): Model | null {
+    const id = modelId(model);
+    if (!id) return null;
+
+    if (typeof model === "string") {
+        return {
+            id,
+            name: id,
+            title: id,
+            type,
+            hasImageInput: false,
+            hasAudioOutput: false,
+            hasVideoOutput: false,
+        };
+    }
+
+    return {
+        id,
+        name: id,
+        title: model.title || model.description?.split(" - ")[0]?.trim() || id,
+        description: model.description,
+        type,
+        hasImageInput: model.input_modalities?.includes("image") || false,
+        hasAudioOutput: model.output_modalities?.includes("audio") || false,
+        hasVideoOutput: model.output_modalities?.includes("video") || false,
+        inputModalities: model.input_modalities,
+        outputModalities: model.output_modalities,
+        voices: model.voices,
+        paid_only: model.paid_only,
+    };
+}
+
+async function fetchJson(url: string, headers?: Record<string, string>) {
+    const response = await fetch(url, { headers });
+    if (!response.ok) {
+        throw new Error(`Failed to fetch ${url} (${response.status})`);
+    }
+    return (await response.json()) as RawModel[];
+}
+
+async function fetchCatalogModels(): Promise<{
+    imageModels: Model[];
+    textModels: Model[];
+    audioModels: Model[];
+}> {
+    const [imageList, textList, audioList] = await Promise.all([
+        fetchJson(IMAGE_MODELS_URL),
+        fetchJson(TEXT_MODELS_URL),
+        fetchJson(AUDIO_MODELS_URL),
+    ]);
+
+    const imageModels = imageList
+        .map((model) => apiModelToModel(model, "image"))
+        .filter((model): model is Model => Boolean(model));
+    const textModels = textList
+        .filter((model) => !hasAudioOutput(model))
+        .map((model) => apiModelToModel(model, "text"))
+        .filter((model): model is Model => Boolean(model));
+    const audioModels = [
+        ...textList
+            .filter((model) => hasAudioOutput(model))
+            .map((model) => apiModelToModel(model, "audio")),
+        ...audioList.map((model) => apiModelToModel(model, "audio")),
+    ].filter((model): model is Model => Boolean(model));
+
+    return { imageModels, textModels, audioModels };
 }
 
 const EMPTY_ALLOWED: AllowedModelsData = { image: [], text: [], audio: [] };
@@ -148,10 +186,23 @@ async function fetchAllowedModels(
     };
 }
 
+async function fetchModelListData(
+    apiKey: string | null,
+): Promise<ModelListData> {
+    const [catalog, allowed] = await Promise.all([
+        fetchCatalogModels(),
+        fetchAllowedModels(apiKey),
+    ]);
+
+    return {
+        ...catalog,
+        allowed,
+    };
+}
+
 /**
  * Custom hook to fetch and manage available models from the API
- * Full model list comes from the shared registry (instant).
- * Only fetches API to determine which models are allowed for the current key.
+ * Full model list comes from the public model endpoints.
  * @param apiKey - API key from useAuth (null when logged out → all models grayed out)
  */
 export function useModelList(apiKey: string | null): UseModelListReturn {
@@ -159,7 +210,7 @@ export function useModelList(apiKey: string | null): UseModelListReturn {
 
     const fetcher = useCallback(
         () =>
-            fetchAllowedModels(apiKey).catch((err) => {
+            fetchModelListData(apiKey).catch((err) => {
                 setError(err instanceof Error ? err : new Error(String(err)));
                 throw err;
             }),
@@ -167,34 +218,38 @@ export function useModelList(apiKey: string | null): UseModelListReturn {
     );
 
     const cacheKey = `${CACHE_KEY_PREFIX}${apiKey ? apiKey.slice(-8) : "anon"}`;
-    const { data, loading: isLoading } = useCachedFetch<AllowedModelsData>(
+    const { data, loading: isLoading } = useCachedFetch<ModelListData>(
         cacheKey,
         fetcher,
         TTL_MS,
     );
 
     const allowedImageModelIds = useMemo(
-        () => new Set<string>(data?.image ?? []),
+        () => new Set<string>(data?.allowed.image ?? []),
         [data],
     );
     const allowedTextModelIds = useMemo(
-        () => new Set<string>(data?.text ?? []),
+        () => new Set<string>(data?.allowed.text ?? []),
         [data],
     );
     const allowedAudioModelIds = useMemo(
-        () => new Set<string>(data?.audio ?? []),
+        () => new Set<string>(data?.allowed.audio ?? []),
         [data],
     );
 
+    const imageModels = data?.imageModels ?? [];
+    const textModels = data?.textModels ?? [];
+    const audioModels = data?.audioModels ?? [];
+
     return {
-        imageModels: REGISTRY_IMAGE_MODELS,
-        textModels: REGISTRY_TEXT_MODELS,
-        audioModels: REGISTRY_AUDIO_MODELS,
+        imageModels,
+        textModels,
+        audioModels,
         allowedImageModelIds,
         allowedTextModelIds,
         allowedAudioModelIds,
         isLoading,
         error,
-        allModels: ALL_MODELS,
+        allModels: [...imageModels, ...textModels, ...audioModels],
     };
 }

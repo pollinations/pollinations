@@ -1,7 +1,5 @@
-import { Field } from "@ark-ui/react/field";
+import { Button, Field, Input, Switch } from "@pollinations/ui";
 import type { FC } from "react";
-import { Button } from "../ui/button.tsx";
-import { Switch } from "../ui/switch.tsx";
 
 type PublishableKeySettingsProps = {
     redirectUris: string[];
@@ -48,17 +46,22 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                         Redirect URIs
                     </Field.Label>
                 </div>
+                <p className="text-xs text-theme-text-soft">
+                    A localhost callback is pre-filled for local development —
+                    edit the path to match your dev server, and remove it before
+                    going to production.
+                </p>
                 {redirectUris.map((uri, index) => (
                     <div
                         // biome-ignore lint/suspicious/noArrayIndexKey: stable enough for a small editable list
                         key={index}
                         className="flex items-center gap-2"
                     >
-                        <Field.Input
+                        <Input
                             type="text"
                             value={uri}
                             onChange={(e) => update(index, e.target.value)}
-                            className="flex-1 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                            className="flex-1 focus:outline-none focus:ring-2 focus:ring-theme-border"
                             placeholder="https://myapp.com/auth/callback"
                             disabled={disabled}
                         />
@@ -83,7 +86,7 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                         <div className="text-sm font-semibold">
                             Developer earnings
                         </div>
-                        <p className="mt-0.5 text-xs text-blue-800/75">
+                        <p className="mt-0.5 text-xs text-theme-text-soft">
                             Users pay 25% over base rates. Markup credits to
                             your balance.
                         </p>

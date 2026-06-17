@@ -1,137 +1,333 @@
 /** biome-ignore-all lint/suspicious/noUnknownAtRules: tailwind handles it */
+/* ============================================================================
+   Pollinations UI — color tokens. Refresh + dark mode + 3-level depth.
 
-@theme {
-    --font-heading: "LCT Mogi", ui-sans-serif, sans-serif;
-    --font-subheading: "Fraunces", ui-serif, serif;
-    --font-body: "Uncut Sans", ui-sans-serif, sans-serif;
-    --font-pixel: "Pixelify Sans", ui-monospace, monospace;
-    --text-micro: 10px;
-    --text-base: 16px;
+   DEPTH MODEL (deeper = darker, forward = lighter — in BOTH modes)
+     Level 0  Desk       --polli-color-app-bg          NEUTRAL, theme-independent
+     Level 1  Container  --polli-color-bg-pale         THEMED (carries the hue)
+     Level 2  Well        --polli-color-surface-opaque  NEUTRAL card surface
+              Accents     --polli-color-bg-active / bg-hover(=border)  THEMED
 
-    /* Paid + Tier identity colors used by Chip's `paid`/`tier` intents. */
-    --color-paid-pale: oklch(0.93 0.09 95.746);
-    --color-paid-soft: oklch(0.85 0.16 95.746);
-    --color-paid-deep: #78350f;
-    --color-tier-pale: oklch(0.93 0.06 55);
-    --color-tier-soft: oklch(0.83 0.13 55);
-    --color-tier-deep: #7C3F1E;
-}
+   SINGLE-ACCENT ARCHITECTURE
+     - All chrome uses ONE app accent, defined once on :root via the recipe
+       (--polli-hue/--polli-nudge). Switching mode flips the neutrals.
+     - The multi-hue palette is reserved for dedicated ROLES only: modality
+       (model-UI dots/badges), wallet (paid/tier coins — in the wallet module),
+       and the fixed intents (status + labels). None of these ride a page theme.
+     - `neutral` is the one no-hue member, for chrome that must carry no accent.
 
-/* ─── Per-theme cascade (public `--polli-color-*` tokens) ────────
-   Consumers may reference these in their own CSS:
-       color: var(--polli-color-text-base).
-   Renames between minor versions count as breaking. */
-[data-theme="amber"] {
-    --polli-color-text-base:    oklch(0.414 0.112 45.904);
-    --polli-color-text-strong:  oklch(0.279 0.077 45.635);
-    --polli-color-text-soft:    oklch(0.555 0.163 48.998);
-    --polli-color-text-muted:   oklch(0.62 0.045 45.904);
+   DARK: add class `dark` to <html> (color-scheme owned here: :root=light,
+   .dark=dark). INVARIANT: --polli-color-border === --polli-color-bg-hover.
+   ========================================================================== */
 
-    --polli-color-border:       oklch(0.879 0.169 91.605);
-
-    --polli-color-bg-subtle:    oklch(0.987 0.022 95.277 / 0.7);
-    --polli-color-bg-active:    oklch(0.924 0.12 95.746);
-    --polli-color-bg-hover:     oklch(0.879 0.169 91.605);
-    --polli-color-bg-pale:      oklch(0.962 0.059 95.617);
-}
-
-[data-theme="blue"] {
-    --polli-color-text-base:    oklch(0.379 0.146 265.522);
-    --polli-color-text-strong:  oklch(0.282 0.091 267.935);
-    --polli-color-text-soft:    oklch(0.488 0.243 264.376);
-    --polli-color-text-muted:   oklch(0.62 0.058 265.522);
-
-    --polli-color-border:       oklch(0.809 0.105 251.813);
-
-    --polli-color-bg-subtle:    oklch(0.97 0.014 254.604 / 0.7);
-    --polli-color-bg-active:    oklch(0.882 0.059 254.128);
-    --polli-color-bg-hover:     oklch(0.809 0.105 251.813);
-    --polli-color-bg-pale:      oklch(0.932 0.032 255.585);
-}
-
-[data-theme="pink"] {
-    --polli-color-text-base:    oklch(0.408 0.153 2.432);
-    --polli-color-text-strong:  oklch(0.284 0.109 3.907);
-    --polli-color-text-soft:    oklch(0.525 0.223 3.958);
-    --polli-color-text-muted:   oklch(0.62 0.061 2.432);
-
-    --polli-color-border:       oklch(0.823 0.12 346.018);
-
-    --polli-color-bg-subtle:    oklch(0.971 0.014 343.198 / 0.7);
-    --polli-color-bg-active:    oklch(0.899 0.061 343.231);
-    --polli-color-bg-hover:     oklch(0.823 0.12 346.018);
-    --polli-color-bg-pale:      oklch(0.948 0.028 342.258);
-}
-
-[data-theme="teal"] {
-    --polli-color-text-base:    oklch(0.386 0.063 188.416);
-    --polli-color-text-strong:  oklch(0.277 0.046 192.524);
-    --polli-color-text-soft:    oklch(0.511 0.096 186.391);
-    --polli-color-text-muted:   oklch(0.62 0.025 188.416);
-
-    --polli-color-border:       oklch(0.855 0.138 181.071);
-
-    --polli-color-bg-subtle:    oklch(0.984 0.014 180.72 / 0.7);
-    --polli-color-bg-active:    oklch(0.91 0.096 180.426);
-    --polli-color-bg-hover:     oklch(0.855 0.138 181.071);
-    --polli-color-bg-pale:      oklch(0.953 0.051 180.801);
-}
-
-[data-theme="violet"] {
-    --polli-color-text-base:    oklch(0.38 0.189 293.745);
-    --polli-color-text-strong:  oklch(0.283 0.141 291.089);
-    --polli-color-text-soft:    oklch(0.491 0.27 292.581);
-    --polli-color-text-muted:   oklch(0.62 0.076 293.745);
-
-    --polli-color-border:       oklch(0.811 0.111 293.571);
-
-    --polli-color-bg-subtle:    oklch(0.969 0.016 293.756 / 0.7);
-    --polli-color-bg-active:    oklch(0.894 0.057 293.283);
-    --polli-color-bg-hover:     oklch(0.811 0.111 293.571);
-    --polli-color-bg-pale:      oklch(0.943 0.029 294.588);
-}
-
-/* Green is also the chrome default — :root fallback so unwrapped routes
-   resolve --polli-color-* vars. */
-:root,
-[data-theme="green"] {
-    --polli-color-text-base:    oklch(0.393 0.095 152.535);
-    --polli-color-text-strong:  oklch(0.266 0.065 152.934);
-    --polli-color-text-soft:    oklch(0.527 0.154 150.069);
-    --polli-color-text-muted:   oklch(0.62 0.038 152.535);
-
-    --polli-color-border:       oklch(0.871 0.15 154.449);
-
-    --polli-color-bg-subtle:    oklch(0.982 0.018 155.826 / 0.7);
-    --polli-color-bg-active:    oklch(0.925 0.084 155.995);
-    --polli-color-bg-hover:     oklch(0.871 0.15 154.449);
-    --polli-color-bg-pale:      oklch(0.962 0.044 156.743);
-}
-
-/* Intent tokens (semantic, theme-independent). Public. */
 :root {
+    color-scheme: light;
+
+    --polli-font-heading:    "LCT Mogi", ui-sans-serif, sans-serif;
+    --polli-font-subheading: "Fraunces", ui-serif, serif;
+    --polli-font-body:       "Uncut Sans", ui-sans-serif, sans-serif;
+    --polli-font-pixel:      "Pixelify Sans", ui-monospace, monospace;
+    --polli-text-micro:      10px;
+    --polli-text-base:       16px;
+
+    --polli-color-brand-dark: #110518;
+
+    /* Level 0 — Desk (neutral, identical on every page) */
+    --polli-color-app-bg:              oklch(0.902 0.013 80);
+
+    /* Level 2 — Well + neutral card surfaces */
+    --polli-color-surface-opaque:      oklch(0.996 0.004 85);
+    --polli-color-surface-translucent: oklch(0.996 0.004 85 / 0.8);
+    --polli-color-surface-white: var(--polli-color-surface-translucent);
+
+    /* Neutral text (theme-independent, warm low-chroma) */
+    --polli-color-text-strong:         oklch(0.25 0.02 80);
+    --polli-color-text-base:           oklch(0.40 0.017 80);
+    --polli-color-text-muted:          oklch(0.49 0.013 80);
+
+    /* Neutral separator line — subtle hairline for dividers/hr/table rows.
+       Calibrated to stay visible-but-quiet on every surface in BOTH modes
+       (a plain ink shade can't: it inverts and vanishes on the desk in dark).
+       Distinct from theme-border (themed element outline) by design. */
+    --polli-color-divider:             oklch(0.835 0.007 80);
+
+    /* Raised elevation shadows (Level 1 container / Level 2 well) */
+    --polli-shadow-container: 0 1px 2px rgba(50, 38, 24, 0.1), 0 18px 38px -8px rgba(50, 38, 24, 0.18);
+    --polli-shadow-well:      0 1px 2px rgba(50, 38, 24, 0.07), 0 7px 18px -6px rgba(50, 38, 24, 0.13);
+
+    /* Neutral ink ramp */
+    --polli-color-ink-50:  oklch(0.985 0.002 247.839);
+    --polli-color-ink-100: oklch(0.967 0.003 264.542);
+    --polli-color-ink-200: oklch(0.928 0.006 264.531);
+    --polli-color-ink-300: oklch(0.872 0.01 258.338);
+    --polli-color-ink-400: oklch(0.707 0.022 261.325);
+    --polli-color-ink-500: oklch(0.551 0.027 264.364);
+    --polli-color-ink-600: oklch(0.446 0.03 256.802);
+    --polli-color-ink-700: oklch(0.373 0.034 259.733);
+    --polli-color-ink-800: oklch(0.278 0.033 256.848);
+    --polli-color-ink-900: oklch(0.21 0.034 264.665);
+    --polli-color-ink-950: oklch(0.13 0.028 261.692);
+}
+
+/* ─── SINGLE APP ACCENT. The app renders ONE accent everywhere; the
+   multi-hue palette lives only in dedicated roles (modality, wallet, intents).
+   The accent keeps the v3 recipe form, so recoloring the whole app = change
+   --polli-hue in ONE place (optionally --polli-nudge to rebalance accent
+   lightness for the new hue). --polli-hue is mode-agnostic — both the light
+   (:root) and dark (.dark) recipes read it. INVARIANT: border === bg-hover.
+   `neutral` (no-hue chrome, e.g. the dashboard rail) keeps its block below;
+   `data-theme="accent"` re-asserts the accent INSIDE a neutral subtree (e.g.
+   accent nav buttons in the neutral rail). ─── */
+:root {
+    --polli-hue:   85;     /* default app accent ≈ amber. The ONE place to change it. */
+    --polli-nudge: 0.024;  /* accent-lightness offset for this hue */
+}
+
+/* The accent recipe — reads --polli-hue/--polli-nudge from its scope. `:root`
+   carries the app default; `data-theme="accent"` re-asserts the live accent inside
+   a neutral subtree. INVARIANT: border === bg-hover. */
+:root,
+[data-theme="accent"] {
+    --polli-color-bg-pale:         oklch(0.981 0.018 var(--polli-hue));
+    --polli-color-bg-subtle:       oklch(0.955 0.022 var(--polli-hue) / 0.7);
+    --polli-color-bg-active:       oklch(calc(0.876 + var(--polli-nudge)) 0.135 var(--polli-hue));
+    --polli-color-bg-hover:        oklch(calc(0.826 + var(--polli-nudge)) 0.165 var(--polli-hue));
+    --polli-color-border:          var(--polli-color-bg-hover);
+    --polli-color-scrollbar-thumb: oklch(calc(0.728 + var(--polli-nudge)) 0.17 var(--polli-hue) / 0.7);
+    --polli-color-text-soft:       oklch(0.47 0.13 var(--polli-hue));
+}
+
+/* Neutral — the no-hue member of the theme set. Global chrome (the dashboard
+   rail) carries data-theme="neutral" so its tooltips, focus rings and surfaces
+   read neutral instead of inheriting the app accent. Mode-agnostic: every
+   slot points at a mode-aware neutral token, so dark adapts automatically. */
+[data-theme="neutral"] {
+    --polli-color-bg-pale:         var(--polli-color-surface-opaque);
+    --polli-color-bg-subtle:       color-mix(in oklab, var(--polli-color-text-muted) 10%, transparent);
+    --polli-color-bg-active:       color-mix(in oklab, var(--polli-color-text-muted) 32%, transparent);
+    --polli-color-bg-hover:        color-mix(in oklab, var(--polli-color-text-muted) 46%, transparent);
+    --polli-color-border:          color-mix(in oklab, var(--polli-color-text-muted) 50%, transparent);
+    --polli-color-scrollbar-thumb: color-mix(in oklab, var(--polli-color-text-muted) 55%, transparent);
+    --polli-color-text-soft:       var(--polli-color-text-muted);
+}
+
+/* Intent tokens — LIGHT (semantic, theme-independent). Two distinct groups:
+   STATUS (feedback) = danger / success / warning / info — the action quartet
+   (info = blue, for edit/links); LABELS (informational) = news / alpha. */
+:root {
+    /* STATUS — danger / success / warning / info */
     --polli-color-danger-bg-light:  oklch(0.935 0.045 25);
+    --polli-color-danger-bg-hover:  oklch(0.88 0.075 25);
     --polli-color-danger-text:      oklch(0.48 0.18 25);
     --polli-color-danger-border:    oklch(0.78 0.115 25);
+    --polli-color-success-bg-light: oklch(0.94 0.055 150);
+    --polli-color-success-text:     oklch(0.38 0.12 150);
+    --polli-color-warning-bg-light: oklch(0.94 0.06 75);
+    --polli-color-warning-text:     oklch(0.45 0.13 65);
+    --polli-color-info-bg-light:    oklch(0.935 0.04 252);
+    --polli-color-info-bg-hover:    oklch(0.88 0.05 252);
+    --polli-color-info-text:        oklch(0.5 0.15 252);
+    /* LABELS — news / alpha */
+    --polli-color-news-bg-light:    oklch(0.935 0.06 158);
+    --polli-color-news-text:        oklch(0.46 0.13 158);
+    --polli-color-alpha-bg-light:   oklch(0.93 0.06 300);
+    --polli-color-alpha-text:       oklch(0.42 0.18 300);
+}
+
+/* Modality colors — a FIXED per-modality palette, DECOUPLED from the app
+   accent. Rendered as dots/badges on model UI (never as a page theme).
+   `solid` = dot/border; `-bg` = faint chip background. */
+:root {
+    --polli-color-modality-text:         oklch(0.68 0.11 252);
+    --polli-color-modality-image:        oklch(0.68 0.11 350);
+    --polli-color-modality-video:        oklch(0.68 0.11 190);
+    --polli-color-modality-audio:        oklch(0.68 0.11 300);
+    --polli-color-modality-realtime:     oklch(0.68 0.11 128);
+    --polli-color-modality-embedding:    oklch(0.68 0.11 163);
+    --polli-color-modality-text-bg:      oklch(0.95 0.03 252 / 0.7);
+    --polli-color-modality-image-bg:     oklch(0.95 0.03 350 / 0.7);
+    --polli-color-modality-video-bg:     oklch(0.95 0.03 190 / 0.7);
+    --polli-color-modality-audio-bg:     oklch(0.95 0.03 300 / 0.7);
+    --polli-color-modality-realtime-bg:  oklch(0.95 0.03 128 / 0.7);
+    --polli-color-modality-embedding-bg: oklch(0.95 0.03 163 / 0.7);
+}
+
+/* Switch primitive — theme-independent, mode-aware. Light thumb in BOTH modes
+   (so it reads as a switch, not a dark blob), vivid on/invalid tracks, neutral
+   off track. Only the off track flips per mode (see .dark below). */
+:root {
+    --polli-color-switch-thumb:         oklch(0.98 0.005 80);
+    --polli-color-switch-track-off:     oklch(0.86 0.012 80);
+    --polli-color-switch-track-on:      oklch(0.68 0.17 150);
+    --polli-color-switch-track-invalid: oklch(0.62 0.2 25);
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   DARK MODE — add `dark` to <html>.
+   (a) mode layer: neutrals, ink ramp, shadows, intents (theme-independent)
+   ════════════════════════════════════════════════════════════════════════ */
+.dark {
+    color-scheme: dark;
+
+    /* Level 0 — Desk. ONE warm neutral hue (80) shared by every dark neutral
+       below — desk, surfaces, text, ink — so nothing splits warm/cool, and it
+       matches light mode's warm neutral. A small chroma lift keeps it warm
+       charcoal (not flat gray), never muddy. */
+    --polli-color-app-bg:              oklch(0.185 0.005 80);
+
+    /* Level 2 — Well + neutral card surfaces (raised above the desk) */
+    --polli-color-surface-opaque:      oklch(0.278 0.005 80);
+    --polli-color-surface-translucent: oklch(0.278 0.005 80 / 0.8);
+    --polli-color-surface-white: var(--polli-color-surface-translucent);
+
+    /* Neutral text. strong is 0.92 (not ~white) to avoid halation/glare on
+       large serif headings in dark — near-white text blooms on a dark desk.
+       base/muted stay put (they don't glare), so the top step is 0.075 then
+       0.11; muted is the single legible muted-grey. */
+    --polli-color-text-strong:         oklch(0.93 0.004 80);
+    --polli-color-text-base:           oklch(0.85 0.007 80);
+    --polli-color-text-muted:          oklch(0.72 0.008 80);
+
+    /* Neutral separator line (dark) — a quiet hairline LIGHTER than the
+       surface so it reads on desk and cards alike. */
+    --polli-color-divider:             oklch(0.385 0.005 80);
+
+    /* Raised elevation shadows — deeper, with a faint top highlight */
+    --polli-shadow-container: 0 1px 0 rgba(255, 255, 255, 0.05), 0 14px 30px rgba(0, 0, 0, 0.55);
+    --polli-shadow-well:      0 1px 0 rgba(255, 255, 255, 0.05), 0 6px 16px rgba(0, 0, 0, 0.45);
+
+    /* Ink ramp — inverted (high numbers read light); same warm neutral hue */
+    --polli-color-ink-50:  oklch(0.165 0.006 80);
+    --polli-color-ink-100: oklch(0.205 0.006 80);
+    --polli-color-ink-200: oklch(0.255 0.006 80);
+    --polli-color-ink-300: oklch(0.315 0.006 80);
+    --polli-color-ink-400: oklch(0.395 0.006 80);
+    --polli-color-ink-500: oklch(0.505 0.006 80);
+    --polli-color-ink-600: oklch(0.62 0.006 80);
+    --polli-color-ink-700: oklch(0.72 0.006 80);
+    --polli-color-ink-800: oklch(0.82 0.006 80);
+    --polli-color-ink-900: oklch(0.9 0.006 80);
+    --polli-color-ink-950: oklch(0.96 0.006 80);
+
+    /* Intents — DARK: deep fill + light text (mirror of the light tints) */
+    --polli-color-danger-bg-light:  oklch(0.36 0.095 25);
+    --polli-color-danger-bg-hover:  oklch(0.43 0.11 25);
+    --polli-color-danger-text:      oklch(0.855 0.105 25);
+    --polli-color-danger-border:    oklch(0.48 0.11 25);
+    --polli-color-success-bg-light: oklch(0.35 0.075 150);
+    --polli-color-success-text:     oklch(0.86 0.1 150);
+    --polli-color-warning-bg-light: oklch(0.36 0.075 75);
+    --polli-color-warning-text:     oklch(0.87 0.1 75);
+    --polli-color-info-bg-light:    oklch(0.36 0.08 252);
+    --polli-color-info-bg-hover:    oklch(0.43 0.095 252);
+    --polli-color-info-text:        oklch(0.82 0.09 252);
+    --polli-color-news-bg-light:    oklch(0.35 0.07 158);
+    --polli-color-news-text:        oklch(0.86 0.1 158);
+    --polli-color-alpha-bg-light:   oklch(0.35 0.085 300);
+    --polli-color-alpha-text:       oklch(0.85 0.12 300);
+
+    /* Switch — off track darkens so it stays visible on the dark desk;
+       thumb + on/invalid tracks are shared with :root. */
+    --polli-color-switch-track-off: oklch(0.44 0.012 80);
+}
+
+/* Modality colors — DARK (deeper solids; deep-tint chip backgrounds). */
+.dark {
+    --polli-color-modality-text:         oklch(0.62 0.10 252);
+    --polli-color-modality-image:        oklch(0.62 0.10 350);
+    --polli-color-modality-video:        oklch(0.62 0.10 190);
+    --polli-color-modality-audio:        oklch(0.62 0.10 300);
+    --polli-color-modality-realtime:     oklch(0.62 0.10 128);
+    --polli-color-modality-embedding:    oklch(0.62 0.10 163);
+    --polli-color-modality-text-bg:      oklch(0.39 0.03 252 / 0.7);
+    --polli-color-modality-image-bg:     oklch(0.39 0.03 350 / 0.7);
+    --polli-color-modality-video-bg:     oklch(0.39 0.03 190 / 0.7);
+    --polli-color-modality-audio-bg:     oklch(0.39 0.03 300 / 0.7);
+    --polli-color-modality-realtime-bg:  oklch(0.39 0.03 128 / 0.7);
+    --polli-color-modality-embedding-bg: oklch(0.39 0.03 163 / 0.7);
+}
+
+/* (b) DARK accent recipe — mirror: deep tint + light text, reads the same
+   --polli-hue/--polli-nudge (set once on :root). Low chroma keeps bg-pale/
+   bg-subtle cohesive without a hue rotation. border === bg-hover. ─── */
+.dark,
+.dark [data-theme="accent"] {
+    --polli-color-bg-pale:         oklch(0.262 0.009 var(--polli-hue));
+    --polli-color-bg-subtle:       oklch(0.33 0.014 var(--polli-hue) / 0.7);
+    --polli-color-bg-active:       oklch(calc(0.496 + var(--polli-nudge)) 0.145 var(--polli-hue));
+    --polli-color-bg-hover:        oklch(calc(0.571 + var(--polli-nudge)) 0.16 var(--polli-hue));
+    --polli-color-border:          var(--polli-color-bg-hover);
+    --polli-color-scrollbar-thumb: oklch(calc(0.62 + var(--polli-nudge)) 0.15 var(--polli-hue) / 0.7);
+    --polli-color-text-soft:       oklch(0.83 0.135 var(--polli-hue));
 }
 
 /* Tailwind utility surface — internal. */
 @theme inline {
-    --color-theme-text-base:         var(--polli-color-text-base);
-    --color-theme-text-strong:       var(--polli-color-text-strong);
-    --color-theme-text-soft:         var(--polli-color-text-soft);
-    --color-theme-text-muted:        var(--polli-color-text-muted);
+    --color-*: initial;
 
-    --color-theme-border:            var(--polli-color-border);
+    --font-heading:    "LCT Mogi", ui-sans-serif, sans-serif;
+    --font-subheading: "Fraunces", ui-serif, serif;
+    --font-body:       "Uncut Sans", ui-sans-serif, sans-serif;
+    --font-pixel:      "Pixelify Sans", ui-monospace, monospace;
+    --text-micro:      10px;
+    --text-base:       16px;
 
-    --color-theme-bg-subtle:         var(--polli-color-bg-subtle);
-    --color-theme-bg-active:         var(--polli-color-bg-active);
-    --color-theme-bg-hover:          var(--polli-color-bg-hover);
-    --color-theme-bg-pale:           var(--polli-color-bg-pale);
+    --shadow-container: var(--polli-shadow-container);
+    --shadow-well:      var(--polli-shadow-well);
+
+    --color-transparent: transparent;
+    --color-current:     currentColor;
+    --color-inherit:     inherit;
+
+    --color-brand-dark:  var(--polli-color-brand-dark);
+
+    --color-app-bg:      var(--polli-color-app-bg);
+    --color-divider:     var(--polli-color-divider);
+
+    --color-ink-50:  var(--polli-color-ink-50);
+    --color-ink-100: var(--polli-color-ink-100);
+    --color-ink-200: var(--polli-color-ink-200);
+    --color-ink-300: var(--polli-color-ink-300);
+    --color-ink-400: var(--polli-color-ink-400);
+    --color-ink-500: var(--polli-color-ink-500);
+    --color-ink-600: var(--polli-color-ink-600);
+    --color-ink-700: var(--polli-color-ink-700);
+    --color-ink-800: var(--polli-color-ink-800);
+    --color-ink-900: var(--polli-color-ink-900);
+    --color-ink-950: var(--polli-color-ink-950);
+
+    --color-theme-text-base:   var(--polli-color-text-base);
+    --color-theme-text-strong: var(--polli-color-text-strong);
+    --color-theme-text-soft:   var(--polli-color-text-soft);
+    --color-theme-text-muted:  var(--polli-color-text-muted);
+    --color-theme-border:      var(--polli-color-border);
+    --color-theme-bg-subtle:   var(--polli-color-bg-subtle);
+    --color-theme-bg-active:   var(--polli-color-bg-active);
+    --color-theme-bg-hover:    var(--polli-color-bg-hover);
+    --color-theme-bg-pale:     var(--polli-color-bg-pale);
 
     --color-intent-danger-bg-light:  var(--polli-color-danger-bg-light);
+    --color-intent-danger-bg-hover:  var(--polli-color-danger-bg-hover);
     --color-intent-danger-text:      var(--polli-color-danger-text);
     --color-intent-danger-border:    var(--polli-color-danger-border);
+    --color-intent-success-bg-light: var(--polli-color-success-bg-light);
+    --color-intent-success-text:     var(--polli-color-success-text);
+    --color-intent-warning-bg-light: var(--polli-color-warning-bg-light);
+    --color-intent-warning-text:     var(--polli-color-warning-text);
+    --color-intent-info-bg-light:    var(--polli-color-info-bg-light);
+    --color-intent-info-bg-hover:    var(--polli-color-info-bg-hover);
+    --color-intent-info-text:        var(--polli-color-info-text);
+    --color-intent-news-bg-light:    var(--polli-color-news-bg-light);
+    --color-intent-news-text:        var(--polli-color-news-text);
+    --color-intent-alpha-bg-light:   var(--polli-color-alpha-bg-light);
+    --color-intent-alpha-text:       var(--polli-color-alpha-text);
 
-    --color-surface-white:           oklch(1 0 0 / 0.8);
+    --color-switch-thumb:            var(--polli-color-switch-thumb);
+    --color-switch-track-off:        var(--polli-color-switch-track-off);
+    --color-switch-track-on:         var(--polli-color-switch-track-on);
+    --color-switch-track-invalid:    var(--polli-color-switch-track-invalid);
+
+    --color-surface-opaque:      var(--polli-color-surface-opaque);
+    --color-surface-translucent: var(--polli-color-surface-translucent);
+    --color-surface-white:       var(--polli-color-surface-translucent);
 }

@@ -22,11 +22,11 @@ from .services.media_handlers import (
     PIL_AVAILABLE,
     convert_latex_to_png,
     detect_and_parse_markdown_tables,
-    detect_latex,
     format_table_as_markdown,
     render_table_image,
     replace_latex_with_unicode,
     send_code_block,
+    truncate_long_decimals,
 )
 from .services.pollinations import pollinations_client
 from .services.subscriptions import init_notifier
@@ -450,7 +450,19 @@ async def fetch_thread_history(thread: discord.Thread, limit: int = THREAD_HISTO
             if is_first:
                 is_first = False
                 continue  # Skip the current message (newest)
-            content = msg.content or "[attachment/embed]"
+            content = msg.content
+            if not content and msg.attachments:
+                names = []
+                for att in msg.attachments:
+                    if att.filename.startswith("table_"):
+                        names.append("table image")
+                    elif att.filename.startswith("equation_"):
+                        names.append("equation image")
+                    else:
+                        names.append(att.filename)
+                content = f"[Attached: {', '.join(names)}]"
+            elif not content:
+                content = "[embed]"
             if msg.author.bot:
                 fetched.append({"role": "assistant", "content": content})
             else:
@@ -520,11 +532,13 @@ class PollyBot(commands.Bot):
         pollinations_client.register_tool_handler("web_scrape", web_scrape_handler)
         logger.info("Registered web_scrape tool handler (Crawl4AI)")
 
-        # Register data visualization handler (always available)
-        from .services.charts import data_visualization
+        # Register render_visual handler (always available).
+        # Old tool name aliased for back-compat with cached AI sessions.
+        from .services.charts import data_visualization, render_visual
 
+        pollinations_client.register_tool_handler("render_visual", render_visual)
         pollinations_client.register_tool_handler("data_visualization", data_visualization)
-        logger.info("Registered data_visualization tool handler")
+        logger.info("Registered render_visual tool handler (data_visualization alias)")
 
         # Register discord_search handler (full guild search capabilities)
         from .services.discord_search import tool_discord_search
@@ -1053,7 +1067,19 @@ async def handle_inline_polly_mention(message: discord.Message):
             if msg.id == message.id:
                 continue  # Skip current message
 
-            content = msg.content or "[attachment/embed]"
+            content = msg.content
+            if not content and msg.attachments:
+                names = []
+                for att in msg.attachments:
+                    if att.filename.startswith("table_"):
+                        names.append("table image")
+                    elif att.filename.startswith("equation_"):
+                        names.append("equation image")
+                    else:
+                        names.append(att.filename)
+                content = f"[Attached: {', '.join(names)}]"
+            elif not content:
+                content = "[embed]"
             if msg.author.bot:
                 channel_history.append({"role": "assistant", "content": content})
             else:
@@ -1371,7 +1397,7 @@ async def send_long_message(
     for idx, latex_expr in enumerate(latex_blocks):
         placeholder = f"__LATEX_IMG_{idx}__"
         modified_text = modified_text.replace(latex_expr, placeholder)
-        
+
         rendered = False
         try:
             latex_buffer, success = await convert_latex_to_png(latex_expr)
@@ -1382,11 +1408,12 @@ async def send_long_message(
                 rendered = True
         except Exception as e:
             logger.error(f"LaTeX block rendering error: {e}")
-        
+
         if not rendered:
             modified_text = modified_text.replace(placeholder, f"\n```latex\n{latex_expr.strip()}\n```\n")
 
     modified_text = replace_latex_with_unicode(modified_text)
+    modified_text = truncate_long_decimals(modified_text)
 
     lines = modified_text.split("\n")
     output_lines = []

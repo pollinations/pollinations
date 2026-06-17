@@ -1,8 +1,6 @@
 import { env } from "cloudflare:test";
-import {
-    atomicDeductUserBalance,
-    getUserBalances,
-} from "@shared/billing/deduction.ts";
+import { getUserBalance } from "@shared/billing/balance.ts";
+import { atomicDeductUserBalance } from "@shared/billing/deduction.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
 import { getModelDefinition } from "@shared/registry/registry.ts";
@@ -37,19 +35,19 @@ describe("billing deduction", () => {
         const userId = await createUser({ tierBalance: 5, packBalance: 10 });
 
         await atomicDeductUserBalance(db, userId, 3);
-        expect(await getUserBalances(db, userId)).toEqual({
+        expect(await getUserBalance(db, userId)).toEqual({
             tierBalance: 2,
             packBalance: 10,
         });
 
         await atomicDeductUserBalance(db, userId, 4);
-        expect(await getUserBalances(db, userId)).toEqual({
+        expect(await getUserBalance(db, userId)).toEqual({
             tierBalance: 2,
             packBalance: 6,
         });
 
         await atomicDeductUserBalance(db, userId, 10);
-        expect(await getUserBalances(db, userId)).toEqual({
+        expect(await getUserBalance(db, userId)).toEqual({
             tierBalance: 2,
             packBalance: -4,
         });
@@ -60,7 +58,7 @@ describe("billing deduction", () => {
 
         await atomicDeductUserBalance(db, userId, 3);
 
-        expect(await getUserBalances(db, userId)).toEqual({
+        expect(await getUserBalance(db, userId)).toEqual({
             tierBalance: -3,
             packBalance: 0,
         });
@@ -73,13 +71,13 @@ describe("billing deduction", () => {
         });
 
         await atomicDeductUserBalance(db, userId, 2, true);
-        expect(await getUserBalances(db, userId)).toEqual({
+        expect(await getUserBalance(db, userId)).toEqual({
             tierBalance: 10,
             packBalance: 3,
         });
 
         await atomicDeductUserBalance(db, userId, 4, true);
-        expect(await getUserBalances(db, userId)).toEqual({
+        expect(await getUserBalance(db, userId)).toEqual({
             tierBalance: 10,
             packBalance: -1,
         });
@@ -92,7 +90,7 @@ describe("billing deduction", () => {
         await atomicDeductUserBalance(db, userId, 4, true);
         await atomicDeductUserBalance(db, userId, 6);
 
-        expect(await getUserBalances(db, userId)).toEqual({
+        expect(await getUserBalance(db, userId)).toEqual({
             tierBalance: 2,
             packBalance: 0,
         });
@@ -116,7 +114,7 @@ describe("billing deduction", () => {
             userId,
             modelResolved,
         });
-        let balance = await getUserBalances(db, userId);
+        let balance = await getUserBalance(db, userId);
         expect(balance.tierBalance).toBeCloseTo(0.01, 10);
         expect(balance.packBalance).toBeCloseTo(0, 10);
 
@@ -127,7 +125,7 @@ describe("billing deduction", () => {
             userId,
             modelResolved,
         });
-        balance = await getUserBalances(db, userId);
+        balance = await getUserBalance(db, userId);
         expect(balance.tierBalance).toBeCloseTo(0.01, 10);
         expect(balance.packBalance).toBeCloseTo(-0.01, 10);
     });

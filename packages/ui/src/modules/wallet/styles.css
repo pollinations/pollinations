@@ -1,0 +1,73 @@
+/** biome-ignore-all lint/suspicious/noUnknownAtRules: tailwind handles it */
+
+:root {
+    /* Opaque, slightly lightened from the old 60%-transparent mix so the
+       wells read as crisp gold/bronze chips on the pale-amber panel. */
+    --polli-color-paid-pale: oklch(0.955 0.062 92);
+    --polli-color-paid-soft: oklch(0.82 0.165 92);
+    --polli-color-paid-deep: oklch(0.43 0.105 82);
+    --polli-color-tier-pale: oklch(0.95 0.05 152);
+    --polli-color-tier-soft: oklch(0.74 0.135 152);
+    --polli-color-tier-deep: oklch(0.42 0.11 152);
+}
+
+/* Dark twin: deep gold/bronze chip, light gold/bronze text — keeps the
+   paid/tier identity while staying legible (the :root values are tuned for
+   light surfaces only). */
+.dark {
+    --polli-color-paid-pale: oklch(0.33 0.055 92);
+    --polli-color-paid-soft: oklch(0.82 0.135 92);
+    --polli-color-paid-deep: oklch(0.88 0.085 92);
+    --polli-color-tier-pale: oklch(0.31 0.045 152);
+    --polli-color-tier-soft: oklch(0.75 0.13 152);
+    --polli-color-tier-deep: oklch(0.87 0.10 152);
+}
+
+@theme inline {
+    --color-paid-pale: var(--polli-color-paid-pale);
+    --color-paid-soft: var(--polli-color-paid-soft);
+    --color-paid-deep: var(--polli-color-paid-deep);
+    --color-tier-pale: var(--polli-color-tier-pale);
+    --color-tier-soft: var(--polli-color-tier-soft);
+    --color-tier-deep: var(--polli-color-tier-deep);
+}
+
+.polli-wallet-chip-paid {
+    background-color: var(--polli-color-paid-pale);
+    color: var(--polli-color-paid-deep);
+}
+
+.polli-wallet-chip-tier {
+    background-color: var(--polli-color-tier-pale);
+    color: var(--polli-color-tier-deep);
+}
+
+.polli-wallet-panel-paid {
+    background-color: var(--polli-color-paid-pale);
+    color: var(--polli-color-paid-deep);
+    box-shadow: var(--polli-shadow-well);
+}
+
+.polli-wallet-panel-tier {
+    background-color: var(--polli-color-tier-pale);
+    color: var(--polli-color-tier-deep);
+    box-shadow: var(--polli-shadow-well);
+}
+
+.polli-wallet-text-paid {
+    color: var(--polli-color-paid-deep);
+}
+
+.polli-wallet-text-tier {
+    color: var(--polli-color-tier-deep);
+}
+
+.polli-wallet-balance-value {
+    font-size: 2.25rem;
+}
+
+@media (min-width: 640px) {
+    .polli-wallet-balance-value {
+        font-size: 3rem;
+    }
+}

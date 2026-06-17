@@ -1,14 +1,25 @@
 import { getLogger } from "@logtape/logtape";
+import type { ApiKeyType } from "@shared/auth/api-key-creation.ts";
 import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
+import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import {
     handleBalanceDeduction,
     type MarkupResolution,
 } from "@shared/billing/track-helpers.ts";
-import { getRealClientIp } from "@shared/client-ip.ts";
 import {
-    apikey as apikeyTable,
-    user as userTable,
-} from "@shared/db/better-auth.ts";
+    getRealClientIp,
+    hashIp,
+    stripIPv4MappedPrefix,
+    truncateIpToSubnet,
+} from "@shared/client-ip.ts";
+import { user as userTable } from "@shared/db/better-auth.ts";
+import type { ErrorVariables } from "@shared/error.ts";
+import {
+    getDefaultErrorMessage,
+    getErrorCode,
+    UpstreamError,
+} from "@shared/error.ts";
+import { sendToTinybird } from "@shared/events.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import {
@@ -22,14 +33,14 @@ import {
     type UsagePrice,
 } from "@shared/registry/registry.ts";
 import {
+    FALLBACK_TARGET_HEADER,
     openaiUsageToUsage,
     parseUsageHeaders,
 } from "@shared/registry/usage-headers.ts";
 import type {
-    ApiKeyType,
     EventType,
     GenerationEventContentFilterParams,
-    InsertGenerationEvent,
+    TinybirdEvent as InsertGenerationEvent,
 } from "@shared/schemas/generation-event.ts";
 import {
     contentFilterResultsToEventParams,
@@ -43,6 +54,7 @@ import {
     ContentFilterResultSchema,
     ContentFilterSeveritySchema,
 } from "@shared/schemas/openai.ts";
+import { getRoutePath, removeUnset } from "@shared/util.ts";
 import { eq } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { drizzle } from "drizzle-orm/d1";
@@ -51,18 +63,11 @@ import type { HonoRequest } from "hono";
 import { createMiddleware } from "hono/factory";
 import { z } from "zod";
 import { mergeContentFilterResults } from "@/content-filter.ts";
-import type { ErrorVariables } from "@/env.ts";
-import {
-    getDefaultErrorMessage,
-    getErrorCode,
-    UpstreamError,
-} from "@/error.ts";
-import { sendToTinybird } from "@/events.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
-import { generateRandomId, getRoutePath, removeUnset } from "@/util.ts";
+import { generateRandomId, parseBooleanLike } from "@/util.ts";
 
 type ModelVariables = {
     model: {
@@ -90,6 +95,7 @@ type ResponseTrackingData = {
     responseOk: boolean;
     cacheData: CacheData;
     isBilledUsage: boolean;
+    fallbackUsed: boolean;
     modelUsed?: string;
     usage?: Usage;
     cost?: UsageCost;
@@ -189,10 +195,6 @@ export const track = (eventType: EventType) =>
                 } satisfies BalanceData;
 
                 const ipHash = await hashIp(clientIp, c.env.BETTER_AUTH_SECRET);
-                const byopClientTracking = await resolveByopClientTracking(
-                    db,
-                    byopClientKeyId,
-                );
 
                 // Deduct payer + credit dev before emitting the event so billing
                 // telemetry reflects the committed ledger state.
@@ -245,11 +247,7 @@ export const track = (eventType: EventType) =>
                 const committedBalanceTracking = payerBucket
                     ? {
                           ...balanceTracking,
-                          selectedMeterId: `local:${payerBucket}`,
-                          selectedMeterSlug:
-                              payerBucket === "tier"
-                                  ? "v1:meter:tier"
-                                  : "v1:meter:pack",
+                          ...payerBucketToMeter(payerBucket),
                       }
                     : balanceTracking;
 
@@ -263,10 +261,7 @@ export const track = (eventType: EventType) =>
                     eventType,
                     ipSubnet,
                     ipHash,
-                    userTracking: {
-                        ...userTracking,
-                        ...byopClientTracking,
-                    },
+                    userTracking,
                     balanceTracking: committedBalanceTracking,
                     requestTracking,
                     responseTracking,
@@ -398,74 +393,44 @@ async function trackResponse(
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
     const cacheInfo = extractCacheHeaders(response);
+    const fallbackUsed = parseFallbackUsed(response);
+    const notBilled = (
+        extra?: Partial<ResponseTrackingData>,
+    ): ResponseTrackingData => ({
+        responseOk: response.ok,
+        responseStatus: response.status,
+        cacheData: cacheInfo,
+        isBilledUsage: false,
+        fallbackUsed,
+        ...extra,
+    });
+
     if (!response.ok || cacheInfo.cacheHit) {
-        return {
-            responseOk: response.ok,
-            responseStatus: response.status,
-            cacheData: cacheInfo,
-            isBilledUsage: false,
-        };
+        return notBilled();
     }
 
-    // For image generation, verify the response is actually an image
-    // Don't bill if the response is JSON/text (error response with HTTP 200)
-    if (eventType === "generate.image") {
-        const contentType = response.headers.get("content-type") || "";
-        if (
-            !contentType.startsWith("image/") &&
-            !contentType.startsWith("video/")
-        ) {
-            log.warn(
-                "Image generation returned non-image content-type: {contentType} for model {model}",
-                { contentType, model: resolvedModelRequested },
-            );
-            return {
-                responseOk: response.ok,
-                responseStatus: response.status,
-                cacheData: cacheInfo,
-                isBilledUsage: false,
-            };
-        }
+    // Verify the response content-type matches the expected output before
+    // billing. Don't bill (or attempt usage extraction) when upstream returns
+    // an unexpected content-type — e.g. a JSON/text error body with HTTP 200,
+    // or JSON for a stream: true request.
+    const contentType = response.headers.get("content-type") || "";
+    const contentTypeGuard = getContentTypeGuard(
+        eventType,
+        requestTracking,
+        resolvedModelRequested,
+    );
+    if (contentTypeGuard && !contentTypeGuard.isExpected(contentType)) {
+        log.warn(
+            "Unexpected content-type for billing: {contentType} for model {model} (kind={kind})",
+            {
+                contentType,
+                model: resolvedModelRequested,
+                kind: contentTypeGuard.kind,
+            },
+        );
+        return notBilled();
     }
-    // For text streaming, verify the response is actually SSE.
-    // Don't try SSE parsing if upstream returned JSON for a stream: true request.
-    if (eventType === "generate.text" && requestTracking.streamRequested) {
-        const contentType = response.headers.get("content-type") || "";
-        if (!contentType.includes("text/event-stream")) {
-            log.warn(
-                "Stream requested but upstream returned non-SSE content-type: {contentType} for model {model}",
-                { contentType, model: resolvedModelRequested },
-            );
-            return {
-                responseOk: response.ok,
-                responseStatus: response.status,
-                cacheData: cacheInfo,
-                isBilledUsage: false,
-            };
-        }
-    }
-    // For audio generation, verify the response content-type is expected.
-    // TTS returns audio/*, STT (whisper) returns application/json — both are valid.
-    if (eventType === "generate.audio") {
-        const contentType = response.headers.get("content-type") || "";
-        const isAudio = contentType.startsWith("audio/");
-        const isSTT =
-            contentType.startsWith("application/json") &&
-            getModelDefinition(resolvedModelRequested)
-                ?.outputModalities?.[0] === "text";
-        if (!isAudio && !isSTT) {
-            log.warn(
-                "Audio generation returned unexpected content-type: {contentType} for model {model}",
-                { contentType, model: resolvedModelRequested },
-            );
-            return {
-                responseOk: response.ok,
-                responseStatus: response.status,
-                cacheData: cacheInfo,
-                isBilledUsage: false,
-            };
-        }
-    }
+
     const { modelUsage, contentFilterResults } =
         await extractUsageAndContentFilterResults(
             eventType,
@@ -476,13 +441,7 @@ async function trackResponse(
         log.error("Failed to extract model usage for model {model}", {
             model: resolvedModelRequested,
         });
-        return {
-            responseOk: response.ok,
-            responseStatus: response.status,
-            cacheData: cacheInfo,
-            isBilledUsage: false,
-            contentFilterResults,
-        };
+        return notBilled({ contentFilterResults });
     }
     const cost = calculateCost(resolvedModelRequested, modelUsage.usage);
     const price = calculatePrice(resolvedModelRequested, modelUsage.usage);
@@ -491,12 +450,62 @@ async function trackResponse(
         responseStatus: response.status,
         cacheData: cacheInfo,
         isBilledUsage: true,
+        fallbackUsed,
         cost,
         price,
         modelUsed: modelUsage.model,
         usage: modelUsage.usage,
         contentFilterResults,
     };
+}
+
+// Portkey reports the served target as "config.targets[N]" via the
+// x-fallback-target header (re-emitted from x-portkey-last-used-option-index).
+// A fallback fired whenever the served target is not the primary (index 0).
+function parseFallbackUsed(response: Response): boolean {
+    const target = response.headers.get(FALLBACK_TARGET_HEADER);
+    if (!target) return false;
+    const match = target.match(/\[(\d+)\]/);
+    return match ? Number(match[1]) > 0 : false;
+}
+
+// Resolve the per-event content-type expectation for billing. Returns null
+// when the event type (or stream mode) has no content-type guard, so the
+// caller skips the check entirely. Preserves the per-branch rules: image/video
+// uses startsWith; text-stream only guards when a stream was requested and uses
+// includes; audio allows audio/* (TTS) or application/json for STT models.
+function getContentTypeGuard(
+    eventType: EventType,
+    requestTracking: RequestTrackingData,
+    resolvedModelRequested: ModelName,
+): { kind: string; isExpected: (contentType: string) => boolean } | null {
+    if (eventType === "generate.image") {
+        return {
+            kind: "image",
+            isExpected: (contentType) =>
+                contentType.startsWith("image/") ||
+                contentType.startsWith("video/"),
+        };
+    }
+    if (eventType === "generate.text" && requestTracking.streamRequested) {
+        return {
+            kind: "text-stream",
+            isExpected: (contentType) =>
+                contentType.includes("text/event-stream"),
+        };
+    }
+    if (eventType === "generate.audio") {
+        const isSTTModel =
+            getModelDefinition(resolvedModelRequested)
+                ?.outputModalities?.[0] === "text";
+        return {
+            kind: "audio",
+            isExpected: (contentType) =>
+                contentType.startsWith("audio/") ||
+                (isSTTModel && contentType.startsWith("application/json")),
+        };
+    }
+    return null;
 }
 
 async function* extractResponseStream(
@@ -609,6 +618,7 @@ function createTrackingEvent({
         resolvedModelRequested: requestTracking.resolvedModelRequested,
         modelUsed: responseTracking.modelUsed,
         modelProviderUsed: requestTracking.modelProvider,
+        fallbackUsed: responseTracking.fallbackUsed,
 
         isBilledUsage: responseTracking.isBilledUsage,
 
@@ -629,8 +639,8 @@ function createTrackingEvent({
 
 async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
     if (request.method === "GET") {
-        const stream = request.param("stream");
-        return z.safeParse(z.coerce.boolean(), stream).data || false;
+        // "stream" is a query param, not a route param.
+        return parseBooleanLike(request.query("stream")) ?? false;
     }
     if (request.method === "POST") {
         const contentType = request.header("content-type") || "";
@@ -645,7 +655,7 @@ async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
                     | undefined
             )?.stream;
             if (stream !== undefined) {
-                return z.safeParse(z.coerce.boolean(), stream).data || false;
+                return parseBooleanLike(stream) ?? false;
             }
         } catch {
             // Fall back to parsing a cloned raw body for routes without JSON validation.
@@ -654,7 +664,7 @@ async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
             const stream = (
                 (await request.raw.clone().json()) as { stream?: unknown }
             ).stream;
-            return z.safeParse(z.coerce.boolean(), stream).data || false;
+            return parseBooleanLike(stream) ?? false;
         } catch {
             return false;
         }
@@ -800,25 +810,12 @@ async function extractUsageAndContentFilterResults(
 type CacheData = {
     cacheHit: boolean;
     cacheKey?: string;
-    cacheType?: "exact" | "semantic";
-    cacheSemanticSimilarity?: number;
-    cacheSemanticThreshold?: number;
 };
 
 function extractCacheHeaders(response: Response): CacheData {
     return {
         cacheHit: response.headers.get("x-cache") === "HIT",
         cacheKey: response.headers.get("x-cache-key") || undefined,
-        cacheType: z
-            .enum(["exact", "semantic"])
-            .safeParse(response.headers.get("x-cache-type")).data,
-        cacheSemanticSimilarity: z
-            .number()
-            .safeParse(response.headers.get("x-cache-semantic-similarity"))
-            .data,
-        cacheSemanticThreshold: z
-            .number()
-            .safeParse(response.headers.get("x-cache-semantic-threshold")).data,
     };
 }
 
@@ -841,6 +838,12 @@ function safeUrl(url: string): URL | null {
     }
 }
 
+// Boolean moderation flags arrive as header strings ("true"/"false" via
+// String(value) in contentFilterResultsToHeaders), so parse them back here.
+const HeaderBooleanSchema = z
+    .enum(["true", "false"])
+    .transform((value) => value === "true");
+
 // biome-ignore format: custom formatting
 const ContentFilterResultHeadersSchema = z
     .object({
@@ -853,7 +856,7 @@ const ContentFilterResultHeadersSchema = z
         "x-moderation-prompt-violence-severity": 
             ContentFilterSeveritySchema.optional().catch(undefined),
         "x-moderation-prompt-jailbreak-detected": 
-            z.boolean().optional().catch(undefined),
+            HeaderBooleanSchema.optional().catch(undefined),
         "x-moderation-completion-hate-severity": 
             ContentFilterSeveritySchema.optional().catch(undefined),
         "x-moderation-completion-self-harm-severity":
@@ -863,9 +866,9 @@ const ContentFilterResultHeadersSchema = z
         "x-moderation-completion-violence-severity":
             ContentFilterSeveritySchema.optional().catch(undefined),
         "x-moderation-completion-protected-material-text-detected": 
-            z.boolean().optional().catch(undefined),
+            HeaderBooleanSchema.optional().catch(undefined),
         "x-moderation-completion-protected-material-code-detected": 
-            z.boolean().optional().catch(undefined),
+            HeaderBooleanSchema.optional().catch(undefined),
     })
     .transform((headers) => removeUnset({
         moderationPromptHateSeverity:
@@ -892,59 +895,6 @@ const ContentFilterResultHeadersSchema = z
             headers["x-moderation-completion-protected-material-code-detected"],
     }));
 
-/** Salted SHA-256 hash of the full IP — irreversible without the salt. */
-async function hashIp(
-    ip: string | undefined,
-    salt: string,
-): Promise<string | undefined> {
-    if (!ip) return undefined;
-    const data = new TextEncoder().encode(`${salt}:${ip}`);
-    const hash = await crypto.subtle.digest("SHA-256", data);
-    return Array.from(new Uint8Array(hash))
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join("");
-}
-
-/** Strip `::ffff:` prefix from IPv4-mapped IPv6 addresses. */
-function stripIPv4MappedPrefix(ip: string): string {
-    const match = ip.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/i);
-    return match ? match[1] : ip;
-}
-
-/** Truncate IP to /24 subnet (IPv4) or /48 subnet (IPv6, first 3 groups). */
-function truncateIpToSubnet(ip: string | undefined): string | undefined {
-    if (!ip) return undefined;
-    const normalized = stripIPv4MappedPrefix(ip);
-    if (normalized.includes(".")) {
-        const parts = normalized.split(".");
-        if (parts.length === 4) return `${parts[0]}.${parts[1]}.${parts[2]}.0`;
-    }
-    if (normalized.includes(":")) {
-        const full = expandIPv6(normalized);
-        const groups = full.split(":");
-        return `${groups[0]}:${groups[1]}:${groups[2]}::`;
-    }
-    return undefined;
-}
-
-/** Expand IPv6 `::` shorthand to full 8-group form. */
-function expandIPv6(ip: string): string {
-    if (!ip.includes("::")) {
-        return ip
-            .split(":")
-            .map((g) => g.padStart(4, "0"))
-            .join(":");
-    }
-    const halves = ip.split("::");
-    const left = halves[0] ? halves[0].split(":") : [];
-    const right = halves[1] ? halves[1].split(":") : [];
-    const missing = 8 - left.length - right.length;
-    const middle = Array(missing).fill("0000");
-    return [...left, ...middle, ...right]
-        .map((g) => g.padStart(4, "0"))
-        .join(":");
-}
-
 type ErrorData = {
     errorResponseCode?: string;
     errorSource?: string;
@@ -952,39 +902,20 @@ type ErrorData = {
     // errorStack and errorDetails removed to reduce D1 memory usage
 };
 
-async function resolveByopClientTracking(
-    db: ReturnType<typeof drizzle>,
-    byopClientKeyId: string | null | undefined,
-): Promise<Partial<UserData>> {
-    if (!byopClientKeyId) return {};
-
-    const [clientKey] = await db
-        .select({
-            id: apikeyTable.id,
-            name: apikeyTable.name,
-            userId: apikeyTable.userId,
-        })
-        .from(apikeyTable)
-        .where(eq(apikeyTable.id, byopClientKeyId))
-        .limit(1);
-
-    return {
-        apiKeyClientId: clientKey?.id ?? byopClientKeyId,
-        apiKeyCreatedForApp: clientKey?.name ?? undefined,
-        apiKeyCreatedForUserId: clientKey?.userId ?? undefined,
-    };
-}
-
-function collectErrorData(response: Response, error?: Error): ErrorData {
+export function collectErrorData(response: Response, error?: Error): ErrorData {
     if (response.ok && !error) return {};
     let source: string | undefined;
+    let explicitCode: string | undefined;
     if (error instanceof UpstreamError) {
         source = error.requestUrl?.hostname;
+        explicitCode = error.errorCode;
     }
     // Note: errorStack and errorDetails removed to reduce D1 memory usage
     // Stack traces and details are still logged but not stored in the database
     return {
-        errorResponseCode: getErrorCode(response.status),
+        // Prefer the error's explicit code (e.g. content_policy_violation) so
+        // analytics can distinguish it from a generic status-derived code.
+        errorResponseCode: explicitCode ?? getErrorCode(response.status),
         errorSource: source,
         errorMessage: error?.message || getDefaultErrorMessage(response.status),
     };

@@ -13,9 +13,7 @@ import { Body, Heading, Label } from "../ui/typography";
 interface PlayGeneratorProps {
     selectedModel: string;
     prompt: string;
-    imageModels: Model[];
-    textModels: Model[];
-    audioModels: Model[];
+    currentModel: Model | undefined;
     apiKey: string | null;
     onLoginRequired: () => void;
 }
@@ -89,9 +87,7 @@ const extractErrorMessage = async (response: Response): Promise<string> => {
 export function PlayGenerator({
     selectedModel,
     prompt,
-    imageModels,
-    textModels,
-    audioModels,
+    currentModel,
     apiKey,
     onLoginRequired,
 }: PlayGeneratorProps) {
@@ -130,17 +126,13 @@ export function PlayGenerator({
     const [width, setWidth] = useState(1024);
     const [height, setHeight] = useState(1024);
     const [seed, setSeed] = useState(0);
-    const [enhance, setEnhance] = useState(false);
     const [imageUrls, setImageUrls] = useState<string[]>([]);
     const [isUploading, setIsUploading] = useState(false);
 
-    const isImageModel = imageModels.some((m) => m.id === selectedModel);
-
-    const currentModelData = [
-        ...imageModels,
-        ...textModels,
-        ...audioModels,
-    ].find((m) => m.id === selectedModel);
+    const currentModelData = currentModel;
+    // Image-registry models (type "image") include video models (hasVideoOutput),
+    // which are served by the same /image endpoint — keep them in this flag.
+    const isImageModel = currentModelData?.type === "image";
     const isAudioModel =
         currentModelData?.hasAudioOutput ||
         currentModelData?.type === "audio" ||
@@ -154,10 +146,13 @@ export function PlayGenerator({
     );
 
     useEffect(() => {
-        if (
-            availableVoices.length > 0 &&
-            !availableVoices.includes(selectedVoice)
-        ) {
+        // Reset the voice when switching to a model whose voice list doesn't
+        // include the current selection (e.g. ElevenLabs -> Qwen3-TTS, which
+        // has no voices). Otherwise a stale voice leaks across providers and
+        // the API rejects it with "voice not available for this model".
+        if (availableVoices.length === 0) {
+            if (selectedVoice) setSelectedVoice("");
+        } else if (!availableVoices.includes(selectedVoice)) {
             setSelectedVoice(availableVoices[0]);
         }
     }, [availableVoices, selectedVoice]);
@@ -169,10 +164,9 @@ export function PlayGenerator({
             width: width.toString(),
             height: height.toString(),
             seed: seed.toString(),
-            enhance: enhance.toString(),
             ...(imageUrls.length > 0 ? { image: imageUrls.join("|") } : {}),
         }),
-        [selectedModel, width, height, seed, enhance, imageUrls],
+        [selectedModel, width, height, seed, imageUrls],
     );
 
     const textParams = useMemo(
@@ -241,6 +235,32 @@ export function PlayGenerator({
         }
     };
 
+    // Shared fetch → error-check → success/catch flow for all generation types.
+    // onSuccess handles the type-specific response parsing and result state.
+    const runGeneration = async (
+        fetchFn: () => Promise<Response>,
+        onSuccess: (response: Response) => Promise<void>,
+        label: string,
+    ) => {
+        try {
+            const response = await fetchFn();
+            if (!response.ok) {
+                setError(await extractErrorMessage(response));
+                setResult(null);
+                setIsLoading(false);
+                return;
+            }
+            await onSuccess(response);
+        } catch (err) {
+            console.error(label, err);
+            setError(
+                err instanceof Error ? err.message : copy.somethingWentWrong,
+            );
+            setResult(null);
+            setIsLoading(false);
+        }
+    };
+
     const handleGenerate = async () => {
         if (isLoading) return;
         if (!apiKey) {
@@ -253,66 +273,44 @@ export function PlayGenerator({
         setResultType(null);
 
         if (isImageModel) {
-            try {
-                const params = new URLSearchParams({
-                    model: selectedModel,
-                    width: width.toString(),
-                    height: height.toString(),
-                    seed: seed.toString(),
-                    enhance: enhance.toString(),
-                });
-                if (imageUrls.length > 0) {
-                    params.set("image", imageUrls.join("|"));
-                }
-                const url = `${API_BASE}/image/${encodeURIComponent(prompt)}?${params}`;
-                const response = await fetch(url, {
-                    headers: { Authorization: `Bearer ${apiKey}` },
-                });
-                if (!response.ok) {
-                    const errorMsg = await extractErrorMessage(response);
-                    setError(errorMsg);
-                    setResult(null);
-                    setIsLoading(false);
-                    return;
-                }
-                const blob = await response.blob();
-                const imageURL = URL.createObjectURL(blob);
-                setResult(imageURL);
-                setResultType(isVideoModel ? "video" : "image");
-                setIsLoading(false);
-            } catch (err) {
-                console.error("Image generation error:", err);
-                setError(
-                    err instanceof Error
-                        ? err.message
-                        : copy.somethingWentWrong,
-                );
-                setResult(null);
-                setIsLoading(false);
-            }
-        } else if (isAudioModel) {
-            try {
-                // Dedicated audio models (type=audio, e.g. elevenmusic, elevenlabs)
-                // use /v1/audio/speech; text models with audio output use /v1/chat/completions
-                const isDedicatedAudioModel =
-                    currentModelData?.type === "audio";
-
-                let response: Response;
-                if (isDedicatedAudioModel) {
-                    const body = {
-                        model: selectedModel,
-                        input: prompt,
-                        ...(selectedVoice ? { voice: selectedVoice } : {}),
-                    };
-                    response = await fetch(`${API_BASE}/v1/audio/speech`, {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            Authorization: `Bearer ${apiKey}`,
-                        },
-                        body: JSON.stringify(body),
+            await runGeneration(
+                () => {
+                    const params = new URLSearchParams(imageParams);
+                    const url = `${API_BASE}/image/${encodeURIComponent(prompt)}?${params}`;
+                    return fetch(url, {
+                        headers: { Authorization: `Bearer ${apiKey}` },
                     });
-                } else {
+                },
+                async (response) => {
+                    const blob = await response.blob();
+                    const imageURL = URL.createObjectURL(blob);
+                    setResult(imageURL);
+                    setResultType(isVideoModel ? "video" : "image");
+                    setIsLoading(false);
+                },
+                "Image generation error:",
+            );
+        } else if (isAudioModel) {
+            // Dedicated audio models (type=audio, e.g. elevenmusic, elevenlabs)
+            // use /v1/audio/speech; text models with audio output use /v1/chat/completions
+            const isDedicatedAudioModel = currentModelData?.type === "audio";
+            await runGeneration(
+                () => {
+                    if (isDedicatedAudioModel) {
+                        const body = {
+                            model: selectedModel,
+                            input: prompt,
+                            ...(selectedVoice ? { voice: selectedVoice } : {}),
+                        };
+                        return fetch(`${API_BASE}/v1/audio/speech`, {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${apiKey}`,
+                            },
+                            body: JSON.stringify(body),
+                        });
+                    }
                     const body = {
                         model: selectedModel,
                         modalities: ["text", "audio"],
@@ -322,7 +320,7 @@ export function PlayGenerator({
                         },
                         messages: [{ role: "user", content: prompt }],
                     };
-                    response = await fetch(`${API_BASE}/v1/chat/completions`, {
+                    return fetch(`${API_BASE}/v1/chat/completions`, {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
@@ -330,101 +328,73 @@ export function PlayGenerator({
                         },
                         body: JSON.stringify(body),
                     });
-                }
+                },
+                async (response) => {
+                    let audioURL: string;
+                    if (isDedicatedAudioModel) {
+                        const blob = await response.blob();
+                        audioURL = URL.createObjectURL(blob);
+                    } else {
+                        const data = await response.json();
+                        const audioData =
+                            data.choices?.[0]?.message?.audio?.data;
+                        if (!audioData) {
+                            setError(copy.noResponse);
+                            setResult(null);
+                            setIsLoading(false);
+                            return;
+                        }
+                        const binaryString = atob(audioData);
+                        const bytes = new Uint8Array(binaryString.length);
+                        for (let i = 0; i < binaryString.length; i++) {
+                            bytes[i] = binaryString.charCodeAt(i);
+                        }
+                        const blob = new Blob([bytes], { type: "audio/wav" });
+                        audioURL = URL.createObjectURL(blob);
+                    }
 
-                if (!response.ok) {
-                    const errorMsg = await extractErrorMessage(response);
-                    setError(errorMsg);
-                    setResult(null);
+                    setResult(audioURL);
+                    setResultType("audio");
                     setIsLoading(false);
-                    return;
-                }
-
-                let audioURL: string;
-                if (isDedicatedAudioModel) {
-                    const blob = await response.blob();
-                    audioURL = URL.createObjectURL(blob);
-                } else {
-                    const data = await response.json();
-                    const audioData = data.choices?.[0]?.message?.audio?.data;
-                    if (!audioData) {
-                        setError(copy.noResponse);
-                        setResult(null);
-                        setIsLoading(false);
-                        return;
-                    }
-                    const binaryString = atob(audioData);
-                    const bytes = new Uint8Array(binaryString.length);
-                    for (let i = 0; i < binaryString.length; i++) {
-                        bytes[i] = binaryString.charCodeAt(i);
-                    }
-                    const blob = new Blob([bytes], { type: "audio/wav" });
-                    audioURL = URL.createObjectURL(blob);
-                }
-
-                setResult(audioURL);
-                setResultType("audio");
-                setIsLoading(false);
-            } catch (err) {
-                console.error("Audio generation error:", err);
-                setError(
-                    err instanceof Error
-                        ? err.message
-                        : copy.somethingWentWrong,
-                );
-                setResult(null);
-                setIsLoading(false);
-            }
+                },
+                "Audio generation error:",
+            );
         } else {
-            try {
-                const content =
-                    imageUrls.length > 0
-                        ? [
-                              { type: "text", text: prompt },
-                              ...imageUrls.map((url: string) => ({
-                                  type: "image_url",
-                                  image_url: { url },
-                              })),
-                          ]
-                        : prompt;
-                const body = {
-                    model: selectedModel,
-                    messages: [{ role: "user", content }],
-                };
-                const response = await fetch(
-                    `${API_BASE}/v1/chat/completions`,
-                    {
+            await runGeneration(
+                () => {
+                    const content =
+                        imageUrls.length > 0
+                            ? [
+                                  { type: "text", text: prompt },
+                                  ...imageUrls.map((url: string) => ({
+                                      type: "image_url",
+                                      image_url: { url },
+                                  })),
+                              ]
+                            : prompt;
+                    const body = {
+                        model: selectedModel,
+                        messages: [{ role: "user", content }],
+                    };
+                    return fetch(`${API_BASE}/v1/chat/completions`, {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
                             Authorization: `Bearer ${apiKey}`,
                         },
                         body: JSON.stringify(body),
-                    },
-                );
-                if (!response.ok) {
-                    const errorMsg = await extractErrorMessage(response);
-                    setError(errorMsg);
-                    setResult(null);
+                    });
+                },
+                async (response) => {
+                    const data = await response.json();
+                    const text =
+                        data.choices?.[0]?.message?.content || copy.noResponse;
+                    setResult(text);
+                    setResultType("text");
                     setIsLoading(false);
-                    return;
-                }
-                const data = await response.json();
-                const text =
-                    data.choices?.[0]?.message?.content || copy.noResponse;
-                setResult(text);
-                setResultType("text");
-                setIsLoading(false);
-            } catch (err) {
-                console.error("Text generation error:", err);
-                setError(
-                    err instanceof Error
-                        ? err.message
-                        : copy.somethingWentWrong,
-                );
-                setResult(null);
-                setIsLoading(false);
-            }
+                },
+                "Text generation error:",
+            );
         }
     };
 
@@ -566,49 +536,6 @@ export function PlayGenerator({
                                 placeholder={copy.seedPlaceholder}
                                 className="w-full p-3 bg-white text-dark font-body focus:outline-none focus:bg-white hover:bg-white transition-colors placeholder:text-subtle rounded-input"
                             />
-                        </div>
-                        <div>
-                            <div className="relative group/enhance inline-block mb-2">
-                                <Label
-                                    as="span"
-                                    spacing="none"
-                                    display="inline"
-                                    className="cursor-help"
-                                >
-                                    {copy.enhanceLabel}
-                                </Label>
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-white text-dark text-xs rounded-input shadow-lg border border-border opacity-0 group-hover/enhance:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                                    {copy.enhanceTooltip}
-                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-input-background" />
-                                </div>
-                            </div>
-                            <label className="relative flex items-center justify-center p-3 bg-white hover:bg-white transition-colors cursor-pointer select-none group rounded-input">
-                                <input
-                                    id="enhance-prompt"
-                                    name="enhance-prompt"
-                                    type="checkbox"
-                                    checked={enhance}
-                                    onChange={(e) =>
-                                        setEnhance(e.target.checked)
-                                    }
-                                    className="sr-only peer"
-                                />
-                                <div className="w-6 h-6 border-4 border-dark bg-white peer-checked:bg-white transition-colors group-hover:border-dark rounded-input" />
-                                <svg
-                                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 text-dark opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                    aria-hidden="true"
-                                >
-                                    <path
-                                        strokeLinecap="square"
-                                        strokeLinejoin="miter"
-                                        strokeWidth="4"
-                                        d="M5 13l4 4L19 7"
-                                    />
-                                </svg>
-                            </label>
                         </div>
                     </div>
                 </div>

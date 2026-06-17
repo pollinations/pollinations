@@ -1,15 +1,30 @@
-import { PAID_COLOR, TIER_COLOR } from "@frontend/lib/balance-colors.ts";
-import { formatPollen } from "@frontend/lib/format-pollen.ts";
+import {
+    AudioIcon,
+    CardIcon,
+    ChatIcon,
+    Chip,
+    DatabaseIcon,
+    GlobeIcon,
+    type IconProps,
+    ImageIcon,
+    MultiSelect,
+    Section,
+    SproutIcon,
+    StatCard,
+    Surface,
+    TabButton,
+    Tooltip,
+    VideoIcon,
+} from "@pollinations/ui";
+import { formatPollen, PaidChip, TierChip } from "@pollinations/ui/wallet";
 import type { FC, ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { DashboardSection } from "../layout/dashboard-section.tsx";
-import type { ThemeName } from "../layout/dashboard-theme.ts";
-import { Chip } from "../ui/chip.tsx";
-import { TabButton } from "../ui/tab-button.tsx";
-import { Tooltip } from "../ui/tooltip.tsx";
 import { Chart } from "./chart";
-import { MODALITY_META, type ModelModality } from "./constants";
-import { MultiSelect } from "./multi-select";
+import {
+    MODALITY_META,
+    MODEL_MODALITIES,
+    type ModelModality,
+} from "./constants";
 import type { FilterState, Metric, UsagePeriodSelection } from "./types";
 import { useUsageData } from "./use-usage-data";
 
@@ -17,14 +32,12 @@ type UsageGraphProps = {
     period: UsagePeriodSelection;
     apiKeys: Array<{ id: string; name: string }>;
     action?: ReactNode;
-    theme: ThemeName;
 };
 
 export const UsageGraph: FC<UsageGraphProps> = ({
     period,
     apiKeys,
     action,
-    theme,
 }) => {
     const [filters, setFilters] = useState<Omit<FilterState, "period">>({
         metric: "pollen",
@@ -60,7 +73,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({
         filters.selectedModels.length > 1;
 
     return (
-        <DashboardSection title="Usage" theme={theme} framed action={action}>
+        <Section title="Usage" framed action={action}>
             <div className="flex flex-col gap-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex flex-wrap gap-1.5">
@@ -94,7 +107,6 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                             disabledText="None"
                             align="end"
                             label="Models"
-                            theme={theme}
                         />
                         <MultiSelect
                             options={keySelectOptions}
@@ -110,15 +122,14 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                             disabledText="None"
                             align="end"
                             label="API Keys"
-                            theme={theme}
                         />
                     </div>
                 </div>
 
-                <div className="border-t pt-4 border-theme-border">
+                <Surface>
                     {loading && (
                         <div className="flex items-center justify-center h-[180px]">
-                            <p className="text-sm text-gray-400 animate-[pulse_2s_ease-in-out_infinite]">
+                            <p className="text-sm text-theme-text-muted animate-[pulse_2s_ease-in-out_infinite]">
                                 Fetching usage data…
                             </p>
                         </div>
@@ -126,13 +137,13 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                     {error && !loading && (
                         <div className="flex items-center justify-center h-[180px]">
                             <div className="text-center">
-                                <p className="text-sm text-red-500 font-medium">
+                                <p className="text-sm text-intent-danger-text font-medium">
                                     {error}
                                 </p>
                                 <button
                                     type="button"
                                     onClick={() => fetchUsage()}
-                                    className="mt-2 text-xs text-red-600 hover:text-red-700 underline"
+                                    className="mt-2 text-xs text-intent-danger-text hover:text-intent-danger-text underline"
                                 >
                                     Try again
                                 </button>
@@ -144,54 +155,49 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                             data={chartData}
                             metric={filters.metric}
                             showModelBreakdown={showModelBreakdown}
-                            paidBarColor={PAID_COLOR}
-                            tierBarColor={TIER_COLOR}
                         />
                     )}
-                </div>
+                </Surface>
 
                 {!loading && !error && (
-                    <div className="flex flex-col gap-4 border-t pt-4 sm:flex-row sm:gap-0 sm:divide-x border-theme-border divide-theme-border">
-                        <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
-                            <UsageStatCard
+                    <div className="grid gap-4 sm:grid-cols-3">
+                        <Surface>
+                            <StatCard
                                 label="Pollen spent"
                                 value={formatPollen(stats.totalPollen)}
                                 detail={
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <Chip
-                                            intent="paid"
+                                        <PaidChip
                                             size="lg"
                                             className="font-semibold"
                                         >
-                                            💳 {formatPollen(stats.paidPollen)}
-                                        </Chip>
-                                        <Chip
-                                            intent="tier"
+                                            <CardIcon className="h-4 w-4" />
+                                            {formatPollen(stats.paidPollen)}
+                                        </PaidChip>
+                                        <TierChip
                                             size="lg"
                                             className="font-semibold"
                                         >
-                                            🌱 {formatPollen(stats.tierPollen)}
-                                        </Chip>
+                                            <SproutIcon className="h-4 w-4" />
+                                            {formatPollen(stats.tierPollen)}
+                                        </TierChip>
                                     </div>
                                 }
-                                theme={theme}
                             />
-                        </div>
-                        <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
-                            <UsageStatCard
+                        </Surface>
+                        <Surface>
+                            <StatCard
                                 label="Requests"
                                 value={stats.totalRequests.toLocaleString()}
                                 detail={
                                     <ModalityPills
                                         breakdown={stats.requestsByModality}
-                                        theme={theme}
                                     />
                                 }
-                                theme={theme}
                             />
-                        </div>
-                        <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
-                            <UsageStatCard
+                        </Surface>
+                        <Surface>
+                            <StatCard
                                 label="Top model"
                                 value={
                                     <span className="text-xl leading-tight">
@@ -201,90 +207,69 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                 detail={
                                     stats.topModel ? (
                                         <div className="flex flex-wrap items-center gap-2">
-                                            <Tooltip
-                                                content={`${stats.topModel.requests.toLocaleString()} request${stats.topModel.requests === 1 ? "" : "s"}`}
-                                                displayContents
+                                            <Chip
+                                                size="lg"
+                                                className="font-semibold"
                                             >
-                                                <Chip
-                                                    size="lg"
-                                                    className="font-semibold"
-                                                >
-                                                    <span className="tabular-nums">
-                                                        {stats.topModel.requests.toLocaleString()}
-                                                    </span>
-                                                    <span className="font-medium opacity-70">
-                                                        {stats.topModel
-                                                            .requests === 1
-                                                            ? "req"
-                                                            : "reqs"}
-                                                    </span>
-                                                </Chip>
-                                            </Tooltip>
-                                            <Tooltip
-                                                content={`${formatPollen(stats.topModel.pollen)} pollen`}
-                                                displayContents
+                                                <span className="tabular-nums">
+                                                    {stats.topModel.requests.toLocaleString()}
+                                                </span>
+                                                <span className="font-medium opacity-70">
+                                                    {stats.topModel.requests ===
+                                                    1
+                                                        ? "req"
+                                                        : "reqs"}
+                                                </span>
+                                            </Chip>
+                                            <Chip
+                                                size="lg"
+                                                className="font-semibold"
                                             >
-                                                <Chip
-                                                    size="lg"
-                                                    className="font-semibold"
-                                                >
-                                                    <span className="tabular-nums">
-                                                        {formatPollen(
-                                                            stats.topModel
-                                                                .pollen,
-                                                        )}
-                                                    </span>
-                                                    <span className="font-medium opacity-70">
-                                                        pollen
-                                                    </span>
-                                                </Chip>
-                                            </Tooltip>
+                                                <span className="tabular-nums">
+                                                    {formatPollen(
+                                                        stats.topModel.pollen,
+                                                    )}
+                                                </span>
+                                                <span className="font-medium opacity-70">
+                                                    pollen
+                                                </span>
+                                            </Chip>
                                         </div>
                                     ) : (
                                         "No model usage yet"
                                     )
                                 }
-                                theme={theme}
                             />
-                        </div>
+                        </Surface>
                     </div>
                 )}
             </div>
-        </DashboardSection>
+        </Section>
     );
 };
 
-const UsageStatCard: FC<{
-    label: string;
-    value: ReactNode;
-    detail?: ReactNode;
-    theme: ThemeName;
-}> = ({ label, value, detail, theme }) => (
-    <div data-theme={theme} className="text-sm">
-        <div className="text-micro uppercase tracking-wide font-bold text-theme-text-strong">
-            {label}
-        </div>
-        <div className="mt-1 min-h-8 break-words text-2xl font-bold leading-tight tabular-nums text-theme-text-strong">
-            {value}
-        </div>
-        {detail && (
-            <div className="mt-2 text-xs text-theme-text-soft">{detail}</div>
-        )}
-    </div>
-);
+const MODALITY_ICON: Record<ModelModality, FC<IconProps>> = {
+    text: ChatIcon,
+    image: ImageIcon,
+    video: VideoIcon,
+    audio: AudioIcon,
+    embedding: DatabaseIcon,
+    realtime: GlobeIcon,
+};
 
 const ModalityPills: FC<{
     breakdown: Record<ModelModality, number>;
-    theme: ThemeName;
-}> = ({ breakdown, theme }) => {
-    const entries = (Object.keys(MODALITY_META) as ModelModality[])
-        .map((modality) => ({ modality, count: breakdown[modality] }))
-        .filter(({ count }) => count > 0);
+}> = ({ breakdown }) => {
+    const entries = MODEL_MODALITIES.map((modality) => ({
+        modality,
+        count: breakdown[modality],
+    })).filter(({ count }) => count > 0);
     if (entries.length === 0) return null;
     return (
-        <div data-theme={theme} className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
             {entries.map(({ modality, count }) => {
-                const { emoji, label } = MODALITY_META[modality];
+                const { label } = MODALITY_META[modality];
+                const Icon = MODALITY_ICON[modality];
                 return (
                     <Tooltip
                         key={modality}
@@ -292,11 +277,10 @@ const ModalityPills: FC<{
                         displayContents
                     >
                         <Chip
-                            theme={theme}
                             size="lg"
                             className="font-semibold text-theme-text-base"
                         >
-                            <span aria-hidden="true">{emoji}</span>
+                            <Icon className="h-4 w-4" />
                             <span className="tabular-nums">
                                 {count.toLocaleString()}
                             </span>

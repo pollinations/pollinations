@@ -17,6 +17,7 @@ const snapshotServerUrl = inject("snapshotServerUrl");
 const png1x1Base64 =
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lPFCAAAAAABJRU5ErkJggg==";
 const imageBackendHost = "image-backend.test";
+const fireworksHost = "api.fireworks.ai";
 
 afterEach(async () => {
     await teardownFetchMock();
@@ -35,6 +36,13 @@ const test = baseTest.extend<{
 function createGenerationMocks() {
     env.PORTKEY_GATEWAY_URL = "https://portkey.test";
     const portkeyHost = new URL(env.PORTKEY_GATEWAY_URL).host;
+    const fireworksState: {
+        requests: Array<{
+            body: Record<string, unknown>;
+            headers: Record<string, string>;
+            url: string;
+        }>;
+    } = { requests: [] };
     return createFetchMock({
         tinybird: createMockTinybird(),
         portkeyDirect: {
@@ -51,12 +59,48 @@ function createGenerationMocks() {
             },
             reset: () => {},
         },
+        fireworks: {
+            state: fireworksState,
+            handlerMap: {
+                [fireworksHost]: (request) =>
+                    fakeFireworksFluxResponse(request, fireworksState),
+            },
+            reset: () => {
+                fireworksState.requests = [];
+            },
+        },
         vcr: createMockVcr({
             originalFetch: fakeUpstreamFetch,
             hosts: [{ name: "portkey", host: portkeyHost }],
             snapshotServerUrl,
             mode: env.TEST_VCR_MODE,
         }),
+    });
+}
+
+async function fakeFireworksFluxResponse(
+    request: Request,
+    state: {
+        requests: Array<{
+            body: Record<string, unknown>;
+            headers: Record<string, string>;
+            url: string;
+        }>;
+    },
+) {
+    const body = (await request.json()) as Record<string, unknown>;
+    state.requests.push({
+        body,
+        headers: Object.fromEntries(request.headers.entries()),
+        url: request.url,
+    });
+
+    return new Response(Buffer.from(png1x1Base64, "base64"), {
+        headers: {
+            "content-type": "image/jpeg",
+            "finish-reason": "SUCCESS",
+            seed: String(body.seed ?? 0),
+        },
     });
 }
 
@@ -567,35 +611,14 @@ test("simple text prompts can include slashes", async ({
     await expect(response.text()).resolves.toBe("snapshot slash response");
 });
 
-test("image generation uses a registered image backend from gen", async ({
+test("flux image generation uses Fireworks serverless from gen", async ({
     paidApiKey,
     mocks,
 }) => {
-    const existing = await env.KV.list({ prefix: "image:server:test:flux:" });
-    await Promise.all(existing.keys.map((k) => env.KV.delete(k.name)));
-
-    const { response: registerResponse } = await fetchWorker("/register", {
-        method: "POST",
-        headers: {
-            "content-type": "application/json",
-            authorization: `Bearer ${env.PLN_GPU_TOKEN}`,
-        },
-        body: JSON.stringify({
-            url: `https://${imageBackendHost}`,
-            type: "flux",
-        }),
-    });
-    expect(registerResponse.status).toBe(200);
-    const registered = await env.KV.list({
-        prefix: "image:server:test:flux:",
-    });
-    expect(registered.keys.length).toBeGreaterThan(0);
-    const entry = await env.KV.get(registered.keys[0].name);
-    expect(entry).toContain(imageBackendHost);
-    await mocks.enable("tinybird", "imageBackend");
+    await mocks.enable("tinybird", "fireworks");
 
     const { response, wait } = await fetchWorker(
-        "/image/vcr%20red%20square?model=flux&width=256&height=256&seed=42",
+        "/image/vcr%20red%20square?model=flux&width=1280&height=720&seed=42",
         {
             headers: { authorization: `Bearer ${paidApiKey}` },
         },
@@ -608,6 +631,21 @@ test("image generation uses a registered image backend from gen", async ({
     expect((await response.arrayBuffer()).byteLength).toBeGreaterThan(0);
     await wait();
 
+    expect(mocks.fireworks.state.requests).toHaveLength(1);
+    expect(mocks.fireworks.state.requests[0]).toMatchObject({
+        url: "https://api.fireworks.ai/inference/v1/workflows/accounts/fireworks/models/flux-1-schnell-fp8/text_to_image",
+        body: {
+            prompt: "vcr red square",
+            aspect_ratio: "16:9",
+            num_inference_steps: 4,
+            seed: 42,
+        },
+        headers: {
+            accept: "image/jpeg",
+            authorization: `Bearer ${env.FIREWORKS_API_KEY}`,
+            "content-type": "application/json",
+        },
+    });
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         eventType: "generate.image",

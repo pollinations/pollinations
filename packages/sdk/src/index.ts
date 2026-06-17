@@ -6,7 +6,7 @@
  *
  * @example
  * ```ts
- * import { generateImage, generateText } from '@pollinations_ai/sdk';
+ * import { generateImage, generateText } from '@pollinations/sdk';
  *
  * const image = await generateImage('a cat in space');
  * await image.saveToFile('cat.png');
@@ -20,20 +20,11 @@ export { Pollinations } from "./client.js";
 // Extra utilities
 export {
     type AudioResponseExt,
-    type AwaitOptions,
     type ChatResponseExt,
     // Conversation class
     Conversation,
-    displayImage,
-    // Batch generation (multiple different prompts)
-    generateImages,
-    // Progress tracking
-    generateImageWithProgress,
-    generateVideos,
     // Extended response types with helpers
     type ImageResponseExt,
-    // Browser helpers
-    showImage,
     type VideoResponseExt,
     wrapAudioResponse,
     wrapChatResponse,
@@ -75,6 +66,13 @@ export {
     validateKey,
     videoUrl,
 } from "./helpers.js";
+export {
+    type FetchModelCatalogOptions,
+    fetchModelCatalog,
+    type ModelCatalog,
+    type ModelCatalogItem,
+    pricingEntries,
+} from "./models.js";
 
 // Export all types
 export type {
@@ -123,8 +121,9 @@ export type {
     MessageContent,
     MessageContentPart,
     MessageRole,
-    ModelInfo,
     // Models
+    ModelCategory,
+    ModelInfo,
     ModelTier,
     // Config
     PollinationsConfig,

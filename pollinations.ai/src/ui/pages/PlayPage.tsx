@@ -19,8 +19,6 @@ function PlayPage() {
     const { apiKey, isLoggedIn, login } = useAuth();
     const {
         imageModels,
-        textModels,
-        audioModels,
         allModels: registryModels,
         allowedImageModelIds,
         allowedTextModelIds,
@@ -125,9 +123,7 @@ function PlayPage() {
                     <PlayGenerator
                         selectedModel={selectedModel}
                         prompt={prompt}
-                        imageModels={imageModels}
-                        textModels={textModels}
-                        audioModels={audioModels}
+                        currentModel={currentModel}
                         apiKey={apiKey}
                         onLoginRequired={login}
                     />

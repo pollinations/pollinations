@@ -1,0 +1,35 @@
+{
+  "pr_number": 11869,
+  "title": "fix(gen-image): weight image LB by last latency",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11869",
+  "merged_at": "2026-06-17T16:29:40Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Routes image requests weighted by `1/lastMs` instead of uniform random, so a fast 4090 gets a larger share than a slow 3090 (which drowned at an equal split → 524 timeouts)\n- Gen worker measures `/generate` latency itself and stores the last value on the registry entry; no worker/backend changes\n- Latency writes throttled to 20s/server (KV ~1 write/sec/key); recorded on success only so timeouts don't poison the weight\n- Unmeasured servers use a neutral default so they still get sampled\n- Weighted-random (not always-pick-fastest) to avoid herding requests onto one server between updates\n- Adds unit tests for `chooseWeightedServer` + `recordLatency`\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Fast lanes for fast GPUs",
+    "blurb": "We've upgraded our image generation load balancer to play favorites. Faster GPUs now get more requests, meaning fewer timeouts and quicker images for everyone.",
+    "summary": "Updated the image generation load balancer to route requests using a weighted random algorithm based on recent latency (1/lastMs) rather than uniform distribution.",
+    "impact": "Users will experience fewer 524 timeouts and faster overall image generation, as faster GPUs like 4090s now handle a proportionally larger share of the traffic.",
+    "keywords": [
+      "load-balancing",
+      "latency",
+      "gpu",
+      "performance",
+      "image-generation"
+    ],
+    "visual_concept": "Polly the bee acting as a traffic controller, directing glowing data packets on conveyor belts. A large, fast-moving conveyor belt leads to a shiny, high-speed retro server, while a smaller belt leads to a slower server.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny traffic cop hat, directing glowing data packets on conveyor belts. A large, fast-moving conveyor belt leads to a shiny, high-speed retro server, while a smaller belt leads to a slower, chugging server. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi Stardew Valley aesthetic. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-17/PR-11869.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny traffic cop hat, directing glowing data packets on conveyor belts. A large, fast-moving conveyor belt leads to a shiny, high-speed retro server, while a smaller belt leads to a slower, chugging server. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi Stardew Valley aesthetic. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-17T16:31:03.927178+00:00"
+}

@@ -103,8 +103,8 @@ One clear sentence. Focus on WHAT changed and WHY. Written for a technical audie
 
 Examples — vague vs. specific:
 - ❌ "Added a new image model" → ✅ "Added Llama 4 Maverick via Fireworks, exposed at /v1/chat/completions"
-- ❌ "Updated tier options" → ✅ "Pollen pack bonuses reduced: $10 → 13 (was 20), $50 → 75 (was 110)"
-- ❌ "Improved checkout flow" → ✅ "Checkout metadata now uses packPollenGrant + packBonusPollen; the legacy 2x credit fallback is removed"
+- ❌ "Updated pack pricing" → ✅ "Pollen pack bonuses removed — $10 now credits 10 Pollen (was 13), $100 credits 100 (was 160)"
+- ❌ "Improved checkout flow" → ✅ "Checkout metadata slimmed to packKey + packAmountUsd; webhook credits the amount paid"
 - ❌ "Better rate limiting" → ✅ "Per-key rate limit dropped from 10 → 5 req/s for the free tier"
 
 ### `impact`

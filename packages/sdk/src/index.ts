@@ -66,6 +66,13 @@ export {
     validateKey,
     videoUrl,
 } from "./helpers.js";
+export {
+    type FetchModelCatalogOptions,
+    fetchModelCatalog,
+    type ModelCatalog,
+    type ModelCatalogItem,
+    pricingEntries,
+} from "./models.js";
 
 // Export all types
 export type {
@@ -114,8 +121,9 @@ export type {
     MessageContent,
     MessageContentPart,
     MessageRole,
-    ModelInfo,
     // Models
+    ModelCategory,
+    ModelInfo,
     ModelTier,
     // Config
     PollinationsConfig,

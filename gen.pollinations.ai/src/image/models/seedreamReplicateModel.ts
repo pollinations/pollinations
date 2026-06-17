@@ -18,9 +18,9 @@ import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
-import type { ProgressManager } from "../progressBar.ts";
+import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
-import { downloadUserImage } from "../utils/imageDownload.ts";
+import { toDataUri } from "../utils/imageDownload.ts";
 import {
     ReplicateError,
     runReplicatePrediction,
@@ -46,28 +46,6 @@ type SeedreamAspectRatio = (typeof SEEDREAM_ASPECT_RATIOS)[number];
 const SEEDREAM_NUMERIC_RATIOS = SEEDREAM_ASPECT_RATIOS.filter(
     (r) => r !== "match_input_image",
 ) as readonly Exclude<SeedreamAspectRatio, "match_input_image">[];
-
-// When clients pass width/height without aspectRatio (e.g. OpenAI's
-// `size: "1792x1024"` shape), pick the closest preset by log-space distance
-// so 1920×1080 → 16:9, 720×1280 → 9:16, 800×800 → 1:1. Without this, the
-// resolver would silently default to "1:1" and produce square output.
-function deriveAspectRatioFromDimensions(
-    width: number,
-    height: number,
-): Exclude<SeedreamAspectRatio, "match_input_image"> {
-    const target = Math.log(width / height);
-    let best: Exclude<SeedreamAspectRatio, "match_input_image"> = "1:1";
-    let bestDist = Number.POSITIVE_INFINITY;
-    for (const ar of SEEDREAM_NUMERIC_RATIOS) {
-        const [w, h] = ar.split(":").map(Number);
-        const dist = Math.abs(Math.log(w / h) - target);
-        if (dist < bestDist) {
-            bestDist = dist;
-            best = ar;
-        }
-    }
-    return best;
-}
 
 type Seedream4Size = "1K" | "2K" | "4K";
 type Seedream45Size = "2K" | "4K";
@@ -185,9 +163,10 @@ function resolveAspectRatio(
     if (!requested) {
         if (hasImage) return "match_input_image";
         if (safeParams.width && safeParams.height) {
-            return deriveAspectRatioFromDimensions(
+            return closestRatioLogSpace(
                 safeParams.width,
                 safeParams.height,
+                SEEDREAM_NUMERIC_RATIOS,
             );
         }
         return "1:1";
@@ -267,17 +246,8 @@ async function callSeedreamReplicateAPI(
     variantKey: "seedream" | "seedream-pro" | "seedream5",
     prompt: string,
     safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
 ): Promise<ImageGenerationResult> {
     const variant = SEEDREAM_VARIANTS[variantKey];
-
-    progress.updateBar(
-        requestId,
-        35,
-        "Processing",
-        `Starting ${variant.displayName} generation...`,
-    );
 
     const images = safeParams.image ?? [];
     if (images.length > variant.maxReferenceImages) {
@@ -287,24 +257,8 @@ async function callSeedreamReplicateAPI(
         );
     }
 
-    // Replicate's URL fetcher chokes on query strings and missing extensions
-    // (same issue seen in seedance-2.0 / seedream5). Download here and pass
-    // data URIs.
-    const toDataUri = async (url: string): Promise<string> => {
-        const { buffer, mimeType } = await downloadUserImage(url);
-        return `data:${mimeType};base64,${buffer.toString("base64")}`;
-    };
     const imageInput =
         images.length > 0 ? await Promise.all(images.map(toDataUri)) : [];
-
-    if (imageInput.length > 0) {
-        progress.updateBar(
-            requestId,
-            45,
-            "Processing",
-            `Processed ${imageInput.length} reference image(s)`,
-        );
-    }
 
     // Replicate's bytedance/seedream-4 and 4.5 schemas don't accept a `seed`
     // field — 4.5 strict-rejects unknown fields, 4 silently drops them.
@@ -326,13 +280,6 @@ async function callSeedreamReplicateAPI(
             ? `[${imageInput.length} data uris]`
             : [],
     });
-
-    progress.updateBar(
-        requestId,
-        55,
-        "Processing",
-        "Submitting to Replicate...",
-    );
 
     let outputUrls: string[];
     try {
@@ -364,12 +311,6 @@ async function callSeedreamReplicateAPI(
         throw new HttpError(`${variant.displayName} returned no images`, 500);
     }
 
-    progress.updateBar(
-        requestId,
-        80,
-        "Processing",
-        "Downloading generated image...",
-    );
     const imageResponse = await fetchUpstream(outputUrls[0], {
         errorLabel: `Failed to download ${variant.displayName} output image`,
     });
@@ -378,13 +319,6 @@ async function callSeedreamReplicateAPI(
         `${variant.displayName} image downloaded:`,
         (imageBuffer.length / 1024).toFixed(1),
         "KB",
-    );
-
-    progress.updateBar(
-        requestId,
-        95,
-        "Success",
-        `${variant.displayName} generation completed`,
     );
 
     return {
@@ -409,46 +343,22 @@ async function callSeedreamReplicateAPI(
 export function callSeedreamAPI(
     prompt: string,
     safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
 ): Promise<ImageGenerationResult> {
-    return callSeedreamReplicateAPI(
-        "seedream",
-        prompt,
-        safeParams,
-        progress,
-        requestId,
-    );
+    return callSeedreamReplicateAPI("seedream", prompt, safeParams);
 }
 
 /** Seedream 4.5 Pro via Replicate (bytedance/seedream-4.5). */
 export function callSeedreamProAPI(
     prompt: string,
     safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
 ): Promise<ImageGenerationResult> {
-    return callSeedreamReplicateAPI(
-        "seedream-pro",
-        prompt,
-        safeParams,
-        progress,
-        requestId,
-    );
+    return callSeedreamReplicateAPI("seedream-pro", prompt, safeParams);
 }
 
 /** Seedream 5.0 Lite via Replicate (bytedance/seedream-5-lite). */
 export function callSeedream5API(
     prompt: string,
     safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
 ): Promise<ImageGenerationResult> {
-    return callSeedreamReplicateAPI(
-        "seedream5",
-        prompt,
-        safeParams,
-        progress,
-        requestId,
-    );
+    return callSeedreamReplicateAPI("seedream5", prompt, safeParams);
 }

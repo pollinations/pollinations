@@ -9,7 +9,6 @@ import {
     useRef,
 } from "react";
 import { cn } from "../lib/cn.ts";
-import type { ThemeName } from "../theme.ts";
 
 type ScrollAxis = "y" | "x";
 
@@ -19,8 +18,6 @@ const axisClasses: Record<ScrollAxis, string> = {
 };
 
 type ScrollAreaOwnProps = {
-    /** Override the ambient cascade theme for this scroller's thumb. */
-    theme?: ThemeName;
     /** Scroll direction. Default `y`. */
     axis?: ScrollAxis;
     className?: string;
@@ -38,10 +35,10 @@ function assignRef<T>(ref: Ref<T> | undefined, value: T | null) {
 
 /**
  * Themed auto-hide scroll container. Thumb color follows the nearest
- * `[data-theme="..."]` ancestor; pass `theme` to override locally.
+ * `[data-theme="..."]` ancestor.
  */
 export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(
-    ({ theme, axis = "y", className, children, ...rest }, externalRef) => {
+    ({ axis = "y", className, children, ...rest }, externalRef) => {
         const innerRef = useRef<HTMLDivElement | null>(null);
 
         const setRef = useCallback(
@@ -117,9 +114,8 @@ export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(
             <div
                 {...rest}
                 ref={setRef}
-                data-theme={theme}
                 className={cn(
-                    "polli-scrollbar-subtle",
+                    "polli-scrollbar-subtle polli:min-w-0 polli:max-w-full",
                     axisClasses[axis],
                     className,
                 )}

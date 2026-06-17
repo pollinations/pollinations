@@ -68,18 +68,6 @@ export function validateAndNormalizeMessages(messages: unknown): ChatMessage[] {
     });
 }
 
-const TRUTHY_STRINGS = new Set(["true", "1", "yes"]);
-const FALSY_STRINGS = new Set(["false", "0", "no"]);
-
-function parseStreamOption(value: unknown): boolean {
-    if (value === undefined) return false;
-    if (typeof value === "string") {
-        if (TRUTHY_STRINGS.has(value)) return true;
-        if (FALSY_STRINGS.has(value)) return false;
-    }
-    return Boolean(value);
-}
-
 function clamp(value: number, min: number, max: number): number {
     return Math.max(min, Math.min(max, value));
 }
@@ -91,19 +79,30 @@ export function normalizeOptions(
     const normalized = { ...defaults, ...options } as TransformOptions &
         Record<string, unknown>;
 
-    normalized.stream = parseStreamOption(normalized.stream);
+    // Stream is already validated to boolean|undefined at the request boundary
+    // (validateBoolean in parameterValidators.ts); coerce undefined to false.
+    normalized.stream = Boolean(normalized.stream);
     log("Normalized stream option to %s", normalized.stream);
 
-    if (normalized.temperature !== undefined) {
+    if (
+        normalized.temperature !== undefined &&
+        normalized.temperature !== null
+    ) {
         normalized.temperature = clamp(normalized.temperature, 0, 3);
     }
-    if (normalized.top_p !== undefined) {
+    if (normalized.top_p !== undefined && normalized.top_p !== null) {
         normalized.top_p = clamp(normalized.top_p, 0, 1);
     }
-    if (normalized.presence_penalty !== undefined) {
+    if (
+        normalized.presence_penalty !== undefined &&
+        normalized.presence_penalty !== null
+    ) {
         normalized.presence_penalty = clamp(normalized.presence_penalty, -2, 2);
     }
-    if (normalized.frequency_penalty !== undefined) {
+    if (
+        normalized.frequency_penalty !== undefined &&
+        normalized.frequency_penalty !== null
+    ) {
         normalized.frequency_penalty = clamp(
             normalized.frequency_penalty,
             -2,
@@ -113,11 +112,6 @@ export function normalizeOptions(
 
     if (typeof normalized.seed === "number") {
         normalized.seed = Math.floor(normalized.seed);
-    }
-
-    if (normalized.maxTokens !== undefined) {
-        normalized.max_tokens = normalized.maxTokens as number;
-        delete normalized.maxTokens;
     }
 
     if (normalized.jsonMode) {

@@ -10,6 +10,15 @@ import {
     type ModelName,
 } from "./registry";
 
+export const ModelCapabilitySchema = z.enum([
+    "tool_calling",
+    "reasoning",
+    "web_search",
+    "code_execution",
+]);
+
+export type ModelCapability = z.infer<typeof ModelCapabilitySchema>;
+
 // Pricing uses registry field names directly, filtering out zero/undefined values
 // Fields: promptTextTokens, promptCachedTokens, promptCacheWriteTokens,
 //         promptAudioTokens, promptAudioSeconds, promptImageTokens,
@@ -18,19 +27,34 @@ import {
 export const ModelInfoSchema = z.object({
     name: z.string(),
     aliases: z.array(z.string()),
+    category: z.enum([
+        "text",
+        "image",
+        "audio",
+        "video",
+        "embedding",
+        "realtime",
+    ]),
+    brand: z.string(),
     pricing: z
         .record(z.string(), z.string())
         .and(z.object({ currency: z.literal("pollen") })),
+    title: z.string(),
     description: z.string().optional(),
     input_modalities: z.array(z.string()).optional(),
     output_modalities: z.array(z.string()).optional(),
     video_capabilities: z.array(z.string()).optional(),
+    max_reference_images: z.number().int().positive().optional(),
+    max_reference_videos: z.number().int().positive().optional(),
+    capabilities: z.array(ModelCapabilitySchema),
     tools: z.boolean().optional(),
     reasoning: z.boolean().optional(),
     context_length: z.number().optional(),
     voices: z.array(z.string()).optional(),
     is_specialized: z.boolean().optional(),
     paid_only: z.boolean().optional(),
+    alpha: z.boolean().optional(),
+    added_date: z.number().optional(),
 });
 
 export type ModelInfo = z.infer<typeof ModelInfoSchema>;
@@ -41,6 +65,17 @@ export type ModelInfo = z.infer<typeof ModelInfoSchema>;
  */
 function toFixedPoint(n: number): string {
     return n.toFixed(12).replace(/\.?0+$/, "");
+}
+
+function getCapabilities(
+    service: ReturnType<typeof getModelDefinition>,
+): ModelCapability[] {
+    const capabilities: ModelCapability[] = [];
+    if (service.tools) capabilities.push("tool_calling");
+    if (service.reasoning) capabilities.push("reasoning");
+    if (service.search) capabilities.push("web_search");
+    if (service.codeExecution) capabilities.push("code_execution");
+    return capabilities;
 }
 
 /**
@@ -65,18 +100,26 @@ function getModelInfo(modelName: ModelName): ModelInfo {
     return {
         name: modelName as string,
         aliases: service.aliases,
+        category: service.category,
+        brand: service.brand,
         pricing,
         // User-facing metadata from service definition
+        title: service.title,
         description: service.description,
         input_modalities: service.inputModalities,
         output_modalities: service.outputModalities,
         video_capabilities: service.videoCapabilities,
+        max_reference_images: service.maxReferenceImages,
+        max_reference_videos: service.maxReferenceVideos,
+        capabilities: getCapabilities(service),
         tools: service.tools,
         reasoning: service.reasoning,
         context_length: service.contextLength,
         voices: service.voices,
         is_specialized: service.isSpecialized,
         paid_only: service.paidOnly,
+        alpha: service.alpha,
+        added_date: service.addedDate,
     };
 }
 

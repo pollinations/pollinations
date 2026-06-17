@@ -1,10 +1,13 @@
 import type { Logger } from "@logtape/logtape";
-import { createApiKeyForUser } from "@shared/auth/api-key-creation.ts";
+import {
+    type ApiKeyType,
+    createApiKeyForUser,
+} from "@shared/auth/api-key-creation.ts";
 import {
     apikey as apikeyTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
-import type { ApiKeyType } from "@shared/schemas/generation-event.ts";
+import { validator } from "@shared/middleware/validator.ts";
 import { getTierCadence, tierNames } from "@shared/tier-config.ts";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -15,7 +18,6 @@ import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
-import { validator } from "../middleware/validator.ts";
 import { parseMetadata } from "./metadata-utils.ts";
 
 // Calculate next tier refill time (null for tiers with no refill).
@@ -355,6 +357,18 @@ function buildUsageWindows(
     return newestFirst ? windows.reverse() : windows;
 }
 
+/**
+ * Thrown when Tinybird returns 429 (rate limit / vCPU budget exceeded). This is
+ * transient, so read-only usage endpoints should degrade gracefully rather than
+ * surface it as a 5xx with the raw upstream message.
+ */
+export class TinybirdRateLimitError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "TinybirdRateLimitError";
+    }
+}
+
 export async function fetchTinybirdRows<T>(
     origin: string,
     path: string,
@@ -376,9 +390,11 @@ export async function fetchTinybirdRows<T>(
 
     if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(
-            `Tinybird error: ${response.status} ${errorText || "(empty response)"}`,
-        );
+        const message = `Tinybird error: ${response.status} ${errorText || "(empty response)"}`;
+        if (response.status === 429) {
+            throw new TinybirdRateLimitError(message);
+        }
+        throw new Error(message);
     }
 
     const data = (await response.json()) as { data: T[] };

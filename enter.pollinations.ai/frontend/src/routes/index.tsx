@@ -310,11 +310,10 @@ function RouteComponent() {
                             <TierPanel {...tierData} />
                         </Section>
                     )}
-                    <Section title="Recent transactions" theme="amber" framed>
+                    <Section title="Recent transactions" framed>
                         <TransactionHistory
                             mode="compact"
                             apiKeys={selectableKeys}
-                            theme="amber"
                         />
                     </Section>
                 </div>
@@ -346,15 +345,10 @@ function RouteComponent() {
                             apps={earningsEnabledApps}
                         />
                     )}
-                    <Section
-                        title="Transactions"
-                        theme={dashboardThemeByPage.activity}
-                        framed
-                    >
+                    <Section title="Transactions" framed>
                         <TransactionHistory
                             mode="full"
                             apiKeys={selectableKeys}
-                            theme={dashboardThemeByPage.activity}
                         />
                     </Section>
                 </div>

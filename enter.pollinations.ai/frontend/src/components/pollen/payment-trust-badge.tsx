@@ -19,7 +19,7 @@ export const PaymentTrustBadge: FC<PaymentTrustBadgeProps> = ({
     return (
         <div
             className={cn(
-                "mt-2 flex w-full flex-wrap items-center gap-x-2 gap-y-1 pt-6 text-[13px] leading-snug text-accent-amber-950/45",
+                "mt-2 flex w-full flex-wrap items-center gap-x-2 gap-y-1 pt-6 text-[13px] leading-snug text-theme-text-muted",
                 className,
             )}
         >

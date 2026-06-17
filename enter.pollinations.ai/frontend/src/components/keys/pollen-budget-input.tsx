@@ -1,16 +1,11 @@
-import { cn, Field, InfoTip, Input } from "@pollinations/ui";
+import { Field, InfoTip, Input } from "@pollinations/ui";
 import type { FC } from "react";
-import {
-    getPermissionUiTheme,
-    type PermissionUiTheme,
-} from "./permission-ui.ts";
 
 type PollenBudgetInputProps = {
     value: number | null;
     onChange: (value: number | null) => void;
     disabled?: boolean;
     inline?: boolean;
-    theme?: PermissionUiTheme;
 };
 
 /**
@@ -23,12 +18,7 @@ export const PollenBudgetInput: FC<PollenBudgetInputProps> = ({
     onChange,
     disabled = false,
     inline = false,
-    theme = "blue",
 }) => {
-    const {
-        input: { classes: inputClasses },
-    } = getPermissionUiTheme(theme);
-
     return (
         <Field.Root className={inline ? "flex items-center gap-3" : ""}>
             <Field.Label
@@ -36,7 +26,7 @@ export const PollenBudgetInput: FC<PollenBudgetInputProps> = ({
             >
                 Budget
                 <InfoTip
-                    text="Spending cap for this key. Leave empty for unlimited. Once the key spends its budget, requests through it are rejected."
+                    text="Spending cap for this key. Leave empty for unlimited. Requests are rejected after the budget is spent."
                     label="Budget information"
                 />
             </Field.Label>
@@ -52,12 +42,14 @@ export const PollenBudgetInput: FC<PollenBudgetInputProps> = ({
                         const val = e.target.value;
                         onChange(val === "" ? null : Number(val));
                     }}
-                    className={cn("w-[90px]", inputClasses)}
+                    className="w-[116px]"
                     hideNumberSteppers
                     placeholder="Unlimited"
                     disabled={disabled}
                 />
-                <span className="text-sm text-ink-500 w-12">pollen</span>
+                <span className="text-sm text-theme-text-muted w-12">
+                    pollen
+                </span>
             </div>
         </Field.Root>
     );

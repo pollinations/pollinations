@@ -15,7 +15,7 @@ export interface GrantRewardInput {
     /** Grant kind, e.g. code_quest | first_image | first_top_up | referral | manual. */
     source: string;
     amount: number;
-    /** Which balance bucket to credit. Defaults to the REWARD-style "tier" meter. */
+    /** Which balance bucket to credit. Defaults to "pack"; pass "tier" to override. */
     bucket?: Bucket;
     /** Catalog id for product quests; null for one-off grants. */
     questId?: string | null;
@@ -52,7 +52,7 @@ export async function grantReward(
         userId,
         source,
         amount,
-        bucket = "tier",
+        bucket = "pack",
         questId = null,
         sourceRef = null,
         metadata = null,

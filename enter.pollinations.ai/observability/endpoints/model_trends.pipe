@@ -1,0 +1,29 @@
+TOKEN tinybird_read_public READ
+TOKEN tinybird_read READ
+
+DESCRIPTION >
+Daily error-rate trends per model and event type for the model monitor "Trends" tab.
+Returns per-day request counts and 5xx error counts over the last `days` days (default 28),
+excluding cache hits. 4xx (auth/quota) are deliberately not counted as errors.
+
+NODE model_trends_daily
+SQL >
+    %
+    SELECT
+        toDate(start_time) as day,
+        resolved_model_requested as model,
+        event_type,
+        topK(1)(model_provider_used)[1] as provider,
+        count() as requests,
+        countIf(response_status >= 500) as errors_5xx,
+        countIf(response_status >= 200 AND response_status < 300) as status_2xx
+    FROM generation_event
+    WHERE start_time >= now() - interval {{Int32(days, 28)}} day
+        AND cache_hit = false
+        AND resolved_model_requested != ''
+        AND resolved_model_requested != 'undefined'
+    GROUP BY day, resolved_model_requested, event_type
+    HAVING requests > {{Int32(min_requests, 20)}}
+    ORDER BY day ASC, requests DESC
+
+TYPE endpoint

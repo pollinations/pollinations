@@ -7,12 +7,13 @@ const ENTER_URL = "https://enter.pollinations.ai";
 const API_BASE = "https://enter.pollinations.ai/api";
 const API_KEY_PREFIX = /^(sk_|plln_pk_|pk_)/;
 
+// deepseek best respects the elevator/Marvin resistance (keeps the game
+// challenging); reasoning_effort:"low" on each request keeps it responsive.
 export const DEFAULT_MODEL = "deepseek";
 
 export const AVAILABLE_MODELS = [
     { id: "deepseek", label: "DeepSeek" },
-    { id: "kimi", label: "Kimi" },
-    { id: "gemini-fast", label: "Gemini" },
+    { id: "openai", label: "OpenAI" },
     { id: "claude-fast", label: "Claude" },
 ] as const;
 
@@ -52,7 +53,7 @@ function extractApiKeyFromFragment(): string | null {
     }
 }
 
-const APP_KEY = "pk_vbqLj6cwn05D2v5B";
+const APP_KEY = "pk_nDXh3ryXfjTkirMB";
 
 function getAuthorizeUrl(): string {
     const redirect = window.location.href.split("#")[0];

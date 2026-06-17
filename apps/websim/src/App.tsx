@@ -4,7 +4,6 @@ import {
     Button,
     ButtonGroup,
     ColorModeToggle,
-    cn,
     DownloadIcon,
     ExternalLinkIcon,
     FieldStack,
@@ -16,12 +15,8 @@ import {
     Text,
     Textarea,
     Tooltip,
-    useHostThemeSync,
 } from "@pollinations/ui";
-import {
-    AppUserMenu,
-    isEmbeddedContext,
-} from "@pollinations/ui/app-user-menu/sdk";
+import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import { useEffect, useRef, useState } from "react";
 import {
     DEFAULT_MODEL,
@@ -141,7 +136,6 @@ function PreviewPanel({
 export function App() {
     const { apiKey, isHydrated } = useAuthState();
     const { login } = useAuthActions();
-    const isEmbedded = isEmbeddedContext();
     const [prompt, setPrompt] = useState(INITIAL_PROMPT);
     const [model, setModel] = useState<WebsimModelId>(DEFAULT_MODEL);
     const [html, setHtml] = useState("");
@@ -152,10 +146,6 @@ export function App() {
     useEffect(() => {
         return () => activeRequest.current?.abort();
     }, []);
-
-    // Sizing + the auth handshake are auto-wired by the SDK's PolliProvider.
-    // Theme application is UI-owned, so opt into the host's live theme here.
-    useHostThemeSync();
 
     async function generate() {
         const trimmedPrompt = prompt.trim();
@@ -224,42 +214,27 @@ export function App() {
     return (
         <div
             data-theme="accent"
-            className={cn(
-                "relative flex flex-col bg-app-bg font-body text-theme-text-base",
-                !isEmbedded && "min-h-dvh",
-            )}
+            className="relative flex min-h-dvh flex-col bg-app-bg font-body text-theme-text-base"
         >
-            <div
-                className={cn(
-                    "fixed right-4 z-40 flex items-center gap-2",
-                    isEmbedded ? "top-2" : "top-4",
-                )}
-            >
-                {!isEmbedded && <ColorModeToggle />}
+            <div className="fixed top-4 right-4 z-40 flex items-center gap-2">
+                <ColorModeToggle />
                 <AppUserMenu dashboardHref={ENTER_URL} />
             </div>
 
-            <main
-                className={cn(
-                    "mx-auto flex w-full max-w-5xl flex-1 flex-col gap-5 px-4 pb-5 sm:px-6",
-                    isEmbedded ? "pt-2" : "pt-16",
-                )}
-            >
+            <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-5 px-4 pt-16 pb-5 sm:px-6">
                 <section className="flex flex-col gap-2">
-                    {!isEmbedded && (
-                        <div className="flex items-center gap-3">
-                            <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-theme-bg-active text-theme-text-strong">
-                                <AppIcon className="h-6 w-6" />
-                            </span>
-                            <Heading
-                                as="h1"
-                                size="title"
-                                className="websim-title m-0 text-theme-text-strong"
-                            >
-                                Websim
-                            </Heading>
-                        </div>
-                    )}
+                    <div className="flex items-center gap-3">
+                        <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-theme-bg-active text-theme-text-strong">
+                            <AppIcon className="h-6 w-6" />
+                        </span>
+                        <Heading
+                            as="h1"
+                            size="title"
+                            className="websim-title m-0 text-theme-text-strong"
+                        >
+                            Websim
+                        </Heading>
+                    </div>
                     <Text as="p" className="m-0 max-w-3xl">
                         Generate shareable single-file web pages with
                         Pollinations.

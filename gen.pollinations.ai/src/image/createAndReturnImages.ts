@@ -1,5 +1,5 @@
 import debug from "debug";
-import { fetchFromLeastBusyServer } from "./availableServers.ts";
+import { fetchFromWeightedServer } from "./availableServers.ts";
 import { getImageEnv } from "./env.ts";
 import { HttpError } from "./httpError.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
@@ -196,7 +196,7 @@ export const callSelfHostedServer = async (
 
         // Single attempt - no retry logic
         try {
-            response = await fetchFromLeastBusyServer("zimage", {
+            response = await fetchFromWeightedServer("zimage", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

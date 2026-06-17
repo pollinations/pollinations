@@ -1,4 +1,4 @@
-import { Button, type ThemeName } from "@pollinations/ui";
+import { Button } from "@pollinations/ui";
 import { formatPollen, PaidChip, TierChip } from "@pollinations/ui/wallet";
 import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { apiClient } from "../../api.ts";
@@ -80,15 +80,12 @@ export type TransactionHistoryProps = {
     apiKeys?: ApiKeyInfo[];
     /** Hash route for the "View all" link in compact mode. */
     viewAllHref?: string;
-    /** Theme used for the "Load more" button. */
-    theme?: ThemeName;
 };
 
 export const TransactionHistory: FC<TransactionHistoryProps> = ({
     mode = "full",
     apiKeys,
     viewAllHref = "#activity",
-    theme = "amber",
 }) => {
     const [state, setState] = useState<FetchState>(INITIAL_STATE);
     const pageSize = mode === "compact" ? PAGE_SIZE_COMPACT : PAGE_SIZE_FULL;
@@ -277,7 +274,6 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
                 {!isCompact && state.hasMore && (
                     <Button
                         as="button"
-                        theme={theme}
                         onClick={handleLoadMore}
                         disabled={state.loading}
                     >

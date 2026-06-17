@@ -1,0 +1,35 @@
+{
+  "pr_number": 11711,
+  "title": "feat(enter): add transaction history (compact on Pollen, full on Activity)",
+  "author": "mahdiebene",
+  "url": "https://github.com/pollinations/pollinations/pull/11711",
+  "merged_at": "2026-06-17T23:40:10Z",
+  "labels": [
+    "DEV-UI-UX"
+  ],
+  "pr_body_excerpt": "Fixes #11624\r\n\r\nAdds a transaction history view that lists each billed Pollen request — when it happened, which API key and model were used, the source (tier/paid), and how much pollen was deducted.\r\n\r\n### What\r\n- New `TransactionHistory` component (`enter.pollinations.ai/frontend/src/components/activity/transaction-history.tsx`).\r\n- Two render modes via a `mode` prop:\r\n  - `compact` — last 5 rows + \"View all →\" link, mounted on the **Pollen** page in a \"Recent transactions\" section.\r\n  - `full` — paginated 25-per-page with a **Load more** button, mounted on the **Activity** page in a \"Transactions\" section.\r\n- Responsive: stacked cards on mobile (<sm), table on >=sm.\r\n- Resolves API key UUIDs to human names using the existing `apiKeys` already loaded by the dashboard.\r\n\r\n### Why this layout\r\nPer [#11624](https://github.com/pollinations/pollinations/issues/11624) the existing Activity page already aggregates usage but doesn't show individual transactions. Putting the full list on Activity (alongside `UsageGraph`) keeps related data together; the compact preview on the Pollen page gives users a quick \"did my last request go through?\" check next to their balance.\r\n\r\n### Data source\r\nCalls the existing `apiClient.account.usage` endpoint — **no backend, schema, or new API surface**. Pagination uses the endpoint's `before` cursor.\r\n\r\n### Diff size\r\n3 files touched:\r\n- `components/activity/transaction-history.tsx` (new)\r\n- `components/activity/index.ts` (1 line — re-export)\r\n- `routes/index.tsx` (import + 2 mount sites)\r\n\r\n### Checks\r\n- `npx biome check` passes on all changed files.\r\n- `npx tsc --noEmit` passes for the `enter.pollinations.ai/frontend` project.\r\n- Manually verified responsive breakpoints, empty state, error state, and Load-more pagination paths in the component logic.\r\n\r\nHappy to iterate on copy, placement, or column choices.\r\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Follow the pollen trail",
+    "blurb": "Added a new transaction history view to the dashboard. Now you can see exactly when, where, and how your Pollen is being used, right down to the API key and model.",
+    "summary": "Added a transaction history component to the dashboard that displays individual billed requests, including the API key, model, source, and deducted amount.",
+    "impact": "Users can now view their last 5 transactions directly on the Pollen page, or browse their complete paginated history on the Activity page.",
+    "keywords": [
+      "dashboard",
+      "billing",
+      "transactions",
+      "ui",
+      "pollen"
+    ],
+    "visual_concept": "Polly the bee acting as an accountant or auditor, looking at a long paper receipt printing from a retro terminal. The receipt represents the transaction history.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, inspecting a long paper receipt printing from a retro computer monitor. The monitor screen glows with soft lime green (#ecf874) showing a neat ledger. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-17/PR-11711.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, inspecting a long paper receipt printing from a retro computer monitor. The monitor screen glows with soft lime green (#ecf874) showing a neat ledger. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-17T23:41:10.177115+00:00"
+}

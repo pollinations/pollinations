@@ -72,7 +72,7 @@ export async function getCommunityTextModelsInfo(
         }
 
         const name = communityModelId(row.ownerGithubUsername, row.name);
-        const title = row.description?.trim() || name;
+        const title = `${row.name} by @${row.ownerGithubUsername}`;
 
         return [
             {

@@ -224,9 +224,9 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/qwen3p7-plus",
         }),
-    "accounts/fireworks/models/glm-5p1": () =>
+    "accounts/fireworks/models/glm-5p2": () =>
         createFireworksModelConfig({
-            model: "accounts/fireworks/models/glm-5p1",
+            model: "accounts/fireworks/models/glm-5p2",
         }),
     "accounts/fireworks/models/minimax-m2p7": () =>
         createFireworksModelConfig({

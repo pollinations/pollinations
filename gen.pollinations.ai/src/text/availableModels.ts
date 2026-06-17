@@ -265,7 +265,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "glm",
-        config: portkeyConfig["accounts/fireworks/models/glm-5p1"],
+        config: portkeyConfig["accounts/fireworks/models/glm-5p2"],
         transform: stripCacheControl,
     },
     {

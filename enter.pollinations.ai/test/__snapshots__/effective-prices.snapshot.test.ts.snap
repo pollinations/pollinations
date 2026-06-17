@@ -280,14 +280,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "glm": {
     "cost": {
-      "completionTextTokens": 0.0000032,
-      "promptCachedTokens": 0.0000002,
-      "promptTextTokens": 0.000001,
+      "completionTextTokens": 0.0000044,
+      "promptCachedTokens": 0.00000026,
+      "promptTextTokens": 0.0000014,
     },
     "price": {
-      "completionTextTokens": 0.0000032,
-      "promptCachedTokens": 0.0000002,
-      "promptTextTokens": 0.000001,
+      "completionTextTokens": 0.0000044,
+      "promptCachedTokens": 0.00000026,
+      "promptTextTokens": 0.0000014,
     },
   },
   "gpt-5.4-mini": {

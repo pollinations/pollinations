@@ -374,4 +374,102 @@ describe("genericOpenAIClient", () => {
         expect(text).toContain('"content":"ok"');
         expect(text).toContain("data: [DONE]\n\n");
     });
+
+    it("captures the Portkey fallback target header on non-streaming responses", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json(
+                {
+                    id: "chatcmpl_test",
+                    object: "chat.completion",
+                    model: "provider-model",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "ok" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: { prompt_tokens: 1, completion_tokens: 1 },
+                },
+                {
+                    headers: {
+                        "x-portkey-last-used-option-index": "config.targets[1]",
+                    },
+                },
+            ),
+        );
+
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model" },
+            { endpoint: "https://portkey.test/chat" },
+        );
+
+        expect(completion.fallbackTarget).toBe("config.targets[1]");
+        // Internal metadata must stay out of the OpenAI-compatible body: it is
+        // non-enumerable, so JSON.stringify({ ...completion }) never includes it.
+        expect(
+            Object.prototype.propertyIsEnumerable.call(
+                completion,
+                "fallbackTarget",
+            ),
+        ).toBe(false);
+        expect(JSON.stringify({ ...completion })).not.toContain(
+            "fallbackTarget",
+        );
+    });
+
+    it("captures the Portkey fallback target header on streaming responses", async () => {
+        vi.spyOn(globalThis, "fetch").mockImplementationOnce(async () => {
+            const encoder = new TextEncoder();
+            return new Response(
+                new ReadableStream({
+                    start(controller) {
+                        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+                        controller.close();
+                    },
+                }),
+                {
+                    headers: {
+                        "content-type": "text/event-stream; charset=utf-8",
+                        "x-portkey-last-used-option-index": "config.targets[1]",
+                    },
+                },
+            );
+        });
+
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model", stream: true },
+            { endpoint: "https://portkey.test/chat" },
+        );
+
+        expect(completion.fallbackTarget).toBe("config.targets[1]");
+    });
+
+    it("leaves fallbackTarget undefined when the header is absent", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({
+                id: "chatcmpl_test",
+                object: "chat.completion",
+                model: "provider-model",
+                choices: [
+                    {
+                        index: 0,
+                        message: { role: "assistant", content: "ok" },
+                        finish_reason: "stop",
+                    },
+                ],
+                usage: { prompt_tokens: 1, completion_tokens: 1 },
+            }),
+        );
+
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model" },
+            { endpoint: "https://portkey.test/chat" },
+        );
+
+        expect(completion.fallbackTarget).toBeUndefined();
+    });
 });

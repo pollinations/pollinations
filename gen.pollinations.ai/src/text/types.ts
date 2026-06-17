@@ -80,6 +80,8 @@ export interface ChatCompletion {
     stream?: boolean;
     responseStream?: ReadableStream | null;
     requestData?: unknown;
+    /** Portkey fallback target that served the call, e.g. "config.targets[1]". */
+    fallbackTarget?: string;
     [key: string]: unknown;
 }
 

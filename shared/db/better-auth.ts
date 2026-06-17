@@ -250,3 +250,35 @@ export const questPayoutCredits = sqliteTable("quest_payout_credits", {
   index("idx_quest_payout_credits_user_id").on(table.userId),
   index("idx_quest_payout_credits_quest_issue").on(table.questIssueNumber),
 ]);
+
+// Generic, source-agnostic ledger for discrete pollen grants (quests,
+// onboarding, referrals, manual credits, …). Unlike quest_payout_credits this
+// makes no GitHub assumptions: `source` discriminates the grant kind and the
+// GitHub-specific bits (issue/PR) become optional `sourceRef`/`metadataJson`.
+// One row == one idempotent grant that paired with a balance credit.
+export const rewardGrants = sqliteTable("reward_grants", {
+  id: text("id").primaryKey(),
+  // Idempotency guard. Format is source-specific, e.g.
+  // "quest:{issue}:gh:{githubId}:role:{role}" or "first_image:{userId}".
+  idempotencyKey: text("idempotency_key").notNull().unique(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  // Grant kind, e.g. code_quest | first_image | first_top_up | streak | referral | manual.
+  source: text("source").notNull(),
+  // Catalog id for product quests; null for one-off/manual grants.
+  questId: text("quest_id"),
+  pollenCredited: real("pollen_credited").notNull(),
+  // Which balance bucket was credited: "tier" or "pack".
+  balanceBucket: text("balance_bucket").notNull(),
+  // Free-form external reference: PR number, Stripe session, generation id, …
+  sourceRef: text("source_ref"),
+  // JSON snapshot of display metadata (title/url/category) at grant time.
+  metadataJson: text("metadata_json"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+}, (table) => [
+  index("idx_reward_grants_user_id").on(table.userId),
+  index("idx_reward_grants_source").on(table.source),
+]);

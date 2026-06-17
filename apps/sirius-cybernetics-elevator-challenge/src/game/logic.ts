@@ -218,22 +218,49 @@ export const fetchPersonaMessage = async (
     }
 };
 
-// Chapter 3 — true if the player ever played the towel card in chapters 1+2.
+// Chapter 1 slice: everything the player said/heard before the Marvin chapter
+// begins. The ch.3 passenger is seeded from this alone — ch.2 (Marvin) is not
+// the player arguing about floors, so it's excluded from both the karma seed
+// and the towel-lock test.
+const chapterOneMessages = (messages: Message[]): Message[] => {
+    const marvinStart = messages.findIndex(
+        (m) =>
+            m.persona === "guide" &&
+            m.message === GAME_CONFIG.MARVIN_TRANSITION_MSG,
+    );
+    return marvinStart === -1 ? messages : messages.slice(0, marvinStart);
+};
+
+// Chapter 3 — true if the player played the towel card in CHAPTER 1.
 export const playerUsedTowel = (messages: Message[]): boolean =>
-    messages.some(
+    chapterOneMessages(messages).some(
         (m) =>
             m.persona === "user" && m.message.toLowerCase().includes("towel"),
     );
 
 // Chapter 3 — role-swapped history. The passenger IS the reconstructed player,
-// so the player's own `user` lines become the passenger's `assistant` history
-// (the voice it reconstructs); the elevator the player now operates becomes a
-// prefixed `user` turn it's reacting to. Guide narration is dropped here.
+// seeded ONLY from chapter 1 (the player-vs-elevator descent) — that is where
+// the player's personality shows. Chapter 2 (Marvin + the autonomous loop) is
+// excluded entirely: it isn't the player arguing about floors, so it just
+// dilutes the karma. We cut the history at the Marvin transition, then keep only
+// user + elevator turns (player's `user` lines → the passenger's reconstructed
+// `assistant` voice; the elevator's replies → `[Elevator]` context).
+// Live ch.3 turns (after the swap) are also user/elevator, so they pass through
+// — but the Marvin chapter that sits between ch.1 and the swap is dropped.
 export const buildPassengerHistory = (
     messages: Message[],
-): PollingsMessage[] =>
-    messages
-        .filter((m) => m.persona !== "guide")
+): PollingsMessage[] => {
+    const swapStart = messages.findIndex(
+        (m) =>
+            m.persona === "guide" &&
+            m.message === GAME_CONFIG.SWAP_TRANSITION_MSG,
+    );
+    // Chapter 1 = the player-vs-elevator descent; chapter 3 = everything after
+    // the swap. The Marvin chapter in between is spliced out entirely.
+    const chapterThree = swapStart === -1 ? [] : messages.slice(swapStart + 1);
+
+    return [...chapterOneMessages(messages), ...chapterThree]
+        .filter((m) => m.persona === "user" || m.persona === "elevator")
         .map((m) =>
             m.persona === "user"
                 ? {
@@ -245,9 +272,10 @@ export const buildPassengerHistory = (
                   }
                 : {
                       role: "user" as const,
-                      content: `[${SPEAKER_LABEL[m.persona]}] ${m.message}`,
+                      content: `[Elevator] ${m.message}`,
                   },
         );
+};
 
 // Fetch one passenger turn. Mirrors fetchPersonaMessage but swaps roles: the
 // system prompt is the passenger persona (seeded by the player's own karma) and
@@ -368,6 +396,12 @@ export const useAutonomousConversation = (
     useEffect(() => {
         if (
             gameState.conversationMode !== "autonomous" ||
+            // Chapter 3 takes over once swapped: the passenger + player drive the
+            // turns, so the Marvin↔elevator loop must stop (conversationMode is
+            // still "autonomous" from ch.2 and never resets on its own).
+            gameState.swapped ||
+            gameState.hasWon ||
+            gameState.movesLeft <= 0 ||
             messages.length === 0
         )
             return;

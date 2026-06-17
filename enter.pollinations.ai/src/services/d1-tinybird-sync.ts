@@ -41,6 +41,20 @@ const TABLES: TableConfig[] = [
                 FROM apikey`,
     },
     {
+        datasource: "d1_reward_grants",
+        query: `SELECT id, idempotency_key, user_id, source, quest_id,
+                       pollen_credited, balance_bucket, source_ref,
+                       metadata_json, created_at
+                FROM reward_grants`,
+    },
+    {
+        datasource: "d1_quest_definitions",
+        query: `SELECT id, title, description, category, status, trigger,
+                       reward_amount, balance_bucket, repeatability,
+                       criteria_json, created_at, updated_at
+                FROM quest_definitions`,
+    },
+    {
         datasource: "d1_session",
         query: `SELECT id, expires_at, created_at, updated_at, user_agent, user_id,
                        impersonated_by

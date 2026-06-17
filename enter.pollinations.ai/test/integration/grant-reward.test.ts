@@ -1,6 +1,7 @@
 import { env } from "cloudflare:test";
 import { getUserBalance } from "@shared/billing/balance.ts";
 import { grantReward } from "@shared/billing/grant-reward.ts";
+import * as schema from "@shared/db/better-auth.ts";
 import { rewardGrants, user as userTable } from "@shared/db/better-auth.ts";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -41,7 +42,7 @@ async function countGrants(db: ReturnType<typeof drizzle>, userId: string) {
 
 describe("grantReward", () => {
     test("credits the tier bucket and records a grant row", async () => {
-        const db = drizzle(env.DB);
+        const db = drizzle(env.DB, { schema });
         const userId = "grant-user-tier";
         await seedUser(db, userId);
 
@@ -69,7 +70,7 @@ describe("grantReward", () => {
     });
 
     test("is idempotent: a duplicate idempotency_key does not double-credit", async () => {
-        const db = drizzle(env.DB);
+        const db = drizzle(env.DB, { schema });
         const userId = "grant-user-idem";
         await seedUser(db, userId);
 
@@ -100,7 +101,7 @@ describe("grantReward", () => {
     });
 
     test("credits the pack bucket when requested", async () => {
-        const db = drizzle(env.DB);
+        const db = drizzle(env.DB, { schema });
         const userId = "grant-user-pack";
         await seedUser(db, userId);
 
@@ -119,7 +120,7 @@ describe("grantReward", () => {
     });
 
     test("defaults to the pack bucket when bucket is omitted", async () => {
-        const db = drizzle(env.DB);
+        const db = drizzle(env.DB, { schema });
         const userId = "grant-user-default";
         await seedUser(db, userId);
 
@@ -137,7 +138,7 @@ describe("grantReward", () => {
     });
 
     test("rejects non-positive amounts", async () => {
-        const db = drizzle(env.DB);
+        const db = drizzle(env.DB, { schema });
         const userId = "grant-user-bad";
         await seedUser(db, userId);
 

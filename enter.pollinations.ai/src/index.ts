@@ -9,6 +9,7 @@ import { api } from "./api.ts";
 import type { Env } from "./env.ts";
 import { logger } from "./middleware/logger.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
+import { runQuestEvaluator } from "./services/quest-evaluator.ts";
 import { runTierRefill } from "./services/tier-refill.ts";
 
 function stripTrailingSlash(path: string): string {
@@ -94,5 +95,10 @@ export default {
         ctx: ExecutionContext,
     ) {
         await runTierRefill(env, ctx);
+        ctx.waitUntil(
+            runQuestEvaluator(env).catch((error) => {
+                console.error("Quest evaluator failed:", error);
+            }),
+        );
     },
 } satisfies ExportedHandler<CloudflareBindings>;

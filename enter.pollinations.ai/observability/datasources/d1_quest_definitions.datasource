@@ -1,0 +1,23 @@
+TOKEN tinybird_read READ
+
+DESCRIPTION >
+    Daily snapshot of D1 quest_definitions table (quest catalog config)
+
+SCHEMA >
+    `id` String `json:$.id`,
+    `title` String `json:$.title`,
+    `description` String `json:$.description`,
+    `category` LowCardinality(String) `json:$.category`,
+    `status` LowCardinality(String) `json:$.status`,
+    `trigger` LowCardinality(String) `json:$.trigger`,
+    `reward_amount` Float64 `json:$.reward_amount`,
+    `balance_bucket` LowCardinality(String) `json:$.balance_bucket`,
+    `repeatability` LowCardinality(String) `json:$.repeatability`,
+    `criteria_json` Nullable(String) `json:$.criteria_json`,
+    `created_at` Int64 `json:$.created_at`,
+    `updated_at` Int64 `json:$.updated_at`,
+    `synced_at` DateTime `json:$.synced_at`
+
+ENGINE "MergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(synced_at)"
+ENGINE_SORTING_KEY "id"

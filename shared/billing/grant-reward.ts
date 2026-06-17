@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
+import type * as schema from "../db/better-auth.ts";
 import { rewardGrants, user as userTable } from "../db/better-auth.ts";
 import type { Bucket } from "./deduction.ts";
 
@@ -31,6 +32,8 @@ export interface GrantRewardResult {
     newBalance: number | null;
 }
 
+type AuthDb = DrizzleD1Database<typeof schema>;
+
 /**
  * Records a discrete pollen grant and credits the user's balance atomically.
  *
@@ -44,7 +47,7 @@ export interface GrantRewardResult {
  * never only in append-only Tinybird. Worker context only (needs DB binding).
  */
 export async function grantReward(
-    db: DrizzleD1Database,
+    db: AuthDb,
     input: GrantRewardInput,
 ): Promise<GrantRewardResult> {
     const {
@@ -70,7 +73,7 @@ export async function grantReward(
     // Single batch so the grant record and the balance credit commit together.
     // The UPDATE is gated on `changes() = 1` so a duplicate (ignored) insert
     // credits nothing — identical to quest-grant-pollen.ts.
-    const [, updateResult] = await db.session.batch([
+    const [, updateResult] = await db.batch([
         db
             .insert(rewardGrants)
             .values({

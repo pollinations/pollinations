@@ -127,6 +127,7 @@ async function handleMessage(msg: Message, client: Client): Promise<void> {
     const avatarUrl = msg.author.displayAvatarURL({
         size: 1024,
         extension: "png",
+        forceStatic: true, // animated avatars ignore `extension` and return .gif, which the API rejects (400)
     });
     const catReply = await generateCatReply(question, avatarUrl);
     const prompt = createPrompt(question, catReply, true);

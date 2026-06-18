@@ -1,0 +1,35 @@
+{
+  "pr_number": 11916,
+  "title": "fix: bump lxml to >=6.1.1 for scrapling compatibility",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/11916",
+  "merged_at": "2026-06-18T19:25:32Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "deploy was broken, fixed it",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Deploy unjammed",
+    "blurb": "Bumped lxml to version 6.1.1 to play nicely with scrapling and get our deploys flowing again.",
+    "summary": "Bumped the lxml dependency to version >=6.1.1 in the Polly app to resolve a compatibility conflict with scrapling and fix broken deployments.",
+    "impact": "Internal deployments for the Polly app now build successfully without dependency conflicts.",
+    "keywords": [
+      "dependencies",
+      "lxml",
+      "scrapling",
+      "deployment",
+      "infra"
+    ],
+    "visual_concept": "The bee mascot acting as a mechanic, fixing a jammed server or pipeline to represent unblocking the deployment. A robot companion holding the new dependency package.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, using a wrench to fix a glowing lime green (#ecf874) server rack. A chunky monitor robot stands nearby holding a small box labeled 'lxml'. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-18/PR-11916.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, using a wrench to fix a glowing lime green (#ecf874) server rack. A chunky monitor robot stands nearby holding a small box labeled 'lxml'. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-18T19:26:31.682129+00:00"
+}

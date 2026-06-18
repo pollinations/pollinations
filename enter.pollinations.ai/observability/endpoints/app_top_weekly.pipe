@@ -1,10 +1,12 @@
 DESCRIPTION >
-    Top registered community apps by verified app-attributed request count
-    over the last 7 days.
-    Source of truth is App Keys: publishable keys with a non-empty redirectUris allowlist.
-    Current attribution only counts BYOP requests minted through redirect-auth
-    for that registered app.
+    Top community apps by verified app-attributed request count over the last
+    7 days. Counts BYOP requests minted through redirect-auth for a registered
+    publishable App Key, then restricts to apps whose owner is published in the
+    public community showcase (app_directory, synced daily from apps/APPS.md).
+    Output (app_url, app_name, owner GitHub handle, request_count, last_seen)
+    is therefore already-public data — safe for the public read token.
 
+TOKEN tinybird_read_public READ
 TOKEN tinybird_read READ
 
 NODE banned_users
@@ -55,17 +57,24 @@ SQL >
     FROM d1_user
     WHERE synced_at = (SELECT max(synced_at) FROM d1_user)
 
+NODE published_owners
+SQL >
+    SELECT DISTINCT github_username
+    FROM app_directory
+    WHERE github_username != ''
+
 NODE app_top_weekly_node
 SQL >
     SELECT
         requests.app_url,
         any(requests.app_name) AS app_name,
-        any(users.github_username) AS owner,
+        users.github_username AS owner,
         count() AS request_count,
         max(requests.start_time) AS last_seen
     FROM byop_requests requests
-    LEFT JOIN latest_users users ON requests.owner_user_id = users.user_id
-    GROUP BY requests.app_url
+    INNER JOIN latest_users users ON requests.owner_user_id = users.user_id
+    INNER JOIN published_owners pub ON users.github_username = pub.github_username
+    GROUP BY requests.app_url, users.github_username
     ORDER BY request_count DESC, last_seen DESC
     LIMIT 10
 

@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **809** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **810** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -44,6 +44,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🧪 Pollen Studio](https://pollenstudio.cru2.net) | Pollen Studio is a static-files BYOP comparator for Pollinations.AI. Users connect via enter.pollinations.ai authorize flow and compare image, text, and TTS models side-by-side across three modes. | [@davealan74](https://github.com/davealan74) |  | 🫧 |
 | [📝 Lingua Memory Card](https://lingua-memory-card.vercel.app/) | Lingua Memory Card is a multilingual writing practice app for language learners. Users paste their own practice text, then the app uses Pollinations text models to provide sentence-by-sentence correct | [@Minor-fun](https://github.com/Minor-fun) |  | 🫧 |
 | [🧠 Wikimind AI](https://chpalitom09-bot.github.io/Wikimind-5/) | Wikimind AI is a French chatbot with over 29 functional AI models. | [@chpalitom09-bot](https://github.com/chpalitom09-bot) | 2 | 🐝 🫧 |
 | [🧩 AuraForge](https://autoforge-iota.vercel.app/) | AuraForge is an Identity Orchestration Studio that generates strict, flat 2D vector mascots for AI agents, team members, or digital personas, acting as a profiling tool for visual identities. | [@dreamm160-ops](https://github.com/dreamm160-ops) |  | 🏵️ 🫧 |
@@ -53,7 +54,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🤖 ather mini](minitejas.in) | ather mini provides a ChatGPT-like AI chat to help people learn about AI and uses pollinations.ai for teaching. | [@aadarsh-kandula](https://github.com/aadarsh-kandula) |  | 🫧 |
 | [🖼️ Photo Ai](https://apps.apple.com/pk/app/photo-ai-image-generator/id6759615194) | Use Pollination Api to generate or process photos in Photo Ai. | [@hussainmunir](https://github.com/hussainmunir) |  | 🫧 |
 | [🧶 NebulaCraft](https://nebulacraft-1c723.web.app) | Generate amigurumi patterns with Pollinations AI in NebulaCraft. Includes a PWA experience, SEO optimization, and a variation selector for iterative design. | [@Lubloodyrose](https://github.com/Lubloodyrose) |  | 🫧 |
-| [🤖 Anura Hub AI](https://meow-script.vercel.all) | Anura Hub AI là nền tảng tích hợp nhiều công cụ AI như tạo ảnh, xử lý văn bản và hỗ trợ tự động hóa. | [@anuragaming1](https://github.com/anuragaming1) |  | 🫧 |
 
 ---
 
@@ -798,7 +798,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [💻 Editor](https://github.com/SkalaSkalolaz/editor) | Console code editor with multi-language support and built-in LLM tools | [@SkalaSkalolaz](https://github.com/SkalaSkalolaz) |  | 🐝 |
 | [🔌 limnoria plugin](https://github.com/nukam0s/Pollinations) | Limnoria IRC plugin integrating the Pollinations API | [@nukam0s](https://github.com/nukam0s) |  | 🐝 |
 
-<details><summary>Show all 125 apps</summary>
+<details><summary>Show all 126 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -875,6 +875,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🎨 ChimeraStudio](https://github.com/migueland94/ChimeraStudio) | Provides a client-side sandbox for testing Pollinations.ai image generation, computer vision analysis, and editing while storing API keys locally in the browser. | [@migueland94](https://github.com/migueland94) | 1 |  |
 | [🛠 Pollinations PR Summarizer ️](https://github.com/CloudCompile/pollinations-pr-review) | Analyze pull requests with the Pollinations Text API to generate summaries, detect risk and breaking changes, and post labeled analysis and diff stats as PR comments. | [@CloudCompile](https://github.com/CloudCompile) | 1 |  |
 | [🏵 Pollinations CLI](https://pollinations-cli-web.vercel.app) | High-performance terminal interface + autonomous agent hub for Pollinations.ai. Text/image/audio/video, batch processing, templates, gallery, chat, replays and Pollina Swarm Agent (self-correcting ReAct agent with Architect-Coder-Critic loop and ability to use tools and help make projects autonomously, also has asset generation for full scale projects). A Pollinations CLI which has pretty much everything a CLI user will need. | [@blueplaysgames3921](https://github.com/blueplaysgames3921) | 1 |  |
+| [🧪 Pollen Studio](https://pollenstudio.cru2.net) | Pollen Studio is a static-files BYOP comparator for Pollinations.AI. Users connect via enter.pollinations.ai authorize flow and compare image, text, and TTS models side-by-side across three modes. | [@davealan74](https://github.com/davealan74) |  | 🫧 |
 | [🤖 Anura Hub AI](https://meow-script.vercel.all) | Anura Hub AI là nền tảng tích hợp nhiều công cụ AI như tạo ảnh, xử lý văn bản và hỗ trợ tự động hóa. | [@anuragaming1](https://github.com/anuragaming1) |  | 🫧 |
 | [🧾 Resume Makinator](https://rm.mkgpdev.xyz) | Resume Makinator is a free browser-based resume builder that lets users edit structured resume sections, preview the result live, and export their resume. It integrates Pollinations.ai through the Cha | [@mkgp-dev](https://github.com/mkgp-dev) |  | 🫧 |
 | [🌀 AI Package](https://cyclonelib.pages.dev/) | Mentions Apple Shortcuts. | [@dsewerek](https://github.com/dsewerek) |  |  |

@@ -1,0 +1,34 @@
+{
+  "pr_number": 11889,
+  "title": "docs: update README — 2026-06-18",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11889",
+  "merged_at": "2026-06-18T08:36:39Z",
+  "labels": [
+    "NEWS"
+  ],
+  "pr_body_excerpt": "Daily README update: Latest News section. (Recent Apps is refreshed by app-update-metrics.yml.)",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Daily News Refresh",
+    "blurb": "The hive's bulletin board got its daily polish. Keeping the README fresh with the latest buzz!",
+    "summary": "Automated daily update to the Latest News section in the repository README.",
+    "impact": "Repository visitors will see the most recent news and updates reflected on the main page.",
+    "keywords": [
+      "readme",
+      "automation",
+      "news",
+      "docs"
+    ],
+    "visual_concept": "The bee mascot pinning a new news clipping to a wooden corkboard or updating a digital billboard.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot pinning a small pixelated news clipping to a wooden bulletin board. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-18/PR-11889.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot pinning a small pixelated news clipping to a wooden bulletin board. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-18T08:37:37.335082+00:00"
+}

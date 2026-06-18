@@ -85,8 +85,11 @@ function MeterSourceChip({ source }: { source: string | null }) {
     return <PaidChip>paid</PaidChip>;
 }
 
-function rowKey(row: UsageRecord): string {
-    return row.cursor_event_id;
+function rowKey(row: UsageRecord, index: number): string {
+    if (row.cursor_event_id) return row.cursor_event_id;
+    return `${row.timestamp}-${row.api_key_id ?? row.api_key ?? "key"}-${
+        row.model || "model"
+    }-${row.cost_usd}-${index}`;
 }
 
 function buildKeyNameLookup(keys: ApiKeyInfo[] | undefined) {
@@ -208,9 +211,9 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
                 <>
                     {/* Mobile: stacked cards */}
                     <ul className="flex flex-col gap-2 sm:hidden">
-                        {state.rows.map((row) => (
+                        {state.rows.map((row, index) => (
                             <li
-                                key={rowKey(row)}
+                                key={rowKey(row, index)}
                                 className="rounded-lg border border-theme-border p-3 flex flex-col gap-1.5"
                             >
                                 <div className="flex items-center justify-between gap-2">
@@ -266,9 +269,9 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-theme-border">
-                                {state.rows.map((row) => (
+                                {state.rows.map((row, index) => (
                                     <tr
-                                        key={rowKey(row)}
+                                        key={rowKey(row, index)}
                                         className="hover:bg-ink-50"
                                     >
                                         <td className="px-3 py-2 whitespace-nowrap text-ink-800 tabular-nums">

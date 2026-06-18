@@ -1,5 +1,5 @@
 name: Community Quest
-description: Propose a community quest — earn Pollen by shipping a self-contained piece of work
+description: Define a maintainer-owned community quest with a fixed Pollen reward
 title: "[🎯 QUEST] "
 body:
   - type: textarea
@@ -8,7 +8,8 @@ body:
       label: How this quest works
       description: Standard quest workflow. Leave as-is unless you need to override.
       value: |
-        Community quests are self-contained tasks with a fixed Pollen reward paid on PR merge.
+        Community quests are maintainer-owned tasks with a fixed Pollen reward paid on PR merge.
+        Only maintainer-authored quest issues should receive the `POLLEN-QUEST` label. If a community member proposes a quest, a maintainer should create the final quest issue before labeling it.
 
         1. Comment on this issue if you'd like to take it on — multiple devs can express interest
         2. A maintainer picks one dev and assigns the issue to them — please wait until you're assigned before starting work

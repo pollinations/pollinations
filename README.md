@@ -48,16 +48,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-06-17** – **📊 Transaction History** You can now see exactly where your Pollen is going. Check your last 5 requests directly on the Pollen page, or browse the full history on your [Dashboard](https://enter.pollinations.ai).
+- **2026-06-17** – **🚀 Siriusly Fast Elevators** The Sirius Cybernetics Elevator Challenge app now defaults to Mistral, dropping response times from 10s to 1.2s. Even the API errors are now delivered in-character. [Try it](https://pollinations.ai) <!-- app -->
+- **2026-06-17** – **⚡ Faster Image Generation** We rewired the [image generation](https://gen.pollinations.ai/image/models) load balancer to favor GPUs with the lowest recent latency. More traffic goes to the 4090s, meaning fewer timeouts and faster pixels.
+- **2026-06-17** – **🧠 GLM-5.2 Upgrade** The `glm` model slug now points to Z.ai's GLM-5.2, expanding the context window from 198k to a massive 1 million tokens.
+- **2026-06-17** – **✨ Auto-Upgrading Model Slugs** Clean slugs like `openai-large` and `claude-large` now automatically resolve to the latest versions (like GPT-5.5 and Opus 4.8). If you need the old stuff, versioned slugs still work. Check the [available models](https://gen.pollinations.ai/v1/models).
 - **2026-06-16** – **🤖 Unkillable Gemini** Added automatic provider failover for `gemini-3-flash`. If the primary endpoint throws an error, requests instantly reroute to GCP Vertex. Same model, fewer headaches. Check the [available models](https://gen.pollinations.ai/v1/models).
 - **2026-06-16** – **🔗 Localhost by Default** New app keys now pre-fill `http://localhost/callback` for OAuth redirects. Because manually typing localhost every time you spin up a new project is a waste of keystrokes. [Manage keys](https://enter.pollinations.ai).
 - **2026-06-16** – **🎨 Back to the Terminal** The Sirius Cybernetics Elevator Challenge app dropped its heavy background animations and returned to a pure, 170kB ASCII terminal aesthetic. Sometimes less really is more.
 - **2026-06-15** – **🎨 Ideogram 4.0 Models** Three new Ideogram 4.0 image models (`ideogram-v4-turbo`, `ideogram-v4-balanced`, `ideogram-v4-quality`) are now available via the [Unified API](https://gen.pollinations.ai).
 - **2026-06-15** – **🔗 Seamless App Embedding** The [React SDK](https://react.pollinations.ai) now includes an `EmbedBridge` to automatically handle host handshakes, API key sharing, and theme syncing for apps embedded in trusted hosts.
-- **2026-06-14** – **🚀 Qwen3.7 Plus & 512K Context** Qwen3.7 Plus is now live, and MiniMax M3 just got its context window stretched to an absurd 512K tokens. Available now via the [text endpoint](https://gen.pollinations.ai/v1/chat/completions).
-- **2026-06-12** – **🤖 Kimi learns to code** Moonshot AI's Kimi K2.7 Code model (`kimi-k2.7-code`) is now live. 256K context and reasoning capabilities for when your scripts need adult supervision. Check the [Available Text Models](https://gen.pollinations.ai/v1/models).
-- **2026-06-12** – **🎥 1080p Wan video & cheaper Qwen** We've added `wan-pro-1080p` for high-res [video generation](https://gen.pollinations.ai), plus dropped the cost of `qwen-coder-large` by 2.5x. Better pixels, cheaper tokens.
-- **2026-06-11** – **🌱 Wikimind Joins the Showcase** A new community-built learning tool that wires up translation for interactive messaging. [Try it](https://chpalitom09-bot.github.io/Wikimind-5/) <!-- app -->
-- **2026-06-11** – **🚀 Claude Fable 5 is Live** Anthropic's Mythos-class model is now wired up via AWS Bedrock. 1M context window, vision, and tool support ready to go on the [text endpoint](https://gen.pollinations.ai/v1/chat/completions).
 ---
 
 ## 🌱 Introduction

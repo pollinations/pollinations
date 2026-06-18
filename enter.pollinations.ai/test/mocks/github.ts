@@ -12,6 +12,7 @@ export type MockGithubState = {
         name: string;
         email: string;
         avatar_url: string;
+        created_at: string;
     };
 };
 
@@ -23,12 +24,15 @@ export function createMockGithub(): MockAPI<MockGithubState> {
             name: "Test User",
             email: "test@example.com",
             avatar_url: "https://avatars.githubusercontent.com/u/12345?v=4",
+            created_at: "2018-01-01T00:00:00Z",
         },
     };
 
     const githubAuth = createMiddleware(async (c, next) => {
         const authHeader = c.req.header("Authorization");
-        if (!authHeader?.includes("mock_github_auth_token")) {
+        const isUserToken = authHeader?.includes("mock_github_auth_token");
+        const isAppCredentials = authHeader?.startsWith("Basic ");
+        if (!isUserToken && !isAppCredentials) {
             return c.json({ message: "Bad credentials" }, 401);
         }
         return await next();
@@ -47,6 +51,12 @@ export function createMockGithub(): MockAPI<MockGithubState> {
             ]);
         })
         .get("/user", (c) => {
+            return c.json(state.user);
+        })
+        .get("/user/:id", (c) => {
+            if (Number(c.req.param("id")) !== state.user.id) {
+                return c.json({ message: "Not Found" }, 404);
+            }
             return c.json(state.user);
         });
 

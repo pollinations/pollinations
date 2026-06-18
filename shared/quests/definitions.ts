@@ -10,6 +10,7 @@ export type QuestStatus = "active" | "planned";
 export type QuestEventType =
     | "api_key_created"
     | "first_top_up"
+    | "github_account_age"
     | "first_chat_completion"
     | "first_image_generation"
     | "github_pr_merged";
@@ -55,6 +56,17 @@ export const QUEST_DEFINITIONS: QuestDefinition[] = [
         status: "active",
         eventType: "first_top_up",
         rewardAmount: 2,
+        balanceBucket: "pack",
+        payoutScope: "once_per_user",
+    },
+    {
+        id: "onboarding:established_github_account",
+        title: "Connect an established GitHub account",
+        description: "Connect a GitHub account that is at least one year old.",
+        category: "onboarding",
+        status: "active",
+        eventType: "github_account_age",
+        rewardAmount: 1,
         balanceBucket: "pack",
         payoutScope: "once_per_user",
     },

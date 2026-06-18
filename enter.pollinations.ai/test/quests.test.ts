@@ -60,11 +60,20 @@ test("GET /api/quests/catalog returns checked-in launch catalog", async () => {
 
     expect(
         payload.quests.filter((quest) => quest.status === "active"),
-    ).toHaveLength(2);
+    ).toHaveLength(3);
     expect(
         payload.quests.find((quest) => quest.id === "onboarding:first_api_key"),
     ).toMatchObject({
         eventType: "api_key_created",
+        balanceBucket: "pack",
+        payoutScope: "once_per_user",
+    });
+    expect(
+        payload.quests.find(
+            (quest) => quest.id === "onboarding:established_github_account",
+        ),
+    ).toMatchObject({
+        eventType: "github_account_age",
         balanceBucket: "pack",
         payoutScope: "once_per_user",
     });
@@ -182,10 +191,12 @@ test("per-event grant keys pay once per event", async ({
 
 test("quest evaluator grants code-defined product quests once", async ({
     apiKey: _apiKey,
+    mocks,
     sessionToken,
 }) => {
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
+    await mocks.enable("github");
 
     await db.insert(schema.stripeCheckoutCredits).values({
         sessionId: `cs_test_${user.id}`,
@@ -200,19 +211,29 @@ test("quest evaluator grants code-defined product quests once", async ({
     expect(first.results).toEqual([
         { questId: "onboarding:first_api_key", scanned: 1, granted: 1 },
         { questId: "spend:first_top_up", scanned: 1, granted: 1 },
+        {
+            questId: "onboarding:established_github_account",
+            scanned: 1,
+            granted: 1,
+        },
     ]);
 
     const second = await runQuestEvaluator(env);
     expect(second.results).toEqual([
         { questId: "onboarding:first_api_key", scanned: 0, granted: 0 },
         { questId: "spend:first_top_up", scanned: 0, granted: 0 },
+        {
+            questId: "onboarding:established_github_account",
+            scanned: 0,
+            granted: 0,
+        },
     ]);
 
     const [balance] = await db
         .select({ packBalance: schema.user.packBalance })
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
-    expect(balance?.packBalance).toBeCloseTo((user.packBalance ?? 0) + 2.5);
+    expect(balance?.packBalance).toBeCloseTo((user.packBalance ?? 0) + 3.5);
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/account/quests",
@@ -231,11 +252,12 @@ test("quest evaluator grants code-defined product quests once", async ({
             questId: string | null;
             pollenCredited: number;
             balanceBucket: string;
+            metadata: Record<string, unknown> | null;
         }[];
     };
 
-    expect(payload.totalPollen).toBeCloseTo(2.5);
-    expect(payload.grants).toHaveLength(2);
+    expect(payload.totalPollen).toBeCloseTo(3.5);
+    expect(payload.grants).toHaveLength(3);
     for (const grant of payload.grants) {
         expect(grant).not.toHaveProperty("id");
         expect(grant).not.toHaveProperty("idempotencyKey");
@@ -256,6 +278,48 @@ test("quest evaluator grants code-defined product quests once", async ({
         pollenCredited: 2,
         balanceBucket: "pack",
     });
+    expect(
+        payload.grants.find(
+            (grant) =>
+                grant.questId === "onboarding:established_github_account",
+        ),
+    ).toMatchObject({
+        source: "product_quest",
+        pollenCredited: 1,
+        balanceBucket: "pack",
+        metadata: {
+            githubId: 12345,
+            githubAccountCreatedAt: "2018-01-01T00:00:00.000Z",
+            thresholdDays: 365,
+        },
+    });
+});
+
+test("github account age quest waits until threshold", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    mocks.github.state.user.created_at = new Date().toISOString();
+    await mocks.enable("github");
+
+    const first = await runQuestEvaluator(env);
+    expect(first.results).toEqual([
+        { questId: "onboarding:first_api_key", scanned: 0, granted: 0 },
+        { questId: "spend:first_top_up", scanned: 0, granted: 0 },
+        {
+            questId: "onboarding:established_github_account",
+            scanned: 0,
+            granted: 0,
+        },
+    ]);
+
+    const [balance] = await db
+        .select({ packBalance: schema.user.packBalance })
+        .from(schema.user)
+        .where(eq(schema.user.id, user.id));
+    expect(balance?.packBalance).toBeCloseTo(user.packBalance ?? 0);
 });
 
 test("account quest history includes GitHub quest reward grants", async ({

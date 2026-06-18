@@ -739,6 +739,25 @@ function guideHtml(guide: Guide): string {
     return guidesPage(rendered);
 }
 
+/**
+ * Build the merged OpenAPI spec (generation + public account + media storage,
+ * with code samples injected). Single source of truth for both the docs
+ * Scalar route and the conventional /openapi.json alias.
+ */
+export async function buildMergedOpenApiSpec(
+    c: Context<Env>,
+    genApp: Hono<Env>,
+): Promise<OpenApiSchema> {
+    const [generationSchema, enterSchema, mediaSchema] = await Promise.all([
+        getGenerationSchema(genApp),
+        fetchEnterSchema(c).catch(() => undefined),
+        fetchMediaSchema().catch(() => undefined),
+    ]);
+    return injectSamples(
+        mergeSchemas(generationSchema, enterSchema, mediaSchema),
+    );
+}
+
 export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
     return new Hono<Env>()
         .get("/", async (c, next) => {
@@ -799,16 +818,7 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             return c.html(guideHtml(guide));
         })
         .get("/open-api/generate-schema", async (c) => {
-            const [generationSchema, enterSchema, mediaSchema] =
-                await Promise.all([
-                    getGenerationSchema(genApp),
-                    fetchEnterSchema(c).catch(() => undefined),
-                    fetchMediaSchema().catch(() => undefined),
-                ]);
-            const merged = injectSamples(
-                mergeSchemas(generationSchema, enterSchema, mediaSchema),
-            );
-
+            const merged = await buildMergedOpenApiSpec(c, genApp);
             if (c.req.query("format") === "yaml") {
                 c.header("Content-Type", "application/yaml; charset=utf-8");
                 return c.body(yamlStringify(merged));

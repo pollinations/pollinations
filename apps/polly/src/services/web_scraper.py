@@ -107,12 +107,12 @@ async def scrape_url(
                 "title": result.metadata.get("title", "") if result.metadata else "",
             }
 
-            if output_format == "fit_markdown" and result.fit_markdown:
-                response["markdown"] = result.fit_markdown
+            if output_format == "fit_markdown" and result.markdown and result.markdown.fit_markdown:
+                response["markdown"] = result.markdown.fit_markdown
             elif output_format == "html" and result.html:
                 response["html"] = result.html
             else:
-                response["markdown"] = result.markdown or ""
+                response["markdown"] = result.markdown.raw_markdown if result.markdown else ""
 
             if include_raw_html and result.html:
                 response["raw_html"] = result.html

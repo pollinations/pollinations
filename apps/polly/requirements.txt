@@ -19,6 +19,7 @@ charset-normalizer==3.4.4
 chromadb==1.4.1
 click==8.3.1
 coloredlogs==15.0.1
+crawl4ai==0.8.0
 cryptography==46.0.4
 discord.py==2.6.4
 distro==1.9.0

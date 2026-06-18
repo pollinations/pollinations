@@ -561,6 +561,37 @@ async def search_code(query: str, top_k: int = 5) -> list[dict]:
     return formatted
 
 
+_LAST_HEAD_FILE = EMBEDDINGS_DIR / "last_embedded_head.txt"
+
+
+def _read_last_embedded_head() -> str | None:
+    try:
+        return _LAST_HEAD_FILE.read_text().strip() if _LAST_HEAD_FILE.exists() else None
+    except Exception:
+        return None
+
+
+def _save_last_embedded_head(head: str) -> None:
+    try:
+        _LAST_HEAD_FILE.parent.mkdir(parents=True, exist_ok=True)
+        _LAST_HEAD_FILE.write_text(head)
+    except Exception as e:
+        logger.warning(f"Failed to save last embedded HEAD: {e}")
+
+
+async def _get_repo_head(repo: str) -> str | None:
+    repo_path = REPO_DIR / repo.replace("/", "_")
+    try:
+        result = await asyncio.to_thread(
+            subprocess.run,
+            ["git", "-C", str(repo_path), "rev-parse", "HEAD"],
+            capture_output=True, text=True,
+        )
+        return result.stdout.strip() if result.returncode == 0 else None
+    except Exception:
+        return None
+
+
 async def pull_and_update():
     from ..config import config
 
@@ -573,6 +604,9 @@ async def pull_and_update():
             logger.info("Repository changes detected, running incremental embedding update...")
             count = await embed_repository(config.embeddings_repo, force_full=False)
             logger.info(f"Update complete. Embedded {count} new/changed chunks.")
+            head = await _get_repo_head(config.embeddings_repo)
+            if head:
+                _save_last_embedded_head(head)
 
         else:
             logger.info("No repository changes detected, skipping embedding update")
@@ -617,13 +651,31 @@ async def initialize():
         await clone_or_pull_repo(config.embeddings_repo)
 
         collection = _get_collection()
-        force_full = collection.count() == 0
+        current_head = await _get_repo_head(config.embeddings_repo)
+        last_head = _read_last_embedded_head()
+        has_existing = collection.count() > 0
+
+        if has_existing and current_head and current_head == last_head:
+            logger.info(
+                f"✅ Embeddings up to date (HEAD {current_head[:8]}, "
+                f"{collection.count()} chunks) — skipping re-embed"
+            )
+            _initialized.set()
+            return
+
+        force_full = not has_existing
         if force_full:
             logger.info("No existing embeddings found, running full embed (first initialization)...")
         else:
-            logger.info(f"Found {collection.count()} existing embeddings, checking for updates...")
+            logger.info(
+                f"Found {collection.count()} existing embeddings, HEAD changed "
+                f"({last_head[:8] if last_head else 'none'} -> {current_head[:8] if current_head else '?'}), updating..."
+            )
 
         await embed_repository(config.embeddings_repo, force_full=force_full)
+
+        if current_head:
+            _save_last_embedded_head(current_head)
 
         _initialized.set()
         logger.info("✅ Code embeddings initialization complete — %d chunks ready", collection.count())

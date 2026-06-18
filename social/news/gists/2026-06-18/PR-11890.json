@@ -1,0 +1,35 @@
+{
+  "pr_number": 11890,
+  "title": "Add Lingua Memory Card to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11890",
+  "merged_at": "2026-06-18T08:51:04Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Lingua Memory Card](https://lingua-memory-card.vercel.app/) to writing\n- Lingua Memory Card is a multilingual writing practice app for language learners. Users paste their own practice text, then the app uses Pollinations text models to provide sentence-by-sentence correct\n\nFixes #11652",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Polyglot Pollen",
+    "blurb": "A new community app just landed! Lingua Memory Card uses our text models to give language learners sentence-by-sentence corrections on their practice writing.",
+    "summary": "Added Lingua Memory Card, a multilingual writing practice app that uses Pollinations text models for sentence-by-sentence correction, to the community showcase.",
+    "impact": "Language learners can now discover and use this community-built tool to practice writing and get instant AI feedback.",
+    "keywords": [
+      "community",
+      "app",
+      "language",
+      "education",
+      "text-models"
+    ],
+    "visual_concept": "The app is about language learning, writing, and memory cards (flashcards). The bee mascot (Polly) should be studying or holding flashcards with different languages on them in a cozy study setting.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, sitting at a wooden desk studying glowing pixelated flashcards with different language characters on them. A retro computer monitor in the background shows clean text blocks. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-18/PR-11890.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, sitting at a wooden desk studying glowing pixelated flashcards with different language characters on them. A retro computer monitor in the background shows clean text blocks. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-18T08:52:02.645723+00:00",
+  "app_name": "Lingua Memory Card",
+  "app_url": "https://lingua-memory-card.vercel.app/"
+}

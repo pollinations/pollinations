@@ -96,6 +96,7 @@ const ALL_ALIASES = new Set([
     ...AUDIO_ALIASES,
     ...EMBEDDING_ALIASES,
 ]);
+const UNDOCUMENTED_CHAT_COMPAT_FIELDS = ["thinking", "thinking_budget"];
 
 const imageModelDisplayNames = getImageModelIds().join(", ");
 
@@ -118,6 +119,40 @@ function filterAliases(schema: OpenApiSchema): OpenApiSchema {
                 return filtered.length !== value.length ? filtered : value;
             }
             return value;
+        }),
+    ) as OpenApiSchema;
+}
+
+function hideUndocumentedChatCompatFields(
+    schema: OpenApiSchema,
+): OpenApiSchema {
+    return JSON.parse(
+        JSON.stringify(schema, (_key, value) => {
+            if (!value || typeof value !== "object" || Array.isArray(value)) {
+                return value;
+            }
+
+            const record = value as Record<string, unknown>;
+            const properties = record.properties;
+            if (
+                !properties ||
+                typeof properties !== "object" ||
+                Array.isArray(properties)
+            ) {
+                return value;
+            }
+
+            const props = properties as Record<string, unknown>;
+            if (!("reasoning_effort" in props)) {
+                return value;
+            }
+
+            const filtered = { ...props };
+            for (const field of UNDOCUMENTED_CHAT_COMPAT_FIELDS) {
+                delete filtered[field];
+            }
+
+            return { ...record, properties: filtered };
         }),
     ) as OpenApiSchema;
 }
@@ -412,10 +447,12 @@ function transformGenerationSchema(schema: OpenApiSchema): OpenApiSchema {
         paths[publicPath] = value;
     }
 
-    return filterAliases({
-        ...schema,
-        paths,
-    });
+    return hideUndocumentedChatCompatFields(
+        filterAliases({
+            ...schema,
+            paths,
+        }),
+    );
 }
 
 async function fetchEnterSchema(c: Context<Env>) {

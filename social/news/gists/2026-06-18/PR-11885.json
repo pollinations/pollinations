@@ -1,0 +1,35 @@
+{
+  "pr_number": 11885,
+  "title": "fix(polly): extract image_url parts from openai content arrays",
+  "author": "fisventurous",
+  "url": "https://github.com/pollinations/pollinations/pull/11885",
+  "merged_at": "2026-06-18T14:53:23Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "fixes polly's HTTP API endpoint silently dropping images from openai-format content arrays\r\n\r\nthe `/v1/chat/completions` endpoint parsed list-type `content` for text parts but discarded `image_url` entries entirely. other providers (openai, claude, gemini) handle the same image fine because they receive the full content array. polly's API was the only path stripping them.\r\n\r\nchanges\r\n\\- extract `image_url` parts from list-type message content alongside text\r\n\\- merge extracted URLs with the explicit `image_urls` field before passing to `process_with_tools`\r\n\\- discord path was unaffected (uses `extract_media_urls` on attachments separately)\r\n\r\nref #11669",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Polly gets her glasses back",
+    "blurb": "Fixed a sneaky bug where Polly's API was ignoring images sent in OpenAI-format content arrays. Now she can see everything you show her!",
+    "summary": "Fixed an issue in the /v1/chat/completions endpoint where image_url entries in OpenAI-format content arrays were being silently discarded.",
+    "impact": "Developers sending multimodal requests with image URLs inside the content array will now have their images successfully processed by Polly.",
+    "keywords": [
+      "api",
+      "polly",
+      "vision",
+      "bug-fix",
+      "openai-format"
+    ],
+    "visual_concept": "Polly the bee wearing cute reading glasses, successfully looking at a photograph held by the Monitor Robot, symbolizing restored vision capabilities for the API.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing tiny cute reading glasses, looking happily at a pixelated photograph held up by the chunky monitor robot. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-18/PR-11885.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing tiny cute reading glasses, looking happily at a pixelated photograph held up by the chunky monitor robot. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-06-18T14:54:33.243709+00:00"
+}

@@ -23,16 +23,20 @@ For each `{before, after}` pair, identify what actually changed:
 2. **Price cut** — any numeric pricing token value decreased. Compute the primary token % drop:
    - Image/video: `completionImageTokens`
    - Text: `completionTextTokens`
-   - Audio: `completionAudioTokens`
+   - Audio: `completionAudioTokens` or `completionAudioSeconds`
    - Embeddings: `completionEmbeddingTokens`
    Round to nearest 5%. Group these under ⬇️ by category.
 3. **Price increase** — any pricing token value increased. Same calculation. Group under ⬆️.
 4. **Modality change** — `input_modalities` or `output_modalities` changed → ✨ section.
-5. **Capability change** — `capabilities` array changed → ✨ section.
+   Note: audio models with `input_modalities: ["audio"]` are transcription/STT;
+   those with `output_modalities: ["audio"]` are TTS; both-direction models (like
+   openai-audio) are realtime voice models — describe accurately.
+5. **Capability change** — `capabilities` array changed (e.g. `tool_calling`, `reasoning`,
+   `web_search`, `code_execution` added or removed) → ✨ section.
 6. If multiple change types apply to one model, list it only in the most prominent section
    (access > price > capability).
 
-Category emojis: 🎨 image/video · 🧠 text · 🔊 audio · 🔢 embeddings
+Category emojis: 🎨 image · 🎬 video · 🧠 text · 🔊 audio · 🔢 embeddings
 
 ## discord_text format
 
@@ -46,9 +50,11 @@ Category emojis: 🎨 image/video · 🧠 text · 🔊 audio · 🔢 embeddings
 - `model-name` (category)
 
 ### ⬇️ Price cuts (~X% off)
-- 🎨 Image: Model A · Model B · Model C
-- 🧠 Text: Model D · Model E
-- 🔢 Embeddings: Model F
+- 🎨 Image: Model A · Model B
+- 🎬 Video: Model C · Model D
+- 🧠 Text: Model E · Model F
+- 🔊 Audio: Model G
+- 🔢 Embeddings: Model H
 
 ### ⬆️ Price increases (~X% more)
 - 🧠 Text: Model A · Model B

@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-06-17",
+  "period_start": "2026-06-17",
+  "period_end": "2026-06-17",
+  "generated_at": "2026-06-18T07:36:13.270166+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-17/images/reddit.jpg"
+    }
+  ],
+  "title": "Load balancer tweaks, GLM-5.2 upgrade, and text routing fixes",
+  "text": "Merged 9 PRs today. Mostly plumbing, but a few things you will notice if you are hitting the text or image endpoints.\n\nFirst, the image load balancer is now weighted by last latency. Instead of treating all nodes equally, we are feeding the fast GPUs more aggressively and storing that latency data in its own KV key. If you are generating images, response times should be more consistent.\n\nOn the text side, we refactored the registry so clean model slugs always point to the newest versions. We also upgraded the GLM slug to GLM-5.2 and cut the price multiplier in half to 0.5.\n\nRouting had some weird edge cases this week. We fixed Opus 4.7/4.8 by forcing them through the us.* Bedrock profiles, and reverted routing Gemini through Airforce since it was causing headaches.\n\nIf you are tracking your Pollen usage, transaction history is now live (compact view on the Pollen tab, full on Activity).\n\nFinally, the Sirius elevator models are faster. We also made the LLM errors in-character. Debugging a 500 error is marginally less painful when the server throws an exception in character.\n\nCode and open PRs: github.com/pollinations/pollinations"
+}

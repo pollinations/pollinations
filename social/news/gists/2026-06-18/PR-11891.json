@@ -1,0 +1,34 @@
+{
+  "pr_number": 11891,
+  "title": "fix(apps): rename Wikimind to Wikimind AI",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11891",
+  "merged_at": "2026-06-18T08:59:32Z",
+  "labels": [
+    "DEV-APP"
+  ],
+  "pr_body_excerpt": "Author request from #11704:\n\n- Renames **Wikimind** → **Wikimind AI**\n- Updates description to \"Wikimind AI is a French chatbot with over 29 functional AI models.\"\n- Regenerates `GREENHOUSE.md` + `README.md` via `app-update-greenhouse.js`\n\nFixes #11704\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Bonjour, Wikimind AI",
+    "blurb": "The community app Wikimind has officially leveled up to Wikimind AI. Say bonjour to this French chatbot packing over 29 functional AI models!",
+    "summary": "Renamed the community app Wikimind to Wikimind AI and updated its description to highlight its 29+ functional AI models.",
+    "impact": "Users browsing the app showcase will now see Wikimind AI with its updated branding and capabilities.",
+    "keywords": [
+      "community",
+      "apps",
+      "chatbot",
+      "showcase"
+    ],
+    "visual_concept": "Polly the bee wearing a tiny French beret, interacting with a retro computer in a cozy cafe setting to represent the French chatbot app update.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny red French beret, sitting at a retro computer terminal in a cozy digital cafe. The monitor glows with a chunky pixel brain and the number 29. Soft lime green (#ecf874) and lavender pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-18/PR-11891.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny red French beret, sitting at a retro computer terminal in a cozy digital cafe. The monitor glows with a chunky pixel brain and the number 29. Soft lime green (#ecf874) and lavender pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-06-18T09:00:42.765926+00:00"
+}

@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-06-17",
+  "period_start": "2026-06-17",
+  "period_end": "2026-06-17",
+  "generated_at": "2026-06-18T07:36:13.270166+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-17/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped some infra updates:\n- upgraded GLM to 5.2 (and halved the price)\n- image load balancer now weights by actual latency instead of vibes\n- fixed opus & gemini routing\n- the elevator AI is faster, but now stays in character when it throws errors"
+}

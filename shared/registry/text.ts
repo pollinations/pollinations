@@ -889,30 +889,6 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "kimi-k2.5": {
-        aliases: ["kimi-k2p5", "kimi-k2-thinking"],
-        modelId: "accounts/fireworks/models/kimi-k2p5",
-        provider: "fireworks",
-        brand: "Moonshot AI",
-        category: "text",
-        addedDate: new Date("2026-01-10").getTime(),
-        priceMultiplier: 1,
-        cost: {
-            promptTextTokens: perMillion(0.6),
-            promptCachedTokens: perMillion(0.1),
-            completionTextTokens: perMillion(3.0),
-        },
-        title: "Moonshot Kimi K2.5",
-        description:
-            "Moonshot Kimi K2.5 - Flagship Agentic Model with CoT Reasoning",
-        inputModalities: ["text", "image"],
-        outputModalities: ["text"],
-        maxReferenceImages: 30, // Fireworks vision hard limit.
-        tools: true,
-        reasoning: true,
-        contextLength: 262000,
-        isSpecialized: false,
-    },
     "kimi": {
         aliases: [
             "kimi-k2.6",

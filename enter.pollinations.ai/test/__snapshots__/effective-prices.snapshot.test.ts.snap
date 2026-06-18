@@ -490,18 +490,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000095,
     },
   },
-  "kimi-k2.5": {
-    "cost": {
-      "completionTextTokens": 0.000003,
-      "promptCachedTokens": 0.0000001,
-      "promptTextTokens": 0.0000006,
-    },
-    "price": {
-      "completionTextTokens": 0.000003,
-      "promptCachedTokens": 0.0000001,
-      "promptTextTokens": 0.0000006,
-    },
-  },
   "klein": {
     "cost": {
       "completionImageTokens": 0.01,

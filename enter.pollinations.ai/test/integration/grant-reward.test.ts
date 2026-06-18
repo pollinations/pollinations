@@ -1,6 +1,9 @@
 import { env } from "cloudflare:test";
 import { getUserBalance } from "@shared/billing/balance.ts";
-import { grantReward } from "@shared/billing/grant-reward.ts";
+import {
+    grantReward,
+    MAX_REWARD_GRANT_AMOUNT,
+} from "@shared/billing/grant-reward.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { rewardGrants, user as userTable } from "@shared/db/better-auth.ts";
 import { sql } from "drizzle-orm";
@@ -150,5 +153,20 @@ describe("grantReward", () => {
                 amount: 0,
             }),
         ).rejects.toThrow();
+    });
+
+    test("rejects amounts above the reward grant ceiling", async () => {
+        const db = drizzle(env.DB, { schema });
+        const userId = "grant-user-too-large";
+        await seedUser(db, userId);
+
+        await expect(
+            grantReward(db, {
+                idempotencyKey: `too-large:${userId}`,
+                userId,
+                source: "manual",
+                amount: MAX_REWARD_GRANT_AMOUNT + 1,
+            }),
+        ).rejects.toThrow(String(MAX_REWARD_GRANT_AMOUNT));
     });
 });

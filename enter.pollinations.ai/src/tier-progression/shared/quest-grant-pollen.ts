@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { command, number, run, string } from "@drizzle-team/brocli";
+import { MAX_REWARD_GRANT_AMOUNT } from "@shared/billing/grant-reward.ts";
 
 type Environment = "staging" | "production";
 
@@ -66,10 +67,13 @@ const grantCommand = command({
         const { amount, questIssue, prNumber, githubId } = opts;
         const env = opts.env as Environment;
 
-        const MAX_AMOUNT = 10000;
-        if (!Number.isFinite(amount) || amount <= 0 || amount > MAX_AMOUNT) {
+        if (
+            !Number.isFinite(amount) ||
+            amount <= 0 ||
+            amount > MAX_REWARD_GRANT_AMOUNT
+        ) {
             console.error(
-                `❌ Amount must be a positive number ≤ ${MAX_AMOUNT}, got: ${amount}`,
+                `❌ Amount must be a positive number ≤ ${MAX_REWARD_GRANT_AMOUNT}, got: ${amount}`,
             );
             process.exit(1);
         }

@@ -52,7 +52,7 @@ async function grantCandidates({
             userId: candidate.userId,
             source: definition.eventType,
             questId,
-            amount: definition.rewardAmount,
+            amount: candidate.amount ?? definition.rewardAmount,
             bucket: definition.balanceBucket,
             sourceRef: candidate.sourceRef,
             metadata: buildQuestGrantMetadata(definition, candidate),

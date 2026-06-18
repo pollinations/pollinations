@@ -4,6 +4,8 @@ import type * as schema from "../db/better-auth.ts";
 import { rewardGrants, user as userTable } from "../db/better-auth.ts";
 import type { Bucket } from "./deduction.ts";
 
+export const MAX_REWARD_GRANT_AMOUNT = 10_000;
+
 export interface GrantRewardInput {
     /**
      * Idempotency guard. Must be deterministic for the logical grant so retries
@@ -61,9 +63,13 @@ export async function grantReward(
         metadata = null,
     } = input;
 
-    if (!Number.isFinite(amount) || amount <= 0) {
+    if (
+        !Number.isFinite(amount) ||
+        amount <= 0 ||
+        amount > MAX_REWARD_GRANT_AMOUNT
+    ) {
         throw new Error(
-            `grantReward amount must be a positive number, got: ${amount}`,
+            `grantReward amount must be > 0 and <= ${MAX_REWARD_GRANT_AMOUNT}, got: ${amount}`,
         );
     }
 

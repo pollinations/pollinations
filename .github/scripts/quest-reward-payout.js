@@ -1,6 +1,9 @@
 const { spawnSync } = require("node:child_process");
 const path = require("node:path");
 
+const COMMUNITY_QUEST_LABEL = "POLLEN-QUEST";
+const MAX_QUEST_PAYOUT = 10_000;
+
 function repo(context) {
     return {
         owner: context.repo.owner,
@@ -13,9 +16,48 @@ function parseJsonEnv(name) {
     return value ? JSON.parse(value) : null;
 }
 
-async function resolveLinkedQuest({ github, context, core }) {
+function parseReward(body) {
+    const match = body.match(/###\s*Reward\s*\n+\s*([0-9]+(?:\.[0-9]+)?)/i);
+    return match ? Number(match[1]) : null;
+}
+
+function validateQuestPayoutAmount(amount) {
+    if (!Number.isFinite(amount) || amount <= 0) {
+        return "valid reward amount in issue body";
+    }
+    if (amount > MAX_QUEST_PAYOUT) {
+        return `reward amount <= ${MAX_QUEST_PAYOUT}`;
+    }
+    return null;
+}
+
+function getGitHubEvent(context) {
+    return {
+        source: "github",
+        event: context.eventName || process.env.GITHUB_EVENT_NAME || "",
+        action: context.payload?.action || "",
+    };
+}
+
+function triggerMatches(trigger, event) {
+    if (trigger.source !== event.source) return false;
+    if (trigger.event !== event.event) return false;
+    return !trigger.actions || trigger.actions.includes(event.action);
+}
+
+function issueHasLabel(issue, label) {
+    return issue.labels?.nodes?.some((node) => node.name === label) ?? false;
+}
+
+function firstAssignee(issue) {
+    return issue.assignees?.nodes?.[0] ?? null;
+}
+
+async function findLinkedIssueWithLabel({ github, context, label }) {
     const pr = context.payload.pull_request;
-    // Use GitHub's native PR↔issue link: covers "Fixes #N" keywords AND the
+    if (!pr?.number) return null;
+
+    // Use GitHub's native PR<->issue link: covers "Fixes #N" keywords AND the
     // Development sidebar manual link. Means maintainers can rescue a quest
     // PR pre-merge without contributor cooperation.
     const data = await github.graphql(
@@ -24,7 +66,10 @@ async function resolveLinkedQuest({ github, context, core }) {
                 pullRequest(number:$num) {
                     closingIssuesReferences(first:10) {
                         nodes {
-                            number body
+                            number
+                            title
+                            url
+                            body
                             labels(first:20) { nodes { name } }
                             assignees(first:5) { nodes { login databaseId } }
                         }
@@ -35,10 +80,185 @@ async function resolveLinkedQuest({ github, context, core }) {
         { ...repo(context), num: pr.number },
     );
 
-    const issue =
-        data.repository.pullRequest.closingIssuesReferences.nodes.find((n) =>
-            n.labels.nodes.some((l) => l.name === "POLLEN-QUEST"),
+    return (
+        data.repository.pullRequest.closingIssuesReferences.nodes.find(
+            (issue) => issueHasLabel(issue, label),
+        ) ?? null
+    );
+}
+
+function buildReviewBody(review) {
+    return [
+        `@${process.env.PAYOUT_FALLBACK} — quest payout could not be auto-processed.`,
+        "",
+        `**Missing:** ${review.missing.join(", ")}`,
+        `- assignee: ${review.assignee ?? "(none)"}`,
+        `- parsed reward: ${review.amount ?? "(unparsed)"}`,
+        "",
+        `Triggered by merge of #${review.prNumber}. Please review and back-fill manually.`,
+    ].join("\n");
+}
+
+const githubQuestDefinitions = [
+    {
+        id: "github:community_issue_quest",
+        title: "Community issue quest",
+        balanceBucket: "pack",
+        payoutScope: "once_per_event_per_user",
+        triggers: [
+            {
+                source: "github",
+                event: "pull_request_target",
+                actions: ["closed"],
+            },
+        ],
+        evaluate: async ({ context, helpers }) => {
+            const pr = context.payload.pull_request;
+            if (!pr?.merged) return { candidates: [] };
+
+            const issue = await helpers.findLinkedIssueWithLabel(
+                COMMUNITY_QUEST_LABEL,
+            );
+            if (!issue) return { candidates: [] };
+
+            const reward = parseReward(issue.body || "");
+            const assignee = firstAssignee(issue);
+            const missing = [];
+            if (!assignee) missing.push("assignee");
+            const amountProblem = validateQuestPayoutAmount(reward);
+            if (amountProblem) missing.push(amountProblem);
+
+            if (missing.length) {
+                return {
+                    candidates: [],
+                    reviews: [
+                        {
+                            issue: issue.number,
+                            prNumber: pr.number,
+                            assignee: assignee?.login ?? null,
+                            amount: reward,
+                            missing,
+                        },
+                    ],
+                };
+            }
+
+            return {
+                candidates: [
+                    {
+                        questTypeId: "github:community_issue_quest",
+                        issue: issue.number,
+                        issueTitle: issue.title,
+                        issueUrl: issue.url,
+                        prNumber: pr.number,
+                        recipient: assignee.login,
+                        recipientId: assignee.databaseId,
+                        amount: reward,
+                        eventId: `issue:${issue.number}`,
+                        sourceRef: `pr:${pr.number}`,
+                        metadata: {
+                            issueNumber: issue.number,
+                            issueTitle: issue.title,
+                            issueUrl: issue.url,
+                            prNumber: pr.number,
+                        },
+                    },
+                ],
+            };
+        },
+    },
+];
+
+async function runGitHubQuestEvaluators({
+    github,
+    context,
+    definitions = githubQuestDefinitions,
+}) {
+    const event = getGitHubEvent(context);
+    const helpers = {
+        findLinkedIssueWithLabel: (label) =>
+            findLinkedIssueWithLabel({ github, context, label }),
+    };
+    const candidates = [];
+    const reviews = [];
+
+    for (const definition of definitions) {
+        const shouldEvaluate = definition.triggers.some((trigger) =>
+            triggerMatches(trigger, event),
         );
+        if (!shouldEvaluate) continue;
+
+        const result = await definition.evaluate({
+            context,
+            event,
+            helpers,
+            definition,
+        });
+
+        for (const review of result.reviews ?? []) {
+            reviews.push({ questTypeId: definition.id, ...review });
+        }
+
+        for (const candidate of result.candidates ?? []) {
+            const amount = candidate.amount ?? definition.rewardAmount;
+            const amountProblem = validateQuestPayoutAmount(amount);
+            if (amountProblem) {
+                reviews.push({
+                    questTypeId: definition.id,
+                    issue: candidate.issue,
+                    prNumber: context.payload.pull_request?.number,
+                    assignee: candidate.recipient ?? null,
+                    amount,
+                    missing: [amountProblem],
+                });
+                continue;
+            }
+
+            candidates.push({
+                questTypeId: candidate.questTypeId ?? definition.id,
+                balanceBucket:
+                    candidate.balanceBucket ?? definition.balanceBucket,
+                payoutScope: definition.payoutScope,
+                ...candidate,
+                amount,
+            });
+        }
+    }
+
+    return { event, candidates, reviews };
+}
+
+async function evaluateQuestPayouts({ github, context, core }) {
+    const { event, candidates, reviews } = await runGitHubQuestEvaluators({
+        github,
+        context,
+    });
+
+    core.info(
+        `Quest runner event=${event.event}.${event.action} candidates=${candidates.length} reviews=${reviews.length}`,
+    );
+
+    for (const review of reviews) {
+        if (!review.issue) continue;
+        await github.rest.issues.createComment({
+            ...repo(context),
+            issue_number: review.issue,
+            body: buildReviewBody(review),
+        });
+    }
+
+    core.setOutput(
+        "payouts",
+        candidates.length ? JSON.stringify(candidates) : "",
+    );
+}
+
+async function resolveLinkedQuest({ github, context, core }) {
+    const issue = await findLinkedIssueWithLabel({
+        github,
+        context,
+        label: COMMUNITY_QUEST_LABEL,
+    });
 
     if (!issue) {
         core.setOutput("quest", "");
@@ -46,7 +266,7 @@ async function resolveLinkedQuest({ github, context, core }) {
         return;
     }
 
-    const assignee = issue.assignees.nodes[0];
+    const assignee = firstAssignee(issue);
     core.setOutput(
         "quest",
         JSON.stringify({
@@ -60,11 +280,6 @@ async function resolveLinkedQuest({ github, context, core }) {
     core.info(`Linked POLLEN-QUEST issue: #${issue.number}`);
 }
 
-function parseReward(body) {
-    const match = body.match(/###\s*Reward\s*\n+\s*([0-9]+(?:\.[0-9]+)?)/i);
-    return match ? Number(match[1]) : null;
-}
-
 async function computePayout({ github, context, core }) {
     const quest = parseJsonEnv("QUEST");
     if (!quest) return;
@@ -72,23 +287,20 @@ async function computePayout({ github, context, core }) {
     const reward = parseReward(quest.body);
     const missing = [];
     if (!quest.assignee) missing.push("assignee");
-    if (reward === null || !Number.isFinite(reward) || reward <= 0) {
-        missing.push("valid reward amount in issue body");
-    }
+    const amountProblem = validateQuestPayoutAmount(reward);
+    if (amountProblem) missing.push(amountProblem);
 
     if (missing.length) {
         await github.rest.issues.createComment({
             ...repo(context),
             issue_number: quest.number,
-            body: [
-                `@${process.env.PAYOUT_FALLBACK} — quest payout could not be auto-processed.`,
-                "",
-                `**Missing:** ${missing.join(", ")}`,
-                `- assignee: ${quest.assignee?.login ?? "(none)"}`,
-                `- parsed reward: ${reward ?? "(unparsed)"}`,
-                "",
-                `Triggered by merge of #${context.payload.pull_request.number}. Please review and back-fill manually.`,
-            ].join("\n"),
+            body: buildReviewBody({
+                issue: quest.number,
+                prNumber: context.payload.pull_request.number,
+                assignee: quest.assignee?.login ?? null,
+                amount: reward,
+                missing,
+            }),
         });
         return;
     }
@@ -115,15 +327,19 @@ function buildReceiptBody(result) {
 }
 
 async function postReceipt({ github, context }) {
-    const quest = parseJsonEnv("QUEST");
+    const results = parseJsonEnv("RESULTS");
     const result = parseJsonEnv("RESULT");
-    if (!quest || !result) return;
+    const receiptResults = results ?? (result ? [result] : []);
+    if (!receiptResults.length) return;
 
-    await github.rest.issues.createComment({
-        ...repo(context),
-        issue_number: quest.number,
-        body: buildReceiptBody(result),
-    });
+    for (const receipt of receiptResults) {
+        if (!receipt.issue) continue;
+        await github.rest.issues.createComment({
+            ...repo(context),
+            issue_number: receipt.issue,
+            body: buildReceiptBody(receipt),
+        });
+    }
 }
 
 function runGrant(enterDir, payout) {
@@ -145,7 +361,7 @@ function runGrant(enterDir, payout) {
             "--questIssue",
             String(payout.issue),
             "--prNumber",
-            String(process.env.PR_NUMBER),
+            String(payout.prNumber ?? process.env.PR_NUMBER),
             "--env",
             "production",
         ],
@@ -172,8 +388,10 @@ function runGrant(enterDir, payout) {
 }
 
 async function runPollenGrant({ core }) {
+    const payouts = parseJsonEnv("PAYOUTS");
     const payout = parseJsonEnv("PAYOUT");
-    if (!payout) return;
+    const grantPayouts = payouts ?? (payout ? [payout] : []);
+    if (!grantPayouts.length) return;
 
     const enterDir = path.join(process.cwd(), "enter.pollinations.ai");
     const install = spawnSync("npm", ["install"], {
@@ -184,12 +402,23 @@ async function runPollenGrant({ core }) {
     if (install.status !== 0) {
         throw new Error("npm install failed");
     }
-    core.setOutput("result", JSON.stringify(runGrant(enterDir, payout)));
+
+    const results = grantPayouts.map((grantPayout) =>
+        runGrant(enterDir, grantPayout),
+    );
+    core.setOutput("results", JSON.stringify(results));
+    core.setOutput("result", JSON.stringify(results[0]));
 }
 
 module.exports = {
+    MAX_QUEST_PAYOUT,
     computePayout,
+    evaluateQuestPayouts,
+    githubQuestDefinitions,
+    parseReward,
     postReceipt,
     resolveLinkedQuest,
+    runGitHubQuestEvaluators,
     runPollenGrant,
+    validateQuestPayoutAmount,
 };

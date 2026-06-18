@@ -31,6 +31,7 @@ export type GrantCandidate = {
     userId: string;
     eventId?: string;
     sourceRef?: string | null;
+    amount?: number;
     metadata?: Record<string, unknown> | null;
 };
 

@@ -25,7 +25,10 @@ jobs:
           private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
           owner: pollinations
 
-      - uses: actions/checkout@v4
+      - name: Checkout trusted base code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
 
       - name: Evaluate quest payouts
         id: resolve

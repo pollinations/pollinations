@@ -254,72 +254,12 @@ async function evaluateQuestPayouts({ github, context, core }) {
     );
 }
 
-async function resolveLinkedQuest({ github, context, core }) {
-    const issue = await findLinkedIssueWithLabel({
-        github,
-        context,
-        label: COMMUNITY_QUEST_LABEL,
-    });
-
-    if (!issue) {
-        core.setOutput("quest", "");
-        core.info("Linked POLLEN-QUEST issue: (none)");
-        return;
-    }
-
-    const assignee = firstAssignee(issue);
-    core.setOutput(
-        "quest",
-        JSON.stringify({
-            number: issue.number,
-            assignee: assignee
-                ? { login: assignee.login, id: assignee.databaseId }
-                : null,
-            body: issue.body || "",
-        }),
-    );
-    core.info(`Linked POLLEN-QUEST issue: #${issue.number}`);
-}
-
-async function computePayout({ github, context, core }) {
-    const quest = parseJsonEnv("QUEST");
-    if (!quest) return;
-
-    const reward = parseReward(quest.body);
-    const missing = [];
-    if (!quest.assignee) missing.push("assignee");
-    const amountProblem = validateQuestPayoutAmount(reward);
-    if (amountProblem) missing.push(amountProblem);
-
-    if (missing.length) {
-        await github.rest.issues.createComment({
-            ...repo(context),
-            issue_number: quest.number,
-            body: buildReviewBody({
-                issue: quest.number,
-                prNumber: context.payload.pull_request.number,
-                assignee: quest.assignee?.login ?? null,
-                amount: reward,
-                missing,
-            }),
-        });
-        return;
-    }
-
-    core.setOutput(
-        "payout",
-        JSON.stringify({
-            issue: quest.number,
-            recipient: quest.assignee.login,
-            recipientId: quest.assignee.id,
-            amount: reward,
-        }),
-    );
-}
-
 function buildReceiptBody(result) {
     if (result.status === "granted") {
         return `### 🌸 Quest reward paid out\n\n- **${result.amount}** Pollen → @${result.user}`;
+    }
+    if (result.status === "duplicate") {
+        return `### 🌸 Quest reward already paid out\n\n- **${result.amount}** Pollen → @${result.user}`;
     }
     if (result.status === "not_found") {
         return `### ⚠️ Quest reward needs review\n\n@${process.env.PAYOUT_FALLBACK} — @${result.user} is not registered at enter.pollinations.ai; please back-fill ${result.amount} Pollen manually.`;
@@ -328,9 +268,7 @@ function buildReceiptBody(result) {
 }
 
 async function postReceipt({ github, context }) {
-    const results = parseJsonEnv("RESULTS");
-    const result = parseJsonEnv("RESULT");
-    const receiptResults = results ?? (result ? [result] : []);
+    const receiptResults = parseJsonEnv("RESULTS") ?? [];
     if (!receiptResults.length) return;
 
     for (const receipt of receiptResults) {
@@ -343,11 +281,11 @@ async function postReceipt({ github, context }) {
     }
 }
 
-function runGrant(enterDir, payout) {
+function runGrant(enterDir, payout, spawn = spawnSync) {
     console.log(
         `→ granting ${payout.amount} Pollen to @${payout.recipient} for #${payout.issue}`,
     );
-    const result = spawnSync(
+    const result = spawn(
         "npx",
         [
             "tsx",
@@ -382,45 +320,46 @@ function runGrant(enterDir, payout) {
         user: payout.recipient,
         amount: payout.amount,
         status:
-            result.status === 0 || result.status === 3
+            result.status === 0
                 ? "granted"
-                : result.status === 2
-                  ? "not_found"
-                  : "failed",
+                : result.status === 3
+                  ? "duplicate"
+                  : result.status === 2
+                    ? "not_found"
+                    : "failed",
     };
 }
 
-async function runPollenGrant({ core }) {
-    const payouts = parseJsonEnv("PAYOUTS");
-    const payout = parseJsonEnv("PAYOUT");
-    const grantPayouts = payouts ?? (payout ? [payout] : []);
+async function runPollenGrant({
+    core,
+    cwd = process.cwd(),
+    spawn = spawnSync,
+}) {
+    const grantPayouts = parseJsonEnv("PAYOUTS") ?? [];
     if (!grantPayouts.length) return;
 
-    const enterDir = path.join(process.cwd(), "enter.pollinations.ai");
-    const install = spawnSync("npm", ["install"], {
-        cwd: enterDir,
+    const enterDir = path.join(cwd, "enter.pollinations.ai");
+    const install = spawn("npm", ["ci", "--ignore-scripts"], {
+        cwd,
         encoding: "utf8",
         stdio: "inherit",
     });
     if (install.status !== 0) {
-        throw new Error("npm install failed");
+        throw new Error("npm ci failed");
     }
 
     const results = grantPayouts.map((grantPayout) =>
-        runGrant(enterDir, grantPayout),
+        runGrant(enterDir, grantPayout, spawn),
     );
     core.setOutput("results", JSON.stringify(results));
-    core.setOutput("result", JSON.stringify(results[0]));
 }
 
 module.exports = {
     MAX_QUEST_PAYOUT,
-    computePayout,
     evaluateQuestPayouts,
     githubQuestDefinitions,
     parseReward,
     postReceipt,
-    resolveLinkedQuest,
     runGitHubQuestEvaluators,
     runPollenGrant,
     validateQuestPayoutAmount,

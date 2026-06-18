@@ -827,8 +827,6 @@ const usageResponseSchema = z.object({
 });
 
 const accountQuestGrantSchema = z.object({
-    id: z.string(),
-    idempotencyKey: z.string(),
     source: z.string(),
     questId: z.string().nullable(),
     pollenCredited: z.number(),
@@ -1394,8 +1392,6 @@ export const accountRoutes = new Hono<Env>()
             const db = drizzle(c.env.DB);
             const rewardRows = await db
                 .select({
-                    id: rewardGrantsTable.id,
-                    idempotencyKey: rewardGrantsTable.idempotencyKey,
                     source: rewardGrantsTable.source,
                     questId: rewardGrantsTable.questId,
                     pollenCredited: rewardGrantsTable.pollenCredited,
@@ -1409,8 +1405,6 @@ export const accountRoutes = new Hono<Env>()
                 .orderBy(desc(rewardGrantsTable.createdAt));
 
             const grants = rewardRows.map((row) => ({
-                id: row.id,
-                idempotencyKey: row.idempotencyKey,
                 source: row.source,
                 questId: row.questId,
                 pollenCredited: row.pollenCredited,

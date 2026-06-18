@@ -227,7 +227,6 @@ test("quest evaluator grants code-defined product quests once", async ({
     const payload = (await response.json()) as {
         totalPollen: number;
         grants: {
-            idempotencyKey: string;
             questId: string | null;
             pollenCredited: number;
             balanceBucket: string;
@@ -236,6 +235,10 @@ test("quest evaluator grants code-defined product quests once", async ({
 
     expect(payload.totalPollen).toBeCloseTo(2.5);
     expect(payload.grants).toHaveLength(2);
+    for (const grant of payload.grants) {
+        expect(grant).not.toHaveProperty("id");
+        expect(grant).not.toHaveProperty("idempotencyKey");
+    }
     expect(
         payload.grants.find(
             (grant) => grant.questId === "onboarding:first_api_key",
@@ -291,7 +294,6 @@ test("account quest history includes GitHub quest reward grants", async ({
     const payload = (await response.json()) as {
         totalPollen: number;
         grants: {
-            idempotencyKey: string;
             questId: string | null;
             pollenCredited: number;
             sourceRef: string | null;
@@ -301,8 +303,9 @@ test("account quest history includes GitHub quest reward grants", async ({
 
     expect(payload.totalPollen).toBe(5);
     expect(payload.grants).toHaveLength(1);
+    expect(payload.grants[0]).not.toHaveProperty("id");
+    expect(payload.grants[0]).not.toHaveProperty("idempotencyKey");
     expect(payload.grants[0]).toMatchObject({
-        idempotencyKey: payoutKey,
         questId: "github:community_issue_quest",
         pollenCredited: 5,
         sourceRef: "pr:789",

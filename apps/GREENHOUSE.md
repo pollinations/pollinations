@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **810** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **811** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -44,6 +44,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [💸 Cashflower](https://cashflower.cru2.net) | Cashflower turns Pollinations generation into income for everyday users, with results provided using their own numbers. | [@davealan74](https://github.com/davealan74) |  | 🫧 |
 | [🧪 Pollen Studio](https://pollenstudio.cru2.net) | Pollen Studio is a static-files BYOP comparator for Pollinations.AI. Users connect via enter.pollinations.ai authorize flow and compare image, text, and TTS models side-by-side across three modes. | [@davealan74](https://github.com/davealan74) |  | 🫧 |
 | [📝 Lingua Memory Card](https://lingua-memory-card.vercel.app/) | Lingua Memory Card is a multilingual writing practice app for language learners. Users paste their own practice text, then the app uses Pollinations text models to provide sentence-by-sentence correct | [@Minor-fun](https://github.com/Minor-fun) |  | 🫧 |
 | [🧠 Wikimind AI](https://chpalitom09-bot.github.io/Wikimind-5/) | Wikimind AI is a French chatbot with over 29 functional AI models. | [@chpalitom09-bot](https://github.com/chpalitom09-bot) | 2 | 🐝 🫧 |
@@ -53,7 +54,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🖼️ Imagio  AI image generator](https://imagio-ai.vercel.app/) | Imagio  AI image generator converts text prompts into original images using AI. It generates images in seconds. | [@its3li](https://github.com/its3li) | 1 | 🐝 🫧 |
 | [🤖 ather mini](minitejas.in) | ather mini provides a ChatGPT-like AI chat to help people learn about AI and uses pollinations.ai for teaching. | [@aadarsh-kandula](https://github.com/aadarsh-kandula) |  | 🫧 |
 | [🖼️ Photo Ai](https://apps.apple.com/pk/app/photo-ai-image-generator/id6759615194) | Use Pollination Api to generate or process photos in Photo Ai. | [@hussainmunir](https://github.com/hussainmunir) |  | 🫧 |
-| [🧶 NebulaCraft](https://nebulacraft-1c723.web.app) | Generate amigurumi patterns with Pollinations AI in NebulaCraft. Includes a PWA experience, SEO optimization, and a variation selector for iterative design. | [@Lubloodyrose](https://github.com/Lubloodyrose) |  | 🫧 |
 
 ---
 
@@ -938,7 +938,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🍎 AI Food Guide and Track Calories](https://nutri.selfhost.io.vn/) | Provides AI-powered nutrition guidance and calorie tracking in a web application with food analysis and logging features. | [@newnol](https://github.com/newnol) | 208 |  |
 | [🏃 Spix - Personal Fitness Companion](https://github.com/LuckyTheCookie/FitTrack) | Track workouts, activity, and health metrics with Spix - Personal Fitness Companion, built with React Native 0.81 Expo TypeScript and designed to keep your data local and private. | [@LuckyTheCookie](https://github.com/LuckyTheCookie) | 14 |  |
 
-<details><summary>Show all 56 apps</summary>
+<details><summary>Show all 57 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -947,6 +947,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🤖 The Mork Stack](https://github.com/Mork-Zuckerbarge/mork-stack) | Manage social media with agentic workflows and run autonomous trading on Solana in The Mork Stack. | [@Mork-Zuckerbarge](https://github.com/Mork-Zuckerbarge) | 1 | 🫧 |
 | [🗞️ Akhbaar](https://akhbaar.hoxlabs.com/) | Akhbaar turns daily tech reports into structured insights by converting daily PDFs into structured JSON and providing a live news feed. | [@niteshmandall](https://github.com/niteshmandall) | 1 |  |
 | [🧾 Transport Document OCR](https://xfynder99-byte.github.io/OCR/) | Standalone web app extracting product data from images and PDFs via AI OCR. | [@xfynder99-byte](https://github.com/xfynder99-byte) | 1 |  |
+| [💸 Cashflower](https://cashflower.cru2.net) | Cashflower turns Pollinations generation into income for everyday users, with results provided using their own numbers. | [@davealan74](https://github.com/davealan74) |  | 🫧 |
 | [🧩 zolio](zolio.site) | zolioapp | [@LSSHRT](https://github.com/LSSHRT) |  | 🫧 |
 | [✈️ FLTRCK: Flight Log & Records](https://play.google.com/store/apps/details?id=com.fltrckr.app) | Your personal flight log and travel tracker — built for aviation enthusiasts and frequent flyers. Keep a complete flight logbook: log your longest flights, most-visited airports, favourite routes, and | [@me-eujene](https://github.com/me-eujene) |  | 🫧 |
 | [✅ TaskManager](https://panel.estehlal.com/) | non profite | [@LahbabiCode](https://github.com/LahbabiCode) |  | 🫧 |

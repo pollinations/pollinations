@@ -117,6 +117,9 @@ class PollinationsClient:
                     return data["choices"][0]["message"].get("content", "")
                 else:
                     error_text = await response.text()
+                    if response.status == 402:
+                        logger.warning(f"generate_text: insufficient balance (402), bailing")
+                        return None
                     logger.error(f"generate_text error: HTTP {response.status}: {error_text[:200]}")
                     return None
         except Exception as e:
@@ -349,18 +352,34 @@ class PollinationsClient:
             ]
             logger.info(f"Executing {len(tool_calls)} tool(s): {', '.join(tool_names)}")
 
-            # Soft guidance: nudge AI if it keeps calling the same tool
+            # Escalating guidance: inject system messages when the AI loops on the same tool
             current_signature = tuple(sorted(tool_names))
             if current_signature == last_tool_signature:
                 consecutive_same_tool += 1
-                if consecutive_same_tool >= 3:
-                    logger.info(f"Soft nudge: {current_signature} called {consecutive_same_tool + 1}x consecutively")
-                    messages.append(
-                        {
-                            "role": "system",
-                            "content": f"[Hint: You've called {', '.join(tool_names)} {consecutive_same_tool + 1} times in a row. Consider if you already have enough info to respond, or try a different tool/approach.]",
-                        }
-                    )
+                count = consecutive_same_tool + 1
+                if count >= 3:
+                    logger.info(f"Soft nudge: {current_signature} called {count}x consecutively")
+                    tool_str = ", ".join(tool_names)
+                    if count >= 12:
+                        guidance = (
+                            f"[IMPORTANT: You have called {tool_str} {count} times in a row and are clearly stuck in a loop. "
+                            f"You now have enough context to give a useful answer. "
+                            f"Stop searching and respond directly with what you know — it is better to give a partial answer than to keep looping. "
+                            f"Do not call {tool_str} again.]"
+                        )
+                    elif count >= 7:
+                        guidance = (
+                            f"[You have called {tool_str} {count} times consecutively. "
+                            f"You are likely not finding new information. "
+                            f"Synthesize what you have gathered so far and give your best answer. "
+                            f"If you truly need one more lookup, use a different tool or a more specific query — do not repeat the same search.]"
+                        )
+                    else:
+                        guidance = (
+                            f"[Hint: {tool_str} called {count} times in a row. "
+                            f"Consider whether you already have enough to respond, or try a different tool or query angle.]"
+                        )
+                    messages.append({"role": "system", "content": guidance})
             else:
                 consecutive_same_tool = 0
             last_tool_signature = current_signature
@@ -558,13 +577,14 @@ class PollinationsClient:
         url = f"{POLLINATIONS_API_BASE}/v1/chat/completions"
         last_error = None
 
+        current_model = config.pollinations_model
         for attempt in range(MAX_RETRIES):
             # Use caller's seed if provided (default 42), otherwise random per attempt
             caller_seed = (api_params or {}).get("seed") if api_params else None
             seed = caller_seed if caller_seed is not None else 42
 
             payload = {
-                "model": config.pollinations_model,
+                "model": current_model,
                 "messages": messages,
                 "seed": seed,
             }
@@ -610,6 +630,13 @@ class PollinationsClient:
                         error_text = await response.text()
                         last_error = f"HTTP {response.status}: {error_text[:100]}"
                         logger.warning(f"Pollinations API error (attempt {attempt + 1}): {last_error}")
+                        # 402 = global balance exhausted -- bail immediately, no retry
+                        if response.status == 402:
+                            break
+                        # Other errors: switch to fallback model on next attempt
+                        if config.pollinations_fallback_model and current_model != config.pollinations_fallback_model:
+                            logger.info(f"Switching to fallback model {config.pollinations_fallback_model!r} after error")
+                            current_model = config.pollinations_fallback_model
                         # In API mode, propagate auth errors immediately — don't retry
                         if mode == "api" and response.status in (401, 403):
                             raise UpstreamAuthError(response.status, error_text)
@@ -879,71 +906,3 @@ async def web_search_handler(query: str, model: str = "perplexity-fast", **kwarg
         logger.error(f"Web search error: {e}")
         return {"error": f"Search failed: {str(e)}"}
 
-
-async def web_handler(query: str, **kwargs) -> dict:
-    """
-    Handle web tool calls using nomnom model for deep research.
-
-    nomnom combines search, scrape, crawl, and code execution for complex tasks.
-    Use sparingly - it's powerful but slower and more expensive than simple tools.
-
-    Args:
-        query: Natural language request describing what to research/analyze
-
-    Returns:
-        Dict with research results, including any generated images
-    """
-    messages = [
-        {
-            "role": "system",
-            "content": "You are a deep research assistant with web search, scraping, crawling, and Python code execution capabilities. Provide thorough, accurate, well-sourced answers. Use code for data analysis when helpful.",
-        },
-        {"role": "user", "content": query},
-    ]
-
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {config.pollinations_token}",
-    }
-
-    payload = {
-        "model": "perplexity-reasoning",
-        "messages": messages,
-    }
-
-    try:
-        session = await pollinations_client.get_session()
-        url = f"{POLLINATIONS_API_BASE}/v1/chat/completions"
-
-        # nomnom handles complex research - no timeout limit
-        async with session.post(url, json=payload, headers=headers) as response:
-            if response.status == 200:
-                data = await response.json()
-                message = data["choices"][0]["message"]
-                content = message.get("content", "")
-
-                # Extract image URLs from content_blocks (nomnom can generate images)
-                content_blocks = message.get("content_blocks", [])
-                image_urls = []
-                for block in content_blocks:
-                    if block.get("type") == "image_url":
-                        img_url = block.get("image_url", {}).get("url", "")
-                        if img_url and img_url.startswith("http"):
-                            image_urls.append(img_url)
-
-                result = {"result": content, "model": "nomnom", "query": query}
-                if image_urls:
-                    result["image_urls"] = image_urls
-                    logger.info(f"nomnom returned {len(image_urls)} image(s)")
-                return result
-            else:
-                error_text = await response.text()
-                logger.error(f"Web (nomnom) API error: {response.status} - {error_text[:200]}")
-                return {"error": f"Research failed: HTTP {response.status}"}
-
-    except TimeoutError:
-        logger.error("Web (nomnom) timeout")
-        return {"error": "Research timed out. Try a simpler query or use web_search instead."}
-    except Exception as e:
-        logger.error(f"Web (nomnom) error: {e}")
-        return {"error": f"Research failed: {str(e)}"}

@@ -1,0 +1,36 @@
+{
+  "pr_number": 11909,
+  "title": "fix(polly): kimi-code model, glm fallback, 402 bail, crawl4ai fixes, rnet→scrapling→crawl4ai cascade",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/11909",
+  "merged_at": "2026-06-18T19:13:26Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "Small set of fixes for Polly:\n\n- Switch main model to `kimi-code`, `glm` as fallback for non-balance errors\n- HTTP 402 now bails immediately (balance is global, no point retrying)\n- Tool loop: inject escalating guidance into context so the AI can self-correct instead of looping forever\n- Embeddings skip re-indexing on restart if the repo HEAD hasn't changed\n- Discord link formatting rules in system prompt (suppress preview bloat, embed named refs)\n- Fixed a couple crawl4ai API deprecations\n- Removed the broken web tool (model no longer exists upstream)",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Polly hits the books",
+    "blurb": "Polly just got a major brain upgrade. She's now powered by kimi-code, learns from her own tool loops, and formats Discord links without the preview bloat.",
+    "summary": "Upgraded Polly's primary model to kimi-code with a glm fallback, added self-correcting tool loops, and implemented embedding caching to skip re-indexing when the repo HEAD is unchanged.",
+    "impact": "Users will notice smarter code responses and cleaner Discord links, while the bot itself restarts faster and recovers gracefully from tool errors.",
+    "keywords": [
+      "polly",
+      "discord bot",
+      "kimi-code",
+      "glm",
+      "embeddings",
+      "scraping"
+    ],
+    "visual_concept": "Polly the bee mascot wearing a tiny graduation cap or reading a glowing book/code manual, representing a 'brain upgrade' and new models. A retro monitor displays code.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny graduation cap, reading a glowing spellbook of code. A chunky retro monitor nearby displays a lime green (#ecf874) terminal with 'kimi-code' text. Soft pastel lavender and mint gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-18/PR-11909.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny graduation cap, reading a glowing spellbook of code. A chunky retro monitor nearby displays a lime green (#ecf874) terminal with 'kimi-code' text. Soft pastel lavender and mint gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "generated_at": "2026-06-18T19:15:08.235831+00:00"
+}

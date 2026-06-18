@@ -42,6 +42,7 @@ import IMAGE_GENERATION_MD from "../docs/image-generation.md?raw";
 import INTRODUCTION_MD from "../docs/introduction.md?raw";
 import MEDIA_STORAGE_MD from "../docs/media-storage.md?raw";
 import MODELS_MD from "../docs/models.md?raw";
+import PUBLIC_STATS_MD from "../docs/public-stats.md?raw";
 import QUICK_START_MD from "../docs/quick-start.md?raw";
 import SAFETY_MD from "../docs/safety.md?raw";
 import TEXT_GENERATION_MD from "../docs/text-generation.md?raw";
@@ -74,6 +75,7 @@ const AUTHENTICATION_DOCS = AUTHENTICATION_MD.trim();
 const MODELS_DOCS = MODELS_MD.trim();
 const MEDIA_STORAGE_DOCS = MEDIA_STORAGE_MD.trim();
 const ACCOUNT_DOCS = ACCOUNT_MD.trim();
+const PUBLIC_STATS_DOCS = PUBLIC_STATS_MD.trim();
 const SAFETY_DOCS = SAFETY_MD.trim();
 const ERRORS_DOCS = ERRORS_MD.trim();
 const IMAGE_ALIASES = new Set(
@@ -198,6 +200,7 @@ const GEN_API_DOCS = [
     MODELS_DOCS,
     MEDIA_STORAGE_DOCS,
     ACCOUNT_DOCS,
+    PUBLIC_STATS_DOCS,
     SAFETY_DOCS,
     ERRORS_DOCS,
 ].join("\n\n");
@@ -314,6 +317,7 @@ function generationDocumentation(): OpenApiSchema {
                     "🤖 Models",
                     "📦 Media Storage",
                     "👤 Account",
+                    "📊 Public Stats",
                     "❌ Errors",
                     "🛡️ Safety",
                 ],
@@ -383,6 +387,10 @@ function generationDocumentation(): OpenApiSchema {
             {
                 name: "👤 Account",
                 description: stripLeadingHeading(ACCOUNT_DOCS),
+            },
+            {
+                name: "📊 Public Stats",
+                description: stripLeadingHeading(PUBLIC_STATS_DOCS),
             },
         ],
     };

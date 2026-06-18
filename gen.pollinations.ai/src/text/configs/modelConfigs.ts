@@ -125,10 +125,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // -- Fireworks AI (Kimi, GLM, Qwen) --------------------------------------
-    "accounts/fireworks/models/kimi-k2p5": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/kimi-k2p5",
-        }),
     "accounts/fireworks/models/kimi-k2p6": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/kimi-k2p6",
@@ -224,9 +220,9 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/qwen3p7-plus",
         }),
-    "accounts/fireworks/models/glm-5p1": () =>
+    "accounts/fireworks/models/glm-5p2": () =>
         createFireworksModelConfig({
-            model: "accounts/fireworks/models/glm-5p1",
+            model: "accounts/fireworks/models/glm-5p2",
         }),
     "accounts/fireworks/models/minimax-m2p7": () =>
         createFireworksModelConfig({

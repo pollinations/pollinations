@@ -1,0 +1,35 @@
+{
+  "pr_number": 11904,
+  "title": "Add Cashflower to business",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11904",
+  "merged_at": "2026-06-18T13:30:37Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Cashflower](https://cashflower.cru2.net) to business\n- Cashflower turns Pollinations generation into income for everyday users, with results provided using their own numbers.\n\nFixes #11751",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Cashflower blooms in the Greenhouse",
+    "blurb": "The community Greenhouse just got a little greener. Cashflower is a new app that helps you turn your Pollinations generations into actual income.",
+    "summary": "Added the community-built Cashflower app to the Greenhouse directory, providing a tool for users to monetize their AI generations.",
+    "impact": "Creators can now discover Cashflower in the apps list and explore new ways to generate income from their Pollinations usage.",
+    "keywords": [
+      "community",
+      "apps",
+      "cashflower",
+      "greenhouse",
+      "monetization"
+    ],
+    "visual_concept": "A literal 'cash flower' growing in a greenhouse. Polly the bee acting as a gardener, tending to this new community plant.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny straw hat, watering a glowing plant that has shiny golden coins for petals. They are inside a warm, sunlit digital greenhouse with other pixelated code-plants. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-18/PR-11904.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny straw hat, watering a glowing plant that has shiny golden coins for petals. They are inside a warm, sunlit digital greenhouse with other pixelated code-plants. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-18T13:32:13.034003+00:00",
+  "app_name": "Cashflower",
+  "app_url": "https://cashflower.cru2.net"
+}

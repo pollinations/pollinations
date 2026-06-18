@@ -1,0 +1,34 @@
+{
+  "pr_number": 11882,
+  "title": "fix(tinybird): privatize d1_user_public pipe",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11882",
+  "merged_at": "2026-06-18T01:36:56Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Switches `d1_user_public` from the public read token (`tinybird_read_public`) to the private one (`tinybird_read`)\n- The pipe returns the **full user roster** — `id`, `name`, GitHub identity, `tier`, and ban status incl. free-text `ban_reason` — with no pagination, readable by anyone holding the public token shipped in client code\n- Stripping just the ban fields wouldn't fix it: the core problem is an unauthenticated, enumerable list linking internal user IDs to named individuals (PII linkage + customer list)\n- No in-repo consumer reads this pipe (only its own definition referenced it); the two genuinely-public stats pipes (`public_model_stats`, `model_health`) are untouched\n- Original pipe added in #9078 (@ElliotEtag) — if an out-of-repo dashboard reads it via the public token, it will need re-pointing at an authenticated endpoint\n\n**Deploy status:** already deployed to prod (deployment #127) and verified:\n- `d1_user_public` + public token → **403** (was 200, returning real user rows)\n- `public_model_stats` / `model_health` + public token → **200** (unchanged)\n\n> Needs the same deploy on the staging workspace (`pollinations_enter_staging`) — no CI auto-deploy yet (#11127).\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Securing the hive",
+    "blurb": "Tightened up our internal data pipes to keep the hive's information safe and secure.",
+    "summary": "Switched the Tinybird d1_user_public pipe to require a private authentication token instead of the public read token.",
+    "impact": "Internal user data and roster information is now properly protected from unauthorized access.",
+    "keywords": [
+      "security",
+      "tinybird",
+      "observability",
+      "privacy"
+    ],
+    "visual_concept": "Polly the bee securing a data pipe. A cute padlock on a glowing pipe represents the privacy fix.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot placing a shiny golden padlock on a glowing lime green (#ecf874) data pipe. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-18/PR-11882.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot placing a shiny golden padlock on a glowing lime green (#ecf874) data pipe. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-18T01:37:53.749769+00:00"
+}

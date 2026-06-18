@@ -200,9 +200,9 @@ const GEN_API_DOCS = [
     MODELS_DOCS,
     MEDIA_STORAGE_DOCS,
     ACCOUNT_DOCS,
-    PUBLIC_STATS_DOCS,
     SAFETY_DOCS,
     ERRORS_DOCS,
+    PUBLIC_STATS_DOCS,
 ].join("\n\n");
 
 const BYOP_SECTION = `## BYOP\n\n${BYOP_DOCS}`;
@@ -317,9 +317,9 @@ function generationDocumentation(): OpenApiSchema {
                     "🤖 Models",
                     "📦 Media Storage",
                     "👤 Account",
-                    "📊 Public Stats",
-                    "❌ Errors",
                     "🛡️ Safety",
+                    "❌ Errors",
+                    "📊 Public Stats",
                 ],
             },
         ],

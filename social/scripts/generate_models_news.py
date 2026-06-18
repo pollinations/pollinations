@@ -258,14 +258,29 @@ def load_models_md(github_token: str, owner: str, repo: str) -> str:
     return base64.b64decode(resp.json()["content"]).decode()
 
 
-# Fields ignored when comparing models. Pricing fluctuates frequently and is
-# not user-facing model news; description text gets edited for clarity without
-# any underlying capability change.
-_DIFF_IGNORED_FIELDS: frozenset[str] = frozenset({"pricing", "description"})
+# Fields ignored when comparing models.
+# description: prose edits with no capability change.
+# added_date: static timestamp, never changes for existing models.
+# name / id: identity key fields used for lookup — excluded from value comparison
+#   so that snapshots migrating from 'id' to 'name' don't flood the diff.
+_DIFF_IGNORED_FIELDS: frozenset[str] = frozenset({"description", "added_date", "name", "id"})
 
 
 def _normalize_for_diff(model: dict[str, Any]) -> dict[str, Any]:
-    return {k: v for k, v in model.items() if k not in _DIFF_IGNORED_FIELDS}
+    result: dict[str, Any] = {}
+    for k, v in model.items():
+        if k in _DIFF_IGNORED_FIELDS:
+            continue
+        # Sort lists so reordering aliases/modalities/capabilities doesn't
+        # trigger false "changed" entries.
+        result[k] = sorted(str(x) for x in v) if isinstance(v, list) else v
+    return result
+
+
+def _model_key(m: dict[str, Any]) -> str | None:
+    """Return a stable identity key for a model, falling back to 'id' for
+    older snapshots that predate the 'name' field."""
+    return m.get("name") or m.get("id")
 
 
 def diff_models(
@@ -277,15 +292,25 @@ def diff_models(
     changed: dict[str, list[dict[str, Any]]] = {c: [] for c in CATEGORIES}
 
     if previous is None:
-        # First run: do not flood the diff with every existing model. Treat
-        # the very first snapshot as a baseline with no announced changes.
+        # First run: treat the snapshot as baseline with no announced changes.
         return Diff(added=added, removed=removed, changed=changed)
 
     for cat in CATEGORIES:
-        prev_by_name = {
-            m.get("name"): m for m in previous.get(cat, []) if m.get("name")
-        }
-        curr_by_name = {m.get("name"): m for m in current.get(cat, []) if m.get("name")}
+        prev_raw = previous.get(cat, [])
+        curr_raw = current.get(cat, [])
+
+        prev_by_name = {_model_key(m): m for m in prev_raw if _model_key(m)}
+        curr_by_name = {_model_key(m): m for m in curr_raw if _model_key(m)}
+
+        # If the previous snapshot has raw models but none resolved to a key,
+        # the snapshot used a different structure — treat as no baseline to
+        # avoid flooding the diff with every current model as "added".
+        if prev_raw and not prev_by_name:
+            print(
+                f"  Warning: previous snapshot for {cat} has {len(prev_raw)} models "
+                "but none have a resolvable key — skipping diff for this category."
+            )
+            continue
 
         for name, model in curr_by_name.items():
             if name not in prev_by_name:

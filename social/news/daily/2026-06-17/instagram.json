@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-06-17",
+  "period_start": "2026-06-17",
+  "period_end": "2026-06-17",
+  "generated_at": "2026-06-18T07:36:13.270166+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-17/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-17/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-17/images/instagram-3.jpg"
+    }
+  ],
+  "text": "9 PRs merged this week. We cleaned up the registry so model slugs always point to the newest versions (including a massive GLM-5.2 upgrade at half the price). Image generation load balancing now weights by recent latency—basically, we're feeding the fast GPUs first so your ideas render quicker. Added transaction history so you can track exactly where your Pollen goes, and fixed text routing for Claude and Gemini. Oh, and the Sirius elevator models are faster (and sadder). Code's open on GitHub as always.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #generativeai #webdev #stardewvalleyvibes #techupdate",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

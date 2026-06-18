@@ -93,7 +93,23 @@ SKIP_DIRS = {
     ".mypy_cache",
 }
 
-MAX_FILE_SIZE = 500 * 1024
+# Lock files and generated files — large, noisy, zero search value
+SKIP_FILES = {
+    "package-lock.json",
+    "yarn.lock",
+    "pnpm-lock.yaml",
+    "pnpm-lock.yml",
+    "Gemfile.lock",
+    "Pipfile.lock",
+    "poetry.lock",
+    "Cargo.lock",
+    "composer.lock",
+    "go.sum",
+    "flake.lock",
+    "packages.lock.json",
+}
+
+MAX_FILE_SIZE = 200 * 1024  # 200KB — lock files are large; most useful code is small
 
 UPDATE_DEBOUNCE_SECONDS = 30
 _pending_update_task: asyncio.Task | None = None
@@ -288,6 +304,7 @@ async def clone_or_pull_repo(repo: str) -> bool:
                     "git",
                     "clone",
                     "--depth=1",
+                    "--filter=blob:limit=100k",
                     f"https://github.com/{repo}.git",
                     str(repo_path),
                 ],
@@ -328,13 +345,16 @@ def _collect_code_files(repo_path: Path) -> list[Path]:
             list(SKIP_DIRS),
             MAX_FILE_SIZE,
         )
-        return [Path(p) for p in paths]
+        return [Path(p) for p in paths if Path(p).name not in SKIP_FILES]
 
     files = []
     for root, dirs, filenames in os.walk(repo_path):
         dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
 
         for filename in filenames:
+            if filename in SKIP_FILES:
+                continue
+
             file_path = Path(root) / filename
 
             if file_path.suffix.lower() not in CODE_EXTENSIONS:

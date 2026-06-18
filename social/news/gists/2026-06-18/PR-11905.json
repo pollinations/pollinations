@@ -1,0 +1,34 @@
+{
+  "pr_number": 11905,
+  "title": "fix: force static avatar in catgpt-bot",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11905",
+  "merged_at": "2026-06-18T13:47:46Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "Animated (.gif) avatars failed the text API with a 400 because the gateway rejects gif image input. `forceStatic: true` resolves them to .png.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Freeze Frame Felines",
+    "blurb": "Fixed a bug where animated avatars were causing hiccups in CatGPT. We're now forcing static PNGs so the text API stays happy and purring.",
+    "summary": "Fixed a 400 error in the CatGPT bot by forcing animated GIF avatars to resolve as static PNGs before hitting the text API gateway.",
+    "impact": "Users with animated avatars will no longer trigger errors when interacting with the CatGPT bot.",
+    "keywords": [
+      "catgpt",
+      "bug-fix",
+      "avatar",
+      "discord-bot"
+    ],
+    "visual_concept": "Polly the bee fixing a 'wiggly' or animated cat by taking a static snapshot. Represents converting animated GIF avatars to static PNGs for CatGPT.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot using a retro instant camera to take a picture of a wiggly, blurry pixel cat. A crisp, static polaroid photo of the cat pops out of the camera. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-18/PR-11905.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot using a retro instant camera to take a picture of a wiggly, blurry pixel cat. A crisp, static polaroid photo of the cat pops out of the camera. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-18T13:48:49.634628+00:00"
+}

@@ -5,7 +5,6 @@ import {
 } from "@shared/auth/api-key-creation.ts";
 import {
     apikey as apikeyTable,
-    questPayoutCredits as questPayoutCreditsTable,
     rewardGrants as rewardGrantsTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
@@ -825,9 +824,6 @@ const accountQuestGrantSchema = z.object({
     sourceRef: z.string().nullable(),
     metadata: z.record(z.string(), z.unknown()).nullable(),
     createdAt: z.string(),
-    legacy: z.boolean(),
-    questIssueNumber: z.number().nullable(),
-    prNumber: z.number().nullable(),
 });
 
 const accountQuestResponseSchema = z.object({
@@ -1350,7 +1346,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Completed Quest Rewards",
             description:
-                "Returns completed grant-style quest rewards for the authenticated account. Includes generic reward grant rows and legacy GitHub quest payouts that have not been dual-written yet. Requires `account:usage` permission when using API keys.",
+                "Returns completed grant-style quest rewards for the authenticated account from the reward_grants ledger. Requires `account:usage` permission when using API keys.",
             responses: {
                 200: {
                     description: "Completed quest rewards",
@@ -1375,79 +1371,33 @@ export const accountRoutes = new Hono<Env>()
             requireUsagePermission(c.var.auth.apiKey);
 
             const db = drizzle(c.env.DB);
-            const [rewardRows, legacyRows] = await Promise.all([
-                db
-                    .select({
-                        id: rewardGrantsTable.id,
-                        idempotencyKey: rewardGrantsTable.idempotencyKey,
-                        source: rewardGrantsTable.source,
-                        questId: rewardGrantsTable.questId,
-                        pollenCredited: rewardGrantsTable.pollenCredited,
-                        balanceBucket: rewardGrantsTable.balanceBucket,
-                        sourceRef: rewardGrantsTable.sourceRef,
-                        metadataJson: rewardGrantsTable.metadataJson,
-                        createdAt: rewardGrantsTable.createdAt,
-                    })
-                    .from(rewardGrantsTable)
-                    .where(eq(rewardGrantsTable.userId, user.id))
-                    .orderBy(desc(rewardGrantsTable.createdAt)),
-                db
-                    .select({
-                        payoutKey: questPayoutCreditsTable.payoutKey,
-                        questIssueNumber:
-                            questPayoutCreditsTable.questIssueNumber,
-                        prNumber: questPayoutCreditsTable.prNumber,
-                        role: questPayoutCreditsTable.role,
-                        githubUsername: questPayoutCreditsTable.githubUsername,
-                        pollenCredited: questPayoutCreditsTable.pollenCredited,
-                        createdAt: questPayoutCreditsTable.createdAt,
-                    })
-                    .from(questPayoutCreditsTable)
-                    .where(eq(questPayoutCreditsTable.userId, user.id))
-                    .orderBy(desc(questPayoutCreditsTable.createdAt)),
-            ]);
+            const rewardRows = await db
+                .select({
+                    id: rewardGrantsTable.id,
+                    idempotencyKey: rewardGrantsTable.idempotencyKey,
+                    source: rewardGrantsTable.source,
+                    questId: rewardGrantsTable.questId,
+                    pollenCredited: rewardGrantsTable.pollenCredited,
+                    balanceBucket: rewardGrantsTable.balanceBucket,
+                    sourceRef: rewardGrantsTable.sourceRef,
+                    metadataJson: rewardGrantsTable.metadataJson,
+                    createdAt: rewardGrantsTable.createdAt,
+                })
+                .from(rewardGrantsTable)
+                .where(eq(rewardGrantsTable.userId, user.id))
+                .orderBy(desc(rewardGrantsTable.createdAt));
 
-            const rewardKeys = new Set(
-                rewardRows.map((row) => row.idempotencyKey),
-            );
-            const grants = [
-                ...rewardRows.map((row) => ({
-                    id: row.id,
-                    idempotencyKey: row.idempotencyKey,
-                    source: row.source,
-                    questId: row.questId,
-                    pollenCredited: row.pollenCredited,
-                    balanceBucket: row.balanceBucket,
-                    sourceRef: row.sourceRef,
-                    metadata: parseGrantMetadata(row.metadataJson),
-                    createdAt: formatGrantTimestamp(row.createdAt),
-                    legacy: false,
-                    questIssueNumber: null,
-                    prNumber: null,
-                })),
-                ...legacyRows
-                    .filter((row) => !rewardKeys.has(row.payoutKey))
-                    .map((row) => ({
-                        id: row.payoutKey,
-                        idempotencyKey: row.payoutKey,
-                        source: "code_quest",
-                        questId: `github:${row.questIssueNumber}`,
-                        pollenCredited: row.pollenCredited,
-                        balanceBucket: "pack",
-                        sourceRef: `pr:${row.prNumber}`,
-                        metadata: {
-                            role: row.role,
-                            githubUsername: row.githubUsername,
-                        },
-                        createdAt: formatGrantTimestamp(row.createdAt),
-                        legacy: true,
-                        questIssueNumber: row.questIssueNumber,
-                        prNumber: row.prNumber,
-                    })),
-            ].sort(
-                (left, right) =>
-                    Date.parse(right.createdAt) - Date.parse(left.createdAt),
-            );
+            const grants = rewardRows.map((row) => ({
+                id: row.id,
+                idempotencyKey: row.idempotencyKey,
+                source: row.source,
+                questId: row.questId,
+                pollenCredited: row.pollenCredited,
+                balanceBucket: row.balanceBucket,
+                sourceRef: row.sourceRef,
+                metadata: parseGrantMetadata(row.metadataJson),
+                createdAt: formatGrantTimestamp(row.createdAt),
+            }));
 
             const totalPollen = grants.reduce(
                 (total, grant) => total + grant.pollenCredited,

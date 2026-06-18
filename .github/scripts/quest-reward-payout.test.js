@@ -93,6 +93,7 @@ test("community issue quest returns a payout candidate for merged quest PRs", as
         prNumber: 42,
         recipient: "dev-user",
         recipientId: 999,
+        role: "assignee",
         amount: 15,
         eventId: "issue:321",
         sourceRef: "pr:42",

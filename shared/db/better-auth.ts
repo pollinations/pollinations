@@ -233,29 +233,13 @@ export const stripeCheckoutCredits = sqliteTable("stripe_checkout_credits", {
   index("idx_stripe_checkout_credits_user_id").on(table.userId),
 ]);
 
-export const questPayoutCredits = sqliteTable("quest_payout_credits", {
-  payoutKey: text("payout_key").primaryKey(),
-  questIssueNumber: integer("quest_issue_number").notNull(),
-  prNumber: integer("pr_number").notNull(),
-  role: text("role").notNull(),
-  githubUsername: text("github_username").notNull(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  pollenCredited: real("pollen_credited").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" })
-    .defaultNow()
-    .notNull(),
-}, (table) => [
-  index("idx_quest_payout_credits_user_id").on(table.userId),
-  index("idx_quest_payout_credits_quest_issue").on(table.questIssueNumber),
-]);
-
 // Generic, source-agnostic ledger for discrete pollen grants (quests,
-// onboarding, referrals, manual credits, …). Unlike quest_payout_credits this
-// makes no GitHub assumptions: `source` discriminates the grant kind and the
-// GitHub-specific bits (issue/PR) become optional `sourceRef`/`metadataJson`.
-// One row == one idempotent grant that paired with a balance credit.
+// onboarding, referrals, manual credits, …). Makes no GitHub assumptions:
+// `source` discriminates the grant kind and the GitHub-specific bits (issue/PR,
+// role, username) live in optional `sourceRef`/`metadataJson`. One row == one
+// idempotent grant paired with a balance credit. This is the single quest
+// ledger; the old GitHub-shaped quest_payout_credits table was backfilled into
+// here and dropped (migration 0028).
 export const rewardGrants = sqliteTable("reward_grants", {
   id: text("id").primaryKey(),
   // Idempotency guard. Format is source-specific, e.g.

@@ -231,7 +231,6 @@ test("quest evaluator grants code-defined product quests once", async ({
             questId: string | null;
             pollenCredited: number;
             balanceBucket: string;
-            legacy: boolean;
         }[];
     };
 
@@ -244,32 +243,38 @@ test("quest evaluator grants code-defined product quests once", async ({
     ).toMatchObject({
         pollenCredited: 0.5,
         balanceBucket: "pack",
-        legacy: false,
     });
     expect(
         payload.grants.find((grant) => grant.questId === "spend:first_top_up"),
     ).toMatchObject({
         pollenCredited: 2,
         balanceBucket: "pack",
-        legacy: false,
     });
 });
 
-test("account quest history includes legacy GitHub quest payouts", async ({
+test("account quest history includes GitHub quest reward grants", async ({
     sessionToken,
 }) => {
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
     const payoutKey = "quest:123:gh:456:role:assignee";
 
-    await db.insert(schema.questPayoutCredits).values({
-        payoutKey,
-        questIssueNumber: 123,
-        prNumber: 789,
-        role: "assignee",
-        githubUsername: "octocat",
+    await db.insert(schema.rewardGrants).values({
+        id: payoutKey,
+        idempotencyKey: payoutKey,
         userId: user.id,
+        source: "code_quest",
+        questId: "github:community_issue_quest",
         pollenCredited: 5,
+        balanceBucket: "pack",
+        sourceRef: "pr:789",
+        metadataJson: JSON.stringify({
+            questTypeId: "github:community_issue_quest",
+            issueNumber: 123,
+            prNumber: 789,
+            role: "assignee",
+            githubUsername: "octocat",
+        }),
         createdAt: new Date(),
     });
 
@@ -289,9 +294,8 @@ test("account quest history includes legacy GitHub quest payouts", async ({
             idempotencyKey: string;
             questId: string | null;
             pollenCredited: number;
-            legacy: boolean;
-            questIssueNumber: number | null;
-            prNumber: number | null;
+            sourceRef: string | null;
+            metadata: Record<string, unknown> | null;
         }[];
     };
 
@@ -299,11 +303,16 @@ test("account quest history includes legacy GitHub quest payouts", async ({
     expect(payload.grants).toHaveLength(1);
     expect(payload.grants[0]).toMatchObject({
         idempotencyKey: payoutKey,
-        questId: "github:123",
+        questId: "github:community_issue_quest",
         pollenCredited: 5,
-        legacy: true,
-        questIssueNumber: 123,
-        prNumber: 789,
+        sourceRef: "pr:789",
+        metadata: {
+            questTypeId: "github:community_issue_quest",
+            issueNumber: 123,
+            prNumber: 789,
+            role: "assignee",
+            githubUsername: "octocat",
+        },
     });
 });
 

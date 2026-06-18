@@ -1,0 +1,35 @@
+{
+  "pr_number": 11881,
+  "title": "fix: stabilize transaction history pagination",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11881",
+  "merged_at": "2026-06-18T02:05:08Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Fixes transaction history pagination by using the Tinybird event id tie-breaker with the timestamp cursor.\n- Returns `cursor_event_id` in JSON usage rows while keeping CSV columns unchanged.\n- Displays API key names by resolving `api_key_id`, with the returned key name as fallback.\n- Clarifies that activity charts use UTC buckets while transaction rows use local time.\n\nChecks:\n- `npx biome check --write enter.pollinations.ai/src/routes/account.ts enter.pollinations.ai/frontend/src/components/activity/transaction-history.tsx enter.pollinations.ai/frontend/src/routes/index.tsx enter.pollinations.ai/test/account-usage.test.ts`\n- `npx tsc --noEmit -p enter.pollinations.ai/frontend/src/tsconfig.json`\n- `npm run decrypt-vars && npx vitest run test/account-usage.test.ts`\n- `npm run typecheck`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A perfect ledger",
+    "blurb": "Flipping through your transaction history is now perfectly smooth. We squashed a pagination bug and added API key names so you always know exactly what your hive is up to.",
+    "summary": "Stabilized transaction history pagination by adding a Tinybird event ID tie-breaker to the timestamp cursor, and updated the UI to resolve and display API key names.",
+    "impact": "Paging through account usage is now perfectly reliable, and developers can instantly see which specific API key generated each transaction.",
+    "keywords": [
+      "pagination",
+      "transaction history",
+      "api keys",
+      "tinybird",
+      "bug fix"
+    ],
+    "visual_concept": "The bee mascot acting as an accountant or archivist, organizing a long, continuous scroll or ledger of transactions. A retro computer monitor showing a neat list of API keys.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, carefully organizing a long, glowing digital scroll of transaction records. A chunky retro monitor in the background displays a neat, lime green (#ecf874) list of API keys. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-18/PR-11881.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, carefully organizing a long, glowing digital scroll of transaction records. A chunky retro monitor in the background displays a neat, lime green (#ecf874) list of API keys. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-06-18T02:06:14.385449+00:00"
+}

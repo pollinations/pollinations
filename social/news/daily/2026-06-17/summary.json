@@ -1,0 +1,47 @@
+{
+  "date": "2026-06-17",
+  "period_start": "2026-06-17",
+  "period_end": "2026-06-17",
+  "title": "Clean slugs and a massive GLM upgrade",
+  "summary": "A heavy routing day: smarter image load balancing, auto-updating model slugs, and a massive context bump for GLM.\n\nUnversioned model slugs (`openai-large`, `claude-large`, `gemini`) now automatically resolve to the newest models (GPT-5.5, Opus 4.8, 3.5 Flash) while preserving older versions under specific names. We also bumped the `glm` slug to GLM-5.2, expanding the context window to 1M tokens and slicing the pollen cost in half.\n\nThe image generation load balancer now weights routing based on recent latency rather than a uniform distribution. Faster hardware like 4090s will naturally absorb more traffic. We also isolated the latency tracking in the KV store to stop race conditions from wiping the weights. Net result: fewer timeouts, faster pixels.\n\nClaude Opus 4.7 and 4.8 were throwing 500s on global Bedrock profiles, so we forced them to `us.*` regions. Meanwhile, Gemini was leaking proxy health strings into completions, so we reverted to direct Vertex connections. Responses should be reliable and artifact-free again.",
+  "pr_count": 9,
+  "prs": [
+    {
+      "number": 11711,
+      "date": "2026-06-17"
+    },
+    {
+      "number": 11846,
+      "date": "2026-06-17"
+    },
+    {
+      "number": 11855,
+      "date": "2026-06-17"
+    },
+    {
+      "number": 11869,
+      "date": "2026-06-17"
+    },
+    {
+      "number": 11870,
+      "date": "2026-06-17"
+    },
+    {
+      "number": 11871,
+      "date": "2026-06-17"
+    },
+    {
+      "number": 11873,
+      "date": "2026-06-17"
+    },
+    {
+      "number": 11875,
+      "date": "2026-06-17"
+    },
+    {
+      "number": 11876,
+      "date": "2026-06-17"
+    }
+  ],
+  "generated_at": "2026-06-18T07:36:13.270166+00:00"
+}

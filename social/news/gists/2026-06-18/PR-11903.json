@@ -1,0 +1,35 @@
+{
+  "pr_number": 11903,
+  "title": "Add Pollen Studio to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11903",
+  "merged_at": "2026-06-18T10:49:57Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Pollen Studio](https://pollenstudio.cru2.net) to build\n- Pollen Studio is a static-files BYOP comparator for Pollinations.AI. Users connect via enter.pollinations.ai authorize flow and compare image, text, and TTS models side-by-side across three modes.\n\nFixes #11229",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Welcome to Pollen Studio",
+    "blurb": "A new community app just dropped! Pollen Studio lets you compare image, text, and audio models side-by-side using your own Pollen pass.",
+    "summary": "Added Pollen Studio to the community showcase, a static-file comparator app that uses the Pollinations authorization flow to let users test image, text, and TTS models side-by-side.",
+    "impact": "Users can now easily evaluate and compare different AI models across three distinct modes in a single, unified interface.",
+    "keywords": [
+      "community",
+      "app",
+      "comparator",
+      "models",
+      "pollen-studio"
+    ],
+    "visual_concept": "Polly the bee in a cozy art studio or laboratory, looking at multiple canvases or screens side-by-side to represent the 'comparator' aspect of the app. She wears a tiny painter's beret to fit the 'Studio' theme.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny painter's beret, standing in a warm digital studio. She is happily looking at three glowing retro monitors side-by-side showing different pixelated landscapes and text, representing a model comparator. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-18/PR-11903.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny painter's beret, standing in a warm digital studio. She is happily looking at three glowing retro monitors side-by-side showing different pixelated landscapes and text, representing a model comparator. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-18T10:51:03.355330+00:00",
+  "app_name": "Pollen Studio",
+  "app_url": "https://pollenstudio.cru2.net"
+}

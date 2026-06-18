@@ -243,12 +243,12 @@ export const stripeCheckoutCredits = sqliteTable("stripe_checkout_credits", {
 export const rewardGrants = sqliteTable("reward_grants", {
   id: text("id").primaryKey(),
   // Idempotency guard. Format is source-specific, e.g.
-  // "quest:{issue}:gh:{githubId}:role:{role}" or "first_image:{userId}".
+  // "quest:{issue}:gh:{githubId}:role:{role}" or "quest:{questId}:user:{userId}".
   idempotencyKey: text("idempotency_key").notNull().unique(),
   userId: text("user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
-  // Grant kind, e.g. code_quest | first_image | first_top_up | streak | referral | manual.
+  // Grant kind, e.g. code_quest | product_quest | referral | manual.
   source: text("source").notNull(),
   // Catalog id for product quests; null for one-off/manual grants.
   questId: text("quest_id"),

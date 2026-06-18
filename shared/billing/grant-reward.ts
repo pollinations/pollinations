@@ -10,12 +10,12 @@ export interface GrantRewardInput {
     /**
      * Idempotency guard. Must be deterministic for the logical grant so retries
      * never double-pay, e.g. "quest:{issue}:gh:{githubId}:role:{role}" or
-     * "first_image:{userId}". Mirrors the payout_key pattern of
+     * "quest:{questId}:user:{userId}". Mirrors the payout_key pattern of
      * quest_payout_credits / the session_id of stripe_checkout_credits.
      */
     idempotencyKey: string;
     userId: string;
-    /** Grant kind, e.g. code_quest | first_image | first_top_up | referral | manual. */
+    /** Grant kind, e.g. code_quest | product_quest | referral | manual. */
     source: string;
     amount: number;
     /** Which balance bucket to credit. Defaults to "pack"; pass "tier" to override. */

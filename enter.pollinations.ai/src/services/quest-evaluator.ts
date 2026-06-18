@@ -12,6 +12,7 @@ import { drizzle } from "drizzle-orm/d1";
 
 const log = getLogger(["enter", "quest-evaluator"]);
 const MAX_GRANTS_PER_RUN = 500;
+const PRODUCT_QUEST_SOURCE = "product_quest";
 
 type QuestEvaluatorResult = {
     questId: string;
@@ -50,7 +51,7 @@ async function grantCandidates({
         const result = await grantReward(db, {
             idempotencyKey: buildGrantKey(definition, candidate),
             userId: candidate.userId,
-            source: definition.eventType,
+            source: PRODUCT_QUEST_SOURCE,
             questId,
             amount: candidate.amount ?? definition.rewardAmount,
             bucket: definition.balanceBucket,

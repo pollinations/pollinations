@@ -227,6 +227,7 @@ test("quest evaluator grants code-defined product quests once", async ({
     const payload = (await response.json()) as {
         totalPollen: number;
         grants: {
+            source: string;
             questId: string | null;
             pollenCredited: number;
             balanceBucket: string;
@@ -244,12 +245,14 @@ test("quest evaluator grants code-defined product quests once", async ({
             (grant) => grant.questId === "onboarding:first_api_key",
         ),
     ).toMatchObject({
+        source: "product_quest",
         pollenCredited: 0.5,
         balanceBucket: "pack",
     });
     expect(
         payload.grants.find((grant) => grant.questId === "spend:first_top_up"),
     ).toMatchObject({
+        source: "product_quest",
         pollenCredited: 2,
         balanceBucket: "pack",
     });

@@ -1,0 +1,34 @@
+{
+  "pr_number": 11888,
+  "title": "feat(tinybird): expose public stats pipes + docs",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11888",
+  "merged_at": "2026-06-18T09:16:52Z",
+  "labels": [],
+  "pr_body_excerpt": "Exposes anonymous, read-only platform stats via Tinybird public token, and documents them in the gen API docs (Scalar).\n\n**Pipes**\n- Adds `app_directory_public` — public passthrough of the community app directory (APPS.md); drops internal fields (github_user_id, free-text other)\n- `app_top_weekly` — adds public read token; scopes to apps whose owner is a published showcase contributor; corrects description (owner is in showcase, returned app may be any of their registered apps)\n- `weekly_health_stats` — adds public read token; corrects availability to `2xx / (2xx + 5xx)` (5xx-only failures, 4xx excluded, cache excluded), matching the model monitor; availability now in percent\n\n**Docs**\n- Adds Public Stats section to gen docs (all 5 public pipes, public read token, curl example)\n- Reorders Resources sidebar: Safety, Errors, then Public Stats last\n\nDeployed to prod (`pollinations_enter`, deployment #128); all 5 pipes verified returning correct data on the public token. Staging (`pollinations_enter_staging`) still needs the same deploy for parity.\n\nSupersedes #11883 (docs folded in here).",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Stats for the swarm",
+    "blurb": "We've opened up our platform analytics. You can now query live data on top apps, health metrics, and the community directory directly via our public Tinybird token.",
+    "summary": "Exposed five read-only platform statistics pipes via a public Tinybird token, including a new app_directory_public endpoint, and added a Public Stats section to the API documentation.",
+    "impact": "Developers can now query live platform health metrics, top weekly apps, and the community app directory directly, with full documentation and curl examples available in the API docs.",
+    "keywords": [
+      "analytics",
+      "tinybird",
+      "api",
+      "docs",
+      "stats",
+      "observability"
+    ],
+    "visual_concept": "The bee mascot and a tiny pixel bird (representing Tinybird) looking at a glowing retro terminal displaying colorful bar charts and graphs. The theme is data, stats, transparency, and public access.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a tiny blue pixel bird looking at a glowing retro terminal displaying colorful bar charts and graphs. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-18/PR-11888.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a tiny blue pixel bird looking at a glowing retro terminal displaying colorful bar charts and graphs. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-18T09:17:54.489639+00:00"
+}

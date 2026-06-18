@@ -8,6 +8,7 @@ import {
     EarningsGraph,
     getEarningsEnabledApps,
     PeriodPicker,
+    TransactionHistory,
     UsageGraph,
     type UsagePeriodSelection,
 } from "../components/activity";
@@ -305,6 +306,12 @@ function RouteComponent() {
                             <TierPanel {...tierData} />
                         </Section>
                     )}
+                    <Section title="Recent transactions" framed>
+                        <TransactionHistory
+                            mode="compact"
+                            apiKeys={selectableKeys}
+                        />
+                    </Section>
                 </div>
             )}
             {activePage === "activity" && (
@@ -316,7 +323,8 @@ function RouteComponent() {
                             minDate={ACTIVITY_MIN_DATE}
                         />
                         <p className="text-micro text-theme-text-muted">
-                            Data refreshes every hour. Times shown in UTC.
+                            Usage data refreshes every hour. Chart buckets use
+                            UTC; transactions use your local time.
                         </p>
                     </div>
                     <UsageGraph
@@ -334,6 +342,12 @@ function RouteComponent() {
                             apps={earningsEnabledApps}
                         />
                     )}
+                    <Section title="Transactions" framed>
+                        <TransactionHistory
+                            mode="full"
+                            apiKeys={selectableKeys}
+                        />
+                    </Section>
                 </div>
             )}
             {activePage === "keys" && (

@@ -17,7 +17,7 @@ from io import BytesIO
 import torch
 import uvicorn
 from fastapi import Depends, FastAPI, Header, HTTPException
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel, Field
 
 logging.basicConfig(level=logging.INFO)
@@ -92,8 +92,14 @@ async def generate(request: ImageRequest, _=Depends(verify_backend_token)):
         for img_b64 in request.images[:10]:
             if img_b64.startswith("data:"):
                 img_b64 = img_b64.split(",", 1)[1]
-            img_bytes = base64.b64decode(img_b64)
-            img = Image.open(BytesIO(img_bytes)).convert("RGB")
+            # Bad reference image input is a client error (400), not a 500.
+            try:
+                img_bytes = base64.b64decode(img_b64)
+                img = Image.open(BytesIO(img_bytes)).convert("RGB")
+            except (UnidentifiedImageError, base64.binascii.Error, ValueError) as e:
+                raise HTTPException(
+                    status_code=400, detail=f"Invalid reference image: {e}"
+                ) from e
             reference_images.append(img)
         if len(reference_images) == 1:
             reference_images = reference_images[0]

@@ -291,6 +291,42 @@ def _normalize_for_diff(model: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
+def _migrate_old_snapshot(
+    snapshot: dict[str, list[dict[str, Any]]],
+) -> dict[str, list[dict[str, Any]]]:
+    """One-time migration: old snapshots stored image+video together under 'image'
+    (fetched from /image/models before the video split). If 'video' is absent but
+    'image' is present, re-bucket by each model's 'category' field so the diff
+    doesn't report all video models as removed from image."""
+    if "video" in snapshot or "image" not in snapshot:
+        return snapshot
+    migrated = {k: list(v) for k, v in snapshot.items()}
+    migrated["image"] = [m for m in snapshot["image"] if m.get("category") != "video"]
+    migrated["video"] = [m for m in snapshot["image"] if m.get("category") == "video"]
+    video_count = len(migrated["video"])
+    if video_count:
+        print(f"  Migrated {video_count} video model(s) out of old 'image' bucket.")
+    return migrated
+
+
+def _migrate_old_snapshot(
+    snapshot: dict[str, list[dict[str, Any]]],
+) -> dict[str, list[dict[str, Any]]]:
+    """One-time migration: old snapshots stored image+video together under 'image'
+    (fetched from /image/models before the video split). If 'video' is absent but
+    'image' is present, re-bucket by each model's 'category' field so the diff
+    doesn't report all video models as removed from image."""
+    if "video" in snapshot or "image" not in snapshot:
+        return snapshot
+    migrated = {k: list(v) for k, v in snapshot.items()}
+    migrated["image"] = [m for m in snapshot["image"] if m.get("category") != "video"]
+    migrated["video"] = [m for m in snapshot["image"] if m.get("category") == "video"]
+    video_count = len(migrated["video"])
+    if video_count:
+        print(f"  Migrated {video_count} video model(s) out of old 'image' bucket.")
+    return migrated
+
+
 def _model_key(m: dict[str, Any]) -> str | None:
     """Return a stable identity key for a model, falling back to 'id' for
     older snapshots that predate the 'name' field."""
@@ -468,7 +504,9 @@ def main() -> int:
             github_token, owner, repo, target_date
         )
         previous = (
-            load_snapshot_from_news(github_token, owner, repo, previous_date)
+            _migrate_old_snapshot(
+                load_snapshot_from_news(github_token, owner, repo, previous_date)
+            )
             if previous_date
             else None
         )

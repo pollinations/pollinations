@@ -7,6 +7,125 @@ from .._url import parse_url
 
 logger = logging.getLogger(__name__)
 
+_BOT_MARKERS = [
+    "cloudflare",
+    "captcha",
+    "just a moment",
+    "checking your browser",
+    "access denied",
+    "please enable javascript",
+    "are you a robot",
+    "security check",
+    "ddos protection",
+    "cf-browser-verification",
+    "recaptcha",
+]
+
+
+def _is_bot_blocked(html: str, status: int) -> bool:
+    if status in (403, 429, 503):
+        return True
+    if len(html) < 1500:
+        lower = html.lower()
+        return any(m in lower for m in _BOT_MARKERS)
+    return False
+
+
+def _html_to_markdown(html: str) -> str:
+    try:
+        import html2text
+
+        h = html2text.HTML2Text()
+        h.ignore_links = False
+        h.ignore_images = True
+        h.body_width = 0
+        h.unicode_snob = True
+        return h.handle(html).strip()
+    except ImportError:
+        from bs4 import BeautifulSoup
+
+        soup = BeautifulSoup(html, "html.parser")
+        for tag in soup(["script", "style", "noscript", "nav", "footer", "aside"]):
+            tag.decompose()
+        return soup.get_text(separator="\n", strip=True)
+
+
+def _needs_browser(
+    output_format: str,
+    extraction_strategy: str | None,
+    content_filter: str | None,
+    js_code: str | None,
+    wait_for: str | None,
+    screenshot: bool,
+    pdf: bool,
+    stealth_mode: bool,
+    simulate_user: bool,
+    magic_mode: bool,
+    process_iframes: bool,
+    include_links: bool,
+    include_images: bool,
+    include_tables: bool,
+) -> bool:
+    return bool(
+        output_format in ("fit_markdown", "html")
+        or extraction_strategy
+        or content_filter
+        or js_code
+        or wait_for
+        or screenshot
+        or pdf
+        or stealth_mode
+        or simulate_user
+        or magic_mode
+        or process_iframes
+        or include_links
+        or include_images
+        or include_tables
+    )
+
+
+async def _try_rnet(url: str, timeout: int) -> str | None:
+    try:
+        from rnet import Client, Impersonate
+
+        client = Client(
+            timeout=timeout,
+            impersonate=Impersonate.Chrome136,
+            redirect=10,
+        )
+        resp = await client.get(url)
+        status = resp.status
+        if status in (403, 429, 503):
+            return None
+        html = await resp.text()
+        if not html or _is_bot_blocked(html, status):
+            return None
+        md = _html_to_markdown(html)
+        return md if md and len(md) > 50 else None
+    except Exception as e:
+        logger.debug(f"rnet failed for {url}: {e}")
+        return None
+
+
+async def _try_scrapling(url: str, timeout: int) -> str | None:
+    try:
+        from scrapling.fetchers import AsyncFetcher
+
+        page = await asyncio.wait_for(
+            AsyncFetcher().get(url, follow_redirects=True),
+            timeout=timeout,
+        )
+        html = page.html_content if hasattr(page, "html_content") else ""
+        if not html:
+            html = page.body.decode(page.encoding or "utf-8", errors="replace") if hasattr(page, "body") else ""
+        if not html or _is_bot_blocked(html, 200):
+            return None
+        md = _html_to_markdown(html)
+        return md if md and len(md) > 50 else None
+    except Exception as e:
+        logger.debug(f"scrapling failed for {url}: {e}")
+        return None
+
 
 async def scrape_url(
     url: str,
@@ -47,6 +166,99 @@ async def scrape_url(
     except Exception:
         return {"success": False, "url": url, "error": "Invalid URL format"}
 
+    # ── Layer 1: rnet (Rust HTTP + Chrome TLS) ────────────────────────────────
+    # ── Layer 2: scrapling AsyncFetcher (curl_cffi stealth) ──────────────────
+    # Fast path for basic markdown — skip browser entirely when not needed.
+    if not _needs_browser(
+        output_format=output_format,
+        extraction_strategy=extraction_strategy,
+        content_filter=content_filter,
+        js_code=js_code,
+        wait_for=wait_for,
+        screenshot=screenshot,
+        pdf=pdf,
+        stealth_mode=stealth_mode,
+        simulate_user=simulate_user,
+        magic_mode=magic_mode,
+        process_iframes=process_iframes,
+        include_links=include_links,
+        include_images=include_images,
+        include_tables=include_tables,
+    ):
+        rnet_timeout = min(timeout, 12)
+        md = await _try_rnet(url, rnet_timeout)
+        if md:
+            logger.debug(f"rnet succeeded for {url}")
+            return {"success": True, "url": url, "title": "", "markdown": md, "_fetcher": "rnet"}
+
+        scrapling_timeout = min(timeout, 18)
+        md = await _try_scrapling(url, scrapling_timeout)
+        if md:
+            logger.debug(f"scrapling succeeded for {url}")
+            return {"success": True, "url": url, "title": "", "markdown": md, "_fetcher": "scrapling"}
+
+        logger.debug(f"rnet+scrapling both failed for {url}, falling back to crawl4ai")
+
+    # ── Layer 3: crawl4ai (Playwright browser) ────────────────────────────────
+    # Used when: browser features needed, or rnet/scrapling returned empty.
+    return await _scrape_with_crawl4ai(
+        url=url,
+        extraction_strategy=extraction_strategy,
+        schema=schema,
+        instruction=instruction,
+        semantic_filter=semantic_filter,
+        regex_patterns=regex_patterns,
+        content_filter=content_filter,
+        filter_query=filter_query,
+        include_links=include_links,
+        include_images=include_images,
+        include_raw_html=include_raw_html,
+        include_tables=include_tables,
+        output_format=output_format,
+        js_code=js_code,
+        wait_for=wait_for,
+        screenshot=screenshot,
+        pdf=pdf,
+        stealth_mode=stealth_mode,
+        simulate_user=simulate_user,
+        magic_mode=magic_mode,
+        scan_full_page=scan_full_page,
+        process_iframes=process_iframes,
+        remove_overlays=remove_overlays,
+        timeout=timeout,
+        headless=headless,
+        session_id=session_id,
+    )
+
+
+async def _scrape_with_crawl4ai(
+    url: str,
+    extraction_strategy: str | None = None,
+    schema: dict[str, Any] | None = None,
+    instruction: str | None = None,
+    semantic_filter: str | None = None,
+    regex_patterns: list[str] | None = None,
+    content_filter: str | None = None,
+    filter_query: str | None = None,
+    include_links: bool = False,
+    include_images: bool = False,
+    include_raw_html: bool = False,
+    include_tables: bool = False,
+    output_format: str = "markdown",
+    js_code: str | None = None,
+    wait_for: str | None = None,
+    screenshot: bool = False,
+    pdf: bool = False,
+    stealth_mode: bool = False,
+    simulate_user: bool = False,
+    magic_mode: bool = False,
+    scan_full_page: bool = False,
+    process_iframes: bool = False,
+    remove_overlays: bool = True,
+    timeout: int = 30,
+    headless: bool = True,
+    session_id: str | None = None,
+) -> dict:
     try:
         from crawl4ai import AsyncWebCrawler, BrowserConfig, CacheMode, CrawlerRunConfig
 
@@ -105,6 +317,7 @@ async def scrape_url(
                 "success": True,
                 "url": url,
                 "title": result.metadata.get("title", "") if result.metadata else "",
+                "_fetcher": "crawl4ai",
             }
 
             if output_format == "fit_markdown" and result.markdown and result.markdown.fit_markdown:
@@ -628,7 +841,7 @@ async def web_scrape_handler(
         return {
             "error": f"Unknown action: {action}",
             "available_actions": [
-                "scrape - Single URL to markdown",
+                "scrape - Single URL to markdown (rnet → scrapling → crawl4ai)",
                 "extract - URL + LLM extraction",
                 "css_extract - URL + CSS schema (fast)",
                 "semantic - URL + cosine clustering",

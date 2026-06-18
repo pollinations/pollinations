@@ -1,0 +1,35 @@
+{
+  "pr_number": 11907,
+  "title": "fix(social): accurate model diff + richer Discord news format",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/11907",
+  "merged_at": "2026-06-18T14:39:32Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "The weekly models report was announcing models that hadn't changed at all — calling them \"added\" — and ignoring pricing changes entirely. Both issues are fixed here.\n\n**What was wrong:**\n- `pricing` was in the ignored-fields set, so price changes were invisible to the diff\n- Old snapshots keyed models by `id`; current snapshots use `name`. When comparing the two, `prev_by_name` resolved to an empty dict, making every live model appear as newly added\n- List fields like `aliases` and `input_modalities` weren't sorted before comparison, so a reordering from the API would trigger a false \"changed\" entry\n\n**What's fixed:**\n- `pricing` is now compared — price cuts, hikes, and paid-only flips all show up in the diff\n- `_model_key()` tries `name` first, then `id` as fallback, so old and new snapshots resolve to the same identity\n- `name` and `id` are excluded from the *value* comparison (they're already the lookup key)\n- `added_date` excluded — it's a static timestamp that never changes for existing models\n- List fields sorted before compare — alias reordering is not news\n- Guard added: if old snapshot has raw models but none resolve to a key, skip that category rather than flooding the diff\n- `models_news.md` prompt rewritten: Discord output now groups by change type (new · removed · price cuts · price hikes · paid-only · newly free · capability updates) with category emojis, matching the intended announcement style",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Fixing the model radar",
+    "blurb": "Tuned up our internal model tracking so the weekly updates are perfectly accurate. No more false alarms, just the real scoop on what's new and what's changed.",
+    "summary": "Fixed the social media pipeline's model diffing logic to accurately track pricing changes and prevent false positives caused by key mismatches or list reordering.",
+    "impact": "The weekly Discord model updates will now correctly highlight price changes and group updates by category, without flooding the channel with false 'new model' alerts.",
+    "keywords": [
+      "social",
+      "pipeline",
+      "models",
+      "discord",
+      "diff"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot acting as news reporters or data analysts. The robot's screen shows a clean, organized list or chart, representing the fixed diffing logic.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny newsboy cap, standing next to the chunky Monitor Robot at a retro news desk. The robot's CRT screen glows lime green (#ecf874) showing a neatly organized list of models. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-18/PR-11907.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny newsboy cap, standing next to the chunky Monitor Robot at a retro news desk. The robot's CRT screen glows lime green (#ecf874) showing a neatly organized list of models. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "generated_at": "2026-06-18T14:40:43.363457+00:00"
+}

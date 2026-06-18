@@ -146,7 +146,6 @@ const githubQuestDefinitions = [
             return {
                 candidates: [
                     {
-                        questTypeId: "github:community_issue_quest",
                         issue: issue.number,
                         issueTitle: issue.title,
                         issueUrl: issue.url,
@@ -201,7 +200,7 @@ async function runGitHubQuestEvaluators({
         }
 
         for (const candidate of result.candidates ?? []) {
-            const amount = candidate.amount ?? definition.rewardAmount;
+            const amount = candidate.amount;
             const amountProblem = validateQuestPayoutAmount(amount);
             if (amountProblem) {
                 reviews.push({
@@ -216,7 +215,7 @@ async function runGitHubQuestEvaluators({
             }
 
             candidates.push({
-                questTypeId: candidate.questTypeId ?? definition.id,
+                questTypeId: definition.id,
                 balanceBucket:
                     candidate.balanceBucket ?? definition.balanceBucket,
                 payoutScope: definition.payoutScope,

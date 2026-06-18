@@ -86,10 +86,6 @@ export function getQuestDefinition(id: string): QuestDefinition | undefined {
     return QUEST_DEFINITIONS.find((quest) => quest.id === id);
 }
 
-export function activeQuestDefinitions(): QuestDefinition[] {
-    return QUEST_DEFINITIONS.filter((quest) => quest.status === "active");
-}
-
 export function buildGrantKey(
     definition: QuestDefinition,
     candidate: GrantCandidate,

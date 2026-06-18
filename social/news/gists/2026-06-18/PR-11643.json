@@ -1,0 +1,35 @@
+{
+  "pr_number": 11643,
+  "title": "fix: fail closed on missing gpu backend token",
+  "author": "its3li",
+  "url": "https://github.com/pollinations/pollinations/pull/11643",
+  "merged_at": "2026-06-18T11:45:45Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "Fixes #11902\n\n## Summary\n- make GPU image backends reject generation requests when `PLN_GPU_TOKEN` is unset instead of allowing public access\n- add the missing `x-backend-token` dependency to the SANA `/generate` endpoint\n- keep `/health` available for LTX-2 health checks while protecting other routes\n\n## Verification\n- python -m py_compile image.pollinations.ai/z-image/server.py image.pollinations.ai/nunchaku/server.py image.pollinations.ai/image_gen_twinflow/server.py image.pollinations.ai/klein-runpod/handler.py image.pollinations.ai/sana/server.py image.pollinations.ai/video_gen_ltx2modal/ltx2-vastai/server.py image.pollinations.ai/video_gen_ltx2modal/ltx2-vastai/server_comfyui.py\n- rg scan confirmed the old fail-open warning string is gone and remaining missing-token branches fail closed\n- git diff --check -- image.pollinations.ai\r",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Locking the garden gate",
+    "blurb": "We've tightened up the locks on our GPU backends. Now, generation requests require the proper tokens, keeping the hive's resources safe and sound.",
+    "summary": "Updated GPU image backends including SANA, LTX-2, and Twinflow to fail closed and reject generation requests when the PLN_GPU_TOKEN is missing.",
+    "impact": "This secures internal backend endpoints against unauthorized access while keeping health check routes open for monitoring.",
+    "keywords": [
+      "security",
+      "gpu",
+      "backend",
+      "auth",
+      "infrastructure"
+    ],
+    "visual_concept": "The bee mascot acting as a friendly security guard, locking a gate or securing a glowing server rack alongside the monitor robot.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny security guard hat, locking a small wooden gate in front of a glowing lime green (#ecf874) server rack. A chunky monitor robot stands nearby holding a pixelated golden key. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-18/PR-11643.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny security guard hat, locking a small wooden gate in front of a glowing lime green (#ecf874) server rack. A chunky monitor robot stands nearby holding a pixelated golden key. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-06-18T11:46:49.858705+00:00"
+}

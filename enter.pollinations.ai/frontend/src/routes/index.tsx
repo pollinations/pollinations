@@ -8,6 +8,7 @@ import {
     EarningsGraph,
     getEarningsEnabledApps,
     PeriodPicker,
+    TransactionHistory,
     UsageGraph,
     type UsagePeriodSelection,
 } from "../components/activity";
@@ -21,11 +22,7 @@ import {
     type DashboardPage,
     DashboardShell,
 } from "../components/layout/dashboard-shell.tsx";
-import {
-    dashboardThemeByPage,
-    isDashboardPage,
-    type ThemeName,
-} from "../components/layout/dashboard-theme.ts";
+import { isDashboardPage } from "../components/layout/dashboard-theme.ts";
 import { usePageFromHash } from "../components/layout/use-page-from-hash.ts";
 import { Models } from "../components/models";
 import { NewsFaq } from "../components/news-faq";
@@ -40,17 +37,10 @@ import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
 const ACTIVITY_MIN_DATE = new Date("2026-01-01T00:00:00.000Z");
 
-function DownloadCsvButton({
-    theme,
-    onClick,
-}: {
-    theme: ThemeName;
-    onClick: () => void;
-}) {
+function DownloadCsvButton({ onClick }: { onClick: () => void }) {
     return (
         <Button
             as="button"
-            theme={theme}
             onClick={onClick}
             className="flex items-center gap-1.5"
         >
@@ -268,7 +258,11 @@ function RouteComponent() {
     function handlePageChange(page: DashboardPage): void {
         setActivePage(page);
         try {
-            history.replaceState(null, "", `#${page}`);
+            history.replaceState(
+                null,
+                "",
+                `${window.location.pathname}${window.location.search}#${page}`,
+            );
         } catch {
             // Hash updates are cosmetic; navigation still works without them.
         }
@@ -295,7 +289,7 @@ function RouteComponent() {
             {activePage === "news-faq" && <NewsFaq />}
             {activePage === "pollen" && (
                 <div className="flex flex-col gap-6">
-                    <Section title="Wallet" theme="amber" framed>
+                    <Section title="Wallet" framed>
                         <PollenBalance
                             tierBalance={tierBalance}
                             packBalance={packBalance}
@@ -304,19 +298,20 @@ function RouteComponent() {
                             tierWeek={tierWeek}
                         />
                     </Section>
-                    <Section
-                        title="Top-up"
-                        theme="amber"
-                        framed
-                        id="buy-pollen"
-                    >
+                    <Section title="Top-up" framed id="buy-pollen">
                         <BuyPollenPanel initialBillingState={billingState} />
                     </Section>
                     {tierData && (
-                        <Section title="Tier" theme="amber" framed>
+                        <Section title="Tier" framed>
                             <TierPanel {...tierData} />
                         </Section>
                     )}
+                    <Section title="Recent transactions" framed>
+                        <TransactionHistory
+                            mode="compact"
+                            apiKeys={selectableKeys}
+                        />
+                    </Section>
                 </div>
             )}
             {activePage === "activity" && (
@@ -325,20 +320,18 @@ function RouteComponent() {
                         <PeriodPicker
                             value={activityPeriod}
                             onChange={setActivityPeriod}
-                            theme={dashboardThemeByPage.activity}
                             minDate={ACTIVITY_MIN_DATE}
                         />
-                        <p className="text-micro text-ink-400">
-                            Data refreshes every hour. Times shown in UTC.
+                        <p className="text-micro text-theme-text-muted">
+                            Usage data refreshes every hour. Chart buckets use
+                            UTC; transactions use your local time.
                         </p>
                     </div>
                     <UsageGraph
                         period={activityPeriod}
                         apiKeys={selectableKeys}
-                        theme={dashboardThemeByPage.activity}
                         action={
                             <DownloadCsvButton
-                                theme={dashboardThemeByPage.activity}
                                 onClick={downloadDetailedUsage}
                             />
                         }
@@ -347,9 +340,14 @@ function RouteComponent() {
                         <EarningsGraph
                             period={activityPeriod}
                             apps={earningsEnabledApps}
-                            theme={dashboardThemeByPage.activity}
                         />
                     )}
+                    <Section title="Transactions" framed>
+                        <TransactionHistory
+                            mode="full"
+                            apiKeys={selectableKeys}
+                        />
+                    </Section>
                 </div>
             )}
             {activePage === "keys" && (
@@ -360,9 +358,7 @@ function RouteComponent() {
                     onDelete={handleDeleteApiKey}
                 />
             )}
-            {activePage === "models" && (
-                <Models tierBalance={tierBalance} packBalance={packBalance} />
-            )}
+            {activePage === "models" && <Models />}
         </DashboardShell>
     );
 }

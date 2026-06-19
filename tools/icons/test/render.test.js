@@ -54,7 +54,7 @@ test("renderSolidIcon has an opaque brand-colored background", async () => {
 
 test("renderOg is a 1200x630 PNG", async () => {
     const meta = await sharp(
-        await renderOg(SVG, { bg: "#FEF3C7", logoColor: "#110518" }),
+        await renderOg(SVG, SVG, { bg: "#FEF3C7", logoColor: "#110518" }),
     ).metadata();
     assert.equal(meta.width, 1200);
     assert.equal(meta.height, 630);

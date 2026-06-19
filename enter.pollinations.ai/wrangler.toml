@@ -23,22 +23,11 @@ migrations_dir = "drizzle"
 binding = "KV"
 id = "84512601e2a44679a4d3b0f7415d90ec"
 
-[[r2_buckets]]
-binding = "IMAGE_BUCKET"
-bucket_name = "pollinations-images"
-remote = true
-
-[[r2_buckets]]
-binding = "TEXT_BUCKET"
-bucket_name = "pollinations-text-enter"
-remote = true
-
 [vars]
 ENVIRONMENT = "development"
 CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
-ALLOW_ANONYMOUS_USAGE = false
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
@@ -65,21 +54,12 @@ migrations_dir = "drizzle"
 binding = "KV"
 id = "84512601e2a44679a4d3b0f7415d90ec"
 
-[[env.local.r2_buckets]]
-binding = "IMAGE_BUCKET"
-bucket_name = "pollinations-images"
-
-[[env.local.r2_buckets]]
-binding = "TEXT_BUCKET"
-bucket_name = "pollinations-text-enter"
-
 [env.local.vars]
 ENVIRONMENT = "local"
 USAGE_DEBUG_USER_ID = "ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh" # pollen@myceli.ai; local dashboard usage data
 CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
-ALLOW_ANONYMOUS_USAGE = false
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
@@ -90,7 +70,6 @@ BETTER_AUTH_URL = "http://localhost:3000"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
-POLLEN_REFILL_PER_HOUR = 1
 
 [env.production]
 
@@ -117,30 +96,14 @@ migrations_dir = "drizzle"
 binding = "KV"
 id = "a621f17ad3e34000971cffa616675c5b"
 
-[[env.production.r2_buckets]]
-binding = "IMAGE_BUCKET"
-bucket_name = "pollinations-images"
-
-[[env.production.r2_buckets]]
-binding = "TEXT_BUCKET"
-bucket_name = "pollinations-text-enter"
-
-# Edge rate limiter: ~1000 req/s per IP (10000 req per 10s)
-[[env.production.ratelimits]]
-name = "EDGE_RATE_LIMITER"
-namespace_id = "1001"
-simple = { limit = 10000, period = 10 }
-
 [env.production.vars]
 ENVIRONMENT = "production"
 CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
-ALLOW_ANONYMOUS_USAGE = false
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
-POLLEN_REFILL_PER_HOUR = 1
 # Stripe payments (live for production)
 STRIPE_MODE = "live"
 STRIPE_SUCCESS_URL = "https://enter.pollinations.ai"
@@ -171,26 +134,11 @@ migrations_dir = "drizzle"
 binding = "KV"
 id = "ba22195551794751b9792e4e67eb074a"
 
-[[env.staging.r2_buckets]]
-binding = "IMAGE_BUCKET"
-bucket_name = "pollinations-images"
-
-[[env.staging.r2_buckets]]
-binding = "TEXT_BUCKET"
-bucket_name = "pollinations-text-enter"
-
-# Edge rate limiter: ~1000 req/s per IP (10000 req per 10s)
-[[env.staging.ratelimits]]
-name = "EDGE_RATE_LIMITER"
-namespace_id = "1001"
-simple = { limit = 10000, period = 10 }
-
 [env.staging.vars]
 ENVIRONMENT = "staging"
 CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
-ALLOW_ANONYMOUS_USAGE = false
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
@@ -226,23 +174,12 @@ migrations_dir = "drizzle"
 binding = "KV"
 id = "84512601e2a44679a4d3b0f7415d90ec"
 
-[[env.dev.r2_buckets]]
-binding = "IMAGE_BUCKET"
-bucket_name = "pollinations-images"
-remote = true
-
-[[env.dev.r2_buckets]]
-binding = "TEXT_BUCKET"
-bucket_name = "pollinations-text-enter"
-remote = true
-
 [env.dev.vars]
 ENVIRONMENT = "dev"
 USAGE_DEBUG_USER_ID = "ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh" # pollen@myceli.ai; dev dashboard usage data
 CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
-ALLOW_ANONYMOUS_USAGE = false
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
@@ -269,26 +206,11 @@ migrations_dir = "drizzle"
 binding = "KV"
 id = "84512601e2a44679a4d3b0f7415d90ec"
 
-[[env.test.r2_buckets]]
-binding = "IMAGE_BUCKET"
-bucket_name = "pollinations-images"
-
-[[env.test.r2_buckets]]
-binding = "TEXT_BUCKET"
-bucket_name = "pollinations-text-enter"
-
-# Edge rate limiter: ~1000 req/s per IP (10000 req per 10s)
-[[env.test.ratelimits]]
-name = "EDGE_RATE_LIMITER"
-namespace_id = "1001"
-simple = { limit = 10000, period = 10 }
-
 [env.test.vars]
 ENVIRONMENT = "test"
 CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
-ALLOW_ANONYMOUS_USAGE = true
 GITHUB_CLIENT_ID = "test_github_client_id"
 GITHUB_CLIENT_SECRET = "test_github_client_secret"
 GOOGLE_CLIENT_ID = "test_google_client_id"

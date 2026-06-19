@@ -17,13 +17,17 @@ from io import BytesIO
 import torch
 import uvicorn
 from fastapi import Depends, FastAPI, Header, HTTPException
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel, Field
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("klein")
 
 MODEL_ID = "black-forest-labs/FLUX.2-klein-4B"
+BACKEND_TOKEN = os.getenv("PLN_GPU_TOKEN")
+if not BACKEND_TOKEN:
+    logger.critical("PLN_GPU_TOKEN not configured - refusing to start")
+    raise RuntimeError("PLN_GPU_TOKEN must be configured")
 
 # Use Network Volume for HF cache if available
 cache_dir = "/workspace/hf-cache" if os.path.isdir("/workspace") else None
@@ -47,11 +51,7 @@ app = FastAPI()
 def verify_backend_token(
     x_backend_token: str = Header(None, alias="x-backend-token"),
 ):
-    expected_token = os.getenv("PLN_GPU_TOKEN")
-    if not expected_token:
-        logger.warning("PLN_GPU_TOKEN not configured - allowing request")
-        return True
-    if x_backend_token != expected_token:
+    if x_backend_token != BACKEND_TOKEN:
         logger.warning("Invalid or missing backend token")
         raise HTTPException(status_code=403, detail="Unauthorized")
     return True
@@ -92,8 +92,14 @@ async def generate(request: ImageRequest, _=Depends(verify_backend_token)):
         for img_b64 in request.images[:10]:
             if img_b64.startswith("data:"):
                 img_b64 = img_b64.split(",", 1)[1]
-            img_bytes = base64.b64decode(img_b64)
-            img = Image.open(BytesIO(img_bytes)).convert("RGB")
+            # Bad reference image input is a client error (400), not a 500.
+            try:
+                img_bytes = base64.b64decode(img_b64)
+                img = Image.open(BytesIO(img_bytes)).convert("RGB")
+            except (UnidentifiedImageError, base64.binascii.Error, ValueError) as e:
+                raise HTTPException(
+                    status_code=400, detail=f"Invalid reference image: {e}"
+                ) from e
             reference_images.append(img)
         if len(reference_images) == 1:
             reference_images = reference_images[0]

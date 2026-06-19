@@ -6,15 +6,12 @@ declare namespace Cloudflare {
 	}
 	interface LocalEnv {
 		KV: KVNamespace;
-		IMAGE_BUCKET: R2Bucket;
-		TEXT_BUCKET: R2Bucket;
 		DB: D1Database;
 		ENVIRONMENT: "local";
 		USAGE_DEBUG_USER_ID: "ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh";
 		CLOUDFLARE_ACCOUNT_ID: "b6ec751c0862027ba269faf7029b2501";
 		LOG_LEVEL: "trace";
 		LOG_FORMAT: "text";
-		ALLOW_ANONYMOUS_USAGE: false;
 		TINYBIRD_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event";
 		TINYBIRD_TIER_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event";
 		TINYBIRD_STRIPE_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event";
@@ -23,7 +20,6 @@ declare namespace Cloudflare {
 		BETTER_AUTH_URL: "http://localhost:3000";
 		STRIPE_AUTO_TOP_UP_PMC_ID: "pmc_1TUpob6O03AauPe8EgmA4mvg";
 		STRIPE_PMC: "pmc_1SrYT96O03AauPe8ijLy6sZU";
-		POLLEN_REFILL_PER_HOUR: 1;
 		BETTER_AUTH_SECRET: string;
 		GITHUB_CLIENT_ID: string;
 		GITHUB_CLIENT_SECRET: string;
@@ -46,19 +42,14 @@ declare namespace Cloudflare {
 	}
 	interface ProductionEnv {
 		KV: KVNamespace;
-		IMAGE_BUCKET: R2Bucket;
-		TEXT_BUCKET: R2Bucket;
 		DB: D1Database;
-		EDGE_RATE_LIMITER: RateLimit;
 		ENVIRONMENT: "production";
 		CLOUDFLARE_ACCOUNT_ID: "b6ec751c0862027ba269faf7029b2501";
 		LOG_LEVEL: "debug";
 		LOG_FORMAT: "json";
-		ALLOW_ANONYMOUS_USAGE: false;
 		TINYBIRD_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event";
 		TINYBIRD_TIER_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event";
 		TINYBIRD_STRIPE_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event";
-		POLLEN_REFILL_PER_HOUR: 1;
 		STRIPE_MODE: "live";
 		STRIPE_SUCCESS_URL: "https://enter.pollinations.ai";
 		BETTER_AUTH_URL: "https://enter.pollinations.ai";
@@ -86,15 +77,11 @@ declare namespace Cloudflare {
 	}
 	interface StagingEnv {
 		KV: KVNamespace;
-		IMAGE_BUCKET: R2Bucket;
-		TEXT_BUCKET: R2Bucket;
 		DB: D1Database;
-		EDGE_RATE_LIMITER: RateLimit;
 		ENVIRONMENT: "staging";
 		CLOUDFLARE_ACCOUNT_ID: "b6ec751c0862027ba269faf7029b2501";
 		LOG_LEVEL: "debug";
 		LOG_FORMAT: "json";
-		ALLOW_ANONYMOUS_USAGE: false;
 		TINYBIRD_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event";
 		TINYBIRD_TIER_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event";
 		TINYBIRD_STRIPE_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event";
@@ -126,15 +113,12 @@ declare namespace Cloudflare {
 	}
 	interface DevEnv {
 		KV: KVNamespace;
-		IMAGE_BUCKET: R2Bucket;
-		TEXT_BUCKET: R2Bucket;
 		DB: D1Database;
 		ENVIRONMENT: "dev";
 		USAGE_DEBUG_USER_ID: "ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh";
 		CLOUDFLARE_ACCOUNT_ID: "b6ec751c0862027ba269faf7029b2501";
 		LOG_LEVEL: "debug";
 		LOG_FORMAT: "json";
-		ALLOW_ANONYMOUS_USAGE: false;
 		TINYBIRD_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event";
 		TINYBIRD_TIER_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event";
 		TINYBIRD_STRIPE_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event";
@@ -165,15 +149,11 @@ declare namespace Cloudflare {
 	}
 	interface TestEnv {
 		KV: KVNamespace;
-		IMAGE_BUCKET: R2Bucket;
-		TEXT_BUCKET: R2Bucket;
 		DB: D1Database;
-		EDGE_RATE_LIMITER: RateLimit;
 		ENVIRONMENT: "test";
 		CLOUDFLARE_ACCOUNT_ID: "b6ec751c0862027ba269faf7029b2501";
 		LOG_LEVEL: "trace";
 		LOG_FORMAT: "text";
-		ALLOW_ANONYMOUS_USAGE: true;
 		TINYBIRD_INGEST_URL: "http://localhost:7181/v0/events?name=generation_event";
 		TINYBIRD_TIER_INGEST_URL: "http://localhost:7181/v0/events?name=tier_event";
 		TINYBIRD_STRIPE_INGEST_URL: "http://localhost:7181/v0/events?name=stripe_event";
@@ -204,15 +184,12 @@ declare namespace Cloudflare {
 	}
 	interface Env {
 		KV: KVNamespace;
-		IMAGE_BUCKET: R2Bucket;
-		TEXT_BUCKET: R2Bucket;
 		DB: D1Database;
 		ENVIRONMENT: "local" | "production" | "staging" | "dev" | "test" | "development";
 		USAGE_DEBUG_USER_ID?: "ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh";
 		CLOUDFLARE_ACCOUNT_ID: "b6ec751c0862027ba269faf7029b2501";
 		LOG_LEVEL: "trace" | "debug";
 		LOG_FORMAT: "text" | "json";
-		ALLOW_ANONYMOUS_USAGE: false | true;
 		TINYBIRD_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event" | "http://localhost:7181/v0/events?name=generation_event";
 		TINYBIRD_TIER_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event" | "http://localhost:7181/v0/events?name=tier_event";
 		TINYBIRD_STRIPE_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event" | "http://localhost:7181/v0/events?name=stripe_event";
@@ -221,7 +198,6 @@ declare namespace Cloudflare {
 		BETTER_AUTH_URL: "http://localhost:3000" | "https://enter.pollinations.ai" | "https://staging.enter.pollinations.ai" | "https://dev.enter.pollinations.ai";
 		STRIPE_AUTO_TOP_UP_PMC_ID: "pmc_1TUpob6O03AauPe8EgmA4mvg" | "pmc_1TVU4T7rcjS3l7trqtBuve71";
 		STRIPE_PMC: "pmc_1SrYT96O03AauPe8ijLy6sZU" | "pmc_1SrY4O7rcjS3l7trnGXDTuat";
-		POLLEN_REFILL_PER_HOUR?: 1;
 		BETTER_AUTH_SECRET: string;
 		GITHUB_CLIENT_ID: string;
 		GITHUB_CLIENT_SECRET: string;
@@ -243,6 +219,7 @@ declare namespace Cloudflare {
 		GOOGLE_CLIENT_SECRET: string;
 		EDGE_RATE_LIMITER?: RateLimit;
 		STAGING_ALLOWED_EMAILS?: "elliot@myceli.ai,t.haferlach@gmail.com,thomash@myceli.ai,elliot@pollinations.ai,pollen@myceli.ai";
+		STAGING_ALLOWED_GITHUB_IDS?: "36901823,5099901,235942848,248917639,241978997";
 	}
 }
 interface CloudflareBindings extends Cloudflare.Env {}
@@ -250,5 +227,5 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "ENVIRONMENT" | "USAGE_DEBUG_USER_ID" | "CLOUDFLARE_ACCOUNT_ID" | "LOG_LEVEL" | "LOG_FORMAT" | "ALLOW_ANONYMOUS_USAGE" | "TINYBIRD_INGEST_URL" | "TINYBIRD_TIER_INGEST_URL" | "TINYBIRD_STRIPE_INGEST_URL" | "STRIPE_MODE" | "STRIPE_SUCCESS_URL" | "BETTER_AUTH_URL" | "STRIPE_AUTO_TOP_UP_PMC_ID" | "STRIPE_PMC" | "POLLEN_REFILL_PER_HOUR" | "BETTER_AUTH_SECRET" | "GITHUB_CLIENT_ID" | "GITHUB_CLIENT_SECRET" | "PLN_ENTER_TOKEN" | "TINYBIRD_READ_TOKEN" | "STRIPE_SECRET_KEY" | "STRIPE_WEBHOOK_SECRET" | "ELEVENLABS_API_KEY" | "OVHCLOUD_API_KEY" | "PLN_GPU_TOKEN" | "MUSIC_SERVICE_URL" | "SSH_RUNPOD_KLEIN" | "SSH_RUNPOD_FLUX_ZIMAGE" | "SSH_LAMBDA_SANA_LTX2_ACESTEP" | "TINYBIRD_INGEST_TOKEN" | "TINYBIRD_SYNC_TOKEN" | "DASHSCOPE_API_KEY" | "GOOGLE_CLIENT_ID" | "GOOGLE_CLIENT_SECRET" | "STAGING_ALLOWED_EMAILS">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "ENVIRONMENT" | "USAGE_DEBUG_USER_ID" | "CLOUDFLARE_ACCOUNT_ID" | "LOG_LEVEL" | "LOG_FORMAT" | "ALLOW_ANONYMOUS_USAGE" | "TINYBIRD_INGEST_URL" | "TINYBIRD_TIER_INGEST_URL" | "TINYBIRD_STRIPE_INGEST_URL" | "STRIPE_MODE" | "STRIPE_SUCCESS_URL" | "BETTER_AUTH_URL" | "STRIPE_AUTO_TOP_UP_PMC_ID" | "STRIPE_PMC" | "POLLEN_REFILL_PER_HOUR" | "BETTER_AUTH_SECRET" | "GITHUB_CLIENT_ID" | "GITHUB_CLIENT_SECRET" | "PLN_ENTER_TOKEN" | "TINYBIRD_READ_TOKEN" | "STRIPE_SECRET_KEY" | "STRIPE_WEBHOOK_SECRET" | "ELEVENLABS_API_KEY" | "OVHCLOUD_API_KEY" | "PLN_GPU_TOKEN" | "MUSIC_SERVICE_URL" | "SSH_RUNPOD_KLEIN" | "SSH_RUNPOD_FLUX_ZIMAGE" | "SSH_LAMBDA_SANA_LTX2_ACESTEP" | "TINYBIRD_INGEST_TOKEN" | "TINYBIRD_SYNC_TOKEN" | "DASHSCOPE_API_KEY" | "GOOGLE_CLIENT_ID" | "GOOGLE_CLIENT_SECRET" | "STAGING_ALLOWED_EMAILS" | "STAGING_ALLOWED_GITHUB_IDS">> {}
 }

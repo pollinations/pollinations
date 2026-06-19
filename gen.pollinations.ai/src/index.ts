@@ -16,16 +16,16 @@
  *   gen.pollinations.ai/v1/*          -> OpenAI-compatible generation
  */
 
+import { handleError } from "@shared/error.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import { requestId } from "hono/request-id";
 import type { Env } from "@/env.ts";
-import { handleError } from "@/error.ts";
 import { logger } from "@/middleware/logger.ts";
 import { audioRoutes } from "./routes/audio.ts";
-import { createDocsRoutes } from "./routes/docs.ts";
+import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 
 export { PollenRateLimiter } from "./durable-objects/PollenRateLimiter.ts";
@@ -85,7 +85,11 @@ function stripTrailingSlash(path: string): string {
 }
 
 function isDocsPath(path: string): boolean {
-    return path === "/docs" || path.startsWith("/docs/");
+    return (
+        path === "/docs" ||
+        path.startsWith("/docs/") ||
+        path === "/openapi.json"
+    );
 }
 
 function redirectLegacyDocs(c: Context<Env>): Response {
@@ -125,6 +129,13 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     })
     .route("/docs", createDocsRoutes(app))
     .route("/v1/audio", audioRoutes)
+    // Conventional, discoverable alias for the merged OpenAPI spec. JSON-only;
+    // the ?format=yaml passthrough stays on /docs/open-api/generate-schema.
+    // Must be registered before the "/" proxy catch-all or it gets shadowed.
+    .get("/openapi.json", async (c) => {
+        const merged = await buildMergedOpenApiSpec(c, app);
+        return c.json(merged);
+    })
     .route("/", proxyRoutes);
 
 app.notFound(async (c: Context<Env>) => {

@@ -9,6 +9,7 @@ import {
     account as accountTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
+import { sendTierEventToTinybird } from "@shared/events.ts";
 import { AUTH_TRUSTED_ORIGINS } from "@shared/public-urls.ts";
 import { DEFAULT_TIER, getTierPollen } from "@shared/tier-config.ts";
 import {
@@ -23,7 +24,6 @@ import { APIError } from "better-auth/api";
 import { admin, openAPI } from "better-auth/plugins";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { sendTierEventToTinybird } from "./events.ts";
 import { getEnabledSocialProviderIds } from "./social-providers.ts";
 
 const LOCAL_TRUSTED_ORIGINS = [

@@ -57,12 +57,36 @@ function saveHtml(html: string) {
     URL.revokeObjectURL(blobUrl);
 }
 
+function escapeSrcDoc(html: string) {
+    return html
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+}
+
 function openHtml(html: string) {
-    const blobUrl = URL.createObjectURL(
-        new Blob([html], { type: "text/html;charset=utf-8" }),
-    );
-    window.open(blobUrl, "_blank", "noopener,noreferrer");
-    window.setTimeout(() => URL.revokeObjectURL(blobUrl), 10_000);
+    const preview = window.open("", "_blank");
+    if (!preview) return;
+
+    preview.opener = null;
+    preview.document.open();
+    preview.document.write(`<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Websim Preview</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#fff}
+iframe{display:block;width:100%;height:100%;border:0;background:#fff}
+</style>
+</head>
+<body>
+<iframe title="Generated Websim page" sandbox="allow-forms allow-modals allow-popups allow-scripts" srcdoc="${escapeSrcDoc(html)}"></iframe>
+</body>
+</html>`);
+    preview.document.close();
 }
 
 function PreviewPanel({

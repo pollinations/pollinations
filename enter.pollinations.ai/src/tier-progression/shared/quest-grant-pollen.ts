@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { command, number, run, string } from "@drizzle-team/brocli";
+import type { Bucket } from "@shared/billing/deduction.ts";
 import { MAX_REWARD_GRANT_AMOUNT } from "@shared/billing/grant-reward.ts";
 
 type Environment = "staging" | "production";
@@ -35,11 +36,12 @@ interface D1User {
     id: string;
     github_id: number | null;
     github_username: string;
+    tier_balance: number | null;
     pack_balance: number | null;
 }
 
 function getUserByGithubId(env: Environment, githubId: number): D1User | null {
-    const sql = `SELECT id, github_id, github_username, pack_balance FROM user WHERE github_id = ${githubId} LIMIT 1;`;
+    const sql = `SELECT id, github_id, github_username, tier_balance, pack_balance FROM user WHERE github_id = ${githubId} LIMIT 1;`;
     const raw = queryD1(env, sql);
     const parsed = JSON.parse(raw);
     const results = parsed[0]?.results || parsed.results || [];
@@ -70,10 +72,15 @@ const grantCommand = command({
         role: string()
             .default("assignee")
             .desc("Quest recipient role for the idempotency key"),
+        bucket: string()
+            .enum("pack", "tier")
+            .default("pack")
+            .desc("Balance bucket to credit"),
         env: string().enum("staging", "production").default("production"),
     },
     handler: async (opts) => {
         const { amount, questIssue, prNumber, githubId, role } = opts;
+        const bucket = opts.bucket as Bucket;
         const issueTitle = opts.issueTitle.trim();
         const issueUrl = opts.issueUrl.trim();
         const env = opts.env as Environment;
@@ -108,6 +115,8 @@ const grantCommand = command({
 
         // Idempotency key is quest-scoped and uses the immutable github_id.
         const payoutKey = `quest:${questIssue}:gh:${githubId}:role:${role}`;
+        const balanceColumn =
+            bucket === "tier" ? "tier_balance" : "pack_balance";
         const metadataJson = JSON.stringify({
             questTypeId: "github:community_issue_quest",
             issueNumber: questIssue,
@@ -135,12 +144,12 @@ const grantCommand = command({
                 'code_quest',
                 'github:community_issue_quest',
                 ${amount},
-                'pack',
+                ${sqlString(bucket)},
                 ${sqlString(`pr:${prNumber}`)},
                 ${sqlString(metadataJson)}
             );
             UPDATE user
-            SET pack_balance = COALESCE(pack_balance, 0) + ${amount}
+            SET ${balanceColumn} = COALESCE(${balanceColumn}, 0) + ${amount}
             WHERE id = ${sqlString(user.id)} AND changes() = 1;
         `;
 
@@ -160,9 +169,12 @@ const grantCommand = command({
             );
         }
 
-        const previous = user.pack_balance ?? 0;
+        const previous =
+            bucket === "tier"
+                ? (user.tier_balance ?? 0)
+                : (user.pack_balance ?? 0);
         console.log(
-            `GRANTED payout_key=${payoutKey} user_id=${user.id} github_username=${user.github_username} previous=${previous} added=${amount} new=${previous + amount}`,
+            `GRANTED payout_key=${payoutKey} user_id=${user.id} github_username=${user.github_username} bucket=${bucket} previous=${previous} added=${amount} new=${previous + amount}`,
         );
     },
 });

@@ -306,6 +306,8 @@ function runGrant(enterDir, payout, spawn = spawnSync) {
             payout.issueUrl ?? "",
             "--role",
             payout.role ?? "assignee",
+            "--bucket",
+            payout.balanceBucket ?? "pack",
             "--env",
             "production",
         ],

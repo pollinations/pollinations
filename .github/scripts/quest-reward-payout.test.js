@@ -197,6 +197,42 @@ test("runner enforces trigger allow-list before calling evaluators", async () =>
     assert.deepEqual(result.reviews, []);
 });
 
+test("runner preserves definition balance bucket on payout candidates", async () => {
+    const result = await runGitHubQuestEvaluators({
+        github: githubWithLinkedIssues([]),
+        context: pullRequestContext(),
+        definitions: [
+            {
+                id: "test:tier_bucket",
+                balanceBucket: "tier",
+                payoutScope: "once_per_event_per_user",
+                triggers: [
+                    {
+                        source: "github",
+                        event: "pull_request_target",
+                        actions: ["closed"],
+                    },
+                ],
+                evaluate: () => ({
+                    candidates: [
+                        {
+                            issue: 123,
+                            prNumber: 42,
+                            recipient: "dev-user",
+                            recipientId: 999,
+                            role: "assignee",
+                            amount: 15,
+                        },
+                    ],
+                }),
+            },
+        ],
+    });
+
+    assert.equal(result.candidates.length, 1);
+    assert.equal(result.candidates[0].balanceBucket, "tier");
+});
+
 test("payout amount validator enforces the shared ceiling", () => {
     assert.equal(validateQuestPayoutAmount(1), null);
     assert.equal(validateQuestPayoutAmount(MAX_QUEST_PAYOUT), null);
@@ -279,6 +315,7 @@ test("runPollenGrant installs from the repo root and grants each payout", async 
             recipient: "dev-two",
             recipientId: 222,
             role: "collaborator",
+            balanceBucket: "tier",
             amount: 20,
         },
     ]);
@@ -311,6 +348,7 @@ test("runPollenGrant installs from the repo root and grants each payout", async 
         calls[1].args[calls[1].args.indexOf("--role") + 1],
         "assignee",
     );
+    assert.equal(calls[1].args[calls[1].args.indexOf("--bucket") + 1], "pack");
     assert.equal(
         calls[1].args[calls[1].args.indexOf("--issueTitle") + 1],
         "Add a demo app",
@@ -323,6 +361,7 @@ test("runPollenGrant installs from the repo root and grants each payout", async 
         calls[2].args[calls[2].args.indexOf("--role") + 1],
         "collaborator",
     );
+    assert.equal(calls[2].args[calls[2].args.indexOf("--bucket") + 1], "tier");
 
     assert.deepEqual(JSON.parse(core.outputs.results), [
         {

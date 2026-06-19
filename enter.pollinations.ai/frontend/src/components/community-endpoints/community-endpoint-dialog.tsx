@@ -386,16 +386,81 @@ export function CommunityEndpointDialog({
                                 </Button>
                             }
                         >
-                            <div className="relative">
+                            {modelOptions.length > 0 ? (
+                                <Dropdown
+                                    align="end"
+                                    open={providerModelMenuOpen}
+                                    onOpenChange={setProviderModelMenuOpen}
+                                    className="w-[var(--reference-width)] min-w-0 p-1"
+                                    trigger={(menuOpen) => (
+                                        <div className="relative w-full">
+                                            <Input
+                                                name="community-upstream-id"
+                                                value={form.upstreamModel}
+                                                placeholder="gpt-4o-mini"
+                                                className="w-full pr-10"
+                                                autoComplete="off"
+                                                autoCapitalize="none"
+                                                spellCheck={false}
+                                                data-lpignore="true"
+                                                data-1p-ignore="true"
+                                                data-bwignore="true"
+                                                onChange={(e) =>
+                                                    updateForm(
+                                                        "upstreamModel",
+                                                        e.target.value,
+                                                    )
+                                                }
+                                            />
+                                            <ChevronIcon
+                                                expanded={menuOpen}
+                                                className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-theme-text-muted transition-transform"
+                                            />
+                                        </div>
+                                    )}
+                                >
+                                    {(close) =>
+                                        visibleModelOptions.length > 0 ? (
+                                            <ScrollArea className="max-h-64">
+                                                <div className="flex flex-col">
+                                                    {visibleModelOptions.map(
+                                                        (model) => (
+                                                            <DropdownItem
+                                                                key={model}
+                                                                className={
+                                                                    form.upstreamModel ===
+                                                                    model
+                                                                        ? "bg-theme-bg-active font-medium text-theme-text-strong"
+                                                                        : undefined
+                                                                }
+                                                                onClick={() => {
+                                                                    updateForm(
+                                                                        "upstreamModel",
+                                                                        model,
+                                                                    );
+                                                                    close();
+                                                                }}
+                                                            >
+                                                                <span className="truncate font-mono">
+                                                                    {model}
+                                                                </span>
+                                                            </DropdownItem>
+                                                        ),
+                                                    )}
+                                                </div>
+                                            </ScrollArea>
+                                        ) : (
+                                            <p className="m-0 px-2 py-2 text-sm text-theme-text-soft">
+                                                No fetched models match.
+                                            </p>
+                                        )
+                                    }
+                                </Dropdown>
+                            ) : (
                                 <Input
                                     name="community-upstream-id"
                                     value={form.upstreamModel}
                                     placeholder="gpt-4o-mini"
-                                    className={
-                                        modelOptions.length > 0
-                                            ? "pr-10"
-                                            : undefined
-                                    }
                                     autoComplete="off"
                                     autoCapitalize="none"
                                     spellCheck={false}
@@ -414,68 +479,7 @@ export function CommunityEndpointDialog({
                                         )
                                     }
                                 />
-                                {modelOptions.length > 0 && (
-                                    <Dropdown
-                                        align="end"
-                                        open={providerModelMenuOpen}
-                                        onOpenChange={setProviderModelMenuOpen}
-                                        className="w-[min(28rem,calc(100vw-2rem))] p-2"
-                                        trigger={(menuOpen) => (
-                                            <button
-                                                type="button"
-                                                aria-label={
-                                                    menuOpen
-                                                        ? "Close provider model menu"
-                                                        : "Open provider model menu"
-                                                }
-                                                className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-theme-text-muted transition-colors hover:bg-theme-bg-hover hover:text-theme-text-strong focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-border-strong"
-                                            >
-                                                <ChevronIcon
-                                                    expanded={menuOpen}
-                                                    className="h-3 w-3"
-                                                />
-                                            </button>
-                                        )}
-                                    >
-                                        {(close) =>
-                                            visibleModelOptions.length > 0 ? (
-                                                <ScrollArea className="max-h-64 pr-1">
-                                                    <div className="flex flex-col gap-1">
-                                                        {visibleModelOptions.map(
-                                                            (model) => (
-                                                                <DropdownItem
-                                                                    key={model}
-                                                                    className={
-                                                                        form.upstreamModel ===
-                                                                        model
-                                                                            ? "bg-theme-bg-active font-medium"
-                                                                            : undefined
-                                                                    }
-                                                                    onClick={() => {
-                                                                        updateForm(
-                                                                            "upstreamModel",
-                                                                            model,
-                                                                        );
-                                                                        close();
-                                                                    }}
-                                                                >
-                                                                    <span className="truncate font-mono">
-                                                                        {model}
-                                                                    </span>
-                                                                </DropdownItem>
-                                                            ),
-                                                        )}
-                                                    </div>
-                                                </ScrollArea>
-                                            ) : (
-                                                <p className="m-0 px-2 py-2 text-sm text-theme-text-soft">
-                                                    No fetched models match.
-                                                </p>
-                                            )
-                                        }
-                                    </Dropdown>
-                                )}
-                            </div>
+                            )}
                         </FieldStack>
                     </div>
 

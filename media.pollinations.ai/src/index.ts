@@ -1,4 +1,4 @@
-import { bytesToHex, getRealClientIp } from "@shared/client-ip.ts";
+import { bytesToHex } from "@shared/client-ip.ts";
 import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
@@ -70,13 +70,17 @@ async function hashRateLimitKey(apiKey: string): Promise<string> {
     return bytesToHex(digest).substring(0, 16);
 }
 
+function getUploadRateLimitIp(c: MediaContext): string {
+    return c.req.header("cf-connecting-ip") || "unknown";
+}
+
 async function enforceUploadRateLimit(
     c: MediaContext,
     apiKey: string,
 ): Promise<Response | null> {
     if (!c.env.UPLOAD_RATE_LIMITER) return null;
 
-    const ip = getRealClientIp(c);
+    const ip = getUploadRateLimitIp(c);
     const keyHash = await hashRateLimitKey(apiKey);
     const { success } = await c.env.UPLOAD_RATE_LIMITER.limit({
         key: `key:${keyHash}:ip:${ip}`,

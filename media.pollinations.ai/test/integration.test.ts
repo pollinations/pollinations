@@ -155,6 +155,8 @@ describe("media.pollinations.ai", () => {
                 headers: {
                     Authorization: `Bearer ${VALID_KEY}`,
                     "CF-Connecting-IP": "203.0.113.7",
+                    "X-Forwarded-Host": "media.pollinations.ai",
+                    "X-Original-Client-IP": "198.51.100.99",
                     "Content-Type": "image/png",
                 },
             }),

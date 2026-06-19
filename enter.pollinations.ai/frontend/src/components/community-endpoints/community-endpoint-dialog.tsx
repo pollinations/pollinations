@@ -7,11 +7,16 @@ import {
     DialogTitle,
     Dropdown,
     DropdownItem,
-    Field,
     FieldStack,
     Input,
     ScrollArea,
     Surface,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeaderCell,
+    TableRow,
 } from "@pollinations/ui";
 import { COMMUNITY_ENDPOINT_PRICE_FIELDS } from "@shared/community-endpoints.ts";
 import type { FormEvent, ReactNode } from "react";
@@ -599,38 +604,57 @@ function PriceGroups({
 
     if (visibleGroups.length === 0) return null;
 
+    const columnCount = showReturnedColumn ? 3 : 2;
+
     return (
         <Surface className="overflow-hidden p-0">
-            <div className={priceHeaderClass(showReturnedColumn)}>
-                <span>Usage</span>
-                <span>Price / 1M</span>
-                {showReturnedColumn && (
-                    <span className="text-right">Test returned</span>
-                )}
-            </div>
-            <div className="divide-y divide-divider">
-                {visibleGroups.map((group) => (
-                    <Fragment key={group.title}>
-                        <PriceSectionHeader
-                            group={group}
-                            testState={testState}
-                        />
-                        {group.fields.map((field) => (
-                            <PriceRow
-                                key={field.key}
-                                field={field}
-                                value={form[field.key]}
-                                observedValue={observedUsageValue(
-                                    testState.usage,
-                                    testState.billableUsage,
-                                    field,
-                                )}
-                                showReturnedColumn={showReturnedColumn}
-                                onChange={(value) => onChange(field.key, value)}
-                            />
+            <div className="overflow-x-auto">
+                <Table
+                    className={
+                        showReturnedColumn ? "min-w-[34rem]" : "min-w-[24rem]"
+                    }
+                >
+                    <TableHead>
+                        <TableRow>
+                            <TableHeaderCell>Usage</TableHeaderCell>
+                            <TableHeaderCell align="right">
+                                Price / 1M
+                            </TableHeaderCell>
+                            {showReturnedColumn && (
+                                <TableHeaderCell align="right">
+                                    Test returned
+                                </TableHeaderCell>
+                            )}
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {visibleGroups.map((group) => (
+                            <Fragment key={group.title}>
+                                <PriceSectionHeader
+                                    group={group}
+                                    testState={testState}
+                                    columnCount={columnCount}
+                                />
+                                {group.fields.map((field) => (
+                                    <PriceRow
+                                        key={field.key}
+                                        field={field}
+                                        value={form[field.key]}
+                                        observedValue={observedUsageValue(
+                                            testState.usage,
+                                            testState.billableUsage,
+                                            field,
+                                        )}
+                                        showReturnedColumn={showReturnedColumn}
+                                        onChange={(value) =>
+                                            onChange(field.key, value)
+                                        }
+                                    />
+                                ))}
+                            </Fragment>
                         ))}
-                    </Fragment>
-                ))}
+                    </TableBody>
+                </Table>
             </div>
         </Surface>
     );
@@ -639,9 +663,11 @@ function PriceGroups({
 function PriceSectionHeader({
     group,
     testState,
+    columnCount,
 }: {
     group: (typeof PRICE_GROUPS)[number];
     testState: ActionState;
+    columnCount: number;
 }) {
     const observedCount = group.fields.filter(
         (field) =>
@@ -653,16 +679,20 @@ function PriceSectionHeader({
     ).length;
 
     return (
-        <div className="flex min-w-0 items-center justify-between gap-2 bg-theme-bg-active/35 px-3 py-2">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
-                {group.title}
-            </h3>
-            {observedCount > 0 && (
-                <Chip intent="success" size="sm">
-                    {observedCount} returned by test
-                </Chip>
-            )}
-        </div>
+        <TableRow>
+            <TableCell colSpan={columnCount} className="pb-1 pt-3">
+                <div className="flex min-w-0 items-center justify-between gap-2">
+                    <h3 className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
+                        {group.title}
+                    </h3>
+                    {observedCount > 0 && (
+                        <Chip intent="success" size="sm">
+                            {observedCount} returned by test
+                        </Chip>
+                    )}
+                </div>
+            </TableCell>
+        </TableRow>
     );
 }
 
@@ -682,20 +712,18 @@ function PriceRow({
     const observed = observedValue !== null;
     const missing = observed && value.trim() === "";
     const invalid = !isValidPriceInput(value);
+    const inputId = `community-${field.key}`;
 
     return (
-        <Field.Root
-            className={priceRowClass(
-                observed,
-                showReturnedColumn,
-                invalid || missing,
-            )}
-        >
-            <div className="min-w-0">
+        <TableRow intent={invalid || missing ? "danger" : "default"}>
+            <TableCell>
                 <div className="flex min-w-0 items-center gap-2">
-                    <Field.Label className="min-w-0 truncate text-sm font-medium text-theme-text-strong">
+                    <label
+                        htmlFor={inputId}
+                        className="min-w-0 truncate text-sm font-medium text-theme-text-strong"
+                    >
                         {shortPriceLabel(field.label)}
-                    </Field.Label>
+                    </label>
                     {observed && (
                         <Chip
                             intent="success"
@@ -706,48 +734,45 @@ function PriceRow({
                         </Chip>
                     )}
                 </div>
-                <p
-                    className={
-                        invalid || missing
-                            ? "mt-0.5 text-xs text-intent-danger-text"
-                            : "mt-0.5 text-xs text-theme-text-muted sm:hidden"
-                    }
-                >
-                    {invalid
-                        ? "Use a dot decimal like 0.1"
-                        : missing
-                          ? "Required for returned usage"
-                          : "Pollen per 1M tokens"}
-                </p>
-            </div>
+                {(invalid || missing) && (
+                    <p className="mt-0.5 text-xs text-intent-danger-text">
+                        {invalid
+                            ? "Use a dot decimal like 0.1"
+                            : "Required for returned usage"}
+                    </p>
+                )}
+            </TableCell>
 
-            <Input
-                name={`community-${field.key}`}
-                type="number"
-                step="any"
-                min="0"
-                inputMode="decimal"
-                hideNumberSteppers
-                value={value}
-                placeholder="0"
-                autoComplete="off"
-                error={invalid || missing}
-                className="h-9 font-mono tabular-nums sm:text-right"
-                onChange={(e) => onChange(e.target.value)}
-            />
+            <TableCell align="right" className="w-40">
+                <Input
+                    id={inputId}
+                    name={inputId}
+                    type="number"
+                    step="any"
+                    min="0"
+                    inputMode="decimal"
+                    hideNumberSteppers
+                    value={value}
+                    placeholder="0"
+                    autoComplete="off"
+                    error={invalid || missing}
+                    className="h-9 w-32 max-w-full font-mono tabular-nums text-right"
+                    onChange={(e) => onChange(e.target.value)}
+                />
+            </TableCell>
 
             {showReturnedColumn && (
-                <div className="min-w-0 text-xs sm:text-right">
+                <TableCell align="right" numeric className="w-32">
                     {observed ? (
-                        <span className="font-mono font-semibold tabular-nums text-intent-success-text">
+                        <span className="font-mono font-semibold text-theme-text-strong">
                             {usageNumberFormatter.format(observedValue)}
                         </span>
                     ) : (
                         <span className="text-theme-text-muted">-</span>
                     )}
-                </div>
+                </TableCell>
             )}
-        </Field.Root>
+        </TableRow>
     );
 }
 
@@ -811,31 +836,6 @@ function hasValidVisibleFormPrices(
     );
 }
 
-function priceHeaderClass(showReturnedColumn: boolean): string {
-    const columns = showReturnedColumn
-        ? "sm:grid-cols-[minmax(0,1fr)_9rem_10rem]"
-        : "sm:grid-cols-[minmax(0,1fr)_9rem]";
-    return `hidden gap-3 border-b border-divider bg-theme-bg-active/40 px-3 py-1.5 text-micro font-semibold uppercase tracking-wide text-theme-text-muted sm:grid ${columns}`;
-}
-
-function priceRowClass(
-    observed: boolean,
-    showReturnedColumn: boolean,
-    invalid: boolean,
-): string {
-    const columns = showReturnedColumn
-        ? "sm:grid-cols-[minmax(0,1fr)_9rem_10rem]"
-        : "sm:grid-cols-[minmax(0,1fr)_9rem]";
-    const base =
-        "grid gap-2 border-l-4 px-3 py-2 transition-colors sm:items-center sm:gap-3";
-    if (invalid) {
-        return `${base} ${columns} border-l-intent-danger-border bg-intent-danger-bg-light/30`;
-    }
-    return observed
-        ? `${base} ${columns} border-l-intent-success-text bg-intent-success-bg-light/30`
-        : `${base} ${columns} border-l-transparent`;
-}
-
 function shortPriceLabel(label: string): string {
     return label.replace(/^Prompt /, "").replace(/^Completion /, "");
 }
@@ -873,24 +873,32 @@ function SimulatedCostPreview({
                     <p className="text-xs text-theme-text-muted">pollen</p>
                 </div>
             </div>
-            <div className="mt-2 grid gap-1.5">
-                {lines.map((line) => (
-                    <div
-                        key={line.field.key}
-                        className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 text-xs"
-                    >
-                        <span className="min-w-0 truncate text-theme-text-muted">
-                            {line.field.label}
-                        </span>
-                        <span className="whitespace-nowrap font-mono tabular-nums text-theme-text-strong">
-                            {usageNumberFormatter.format(line.tokens)} tokens
-                        </span>
-                        <span className="whitespace-nowrap text-right font-mono tabular-nums text-theme-text-strong">
-                            {formatPollenCost(line.cost)} pollen
-                        </span>
-                    </div>
-                ))}
-            </div>
+            <Table className="mt-2">
+                <TableBody>
+                    {lines.map((line) => (
+                        <TableRow key={line.field.key}>
+                            <TableCell muted className="py-1 pl-0 text-xs">
+                                {line.field.label}
+                            </TableCell>
+                            <TableCell
+                                align="right"
+                                numeric
+                                className="whitespace-nowrap py-1 pr-0 text-xs font-mono text-theme-text-strong"
+                            >
+                                {usageNumberFormatter.format(line.tokens)}{" "}
+                                tokens
+                            </TableCell>
+                            <TableCell
+                                align="right"
+                                numeric
+                                className="whitespace-nowrap py-1 pr-0 text-xs font-mono text-theme-text-strong"
+                            >
+                                {formatPollenCost(line.cost)} pollen
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
             {pricedLineCount === 0 && (
                 <p className="mt-2 text-xs text-theme-text-muted">
                     Enter a price for any returned usage field to preview a

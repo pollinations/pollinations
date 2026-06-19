@@ -5,7 +5,7 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import app from "../src/index";
 
 // 1x1 red PNG (67 bytes)
@@ -138,6 +138,39 @@ describe("media.pollinations.ai", () => {
         const dup = (await dupRes.json()) as UploadResponse;
         expect(dup.id).toBe(upload.id);
         expect(dup.duplicate).toBe(true);
+    });
+
+    it("rate limits uploads by client IP before writing to R2", async () => {
+        const bucket = createTestR2Bucket();
+        const limit = vi.fn(async () => ({ success: false }));
+        const env = {
+            ...createMediaEnv(bucket),
+            UPLOAD_RATE_LIMITER: { limit } as unknown as RateLimit,
+        };
+
+        const res = await app.fetch(
+            new Request("https://media.pollinations.ai/upload", {
+                method: "POST",
+                body: TINY_PNG,
+                headers: {
+                    Authorization: `Bearer ${VALID_KEY}`,
+                    "CF-Connecting-IP": "203.0.113.7",
+                    "Content-Type": "image/png",
+                },
+            }),
+            env,
+            createExecutionContext(),
+        );
+
+        expect(res.status).toBe(429);
+        expect(res.headers.get("retry-after")).toBe("60");
+        await expect(res.json()).resolves.toEqual({
+            error: "Too many uploads from this API key and IP. Please slow down.",
+        });
+        expect(limit).toHaveBeenCalledWith({
+            key: expect.stringMatching(/^key:[a-f0-9]{16}:ip:203\.0\.113\.7$/),
+        });
+        expect(bucket.putCount).toBe(0);
     });
 
     it("refreshes uploaded media TTL on aged GET", async () => {

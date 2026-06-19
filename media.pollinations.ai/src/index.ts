@@ -1,5 +1,6 @@
+import { bytesToHex, getRealClientIp } from "@shared/client-ip.ts";
 import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
-import { Hono } from "hono";
+import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { describeRoute, openAPIRouteHandler, resolver } from "hono-openapi";
 import { z } from "zod";
@@ -21,6 +22,7 @@ const DEFAULT_MAX_SIZE = 52428800; // 50 MB
 interface Env {
     MEDIA_BUCKET: R2Bucket;
     MAX_FILE_SIZE: string;
+    UPLOAD_RATE_LIMITER?: RateLimit;
 }
 
 interface AuthResult {
@@ -28,6 +30,8 @@ interface AuthResult {
     type: string;
     name: string | null;
 }
+
+type MediaContext = Context<{ Bindings: Env }>;
 
 async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
     try {
@@ -56,6 +60,37 @@ function fileTooLargeError(maxSize: number): { error: string } {
 
 function mediaUrl(hash: string): string {
     return `https://${DOMAIN}/${hash}`;
+}
+
+async function hashRateLimitKey(apiKey: string): Promise<string> {
+    const digest = await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(apiKey),
+    );
+    return bytesToHex(digest).substring(0, 16);
+}
+
+async function enforceUploadRateLimit(
+    c: MediaContext,
+    apiKey: string,
+): Promise<Response | null> {
+    if (!c.env.UPLOAD_RATE_LIMITER) return null;
+
+    const ip = getRealClientIp(c);
+    const keyHash = await hashRateLimitKey(apiKey);
+    const { success } = await c.env.UPLOAD_RATE_LIMITER.limit({
+        key: `key:${keyHash}:ip:${ip}`,
+    });
+
+    if (success) return null;
+
+    c.header("Retry-After", "60");
+    return c.json(
+        {
+            error: "Too many uploads from this API key and IP. Please slow down.",
+        },
+        429,
+    );
 }
 
 const UploadResponseSchema = z.object({
@@ -110,6 +145,12 @@ api.post(
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
             },
+            429: {
+                description: "Upload rate limit exceeded",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
         },
     }),
     async (c) => {
@@ -126,6 +167,9 @@ api.post(
         if (!authResult) {
             return c.json({ error: "Invalid or expired API key" }, 401);
         }
+
+        const rateLimitResponse = await enforceUploadRateLimit(c, apiKey);
+        if (rateLimitResponse) return rateLimitResponse;
 
         const maxSize = parseInt(c.env.MAX_FILE_SIZE, 10) || DEFAULT_MAX_SIZE;
 

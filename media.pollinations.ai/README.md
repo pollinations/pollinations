@@ -95,6 +95,7 @@ Upload a media file. **Requires API key** via `Authorization: Bearer <key>` head
 **Errors:**
 - `400` - No file provided, empty file, or invalid JSON/base64
 - `413` - File too large (max 50MB)
+- `429` - Too many upload attempts from the same API key and IP
 
 ### `GET /:hash`
 
@@ -167,6 +168,7 @@ npm run deploy:production
 ## 📊 Limits
 
 - **Max file size:** 50MB
+- **Upload rate limit:** 60 uploads per minute per API key and IP
 - **Storage:** Cloudflare R2
 - **Default retention:** 30 days (re-uploading the same file resets the timer)
 

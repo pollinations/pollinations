@@ -11,6 +11,11 @@ name = "pollinations-media-dev"
 [env.development.vars]
 MAX_FILE_SIZE = "52428800"  # 50MB in bytes
 
+[[env.development.ratelimits]]
+name = "UPLOAD_RATE_LIMITER"
+namespace_id = "1002"
+simple = { limit = 60, period = 60 }
+
 [[env.development.r2_buckets]]
 binding = "MEDIA_BUCKET"
 bucket_name = "pollinations-media-dev"
@@ -21,6 +26,11 @@ name = "pollinations-media-prod"
 
 [env.production.vars]
 MAX_FILE_SIZE = "52428800"  # 50MB in bytes
+
+[[env.production.ratelimits]]
+name = "UPLOAD_RATE_LIMITER"
+namespace_id = "1002"
+simple = { limit = 60, period = 60 }
 
 [[env.production.routes]]
 pattern = "media.myceli.ai"
@@ -33,6 +43,11 @@ bucket_name = "pollinations-media"
 
 [vars]
 MAX_FILE_SIZE = "52428800"  # 50MB in bytes
+
+[[ratelimits]]
+name = "UPLOAD_RATE_LIMITER"
+namespace_id = "1002"
+simple = { limit = 60, period = 60 }
 
 [[r2_buckets]]
 binding = "MEDIA_BUCKET"

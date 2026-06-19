@@ -32,7 +32,7 @@ import {
     SidebarWallet,
     TierPanel,
 } from "../components/pollen";
-import { QuestRewards } from "../components/quests";
+import { QuestOverview } from "../components/quests";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 
 const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
@@ -352,8 +352,8 @@ function RouteComponent() {
                 </div>
             )}
             {activePage === "quests" && (
-                <Section title="Completed quests" framed>
-                    <QuestRewards />
+                <Section title="Quests" framed>
+                    <QuestOverview />
                 </Section>
             )}
             {activePage === "keys" && (

@@ -14,6 +14,19 @@ export type MockGithubState = {
         avatar_url: string;
         created_at: string;
     };
+    questIssues: Array<{
+        number: number;
+        title: string;
+        state: "open" | "closed";
+        html_url: string;
+        body: string | null;
+        created_at: string;
+        updated_at: string;
+        closed_at: string | null;
+        user: { login: string } | null;
+        assignees?: { login: string }[];
+        labels?: Array<{ name: string }>;
+    }>;
 };
 
 export function createMockGithub(): MockAPI<MockGithubState> {
@@ -26,6 +39,36 @@ export function createMockGithub(): MockAPI<MockGithubState> {
             avatar_url: "https://avatars.githubusercontent.com/u/12345?v=4",
             created_at: "2018-01-01T00:00:00Z",
         },
+        questIssues: [
+            {
+                number: 321,
+                title: "Add a demo app",
+                state: "open",
+                html_url:
+                    "https://github.com/pollinations/pollinations/issues/321",
+                body: "### Goal\nBuild a focused demo.\n\n### Reward\n15",
+                created_at: "2026-06-01T00:00:00Z",
+                updated_at: "2026-06-02T00:00:00Z",
+                closed_at: null,
+                user: { login: "maintainer" },
+                assignees: [],
+                labels: [{ name: "POLLEN-QUEST" }],
+            },
+            {
+                number: 322,
+                title: "Fix a model config",
+                state: "open",
+                html_url:
+                    "https://github.com/pollinations/pollinations/issues/322",
+                body: "### What to build\nWire the missing config.\n\n### Reward\n20 pollen",
+                created_at: "2026-06-03T00:00:00Z",
+                updated_at: "2026-06-04T00:00:00Z",
+                closed_at: null,
+                user: { login: "maintainer" },
+                assignees: [{ login: "dev-user" }],
+                labels: [{ name: "POLLEN-QUEST" }],
+            },
+        ],
     };
 
     const githubAuth = createMiddleware(async (c, next) => {
@@ -39,6 +82,9 @@ export function createMockGithub(): MockAPI<MockGithubState> {
     });
 
     const githubAPI = new Hono()
+        .get("/search/issues", (c) => {
+            return c.json({ items: state.questIssues });
+        })
         .use("*", githubAuth)
         .get("/user/emails", (c) => {
             return c.json([

@@ -265,6 +265,8 @@ test("runPollenGrant installs from the repo root and grants each payout", async 
     process.env.PAYOUTS = JSON.stringify([
         {
             issue: 123,
+            issueTitle: "Add a demo app",
+            issueUrl: "https://github.com/pollinations/pollinations/issues/123",
             prNumber: 456,
             recipient: "dev-one",
             recipientId: 111,
@@ -308,6 +310,14 @@ test("runPollenGrant installs from the repo root and grants each payout", async 
     assert.equal(
         calls[1].args[calls[1].args.indexOf("--role") + 1],
         "assignee",
+    );
+    assert.equal(
+        calls[1].args[calls[1].args.indexOf("--issueTitle") + 1],
+        "Add a demo app",
+    );
+    assert.equal(
+        calls[1].args[calls[1].args.indexOf("--issueUrl") + 1],
+        "https://github.com/pollinations/pollinations/issues/123",
     );
     assert.equal(
         calls[2].args[calls[2].args.indexOf("--role") + 1],

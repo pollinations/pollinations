@@ -1,1 +1,1 @@
-export { QuestRewards } from "./quest-rewards.tsx";
+export { QuestOverview } from "./quest-overview.tsx";

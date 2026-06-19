@@ -61,6 +61,12 @@ const grantCommand = command({
             .desc("Pollen amount to add (positive number)"),
         questIssue: number().required().desc("Quest issue number"),
         prNumber: number().required().desc("Merged PR number"),
+        issueTitle: string()
+            .default("")
+            .desc("Quest issue title for reward metadata"),
+        issueUrl: string()
+            .default("")
+            .desc("Quest issue URL for reward metadata"),
         role: string()
             .default("assignee")
             .desc("Quest recipient role for the idempotency key"),
@@ -68,6 +74,8 @@ const grantCommand = command({
     },
     handler: async (opts) => {
         const { amount, questIssue, prNumber, githubId, role } = opts;
+        const issueTitle = opts.issueTitle.trim();
+        const issueUrl = opts.issueUrl.trim();
         const env = opts.env as Environment;
 
         if (
@@ -103,6 +111,8 @@ const grantCommand = command({
         const metadataJson = JSON.stringify({
             questTypeId: "github:community_issue_quest",
             issueNumber: questIssue,
+            ...(issueTitle ? { issueTitle } : {}),
+            ...(issueUrl ? { issueUrl } : {}),
             prNumber,
             role,
             githubUsername: user.github_username,

@@ -42,24 +42,38 @@ const mergedPrQuest: QuestDefinition = {
     payoutScope: "once_per_event_per_user",
 };
 
-test("GET /api/quests/catalog returns checked-in launch catalog", async () => {
+test("GET /api/quests/catalog returns product and GitHub issue quests", async ({
+    mocks,
+}) => {
+    await mocks.enable("github");
+
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
     );
     expect(response.status).toBe(200);
 
     const payload = (await response.json()) as {
+        generatedAt: string;
         quests: {
             id: string;
-            status: string;
+            kind: string;
+            questTypeId: string;
+            availability: string;
             eventType: string;
+            rewardAmount: number | null;
             balanceBucket: string;
             payoutScope: string;
+            issueNumber: number | null;
+            assignees: string[];
         }[];
     };
 
+    expect(payload.generatedAt).toEqual(expect.any(String));
     expect(
-        payload.quests.filter((quest) => quest.status === "active"),
+        payload.quests.filter(
+            (quest) =>
+                quest.kind === "product" && quest.availability === "available",
+        ),
     ).toHaveLength(3);
     expect(
         payload.quests.find((quest) => quest.id === "onboarding:first_api_key"),
@@ -85,6 +99,28 @@ test("GET /api/quests/catalog returns checked-in launch catalog", async () => {
         eventType: "first_image_generation",
         balanceBucket: "pack",
         payoutScope: "once_per_user",
+    });
+    expect(
+        payload.quests.find((quest) => quest.id === "github:issue:321"),
+    ).toMatchObject({
+        kind: "github_issue",
+        questTypeId: "github:community_issue_quest",
+        availability: "available",
+        eventType: "github_pr_merged",
+        rewardAmount: 15,
+        balanceBucket: "pack",
+        payoutScope: "once_per_event_per_user",
+        issueNumber: 321,
+        assignees: [],
+    });
+    expect(
+        payload.quests.find((quest) => quest.id === "github:issue:322"),
+    ).toMatchObject({
+        kind: "github_issue",
+        availability: "claimed",
+        rewardAmount: 20,
+        issueNumber: 322,
+        assignees: ["dev-user"],
     });
 });
 

@@ -20,8 +20,9 @@ import {
 } from "@pollinations/ui";
 import { COMMUNITY_ENDPOINT_PRICE_FIELDS } from "@shared/community-endpoints.ts";
 import type { FormEvent, ReactNode } from "react";
-import { Fragment, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
+import { PRICE_ICON, type PriceKind } from "../models/model-icons.tsx";
 import {
     type ActionState,
     type CommunityEndpoint,
@@ -58,24 +59,14 @@ type SimulatedCostLine = {
     tokens: number;
     cost: number;
 };
-
-const PRICE_GROUPS: {
-    title: string;
-    fields: PriceField[];
-}[] = [
-    {
-        title: "Prompt tokens",
-        fields: COMMUNITY_ENDPOINT_PRICE_FIELDS.filter((field) =>
-            field.usageType.startsWith("prompt"),
-        ),
-    },
-    {
-        title: "Completion tokens",
-        fields: COMMUNITY_ENDPOINT_PRICE_FIELDS.filter((field) =>
-            field.usageType.startsWith("completion"),
-        ),
-    },
-];
+type PriceColumn = "input" | "output";
+type PriceFormRow = {
+    key: string;
+    label: string;
+    iconKinds: PriceKind[];
+    inputField?: PriceField;
+    outputField?: PriceField;
+};
 
 export function CommunityEndpointDialog({
     endpoint,
@@ -596,62 +587,42 @@ function PriceGroups({
     visiblePriceKeys: Set<PriceField["key"]>;
     onChange: (key: keyof EndpointFormState, value: string) => void;
 }) {
-    const showReturnedColumn = testState.status === "success";
-    const visibleGroups = PRICE_GROUPS.map((group) => ({
-        ...group,
-        fields: group.fields.filter((field) => visiblePriceKeys.has(field.key)),
-    })).filter((group) => group.fields.length > 0);
+    const rows = priceFormRows(visiblePriceKeys);
 
-    if (visibleGroups.length === 0) return null;
-
-    const columnCount = showReturnedColumn ? 3 : 2;
+    if (rows.length === 0) return null;
 
     return (
         <Surface className="overflow-hidden p-0">
             <div className="overflow-x-auto">
-                <Table
-                    className={
-                        showReturnedColumn ? "min-w-[34rem]" : "min-w-[24rem]"
-                    }
-                >
+                <Table className="min-w-[32rem]">
                     <TableHead>
                         <TableRow>
-                            <TableHeaderCell>Usage</TableHeaderCell>
-                            <TableHeaderCell align="right">
-                                Price / 1M
+                            <TableHeaderCell className="normal-case tracking-normal">
+                                Usage type
                             </TableHeaderCell>
-                            {showReturnedColumn && (
-                                <TableHeaderCell align="right">
-                                    Test returned
-                                </TableHeaderCell>
-                            )}
+                            <TableHeaderCell
+                                align="right"
+                                className="normal-case tracking-normal"
+                            >
+                                Input / 1M
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="right"
+                                className="normal-case tracking-normal"
+                            >
+                                Output / 1M
+                            </TableHeaderCell>
                         </TableRow>
                     </TableHead>
-                    <TableBody>
-                        {visibleGroups.map((group) => (
-                            <Fragment key={group.title}>
-                                <PriceSectionHeader
-                                    group={group}
-                                    testState={testState}
-                                    columnCount={columnCount}
-                                />
-                                {group.fields.map((field) => (
-                                    <PriceRow
-                                        key={field.key}
-                                        field={field}
-                                        value={form[field.key]}
-                                        observedValue={observedUsageValue(
-                                            testState.usage,
-                                            testState.billableUsage,
-                                            field,
-                                        )}
-                                        showReturnedColumn={showReturnedColumn}
-                                        onChange={(value) =>
-                                            onChange(field.key, value)
-                                        }
-                                    />
-                                ))}
-                            </Fragment>
+                    <TableBody className="divide-y-0">
+                        {rows.map((row) => (
+                            <PriceRow
+                                key={row.key}
+                                row={row}
+                                form={form}
+                                testState={testState}
+                                onChange={onChange}
+                            />
                         ))}
                     </TableBody>
                 </Table>
@@ -660,90 +631,89 @@ function PriceGroups({
     );
 }
 
-function PriceSectionHeader({
-    group,
-    testState,
-    columnCount,
-}: {
-    group: (typeof PRICE_GROUPS)[number];
-    testState: ActionState;
-    columnCount: number;
-}) {
-    const observedCount = group.fields.filter(
-        (field) =>
-            observedUsageValue(
-                testState.usage,
-                testState.billableUsage,
-                field,
-            ) !== null,
-    ).length;
-
-    return (
-        <TableRow>
-            <TableCell colSpan={columnCount} className="pb-1 pt-3">
-                <div className="flex min-w-0 items-center justify-between gap-2">
-                    <h3 className="text-xs font-semibold uppercase tracking-wide text-theme-text-muted">
-                        {group.title}
-                    </h3>
-                    {observedCount > 0 && (
-                        <Chip intent="success" size="sm">
-                            {observedCount} returned by test
-                        </Chip>
-                    )}
-                </div>
-            </TableCell>
-        </TableRow>
-    );
-}
-
 function PriceRow({
-    field,
-    value,
-    observedValue,
-    showReturnedColumn,
+    row,
+    form,
+    testState,
     onChange,
 }: {
-    field: PriceField;
-    value: string;
-    observedValue: number | null;
-    showReturnedColumn: boolean;
-    onChange: (value: string) => void;
+    row: PriceFormRow;
+    form: EndpointFormState;
+    testState: ActionState;
+    onChange: (key: keyof EndpointFormState, value: string) => void;
 }) {
-    const observed = observedValue !== null;
-    const missing = observed && value.trim() === "";
-    const invalid = !isValidPriceInput(value);
-    const inputId = `community-${field.key}`;
+    const inputState = row.inputField
+        ? priceCellState(row.inputField, form, testState)
+        : null;
+    const outputState = row.outputField
+        ? priceCellState(row.outputField, form, testState)
+        : null;
+    const hasError =
+        Boolean(inputState?.invalid || inputState?.missing) ||
+        Boolean(outputState?.invalid || outputState?.missing);
+    const returned = Boolean(inputState?.observed || outputState?.observed);
 
     return (
-        <TableRow intent={invalid || missing ? "danger" : "default"}>
+        <TableRow intent={hasError ? "danger" : "default"}>
             <TableCell>
                 <div className="flex min-w-0 items-center gap-2">
-                    <label
-                        htmlFor={inputId}
-                        className="min-w-0 truncate text-sm font-medium text-theme-text-strong"
-                    >
-                        {shortPriceLabel(field.label)}
-                    </label>
-                    {observed && (
-                        <Chip
-                            intent="success"
-                            size="sm"
-                            className="uppercase tracking-wide"
-                        >
+                    <span className="inline-flex shrink-0 items-center gap-0.5 text-theme-text-muted">
+                        {row.iconKinds.map((kind) => {
+                            const Icon = PRICE_ICON[kind];
+                            return <Icon key={kind} className="h-3.5 w-3.5" />;
+                        })}
+                    </span>
+                    <span className="min-w-0 truncate text-sm font-medium text-theme-text-strong">
+                        {row.label}
+                    </span>
+                    {returned && (
+                        <Chip intent="success" size="sm">
                             returned
                         </Chip>
                     )}
                 </div>
-                {(invalid || missing) && (
-                    <p className="mt-0.5 text-xs text-intent-danger-text">
-                        {invalid
-                            ? "Use a dot decimal like 0.1"
-                            : "Required for returned usage"}
-                    </p>
-                )}
             </TableCell>
+            <PriceInputCell
+                field={row.inputField}
+                state={inputState}
+                value={row.inputField ? form[row.inputField.key] : ""}
+                onChange={onChange}
+            />
+            <PriceInputCell
+                field={row.outputField}
+                state={outputState}
+                value={row.outputField ? form[row.outputField.key] : ""}
+                onChange={onChange}
+            />
+        </TableRow>
+    );
+}
 
-            <TableCell align="right" className="w-40">
+function PriceInputCell({
+    field,
+    state,
+    value,
+    onChange,
+}: {
+    field: PriceField | undefined;
+    state: PriceCellState | null;
+    value: string;
+    onChange: (key: keyof EndpointFormState, value: string) => void;
+}) {
+    if (!field || !state) {
+        return (
+            <TableCell align="right" muted>
+                -
+            </TableCell>
+        );
+    }
+
+    const inputId = `community-${field.key}`;
+    const hasError = state.invalid || state.missing;
+
+    return (
+        <TableCell align="right" className="w-40 align-top">
+            <div className="inline-flex flex-col items-end">
                 <Input
                     id={inputId}
                     name={inputId}
@@ -755,25 +725,90 @@ function PriceRow({
                     value={value}
                     placeholder="0"
                     autoComplete="off"
-                    error={invalid || missing}
+                    aria-label={`${field.label} price per 1M tokens`}
+                    error={hasError}
                     className="h-9 w-32 max-w-full font-mono tabular-nums text-right"
-                    onChange={(e) => onChange(e.target.value)}
+                    onChange={(event) =>
+                        onChange(field.key, event.target.value)
+                    }
                 />
-            </TableCell>
-
-            {showReturnedColumn && (
-                <TableCell align="right" numeric className="w-32">
-                    {observed ? (
-                        <span className="font-mono font-semibold text-theme-text-strong">
-                            {usageNumberFormatter.format(observedValue)}
-                        </span>
-                    ) : (
-                        <span className="text-theme-text-muted">-</span>
-                    )}
-                </TableCell>
-            )}
-        </TableRow>
+                {hasError && (
+                    <p className="mt-1 text-right text-xs text-intent-danger-text">
+                        {state.invalid
+                            ? "Use a dot decimal like 0.1"
+                            : "Required for returned usage"}
+                    </p>
+                )}
+            </div>
+        </TableCell>
     );
+}
+
+type PriceCellState = {
+    observed: boolean;
+    missing: boolean;
+    invalid: boolean;
+};
+
+function priceCellState(
+    field: PriceField,
+    form: EndpointFormState,
+    testState: ActionState,
+): PriceCellState {
+    const observed =
+        observedUsageValue(testState.usage, testState.billableUsage, field) !==
+        null;
+    const value = form[field.key];
+    return {
+        observed,
+        missing: observed && value.trim() === "",
+        invalid: !isValidPriceInput(value),
+    };
+}
+
+function priceFormRows(
+    visiblePriceKeys: Set<PriceField["key"]>,
+): PriceFormRow[] {
+    const rows = new Map<string, PriceFormRow>();
+    for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
+        if (!visiblePriceKeys.has(field.key)) continue;
+        const column = priceColumn(field);
+        if (!column) continue;
+        const label = priceRowLabel(field);
+        const key = label.toLowerCase();
+        const iconKind = priceKind(field);
+        const row = rows.get(key) ?? { key, label, iconKinds: [] };
+        row.iconKinds = [...new Set([...row.iconKinds, iconKind])];
+        if (column === "input") {
+            row.inputField = field;
+        } else {
+            row.outputField = field;
+        }
+        rows.set(key, row);
+    }
+    return [...rows.values()];
+}
+
+function priceColumn(field: PriceField): PriceColumn | null {
+    if (field.usageType.startsWith("prompt")) return "input";
+    if (field.usageType.startsWith("completion")) return "output";
+    return null;
+}
+
+function priceRowLabel(field: PriceField): string {
+    const label = shortPriceLabel(field.label);
+    return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+function priceKind(field: PriceField): PriceKind {
+    if (field.usageType.includes("Cached")) return "cached";
+    if (field.usageType.includes("CacheWrite")) return "cacheWrite";
+    if (field.usageType.includes("Reasoning")) return "reasoning";
+    if (field.usageType.includes("Audio")) {
+        return field.usageType.startsWith("prompt") ? "audioIn" : "audioOut";
+    }
+    if (field.usageType.includes("Image")) return "image";
+    return "text";
 }
 
 function savedEndpointPriceKeys(

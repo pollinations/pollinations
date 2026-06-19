@@ -8,3 +8,10 @@ export {
     type AuthModalProps,
     ErrorBanner,
 } from "./AuthModal.tsx";
+export { SocialSignInButtons } from "./SocialSignInButtons.tsx";
+export {
+    isSocialProvider,
+    SOCIAL_PROVIDER_LABELS,
+    type SocialProvider,
+    type SocialProviderConfig,
+} from "./social-providers.ts";

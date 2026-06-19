@@ -1,17 +1,6 @@
-import { Chip, cn, Tooltip } from "@pollinations/ui";
+import { Chip, cn } from "@pollinations/ui";
 import type { FC } from "react";
 import { PRICE_ICON, type PriceKind } from "./model-icons.tsx";
-
-const TOKEN_TYPE_LABELS: Record<PriceKind, string> = {
-    text: "text",
-    image: "image",
-    cached: "cached",
-    cacheWrite: "cache write",
-    reasoning: "reasoning",
-    video: "video",
-    audioIn: "audio",
-    audioOut: "audio",
-};
 
 export type PriceBadgeConfig = {
     prices: (string | undefined)[];
@@ -76,15 +65,6 @@ export const PriceBadge: FC<PriceBadgeConfig> = ({
         Boolean(p && p !== "—"),
     );
     if (validPrices.length === 0) return null;
-    const tokenTypes = [
-        ...new Set(subKinds.map((item) => TOKEN_TYPE_LABELS[item])),
-    ];
-    const tokenTypeLabel =
-        tokenTypes.length > 1
-            ? `Token types: ${tokenTypes.join(", ")}`
-            : tokenTypes.length === 1
-              ? `Token type: ${tokenTypes[0]}`
-              : undefined;
 
     // Compact suffix based on pricing type
     const suffix = perSecond
@@ -95,8 +75,8 @@ export const PriceBadge: FC<PriceBadgeConfig> = ({
             ? "/M"
             : "";
 
-    // One compact pill: emoji(s) + value grouped so it reads as a single unit.
-    const badge = (
+    // One compact pill: glyph(s) + value grouped so it reads as a single unit.
+    return (
         <Chip
             intent="neutral"
             size="sm"
@@ -113,11 +93,5 @@ export const PriceBadge: FC<PriceBadgeConfig> = ({
                 {suffix}
             </span>
         </Chip>
-    );
-
-    return tokenTypeLabel ? (
-        <Tooltip content={tokenTypeLabel}>{badge}</Tooltip>
-    ) : (
-        badge
     );
 };

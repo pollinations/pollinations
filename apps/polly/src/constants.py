@@ -826,42 +826,6 @@ Security: Results filtered to channels the user can access.""",
     },
 }
 
-# =============================================================================
-# WEB TOOL - Deep web research using nomnom model (search + scrape + crawl + code)
-# Use for complex research, multi-step analysis, data extraction with code
-# =============================================================================
-
-WEB_TOOL = {
-    "type": "function",
-    "function": {
-        "name": "web",
-        "description": """Deep web research tool powered by nomnom model.
-Use this for COMPLEX tasks that need multiple capabilities combined:
-- Multi-source research with analysis
-- Scraping sites that need JavaScript/anti-bot bypass
-- Data extraction + Python analysis/visualization
-- Crawling multiple pages and synthesizing results
-
-For SIMPLE tasks, prefer faster tools:
-- Quick searches → web_search with model=gemini-search (fast, Google Search grounding)
-- Balanced searches → web_search with model=perplexity-fast (default, citations)
-- Deep analysis → web_search with model=perplexity-reasoning (multi-step reasoning)
-- URL scraping → web_scrape (fast)
-
-This tool is SLOW but POWERFUL - combines search, scrape, crawl, and code execution.""",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "query": {
-                    "type": "string",
-                    "description": "Natural language request. Examples: 'Find top 10 laptops on Amazon and compare specs', 'Research latest AI news and summarize', 'Scrape this Discord CDN URL and parse the JSON'",
-                },
-            },
-            "required": ["query"],
-        },
-    },
-}
-
 
 # =============================================================================
 # DATA VISUALIZATION TOOL - Gemini native code_execution
@@ -957,7 +921,6 @@ def get_tools_with_embeddings(base_tools: list, embeddings_enabled: bool, doc_em
     tools.append(WEB_SEARCH_TOOL)
     tools.append(WEB_SCRAPE_TOOL)
     tools.append(DISCORD_SEARCH_TOOL)
-    tools.append(WEB_TOOL)  # nomnom - deep research (use sparingly, slow but powerful)
     tools.append(DATA_VIZ_TOOL)
 
     # Conditionally include code_search if embeddings enabled
@@ -1268,9 +1231,7 @@ Use tools for everything else:
 - GitHub issues/PRs → `github_issue`, `github_pr`
 - Live model pricing → `web_scrape` on `/text/models` or `/image/models`
 - Discord history → `discord_search`
-- Complex multi-source research → `web` (nomnom, slow but powerful)
-
-**Priority:** `doc_search` > `code_search` > `web_search(gemini-search)` > `web_search(perplexity-fast)` > `web_scrape` > `web`
+**Priority:** `doc_search` > `code_search` > `web_search(gemini-search)` > `web_search(perplexity-fast)` > `web_scrape`
 
 ## Tools
 {tools_section}
@@ -1309,7 +1270,8 @@ You are a sharp, knowledgeable teammate on the Pollinations Discord. You sound l
 **Use:** bold, italic, underline, code, blockquotes, bullet lists, headers (#/##/###), subtext (-#), spoiler tags (||)
 **Tables:** Markdown tables are fully supported and will be automatically rendered as high-quality, beautiful images for the user. Use markdown tables when presenting structured data, comparison tables, or model details. Ensure you use standard markdown table syntax (with or without outer pipes).
 **Spans:** Ensure inline formatting tags (like bold `**`, italic `*`, strikethrough `~~`, and spoiler `||`) are closed within the same paragraph so that they do not get broken across message boundaries if a message is split.
-**Links:** `[text](url)` for named links. `<url>` to suppress preview. Raw URL for preview.
+**Links:** Always suppress Discord preview bloat -- wrap every bare URL in `<url>`. For anything with a natural name (issues, PRs, docs, repos, models, etc.) use `[name](<url>)` -- angle brackets inside the parens suppress preview AND keep the link clickable. Exception: if the display text IS the URL itself, use `<url>` only -- never `[https://...](<https://...>)`. Never post a raw URL.
+**Named refs rule:** Whenever you mention something linkable -- `#123` issues, `#456` PRs, a model, a repo, a doc page, a workflow -- always embed it: `[#123](<https://github.com/pollinations/pollinations/issues/123>)`, `[name](<url>)`. Never leave a linkable reference as plain unlinked text when you have the URL.
 **Usernames:** backticks `username` — no @ mentions, no guessed IDs.
 **Avoid:** horizontal rules, HTML, nested blockquotes, long unbroken paragraphs.
 

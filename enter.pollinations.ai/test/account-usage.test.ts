@@ -142,6 +142,58 @@ test("GET /api/account/usage/daily rejects periods outside supported bounds", as
     expect(future.status).toBe(400);
 });
 
+test("GET /api/account/usage forwards stable cursor and returns event cursor", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    mocks.tinybird.state.usageResponse = [
+        {
+            cursor_event_id: "event-2",
+            timestamp: "2026-04-14 12:10:00",
+            type: "generate.text",
+            model: "openai-fast",
+            api_key_id: "key_abc123",
+            api_key: "alpha",
+            api_key_type: "secret",
+            meter_source: "tier",
+            input_text_tokens: 10,
+            input_cached_tokens: 0,
+            input_audio_tokens: 0,
+            input_audio_seconds: 0,
+            input_image_tokens: 0,
+            output_text_tokens: 20,
+            output_reasoning_tokens: 0,
+            output_audio_tokens: 0,
+            output_audio_seconds: 0,
+            output_image_tokens: 0,
+            output_video_seconds: 0,
+            cost_usd: 1,
+            response_time_ms: 123,
+        },
+    ];
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/account/usage?days=30&limit=25&before=2026-04-14%2012%3A10%3A00&before_event_id=event-1",
+        { headers: authHeaders(sessionToken) },
+    );
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+        usage: Array<Record<string, unknown>>;
+    };
+    expect(body.usage[0].cursor_event_id).toBe("event-2");
+    expect(body.usage[0].api_key_id).toBe("key_abc123");
+
+    const usageCalls = mocks.tinybird.state.pipeCalls.filter((call) =>
+        call.url.includes("user_usage.json"),
+    );
+    expect(usageCalls).toHaveLength(1);
+    expect(usageCalls[0].query.before).toBe("2026-04-14 12:10:00");
+    expect(usageCalls[0].query.before_event_id).toBe("event-1");
+});
+
 test("GET /api/account/usage?format=csv renders rows and sets filename from limit", async ({
     sessionToken,
     mocks,
@@ -188,6 +240,7 @@ test("GET /api/account/usage?format=csv renders rows and sets filename from limi
     const lines = csv.trim().split("\n");
     expect(lines).toHaveLength(2);
     expect(lines[0]).toContain("timestamp,type,model");
+    expect(lines[0]).not.toContain("cursor_event_id");
     expect(lines[1]).toContain("2026-04-14 12:10:00");
     expect(lines[1]).toContain("alpha");
 

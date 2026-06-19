@@ -37,7 +37,7 @@ const REQUIRED_SECRET_KEYS = [
     "XAI_API_KEY",
 ];
 
-const OPTIONAL_SECRET_KEYS = ["ASSEMBLYAI_API_KEY"];
+const OPTIONAL_SECRET_KEYS = ["AIRFORCE_API_KEY", "ASSEMBLYAI_API_KEY"];
 
 const [sourcePath, environment] = process.argv.slice(2);
 

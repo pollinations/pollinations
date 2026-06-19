@@ -7,7 +7,7 @@
     <script>
       (() => {
         try {
-          let mode = (document.cookie.match(/(?:^|;\s*)polli-color-mode=(light|dark)(?:;|$)/) || [])[1] || localStorage.getItem("polli-color-mode");
+          let mode = localStorage.getItem("polli-color-mode");
           if (mode !== "light" && mode !== "dark") {
             mode = matchMedia("(prefers-color-scheme: dark)").matches
               ? "dark"

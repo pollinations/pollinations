@@ -111,6 +111,82 @@ function createWrongContentTypeApp(
     return app;
 }
 
+// App whose text response carries caller-supplied headers, used to assert that
+// the x-fallback-target worker header propagates into the Tinybird event.
+function createHeaderApp(extraHeaders: Record<string, string>) {
+    const app = new Hono<Env>();
+
+    app.use("*", requestId());
+    app.use("*", logger);
+    app.use("*", async (c, next) => {
+        c.set("auth", {
+            user: undefined,
+            requireAuthorization: async () => {},
+            requireUser: () => {
+                throw new Error("user should not be required in this test");
+            },
+            requireModelAccess: () => {},
+        });
+        c.set("balance", {
+            getBalance: async () => ({ tierBalance: 1, packBalance: 0 }),
+        });
+        c.set("frontendKeyRateLimit", { consumePollen: async () => {} });
+        c.set("model", { requested: "openai", resolved: "openai" });
+        await next();
+    });
+    app.post(
+        "/v1/chat/completions",
+        track("generate.text"),
+        () =>
+            new Response(JSON.stringify({ choices: [{ message: {} }] }), {
+                headers: {
+                    "content-type": "application/json",
+                    "x-model-used": "gpt-5-nano-2025-08-07",
+                    "x-usage-prompt-text-tokens": "10",
+                    "x-usage-completion-text-tokens": "5",
+                    ...extraHeaders,
+                },
+            }),
+    );
+
+    return app;
+}
+
+async function captureFallbackEvent(extraHeaders: Record<string, string>) {
+    const tinybirdRequests: Request[] = [];
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        tinybirdRequests.push(new Request(input, init));
+        return new Response("ok");
+    });
+
+    const ctx = createExecutionContext();
+    await createHeaderApp(extraHeaders).fetch(
+        new Request("https://gen.pollinations.ai/v1/chat/completions", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+                model: "openai",
+                stream: false,
+                messages: [{ role: "user", content: "test" }],
+            }),
+        }),
+        {
+            ENVIRONMENT: "test",
+            LOG_LEVEL: "debug",
+            LOG_FORMAT: "text",
+            BETTER_AUTH_SECRET: "test_secret",
+            TINYBIRD_INGEST_URL:
+                "https://tinybird.test/v0/events?name=generation_event",
+            TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+        } as CloudflareBindings,
+        ctx,
+    );
+    await waitOnExecutionContext(ctx);
+
+    expect(tinybirdRequests).toHaveLength(1);
+    return (await tinybirdRequests[0].json()) as { fallbackUsed?: boolean };
+}
+
 describe("tracking observability", () => {
     it("emits Tinybird generation events for successful gen requests", async () => {
         const tinybirdRequests: Request[] = [];
@@ -356,5 +432,24 @@ describe("tracking observability", () => {
             isBilledUsage: false,
         });
         expect(consumePollen).toHaveBeenCalledWith(0);
+    });
+
+    it("records fallbackUsed=true when Portkey served a non-primary target", async () => {
+        const event = await captureFallbackEvent({
+            "x-fallback-target": "config.targets[1]",
+        });
+        expect(event.fallbackUsed).toBe(true);
+    });
+
+    it("records fallbackUsed=false when Portkey served the primary target", async () => {
+        const event = await captureFallbackEvent({
+            "x-fallback-target": "config.targets[0]",
+        });
+        expect(event.fallbackUsed).toBe(false);
+    });
+
+    it("records fallbackUsed=false when no fallback header is present", async () => {
+        const event = await captureFallbackEvent({});
+        expect(event.fallbackUsed).toBe(false);
     });
 });

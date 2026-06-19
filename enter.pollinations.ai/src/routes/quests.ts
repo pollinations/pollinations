@@ -13,7 +13,7 @@ import type { Env } from "../env.ts";
 const QUEST_REPO = "pollinations/pollinations";
 const COMMUNITY_QUEST_LABEL = "POLLEN-QUEST";
 const CACHE_KEY = "quests:catalog:v2";
-const CACHE_TTL = 10 * 60;
+const CACHE_TTL = 60;
 const GITHUB_HEADERS = {
     Accept: "application/vnd.github+json",
     "User-Agent": "pollinations-enter-quest-catalog",

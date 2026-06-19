@@ -66,6 +66,18 @@ function formatTimestamp(value: string): string {
     });
 }
 
+function formatSyncedTimestamp(value: string): string {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+}
+
 function metadataString(
     metadata: Record<string, unknown> | null,
     key: string,
@@ -420,7 +432,7 @@ export const QuestOverview: FC = () => {
                 </div>
                 {state.generatedAt && (
                     <span className="text-xs text-ink-500">
-                        Synced {formatTimestamp(state.generatedAt)}
+                        Synced {formatSyncedTimestamp(state.generatedAt)}
                     </span>
                 )}
             </div>

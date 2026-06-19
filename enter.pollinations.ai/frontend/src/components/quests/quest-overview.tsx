@@ -164,11 +164,11 @@ function CatalogQuestCard({
                             {quest.issueNumber ? `#${quest.issueNumber} ` : ""}
                             {quest.title}
                         </span>
-                        <Chip size="sm" intent="neutral">
-                            {quest.kind === "github_issue"
-                                ? "GitHub"
-                                : "Product"}
-                        </Chip>
+                        {quest.kind === "github_issue" && (
+                            <Chip size="sm" intent="neutral">
+                                GitHub
+                            </Chip>
+                        )}
                         <StatusChip quest={quest} completed={completed} />
                     </div>
                     {quest.description && (
@@ -216,13 +216,6 @@ function StatusChip({
         return (
             <Chip size="sm" intent="neutral">
                 Completed
-            </Chip>
-        );
-    }
-    if (quest.availability === "planned") {
-        return (
-            <Chip size="sm" intent="alpha">
-                Planned
             </Chip>
         );
     }
@@ -365,10 +358,7 @@ export const QuestOverview: FC = () => {
             state.catalog.filter((quest) => {
                 if (completedCatalogIds.has(quest.id)) return false;
                 if (activeTab === "available") {
-                    return (
-                        quest.availability === "available" ||
-                        quest.availability === "planned"
-                    );
+                    return quest.availability === "available";
                 }
                 if (activeTab === "claimed") {
                     return quest.availability === "claimed";
@@ -381,8 +371,7 @@ export const QuestOverview: FC = () => {
     const availableCount = state.catalog.filter(
         (quest) =>
             !completedCatalogIds.has(quest.id) &&
-            (quest.availability === "available" ||
-                quest.availability === "planned"),
+            quest.availability === "available",
     ).length;
     const claimedCount = state.catalog.filter(
         (quest) =>

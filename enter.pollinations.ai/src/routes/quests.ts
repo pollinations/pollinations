@@ -44,7 +44,7 @@ export type QuestCatalogItem = {
     title: string;
     description: string;
     category: QuestCategory;
-    availability: "available" | "claimed" | "completed" | "planned";
+    availability: "available" | "claimed" | "completed";
     rewardAmount: number | null;
     rewardText: string | null;
     balanceBucket: Bucket;
@@ -71,7 +71,7 @@ const questCatalogItemSchema = z.object({
     title: z.string(),
     description: z.string(),
     category: z.string(),
-    availability: z.enum(["available", "claimed", "completed", "planned"]),
+    availability: z.enum(["available", "claimed", "completed"]),
     rewardAmount: z.number().nullable(),
     rewardText: z.string().nullable(),
     balanceBucket: z.string(),
@@ -140,14 +140,16 @@ async function buildQuestCatalog(): Promise<QuestCatalogResponse> {
 }
 
 function productCatalogItems(): QuestCatalogItem[] {
-    return QUEST_DEFINITIONS.map((definition) => ({
+    return QUEST_DEFINITIONS.filter(
+        (definition) => definition.status === "active",
+    ).map((definition) => ({
         id: definition.id,
         kind: "product",
         questTypeId: definition.id,
         title: definition.title,
         description: definition.description,
         category: definition.category,
-        availability: definition.status === "planned" ? "planned" : "available",
+        availability: "available",
         rewardAmount: definition.rewardAmount,
         rewardText: `${definition.rewardAmount} Pollen`,
         balanceBucket: definition.balanceBucket,

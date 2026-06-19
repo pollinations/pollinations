@@ -92,14 +92,10 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ({
         payoutScope: "once_per_user",
     });
     expect(
-        payload.quests.find(
+        payload.quests.some(
             (quest) => quest.id === "onboarding:first_image_generation",
         ),
-    ).toMatchObject({
-        eventType: "first_image_generation",
-        balanceBucket: "pack",
-        payoutScope: "once_per_user",
-    });
+    ).toBe(false);
     expect(
         payload.quests.find((quest) => quest.id === "github:issue:321"),
     ).toMatchObject({

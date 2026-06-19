@@ -8,6 +8,7 @@ import {
     Surface,
     TerminalIcon,
     TokensIcon,
+    Tooltip,
     XIcon,
 } from "@pollinations/ui";
 import { COMMUNITY_ENDPOINT_PRICE_FIELDS } from "@shared/community-endpoints.ts";
@@ -27,7 +28,7 @@ export function CommunityEndpointCard({
     onEdit,
     onDelete,
 }: CommunityEndpointCardProps) {
-    const priceBadges = communityPriceBadges(endpoint);
+    const priceGroups = communityPriceGroups(endpoint);
 
     return (
         <Surface className="transition-colors hover:bg-surface-opaque/90">
@@ -86,19 +87,19 @@ export function CommunityEndpointCard({
                 />
             </div>
 
-            {priceBadges.length > 0 && (
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                    {priceBadges.map(({ label, badge }) => (
-                        <span
-                            key={`${label}-${badge.kind}-${badge.prices[0]}`}
-                            className="inline-flex items-center gap-1"
-                        >
-                            <span className="text-xs text-theme-text-muted">
-                                {label}
-                            </span>
-                            <PriceBadge {...badge} />
-                        </span>
-                    ))}
+            {priceGroups.length > 0 && (
+                <div className="mt-3 grid gap-2">
+                    <span className="text-xs font-medium text-theme-text-muted">
+                        Pricing
+                    </span>
+                    <div className="grid gap-1.5">
+                        {priceGroups.map((group) => (
+                            <CommunityPriceGroupRow
+                                key={group.key}
+                                group={group}
+                            />
+                        ))}
+                    </div>
                 </div>
             )}
         </Surface>
@@ -149,42 +150,87 @@ function CommunityDetailRow({
     );
 }
 
-type CommunityPriceBadge = {
+function CommunityPriceGroupRow({ group }: { group: CommunityPriceGroup }) {
+    return (
+        <div className="grid min-w-0 gap-1 text-xs text-theme-text-muted sm:grid-cols-[8.5rem_minmax(0,1fr)] sm:items-center">
+            <span className="font-medium text-theme-text-muted">
+                {group.label}
+            </span>
+            <span className="flex min-w-0 flex-wrap items-center gap-1">
+                {group.badges.map(({ badge, tooltip }) => (
+                    <Tooltip
+                        key={`${group.key}-${badge.kind}-${badge.prices[0]}`}
+                        triggerAs="span"
+                        content={tooltip}
+                        ariaLabel={tooltip}
+                    >
+                        <PriceBadge {...badge} />
+                    </Tooltip>
+                ))}
+            </span>
+        </div>
+    );
+}
+
+type CommunityPriceGroup = {
+    key: "input" | "output";
     label: string;
+    badges: CommunityPriceBadge[];
+};
+
+type CommunityPriceBadge = {
+    tooltip: string;
     badge: PriceBadgeConfig;
 };
 
-function communityPriceBadges(
+function communityPriceGroups(
     endpoint: CommunityEndpoint,
-): CommunityPriceBadge[] {
-    return COMMUNITY_ENDPOINT_PRICE_FIELDS.flatMap((field) => {
+): CommunityPriceGroup[] {
+    const groups: Record<CommunityPriceGroup["key"], CommunityPriceBadge[]> = {
+        input: [],
+        output: [],
+    };
+
+    for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
         const price = endpoint[field.key];
-        if (price <= 0) return [];
+        if (price <= 0) continue;
+        const groupKey = communityPriceGroupKey(field.usageType);
+        if (!groupKey) continue;
         const kind = communityPriceKind(field.usageType);
-        return [
-            {
-                label: communityPriceLabel(field.usageType),
-                badge: {
-                    prices: [pricePerTokenToPerMillion(price)],
-                    kind,
-                    subKinds: [kind],
-                    perToken: true,
-                },
+        groups[groupKey].push({
+            tooltip: communityPriceTooltip(field.usageType),
+            badge: {
+                prices: [pricePerTokenToPerMillion(price)],
+                kind,
+                subKinds: [kind],
+                perToken: true,
             },
-        ];
-    });
+        });
+    }
+
+    const priceGroups: CommunityPriceGroup[] = [
+        { key: "input", label: "Input", badges: groups.input },
+        { key: "output", label: "Output", badges: groups.output },
+    ];
+
+    return priceGroups.filter((group) => group.badges.length > 0);
 }
 
-function communityPriceLabel(usageType: string): string {
-    if (usageType === "promptTextTokens") return "Input";
-    if (usageType === "promptCachedTokens") return "Cached";
-    if (usageType === "promptCacheWriteTokens") return "Cache write";
-    if (usageType === "completionTextTokens") return "Output";
-    if (usageType === "completionReasoningTokens") return "Reasoning";
-    if (usageType === "promptAudioTokens") return "Audio input";
-    if (usageType === "completionAudioTokens") return "Audio output";
-    if (usageType === "promptImageTokens") return "Image input";
-    return "Price";
+function communityPriceGroupKey(
+    usageType: string,
+): CommunityPriceGroup["key"] | null {
+    if (usageType.startsWith("prompt")) return "input";
+    if (usageType.startsWith("completion")) return "output";
+    return null;
+}
+
+function communityPriceTooltip(usageType: string): string {
+    if (usageType === "promptCachedTokens") return "Cached token";
+    if (usageType === "promptCacheWriteTokens") return "Cache write token";
+    if (usageType.includes("Reasoning")) return "Reasoning token";
+    if (usageType.includes("Audio")) return "Audio token";
+    if (usageType.includes("Image")) return "Image token";
+    return "Text token";
 }
 
 function communityPriceKind(usageType: string): PriceKind {

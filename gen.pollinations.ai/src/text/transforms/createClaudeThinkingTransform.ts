@@ -19,8 +19,7 @@ export type ClaudeThinkingMode = "budget" | "adaptive";
 
 const MIN_THINKING_BUDGET = 1024;
 
-// reasoning_effort -> budget_tokens for budget-mode models. budget_tokens must
-// be < max_tokens, so caller-provided max_tokens can force a clamp below.
+// reasoning_effort -> budget_tokens for budget-mode models.
 const EFFORT_TO_BUDGET: Record<string, number> = {
     minimal: MIN_THINKING_BUDGET,
     low: MIN_THINKING_BUDGET,
@@ -42,31 +41,6 @@ const EFFORT_TO_OUTPUT_EFFORT: Record<string, string> = {
 
 function normalizeEffort(value: unknown): string | undefined {
     return typeof value === "string" ? value.toLowerCase() : undefined;
-}
-
-function numericOption(value: unknown): number | undefined {
-    return typeof value === "number" && Number.isFinite(value)
-        ? Math.floor(value)
-        : undefined;
-}
-
-function maxTokenLimit(options: TransformOptions): number | undefined {
-    return (
-        numericOption(options.max_completion_tokens) ??
-        numericOption(options.max_tokens)
-    );
-}
-
-function clampBudgetToMaxTokens(
-    budgetTokens: number,
-    options: TransformOptions,
-): number | undefined {
-    const maxTokens = maxTokenLimit(options);
-    if (maxTokens === undefined) return budgetTokens;
-
-    const maxBudget = maxTokens - 1;
-    if (maxBudget < MIN_THINKING_BUDGET) return undefined;
-    return Math.min(budgetTokens, maxBudget);
 }
 
 /**
@@ -107,21 +81,16 @@ export function createClaudeThinkingTransform(
             };
             log("Enabled adaptive thinking, effort=%s", updated.output_config);
         } else {
-            const requestedBudgetTokens =
+            // Anthropic requires budget_tokens < max_tokens (min 1024). We pass
+            // the requested budget through as-is — if it exceeds the caller's
+            // max_tokens, Bedrock returns its own clear 400 ("max_tokens must be
+            // greater than thinking budget"). Thin proxy: surface the upstream
+            // error rather than silently shrinking a budget the caller set.
+            const budgetTokens =
                 typeof budget === "number" && budget > 0
                     ? budget
                     : (effort && EFFORT_TO_BUDGET[effort]) ||
                       EFFORT_TO_BUDGET.medium;
-            const budgetTokens = clampBudgetToMaxTokens(
-                requestedBudgetTokens,
-                updated,
-            );
-            if (budgetTokens === undefined) {
-                log(
-                    "Skipping Claude budget thinking because max_tokens is too small",
-                );
-                return { messages, options: updated };
-            }
             updated.thinking = {
                 type: "enabled",
                 budget_tokens: budgetTokens,

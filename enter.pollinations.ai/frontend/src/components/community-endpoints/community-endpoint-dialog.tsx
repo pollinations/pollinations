@@ -3,6 +3,7 @@ import {
     Dialog,
     DialogTitle,
     Field,
+    FieldStack,
     Input,
     ScrollArea,
 } from "@pollinations/ui";
@@ -287,9 +288,10 @@ export function CommunityEndpointDialog({
                     )}
 
                     <div className="grid gap-4 sm:grid-cols-2">
-                        <DialogField
+                        <FieldStack
                             label="Model ID"
                             helper="Public id: community/{username}/{model-id}."
+                            alignLabelRow
                         >
                             <Input
                                 name="community-model-name"
@@ -303,10 +305,11 @@ export function CommunityEndpointDialog({
                                     updateForm("name", e.target.value)
                                 }
                             />
-                        </DialogField>
-                        <DialogField
+                        </FieldStack>
+                        <FieldStack
                             label="Description"
                             helper="Shown in the Models list, like registry models."
+                            alignLabelRow
                         >
                             <Input
                                 name="community-model-description"
@@ -318,13 +321,14 @@ export function CommunityEndpointDialog({
                                     updateForm("description", e.target.value)
                                 }
                             />
-                        </DialogField>
+                        </FieldStack>
                     </div>
 
                     <div className="grid gap-4 sm:grid-cols-2">
-                        <DialogField
+                        <FieldStack
                             label="Endpoint URL"
                             helper="OpenAI-compatible /v1 base URL or full chat completions URL."
+                            alignLabelRow
                         >
                             <Input
                                 name="community-endpoint-url"
@@ -340,13 +344,14 @@ export function CommunityEndpointDialog({
                                     updateForm("baseUrl", e.target.value)
                                 }
                             />
-                        </DialogField>
-                        <DialogField
+                        </FieldStack>
+                        <FieldStack
                             label="Provider model ID"
                             helper={providerModelHelper(
                                 modelOptions,
                                 modelListState,
                             )}
+                            alignLabelRow
                             action={
                                 <Button
                                     type="button"
@@ -391,16 +396,17 @@ export function CommunityEndpointDialog({
                                     ))}
                                 </datalist>
                             )}
-                        </DialogField>
+                        </FieldStack>
                     </div>
 
-                    <DialogField
+                    <FieldStack
                         label="API bearer token"
                         helper={
                             isEdit
                                 ? "Saved token is configured. Leave blank to keep it; fetch models and test use it unless you enter a replacement."
                                 : "Stored encrypted and sent as Authorization: Bearer to your endpoint."
                         }
+                        alignLabelRow
                     >
                         <Input
                             name="community-api-bearer-token"
@@ -419,7 +425,7 @@ export function CommunityEndpointDialog({
                                 updateForm("bearerToken", e.target.value)
                             }
                         />
-                    </DialogField>
+                    </FieldStack>
 
                     <div className="flex flex-wrap items-center gap-3">
                         <Button
@@ -834,36 +840,4 @@ function formatPollenCost(value: number): string {
     if (value === 0) return "0";
     if (value < 0.01) return value.toFixed(12).replace(/\.?0+$/, "");
     return String(Number(value.toPrecision(12)));
-}
-
-function DialogField({
-    label,
-    helper,
-    action,
-    children,
-}: {
-    label: string;
-    helper?: ReactNode;
-    action?: ReactNode;
-    children: ReactNode;
-}) {
-    return (
-        <Field.Root className="flex flex-col gap-1.5">
-            {/* Fixed-height label row so inputs align across columns whether or
-                not a field has an action button (e.g. "Fetch models"). Height
-                clears the sm button (text-sm, ~27px) on every row. */}
-            <div className="flex min-h-8 items-center justify-between gap-2">
-                <Field.Label className="text-sm font-semibold">
-                    {label}
-                </Field.Label>
-                {action}
-            </div>
-            {children}
-            {helper && (
-                <p className="text-xs leading-5 text-theme-text-muted">
-                    {helper}
-                </p>
-            )}
-        </Field.Root>
-    );
 }

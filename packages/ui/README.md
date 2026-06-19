@@ -148,6 +148,8 @@ Wallet colors and utilities are bundled into the main stylesheet
   `CopyButton`, `ExternalLinkButton`, `FieldStack`, `FileUpload`, `InfoTip`,
   `LinkCard`, `Markdown`, `MediaPlaceholder`, `MultiSelect`, `NavItem`,
   `PeriodPicker`, `Prose`, `Section`, `StatCard`.
+  `FieldStack` supports label, helper, action, error, and opt-in aligned label
+  rows for compact forms.
 - **Helpers** — `cn`, `useScrollLock`, `currentPeriod`,
   `getPeriodBucketKeys`, `periodBucketKeyToDate`.
 

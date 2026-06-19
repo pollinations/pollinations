@@ -40,8 +40,7 @@ export const QUEST_DEFINITIONS: QuestDefinition[] = [
     {
         id: "onboarding:first_api_key",
         title: "Mint your first key",
-        description:
-            "Create a Pollinations API key so your apps can talk to the garden.",
+        description: "Create your first Pollinations API key.",
         category: "onboarding",
         status: "active",
         eventType: "api_key_created",
@@ -52,7 +51,7 @@ export const QUEST_DEFINITIONS: QuestDefinition[] = [
     {
         id: "spend:first_top_up",
         title: "Stock your pollen pack",
-        description: "Buy your first Pollen pack for heavier API runs.",
+        description: "Buy your first Pollen pack.",
         category: "spend",
         status: "active",
         eventType: "first_top_up",
@@ -63,8 +62,7 @@ export const QUEST_DEFINITIONS: QuestDefinition[] = [
     {
         id: "onboarding:established_github_account",
         title: "Claim senior dev status",
-        description:
-            "Connect a GitHub account that has survived at least one year of software.",
+        description: "Connect a GitHub account that is at least one year old.",
         category: "onboarding",
         status: "active",
         eventType: "github_account_age",

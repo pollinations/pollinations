@@ -522,8 +522,8 @@ export function CommunityEndpointDialog({
                                 ? "Testing…"
                                 : "Test endpoint"}
                         </Button>
-                        {testState.status !== "idle" && testState.message && (
-                            <p className={testMessageClass(testState.status)}>
+                        {testState.status === "error" && testState.message && (
+                            <p className="text-sm text-intent-danger-text">
                                 {testState.message}
                             </p>
                         )}
@@ -568,12 +568,6 @@ export function CommunityEndpointDialog({
             </form>
         </Dialog>
     );
-}
-
-function testMessageClass(status: ActionState["status"]): string {
-    if (status === "error") return "text-sm text-intent-danger-text";
-    if (status === "success") return "text-sm text-intent-success-text";
-    return "text-sm text-theme-text-muted";
 }
 
 function PriceGroups({

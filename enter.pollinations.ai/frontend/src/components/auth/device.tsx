@@ -5,6 +5,7 @@ import {
     AuthModalHeader,
     AuthModalLoading,
     ErrorBanner,
+    SocialSignInButtons,
 } from "@pollinations/ui/auth";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -12,7 +13,6 @@ import { apiClient } from "../../api.ts";
 import { authClient } from "../../auth.ts";
 import { useSocialProviders } from "../../hooks/use-social-providers.ts";
 import { useSocialSignIn } from "../../hooks/use-social-sign-in.ts";
-import { SocialSignInButtons } from "./social-sign-in-buttons.tsx";
 
 type DeviceProps = {
     prefilledCode: string;

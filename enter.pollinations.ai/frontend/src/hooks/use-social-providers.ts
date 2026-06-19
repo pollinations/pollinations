@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
-import { config } from "../config.ts";
 import {
     isSocialProvider,
     SOCIAL_PROVIDER_LABELS,
     type SocialProviderConfig,
-} from "../lib/social-providers.ts";
+} from "@pollinations/ui/auth";
+import { useEffect, useState } from "react";
+import { config } from "../config.ts";
 
 type ProviderResponse = {
     providers?: Array<{

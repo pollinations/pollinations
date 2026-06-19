@@ -1,6 +1,9 @@
+import {
+    type SocialProvider,
+    SocialSignInButtons,
+} from "@pollinations/ui/auth";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { authClient } from "../auth.ts";
-import { SocialSignInButtons } from "../components/auth/social-sign-in-buttons.tsx";
 import {
     type DashboardPage,
     DashboardShell,
@@ -14,7 +17,6 @@ import { Models } from "../components/models";
 import { NewsFaq } from "../components/news-faq";
 import { useSocialProviders } from "../hooks/use-social-providers.ts";
 import { useSocialSignIn } from "../hooks/use-social-sign-in.ts";
-import type { SocialProvider } from "../lib/social-providers.ts";
 
 const SIGNED_OUT_PAGES: ReadonlySet<DashboardPage> = new Set([
     "news-faq",

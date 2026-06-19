@@ -11,6 +11,7 @@ import {
     AuthModalHeader,
     AuthModalLoading,
     ErrorBanner,
+    SocialSignInButtons,
 } from "@pollinations/ui/auth";
 import { ModalityChip } from "@pollinations/ui/gen";
 import { formatPollen } from "@pollinations/ui/wallet";
@@ -38,7 +39,6 @@ import {
     type ModelCategoryGroup,
 } from "../models/model-categories.ts";
 import { AppAttribution } from "./app-attribution.tsx";
-import { SocialSignInButtons } from "./social-sign-in-buttons.tsx";
 
 type Attribution = {
     found: boolean;

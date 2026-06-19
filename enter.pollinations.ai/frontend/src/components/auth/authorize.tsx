@@ -609,7 +609,7 @@ export function Authorize() {
                             </ul>
                         </div>
 
-                        <div className="-mx-6 px-10 py-4 border-t border-divider">
+                        <div className="-mx-6 px-10 pt-4 pb-2 border-t border-divider">
                             <PollenBudgetInput
                                 value={keyPermissions.permissions.pollenBudget}
                                 onChange={keyPermissions.setPollenBudget}
@@ -617,7 +617,7 @@ export function Authorize() {
                             />
                         </div>
 
-                        <div className="-mx-6 px-10 py-4">
+                        <div className="-mx-6 px-10 pt-2 pb-4">
                             <ExpiryDaysInput
                                 value={keyPermissions.permissions.expiryDays}
                                 onChange={keyPermissions.setExpiryDays}

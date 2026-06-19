@@ -1,11 +1,14 @@
 import {
+    Alert,
     Button,
+    Chip,
     Dialog,
     DialogTitle,
     Field,
     FieldStack,
     Input,
     ScrollArea,
+    Surface,
 } from "@pollinations/ui";
 import { COMMUNITY_ENDPOINT_PRICE_FIELDS } from "@shared/community-endpoints.ts";
 import type { FormEvent, ReactNode } from "react";
@@ -281,11 +284,7 @@ export function CommunityEndpointDialog({
                 data-form-type="other"
             >
                 <ScrollArea className="min-h-0 flex-1 space-y-4 overscroll-contain px-6 pb-2">
-                    {error && (
-                        <p className="rounded-lg bg-intent-danger-bg-light px-3 py-2 text-sm text-intent-danger-text">
-                            {error}
-                        </p>
-                    )}
+                    {error && <Alert intent="danger">{error}</Alert>}
 
                     <div className="grid gap-4 sm:grid-cols-2">
                         <FieldStack
@@ -467,7 +466,6 @@ export function CommunityEndpointDialog({
                 <div className="flex shrink-0 justify-end gap-2 p-6 pt-4">
                     <Button
                         type="button"
-                        intent="danger"
                         className="disabled:opacity-50"
                         onClick={() => onOpenChange(false)}
                         disabled={isSubmitting}
@@ -517,7 +515,7 @@ function PriceGroups({
     if (visibleGroups.length === 0) return null;
 
     return (
-        <section className="overflow-hidden rounded-lg border border-divider bg-surface-opaque/35">
+        <Surface className="overflow-hidden p-0">
             <div className={priceHeaderClass(showReturnedColumn)}>
                 <span>Usage</span>
                 <span>Price / 1M</span>
@@ -549,7 +547,7 @@ function PriceGroups({
                     </Fragment>
                 ))}
             </div>
-        </section>
+        </Surface>
     );
 }
 
@@ -575,9 +573,9 @@ function PriceSectionHeader({
                 {group.title}
             </h3>
             {observedCount > 0 && (
-                <span className="shrink-0 rounded-full bg-intent-success-bg-light px-2 py-0.5 text-xs font-semibold text-intent-success-text">
+                <Chip intent="success" size="sm">
                     {observedCount} returned by test
-                </span>
+                </Chip>
             )}
         </div>
     );
@@ -614,9 +612,13 @@ function PriceRow({
                         {shortPriceLabel(field.label)}
                     </Field.Label>
                     {observed && (
-                        <span className="shrink-0 rounded-full bg-intent-success-bg-light px-2 py-0.5 text-micro font-semibold uppercase tracking-wide text-intent-success-text">
+                        <Chip
+                            intent="success"
+                            size="sm"
+                            className="uppercase tracking-wide"
+                        >
                             returned
-                        </span>
+                        </Chip>
                     )}
                 </div>
                 <p
@@ -769,7 +771,7 @@ function SimulatedCostPreview({
     ).length;
 
     return (
-        <div className="rounded-lg border border-divider bg-theme-bg-active/60 p-3">
+        <Surface className="p-3">
             <div className="flex min-w-0 items-start justify-between gap-3">
                 <div className="min-w-0">
                     <p className="text-sm font-semibold text-theme-text-strong">
@@ -810,7 +812,7 @@ function SimulatedCostPreview({
                     non-zero charge.
                 </p>
             )}
-        </div>
+        </Surface>
     );
 }
 

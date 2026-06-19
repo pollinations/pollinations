@@ -1,4 +1,5 @@
 import {
+    Alert,
     ClockIcon,
     ExternalLinkButton,
     GitHubIcon,
@@ -114,7 +115,9 @@ export const Models: FC<ModelsProps> = ({ showCommunityEndpoints = false }) => {
                     ))}
                 </div>
                 {catalogError && (
-                    <p className="mb-4 text-sm text-red-600">{catalogError}</p>
+                    <Alert intent="danger" className="mb-4">
+                        {catalogError}
+                    </Alert>
                 )}
                 <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     <UnifiedModelTable

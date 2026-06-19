@@ -1,4 +1,5 @@
 import {
+    Alert,
     Button,
     Section,
     SproutIcon,
@@ -163,9 +164,9 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
                 }
             >
                 {error && (
-                    <p className="mb-3 rounded-lg bg-intent-danger-bg-light px-3 py-2 text-sm text-intent-danger-text">
+                    <Alert intent="danger" className="mb-3">
                         {error}
-                    </p>
+                    </Alert>
                 )}
                 <div className="flex flex-col gap-3">
                     {isLoading ? (

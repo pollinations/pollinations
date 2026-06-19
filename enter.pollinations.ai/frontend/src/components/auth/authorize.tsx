@@ -617,7 +617,7 @@ export function Authorize() {
                             />
                         </div>
 
-                        <div className="-mx-6 px-10 py-4 border-t border-divider">
+                        <div className="-mx-6 px-10 py-4">
                             <ExpiryDaysInput
                                 value={keyPermissions.permissions.expiryDays}
                                 onChange={keyPermissions.setExpiryDays}

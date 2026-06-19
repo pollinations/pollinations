@@ -117,7 +117,7 @@ export function AuthInfoCard({
     children,
 }: AuthInfoCardProps) {
     return (
-        <div className="polli:rounded-lg polli:border-2 polli:border-theme-border polli:bg-theme-bg-pale polli:p-4">
+        <div className="polli:rounded-lg polli:bg-theme-bg-pale polli:p-4">
             <p className="polli:mb-2 polli:font-body polli:text-xs polli:font-semibold polli:tracking-wide polli:text-theme-text-soft">
                 {title}
             </p>

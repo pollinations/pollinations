@@ -232,6 +232,18 @@ Generate text responses using AI models. Fully compatible with the OpenAI Chat C
 
 Supports streaming, function calling, vision (image input), structured outputs, and reasoning/thinking modes depending on the model.
 
+**Controlling reasoning.** Use the standard OpenAI `reasoning_effort` parameter. `"none"` requests no reasoning; `"low"`/`"medium"`/`"high"` set its depth on models that support adjustable reasoning. This works with any OpenAI SDK — no extra fields:
+
+```python
+client.chat.completions.create(
+    model="glm",
+    messages=[{"role": "user", "content": "..."}],
+    reasoning_effort="none",   # request no reasoning
+)
+```
+
+Behavior is per-model and provider-specific: some models honor `"none"`, some run reasoning always-on, and some providers reject unsupported reasoning controls. For broad model switching, only send `reasoning_effort` to models that advertise reasoning support. See [`/v1/models`](#get-v1models-list-models-openai-compatible) for model capabilities.
+
 📥 **Request body** · `application/json`
 
 | Field | Type | Description |
@@ -255,9 +267,7 @@ Supports streaming, function calling, vision (image input), structured outputs, 
 | `stream` | `boolean` \| `null` | default: `false` |
 | `stream_options` | `object` \| `null` | — |
 | `safe` | `string` \| `boolean` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
-| `thinking` | `object` \| `null` | — |
-| `reasoning_effort` | enum (6) — `"none"`, `"minimal"`, `"low"`, … | — |
-| `thinking_budget` | `integer` | — |
+| `reasoning_effort` | enum — `"none"`, `"minimal"`, `"low"`, `"medium"`, `"high"`, `"xhigh"` | Requests reasoning depth for models that support adjustable reasoning. `"none"` requests no reasoning. Unsupported values or unsupported models may be ignored or rejected by the upstream provider. |
 | `temperature` | `number` \| `null` | — |
 | `top_p` | `number` \| `null` | — |
 | `tools` | `object`[] | — |
@@ -333,9 +343,7 @@ Use `/v1/chat/completions` when you need the full OpenAI-compatible JSON respons
 | `stream` | `boolean` \| `null` | default: `false` |
 | `stream_options` | `object` \| `null` | — |
 | `safe` | `string` \| `boolean` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
-| `thinking` | `object` \| `null` | — |
-| `reasoning_effort` | enum (6) — `"none"`, `"minimal"`, `"low"`, … | — |
-| `thinking_budget` | `integer` | — |
+| `reasoning_effort` | enum — `"none"`, `"minimal"`, `"low"`, `"medium"`, `"high"`, `"xhigh"` | Requests reasoning depth for models that support adjustable reasoning. `"none"` requests no reasoning. Unsupported values or unsupported models may be ignored or rejected by the upstream provider. |
 | `temperature` | `number` \| `null` | — |
 | `top_p` | `number` \| `null` | — |
 | `tools` | `object`[] | — |

@@ -323,7 +323,8 @@ function RouteComponent() {
                             minDate={ACTIVITY_MIN_DATE}
                         />
                         <p className="text-micro text-theme-text-muted">
-                            Data refreshes every hour. Times shown in UTC.
+                            Usage data refreshes every hour. Chart buckets use
+                            UTC; transactions use your local time.
                         </p>
                     </div>
                     <UsageGraph

@@ -2,17 +2,29 @@ import { type ModelId, resolveModelName } from "@shared/registry/registry.ts";
 import { portkeyConfig } from "./configs/modelConfigs.js";
 import midijourneyPrompt from "./personas/midijourney.js";
 import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
+import { createClaudeThinkingTransform } from "./transforms/createClaudeThinkingTransform.ts";
 import { createGeminiThinkingTransform } from "./transforms/createGeminiThinkingTransform.ts";
 import { createGeminiToolsTransform } from "./transforms/createGeminiToolsTransform.ts";
 import { createMessageTransform } from "./transforms/createMessageTransform.js";
 import { createPerplexitySearchTransform } from "./transforms/createPerplexitySearchTransform.ts";
+import { createReasoningEffortTransform } from "./transforms/createReasoningEffortTransform.ts";
 import { createSystemPromptTransform } from "./transforms/createSystemPromptTransform.js";
 import { pipe } from "./transforms/pipe.js";
 import { removeToolsForJsonResponse } from "./transforms/removeToolsForJsonResponse.ts";
 import { sanitizeToolSchemas } from "./transforms/sanitizeToolSchemas.js";
 import { stripCacheControl } from "./transforms/stripCacheControl.js";
-import { stripReasoningEffort } from "./transforms/stripReasoningEffort.js";
 import type { TransformFn } from "./types.js";
+
+// Fireworks reasoning models: disable thinking via reasoning_effort:"none".
+const fireworksThinking = createReasoningEffortTransform("toggle");
+// MiniMax M2: reasoning is mandatory (rejects "none"/"minimal").
+const mandatoryReasoning = createReasoningEffortTransform("mandatory");
+// Models that 400/500 when reasoning_effort is forwarded (no reasoning mode).
+const stripReasoning = createReasoningEffortTransform("strip");
+// Claude families differ: Haiku 4.5 uses manual budget thinking; Sonnet/Opus
+// 4.6+ use adaptive + output_config.effort.
+const claudeManualThinking = createClaudeThinkingTransform("budget");
+const claudeAdaptiveThinking = createClaudeThinkingTransform("adaptive");
 
 interface ModelDefinition {
     name: string;
@@ -44,7 +56,11 @@ const models: ModelDefinition[] = [
     {
         name: "qwen-coder",
         config: portkeyConfig["qwen3-coder-30b-a3b-instruct"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.coding),
+        // OVHcloud Qwen3-Coder 400s on reasoning_effort (no reasoning mode).
+        transform: pipe(
+            createSystemPromptTransform(BASE_PROMPTS.coding),
+            stripReasoning,
+        ),
     },
     {
         name: "qwen-coder-large",
@@ -54,6 +70,7 @@ const models: ModelDefinition[] = [
     {
         name: "qwen-large",
         config: portkeyConfig["accounts/fireworks/models/qwen3p7-plus"],
+        transform: fireworksThinking,
     },
     {
         name: "qwen-vision",
@@ -62,14 +79,18 @@ const models: ModelDefinition[] = [
     {
         name: "qwen-vision-pro",
         config: portkeyConfig["qwen/qwen3-vl-235b-a22b-thinking"],
+        // Reasoning mandatory: rejects "none" but accepts low/medium/high.
+        transform: mandatoryReasoning,
     },
     {
         name: "step-3.5-flash",
         config: portkeyConfig["stepfun/step-3.5-flash"],
+        transform: mandatoryReasoning,
     },
     {
         name: "step-flash",
         config: portkeyConfig["stepfun/step-3.7-flash"],
+        transform: mandatoryReasoning,
     },
     {
         name: "mistral-small-3.2",
@@ -84,6 +105,7 @@ const models: ModelDefinition[] = [
     {
         name: "deepseek",
         config: portkeyConfig["accounts/fireworks/models/deepseek-v4-flash"],
+        transform: fireworksThinking,
     },
     {
         name: "gemma",
@@ -92,12 +114,13 @@ const models: ModelDefinition[] = [
     {
         name: "deepseek-pro",
         config: portkeyConfig["accounts/fireworks/models/deepseek-v4-pro"],
+        transform: fireworksThinking,
     },
     {
         name: "grok",
         config: portkeyConfig["grok-4-20-non-reasoning"],
         // Non-reasoning deployment 500s if reasoning_effort is forwarded.
-        transform: pipe(stripCacheControl, stripReasoningEffort),
+        transform: pipe(stripCacheControl, stripReasoning),
     },
     {
         name: "grok-4-20-reasoning",
@@ -120,22 +143,28 @@ const models: ModelDefinition[] = [
     {
         name: "claude-fast",
         config: portkeyConfig["claude-haiku-4-5"],
+        transform: claudeManualThinking,
     },
     {
         name: "claude",
         config: portkeyConfig["claude-sonnet-4-6"],
+        transform: claudeAdaptiveThinking,
     },
     {
         name: "claude-opus-4.6",
         config: portkeyConfig["claude-opus-4-6"],
+        transform: claudeAdaptiveThinking,
     },
     {
         name: "claude-opus-4.7",
         config: portkeyConfig["claude-opus-4-7"],
+        // Opus 4.7/4.8 require adaptive thinking + output_config.effort.
+        transform: claudeAdaptiveThinking,
     },
     {
         name: "claude-large",
         config: portkeyConfig["claude-opus-4-8"],
+        transform: claudeAdaptiveThinking,
     },
     {
         name: "gemini-3-flash",
@@ -233,12 +262,12 @@ const models: ModelDefinition[] = [
     {
         name: "kimi",
         config: portkeyConfig["accounts/fireworks/models/kimi-k2p6"],
-        transform: stripCacheControl,
+        transform: pipe(stripCacheControl, fireworksThinking),
     },
     {
         name: "kimi-code",
         config: portkeyConfig["accounts/fireworks/models/kimi-k2p7-code"],
-        transform: stripCacheControl,
+        transform: pipe(stripCacheControl, fireworksThinking),
     },
     {
         name: "gemini-large",
@@ -261,23 +290,29 @@ const models: ModelDefinition[] = [
     {
         name: "glm",
         config: portkeyConfig["accounts/fireworks/models/glm-5p2"],
-        transform: stripCacheControl,
+        transform: pipe(stripCacheControl, fireworksThinking),
     },
     {
         name: "minimax-m2.7",
         config: portkeyConfig["accounts/fireworks/models/minimax-m2p7"],
+        // Reasoning mandatory: rejects "none"/"minimal", accepts low/medium/high.
+        transform: mandatoryReasoning,
     },
     {
         name: "minimax",
         config: portkeyConfig["accounts/fireworks/models/minimax-m3"],
+        transform: fireworksThinking,
     },
     {
         name: "llama",
         config: portkeyConfig["Llama-3.3-70B-Instruct"],
+        // No reasoning mode; Azure 422/400s on reasoning_effort.
+        transform: stripReasoning,
     },
     {
         name: "llama-maverick",
         config: portkeyConfig["Llama-4-Maverick-17B-128E-Instruct-FP8"],
+        transform: stripReasoning,
     },
     {
         name: "llama-scout",
@@ -286,6 +321,8 @@ const models: ModelDefinition[] = [
     {
         name: "mistral-large",
         config: portkeyConfig["Mistral-Large-3"],
+        // Azure deployment 500s on reasoning_effort.
+        transform: stripReasoning,
     },
     {
         name: "polly",

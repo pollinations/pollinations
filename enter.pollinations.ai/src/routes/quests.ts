@@ -128,8 +128,15 @@ async function readCached(
 }
 
 async function buildQuestCatalog(): Promise<QuestCatalogResponse> {
-    const [githubQuests] = await Promise.all([fetchGitHubIssueQuests()]);
-    const quests = [...productCatalogItems(), ...githubQuests].sort(
+    const productQuests = productCatalogItems();
+    let githubQuests: QuestCatalogItem[] = [];
+    try {
+        githubQuests = await fetchGitHubIssueQuests();
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.warn(`GitHub quest catalog unavailable: ${message}`);
+    }
+    const quests = [...productQuests, ...githubQuests].sort(
         compareCatalogItems,
     );
 
@@ -180,7 +187,7 @@ async function fetchGitHubIssueQuests(): Promise<QuestCatalogItem[]> {
 
 function githubIssueCatalogItem(issue: GitHubIssue): QuestCatalogItem {
     const body = issue.body ?? "";
-    const rewardText = extractRewardText(body);
+    const rewardAmount = parsePayoutReward(body);
     return {
         id: `github:issue:${issue.number}`,
         kind: "github_issue",
@@ -189,8 +196,8 @@ function githubIssueCatalogItem(issue: GitHubIssue): QuestCatalogItem {
         description: extractDescription(body),
         category: "build",
         availability: githubIssueAvailability(issue),
-        rewardAmount: extractRewardPollen(rewardText),
-        rewardText,
+        rewardAmount,
+        rewardText: rewardAmount == null ? null : `${rewardAmount} Pollen`,
         balanceBucket: "pack",
         payoutScope: "once_per_event_per_user",
         eventType: "github_pr_merged",
@@ -237,20 +244,9 @@ function compareCatalogItems(left: QuestCatalogItem, right: QuestCatalogItem) {
     return left.title.localeCompare(right.title);
 }
 
-function extractRewardPollen(rewardText: string | null): number | null {
-    if (!rewardText) return null;
-    const match = rewardText.match(/([0-9]+(?:\.[0-9]+)?)\s*(?:pollen|p)?\b/i);
+function parsePayoutReward(body: string): number | null {
+    const match = body.match(/###\s*Reward\s*\n+\s*([0-9]+(?:\.[0-9]+)?)/i);
     return match ? Number(match[1]) : null;
-}
-
-function extractRewardText(body: string): string | null {
-    const rewardSection = body.match(
-        /(?:^|\n)#{2,4}\s*[^A-Za-z0-9\n]{0,4}\s*reward[^\n]*\n+([\s\S]*?)(?=\n#{2,4}\s|\n---|$)/i,
-    );
-    if (rewardSection?.[1]) {
-        return compactMarkdown(rewardSection[1]).slice(0, 180) || null;
-    }
-    return null;
 }
 
 function extractDescription(body: string): string {

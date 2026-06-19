@@ -27,6 +27,7 @@ export type MockGithubState = {
         assignees?: { login: string }[];
         labels?: Array<{ name: string }>;
     }>;
+    failQuestSearch: boolean;
 };
 
 export function createMockGithub(): MockAPI<MockGithubState> {
@@ -69,6 +70,7 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                 labels: [{ name: "POLLEN-QUEST" }],
             },
         ],
+        failQuestSearch: false,
     };
 
     const githubAuth = createMiddleware(async (c, next) => {
@@ -83,6 +85,9 @@ export function createMockGithub(): MockAPI<MockGithubState> {
 
     const githubAPI = new Hono()
         .get("/search/issues", (c) => {
+            if (state.failQuestSearch) {
+                return c.json({ message: "rate limited" }, 403);
+            }
             return c.json({ items: state.questIssues });
         })
         .use("*", githubAuth)

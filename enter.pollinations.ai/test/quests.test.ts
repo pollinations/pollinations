@@ -45,6 +45,20 @@ const mergedPrQuest: QuestDefinition = {
 test("GET /api/quests/catalog returns product and GitHub issue quests", async ({
     mocks,
 }) => {
+    await env.KV.delete("quests:catalog:v2");
+    mocks.github.state.questIssues.push({
+        number: 323,
+        title: "Malformed reward heading",
+        state: "open",
+        html_url: "https://github.com/pollinations/pollinations/issues/323",
+        body: "### Goal\nCheck reward parsing.\n\n## Reward\n99",
+        created_at: "2026-06-05T00:00:00Z",
+        updated_at: "2026-06-06T00:00:00Z",
+        closed_at: null,
+        user: { login: "maintainer" },
+        assignees: [],
+        labels: [{ name: "POLLEN-QUEST" }],
+    });
     await mocks.enable("github");
 
     const response = await SELF.fetch(
@@ -118,6 +132,46 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ({
         issueNumber: 322,
         assignees: ["dev-user"],
     });
+    expect(
+        payload.quests.find((quest) => quest.id === "github:issue:323"),
+    ).toMatchObject({
+        kind: "github_issue",
+        availability: "available",
+        rewardAmount: null,
+        issueNumber: 323,
+        assignees: [],
+    });
+});
+
+test("GET /api/quests/catalog keeps product quests when GitHub search fails", async ({
+    mocks,
+}) => {
+    await env.KV.delete("quests:catalog:v2");
+    mocks.github.state.failQuestSearch = true;
+    await mocks.enable("github");
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/quests/catalog",
+    );
+    expect(response.status).toBe(200);
+
+    const payload = (await response.json()) as {
+        quests: {
+            id: string;
+            kind: string;
+            availability: string;
+        }[];
+    };
+
+    expect(
+        payload.quests.filter(
+            (quest) =>
+                quest.kind === "product" && quest.availability === "available",
+        ),
+    ).toHaveLength(3);
+    expect(payload.quests.some((quest) => quest.kind === "github_issue")).toBe(
+        false,
+    );
 });
 
 test("buildGrantKey ignores eventId for once-per-user quests", () => {

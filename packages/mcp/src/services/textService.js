@@ -676,10 +676,10 @@ const chatParamsSchema = {
             "Thinking mode for reasoning models. Use with kimi, perplexity-reasoning, openai-large, gemini-large",
         ),
     reasoning_effort: z
-        .enum(["low", "medium", "high"])
+        .enum(["none", "minimal", "low", "medium", "high", "xhigh"])
         .optional()
         .describe(
-            "Reasoning effort level. Works with reasoning models like kimi, openai-large",
+            "Reasoning effort level. Use 'none' to request no reasoning on supported models",
         ),
     thinking_budget: z
         .number()

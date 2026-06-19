@@ -94,11 +94,15 @@ export default {
         env: CloudflareBindings,
         ctx: ExecutionContext,
     ) {
-        await runTierRefill(env, ctx);
-        ctx.waitUntil(
+        // Isolate the two cron tasks: a failure in one must not skip the other.
+        // Both are awaited so a manual trigger reflects completion (and errors).
+        await Promise.allSettled([
+            runTierRefill(env, ctx).catch((error) => {
+                console.error("Tier refill failed:", error);
+            }),
             runQuestEvaluator(env).catch((error) => {
                 console.error("Quest evaluator failed:", error);
             }),
-        );
+        ]);
     },
 } satisfies ExportedHandler<CloudflareBindings>;

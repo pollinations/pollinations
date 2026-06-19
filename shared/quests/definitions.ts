@@ -39,8 +39,9 @@ export type GrantCandidate = {
 export const QUEST_DEFINITIONS: QuestDefinition[] = [
     {
         id: "onboarding:first_api_key",
-        title: "Create your first API key",
-        description: "Create a Pollinations API key from your account.",
+        title: "Mint your first key",
+        description:
+            "Create a Pollinations API key so your apps can talk to the garden.",
         category: "onboarding",
         status: "active",
         eventType: "api_key_created",
@@ -50,8 +51,8 @@ export const QUEST_DEFINITIONS: QuestDefinition[] = [
     },
     {
         id: "spend:first_top_up",
-        title: "Make your first top-up",
-        description: "Buy your first Pollen pack.",
+        title: "Stock your pollen pack",
+        description: "Buy your first Pollen pack for heavier API runs.",
         category: "spend",
         status: "active",
         eventType: "first_top_up",
@@ -61,8 +62,9 @@ export const QUEST_DEFINITIONS: QuestDefinition[] = [
     },
     {
         id: "onboarding:established_github_account",
-        title: "Connect an established GitHub account",
-        description: "Connect a GitHub account that is at least one year old.",
+        title: "Claim senior dev status",
+        description:
+            "Connect a GitHub account that has survived at least one year of software.",
         category: "onboarding",
         status: "active",
         eventType: "github_account_age",
@@ -72,8 +74,8 @@ export const QUEST_DEFINITIONS: QuestDefinition[] = [
     },
     {
         id: "onboarding:first_chat_completion",
-        title: "Run your first chat completion",
-        description: "Send a successful chat completion request.",
+        title: "Make the hive talk",
+        description: "Send your first successful chat completion request.",
         category: "onboarding",
         status: "planned",
         eventType: "first_chat_completion",
@@ -83,8 +85,8 @@ export const QUEST_DEFINITIONS: QuestDefinition[] = [
     },
     {
         id: "onboarding:first_image_generation",
-        title: "Generate your first image",
-        description: "Send a successful image generation request.",
+        title: "Grow your first image",
+        description: "Send your first successful image generation request.",
         category: "onboarding",
         status: "planned",
         eventType: "first_image_generation",

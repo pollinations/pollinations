@@ -12,9 +12,7 @@ import { CommunityEndpointCard } from "./community-endpoint-card.tsx";
 import { CommunityEndpointDeleteConfirmation } from "./community-endpoint-delete-confirmation.tsx";
 import { CommunityEndpointDialog } from "./community-endpoint-dialog.tsx";
 import {
-    type ActionState,
     type CommunityEndpoint,
-    type CommunityEndpointTestResponse,
     type EndpointPayload,
     readError,
 } from "./types.ts";
@@ -30,9 +28,6 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
     const [createOpen, setCreateOpen] = useState(false);
     const [editing, setEditing] = useState<CommunityEndpoint | null>(null);
     const [deleting, setDeleting] = useState<CommunityEndpoint | null>(null);
-    const [endpointTests, setEndpointTests] = useState<
-        Record<string, ActionState>
-    >({});
 
     const loadEndpoints = useCallback(async (): Promise<void> => {
         setError(null);
@@ -100,47 +95,6 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
         }
     }
 
-    async function handleTest(endpoint: CommunityEndpoint): Promise<void> {
-        setEndpointTests((current) => ({
-            ...current,
-            [endpoint.id]: { status: "loading", message: "Testing…" },
-        }));
-        try {
-            const response = await apiClient["community-endpoints"][
-                ":id"
-            ].test.$post({
-                param: { id: endpoint.id },
-                json: {
-                    baseUrl: endpoint.baseUrl,
-                    model: endpoint.upstreamModel,
-                },
-            });
-            if (!response.ok) throw new Error(await readError(response));
-            const body =
-                (await response.json()) as CommunityEndpointTestResponse;
-            setEndpointTests((current) => ({
-                ...current,
-                [endpoint.id]: {
-                    status: "success",
-                    message: body.message || "Endpoint responded",
-                    usage: body.usage,
-                    billableUsage: body.billableUsage,
-                },
-            }));
-        } catch (thrown) {
-            setEndpointTests((current) => ({
-                ...current,
-                [endpoint.id]: {
-                    status: "error",
-                    message:
-                        thrown instanceof Error
-                            ? thrown.message
-                            : "Endpoint test failed",
-                },
-            }));
-        }
-    }
-
     return (
         <>
             <Section
@@ -190,8 +144,6 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
                             <CommunityEndpointCard
                                 key={endpoint.id}
                                 endpoint={endpoint}
-                                testState={endpointTests[endpoint.id]}
-                                onTest={() => void handleTest(endpoint)}
                                 onEdit={() => setEditing(endpoint)}
                                 onDelete={() => setDeleting(endpoint)}
                             />

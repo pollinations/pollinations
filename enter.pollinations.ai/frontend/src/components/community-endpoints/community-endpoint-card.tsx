@@ -1,7 +1,5 @@
 import {
-    Button,
     CheckIcon,
-    Chip,
     ClipboardIcon,
     CopyButton,
     ExternalLinkIcon,
@@ -16,26 +14,16 @@ import { COMMUNITY_ENDPOINT_PRICE_FIELDS } from "@shared/community-endpoints.ts"
 import type { ReactNode } from "react";
 import type { PriceKind } from "../models/model-icons.tsx";
 import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
-import { CommunityEndpointUsageCounts } from "./community-endpoint-usage.tsx";
-import {
-    type ActionState,
-    type CommunityEndpoint,
-    idleAction,
-    pricePerTokenToPerMillion,
-} from "./types.ts";
+import { type CommunityEndpoint, pricePerTokenToPerMillion } from "./types.ts";
 
 type CommunityEndpointCardProps = {
     endpoint: CommunityEndpoint;
-    testState?: ActionState;
-    onTest: () => void;
     onEdit: () => void;
     onDelete: () => void;
 };
 
 export function CommunityEndpointCard({
     endpoint,
-    testState = idleAction,
-    onTest,
     onEdit,
     onDelete,
 }: CommunityEndpointCardProps) {
@@ -49,7 +37,6 @@ export function CommunityEndpointCard({
                         <h3 className="min-w-0 truncate text-base font-semibold text-theme-text-strong">
                             {endpoint.name}
                         </h3>
-                        <TestStateChip status={testState.status} />
                     </div>
                     {endpoint.description && (
                         <p className="mt-1 text-sm text-theme-text-muted">
@@ -58,15 +45,6 @@ export function CommunityEndpointCard({
                     )}
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
-                    <Button
-                        type="button"
-                        size="sm"
-                        intent="info"
-                        onClick={onTest}
-                        disabled={testState.status === "loading"}
-                    >
-                        Test
-                    </Button>
                     <IconButton
                         intent="info"
                         title="Edit model"
@@ -123,48 +101,8 @@ export function CommunityEndpointCard({
                     ))}
                 </div>
             )}
-
-            {testState.status === "error" && testState.message && (
-                <p className="mt-3 text-sm text-intent-danger-text">
-                    {testState.message}
-                </p>
-            )}
-
-            {testState.status === "success" && (
-                <div className="mt-3 rounded-md border border-divider bg-surface-opaque/50 p-2">
-                    <CommunityEndpointUsageCounts
-                        usage={testState.usage}
-                        billableUsage={testState.billableUsage}
-                    />
-                </div>
-            )}
         </Surface>
     );
-}
-
-function TestStateChip({ status }: { status: ActionState["status"] }) {
-    if (status === "success") {
-        return (
-            <Chip size="sm" intent="success">
-                Tested
-            </Chip>
-        );
-    }
-    if (status === "loading") {
-        return (
-            <Chip size="sm" intent="warning">
-                Testing
-            </Chip>
-        );
-    }
-    if (status === "error") {
-        return (
-            <Chip size="sm" intent="danger">
-                Test failed
-            </Chip>
-        );
-    }
-    return null;
 }
 
 type CommunityDetailRowProps = {

@@ -246,11 +246,10 @@ export function CommunityEndpointDialog({
         visiblePriceKeys,
     );
     const hasRequiredReturnedPrices = returnedFields.every((field) =>
-        hasDefinedPriceInput(form, field),
+        hasPositivePriceInput(form, field),
     );
-    const testRequirementMet = isEdit
-        ? testState.status !== "error"
-        : testState.status === "success" && returnedFields.length > 0;
+    const testRequirementMet =
+        testState.status === "success" && returnedFields.length > 0;
     const providerModelQuery = form.upstreamModel.trim().toLowerCase();
     const visibleModelOptions =
         providerModelQuery === ""
@@ -643,8 +642,16 @@ function PriceRow({
         ? priceCellState(row.outputField, form, testState)
         : null;
     const hasError =
-        Boolean(inputState?.invalid || inputState?.missing) ||
-        Boolean(outputState?.invalid || outputState?.missing);
+        Boolean(
+            inputState?.invalid ||
+                inputState?.missing ||
+                inputState?.nonPositive,
+        ) ||
+        Boolean(
+            outputState?.invalid ||
+                outputState?.missing ||
+                outputState?.nonPositive,
+        );
     const returned = Boolean(inputState?.observed || outputState?.observed);
 
     return (
@@ -703,7 +710,7 @@ function PriceInputCell({
     }
 
     const inputId = `community-${field.key}`;
-    const hasError = state.invalid || state.missing;
+    const hasError = state.invalid || state.missing || state.nonPositive;
 
     return (
         <TableCell align="right" className="w-40 align-top">
@@ -730,7 +737,9 @@ function PriceInputCell({
                     <p className="mt-1 text-right text-xs text-intent-danger-text">
                         {state.invalid
                             ? "Use a dot decimal like 0.1"
-                            : "Required for returned usage"}
+                            : state.nonPositive
+                              ? "Must be greater than 0"
+                              : "Required for returned usage"}
                     </p>
                 )}
             </div>
@@ -741,6 +750,7 @@ function PriceInputCell({
 type PriceCellState = {
     observed: boolean;
     missing: boolean;
+    nonPositive: boolean;
     invalid: boolean;
 };
 
@@ -753,10 +763,17 @@ function priceCellState(
         observedUsageValue(testState.usage, testState.billableUsage, field) !==
         null;
     const value = form[field.key];
+    const trimmedValue = value.trim();
+    const invalid = !isValidPriceInput(value);
     return {
         observed,
-        missing: observed && value.trim() === "",
-        invalid: !isValidPriceInput(value),
+        missing: observed && trimmedValue === "",
+        nonPositive:
+            observed &&
+            trimmedValue !== "" &&
+            !invalid &&
+            Number(trimmedValue) <= 0,
+        invalid,
     };
 }
 
@@ -847,11 +864,12 @@ function formWithVisiblePrices(
     return next;
 }
 
-function hasDefinedPriceInput(
+function hasPositivePriceInput(
     form: EndpointFormState,
     field: PriceField,
 ): boolean {
-    return form[field.key].trim() !== "" && isValidPriceInput(form[field.key]);
+    const value = form[field.key].trim();
+    return value !== "" && isValidPriceInput(value) && Number(value) > 0;
 }
 
 function hasValidVisibleFormPrices(

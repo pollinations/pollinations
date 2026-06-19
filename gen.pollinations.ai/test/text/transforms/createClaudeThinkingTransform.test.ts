@@ -46,23 +46,17 @@ describe("createClaudeThinkingTransform — budget mode (Haiku 4.5)", () => {
         });
     });
 
-    it("clamps budget below max_tokens", async () => {
+    it("passes the budget through unchanged regardless of max_tokens", async () => {
+        // Thin proxy: don't shrink the budget to fit max_tokens — if it
+        // exceeds max_tokens, Bedrock returns its own clear 400.
         const { options } = await budget([], {
             reasoning_effort: "high",
             max_tokens: 3000,
         });
         expect(options.thinking).toEqual({
             type: "enabled",
-            budget_tokens: 2999,
+            budget_tokens: 4096,
         });
-    });
-
-    it("skips thinking when max_tokens is too small for the minimum budget", async () => {
-        const { options } = await budget([], {
-            reasoning_effort: "high",
-            max_tokens: 512,
-        });
-        expect(options.thinking).toBeUndefined();
     });
 
     it("strips temperature/top_p/top_k when thinking is enabled", async () => {

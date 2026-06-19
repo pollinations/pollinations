@@ -60,11 +60,12 @@ test("catalog prices format text rates through formatPricePer1M", () => {
     });
 });
 
-test("catalog prices keep community models in their own category", () => {
+test("catalog prices keep community text models flagged for display", () => {
     const [communityModel] = getModelPricesFromCatalog([
         {
             name: "community/voodoohop/openai",
-            category: "community",
+            category: "text",
+            community: true,
             brand: "Community",
             title: "OpenAI relay",
             description: "OpenAI relay",
@@ -81,7 +82,8 @@ test("catalog prices keep community models in their own category", () => {
 
     expect(communityModel).toMatchObject({
         name: "community/voodoohop/openai",
-        type: "community",
+        type: "text",
+        community: true,
         displayName: "OpenAI relay",
         brand: "Community",
         promptTextPrice: "0.1",

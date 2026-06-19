@@ -34,9 +34,9 @@ export const ModelInfoSchema = z.object({
         "video",
         "embedding",
         "realtime",
-        "community",
     ]),
     brand: z.string(),
+    community: z.boolean().optional(),
     pricing: z
         .record(z.string(), z.string())
         .and(z.object({ currency: z.literal("pollen") })),

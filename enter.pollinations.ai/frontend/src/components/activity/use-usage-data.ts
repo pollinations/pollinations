@@ -56,10 +56,6 @@ const emptyRequestsByModality = (): Record<ModelModality, number> =>
         MODEL_MODALITIES.map((modality) => [modality, 0]),
     ) as Record<ModelModality, number>;
 
-const catalogCategoryToActivityModality = (
-    category: ReturnType<typeof getCatalogCategory>,
-): ModelModality => (category === "community" ? "text" : category);
-
 function catalogModelToActivityModel(
     model: ApiModelInfo,
 ): ActivityModel | null {
@@ -68,7 +64,7 @@ function catalogModelToActivityModel(
     return {
         id,
         label: getCatalogDisplayName(model, id),
-        type: catalogCategoryToActivityModality(getCatalogCategory(model)),
+        type: getCatalogCategory(model),
     };
 }
 

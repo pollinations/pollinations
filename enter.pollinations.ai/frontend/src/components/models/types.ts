@@ -4,8 +4,9 @@ export type ModelCategory =
     | "audio"
     | "video"
     | "embedding"
-    | "realtime"
-    | "community";
+    | "realtime";
+
+export type ModelDisplayCategory = ModelCategory | "community";
 
 export type ModelCapability =
     | "tool_calling"
@@ -16,6 +17,7 @@ export type ModelCapability =
 export type ModelPrice = {
     name: string;
     type: ModelCategory;
+    community?: boolean;
     displayName?: string;
     description?: string;
     brand?: string;

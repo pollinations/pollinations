@@ -580,6 +580,7 @@ fixtureTest(
         const textModels = (await textResponse.json()) as {
             name: string;
             category?: string;
+            community?: boolean;
             description?: string;
             pricing?: Record<string, string>;
             baseUrl?: string;
@@ -597,7 +598,8 @@ fixtureTest(
             const listed = models.find((model) => model.name === modelId);
             expect(listed).toMatchObject({
                 name: modelId,
-                category: "community",
+                category: "text",
+                community: true,
                 description: "Public community model",
                 pricing: {
                     currency: "pollen",

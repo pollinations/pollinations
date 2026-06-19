@@ -15,6 +15,7 @@ export type ApiModelInfo = {
     id?: string;
     category?: ModelCategory;
     brand?: string;
+    community?: boolean;
     pricing?: ApiPricing;
     title?: string;
     description?: string;
@@ -158,6 +159,7 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
     return {
         name,
         type: getCatalogCategory(model),
+        community: model.community,
         displayName: getCatalogDisplayName(model, name),
         description: getCatalogDescriptionWithoutName(model),
         brand: model.brand,

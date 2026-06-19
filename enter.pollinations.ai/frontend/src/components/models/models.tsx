@@ -58,8 +58,10 @@ export const Models: FC<ModelsProps> = ({ showCommunityEndpoints = false }) => {
     const videoModels = allModels.filter((m) => m.type === "video");
     const audioModels = allModels.filter((m) => m.type === "audio");
     const realtimeModels = allModels.filter((m) => m.type === "realtime");
-    const textModels = allModels.filter((m) => m.type === "text");
-    const communityModels = allModels.filter((m) => m.type === "community");
+    const textModels = allModels.filter(
+        (m) => m.type === "text" && !m.community,
+    );
+    const communityModels = allModels.filter((m) => m.community);
     const embeddingModels = allModels.filter((m) => m.type === "embedding");
     const availableSections: SectionType[] = [
         "image",

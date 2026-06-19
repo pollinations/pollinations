@@ -78,8 +78,9 @@ export async function getCommunityTextModelsInfo(
             {
                 name,
                 aliases: [],
-                category: "community",
+                category: "text",
                 brand: "Community",
+                community: true,
                 pricing,
                 title,
                 description: row.description ?? undefined,

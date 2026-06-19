@@ -1,3 +1,4 @@
+import logoWordmarkUrl from "@pollinations/ui/assets/logo-wordmark.svg";
 import {
     type SocialProvider,
     SocialSignInButtons,
@@ -94,6 +95,7 @@ function RouteComponent() {
                 />
             }
         >
+            <MobileBrandHeader />
             <MobileSignInPrompt
                 socialProviders={socialProviders}
                 pendingProvider={pendingProvider}
@@ -103,6 +105,34 @@ function RouteComponent() {
             {activePage === "news-faq" && <NewsFaq />}
             {activePage === "models" && <Models />}
         </DashboardShell>
+    );
+}
+
+/**
+ * The wordmark lives in the rail/drawer, both hidden on mobile. Give the
+ * logged-out mobile view its own brand header at the top of the content.
+ */
+function MobileBrandHeader() {
+    return (
+        <div className="flex justify-center pt-1 md:hidden">
+            <a
+                href="https://pollinations.ai"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Pollinations"
+                className="text-theme-text-strong"
+            >
+                <span className="sr-only">Pollinations</span>
+                <span
+                    aria-hidden="true"
+                    className="block h-7 w-[210px] bg-current"
+                    style={{
+                        WebkitMask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
+                        mask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
+                    }}
+                />
+            </a>
+        </div>
     );
 }
 
@@ -123,7 +153,7 @@ function MobileSignInPrompt({
     onSignIn: (provider: SocialProvider) => void;
 }) {
     return (
-        <section className="rounded-2xl border-2 border-theme-border bg-theme-bg-pale p-5 md:hidden">
+        <section className="rounded-2xl bg-theme-bg-pale p-5 md:hidden">
             <h2 className="text-lg font-semibold text-theme-text-strong">
                 Sign in
             </h2>

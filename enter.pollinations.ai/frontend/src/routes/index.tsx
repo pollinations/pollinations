@@ -353,7 +353,7 @@ function RouteComponent() {
             )}
             {activePage === "quests" && (
                 <Section title="Quests" framed>
-                    <QuestOverview />
+                    <QuestOverview githubUsername={githubUsername} />
                 </Section>
             )}
             {activePage === "keys" && (

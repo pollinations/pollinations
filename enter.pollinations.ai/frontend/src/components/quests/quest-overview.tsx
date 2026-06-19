@@ -27,6 +27,10 @@ type QuestGrant = {
 
 type QuestTab = "available" | "claimed" | "completed";
 
+type QuestOverviewProps = {
+    githubUsername?: string | null;
+};
+
 type FetchState = {
     catalog: QuestCatalogItem[];
     grants: QuestGrant[];
@@ -217,6 +221,17 @@ function CatalogQuestCard({
     );
 }
 
+function claimedByUser(
+    quest: QuestCatalogItem,
+    githubUsername: string | null,
+): boolean {
+    if (!githubUsername) return false;
+    const normalizedUsername = githubUsername.toLowerCase();
+    return quest.assignees.some(
+        (assignee) => assignee.toLowerCase() === normalizedUsername,
+    );
+}
+
 function StatusChip({
     quest,
     completed,
@@ -299,9 +314,10 @@ function QuestStat({ label, value }: { label: string; value: string }) {
     );
 }
 
-export const QuestOverview: FC = () => {
+export const QuestOverview: FC<QuestOverviewProps> = ({ githubUsername }) => {
     const [activeTab, setActiveTab] = useState<QuestTab>("available");
     const [state, setState] = useState<FetchState>(INITIAL_STATE);
+    const normalizedGithubUsername = githubUsername?.trim() || null;
 
     useEffect(() => {
         let cancelled = false;
@@ -373,11 +389,19 @@ export const QuestOverview: FC = () => {
                     return quest.availability === "available";
                 }
                 if (activeTab === "claimed") {
-                    return quest.availability === "claimed";
+                    return (
+                        quest.availability === "claimed" &&
+                        claimedByUser(quest, normalizedGithubUsername)
+                    );
                 }
                 return false;
             }),
-        [activeTab, completedCatalogIds, state.catalog],
+        [
+            activeTab,
+            completedCatalogIds,
+            normalizedGithubUsername,
+            state.catalog,
+        ],
     );
 
     const availableCount = state.catalog.filter(
@@ -388,7 +412,8 @@ export const QuestOverview: FC = () => {
     const claimedCount = state.catalog.filter(
         (quest) =>
             !completedCatalogIds.has(quest.id) &&
-            quest.availability === "claimed",
+            quest.availability === "claimed" &&
+            claimedByUser(quest, normalizedGithubUsername),
     ).length;
     const currentItems =
         activeTab === "completed" ? state.grants.length : visibleCatalog.length;
@@ -423,7 +448,7 @@ export const QuestOverview: FC = () => {
                                     {tab === "available"
                                         ? `Available (${availableCount})`
                                         : tab === "claimed"
-                                          ? `Claimed (${claimedCount})`
+                                          ? `Claimed by me (${claimedCount})`
                                           : `Completed (${state.grants.length})`}
                                 </span>
                             </TabButton>

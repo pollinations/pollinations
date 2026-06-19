@@ -5,7 +5,7 @@ import type {
     SocialProviderConfig,
 } from "./social-providers.ts";
 
-type SocialSignInButtonsProps = {
+export type SocialSignInButtonsProps = {
     providers: ReadonlyArray<SocialProviderConfig>;
     pendingProvider: SocialProvider | null;
     isLoading?: boolean;

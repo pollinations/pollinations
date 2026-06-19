@@ -94,9 +94,51 @@ function RouteComponent() {
                 />
             }
         >
+            <MobileSignInPrompt
+                socialProviders={socialProviders}
+                pendingProvider={pendingProvider}
+                signInError={signInError}
+                onSignIn={signIn}
+            />
             {activePage === "news-faq" && <NewsFaq />}
             {activePage === "models" && <Models />}
         </DashboardShell>
+    );
+}
+
+/**
+ * The rail (and its sign-in buttons) is desktop-only; on mobile it sits behind
+ * the drawer. `/sign-in` exists to sign in, so surface the same buttons at the
+ * top of the main column on small screens where the rail isn't visible.
+ */
+function MobileSignInPrompt({
+    socialProviders,
+    pendingProvider,
+    signInError,
+    onSignIn,
+}: {
+    socialProviders: ReturnType<typeof useSocialProviders>;
+    pendingProvider: SocialProvider | null;
+    signInError: string | null;
+    onSignIn: (provider: SocialProvider) => void;
+}) {
+    return (
+        <section className="rounded-2xl border-2 border-theme-border bg-theme-bg-pale p-5 md:hidden">
+            <h2 className="text-lg font-semibold text-theme-text-strong">
+                Sign in
+            </h2>
+            <p className="mt-1 mb-4 text-sm text-theme-text-base">
+                Continue to your Pollinations account.
+            </p>
+            <SocialSignInButtons
+                providers={socialProviders.providers}
+                isLoading={socialProviders.isLoading}
+                error={signInError ?? socialProviders.error}
+                pendingProvider={pendingProvider}
+                onSignIn={onSignIn}
+                className="w-full"
+            />
+        </section>
     );
 }
 

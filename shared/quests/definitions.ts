@@ -1,18 +1,10 @@
 import type { Bucket } from "../billing/deduction.ts";
 
-export type QuestCategory =
-    | "onboarding"
-    | "spend"
-    | "build"
-    | "grow"
-    | "engage";
-export type QuestStatus = "active" | "planned";
+export type QuestCategory = "onboarding" | "spend" | "build";
 export type QuestEventType =
     | "api_key_created"
     | "first_top_up"
     | "github_account_age"
-    | "first_chat_completion"
-    | "first_image_generation"
     | "github_pr_merged";
 export type PayoutScope = "once_per_user" | "once_per_event_per_user";
 
@@ -21,7 +13,6 @@ export type QuestDefinition = {
     title: string;
     description: string;
     category: QuestCategory;
-    status: QuestStatus;
     eventType: QuestEventType;
     rewardAmount: number;
     balanceBucket: Bucket;
@@ -32,7 +23,6 @@ export type GrantCandidate = {
     userId: string;
     eventId?: string;
     sourceRef?: string | null;
-    amount?: number;
     metadata?: Record<string, unknown> | null;
 };
 
@@ -42,7 +32,6 @@ export const QUEST_DEFINITIONS: QuestDefinition[] = [
         title: "Mint your first key",
         description: "Create your first Pollinations API key.",
         category: "onboarding",
-        status: "active",
         eventType: "api_key_created",
         rewardAmount: 1,
         balanceBucket: "pack",
@@ -53,7 +42,6 @@ export const QUEST_DEFINITIONS: QuestDefinition[] = [
         title: "Stock your pollen pack",
         description: "Buy your first Pollen pack.",
         category: "spend",
-        status: "active",
         eventType: "first_top_up",
         rewardAmount: 5,
         balanceBucket: "pack",
@@ -64,31 +52,8 @@ export const QUEST_DEFINITIONS: QuestDefinition[] = [
         title: "Claim senior dev status",
         description: "Connect a GitHub account that is at least one year old.",
         category: "onboarding",
-        status: "active",
         eventType: "github_account_age",
         rewardAmount: 5,
-        balanceBucket: "pack",
-        payoutScope: "once_per_user",
-    },
-    {
-        id: "onboarding:first_chat_completion",
-        title: "Make the hive talk",
-        description: "Send your first successful chat completion request.",
-        category: "onboarding",
-        status: "planned",
-        eventType: "first_chat_completion",
-        rewardAmount: 1,
-        balanceBucket: "pack",
-        payoutScope: "once_per_user",
-    },
-    {
-        id: "onboarding:first_image_generation",
-        title: "Grow your first image",
-        description: "Send your first successful image generation request.",
-        category: "onboarding",
-        status: "planned",
-        eventType: "first_image_generation",
-        rewardAmount: 1,
         balanceBucket: "pack",
         payoutScope: "once_per_user",
     },

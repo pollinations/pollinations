@@ -61,7 +61,7 @@ async function grantCandidates({
             userId: candidate.userId,
             source: PRODUCT_QUEST_SOURCE,
             questId,
-            amount: candidate.amount ?? definition.rewardAmount,
+            amount: definition.rewardAmount,
             bucket: definition.balanceBucket,
             sourceRef: candidate.sourceRef,
             metadata: buildQuestGrantMetadata(definition, candidate),

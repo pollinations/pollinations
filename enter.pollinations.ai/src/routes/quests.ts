@@ -147,9 +147,7 @@ async function buildQuestCatalog(): Promise<QuestCatalogResponse> {
 }
 
 function productCatalogItems(): QuestCatalogItem[] {
-    return QUEST_DEFINITIONS.filter(
-        (definition) => definition.status === "active",
-    ).map((definition) => ({
+    return QUEST_DEFINITIONS.map((definition) => ({
         id: definition.id,
         kind: "product",
         questTypeId: definition.id,

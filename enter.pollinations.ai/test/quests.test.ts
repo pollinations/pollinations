@@ -35,7 +35,6 @@ const mergedPrQuest: QuestDefinition = {
     title: "Merge a pull request",
     description: "Earn Pollen when your pull request is merged.",
     category: "build",
-    status: "planned",
     eventType: "github_pr_merged",
     rewardAmount: 1,
     balanceBucket: "pack",
@@ -105,11 +104,6 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ({
         balanceBucket: "pack",
         payoutScope: "once_per_user",
     });
-    expect(
-        payload.quests.some(
-            (quest) => quest.id === "onboarding:first_image_generation",
-        ),
-    ).toBe(false);
     expect(
         payload.quests.find((quest) => quest.id === "github:issue:321"),
     ).toMatchObject({
@@ -207,7 +201,7 @@ test("quest grant metadata keeps definition fields authoritative", () => {
             userId: "user-1",
             metadata: {
                 title: "Overridden title",
-                category: "engage",
+                category: "spend",
                 eventType: "manual",
                 externalUrl:
                     "https://github.com/pollinations/pollinations/pull/123",

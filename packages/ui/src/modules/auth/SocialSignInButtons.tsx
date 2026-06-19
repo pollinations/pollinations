@@ -19,7 +19,7 @@ const baseButtonClasses =
     "polli:flex polli:h-11 polli:w-full polli:items-center polli:justify-center polli:gap-3 polli:rounded-md polli:border polli:px-4 polli:text-sm polli:font-medium polli:transition-[background-color,border-color,box-shadow] polli:focus-visible:outline-none polli:focus-visible:ring-2 polli:focus-visible:ring-offset-2 polli:disabled:cursor-not-allowed polli:disabled:opacity-60";
 
 const providerButtonClasses: Record<SocialProvider, string> = {
-    google: "polli:border-[#dadce0] polli:bg-[#ffffff] polli:text-[#1f1f1f] polli:hover:bg-[#f8fafd] polli:hover:shadow-[0_1px_3px_rgba(60,64,67,0.30),0_1px_2px_rgba(60,64,67,0.15)] polli:focus-visible:ring-[#4285f4]",
+    google: "polli:border-[#dadce0] polli:bg-[#ffffff] polli:text-[#1f1f1f] polli:shadow-[0_1px_2px_rgba(60,64,67,0.18)] polli:hover:bg-[#f8fafd] polli:hover:shadow-[0_1px_3px_rgba(60,64,67,0.30),0_1px_2px_rgba(60,64,67,0.15)] polli:focus-visible:ring-[#4285f4]",
     github: "polli:border-[#24292f] polli:bg-[#24292f] polli:text-[#ffffff] polli:hover:border-[#444c56] polli:hover:bg-[#32383f] polli:hover:shadow-[0_1px_3px_rgba(36,41,47,0.35)] polli:focus-visible:ring-[#24292f]",
 };
 

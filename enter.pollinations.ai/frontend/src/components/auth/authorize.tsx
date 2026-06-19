@@ -83,12 +83,7 @@ export function Authorize() {
     const user = session?.user as User | undefined;
 
     const [isAuthorizing, setIsAuthorizing] = useState(false);
-    const {
-        pendingProvider,
-        isSigningIn,
-        error: signInError,
-        signIn,
-    } = useSocialSignIn();
+    const { pendingProvider, error: signInError, signIn } = useSocialSignIn();
     const socialProviders = useSocialProviders();
     const [error, setError] = useState<string | null>(null);
     const [attribution, setAttribution] = useState<Attribution | null>(null);
@@ -435,16 +430,6 @@ export function Authorize() {
                             onSignIn={signIn}
                         />
                     )}
-                    <div className="flex justify-end">
-                        <Button
-                            as="button"
-                            onClick={handleDeny}
-                            intent="danger"
-                            disabled={isSigningIn}
-                        >
-                            Deny
-                        </Button>
-                    </div>
                 </div>
             </AuthModal>
         );

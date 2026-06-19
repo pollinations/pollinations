@@ -1,4 +1,5 @@
 import {
+    CardIcon,
     CheckIcon,
     ClipboardIcon,
     CopyButton,
@@ -85,23 +86,15 @@ export function CommunityEndpointCard({
                     label="Upstream model"
                     value={endpoint.upstreamModel}
                 />
+                {priceGroups.map((group) => (
+                    <CommunityDetailRow
+                        key={group.key}
+                        icon={<CardIcon className="h-3.5 w-3.5" />}
+                        label={group.label}
+                        value={<CommunityPriceBadges group={group} />}
+                    />
+                ))}
             </div>
-
-            {priceGroups.length > 0 && (
-                <div className="mt-3 grid gap-2">
-                    <span className="text-xs font-medium text-theme-text-muted">
-                        Pricing
-                    </span>
-                    <div className="grid gap-1.5">
-                        {priceGroups.map((group) => (
-                            <CommunityPriceGroupRow
-                                key={group.key}
-                                group={group}
-                            />
-                        ))}
-                    </div>
-                </div>
-            )}
         </Surface>
     );
 }
@@ -109,7 +102,7 @@ export function CommunityEndpointCard({
 type CommunityDetailRowProps = {
     icon: ReactNode;
     label: string;
-    value: string;
+    value: ReactNode;
     copyLabel?: string;
 };
 
@@ -119,6 +112,8 @@ function CommunityDetailRow({
     value,
     copyLabel,
 }: CommunityDetailRowProps) {
+    const copyValue = typeof value === "string" ? value : null;
+
     return (
         <div className="grid min-w-0 gap-1 text-xs text-theme-text-muted sm:grid-cols-[8.5rem_minmax(0,1fr)] sm:items-center">
             <span className="inline-flex items-center gap-1.5 font-medium text-theme-text-muted">
@@ -126,12 +121,16 @@ function CommunityDetailRow({
                 {label}
             </span>
             <span className="flex min-w-0 items-center gap-1.5">
-                <span className="min-w-0 truncate font-mono text-theme-text-strong">
-                    {value}
-                </span>
-                {copyLabel && (
+                {typeof value === "string" ? (
+                    <span className="min-w-0 truncate font-mono text-theme-text-strong">
+                        {value}
+                    </span>
+                ) : (
+                    value
+                )}
+                {copyLabel && copyValue && (
                     <CopyButton
-                        value={value}
+                        value={copyValue}
                         tooltip={copyLabel}
                         copiedTooltip="Copied"
                         className="inline-flex shrink-0 items-center justify-center rounded-md p-1 text-theme-text-muted transition-colors hover:bg-theme-bg-active hover:text-theme-text-strong"
@@ -150,25 +149,20 @@ function CommunityDetailRow({
     );
 }
 
-function CommunityPriceGroupRow({ group }: { group: CommunityPriceGroup }) {
+function CommunityPriceBadges({ group }: { group: CommunityPriceGroup }) {
     return (
-        <div className="grid min-w-0 gap-1 text-xs text-theme-text-muted sm:grid-cols-[8.5rem_minmax(0,1fr)] sm:items-center">
-            <span className="font-medium text-theme-text-muted">
-                {group.label}
-            </span>
-            <span className="flex min-w-0 flex-wrap items-center gap-1">
-                {group.badges.map(({ badge, tooltip }) => (
-                    <Tooltip
-                        key={`${group.key}-${badge.kind}-${badge.prices[0]}`}
-                        triggerAs="span"
-                        content={tooltip}
-                        ariaLabel={tooltip}
-                    >
-                        <PriceBadge {...badge} />
-                    </Tooltip>
-                ))}
-            </span>
-        </div>
+        <span className="flex min-w-0 flex-wrap items-center gap-1">
+            {group.badges.map(({ badge, tooltip }) => (
+                <Tooltip
+                    key={`${group.key}-${badge.kind}-${badge.prices[0]}`}
+                    triggerAs="span"
+                    content={tooltip}
+                    ariaLabel={tooltip}
+                >
+                    <PriceBadge {...badge} />
+                </Tooltip>
+            ))}
+        </span>
     );
 }
 
@@ -209,8 +203,8 @@ function communityPriceGroups(
     }
 
     const priceGroups: CommunityPriceGroup[] = [
-        { key: "input", label: "Input", badges: groups.input },
-        { key: "output", label: "Output", badges: groups.output },
+        { key: "input", label: "Input price", badges: groups.input },
+        { key: "output", label: "Output price", badges: groups.output },
     ];
 
     return priceGroups.filter((group) => group.badges.length > 0);

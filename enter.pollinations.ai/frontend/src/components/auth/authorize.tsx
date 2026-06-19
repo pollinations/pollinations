@@ -3,6 +3,7 @@ import {
     Collapsible,
     cn,
     MailIcon,
+    Surface,
     useScrollLock,
 } from "@pollinations/ui";
 import {
@@ -491,7 +492,7 @@ export function Authorize() {
                     <ErrorBanner>{error}</ErrorBanner>
                 ) : (
                     <div>
-                        <div className="-mx-6 px-6 py-4 bg-theme-bg-pale border-y border-theme-border">
+                        <Surface variant="card">
                             <p
                                 id="authorize-dialog-title"
                                 className="font-body text-xs font-semibold text-theme-text-soft tracking-wide mb-2"
@@ -504,7 +505,7 @@ export function Authorize() {
                                 userCode={user_code}
                                 redirectHostname={redirectHostname}
                             />
-                        </div>
+                        </Surface>
 
                         <div className="p-4">
                             <p className="font-body text-xs font-semibold text-theme-text-soft tracking-wide mb-3">

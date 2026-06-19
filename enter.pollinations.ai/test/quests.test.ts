@@ -265,7 +265,7 @@ test("quest evaluator grants code-defined product quests once", async ({
         .select({ packBalance: schema.user.packBalance })
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
-    expect(balance?.packBalance).toBeCloseTo((user.packBalance ?? 0) + 3.5);
+    expect(balance?.packBalance).toBeCloseTo((user.packBalance ?? 0) + 11);
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/account/quests",
@@ -288,7 +288,7 @@ test("quest evaluator grants code-defined product quests once", async ({
         }[];
     };
 
-    expect(payload.totalPollen).toBeCloseTo(3.5);
+    expect(payload.totalPollen).toBeCloseTo(11);
     expect(payload.grants).toHaveLength(3);
     for (const grant of payload.grants) {
         expect(grant).not.toHaveProperty("id");
@@ -300,14 +300,14 @@ test("quest evaluator grants code-defined product quests once", async ({
         ),
     ).toMatchObject({
         source: "product_quest",
-        pollenCredited: 0.5,
+        pollenCredited: 1,
         balanceBucket: "pack",
     });
     expect(
         payload.grants.find((grant) => grant.questId === "spend:first_top_up"),
     ).toMatchObject({
         source: "product_quest",
-        pollenCredited: 2,
+        pollenCredited: 5,
         balanceBucket: "pack",
     });
     expect(
@@ -317,7 +317,7 @@ test("quest evaluator grants code-defined product quests once", async ({
         ),
     ).toMatchObject({
         source: "product_quest",
-        pollenCredited: 1,
+        pollenCredited: 5,
         balanceBucket: "pack",
         metadata: {
             githubId: 12345,

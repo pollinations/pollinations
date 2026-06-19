@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import logoUrl from "../../assets/logo.svg";
 import { Dialog } from "../../primitives/Dialog.tsx";
+import { Surface } from "../../primitives/Surface.tsx";
 
 const authLogoMaskUrl = `url('${logoUrl}')`;
 
@@ -22,17 +23,27 @@ export type AuthModalProps = {
         labelledBy?: string;
     };
     tone?: "default" | "error";
+    /**
+     * Modal interior fill:
+     * - "raised" (default) — light surface (consent / approval screens).
+     * - "desk" — dark desk like the dashboard, so inner Surface cards read as
+     *   distinct panels (login screens).
+     */
+    interior?: "raised" | "desk";
 };
 
 export function AuthModal({
     children,
     dialog,
     tone = "default",
+    interior = "raised",
 }: AuthModalProps) {
     const borderClass =
         tone === "error"
             ? "polli:border-intent-danger-border"
             : "polli:border-theme-border";
+    const interiorClass =
+        interior === "desk" ? "polli:bg-app-bg" : "polli:bg-surface-white";
     return (
         <Dialog
             open
@@ -40,7 +51,7 @@ export function AuthModal({
             ariaLabel={dialog?.label}
             labelledBy={dialog?.labelledBy}
             positionerClassName="polli:items-start polli:overflow-y-auto polli:bg-app-bg"
-            contentClassName={`polli:bg-surface-white polli:border-2 ${borderClass} polli:rounded-lg polli:shadow-lg polli:max-w-xl polli:w-full polli:my-auto`}
+            contentClassName={`${interiorClass} polli:border-2 ${borderClass} polli:rounded-lg polli:shadow-lg polli:max-w-xl polli:w-full polli:my-auto`}
         >
             {children}
         </Dialog>
@@ -117,11 +128,11 @@ export function AuthInfoCard({
     children,
 }: AuthInfoCardProps) {
     return (
-        <div className="polli:rounded-lg polli:bg-theme-bg-pale polli:p-4">
+        <Surface variant="card">
             <p className="polli:mb-2 polli:font-body polli:text-xs polli:font-semibold polli:tracking-wide polli:text-theme-text-soft">
                 {title}
             </p>
             {children}
-        </div>
+        </Surface>
     );
 }

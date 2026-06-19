@@ -401,6 +401,7 @@ export function Authorize() {
             <AuthModal
                 dialog={{ label: "Sign in to authorize" }}
                 tone={displayedError ? "error" : undefined}
+                interior="desk"
             >
                 <AuthModalHeader />
                 <div className="px-6 pb-6 pt-4 space-y-4">

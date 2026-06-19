@@ -26,10 +26,10 @@ export type AuthModalProps = {
     /**
      * Modal interior fill:
      * - "raised" (default) — light surface (consent / approval screens).
-     * - "desk" — dark desk like the dashboard, so inner Surface cards read as
-     *   distinct panels (login screens).
+     * - "panel" — themed container (Level 1) so inner Surface cards read as
+     *   distinct wells without the interior going pitch-black (login screens).
      */
-    interior?: "raised" | "desk";
+    interior?: "raised" | "panel";
 };
 
 export function AuthModal({
@@ -43,7 +43,9 @@ export function AuthModal({
             ? "polli:border-intent-danger-border"
             : "polli:border-theme-border";
     const interiorClass =
-        interior === "desk" ? "polli:bg-app-bg" : "polli:bg-surface-white";
+        interior === "panel"
+            ? "polli:bg-theme-bg-pale"
+            : "polli:bg-surface-white";
     return (
         <Dialog
             open

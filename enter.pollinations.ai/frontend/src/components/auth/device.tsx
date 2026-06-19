@@ -101,7 +101,10 @@ export function Device({ prefilledCode }: DeviceProps) {
 
     if (!user) {
         return (
-            <AuthModal tone={signInError ? "error" : undefined} interior="desk">
+            <AuthModal
+                tone={signInError ? "error" : undefined}
+                interior="panel"
+            >
                 <AuthModalHeader />
                 <div className="px-6 pb-6 pt-4 space-y-4">
                     {signInError && <ErrorBanner>{signInError}</ErrorBanner>}

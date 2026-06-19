@@ -198,7 +198,7 @@ async def convert_latex_to_png(latex: str) -> tuple[io.BytesIO | str, bool]:
 # =============================================================================
 #
 # Visual spec — calibrated for Discord dark mode at 150 DPI:
-#   font_size=20pt, padding=10px, header_height=48px, min_cell_height=42px
+#   FONT_SIZE=20, PADDING=14, HEADER_HEIGHT=56, MIN_CELL_HEIGHT=44
 #   row banding #313338 / #383a40, border #40444b
 # Inline markdown spans (**bold**, *italic*, `code`) render via per-span
 # drawing — measure each segment's width with its own font, dispatch the
@@ -479,25 +479,9 @@ async def render_table_image(
         col_widths = _calc_col_widths(sanitized_headers, sanitized_rows, header_fonts, body_fonts, PADDING)
 
         total_width = sum(col_widths) + len(col_widths) + 1
-        total_height = header_height + len(sanitized_rows) * min_cell_height + len(sanitized_rows) + 1
+        total_height = HEADER_HEIGHT + len(sanitized_rows) * MIN_CELL_HEIGHT + len(sanitized_rows) + 1
 
-        img = Image.new("RGB", (total_width, total_height), colors["bg"])
-
-        def _draw_formatted(pilmoji_ctx, pos, text, base_font_key, fonts_dict, fill, anchor):
-            segments = _parse_text_formatting(text)
-            cx, cy = pos
-            for style, content in segments:
-                if style["bold"] and style["italic"]:
-                    fkey = "bold_italic"
-                elif style["bold"]:
-                    fkey = base_font_key.replace("reg", "bold", 1) if "reg" in base_font_key else "bold_reg"
-                elif style["italic"]:
-                    fkey = "reg_italic"
-                else:
-                    fkey = base_font_key
-                font = fonts_dict.get(fkey, fonts_dict[base_font_key])
-                pilmoji_ctx.text((cx, cy), content, font=font, fill=fill, anchor=anchor)
-                cx += pilmoji_ctx.draw.textlength(content, font=font)
+        img = Image.new("RGB", (total_width, total_height), PALETTE["bg"])
 
         with Pilmoji(img) as pilmoji:
             draw = ImageDraw.Draw(img)

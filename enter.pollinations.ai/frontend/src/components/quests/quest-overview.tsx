@@ -37,7 +37,6 @@ type FetchState = {
     catalog: QuestCatalogItem[];
     grants: QuestGrant[];
     totalPollen: number;
-    generatedAt: string | null;
     loading: boolean;
     error: string | null;
 };
@@ -46,7 +45,6 @@ const INITIAL_STATE: FetchState = {
     catalog: [],
     grants: [],
     totalPollen: 0,
-    generatedAt: null,
     loading: true,
     error: null,
 };
@@ -69,18 +67,6 @@ function formatTimestamp(value: string): string {
         year: "numeric",
         month: "short",
         day: "numeric",
-    });
-}
-
-function formatSyncedTimestamp(value: string): string {
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return value;
-    return date.toLocaleString(undefined, {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
     });
 }
 
@@ -355,7 +341,6 @@ export const QuestOverview: FC<QuestOverviewProps> = ({ githubUsername }) => {
                     catalog: catalog.quests ?? [],
                     grants: rewards.grants ?? [],
                     totalPollen: rewards.totalPollen ?? 0,
-                    generatedAt: catalog.generatedAt ?? null,
                     loading: false,
                     error: null,
                 });
@@ -457,11 +442,6 @@ export const QuestOverview: FC<QuestOverviewProps> = ({ githubUsername }) => {
                         </TabButton>
                     ))}
                 </div>
-                {state.generatedAt && (
-                    <span className="text-xs text-ink-500">
-                        Synced {formatSyncedTimestamp(state.generatedAt)}
-                    </span>
-                )}
             </div>
 
             {state.error && (

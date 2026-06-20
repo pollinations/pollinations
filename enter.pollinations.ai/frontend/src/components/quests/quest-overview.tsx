@@ -27,7 +27,7 @@ type QuestGrant = {
     createdAt: string;
 };
 
-type QuestTab = "available" | "claimed" | "completed";
+type QuestTab = "available" | "completed";
 
 type QuestOverviewProps = {
     githubUsername?: string | null;
@@ -392,12 +392,10 @@ export const QuestOverview: FC<QuestOverviewProps> = ({ githubUsername }) => {
             state.catalog.filter((quest) => {
                 if (completedCatalogIds.has(quest.id)) return false;
                 if (activeTab === "available") {
-                    return quest.availability === "available";
-                }
-                if (activeTab === "claimed") {
                     return (
-                        quest.availability === "claimed" &&
-                        claimedByUser(quest, normalizedGithubUsername)
+                        quest.availability === "available" ||
+                        (quest.availability === "claimed" &&
+                            claimedByUser(quest, normalizedGithubUsername))
                     );
                 }
                 return false;
@@ -413,13 +411,9 @@ export const QuestOverview: FC<QuestOverviewProps> = ({ githubUsername }) => {
     const availableCount = state.catalog.filter(
         (quest) =>
             !completedCatalogIds.has(quest.id) &&
-            quest.availability === "available",
-    ).length;
-    const claimedCount = state.catalog.filter(
-        (quest) =>
-            !completedCatalogIds.has(quest.id) &&
-            quest.availability === "claimed" &&
-            claimedByUser(quest, normalizedGithubUsername),
+            (quest.availability === "available" ||
+                (quest.availability === "claimed" &&
+                    claimedByUser(quest, normalizedGithubUsername))),
     ).length;
     const currentItems =
         activeTab === "completed" ? state.grants.length : visibleCatalog.length;
@@ -449,21 +443,17 @@ export const QuestOverview: FC<QuestOverviewProps> = ({ githubUsername }) => {
 
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap gap-1.5">
-                    {(["available", "claimed", "completed"] as const).map(
-                        (tab) => (
-                            <TabButton
-                                key={tab}
-                                active={activeTab === tab}
-                                onClick={() => setActiveTab(tab)}
-                            >
-                                {tab === "available"
-                                    ? `Available (${availableCount})`
-                                    : tab === "claimed"
-                                      ? `Claimed by me (${claimedCount})`
-                                      : `Completed (${state.grants.length})`}
-                            </TabButton>
-                        ),
-                    )}
+                    {(["available", "completed"] as const).map((tab) => (
+                        <TabButton
+                            key={tab}
+                            active={activeTab === tab}
+                            onClick={() => setActiveTab(tab)}
+                        >
+                            {tab === "available"
+                                ? `Available (${availableCount})`
+                                : `Completed (${state.grants.length})`}
+                        </TabButton>
+                    ))}
                 </div>
                 {state.generatedAt && (
                     <span className="text-xs text-ink-500">

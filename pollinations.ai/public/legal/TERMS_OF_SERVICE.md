@@ -29,7 +29,6 @@ Third-party app developers are responsible for their own apps, claims, user inte
 
 Features, plans, or pricing labeled "beta" or "preview" may be modified, suspended, or discontinued at any time with in-product notice. This includes changes to:
 
-- Tier structures and associated benefits (for example Pollen allocations and daily/hourly limits)
 - Model availability, capabilities, and per-model pricing
 - Developer-earnings rates and markup percentages
 - Usage limits, quotas, and rate limits
@@ -49,7 +48,7 @@ You retain all rights to data you submit ("Customer Data"). How personal data is
 
 ## 5) Acceptable Use & Safety
 
-Do not violate law; infringe IP/likeness/privacy; attack the Service; evade rate limits or spending controls; abuse Pollen grants, app attribution, or developer earnings; or replicate non-public features to build a competing hosted service. **No deepfakes of real people without consent. No CSAM (real or fictional).**
+Do not violate law; infringe IP/likeness/privacy; attack the Service; evade rate limits or spending controls; abuse Pollen rewards, app attribution, or developer earnings; or replicate non-public features to build a competing hosted service. **No deepfakes of real people without consent. No CSAM (real or fictional).**
 
 ## 6) Pollen, Fees, Taxes & Billing
 
@@ -59,12 +58,12 @@ Fees are per plan/order/invoice; currency is by default USD.
 
 **Balances.** Your wallet may include:
 
-- **Tier balance:** free Pollen grants and developer earnings. Tier balance refills according to your tier and can be capped by tier rules.
+- **Tier balance:** an existing spendable balance bucket and developer earnings credited from tier-balance usage. It does not refill automatically.
 - **Paid balance:** purchased Pollen and developer earnings credited from paid-balance usage. Paid balance does not automatically refill.
 
 **Wallet inactivity.** Effective **2026-06-01**, if your account remains inactive for 12 consecutive months, any remaining Pollen in your wallet (tier and paid balance) will expire. For balances held before that date, the inactivity clock starts on 2026-06-01, so every existing user gets a full 12-month window from the effective date. Signing in, making API requests, or purchasing Pollen counts as activity and resets the inactivity clock.
 
-**Request billing.** Pollen is consumed when API requests run. Regular models draw from tier balance first; paid-only models draw from paid balance only. We may refuse requests when the available balance can't cover them. If actual usage exceeds our estimate, the balance may briefly go negative and clears from future refills or top-ups.
+**Request billing.** Pollen is consumed when API requests run. Regular models draw from tier balance first; paid-only models draw from paid balance only. We may refuse requests when the available balance can't cover them. If actual usage exceeds our estimate, the balance may briefly go negative and clears from future earnings, rewards, or top-ups for that balance bucket.
 
 **Developer earnings.** App developers may enable developer earnings on their Publishable App Keys, in which case authorized requests include a markup that goes to the developer. The current rate and the user's share are shown before authorization.
 
@@ -74,7 +73,7 @@ Developer earnings are credited as Pollen to the developer wallet in the same ba
 
 **Payments.** Payments are processed by Stripe Payments Europe, Limited. Stripe sends purchase invoices by email.
 
-**No late payments.** All Pollen is prepaid: there are no invoices, due dates, or late fees. The only way a balance can go below zero is when final usage on a request exceeds the pre-flight estimate; that negative balance clears automatically through future tier refills or future top-ups, as described under Request billing above. We may refuse new paid-model requests until a negative paid balance is covered.
+**No late payments.** All Pollen is prepaid: there are no invoices, due dates, or late fees. The only way a balance can go below zero is when final usage on a request exceeds the pre-flight estimate; that negative balance clears through future earnings, rewards, or top-ups, as described under Request billing above. We may refuse new paid-model requests until a negative paid balance is covered.
 
 **Price changes.** Prices, model costs, and Pollen rates may change at any time without notice; what's shown at top-up or in the pre-flight estimate is what applies to that transaction. If a change materially raises the cost of models you actively use, you may request a refund of unused paid balance within 14 days.
 

@@ -624,52 +624,11 @@ URL-based identity lookup was removed — identity is derived from `client_id` o
 
 ---
 
-## 🎫 User Tier Management
+## 🎫 Tier State
 
-> Claude skill available: `.claude/skills/tier-management/SKILL.md`
+User tiers and hourly Pollen drip are removed. Do not use the D1 tier column as runtime product state or manually upgrade users.
 
-### Tier Levels
-
-| Tier   | Emoji | Pollen   | Cadence | Criteria                 |
-| ------ | ----- | -------- | ------- | ------------------------ |
-| microbe| 🦠    | 0        | none    | Entry tier (auto-upgrades once verified) |
-| spore  | 🍄    | 0.01     | hourly  | Verified accounts        |
-| seed   | 🌱    | 0.15     | hourly  | GitHub engagement        |
-| flower | 🌸    | 0.4      | hourly  | Contributor              |
-| nectar | 🍯    | 0.8      | hourly  | Legacy — still supported for existing users, no longer granted |
-
-### Quick Tier Update
-
-```bash
-cd enter.pollinations.ai
-
-# 1. Find user
-npx wrangler d1 execute DB --remote --env production \
-  --command "SELECT github_username, email, tier FROM user WHERE LOWER(github_username) LIKE '%USERNAME%';"
-
-# 2. Update DB tier
-npx wrangler d1 execute DB --remote --env production \
-  --command "UPDATE user SET tier='flower' WHERE github_username='USERNAME';"
-
-```
-
-### Evaluate User for Upgrade
-
-**Flower tier** (any ONE qualifies):
-
-- Has commits: `gh api 'search/commits?q=repo:pollinations/pollinations+author:USERNAME' --jq '.total_count'`
-- Has project: `grep -ri "author.*USERNAME" pollinations.ai/src/config/projects/`
-
-**Seed tier** (any ONE qualifies):
-
-- Issue involvement: `gh api 'search/issues?q=repo:pollinations/pollinations+involves:USERNAME' --jq '.total_count'`
-- Starred repo: `.claude/skills/tier-management/fetch-stargazers.sh USERNAME`
-
-### Notes
-
-- **DB tier** = what user CAN activate
-- **Polar subscription** = what user HAS activated
-- If no Polar subscription, user must click "Activate" at enter.pollinations.ai
+The D1 tier, `tier_balance`, and `last_tier_grant` columns remain for compatibility/history. `tier_balance` and `pack_balance` are both still active wallet buckets; regular models spend Tier balance first, then Paid balance.
 
 ---
 
@@ -715,7 +674,7 @@ OpenAPI 3.x JSON served at /docs/open-api/generate-schema
   2. `filterAliases()` removes model aliases from enums (only primary IDs shown)
   3. Injects `x-codeSamples` (curl, Python, JS examples) from the `CODE_SAMPLES` object
 - **`generateLLMDoc()`** in `docs.ts` — hand-written compact text doc served at `/docs/llm.txt`, separate from OpenAPI
-- **Hidden endpoints** — routes with `hide: true` in `describeRoute()` are excluded from production docs (e.g. `/customer/balance`, `/api-keys`, `/tiers/view`)
+- **Hidden endpoints** — routes with `hide: true` in `describeRoute()` are excluded from production docs (e.g. `/customer/balance`, `/api-keys`)
 
 ### Three Output Surfaces
 

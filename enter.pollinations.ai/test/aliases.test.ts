@@ -72,7 +72,7 @@ test("calculatePrice derives the total from cost via priceMultiplier", () => {
     expect(price.totalPrice).toBeCloseTo(cost.totalCost * priceMultiplier, 8);
 });
 
-test("GPT-5.5 is available on the free tier", () => {
+test("GPT-5.5 is available without paid-only gating", () => {
     // GPT-5.5 is the flagship behind the `openai-large` clean slug; `gpt-5.5`
     // remains a back-compat alias. Resolve before the direct registry lookup.
     const definition = getModelDefinition(resolveModelName("gpt-5.5"));

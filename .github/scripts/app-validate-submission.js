@@ -13,7 +13,7 @@
  *   ISSUE_NUMBER=123 ISSUE_AUTHOR=username node app-validate-submission.js
  */
 
-const { execSync, spawn } = require("child_process");
+const { execSync, spawn } = require("node:child_process");
 
 const ISSUE_NUMBER = process.env.ISSUE_NUMBER;
 const ISSUE_AUTHOR = process.env.ISSUE_AUTHOR;
@@ -28,7 +28,7 @@ async function main() {
         repo_url: null,
     };
 
-    // 1. Check Enter registration and tier
+    // 1. Check Enter registration
     try {
         // Sanitize username to prevent SQL injection (defense-in-depth)
         const safeUsername = ISSUE_AUTHOR?.replace(/[^a-zA-Z0-9_-]/g, "") || "";
@@ -37,7 +37,7 @@ async function main() {
                 "ISSUE_AUTHOR is required but was empty or undefined",
             );
         }
-        const cmd = `cd enter.pollinations.ai && npx wrangler d1 execute DB --remote --env production --command "SELECT id, tier FROM user WHERE LOWER(github_username) = LOWER('${safeUsername}');" --json`;
+        const cmd = `cd enter.pollinations.ai && npx wrangler d1 execute DB --remote --env production --command "SELECT id FROM user WHERE LOWER(github_username) = LOWER('${safeUsername}');" --json`;
         const output = execSync(cmd, {
             encoding: "utf-8",
             stdio: ["pipe", "pipe", "pipe"],
@@ -45,12 +45,10 @@ async function main() {
         const data = JSON.parse(output);
         const userRecord = data?.[0]?.results?.[0];
         const registered = !!userRecord;
-        const tier = userRecord?.tier || null;
 
         result.checks.registration = {
             registered,
             username: safeUsername,
-            tier: tier,
         };
 
         if (!registered) {
@@ -59,15 +57,7 @@ async function main() {
             result.errors.push(
                 `User @${ISSUE_AUTHOR} is not registered at enter.pollinations.ai`,
             );
-        } else if (tier === null || tier === undefined) {
-            // User exists but tier not set - this is a system error (D1 initialization failed)
-            result.valid = false;
-            result.checks.registration.error_code = "TIER_NOT_SET";
-            result.errors.push(
-                `User @${ISSUE_AUTHOR} has no tier set. This is a system error - please contact support.`,
-            );
         }
-        // All tiers (SPORE, SEED, FLOWER, NECTAR, ROUTER) allowed to submit
     } catch (err) {
         result.checks.registration = {
             error: err.message,
@@ -146,7 +136,7 @@ async function main() {
                         } else {
                             try {
                                 resolve(JSON.parse(stdout.trim()));
-                            } catch (err) {
+                            } catch (_err) {
                                 reject(
                                     new Error(
                                         `Failed to parse output: ${stdout}`,

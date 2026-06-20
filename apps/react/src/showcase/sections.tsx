@@ -1119,7 +1119,7 @@ export const ModuleRecipesDemo: FC = () => {
                                 </span>
                             </>
                         }
-                        info={<InfoTip content="Tier allowance balance." />}
+                        info={<InfoTip content="Tier balance bucket." />}
                     />
                 </div>
                 <Row label="ModalityDot">

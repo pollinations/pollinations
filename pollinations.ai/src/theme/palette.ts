@@ -4,7 +4,7 @@
 // ║  Every unique color in the product. No duplicates.               ║
 // ║  Change a value here and it changes everywhere.                  ║
 // ║                                                                  ║
-// ║  PALETTE = the actual hex colors (21 total)                      ║
+// ║  PALETTE = the actual hex colors (15 total)                      ║
 // ║  CSS_VARIABLES = 1:1 mapping to CSS custom properties            ║
 // ╚══════════════════════════════════════════════════════════════════╝
 
@@ -36,16 +36,6 @@ export const PALETTE = {
     tertiaryStrong: "#A8E6A2", // mint saturated
     accentStrong: "#E8F372", // lime saturated
     accentLight: "#F5FABC", // lime pastel
-
-    // ─────────────────────────────────────────────
-    // TIER COLORS — used exclusively for tiers
-    // ─────────────────────────────────────────────
-    seed: "#dcfce7", // green
-    seedAccent: "#4ade80", // green accent
-    flower: "#fce7f3", // pink
-    flowerAccent: "#f472b6", // pink accent
-    nectar: "#fef3c7", // amber
-    nectarAccent: "#fbbf24", // amber accent
 } as const;
 
 // Hex → RGB triplet for Tailwind opacity support

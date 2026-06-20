@@ -68,7 +68,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 - 🔓 **100% Open Source** — code, decisions, roadmap all public
 - 🤝 **Community-Built** — 500+ projects already using our APIs
-- 🌱 **Pollen Tiers** — earn credits by contributing (tiers in beta)
+- 🌱 **Pollen Wallet** — manage Tier and Paid balance buckets
 - 🖼️ **Image Generation** — Flux, GPT Image, Seedream, Kontext
 - 🎬 **Video Generation** — Seedance, Veo (alpha)
 - 🎵 **Audio** — Text-to-speech and speech-to-text

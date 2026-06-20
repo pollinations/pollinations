@@ -23,12 +23,12 @@ You build the app. We handle the models and the billing.
 There are **three ways**:
 
 1. 💳 **Buy** — Pay by card, Pollen goes to your **paid balance**. Expires after 12 months of account inactivity. *(Want other payment options? [Vote here](https://github.com/pollinations/pollinations/issues/4826)!)*
-2. 🌱 **Tier grants** — Free Pollen that refills every hour into your **tier balance**. Contribute to unlock bigger hourly grants.
+2. 🎯 **Quest rewards** — Earn Pollen through achievements, milestones, and community work.
 3. 🌻 **Dev earnings** — Flip on Developer earnings on an App Key to take +25% on top of model price on user traffic.
 
 ## 🆓 Can I try it for free?
 
-Free Pollen on every account, refilled hourly. No credit card to register. Contribute on GitHub or ship an app and the hourly grant gets bigger.
+You can register without a credit card and get API keys immediately. The automatic hourly Pollen refill ends on **June 22, 2026**; existing Tier balance stays spendable, but new users should not expect an automatic wallet grant.
 
 ## 💳 What payment methods do you accept?
 
@@ -53,7 +53,7 @@ Registration gets you API keys. There are two:
 
 One central wallet across all your apps, split into two balances:
 
-- **🌱 Tier balance** — free, refilled hourly up to your tier cap.
+- **🌱 Tier balance** — an existing spendable balance bucket. It does not refill automatically.
 - **💳 Paid balance** — purchased Pollen.
 - **Earnings** — credited to the balance the user spent from.
 
@@ -61,24 +61,10 @@ Balances expire after 12 months of account inactivity.
 
 **Every request comes from one balance, not both at once.**
 
-- **Regular models** use your free tier balance first. If it can't cover the cost, they switch to paid.
+- **Regular models** use your Tier balance first. If it can't cover the cost, they switch to paid.
 - **Paid-only models** always charge your paid balance.
 
-⏰ A request can overshoot its estimate and push the balance that paid for it negative. Your 🌱 tier balance refills hourly until it's back to its cap; your 💳 paid balance stays negative until you top up.
-
-## 🏅 What are tiers?
-
-Your tier sets how much free Pollen you get each hour. The tier balance tops up to that amount, then waits.
-
-| Tier | Pollen/hour |
-|------|-------------|
-| 🍄 Spore | 0.01 |
-| 🌱 Seed | 0.15 |
-| 🌸 Flower | 0.4 |
-
-Everyone starts at Spore. Tiers go up as you build:
-- **Seed** — automatic, once you've racked up enough GitHub activity in the Pollinations org.
-- **Flower** — publish an app to the showcase.
+⏰ A request can overshoot its estimate and push the balance that paid for it negative. A negative balance clears only through future earnings, rewards, or top-ups for that balance bucket.
 
 ## 🔌 What is BYOP (Bring Your Own Pollen)?
 
@@ -94,7 +80,7 @@ BYOP lets your users connect their Pollinations account to your app and spend th
 
 1. You spend Pollen from your wallet, not the developer's.
 2. Apps may add a 25% share — shown at sign-in.
-3. Tier balance pays first; paid balance covers it if tier can't.
+3. Tier balance pays first; paid balance covers it if Tier balance can't.
 4. Revoke or cap any app at [enter.pollinations.ai](https://enter.pollinations.ai).
 
 📖 **[Full BYOP guide →](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md)**

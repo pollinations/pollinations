@@ -7,7 +7,7 @@ Two-phase review via `app-review-submission.yml` (AI + human). Source of truth: 
 Flow: user opens issue with `TIER-APP` → workflow validates + AI generates preview → bot posts `APP_REVIEW_DATA` JSON + labels `TIER-APP-REVIEW` → maintainer adds `TIER-APP-APPROVED` → workflow prepends row to `apps/APPS.md`, opens PR with auto-merge, closes issue via `Fixes #NNN`.
 
 Label state machine:
-- `TIER-APP` → `TIER-APP-REJECTED` (duplicate/spore) | `TIER-APP-INCOMPLETE` (not registered) | `TIER-APP-REVIEW` → `TIER-APP-APPROVED` (merged) | `TIER-APP-REJECTED` (closed)
+- `TIER-APP` → `TIER-APP-REJECTED` (duplicate/invalid) | `TIER-APP-INCOMPLETE` (not registered) | `TIER-APP-REVIEW` → `TIER-APP-APPROVED` (merged) | `TIER-APP-REJECTED` (closed)
 
 Manual edits: edit `apps/APPS.md`, run `node .github/scripts/app-update-greenhouse.js`.
 
@@ -40,7 +40,7 @@ Primary: `https://gen.pollinations.ai` → routes to `enter.pollinations.ai` for
 - Auth: `pk_` (frontend), `sk_` (backend). Keys: https://enter.pollinations.ai
 - Billing: Pollen credits ($1 ≈ 1 Pollen). Full docs: `./APIDOCS.md`
 - Services: Text (Portkey, multi-provider), Image (gen Worker dispatch to providers/GPU backends), Video (Wan/Veo/LTX), Audio (ElevenLabs, TTM)
-- Tiers: microbe → spore → seed → flower → router (nectar is legacy — still supported, no longer granted; see `enter.pollinations.ai/src/tier-config.ts`)
+- Wallet: `tier_balance` and `pack_balance` remain active balance buckets; old account levels and hourly drip are removed.
 
 ### Local Development
 

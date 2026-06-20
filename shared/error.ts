@@ -180,7 +180,6 @@ type ServerErrorEnvelope = {
     resolvedModelRequested?: string;
     requestInputs?: RequestInputs;
     userId?: string;
-    userTier?: string;
     apiKeyId?: string;
 };
 
@@ -457,7 +456,6 @@ async function createServerErrorEnvelope<TEnv extends ErrorHandlerEnv>(
         resolvedModelRequested: vars.model?.resolved,
         requestInputs: await collectRequestInputs(c),
         userId: vars.auth?.user?.id,
-        userTier: vars.auth?.user?.tier,
         apiKeyId: vars.auth?.apiKey?.id,
     };
 }
@@ -486,7 +484,6 @@ function toTinybirdErrorEvent(
         resolved_model_requested: envelope.resolvedModelRequested,
         request_inputs: stringifyRequestInputs(envelope.requestInputs),
         user_id: envelope.userId,
-        user_tier: envelope.userTier,
         api_key_id: envelope.apiKeyId,
     };
 }

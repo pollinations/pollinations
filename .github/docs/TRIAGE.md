@@ -200,12 +200,11 @@ Any `TIER-*` labeled issue routes to the Apps project (#23). The state machine:
 | `VIDEO`   | Video generation      | `project-manager.py` |
 | `API`     | API/SDK general       | `project-manager.py` |
 | `WEB`     | Website/dashboard     | `project-manager.py` |
-| `CREDITS` | Pollen balance issues | `project-manager.py` |
+| `CREDITS` | Pollen balance and usage quota issues | `project-manager.py` |
 | `BILLING` | Payment/credit card   | `project-manager.py` |
 | `ACCOUNT` | Account/login/auth    | `project-manager.py` |
-| `TIER`    | User tier questions (spore/seed/flower/nectar/upgrade) | `project-manager.py` |
 
-(`TIER` is unrelated to the `TIER-APP-*` family used for app submissions.)
+(`TIER-APP-*` labels are used only for app submissions.)
 
 ### News Labels
 

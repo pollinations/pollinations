@@ -29,7 +29,6 @@ CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
-TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 # Stripe payments (sandbox for dev)
 STRIPE_MODE = "sandbox"
@@ -61,7 +60,6 @@ CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
-TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 # Stripe payments (sandbox for local development)
 STRIPE_MODE = "sandbox"
@@ -72,9 +70,6 @@ STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 
 [env.production]
-
-[env.production.triggers]
-crons = ["*/15 * * * *"]
 
 [env.production.observability]
 enabled = true
@@ -102,7 +97,6 @@ CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
-TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 # Stripe payments (live for production)
 STRIPE_MODE = "live"
@@ -114,9 +108,6 @@ STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TVU4T7rcjS3l7trqtBuve71"
 STRIPE_PMC = "pmc_1SrY4O7rcjS3l7trnGXDTuat"
 
 [env.staging]
-
-[env.staging.triggers]
-crons = ["*/15 * * * *"]
 
 [[env.staging.routes]]
 pattern = "staging.enter.myceli.ai"
@@ -140,7 +131,6 @@ CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
-TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 # Stripe payments: sandbox mode for staging
 STRIPE_MODE = "sandbox"
@@ -180,7 +170,6 @@ CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
-TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 # TODO: Change back to staging image endpoint once staging services are available
 # Currently using prod services for simplicity
@@ -213,7 +202,6 @@ LOG_FORMAT = "text"
 GITHUB_CLIENT_ID = "test_github_client_id"
 GITHUB_CLIENT_SECRET = "test_github_client_secret"
 TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"
-TINYBIRD_TIER_INGEST_URL = "http://localhost:7181/v0/events?name=tier_event"
 TINYBIRD_STRIPE_INGEST_URL = "http://localhost:7181/v0/events?name=stripe_event"
 TINYBIRD_INGEST_TOKEN = "test_tinybird_ingest_token"
 TINYBIRD_READ_TOKEN = "test_tinybird_read_token"

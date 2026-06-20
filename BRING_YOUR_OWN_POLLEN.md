@@ -62,7 +62,7 @@ https://enter.pollinations.ai/authorize?redirect_uri=https://myapp.com&client_id
 
 | Param | What it does | Example |
 |-------|-------------|---------|
-| `client_id` | Your publishable key — shows app name + author on consent screen, tracks traffic for tier upgrades | `pk_abc123` |
+| `client_id` | Your publishable key — shows app name + author on consent screen and attributes usage and earnings | `pk_abc123` |
 | `redirect_uri` | Where users return after authorizing — receives the temp API key in the URL fragment | `https://myapp.com` |
 | `state` | Opaque value echoed back on the callback for CSRF protection | `any-random-string` |
 | `scope` | Account access (space or comma separated) | `usage keys` |

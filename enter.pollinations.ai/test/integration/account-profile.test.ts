@@ -3,7 +3,7 @@ import { describe, expect } from "vitest";
 import { test } from "../fixtures.ts";
 
 describe("GET /api/account/profile", () => {
-    test("session auth returns githubUsername, image, tier, nextResetAt, name, email", async ({
+    test("session auth returns githubUsername, image, name, email", async ({
         sessionToken,
     }) => {
         const response = await SELF.fetch(
@@ -17,48 +17,51 @@ describe("GET /api/account/profile", () => {
 
         expect(response.status).toBe(200);
         const data = (await response.json()) as Record<string, unknown>;
+        expect(Object.keys(data).sort()).toEqual(
+            ["email", "githubUsername", "image", "name"].sort(),
+        );
         expect(data).toHaveProperty("githubUsername");
         expect(data).toHaveProperty("image");
-        expect(data).toHaveProperty("tier");
-        expect(data).toHaveProperty("nextResetAt");
         expect(data).toHaveProperty("name");
         expect(data).toHaveProperty("email");
     });
 
-    test("api key without profile scope returns githubUsername, image, tier, nextResetAt (no name/email)", async ({
-        apiKey,
+    test("api key without profile scope returns githubUsername and image only", async ({
+        sessionToken,
     }) => {
+        const createResult = await SELF.fetch(
+            "http://localhost:3000/api/account/keys",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+                body: JSON.stringify({ name: "profile-limited-key" }),
+            },
+        );
+        expect(createResult.status).toBe(200);
+        const created = (await createResult.json()) as { key: string };
+
         const response = await SELF.fetch(
             "http://localhost:3000/api/account/profile",
-            { headers: { Authorization: `Bearer ${apiKey}` } },
+            { headers: { Authorization: `Bearer ${created.key}` } },
         );
 
         expect(response.status).toBe(200);
         const data = (await response.json()) as Record<string, unknown>;
+        expect(Object.keys(data).sort()).toEqual(
+            ["githubUsername", "image"].sort(),
+        );
         expect(data).toHaveProperty("githubUsername");
         expect(data).toHaveProperty("image");
-        expect(data).toHaveProperty("tier");
-        expect(data).toHaveProperty("nextResetAt");
-        expect(data).not.toHaveProperty("name");
-        expect(data).not.toHaveProperty("email");
     });
 
     test("api key with profile scope also returns name + email", async ({
-        auth,
         sessionToken,
     }) => {
-        const createResult = await auth.apiKey.create({
-            name: "profile-scoped-key",
-            fetchOptions: {
-                headers: {
-                    Cookie: `better-auth.session_token=${sessionToken}`,
-                },
-            },
-        });
-        if (!createResult.data) throw new Error("Failed to create key");
-
-        const updateRes = await SELF.fetch(
-            `http://localhost:3000/api/api-keys/${createResult.data.id}/update`,
+        const createResult = await SELF.fetch(
+            "http://localhost:3000/api/account/keys",
             {
                 method: "POST",
                 headers: {
@@ -66,31 +69,30 @@ describe("GET /api/account/profile", () => {
                     Cookie: `better-auth.session_token=${sessionToken}`,
                 },
                 body: JSON.stringify({
+                    name: "profile-scoped-key",
                     accountPermissions: ["profile"],
                 }),
             },
         );
-        if (!updateRes.ok) {
-            throw new Error(
-                `Failed to set permissions: ${await updateRes.text()}`,
-            );
-        }
+        expect(createResult.status).toBe(200);
+        const created = (await createResult.json()) as { key: string };
 
         const response = await SELF.fetch(
             "http://localhost:3000/api/account/profile",
             {
                 headers: {
-                    Authorization: `Bearer ${createResult.data.key}`,
+                    Authorization: `Bearer ${created.key}`,
                 },
             },
         );
 
         expect(response.status).toBe(200);
         const data = (await response.json()) as Record<string, unknown>;
+        expect(Object.keys(data).sort()).toEqual(
+            ["email", "githubUsername", "image", "name"].sort(),
+        );
         expect(data).toHaveProperty("githubUsername");
         expect(data).toHaveProperty("image");
-        expect(data).toHaveProperty("tier");
-        expect(data).toHaveProperty("nextResetAt");
         expect(data).toHaveProperty("name");
         expect(data).toHaveProperty("email");
     });

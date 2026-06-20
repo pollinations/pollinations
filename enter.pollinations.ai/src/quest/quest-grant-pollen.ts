@@ -69,13 +69,13 @@ const grantCommand = command({
         const MAX_AMOUNT = 10000;
         if (!Number.isFinite(amount) || amount <= 0 || amount > MAX_AMOUNT) {
             console.error(
-                `❌ Amount must be a positive number ≤ ${MAX_AMOUNT}, got: ${amount}`,
+                `Amount must be a positive number <= ${MAX_AMOUNT}, got: ${amount}`,
             );
             process.exit(1);
         }
         if (!Number.isInteger(githubId) || githubId <= 0) {
             console.error(
-                `❌ githubId must be a positive integer, got: ${githubId}`,
+                `githubId must be a positive integer, got: ${githubId}`,
             );
             process.exit(1);
         }
@@ -87,7 +87,6 @@ const grantCommand = command({
             process.exit(2);
         }
 
-        // Idempotency key is quest-scoped and uses the immutable github_id.
         const payoutKey = `quest:${questIssue}:gh:${githubId}:role:assignee`;
         const sql = `
             INSERT OR IGNORE INTO quest_payout_credits (

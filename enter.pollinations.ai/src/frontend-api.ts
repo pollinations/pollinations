@@ -7,12 +7,10 @@ import { customerRoutes } from "./routes/customer.ts";
 import { deviceRoutes } from "./routes/device.ts";
 import { modelStatsRoutes } from "./routes/model-stats.ts";
 import { stripeRoutes } from "./routes/stripe.ts";
-import { tiersRoutes } from "./routes/tiers.ts";
 
 export const frontendApi = new Hono<Env>()
     .route("/customer", customerRoutes)
     .route("/stripe", stripeRoutes)
-    .route("/tiers", tiersRoutes)
     .route("/api-keys", apiKeysRoutes)
     .route("/app-lookup", appLookupRoutes)
     .route("/account", accountRoutes)

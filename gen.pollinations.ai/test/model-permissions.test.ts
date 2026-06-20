@@ -1,5 +1,5 @@
 import { SELF } from "cloudflare:test";
-import { test } from "@shared/test/fixtures/index.ts";
+import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
 import { expect } from "vitest";
 
 async function fetchWorker(path: string, init: RequestInit = {}) {
@@ -40,11 +40,11 @@ test("filters image model list by API key permissions", async ({
 });
 
 test("filters paid-only audio models by paid balance", async ({
-    apiKey,
     paidApiKey,
 }) => {
+    const { key: unpaidApiKey } = await createTestApiKey();
     const freeResponse = await fetchWorker("/audio/models", {
-        headers: { Authorization: `Bearer ${apiKey}` },
+        headers: { Authorization: `Bearer ${unpaidApiKey}` },
     });
     const paidResponse = await fetchWorker("/audio/models", {
         headers: { Authorization: `Bearer ${paidApiKey}` },

@@ -1,0 +1,132 @@
+name: App Submission Follow-up
+
+on:
+  pull_request_target:
+    types: [closed]
+    branches: [main]
+    paths:
+      - 'apps/APPS.md'
+
+concurrency:
+  group: app-follow-up-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  handle-rejection:
+    if: |
+      github.event.pull_request.merged == false &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      startsWith(github.event.pull_request.head.ref, 'auto/app-') &&
+      !startsWith(github.event.pull_request.head.ref, 'auto/app-metrics')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Generate App Token
+        id: token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Label issue as rejected
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.token.outputs.token }}
+          script: |
+            const prBody = context.payload.pull_request.body || '';
+            const closePattern = /(?:closes?|fixes?|resolves?)\s+#(\d+)/gi;
+            const matches = [...prBody.matchAll(closePattern)];
+
+            for (const match of matches) {
+              const issueNumber = parseInt(match[1], 10);
+              try {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                  labels: ['TIER-APP-REJECTED']
+                });
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                  state: 'closed',
+                  state_reason: 'not_planned'
+                });
+                console.log(`Rejected and closed issue #${issueNumber}`);
+              } catch (e) {
+                console.log(`Could not update issue #${issueNumber}: ${e.message}`);
+              }
+            }
+
+  handle-merge:
+    if: |
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      startsWith(github.event.pull_request.head.ref, 'auto/app-') &&
+      !startsWith(github.event.pull_request.head.ref, 'auto/app-metrics')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Generate App Token
+        id: token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Post app merge follow-up
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.token.outputs.token }}
+          script: |
+            const prBody = context.payload.pull_request.body || '';
+            const prNumber = context.payload.pull_request.number;
+            const closePattern = /(?:closes?|fixes?|resolves?)\s+#(\d+)/gi;
+            const issueMatches = [...prBody.matchAll(closePattern)];
+
+            if (issueMatches.length === 0) {
+              console.log('Merged APPS.md PR has no linked app issue; no app follow-up needed.');
+              return;
+            }
+
+            for (const match of issueMatches) {
+              const issueNumber = parseInt(match[1], 10);
+              try {
+                const { data: issue } = await github.rest.issues.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber
+                });
+                const username = issue.user.login;
+
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                  body: `## App Approved & Verified\n\n@${username}, your app has been added to the [pollinations.ai showcase](https://pollinations.ai/apps).\n\nThanks for contributing to pollinations.ai.`
+                });
+
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                  state: 'closed',
+                  state_reason: 'completed'
+                });
+
+                console.log(`Posted app follow-up and closed issue #${issueNumber}`);
+              } catch (e) {
+                console.log(`Could not update issue #${issueNumber}: ${e.message}`);
+              }
+            }
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: '## App Added & Verified\n\nThis PR added an app to the pollinations.ai showcase.'
+            });

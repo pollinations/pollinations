@@ -24,7 +24,6 @@ import { PollenPackSlider } from "./pollen-pack-controls.tsx";
 type PollenBalanceProps = {
     tierBalance: number;
     packBalance: number;
-    tier?: string;
     paidWeek?: number;
     tierWeek?: number;
 };
@@ -69,7 +68,6 @@ const TooltipList: FC<{
 export const PollenBalance: FC<PollenBalanceProps> = ({
     tierBalance,
     packBalance,
-    tier = "spore",
     paidWeek = 0,
     tierWeek = 0,
 }) => {
@@ -79,18 +77,11 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
         displayTierBalance + displayPaidBalance,
     );
     const totalWeek = normalizeDisplayBalance(paidWeek + tierWeek);
-    const hideTierColumn = tier === "microbe" && displayTierBalance === 0;
 
     return (
         <div className="flex flex-col gap-3">
             {/* Twin headline numbers: Paid + Tier as tinted cards */}
-            <div
-                className={
-                    hideTierColumn
-                        ? "grid grid-cols-1 gap-3"
-                        : "grid grid-cols-2 gap-3"
-                }
-            >
+            <div className="grid grid-cols-2 gap-3">
                 <WalletBalanceCard
                     kind="paid"
                     label="Paid"
@@ -123,42 +114,38 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         ) : undefined
                     }
                 />
-                {!hideTierColumn && (
-                    <WalletBalanceCard
-                        kind="tier"
-                        label="Tier"
-                        value={formatPollen(displayTierBalance)}
-                        info={
-                            <InfoTip
-                                label="About tier balance"
-                                text={
-                                    <TooltipList
-                                        title="Tier balance"
-                                        icon={
-                                            <SproutIcon className="h-4 w-4" />
-                                        }
-                                        items={[
-                                            "Hourly Pollen refill from your tier",
-                                            "Earnings from tier-side spend in your apps",
-                                            "Used first for regular models, when it can cover",
-                                        ]}
-                                        earned={tierWeek}
-                                    />
-                                }
-                            />
-                        }
-                        footer={
-                            tierWeek > 0 ? (
-                                <>
-                                    +{formatPollen(tierWeek)}{" "}
-                                    <span className="font-medium text-theme-text-muted">
-                                        / 7d
-                                    </span>
-                                </>
-                            ) : undefined
-                        }
-                    />
-                )}
+                <WalletBalanceCard
+                    kind="tier"
+                    label="Tier"
+                    value={formatPollen(displayTierBalance)}
+                    info={
+                        <InfoTip
+                            label="About tier balance"
+                            text={
+                                <TooltipList
+                                    title="Tier balance"
+                                    icon={<SproutIcon className="h-4 w-4" />}
+                                    items={[
+                                        "Existing balance bucket",
+                                        "Earnings from tier-side spend in your apps",
+                                        "Used first for regular models, when it can cover",
+                                    ]}
+                                    earned={tierWeek}
+                                />
+                            }
+                        />
+                    }
+                    footer={
+                        tierWeek > 0 ? (
+                            <>
+                                +{formatPollen(tierWeek)}{" "}
+                                <span className="font-medium text-theme-text-muted">
+                                    / 7d
+                                </span>
+                            </>
+                        ) : undefined
+                    }
+                />
             </div>
 
             {/* Total + 7d earnings below */}
@@ -213,7 +200,6 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
 type SidebarWalletProps = {
     tierBalance: number;
     packBalance: number;
-    tier?: string;
     paidWeek?: number;
     tierWeek?: number;
     onClick?: () => void;
@@ -222,13 +208,11 @@ type SidebarWalletProps = {
 export const SidebarWallet: FC<SidebarWalletProps> = ({
     tierBalance,
     packBalance,
-    tier = "spore",
     paidWeek = 0,
     tierWeek = 0,
 }) => {
     const displayTierBalance = normalizeDisplayBalance(tierBalance);
     const displayPaidBalance = normalizeDisplayBalance(packBalance);
-    const hideTierSegment = tier === "microbe" && displayTierBalance === 0;
 
     return (
         <div data-theme="accent" className="px-3 py-1 flex flex-col gap-1">
@@ -248,24 +232,22 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
                     )}
                 </span>
             </div>
-            {!hideTierSegment && (
-                <div className="flex items-center justify-between gap-2">
-                    <span className="flex items-center gap-1.5 text-xs font-bold text-theme-text-soft">
-                        <WalletKindIcon kind="tier" />
-                        Tier
+            <div className="flex items-center justify-between gap-2">
+                <span className="flex items-center gap-1.5 text-xs font-bold text-theme-text-soft">
+                    <WalletKindIcon kind="tier" />
+                    Tier
+                </span>
+                <span className="flex items-baseline gap-1.5">
+                    <span className="text-sm font-bold tabular-nums text-theme-text-soft leading-none">
+                        {formatPollen(displayTierBalance)}
                     </span>
-                    <span className="flex items-baseline gap-1.5">
-                        <span className="text-sm font-bold tabular-nums text-theme-text-soft leading-none">
-                            {formatPollen(displayTierBalance)}
+                    {tierWeek > 0 && (
+                        <span className="text-micro font-bold tabular-nums text-intent-success-text">
+                            +{formatPollen(tierWeek)}
                         </span>
-                        {tierWeek > 0 && (
-                            <span className="text-micro font-bold tabular-nums text-intent-success-text">
-                                +{formatPollen(tierWeek)}
-                            </span>
-                        )}
-                    </span>
-                </div>
-            )}
+                    )}
+                </span>
+            </div>
         </div>
     );
 };

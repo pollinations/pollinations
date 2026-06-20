@@ -941,7 +941,7 @@ curl "https://gen.pollinations.ai/a1b2c3d4e5f60718/metadata"
 
 #### `GET` `/account/profile` — Get Profile
 
-Returns your account profile. GitHub username, profile image, current tier, and next pollen refill timestamp are always returned. Name and email are returned only when the API key has the `account:profile` permission.
+Returns your account profile. GitHub username and profile image are always returned. Name and email are returned only when the API key has the `account:profile` permission.
 
 📤 **Response** · `200` · `application/json` — User profile
 
@@ -949,8 +949,6 @@ Returns your account profile. GitHub username, profile image, current tier, and 
 |---|---|---|
 | `githubUsername` * | `string` \| `null` | GitHub username if linked |
 | `image` * | `string` \| `null` | Profile picture URL (e.g. GitHub avatar) |
-| `tier` * | enum (7) — `"anonymous"`, `"microbe"`, `"spore"`, … | User's current tier level |
-| `nextResetAt` * | `string · date-time` \| `null` | Next pollen refill timestamp (ISO 8601). `null` for tiers with no refill. |
 | `name` | `string` \| `null` | User's display name (only returned when the key has `account:profile`) |
 | `email` | `string · email` \| `null` | User's email address (only returned when the key has `account:profile`) |
 
@@ -965,8 +963,8 @@ curl "https://gen.pollinations.ai/account/profile" \
 
 ```json
 {
-  "tier": "anonymous",
-  "nextResetAt": "2026-01-01T00:00:00Z"
+  "githubUsername": "pollinations-user",
+  "image": "https://avatars.githubusercontent.com/u/123456"
 }
 ```
 

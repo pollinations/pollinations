@@ -134,7 +134,7 @@ function runGrant(enterDir, payout) {
         "npx",
         [
             "tsx",
-            "src/tier-progression/shared/quest-grant-pollen.ts",
+            "src/quest/quest-grant-pollen.ts",
             "grant",
             "--githubId",
             String(payout.recipientId),

@@ -576,7 +576,7 @@ export async function authorizeDevice(
  * @example
  * ```ts
  * const user = await userInfo();
- * console.log(user.name, user.tier);
+ * console.log(user.name, user.preferred_username);
  * ```
  */
 export async function userInfo(): Promise<UserInfo> {

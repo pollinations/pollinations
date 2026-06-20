@@ -8,7 +8,6 @@ import {
     user as userTable,
 } from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { getTierCadence, tierNames } from "@shared/tier-config.ts";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
@@ -19,17 +18,6 @@ import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { parseMetadata } from "./metadata-utils.ts";
-
-// Calculate next tier refill time (null for tiers with no refill).
-// Matches the `0 * * * *` cron in wrangler.toml — top of the next UTC hour.
-function getNextRefillAt(tier?: string | null): string | null {
-    const cadence = tier ? getTierCadence(tier) : "none";
-    if (cadence === "none") return null;
-    const next = new Date();
-    next.setUTCMinutes(0, 0, 0);
-    next.setUTCHours(next.getUTCHours() + 1);
-    return next.toISOString();
-}
 
 // Cache TTL in seconds
 const CACHE_TTL = 60 * 60; // 1 hour
@@ -699,15 +687,6 @@ const profileResponseSchema = z.object({
         .string()
         .nullable()
         .describe("Profile picture URL (e.g. GitHub avatar)"),
-    tier: z
-        .enum(["anonymous", ...tierNames])
-        .describe("User's current tier level"),
-    nextResetAt: z.iso
-        .datetime()
-        .nullable()
-        .describe(
-            "Next pollen refill timestamp (ISO 8601). `null` for tiers with no refill.",
-        ),
     name: z
         .string()
         .nullable()
@@ -807,7 +786,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Profile",
             description:
-                "Returns your account profile. GitHub username, profile image, current tier, and next pollen refill timestamp are always returned. Name and email are returned only when the API key has the `account:profile` permission.",
+                "Returns your account profile. GitHub username and profile image are always returned. Name and email are returned only when the API key has the `account:profile` permission.",
             responses: {
                 200: {
                     description: "User profile",
@@ -832,7 +811,6 @@ export const accountRoutes = new Hono<Env>()
                 .select({
                     githubUsername: userTable.githubUsername,
                     image: userTable.image,
-                    tier: userTable.tier,
                     name: userTable.name,
                     email: userTable.email,
                 })
@@ -848,8 +826,6 @@ export const accountRoutes = new Hono<Env>()
             return c.json({
                 githubUsername: profile.githubUsername ?? null,
                 image: profile.image ?? null,
-                tier: profile.tier,
-                nextResetAt: getNextRefillAt(profile.tier),
                 ...(includeProfilePII && {
                     name: profile.name ?? null,
                     email: profile.email ?? null,

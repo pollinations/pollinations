@@ -5,13 +5,12 @@ import type { Env } from "../env.ts";
 import { loadQuestInstances } from "../services/quests/index.ts";
 import type { QuestInstance } from "../services/quests/types.ts";
 
-const CACHE_KEY = "quests:catalog:v2";
+const CACHE_KEY = "quests:catalog:v3";
 const CACHE_TTL = 60;
 
 export type QuestCatalogItem = Omit<QuestInstance, "sortKey">;
 
 export type QuestCatalogResponse = {
-    generatedAt: string;
     quests: QuestCatalogItem[];
 };
 
@@ -27,7 +26,6 @@ const questCatalogItemSchema = z.object({
 });
 
 const questCatalogResponseSchema = z.object({
-    generatedAt: z.string(),
     quests: z.array(questCatalogItemSchema),
 });
 
@@ -75,7 +73,6 @@ async function buildQuestCatalog(
         .map(stripInternalCatalogFields);
 
     return {
-        generatedAt: new Date().toISOString(),
         quests,
     };
 }

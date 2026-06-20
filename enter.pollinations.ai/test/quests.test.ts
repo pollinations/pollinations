@@ -96,7 +96,6 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
     expect(response.status).toBe(200);
 
     const payload = (await response.json()) as {
-        generatedAt: string;
         quests: {
             id: string;
             kind: string;
@@ -107,7 +106,6 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
         }[];
     };
 
-    expect(payload.generatedAt).toEqual(expect.any(String));
     expect(
         payload.quests.filter(
             (quest) =>

@@ -94,7 +94,7 @@ export const AUDIO_SERVICES = {
     },
     elevenmusic: {
         aliases: ["music"],
-        modelId: "music_v1",
+        modelId: "music_v2",
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
@@ -108,8 +108,8 @@ export const AUDIO_SERVICES = {
         },
         title: "ElevenLabs Music",
         description:
-            "ElevenLabs Music - Generate studio-grade music from text prompts",
-        inputModalities: ["text"],
+            "ElevenLabs Music - Generate studio-grade music from text prompts and reference audio",
+        inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
         alpha: true,
     },

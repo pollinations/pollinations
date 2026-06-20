@@ -15,6 +15,13 @@ import { runQuestEvaluator } from "../src/services/quest-evaluator.ts";
 import { QUESTS, type QuestModule } from "../src/services/quests/index.ts";
 import { test } from "./fixtures.ts";
 
+const ELIXPO_INTERN_QUEST_ID = "easteregg:elixpo_intern";
+const NO_ELIXPO_INTERN_RESULT = {
+    questId: ELIXPO_INTERN_QUEST_ID,
+    scanned: 0,
+    granted: 0,
+};
+
 async function getOnlyUser() {
     const db = drizzle(env.DB, { schema });
     const users = await db
@@ -34,7 +41,7 @@ async function getOnlyUser() {
 }
 
 test("GET /api/quests/catalog returns product and GitHub issue quests", async () => {
-    await env.KV.delete("quests:catalog:v2");
+    await env.KV.delete("quests:catalog:v3");
     const db = drizzle(env.DB, { schema });
     await db.insert(schema.githubQuestIssues).values([
         {
@@ -265,6 +272,7 @@ test("quest evaluator grants code-defined product quests once", async ({
         },
         { questId: COMMUNITY_GITHUB_QUEST_ID, scanned: 0, granted: 0 },
         { questId: "grow:list_app_on_pollinations", scanned: 0, granted: 0 },
+        NO_ELIXPO_INTERN_RESULT,
     ]);
 
     const second = await runQuestEvaluator(env);
@@ -278,6 +286,7 @@ test("quest evaluator grants code-defined product quests once", async ({
         },
         { questId: COMMUNITY_GITHUB_QUEST_ID, scanned: 0, granted: 0 },
         { questId: "grow:list_app_on_pollinations", scanned: 0, granted: 0 },
+        NO_ELIXPO_INTERN_RESULT,
     ]);
 
     const [balance] = await db
@@ -404,6 +413,7 @@ test("github account age quest waits until threshold", async ({
         },
         { questId: COMMUNITY_GITHUB_QUEST_ID, scanned: 0, granted: 0 },
         { questId: "grow:list_app_on_pollinations", scanned: 0, granted: 0 },
+        NO_ELIXPO_INTERN_RESULT,
     ]);
 
     const [balance] = await db
@@ -411,6 +421,68 @@ test("github account age quest waits until threshold", async ({
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
     expect(balance?.packBalance).toBeCloseTo(user.packBalance ?? 0);
+});
+
+test("quest evaluator grants elixpo intern easter egg once", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    await db
+        .update(schema.user)
+        .set({
+            githubId: 161_109_909,
+            githubUsername: "elixpo",
+        })
+        .where(eq(schema.user.id, user.id));
+
+    mocks.github.state.user = {
+        ...mocks.github.state.user,
+        id: 161_109_909,
+        login: "elixpo",
+        name: "elixpo",
+        avatar_url: "https://avatars.githubusercontent.com/u/161109909?v=4",
+    };
+    await mocks.enable("github", "tinybird");
+
+    const first = await runQuestEvaluator(env);
+    expect(first.results).toContainEqual({
+        questId: ELIXPO_INTERN_QUEST_ID,
+        scanned: 1,
+        granted: 1,
+    });
+
+    const second = await runQuestEvaluator(env);
+    expect(second.results).toContainEqual(NO_ELIXPO_INTERN_RESULT);
+
+    const grants = await db
+        .select({
+            idempotencyKey: schema.rewardGrants.idempotencyKey,
+            source: schema.rewardGrants.source,
+            questId: schema.rewardGrants.questId,
+            pollenCredited: schema.rewardGrants.pollenCredited,
+            balanceBucket: schema.rewardGrants.balanceBucket,
+            sourceRef: schema.rewardGrants.sourceRef,
+            metadataJson: schema.rewardGrants.metadataJson,
+        })
+        .from(schema.rewardGrants)
+        .where(eq(schema.rewardGrants.questId, ELIXPO_INTERN_QUEST_ID));
+
+    expect(grants).toHaveLength(1);
+    expect(grants[0]).toMatchObject({
+        idempotencyKey: `quest:${ELIXPO_INTERN_QUEST_ID}:user:${user.id}`,
+        source: PRODUCT_QUEST_REWARD_SOURCE,
+        pollenCredited: 10,
+        balanceBucket: "pack",
+        sourceRef: "github:161109909",
+    });
+    expect(JSON.parse(grants[0].metadataJson ?? "{}")).toMatchObject({
+        title: "Welcome intern, elixpo",
+        message: "Congrats on becoming a Pollinations intern, elixpo.",
+        githubId: 161_109_909,
+        githubUsername: "elixpo",
+    });
 });
 
 test("quest evaluator grants approved app quest per app", async ({
@@ -443,6 +515,7 @@ test("quest evaluator grants approved app quest per app", async ({
         },
         { questId: COMMUNITY_GITHUB_QUEST_ID, scanned: 0, granted: 0 },
         { questId: "grow:list_app_on_pollinations", scanned: 1, granted: 1 },
+        NO_ELIXPO_INTERN_RESULT,
     ]);
 
     const second = await runQuestEvaluator(env);
@@ -456,6 +529,7 @@ test("quest evaluator grants approved app quest per app", async ({
         },
         { questId: COMMUNITY_GITHUB_QUEST_ID, scanned: 0, granted: 0 },
         { questId: "grow:list_app_on_pollinations", scanned: 1, granted: 0 },
+        NO_ELIXPO_INTERN_RESULT,
     ]);
 
     const [balance] = await db
@@ -536,6 +610,7 @@ test("quest evaluator rewards completed GitHub quest issues through shared path"
         },
         { questId: COMMUNITY_GITHUB_QUEST_ID, scanned: 1, granted: 1 },
         { questId: "grow:list_app_on_pollinations", scanned: 0, granted: 0 },
+        NO_ELIXPO_INTERN_RESULT,
     ]);
 
     const otherGithubId = 987654;
@@ -574,6 +649,7 @@ test("quest evaluator rewards completed GitHub quest issues through shared path"
         },
         { questId: COMMUNITY_GITHUB_QUEST_ID, scanned: 0, granted: 0 },
         { questId: "grow:list_app_on_pollinations", scanned: 0, granted: 0 },
+        NO_ELIXPO_INTERN_RESULT,
     ]);
 
     const [balance] = await db

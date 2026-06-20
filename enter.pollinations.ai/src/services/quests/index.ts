@@ -2,6 +2,7 @@ import * as schema from "@shared/db/better-auth.ts";
 import type { QuestDefinition } from "@shared/quests/definitions.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { communityGitHubIssueQuest } from "./community-github-issue.ts";
+import { elixpoInternQuest } from "./elixpo-intern.ts";
 import { establishedGitHubAccountQuest } from "./established-github-account.ts";
 import { firstApiKeyQuest } from "./first-api-key.ts";
 import { firstTopUpQuest } from "./first-top-up.ts";
@@ -18,6 +19,7 @@ export const QUESTS: QuestModule[] = [
     establishedGitHubAccountQuest,
     communityGitHubIssueQuest,
     listAppOnPollinationsQuest,
+    elixpoInternQuest,
 ];
 
 export const QUEST_DEFINITIONS = QUESTS.map((quest) => quest.definition);

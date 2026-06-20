@@ -25,9 +25,9 @@ export const HELLO_PAGE = {
     whatYouGetItems: [
         {
             emoji: "👛",
-            title: "Wallets & earnings",
-            lead: "Users bring their own Pollen. You take a share.",
-            desc: "- Users **sign in** and spend from their **own wallet** 👛\n- Set **spending caps**, **revoke access** any time\n- Turn on earnings on your **App Key** to receive a **share** when users spend in your app 💰",
+            title: "User wallets",
+            lead: "Users bring their own Pollen.",
+            desc: "- Users **sign in** and spend from their **own wallet** 👛\n- Set **spending caps**, **revoke access** any time\n- Your app never handles billing credentials",
             linkText: "Add Pollen to your app",
             linkUrl: "byopDocs",
         },
@@ -49,10 +49,10 @@ export const HELLO_PAGE = {
         },
         {
             emoji: "🌱",
-            title: "Pollen wallet",
-            lead: "Build before users show up.",
-            desc: "- Track **Tier** and **Paid** balances in one wallet\n- Earn extra from **Pollen Quests** 🎯\n- Top up only when your app needs more room 📈",
-            linkText: "Open your wallet",
+            title: "Earnings & quests",
+            lead: "Earn Pollen while you build.",
+            desc: "- Turn on earnings on your **App Key** to receive a **share** when users spend in your app 💰\n- Complete **Pollen Quests** for extra credits 🎯\n- Top up only when your app needs more room 📈",
+            linkText: "Open earnings & quests",
             linkUrl: "enter",
         },
         {

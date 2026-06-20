@@ -50,7 +50,7 @@ describe("grantReward", () => {
         await seedUser(db, userId);
 
         const result = await grantReward(db, {
-            idempotencyKey: `quest:1:gh:42:role:assignee`,
+            idempotencyKey: "quest:1",
             userId,
             source: "code_quest",
             amount: 5,

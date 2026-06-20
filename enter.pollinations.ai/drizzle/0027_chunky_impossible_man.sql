@@ -28,8 +28,8 @@ INSERT OR IGNORE INTO reward_grants (
 		created_at
 	)
 SELECT
-		'backfill:' || payout_key,
-		payout_key,
+		'backfill:quest:' || quest_issue_number,
+		'quest:' || quest_issue_number,
 		user_id,
 		'code_quest',
 		'github:community_issue_quest',

@@ -243,7 +243,7 @@ export const stripeCheckoutCredits = sqliteTable("stripe_checkout_credits", {
 export const rewardGrants = sqliteTable("reward_grants", {
   id: text("id").primaryKey(),
   // Idempotency guard. Format is source-specific, e.g.
-  // "quest:{issue}:gh:{githubId}:role:{role}" or "quest:{questId}:user:{userId}".
+  // "quest:{issue}" or "quest:{questId}:user:{userId}".
   idempotencyKey: text("idempotency_key").notNull().unique(),
   userId: text("user_id")
     .notNull()

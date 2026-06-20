@@ -9,7 +9,7 @@ export const MAX_REWARD_GRANT_AMOUNT = 10_000;
 export interface GrantRewardInput {
     /**
      * Idempotency guard. Must be deterministic for the logical grant so retries
-     * never double-pay, e.g. "quest:{issue}:gh:{githubId}:role:{role}" or
+     * never double-pay, e.g. "quest:{issue}" or
      * "quest:{questId}:user:{userId}". Mirrors the payout_key pattern of
      * quest_payout_credits / the session_id of stripe_checkout_credits.
      */

@@ -621,6 +621,31 @@ test("quest evaluator rewards completed GitHub quest issues through shared path"
         { questId: "grow:list_app_on_pollinations", scanned: 0, granted: 0 },
     ]);
 
+    const otherGithubId = 987654;
+    await db.insert(schema.user).values({
+        id: "github-quest-other-user",
+        name: "Other Dev",
+        email: "other-dev@example.com",
+        emailVerified: false,
+        image: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        githubId: otherGithubId,
+        githubUsername: "other-dev",
+        tier: "spore",
+        tierBalance: 0,
+        packBalance: 0,
+    });
+    await db
+        .update(schema.githubQuestIssues)
+        .set({
+            assigneeGithubId: otherGithubId,
+            assigneeLogin: "other-dev",
+            assigneesJson: JSON.stringify(["other-dev"]),
+            githubUpdatedAt: new Date("2026-06-13T00:00:00Z"),
+        })
+        .where(eq(schema.githubQuestIssues.issueNumber, 777));
+
     const second = await runQuestEvaluator(env);
     expect(second.results).toEqual([
         { questId: "onboarding:first_api_key", scanned: 0, granted: 0 },
@@ -639,8 +664,13 @@ test("quest evaluator rewards completed GitHub quest issues through shared path"
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
     expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 17);
+    const [otherBalance] = await db
+        .select({ tierBalance: schema.user.tierBalance })
+        .from(schema.user)
+        .where(eq(schema.user.githubId, otherGithubId));
+    expect(otherBalance?.tierBalance).toBe(0);
 
-    const [grant] = await db
+    const grants = await db
         .select({
             idempotencyKey: schema.rewardGrants.idempotencyKey,
             source: schema.rewardGrants.source,
@@ -653,10 +683,11 @@ test("quest evaluator rewards completed GitHub quest issues through shared path"
         .from(schema.rewardGrants)
         .where(eq(schema.rewardGrants.questId, COMMUNITY_GITHUB_QUEST_ID));
 
+    expect(grants).toHaveLength(1);
+    const grant = grants[0];
     expect(grant).toMatchObject({
         idempotencyKey: buildGitHubQuestRewardKey({
             issueNumber: 777,
-            githubId: user.githubId ?? 0,
         }),
         source: GITHUB_QUEST_REWARD_SOURCE,
         pollenCredited: 17,
@@ -680,7 +711,7 @@ test("account quest history includes GitHub quest reward grants", async ({
 }) => {
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
-    const payoutKey = "quest:123:gh:456:role:assignee";
+    const payoutKey = "quest:123";
 
     await db.insert(schema.rewardGrants).values({
         id: payoutKey,

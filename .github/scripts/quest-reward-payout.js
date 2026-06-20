@@ -437,36 +437,12 @@ function upsertGithubQuestIssue(enterDir, issue, spawn = spawnSync) {
             title = excluded.title,
             description = excluded.description,
             url = excluded.url,
-            reward_amount = CASE
-                WHEN github_quest_issues.completed_by_pr_number IS NOT NULL
-                    THEN github_quest_issues.reward_amount
-                ELSE excluded.reward_amount
-            END,
-            balance_bucket = CASE
-                WHEN github_quest_issues.completed_by_pr_number IS NOT NULL
-                    THEN github_quest_issues.balance_bucket
-                ELSE excluded.balance_bucket
-            END,
-            state = CASE
-                WHEN github_quest_issues.completed_by_pr_number IS NOT NULL
-                    THEN github_quest_issues.state
-                ELSE excluded.state
-            END,
-            assignee_github_id = CASE
-                WHEN github_quest_issues.completed_by_pr_number IS NOT NULL
-                    THEN github_quest_issues.assignee_github_id
-                ELSE excluded.assignee_github_id
-            END,
-            assignee_login = CASE
-                WHEN github_quest_issues.completed_by_pr_number IS NOT NULL
-                    THEN github_quest_issues.assignee_login
-                ELSE excluded.assignee_login
-            END,
-            assignees_json = CASE
-                WHEN github_quest_issues.completed_by_pr_number IS NOT NULL
-                    THEN github_quest_issues.assignees_json
-                ELSE excluded.assignees_json
-            END,
+            reward_amount = excluded.reward_amount,
+            balance_bucket = excluded.balance_bucket,
+            state = excluded.state,
+            assignee_github_id = excluded.assignee_github_id,
+            assignee_login = excluded.assignee_login,
+            assignees_json = excluded.assignees_json,
             completed_by_pr_number = COALESCE(
                 excluded.completed_by_pr_number,
                 github_quest_issues.completed_by_pr_number
@@ -477,14 +453,10 @@ function upsertGithubQuestIssue(enterDir, issue, spawn = spawnSync) {
             ),
             github_created_at = excluded.github_created_at,
             github_updated_at = excluded.github_updated_at,
-            metadata_json = CASE
-                WHEN github_quest_issues.completed_by_pr_number IS NOT NULL
-                    THEN github_quest_issues.metadata_json
-                ELSE COALESCE(
-                    excluded.metadata_json,
-                    github_quest_issues.metadata_json
-                )
-            END,
+            metadata_json = COALESCE(
+                excluded.metadata_json,
+                github_quest_issues.metadata_json
+            ),
             updated_at = ${nowSql};
     `;
 

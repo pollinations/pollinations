@@ -74,12 +74,8 @@ export function parseQuestReward(body: string): number | null {
 
 export function buildGitHubQuestRewardKey({
     issueNumber,
-    githubId,
-    role = "assignee",
 }: {
     issueNumber: number;
-    githubId: number;
-    role?: string;
 }): string {
-    return `quest:${issueNumber}:gh:${githubId}:role:${role}`;
+    return `quest:${issueNumber}`;
 }

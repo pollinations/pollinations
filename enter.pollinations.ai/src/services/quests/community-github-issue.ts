@@ -108,10 +108,7 @@ async function findRewardProposals(db: QuestDb): Promise<RewardProposal[]> {
         LEFT JOIN reward_grants
             ON reward_grants.idempotency_key =
                 ${"quest:"} ||
-                github_quest_issues.issue_number ||
-                ${":gh:"} ||
-                github_quest_issues.assignee_github_id ||
-                ${":role:assignee"}
+                github_quest_issues.issue_number
         WHERE github_quest_issues.quest_id = ${COMMUNITY_GITHUB_QUEST_ID}
             AND github_quest_issues.state = 'completed'
             AND github_quest_issues.reward_amount > 0
@@ -125,7 +122,6 @@ async function findRewardProposals(db: QuestDb): Promise<RewardProposal[]> {
         userId: row.userId,
         idempotencyKey: buildGitHubQuestRewardKey({
             issueNumber: row.issueNumber,
-            githubId: row.assigneeGithubId,
         }),
         eventId: `issue:${row.issueNumber}`,
         source: GITHUB_QUEST_REWARD_SOURCE,

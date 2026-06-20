@@ -18,7 +18,11 @@ import {
     buildQuestRewardMetadata,
     runQuestEvaluator,
 } from "../src/services/quest-evaluator.ts";
-import { getQuestDefinition } from "../src/services/quests/index.ts";
+import {
+    getQuestDefinition,
+    QUESTS,
+    type QuestModule,
+} from "../src/services/quests/index.ts";
 import { test } from "./fixtures.ts";
 
 async function getOnlyUser() {
@@ -421,6 +425,45 @@ test("quest evaluator grants code-defined product quests once", async ({
             thresholdDays: 365,
         },
     });
+});
+
+test("quest evaluator continues after one quest fails", async ({
+    apiKey: _apiKey,
+    mocks,
+}) => {
+    await mocks.enable("github", "tinybird");
+
+    const failingQuest = {
+        definition: {
+            id: "test:failing_quest",
+            title: "Failing quest",
+            description: "Used to verify runner isolation.",
+            rewardAmount: 1,
+            balanceBucket: "pack",
+            payoutScope: "once_per_user",
+        },
+        async evaluate() {
+            throw new Error("planned quest failure");
+        },
+    } satisfies QuestModule;
+
+    QUESTS.splice(1, 0, failingQuest);
+    try {
+        const result = await runQuestEvaluator(env);
+        expect(result.success).toBe(false);
+        expect(result.results).toContainEqual({
+            questId: "test:failing_quest",
+            scanned: 0,
+            granted: 0,
+            error: "planned quest failure",
+        });
+        expect(result.results.map((entry) => entry.questId)).toContain(
+            "spend:first_top_up",
+        );
+    } finally {
+        const index = QUESTS.indexOf(failingQuest);
+        if (index >= 0) QUESTS.splice(index, 1);
+    }
 });
 
 test("github account age quest waits until threshold", async ({

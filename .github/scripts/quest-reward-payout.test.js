@@ -6,7 +6,6 @@ const {
     COMMUNITY_GITHUB_QUEST_ID,
     COMMUNITY_GITHUB_QUEST_LABEL,
     evaluateQuestIssueUpdates,
-    MAX_QUEST_PAYOUT,
     parseReward,
     runGitHubQuestEvaluators,
     runQuestIssueSync,
@@ -242,12 +241,16 @@ test("runner preserves definition balance bucket on materialized issues", async 
     assert.equal(result.questIssues[0].balanceBucket, "tier");
 });
 
-test("payout amount validator enforces the shared ceiling", () => {
+test("payout amount validator only requires a positive parsed reward", () => {
     assert.equal(validateQuestPayoutAmount(1), null);
-    assert.equal(validateQuestPayoutAmount(MAX_QUEST_PAYOUT), null);
+    assert.equal(validateQuestPayoutAmount(1_000_000), null);
     assert.equal(
-        validateQuestPayoutAmount(MAX_QUEST_PAYOUT + 1),
-        `reward amount <= ${MAX_QUEST_PAYOUT}`,
+        validateQuestPayoutAmount(Number.NaN),
+        "valid reward amount in issue body",
+    );
+    assert.equal(
+        validateQuestPayoutAmount(0),
+        "valid reward amount in issue body",
     );
 });
 

@@ -7,7 +7,6 @@ const path = require("node:path");
 const COMMUNITY_GITHUB_QUEST_ID = "github:community_issue_quest";
 const COMMUNITY_GITHUB_QUEST_LABEL = "POLLEN-QUEST";
 const QUEST_REWARD_REGEX = /###\s*Reward\s*\n+\s*([0-9]+(?:\.[0-9]+)?)/i;
-const MAX_QUEST_PAYOUT = 10_000;
 
 function repo(context) {
     return {
@@ -55,9 +54,6 @@ function truncate(text, maxLength) {
 function validateQuestPayoutAmount(amount) {
     if (!Number.isFinite(amount) || amount <= 0) {
         return "valid reward amount in issue body";
-    }
-    if (amount > MAX_QUEST_PAYOUT) {
-        return `reward amount <= ${MAX_QUEST_PAYOUT}`;
     }
     return null;
 }
@@ -520,7 +516,6 @@ async function runQuestIssueSync({
 module.exports = {
     COMMUNITY_GITHUB_QUEST_ID,
     COMMUNITY_GITHUB_QUEST_LABEL,
-    MAX_QUEST_PAYOUT,
     evaluateQuestIssueUpdates,
     githubQuestDefinitions,
     parseReward,

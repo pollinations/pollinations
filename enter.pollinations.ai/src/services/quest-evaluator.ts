@@ -17,6 +17,7 @@ type QuestEvaluatorResult = {
     questId: string;
     scanned: number;
     granted: number;
+    error?: string;
 };
 
 export function buildQuestRewardMetadata(
@@ -62,21 +63,44 @@ export async function commitRewardProposals({
 
 export async function runQuestEvaluator(
     env: CloudflareBindings,
-): Promise<{ success: true; results: QuestEvaluatorResult[] }> {
+): Promise<{ success: boolean; results: QuestEvaluatorResult[] }> {
     const db = drizzle(env.DB, { schema });
     const results: QuestEvaluatorResult[] = [];
 
     for (const quest of QUESTS) {
-        const proposals = await quest.evaluate({ db, env });
-        results.push(
-            await commitRewardProposals({
-                db,
-                definition: quest.definition,
-                proposals,
-            }),
-        );
+        let scanned = 0;
+        try {
+            const proposals = await quest.evaluate({ db, env });
+            scanned = proposals.length;
+            results.push(
+                await commitRewardProposals({
+                    db,
+                    definition: quest.definition,
+                    proposals,
+                }),
+            );
+        } catch (error) {
+            const message =
+                error instanceof Error ? error.message : String(error);
+            log.error(
+                "QUEST_EVALUATOR_FAILED: questId={questId} error={error}",
+                {
+                    questId: quest.definition.id,
+                    error: message,
+                },
+            );
+            results.push({
+                questId: quest.definition.id,
+                scanned,
+                granted: 0,
+                error: message,
+            });
+        }
     }
 
     log.info("QUEST_EVALUATOR_COMPLETE: results={results}", { results });
-    return { success: true, results };
+    return {
+        success: results.every((result) => !result.error),
+        results,
+    };
 }

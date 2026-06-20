@@ -6,11 +6,12 @@ import {
 import { isCommunityEndpointOwnerAllowed } from "@shared/community-endpoints.ts";
 import {
     apikey as apikeyTable,
+    rewardGrants as rewardGrantsTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { getTierCadence, tierNames } from "@shared/tier-config.ts";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -19,6 +20,10 @@ import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
+import {
+    fetchTinybirdRows,
+    requireTinybirdReadToken,
+} from "../services/tinybird.ts";
 import { parseMetadata } from "./metadata-utils.ts";
 
 // Calculate next tier refill time (null for tiers with no refill).
@@ -102,6 +107,36 @@ function requireKeysPermission(apiKey?: {
             message: "API key does not have 'account:keys' permission",
         });
     }
+}
+
+function requireUsagePermission(apiKey?: {
+    permissions?: Record<string, string[]>;
+}): void {
+    if (apiKey && !apiKey.permissions?.account?.includes("usage")) {
+        throw new HTTPException(403, {
+            message: "API key does not have 'account:usage' permission",
+        });
+    }
+}
+
+function parseGrantMetadata(
+    raw: string | null,
+): Record<string, unknown> | null {
+    if (!raw) return null;
+    try {
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+            ? (parsed as Record<string, unknown>)
+            : null;
+    } catch {
+        return null;
+    }
+}
+
+function formatGrantTimestamp(value: Date | number | string): string {
+    return value instanceof Date
+        ? value.toISOString()
+        : new Date(value).toISOString();
 }
 
 // Schema for creating an API key via the API
@@ -358,59 +393,6 @@ function buildUsageWindows(
     return newestFirst ? windows.reverse() : windows;
 }
 
-/**
- * Thrown when Tinybird returns 429 (rate limit / vCPU budget exceeded). This is
- * transient, so read-only usage endpoints should degrade gracefully rather than
- * surface it as a 5xx with the raw upstream message.
- */
-export class TinybirdRateLimitError extends Error {
-    constructor(message: string) {
-        super(message);
-        this.name = "TinybirdRateLimitError";
-    }
-}
-
-export async function fetchTinybirdRows<T>(
-    origin: string,
-    path: string,
-    token: string,
-    params: Record<string, string | undefined>,
-): Promise<T[]> {
-    const url = new URL(path, origin);
-    for (const [key, value] of Object.entries(params)) {
-        if (value) {
-            url.searchParams.set(key, value);
-        }
-    }
-
-    const response = await fetch(url.toString(), {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
-    });
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        const message = `Tinybird error: ${response.status} ${errorText || "(empty response)"}`;
-        if (response.status === 429) {
-            throw new TinybirdRateLimitError(message);
-        }
-        throw new Error(message);
-    }
-
-    const data = (await response.json()) as { data: T[] };
-    return data.data;
-}
-
-export function requireTinybirdReadToken(env: CloudflareBindings): string {
-    if (!env.TINYBIRD_READ_TOKEN) {
-        throw new HTTPException(500, {
-            message: "Tinybird read token is not configured",
-        });
-    }
-    return env.TINYBIRD_READ_TOKEN;
-}
-
 // Query params schema for usage
 const usageQuerySchema = z.object({
     format: z.enum(["json", "csv"]).optional().default("json"),
@@ -421,6 +403,7 @@ const usageQuerySchema = z.object({
         .optional()
         .default(100),
     before: z.string().optional(), // ISO timestamp cursor for pagination
+    before_event_id: z.string().optional(), // Stable tie-breaker for same-second timestamps
     days: z.coerce
         .number()
         .int()
@@ -645,8 +628,8 @@ function stripUsageCursor(row: UsageRecordWithCursor): UsageRecord {
 }
 
 // Shared tail for the detailed-usage endpoints (/usage, /key/usage):
-// fetch a page from the user_usage pipe, strip the cursor, then return CSV
-// (with a per-route filename prefix) or JSON, or a 500 on upstream error.
+// fetch a page from the user_usage pipe, return the cursor for JSON pagination,
+// but keep CSV output on its established public columns.
 async function respondDetailedUsage(
     c: Pick<Context<Env>, "env" | "json">,
     log: Logger,
@@ -660,25 +643,29 @@ async function respondDetailedUsage(
         since: string;
         until: string;
         before?: string;
+        beforeEventId?: string;
     },
 ): Promise<Response> {
     const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
     const tinybirdToken = requireTinybirdReadToken(c.env);
 
     try {
-        const usage = (
-            await fetchDetailedUsagePage(tinybirdOrigin, tinybirdToken, {
+        const usage = await fetchDetailedUsagePage(
+            tinybirdOrigin,
+            tinybirdToken,
+            {
                 userId: params.userId,
                 apiKeyId: params.apiKeyId,
                 limit: params.limit,
                 since: params.since,
                 until: params.until,
                 before: params.before,
-            })
-        ).map(stripUsageCursor);
+                beforeEventId: params.beforeEventId,
+            },
+        );
 
         if (params.format === "csv") {
-            const rows = usage.map(usageRecordToCsvRow);
+            const rows = usage.map(stripUsageCursor).map(usageRecordToCsvRow);
             const csv = [USAGE_CSV_HEADER, ...rows].join("\n");
             return new Response(csv, {
                 headers: {
@@ -744,11 +731,18 @@ const usageRecordSchema = z.object({
     timestamp: z
         .string()
         .describe("Request timestamp (YYYY-MM-DD HH:mm:ss format)"),
+    cursor_event_id: z
+        .string()
+        .describe("Event id used with `before_event_id` for stable pagination"),
     type: z
         .string()
         .describe("Request type (e.g., 'generate.image', 'generate.text')"),
     model: z.string().nullable().describe("Model used for generation"),
-    api_key: z.string().nullable().describe("API key identifier used (masked)"),
+    api_key_id: z
+        .string()
+        .nullable()
+        .describe("API key id used for generation"),
+    api_key: z.string().nullable().describe("API key display name"),
     api_key_type: z
         .string()
         .nullable()
@@ -794,6 +788,21 @@ const usageRecordSchema = z.object({
 const usageResponseSchema = z.object({
     usage: z.array(usageRecordSchema).describe("Array of usage records"),
     count: z.number().describe("Number of records returned"),
+});
+
+const accountQuestGrantSchema = z.object({
+    source: z.string(),
+    questId: z.string().nullable(),
+    pollenCredited: z.number(),
+    balanceBucket: z.string(),
+    sourceRef: z.string().nullable(),
+    metadata: z.record(z.string(), z.unknown()).nullable(),
+    createdAt: z.string(),
+});
+
+const accountQuestResponseSchema = z.object({
+    totalPollen: z.number(),
+    grants: z.array(accountQuestGrantSchema),
 });
 
 /**
@@ -924,7 +933,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Usage History",
             description:
-                "Returns your request history with per-request details: model used, token counts, cost, and response time. Defaults to the last 30 days, supports up to 90 days via `days`, or exact day/week/month periods via `granularity` and `period`. Supports JSON and CSV export. Each response is capped at 50,000 rows. Use `before` for cursor-based pagination. Requires `account:usage` permission when using API keys.",
+                "Returns your request history with per-request details: model used, token counts, cost, and response time. Defaults to the last 30 days, supports up to 90 days via `days`, or exact day/week/month periods via `granularity` and `period`. Supports JSON and CSV export. Each response is capped at 50,000 rows. Use `before` with `before_event_id` for stable cursor-based pagination. Requires `account:usage` permission when using API keys.",
             responses: {
                 200: {
                     description: "Usage records",
@@ -959,8 +968,15 @@ export const accountRoutes = new Hono<Env>()
                 });
             }
 
-            const { format, limit, before, days, granularity, period } =
-                c.req.valid("query");
+            const {
+                format,
+                limit,
+                before,
+                before_event_id: beforeEventId,
+                days,
+                granularity,
+                period,
+            } = c.req.valid("query");
             const { userId: usageUserId, overridden: usageUserOverridden } =
                 resolveUsageTargetUserId(c.env, user.id, apiKey);
             const usageWindow = formatUsageWindow(
@@ -975,7 +991,7 @@ export const accountRoutes = new Hono<Env>()
             });
 
             log.debug(
-                "Fetching usage: requesterUserId={requesterUserId} targetUserId={targetUserId} override={override} format={format} limit={limit} before={before} days={days}",
+                "Fetching usage: requesterUserId={requesterUserId} targetUserId={targetUserId} override={override} format={format} limit={limit} before={before} beforeEventId={beforeEventId} days={days}",
                 {
                     requesterUserId: user.id,
                     targetUserId: usageUserId,
@@ -983,6 +999,7 @@ export const accountRoutes = new Hono<Env>()
                     format,
                     limit,
                     before,
+                    beforeEventId,
                     days,
                 },
             );
@@ -996,6 +1013,7 @@ export const accountRoutes = new Hono<Env>()
                 since: usageWindow.since,
                 until: usageWindow.until,
                 before,
+                beforeEventId,
             });
         },
     )
@@ -1306,6 +1324,69 @@ export const accountRoutes = new Hono<Env>()
                 log.error("Error fetching earnings: {error}", { error });
                 return c.json({ error: "Failed to fetch earnings data" }, 500);
             }
+        },
+    )
+    .get(
+        "/quests",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Get Completed Quest Rewards",
+            description:
+                "Returns completed grant-style quest rewards for the authenticated account from the reward_grants ledger. Requires `account:usage` permission when using API keys.",
+            responses: {
+                200: {
+                    description: "Completed quest rewards",
+                    content: {
+                        "application/json": {
+                            schema: resolver(accountQuestResponseSchema),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+                403: {
+                    description:
+                        "Permission denied - API key missing `account:usage` permission",
+                },
+            },
+        }),
+        async (c) => {
+            await c.var.auth.requireAuthorization({
+                message: "Authentication required to view quest rewards",
+            });
+            const user = c.var.auth.requireUser();
+            requireUsagePermission(c.var.auth.apiKey);
+
+            const db = drizzle(c.env.DB);
+            const rewardRows = await db
+                .select({
+                    source: rewardGrantsTable.source,
+                    questId: rewardGrantsTable.questId,
+                    pollenCredited: rewardGrantsTable.pollenCredited,
+                    balanceBucket: rewardGrantsTable.balanceBucket,
+                    sourceRef: rewardGrantsTable.sourceRef,
+                    metadataJson: rewardGrantsTable.metadataJson,
+                    createdAt: rewardGrantsTable.createdAt,
+                })
+                .from(rewardGrantsTable)
+                .where(eq(rewardGrantsTable.userId, user.id))
+                .orderBy(desc(rewardGrantsTable.createdAt));
+
+            const grants = rewardRows.map((row) => ({
+                source: row.source,
+                questId: row.questId,
+                pollenCredited: row.pollenCredited,
+                balanceBucket: row.balanceBucket,
+                sourceRef: row.sourceRef,
+                metadata: parseGrantMetadata(row.metadataJson),
+                createdAt: formatGrantTimestamp(row.createdAt),
+            }));
+
+            const totalPollen = grants.reduce(
+                (total, grant) => total + grant.pollenCredited,
+                0,
+            );
+
+            return c.json({ totalPollen, grants });
         },
     )
     .get(
@@ -1633,7 +1714,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get API Key Usage",
             description:
-                "Returns usage history for the API key used in the request. No scope required — a key can always read its own usage. For account-wide usage across all keys, use `/account/usage` with the `account:usage` scope.",
+                "Returns usage history for the API key used in the request. No scope required — a key can always read its own usage. Use `before` with `before_event_id` for stable cursor-based pagination. For account-wide usage across all keys, use `/account/usage` with the `account:usage` scope.",
             responses: {
                 200: {
                     description: "Usage records for this key",
@@ -1661,8 +1742,15 @@ export const accountRoutes = new Hono<Env>()
             }
             const user = c.var.auth.requireUser();
 
-            const { format, limit, before, days, granularity, period } =
-                c.req.valid("query");
+            const {
+                format,
+                limit,
+                before,
+                before_event_id: beforeEventId,
+                days,
+                granularity,
+                period,
+            } = c.req.valid("query");
             const usageWindow = formatUsageWindow(
                 resolveUsageWindow(days, {
                     granularity,
@@ -1689,6 +1777,7 @@ export const accountRoutes = new Hono<Env>()
                 since: usageWindow.since,
                 until: usageWindow.until,
                 before,
+                beforeEventId,
             });
         },
     );

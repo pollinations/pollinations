@@ -281,20 +281,64 @@ export const stripeCheckoutCredits = sqliteTable("stripe_checkout_credits", {
   index("idx_stripe_checkout_credits_user_id").on(table.userId),
 ]);
 
-export const questPayoutCredits = sqliteTable("quest_payout_credits", {
-  payoutKey: text("payout_key").primaryKey(),
-  questIssueNumber: integer("quest_issue_number").notNull(),
-  prNumber: integer("pr_number").notNull(),
-  role: text("role").notNull(),
-  githubUsername: text("github_username").notNull(),
+// Generic, source-agnostic ledger for discrete pollen grants (quests,
+// onboarding, referrals, manual credits, …). Makes no GitHub assumptions:
+// `source` discriminates the grant kind and the GitHub-specific bits (issue/PR,
+// role, username) live in optional `sourceRef`/`metadataJson`. One row == one
+// idempotent grant paired with a balance credit. This is the single quest
+// ledger; the old GitHub-shaped quest_payout_credits table was backfilled into
+// here and dropped by the previous migration.
+export const rewardGrants = sqliteTable("reward_grants", {
+  id: text("id").primaryKey(),
+  // Idempotency guard. Format is source-specific, e.g.
+  // "quest:{issue}" or "quest:{questId}:user:{userId}".
+  idempotencyKey: text("idempotency_key").notNull().unique(),
   userId: text("user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
+  // Grant kind, e.g. code_quest | product_quest | referral | manual.
+  source: text("source").notNull(),
+  // Catalog id for product quests; null for one-off/manual grants.
+  questId: text("quest_id"),
   pollenCredited: real("pollen_credited").notNull(),
+  // Which balance bucket was credited: "tier" or "pack".
+  balanceBucket: text("balance_bucket").notNull(),
+  // Free-form external reference: PR number, Stripe session, generation id, …
+  sourceRef: text("source_ref"),
+  // JSON snapshot of display metadata (title/url/details) at grant time.
+  metadataJson: text("metadata_json"),
   createdAt: integer("created_at", { mode: "timestamp" })
     .defaultNow()
     .notNull(),
 }, (table) => [
-  index("idx_quest_payout_credits_user_id").on(table.userId),
-  index("idx_quest_payout_credits_quest_issue").on(table.questIssueNumber),
+  index("idx_reward_grants_user_id").on(table.userId),
+  index("idx_reward_grants_source").on(table.source),
+]);
+
+export const githubQuestIssues = sqliteTable("github_quest_issues", {
+  issueNumber: integer("issue_number").primaryKey(),
+  questId: text("quest_id").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  url: text("url").notNull(),
+  rewardAmount: real("reward_amount"),
+  balanceBucket: text("balance_bucket").notNull(),
+  state: text("state").notNull(),
+  assigneeGithubId: integer("assignee_github_id"),
+  assigneeLogin: text("assignee_login"),
+  assigneesJson: text("assignees_json"),
+  completedByPrNumber: integer("completed_by_pr_number"),
+  completedAt: integer("completed_at", { mode: "timestamp" }),
+  githubCreatedAt: integer("github_created_at", { mode: "timestamp" }),
+  githubUpdatedAt: integer("github_updated_at", { mode: "timestamp" }),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+}, (table) => [
+  index("idx_github_quest_issues_quest_id").on(table.questId),
+  index("idx_github_quest_issues_state").on(table.state),
+  index("idx_github_quest_issues_assignee_github_id").on(
+    table.assigneeGithubId,
+  ),
 ]);

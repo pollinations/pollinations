@@ -9,6 +9,7 @@ import { api } from "./api.ts";
 import type { Env } from "./env.ts";
 import { logger } from "./middleware/logger.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
+import { runQuestEvaluator } from "./services/quest-evaluator.ts";
 import { runTierRefill } from "./services/tier-refill.ts";
 
 function stripTrailingSlash(path: string): string {
@@ -93,6 +94,15 @@ export default {
         env: CloudflareBindings,
         ctx: ExecutionContext,
     ) {
-        await runTierRefill(env, ctx);
+        // Isolate the two cron tasks: a failure in one must not skip the other.
+        // Both are awaited so a manual trigger reflects completion (and errors).
+        await Promise.allSettled([
+            runTierRefill(env, ctx).catch((error) => {
+                console.error("Tier refill failed:", error);
+            }),
+            runQuestEvaluator(env).catch((error) => {
+                console.error("Quest evaluator failed:", error);
+            }),
+        ]);
     },
 } satisfies ExportedHandler<CloudflareBindings>;

@@ -311,7 +311,7 @@ async function listTextModels(_params) {
                 advanced:
                     "Use chatCompletion for multi-turn conversations, tool calling, audio output",
                 reasoning:
-                    "True reasoning models: kimi-k2-thinking, perplexity-reasoning, openai-large, gemini-large. Use reasoning_effort or thinking params",
+                    "True reasoning models: kimi, perplexity-reasoning, openai-large, gemini-large. Use reasoning_effort or thinking params",
                 audio: "Use openai-audio with modalities=['text','audio'] for voice output",
             },
         };
@@ -673,13 +673,13 @@ const chatParamsSchema = {
     thinking: thinkingSchema
         .optional()
         .describe(
-            "Thinking mode for reasoning models. Use with kimi-k2-thinking, perplexity-reasoning, openai-large, gemini-large",
+            "Thinking mode for reasoning models. Use with kimi, perplexity-reasoning, openai-large, gemini-large",
         ),
     reasoning_effort: z
-        .enum(["low", "medium", "high"])
+        .enum(["none", "minimal", "low", "medium", "high", "xhigh"])
         .optional()
         .describe(
-            "Reasoning effort level. Works with reasoning models like kimi-k2-thinking, openai-large",
+            "Reasoning effort level. Use 'none' to request no reasoning on supported models",
         ),
     thinking_budget: z
         .number()
@@ -770,7 +770,7 @@ export const textTools = [
     ],
     [
         "chatCompletion",
-        "OpenAI-compatible chat completions with ALL parameters. Supports:\n- Multi-turn conversations with message history\n- Function/tool calling for AI agents\n- Audio input/output (openai-audio model)\n- Reasoning mode (kimi-k2-thinking, perplexity-reasoning, openai-large, gemini-large)\n- JSON/structured output\n- Built-in Gemini tools (google_search, code_execution, etc.)\n- Perplexity web search with citations",
+        "OpenAI-compatible chat completions with ALL parameters. Supports:\n- Multi-turn conversations with message history\n- Function/tool calling for AI agents\n- Audio input/output (openai-audio model)\n- Reasoning mode (kimi, perplexity-reasoning, openai-large, gemini-large)\n- JSON/structured output\n- Built-in Gemini tools (google_search, code_execution, etc.)\n- Perplexity web search with citations",
         chatParamsSchema,
         chatCompletion,
     ],

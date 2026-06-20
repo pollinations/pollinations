@@ -12,17 +12,24 @@ const PAGE_SIZE_COMPACT = 5;
 
 type UsageRecord = {
     timestamp: string;
+    cursor_event_id: string;
     model: string;
+    api_key_id: string | null;
     api_key: string | null;
     meter_source: string | null;
     cost_usd: number;
+};
+
+type UsageCursor = {
+    timestamp: string;
+    eventId: string;
 };
 
 type FetchState = {
     rows: UsageRecord[];
     loading: boolean;
     error: string | null;
-    nextCursor: string | null;
+    nextCursor: UsageCursor | null;
     hasMore: boolean;
 };
 
@@ -34,8 +41,17 @@ const INITIAL_STATE: FetchState = {
     hasMore: true,
 };
 
+function parseTimestamp(value: string): Date {
+    const normalizedUtcTimestamp = value.match(
+        /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/,
+    )
+        ? `${value.replace(" ", "T")}Z`
+        : value;
+    return new Date(normalizedUtcTimestamp);
+}
+
 function formatTimestamp(value: string, mode: Mode): string {
-    const date = new Date(value);
+    const date = parseTimestamp(value);
     if (Number.isNaN(date.getTime())) return value;
     if (mode === "compact") {
         // Relative-ish short form: "Mar 14, 14:05"
@@ -55,23 +71,33 @@ function formatTimestamp(value: string, mode: Mode): string {
     });
 }
 
+// formatPollen floors to 4 decimals, so a real charge below 0.0001 Pollen
+// renders as "0" — making a billed request look free. Surface those as
+// "<0.0001" so a nonzero deduction is never shown as zero.
+function formatCost(value: number): string {
+    const formatted = formatPollen(value);
+    if (value > 0 && formatted === "0") return "<0.0001";
+    return formatted;
+}
+
 function MeterSourceChip({ source }: { source: string | null }) {
     if (source === "tier") return <TierChip>tier</TierChip>;
     return <PaidChip>paid</PaidChip>;
 }
 
-function rowKey(row: UsageRecord): string {
-    return `${row.timestamp}-${row.model}-${row.cost_usd}`;
+function rowKey(row: UsageRecord, index: number): string {
+    if (row.cursor_event_id) return row.cursor_event_id;
+    return `${row.timestamp}-${row.api_key_id ?? row.api_key ?? "key"}-${
+        row.model || "model"
+    }-${row.cost_usd}-${index}`;
 }
 
-function buildKeyNameLookup(
-    keys: ApiKeyInfo[] | undefined,
-): (id: string | null) => string {
+function buildKeyNameLookup(keys: ApiKeyInfo[] | undefined) {
     const map = new Map<string, string>();
     for (const k of keys ?? []) map.set(k.id, k.name);
-    return (id) => {
+    return (id: string | null, fallbackName?: string | null) => {
         if (!id) return "—";
-        return map.get(id) ?? `${id.slice(0, 8)}…`;
+        return map.get(id) ?? fallbackName ?? `${id.slice(0, 8)}…`;
     };
 }
 
@@ -92,12 +118,19 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
     const lookupKeyName = useMemo(() => buildKeyNameLookup(apiKeys), [apiKeys]);
 
     const loadPage = useCallback(
-        async (before: string | null): Promise<void> => {
+        async (cursor: UsageCursor | null): Promise<void> => {
             setState((prev) => ({ ...prev, loading: true, error: null }));
-            const query: { limit: string; before?: string } = {
+            const query: {
+                limit: string;
+                before?: string;
+                before_event_id?: string;
+            } = {
                 limit: pageSize.toString(),
             };
-            if (before) query.before = before;
+            if (cursor) {
+                query.before = cursor.timestamp;
+                query.before_event_id = cursor.eventId;
+            }
 
             const response = await apiClient.account.usage.$get({ query });
             if (!response.ok) {
@@ -113,10 +146,16 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
             const rows = data.usage ?? [];
             const hasMore = mode === "full" && rows.length >= pageSize;
             const last = rows[rows.length - 1];
-            const nextCursor = hasMore && last ? last.timestamp : null;
+            const nextCursor =
+                hasMore && last
+                    ? {
+                          timestamp: last.timestamp,
+                          eventId: last.cursor_event_id,
+                      }
+                    : null;
 
             setState((prev) => ({
-                rows: before ? [...prev.rows, ...rows] : rows,
+                rows: cursor ? [...prev.rows, ...rows] : rows,
                 loading: false,
                 error: null,
                 nextCursor,
@@ -153,6 +192,7 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
                 <p className="text-sm text-ink-700">
                     Each row is one billed request — when it happened, which API
                     key and model were used, and how much pollen was deducted.
+                    Times are shown in your local timezone.
                 </p>
             )}
 
@@ -171,9 +211,9 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
                 <>
                     {/* Mobile: stacked cards */}
                     <ul className="flex flex-col gap-2 sm:hidden">
-                        {state.rows.map((row) => (
+                        {state.rows.map((row, index) => (
                             <li
-                                key={rowKey(row)}
+                                key={rowKey(row, index)}
                                 className="rounded-lg border border-theme-border p-3 flex flex-col gap-1.5"
                             >
                                 <div className="flex items-center justify-between gap-2">
@@ -181,7 +221,7 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
                                         {row.model || "—"}
                                     </span>
                                     <span className="tabular-nums font-semibold text-ink-900 shrink-0">
-                                        {formatPollen(row.cost_usd)}
+                                        {formatCost(row.cost_usd)}
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between gap-2 text-xs">
@@ -194,7 +234,10 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
                                 </div>
                                 {!isCompact && (
                                     <div className="text-xs text-ink-500 truncate">
-                                        {lookupKeyName(row.api_key)}
+                                        {lookupKeyName(
+                                            row.api_key_id,
+                                            row.api_key,
+                                        )}
                                     </div>
                                 )}
                             </li>
@@ -226,9 +269,9 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-theme-border">
-                                {state.rows.map((row) => (
+                                {state.rows.map((row, index) => (
                                     <tr
-                                        key={rowKey(row)}
+                                        key={rowKey(row, index)}
                                         className="hover:bg-ink-50"
                                     >
                                         <td className="px-3 py-2 whitespace-nowrap text-ink-800 tabular-nums">
@@ -242,7 +285,10 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
                                         </td>
                                         {!isCompact && (
                                             <td className="px-3 py-2 text-ink-700 max-w-[12rem] truncate">
-                                                {lookupKeyName(row.api_key)}
+                                                {lookupKeyName(
+                                                    row.api_key_id,
+                                                    row.api_key,
+                                                )}
                                             </td>
                                         )}
                                         <td className="px-3 py-2">
@@ -251,7 +297,7 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
                                             />
                                         </td>
                                         <td className="px-3 py-2 text-right tabular-nums font-semibold text-ink-900">
-                                            {formatPollen(row.cost_usd)}
+                                            {formatCost(row.cost_usd)}
                                         </td>
                                     </tr>
                                 ))}

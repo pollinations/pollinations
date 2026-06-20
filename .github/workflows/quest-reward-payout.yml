@@ -1,4 +1,4 @@
-name: Quest Reward Payout
+name: Quest Issue Completion
 
 on:
   pull_request_target:
@@ -25,50 +25,41 @@ jobs:
           private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
           owner: pollinations
 
-      - uses: actions/checkout@v4
-
-      - name: Resolve linked quest
-        id: linked
-        uses: actions/github-script@v7
+      - name: Checkout trusted base code
+        uses: actions/checkout@v4
         with:
-          github-token: ${{ steps.token.outputs.token }}
-          script: |
-            const { resolveLinkedQuest } = require('./.github/scripts/quest-reward-payout.js');
-            await resolveLinkedQuest({ github, context, core });
+          ref: ${{ github.event.pull_request.base.sha }}
 
-      - name: Compute payout
-        if: steps.linked.outputs.quest != ''
+      - name: Evaluate quest issue updates
         id: resolve
         uses: actions/github-script@v7
         env:
-          QUEST: ${{ steps.linked.outputs.quest }}
           PAYOUT_FALLBACK: ${{ env.QUEST_PAYOUT_FALLBACK }}
         with:
           github-token: ${{ steps.token.outputs.token }}
           script: |
-            const { computePayout } = require('./.github/scripts/quest-reward-payout.js');
-            await computePayout({ github, context, core });
+            const { evaluateQuestIssueUpdates } = require('./.github/scripts/quest-reward-payout.js');
+            await evaluateQuestIssueUpdates({ github, context, core });
 
-      - name: Grant Pollen via D1
-        if: steps.resolve.outputs.payout != ''
-        id: grant
+      - name: Record GitHub quest issue
+        if: steps.resolve.outputs.questIssues != ''
+        id: record
         uses: actions/github-script@v7
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
-          PAYOUT: ${{ steps.resolve.outputs.payout }}
+          QUEST_ISSUES: ${{ steps.resolve.outputs.questIssues }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         with:
           script: |
-            const { runPollenGrant } = require('./.github/scripts/quest-reward-payout.js');
-            await runPollenGrant({ core });
+            const { runQuestIssueSync } = require('./.github/scripts/quest-reward-payout.js');
+            await runQuestIssueSync({ core });
 
-      - name: Comment payout receipt
-        if: steps.grant.outputs.result != ''
+      - name: Comment quest issue receipt
+        if: steps.record.outputs.results != ''
         uses: actions/github-script@v7
         env:
-          RESULT: ${{ steps.grant.outputs.result }}
-          QUEST: ${{ steps.linked.outputs.quest }}
+          RESULTS: ${{ steps.record.outputs.results }}
           PAYOUT_FALLBACK: ${{ env.QUEST_PAYOUT_FALLBACK }}
         with:
           github-token: ${{ steps.token.outputs.token }}

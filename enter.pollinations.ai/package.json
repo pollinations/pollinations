@@ -13,7 +13,7 @@
         "predev": "npm run build:ui",
         "dev:frontend": "vite dev --config frontend/vite.config.ts",
         "predev:frontend": "npm run build:ui",
-        "dev:worker": "npm run decrypt-vars && vite build --mode=development && wrangler dev --port 3001 --local --persist-to .wrangler/state --show-interactive-dev-session false",
+        "dev:worker": "npm run decrypt-vars && vite build --mode=development && wrangler dev --port 3001 --local --persist-to .wrangler/state --show-interactive-dev-session false --test-scheduled",
         "dev:production": "npm run decrypt-vars:production && CLOUDFLARE_ENV=production vite dev",
         "test": "npm run decrypt-vars && vitest run",
         "test:local": "npm run decrypt-vars && CLOUDFLARE_ENV=local vitest run",

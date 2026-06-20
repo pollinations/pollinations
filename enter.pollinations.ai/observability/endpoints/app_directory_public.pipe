@@ -1,0 +1,43 @@
+DESCRIPTION >
+    Public community app directory — the apps/APPS.md showcase synced daily into
+    Tinybird (app_directory). Every field here is already published on the
+    Pollinations website, so this endpoint is gated by the public read token.
+    Returns the full directory; filter or paginate client-side with the
+    `category`, `platform`, and `limit` params.
+
+TOKEN tinybird_read_public READ
+TOKEN tinybird_read READ
+
+NODE app_directory_public_node
+SQL >
+    %
+    SELECT
+        emoji,
+        name,
+        web_url,
+        description,
+        language,
+        category,
+        platform,
+        github_username,
+        github_user_id,
+        github_repository_url,
+        github_repository_stars,
+        discord_username,
+        submitted_date,
+        issue_url,
+        approved_date,
+        byop,
+        requests_24h
+    FROM app_directory
+    WHERE name != ''
+    {% if defined(category) %}
+    AND category = {{String(category)}}
+    {% end %}
+    {% if defined(platform) %}
+    AND position(platform, {{String(platform)}}) > 0
+    {% end %}
+    ORDER BY name ASC
+    LIMIT {{Int32(limit, 1000)}}
+
+TYPE endpoint

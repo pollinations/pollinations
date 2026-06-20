@@ -12,6 +12,7 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "../env.ts";
 import { runD1TinybirdSync } from "../services/d1-tinybird-sync.ts";
+import { runQuestEvaluator } from "../services/quest-evaluator.ts";
 import { runTierRefill } from "../services/tier-refill.ts";
 
 const log = getLogger(["hono", "admin"]);
@@ -120,6 +121,10 @@ export const adminRoutes = new Hono<Env>()
     })
     .post("/trigger-refill", async (c) => {
         const result = await runTierRefill(c.env, c.executionCtx);
+        return c.json(result);
+    })
+    .post("/trigger-quest-evaluator", async (c) => {
+        const result = await runQuestEvaluator(c.env);
         return c.json(result);
     })
     .post("/trigger-d1-sync", async (c) => {

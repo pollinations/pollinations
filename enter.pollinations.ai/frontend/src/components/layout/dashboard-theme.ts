@@ -5,6 +5,7 @@ import {
     BeakerIcon,
     LockIcon,
     NewspaperIcon,
+    SproutIcon,
     TrendUpIcon,
     WalletIcon,
 } from "@pollinations/ui";
@@ -16,6 +17,7 @@ export const DASHBOARD_NAV_ITEMS = [
     { id: "keys", label: "Keys", icon: LockIcon },
     { id: "pollen", label: "Pollen", icon: WalletIcon },
     { id: "activity", label: "Activity", icon: TrendUpIcon },
+    { id: "quests", label: "Quests", icon: SproutIcon },
 ] as const satisfies readonly {
     id: string;
     label: string;

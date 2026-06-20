@@ -444,6 +444,19 @@ test("runQuestIssueSync installs from the repo root and records each issue", asy
         calls[1].args[calls[1].args.indexOf("--command") + 1],
         /Add a demo app/,
     );
+    const upsertSql = calls[1].args[calls[1].args.indexOf("--command") + 1];
+    assert.match(
+        upsertSql,
+        /reward_amount = CASE\s+WHEN github_quest_issues\.completed_by_pr_number IS NOT NULL\s+THEN github_quest_issues\.reward_amount\s+ELSE excluded\.reward_amount\s+END,/,
+    );
+    assert.match(
+        upsertSql,
+        /state = CASE\s+WHEN github_quest_issues\.completed_by_pr_number IS NOT NULL\s+THEN github_quest_issues\.state\s+ELSE excluded\.state\s+END,/,
+    );
+    assert.match(
+        upsertSql,
+        /assignee_github_id = CASE\s+WHEN github_quest_issues\.completed_by_pr_number IS NOT NULL\s+THEN github_quest_issues\.assignee_github_id\s+ELSE excluded\.assignee_github_id\s+END,/,
+    );
 
     assert.deepEqual(JSON.parse(core.outputs.results), [
         {

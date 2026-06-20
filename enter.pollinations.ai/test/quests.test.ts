@@ -13,10 +13,6 @@ import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
 import { runQuestEvaluator } from "../src/services/quest-evaluator.ts";
 import { QUESTS, type QuestModule } from "../src/services/quests/index.ts";
-import {
-    findAppListingGrants,
-    parseAppsMarkdown,
-} from "../src/services/quests/list-app-on-pollinations.ts";
 import { test } from "./fixtures.ts";
 
 async function getOnlyUser() {
@@ -419,32 +415,56 @@ test("github account age quest waits until threshold", async ({
     expect(balance?.packBalance).toBeCloseTo(user.packBalance ?? 0);
 });
 
-test("app listing quest grants approved apps from APPS.md", async ({
+test("quest evaluator grants approved app quest per app", async ({
+    mocks,
     sessionToken: _sessionToken,
 }) => {
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
-    const apps = parseAppsMarkdown(`
-# Apps
+    mocks.tinybird.state.appDirectoryResponse = [
+        {
+            name: "Demo App",
+            web_url: "https://example.com/demo",
+            github_user_id: "12345",
+            github_username: "testuser",
+            issue_url:
+                "https://github.com/pollinations/pollinations/issues/555",
+            approved_date: "2026-06-19",
+        },
+    ];
+    await mocks.enable("github", "tinybird");
 
-| Emoji | Name | Web_URL | Description | Language | Category | Platform | GitHub_Username | GitHub_UserID | Github_Repository_URL | Github_Repository_Stars | Discord_Username | Other | Submitted_Date | Issue_URL | Approved_Date | BYOP | Requests_24h |
-| ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
-| 🧪 | Demo App | https://example.com/demo | Demo app. | en | build | web | @testuser | 12345 |  | |  | | 2026-06-18 | https://github.com/pollinations/pollinations/issues/555 | 2026-06-19 |  |  |
-| 🧪 | Waiting App | https://example.com/waiting | Waiting app. | en | build | web | @testuser | 12345 |  | |  | | 2026-06-18 | https://github.com/pollinations/pollinations/issues/556 | - |  |  |
-`);
-    const proposedGrants = await findAppListingGrants(db, apps);
-    expect(proposedGrants).toHaveLength(1);
+    const first = await runQuestEvaluator(env);
+    expect(first.results).toEqual([
+        { questId: "onboarding:first_api_key", scanned: 0, granted: 0 },
+        { questId: "spend:first_top_up", scanned: 0, granted: 0 },
+        {
+            questId: "onboarding:established_github_account",
+            scanned: 1,
+            granted: 1,
+        },
+        { questId: COMMUNITY_GITHUB_QUEST_ID, scanned: 0, granted: 0 },
+        { questId: "grow:list_app_on_pollinations", scanned: 1, granted: 1 },
+    ]);
 
-    const first = await grantReward(db, proposedGrants[0]);
-    const second = await grantReward(db, proposedGrants[0]);
-    expect(first.granted).toBe(true);
-    expect(second.granted).toBe(false);
+    const second = await runQuestEvaluator(env);
+    expect(second.results).toEqual([
+        { questId: "onboarding:first_api_key", scanned: 0, granted: 0 },
+        { questId: "spend:first_top_up", scanned: 0, granted: 0 },
+        {
+            questId: "onboarding:established_github_account",
+            scanned: 0,
+            granted: 0,
+        },
+        { questId: COMMUNITY_GITHUB_QUEST_ID, scanned: 0, granted: 0 },
+        { questId: "grow:list_app_on_pollinations", scanned: 1, granted: 0 },
+    ]);
 
     const [balance] = await db
         .select({ packBalance: schema.user.packBalance })
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
-    expect(balance?.packBalance).toBeCloseTo((user.packBalance ?? 0) + 5);
+    expect(balance?.packBalance).toBeCloseTo((user.packBalance ?? 0) + 10);
 
     const grants = await db
         .select({

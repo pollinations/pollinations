@@ -128,9 +128,9 @@ function grantTitle(
     const catalogItem = catalogKey ? catalogById.get(catalogKey) : null;
     if (catalogItem) return catalogItem.title;
     return (
-        metadataString(grant.metadata, "appName") ??
         metadataString(grant.metadata, "issueTitle") ??
         metadataString(grant.metadata, "title") ??
+        metadataString(grant.metadata, "appName") ??
         (grant.questId
             ? humanizeSlug(grant.questId)
             : humanizeSlug(grant.source))
@@ -164,10 +164,12 @@ function grantLinkIsGitHub(grant: QuestGrant): boolean {
 }
 
 function grantContext(grant: QuestGrant): string | null {
+    const appName = metadataString(grant.metadata, "appName");
     const issueNumber = metadataNumber(grant.metadata, "issueNumber");
     const prNumber = metadataNumber(grant.metadata, "prNumber");
     const githubUsername = metadataString(grant.metadata, "githubUsername");
     const parts: string[] = [];
+    if (appName) parts.push(`App: ${appName}`);
     if (issueNumber != null) parts.push(`Issue #${issueNumber}`);
     if (prNumber != null) parts.push(`PR #${prNumber}`);
     if (githubUsername) parts.push(`@${githubUsername}`);

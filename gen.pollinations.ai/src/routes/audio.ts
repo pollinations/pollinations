@@ -849,10 +849,10 @@ async function parseSpeechRequest(c: AudioContext): Promise<
         const parsed: CreateSpeechRequest & { reference_audio?: File } = {
             model: (formData.get("model") as string | null) || undefined,
             input: typeof input === "string" ? input : "",
-            safe: (formData.get("safe") as SafeValue | null) || undefined,
+            safe: (formData.get("safe") as string | undefined) || undefined,
             voice: (formData.get("voice") as string | null) || "alloy",
             response_format:
-                (formData.get("response_format") as string | null) || "mp3",
+                (formData.get("response_format") as "wav" | "mp3" | "flac" | "opus" | "aac" | "pcm") || "mp3",
             duration: parseOptionalNumber(formData.get("duration"), "duration"),
             instrumental: parseOptionalBoolean(
                 formData.get("instrumental"),

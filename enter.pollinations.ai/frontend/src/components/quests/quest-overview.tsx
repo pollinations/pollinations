@@ -1,16 +1,26 @@
 import {
+    AppIcon,
+    CheckIcon,
     Chip,
     ClockIcon,
     GitHubIcon,
     InlineLink,
+    KeyIcon,
     SproutIcon,
-    StatCard,
     Surface,
     TabButton,
     Text,
+    TokensIcon,
+    WalletIcon,
 } from "@pollinations/ui";
 import { formatPollen, PaidChip, TierChip } from "@pollinations/ui/wallet";
-import { type FC, useEffect, useMemo, useState } from "react";
+import {
+    type ComponentType,
+    type FC,
+    useEffect,
+    useMemo,
+    useState,
+} from "react";
 import { apiClient } from "../../api.ts";
 import type {
     QuestCatalogItem,
@@ -48,6 +58,77 @@ const INITIAL_STATE: FetchState = {
     loading: true,
     error: null,
 };
+
+type IconComponent = ComponentType<{ className?: string }>;
+
+// Category metadata decoded from the quest id prefix (onboarding: / spend: /
+// grow: / github:). Drives section grouping, ordering, and the icon medallion.
+// Pure display logic — no new backend data.
+type CategoryKey = "plant" | "grow" | "community";
+
+type CategoryMeta = {
+    key: CategoryKey;
+    label: string;
+    blurb: string;
+    icon: IconComponent;
+    order: number;
+    tint: string;
+};
+
+const CATEGORY_PLANT: CategoryMeta = {
+    key: "plant",
+    label: "Plant",
+    blurb: "Get set up",
+    icon: SproutIcon,
+    order: 0,
+    tint: "text-intent-success-text",
+};
+const CATEGORY_GROW: CategoryMeta = {
+    key: "grow",
+    label: "Grow",
+    blurb: "Go deeper",
+    icon: WalletIcon,
+    order: 1,
+    tint: "text-intent-news-text",
+};
+const CATEGORY_COMMUNITY: CategoryMeta = {
+    key: "community",
+    label: "Community",
+    blurb: "Build for others",
+    icon: GitHubIcon,
+    order: 2,
+    tint: "text-theme-text-soft",
+};
+
+const CATEGORY_ORDER: CategoryMeta[] = [
+    CATEGORY_PLANT,
+    CATEGORY_GROW,
+    CATEGORY_COMMUNITY,
+];
+
+function categoryForQuest(quest: QuestCatalogItem): CategoryMeta {
+    const id = quest.id;
+    if (id.startsWith("github:") || quest.kind === "github_issue") {
+        return CATEGORY_COMMUNITY;
+    }
+    if (id.startsWith("onboarding:")) return CATEGORY_PLANT;
+    // spend: + grow: + anything else product-y maps to the middle "Grow" lane.
+    return CATEGORY_GROW;
+}
+
+// Per-quest icon medallion. More specific than the category icon where the id
+// makes the intent obvious.
+function iconForQuest(quest: QuestCatalogItem): IconComponent {
+    const id = quest.id;
+    if (id.startsWith("github:") || quest.kind === "github_issue") {
+        return GitHubIcon;
+    }
+    if (id.includes("api_key") || id.includes("first_api_key")) return KeyIcon;
+    if (id.startsWith("spend:") || id.includes("top_up")) return WalletIcon;
+    if (id.includes("github_account")) return GitHubIcon;
+    if (id.startsWith("grow:") || id.includes("list_app")) return AppIcon;
+    return SproutIcon;
+}
 
 function formatGrantAmount(value: number | null): string {
     if (value == null) return "TBD";
@@ -172,6 +253,54 @@ function BalanceBucketChip({ bucket }: { bucket: string }) {
     );
 }
 
+// Tinted circular icon holder left of each quest. The single biggest visual
+// delta from the old flat-row look.
+function IconMedallion({
+    icon: Icon,
+    tint,
+    completed = false,
+}: {
+    icon: IconComponent;
+    tint: string;
+    completed?: boolean;
+}) {
+    return (
+        <span
+            className={[
+                "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
+                completed
+                    ? "bg-intent-success-bg-light text-intent-success-text"
+                    : `bg-theme-bg-active ${tint}`,
+            ].join(" ")}
+        >
+            {completed ? (
+                <CheckIcon className="h-5 w-5" />
+            ) : (
+                <Icon className="h-5 w-5" />
+            )}
+        </span>
+    );
+}
+
+// Reward "seed coin": a Pollen glyph + tabular amount. Weight scales gently
+// with size (outline feel at small amounts) without slot-machine emphasis.
+function RewardCoin({ amount }: { amount: number | null }) {
+    const big = (amount ?? 0) >= 5;
+    return (
+        <span
+            className={[
+                "inline-flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1 text-sm",
+                big
+                    ? "bg-intent-news-bg-light font-semibold text-intent-news-text"
+                    : "bg-theme-bg-active font-medium text-theme-text-soft",
+            ].join(" ")}
+        >
+            <TokensIcon className="h-3.5 w-3.5" />
+            <span className="tabular-nums">{formatRewardLabel(amount)}</span>
+        </span>
+    );
+}
+
 function CatalogQuestCard({
     quest,
     completed,
@@ -180,40 +309,47 @@ function CatalogQuestCard({
     completed: boolean;
 }) {
     const assignees = quest.assignees ?? [];
+    const category = categoryForQuest(quest);
 
     return (
-        <Surface className="space-y-3">
-            <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                        <Text as="span" weight="semibold" tone="strong">
-                            {quest.title}
-                        </Text>
-                        <StatusChip quest={quest} completed={completed} />
+        <Surface className="flex items-start gap-3">
+            <IconMedallion
+                icon={iconForQuest(quest)}
+                tint={category.tint}
+                completed={completed}
+            />
+            <div className="min-w-0 flex-1 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Text as="span" weight="semibold" tone="strong">
+                                {quest.title}
+                            </Text>
+                            <StatusChip quest={quest} completed={completed} />
+                        </div>
+                        {quest.description && (
+                            <Text size="sm" tone="soft" className="mt-2">
+                                {quest.description}
+                            </Text>
+                        )}
+                        {assignees.length > 0 && (
+                            <Text size="xs" tone="muted" className="mt-1">
+                                {assignees.length === 1
+                                    ? `Claimed by @${assignees[0]}`
+                                    : `${assignees.length} builders on this`}
+                            </Text>
+                        )}
                     </div>
-                    {quest.description && (
-                        <Text size="sm" tone="soft" className="mt-2">
-                            {quest.description}
-                        </Text>
-                    )}
-                    {assignees.length > 0 && (
-                        <Text size="xs" tone="muted" className="mt-1">
-                            Assigned to{" "}
-                            {assignees.map((name) => `@${name}`).join(", ")}
-                        </Text>
-                    )}
+                    <div className="shrink-0">
+                        <RewardCoin amount={quest.rewardAmount} />
+                    </div>
                 </div>
-                <div className="shrink-0">
-                    <PaidChip size="sm">
-                        {formatRewardLabel(quest.rewardAmount)}
-                    </PaidChip>
-                </div>
+                {quest.url && (
+                    <InlineLink href={quest.url} className="text-sm">
+                        View details
+                    </InlineLink>
+                )}
             </div>
-            {quest.url && (
-                <InlineLink href={quest.url} className="text-sm">
-                    View details
-                </InlineLink>
-            )}
         </Surface>
     );
 }
@@ -238,7 +374,7 @@ function StatusChip({
 }) {
     if (completed) {
         return (
-            <Chip size="sm" intent="neutral">
+            <Chip size="sm" intent="success">
                 Completed
             </Chip>
         );
@@ -265,46 +401,172 @@ function CompletedGrantCard({
     const showGitHubIcon = grantLinkIsGitHub(grant);
 
     return (
-        <Surface className="space-y-3">
-            <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                        <Text as="span" weight="semibold" tone="strong">
-                            {grantTitle(grant, catalogById)}
-                        </Text>
-                        <BalanceBucketChip bucket={grant.balanceBucket} />
-                    </div>
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <Text as="span" size="xs" tone="muted">
-                            {formatTimestamp(grant.createdAt)}
-                        </Text>
-                        {context && (
-                            <Text as="span" size="xs" tone="muted">
-                                {context}
+        <Surface className="flex items-start gap-3 opacity-80">
+            <IconMedallion icon={CheckIcon} tint="" completed />
+            <div className="min-w-0 flex-1 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Text as="span" weight="semibold" tone="strong">
+                                {grantTitle(grant, catalogById)}
                             </Text>
-                        )}
+                            <BalanceBucketChip bucket={grant.balanceBucket} />
+                        </div>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <Text as="span" size="xs" tone="muted">
+                                {formatTimestamp(grant.createdAt)}
+                            </Text>
+                            {context && (
+                                <Text as="span" size="xs" tone="muted">
+                                    {context}
+                                </Text>
+                            )}
+                        </div>
+                    </div>
+                    <div className="shrink-0">
+                        <Text
+                            as="span"
+                            weight="semibold"
+                            tone="strong"
+                            className="tabular-nums text-intent-success-text"
+                        >
+                            +{formatGrantAmount(grant.pollenCredited)}
+                        </Text>
                     </div>
                 </div>
-                <div className="shrink-0">
-                    <Text
-                        as="span"
-                        weight="semibold"
-                        tone="strong"
-                        className="tabular-nums"
-                    >
-                        +{formatGrantAmount(grant.pollenCredited)}
-                    </Text>
-                </div>
+                {url && (
+                    <InlineLink href={url} className="text-sm">
+                        {showGitHubIcon && (
+                            <GitHubIcon className="h-3.5 w-3.5 shrink-0" />
+                        )}
+                        {grantLinkLabel(grant)}
+                    </InlineLink>
+                )}
             </div>
-            {url && (
-                <InlineLink href={url} className="text-sm">
-                    {showGitHubIcon && (
-                        <GitHubIcon className="h-3.5 w-3.5 shrink-0" />
-                    )}
-                    {grantLinkLabel(grant)}
-                </InlineLink>
-            )}
         </Surface>
+    );
+}
+
+// On-brand "endowed progress" header: the sprout grows through discrete stages
+// (seed → sprout → leafy → bloom) as completion rises, wrapped in a thin SVG
+// progress ring. Replaces the three redundant stat cards. Pure derived data.
+function GardenProgress({
+    completed,
+    total,
+    totalPollen,
+}: {
+    completed: number;
+    total: number;
+    totalPollen: number;
+}) {
+    const safeTotal = Math.max(total, 1);
+    const ratio = Math.min(1, completed / safeTotal);
+    const radius = 34;
+    const circumference = 2 * Math.PI * radius;
+    const dash = circumference * ratio;
+    const stage = ratio >= 1 ? 4 : ratio >= 0.66 ? 3 : ratio >= 0.33 ? 2 : 1;
+    const allDone = total > 0 && completed >= total;
+
+    return (
+        <Surface
+            variant="card-themed"
+            className="flex items-center gap-5 sm:gap-6"
+        >
+            <div className="relative h-20 w-20 shrink-0">
+                <svg
+                    aria-hidden="true"
+                    viewBox="0 0 80 80"
+                    className="h-20 w-20 -rotate-90"
+                >
+                    <circle
+                        cx="40"
+                        cy="40"
+                        r={radius}
+                        fill="none"
+                        strokeWidth="5"
+                        className="stroke-theme-bg-active"
+                    />
+                    <circle
+                        cx="40"
+                        cy="40"
+                        r={radius}
+                        fill="none"
+                        strokeWidth="5"
+                        strokeLinecap="round"
+                        strokeDasharray={`${dash} ${circumference}`}
+                        className="stroke-intent-success-text transition-[stroke-dasharray] duration-700 ease-out"
+                    />
+                </svg>
+                <span className="absolute inset-0 flex items-center justify-center">
+                    <SproutIcon
+                        className={[
+                            "text-intent-success-text transition-all duration-500",
+                            stage === 1
+                                ? "h-5 w-5 opacity-70"
+                                : stage === 2
+                                  ? "h-7 w-7 opacity-85"
+                                  : "h-9 w-9 opacity-100",
+                        ].join(" ")}
+                    />
+                </span>
+            </div>
+            <div className="min-w-0 flex-1">
+                <Text
+                    as="div"
+                    size="micro"
+                    tone="soft"
+                    weight="bold"
+                    className="uppercase tracking-wide"
+                >
+                    Your garden
+                </Text>
+                <Text
+                    as="div"
+                    weight="semibold"
+                    tone="strong"
+                    className="mt-1 text-lg"
+                >
+                    {allDone
+                        ? "In full bloom 🌸"
+                        : `${completed} of ${total} quests`}
+                </Text>
+                <Text as="div" size="sm" tone="soft" className="mt-0.5">
+                    {formatGrantAmount(totalPollen)} Pollen earned
+                </Text>
+            </div>
+        </Surface>
+    );
+}
+
+function SectionHeader({
+    category,
+    done,
+    total,
+}: {
+    category: CategoryMeta;
+    done: number;
+    total: number;
+}) {
+    const Icon = category.icon;
+    return (
+        <div className="mt-1 flex items-center gap-2">
+            <Icon className={`h-4 w-4 shrink-0 ${category.tint}`} />
+            <Text
+                as="span"
+                size="micro"
+                tone="soft"
+                weight="bold"
+                className="uppercase tracking-wide"
+            >
+                {category.label}
+            </Text>
+            <Text as="span" size="xs" tone="muted">
+                — {category.blurb}
+            </Text>
+            <Chip size="sm" intent="neutral" className="ml-auto tabular-nums">
+                {done} / {total}
+            </Chip>
+        </div>
     );
 }
 
@@ -374,18 +636,19 @@ export const QuestOverview: FC<QuestOverviewProps> = ({ githubUsername }) => {
             ),
         [state.grants],
     );
+
+    // Visible available quests, ordered so an easy win (cheapest reward) is
+    // always near the top, then grouped by category for the journey framing.
     const visibleCatalog = useMemo(
         () =>
             state.catalog.filter((quest) => {
                 if (completedCatalogIds.has(quest.id)) return false;
-                if (activeTab === "available") {
-                    return (
-                        quest.availability === "available" ||
-                        (quest.availability === "claimed" &&
-                            claimedByUser(quest, normalizedGithubUsername))
-                    );
-                }
-                return false;
+                if (activeTab !== "available") return false;
+                return (
+                    quest.availability === "available" ||
+                    (quest.availability === "claimed" &&
+                        claimedByUser(quest, normalizedGithubUsername))
+                );
             }),
         [
             activeTab,
@@ -395,38 +658,53 @@ export const QuestOverview: FC<QuestOverviewProps> = ({ githubUsername }) => {
         ],
     );
 
-    const availableCount = state.catalog.filter(
-        (quest) =>
-            !completedCatalogIds.has(quest.id) &&
-            (quest.availability === "available" ||
-                (quest.availability === "claimed" &&
-                    claimedByUser(quest, normalizedGithubUsername))),
-    ).length;
+    // Group available quests into the journey sections.
+    const grouped = useMemo(() => {
+        const map = new Map<CategoryKey, QuestCatalogItem[]>();
+        for (const quest of visibleCatalog) {
+            const key = categoryForQuest(quest).key;
+            const list = map.get(key) ?? [];
+            list.push(quest);
+            map.set(key, list);
+        }
+        // Cheapest reward first within each lane (the always-visible easy win).
+        for (const list of map.values()) {
+            list.sort(
+                (a, b) =>
+                    (a.rewardAmount ?? Number.POSITIVE_INFINITY) -
+                    (b.rewardAmount ?? Number.POSITIVE_INFINITY),
+            );
+        }
+        return map;
+    }, [visibleCatalog]);
+
+    // Per-category totals (available + already-completed) for the section count
+    // chips — gives the "2 / 3" goal-gradient cue.
+    const categoryTotals = useMemo(() => {
+        const totals = new Map<CategoryKey, { done: number; total: number }>();
+        for (const quest of state.catalog) {
+            const key = categoryForQuest(quest).key;
+            const entry = totals.get(key) ?? { done: 0, total: 0 };
+            entry.total += 1;
+            if (completedCatalogIds.has(quest.id)) entry.done += 1;
+            totals.set(key, entry);
+        }
+        return totals;
+    }, [state.catalog, completedCatalogIds]);
+
+    const availableCount = visibleCatalog.length;
+    const completedCount = state.grants.length;
+    const totalQuests = state.catalog.length;
     const currentItems =
-        activeTab === "completed" ? state.grants.length : visibleCatalog.length;
+        activeTab === "completed" ? completedCount : availableCount;
 
     return (
-        <div className="flex flex-col gap-4">
-            <div className="grid gap-2 sm:grid-cols-3">
-                <Surface>
-                    <StatCard
-                        label="Available"
-                        value={availableCount.toLocaleString()}
-                    />
-                </Surface>
-                <Surface>
-                    <StatCard
-                        label="Completed"
-                        value={state.grants.length.toLocaleString()}
-                    />
-                </Surface>
-                <Surface>
-                    <StatCard
-                        label="Earned"
-                        value={formatGrantAmount(state.totalPollen)}
-                    />
-                </Surface>
-            </div>
+        <div className="flex flex-col gap-5">
+            <GardenProgress
+                completed={completedCount}
+                total={Math.max(totalQuests, completedCount)}
+                totalPollen={state.totalPollen}
+            />
 
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap gap-1.5">
@@ -438,7 +716,7 @@ export const QuestOverview: FC<QuestOverviewProps> = ({ githubUsername }) => {
                         >
                             {tab === "available"
                                 ? `Available (${availableCount})`
-                                : `Completed (${state.grants.length})`}
+                                : `Completed (${completedCount})`}
                         </TabButton>
                     ))}
                 </div>
@@ -460,29 +738,62 @@ export const QuestOverview: FC<QuestOverviewProps> = ({ githubUsername }) => {
                     <SproutIcon className="mt-0.5 h-5 w-5 shrink-0 text-theme-text-muted" />
                     <div className="min-w-0">
                         <p className="font-semibold text-ink-900">
-                            No {activeTab} quests
+                            {activeTab === "available"
+                                ? "Your garden is in full bloom"
+                                : "No completed quests yet"}
                         </p>
+                        <Text size="sm" tone="soft" className="mt-1">
+                            {activeTab === "available"
+                                ? "You've cleared every available quest. Nice work."
+                                : "Complete a quest to start your garden."}
+                        </Text>
                     </div>
                 </Surface>
             )}
 
-            <div className="flex flex-col gap-3">
-                {activeTab === "completed"
-                    ? state.grants.map((grant, index) => (
-                          <CompletedGrantCard
-                              key={`${grant.source}-${grant.questId ?? grant.sourceRef ?? "grant"}-${grant.createdAt}-${index}`}
-                              grant={grant}
-                              catalogById={catalogById}
-                          />
-                      ))
-                    : visibleCatalog.map((quest) => (
-                          <CatalogQuestCard
-                              key={quest.id}
-                              quest={quest}
-                              completed={completedCatalogIds.has(quest.id)}
-                          />
-                      ))}
-            </div>
+            {activeTab === "completed" ? (
+                <div className="flex flex-col gap-3">
+                    {state.grants.map((grant, index) => (
+                        <CompletedGrantCard
+                            key={`${grant.source}-${grant.questId ?? grant.sourceRef ?? "grant"}-${grant.createdAt}-${index}`}
+                            grant={grant}
+                            catalogById={catalogById}
+                        />
+                    ))}
+                </div>
+            ) : (
+                <div className="flex flex-col gap-5">
+                    {CATEGORY_ORDER.map((category) => {
+                        const quests = grouped.get(category.key) ?? [];
+                        if (quests.length === 0) return null;
+                        const totals = categoryTotals.get(category.key) ?? {
+                            done: 0,
+                            total: quests.length,
+                        };
+                        return (
+                            <div
+                                key={category.key}
+                                className="flex flex-col gap-3"
+                            >
+                                <SectionHeader
+                                    category={category}
+                                    done={totals.done}
+                                    total={totals.total}
+                                />
+                                {quests.map((quest) => (
+                                    <CatalogQuestCard
+                                        key={quest.id}
+                                        quest={quest}
+                                        completed={completedCatalogIds.has(
+                                            quest.id,
+                                        )}
+                                    />
+                                ))}
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
         </div>
     );
 };

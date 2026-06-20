@@ -1,5 +1,6 @@
+import type { GrantRewardInput } from "@shared/billing/grant-reward.ts";
 import * as schema from "@shared/db/better-auth.ts";
-import type { RewardProposal } from "@shared/quests/definitions.ts";
+import { PRODUCT_QUEST_REWARD_SOURCE } from "@shared/quests/definitions.ts";
 import { inArray } from "drizzle-orm";
 import { fetchTinybirdRows, requireTinybirdReadToken } from "../tinybird.ts";
 import type { QuestDb, QuestModule } from "./types.ts";
@@ -20,17 +21,16 @@ export const listAppOnPollinationsQuest = {
         description: "Get an app approved for the Pollinations app directory.",
         rewardAmount: 5,
         balanceBucket: "pack",
-        payoutScope: "once_per_event_per_user",
     },
     async evaluate({ db, env }) {
-        return findRewardProposals(db, env);
+        return findGrants(db, env);
     },
 } satisfies QuestModule;
 
-async function findRewardProposals(
+async function findGrants(
     db: QuestDb,
     env: CloudflareBindings,
-): Promise<RewardProposal[]> {
+): Promise<GrantRewardInput[]> {
     const tinybirdOrigin = new URL(env.TINYBIRD_INGEST_URL).origin;
     const tinybirdToken = requireTinybirdReadToken(env);
     const apps = await fetchTinybirdRows<AppDirectoryQuestRow>(
@@ -65,10 +65,15 @@ async function findRewardProposals(
 
         return [
             {
+                idempotencyKey: `quest:${listAppOnPollinationsQuest.definition.id}:user:${user.userId}:event:app:${app.issue_url}`,
                 userId: user.userId,
-                eventId: `app:${app.issue_url}`,
+                source: PRODUCT_QUEST_REWARD_SOURCE,
+                questId: listAppOnPollinationsQuest.definition.id,
+                amount: listAppOnPollinationsQuest.definition.rewardAmount,
+                bucket: listAppOnPollinationsQuest.definition.balanceBucket,
                 sourceRef: app.issue_url,
                 metadata: {
+                    title: listAppOnPollinationsQuest.definition.title,
                     appName: app.name,
                     appUrl: app.web_url,
                     issueUrl: app.issue_url,

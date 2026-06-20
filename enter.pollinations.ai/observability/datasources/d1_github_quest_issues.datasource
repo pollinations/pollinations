@@ -19,7 +19,6 @@ SCHEMA >
     `completed_at` Nullable(Int64) `json:$.completed_at`,
     `github_created_at` Nullable(Int64) `json:$.github_created_at`,
     `github_updated_at` Nullable(Int64) `json:$.github_updated_at`,
-    `metadata_json` Nullable(String) `json:$.metadata_json`,
     `updated_at` Int64 `json:$.updated_at`,
     `synced_at` DateTime `json:$.synced_at`
 

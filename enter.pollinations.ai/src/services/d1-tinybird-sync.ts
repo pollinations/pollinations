@@ -54,7 +54,7 @@ const TABLES: TableConfig[] = [
                        assignee_github_id, assignee_login, assignees_json,
                        completed_by_pr_number, completed_at,
                        github_created_at, github_updated_at,
-                       metadata_json, updated_at
+                       updated_at
                 FROM github_quest_issues`,
     },
     {

@@ -1,12 +1,10 @@
-import type { Bucket } from "@shared/billing/deduction.ts";
+import type { GrantRewardInput } from "@shared/billing/grant-reward.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import {
     buildGitHubQuestRewardKey,
     COMMUNITY_GITHUB_QUEST_ID,
     GITHUB_QUEST_DEFAULT_BALANCE_BUCKET,
-    GITHUB_QUEST_PAYOUT_SCOPE,
     GITHUB_QUEST_REWARD_SOURCE,
-    type RewardProposal,
 } from "@shared/quests/definitions.ts";
 import { desc, sql } from "drizzle-orm";
 import type { QuestDb, QuestInstance, QuestModule } from "./types.ts";
@@ -33,11 +31,9 @@ export const communityGitHubIssueQuest = {
         description: "Complete an open POLLEN-QUEST issue on GitHub.",
         rewardAmount: 0,
         balanceBucket: GITHUB_QUEST_DEFAULT_BALANCE_BUCKET,
-        payoutScope: GITHUB_QUEST_PAYOUT_SCOPE,
-        catalogMode: "instances",
     },
     async evaluate({ db }) {
-        return findRewardProposals(db);
+        return findGrants(db);
     },
     async instances({ db }) {
         return loadQuestInstances(db);
@@ -53,15 +49,10 @@ async function loadQuestInstances(db: QuestDb): Promise<QuestInstance[]> {
     return rows.map((issue) => ({
         id: `github:issue:${issue.issueNumber}`,
         kind: "github_issue",
-        questTypeId: issue.questId,
         title: issue.title,
         description: issue.description ?? "",
         availability: githubIssueAvailability(issue.state),
         rewardAmount: issue.rewardAmount,
-        rewardText:
-            issue.rewardAmount == null ? null : `${issue.rewardAmount} Pollen`,
-        balanceBucket: issue.balanceBucket as Bucket,
-        payoutScope: GITHUB_QUEST_PAYOUT_SCOPE,
         url: issue.url,
         issueNumber: issue.issueNumber,
         assignees: parseAssignees(issue.assigneesJson),
@@ -88,7 +79,7 @@ function parseAssignees(assigneesJson: string | null): string[] {
         : [];
 }
 
-async function findRewardProposals(db: QuestDb): Promise<RewardProposal[]> {
+async function findGrants(db: QuestDb): Promise<GrantRewardInput[]> {
     const rows = await db.all<CompletedGitHubQuestIssueRow>(
         sql`
         SELECT
@@ -123,13 +114,13 @@ async function findRewardProposals(db: QuestDb): Promise<RewardProposal[]> {
         idempotencyKey: buildGitHubQuestRewardKey({
             issueNumber: row.issueNumber,
         }),
-        eventId: `issue:${row.issueNumber}`,
         source: GITHUB_QUEST_REWARD_SOURCE,
+        questId: COMMUNITY_GITHUB_QUEST_ID,
         amount: row.rewardAmount,
         bucket: row.balanceBucket,
         sourceRef: `pr:${row.completedByPrNumber}`,
         metadata: {
-            questTypeId: COMMUNITY_GITHUB_QUEST_ID,
+            title: communityGitHubIssueQuest.definition.title,
             issueNumber: row.issueNumber,
             issueTitle: row.title,
             issueUrl: row.url,

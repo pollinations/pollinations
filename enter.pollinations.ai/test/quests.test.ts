@@ -3,26 +3,16 @@ import { grantReward } from "@shared/billing/grant-reward.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import {
     buildGitHubQuestRewardKey,
-    buildRewardKey,
     COMMUNITY_GITHUB_QUEST_ID,
     GITHUB_QUEST_DEFAULT_BALANCE_BUCKET,
-    GITHUB_QUEST_PAYOUT_SCOPE,
     GITHUB_QUEST_REWARD_SOURCE,
     PRODUCT_QUEST_REWARD_SOURCE,
-    type QuestDefinition,
 } from "@shared/quests/definitions.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
-import {
-    buildQuestRewardMetadata,
-    runQuestEvaluator,
-} from "../src/services/quest-evaluator.ts";
-import {
-    getQuestDefinition,
-    QUESTS,
-    type QuestModule,
-} from "../src/services/quests/index.ts";
+import { runQuestEvaluator } from "../src/services/quest-evaluator.ts";
+import { QUESTS, type QuestModule } from "../src/services/quests/index.ts";
 import { test } from "./fixtures.ts";
 
 async function getOnlyUser() {
@@ -42,15 +32,6 @@ async function getOnlyUser() {
     if (!user) throw new Error("Expected fixture user");
     return user;
 }
-
-const mergedPrQuest: QuestDefinition = {
-    id: "github:merged_pr_author",
-    title: "Merge a pull request",
-    description: "Earn Pollen when your pull request is merged.",
-    rewardAmount: 1,
-    balanceBucket: "pack",
-    payoutScope: "once_per_event_per_user",
-};
 
 test("GET /api/quests/catalog returns product and GitHub issue quests", async () => {
     await env.KV.delete("quests:catalog:v2");
@@ -72,7 +53,6 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
             completedAt: null,
             githubCreatedAt: new Date("2026-06-01T00:00:00Z"),
             githubUpdatedAt: new Date("2026-06-02T00:00:00Z"),
-            metadataJson: null,
         },
         {
             issueNumber: 322,
@@ -90,7 +70,6 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
             completedAt: null,
             githubCreatedAt: new Date("2026-06-03T00:00:00Z"),
             githubUpdatedAt: new Date("2026-06-04T00:00:00Z"),
-            metadataJson: null,
         },
         {
             issueNumber: 323,
@@ -108,7 +87,6 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
             completedAt: null,
             githubCreatedAt: new Date("2026-06-05T00:00:00Z"),
             githubUpdatedAt: new Date("2026-06-06T00:00:00Z"),
-            metadataJson: null,
         },
     ]);
 
@@ -122,11 +100,8 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
         quests: {
             id: string;
             kind: string;
-            questTypeId: string;
             availability: string;
             rewardAmount: number | null;
-            balanceBucket: string;
-            payoutScope: string;
             issueNumber: number | null;
             assignees: string[];
         }[];
@@ -142,34 +117,16 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
     expect(
         payload.quests.find((quest) => quest.id === "onboarding:first_api_key"),
     ).toMatchObject({
-        balanceBucket: "pack",
-        payoutScope: "once_per_user",
-    });
-    expect(
-        payload.quests.find(
-            (quest) => quest.id === "onboarding:established_github_account",
-        ),
-    ).toMatchObject({
-        balanceBucket: "pack",
-        payoutScope: "once_per_user",
-    });
-    expect(
-        payload.quests.find(
-            (quest) => quest.id === "grow:list_app_on_pollinations",
-        ),
-    ).toMatchObject({
-        balanceBucket: "pack",
-        payoutScope: "once_per_event_per_user",
+        kind: "product",
+        availability: "available",
+        rewardAmount: 1,
     });
     expect(
         payload.quests.find((quest) => quest.id === "github:issue:321"),
     ).toMatchObject({
         kind: "github_issue",
-        questTypeId: COMMUNITY_GITHUB_QUEST_ID,
         availability: "available",
         rewardAmount: 15,
-        balanceBucket: "pack",
-        payoutScope: GITHUB_QUEST_PAYOUT_SCOPE,
         issueNumber: 321,
         assignees: [],
     });
@@ -220,89 +177,43 @@ test("GET /api/quests/catalog returns product quests with no materialized GitHub
     );
 });
 
-test("buildRewardKey ignores eventId for once-per-user quests", () => {
-    const definition = getQuestDefinition("onboarding:first_api_key");
-    if (!definition) throw new Error("missing test quest definition");
-
-    expect(
-        buildRewardKey(definition, {
-            userId: "user-1",
-            eventId: "ignored-event",
-        }),
-    ).toBe("quest:onboarding:first_api_key:user:user-1");
-});
-
-test("buildRewardKey requires eventId for per-event quests", () => {
-    expect(() =>
-        buildRewardKey(mergedPrQuest, {
-            userId: "user-1",
-        }),
-    ).toThrow(/eventId/);
-
-    expect(
-        buildRewardKey(mergedPrQuest, {
-            userId: "user-1",
-            eventId: "pr-123",
-        }),
-    ).toBe("quest:github:merged_pr_author:user:user-1:event:pr-123");
-});
-
-test("quest reward metadata keeps definition fields authoritative", () => {
-    expect(
-        buildQuestRewardMetadata(mergedPrQuest, {
-            userId: "user-1",
-            metadata: {
-                title: "Overridden title",
-                externalUrl:
-                    "https://github.com/pollinations/pollinations/pull/123",
-            },
-        }),
-    ).toEqual({
-        title: "Merge a pull request",
-        externalUrl: "https://github.com/pollinations/pollinations/pull/123",
-    });
-});
-
 test("per-event reward keys pay once per event", async ({
     sessionToken: _sessionToken,
 }) => {
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
+    const questId = "github:merged_pr_author";
+    const rewardAmount = 1;
+    const bucket = "pack";
 
-    const firstEventKey = buildRewardKey(mergedPrQuest, {
-        userId: user.id,
-        eventId: "pr-123",
-    });
-    const secondEventKey = buildRewardKey(mergedPrQuest, {
-        userId: user.id,
-        eventId: "pr-124",
-    });
+    const firstEventKey = `quest:${questId}:user:${user.id}:event:pr-123`;
+    const secondEventKey = `quest:${questId}:user:${user.id}:event:pr-124`;
 
     const first = await grantReward(db, {
         idempotencyKey: firstEventKey,
         userId: user.id,
         source: "test_quest",
-        questId: mergedPrQuest.id,
-        amount: mergedPrQuest.rewardAmount,
-        bucket: mergedPrQuest.balanceBucket,
+        questId,
+        amount: rewardAmount,
+        bucket,
         sourceRef: "pr:123",
     });
     const duplicate = await grantReward(db, {
         idempotencyKey: firstEventKey,
         userId: user.id,
         source: "test_quest",
-        questId: mergedPrQuest.id,
-        amount: mergedPrQuest.rewardAmount,
-        bucket: mergedPrQuest.balanceBucket,
+        questId,
+        amount: rewardAmount,
+        bucket,
         sourceRef: "pr:123",
     });
     const secondEvent = await grantReward(db, {
         idempotencyKey: secondEventKey,
         userId: user.id,
         source: "test_quest",
-        questId: mergedPrQuest.id,
-        amount: mergedPrQuest.rewardAmount,
-        bucket: mergedPrQuest.balanceBucket,
+        questId,
+        amount: rewardAmount,
+        bucket,
         sourceRef: "pr:124",
     });
 
@@ -440,7 +351,6 @@ test("quest evaluator continues after one quest fails", async ({
             description: "Used to verify runner isolation.",
             rewardAmount: 1,
             balanceBucket: "pack",
-            payoutScope: "once_per_user",
         },
         async evaluate() {
             throw new Error("planned quest failure");
@@ -605,7 +515,6 @@ test("quest evaluator rewards completed GitHub quest issues through shared path"
         completedAt: new Date("2026-06-12T00:00:00Z"),
         githubCreatedAt: new Date("2026-06-10T00:00:00Z"),
         githubUpdatedAt: new Date("2026-06-12T00:00:00Z"),
-        metadataJson: null,
     });
 
     const first = await runQuestEvaluator(env);
@@ -696,7 +605,6 @@ test("quest evaluator rewards completed GitHub quest issues through shared path"
     });
     expect(JSON.parse(grant.metadataJson ?? "{}")).toMatchObject({
         title: "Complete a GitHub quest issue",
-        questTypeId: COMMUNITY_GITHUB_QUEST_ID,
         issueNumber: 777,
         issueTitle: "Ship a focused fix",
         issueUrl: "https://github.com/pollinations/pollinations/issues/777",
@@ -723,7 +631,6 @@ test("account quest history includes GitHub quest reward grants", async ({
         balanceBucket: "pack",
         sourceRef: "pr:789",
         metadataJson: JSON.stringify({
-            questTypeId: COMMUNITY_GITHUB_QUEST_ID,
             issueNumber: 123,
             prNumber: 789,
             role: "assignee",
@@ -761,7 +668,6 @@ test("account quest history includes GitHub quest reward grants", async ({
         pollenCredited: 5,
         sourceRef: "pr:789",
         metadata: {
-            questTypeId: COMMUNITY_GITHUB_QUEST_ID,
             issueNumber: 123,
             prNumber: 789,
             role: "assignee",

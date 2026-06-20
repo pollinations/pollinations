@@ -33,7 +33,6 @@ export async function loadQuestInstances(
     const groups = await Promise.all(
         QUESTS.map((quest) => {
             if (quest.instances) return quest.instances({ db });
-            if (quest.definition.catalogMode === "instances") return [];
             return [definitionQuestInstance(quest.definition)];
         }),
     );

@@ -283,7 +283,6 @@ export const githubQuestIssues = sqliteTable("github_quest_issues", {
   completedAt: integer("completed_at", { mode: "timestamp" }),
   githubCreatedAt: integer("github_created_at", { mode: "timestamp" }),
   githubUpdatedAt: integer("github_updated_at", { mode: "timestamp" }),
-  metadataJson: text("metadata_json"),
   updatedAt: integer("updated_at", { mode: "timestamp" })
     .defaultNow()
     .$onUpdate(() => /* @__PURE__ */ new Date())

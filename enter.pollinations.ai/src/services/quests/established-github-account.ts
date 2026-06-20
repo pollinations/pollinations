@@ -1,6 +1,6 @@
 import { getLogger } from "@logtape/logtape";
-import type { RewardProposal } from "@shared/quests/definitions.ts";
-import { questUserKeyPrefix } from "@shared/quests/definitions.ts";
+import type { GrantRewardInput } from "@shared/billing/grant-reward.ts";
+import { PRODUCT_QUEST_REWARD_SOURCE } from "@shared/quests/definitions.ts";
 import { sql } from "drizzle-orm";
 import type { QuestDb, QuestModule } from "./types.ts";
 
@@ -22,16 +22,13 @@ export const establishedGitHubAccountQuest = {
         description: "Connect a GitHub account that is at least one year old.",
         rewardAmount: 5,
         balanceBucket: "pack",
-        payoutScope: "once_per_user",
     },
     async evaluate({ db, env }) {
-        return findRewardProposals(db, env);
+        return findGrants(db, env);
     },
 } satisfies QuestModule;
 
-const USER_KEY_PREFIX = questUserKeyPrefix(
-    establishedGitHubAccountQuest.definition,
-);
+const USER_KEY_PREFIX = `quest:${establishedGitHubAccountQuest.definition.id}:user:`;
 
 function githubApiHeaders(env: CloudflareBindings): Record<string, string> {
     const headers: Record<string, string> = {
@@ -68,11 +65,11 @@ async function fetchGitHubAccountCreatedAt(
     return Number.isNaN(createdAt.getTime()) ? null : createdAt;
 }
 
-async function findRewardProposals(
+async function findGrants(
     db: QuestDb,
     env: CloudflareBindings,
     now = new Date(),
-): Promise<RewardProposal[]> {
+): Promise<GrantRewardInput[]> {
     const rows = await db.all<GitHubAccountProposalRow>(
         sql`
         SELECT
@@ -88,7 +85,7 @@ async function findRewardProposals(
         LIMIT ${MAX_GRANTS_PER_RUN}`,
     );
 
-    const proposals: RewardProposal[] = [];
+    const grants: GrantRewardInput[] = [];
     for (const row of rows) {
         const createdAt = await fetchGitHubAccountCreatedAt(env, row.githubId);
         if (!createdAt) continue;
@@ -98,10 +95,16 @@ async function findRewardProposals(
         );
         if (accountAgeDays < GITHUB_ACCOUNT_AGE_DAYS) continue;
 
-        proposals.push({
+        grants.push({
+            idempotencyKey: `${USER_KEY_PREFIX}${row.userId}`,
             userId: row.userId,
+            source: PRODUCT_QUEST_REWARD_SOURCE,
+            questId: establishedGitHubAccountQuest.definition.id,
+            amount: establishedGitHubAccountQuest.definition.rewardAmount,
+            bucket: establishedGitHubAccountQuest.definition.balanceBucket,
             sourceRef: `github:${row.githubId}`,
             metadata: {
+                title: establishedGitHubAccountQuest.definition.title,
                 githubId: row.githubId,
                 githubUsername: row.githubUsername,
                 githubAccountCreatedAt: createdAt.toISOString(),
@@ -111,5 +114,5 @@ async function findRewardProposals(
         });
     }
 
-    return proposals;
+    return grants;
 }

@@ -58,20 +58,6 @@ function validateQuestPayoutAmount(amount) {
     return null;
 }
 
-function getGitHubEvent(context) {
-    return {
-        source: "github",
-        event: context.eventName || process.env.GITHUB_EVENT_NAME || "",
-        action: context.payload?.action || "",
-    };
-}
-
-function triggerMatches(trigger, event) {
-    if (trigger.source !== event.source) return false;
-    if (trigger.event !== event.event) return false;
-    return !trigger.actions || trigger.actions.includes(event.action);
-}
-
 function issueHasLabel(issue, label) {
     return issue.labels?.nodes?.some((node) => node.name === label) ?? false;
 }
@@ -147,14 +133,6 @@ function githubIssueRecordFromLinkedIssue({ issue, pr, amount, assignee }) {
         completedAt: pr.merged_at ?? pr.closed_at ?? new Date().toISOString(),
         githubCreatedAt: issue.createdAt,
         githubUpdatedAt: issue.updatedAt,
-        metadata: {
-            questTypeId: COMMUNITY_GITHUB_QUEST_ID,
-            issueNumber: issue.number,
-            issueTitle: issue.title,
-            issueUrl: issue.url,
-            prNumber: pr.number,
-            role: "assignee",
-        },
     };
 }
 
@@ -183,12 +161,6 @@ function githubIssueRecordFromRestIssue(issue) {
         completedAt: issue.closed_at ?? null,
         githubCreatedAt: issue.created_at,
         githubUpdatedAt: issue.updated_at,
-        metadata: {
-            questTypeId: COMMUNITY_GITHUB_QUEST_ID,
-            issueNumber: issue.number,
-            issueTitle: issue.title,
-            issueUrl: issue.html_url,
-        },
     };
 }
 
@@ -210,129 +182,60 @@ async function syncGitHubQuestIssues({ github, context, core }) {
     );
 }
 
-const githubQuestDefinitions = [
-    {
-        id: COMMUNITY_GITHUB_QUEST_ID,
-        title: "Community issue quest",
-        balanceBucket: "pack",
-        payoutScope: "once_per_event_per_user",
-        triggers: [
-            {
-                source: "github",
-                event: "pull_request_target",
-                actions: ["closed"],
-            },
-        ],
-        evaluate: async ({ context, helpers }) => {
-            const pr = context.payload.pull_request;
-            if (!pr?.merged) return { questIssues: [] };
+async function resolveMergedQuestIssue({ github, context }) {
+    const pr = context.payload.pull_request;
+    if (!pr?.merged) return { questIssues: [], reviews: [] };
 
-            const issue = await helpers.findLinkedIssueWithLabel(
-                COMMUNITY_GITHUB_QUEST_LABEL,
-            );
-            if (!issue) return { questIssues: [] };
+    const issue = await findLinkedIssueWithLabel({
+        github,
+        context,
+        label: COMMUNITY_GITHUB_QUEST_LABEL,
+    });
+    if (!issue) return { questIssues: [], reviews: [] };
 
-            const reward = parseReward(issue.body || "");
-            const assignee = firstAssignee(issue);
-            const missing = [];
-            if (!assignee) missing.push("assignee");
-            const amountProblem = validateQuestPayoutAmount(reward);
-            if (amountProblem) missing.push(amountProblem);
+    const reward = parseReward(issue.body || "");
+    const assignee = firstAssignee(issue);
+    const missing = [];
+    if (!assignee) missing.push("assignee");
+    const amountProblem = validateQuestPayoutAmount(reward);
+    if (amountProblem) missing.push(amountProblem);
 
-            if (missing.length) {
-                return {
-                    questIssues: [],
-                    reviews: [
-                        {
-                            issue: issue.number,
-                            prNumber: pr.number,
-                            assignee: assignee?.login ?? null,
-                            amount: reward,
-                            missing,
-                        },
-                    ],
-                };
-            }
-
-            return {
-                questIssues: [
-                    githubIssueRecordFromLinkedIssue({
-                        issue,
-                        pr,
-                        amount: reward,
-                        assignee,
-                    }),
-                ],
-            };
-        },
-    },
-];
-
-async function runGitHubQuestEvaluators({
-    github,
-    context,
-    definitions = githubQuestDefinitions,
-}) {
-    const event = getGitHubEvent(context);
-    const helpers = {
-        findLinkedIssueWithLabel: (label) =>
-            findLinkedIssueWithLabel({ github, context, label }),
-    };
-    const questIssues = [];
-    const reviews = [];
-
-    for (const definition of definitions) {
-        const shouldEvaluate = definition.triggers.some((trigger) =>
-            triggerMatches(trigger, event),
-        );
-        if (!shouldEvaluate) continue;
-
-        const result = await definition.evaluate({
-            context,
-            event,
-            helpers,
-            definition,
-        });
-
-        for (const review of result.reviews ?? []) {
-            reviews.push({ questTypeId: definition.id, ...review });
-        }
-
-        for (const issue of result.questIssues ?? []) {
-            const amount = issue.rewardAmount;
-            const amountProblem = validateQuestPayoutAmount(amount);
-            if (amountProblem) {
-                reviews.push({
-                    questTypeId: definition.id,
-                    issue: issue.issueNumber,
-                    prNumber: context.payload.pull_request?.number,
-                    assignee: issue.assigneeLogin ?? null,
-                    amount,
-                    missing: [amountProblem],
-                });
-                continue;
-            }
-
-            questIssues.push({
-                ...issue,
-                questId: definition.id,
-                balanceBucket: issue.balanceBucket ?? definition.balanceBucket,
-                payoutScope: definition.payoutScope,
-            });
-        }
+    if (missing.length) {
+        return {
+            questIssues: [],
+            reviews: [
+                {
+                    issue: issue.number,
+                    prNumber: pr.number,
+                    assignee: assignee?.login ?? null,
+                    amount: reward,
+                    missing,
+                },
+            ],
+        };
     }
 
-    return { event, questIssues, reviews };
+    return {
+        questIssues: [
+            githubIssueRecordFromLinkedIssue({
+                issue,
+                pr,
+                amount: reward,
+                assignee,
+            }),
+        ],
+        reviews: [],
+    };
 }
 
 async function evaluateQuestIssueUpdates({ github, context, core }) {
-    const { event, questIssues, reviews } = await runGitHubQuestEvaluators({
+    const { questIssues, reviews } = await resolveMergedQuestIssue({
         github,
         context,
     });
 
     core.info(
-        `Quest runner event=${event.event}.${event.action} questIssues=${questIssues.length} reviews=${reviews.length}`,
+        `Quest issue update questIssues=${questIssues.length} reviews=${reviews.length}`,
     );
 
     for (const review of reviews) {
@@ -411,7 +314,6 @@ function upsertGithubQuestIssue(enterDir, issue, spawn = spawnSync) {
             completed_at,
             github_created_at,
             github_updated_at,
-            metadata_json,
             updated_at
         ) VALUES (
             ${sqlNumber(issue.issueNumber)},
@@ -429,7 +331,6 @@ function upsertGithubQuestIssue(enterDir, issue, spawn = spawnSync) {
             ${sqlDate(issue.completedAt)},
             ${sqlDate(issue.githubCreatedAt)},
             ${sqlDate(issue.githubUpdatedAt)},
-            ${sqlJson(issue.metadata ?? null)},
             ${nowSql}
         )
         ON CONFLICT(issue_number) DO UPDATE SET
@@ -453,10 +354,6 @@ function upsertGithubQuestIssue(enterDir, issue, spawn = spawnSync) {
             ),
             github_created_at = excluded.github_created_at,
             github_updated_at = excluded.github_updated_at,
-            metadata_json = COALESCE(
-                excluded.metadata_json,
-                github_quest_issues.metadata_json
-            ),
             updated_at = ${nowSql};
     `;
 
@@ -517,10 +414,8 @@ module.exports = {
     COMMUNITY_GITHUB_QUEST_ID,
     COMMUNITY_GITHUB_QUEST_LABEL,
     evaluateQuestIssueUpdates,
-    githubQuestDefinitions,
     parseReward,
     postReceipt,
-    runGitHubQuestEvaluators,
     runQuestIssueSync,
     syncGitHubQuestIssues,
     validateQuestPayoutAmount,

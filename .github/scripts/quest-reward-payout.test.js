@@ -7,7 +7,6 @@ const {
     COMMUNITY_GITHUB_QUEST_LABEL,
     evaluateQuestIssueUpdates,
     parseReward,
-    runGitHubQuestEvaluators,
     runQuestIssueSync,
     syncGitHubQuestIssues,
     validateQuestPayoutAmount,
@@ -108,17 +107,20 @@ test("community issue quest returns a materialized issue for merged quest PRs", 
         }),
     ]);
 
-    const result = await runGitHubQuestEvaluators({
+    const core = outputCore();
+
+    await evaluateQuestIssueUpdates({
         github,
         context: pullRequestContext(),
+        core,
     });
 
-    assert.equal(result.questIssues.length, 1);
-    assert.equal(result.reviews.length, 0);
-    assert.deepEqual(result.questIssues[0], {
+    const questIssues = JSON.parse(core.outputs.questIssues);
+    assert.equal(questIssues.length, 1);
+    assert.deepEqual(github.comments, []);
+    assert.deepEqual(questIssues[0], {
         questId: COMMUNITY_GITHUB_QUEST_ID,
         balanceBucket: "pack",
-        payoutScope: "once_per_event_per_user",
         issueNumber: 321,
         title: "Fix a model",
         description: "Fix the model config.",
@@ -132,14 +134,6 @@ test("community issue quest returns a materialized issue for merged quest PRs", 
         completedAt: "2026-06-10T00:00:00Z",
         githubCreatedAt: "2026-06-01T00:00:00Z",
         githubUpdatedAt: "2026-06-02T00:00:00Z",
-        metadata: {
-            questTypeId: COMMUNITY_GITHUB_QUEST_ID,
-            issueNumber: 321,
-            issueTitle: "Fix a model",
-            issueUrl: "https://github.com/pollinations/pollinations/issues/321",
-            prNumber: 42,
-            role: "assignee",
-        },
     });
 });
 
@@ -148,13 +142,16 @@ test("community issue quest ignores non-quest linked issues", async () => {
         linkedIssue({ labels: [".BUG"], body: "### Reward\n15" }),
     ]);
 
-    const result = await runGitHubQuestEvaluators({
+    const core = outputCore();
+
+    await evaluateQuestIssueUpdates({
         github,
         context: pullRequestContext(),
+        core,
     });
 
-    assert.deepEqual(result.questIssues, []);
-    assert.deepEqual(result.reviews, []);
+    assert.equal(core.outputs.questIssues, "");
+    assert.deepEqual(github.comments, []);
 });
 
 test("community issue quest returns review when reward data is incomplete", async () => {
@@ -165,80 +162,35 @@ test("community issue quest returns review when reward data is incomplete", asyn
         }),
     ]);
 
-    const result = await runGitHubQuestEvaluators({
+    const core = outputCore();
+
+    await evaluateQuestIssueUpdates({
         github,
         context: pullRequestContext(),
+        core,
     });
 
-    assert.deepEqual(result.questIssues, []);
-    assert.equal(result.reviews.length, 1);
-    assert.deepEqual(result.reviews[0].missing, [
-        "assignee",
-        "valid reward amount in issue body",
+    assert.equal(core.outputs.questIssues, "");
+    assert.equal(github.comments.length, 1);
+    assert.match(github.comments[0].body, /assignee/);
+    assert.match(github.comments[0].body, /valid reward amount in issue body/);
+});
+
+test("community issue quest ignores unmerged PR closes", async () => {
+    const github = githubWithLinkedIssues([
+        linkedIssue({ body: "### Reward\n15" }),
     ]);
-});
+    const core = outputCore();
 
-test("runner enforces trigger allow-list before calling evaluators", async () => {
-    const result = await runGitHubQuestEvaluators({
-        github: githubWithLinkedIssues([]),
-        context: {
-            eventName: "issues",
-            repo: { owner: "pollinations", repo: "pollinations" },
-            payload: { action: "opened", issue: { number: 1 } },
-        },
-        definitions: [
-            {
-                id: "test:pr_only",
-                balanceBucket: "pack",
-                payoutScope: "once_per_user",
-                triggers: [
-                    {
-                        source: "github",
-                        event: "pull_request_target",
-                        actions: ["closed"],
-                    },
-                ],
-                evaluate: () => {
-                    throw new Error("should not run");
-                },
-            },
-        ],
+    await evaluateQuestIssueUpdates({
+        github,
+        context: pullRequestContext({ pull_request: { merged: false } }),
+        core,
     });
 
-    assert.deepEqual(result.questIssues, []);
-    assert.deepEqual(result.reviews, []);
-});
-
-test("runner preserves definition balance bucket on materialized issues", async () => {
-    const result = await runGitHubQuestEvaluators({
-        github: githubWithLinkedIssues([]),
-        context: pullRequestContext(),
-        definitions: [
-            {
-                id: "test:tier_bucket",
-                balanceBucket: "tier",
-                payoutScope: "once_per_event_per_user",
-                triggers: [
-                    {
-                        source: "github",
-                        event: "pull_request_target",
-                        actions: ["closed"],
-                    },
-                ],
-                evaluate: () => ({
-                    questIssues: [
-                        {
-                            issueNumber: 123,
-                            rewardAmount: 15,
-                        },
-                    ],
-                }),
-            },
-        ],
-    });
-
-    assert.equal(result.questIssues.length, 1);
-    assert.equal(result.questIssues[0].balanceBucket, "tier");
+    assert.equal(core.outputs.questIssues, "");
+    assert.equal(github.calls.length, 0);
+    assert.deepEqual(github.comments, []);
 });
 
 test("payout amount validator only requires a positive parsed reward", () => {
@@ -252,52 +204,6 @@ test("payout amount validator only requires a positive parsed reward", () => {
         validateQuestPayoutAmount(0),
         "valid reward amount in issue body",
     );
-});
-
-test("evaluateQuestIssueUpdates writes materialized issue output", async () => {
-    const github = githubWithLinkedIssues([
-        linkedIssue({
-            number: 321,
-            body: "### Reward\n15",
-            assignee: { login: "dev-user", databaseId: 999 },
-        }),
-    ]);
-    const core = outputCore();
-
-    await evaluateQuestIssueUpdates({
-        github,
-        context: pullRequestContext(),
-        core,
-    });
-
-    const questIssues = JSON.parse(core.outputs.questIssues);
-    assert.equal(questIssues.length, 1);
-    assert.equal(questIssues[0].assigneeLogin, "dev-user");
-    assert.equal(questIssues[0].rewardAmount, 15);
-    assert.equal(questIssues[0].state, "completed");
-    assert.deepEqual(github.comments, []);
-});
-
-test("evaluateQuestIssueUpdates comments when linked quest data is incomplete", async () => {
-    const github = githubWithLinkedIssues([
-        linkedIssue({
-            body: "### Reward\nnot-a-number",
-            assignee: null,
-        }),
-    ]);
-    const core = outputCore();
-
-    await evaluateQuestIssueUpdates({
-        github,
-        context: pullRequestContext(),
-        core,
-    });
-
-    assert.equal(core.outputs.questIssues, "");
-    assert.equal(github.comments.length, 1);
-    assert.equal(github.comments[0].issue_number, 123);
-    assert.match(github.comments[0].body, /\*\*Missing:\*\* assignee/);
-    assert.match(github.comments[0].body, /valid reward amount in issue body/);
 });
 
 test("syncGitHubQuestIssues emits materialized records for current issues", async () => {
@@ -353,13 +259,6 @@ test("syncGitHubQuestIssues emits materialized records for current issues", asyn
             completedAt: null,
             githubCreatedAt: "2026-06-01T00:00:00Z",
             githubUpdatedAt: "2026-06-02T00:00:00Z",
-            metadata: {
-                questTypeId: COMMUNITY_GITHUB_QUEST_ID,
-                issueNumber: 456,
-                issueTitle: "Claimed quest",
-                issueUrl:
-                    "https://github.com/pollinations/pollinations/issues/456",
-            },
         },
     ]);
 });

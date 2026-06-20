@@ -128,6 +128,7 @@ function grantTitle(
     const catalogItem = catalogKey ? catalogById.get(catalogKey) : null;
     if (catalogItem) return catalogItem.title;
     return (
+        metadataString(grant.metadata, "appName") ??
         metadataString(grant.metadata, "issueTitle") ??
         metadataString(grant.metadata, "title") ??
         (grant.questId
@@ -142,7 +143,24 @@ function grantUrl(
 ): string | null {
     const catalogKey = catalogKeyForGrant(grant);
     const catalogItem = catalogKey ? catalogById.get(catalogKey) : null;
-    return catalogItem?.url ?? metadataString(grant.metadata, "issueUrl");
+    return (
+        metadataString(grant.metadata, "appUrl") ??
+        catalogItem?.url ??
+        metadataString(grant.metadata, "issueUrl")
+    );
+}
+
+function grantLinkLabel(grant: QuestGrant): string {
+    if (metadataString(grant.metadata, "appUrl")) return "Open app";
+    if (metadataString(grant.metadata, "issueUrl")) return "View on GitHub";
+    return "View details";
+}
+
+function grantLinkIsGitHub(grant: QuestGrant): boolean {
+    return (
+        !metadataString(grant.metadata, "appUrl") &&
+        Boolean(metadataString(grant.metadata, "issueUrl"))
+    );
 }
 
 function grantContext(grant: QuestGrant): string | null {
@@ -256,6 +274,7 @@ function CompletedGrantCard({
 }) {
     const url = grantUrl(grant, catalogById);
     const context = grantContext(grant);
+    const showGitHubIcon = grantLinkIsGitHub(grant);
 
     return (
         <Surface className="space-y-3">
@@ -291,8 +310,10 @@ function CompletedGrantCard({
             </div>
             {url && (
                 <InlineLink href={url} className="text-sm">
-                    <GitHubIcon className="h-3.5 w-3.5 shrink-0" />
-                    View on GitHub
+                    {showGitHubIcon && (
+                        <GitHubIcon className="h-3.5 w-3.5 shrink-0" />
+                    )}
+                    {grantLinkLabel(grant)}
                 </InlineLink>
             )}
         </Surface>

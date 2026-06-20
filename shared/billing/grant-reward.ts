@@ -24,7 +24,7 @@ export interface GrantRewardInput {
     questId?: string | null;
     /** External reference: PR number, Stripe session, generation id, … */
     sourceRef?: string | null;
-    /** Display metadata snapshot (title/url/category) at grant time. */
+    /** Display metadata snapshot (title/url/details) at grant time. */
     metadata?: Record<string, unknown> | null;
 }
 
@@ -39,11 +39,11 @@ type AuthDb = DrizzleD1Database<typeof schema>;
 /**
  * Records a discrete pollen grant and credits the user's balance atomically.
  *
- * This is the generic, source-agnostic generalization of quest-grant-pollen.ts
- * and stripe-webhooks' creditCheckoutSessionOnce(): a single D1 batch that
- * inserts an idempotent reward_grants row and, only when that insert is fresh,
- * adds the pollen to the chosen balance bucket. INSERT OR IGNORE on the unique
- * idempotency_key makes retries safe — a duplicate insert credits nothing.
+ * This follows stripe-webhooks' creditCheckoutSessionOnce(): a single D1 batch
+ * that inserts an idempotent reward_grants row and, only when that insert is
+ * fresh, adds the pollen to the chosen balance bucket. INSERT OR IGNORE on the
+ * unique idempotency_key makes retries safe — a duplicate insert credits
+ * nothing.
  *
  * The grant row is the authoritative fact (real pollen moved); it lives in D1,
  * never only in append-only Tinybird. Worker context only (needs DB binding).
@@ -78,7 +78,7 @@ export async function grantReward(
 
     // Single batch so the grant record and the balance credit commit together.
     // The UPDATE is gated on `changes() = 1` so a duplicate (ignored) insert
-    // credits nothing — identical to quest-grant-pollen.ts.
+    // credits nothing.
     const [, updateResult] = await db.batch([
         db
             .insert(rewardGrants)

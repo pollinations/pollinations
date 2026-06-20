@@ -1,41 +1,18 @@
 import type { Bucket } from "@shared/billing/deduction.ts";
+import * as schema from "@shared/db/better-auth.ts";
 import {
+    catalogDefinitionQuests,
     type PayoutScope,
-    QUEST_DEFINITIONS,
-    type QuestCategory,
-    type QuestEventType,
 } from "@shared/quests/definitions.ts";
+import { desc } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 
-const QUEST_REPO = "pollinations/pollinations";
-const COMMUNITY_QUEST_LABEL = "POLLEN-QUEST";
 const CACHE_KEY = "quests:catalog:v2";
 const CACHE_TTL = 60;
-const GITHUB_HEADERS = {
-    Accept: "application/vnd.github+json",
-    "User-Agent": "pollinations-enter-quest-catalog",
-};
-
-type GitHubIssue = {
-    number: number;
-    title: string;
-    state: "open" | "closed";
-    html_url: string;
-    body: string | null;
-    created_at: string;
-    updated_at: string;
-    closed_at: string | null;
-    user: { login: string } | null;
-    assignees?: { login: string }[];
-    labels?: Array<string | { name?: string }>;
-};
-
-type GitHubSearchResponse = {
-    items?: GitHubIssue[];
-};
 
 export type QuestCatalogItem = {
     id: string;
@@ -43,13 +20,11 @@ export type QuestCatalogItem = {
     questTypeId: string;
     title: string;
     description: string;
-    category: QuestCategory;
     availability: "available" | "claimed" | "completed";
     rewardAmount: number | null;
     rewardText: string | null;
     balanceBucket: Bucket;
     payoutScope: PayoutScope;
-    eventType: QuestEventType;
     url: string | null;
     issueNumber: number | null;
     assignees: string[];
@@ -70,13 +45,11 @@ const questCatalogItemSchema = z.object({
     questTypeId: z.string(),
     title: z.string(),
     description: z.string(),
-    category: z.string(),
     availability: z.enum(["available", "claimed", "completed"]),
     rewardAmount: z.number().nullable(),
     rewardText: z.string().nullable(),
     balanceBucket: z.string(),
     payoutScope: z.string(),
-    eventType: z.string(),
     url: z.string().nullable(),
     issueNumber: z.number().nullable(),
     assignees: z.array(z.string()),
@@ -113,7 +86,7 @@ export const questsRoutes = new Hono<Env>().get(
         const cached = await readCached(c.env.KV);
         if (cached) return c.json(cached);
 
-        const catalog = await buildQuestCatalog();
+        const catalog = await buildQuestCatalog(c.env.DB);
         await c.env.KV.put(CACHE_KEY, JSON.stringify(catalog), {
             expirationTtl: CACHE_TTL,
         });
@@ -127,15 +100,11 @@ async function readCached(
     return await kv.get<QuestCatalogResponse>(CACHE_KEY, "json");
 }
 
-async function buildQuestCatalog(): Promise<QuestCatalogResponse> {
+async function buildQuestCatalog(
+    dbBinding: D1Database,
+): Promise<QuestCatalogResponse> {
     const productQuests = productCatalogItems();
-    let githubQuests: QuestCatalogItem[] = [];
-    try {
-        githubQuests = await fetchGitHubIssueQuests();
-    } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        console.warn(`GitHub quest catalog unavailable: ${message}`);
-    }
+    const githubQuests = await loadGitHubIssueQuests(dbBinding);
     const quests = [...productQuests, ...githubQuests].sort(
         compareCatalogItems,
     );
@@ -147,19 +116,17 @@ async function buildQuestCatalog(): Promise<QuestCatalogResponse> {
 }
 
 function productCatalogItems(): QuestCatalogItem[] {
-    return QUEST_DEFINITIONS.map((definition) => ({
+    return catalogDefinitionQuests().map((definition) => ({
         id: definition.id,
         kind: "product",
         questTypeId: definition.id,
         title: definition.title,
         description: definition.description,
-        category: definition.category,
         availability: "available",
         rewardAmount: definition.rewardAmount,
         rewardText: `${definition.rewardAmount} Pollen`,
         balanceBucket: definition.balanceBucket,
         payoutScope: definition.payoutScope,
-        eventType: definition.eventType,
         url: null,
         issueNumber: null,
         assignees: [],
@@ -170,66 +137,52 @@ function productCatalogItems(): QuestCatalogItem[] {
     }));
 }
 
-async function fetchGitHubIssueQuests(): Promise<QuestCatalogItem[]> {
-    const params = new URLSearchParams({
-        q: `repo:${QUEST_REPO} is:issue label:${COMMUNITY_QUEST_LABEL}`,
-        per_page: "100",
-        sort: "updated",
-        order: "desc",
-    });
-    const data = await githubJson<GitHubSearchResponse>(
-        `https://api.github.com/search/issues?${params.toString()}`,
-    );
-    return (data.items ?? []).map(githubIssueCatalogItem);
-}
-
-function githubIssueCatalogItem(issue: GitHubIssue): QuestCatalogItem {
-    const body = issue.body ?? "";
-    const rewardAmount = parsePayoutReward(body);
-    return {
-        id: `github:issue:${issue.number}`,
+async function loadGitHubIssueQuests(
+    dbBinding: D1Database,
+): Promise<QuestCatalogItem[]> {
+    const db = drizzle(dbBinding, { schema });
+    const rows = await db
+        .select()
+        .from(schema.githubQuestIssues)
+        .orderBy(desc(schema.githubQuestIssues.githubUpdatedAt));
+    return rows.map((issue) => ({
+        id: `github:issue:${issue.issueNumber}`,
         kind: "github_issue",
-        questTypeId: "github:community_issue_quest",
+        questTypeId: issue.questId,
         title: issue.title,
-        description: extractDescription(body),
-        category: "build",
-        availability: githubIssueAvailability(issue),
-        rewardAmount,
-        rewardText: rewardAmount == null ? null : `${rewardAmount} Pollen`,
-        balanceBucket: "pack",
+        description: issue.description ?? "",
+        availability: githubIssueAvailability(issue.state),
+        rewardAmount: issue.rewardAmount,
+        rewardText:
+            issue.rewardAmount == null ? null : `${issue.rewardAmount} Pollen`,
+        balanceBucket: issue.balanceBucket as Bucket,
         payoutScope: "once_per_event_per_user",
-        eventType: "github_pr_merged",
-        url: issue.html_url,
-        issueNumber: issue.number,
-        assignees: (issue.assignees ?? []).map((assignee) => assignee.login),
-        labels: normalizeLabels(issue.labels ?? []),
-        createdAt: issue.created_at,
-        updatedAt: issue.updated_at,
-        closedAt: issue.closed_at,
-    };
+        url: issue.url,
+        issueNumber: issue.issueNumber,
+        assignees: parseAssignees(issue.assigneesJson),
+        labels: [],
+        createdAt: issue.githubCreatedAt?.toISOString() ?? null,
+        updatedAt: issue.githubUpdatedAt?.toISOString() ?? null,
+        closedAt: issue.completedAt?.toISOString() ?? null,
+    }));
 }
 
 function githubIssueAvailability(
-    issue: GitHubIssue,
+    state: string,
 ): QuestCatalogItem["availability"] {
-    if (issue.state === "closed") return "completed";
-    return (issue.assignees?.length ?? 0) > 0 ? "claimed" : "available";
+    if (state === "completed") return "completed";
+    if (state === "claimed") return "claimed";
+    return "available";
 }
 
-function normalizeLabels(labels: Array<string | { name?: string }>): string[] {
-    return labels
-        .map((label) => (typeof label === "string" ? label : label.name))
-        .filter((name): name is string => !!name);
-}
-
-async function githubJson<T>(url: string): Promise<T> {
-    const response = await fetch(url, { headers: GITHUB_HEADERS });
-    if (!response.ok) {
-        throw new Error(
-            `GitHub quest catalog request failed: ${response.status}`,
-        );
-    }
-    return (await response.json()) as T;
+function parseAssignees(assigneesJson: string | null): string[] {
+    if (!assigneesJson) return [];
+    const parsed = JSON.parse(assigneesJson) as unknown;
+    return Array.isArray(parsed)
+        ? parsed.filter(
+              (assignee): assignee is string => typeof assignee === "string",
+          )
+        : [];
 }
 
 function compareCatalogItems(left: QuestCatalogItem, right: QuestCatalogItem) {
@@ -240,35 +193,4 @@ function compareCatalogItems(left: QuestCatalogItem, right: QuestCatalogItem) {
         return rightTime - leftTime;
     }
     return left.title.localeCompare(right.title);
-}
-
-function parsePayoutReward(body: string): number | null {
-    const match = body.match(/###\s*Reward\s*\n+\s*([0-9]+(?:\.[0-9]+)?)/i);
-    return match ? Number(match[1]) : null;
-}
-
-function extractDescription(body: string): string {
-    const preferred = body.match(
-        /(?:^|\n)#{2,4}\s*(?:goal|quest goal|scope|what to build)[^\n]*\n+([\s\S]*?)(?=\n#{2,4}\s|\n---|$)/i,
-    );
-    if (preferred?.[1]) {
-        const section = compactMarkdown(preferred[1]);
-        if (section) return truncate(section, 260);
-    }
-    return truncate(compactMarkdown(body), 260);
-}
-
-function compactMarkdown(markdown: string): string {
-    return markdown
-        .replace(/```[\s\S]*?```/g, " ")
-        .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
-        .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
-        .replace(/[#>*_`~|-]/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
-}
-
-function truncate(text: string, maxLength: number): string {
-    if (text.length <= maxLength) return text;
-    return `${text.slice(0, maxLength - 3).trimEnd()}...`;
 }

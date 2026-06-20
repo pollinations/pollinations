@@ -1,0 +1,28 @@
+TOKEN tinybird_read READ
+
+DESCRIPTION >
+    Daily snapshot of D1 github_quest_issues table (materialized GitHub quest issue catalog and completion state)
+
+SCHEMA >
+    `issue_number` Int32 `json:$.issue_number`,
+    `quest_id` String `json:$.quest_id`,
+    `title` String `json:$.title`,
+    `description` Nullable(String) `json:$.description`,
+    `url` String `json:$.url`,
+    `reward_amount` Nullable(Float64) `json:$.reward_amount`,
+    `balance_bucket` LowCardinality(String) `json:$.balance_bucket`,
+    `state` LowCardinality(String) `json:$.state`,
+    `assignee_github_id` Nullable(Int32) `json:$.assignee_github_id`,
+    `assignee_login` Nullable(String) `json:$.assignee_login`,
+    `assignees_json` Nullable(String) `json:$.assignees_json`,
+    `completed_by_pr_number` Nullable(Int32) `json:$.completed_by_pr_number`,
+    `completed_at` Nullable(Int64) `json:$.completed_at`,
+    `github_created_at` Nullable(Int64) `json:$.github_created_at`,
+    `github_updated_at` Nullable(Int64) `json:$.github_updated_at`,
+    `metadata_json` Nullable(String) `json:$.metadata_json`,
+    `updated_at` Int64 `json:$.updated_at`,
+    `synced_at` DateTime `json:$.synced_at`
+
+ENGINE "MergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(synced_at)"
+ENGINE_SORTING_KEY "issue_number"

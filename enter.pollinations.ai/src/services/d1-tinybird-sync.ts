@@ -48,6 +48,16 @@ const TABLES: TableConfig[] = [
                 FROM reward_grants`,
     },
     {
+        datasource: "d1_github_quest_issues",
+        query: `SELECT issue_number, quest_id, title, description, url,
+                       reward_amount, balance_bucket, state,
+                       assignee_github_id, assignee_login, assignees_json,
+                       completed_by_pr_number, completed_at,
+                       github_created_at, github_updated_at,
+                       metadata_json, updated_at
+                FROM github_quest_issues`,
+    },
+    {
         datasource: "d1_session",
         query: `SELECT id, expires_at, created_at, updated_at, user_agent, user_id,
                        impersonated_by

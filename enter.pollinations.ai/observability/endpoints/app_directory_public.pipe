@@ -20,6 +20,7 @@ SQL >
         category,
         platform,
         github_username,
+        github_user_id,
         github_repository_url,
         github_repository_stars,
         discord_username,

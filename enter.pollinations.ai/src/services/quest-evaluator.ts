@@ -2,19 +2,38 @@ import { getLogger } from "@logtape/logtape";
 import { grantReward } from "@shared/billing/grant-reward.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import {
+    buildGitHubQuestGrantKey,
     buildGrantKey,
+    COMMUNITY_GITHUB_QUEST_ID,
+    GITHUB_QUEST_GRANT_SOURCE,
     type GrantCandidate,
-    getQuestDefinition,
+    PRODUCT_QUEST_GRANT_SOURCE,
     type QuestDefinition,
+    questUserKeyPrefix,
+    requireQuestDefinition,
 } from "@shared/quests/definitions.ts";
-import { sql } from "drizzle-orm";
+import { inArray, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
+import { fetchTinybirdRows, requireTinybirdReadToken } from "./tinybird.ts";
 
 const log = getLogger(["enter", "quest-evaluator"]);
 const MAX_GRANTS_PER_RUN = 500;
 const GITHUB_ACCOUNT_AGE_DAYS = 365;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-const PRODUCT_QUEST_SOURCE = "product_quest";
+const FIRST_API_KEY_QUEST = requireQuestDefinition("onboarding:first_api_key");
+const FIRST_TOP_UP_QUEST = requireQuestDefinition("spend:first_top_up");
+const ESTABLISHED_GITHUB_ACCOUNT_QUEST = requireQuestDefinition(
+    "onboarding:established_github_account",
+);
+const LIST_APP_QUEST = requireQuestDefinition("grow:list_app_on_pollinations");
+const COMMUNITY_GITHUB_QUEST = requireQuestDefinition(
+    COMMUNITY_GITHUB_QUEST_ID,
+);
+const FIRST_API_KEY_USER_KEY_PREFIX = questUserKeyPrefix(FIRST_API_KEY_QUEST);
+const FIRST_TOP_UP_USER_KEY_PREFIX = questUserKeyPrefix(FIRST_TOP_UP_QUEST);
+const ESTABLISHED_GITHUB_ACCOUNT_USER_KEY_PREFIX = questUserKeyPrefix(
+    ESTABLISHED_GITHUB_ACCOUNT_QUEST,
+);
 
 type QuestEvaluatorResult = {
     questId: string;
@@ -28,6 +47,28 @@ type GitHubAccountCandidateRow = {
     githubUsername: string | null;
 };
 
+type AppDirectoryQuestRow = {
+    name: string;
+    web_url: string;
+    github_user_id: string;
+    github_username: string;
+    issue_url: string;
+    approved_date: string;
+};
+
+type CompletedGitHubQuestIssueRow = {
+    userId: string;
+    githubUsername: string | null;
+    issueNumber: number;
+    title: string;
+    url: string;
+    rewardAmount: number;
+    balanceBucket: "pack" | "tier";
+    assigneeGithubId: number;
+    assigneeLogin: string | null;
+    completedByPrNumber: number;
+};
+
 export function buildQuestGrantMetadata(
     definition: QuestDefinition,
     candidate: GrantCandidate,
@@ -35,12 +76,10 @@ export function buildQuestGrantMetadata(
     return {
         ...(candidate.metadata ?? {}),
         title: definition.title,
-        category: definition.category,
-        eventType: definition.eventType,
     };
 }
 
-async function grantCandidates({
+export async function grantQuestCandidates({
     db,
     questId,
     candidates,
@@ -49,20 +88,17 @@ async function grantCandidates({
     questId: string;
     candidates: GrantCandidate[];
 }): Promise<QuestEvaluatorResult> {
-    const definition = getQuestDefinition(questId);
-    if (!definition) {
-        throw new Error(`Unknown quest definition: ${questId}`);
-    }
+    const definition = requireQuestDefinition(questId);
 
     let granted = 0;
     for (const candidate of candidates) {
         const result = await grantReward(db, {
             idempotencyKey: buildGrantKey(definition, candidate),
             userId: candidate.userId,
-            source: PRODUCT_QUEST_SOURCE,
+            source: candidate.source ?? PRODUCT_QUEST_GRANT_SOURCE,
             questId,
-            amount: definition.rewardAmount,
-            bucket: definition.balanceBucket,
+            amount: candidate.amount ?? definition.rewardAmount,
+            bucket: candidate.bucket ?? definition.balanceBucket,
             sourceRef: candidate.sourceRef,
             metadata: buildQuestGrantMetadata(definition, candidate),
         });
@@ -87,7 +123,7 @@ async function findFirstApiKeyCandidates(
         FROM apikey
         LEFT JOIN reward_grants
             ON reward_grants.idempotency_key =
-                'quest:onboarding:first_api_key:user:' || apikey.user_id
+                ${FIRST_API_KEY_USER_KEY_PREFIX} || apikey.user_id
         WHERE reward_grants.id IS NULL
         GROUP BY apikey.user_id
         LIMIT ${MAX_GRANTS_PER_RUN}`,
@@ -105,8 +141,7 @@ async function findFirstTopUpCandidates(
         FROM stripe_checkout_credits
         LEFT JOIN reward_grants
             ON reward_grants.idempotency_key =
-                'quest:spend:first_top_up:user:' ||
-                stripe_checkout_credits.user_id
+                ${FIRST_TOP_UP_USER_KEY_PREFIX} || stripe_checkout_credits.user_id
         WHERE reward_grants.id IS NULL
         GROUP BY stripe_checkout_credits.user_id
         LIMIT ${MAX_GRANTS_PER_RUN}`,
@@ -162,8 +197,7 @@ async function findEstablishedGitHubAccountCandidates(
         FROM user
         LEFT JOIN reward_grants
             ON reward_grants.idempotency_key =
-                'quest:onboarding:established_github_account:user:' ||
-                user.id
+                ${ESTABLISHED_GITHUB_ACCOUNT_USER_KEY_PREFIX} || user.id
         WHERE user.github_id IS NOT NULL
             AND reward_grants.id IS NULL
         LIMIT ${MAX_GRANTS_PER_RUN}`,
@@ -195,25 +229,147 @@ async function findEstablishedGitHubAccountCandidates(
     return candidates;
 }
 
+async function findApprovedAppCandidates(
+    db: ReturnType<typeof drizzle<typeof schema>>,
+    env: CloudflareBindings,
+): Promise<GrantCandidate[]> {
+    const tinybirdOrigin = new URL(env.TINYBIRD_INGEST_URL).origin;
+    const tinybirdToken = requireTinybirdReadToken(env);
+    const apps = await fetchTinybirdRows<AppDirectoryQuestRow>(
+        tinybirdOrigin,
+        "/v0/pipes/app_directory_public.json",
+        tinybirdToken,
+        {},
+    );
+    const githubIds = [
+        ...new Set(
+            apps
+                .map((app) => Number(app.github_user_id))
+                .filter((githubId) => Number.isInteger(githubId)),
+        ),
+    ];
+    if (!githubIds.length) return [];
+
+    const users = await db
+        .select({
+            userId: schema.user.id,
+            githubId: schema.user.githubId,
+            githubUsername: schema.user.githubUsername,
+        })
+        .from(schema.user)
+        .where(inArray(schema.user.githubId, githubIds));
+    const userByGithubId = new Map(users.map((user) => [user.githubId, user]));
+
+    return apps.flatMap((app) => {
+        const githubId = Number(app.github_user_id);
+        const user = userByGithubId.get(githubId);
+        if (!user || !app.issue_url) return [];
+
+        return [
+            {
+                userId: user.userId,
+                eventId: `app:${app.issue_url}`,
+                sourceRef: app.issue_url,
+                metadata: {
+                    appName: app.name,
+                    appUrl: app.web_url,
+                    issueUrl: app.issue_url,
+                    approvedDate: app.approved_date,
+                    githubId,
+                    githubUsername: user.githubUsername ?? app.github_username,
+                },
+            },
+        ];
+    });
+}
+
+async function findCompletedGitHubIssueCandidates(
+    db: ReturnType<typeof drizzle<typeof schema>>,
+): Promise<GrantCandidate[]> {
+    const rows = await db.all<CompletedGitHubQuestIssueRow>(
+        sql`
+        SELECT
+            user.id AS userId,
+            user.github_username AS githubUsername,
+            github_quest_issues.issue_number AS issueNumber,
+            github_quest_issues.title AS title,
+            github_quest_issues.url AS url,
+            github_quest_issues.reward_amount AS rewardAmount,
+            github_quest_issues.balance_bucket AS balanceBucket,
+            github_quest_issues.assignee_github_id AS assigneeGithubId,
+            github_quest_issues.assignee_login AS assigneeLogin,
+            github_quest_issues.completed_by_pr_number AS completedByPrNumber
+        FROM github_quest_issues
+        INNER JOIN user
+            ON user.github_id = github_quest_issues.assignee_github_id
+        LEFT JOIN reward_grants
+            ON reward_grants.idempotency_key =
+                ${"quest:"} ||
+                github_quest_issues.issue_number ||
+                ${":gh:"} ||
+                github_quest_issues.assignee_github_id ||
+                ${":role:assignee"}
+        WHERE github_quest_issues.quest_id = ${COMMUNITY_GITHUB_QUEST_ID}
+            AND github_quest_issues.state = 'completed'
+            AND github_quest_issues.reward_amount > 0
+            AND github_quest_issues.completed_by_pr_number IS NOT NULL
+            AND github_quest_issues.assignee_github_id IS NOT NULL
+            AND reward_grants.id IS NULL
+        LIMIT ${MAX_GRANTS_PER_RUN}`,
+    );
+
+    return rows.map((row) => ({
+        userId: row.userId,
+        idempotencyKey: buildGitHubQuestGrantKey({
+            issueNumber: row.issueNumber,
+            githubId: row.assigneeGithubId,
+        }),
+        eventId: `issue:${row.issueNumber}`,
+        source: GITHUB_QUEST_GRANT_SOURCE,
+        amount: row.rewardAmount,
+        bucket: row.balanceBucket,
+        sourceRef: `pr:${row.completedByPrNumber}`,
+        metadata: {
+            questTypeId: COMMUNITY_GITHUB_QUEST_ID,
+            issueNumber: row.issueNumber,
+            issueTitle: row.title,
+            issueUrl: row.url,
+            prNumber: row.completedByPrNumber,
+            role: "assignee",
+            githubUsername: row.githubUsername ?? row.assigneeLogin,
+        },
+    }));
+}
+
 export async function runQuestEvaluator(
     env: CloudflareBindings,
 ): Promise<{ success: true; results: QuestEvaluatorResult[] }> {
     const db = drizzle(env.DB, { schema });
     const results = [
-        await grantCandidates({
+        await grantQuestCandidates({
             db,
-            questId: "onboarding:first_api_key",
+            questId: FIRST_API_KEY_QUEST.id,
             candidates: await findFirstApiKeyCandidates(db),
         }),
-        await grantCandidates({
+        await grantQuestCandidates({
             db,
-            questId: "spend:first_top_up",
+            questId: FIRST_TOP_UP_QUEST.id,
             candidates: await findFirstTopUpCandidates(db),
         }),
-        await grantCandidates({
+        await grantQuestCandidates({
             db,
-            questId: "onboarding:established_github_account",
+            questId: ESTABLISHED_GITHUB_ACCOUNT_QUEST.id,
             candidates: await findEstablishedGitHubAccountCandidates(db, env),
+        }),
+        await grantQuestCandidates({
+            db,
+            questId: COMMUNITY_GITHUB_QUEST.id,
+            candidates: await findCompletedGitHubIssueCandidates(db),
+        }),
+        await grantQuestCandidates({
+            db,
+            questId: LIST_APP_QUEST.id,
+            candidates: await findApprovedAppCandidates(db, env),
         }),
     ];
 

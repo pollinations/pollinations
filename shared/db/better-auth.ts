@@ -239,7 +239,7 @@ export const stripeCheckoutCredits = sqliteTable("stripe_checkout_credits", {
 // role, username) live in optional `sourceRef`/`metadataJson`. One row == one
 // idempotent grant paired with a balance credit. This is the single quest
 // ledger; the old GitHub-shaped quest_payout_credits table was backfilled into
-// here and dropped (migration 0028).
+// here and dropped by the previous migration.
 export const rewardGrants = sqliteTable("reward_grants", {
   id: text("id").primaryKey(),
   // Idempotency guard. Format is source-specific, e.g.
@@ -257,7 +257,7 @@ export const rewardGrants = sqliteTable("reward_grants", {
   balanceBucket: text("balance_bucket").notNull(),
   // Free-form external reference: PR number, Stripe session, generation id, …
   sourceRef: text("source_ref"),
-  // JSON snapshot of display metadata (title/url/category) at grant time.
+  // JSON snapshot of display metadata (title/url/details) at grant time.
   metadataJson: text("metadata_json"),
   createdAt: integer("created_at", { mode: "timestamp" })
     .defaultNow()
@@ -265,4 +265,33 @@ export const rewardGrants = sqliteTable("reward_grants", {
 }, (table) => [
   index("idx_reward_grants_user_id").on(table.userId),
   index("idx_reward_grants_source").on(table.source),
+]);
+
+export const githubQuestIssues = sqliteTable("github_quest_issues", {
+  issueNumber: integer("issue_number").primaryKey(),
+  questId: text("quest_id").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  url: text("url").notNull(),
+  rewardAmount: real("reward_amount"),
+  balanceBucket: text("balance_bucket").notNull(),
+  state: text("state").notNull(),
+  assigneeGithubId: integer("assignee_github_id"),
+  assigneeLogin: text("assignee_login"),
+  assigneesJson: text("assignees_json"),
+  completedByPrNumber: integer("completed_by_pr_number"),
+  completedAt: integer("completed_at", { mode: "timestamp" }),
+  githubCreatedAt: integer("github_created_at", { mode: "timestamp" }),
+  githubUpdatedAt: integer("github_updated_at", { mode: "timestamp" }),
+  metadataJson: text("metadata_json"),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+}, (table) => [
+  index("idx_github_quest_issues_quest_id").on(table.questId),
+  index("idx_github_quest_issues_state").on(table.state),
+  index("idx_github_quest_issues_assignee_github_id").on(
+    table.assigneeGithubId,
+  ),
 ]);

@@ -3,11 +3,14 @@ const path = require("node:path");
 const test = require("node:test");
 
 const {
-    evaluateQuestPayouts,
+    COMMUNITY_GITHUB_QUEST_ID,
+    COMMUNITY_GITHUB_QUEST_LABEL,
+    evaluateQuestIssueUpdates,
     MAX_QUEST_PAYOUT,
     parseReward,
     runGitHubQuestEvaluators,
-    runPollenGrant,
+    runQuestIssueSync,
+    syncGitHubQuestIssues,
     validateQuestPayoutAmount,
 } = require("./quest-reward-payout.js");
 
@@ -20,6 +23,8 @@ function pullRequestContext(overrides = {}) {
             pull_request: {
                 number: 42,
                 merged: true,
+                merged_at: "2026-06-10T00:00:00Z",
+                closed_at: "2026-06-10T00:00:00Z",
                 ...overrides.pull_request,
             },
             ...overrides.payload,
@@ -31,7 +36,7 @@ function linkedIssue({
     number = 123,
     title = "Quest issue",
     body = "### Reward\n20",
-    labels = ["POLLEN-QUEST"],
+    labels = [COMMUNITY_GITHUB_QUEST_LABEL],
     assignee = { login: "octocat", databaseId: 456 },
 } = {}) {
     return {
@@ -39,6 +44,9 @@ function linkedIssue({
         title,
         url: `https://github.com/pollinations/pollinations/issues/${number}`,
         body,
+        createdAt: "2026-06-01T00:00:00Z",
+        updatedAt: "2026-06-02T00:00:00Z",
+        closedAt: null,
         labels: { nodes: labels.map((name) => ({ name })) },
         assignees: { nodes: assignee ? [assignee] : [] },
     };
@@ -91,12 +99,12 @@ test("parseReward reads numeric reward sections", () => {
     assert.equal(parseReward("### Reward\nnope"), null);
 });
 
-test("community issue quest returns a payout candidate for merged quest PRs", async () => {
+test("community issue quest returns a materialized issue for merged quest PRs", async () => {
     const github = githubWithLinkedIssues([
         linkedIssue({
             number: 321,
             title: "Fix a model",
-            body: "### Reward\n15",
+            body: "### Goal\nFix the model config.\n\n### Reward\n15",
             assignee: { login: "dev-user", databaseId: 999 },
         }),
     ]);
@@ -106,27 +114,32 @@ test("community issue quest returns a payout candidate for merged quest PRs", as
         context: pullRequestContext(),
     });
 
-    assert.equal(result.candidates.length, 1);
+    assert.equal(result.questIssues.length, 1);
     assert.equal(result.reviews.length, 0);
-    assert.deepEqual(result.candidates[0], {
-        questTypeId: "github:community_issue_quest",
+    assert.deepEqual(result.questIssues[0], {
+        questId: COMMUNITY_GITHUB_QUEST_ID,
         balanceBucket: "pack",
         payoutScope: "once_per_event_per_user",
-        issue: 321,
-        issueTitle: "Fix a model",
-        issueUrl: "https://github.com/pollinations/pollinations/issues/321",
-        prNumber: 42,
-        recipient: "dev-user",
-        recipientId: 999,
-        role: "assignee",
-        amount: 15,
-        eventId: "issue:321",
-        sourceRef: "pr:42",
+        issueNumber: 321,
+        title: "Fix a model",
+        description: "Fix the model config.",
+        url: "https://github.com/pollinations/pollinations/issues/321",
+        rewardAmount: 15,
+        state: "completed",
+        assigneeGithubId: 999,
+        assigneeLogin: "dev-user",
+        assignees: ["dev-user"],
+        completedByPrNumber: 42,
+        completedAt: "2026-06-10T00:00:00Z",
+        githubCreatedAt: "2026-06-01T00:00:00Z",
+        githubUpdatedAt: "2026-06-02T00:00:00Z",
         metadata: {
+            questTypeId: COMMUNITY_GITHUB_QUEST_ID,
             issueNumber: 321,
             issueTitle: "Fix a model",
             issueUrl: "https://github.com/pollinations/pollinations/issues/321",
             prNumber: 42,
+            role: "assignee",
         },
     });
 });
@@ -141,7 +154,7 @@ test("community issue quest ignores non-quest linked issues", async () => {
         context: pullRequestContext(),
     });
 
-    assert.deepEqual(result.candidates, []);
+    assert.deepEqual(result.questIssues, []);
     assert.deepEqual(result.reviews, []);
 });
 
@@ -158,7 +171,7 @@ test("community issue quest returns review when reward data is incomplete", asyn
         context: pullRequestContext(),
     });
 
-    assert.deepEqual(result.candidates, []);
+    assert.deepEqual(result.questIssues, []);
     assert.equal(result.reviews.length, 1);
     assert.deepEqual(result.reviews[0].missing, [
         "assignee",
@@ -193,11 +206,11 @@ test("runner enforces trigger allow-list before calling evaluators", async () =>
         ],
     });
 
-    assert.deepEqual(result.candidates, []);
+    assert.deepEqual(result.questIssues, []);
     assert.deepEqual(result.reviews, []);
 });
 
-test("runner preserves definition balance bucket on payout candidates", async () => {
+test("runner preserves definition balance bucket on materialized issues", async () => {
     const result = await runGitHubQuestEvaluators({
         github: githubWithLinkedIssues([]),
         context: pullRequestContext(),
@@ -214,14 +227,10 @@ test("runner preserves definition balance bucket on payout candidates", async ()
                     },
                 ],
                 evaluate: () => ({
-                    candidates: [
+                    questIssues: [
                         {
-                            issue: 123,
-                            prNumber: 42,
-                            recipient: "dev-user",
-                            recipientId: 999,
-                            role: "assignee",
-                            amount: 15,
+                            issueNumber: 123,
+                            rewardAmount: 15,
                         },
                     ],
                 }),
@@ -229,8 +238,8 @@ test("runner preserves definition balance bucket on payout candidates", async ()
         ],
     });
 
-    assert.equal(result.candidates.length, 1);
-    assert.equal(result.candidates[0].balanceBucket, "tier");
+    assert.equal(result.questIssues.length, 1);
+    assert.equal(result.questIssues[0].balanceBucket, "tier");
 });
 
 test("payout amount validator enforces the shared ceiling", () => {
@@ -242,7 +251,7 @@ test("payout amount validator enforces the shared ceiling", () => {
     );
 });
 
-test("evaluateQuestPayouts writes payout candidates output", async () => {
+test("evaluateQuestIssueUpdates writes materialized issue output", async () => {
     const github = githubWithLinkedIssues([
         linkedIssue({
             number: 321,
@@ -252,21 +261,21 @@ test("evaluateQuestPayouts writes payout candidates output", async () => {
     ]);
     const core = outputCore();
 
-    await evaluateQuestPayouts({
+    await evaluateQuestIssueUpdates({
         github,
         context: pullRequestContext(),
         core,
     });
 
-    const payouts = JSON.parse(core.outputs.payouts);
-    assert.equal(payouts.length, 1);
-    assert.equal(payouts[0].recipient, "dev-user");
-    assert.equal(payouts[0].role, "assignee");
-    assert.equal(payouts[0].amount, 15);
+    const questIssues = JSON.parse(core.outputs.questIssues);
+    assert.equal(questIssues.length, 1);
+    assert.equal(questIssues[0].assigneeLogin, "dev-user");
+    assert.equal(questIssues[0].rewardAmount, 15);
+    assert.equal(questIssues[0].state, "completed");
     assert.deepEqual(github.comments, []);
 });
 
-test("evaluateQuestPayouts comments when linked quest data is incomplete", async () => {
+test("evaluateQuestIssueUpdates comments when linked quest data is incomplete", async () => {
     const github = githubWithLinkedIssues([
         linkedIssue({
             body: "### Reward\nnot-a-number",
@@ -275,48 +284,127 @@ test("evaluateQuestPayouts comments when linked quest data is incomplete", async
     ]);
     const core = outputCore();
 
-    await evaluateQuestPayouts({
+    await evaluateQuestIssueUpdates({
         github,
         context: pullRequestContext(),
         core,
     });
 
-    assert.equal(core.outputs.payouts, "");
+    assert.equal(core.outputs.questIssues, "");
     assert.equal(github.comments.length, 1);
     assert.equal(github.comments[0].issue_number, 123);
     assert.match(github.comments[0].body, /\*\*Missing:\*\* assignee/);
     assert.match(github.comments[0].body, /valid reward amount in issue body/);
 });
 
-test("runPollenGrant installs from the repo root and grants each payout", async (t) => {
-    const previousPayouts = process.env.PAYOUTS;
+test("syncGitHubQuestIssues emits materialized records for current issues", async () => {
+    const calls = [];
+    const github = {
+        paginate: async (endpoint, params) => {
+            calls.push({ endpoint, params });
+            return [
+                {
+                    number: 456,
+                    title: "Claimed quest",
+                    html_url:
+                        "https://github.com/pollinations/pollinations/issues/456",
+                    body: "### Goal\nBuild a thing.\n\n### Reward\n25",
+                    state: "open",
+                    assignees: [{ login: "dev-user", id: 999 }],
+                    closed_at: null,
+                    created_at: "2026-06-01T00:00:00Z",
+                    updated_at: "2026-06-02T00:00:00Z",
+                },
+            ];
+        },
+        rest: {
+            search: {
+                issuesAndPullRequests: "search/issues",
+            },
+        },
+    };
+    const core = outputCore();
+
+    await syncGitHubQuestIssues({
+        github,
+        context: pullRequestContext(),
+        core,
+    });
+
+    assert.match(calls[0].params.q, /label:POLLEN-QUEST/);
+    const questIssues = JSON.parse(core.outputs.questIssues);
+    assert.deepEqual(questIssues, [
+        {
+            issueNumber: 456,
+            questId: COMMUNITY_GITHUB_QUEST_ID,
+            title: "Claimed quest",
+            description: "Build a thing.",
+            url: "https://github.com/pollinations/pollinations/issues/456",
+            rewardAmount: 25,
+            balanceBucket: "pack",
+            state: "claimed",
+            assigneeGithubId: 999,
+            assigneeLogin: "dev-user",
+            assignees: ["dev-user"],
+            completedByPrNumber: null,
+            completedAt: null,
+            githubCreatedAt: "2026-06-01T00:00:00Z",
+            githubUpdatedAt: "2026-06-02T00:00:00Z",
+            metadata: {
+                questTypeId: COMMUNITY_GITHUB_QUEST_ID,
+                issueNumber: 456,
+                issueTitle: "Claimed quest",
+                issueUrl:
+                    "https://github.com/pollinations/pollinations/issues/456",
+            },
+        },
+    ]);
+});
+
+test("runQuestIssueSync installs from the repo root and records each issue", async (t) => {
+    const previousQuestIssues = process.env.QUEST_ISSUES;
     t.after(() => {
-        if (previousPayouts === undefined) {
-            delete process.env.PAYOUTS;
+        if (previousQuestIssues === undefined) {
+            delete process.env.QUEST_ISSUES;
         } else {
-            process.env.PAYOUTS = previousPayouts;
+            process.env.QUEST_ISSUES = previousQuestIssues;
         }
     });
 
-    process.env.PAYOUTS = JSON.stringify([
+    process.env.QUEST_ISSUES = JSON.stringify([
         {
-            issue: 123,
-            issueTitle: "Add a demo app",
-            issueUrl: "https://github.com/pollinations/pollinations/issues/123",
-            prNumber: 456,
-            recipient: "dev-one",
-            recipientId: 111,
-            role: "assignee",
-            amount: 15,
+            issueNumber: 123,
+            questId: COMMUNITY_GITHUB_QUEST_ID,
+            title: "Add a demo app",
+            description: "Build it.",
+            url: "https://github.com/pollinations/pollinations/issues/123",
+            rewardAmount: 15,
+            balanceBucket: "pack",
+            state: "completed",
+            assigneeGithubId: 111,
+            assigneeLogin: "dev-one",
+            assignees: ["dev-one"],
+            completedByPrNumber: 456,
+            completedAt: "2026-06-10T00:00:00Z",
+            githubCreatedAt: "2026-06-01T00:00:00Z",
+            githubUpdatedAt: "2026-06-10T00:00:00Z",
         },
         {
-            issue: 124,
-            prNumber: 457,
-            recipient: "dev-two",
-            recipientId: 222,
-            role: "collaborator",
+            issueNumber: 124,
+            questId: COMMUNITY_GITHUB_QUEST_ID,
+            title: "Claimed issue",
+            description: "Wire it.",
+            url: "https://github.com/pollinations/pollinations/issues/124",
+            rewardAmount: 20,
             balanceBucket: "tier",
-            amount: 20,
+            state: "claimed",
+            assigneeGithubId: 222,
+            assigneeLogin: "dev-two",
+            assignees: ["dev-two"],
+            completedByPrNumber: null,
+            completedAt: null,
+            githubCreatedAt: "2026-06-02T00:00:00Z",
+            githubUpdatedAt: "2026-06-03T00:00:00Z",
         },
     ]);
 
@@ -324,11 +412,11 @@ test("runPollenGrant installs from the repo root and grants each payout", async 
     const spawn = (command, args, options) => {
         calls.push({ command, args, options });
         if (command === "npm") return { status: 0 };
-        return { status: calls.length === 2 ? 0 : 3 };
+        return { status: calls.length === 2 ? 0 : 1 };
     };
     const core = outputCore();
 
-    await runPollenGrant({ core, cwd: "/repo", spawn });
+    await runQuestIssueSync({ core, cwd: "/repo", spawn });
 
     assert.equal(calls[0].command, "npm");
     assert.deepEqual(calls[0].args, ["ci", "--ignore-scripts"]);
@@ -339,42 +427,29 @@ test("runPollenGrant installs from the repo root and grants each payout", async 
         calls[1].options.cwd,
         path.join("/repo", "enter.pollinations.ai"),
     );
-    assert.deepEqual(calls[1].args.slice(0, 3), [
-        "tsx",
-        "src/tier-progression/shared/quest-grant-pollen.ts",
-        "grant",
+    assert.deepEqual(calls[1].args.slice(0, 4), [
+        "wrangler",
+        "d1",
+        "execute",
+        "DB",
     ]);
-    assert.equal(
-        calls[1].args[calls[1].args.indexOf("--role") + 1],
-        "assignee",
+    assert.match(
+        calls[1].args[calls[1].args.indexOf("--command") + 1],
+        /INSERT INTO github_quest_issues/,
     );
-    assert.equal(calls[1].args[calls[1].args.indexOf("--bucket") + 1], "pack");
-    assert.equal(
-        calls[1].args[calls[1].args.indexOf("--issueTitle") + 1],
-        "Add a demo app",
+    assert.match(
+        calls[1].args[calls[1].args.indexOf("--command") + 1],
+        /Add a demo app/,
     );
-    assert.equal(
-        calls[1].args[calls[1].args.indexOf("--issueUrl") + 1],
-        "https://github.com/pollinations/pollinations/issues/123",
-    );
-    assert.equal(
-        calls[2].args[calls[2].args.indexOf("--role") + 1],
-        "collaborator",
-    );
-    assert.equal(calls[2].args[calls[2].args.indexOf("--bucket") + 1], "tier");
 
     assert.deepEqual(JSON.parse(core.outputs.results), [
         {
             issue: 123,
-            user: "dev-one",
-            amount: 15,
-            status: "granted",
+            status: "recorded",
         },
         {
             issue: 124,
-            user: "dev-two",
-            amount: 20,
-            status: "duplicate",
+            status: "failed",
         },
     ]);
 });

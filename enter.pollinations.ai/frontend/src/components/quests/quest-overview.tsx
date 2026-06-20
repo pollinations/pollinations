@@ -10,10 +10,14 @@ import {
     Surface,
     TabButton,
     Text,
-    TokensIcon,
     WalletIcon,
 } from "@pollinations/ui";
-import { formatPollen, PaidChip, TierChip } from "@pollinations/ui/wallet";
+import {
+    formatPollen,
+    PaidChip,
+    TierChip,
+    WalletKindIcon,
+} from "@pollinations/ui/wallet";
 import {
     type ComponentType,
     type FC,
@@ -77,8 +81,8 @@ type CategoryMeta = {
 
 const CATEGORY_PLANT: CategoryMeta = {
     key: "plant",
-    label: "Plant",
-    blurb: "Get set up",
+    label: "Set up",
+    blurb: "Get started",
     icon: SproutIcon,
     order: 0,
     tint: "text-intent-success-text",
@@ -86,7 +90,7 @@ const CATEGORY_PLANT: CategoryMeta = {
 const CATEGORY_GROW: CategoryMeta = {
     key: "grow",
     label: "Grow",
-    blurb: "Go deeper",
+    blurb: "Use more, earn more",
     icon: WalletIcon,
     order: 1,
     tint: "text-intent-news-text",
@@ -94,7 +98,7 @@ const CATEGORY_GROW: CategoryMeta = {
 const CATEGORY_COMMUNITY: CategoryMeta = {
     key: "community",
     label: "Community",
-    blurb: "Build for others",
+    blurb: "Build for the community",
     icon: GitHubIcon,
     order: 2,
     tint: "text-theme-text-soft",
@@ -282,22 +286,15 @@ function IconMedallion({
     );
 }
 
-// Reward "seed coin": a Pollen glyph + tabular amount. Weight scales gently
-// with size (outline feel at small amounts) without slot-machine emphasis.
-function RewardCoin({ amount }: { amount: number | null }) {
-    const big = (amount ?? 0) >= 5;
+// Reward chip: the canonical wallet "paid" chip with its Pollen marker.
+// Uses @pollinations/ui's PaidChip + WalletKindIcon so the reward reads in the
+// same visual language as balances elsewhere in the dashboard.
+function RewardChip({ amount }: { amount: number | null }) {
     return (
-        <span
-            className={[
-                "inline-flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1 text-sm",
-                big
-                    ? "bg-intent-news-bg-light font-semibold text-intent-news-text"
-                    : "bg-theme-bg-active font-medium text-theme-text-soft",
-            ].join(" ")}
-        >
-            <TokensIcon className="h-3.5 w-3.5" />
-            <span className="tabular-nums">{formatRewardLabel(amount)}</span>
-        </span>
+        <PaidChip size="sm" className="tabular-nums">
+            <WalletKindIcon kind="paid" />
+            {formatRewardLabel(amount)}
+        </PaidChip>
     );
 }
 
@@ -341,7 +338,7 @@ function CatalogQuestCard({
                         )}
                     </div>
                     <div className="shrink-0">
-                        <RewardCoin amount={quest.rewardAmount} />
+                        <RewardChip amount={quest.rewardAmount} />
                     </div>
                 </div>
                 {quest.url && (
@@ -448,9 +445,9 @@ function CompletedGrantCard({
 }
 
 // On-brand "endowed progress" header: the sprout grows through discrete stages
-// (seed → sprout → leafy → bloom) as completion rises, wrapped in a thin SVG
-// progress ring. Replaces the three redundant stat cards. Pure derived data.
-function GardenProgress({
+// as completion rises, wrapped in a thin SVG progress ring. Replaces the three
+// redundant stat cards. Pure derived data.
+function QuestProgress({
     completed,
     total,
     totalPollen,
@@ -518,7 +515,7 @@ function GardenProgress({
                     weight="bold"
                     className="uppercase tracking-wide"
                 >
-                    Your garden
+                    Your progress
                 </Text>
                 <Text
                     as="div"
@@ -527,7 +524,7 @@ function GardenProgress({
                     className="mt-1 text-lg"
                 >
                     {allDone
-                        ? "In full bloom 🌸"
+                        ? "All caught up"
                         : `${completed} of ${total} quests`}
                 </Text>
                 <Text as="div" size="sm" tone="soft" className="mt-0.5">
@@ -700,7 +697,7 @@ export const QuestOverview: FC<QuestOverviewProps> = ({ githubUsername }) => {
 
     return (
         <div className="flex flex-col gap-5">
-            <GardenProgress
+            <QuestProgress
                 completed={completedCount}
                 total={Math.max(totalQuests, completedCount)}
                 totalPollen={state.totalPollen}
@@ -739,13 +736,13 @@ export const QuestOverview: FC<QuestOverviewProps> = ({ githubUsername }) => {
                     <div className="min-w-0">
                         <p className="font-semibold text-ink-900">
                             {activeTab === "available"
-                                ? "Your garden is in full bloom"
+                                ? "You're all caught up"
                                 : "No completed quests yet"}
                         </p>
                         <Text size="sm" tone="soft" className="mt-1">
                             {activeTab === "available"
                                 ? "You've cleared every available quest. Nice work."
-                                : "Complete a quest to start your garden."}
+                                : "Complete a quest to get started."}
                         </Text>
                     </div>
                 </Surface>

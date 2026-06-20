@@ -445,68 +445,33 @@ function CompletedGrantCard({
 }
 
 // On-brand "endowed progress" header: the sprout grows through discrete stages
-// as completion rises, wrapped in a thin SVG progress ring. Replaces the three
-// redundant stat cards. Pure derived data.
-function QuestProgress({
-    completed,
-    total,
+// as completion rises. Pure derived data.
+//
+// Headline metric is cumulative Pollen earned — an additive number that only
+// ever goes up. We deliberately AVOID a completion ring / "X of N" here: the
+// catalog mixes a finite product set with an open, ever-growing pool of
+// community bounties (only one user wins each), so any shared denominator would
+// recede as bounties are added and could never reach 100%. Per-section counts
+// below carry the finite "set up" progress instead.
+function QuestSummary({
+    completedSetup,
+    totalSetup,
+    bountiesCompleted,
     totalPollen,
 }: {
-    completed: number;
-    total: number;
+    completedSetup: number;
+    totalSetup: number;
+    bountiesCompleted: number;
     totalPollen: number;
 }) {
-    const safeTotal = Math.max(total, 1);
-    const ratio = Math.min(1, completed / safeTotal);
-    const radius = 34;
-    const circumference = 2 * Math.PI * radius;
-    const dash = circumference * ratio;
-    const stage = ratio >= 1 ? 4 : ratio >= 0.66 ? 3 : ratio >= 0.33 ? 2 : 1;
-    const allDone = total > 0 && completed >= total;
-
     return (
         <Surface
             variant="card-themed"
             className="flex items-center gap-5 sm:gap-6"
         >
-            <div className="relative h-20 w-20 shrink-0">
-                <svg
-                    aria-hidden="true"
-                    viewBox="0 0 80 80"
-                    className="h-20 w-20 -rotate-90"
-                >
-                    <circle
-                        cx="40"
-                        cy="40"
-                        r={radius}
-                        fill="none"
-                        strokeWidth="5"
-                        className="stroke-theme-bg-active"
-                    />
-                    <circle
-                        cx="40"
-                        cy="40"
-                        r={radius}
-                        fill="none"
-                        strokeWidth="5"
-                        strokeLinecap="round"
-                        strokeDasharray={`${dash} ${circumference}`}
-                        className="stroke-intent-success-text transition-[stroke-dasharray] duration-700 ease-out"
-                    />
-                </svg>
-                <span className="absolute inset-0 flex items-center justify-center">
-                    <SproutIcon
-                        className={[
-                            "text-intent-success-text transition-all duration-500",
-                            stage === 1
-                                ? "h-5 w-5 opacity-70"
-                                : stage === 2
-                                  ? "h-7 w-7 opacity-85"
-                                  : "h-9 w-9 opacity-100",
-                        ].join(" ")}
-                    />
-                </span>
-            </div>
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-theme-bg-active">
+                <SproutIcon className="h-7 w-7 text-intent-success-text" />
+            </span>
             <div className="min-w-0 flex-1">
                 <Text
                     as="div"
@@ -515,20 +480,24 @@ function QuestProgress({
                     weight="bold"
                     className="uppercase tracking-wide"
                 >
-                    Your progress
+                    Pollen earned from quests
                 </Text>
                 <Text
                     as="div"
                     weight="semibold"
                     tone="strong"
-                    className="mt-1 text-lg"
+                    className="mt-1 text-2xl tabular-nums"
                 >
-                    {allDone
-                        ? "All caught up"
-                        : `${completed} of ${total} quests`}
+                    {formatGrantAmount(totalPollen)}
                 </Text>
                 <Text as="div" size="sm" tone="soft" className="mt-0.5">
-                    {formatGrantAmount(totalPollen)} Pollen earned
+                    {totalSetup > 0 &&
+                        `${completedSetup} of ${totalSetup} set up`}
+                    {totalSetup > 0 && bountiesCompleted > 0 && " · "}
+                    {bountiesCompleted > 0 &&
+                        `${bountiesCompleted} ${
+                            bountiesCompleted === 1 ? "bounty" : "bounties"
+                        } completed`}
                 </Text>
             </div>
         </Surface>
@@ -539,10 +508,15 @@ function SectionHeader({
     category,
     done,
     total,
+    openCount,
 }: {
     category: CategoryMeta;
     done: number;
     total: number;
+    // When set, this lane is an open pool (community bounties): show a
+    // denominator-free "N open" count instead of a "done / total" ratio that
+    // would recede as the pool grows.
+    openCount?: number;
 }) {
     const Icon = category.icon;
     return (
@@ -561,7 +535,7 @@ function SectionHeader({
                 — {category.blurb}
             </Text>
             <Chip size="sm" intent="neutral" className="ml-auto tabular-nums">
-                {done} / {total}
+                {openCount != null ? `${openCount} open` : `${done} / ${total}`}
             </Chip>
         </div>
     );
@@ -691,15 +665,41 @@ export const QuestOverview: FC<QuestOverviewProps> = ({ githubUsername }) => {
 
     const availableCount = visibleCatalog.length;
     const completedCount = state.grants.length;
-    const totalQuests = state.catalog.length;
     const currentItems =
         activeTab === "completed" ? completedCount : availableCount;
 
+    // Finite "set up" progress = product quests only (the Set up + Grow lanes).
+    // Community bounties are an open, ever-growing pool, so they are NOT part of
+    // any "X of N" denominator — they only contribute an additive completed count.
+    const setupTotals = useMemo(() => {
+        let done = 0;
+        let total = 0;
+        for (const quest of state.catalog) {
+            if (categoryForQuest(quest).key === "community") continue;
+            total += 1;
+            if (completedCatalogIds.has(quest.id)) done += 1;
+        }
+        return { done, total };
+    }, [state.catalog, completedCatalogIds]);
+
+    const bountiesCompleted = useMemo(
+        () =>
+            state.grants.filter((grant) => {
+                const key = catalogKeyForGrant(grant);
+                return (
+                    grant.questId === "github:community_issue_quest" ||
+                    (key?.startsWith("github:") ?? false)
+                );
+            }).length,
+        [state.grants],
+    );
+
     return (
         <div className="flex flex-col gap-5">
-            <QuestProgress
-                completed={completedCount}
-                total={Math.max(totalQuests, completedCount)}
+            <QuestSummary
+                completedSetup={setupTotals.done}
+                totalSetup={setupTotals.total}
+                bountiesCompleted={bountiesCompleted}
                 totalPollen={state.totalPollen}
             />
 
@@ -776,6 +776,11 @@ export const QuestOverview: FC<QuestOverviewProps> = ({ githubUsername }) => {
                                     category={category}
                                     done={totals.done}
                                     total={totals.total}
+                                    openCount={
+                                        category.key === "community"
+                                            ? quests.length
+                                            : undefined
+                                    }
                                 />
                                 {quests.map((quest) => (
                                     <CatalogQuestCard

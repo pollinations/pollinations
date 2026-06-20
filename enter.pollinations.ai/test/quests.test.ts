@@ -113,7 +113,7 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
             (quest) =>
                 quest.kind === "product" && quest.availability === "available",
         ),
-    ).toHaveLength(4);
+    ).toHaveLength(3);
     expect(
         payload.quests.find((quest) => quest.id === "onboarding:first_api_key"),
     ).toMatchObject({
@@ -148,6 +148,11 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
         issueNumber: 323,
         assignees: [],
     });
+    expect(
+        payload.quests.some(
+            (quest) => quest.id === "grow:list_app_on_pollinations",
+        ),
+    ).toBe(false);
 });
 
 test("GET /api/quests/catalog returns product quests with no materialized GitHub issues", async () => {
@@ -171,7 +176,12 @@ test("GET /api/quests/catalog returns product quests with no materialized GitHub
             (quest) =>
                 quest.kind === "product" && quest.availability === "available",
         ),
-    ).toHaveLength(4);
+    ).toHaveLength(3);
+    expect(
+        payload.quests.some(
+            (quest) => quest.id === "grow:list_app_on_pollinations",
+        ),
+    ).toBe(false);
     expect(payload.quests.some((quest) => quest.kind === "github_issue")).toBe(
         false,
     );

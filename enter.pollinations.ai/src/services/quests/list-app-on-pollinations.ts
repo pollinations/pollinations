@@ -25,6 +25,9 @@ export const listAppOnPollinationsQuest = {
     async evaluate({ db, env }) {
         return findGrants(db, env);
     },
+    async instances() {
+        return [];
+    },
 } satisfies QuestModule;
 
 async function findGrants(

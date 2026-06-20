@@ -2,23 +2,23 @@ import { env, SELF } from "cloudflare:test";
 import { grantReward } from "@shared/billing/grant-reward.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import {
-    buildGitHubQuestGrantKey,
-    buildGrantKey,
+    buildGitHubQuestRewardKey,
+    buildRewardKey,
     COMMUNITY_GITHUB_QUEST_ID,
     GITHUB_QUEST_DEFAULT_BALANCE_BUCKET,
-    GITHUB_QUEST_GRANT_SOURCE,
     GITHUB_QUEST_PAYOUT_SCOPE,
-    getQuestDefinition,
-    PRODUCT_QUEST_GRANT_SOURCE,
+    GITHUB_QUEST_REWARD_SOURCE,
+    PRODUCT_QUEST_REWARD_SOURCE,
     type QuestDefinition,
 } from "@shared/quests/definitions.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
 import {
-    buildQuestGrantMetadata,
+    buildQuestRewardMetadata,
     runQuestEvaluator,
 } from "../src/services/quest-evaluator.ts";
+import { getQuestDefinition } from "../src/services/quests/index.ts";
 import { test } from "./fixtures.ts";
 
 async function getOnlyUser() {
@@ -216,36 +216,36 @@ test("GET /api/quests/catalog returns product quests with no materialized GitHub
     );
 });
 
-test("buildGrantKey ignores eventId for once-per-user quests", () => {
+test("buildRewardKey ignores eventId for once-per-user quests", () => {
     const definition = getQuestDefinition("onboarding:first_api_key");
     if (!definition) throw new Error("missing test quest definition");
 
     expect(
-        buildGrantKey(definition, {
+        buildRewardKey(definition, {
             userId: "user-1",
             eventId: "ignored-event",
         }),
     ).toBe("quest:onboarding:first_api_key:user:user-1");
 });
 
-test("buildGrantKey requires eventId for per-event quests", () => {
+test("buildRewardKey requires eventId for per-event quests", () => {
     expect(() =>
-        buildGrantKey(mergedPrQuest, {
+        buildRewardKey(mergedPrQuest, {
             userId: "user-1",
         }),
     ).toThrow(/eventId/);
 
     expect(
-        buildGrantKey(mergedPrQuest, {
+        buildRewardKey(mergedPrQuest, {
             userId: "user-1",
             eventId: "pr-123",
         }),
     ).toBe("quest:github:merged_pr_author:user:user-1:event:pr-123");
 });
 
-test("quest grant metadata keeps definition fields authoritative", () => {
+test("quest reward metadata keeps definition fields authoritative", () => {
     expect(
-        buildQuestGrantMetadata(mergedPrQuest, {
+        buildQuestRewardMetadata(mergedPrQuest, {
             userId: "user-1",
             metadata: {
                 title: "Overridden title",
@@ -259,17 +259,17 @@ test("quest grant metadata keeps definition fields authoritative", () => {
     });
 });
 
-test("per-event grant keys pay once per event", async ({
+test("per-event reward keys pay once per event", async ({
     sessionToken: _sessionToken,
 }) => {
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
 
-    const firstEventKey = buildGrantKey(mergedPrQuest, {
+    const firstEventKey = buildRewardKey(mergedPrQuest, {
         userId: user.id,
         eventId: "pr-123",
     });
-    const secondEventKey = buildGrantKey(mergedPrQuest, {
+    const secondEventKey = buildRewardKey(mergedPrQuest, {
         userId: user.id,
         eventId: "pr-124",
     });
@@ -395,14 +395,14 @@ test("quest evaluator grants code-defined product quests once", async ({
             (grant) => grant.questId === "onboarding:first_api_key",
         ),
     ).toMatchObject({
-        source: PRODUCT_QUEST_GRANT_SOURCE,
+        source: PRODUCT_QUEST_REWARD_SOURCE,
         pollenCredited: 1,
         balanceBucket: "pack",
     });
     expect(
         payload.grants.find((grant) => grant.questId === "spend:first_top_up"),
     ).toMatchObject({
-        source: PRODUCT_QUEST_GRANT_SOURCE,
+        source: PRODUCT_QUEST_REWARD_SOURCE,
         pollenCredited: 5,
         balanceBucket: "pack",
     });
@@ -412,7 +412,7 @@ test("quest evaluator grants code-defined product quests once", async ({
                 grant.questId === "onboarding:established_github_account",
         ),
     ).toMatchObject({
-        source: PRODUCT_QUEST_GRANT_SOURCE,
+        source: PRODUCT_QUEST_REWARD_SOURCE,
         pollenCredited: 5,
         balanceBucket: "pack",
         metadata: {
@@ -523,7 +523,7 @@ test("quest evaluator grants approved app quest per app", async ({
             "quest:grow:list_app_on_pollinations:user:" +
             user.id +
             ":event:app:https://github.com/pollinations/pollinations/issues/555",
-        source: PRODUCT_QUEST_GRANT_SOURCE,
+        source: PRODUCT_QUEST_REWARD_SOURCE,
         pollenCredited: 5,
         sourceRef: "https://github.com/pollinations/pollinations/issues/555",
     });
@@ -537,7 +537,7 @@ test("quest evaluator grants approved app quest per app", async ({
     });
 });
 
-test("quest evaluator grants completed GitHub quest issues through shared funnel", async ({
+test("quest evaluator rewards completed GitHub quest issues through shared path", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -611,11 +611,11 @@ test("quest evaluator grants completed GitHub quest issues through shared funnel
         .where(eq(schema.rewardGrants.questId, COMMUNITY_GITHUB_QUEST_ID));
 
     expect(grant).toMatchObject({
-        idempotencyKey: buildGitHubQuestGrantKey({
+        idempotencyKey: buildGitHubQuestRewardKey({
             issueNumber: 777,
             githubId: user.githubId ?? 0,
         }),
-        source: GITHUB_QUEST_GRANT_SOURCE,
+        source: GITHUB_QUEST_REWARD_SOURCE,
         pollenCredited: 17,
         balanceBucket: "tier",
         sourceRef: "pr:888",
@@ -643,7 +643,7 @@ test("account quest history includes GitHub quest reward grants", async ({
         id: payoutKey,
         idempotencyKey: payoutKey,
         userId: user.id,
-        source: GITHUB_QUEST_GRANT_SOURCE,
+        source: GITHUB_QUEST_REWARD_SOURCE,
         questId: COMMUNITY_GITHUB_QUEST_ID,
         pollenCredited: 5,
         balanceBucket: "pack",

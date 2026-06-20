@@ -1,11 +1,13 @@
 import {
     Chip,
     ClockIcon,
-    ExternalLinkButton,
     GitHubIcon,
+    InlineLink,
     SproutIcon,
+    StatCard,
     Surface,
     TabButton,
+    Text,
 } from "@pollinations/ui";
 import { formatPollen, PaidChip, TierChip } from "@pollinations/ui/wallet";
 import { type FC, useEffect, useMemo, useState } from "react";
@@ -176,47 +178,38 @@ function CatalogQuestCard({
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-semibold text-ink-900">
-                            {quest.issueNumber ? `#${quest.issueNumber} ` : ""}
+                        <Text as="span" weight="semibold" tone="strong">
                             {quest.title}
-                        </span>
-                        {quest.kind === "github_issue" && (
-                            <Chip size="sm" intent="neutral">
-                                GitHub
-                            </Chip>
-                        )}
+                        </Text>
                         <StatusChip quest={quest} completed={completed} />
                     </div>
                     {quest.description && (
-                        <p className="mt-2 text-sm leading-6 text-ink-600">
+                        <Text size="sm" tone="soft" className="mt-2">
                             {quest.description}
-                        </p>
+                        </Text>
                     )}
                     {quest.assignees.length > 0 && (
-                        <p className="mt-1 text-xs text-ink-500">
+                        <Text size="xs" tone="muted" className="mt-1">
                             Assigned to{" "}
                             {quest.assignees
                                 .map((name) => `@${name}`)
                                 .join(", ")}
-                        </p>
+                        </Text>
                     )}
                 </div>
-                <div className="flex shrink-0 flex-col items-end gap-2">
+                <div className="shrink-0">
                     <PaidChip size="sm">
                         {formatRewardLabel(quest.rewardAmount)}
                     </PaidChip>
-                    {quest.url && (
-                        <ExternalLinkButton
-                            href={quest.url}
-                            size="sm"
-                            className="whitespace-nowrap"
-                        >
-                            <GitHubIcon className="h-3.5 w-3.5 shrink-0" />
-                            Issue
-                        </ExternalLinkButton>
-                    )}
                 </div>
             </div>
+            {quest.url && (
+                <InlineLink href={quest.url} className="text-sm">
+                    <GitHubIcon className="h-3.5 w-3.5 shrink-0" />
+                    View issue
+                    {quest.issueNumber ? ` #${quest.issueNumber}` : ""}
+                </InlineLink>
+            )}
         </Surface>
     );
 }
@@ -271,45 +264,39 @@ function CompletedGrantCard({
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-semibold text-ink-900">
+                        <Text as="span" weight="semibold" tone="strong">
                             {grantTitle(grant, catalogById)}
-                        </span>
+                        </Text>
                         <BalanceBucketChip bucket={grant.balanceBucket} />
                     </div>
-                    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-ink-500">
-                        <span>{formatTimestamp(grant.createdAt)}</span>
-                        {context && <span>{context}</span>}
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <Text as="span" size="xs" tone="muted">
+                            {formatTimestamp(grant.createdAt)}
+                        </Text>
+                        {context && (
+                            <Text as="span" size="xs" tone="muted">
+                                {context}
+                            </Text>
+                        )}
                     </div>
                 </div>
-                <div className="flex shrink-0 flex-col items-end gap-2">
-                    <span className="font-semibold tabular-nums text-ink-900">
+                <div className="shrink-0">
+                    <Text
+                        as="span"
+                        weight="semibold"
+                        tone="strong"
+                        className="tabular-nums"
+                    >
                         +{formatGrantAmount(grant.pollenCredited)}
-                    </span>
-                    {url && (
-                        <ExternalLinkButton
-                            href={url}
-                            size="sm"
-                            className="whitespace-nowrap"
-                        >
-                            <GitHubIcon className="h-3.5 w-3.5 shrink-0" />
-                            Issue
-                        </ExternalLinkButton>
-                    )}
+                    </Text>
                 </div>
             </div>
-        </Surface>
-    );
-}
-
-function QuestStat({ label, value }: { label: string; value: string }) {
-    return (
-        <Surface className="flex flex-col gap-1">
-            <span className="text-xs font-medium uppercase tracking-wide text-theme-text-muted">
-                {label}
-            </span>
-            <span className="text-lg font-semibold tabular-nums text-ink-900">
-                {value}
-            </span>
+            {url && (
+                <InlineLink href={url} className="text-sm">
+                    <GitHubIcon className="h-3.5 w-3.5 shrink-0" />
+                    View on GitHub
+                </InlineLink>
+            )}
         </Surface>
     );
 }
@@ -421,18 +408,24 @@ export const QuestOverview: FC<QuestOverviewProps> = ({ githubUsername }) => {
     return (
         <div className="flex flex-col gap-4">
             <div className="grid gap-2 sm:grid-cols-3">
-                <QuestStat
-                    label="Available"
-                    value={availableCount.toLocaleString()}
-                />
-                <QuestStat
-                    label="Completed"
-                    value={state.grants.length.toLocaleString()}
-                />
-                <QuestStat
-                    label="Earned"
-                    value={formatGrantAmount(state.totalPollen)}
-                />
+                <Surface>
+                    <StatCard
+                        label="Available"
+                        value={availableCount.toLocaleString()}
+                    />
+                </Surface>
+                <Surface>
+                    <StatCard
+                        label="Completed"
+                        value={state.grants.length.toLocaleString()}
+                    />
+                </Surface>
+                <Surface>
+                    <StatCard
+                        label="Earned"
+                        value={formatGrantAmount(state.totalPollen)}
+                    />
+                </Surface>
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -444,13 +437,11 @@ export const QuestOverview: FC<QuestOverviewProps> = ({ githubUsername }) => {
                                 active={activeTab === tab}
                                 onClick={() => setActiveTab(tab)}
                             >
-                                <span className="font-bold">
-                                    {tab === "available"
-                                        ? `Available (${availableCount})`
-                                        : tab === "claimed"
-                                          ? `Claimed by me (${claimedCount})`
-                                          : `Completed (${state.grants.length})`}
-                                </span>
+                                {tab === "available"
+                                    ? `Available (${availableCount})`
+                                    : tab === "claimed"
+                                      ? `Claimed by me (${claimedCount})`
+                                      : `Completed (${state.grants.length})`}
                             </TabButton>
                         ),
                     )}

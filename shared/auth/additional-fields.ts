@@ -8,10 +8,5 @@ export const authAdditionalFields = {
             type: "string",
             input: false,
         },
-        tier: {
-            type: "string",
-            defaultValue: "spore",
-            input: false,
-        },
     },
 } as const;

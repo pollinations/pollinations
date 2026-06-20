@@ -264,7 +264,6 @@ describe("tracking observability", () => {
             id: userId,
             email: `${userId}@test.local`,
             name: "Track Auto Top Up Test",
-            tier: "flower",
             tierBalance: 0,
             packBalance: 100,
             autoTopUpEnabled: true,

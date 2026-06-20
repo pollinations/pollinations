@@ -13,7 +13,6 @@ declare namespace Cloudflare {
 		LOG_LEVEL: "trace";
 		LOG_FORMAT: "text";
 		TINYBIRD_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event";
-		TINYBIRD_TIER_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event";
 		TINYBIRD_STRIPE_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event";
 		STRIPE_MODE: "sandbox";
 		STRIPE_SUCCESS_URL: "http://localhost:3000";
@@ -46,7 +45,6 @@ declare namespace Cloudflare {
 		LOG_LEVEL: "debug";
 		LOG_FORMAT: "json";
 		TINYBIRD_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event";
-		TINYBIRD_TIER_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event";
 		TINYBIRD_STRIPE_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event";
 		STRIPE_MODE: "live";
 		STRIPE_SUCCESS_URL: "https://enter.pollinations.ai";
@@ -79,7 +77,6 @@ declare namespace Cloudflare {
 		LOG_LEVEL: "debug";
 		LOG_FORMAT: "json";
 		TINYBIRD_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event";
-		TINYBIRD_TIER_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event";
 		TINYBIRD_STRIPE_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event";
 		STRIPE_MODE: "sandbox";
 		STRIPE_SUCCESS_URL: "https://staging.enter.pollinations.ai";
@@ -114,7 +111,6 @@ declare namespace Cloudflare {
 		LOG_LEVEL: "debug";
 		LOG_FORMAT: "json";
 		TINYBIRD_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event";
-		TINYBIRD_TIER_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event";
 		TINYBIRD_STRIPE_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event";
 		STRIPE_MODE: "sandbox";
 		STRIPE_SUCCESS_URL: "https://dev.enter.pollinations.ai";
@@ -147,7 +143,6 @@ declare namespace Cloudflare {
 		LOG_LEVEL: "trace";
 		LOG_FORMAT: "text";
 		TINYBIRD_INGEST_URL: "http://localhost:7181/v0/events?name=generation_event";
-		TINYBIRD_TIER_INGEST_URL: "http://localhost:7181/v0/events?name=tier_event";
 		TINYBIRD_STRIPE_INGEST_URL: "http://localhost:7181/v0/events?name=stripe_event";
 		STRIPE_MODE: "sandbox";
 		STRIPE_SUCCESS_URL: "http://localhost:3000";
@@ -181,7 +176,6 @@ declare namespace Cloudflare {
 		LOG_LEVEL: "trace" | "debug";
 		LOG_FORMAT: "text" | "json";
 		TINYBIRD_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event" | "http://localhost:7181/v0/events?name=generation_event";
-		TINYBIRD_TIER_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event" | "http://localhost:7181/v0/events?name=tier_event";
 		TINYBIRD_STRIPE_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event" | "http://localhost:7181/v0/events?name=stripe_event";
 		STRIPE_MODE: "sandbox" | "live";
 		STRIPE_SUCCESS_URL: "http://localhost:3000" | "https://enter.pollinations.ai" | "https://staging.enter.pollinations.ai" | "https://dev.enter.pollinations.ai";
@@ -213,5 +207,5 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "ENVIRONMENT" | "USAGE_DEBUG_USER_ID" | "CLOUDFLARE_ACCOUNT_ID" | "LOG_LEVEL" | "LOG_FORMAT" | "TINYBIRD_INGEST_URL" | "TINYBIRD_TIER_INGEST_URL" | "TINYBIRD_STRIPE_INGEST_URL" | "STRIPE_MODE" | "STRIPE_SUCCESS_URL" | "BETTER_AUTH_URL" | "STRIPE_AUTO_TOP_UP_PMC_ID" | "STRIPE_PMC" | "BETTER_AUTH_SECRET" | "GITHUB_CLIENT_ID" | "GITHUB_CLIENT_SECRET" | "PLN_ENTER_TOKEN" | "TINYBIRD_READ_TOKEN" | "STRIPE_SECRET_KEY" | "STRIPE_WEBHOOK_SECRET" | "ELEVENLABS_API_KEY" | "OVHCLOUD_API_KEY" | "PLN_GPU_TOKEN" | "MUSIC_SERVICE_URL" | "SSH_RUNPOD_KLEIN" | "SSH_RUNPOD_FLUX_ZIMAGE" | "SSH_LAMBDA_SANA_LTX2_ACESTEP" | "TINYBIRD_INGEST_TOKEN" | "TINYBIRD_SYNC_TOKEN" | "DASHSCOPE_API_KEY" | "STAGING_ALLOWED_GITHUB_IDS">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "ENVIRONMENT" | "USAGE_DEBUG_USER_ID" | "CLOUDFLARE_ACCOUNT_ID" | "LOG_LEVEL" | "LOG_FORMAT" | "TINYBIRD_INGEST_URL" | "TINYBIRD_STRIPE_INGEST_URL" | "STRIPE_MODE" | "STRIPE_SUCCESS_URL" | "BETTER_AUTH_URL" | "STRIPE_AUTO_TOP_UP_PMC_ID" | "STRIPE_PMC" | "BETTER_AUTH_SECRET" | "GITHUB_CLIENT_ID" | "GITHUB_CLIENT_SECRET" | "PLN_ENTER_TOKEN" | "TINYBIRD_READ_TOKEN" | "STRIPE_SECRET_KEY" | "STRIPE_WEBHOOK_SECRET" | "ELEVENLABS_API_KEY" | "OVHCLOUD_API_KEY" | "PLN_GPU_TOKEN" | "MUSIC_SERVICE_URL" | "SSH_RUNPOD_KLEIN" | "SSH_RUNPOD_FLUX_ZIMAGE" | "SSH_LAMBDA_SANA_LTX2_ACESTEP" | "TINYBIRD_INGEST_TOKEN" | "TINYBIRD_SYNC_TOKEN" | "DASHSCOPE_API_KEY" | "STAGING_ALLOWED_GITHUB_IDS">> {}
 }

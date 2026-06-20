@@ -9,7 +9,6 @@ import { api } from "./api.ts";
 import type { Env } from "./env.ts";
 import { logger } from "./middleware/logger.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
-import { runTierRefill } from "./services/tier-refill.ts";
 
 function stripTrailingSlash(path: string): string {
     return path.length > 1 ? path.replace(/\/+$/, "") : path;
@@ -88,11 +87,4 @@ export type AppRoutes = typeof app;
 
 export default {
     fetch: app.fetch,
-    async scheduled(
-        _event: ScheduledController,
-        env: CloudflareBindings,
-        ctx: ExecutionContext,
-    ) {
-        await runTierRefill(env, ctx);
-    },
 } satisfies ExportedHandler<CloudflareBindings>;

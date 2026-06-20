@@ -9,9 +9,7 @@ import {
     account as accountTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
-import { sendTierEventToTinybird } from "@shared/events.ts";
 import { AUTH_TRUSTED_ORIGINS } from "@shared/public-urls.ts";
-import { DEFAULT_TIER, getTierPollen } from "@shared/tier-config.ts";
 import {
     type BetterAuthOptions,
     type BetterAuthPlugin,
@@ -90,7 +88,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         plugins: [
             adminPlugin,
             apiKeyPlugin,
-            tierPlugin(env, ctx),
+            userSyncPlugin(env, ctx),
             stagingAccessPlugin(env),
             openAPIPlugin,
         ],
@@ -103,22 +101,17 @@ export type Session = Auth["$Infer"]["Session"]["session"];
 export type User = Auth["$Infer"]["Session"]["user"];
 
 /**
- * Plugin to initialize tier balance for new users in D1.
+ * Plugin to keep mutable user profile fields synchronized.
  */
-function tierPlugin(
+function userSyncPlugin(
     env: Cloudflare.Env,
     executionCtx?: ExecutionContext,
 ): BetterAuthPlugin {
     return {
-        id: "tier",
+        id: "user-sync",
         init: (_ctx) => ({
             options: {
                 databaseHooks: {
-                    user: {
-                        create: {
-                            after: onAfterUserCreate(env, executionCtx),
-                        },
-                    },
                     session: {
                         create: {
                             after: onAfterSessionCreate(env, executionCtx),
@@ -223,50 +216,6 @@ function onAfterSessionCreate(
                 }
             })(),
         );
-    };
-}
-
-/**
- * Set initial tier balance in D1 after user creation.
- * This guarantees new users get their default tier pollen.
- */
-function onAfterUserCreate(
-    env: Cloudflare.Env,
-    executionCtx?: ExecutionContext,
-) {
-    return async (user: GenericUser, _ctx: GenericEndpointContext | null) => {
-        try {
-            const db = drizzle(env.DB);
-            const tierBalance = getTierPollen(DEFAULT_TIER);
-            await db
-                .update(userTable)
-                .set({
-                    tierBalance,
-                    lastTierGrant: Date.now(),
-                })
-                .where(eq(userTable.id, user.id));
-
-            // Log user registration event to Tinybird
-            // Use the ExecutionContext passed from createAuth, not better-auth's internal context
-            executionCtx?.waitUntil(
-                sendTierEventToTinybird(
-                    {
-                        event_type: "user_registration",
-                        environment: env.ENVIRONMENT || "unknown",
-                        user_id: user.id,
-                        tier: DEFAULT_TIER,
-                        pollen_amount: tierBalance,
-                    },
-                    env.TINYBIRD_TIER_INGEST_URL,
-                    env.TINYBIRD_INGEST_TOKEN,
-                ),
-            );
-        } catch (e: unknown) {
-            const messageOrError = e instanceof Error ? e.message : e;
-            throw new APIError("INTERNAL_SERVER_ERROR", {
-                message: `User tier initialization failed. Error: ${messageOrError}`,
-            });
-        }
     };
 }
 

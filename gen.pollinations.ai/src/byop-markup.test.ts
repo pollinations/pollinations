@@ -43,10 +43,7 @@ function fakeLog() {
     };
 }
 
-async function setupPayerAndDev({
-    payerTier = "spore",
-    devTier = "seed",
-} = {}) {
+async function setupPayerAndDev() {
     const suffix = crypto.randomUUID();
     const payerId = `payer-${suffix}`;
     const devId = `dev-${suffix}`;
@@ -57,7 +54,6 @@ async function setupPayerAndDev({
             id: payerId,
             email: `${payerId}@test.local`,
             name: payerId,
-            tier: payerTier,
             tierBalance: 2,
             packBalance: 0,
             createdAt: new Date(),
@@ -67,7 +63,6 @@ async function setupPayerAndDev({
             id: devId,
             email: `${devId}@test.local`,
             name: devId,
-            tier: devTier,
             tierBalance: 0,
             packBalance: 0,
             createdAt: new Date(),
@@ -114,18 +109,6 @@ describe("BYOP markup", () => {
             .set({ metadata: JSON.stringify({ earningsEnabled: false }) })
             .where(sql`${apikeyTable.id} = ${pkId}`);
         expect(await resolveDevMarkup(db, pkId, 4, payerId)).toBeNull();
-    });
-
-    it("resolves markup for app owners on any tier", async () => {
-        const { payerId, devId, pkId } = await setupPayerAndDev({
-            devTier: "spore",
-        });
-
-        expect(await resolveDevMarkup(db, pkId, 4, payerId)).toEqual({
-            devUserId: devId,
-            devCredit: 4 * MARKUP_PCT,
-            markupRate: MARKUP_PCT,
-        });
     });
 
     it("credits creator tier balance when payer spends tier balance", async () => {
@@ -176,31 +159,6 @@ describe("BYOP markup", () => {
         const creatorBalances = await getUserBalance(db, devId);
         expect(creatorBalances.tierBalance).toBe(0);
         expect(creatorBalances.packBalance).toBeCloseTo(MARKUP_PCT, 10);
-    });
-
-    it("bills baseline plus markup without a payer-tier gate", async () => {
-        const { payerId, devId, pkId } = await setupPayerAndDev({
-            payerTier: "flower",
-        });
-
-        const { markup } = await handleBalanceDeduction({
-            db,
-            isBilledUsage: true,
-            totalPrice: 1,
-            userId: payerId,
-            byopClientKeyId: pkId,
-        });
-
-        expect(markup?.devUserId).toBe(devId);
-        expect(markup?.devCredit).toBeCloseTo(MARKUP_PCT, 10);
-        expect((await getUserBalance(db, payerId)).tierBalance).toBeCloseTo(
-            1 - MARKUP_PCT,
-            10,
-        );
-        expect((await getUserBalance(db, devId)).tierBalance).toBeCloseTo(
-            MARKUP_PCT,
-            10,
-        );
     });
 
     it("allows regular preflight when one bucket is above the model estimate", async () => {

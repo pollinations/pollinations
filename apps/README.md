@@ -5,7 +5,7 @@ Contains quest based community built projects and the app collection that has be
 
 ## Submit Your App
 
-Build something with Pollinations? Get it on the [showcase](https://pollinations.ai/apps) and bump up to **flower tier**. One approved app per GitHub account does it.
+Build something with Pollinations? Get it on the [showcase](https://pollinations.ai/apps).
 
 
 ## 1. Quest based App Submissions
@@ -81,7 +81,6 @@ Each app gets:
 > To increase the chances of approval during app review, submitted apps should meet the following criteria:
 
 - Have an account at [enter.pollinations.ai](https://enter.pollinations.ai) (sign up with GitHub)
-- Be on **seed tier** or above
 - Your app actively uses the Pollinations API — image, text, audio, or video
 - Be **open-source** with a public GitHub repository
 - Include a working demo URL (auto-deployed or external)
@@ -103,7 +102,7 @@ Open an issue with the [submission template](https://github.com/pollinations/pol
 
 - A bot checks the basics (registered, not a duplicate, attribution present)
 - A maintainer takes a look
-- If it's good, your app lands on [pollinations.ai/apps](https://pollinations.ai/apps) and your tier bumps to **flower**
+- If it's good, your app lands on [pollinations.ai/apps](https://pollinations.ai/apps)
 - If something's off, we'll comment with what to fix
 
 ### After

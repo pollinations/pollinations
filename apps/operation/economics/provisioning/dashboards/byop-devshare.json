@@ -1100,7 +1100,7 @@
                 "type": "grafana-clickhouse-datasource",
                 "uid": "PAD1A0A25CD30D456"
             },
-            "description": "Tier composition of BYOP end-users: how much of their Pollen comes from free-tier subsidy vs paid packs. Pack-heavy traffic is monetized; tier-heavy means BYOP apps are mostly serving free-tier users.",
+            "description": "Balance-bucket mix of BYOP end-users: how much usage spends existing tier balance versus paid pack balance. Pack-heavy traffic is monetized; tier-bucket-heavy traffic is spending the non-pack bucket.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -1217,7 +1217,7 @@
                     "refId": "A"
                 }
             ],
-            "title": "End-User Tier Composition",
+            "title": "End-User Balance Bucket Mix",
             "type": "timeseries"
         },
         {

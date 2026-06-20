@@ -1,6 +1,6 @@
 ---
 name: spending-analysis
-description: Analyze Pollinations revenue, pack purchases, and tier spending patterns. Query Polar for payment history and Tinybird for usage data.
+description: Analyze Pollinations revenue, pack purchases, and balance-bucket spending patterns. Query Polar for payment history and Tinybird for usage data.
 ---
 
 # Requirements
@@ -17,15 +17,19 @@ Must run from the `pollinations` repo root with access to `enter.pollinations.ai
 # Data Sources
 
 ## Polar API
-- **Orders**: Payment history for pack purchases
-- **Products**: Tier subscriptions and pollen packs
+
+- **Orders**: Payment history for Pollen pack purchases
+- **Products**: Pollen pack products
 - **Customers**: User payment info linked by `external_id`
 
 ## Tinybird
-- **generation_event**: Usage data with `user_tier`, `total_price`, `user_id`
-- Tracks all API requests with pricing and tier info
 
-> **Workspace**: Two workspaces exist now — `pollinations_enter` (prod) and `pollinations_enter_staging` (staging + dev + local). All queries below use a **prod** read token by design — staging contains no real revenue. The `environment = 'production'` filters below are redundant against prod-token queries (prod WS only has prod rows after the 2026-05-18 cleanup) but kept as defence-in-depth in case the token is later widened.
+- **generation_event**: Usage data with `user_id`, `total_price`, and `meter_source`
+- Use `meter_source` to split spend by active balance bucket:
+  - `v1:meter:tier` / `local:tier`
+  - `v1:meter:pack` / `local:pack`
+
+> **Workspace**: Two workspaces exist now: `pollinations_enter` (prod) and `pollinations_enter_staging` (staging + dev + local). Revenue queries should use prod read tokens; staging contains no real revenue.
 
 ---
 
@@ -51,14 +55,14 @@ export TINYBIRD_TOKEN=$(sops -d apps/operation/kpi/secrets/env.json | jq -r '.TI
 
 # Polar API Queries
 
-## List Products (Tiers & Packs)
+## List Products
 
 ```bash
 curl -sL "https://api.polar.sh/v1/products" \
   -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" | jq '[.items[] | {name, id, recurring: .is_recurring}]'
 ```
 
-## Get Pack Purchases (Last 100)
+## Get Pack Purchases
 
 ```bash
 # 5 pollen pack product ID
@@ -69,7 +73,7 @@ curl -sL "https://api.polar.sh/v1/orders?limit=100&product_id=$PRODUCT_ID" \
   jq '[.items[] | {date: .created_at[0:10], amount: (.total_amount / 100), customer: .customer.email}]'
 ```
 
-## All Pack Product IDs
+## Pollen Pack Product IDs
 
 | Pack | Product ID |
 |------|------------|
@@ -91,21 +95,20 @@ curl -sL "https://api.polar.sh/v1/orders?limit=100&product_id=$PRODUCT_ID" \
 
 # Tinybird Queries
 
-## User Count by Tier
+## Weekly Spend by Balance Bucket
 
 ```bash
 curl -sL "https://api.europe-west2.gcp.tinybird.co/v0/sql" \
   -H "Authorization: Bearer $TINYBIRD_TOKEN" \
-  --data-urlencode "q=SELECT argMax(user_tier, start_time) as tier, count() as users FROM generation_event WHERE start_time >= now() - INTERVAL 60 DAY AND environment = 'production' AND user_id != 'undefined' GROUP BY user_id FORMAT JSON" | \
-  jq '.data | group_by(.tier) | map({tier: .[0].tier, users: length})'
+  --data-urlencode "q=SELECT toStartOfWeek(start_time) as week, meter_source, sum(total_price) as total_spend, count() as requests FROM generation_event WHERE start_time >= now() - INTERVAL 60 DAY AND environment = 'production' GROUP BY week, meter_source ORDER BY week DESC FORMAT JSON" | jq '.data'
 ```
 
-## Weekly Spending by Tier
+## Top Paying Users by Pack Spend
 
 ```bash
 curl -sL "https://api.europe-west2.gcp.tinybird.co/v0/sql" \
   -H "Authorization: Bearer $TINYBIRD_TOKEN" \
-  --data-urlencode "q=SELECT toStartOfWeek(start_time) as week, user_tier, sum(total_price) as total_spend, count() as requests FROM generation_event WHERE start_time >= now() - INTERVAL 60 DAY AND environment = 'production' GROUP BY week, user_tier ORDER BY week DESC FORMAT JSON" | jq '.data'
+  --data-urlencode "q=SELECT user_id, user_github_username, sum(total_price) as pack_spend, count() as requests FROM generation_event WHERE start_time >= now() - INTERVAL 30 DAY AND environment = 'production' AND meter_source IN ('v1:meter:pack', 'local:pack') GROUP BY user_id, user_github_username ORDER BY pack_spend DESC LIMIT 50 FORMAT JSON" | jq '.data'
 ```
 
 ---
@@ -118,50 +121,13 @@ curl -sL "https://api.europe-west2.gcp.tinybird.co/v0/sql" \
 .claude/skills/spending-analysis/scripts/weekly-pack-revenue.sh
 ```
 
-Shows weekly breakdown of actual pack purchases (real revenue, not free tier usage).
-
-## Pack Purchases by Tier
-
-```bash
-.claude/skills/spending-analysis/scripts/pack-purchases-by-tier.sh
-```
-
-Cross-references Polar pack purchasers with Tinybird tier data to show which tiers buy most pollen proportionally.
-
----
-
-# Key Findings (Jan 2026 Analysis)
-
-## Pack Purchases by Tier (Weighted by User Count)
-
-| Tier | Revenue | Purchasers | Total Users | % Who Buy | $/User |
-|------|---------|------------|-------------|-----------|--------|
-| nectar | $146 | 10 | 23 | **43.5%** | **$6.37** |
-| flower | $564 | 18 | 218 | **8.3%** | **$2.59** |
-| seed | $1,173 | 38 | 575 | **6.6%** | **$2.04** |
-| spore | $1,657 | 106 | 6,757 | **1.6%** | **$0.25** |
-
-**Key Insight**: Higher tiers buy MORE pollen proportionally, not less.
-
-## Revenue Trend (9 Weeks)
-
-| Week | Orders | Revenue |
-|------|--------|---------|
-| Jan 13-19 | 51 | $573 |
-| Jan 6-12 | 83 | $928 |
-| Dec 30-Jan 5 | 59 | $928 |
-| Dec 23-29 | 21 | $432 |
-| Dec 16-22 | 22 | $276 |
-| Dec 9-15 | 16 | $141 |
-| Dec 2-8 | 17 | $293 |
-| Nov 25-Dec 1 | 10 | $293 |
-| Nov 18-24 | 1 | $10 |
+Shows weekly breakdown of actual pack purchases.
 
 ---
 
 # Notes
 
-- **Free tier spending** in Tinybird includes tier pollen allocation - not real revenue
-- **Pack purchases** in Polar are actual paid revenue
-- Cross-reference by `external_id` (Polar) = `user_id` (Tinybird)
-- Polar API returns 307 redirects - use `curl -sL` to follow
+- **Pack purchases** in Polar are actual paid revenue.
+- **Usage spend** in Tinybird is generation consumption and may be paid from either active balance bucket.
+- Cross-reference by `external_id` (Polar) = `user_id` (Tinybird).
+- Polar API returns 307 redirects: use `curl -sL` to follow.

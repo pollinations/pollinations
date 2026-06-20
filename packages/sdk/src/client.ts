@@ -1578,7 +1578,7 @@ export class Pollinations {
      * @example
      * ```ts
      * const user = await pollinations.userInfo();
-     * console.log(user.name, user.tier);
+     * console.log(user.name, user.preferred_username);
      * ```
      */
     async userInfo(options: RequestOptions = {}): Promise<UserInfo> {

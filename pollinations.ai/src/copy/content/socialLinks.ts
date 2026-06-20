@@ -57,7 +57,6 @@ export const LINKS = {
     enter: "https://enter.pollinations.ai",
     enterDocs: "https://gen.pollinations.ai/docs",
     enterApiDocs: "https://gen.pollinations.ai/docs",
-    enterTiersFaq: "https://enter.pollinations.ai#what-are-tiers",
     enterModels: "https://enter.pollinations.ai#models",
     apidocsRaw:
         "https://raw.githubusercontent.com/pollinations/pollinations/production/APIDOCS.md",

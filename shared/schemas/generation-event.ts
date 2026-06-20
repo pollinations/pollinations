@@ -25,7 +25,6 @@ export type TinybirdEvent = {
 
     // User
     userId?: string;
-    userTier?: string;
     userGithubId?: string;
     userGithubUsername?: string;
 

@@ -25,7 +25,6 @@ SQL >
         resolved_model_requested,
         request_inputs,
         user_id,
-        user_tier,
         api_key_id
     FROM error_event
     WHERE timestamp >= now() - interval {{Int32(minutes, 1440)}} minute

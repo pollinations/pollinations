@@ -21,7 +21,6 @@ async function createUser({
         id: userId,
         email: `${userId}@test.local`,
         name: "Billing Test User",
-        tier: "flower",
         tierBalance,
         packBalance,
         createdAt: new Date(),
@@ -93,6 +92,22 @@ describe("billing deduction", () => {
         expect(await getUserBalance(db, userId)).toEqual({
             tierBalance: 2,
             packBalance: 0,
+        });
+    });
+
+    it("handles concurrent regular deductions without lost updates", async () => {
+        const userId = await createUser({ tierBalance: 20, packBalance: 40 });
+
+        const results = await Promise.all(
+            Array.from({ length: 10 }, () =>
+                atomicDeductUserBalance(db, userId, 5),
+            ),
+        );
+
+        expect(results.every((result) => result.ok)).toBe(true);
+        expect(await getUserBalance(db, userId)).toEqual({
+            tierBalance: 0,
+            packBalance: 10,
         });
     });
 

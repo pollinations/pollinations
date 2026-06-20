@@ -2,9 +2,8 @@ TOKEN scoring_snapshot_append APPEND
 TOKEN tinybird_read READ
 
 DESCRIPTION >
-    Periodic snapshots of user tier scoring metrics. Each row captures
-    raw inputs used to compute a user's tier score at a point in time.
-    Enables Grafana simulations with different scoring configs.
+    Legacy scoring snapshots kept for historical data only. Active writers
+    have been removed.
 
 SCHEMA >
     `timestamp`             DateTime            `json:$.timestamp`,

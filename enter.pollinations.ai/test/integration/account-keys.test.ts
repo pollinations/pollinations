@@ -1,6 +1,6 @@
 import { SELF } from "cloudflare:test";
 import { describe, expect } from "vitest";
-import { test } from "../fixtures.ts";
+import { createApiKeyViaApi, test } from "../fixtures.ts";
 
 describe("Account Key Management API", () => {
     describe("POST /api/account/keys (create)", () => {
@@ -173,37 +173,13 @@ describe("Account Key Management API", () => {
         });
 
         test("should create key via API key with account:keys permission", async ({
-            auth,
             sessionToken,
         }) => {
             // First create a key with account:keys permission via session
-            const createParent = await auth.apiKey.create({
+            const parentKey = await createApiKeyViaApi(sessionToken, {
                 name: "parent-key",
-                prefix: "sk",
-                fetchOptions: {
-                    headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                },
+                accountPermissions: ["keys"],
             });
-            if (!createParent.data)
-                throw new Error("Failed to create parent key");
-
-            // Set account:keys permission via the update endpoint
-            const updateResp = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${createParent.data.id}/update`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                    body: JSON.stringify({
-                        accountPermissions: ["keys"],
-                    }),
-                },
-            );
-            expect(updateResp.status).toBe(200);
 
             // Now use the parent key to create a child key
             const response = await SELF.fetch(
@@ -212,7 +188,7 @@ describe("Account Key Management API", () => {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${createParent.data.key}`,
+                        Authorization: `Bearer ${parentKey.key}`,
                     },
                     body: JSON.stringify({
                         name: "child-from-api",
@@ -247,36 +223,14 @@ describe("Account Key Management API", () => {
         });
 
         test("should reject publishable key even with keys permission", async ({
-            auth,
             sessionToken,
         }) => {
             // Create a publishable key
-            const createPub = await auth.apiKey.create({
+            const publishableKey = await createApiKeyViaApi(sessionToken, {
                 name: "pub-with-keys-perm",
-                prefix: "pk",
-                metadata: { keyType: "publishable" },
-                fetchOptions: {
-                    headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                },
+                type: "publishable",
+                accountPermissions: ["keys"],
             });
-            if (!createPub.data) throw new Error("Failed to create pk key");
-
-            // Set account:keys permission
-            await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${createPub.data.id}/update`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                    body: JSON.stringify({
-                        accountPermissions: ["keys"],
-                    }),
-                },
-            );
 
             const response = await SELF.fetch(
                 "http://localhost:3000/api/account/keys",
@@ -284,7 +238,7 @@ describe("Account Key Management API", () => {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${createPub.data.key}`,
+                        Authorization: `Bearer ${publishableKey.key}`,
                     },
                     body: JSON.stringify({ name: "should-fail" }),
                 },
@@ -342,20 +296,13 @@ describe("Account Key Management API", () => {
 
     describe("DELETE /api/account/keys/:id (revoke)", () => {
         test("should revoke a key via session auth", async ({
-            auth,
             sessionToken,
         }) => {
             // Create a key to revoke
-            const createResp = await auth.apiKey.create({
+            const createdKey = await createApiKeyViaApi(sessionToken, {
                 name: "to-be-revoked",
-                fetchOptions: {
-                    headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                },
             });
-            if (!createResp.data) throw new Error("Failed to create key");
-            const keyId = createResp.data.id;
+            const keyId = createdKey.id;
 
             const response = await SELF.fetch(
                 `http://localhost:3000/api/account/keys/${keyId}`,
@@ -376,7 +323,7 @@ describe("Account Key Management API", () => {
                 "http://localhost:3000/api/account/key",
                 {
                     headers: {
-                        Authorization: `Bearer ${createResp.data.key}`,
+                        Authorization: `Bearer ${createdKey.key}`,
                     },
                 },
             );
@@ -384,42 +331,21 @@ describe("Account Key Management API", () => {
         });
 
         test("should prevent self-revocation via API key", async ({
-            auth,
             sessionToken,
         }) => {
             // Create a key with account:keys permission
-            const createResp = await auth.apiKey.create({
+            const createdKey = await createApiKeyViaApi(sessionToken, {
                 name: "self-revoke-test",
-                fetchOptions: {
-                    headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                },
+                accountPermissions: ["keys"],
             });
-            if (!createResp.data) throw new Error("Failed to create key");
-
-            // Grant account:keys permission
-            await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${createResp.data.id}/update`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                    body: JSON.stringify({
-                        accountPermissions: ["keys"],
-                    }),
-                },
-            );
 
             // Try to revoke itself
             const response = await SELF.fetch(
-                `http://localhost:3000/api/account/keys/${createResp.data.id}`,
+                `http://localhost:3000/api/account/keys/${createdKey.id}`,
                 {
                     method: "DELETE",
                     headers: {
-                        Authorization: `Bearer ${createResp.data.key}`,
+                        Authorization: `Bearer ${createdKey.key}`,
                     },
                 },
             );

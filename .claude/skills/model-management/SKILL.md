@@ -53,7 +53,7 @@ client → gen.pollinations.ai → upstream provider
          enter.pollinations.ai (dashboard, auth, Stripe surfaces)
 ```
 
-**Generation does not go through Enter, and neither does billing tracking.** Gen reads the shared D1/KV bindings directly to validate tokens, check `packBalance`, and apply tier limits. Gen also sends the `generation_event` directly to Tinybird (`gen.pollinations.ai/src/middleware/track.ts:290`). The `ENTER` service binding is invoked in only three places:
+**Generation does not go through Enter, and neither does billing tracking.** Gen reads the shared D1/KV bindings directly to validate tokens, check balances, and apply model permissions. Gen also sends the `generation_event` directly to Tinybird (`gen.pollinations.ai/src/middleware/track.ts:290`). The `ENTER` service binding is invoked in only three places:
 
 | File:line | Call site purpose |
 |---|---|
@@ -73,7 +73,6 @@ Implication: **local gen alone covers ~90% of model-management work** — includ
 **Boot Enter locally only if the change touches any of:**
 - Dashboard, auth routes, account APIs (Stripe portal, webhook handlers, login)
 - Pollen pack / `packBalance` mutation logic, auto-top-up flow itself
-- Tier configs (the source of truth in enter — `enter.pollinations.ai/src/tier-config.ts`)
 - Tinybird event schema (the event SHAPE / new datasource column — not the data inside it; gen writes the data)
 - DB seeding / migrations
 
@@ -134,7 +133,7 @@ source _local/.env
 
 > **There are no "free" vs "paid" keys.** A key is a key. The `paidOnly` gate checks the user's `packBalance` (purchased Pollen pack balance), not the key prefix. To exercise the gate, use a token whose **owning user has `packBalance == 0`** — typically a freshly minted key (signup grants free Pollen, no pack) or one whose pack has been depleted. Don't confuse "free Pollen remaining" (signup grant, doesn't unlock paidOnly) with "pack balance" (purchased, does unlock).
 
-> **A 401 on `localhost:8788` almost always means the local D1 has no row for your token — run `cd gen.pollinations.ai && npm run seed:local`.** Root cause: gen validates `Bearer` tokens against its OWN local D1 `apikey` table (`shared/auth/api-key.ts` → better-auth `verifyApiKey`; enter's D1 is a separate sqlite, not shared). better-auth stores keys hashed as `base64url(sha256(key))` and never stores the plaintext of secret keys, so a dashboard-minted key is unrecoverable and a `_local/.env` token only validates if its hash is in THIS D1. The D1 gets recreated (or came from another clone), so the hash is usually absent → 401. `seed:local` inserts a key whose plaintext = your `_local/.env` `POLLINATIONS_TOKEN_LOCAL` (and a flower-tier user with large balances, so paid-only + spend both pass). It's idempotent — re-run any time. Inspect what's seeded (no secrets printed):
+> **A 401 on `localhost:8788` almost always means the local D1 has no row for your token — run `cd gen.pollinations.ai && npm run seed:local`.** Root cause: gen validates `Bearer` tokens against its OWN local D1 `apikey` table (`shared/auth/api-key.ts` → better-auth `verifyApiKey`; enter's D1 is a separate sqlite, not shared). better-auth stores keys hashed as `base64url(sha256(key))` and never stores the plaintext of secret keys, so a dashboard-minted key is unrecoverable and a `_local/.env` token only validates if its hash is in THIS D1. The D1 gets recreated (or came from another clone), so the hash is usually absent → 401. `seed:local` inserts a key whose plaintext = your `_local/.env` `POLLINATIONS_TOKEN_LOCAL` with large test balances, so paid-only + spend both pass. It's idempotent — re-run any time. Inspect what's seeded (no secrets printed):
 > ```bash
 > GEN_DB=gen.pollinations.ai/.wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite
 > sqlite3 $GEN_DB "SELECT name, start, enabled FROM apikey WHERE id='local-e2e-key';"
@@ -193,7 +192,7 @@ Provider/runtime secrets (Azure, OpenAI, OpenRouter API keys, etc.) belong in `g
 
 ### `priceMultiplier`
 
-Every cost block requires `priceMultiplier`. Current values in the registry: **`1` or `1.5`**, no others. `1.5` is our standard markup for retail; `1` is at-cost (typically free-tier or strategically subsidized). Set it explicitly on every new model. Final billed price = `usage × cost × priceMultiplier`.
+Every cost block requires `priceMultiplier`. Current values in the registry: **`1` or `1.5`**, no others. `1.5` is our standard markup for retail; `1` is at-cost or strategically subsidized. Set it explicitly on every new model. Final billed price = `usage × cost × priceMultiplier`.
 
 ---
 
@@ -215,7 +214,7 @@ Every cost block requires `priceMultiplier`. Current values in the registry: **`
 | **Image resolutions / aspect ratios** | handler + (registry comment) | One generation per supported ratio returns 200 with matching dims; unsupported ratios return 4xx; §7 cache row with byte-identical params shows MISS→HIT |
 | **Video duration / fps** | handler | Each supported duration returns 200, mp4 of declared length; unsupported returns 4xx |
 | **Cached-token behavior** | registry `promptCachedTokens` in cost block | §7 prompt-cache row passes (`cached_tokens > 0` on call 2); tail clean of `Missing conversion rate: usageType=promptCachedTokens` |
-| **`paidOnly` flip** | registry `paidOnly: true/false` | Token whose user has `packBalance == 0` → 4xx; token with pack balance → 200; `/v1/models` filtering correct per tier |
+| **`paidOnly` flip** | registry `paidOnly: true/false` | Token whose user has `packBalance == 0` → 4xx; token with pack balance → 200; `/v1/models` filtering correct per pack balance |
 | **Add model** | every file above | Full §7 + §8 + **§9 (mandatory)** + §10 |
 | **Delete model** | remove from config + registry; keep SOPS provider keys (other models may share) | `/v1/models` no longer lists slug; request returns model-not-found 4xx; `aliases.test.ts` updated; `rg <slug>` across the repo for orphan hardcodes; PR description names any downstream apps removed from |
 
@@ -584,4 +583,3 @@ Format: `<Model Name> - <what it does or what makes it distinct>`. ≤ ~70 chars
 ## 11.3 Wrapper models (e.g. persona-prompted Claude)
 
 For specialized wrappers, the underlying model's capabilities are NOT the same as the product's. Mark `inputModalities` to reflect the **product intent**, not what the underlying model technically supports. Add a one-line comment explaining the discrepancy.
-

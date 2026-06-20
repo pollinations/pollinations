@@ -12,7 +12,6 @@ export type CreateTestUserOptions = {
     id?: string;
     name?: string;
     email?: string;
-    tier?: string;
     tierBalance?: number | null;
     packBalance?: number | null;
     githubId?: number | null;
@@ -41,8 +40,7 @@ export async function createTestUser(opts: CreateTestUserOptions = {}) {
         email: opts.email ?? `${userId}@test.local`,
         emailVerified: true,
         image: null,
-        tier: opts.tier ?? "flower",
-        tierBalance: opts.tierBalance ?? 1000,
+        tierBalance: opts.tierBalance ?? 0,
         packBalance: opts.packBalance ?? 0,
         githubId: opts.githubId ?? null,
         githubUsername: opts.githubUsername ?? null,

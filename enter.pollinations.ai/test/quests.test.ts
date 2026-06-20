@@ -102,8 +102,8 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
             kind: string;
             availability: string;
             rewardAmount: number | null;
-            issueNumber: number | null;
-            assignees: string[];
+            url: string | null;
+            assignees?: string[];
         }[];
     };
 
@@ -127,7 +127,7 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
         kind: "github_issue",
         availability: "available",
         rewardAmount: 15,
-        issueNumber: 321,
+        url: "https://github.com/pollinations/pollinations/issues/321",
         assignees: [],
     });
     expect(
@@ -136,7 +136,7 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
         kind: "github_issue",
         availability: "claimed",
         rewardAmount: 20,
-        issueNumber: 322,
+        url: "https://github.com/pollinations/pollinations/issues/322",
         assignees: ["dev-user"],
     });
     expect(
@@ -145,7 +145,7 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
         kind: "github_issue",
         availability: "available",
         rewardAmount: null,
-        issueNumber: 323,
+        url: "https://github.com/pollinations/pollinations/issues/323",
         assignees: [],
     });
     expect(

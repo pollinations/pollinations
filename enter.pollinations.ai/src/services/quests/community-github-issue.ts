@@ -54,12 +54,11 @@ async function loadQuestInstances(db: QuestDb): Promise<QuestInstance[]> {
         availability: githubIssueAvailability(issue.state),
         rewardAmount: issue.rewardAmount,
         url: issue.url,
-        issueNumber: issue.issueNumber,
         assignees: parseAssignees(issue.assigneesJson),
-        labels: [],
-        createdAt: issue.githubCreatedAt?.toISOString() ?? null,
-        updatedAt: issue.githubUpdatedAt?.toISOString() ?? null,
-        closedAt: issue.completedAt?.toISOString() ?? null,
+        sortKey:
+            issue.githubUpdatedAt?.toISOString() ??
+            issue.githubCreatedAt?.toISOString() ??
+            "",
     }));
 }
 

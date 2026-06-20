@@ -2,15 +2,13 @@ import { Hono } from "hono";
 import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
-import {
-    loadQuestInstances,
-    type QuestInstance,
-} from "../services/quests/index.ts";
+import { loadQuestInstances } from "../services/quests/index.ts";
+import type { QuestInstance } from "../services/quests/types.ts";
 
 const CACHE_KEY = "quests:catalog:v2";
 const CACHE_TTL = 60;
 
-export type QuestCatalogItem = QuestInstance;
+export type QuestCatalogItem = Omit<QuestInstance, "sortKey">;
 
 export type QuestCatalogResponse = {
     generatedAt: string;
@@ -19,18 +17,13 @@ export type QuestCatalogResponse = {
 
 const questCatalogItemSchema = z.object({
     id: z.string(),
-    kind: z.enum(["product", "github_issue"]),
+    kind: z.string(),
     title: z.string(),
     description: z.string(),
     availability: z.enum(["available", "claimed", "completed"]),
     rewardAmount: z.number().nullable(),
     url: z.string().nullable(),
-    issueNumber: z.number().nullable(),
-    assignees: z.array(z.string()),
-    labels: z.array(z.string()),
-    createdAt: z.string().nullable(),
-    updatedAt: z.string().nullable(),
-    closedAt: z.string().nullable(),
+    assignees: z.array(z.string()).optional(),
 });
 
 const questCatalogResponseSchema = z.object({
@@ -77,9 +70,9 @@ async function readCached(
 async function buildQuestCatalog(
     dbBinding: D1Database,
 ): Promise<QuestCatalogResponse> {
-    const quests = (await loadQuestInstances(dbBinding)).sort(
-        compareCatalogItems,
-    );
+    const quests = (await loadQuestInstances(dbBinding))
+        .sort(compareCatalogItems)
+        .map(stripInternalCatalogFields);
 
     return {
         generatedAt: new Date().toISOString(),
@@ -87,10 +80,17 @@ async function buildQuestCatalog(
     };
 }
 
-function compareCatalogItems(left: QuestCatalogItem, right: QuestCatalogItem) {
+function stripInternalCatalogFields({
+    sortKey: _sortKey,
+    ...quest
+}: QuestInstance): QuestCatalogItem {
+    return quest;
+}
+
+function compareCatalogItems(left: QuestInstance, right: QuestInstance) {
     if (left.kind !== right.kind) return left.kind === "product" ? -1 : 1;
-    const leftTime = Date.parse(left.updatedAt ?? left.createdAt ?? "");
-    const rightTime = Date.parse(right.updatedAt ?? right.createdAt ?? "");
+    const leftTime = Date.parse(left.sortKey ?? "");
+    const rightTime = Date.parse(right.sortKey ?? "");
     if (Number.isFinite(leftTime) && Number.isFinite(rightTime)) {
         return rightTime - leftTime;
     }

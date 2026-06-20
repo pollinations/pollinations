@@ -173,6 +173,8 @@ function CatalogQuestCard({
     quest: QuestCatalogItem;
     completed: boolean;
 }) {
+    const assignees = quest.assignees ?? [];
+
     return (
         <Surface className="space-y-3">
             <div className="flex items-start justify-between gap-3">
@@ -188,12 +190,10 @@ function CatalogQuestCard({
                             {quest.description}
                         </Text>
                     )}
-                    {quest.assignees.length > 0 && (
+                    {assignees.length > 0 && (
                         <Text size="xs" tone="muted" className="mt-1">
                             Assigned to{" "}
-                            {quest.assignees
-                                .map((name) => `@${name}`)
-                                .join(", ")}
+                            {assignees.map((name) => `@${name}`).join(", ")}
                         </Text>
                     )}
                 </div>
@@ -205,9 +205,7 @@ function CatalogQuestCard({
             </div>
             {quest.url && (
                 <InlineLink href={quest.url} className="text-sm">
-                    <GitHubIcon className="h-3.5 w-3.5 shrink-0" />
-                    View issue
-                    {quest.issueNumber ? ` #${quest.issueNumber}` : ""}
+                    View details
                 </InlineLink>
             )}
         </Surface>
@@ -220,7 +218,7 @@ function claimedByUser(
 ): boolean {
     if (!githubUsername) return false;
     const normalizedUsername = githubUsername.toLowerCase();
-    return quest.assignees.some(
+    return (quest.assignees ?? []).some(
         (assignee) => assignee.toLowerCase() === normalizedUsername,
     );
 }

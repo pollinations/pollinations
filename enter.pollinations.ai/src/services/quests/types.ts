@@ -16,18 +16,14 @@ export type QuestInstanceContext = {
 
 export type QuestInstance = {
     id: string;
-    kind: "product" | "github_issue";
+    kind: string;
     title: string;
     description: string;
     availability: "available" | "claimed" | "completed";
     rewardAmount: number | null;
     url: string | null;
-    issueNumber: number | null;
-    assignees: string[];
-    labels: string[];
-    createdAt: string | null;
-    updatedAt: string | null;
-    closedAt: string | null;
+    assignees?: string[];
+    sortKey?: string;
 };
 
 export type QuestModule = {
@@ -47,11 +43,5 @@ export function definitionQuestInstance(
         availability: "available",
         rewardAmount: definition.rewardAmount,
         url: null,
-        issueNumber: null,
-        assignees: [],
-        labels: [],
-        createdAt: null,
-        updatedAt: null,
-        closedAt: null,
     };
 }

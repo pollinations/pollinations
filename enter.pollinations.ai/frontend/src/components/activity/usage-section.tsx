@@ -59,7 +59,7 @@ const MetricTabs: FC<{
 }> = ({ value, onChange }) => (
     <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-medium text-theme-text-soft">Metric</span>
-        <div className="flex w-56 flex-wrap justify-end gap-1.5 sm:w-72">
+        <div className="flex w-60 flex-wrap justify-end gap-1.5">
             {METRIC_OPTIONS.map((metric) => (
                 <TabButton
                     key={metric}
@@ -199,7 +199,7 @@ export const UsageSection: FC<UsageSectionProps> = ({ period, apiKeys }) => {
                         ))}
                     </div>
                     <div className="flex flex-col items-stretch gap-2">
-                        <div className="[&>div]:justify-between [&_button]:w-56 sm:[&_button]:w-72">
+                        <div className="[&>div]:justify-between [&_button]:w-60">
                             <MultiSelect
                                 options={modelSelectOptions}
                                 selected={filters.selectedModels}
@@ -216,7 +216,7 @@ export const UsageSection: FC<UsageSectionProps> = ({ period, apiKeys }) => {
                                 label="Models"
                             />
                         </div>
-                        <div className="[&>div]:justify-between [&_button]:w-56 sm:[&_button]:w-72">
+                        <div className="[&>div]:justify-between [&_button]:w-60">
                             <MultiSelect
                                 options={keySelectOptions}
                                 selected={filters.selectedKeyIds}

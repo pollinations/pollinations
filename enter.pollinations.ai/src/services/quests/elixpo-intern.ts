@@ -19,6 +19,7 @@ export const elixpoInternQuest = {
         title: "Developer Relations Intern, unlocked 🌻",
         description:
             "It's official, elixpo — welcome to the Pollinations crew.",
+        iconId: "sprout",
         rewardAmount: 100,
         balanceBucket: "pack",
     },
@@ -57,6 +58,7 @@ async function buildInstances(db: QuestDb): Promise<QuestInstance[]> {
             kind: "product",
             title: elixpoInternQuest.definition.title,
             description: elixpoInternQuest.definition.description,
+            iconId: elixpoInternQuest.definition.iconId,
             availability: "completed",
             rewardAmount: elixpoInternQuest.definition.rewardAmount,
             url: null,

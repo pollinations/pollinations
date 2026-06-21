@@ -1,6 +1,9 @@
 import type { GrantRewardInput } from "@shared/billing/grant-reward.ts";
 import type * as schema from "@shared/db/better-auth.ts";
-import type { QuestDefinition } from "@shared/quests/definitions.ts";
+import type {
+    QuestDefinition,
+    QuestIconId,
+} from "@shared/quests/definitions.ts";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 
 export type QuestDb = DrizzleD1Database<typeof schema>;
@@ -19,6 +22,7 @@ export type QuestInstance = {
     kind: string;
     title: string;
     description: string;
+    iconId: QuestIconId;
     availability: "available" | "claimed" | "completed";
     rewardAmount: number | null;
     url: string | null;
@@ -40,6 +44,7 @@ export function definitionQuestInstance(
         kind: "product",
         title: definition.title,
         description: definition.description,
+        iconId: definition.iconId,
         availability: "available",
         rewardAmount: definition.rewardAmount,
         url: null,

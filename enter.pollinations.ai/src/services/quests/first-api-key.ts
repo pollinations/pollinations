@@ -14,6 +14,7 @@ export const firstApiKeyQuest = {
         id: "onboarding:first_api_key",
         title: "Mint your first key",
         description: "Create your first Pollinations API key.",
+        iconId: "key",
         rewardAmount: 1,
         balanceBucket: "pack",
     },

@@ -1,3 +1,4 @@
+import { QUEST_ICON_IDS } from "@shared/quests/definitions.ts";
 import { Hono } from "hono";
 import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
@@ -5,7 +6,7 @@ import type { Env } from "../env.ts";
 import { loadQuestInstances } from "../services/quests/index.ts";
 import type { QuestInstance } from "../services/quests/types.ts";
 
-const CACHE_KEY = "quests:catalog:v5";
+const CACHE_KEY = "quests:catalog:v6";
 const CACHE_TTL = 60;
 
 export type QuestCatalogItem = Omit<QuestInstance, "sortKey">;
@@ -19,6 +20,7 @@ const questCatalogItemSchema = z.object({
     kind: z.string(),
     title: z.string(),
     description: z.string(),
+    iconId: z.enum(QUEST_ICON_IDS),
     availability: z.enum(["available", "claimed", "completed"]),
     rewardAmount: z.number().nullable(),
     url: z.string().nullable(),

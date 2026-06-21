@@ -14,7 +14,8 @@ export const firstTopUpQuest = {
         id: "spend:first_top_up",
         title: "Stock your pollen pack",
         description: "Buy your first Pollen pack.",
-        rewardAmount: 5,
+        iconId: "card",
+        rewardAmount: 1,
         balanceBucket: "pack",
     },
     async evaluate({ db }) {

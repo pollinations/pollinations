@@ -27,7 +27,6 @@ export type MockGithubState = {
         assignees?: { login: string }[];
         labels?: Array<{ name: string }>;
     }>;
-    commitSearchCount: number;
     failQuestSearch: boolean;
 };
 
@@ -71,7 +70,6 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                 labels: [{ name: "POLLEN-QUEST" }],
             },
         ],
-        commitSearchCount: 0,
         failQuestSearch: false,
     };
 
@@ -92,13 +90,6 @@ export function createMockGithub(): MockAPI<MockGithubState> {
             }
             return c.json({ items: state.questIssues });
         })
-        .get("/search/commits", (c) => {
-            return c.json({
-                total_count: state.commitSearchCount,
-                incomplete_results: false,
-                items: [],
-            });
-        })
         .use("*", githubAuth)
         .get("/user/emails", (c) => {
             return c.json([
@@ -118,6 +109,12 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                 return c.json({ message: "Not Found" }, 404);
             }
             return c.json(state.user);
+        })
+        .get("/users/:login/repos", (c) => {
+            if (c.req.param("login") !== state.user.login) {
+                return c.json({ message: "Not Found" }, 404);
+            }
+            return c.json([]);
         });
 
     // OAuth app (no auth needed)

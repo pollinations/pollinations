@@ -12,6 +12,7 @@ export const firstImageQuest = {
         id: "onboarding:first_image",
         title: "Generate your first image",
         description: "Create one image with Pollinations.",
+        iconId: "image",
         rewardAmount: 0.5,
         balanceBucket: "pack",
     },

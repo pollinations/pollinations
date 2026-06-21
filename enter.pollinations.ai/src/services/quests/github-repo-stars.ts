@@ -15,6 +15,7 @@ export const githubRepoStarsQuest = {
         title: "Earn 50 GitHub stars",
         description:
             "Earn 50 stars across your non-empty public GitHub repositories.",
+        iconId: "github",
         rewardAmount: 5,
         balanceBucket: "pack",
     },

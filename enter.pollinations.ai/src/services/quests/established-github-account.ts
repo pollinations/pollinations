@@ -20,6 +20,7 @@ export const establishedGitHubAccountQuest = {
         id: "onboarding:established_github_account",
         title: "Claim senior dev status",
         description: "Connect a GitHub account that is at least one year old.",
+        iconId: "github",
         rewardAmount: 6,
         balanceBucket: "pack",
     },

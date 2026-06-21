@@ -5,7 +5,6 @@ import {
     CheckIcon,
     Chip,
     ClockIcon,
-    CodeIcon,
     GitHubIcon,
     ImageIcon,
     InlineLink,
@@ -15,7 +14,6 @@ import {
     TabButton,
     Text,
     TokensIcon,
-    TrendUpIcon,
     WalletIcon,
 } from "@pollinations/ui";
 import {
@@ -115,6 +113,17 @@ const CATEGORY_ORDER: CategoryMeta[] = [
     CATEGORY_COMMUNITY,
 ];
 
+const QUEST_ICON_COMPONENTS = {
+    app: AppIcon,
+    card: CardIcon,
+    chat: ChatIcon,
+    github: GitHubIcon,
+    image: ImageIcon,
+    key: KeyIcon,
+    sprout: SproutIcon,
+    tokens: TokensIcon,
+} satisfies Record<QuestCatalogItem["iconId"], IconComponent>;
+
 function categoryForQuest(quest: QuestCatalogItem): CategoryMeta {
     const id = quest.id;
     if (id.startsWith("github:") || quest.kind === "github_issue") {
@@ -132,29 +141,8 @@ function isFiniteProgressQuest(quest: QuestCatalogItem): boolean {
     );
 }
 
-// Per-quest icon medallion. More specific than the category icon where the id
-// makes the intent obvious.
-function iconForQuestIdentity(id: string, kind?: string): IconComponent {
-    if (id.startsWith("github:") || kind === "github_issue") {
-        return GitHubIcon;
-    }
-    if (id.includes("api_key") || id.includes("first_api_key")) return KeyIcon;
-    if (id.includes("first_image")) return ImageIcon;
-    if (id.includes("first_chat_completion")) return ChatIcon;
-    if (id.includes("try_three_models")) return TokensIcon;
-    if (id.includes("first_top_up")) return CardIcon;
-    if (id.includes("three_week_top_up_streak")) return TrendUpIcon;
-    if (id.startsWith("spend:") || id.includes("top_up")) return WalletIcon;
-    if (id.includes("github_account")) return GitHubIcon;
-    if (id.includes("github_20_commits_week")) return CodeIcon;
-    if (id.includes("github_30_commits_90_days")) return CodeIcon;
-    if (id.includes("github_")) return GitHubIcon;
-    if (id.startsWith("grow:") || id.includes("list_app")) return AppIcon;
-    return SproutIcon;
-}
-
 function iconForQuest(quest: QuestCatalogItem): IconComponent {
-    return iconForQuestIdentity(quest.id, quest.kind);
+    return QUEST_ICON_COMPONENTS[quest.iconId];
 }
 
 function formatGrantAmount(value: number | null): string {
@@ -522,7 +510,6 @@ function iconForGrant(
     const catalogKey = catalogKeyForGrant(grant);
     const catalogItem = catalogKey ? catalogById.get(catalogKey) : null;
     if (catalogItem) return iconForQuest(catalogItem);
-    if (grant.questId) return iconForQuestIdentity(grant.questId);
     return categoryForGrant(grant, catalogById).icon;
 }
 

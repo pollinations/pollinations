@@ -14,6 +14,7 @@ export const tryThreeModelsQuest = {
         id: "onboarding:try_three_models",
         title: "Try three different models",
         description: "Use three distinct Pollinations models.",
+        iconId: "tokens",
         rewardAmount: 1,
         balanceBucket: "pack",
     },

@@ -14,6 +14,7 @@ export const githubPublicReposQuest = {
         id: "engage:github_2_public_repos",
         title: "Publish 2 public repos",
         description: "Have at least 2 non-empty public GitHub repositories.",
+        iconId: "github",
         rewardAmount: 1,
         balanceBucket: "pack",
     },

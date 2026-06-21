@@ -19,14 +19,12 @@ export const listAppOnPollinationsQuest = {
         id: "grow:list_app_on_pollinations",
         title: "List an app on Pollinations",
         description: "Get an app approved for the Pollinations app directory.",
+        iconId: "app",
         rewardAmount: 5,
         balanceBucket: "pack",
     },
     async evaluate({ db, env }) {
         return findGrants(db, env);
-    },
-    async instances() {
-        return [];
     },
 } satisfies QuestModule;
 

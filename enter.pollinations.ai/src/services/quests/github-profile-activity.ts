@@ -85,36 +85,6 @@ export async function fetchGitHubLogin(
     return profile.login ?? null;
 }
 
-export async function fetchRecentCommitCount(
-    env: CloudflareBindings,
-    githubUsername: string,
-    since: Date,
-): Promise<number | null> {
-    const url = new URL("https://api.github.com/search/commits");
-    url.searchParams.set(
-        "q",
-        `author:${githubUsername} committer-date:>=${since.toISOString().slice(0, 10)}`,
-    );
-    url.searchParams.set("per_page", "1");
-
-    const response = await fetch(url.toString(), {
-        headers: githubApiHeaders(env),
-    });
-    if (!response.ok) {
-        log.warn(
-            "GITHUB_COMMIT_SEARCH_FAILED: githubUsername={githubUsername} status={status}",
-            {
-                githubUsername,
-                status: response.status,
-            },
-        );
-        return null;
-    }
-
-    const payload = (await response.json()) as { total_count?: number };
-    return typeof payload.total_count === "number" ? payload.total_count : null;
-}
-
 export async function fetchGitHubRepoStats(
     env: CloudflareBindings,
     githubId: number,

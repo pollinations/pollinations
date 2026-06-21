@@ -12,6 +12,7 @@ export const firstChatCompletionQuest = {
         id: "onboarding:first_chat_completion",
         title: "Run your first chat completion",
         description: "Send one chat completion request.",
+        iconId: "chat",
         rewardAmount: 0.5,
         balanceBucket: "pack",
     },

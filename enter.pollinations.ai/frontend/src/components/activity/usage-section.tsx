@@ -3,19 +3,17 @@ import {
     Button,
     CardIcon,
     ChatIcon,
-    ChevronIcon,
     Chip,
-    cn,
     DatabaseIcon,
     DownloadIcon,
-    Dropdown,
     GlobeIcon,
     type IconProps,
     ImageIcon,
     InlineLink,
     MultiSelect,
-    ScrollArea,
     Section,
+    Select,
+    type SelectOption,
     SproutIcon,
     StatCard,
     Surface,
@@ -55,99 +53,12 @@ const METRIC_LABELS: Record<Metric, string> = {
     pollen: "Pollen",
 };
 
-const SELECT_TRIGGER_BASE =
-    "polli-control polli:inline-flex polli:min-h-8 polli:min-w-[140px] polli:items-center polli:gap-2 polli:rounded-full polli:px-3 polli:py-1.5 polli:text-xs polli:font-medium polli:transition-all polli:duration-200";
-
-const SELECT_ROW_BASE =
-    "polli-control polli:flex polli:w-full polli:items-center polli:gap-3 polli:px-3 polli:py-2 polli:text-left polli:text-xs polli:transition-colors";
-
-const CHECK_BASE =
-    "polli:flex polli:h-4 polli:w-4 polli:flex-shrink-0 polli:items-center polli:justify-center polli:rounded polli:border polli:border-theme-border polli:text-xs";
-
-const MetricSelect: FC<{
-    value: Metric;
-    onChange: (metric: Metric) => void;
-}> = ({ value, onChange }) => {
-    return (
-        <div className="polli:flex polli:items-center polli:gap-2">
-            <span className="polli:text-xs polli:font-medium polli:text-theme-text-soft">
-                Metric
-            </span>
-            <Dropdown
-                align="end"
-                className="polli:min-w-[160px]"
-                trigger={(open) => (
-                    <button
-                        type="button"
-                        className={cn(
-                            SELECT_TRIGGER_BASE,
-                            open
-                                ? "polli:bg-theme-bg-hover"
-                                : "polli:bg-theme-bg-active polli:hover:bg-theme-bg-hover",
-                        )}
-                    >
-                        <span
-                            className={cn(
-                                "polli:flex-1 polli:truncate polli:text-left",
-                                open
-                                    ? "polli:text-theme-text-strong"
-                                    : "polli:text-theme-text-base",
-                            )}
-                        >
-                            {METRIC_LABELS[value]}
-                        </span>
-                        <ChevronIcon
-                            expanded={open}
-                            className={cn(
-                                "polli:h-3 polli:w-3 polli:transition-transform",
-                                open
-                                    ? "polli:text-theme-text-strong"
-                                    : "polli:text-theme-text-soft",
-                            )}
-                        />
-                    </button>
-                )}
-            >
-                {(close) => (
-                    <ScrollArea className="polli:max-h-64">
-                        {(["requests", "pollen"] as Metric[]).map((metric) => {
-                            const selected = metric === value;
-                            return (
-                                <button
-                                    type="button"
-                                    key={metric}
-                                    onClick={() => {
-                                        onChange(metric);
-                                        close();
-                                    }}
-                                    className={cn(
-                                        SELECT_ROW_BASE,
-                                        selected
-                                            ? "polli:bg-theme-bg-active polli:text-theme-text-strong"
-                                            : "polli:text-theme-text-base polli:hover:bg-theme-bg-subtle",
-                                    )}
-                                >
-                                    <span
-                                        className={cn(
-                                            CHECK_BASE,
-                                            selected &&
-                                                "polli:bg-theme-bg-active polli:text-theme-text-strong",
-                                        )}
-                                    >
-                                        {selected && "✓"}
-                                    </span>
-                                    <span className="polli:whitespace-nowrap">
-                                        {METRIC_LABELS[metric]}
-                                    </span>
-                                </button>
-                            );
-                        })}
-                    </ScrollArea>
-                )}
-            </Dropdown>
-        </div>
-    );
-};
+const METRIC_OPTIONS: SelectOption<Metric>[] = (
+    ["requests", "pollen"] as Metric[]
+).map((metric) => ({
+    value: metric,
+    label: METRIC_LABELS[metric],
+}));
 
 export const UsageSection: FC<UsageSectionProps> = ({ period, apiKeys }) => {
     const [activeView, setActiveView] = useState<UsageView>(() =>
@@ -304,11 +215,14 @@ export const UsageSection: FC<UsageSectionProps> = ({ period, apiKeys }) => {
                             label="API Keys"
                         />
                         {activeView === "chart" && (
-                            <MetricSelect
+                            <Select
+                                options={METRIC_OPTIONS}
                                 value={filters.metric}
                                 onChange={(metric) =>
                                     setFilters((f) => ({ ...f, metric }))
                                 }
+                                align="end"
+                                label="Metric"
                             />
                         )}
                     </div>

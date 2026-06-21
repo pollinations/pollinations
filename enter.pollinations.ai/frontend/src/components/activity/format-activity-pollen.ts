@@ -1,7 +1,7 @@
 import { formatPollen } from "@pollinations/ui/wallet";
 
 const TINY_POLLEN_THRESHOLD = 0.0001;
-const MIN_PRECISE_POLLEN = 0.000000000001;
+const MIN_PRECISE_POLLEN_LABEL = "0.000000000001";
 
 function trimFixed(value: number, decimals: number): string {
     return value
@@ -25,7 +25,9 @@ export function formatActivityPollen(value: number): string {
 
     const formatted = trimFixed(value, decimalsForActivityPollen(abs));
     if (formatted === "0" || formatted === "-0") {
-        return value > 0 ? `<${MIN_PRECISE_POLLEN}` : `>-${MIN_PRECISE_POLLEN}`;
+        return value > 0
+            ? `<${MIN_PRECISE_POLLEN_LABEL}`
+            : `>-${MIN_PRECISE_POLLEN_LABEL}`;
     }
     return formatted;
 }

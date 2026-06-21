@@ -19,6 +19,17 @@ type ChartProps = {
     showModelBreakdown: boolean;
 };
 
+function getYAxisPadding({
+    isCompact,
+    needsPrecisePollenScale,
+}: {
+    isCompact: boolean;
+    needsPrecisePollenScale: boolean;
+}): number {
+    if (needsPrecisePollenScale) return isCompact ? 58 : 68;
+    return isCompact ? 36 : 55;
+}
+
 export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
     const [hovered, setHovered] = useState<number | null>(null);
     const [animationProgress, setAnimationProgress] = useState(0);
@@ -68,13 +79,7 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
         top: 24,
         right: isCompact ? 10 : 20,
         bottom: 32,
-        left: needsPrecisePollenScale
-            ? isCompact
-                ? 58
-                : 68
-            : isCompact
-              ? 36
-              : 55,
+        left: getYAxisPadding({ isCompact, needsPrecisePollenScale }),
     };
     const cw = width - pad.left - pad.right;
     const ch = height - pad.top - pad.bottom;

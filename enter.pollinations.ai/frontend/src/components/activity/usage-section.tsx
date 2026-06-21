@@ -12,8 +12,6 @@ import {
     InlineLink,
     MultiSelect,
     Section,
-    Select,
-    type SelectOption,
     SproutIcon,
     StatCard,
     Surface,
@@ -53,12 +51,28 @@ const METRIC_LABELS: Record<Metric, string> = {
     pollen: "Pollen",
 };
 
-const METRIC_OPTIONS: SelectOption<Metric>[] = (
-    ["requests", "pollen"] as Metric[]
-).map((metric) => ({
-    value: metric,
-    label: METRIC_LABELS[metric],
-}));
+const METRIC_OPTIONS: Metric[] = ["pollen", "requests"];
+
+const MetricTabs: FC<{
+    value: Metric;
+    onChange: (metric: Metric) => void;
+}> = ({ value, onChange }) => (
+    <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-medium text-theme-text-soft">Metric</span>
+        <div className="flex flex-wrap justify-end gap-1.5">
+            {METRIC_OPTIONS.map((metric) => (
+                <TabButton
+                    key={metric}
+                    active={value === metric}
+                    onClick={() => onChange(metric)}
+                    size="sm"
+                >
+                    {METRIC_LABELS[metric]}
+                </TabButton>
+            ))}
+        </div>
+    </div>
+);
 
 export const UsageSection: FC<UsageSectionProps> = ({ period, apiKeys }) => {
     const [activeView, setActiveView] = useState<UsageView>(() =>
@@ -183,7 +197,7 @@ export const UsageSection: FC<UsageSectionProps> = ({ period, apiKeys }) => {
                             </TabButton>
                         ))}
                     </div>
-                    <div className="flex flex-col items-stretch gap-2 [&>div]:justify-between [&_button]:min-w-[160px]">
+                    <div className="flex flex-col items-stretch gap-2 [&>div]:justify-between">
                         <MultiSelect
                             options={modelSelectOptions}
                             selected={filters.selectedModels}
@@ -215,14 +229,11 @@ export const UsageSection: FC<UsageSectionProps> = ({ period, apiKeys }) => {
                             label="API Keys"
                         />
                         {activeView === "chart" && (
-                            <Select
-                                options={METRIC_OPTIONS}
+                            <MetricTabs
                                 value={filters.metric}
                                 onChange={(metric) =>
                                     setFilters((f) => ({ ...f, metric }))
                                 }
-                                align="end"
-                                label="Metric"
                             />
                         )}
                     </div>

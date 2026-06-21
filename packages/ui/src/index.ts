@@ -39,11 +39,6 @@ export {
 } from "./compositions/PeriodPicker.tsx";
 export { Prose, type ProseProps } from "./compositions/Prose.tsx";
 export { Section, type SectionProps } from "./compositions/Section.tsx";
-export {
-    Select,
-    type SelectOption,
-    type SelectProps,
-} from "./compositions/Select.tsx";
 export { StatCard, type StatCardProps } from "./compositions/StatCard.tsx";
 export { cn } from "./lib/cn-app.ts";
 export {

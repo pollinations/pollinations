@@ -5,8 +5,13 @@ import { communityGitHubIssueQuest } from "./community-github-issue.ts";
 import { elixpoInternQuest } from "./elixpo-intern.ts";
 import { establishedGitHubAccountQuest } from "./established-github-account.ts";
 import { firstApiKeyQuest } from "./first-api-key.ts";
+import { firstChatCompletionQuest } from "./first-chat-completion.ts";
+import { firstImageQuest } from "./first-image.ts";
 import { firstTopUpQuest } from "./first-top-up.ts";
+import { githubCommitsWeeklyQuest } from "./github-commits-weekly.ts";
 import { listAppOnPollinationsQuest } from "./list-app-on-pollinations.ts";
+import { topUpStreakQuest } from "./top-up-streak.ts";
+import { tryThreeModelsQuest } from "./try-three-models.ts";
 import {
     definitionQuestInstance,
     type QuestInstance,
@@ -16,9 +21,14 @@ import { weeklyTopUpsQuest } from "./weekly-top-ups.ts";
 
 export const QUESTS: QuestModule[] = [
     firstApiKeyQuest,
+    firstImageQuest,
+    firstChatCompletionQuest,
+    tryThreeModelsQuest,
     firstTopUpQuest,
     weeklyTopUpsQuest,
+    topUpStreakQuest,
     establishedGitHubAccountQuest,
+    githubCommitsWeeklyQuest,
     communityGitHubIssueQuest,
     listAppOnPollinationsQuest,
     elixpoInternQuest,

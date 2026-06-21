@@ -22,7 +22,8 @@ Overview of which external services each environment connects to.
 
 ## Notes
 
-- **Tinybird**: Two workspaces in the same region. Prod traffic lands in `pollinations_enter`; staging + local-dev traffic lands in `pollinations_enter_staging`. The `environment` column is still populated on each row but is no longer used by pipes for filtering — token-scoped routing handles environment separation. Pipes and datasources must be deployed to **both** workspaces (manually for now — no CI auto-deploy).
+- **Tinybird**: Two workspaces in the same region. Prod traffic lands in `pollinations_enter`; staging + local-dev traffic lands in `pollinations_enter_staging`. The `environment` column is still populated on each row but is no longer used by pipes for filtering — token-scoped routing handles environment separation. Pipes and datasources must be deployed to **both** workspaces with the shared deploy helper (`npm run tinybird:check:*` / `npm run tinybird:deploy:* --workspace pollinations-enter`).
+- **Tinybird deploy secrets**: Tinybird admin/deploy tokens are deployer credentials, not Worker runtime secrets. Store the source credentials in the team secret manager. For local CLI use, materialize them into ignored Tinybird config files: `observability/.tinyb.staging` for staging and `observability/.tinyb` for production.
 - **Stripe Test Cards**: Use `4242 4242 4242 4242` for sandbox testing.
 
 ## Configuration Files

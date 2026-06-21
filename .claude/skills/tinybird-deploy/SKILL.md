@@ -10,8 +10,8 @@ Deploy observability pipes and datasources to Tinybird Cloud.
 ## Requirements
 
 - **tb CLI**: Install with `curl -sSL https://tinybird.co | bash` or `pip install tinybird-cli`
-- Must run from `enter.pollinations.ai/observability` directory
-- Authenticated to Tinybird (run `tb login` if needed)
+- Use `npm run tinybird:* --workspace pollinations-enter` from the repo root, or run `enter.pollinations.ai/scripts/tinybird-deploy.sh` directly
+- Gitignored Tinybird CLI config files exist for both workspaces: `enter.pollinations.ai/observability/.tinyb.staging` for staging and `enter.pollinations.ai/observability/.tinyb` for production
 
 ## Workspaces
 
@@ -22,9 +22,9 @@ Two workspaces, same region (`gcp-europe-west2`). Pipes and datasources must be 
 | `pollinations_enter` | production worker only | https://cloud.tinybird.co/gcp/europe-west2/pollinations_enter |
 | `pollinations_enter_staging` | staging worker + dev worker + local `npm run dev` | https://cloud.tinybird.co/gcp/europe-west2/pollinations_enter_staging |
 
-Workspace routing is purely **token-scoped** — same regional ingest URL, different `TINYBIRD_INGEST_TOKEN` per environment (set in `secrets/{prod,staging,dev}.vars.json`).
+Worker ingest routing is purely **token-scoped** — same regional ingest URL, different `TINYBIRD_INGEST_TOKEN` per environment (set in `secrets/{prod,staging,dev}.vars.json`).
 
-The local `.tinyb` is gitignored and points to the prod workspace by default. To target the staging workspace, set `TB_TOKEN` to a staging admin token for any single command (don't run `tb workspace use` — it tends to fail; the env var is the reliable override).
+Deploy routing is also explicit and token-scoped. Use the same helper for both workspaces; it reads the matching gitignored Tinybird CLI config file, validates the workspace name, sets `TB_TOKEN`, and runs `tb --cloud deploy`. Do not run raw `tb --cloud deploy` from a local `.tinyb` whose workspace has not been checked.
 
 ## Directory Structure
 
@@ -51,13 +51,11 @@ enter.pollinations.ai/observability/
 Always validate before deploying. Dry-run is safe to run anytime against either workspace.
 
 ```bash
-cd enter.pollinations.ai/observability
-
-# Against prod workspace (default — uses local .tinyb token)
-tb --cloud deploy --check --wait
-
 # Against staging workspace
-TB_TOKEN=<staging_admin_token> tb --cloud deploy --check --wait
+npm run tinybird:check:staging --workspace pollinations-enter
+
+# Against production workspace
+npm run tinybird:check:production --workspace pollinations-enter
 ```
 
 Example output:
@@ -73,12 +71,12 @@ If validation passes, deploy to **both** workspaces. Recommended order: staging 
 
 ```bash
 # 1. Deploy to staging first
-TB_TOKEN=<staging_admin_token> tb --cloud deploy --wait
+npm run tinybird:deploy:staging --workspace pollinations-enter
 
 # 2. Verify behavior on staging (e.g. curl a pipe via staging read token)
 
 # 3. Deploy to prod
-tb --cloud deploy --wait
+npm run tinybird:deploy:production --workspace pollinations-enter
 ```
 
 > Skipping the staging step is a known drift vector — see issue #11127 for the planned CI auto-deploy that will enforce this.
@@ -141,11 +139,12 @@ curl -sSL https://tinybird.co | bash
 pip install tinybird-cli
 ```
 
-## "Not authenticated"
+## "Missing Tinybird config file"
 
 ```bash
-tb login
-# Follow prompts to authenticate
+# Create the matching ignored config from the team-managed deploy credential.
+enter.pollinations.ai/observability/.tinyb.staging
+enter.pollinations.ai/observability/.tinyb
 ```
 
 ## Pipe Timeout Issues
@@ -161,4 +160,4 @@ If a pipe times out with large `weeks_back`:
 
 - **Always use `--cloud`**: Without it, CLI tries to use Tinybird Local (Docker)
 - **Do NOT use `tb push`**: It's deprecated, use `tb --cloud deploy`
-- **Run from observability directory**: Not from repo root
+- **Use the helper**: It runs from the observability directory internally and keeps staging/production token handling identical

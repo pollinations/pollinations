@@ -12,10 +12,12 @@ import {
     type QuestInstance,
     type QuestModule,
 } from "./types.ts";
+import { weeklyTopUpsQuest } from "./weekly-top-ups.ts";
 
 export const QUESTS: QuestModule[] = [
     firstApiKeyQuest,
     firstTopUpQuest,
+    weeklyTopUpsQuest,
     establishedGitHubAccountQuest,
     communityGitHubIssueQuest,
     listAppOnPollinationsQuest,

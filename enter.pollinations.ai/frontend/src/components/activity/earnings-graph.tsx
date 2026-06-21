@@ -3,11 +3,13 @@ import {
     CardIcon,
     Chip,
     DownloadIcon,
+    InlineLink,
     MultiSelect,
     Section,
     SproutIcon,
     StatCard,
     Surface,
+    Tooltip,
 } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import type { FC } from "react";
@@ -38,8 +40,15 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
     );
 
     const showAppBreakdown = apps.length > 0;
+    const hasEarnings = stats.totalPollen > 0;
+    const downloadDisabled = loading || !hasEarnings;
+    const downloadDisabledReason = loading
+        ? "Loading earnings data"
+        : "No earnings to download for this selected period";
 
     function downloadEarnings(): void {
+        if (downloadDisabled) return;
+
         const params = new URLSearchParams({
             format: "csv",
             granularity: period.granularity,
@@ -56,21 +65,32 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
         anchor.remove();
     }
 
-    return (
-        <Section
-            title="App earnings"
-            framed
-            action={
-                <Button
-                    as="button"
-                    onClick={downloadEarnings}
-                    className="flex items-center gap-1.5"
-                >
-                    <DownloadIcon className="h-3.5 w-3.5 shrink-0" />
-                    Download CSV
-                </Button>
-            }
+    const downloadButton = (
+        <Button
+            as="button"
+            onClick={downloadEarnings}
+            disabled={downloadDisabled}
+            className="flex items-center gap-1.5"
         >
+            <DownloadIcon className="h-3.5 w-3.5 shrink-0" />
+            Download CSV
+        </Button>
+    );
+    const downloadAction = downloadDisabled ? (
+        <Tooltip
+            triggerAs="span"
+            content={downloadDisabledReason}
+            align="center"
+            className="inline-flex"
+        >
+            {downloadButton}
+        </Tooltip>
+    ) : (
+        downloadButton
+    );
+
+    return (
+        <Section title="App earnings" framed action={downloadAction}>
             <div className="flex flex-col gap-4">
                 <div className="flex flex-wrap items-start justify-end gap-4">
                     <div className="flex flex-col items-stretch gap-2 [&>div]:justify-between [&_button]:min-w-[160px]">
@@ -111,22 +131,26 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
                             </div>
                         </div>
                     )}
-                    {!loading && !error && (
-                        <Chart
-                            data={chartData}
-                            metric="pollen"
-                            showModelBreakdown={showAppBreakdown}
-                        />
-                    )}
+                    {!loading &&
+                        !error &&
+                        (hasEarnings ? (
+                            <Chart
+                                data={chartData}
+                                metric="pollen"
+                                showModelBreakdown={showAppBreakdown}
+                            />
+                        ) : (
+                            <EarningsEmptyState />
+                        ))}
                 </Surface>
 
-                <div className="grid gap-4 sm:grid-cols-3">
-                    <Surface>
-                        <StatCard
-                            label="Pollen earned"
-                            value={formatActivityPollen(stats.totalPollen)}
-                            detail={
-                                stats.totalPollen > 0 ? (
+                {hasEarnings && (
+                    <div className="grid gap-4 sm:grid-cols-3">
+                        <Surface>
+                            <StatCard
+                                label="Pollen earned"
+                                value={formatActivityPollen(stats.totalPollen)}
+                                detail={
                                     <div className="flex flex-wrap items-center gap-2">
                                         <PaidChip
                                             size="lg"
@@ -151,77 +175,82 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
                                             </span>
                                         </TierChip>
                                     </div>
-                                ) : null
-                            }
-                        />
-                    </Surface>
-                    <Surface>
-                        <StatCard
-                            label="Active users"
-                            value={stats.activeUsers.toLocaleString()}
-                            detail={
-                                stats.appCount > 0 ? (
+                                }
+                            />
+                        </Surface>
+                        <Surface>
+                            <StatCard
+                                label="Active users"
+                                value={stats.activeUsers.toLocaleString()}
+                                detail={
                                     <span className="text-theme-text-soft">
                                         across {stats.appCount} app
                                         {stats.appCount === 1 ? "" : "s"}
                                     </span>
-                                ) : (
-                                    "No users yet"
-                                )
-                            }
-                        />
-                    </Surface>
-                    <Surface>
-                        <StatCard
-                            label="Top app"
-                            value={
-                                <span className="text-xl leading-tight">
-                                    {stats.topApp?.label || "None"}
-                                </span>
-                            }
-                            detail={
-                                stats.topApp ? (
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        {stats.topApp.uniqueUsers > 0 && (
+                                }
+                            />
+                        </Surface>
+                        <Surface>
+                            <StatCard
+                                label="Top app"
+                                value={
+                                    <span className="text-xl leading-tight">
+                                        {stats.topApp?.label || "None"}
+                                    </span>
+                                }
+                                detail={
+                                    stats.topApp ? (
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            {stats.topApp.uniqueUsers > 0 && (
+                                                <Chip
+                                                    size="lg"
+                                                    className="font-semibold"
+                                                >
+                                                    <span className="tabular-nums">
+                                                        {stats.topApp.uniqueUsers.toLocaleString()}
+                                                    </span>
+                                                    <span className="font-medium opacity-70">
+                                                        {stats.topApp
+                                                            .uniqueUsers === 1
+                                                            ? "user"
+                                                            : "users"}
+                                                    </span>
+                                                </Chip>
+                                            )}
                                             <Chip
                                                 size="lg"
                                                 className="font-semibold"
                                             >
                                                 <span className="tabular-nums">
-                                                    {stats.topApp.uniqueUsers.toLocaleString()}
+                                                    {formatActivityPollen(
+                                                        stats.topApp.pollen,
+                                                    )}
                                                 </span>
                                                 <span className="font-medium opacity-70">
-                                                    {stats.topApp
-                                                        .uniqueUsers === 1
-                                                        ? "user"
-                                                        : "users"}
+                                                    pollen
                                                 </span>
                                             </Chip>
-                                        )}
-                                        <Chip
-                                            size="lg"
-                                            className="font-semibold"
-                                        >
-                                            <span className="tabular-nums">
-                                                {formatActivityPollen(
-                                                    stats.topApp.pollen,
-                                                )}
-                                            </span>
-                                            <span className="font-medium opacity-70">
-                                                pollen
-                                            </span>
-                                        </Chip>
-                                    </div>
-                                ) : (
-                                    "No earnings yet"
-                                )
-                            }
-                        />
-                    </Surface>
-                </div>
+                                        </div>
+                                    ) : null
+                                }
+                            />
+                        </Surface>
+                    </div>
+                )}
             </div>
         </Section>
     );
 };
+
+const EarningsEmptyState: FC = () => (
+    <p className="text-sm text-ink-600">
+        No earnings in this selected period. Once users start spending pollen
+        through your app, earnings will appear here.{" "}
+        <InlineLink href="#keys" showIcon={false}>
+            Create an App key
+        </InlineLink>
+        .
+    </p>
+);
 
 export default EarningsGraph;

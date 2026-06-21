@@ -1,6 +1,6 @@
 import {
     Button,
-    cn,
+    InlineLink,
     Table,
     TableBody,
     TableCell,
@@ -14,12 +14,9 @@ import { apiClient } from "../../api.ts";
 import { formatActivityPollenThreshold } from "./format-activity-pollen.ts";
 import type { UsagePeriodSelection } from "./types.ts";
 
-type Mode = "compact" | "full";
-
 type ApiKeyInfo = { id: string; name: string };
 
 const PAGE_SIZE_FULL = 15;
-const PAGE_SIZE_COMPACT = 5;
 const EMPTY_FILTER_VALUES: string[] = [];
 const TABLE_HEADER_CELL_CLASS = "px-2 py-1.5";
 const TABLE_CELL_CLASS = "px-2 py-1.5 text-xs";
@@ -64,18 +61,9 @@ function parseTimestamp(value: string): Date {
     return new Date(normalizedUtcTimestamp);
 }
 
-function formatTimestamp(value: string, mode: Mode): string {
+function formatTimestamp(value: string): string {
     const date = parseTimestamp(value);
     if (Number.isNaN(date.getTime())) return value;
-    if (mode === "compact") {
-        return date.toLocaleString(undefined, {
-            timeZone: "UTC",
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-        });
-    }
     return date.toLocaleString(undefined, {
         timeZone: "UTC",
         year: "numeric",
@@ -112,25 +100,20 @@ function buildKeyNameLookup(keys: ApiKeyInfo[] | undefined) {
 }
 
 export type TransactionHistoryProps = {
-    mode?: Mode;
     apiKeys?: ApiKeyInfo[];
     period?: UsagePeriodSelection;
     selectedKeyIds?: string[];
     selectedModels?: string[];
-    /** Hash route for the "View all" link in compact mode. */
-    viewAllHref?: string;
 };
 
 export const TransactionHistory: FC<TransactionHistoryProps> = ({
-    mode = "full",
     apiKeys,
     period,
     selectedKeyIds = EMPTY_FILTER_VALUES,
     selectedModels = EMPTY_FILTER_VALUES,
-    viewAllHref = "#activity",
 }) => {
     const [state, setState] = useState<FetchState>(INITIAL_STATE);
-    const pageSize = mode === "compact" ? PAGE_SIZE_COMPACT : PAGE_SIZE_FULL;
+    const pageSize = PAGE_SIZE_FULL;
     const lookupKeyName = useMemo(() => buildKeyNameLookup(apiKeys), [apiKeys]);
 
     const loadPage = useCallback(
@@ -174,7 +157,7 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
 
             const data = (await response.json()) as { usage: UsageRecord[] };
             const rows = data.usage ?? [];
-            const hasMore = mode === "full" && rows.length >= pageSize;
+            const hasMore = rows.length >= pageSize;
             const last = rows[rows.length - 1];
             const nextCursor =
                 hasMore && last
@@ -192,7 +175,7 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
                 hasMore,
             }));
         },
-        [mode, pageSize, period, selectedKeyIds, selectedModels],
+        [pageSize, period, selectedKeyIds, selectedModels],
     );
 
     useEffect(() => {
@@ -205,18 +188,12 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
     }
 
     const showEmpty = state.rows.length === 0 && !state.loading && !state.error;
-    const isCompact = mode === "compact";
     const status = renderStatus();
-    const showFooter =
-        Boolean(status) ||
-        (isCompact && state.rows.length > 0) ||
-        (!isCompact && state.hasMore);
+    const showFooter = Boolean(status) || state.hasMore;
 
     function renderStatus(): string {
         if (state.rows.length > 0) {
-            return `Showing ${state.rows.length} ${
-                isCompact ? "recent" : "most recent"
-            }`;
+            return `Showing ${state.rows.length} most recent`;
         }
         return state.loading ? "Loading…" : "";
     }
@@ -229,8 +206,12 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
 
             {showEmpty && (
                 <p className="text-sm text-ink-600">
-                    No transactions yet. Once you start using the API your
-                    deductions will appear here.
+                    No transactions in this selected period. Once you start
+                    using the API, your deductions will appear here.{" "}
+                    <InlineLink href="#keys" showIcon={false}>
+                        Create an API key
+                    </InlineLink>
+                    .
                 </p>
             )}
 
@@ -253,31 +234,21 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
                                 </div>
                                 <div className="flex items-center justify-between gap-2 text-xs">
                                     <span className="text-ink-600 tabular-nums">
-                                        {formatTimestamp(row.timestamp, mode)}
+                                        {formatTimestamp(row.timestamp)}
                                     </span>
                                     <MeterSourceChip
                                         source={row.meter_source}
                                     />
                                 </div>
-                                {!isCompact && (
-                                    <div className="text-xs text-ink-500 truncate">
-                                        {lookupKeyName(
-                                            row.api_key_id,
-                                            row.api_key,
-                                        )}
-                                    </div>
-                                )}
+                                <div className="text-xs text-ink-500 truncate">
+                                    {lookupKeyName(row.api_key_id, row.api_key)}
+                                </div>
                             </li>
                         ))}
                     </ul>
 
                     {/* Desktop: table */}
-                    <div
-                        className={cn(
-                            "hidden overflow-x-auto sm:block",
-                            isCompact && "rounded-lg bg-surface-opaque",
-                        )}
-                    >
+                    <div className="hidden overflow-x-auto sm:block">
                         <Table className="text-left text-xs">
                             <TableHead>
                                 <TableRow className="hover:bg-transparent">
@@ -291,13 +262,11 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
                                     >
                                         Model
                                     </TableHeaderCell>
-                                    {!isCompact && (
-                                        <TableHeaderCell
-                                            className={TABLE_HEADER_CELL_CLASS}
-                                        >
-                                            API Key
-                                        </TableHeaderCell>
-                                    )}
+                                    <TableHeaderCell
+                                        className={TABLE_HEADER_CELL_CLASS}
+                                    >
+                                        API Key
+                                    </TableHeaderCell>
                                     <TableHeaderCell
                                         className={TABLE_HEADER_CELL_CLASS}
                                     >
@@ -318,26 +287,21 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
                                             numeric
                                             className={`${TABLE_CELL_CLASS} whitespace-nowrap text-ink-800`}
                                         >
-                                            {formatTimestamp(
-                                                row.timestamp,
-                                                mode,
-                                            )}
+                                            {formatTimestamp(row.timestamp)}
                                         </TableCell>
                                         <TableCell
                                             className={`${TABLE_CELL_CLASS} text-ink-900`}
                                         >
                                             {row.model || "—"}
                                         </TableCell>
-                                        {!isCompact && (
-                                            <TableCell
-                                                className={`${TABLE_CELL_CLASS} max-w-[12rem] truncate text-ink-700`}
-                                            >
-                                                {lookupKeyName(
-                                                    row.api_key_id,
-                                                    row.api_key,
-                                                )}
-                                            </TableCell>
-                                        )}
+                                        <TableCell
+                                            className={`${TABLE_CELL_CLASS} max-w-[12rem] truncate text-ink-700`}
+                                        >
+                                            {lookupKeyName(
+                                                row.api_key_id,
+                                                row.api_key,
+                                            )}
+                                        </TableCell>
                                         <TableCell className={TABLE_CELL_CLASS}>
                                             <MeterSourceChip
                                                 source={row.meter_source}
@@ -361,15 +325,7 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
             {showFooter && (
                 <div className="flex items-center justify-between pt-1">
                     <span className="text-xs text-ink-500">{status}</span>
-                    {isCompact && state.rows.length > 0 && (
-                        <a
-                            href={viewAllHref}
-                            className="text-sm font-medium text-ink-800 hover:underline"
-                        >
-                            View all →
-                        </a>
-                    )}
-                    {!isCompact && state.hasMore && (
+                    {state.hasMore && (
                         <Button
                             as="button"
                             onClick={handleLoadMore}

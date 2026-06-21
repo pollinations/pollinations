@@ -12,6 +12,7 @@ import {
     GlobeIcon,
     type IconProps,
     ImageIcon,
+    InlineLink,
     MultiSelect,
     ScrollArea,
     Section,
@@ -37,8 +38,6 @@ import type { FilterState, Metric, UsagePeriodSelection } from "./types";
 import { useUsageData } from "./use-usage-data";
 
 const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
-const EMPTY_USAGE_MESSAGE =
-    "No transactions yet. Once you start using the API your deductions will appear here.";
 
 type UsageView = "chart" | "table";
 
@@ -204,8 +203,15 @@ export const UsageSection: FC<UsageSectionProps> = ({ period, apiKeys }) => {
     const showModelBreakdown =
         filters.selectedModels.length === 0 ||
         filters.selectedModels.length > 1;
+    const hasUsageData = stats.totalRequests > 0;
+    const downloadDisabled = loading || !hasUsageData;
+    const downloadDisabledReason = loading
+        ? "Loading usage data"
+        : "No transactions to download for this selected period";
 
     function downloadDetailedUsage(): void {
+        if (downloadDisabled) return;
+
         const params = new URLSearchParams({
             format: "csv",
             granularity: period.granularity,
@@ -227,21 +233,32 @@ export const UsageSection: FC<UsageSectionProps> = ({ period, apiKeys }) => {
         anchor.remove();
     }
 
-    return (
-        <Section
-            title="API usage"
-            framed
-            action={
-                <Button
-                    as="button"
-                    onClick={downloadDetailedUsage}
-                    className="flex items-center gap-1.5"
-                >
-                    <DownloadIcon className="h-3.5 w-3.5 shrink-0" />
-                    Download CSV
-                </Button>
-            }
+    const downloadButton = (
+        <Button
+            as="button"
+            onClick={downloadDetailedUsage}
+            disabled={downloadDisabled}
+            className="flex items-center gap-1.5"
         >
+            <DownloadIcon className="h-3.5 w-3.5 shrink-0" />
+            Download CSV
+        </Button>
+    );
+    const downloadAction = downloadDisabled ? (
+        <Tooltip
+            triggerAs="span"
+            content={downloadDisabledReason}
+            align="center"
+            className="inline-flex"
+        >
+            {downloadButton}
+        </Tooltip>
+    ) : (
+        downloadButton
+    );
+
+    return (
+        <Section title="API usage" framed action={downloadAction}>
             <div className="flex flex-col gap-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex flex-wrap gap-1.5">
@@ -310,7 +327,6 @@ export const UsageSection: FC<UsageSectionProps> = ({ period, apiKeys }) => {
                 ) : (
                     <Surface>
                         <TransactionHistory
-                            mode="full"
                             apiKeys={apiKeys}
                             period={period}
                             selectedKeyIds={filters.selectedKeyIds}
@@ -375,11 +391,7 @@ const UsageChartView: FC<UsageChartViewProps> = ({
                         showModelBreakdown={showModelBreakdown}
                     />
                 )}
-                {!loading && !error && !hasUsage && (
-                    <p className="text-sm text-ink-600">
-                        {EMPTY_USAGE_MESSAGE}
-                    </p>
-                )}
+                {!loading && !error && !hasUsage && <UsageEmptyState />}
             </Surface>
 
             {!loading && !error && hasUsage && (
@@ -468,6 +480,17 @@ const UsageChartView: FC<UsageChartViewProps> = ({
         </>
     );
 };
+
+const UsageEmptyState: FC = () => (
+    <p className="text-sm text-ink-600">
+        No transactions in this selected period. Once you start using the API,
+        your deductions will appear here.{" "}
+        <InlineLink href="#keys" showIcon={false}>
+            Create an API key
+        </InlineLink>
+        .
+    </p>
+);
 
 const MODALITY_ICON: Record<ModelModality, FC<IconProps>> = {
     text: ChatIcon,

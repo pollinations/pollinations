@@ -1,0 +1,57 @@
+DESCRIPTION >
+    Activity app earnings chart data with per-app and global rollups.
+
+TOKEN "tinybird_read" READ
+
+NODE app_labels
+SQL >
+    %
+    SELECT id AS app_key_id, nullIf(nullIf(name, ''), 'undefined') AS app_name
+    FROM d1_apikey
+    WHERE synced_at = (SELECT max(synced_at) FROM d1_apikey)
+
+NODE earnings_events
+SQL >
+    %
+    SELECT
+        ae.app_key_id AS app_key_id,
+        if(
+            {{ String(grain, 'day') }} = 'hour',
+            formatDateTime(toStartOfHour(ae.timestamp), '%F %T'),
+            formatDateTime(toStartOfDay(ae.timestamp), '%F')
+        ) AS date,
+        ae.payer_user_id AS payer_user_id,
+        ae.baseline_price AS baseline_price,
+        ae.cost_usd AS cost_usd,
+        ae.pollen_earned AS event_pollen_earned,
+        ae.markup_rate AS markup_rate,
+        ae.meter_source AS meter_source,
+        coalesce(al.app_name, nullIf(nullIf(ae.app_name, ''), 'undefined'), ae.app_key_id) AS app_name
+    FROM activity_app_earnings_events ae
+    LEFT JOIN app_labels al ON ae.app_key_id = al.app_key_id
+    WHERE
+        ae.dev_user_id = {{ String(dev_user_id, '') }}
+        {% if defined(since) %} AND ae.timestamp >= {{ DateTime(since) }} {% end %}
+        {% if defined(until) %} AND ae.timestamp < {{ DateTime(until) }} {% end %}
+        {% if defined(api_key_ids) %} AND ae.app_key_id IN {{ Array(api_key_ids, 'String') }} {% end %}
+
+NODE activity_app_earnings_chart_node
+SQL >
+    SELECT
+        date,
+        app_key_id,
+        app_name,
+        count() AS requests,
+        countIf(meter_source = 'pack') AS paid_requests,
+        countIf(meter_source = 'tier') AS tier_requests,
+        sum(baseline_price) AS baseline_price,
+        sum(event_pollen_earned) AS pollen_earned,
+        sumIf(event_pollen_earned, meter_source = 'pack') AS paid_earned,
+        sumIf(event_pollen_earned, meter_source = 'tier') AS tier_earned,
+        sum(cost_usd) AS cost_usd,
+        if(count() = 0, toFloat64(0), avg(markup_rate)) AS markup_rate,
+        if(GROUPING(date) = 0, toUInt64(0), uniq(payer_user_id)) AS unique_users
+    FROM earnings_events
+    GROUP BY GROUPING SETS ((date, app_key_id, app_name), (app_key_id, app_name), ())
+
+TYPE endpoint

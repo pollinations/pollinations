@@ -1,0 +1,30 @@
+DESCRIPTION >
+    Activity API usage chart data grouped by date/hour, API key, model, and meter source.
+
+TOKEN "tinybird_read" READ
+
+NODE activity_usage_chart_node
+SQL >
+    %
+    SELECT
+        if(
+            {{ String(grain, 'day') }} = 'hour',
+            formatDateTime(toStartOfHour(timestamp), '%F %T'),
+            formatDateTime(toStartOfDay(timestamp), '%F')
+        ) as date,
+        api_key_id,
+        nullIf(nullIf(api_key, ''), 'undefined') as api_key,
+        resolved_model as model,
+        meter_source,
+        count() as requests,
+        sum(cost_usd) as cost_usd
+    FROM activity_usage_events
+    WHERE
+        user_id = {{ String(user_id, '') }}
+        {% if defined(since) %} AND timestamp >= {{ DateTime(since) }} {% end %}
+        {% if defined(until) %} AND timestamp < {{ DateTime(until) }} {% end %}
+        {% if defined(api_key_ids) %} AND api_key_id IN {{ Array(api_key_ids, 'String') }} {% end %}
+    GROUP BY date, api_key_id, api_key, model, meter_source
+    ORDER BY date DESC, requests DESC
+
+TYPE endpoint

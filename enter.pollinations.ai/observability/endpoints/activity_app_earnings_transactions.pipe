@@ -1,0 +1,52 @@
+DESCRIPTION >
+    Activity app earnings transactions for table pagination and detailed CSV export.
+
+TOKEN "tinybird_read" READ
+
+NODE app_labels
+SQL >
+    %
+    SELECT id AS app_key_id, nullIf(nullIf(name, ''), 'undefined') AS app_name
+    FROM d1_apikey
+    WHERE synced_at = (SELECT max(synced_at) FROM d1_apikey)
+
+NODE activity_app_earnings_transactions_node
+SQL >
+    %
+    SELECT
+        ae.timestamp,
+        ae.event_id as cursor_event_id,
+        ae.type,
+        ae.app_key_id,
+        coalesce(al.app_name, nullIf(nullIf(ae.app_name, ''), 'undefined'), ae.app_key_id) AS app_name,
+        ae.payer_user_id,
+        ae.model,
+        ae.meter_source,
+        ae.baseline_price,
+        ae.pollen_earned,
+        ae.cost_usd,
+        ae.markup_rate,
+        ae.response_time_ms
+    FROM activity_app_earnings_events ae
+    LEFT JOIN app_labels al ON ae.app_key_id = al.app_key_id
+    WHERE
+        ae.dev_user_id = {{ String(dev_user_id, '') }}
+        {% if defined(api_key_ids) %} AND ae.app_key_id IN {{ Array(api_key_ids, 'String') }} {% end %}
+        {% if defined(since) %} AND ae.timestamp >= {{ DateTime(since) }}
+        {% else %} AND ae.timestamp >= now() - INTERVAL 30 DAY
+        {% end %}
+        {% if defined(until) %} AND ae.timestamp < {{ DateTime(until) }} {% end %}
+        {% if defined(before) and defined(before_event_id) %}
+            AND (
+                ae.timestamp < {{ DateTime(before) }}
+                OR (
+                    ae.timestamp = {{ DateTime(before) }}
+                    AND ae.event_id < {{ String(before_event_id) }}
+                )
+            )
+        {% elif defined(before) %} AND ae.timestamp < {{ DateTime(before) }}
+        {% end %}
+    ORDER BY ae.timestamp DESC, ae.event_id DESC
+    LIMIT {{ Int32(limit, 100) }}
+
+TYPE endpoint

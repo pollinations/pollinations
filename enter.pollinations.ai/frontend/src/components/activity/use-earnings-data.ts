@@ -1,13 +1,23 @@
 import { getPeriodBucketKeys, periodBucketKeyToDate } from "@pollinations/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiClient } from "../../api.ts";
-import type { DataPoint, ModelBreakdown, UsagePeriodSelection } from "./types";
+import type {
+    DataPoint,
+    Metric,
+    ModelBreakdown,
+    UsagePeriodSelection,
+} from "./types";
 
 export type DeveloperEarningsRow = {
     date: string;
     app_key_id: string;
     app_name: string;
     requests: number;
+    baseline_price: number;
+    /** Requests paid from paid balance. Optional — pipe may not yet split. */
+    paid_requests?: number;
+    /** Requests paid from tier balance. Optional — pipe may not yet split. */
+    tier_requests?: number;
     pollen_earned: number;
     /** Earnings from paid-balance spend. Optional — pipe may not yet split. */
     paid_earned?: number;
@@ -19,6 +29,7 @@ export type DeveloperEarningsRow = {
 
 export type EarningsFilterState = {
     period: UsagePeriodSelection;
+    metric: Metric;
     selectedAppKeyIds: string[];
 };
 
@@ -36,8 +47,10 @@ type EarningsDataResult = {
     loading: boolean;
     error: string | null;
     fetchEarnings: () => void;
+    usedApps: { id: string; label: string }[];
     chartData: DataPoint[];
     stats: {
+        totalRequests: number;
         totalPollen: number;
         totalPaid: number;
         totalTier: number;
@@ -61,7 +74,6 @@ export function useEarningsData(
     const [error, setError] = useState<string | null>(null);
     const inFlightRef = useRef<AbortController | null>(null);
 
-    const selectedAppKeyIdsKey = filters.selectedAppKeyIds.join(",");
     const { granularity, period } = filters.period;
 
     const fetchEarnings = useCallback(() => {
@@ -78,14 +90,10 @@ export function useEarningsData(
         const query: {
             granularity: string;
             period: string;
-            api_key_ids?: string;
         } = {
             granularity,
             period,
         };
-        if (selectedAppKeyIdsKey) {
-            query.api_key_ids = selectedAppKeyIdsKey;
-        }
 
         apiClient.account.earnings
             .$get({ query }, { init: { signal: controller.signal } })
@@ -118,7 +126,7 @@ export function useEarningsData(
                 if (controller.signal.aborted) return;
                 setLoading(false);
             });
-    }, [granularity, period, selectedAppKeyIdsKey]);
+    }, [granularity, period]);
 
     useEffect(() => {
         fetchEarnings();
@@ -127,12 +135,42 @@ export function useEarningsData(
         };
     }, [fetchEarnings]);
 
+    const usedApps = useMemo(() => {
+        const appLabels = new Map<string, string>();
+        for (const r of perApp) {
+            if (!r.app_key_id) continue;
+            if (appLabels.has(r.app_key_id)) continue;
+            appLabels.set(r.app_key_id, r.app_name || r.app_key_id);
+        }
+
+        return Array.from(appLabels.entries())
+            .map(([id, label]) => ({ id, label }))
+            .sort((a, b) => a.label.localeCompare(b.label));
+    }, [perApp]);
+
+    const selectedAppKeyIds = filters.selectedAppKeyIds;
+    const filteredDailyEarnings = useMemo(() => {
+        if (selectedAppKeyIds.length === 0) return dailyEarnings;
+        return dailyEarnings.filter((row) =>
+            selectedAppKeyIds.includes(row.app_key_id),
+        );
+    }, [dailyEarnings, selectedAppKeyIds]);
+
+    const filteredPerApp = useMemo(() => {
+        if (selectedAppKeyIds.length === 0) return perApp;
+        return perApp.filter((row) =>
+            selectedAppKeyIds.includes(row.app_key_id),
+        );
+    }, [perApp, selectedAppKeyIds]);
+
     const chartData = useMemo<DataPoint[]>(() => {
         type DayBucket = {
             requests: number;
             pollen: number;
-            paid: number;
-            tier: number;
+            paidRequests: number;
+            tierRequests: number;
+            paidPollen: number;
+            tierPollen: number;
             byApp: Map<
                 string,
                 { label: string; requests: number; pollen: number }
@@ -140,20 +178,24 @@ export function useEarningsData(
         };
         const buckets = new Map<string, DayBucket>();
 
-        for (const r of dailyEarnings) {
+        for (const r of filteredDailyEarnings) {
             const dateKey = r.date;
             const cur = buckets.get(dateKey) || {
                 requests: 0,
                 pollen: 0,
-                paid: 0,
-                tier: 0,
+                paidRequests: 0,
+                tierRequests: 0,
+                paidPollen: 0,
+                tierPollen: 0,
                 byApp: new Map(),
             };
             cur.requests += r.requests;
             cur.pollen += r.pollen_earned;
             // If pipe doesn't yet split, fall back to all-paid.
-            cur.paid += r.paid_earned ?? r.pollen_earned;
-            cur.tier += r.tier_earned ?? 0;
+            cur.paidRequests += r.paid_requests ?? r.requests;
+            cur.tierRequests += r.tier_requests ?? 0;
+            cur.paidPollen += r.paid_earned ?? r.pollen_earned;
+            cur.tierPollen += r.tier_earned ?? 0;
 
             const appData = cur.byApp.get(r.app_key_id) || {
                 label: r.app_name,
@@ -177,8 +219,10 @@ export function useEarningsData(
             const d = buckets.get(bucketKey) || {
                 requests: 0,
                 pollen: 0,
-                paid: 0,
-                tier: 0,
+                paidRequests: 0,
+                tierRequests: 0,
+                paidPollen: 0,
+                tierPollen: 0,
                 byApp: new Map<
                     string,
                     { label: string; requests: number; pollen: number }
@@ -191,7 +235,15 @@ export function useEarningsData(
                     requests: appStats.requests,
                     pollen: appStats.pollen,
                 }))
-                .sort((a, b) => b.pollen - a.pollen);
+                .sort((a, b) => {
+                    const left =
+                        filters.metric === "requests" ? a.requests : a.pollen;
+                    const right =
+                        filters.metric === "requests" ? b.requests : b.pollen;
+                    return right - left;
+                });
+
+            const isRequestsMetric = filters.metric === "requests";
 
             return {
                 label: isHourly
@@ -218,27 +270,55 @@ export function useEarningsData(
                         hour12: false,
                     }),
                 }),
-                value: d.pollen,
-                tierValue: d.tier,
-                paidValue: d.paid,
+                value: isRequestsMetric ? d.requests : d.pollen,
+                tierValue: isRequestsMetric ? d.tierRequests : d.tierPollen,
+                paidValue: isRequestsMetric ? d.paidRequests : d.paidPollen,
                 timestamp: date,
                 modelBreakdown: appBreakdown,
             };
         });
-    }, [dailyEarnings, filters.period]);
+    }, [filteredDailyEarnings, filters.metric, filters.period]);
 
     const stats = useMemo(() => {
-        const totalPollen = globalSummary?.pollen_earned ?? 0;
-        const totalPaid =
-            globalSummary?.paid_earned ?? globalSummary?.pollen_earned ?? 0;
-        const totalTier = globalSummary?.tier_earned ?? 0;
-        const averageMarkupRate = globalSummary?.markup_rate ?? 0;
-        const activeUsers = globalSummary?.unique_users ?? 0;
-        const appCount = perApp.length;
+        const hasAppFilter = selectedAppKeyIds.length > 0;
+        const totalRequests = hasAppFilter
+            ? filteredPerApp.reduce((sum, row) => sum + row.requests, 0)
+            : (globalSummary?.requests ?? 0);
+        const totalPollen = hasAppFilter
+            ? filteredPerApp.reduce((sum, row) => sum + row.pollen_earned, 0)
+            : (globalSummary?.pollen_earned ?? 0);
+        const totalPaid = hasAppFilter
+            ? filteredPerApp.reduce(
+                  (sum, row) => sum + (row.paid_earned ?? row.pollen_earned),
+                  0,
+              )
+            : (globalSummary?.paid_earned ?? globalSummary?.pollen_earned ?? 0);
+        const totalTier = hasAppFilter
+            ? filteredPerApp.reduce(
+                  (sum, row) => sum + (row.tier_earned ?? 0),
+                  0,
+              )
+            : (globalSummary?.tier_earned ?? 0);
+        const totalBaseline = hasAppFilter
+            ? filteredPerApp.reduce((sum, row) => sum + row.baseline_price, 0)
+            : (globalSummary?.baseline_price ?? 0);
+        const averageMarkupRate = hasAppFilter
+            ? totalBaseline > 0
+                ? totalPollen / totalBaseline
+                : 0
+            : (globalSummary?.markup_rate ?? 0);
+        const activeUsers = hasAppFilter
+            ? filteredPerApp.reduce((sum, row) => sum + row.unique_users, 0)
+            : (globalSummary?.unique_users ?? 0);
+        const appCount = filteredPerApp.length;
 
-        const topAppRow = [...perApp].sort(
-            (a, b) => b.pollen_earned - a.pollen_earned,
-        )[0];
+        const topAppRow = [...filteredPerApp].sort((a, b) => {
+            const left =
+                filters.metric === "requests" ? a.requests : a.pollen_earned;
+            const right =
+                filters.metric === "requests" ? b.requests : b.pollen_earned;
+            return right - left;
+        })[0];
         const topApp: TopApp | null = topAppRow
             ? {
                   id: topAppRow.app_key_id,
@@ -252,6 +332,7 @@ export function useEarningsData(
             : null;
 
         return {
+            totalRequests,
             totalPollen,
             totalPaid,
             totalTier,
@@ -260,12 +341,13 @@ export function useEarningsData(
             appCount,
             topApp,
         };
-    }, [perApp, globalSummary]);
+    }, [filteredPerApp, globalSummary, filters.metric, selectedAppKeyIds]);
 
     return {
         loading,
         error,
         fetchEarnings,
+        usedApps,
         chartData,
         stats,
     };

@@ -9,12 +9,10 @@ import {
     TableRow,
 } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
-import { type FC, useCallback, useEffect, useMemo, useState } from "react";
+import { type FC, useCallback, useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { formatActivityPollenThreshold } from "./format-activity-pollen.ts";
 import type { UsagePeriodSelection } from "./types.ts";
-
-type ApiKeyInfo = { id: string; name: string };
 
 const PAGE_SIZE = 10;
 const FETCH_LIMIT = PAGE_SIZE + 1;
@@ -22,26 +20,26 @@ const EMPTY_FILTER_VALUES: string[] = [];
 const TABLE_HEADER_CELL_CLASS = "px-2 py-1.5";
 const TABLE_CELL_CLASS = "px-2 py-1.5 text-xs";
 
-type UsageRecord = {
+type EarningsTransaction = {
     timestamp: string;
     cursor_event_id: string;
-    model: string;
-    api_key_id: string | null;
-    api_key: string | null;
+    app_key_id: string;
+    app_name: string;
+    model: string | null;
     meter_source: string | null;
-    cost_usd: number;
+    pollen_earned: number;
 };
 
-type UsageCursor = {
+type EarningsCursor = {
     timestamp: string;
     eventId: string;
 };
 
 type FetchState = {
-    rows: UsageRecord[];
+    rows: EarningsTransaction[];
     loading: boolean;
     error: string | null;
-    nextCursor: UsageCursor | null;
+    nextCursor: EarningsCursor | null;
     hasMore: boolean;
 };
 
@@ -84,40 +82,25 @@ function MeterSourceChip({ source }: { source: string | null }) {
     return <PaidChip>paid</PaidChip>;
 }
 
-function rowKey(row: UsageRecord, index: number): string {
+function rowKey(row: EarningsTransaction, index: number): string {
     if (row.cursor_event_id) return row.cursor_event_id;
-    return `${row.timestamp}-${row.api_key_id ?? row.api_key ?? "key"}-${
-        row.model || "model"
-    }-${row.cost_usd}-${index}`;
+    return `${row.timestamp}-${row.app_key_id}-${row.model || "model"}-${
+        row.pollen_earned
+    }-${index}`;
 }
 
-function buildKeyNameLookup(keys: ApiKeyInfo[] | undefined) {
-    const map = new Map<string, string>();
-    for (const k of keys ?? []) map.set(k.id, k.name);
-    return (id: string | null, fallbackName?: string | null) => {
-        if (!id) return "—";
-        return map.get(id) ?? fallbackName ?? `${id.slice(0, 8)}…`;
-    };
-}
-
-export type TransactionHistoryProps = {
-    apiKeys?: ApiKeyInfo[];
+export type EarningsTransactionHistoryProps = {
     period?: UsagePeriodSelection;
-    selectedKeyIds?: string[];
-    selectedModels?: string[];
+    selectedAppKeyIds?: string[];
 };
 
-export const TransactionHistory: FC<TransactionHistoryProps> = ({
-    apiKeys,
-    period,
-    selectedKeyIds = EMPTY_FILTER_VALUES,
-    selectedModels = EMPTY_FILTER_VALUES,
-}) => {
+export const EarningsTransactionHistory: FC<
+    EarningsTransactionHistoryProps
+> = ({ period, selectedAppKeyIds = EMPTY_FILTER_VALUES }) => {
     const [state, setState] = useState<FetchState>(INITIAL_STATE);
-    const lookupKeyName = useMemo(() => buildKeyNameLookup(apiKeys), [apiKeys]);
 
     const loadPage = useCallback(
-        async (cursor: UsageCursor | null): Promise<void> => {
+        async (cursor: EarningsCursor | null): Promise<void> => {
             setState((prev) => ({ ...prev, loading: true, error: null }));
             const query: {
                 limit: string;
@@ -126,7 +109,6 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
                 granularity?: string;
                 period?: string;
                 api_key_ids?: string;
-                models?: string;
             } = {
                 limit: FETCH_LIMIT.toString(),
             };
@@ -134,29 +116,30 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
                 query.granularity = period.granularity;
                 query.period = period.period;
             }
-            if (selectedKeyIds.length > 0) {
-                query.api_key_ids = selectedKeyIds.join(",");
-            }
-            if (selectedModels.length > 0) {
-                query.models = selectedModels.join(",");
+            if (selectedAppKeyIds.length > 0) {
+                query.api_key_ids = selectedAppKeyIds.join(",");
             }
             if (cursor) {
                 query.before = cursor.timestamp;
                 query.before_event_id = cursor.eventId;
             }
 
-            const response = await apiClient.account.usage.$get({ query });
+            const response = await apiClient.account.earnings.transactions.$get(
+                { query },
+            );
             if (!response.ok) {
                 setState((prev) => ({
                     ...prev,
                     loading: false,
-                    error: `Failed to load transactions (${response.status})`,
+                    error: `Failed to load earnings (${response.status})`,
                 }));
                 return;
             }
 
-            const data = (await response.json()) as { usage: UsageRecord[] };
-            const fetchedRows = data.usage ?? [];
+            const data = (await response.json()) as {
+                transactions: EarningsTransaction[];
+            };
+            const fetchedRows = data.transactions ?? [];
             const rows = fetchedRows.slice(0, PAGE_SIZE);
             const hasMore = fetchedRows.length > PAGE_SIZE;
             const last = rows[rows.length - 1];
@@ -176,7 +159,7 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
                 hasMore,
             }));
         },
-        [period, selectedKeyIds, selectedModels],
+        [period, selectedAppKeyIds],
     );
 
     useEffect(() => {
@@ -201,10 +184,10 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
 
             {showEmpty && (
                 <p className="text-sm text-ink-600">
-                    No transactions in this selected period. Once you start
-                    using the API, your deductions will appear here.{" "}
+                    No earnings in this selected period. Once users start
+                    spending pollen through your app, earnings will appear here.{" "}
                     <InlineLink href="#keys" showIcon={false}>
-                        Create an API key
+                        Create an App key
                     </InlineLink>
                     .
                 </p>
@@ -212,7 +195,6 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
 
             {state.rows.length > 0 && (
                 <>
-                    {/* Mobile: stacked cards */}
                     <ul className="flex flex-col gap-2 sm:hidden">
                         {state.rows.map((row, index) => (
                             <li
@@ -221,10 +203,10 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
                             >
                                 <div className="flex items-center justify-between gap-2">
                                     <span className="font-semibold text-ink-900 truncate">
-                                        {row.model || "—"}
+                                        {row.app_name || row.app_key_id || "—"}
                                     </span>
                                     <span className="tabular-nums font-semibold text-ink-900 shrink-0">
-                                        {formatCost(row.cost_usd)}
+                                        {formatCost(row.pollen_earned)}
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between gap-2 text-xs">
@@ -236,13 +218,12 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
                                     />
                                 </div>
                                 <div className="text-xs text-ink-500 truncate">
-                                    {lookupKeyName(row.api_key_id, row.api_key)}
+                                    {row.model || "—"}
                                 </div>
                             </li>
                         ))}
                     </ul>
 
-                    {/* Desktop: table */}
                     <div className="hidden overflow-x-auto sm:block">
                         <Table className="text-left text-xs">
                             <TableHead>
@@ -255,12 +236,12 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
                                     <TableHeaderCell
                                         className={TABLE_HEADER_CELL_CLASS}
                                     >
-                                        Model
+                                        App
                                     </TableHeaderCell>
                                     <TableHeaderCell
                                         className={TABLE_HEADER_CELL_CLASS}
                                     >
-                                        API Key
+                                        Model
                                     </TableHeaderCell>
                                     <TableHeaderCell
                                         className={TABLE_HEADER_CELL_CLASS}
@@ -271,7 +252,7 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
                                         align="right"
                                         className={TABLE_HEADER_CELL_CLASS}
                                     >
-                                        Cost
+                                        Earned
                                     </TableHeaderCell>
                                 </TableRow>
                             </TableHead>
@@ -285,17 +266,16 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
                                             {formatTimestamp(row.timestamp)}
                                         </TableCell>
                                         <TableCell
-                                            className={`${TABLE_CELL_CLASS} text-ink-900`}
+                                            className={`${TABLE_CELL_CLASS} max-w-[12rem] truncate text-ink-900`}
                                         >
-                                            {row.model || "—"}
+                                            {row.app_name ||
+                                                row.app_key_id ||
+                                                "—"}
                                         </TableCell>
                                         <TableCell
-                                            className={`${TABLE_CELL_CLASS} max-w-[12rem] truncate text-ink-700`}
+                                            className={`${TABLE_CELL_CLASS} text-ink-700`}
                                         >
-                                            {lookupKeyName(
-                                                row.api_key_id,
-                                                row.api_key,
-                                            )}
+                                            {row.model || "—"}
                                         </TableCell>
                                         <TableCell className={TABLE_CELL_CLASS}>
                                             <MeterSourceChip
@@ -307,7 +287,7 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
                                             numeric
                                             className={`${TABLE_CELL_CLASS} font-medium text-ink-900`}
                                         >
-                                            {formatCost(row.cost_usd)}
+                                            {formatCost(row.pollen_earned)}
                                         </TableCell>
                                     </TableRow>
                                 ))}

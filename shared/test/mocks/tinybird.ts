@@ -25,6 +25,7 @@ export type MockTinybirdState = {
     dailyResponse: UsageRow[];
     usageResponse: UsageRow[];
     earningsResponse: UsageRow[];
+    earningsTransactionsResponse: UsageRow[];
     pipeCalls: PipeCall[];
 };
 
@@ -36,6 +37,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         dailyResponse: [],
         usageResponse: [],
         earningsResponse: [],
+        earningsTransactionsResponse: [],
         pipeCalls: [],
     };
 
@@ -75,17 +77,21 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
                 200,
             );
         })
-        .get("/v0/pipes/user_usage.json", (c) => {
+        .get("/v0/pipes/activity_usage_transactions.json", (c) => {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
             return c.json({ data: state.usageResponse }, 200);
         })
-        .get("/v0/pipes/user_usage_daily_filtered.json", (c) => {
+        .get("/v0/pipes/activity_usage_chart.json", (c) => {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
             return c.json({ data: state.dailyResponse }, 200);
         })
-        .get("/v0/pipes/developer_earnings.json", (c) => {
+        .get("/v0/pipes/activity_app_earnings_chart.json", (c) => {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
             return c.json({ data: state.earningsResponse }, 200);
+        })
+        .get("/v0/pipes/activity_app_earnings_transactions.json", (c) => {
+            state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
+            return c.json({ data: state.earningsTransactionsResponse }, 200);
         });
 
     const handlerMap = {
@@ -99,6 +105,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         state.dailyResponse = [];
         state.usageResponse = [];
         state.earningsResponse = [];
+        state.earningsTransactionsResponse = [];
         state.pipeCalls = [];
     };
 

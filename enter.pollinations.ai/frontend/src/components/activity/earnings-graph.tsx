@@ -9,38 +9,84 @@ import {
     SproutIcon,
     StatCard,
     Surface,
+    TabButton,
     Tooltip,
 } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import type { FC } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Chart } from "./chart";
+import { EarningsTransactionHistory } from "./earnings-transaction-history";
 import { formatActivityPollen } from "./format-activity-pollen";
-import type { UsagePeriodSelection } from "./types";
+import type { Metric, UsagePeriodSelection } from "./types";
 import { useEarningsData } from "./use-earnings-data";
+
+const DETAILED_EARNINGS_DOWNLOAD_LIMIT = 50_000;
+
+type EarningsView = "chart" | "table";
+
+const METRIC_LABELS: Record<Metric, string> = {
+    requests: "Requests",
+    pollen: "Pollen",
+};
+
+const METRIC_OPTIONS: Metric[] = ["pollen", "requests"];
+
+const MetricTabs: FC<{
+    value: Metric;
+    onChange: (metric: Metric) => void;
+}> = ({ value, onChange }) => (
+    <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-medium text-theme-text-soft">Metric</span>
+        <div className="flex w-60 flex-wrap justify-end gap-1.5">
+            {METRIC_OPTIONS.map((metric) => (
+                <TabButton
+                    key={metric}
+                    active={value === metric}
+                    onClick={() => onChange(metric)}
+                    size="sm"
+                    className="flex-1"
+                >
+                    {METRIC_LABELS[metric]}
+                </TabButton>
+            ))}
+        </div>
+    </div>
+);
 
 type EarningsGraphProps = {
     period: UsagePeriodSelection;
-    apps: Array<{ id: string; name: string }>;
 };
 
-export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
+export const EarningsGraph: FC<EarningsGraphProps> = ({ period }) => {
+    const [activeView, setActiveView] = useState<EarningsView>("chart");
+    const [metric, setMetric] = useState<Metric>("pollen");
     const [selectedAppKeyIds, setSelectedAppKeyIds] = useState<string[]>([]);
 
-    const appSelectOptions = apps.map((a) => ({
+    const { loading, error, fetchEarnings, usedApps, chartData, stats } =
+        useEarningsData({
+            period,
+            metric,
+            selectedAppKeyIds,
+        });
+
+    useEffect(() => {
+        const validAppIds = new Set(usedApps.map((app) => app.id));
+        const validSelectedAppKeyIds = selectedAppKeyIds.filter((id) =>
+            validAppIds.has(id),
+        );
+        if (validSelectedAppKeyIds.length !== selectedAppKeyIds.length) {
+            setSelectedAppKeyIds(validSelectedAppKeyIds);
+        }
+    }, [usedApps, selectedAppKeyIds]);
+
+    const appSelectOptions = usedApps.map((a) => ({
         value: a.id,
-        label: a.name,
+        label: a.label,
     }));
 
-    const { loading, error, fetchEarnings, chartData, stats } = useEarningsData(
-        {
-            period,
-            selectedAppKeyIds,
-        },
-    );
-
-    const showAppBreakdown = apps.length > 0;
-    const hasEarnings = stats.totalPollen > 0;
+    const showAppBreakdown = usedApps.length > 0;
+    const hasEarnings = stats.totalRequests > 0;
     const downloadDisabled = loading || !hasEarnings;
     const downloadDisabledReason = loading
         ? "Loading earnings data"
@@ -53,12 +99,13 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
             format: "csv",
             granularity: period.granularity,
             period: period.period,
+            limit: DETAILED_EARNINGS_DOWNLOAD_LIMIT.toString(),
         });
         if (selectedAppKeyIds.length > 0) {
             params.set("api_key_ids", selectedAppKeyIds.join(","));
         }
         const anchor = document.createElement("a");
-        anchor.href = `/api/account/earnings?${params.toString()}`;
+        anchor.href = `/api/account/earnings/transactions?${params.toString()}`;
         anchor.rel = "noopener";
         document.body.appendChild(anchor);
         anchor.click();
@@ -92,57 +139,82 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
     return (
         <Section title="App earnings" framed action={downloadAction}>
             <div className="flex flex-col gap-4">
-                <div className="flex flex-wrap items-start justify-start gap-4 sm:justify-end">
-                    <div className="flex flex-col items-stretch gap-2 [&>div]:justify-between [&_button]:w-60">
-                        <MultiSelect
-                            options={appSelectOptions}
-                            selected={selectedAppKeyIds}
-                            onChange={setSelectedAppKeyIds}
-                            placeholder="All"
-                            disabled={appSelectOptions.length === 0}
-                            disabledText="None"
-                            align="end"
-                            label="Apps"
-                        />
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="flex flex-wrap gap-1.5">
+                        {(["chart", "table"] as EarningsView[]).map((view) => (
+                            <TabButton
+                                key={view}
+                                active={activeView === view}
+                                onClick={() => setActiveView(view)}
+                            >
+                                {view === "chart" ? "Chart" : "Table"}
+                            </TabButton>
+                        ))}
+                    </div>
+                    <div className="flex flex-col items-stretch gap-2">
+                        <div className="[&>div]:justify-between [&_button]:w-60">
+                            <MultiSelect
+                                options={appSelectOptions}
+                                selected={selectedAppKeyIds}
+                                onChange={setSelectedAppKeyIds}
+                                placeholder="All"
+                                disabled={appSelectOptions.length === 0}
+                                disabledText="None"
+                                align="end"
+                                label="Apps"
+                            />
+                        </div>
+                        {activeView === "chart" && (
+                            <MetricTabs value={metric} onChange={setMetric} />
+                        )}
                     </div>
                 </div>
 
-                <Surface>
-                    {loading && (
-                        <div className="flex items-center justify-center h-[180px]">
-                            <p className="text-sm text-theme-text-muted animate-[pulse_2s_ease-in-out_infinite]">
-                                Fetching earnings data…
-                            </p>
-                        </div>
-                    )}
-                    {error && !loading && (
-                        <div className="flex items-center justify-center h-[180px]">
-                            <div className="text-center">
-                                <p className="text-sm text-intent-danger-text font-medium">
-                                    {error}
+                {activeView === "chart" ? (
+                    <Surface>
+                        {loading && (
+                            <div className="flex items-center justify-center h-[180px]">
+                                <p className="text-sm text-theme-text-muted animate-[pulse_2s_ease-in-out_infinite]">
+                                    Fetching earnings data…
                                 </p>
-                                <button
-                                    type="button"
-                                    onClick={() => fetchEarnings()}
-                                    className="mt-2 text-xs text-intent-danger-text hover:text-intent-danger-text underline"
-                                >
-                                    Try again
-                                </button>
                             </div>
-                        </div>
-                    )}
-                    {!loading &&
-                        !error &&
-                        (hasEarnings ? (
-                            <Chart
-                                data={chartData}
-                                metric="pollen"
-                                showModelBreakdown={showAppBreakdown}
-                            />
-                        ) : (
-                            <EarningsEmptyState />
-                        ))}
-                </Surface>
+                        )}
+                        {error && !loading && (
+                            <div className="flex items-center justify-center h-[180px]">
+                                <div className="text-center">
+                                    <p className="text-sm text-intent-danger-text font-medium">
+                                        {error}
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => fetchEarnings()}
+                                        className="mt-2 text-xs text-intent-danger-text hover:text-intent-danger-text underline"
+                                    >
+                                        Try again
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                        {!loading &&
+                            !error &&
+                            (hasEarnings ? (
+                                <Chart
+                                    data={chartData}
+                                    metric={metric}
+                                    showModelBreakdown={showAppBreakdown}
+                                />
+                            ) : (
+                                <EarningsEmptyState />
+                            ))}
+                    </Surface>
+                ) : (
+                    <Surface>
+                        <EarningsTransactionHistory
+                            period={period}
+                            selectedAppKeyIds={selectedAppKeyIds}
+                        />
+                    </Surface>
+                )}
 
                 {hasEarnings && (
                     <div className="grid gap-4 sm:grid-cols-3">

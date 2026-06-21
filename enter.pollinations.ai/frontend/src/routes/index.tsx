@@ -6,7 +6,6 @@ import { authClient, getUserOrRedirect } from "../auth.ts";
 import {
     currentUsagePeriod,
     EarningsGraph,
-    getEarningsEnabledApps,
     PeriodPicker,
     type UsagePeriodSelection,
     UsageSection,
@@ -27,6 +26,7 @@ import { Models } from "../components/models";
 import { NewsFaq } from "../components/news-faq";
 import {
     BuyPollenPanel,
+    LastEventsPanel,
     PollenBalance,
     SidebarWallet,
     TierPanel,
@@ -130,11 +130,6 @@ function RouteComponent() {
             apiKeys
                 .filter((k): k is typeof k & { name: string } => !!k.name)
                 .map((k) => ({ id: k.id, name: k.name })),
-        [apiKeys],
-    );
-
-    const earningsEnabledApps = useMemo(
-        () => getEarningsEnabledApps(apiKeys),
         [apiKeys],
     );
 
@@ -277,6 +272,9 @@ function RouteComponent() {
                             <TierPanel {...tierData} />
                         </Section>
                     )}
+                    <Section title="Last events" framed>
+                        <LastEventsPanel apiKeys={apiKeys} />
+                    </Section>
                 </div>
             )}
             {activePage === "activity" && (
@@ -295,10 +293,7 @@ function RouteComponent() {
                         period={activityPeriod}
                         apiKeys={selectableKeys}
                     />
-                    <EarningsGraph
-                        period={activityPeriod}
-                        apps={earningsEnabledApps}
-                    />
+                    <EarningsGraph period={activityPeriod} />
                 </div>
             )}
             {activePage === "keys" && (

@@ -1,14 +1,8 @@
 import {
-    AudioIcon,
     Button,
     CardIcon,
-    ChatIcon,
     Chip,
-    DatabaseIcon,
     DownloadIcon,
-    GlobeIcon,
-    type IconProps,
-    ImageIcon,
     InlineLink,
     MultiSelect,
     Section,
@@ -17,17 +11,11 @@ import {
     Surface,
     TabButton,
     Tooltip,
-    VideoIcon,
 } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import type { FC } from "react";
 import { useEffect, useState } from "react";
 import { Chart } from "./chart";
-import {
-    MODALITY_META,
-    MODEL_MODALITIES,
-    type ModelModality,
-} from "./constants";
 import { formatActivityPollen } from "./format-activity-pollen";
 import { TransactionHistory } from "./transaction-history";
 import type { FilterState, Metric, UsagePeriodSelection } from "./types";
@@ -85,13 +73,26 @@ export const UsageSection: FC<UsageSectionProps> = ({ period, apiKeys }) => {
         selectedModels: [],
     });
 
+    const {
+        loading,
+        error,
+        fetchUsage,
+        usedModels,
+        usedApiKeys,
+        chartData,
+        stats,
+    } = useUsageData({
+        ...filters,
+        period,
+    });
+
     useEffect(() => {
-        const validIds = new Set(apiKeys.map((k) => k.id));
+        const validIds = new Set(usedApiKeys.map((k) => k.id));
         const pruned = filters.selectedKeyIds.filter((id) => validIds.has(id));
         if (pruned.length !== filters.selectedKeyIds.length) {
             setFilters((f) => ({ ...f, selectedKeyIds: pruned }));
         }
-    }, [apiKeys, filters.selectedKeyIds]);
+    }, [usedApiKeys, filters.selectedKeyIds]);
 
     useEffect(() => {
         function syncViewFromHash(): void {
@@ -101,12 +102,6 @@ export const UsageSection: FC<UsageSectionProps> = ({ period, apiKeys }) => {
         window.addEventListener("hashchange", syncViewFromHash);
         return () => window.removeEventListener("hashchange", syncViewFromHash);
     }, []);
-
-    const { loading, error, fetchUsage, usedModels, chartData, stats } =
-        useUsageData({
-            ...filters,
-            period,
-        });
 
     useEffect(() => {
         const validModels = new Set(usedModels.map((m) => m.id));
@@ -118,9 +113,9 @@ export const UsageSection: FC<UsageSectionProps> = ({ period, apiKeys }) => {
         }
     }, [usedModels, filters.selectedModels]);
 
-    const keySelectOptions = apiKeys.map((k) => ({
+    const keySelectOptions = usedApiKeys.map((k) => ({
         value: k.id,
-        label: k.name,
+        label: k.label,
     }));
     const modelSelectOptions = usedModels.map((m) => ({
         value: m.id,
@@ -355,9 +350,14 @@ const UsageChartView: FC<UsageChartViewProps> = ({
                             label="Requests"
                             value={stats.totalRequests.toLocaleString()}
                             detail={
-                                <ModalityPills
-                                    breakdown={stats.requestsByModality}
-                                />
+                                stats.activeApiKeyCount === null ? null : (
+                                    <span className="text-theme-text-soft">
+                                        across {stats.activeApiKeyCount} API key
+                                        {stats.activeApiKeyCount === 1
+                                            ? ""
+                                            : "s"}
+                                    </span>
+                                )
                             }
                         />
                     </Surface>
@@ -421,47 +421,3 @@ const UsageEmptyState: FC = () => (
         .
     </p>
 );
-
-const MODALITY_ICON: Record<ModelModality, FC<IconProps>> = {
-    text: ChatIcon,
-    image: ImageIcon,
-    video: VideoIcon,
-    audio: AudioIcon,
-    embedding: DatabaseIcon,
-    realtime: GlobeIcon,
-};
-
-const ModalityPills: FC<{
-    breakdown: Record<ModelModality, number>;
-}> = ({ breakdown }) => {
-    const entries = MODEL_MODALITIES.map((modality) => ({
-        modality,
-        count: breakdown[modality],
-    })).filter(({ count }) => count > 0);
-    if (entries.length === 0) return null;
-    return (
-        <div className="flex flex-wrap items-center gap-2">
-            {entries.map(({ modality, count }) => {
-                const { label } = MODALITY_META[modality];
-                const Icon = MODALITY_ICON[modality];
-                return (
-                    <Tooltip
-                        key={modality}
-                        content={`${count.toLocaleString()} ${label} request${count === 1 ? "" : "s"}`}
-                        displayContents
-                    >
-                        <Chip
-                            size="lg"
-                            className="font-semibold text-theme-text-base"
-                        >
-                            <Icon className="h-4 w-4" />
-                            <span className="tabular-nums">
-                                {count.toLocaleString()}
-                            </span>
-                        </Chip>
-                    </Tooltip>
-                );
-            })}
-        </div>
-    );
-};

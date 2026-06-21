@@ -1,0 +1,33 @@
+DESCRIPTION >
+    Billed request events for Activity dashboard usage charts, transactions, and CSV export.
+
+TOKEN "tinybird_read" READ
+
+SCHEMA >
+    `user_id` String,
+    `timestamp` DateTime,
+    `event_id` String,
+    `type` LowCardinality(String),
+    `model` LowCardinality(String),
+    `resolved_model` LowCardinality(String),
+    `api_key_id` String,
+    `api_key` String,
+    `api_key_type` LowCardinality(String),
+    `meter_source` LowCardinality(String),
+    `input_text_tokens` UInt32,
+    `input_cached_tokens` UInt32,
+    `input_audio_tokens` UInt32,
+    `input_audio_seconds` Float64,
+    `input_image_tokens` UInt32,
+    `output_text_tokens` UInt32,
+    `output_reasoning_tokens` UInt32,
+    `output_audio_tokens` UInt32,
+    `output_audio_seconds` Float64,
+    `output_image_tokens` UInt32,
+    `output_video_seconds` Float64,
+    `cost_usd` Float64,
+    `response_time_ms` Float32
+
+ENGINE MergeTree
+ENGINE_PARTITION_KEY toYYYYMM(timestamp)
+ENGINE_SORTING_KEY user_id, timestamp, event_id

@@ -1,0 +1,25 @@
+DESCRIPTION >
+    App earning events for Activity dashboard earnings charts, transactions, and CSV export.
+
+TOKEN "tinybird_read" READ
+
+SCHEMA >
+    `dev_user_id` String,
+    `timestamp` DateTime,
+    `event_id` String,
+    `type` LowCardinality(String),
+    `app_key_id` String,
+    `app_name` String,
+    `payer_user_id` String,
+    `model` LowCardinality(String),
+    `resolved_model` LowCardinality(String),
+    `meter_source` LowCardinality(String),
+    `baseline_price` Float64,
+    `cost_usd` Float64,
+    `pollen_earned` Float64,
+    `markup_rate` Float64,
+    `response_time_ms` Float32
+
+ENGINE MergeTree
+ENGINE_PARTITION_KEY toYYYYMM(timestamp)
+ENGINE_SORTING_KEY dev_user_id, timestamp, event_id

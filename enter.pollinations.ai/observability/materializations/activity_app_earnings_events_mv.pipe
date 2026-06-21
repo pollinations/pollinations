@@ -1,0 +1,28 @@
+DESCRIPTION >
+    Materializes app earning events for Activity dashboard earnings reads.
+
+NODE activity_app_earnings_events_mv_node
+SQL >
+    SELECT
+        api_key_created_for_user_id AS dev_user_id,
+        start_time AS timestamp,
+        event_id,
+        event_type AS type,
+        api_key_client_id AS app_key_id,
+        if(api_key_created_for_app = 'undefined', '', api_key_created_for_app) AS app_name,
+        user_id AS payer_user_id,
+        model_used AS model,
+        resolved_model_requested AS resolved_model,
+        if(splitByChar(':', selected_meter_slug)[-1] = 'tier', 'tier', 'pack') AS meter_source,
+        dev_price AS baseline_price,
+        total_price AS cost_usd,
+        total_price - dev_price AS pollen_earned,
+        markup_rate,
+        response_time AS response_time_ms
+    FROM generation_event
+    WHERE markup_rate > 0
+      AND total_price > dev_price
+      AND start_time >= toDateTime('2026-01-01 00:00:00')
+
+TYPE MATERIALIZED
+DATASOURCE activity_app_earnings_events

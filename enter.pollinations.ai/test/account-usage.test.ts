@@ -15,6 +15,8 @@ test("GET /api/account/usage/daily forwards api_key_ids filter to the pipe", asy
     mocks.tinybird.state.dailyResponse = [
         {
             date: "2026-04-14",
+            api_key_id: "key_abc123",
+            api_key: "debug-usage-fixture",
             model: "openai-fast",
             meter_source: "tier",
             requests: 3,
@@ -27,8 +29,12 @@ test("GET /api/account/usage/daily forwards api_key_ids filter to the pipe", asy
         { headers: authHeaders(sessionToken) },
     );
     expect(unfiltered.status).toBe(200);
-    const unfilteredBody = (await unfiltered.json()) as { usage: unknown[] };
+    const unfilteredBody = (await unfiltered.json()) as {
+        usage: Array<Record<string, unknown>>;
+    };
     expect(unfilteredBody.usage).toHaveLength(1);
+    expect(unfilteredBody.usage[0].api_key_id).toBe("key_abc123");
+    expect(unfilteredBody.usage[0].api_key).toBe("debug-usage-fixture");
 
     const filteredSingle = await SELF.fetch(
         "http://localhost:3000/api/account/usage/daily?days=30&api_key_ids=key_abc123",
@@ -43,7 +49,7 @@ test("GET /api/account/usage/daily forwards api_key_ids filter to the pipe", asy
     expect(filteredMulti.status).toBe(200);
 
     const dailyCalls = mocks.tinybird.state.pipeCalls.filter((call) =>
-        call.url.includes("user_usage_daily_filtered.json"),
+        call.url.includes("activity_usage_chart.json"),
     );
     expect(dailyCalls).toHaveLength(3);
     expect(dailyCalls[0].query.api_key_ids).toBeUndefined();
@@ -80,7 +86,7 @@ test("GET /api/account/usage/daily maps selected periods to exact windows", asyn
     expect(month.status).toBe(200);
 
     const dailyCalls = mocks.tinybird.state.pipeCalls.filter((call) =>
-        call.url.includes("user_usage_daily_filtered.json"),
+        call.url.includes("activity_usage_chart.json"),
     );
     expect(dailyCalls).toHaveLength(3);
     expect(dailyCalls[0].query.since).toBe("2026-04-24 00:00:00");
@@ -113,7 +119,7 @@ test("GET /api/account/usage/daily derives pipe grain from selected period", asy
     expect(monthWithIgnoredGrain.status).toBe(200);
 
     const dailyCalls = mocks.tinybird.state.pipeCalls.filter((call) =>
-        call.url.includes("user_usage_daily_filtered.json"),
+        call.url.includes("activity_usage_chart.json"),
     );
     expect(dailyCalls).toHaveLength(2);
     expect(dailyCalls[0].query.grain).toBe("hour");
@@ -187,7 +193,7 @@ test("GET /api/account/usage forwards stable cursor and returns event cursor", a
     expect(body.usage[0].api_key_id).toBe("key_abc123");
 
     const usageCalls = mocks.tinybird.state.pipeCalls.filter((call) =>
-        call.url.includes("user_usage.json"),
+        call.url.includes("activity_usage_transactions.json"),
     );
     expect(usageCalls).toHaveLength(1);
     expect(usageCalls[0].query.before).toBe("2026-04-14 12:10:00");
@@ -208,7 +214,7 @@ test("GET /api/account/usage forwards table filters to the pipe", async ({
     expect(response.status).toBe(200);
 
     const usageCalls = mocks.tinybird.state.pipeCalls.filter((call) =>
-        call.url.includes("user_usage.json"),
+        call.url.includes("activity_usage_transactions.json"),
     );
     expect(usageCalls).toHaveLength(1);
     expect(usageCalls[0].query.limit).toBe("15");
@@ -267,7 +273,7 @@ test("GET /api/account/usage?format=csv renders rows and sets filename from limi
     expect(lines[1]).toContain("alpha");
 
     const usageCalls = mocks.tinybird.state.pipeCalls.filter((call) =>
-        call.url.includes("user_usage.json"),
+        call.url.includes("activity_usage_transactions.json"),
     );
     expect(usageCalls).toHaveLength(1);
     expect(usageCalls[0].query.limit).toBe("50000");

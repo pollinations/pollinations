@@ -4,6 +4,7 @@ import {
     CopyButton,
     ExternalLinkButton,
     InfoTip,
+    InlineLink,
     MailIcon,
     SproutIcon,
     Surface,
@@ -187,9 +188,12 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
             </div>
 
             {/* Learn more */}
-            <div className="mt-4 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
-                <button
+            <div className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                <WalletIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <InlineLink
+                    as="button"
                     type="button"
+                    external={false}
                     onClick={() => {
                         const slug = "how-does-my-pollen-wallet-work";
                         if (window.location.hash === `#${slug}`) {
@@ -200,11 +204,9 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                             window.location.hash = slug;
                         }
                     }}
-                    className="flex items-start gap-1.5 underline decoration-theme-text-soft/30 underline-offset-2 transition-colors hover:text-theme-text-soft"
                 >
-                    <WalletIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>Learn more</span>
-                </button>
+                    Learn more
+                </InlineLink>
             </div>
         </div>
     );

@@ -147,6 +147,8 @@ function iconForQuestIdentity(id: string, kind?: string): IconComponent {
     if (id.startsWith("spend:") || id.includes("top_up")) return WalletIcon;
     if (id.includes("github_account")) return GitHubIcon;
     if (id.includes("github_20_commits_week")) return CodeIcon;
+    if (id.includes("github_30_commits_90_days")) return CodeIcon;
+    if (id.includes("github_")) return GitHubIcon;
     if (id.startsWith("grow:") || id.includes("list_app")) return AppIcon;
     return SproutIcon;
 }

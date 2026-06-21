@@ -78,6 +78,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 
 - Two workspaces: `pollinations_enter` (prod) and `pollinations_enter_staging` (staging + dev + local). Pipes and datasources must be deployed to **both** — no CI auto-deploy yet, tracked in #11127.
 - Always deploy to **staging first**, verify, then prod. `tb --cloud deploy --wait` defaults to whichever workspace `.tinyb` points to (prod by default); override with `TB_TOKEN=<staging_admin_token>` for staging.
+- Treat Tinybird admin/deploy tokens as deployer credentials, not Worker runtime secrets. Store team-shared tokens in the team's secret manager; use SOPS only if its recipients exactly match the approved Tinybird deployer set. Do not put Tinybird deploy tokens in Wrangler runtime secrets. For local CLI use, materialize the team secret into ignored `.tinyb*` files or `TB_TOKEN`.
 - Validate first: `tb --cloud deploy --check --wait` (against both workspaces if either schema is in doubt)
 - Never `--allow-destructive-operations` without explicit permission
 - Never `tb push` (deprecated); use `tb --cloud deploy --wait`

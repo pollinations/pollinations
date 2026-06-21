@@ -59,13 +59,14 @@ const MetricTabs: FC<{
 }> = ({ value, onChange }) => (
     <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-medium text-theme-text-soft">Metric</span>
-        <div className="flex flex-wrap justify-end gap-1.5">
+        <div className="flex w-56 flex-wrap justify-end gap-1.5 sm:w-72">
             {METRIC_OPTIONS.map((metric) => (
                 <TabButton
                     key={metric}
                     active={value === metric}
                     onClick={() => onChange(metric)}
                     size="sm"
+                    className="flex-1"
                 >
                     {METRIC_LABELS[metric]}
                 </TabButton>
@@ -197,37 +198,41 @@ export const UsageSection: FC<UsageSectionProps> = ({ period, apiKeys }) => {
                             </TabButton>
                         ))}
                     </div>
-                    <div className="flex flex-col items-stretch gap-2 [&>div]:justify-between">
-                        <MultiSelect
-                            options={modelSelectOptions}
-                            selected={filters.selectedModels}
-                            onChange={(v) =>
-                                setFilters((f) => ({
-                                    ...f,
-                                    selectedModels: v,
-                                }))
-                            }
-                            placeholder="All"
-                            disabled={modelSelectOptions.length === 0}
-                            disabledText="None"
-                            align="end"
-                            label="Models"
-                        />
-                        <MultiSelect
-                            options={keySelectOptions}
-                            selected={filters.selectedKeyIds}
-                            onChange={(v) =>
-                                setFilters((f) => ({
-                                    ...f,
-                                    selectedKeyIds: v,
-                                }))
-                            }
-                            placeholder="All"
-                            disabled={keySelectOptions.length === 0}
-                            disabledText="None"
-                            align="end"
-                            label="API Keys"
-                        />
+                    <div className="flex flex-col items-stretch gap-2">
+                        <div className="[&>div]:justify-between [&_button]:w-56 sm:[&_button]:w-72">
+                            <MultiSelect
+                                options={modelSelectOptions}
+                                selected={filters.selectedModels}
+                                onChange={(v) =>
+                                    setFilters((f) => ({
+                                        ...f,
+                                        selectedModels: v,
+                                    }))
+                                }
+                                placeholder="All"
+                                disabled={modelSelectOptions.length === 0}
+                                disabledText="None"
+                                align="end"
+                                label="Models"
+                            />
+                        </div>
+                        <div className="[&>div]:justify-between [&_button]:w-56 sm:[&_button]:w-72">
+                            <MultiSelect
+                                options={keySelectOptions}
+                                selected={filters.selectedKeyIds}
+                                onChange={(v) =>
+                                    setFilters((f) => ({
+                                        ...f,
+                                        selectedKeyIds: v,
+                                    }))
+                                }
+                                placeholder="All"
+                                disabled={keySelectOptions.length === 0}
+                                disabledText="None"
+                                align="end"
+                                label="API Keys"
+                            />
+                        </div>
                         {activeView === "chart" && (
                             <MetricTabs
                                 value={filters.metric}

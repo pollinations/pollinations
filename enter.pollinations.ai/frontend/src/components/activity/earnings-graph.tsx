@@ -93,7 +93,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
         <Section title="App earnings" framed action={downloadAction}>
             <div className="flex flex-col gap-4">
                 <div className="flex flex-wrap items-start justify-end gap-4">
-                    <div className="flex flex-col items-stretch gap-2 [&>div]:justify-between [&_button]:min-w-[160px]">
+                    <div className="flex flex-col items-stretch gap-2 [&>div]:justify-between [&_button]:w-56 sm:[&_button]:w-72">
                         <MultiSelect
                             options={appSelectOptions}
                             selected={selectedAppKeyIds}

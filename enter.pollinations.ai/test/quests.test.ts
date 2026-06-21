@@ -793,13 +793,13 @@ test("quest evaluator grants elixpo intern easter egg once", async ({
     expect(grants[0]).toMatchObject({
         idempotencyKey: `quest:${ELIXPO_INTERN_QUEST_ID}:user:${user.id}`,
         source: PRODUCT_QUEST_REWARD_SOURCE,
-        pollenCredited: 10,
+        pollenCredited: 100,
         balanceBucket: "pack",
         sourceRef: "github:161109909",
     });
     expect(JSON.parse(grants[0].metadataJson ?? "{}")).toMatchObject({
-        title: "Welcome intern, elixpo",
-        message: "Congrats on becoming a Pollinations intern, elixpo.",
+        title: "Developer Relations Intern, unlocked 🌻",
+        message: "Welcome aboard as a Pollinations intern, elixpo.",
         githubId: 161_109_909,
         githubUsername: "elixpo",
     });

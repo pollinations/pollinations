@@ -5,7 +5,7 @@ import type { Env } from "../env.ts";
 import { loadQuestInstances } from "../services/quests/index.ts";
 import type { QuestInstance } from "../services/quests/types.ts";
 
-const CACHE_KEY = "quests:catalog:v3";
+const CACHE_KEY = "quests:catalog:v5";
 const CACHE_TTL = 60;
 
 export type QuestCatalogItem = Omit<QuestInstance, "sortKey">;

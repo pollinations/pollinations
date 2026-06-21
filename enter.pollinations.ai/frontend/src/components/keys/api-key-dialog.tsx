@@ -5,6 +5,7 @@ import {
     Dialog,
     DialogTitle,
     Field,
+    InlineLink,
     Input,
     ScrollArea,
     Tooltip,
@@ -212,16 +213,13 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                             <li>
                                 Use that key for API requests paid with the
                                 user&apos;s Pollen.{" "}
-                                <a
+                                <InlineLink
                                     href={genDocsUrl(
                                         "#tag/bring-your-own-pollen",
                                     )}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-theme-text-soft underline hover:text-theme-text-strong"
                                 >
                                     Read the guide
-                                </a>
+                                </InlineLink>
                             </li>
                         </ul>
                     ) : (

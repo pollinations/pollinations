@@ -26,6 +26,7 @@ export type MockTinybirdState = {
     usageResponse: UsageRow[];
     earningsResponse: UsageRow[];
     appDirectoryResponse: UsageRow[];
+    questUsageResponse: UsageRow[];
     pipeCalls: PipeCall[];
 };
 
@@ -38,6 +39,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         usageResponse: [],
         earningsResponse: [],
         appDirectoryResponse: [],
+        questUsageResponse: [],
         pipeCalls: [],
     };
 
@@ -92,6 +94,10 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         .get("/v0/pipes/app_directory_public.json", (c) => {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
             return c.json({ data: state.appDirectoryResponse }, 200);
+        })
+        .get("/v0/pipes/quest_usage_summary.json", (c) => {
+            state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
+            return c.json({ data: state.questUsageResponse }, 200);
         });
 
     const handlerMap = {
@@ -106,6 +112,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         state.usageResponse = [];
         state.earningsResponse = [];
         state.appDirectoryResponse = [];
+        state.questUsageResponse = [];
         state.pipeCalls = [];
     };
 

@@ -1,5 +1,5 @@
 DESCRIPTION >
-    Usage aggregates used by product quest evaluators.
+    Recent usage candidates used by product quest evaluators.
 
 TOKEN tinybird_read READ
 
@@ -15,7 +15,8 @@ SQL >
         count() AS totalRequests,
         uniqIf(toDate(start_time), start_time >= now() - INTERVAL 7 DAY) AS activeDaysLast7
     FROM generation_event
-    WHERE user_id != ''
+    WHERE start_time >= now() - INTERVAL 2 DAY
+      AND user_id != ''
       AND user_id != 'undefined'
       AND response_status >= 200
       AND response_status < 300

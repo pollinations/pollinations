@@ -21,6 +21,12 @@ const NO_ELIXPO_INTERN_RESULT = {
     scanned: 0,
     granted: 0,
 };
+const WEEKLY_TOP_UP_QUEST_ID = "spend:weekly_three_top_ups";
+const NO_WEEKLY_TOP_UP_RESULT = {
+    questId: WEEKLY_TOP_UP_QUEST_ID,
+    scanned: 0,
+    granted: 0,
+};
 
 async function getOnlyUser() {
     const db = drizzle(env.DB, { schema });
@@ -118,7 +124,7 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
             (quest) =>
                 quest.kind === "product" && quest.availability === "available",
         ),
-    ).toHaveLength(3);
+    ).toHaveLength(4);
     expect(
         payload.quests.find((quest) => quest.id === "onboarding:first_api_key"),
     ).toMatchObject({
@@ -161,7 +167,7 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
 });
 
 test("GET /api/quests/catalog returns product quests with no materialized GitHub issues", async () => {
-    await env.KV.delete("quests:catalog:v2");
+    await env.KV.delete("quests:catalog:v3");
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -181,7 +187,7 @@ test("GET /api/quests/catalog returns product quests with no materialized GitHub
             (quest) =>
                 quest.kind === "product" && quest.availability === "available",
         ),
-    ).toHaveLength(3);
+    ).toHaveLength(4);
     expect(
         payload.quests.some(
             (quest) => quest.id === "grow:list_app_on_pollinations",
@@ -265,6 +271,7 @@ test("quest evaluator grants code-defined product quests once", async ({
     expect(first.results).toEqual([
         { questId: "onboarding:first_api_key", scanned: 1, granted: 1 },
         { questId: "spend:first_top_up", scanned: 1, granted: 1 },
+        NO_WEEKLY_TOP_UP_RESULT,
         {
             questId: "onboarding:established_github_account",
             scanned: 1,
@@ -279,6 +286,7 @@ test("quest evaluator grants code-defined product quests once", async ({
     expect(second.results).toEqual([
         { questId: "onboarding:first_api_key", scanned: 0, granted: 0 },
         { questId: "spend:first_top_up", scanned: 0, granted: 0 },
+        NO_WEEKLY_TOP_UP_RESULT,
         {
             questId: "onboarding:established_github_account",
             scanned: 0,
@@ -355,6 +363,76 @@ test("quest evaluator grants code-defined product quests once", async ({
     });
 });
 
+test("quest evaluator grants weekly top-up quest once per week", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+
+    const now = Date.now();
+    await env.DB.batch(
+        [1, 2, 3].map((index) =>
+            env.DB.prepare(
+                `INSERT INTO stripe_checkout_credits (
+                    session_id,
+                    event_id,
+                    event_type,
+                    user_id,
+                    pollen_credited,
+                    created_at
+                ) VALUES (?, ?, ?, ?, ?, ?)`,
+            ).bind(
+                `cs_weekly_${user.id}_${index}`,
+                `evt_weekly_${user.id}_${index}`,
+                "checkout.session.completed",
+                user.id,
+                10,
+                now,
+            ),
+        ),
+    );
+
+    const first = await runQuestEvaluator(env);
+    expect(first.results).toContainEqual({
+        questId: WEEKLY_TOP_UP_QUEST_ID,
+        scanned: 1,
+        granted: 1,
+    });
+
+    const second = await runQuestEvaluator(env);
+    expect(second.results).toContainEqual(NO_WEEKLY_TOP_UP_RESULT);
+
+    const grants = await db
+        .select({
+            idempotencyKey: schema.rewardGrants.idempotencyKey,
+            source: schema.rewardGrants.source,
+            questId: schema.rewardGrants.questId,
+            pollenCredited: schema.rewardGrants.pollenCredited,
+            balanceBucket: schema.rewardGrants.balanceBucket,
+            sourceRef: schema.rewardGrants.sourceRef,
+            metadataJson: schema.rewardGrants.metadataJson,
+        })
+        .from(schema.rewardGrants)
+        .where(eq(schema.rewardGrants.questId, WEEKLY_TOP_UP_QUEST_ID));
+
+    expect(grants).toHaveLength(1);
+    expect(grants[0]).toMatchObject({
+        source: PRODUCT_QUEST_REWARD_SOURCE,
+        pollenCredited: 1,
+        balanceBucket: "pack",
+        sourceRef: `cs_weekly_${user.id}_1`,
+    });
+    expect(grants[0].idempotencyKey).toContain(
+        `quest:${WEEKLY_TOP_UP_QUEST_ID}:user:${user.id}:week:`,
+    );
+    expect(JSON.parse(grants[0].metadataJson ?? "{}")).toMatchObject({
+        title: "Top up three times this week",
+        purchaseCount: 3,
+    });
+});
+
 test("quest evaluator continues after one quest fails", async ({
     apiKey: _apiKey,
     mocks,
@@ -406,6 +484,7 @@ test("github account age quest waits until threshold", async ({
     expect(first.results).toEqual([
         { questId: "onboarding:first_api_key", scanned: 0, granted: 0 },
         { questId: "spend:first_top_up", scanned: 0, granted: 0 },
+        NO_WEEKLY_TOP_UP_RESULT,
         {
             questId: "onboarding:established_github_account",
             scanned: 0,
@@ -508,6 +587,7 @@ test("quest evaluator grants approved app quest per app", async ({
     expect(first.results).toEqual([
         { questId: "onboarding:first_api_key", scanned: 0, granted: 0 },
         { questId: "spend:first_top_up", scanned: 0, granted: 0 },
+        NO_WEEKLY_TOP_UP_RESULT,
         {
             questId: "onboarding:established_github_account",
             scanned: 1,
@@ -522,6 +602,7 @@ test("quest evaluator grants approved app quest per app", async ({
     expect(second.results).toEqual([
         { questId: "onboarding:first_api_key", scanned: 0, granted: 0 },
         { questId: "spend:first_top_up", scanned: 0, granted: 0 },
+        NO_WEEKLY_TOP_UP_RESULT,
         {
             questId: "onboarding:established_github_account",
             scanned: 0,
@@ -603,6 +684,7 @@ test("quest evaluator rewards completed GitHub quest issues through shared path"
     expect(first.results).toEqual([
         { questId: "onboarding:first_api_key", scanned: 0, granted: 0 },
         { questId: "spend:first_top_up", scanned: 0, granted: 0 },
+        NO_WEEKLY_TOP_UP_RESULT,
         {
             questId: "onboarding:established_github_account",
             scanned: 0,
@@ -642,6 +724,7 @@ test("quest evaluator rewards completed GitHub quest issues through shared path"
     expect(second.results).toEqual([
         { questId: "onboarding:first_api_key", scanned: 0, granted: 0 },
         { questId: "spend:first_top_up", scanned: 0, granted: 0 },
+        NO_WEEKLY_TOP_UP_RESULT,
         {
             questId: "onboarding:established_github_account",
             scanned: 0,

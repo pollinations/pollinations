@@ -56,7 +56,6 @@ id = "84512601e2a44679a4d3b0f7415d90ec"
 
 [env.local.vars]
 ENVIRONMENT = "local"
-USAGE_DEBUG_USER_ID = "ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh" # pollen@myceli.ai; local dashboard usage data
 CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"

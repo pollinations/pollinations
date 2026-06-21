@@ -194,6 +194,28 @@ test("GET /api/account/usage forwards stable cursor and returns event cursor", a
     expect(usageCalls[0].query.before_event_id).toBe("event-1");
 });
 
+test("GET /api/account/usage forwards table filters to the pipe", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/account/usage?days=30&limit=15&api_key_ids=key_b,key_a,key_a&models=gpt-b,gpt-a,gpt-a",
+        { headers: authHeaders(sessionToken) },
+    );
+
+    expect(response.status).toBe(200);
+
+    const usageCalls = mocks.tinybird.state.pipeCalls.filter((call) =>
+        call.url.includes("user_usage.json"),
+    );
+    expect(usageCalls).toHaveLength(1);
+    expect(usageCalls[0].query.limit).toBe("15");
+    expect(usageCalls[0].query.api_key_ids).toBe("key_a,key_b");
+    expect(usageCalls[0].query.models).toBe("gpt-a,gpt-b");
+});
+
 test("GET /api/account/usage?format=csv renders rows and sets filename from limit", async ({
     sessionToken,
     mocks,

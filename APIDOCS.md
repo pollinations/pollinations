@@ -232,18 +232,6 @@ Generate text responses using AI models. Fully compatible with the OpenAI Chat C
 
 Supports streaming, function calling, vision (image input), structured outputs, and reasoning/thinking modes depending on the model.
 
-**Controlling reasoning.** Use the standard OpenAI `reasoning_effort` parameter. `"none"` requests no reasoning; `"low"`/`"medium"`/`"high"` set its depth on models that support adjustable reasoning. This works with any OpenAI SDK — no extra fields:
-
-```python
-client.chat.completions.create(
-    model="glm",
-    messages=[{"role": "user", "content": "..."}],
-    reasoning_effort="none",   # request no reasoning
-)
-```
-
-Behavior is per-model and provider-specific: some models honor `"none"`, some run reasoning always-on, and some providers reject unsupported reasoning controls. For broad model switching, only send `reasoning_effort` to models that advertise reasoning support. See [`/v1/models`](#get-v1models-list-models-openai-compatible) for model capabilities.
-
 📥 **Request body** · `application/json`
 
 | Field | Type | Description |
@@ -267,7 +255,7 @@ Behavior is per-model and provider-specific: some models honor `"none"`, some ru
 | `stream` | `boolean` \| `null` | default: `false` |
 | `stream_options` | `object` \| `null` | — |
 | `safe` | `string` \| `boolean` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
-| `reasoning_effort` | enum — `"none"`, `"minimal"`, `"low"`, `"medium"`, `"high"`, `"xhigh"` | Requests reasoning depth for models that support adjustable reasoning. `"none"` requests no reasoning. Unsupported values or unsupported models may be ignored or rejected by the upstream provider. |
+| `reasoning_effort` | enum (6) — `"none"`, `"minimal"`, `"low"`, … | Requests reasoning depth for models that support adjustable reasoning. "none" requests no reasoning. |
 | `temperature` | `number` \| `null` | — |
 | `top_p` | `number` \| `null` | — |
 | `tools` | `object`[] | — |
@@ -343,7 +331,7 @@ Use `/v1/chat/completions` when you need the full OpenAI-compatible JSON respons
 | `stream` | `boolean` \| `null` | default: `false` |
 | `stream_options` | `object` \| `null` | — |
 | `safe` | `string` \| `boolean` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
-| `reasoning_effort` | enum — `"none"`, `"minimal"`, `"low"`, `"medium"`, `"high"`, `"xhigh"` | Requests reasoning depth for models that support adjustable reasoning. `"none"` requests no reasoning. Unsupported values or unsupported models may be ignored or rejected by the upstream provider. |
+| `reasoning_effort` | enum (6) — `"none"`, `"minimal"`, `"low"`, … | Requests reasoning depth for models that support adjustable reasoning. "none" requests no reasoning. |
 | `temperature` | `number` \| `null` | — |
 | `top_p` | `number` \| `null` | — |
 | `tools` | `object`[] | — |
@@ -1007,7 +995,7 @@ curl "https://gen.pollinations.ai/account/balance" \
 
 #### `GET` `/account/usage` — Get Usage History
 
-Returns your request history with per-request details: model used, token counts, cost, and response time. Defaults to the last 30 days, supports up to 90 days via `days`, or exact day/week/month periods via `granularity` and `period`. Supports JSON and CSV export. Each response is capped at 50,000 rows. Use `before` for cursor-based pagination. Requires `account:usage` permission when using API keys.
+Returns your request history with per-request details: model used, token counts, cost, and response time. Defaults to the last 30 days, supports up to 90 days via `days`, or exact day/week/month periods via `granularity` and `period`. Supports JSON and CSV export. Each response is capped at 50,000 rows. Use `before` with `before_event_id` for stable cursor-based pagination. Requires `account:usage` permission when using API keys.
 
 ⚙️ **Parameters**
 
@@ -1016,6 +1004,7 @@ Returns your request history with per-request details: model used, token counts,
 | `format` | `query` | `"json"` \| `"csv"` | default: `"json"` |
 | `limit` | `query` | `number` | default: `100` · range: `1…50000` |
 | `before` | `query` | `string` | — |
+| `before_event_id` | `query` | `string` | — |
 | `days` | `query` | `integer` | default: `30` · range: `1…90` |
 | `granularity` | `query` | `"day"` \| `"week"` \| `"month"` | — |
 | `period` | `query` | `string` | — |
@@ -1028,9 +1017,11 @@ Returns your request history with per-request details: model used, token counts,
 |---|---|---|
 | `usage` * | `object`[] | Array of usage records |
 | `usage[].timestamp` * | `string` | Request timestamp (YYYY-MM-DD HH:mm:ss format) |
+| `usage[].cursor_event_id` * | `string` | Event id used with `before_event_id` for stable pagination |
 | `usage[].type` * | `string` | Request type (e.g., 'generate.image', 'generate.text') |
 | `usage[].model` * | `string` \| `null` | Model used for generation |
-| `usage[].api_key` * | `string` \| `null` | API key identifier used (masked) |
+| `usage[].api_key_id` * | `string` \| `null` | API key id used for generation |
+| `usage[].api_key` * | `string` \| `null` | API key display name |
 | `usage[].api_key_type` * | `string` \| `null` | Type of API key ('secret', 'publishable') |
 | `usage[].meter_source` * | `string` \| `null` | Billing source: 'tier' = tier balance, 'pack' = paid balance |
 | `usage[].input_text_tokens` * | `number` | Number of input text tokens |
@@ -1253,7 +1244,7 @@ curl "https://gen.pollinations.ai/account/key" \
 
 #### `GET` `/account/key/usage` — Get API Key Usage
 
-Returns usage history for the API key used in the request. No scope required — a key can always read its own usage. For account-wide usage across all keys, use `/account/usage` with the `account:usage` scope.
+Returns usage history for the API key used in the request. No scope required — a key can always read its own usage. Use `before` with `before_event_id` for stable cursor-based pagination. For account-wide usage across all keys, use `/account/usage` with the `account:usage` scope.
 
 ⚙️ **Parameters**
 
@@ -1262,6 +1253,7 @@ Returns usage history for the API key used in the request. No scope required —
 | `format` | `query` | `"json"` \| `"csv"` | default: `"json"` |
 | `limit` | `query` | `number` | default: `100` · range: `1…50000` |
 | `before` | `query` | `string` | — |
+| `before_event_id` | `query` | `string` | — |
 | `days` | `query` | `integer` | default: `30` · range: `1…90` |
 | `granularity` | `query` | `"day"` \| `"week"` \| `"month"` | — |
 | `period` | `query` | `string` | — |
@@ -1274,9 +1266,11 @@ Returns usage history for the API key used in the request. No scope required —
 |---|---|---|
 | `usage` * | `object`[] | Array of usage records |
 | `usage[].timestamp` * | `string` | Request timestamp (YYYY-MM-DD HH:mm:ss format) |
+| `usage[].cursor_event_id` * | `string` | Event id used with `before_event_id` for stable pagination |
 | `usage[].type` * | `string` | Request type (e.g., 'generate.image', 'generate.text') |
 | `usage[].model` * | `string` \| `null` | Model used for generation |
-| `usage[].api_key` * | `string` \| `null` | API key identifier used (masked) |
+| `usage[].api_key_id` * | `string` \| `null` | API key id used for generation |
+| `usage[].api_key` * | `string` \| `null` | API key display name |
 | `usage[].api_key_type` * | `string` \| `null` | Type of API key ('secret', 'publishable') |
 | `usage[].meter_source` * | `string` \| `null` | Billing source: 'tier' = tier balance, 'pack' = paid balance |
 | `usage[].input_text_tokens` * | `number` | Number of input text tokens |

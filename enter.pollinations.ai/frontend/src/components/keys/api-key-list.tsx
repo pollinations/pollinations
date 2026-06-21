@@ -3,6 +3,7 @@ import {
     Chip,
     GlobeIcon,
     IconButton,
+    InlineLink,
     KeyIcon,
     LockIcon,
     PencilIcon,
@@ -331,24 +332,13 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 </span>
                                 Turn on earnings to receive a share of pollen
                                 users spend in your app.{" "}
-                                <a
+                                <InlineLink
                                     href={genDocsUrl(
                                         "#tag/bring-your-own-pollen",
                                     )}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="font-medium text-theme-text-soft hover:text-theme-text-strong"
                                 >
-                                    <span className="underline underline-offset-2">
-                                        Read the guide
-                                    </span>
-                                    <span
-                                        aria-hidden="true"
-                                        className="no-underline ml-0.5"
-                                    >
-                                        ↗
-                                    </span>
-                                </a>
+                                    Read the guide
+                                </InlineLink>
                             </span>
                         </p>
                     </div>

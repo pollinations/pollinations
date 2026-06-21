@@ -9,10 +9,11 @@ import {
     StatCard,
     Surface,
 } from "@pollinations/ui";
-import { formatPollen, PaidChip, TierChip } from "@pollinations/ui/wallet";
+import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import type { FC } from "react";
 import { useState } from "react";
 import { Chart } from "./chart";
+import { formatActivityPollen } from "./format-activity-pollen";
 import type { UsagePeriodSelection } from "./types";
 import { useEarningsData } from "./use-earnings-data";
 
@@ -57,7 +58,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
 
     return (
         <Section
-            title="Earnings"
+            title="App earnings"
             framed
             action={
                 <Button
@@ -123,7 +124,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
                     <Surface>
                         <StatCard
                             label="Pollen earned"
-                            value={formatPollen(stats.totalPollen)}
+                            value={formatActivityPollen(stats.totalPollen)}
                             detail={
                                 stats.totalPollen > 0 ? (
                                     <div className="flex flex-wrap items-center gap-2">
@@ -133,7 +134,9 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
                                         >
                                             <CardIcon className="h-4 w-4" />
                                             <span className="tabular-nums">
-                                                {formatPollen(stats.totalPaid)}
+                                                {formatActivityPollen(
+                                                    stats.totalPaid,
+                                                )}
                                             </span>
                                         </PaidChip>
                                         <TierChip
@@ -142,7 +145,9 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
                                         >
                                             <SproutIcon className="h-4 w-4" />
                                             <span className="tabular-nums">
-                                                {formatPollen(stats.totalTier)}
+                                                {formatActivityPollen(
+                                                    stats.totalTier,
+                                                )}
                                             </span>
                                         </TierChip>
                                     </div>
@@ -198,7 +203,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
                                             className="font-semibold"
                                         >
                                             <span className="tabular-nums">
-                                                {formatPollen(
+                                                {formatActivityPollen(
                                                     stats.topApp.pollen,
                                                 )}
                                             </span>

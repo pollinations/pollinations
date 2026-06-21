@@ -22,61 +22,98 @@ SQL >
     FROM d1_apikey
     WHERE synced_at = (SELECT max(synced_at) FROM d1_apikey)
 
-NODE dev_events
+NODE dev_rollup
 SQL >
     %
     SELECT
-        ge.api_key_client_id AS app_key_id,
-        ge.user_id AS user_id,
+        app_key_id,
         if(
             {{String(grain, 'day')}} = 'hour',
-            formatDateTime(toStartOfHour(ge.start_time), '%F %T'),
-            formatDateTime(toStartOfDay(ge.start_time), '%F')
+            formatDateTime(toStartOfHour(bucket_time), '%F %T'),
+            formatDateTime(toStartOfDay(bucket_time), '%F')
         ) AS date,
-        ge.dev_price AS baseline_price,
-        ge.total_price AS cost_usd,
-        ge.total_price - ge.dev_price AS earned,
-        ge.markup_rate AS markup_rate,
-        coalesce(nullIf(al.app_name, ''), ge.api_key_client_id) AS app_name
-    FROM generation_event ge
-    LEFT JOIN app_labels al ON ge.api_key_client_id = al.app_key_id
-    WHERE ge.api_key_created_for_user_id = {{String(dev_user_id, '')}}
-      AND ge.markup_rate > 0
-      AND ge.total_price > ge.dev_price
+        requests,
+        baseline_price,
+        cost_usd,
+        pollen_earned,
+        markup_rate_sum,
+        unique_users_state
+    FROM activity_developer_earnings_rollup
+    WHERE dev_user_id = {{String(dev_user_id, '')}}
     {% if defined(since) %}
-    AND ge.start_time >= {{DateTime(since)}}
+    AND bucket_time >= {{DateTime(since)}}
     {% end %}
     {% if defined(until) %}
-    AND ge.start_time < {{DateTime(until)}}
+    AND bucket_time < {{DateTime(until)}}
     {% end %}
     {% if defined(api_key_ids) %}
-    AND ge.api_key_client_id IN {{Array(api_key_ids, 'String')}}
+    AND app_key_id IN {{Array(api_key_ids, 'String')}}
     {% end %}
 
-# Single pass over dev_events. GROUPING SETS emits, in one scan, the three row
-# kinds the old pipe produced via three separate scans + UNION ALL:
-#   (date, app_key_id, app_name) -> daily/hourly buckets (date non-empty)
-#   (app_key_id, app_name)       -> per-app rollup (date='')
-#   ()                           -> global rollup (date='', app_key_id='')
-# Columns outside a set default to '' (String), matching the old '' literals.
-# GROUPING(date)=0 only on daily rows, preserving their unique_users=0.
-NODE developer_earnings_node
+NODE daily_rows
 SQL >
     SELECT
-        date,
-        app_key_id,
-        app_name,
-        count() AS requests,
+        dr.date AS date,
+        dr.app_key_id AS app_key_id,
+        coalesce(nullIf(al.app_name, ''), dr.app_key_id) AS app_name,
+        sum(dr.requests) AS requests,
+        sum(dr.baseline_price) AS baseline_price,
+        sum(dr.pollen_earned) AS pollen_earned,
+        sum(dr.cost_usd) AS cost_usd,
+        if(
+            sum(dr.requests) = 0,
+            toFloat64(0),
+            sum(dr.markup_rate_sum) / sum(dr.requests)
+        ) AS markup_rate,
+        toUInt64(0) AS unique_users
+    FROM dev_rollup dr
+    LEFT JOIN app_labels al ON dr.app_key_id = al.app_key_id
+    GROUP BY date, app_key_id, app_name
+
+NODE per_app_rows
+SQL >
+    SELECT
+        '' AS date,
+        dr.app_key_id AS app_key_id,
+        coalesce(nullIf(al.app_name, ''), dr.app_key_id) AS app_name,
+        sum(dr.requests) AS requests,
+        sum(dr.baseline_price) AS baseline_price,
+        sum(dr.pollen_earned) AS pollen_earned,
+        sum(dr.cost_usd) AS cost_usd,
+        if(
+            sum(dr.requests) = 0,
+            toFloat64(0),
+            sum(dr.markup_rate_sum) / sum(dr.requests)
+        ) AS markup_rate,
+        uniqMerge(dr.unique_users_state) AS unique_users
+    FROM dev_rollup dr
+    LEFT JOIN app_labels al ON dr.app_key_id = al.app_key_id
+    GROUP BY app_key_id, app_name
+
+NODE global_row
+SQL >
+    SELECT
+        '' AS date,
+        '' AS app_key_id,
+        '' AS app_name,
+        sum(requests) AS requests,
         sum(baseline_price) AS baseline_price,
-        sum(earned) AS pollen_earned,
+        sum(pollen_earned) AS pollen_earned,
         sum(cost_usd) AS cost_usd,
-        if(count() = 0, toFloat64(0), avg(markup_rate)) AS markup_rate,
-        if(GROUPING(date) = 0, toUInt64(0), uniq(user_id)) AS unique_users
-    FROM dev_events
-    GROUP BY GROUPING SETS (
-        (date, app_key_id, app_name),
-        (app_key_id, app_name),
-        ()
-    )
+        if(
+            sum(requests) = 0,
+            toFloat64(0),
+            sum(markup_rate_sum) / sum(requests)
+        ) AS markup_rate,
+        uniqMerge(unique_users_state) AS unique_users
+    FROM dev_rollup
+
+NODE developer_earnings_node
+SQL >
+    SELECT * FROM daily_rows
+    UNION ALL
+    SELECT * FROM per_app_rows
+    UNION ALL
+    SELECT * FROM global_row
 
 TYPE endpoint

@@ -1,14 +1,28 @@
-import { Button } from "@pollinations/ui";
-import { formatPollen, PaidChip, TierChip } from "@pollinations/ui/wallet";
+import {
+    Button,
+    cn,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeaderCell,
+    TableRow,
+} from "@pollinations/ui";
+import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import { type FC, useCallback, useEffect, useMemo, useState } from "react";
 import { apiClient } from "../../api.ts";
+import { formatActivityPollenThreshold } from "./format-activity-pollen.ts";
+import type { UsagePeriodSelection } from "./types.ts";
 
 type Mode = "compact" | "full";
 
 type ApiKeyInfo = { id: string; name: string };
 
-const PAGE_SIZE_FULL = 25;
+const PAGE_SIZE_FULL = 15;
 const PAGE_SIZE_COMPACT = 5;
+const EMPTY_FILTER_VALUES: string[] = [];
+const TABLE_HEADER_CELL_CLASS = "px-2 py-1.5";
+const TABLE_CELL_CLASS = "px-2 py-1.5 text-xs";
 
 type UsageRecord = {
     timestamp: string;
@@ -54,8 +68,8 @@ function formatTimestamp(value: string, mode: Mode): string {
     const date = parseTimestamp(value);
     if (Number.isNaN(date.getTime())) return value;
     if (mode === "compact") {
-        // Relative-ish short form: "Mar 14, 14:05"
         return date.toLocaleString(undefined, {
+            timeZone: "UTC",
             month: "short",
             day: "numeric",
             hour: "2-digit",
@@ -63,6 +77,7 @@ function formatTimestamp(value: string, mode: Mode): string {
         });
     }
     return date.toLocaleString(undefined, {
+        timeZone: "UTC",
         year: "numeric",
         month: "short",
         day: "numeric",
@@ -71,13 +86,8 @@ function formatTimestamp(value: string, mode: Mode): string {
     });
 }
 
-// formatPollen floors to 4 decimals, so a real charge below 0.0001 Pollen
-// renders as "0" — making a billed request look free. Surface those as
-// "<0.0001" so a nonzero deduction is never shown as zero.
 function formatCost(value: number): string {
-    const formatted = formatPollen(value);
-    if (value > 0 && formatted === "0") return "<0.0001";
-    return formatted;
+    return formatActivityPollenThreshold(value);
 }
 
 function MeterSourceChip({ source }: { source: string | null }) {
@@ -104,6 +114,9 @@ function buildKeyNameLookup(keys: ApiKeyInfo[] | undefined) {
 export type TransactionHistoryProps = {
     mode?: Mode;
     apiKeys?: ApiKeyInfo[];
+    period?: UsagePeriodSelection;
+    selectedKeyIds?: string[];
+    selectedModels?: string[];
     /** Hash route for the "View all" link in compact mode. */
     viewAllHref?: string;
 };
@@ -111,6 +124,9 @@ export type TransactionHistoryProps = {
 export const TransactionHistory: FC<TransactionHistoryProps> = ({
     mode = "full",
     apiKeys,
+    period,
+    selectedKeyIds = EMPTY_FILTER_VALUES,
+    selectedModels = EMPTY_FILTER_VALUES,
     viewAllHref = "#activity",
 }) => {
     const [state, setState] = useState<FetchState>(INITIAL_STATE);
@@ -124,9 +140,23 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
                 limit: string;
                 before?: string;
                 before_event_id?: string;
+                granularity?: string;
+                period?: string;
+                api_key_ids?: string;
+                models?: string;
             } = {
                 limit: pageSize.toString(),
             };
+            if (period) {
+                query.granularity = period.granularity;
+                query.period = period.period;
+            }
+            if (selectedKeyIds.length > 0) {
+                query.api_key_ids = selectedKeyIds.join(",");
+            }
+            if (selectedModels.length > 0) {
+                query.models = selectedModels.join(",");
+            }
             if (cursor) {
                 query.before = cursor.timestamp;
                 query.before_event_id = cursor.eventId;
@@ -162,7 +192,7 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
                 hasMore,
             }));
         },
-        [mode, pageSize],
+        [mode, pageSize, period, selectedKeyIds, selectedModels],
     );
 
     useEffect(() => {
@@ -176,6 +206,11 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
 
     const showEmpty = state.rows.length === 0 && !state.loading && !state.error;
     const isCompact = mode === "compact";
+    const status = renderStatus();
+    const showFooter =
+        Boolean(status) ||
+        (isCompact && state.rows.length > 0) ||
+        (!isCompact && state.hasMore);
 
     function renderStatus(): string {
         if (state.rows.length > 0) {
@@ -188,14 +223,6 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
 
     return (
         <div className="flex flex-col gap-3">
-            {!isCompact && (
-                <p className="text-sm text-ink-700">
-                    Each row is one billed request — when it happened, which API
-                    key and model were used, and how much pollen was deducted.
-                    Times are shown in your local timezone.
-                </p>
-            )}
-
             {state.error && (
                 <p className="text-sm text-intent-danger-500">{state.error}</p>
             )}
@@ -214,7 +241,7 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
                         {state.rows.map((row, index) => (
                             <li
                                 key={rowKey(row, index)}
-                                className="rounded-lg border border-theme-border p-3 flex flex-col gap-1.5"
+                                className="flex flex-col gap-1.5 rounded-lg bg-surface-opaque p-3"
                             >
                                 <div className="flex items-center justify-between gap-2">
                                     <span className="font-semibold text-ink-900 truncate">
@@ -245,88 +272,114 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
                     </ul>
 
                     {/* Desktop: table */}
-                    <div className="hidden sm:block overflow-x-auto rounded-lg border border-theme-border">
-                        <table className="w-full text-left text-sm">
-                            <thead className="bg-ink-50 text-xs uppercase tracking-wide text-ink-700">
-                                <tr>
-                                    <th className="px-3 py-2 font-semibold">
-                                        Time
-                                    </th>
-                                    <th className="px-3 py-2 font-semibold">
-                                        Model
-                                    </th>
-                                    {!isCompact && (
-                                        <th className="px-3 py-2 font-semibold">
-                                            API Key
-                                        </th>
-                                    )}
-                                    <th className="px-3 py-2 font-semibold">
-                                        Source
-                                    </th>
-                                    <th className="px-3 py-2 font-semibold text-right">
-                                        Cost
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-theme-border">
-                                {state.rows.map((row, index) => (
-                                    <tr
-                                        key={rowKey(row, index)}
-                                        className="hover:bg-ink-50"
+                    <div
+                        className={cn(
+                            "hidden overflow-x-auto sm:block",
+                            isCompact && "rounded-lg bg-surface-opaque",
+                        )}
+                    >
+                        <Table className="text-left text-xs">
+                            <TableHead>
+                                <TableRow className="hover:bg-transparent">
+                                    <TableHeaderCell
+                                        className={TABLE_HEADER_CELL_CLASS}
                                     >
-                                        <td className="px-3 py-2 whitespace-nowrap text-ink-800 tabular-nums">
+                                        Time
+                                    </TableHeaderCell>
+                                    <TableHeaderCell
+                                        className={TABLE_HEADER_CELL_CLASS}
+                                    >
+                                        Model
+                                    </TableHeaderCell>
+                                    {!isCompact && (
+                                        <TableHeaderCell
+                                            className={TABLE_HEADER_CELL_CLASS}
+                                        >
+                                            API Key
+                                        </TableHeaderCell>
+                                    )}
+                                    <TableHeaderCell
+                                        className={TABLE_HEADER_CELL_CLASS}
+                                    >
+                                        Source
+                                    </TableHeaderCell>
+                                    <TableHeaderCell
+                                        align="right"
+                                        className={TABLE_HEADER_CELL_CLASS}
+                                    >
+                                        Cost
+                                    </TableHeaderCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody className="divide-divider/70">
+                                {state.rows.map((row, index) => (
+                                    <TableRow key={rowKey(row, index)}>
+                                        <TableCell
+                                            numeric
+                                            className={`${TABLE_CELL_CLASS} whitespace-nowrap text-ink-800`}
+                                        >
                                             {formatTimestamp(
                                                 row.timestamp,
                                                 mode,
                                             )}
-                                        </td>
-                                        <td className="px-3 py-2 text-ink-900">
+                                        </TableCell>
+                                        <TableCell
+                                            className={`${TABLE_CELL_CLASS} text-ink-900`}
+                                        >
                                             {row.model || "—"}
-                                        </td>
+                                        </TableCell>
                                         {!isCompact && (
-                                            <td className="px-3 py-2 text-ink-700 max-w-[12rem] truncate">
+                                            <TableCell
+                                                className={`${TABLE_CELL_CLASS} max-w-[12rem] truncate text-ink-700`}
+                                            >
                                                 {lookupKeyName(
                                                     row.api_key_id,
                                                     row.api_key,
                                                 )}
-                                            </td>
+                                            </TableCell>
                                         )}
-                                        <td className="px-3 py-2">
+                                        <TableCell className={TABLE_CELL_CLASS}>
                                             <MeterSourceChip
                                                 source={row.meter_source}
                                             />
-                                        </td>
-                                        <td className="px-3 py-2 text-right tabular-nums font-semibold text-ink-900">
+                                        </TableCell>
+                                        <TableCell
+                                            align="right"
+                                            numeric
+                                            className={`${TABLE_CELL_CLASS} font-medium text-ink-900`}
+                                        >
                                             {formatCost(row.cost_usd)}
-                                        </td>
-                                    </tr>
+                                        </TableCell>
+                                    </TableRow>
                                 ))}
-                            </tbody>
-                        </table>
+                            </TableBody>
+                        </Table>
                     </div>
                 </>
             )}
 
-            <div className="flex items-center justify-between pt-1">
-                <span className="text-xs text-ink-500">{renderStatus()}</span>
-                {isCompact && state.rows.length > 0 && (
-                    <a
-                        href={viewAllHref}
-                        className="text-sm font-medium text-ink-800 hover:underline"
-                    >
-                        View all →
-                    </a>
-                )}
-                {!isCompact && state.hasMore && (
-                    <Button
-                        as="button"
-                        onClick={handleLoadMore}
-                        disabled={state.loading}
-                    >
-                        {state.loading ? "Loading…" : "Load more"}
-                    </Button>
-                )}
-            </div>
+            {showFooter && (
+                <div className="flex items-center justify-between pt-1">
+                    <span className="text-xs text-ink-500">{status}</span>
+                    {isCompact && state.rows.length > 0 && (
+                        <a
+                            href={viewAllHref}
+                            className="text-sm font-medium text-ink-800 hover:underline"
+                        >
+                            View all →
+                        </a>
+                    )}
+                    {!isCompact && state.hasMore && (
+                        <Button
+                            as="button"
+                            onClick={handleLoadMore}
+                            disabled={state.loading}
+                        >
+                            {state.loading ? "Loading…" : "Load more"}
+                        </Button>
+                    )}
+                </div>
+            )}
         </div>
     );
 };

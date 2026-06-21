@@ -1,0 +1,27 @@
+DESCRIPTION >
+    Materialize billed usage into hourly user/model/source buckets for Activity dashboards.
+
+NODE activity_usage_rollup_mv_node
+SQL >
+    %
+    SELECT
+        toStartOfHour(start_time) AS bucket_time,
+        user_id,
+        if(api_key_id = 'undefined', '', api_key_id) AS api_key_id,
+        resolved_model_requested AS model,
+        splitByChar(':', selected_meter_slug)[-1] AS meter_source,
+        count() AS requests,
+        sum(total_price) AS cost_usd
+    FROM generation_event
+    WHERE total_price > 0
+      AND user_id != ''
+      AND user_id != 'undefined'
+    GROUP BY
+        bucket_time,
+        user_id,
+        api_key_id,
+        model,
+        meter_source
+
+TYPE materialized
+DATASOURCE activity_usage_rollup

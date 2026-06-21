@@ -1,0 +1,19 @@
+TOKEN tinybird_read READ
+
+DESCRIPTION >
+    Hourly billed-usage rollup for account Activity dashboards.
+    Populated from generation_event by activity_usage_rollup_mv.
+
+SCHEMA >
+    `bucket_time` DateTime,
+    `user_id` String,
+    `api_key_id` String,
+    `model` LowCardinality(String),
+    `meter_source` LowCardinality(String),
+    `requests` SimpleAggregateFunction(sum, UInt64),
+    `cost_usd` SimpleAggregateFunction(sum, Float64)
+
+ENGINE "AggregatingMergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(bucket_time)"
+ENGINE_SORTING_KEY "user_id, bucket_time, api_key_id, model, meter_source"
+ENGINE_PRIMARY_KEY "user_id, bucket_time"

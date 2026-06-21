@@ -1,0 +1,36 @@
+DESCRIPTION >
+    Materialize billed generation events into a narrow user/time-sorted transaction ledger.
+
+NODE activity_transaction_ledger_mv_node
+SQL >
+    %
+    SELECT
+        start_time,
+        event_id,
+        user_id,
+        event_type,
+        model_used AS model,
+        if(api_key_id = 'undefined', '', api_key_id) AS api_key_id,
+        if(api_key_name = 'undefined', '', api_key_name) AS api_key_name,
+        if(api_key_type = 'undefined', '', api_key_type) AS api_key_type,
+        splitByChar(':', selected_meter_slug)[-1] AS meter_source,
+        token_count_prompt_text AS input_text_tokens,
+        token_count_prompt_cached AS input_cached_tokens,
+        token_count_prompt_audio AS input_audio_tokens,
+        token_count_prompt_audio_seconds AS input_audio_seconds,
+        token_count_prompt_image AS input_image_tokens,
+        token_count_completion_text AS output_text_tokens,
+        token_count_completion_reasoning AS output_reasoning_tokens,
+        token_count_completion_audio AS output_audio_tokens,
+        token_count_completion_audio_seconds AS output_audio_seconds,
+        token_count_completion_image AS output_image_tokens,
+        token_count_completion_video_seconds AS output_video_seconds,
+        total_price AS cost_usd,
+        response_time AS response_time_ms
+    FROM generation_event
+    WHERE total_price > 0
+      AND user_id != ''
+      AND user_id != 'undefined'
+
+TYPE materialized
+DATASOURCE activity_transaction_ledger

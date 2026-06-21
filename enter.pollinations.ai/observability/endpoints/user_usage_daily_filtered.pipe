@@ -12,21 +12,20 @@ SQL >
     SELECT
         if(
             {{String(grain, 'day')}} = 'hour',
-            formatDateTime(toStartOfHour(start_time), '%F %T'),
-            formatDateTime(toStartOfDay(start_time), '%F')
+            formatDateTime(toStartOfHour(bucket_time), '%F %T'),
+            formatDateTime(toStartOfDay(bucket_time), '%F')
         ) as date,
-        resolved_model_requested as model,
-        splitByChar(':', selected_meter_slug)[-1] as meter_source,
-        count() as requests,
-        sum(total_price) as cost_usd
-    FROM generation_event
+        model,
+        meter_source,
+        sum(requests) as requests,
+        sum(cost_usd) as cost_usd
+    FROM activity_usage_rollup
     WHERE user_id = {{String(user_id, '')}}
-    AND total_price > 0
     {% if defined(since) %}
-    AND start_time >= {{DateTime(since)}}
+    AND bucket_time >= {{DateTime(since)}}
     {% end %}
     {% if defined(until) %}
-    AND start_time < {{DateTime(until)}}
+    AND bucket_time < {{DateTime(until)}}
     {% end %}
     {% if defined(api_key_ids) %}
     AND api_key_id IN {{Array(api_key_ids, 'String')}}

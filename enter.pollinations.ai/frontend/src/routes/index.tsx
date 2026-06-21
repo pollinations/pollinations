@@ -1,4 +1,4 @@
-import { Button, DownloadIcon, Section } from "@pollinations/ui";
+import { Section } from "@pollinations/ui";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { apiClient } from "../api.ts";
@@ -9,8 +9,8 @@ import {
     getEarningsEnabledApps,
     PeriodPicker,
     TransactionHistory,
-    UsageGraph,
     type UsagePeriodSelection,
+    UsageSection,
 } from "../components/activity";
 import {
     type ApiKey,
@@ -34,21 +34,7 @@ import {
 } from "../components/pollen";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 
-const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
 const ACTIVITY_MIN_DATE = new Date("2026-01-01T00:00:00.000Z");
-
-function DownloadCsvButton({ onClick }: { onClick: () => void }) {
-    return (
-        <Button
-            as="button"
-            onClick={onClick}
-            className="flex items-center gap-1.5"
-        >
-            <DownloadIcon className="h-3.5 w-3.5 shrink-0" />
-            Download CSV
-        </Button>
-    );
-}
 
 function pageFromHash(hash: string): DashboardPage {
     const page = hash.replace(/^#/, "");
@@ -57,7 +43,8 @@ function pageFromHash(hash: string): DashboardPage {
         return "news-faq";
     if (page === "buy-pollen") return "pollen";
     if (page === "pricing") return "models";
-    if (page === "earnings" || page === "usage") return "activity";
+    if (page === "earnings" || page === "usage" || page === "activity-table")
+        return "activity";
     // Kebab-case slugs are FAQ anchors — route to news-faq and let the
     // FAQ component scroll/expand the matching question.
     if (page && /^[a-z0-9]+(-[a-z0-9]+)+$/.test(page)) return "news-faq";
@@ -240,21 +227,6 @@ function RouteComponent() {
         router.invalidate();
     }
 
-    function downloadDetailedUsage(): void {
-        const params = new URLSearchParams({
-            format: "csv",
-            granularity: activityPeriod.granularity,
-            period: activityPeriod.period,
-            limit: DETAILED_USAGE_DOWNLOAD_LIMIT.toString(),
-        });
-        const anchor = document.createElement("a");
-        anchor.href = `/api/account/usage?${params.toString()}`;
-        anchor.rel = "noopener";
-        document.body.appendChild(anchor);
-        anchor.click();
-        anchor.remove();
-    }
-
     function handlePageChange(page: DashboardPage): void {
         setActivePage(page);
         try {
@@ -306,10 +278,11 @@ function RouteComponent() {
                             <TierPanel {...tierData} />
                         </Section>
                     )}
-                    <Section title="Recent transactions" framed>
+                    <Section title="Last transactions" framed>
                         <TransactionHistory
                             mode="compact"
                             apiKeys={selectableKeys}
+                            viewAllHref="#activity-table"
                         />
                     </Section>
                 </div>
@@ -323,18 +296,12 @@ function RouteComponent() {
                             minDate={ACTIVITY_MIN_DATE}
                         />
                         <p className="text-micro text-theme-text-muted">
-                            Usage data refreshes every hour. Chart buckets use
-                            UTC; transactions use your local time.
+                            Usage refreshes hourly. Times are shown in UTC.
                         </p>
                     </div>
-                    <UsageGraph
+                    <UsageSection
                         period={activityPeriod}
                         apiKeys={selectableKeys}
-                        action={
-                            <DownloadCsvButton
-                                onClick={downloadDetailedUsage}
-                            />
-                        }
                     />
                     {earningsEnabledApps.length > 0 && (
                         <EarningsGraph
@@ -342,12 +309,6 @@ function RouteComponent() {
                             apps={earningsEnabledApps}
                         />
                     )}
-                    <Section title="Transactions" framed>
-                        <TransactionHistory
-                            mode="full"
-                            apiKeys={selectableKeys}
-                        />
-                    </Section>
                 </div>
             )}
             {activePage === "keys" && (

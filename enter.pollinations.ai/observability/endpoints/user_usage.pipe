@@ -1,6 +1,7 @@
 DESCRIPTION >
     Get billed usage history for a specific user. Only returns billed requests.
     Defaults to the last 30 days. Use 'since' and 'until' to override the date window.
+    Use 'api_key_ids' and 'models' as comma-separated filters.
     Use 'before' and 'before_event_id' for stable cursor pagination.
 
 TOKEN tinybird_read READ
@@ -12,29 +13,34 @@ SQL >
         start_time as timestamp,
         event_id as cursor_event_id,
         event_type as type,
-        model_used as model,
-        api_key_id as api_key_id,
+        model,
+        api_key_id,
         api_key_name as api_key,
-        api_key_type as api_key_type,
-        splitByChar(':', selected_meter_slug)[-1] as meter_source,
-        token_count_prompt_text as input_text_tokens,
-        token_count_prompt_cached as input_cached_tokens,
-        token_count_prompt_audio as input_audio_tokens,
-        token_count_prompt_audio_seconds as input_audio_seconds,
-        token_count_prompt_image as input_image_tokens,
-        token_count_completion_text as output_text_tokens,
-        token_count_completion_reasoning as output_reasoning_tokens,
-        token_count_completion_audio as output_audio_tokens,
-        token_count_completion_audio_seconds as output_audio_seconds,
-        token_count_completion_image as output_image_tokens,
-        token_count_completion_video_seconds as output_video_seconds,
-        total_price as cost_usd,
-        response_time as response_time_ms
-    FROM generation_event
+        api_key_type,
+        meter_source,
+        input_text_tokens,
+        input_cached_tokens,
+        input_audio_tokens,
+        input_audio_seconds,
+        input_image_tokens,
+        output_text_tokens,
+        output_reasoning_tokens,
+        output_audio_tokens,
+        output_audio_seconds,
+        output_image_tokens,
+        output_video_seconds,
+        cost_usd,
+        response_time_ms
+    FROM activity_transaction_ledger
     WHERE user_id = {{String(user_id, '')}}
-    AND total_price > 0
     {% if defined(api_key_id) %}
     AND api_key_id = {{String(api_key_id)}}
+    {% end %}
+    {% if defined(api_key_ids) %}
+    AND api_key_id IN {{Array(api_key_ids, 'String')}}
+    {% end %}
+    {% if defined(models) %}
+    AND model IN {{Array(models, 'String')}}
     {% end %}
     {% if defined(since) %}
     AND start_time >= {{DateTime(since)}}

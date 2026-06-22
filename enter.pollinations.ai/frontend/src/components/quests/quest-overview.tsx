@@ -358,8 +358,8 @@ function SectionFooter({ category }: { category: CategoryMeta }) {
             <div className="mt-4 flex items-center gap-2 border-t border-divider pt-4 text-theme-text-muted">
                 <Icon className="h-3.5 w-3.5 shrink-0" />
                 <Text as="p" size="sm" tone="muted">
-                    Open a GitHub quest to see the full workflow and comment if
-                    you'd like to work on it.
+                    Want to help build Pollinations? Comment on a Contribute
+                    issue if you'd like to work on it.
                 </Text>
             </div>
         );

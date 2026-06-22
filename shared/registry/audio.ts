@@ -60,8 +60,10 @@ export const AUDIO_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            // ElevenLabs Scale plan: 1 credit/char * $0.166/1k credits
-            completionAudioTokens: 0.166 / 1000,
+            // ElevenLabs v3 via API: measured 0.60 credits/char (API-discounted
+            // from the 1 cr/char UI rate) * $0.166/1k Scale credits = $0.10/1k chars
+            // (matches elevenlabs.io/pricing/api).
+            completionAudioTokens: 0.1 / 1000,
         },
         title: "ElevenLabs v3 TTS",
         description:
@@ -81,8 +83,10 @@ export const AUDIO_SERVICES = {
         addedDate: new Date("2026-05-14").getTime(),
         priceMultiplier: 1,
         cost: {
-            // ElevenLabs Scale plan: Flash v2.5 = 0.5 credit/char
-            completionAudioTokens: 0.083 / 1000,
+            // ElevenLabs Flash v2.5 via API: measured 0.30 credits/char
+            // (API-discounted from the 0.5 cr/char UI rate) * $0.166/1k Scale
+            // credits = $0.05/1k chars (matches elevenlabs.io/pricing/api).
+            completionAudioTokens: 0.05 / 1000,
         },
         title: "ElevenLabs Flash v2.5",
         description:
@@ -102,8 +106,10 @@ export const AUDIO_SERVICES = {
         addedDate: new Date("2026-06-22").getTime(),
         priceMultiplier: 1,
         cost: {
-            // ElevenLabs Scale plan: Multilingual v2 = 1 credit/char * $0.166/1k credits
-            completionAudioTokens: 0.166 / 1000,
+            // ElevenLabs Multilingual v2 via API: measured 0.60 credits/char
+            // (API-discounted from the 1 cr/char UI rate) * $0.166/1k Scale credits
+            // = $0.10/1k chars (matches elevenlabs.io/pricing/api).
+            completionAudioTokens: 0.1 / 1000,
         },
         title: "ElevenLabs Multilingual v2",
         description:
@@ -148,6 +154,9 @@ export const AUDIO_SERVICES = {
             // ElevenLabs Sound Effects v2: billed per second of output audio.
             // Measured empirically (5s=120cr, 10s=241cr => 24.0 credits/sec, linear).
             // Scale plan $0.166/1k credits => 24 * 0.166/1000 ≈ $0.004/sec.
+            // Duration caps at 30s, so max per generation = 30 * $0.004 = $0.12,
+            // matching ElevenLabs' "$0.12 per generation" public price; shorter
+            // effects cost proportionally less. One exact per-second rate.
             completionAudioSeconds: 0.004,
         },
         title: "ElevenLabs Sound Effects",

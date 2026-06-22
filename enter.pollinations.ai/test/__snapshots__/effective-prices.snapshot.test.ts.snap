@@ -114,10 +114,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "eleven-multilingual-v2": {
     "cost": {
-      "completionAudioTokens": 0.000166,
+      "completionAudioTokens": 0.0001,
     },
     "price": {
-      "completionAudioTokens": 0.000166,
+      "completionAudioTokens": 0.0001,
     },
   },
   "eleven-sfx": {
@@ -130,18 +130,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "elevenflash": {
     "cost": {
-      "completionAudioTokens": 0.000083,
+      "completionAudioTokens": 0.00005,
     },
     "price": {
-      "completionAudioTokens": 0.000083,
+      "completionAudioTokens": 0.00005,
     },
   },
   "elevenlabs": {
     "cost": {
-      "completionAudioTokens": 0.000166,
+      "completionAudioTokens": 0.0001,
     },
     "price": {
-      "completionAudioTokens": 0.000166,
+      "completionAudioTokens": 0.0001,
     },
   },
   "elevenmusic": {

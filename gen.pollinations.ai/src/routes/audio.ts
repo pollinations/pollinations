@@ -37,9 +37,9 @@ import { buildTranscriptionResponse } from "./transcription-response.ts";
 const CreateSpeechRequestSchema = z
     .object({
         model: z.string().optional(),
-        input: z.string().min(1).max(4096).meta({
+        input: z.string().min(1).max(10000).meta({
             description:
-                "The text to generate audio for. Maximum 4096 characters.",
+                "The text to generate audio for. Maximum 10000 characters.",
             example: "Hello, welcome to Pollinations!",
         }),
         safe: SafeSchema,
@@ -58,10 +58,19 @@ const CreateSpeechRequestSchema = z
                     "The audio format for the output. Qwen TTS currently returns WAV regardless of this setting.",
                 example: "mp3",
             }),
-        duration: z.number().min(3).max(300).optional().meta({
+        duration: z.number().min(0.5).max(300).optional().meta({
             description:
-                "Output duration in seconds (elevenmusic/acestep 3-300; eleven-sfx 3-30)",
+                "Output duration in seconds (elevenmusic/acestep 3-300; eleven-sfx 0.5-30)",
             example: 30,
+        }),
+        loop: z.boolean().optional().meta({
+            description: "Loop the generated sound effect (eleven-sfx only)",
+            example: false,
+        }),
+        prompt_influence: z.number().min(0).max(1).optional().meta({
+            description:
+                "How strictly to follow the prompt, 0-1 (eleven-sfx only)",
+            example: 0.3,
         }),
         instrumental: z.boolean().optional().meta({
             description:
@@ -115,6 +124,8 @@ type SimpleAudioQuery = {
     voice: string;
     response_format: string;
     instruct?: string;
+    loop?: boolean;
+    prompt_influence?: number;
 };
 
 type AudioRefChunk = {
@@ -209,9 +220,9 @@ export async function generateSpeech(opts: {
         });
     }
 
-    if (text.length > 4096) {
+    if (text.length > 10000) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Input text too long: ${text.length} characters. Maximum is 4096.`,
+            message: `Input text too long: ${text.length} characters. Maximum is 10000.`,
         });
     }
 
@@ -273,7 +284,7 @@ export async function generateSpeech(opts: {
     log.info("TTS success: {chars} characters", { chars: text.length });
 
     // WAV needs its RIFF header repaired (ElevenLabs ships a placeholder length),
-    // which requires buffering the body. Audio is small (input capped at 4096
+    // which requires buffering the body. Audio is small (input capped at 10000
     // chars) so this is cheap; all other formats keep streaming.
     if (responseFormat === "wav") {
         const audioBuffer = fixWavHeader(await response.arrayBuffer());
@@ -712,10 +723,13 @@ export async function generateMusic(
 export async function generateSoundEffect(opts: {
     prompt: string;
     durationSeconds?: number;
+    loop?: boolean;
+    promptInfluence?: number;
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
-    const { prompt, durationSeconds, apiKey, log } = opts;
+    const { prompt, durationSeconds, loop, promptInfluence, apiKey, log } =
+        opts;
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -737,6 +751,8 @@ export async function generateSoundEffect(opts: {
     if (durationSeconds !== undefined) {
         body.duration_seconds = Math.min(Math.max(durationSeconds, 0.5), 30);
     }
+    if (loop !== undefined) body.loop = loop;
+    if (promptInfluence !== undefined) body.prompt_influence = promptInfluence;
 
     log.info("Sound effect request: chars={chars}, duration={duration}", {
         chars: prompt.length,
@@ -947,6 +963,11 @@ async function parseSpeechRequest(c: AudioContext): Promise<
             seed: parseOptionalNumber(formData.get("seed"), "seed"),
             style: (formData.get("style") as string | null) || undefined,
             instruct: (formData.get("instruct") as string | null) || undefined,
+            loop: parseOptionalBoolean(formData.get("loop"), "loop"),
+            prompt_influence: parseOptionalNumber(
+                formData.get("prompt_influence"),
+                "prompt_influence",
+            ),
             conditioning_ref:
                 typeof rawConditioningRef === "string"
                     ? parseJsonObject(rawConditioningRef, "conditioning_ref")
@@ -1217,6 +1238,8 @@ async function dispatchAudioGeneration(
         compositionPlan?: unknown;
         referenceAudio?: File;
         instruct?: string;
+        loop?: boolean;
+        promptInfluence?: number;
         apiKey: string;
         dashScopeApiKey: string;
         env: Env["Bindings"];
@@ -1237,6 +1260,8 @@ async function dispatchAudioGeneration(
         compositionPlan,
         referenceAudio,
         instruct,
+        loop,
+        promptInfluence,
         apiKey,
         dashScopeApiKey,
         env,
@@ -1282,6 +1307,8 @@ async function dispatchAudioGeneration(
             await generateSoundEffect({
                 prompt: text,
                 durationSeconds: duration,
+                loop,
+                promptInfluence,
                 apiKey,
                 log,
             }),
@@ -1348,6 +1375,8 @@ export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
         style: query.style,
         instrumental: query.instrumental,
         instruct: query.instruct,
+        loop: query.loop,
+        promptInfluence: query.prompt_influence,
         apiKey,
         dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
         env: c.env,
@@ -1522,6 +1551,8 @@ export const audioRoutes = new Hono<Env>()
                 seed,
                 style,
                 instruct,
+                loop,
+                prompt_influence,
             } = await parseSpeechRequest(c);
             requireTextToAudioModel(c.var.model.resolved);
             requireElevenMusicOptions(c.var.model.resolved, {
@@ -1551,6 +1582,8 @@ export const audioRoutes = new Hono<Env>()
                 compositionPlan: composition_plan,
                 referenceAudio: reference_audio,
                 instruct,
+                loop,
+                promptInfluence: prompt_influence,
                 apiKey,
                 dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
                 env: c.env,

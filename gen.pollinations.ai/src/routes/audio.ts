@@ -63,6 +63,15 @@ const CreateSpeechRequestSchema = z
                 "Music duration in seconds, 3-300 (elevenmusic/acestep)",
             example: 30,
         }),
+        seconds: z.number().min(1).max(190).optional().meta({
+            description:
+                "Audio duration in seconds for stable-audio-2.5, 1-190.",
+            example: 30,
+        }),
+        steps: z.number().int().min(4).max(8).optional().meta({
+            description: "Sampling steps for stable-audio-2.5, 4-8.",
+            example: 8,
+        }),
         instrumental: z.boolean().optional().meta({
             description:
                 "If true, guarantees instrumental output (elevenmusic only)",
@@ -109,6 +118,8 @@ type AudioContext = Context<Env>;
 type SimpleAudioQuery = {
     safe?: SafeValue;
     duration?: number;
+    seconds?: number;
+    steps?: number;
     style?: string;
     instrumental?: boolean;
     seed?: number;
@@ -1134,6 +1145,109 @@ export async function generateAceStepMusic(opts: {
  * handlers. Callers normalize their inputs first (GET maps seed=-1 -> undefined
  * since only its schema permits the sentinel).
  */
+// fal synchronous inference endpoint. Stable Audio 2.5 generates in ~2s, so the
+// blocking `fal.run` route returns inline without needing the queue/poll API.
+const STABLE_AUDIO_25_ENDPOINT =
+    "https://fal.run/fal-ai/stable-audio-25/text-to-audio";
+
+// fal returns the generated file as a URL (or {url}) on a fal.media CDN, not
+// inline bytes — we fetch it and stream the bytes back to the caller.
+type FalAudioOutput = {
+    audio?: string | { url?: string; content_type?: string };
+    seed?: number;
+};
+
+export async function generateStableAudio25(opts: {
+    prompt: string;
+    seconds?: number;
+    steps?: number;
+    seed?: number;
+    falKey?: string;
+    log: Logger;
+}): Promise<Response> {
+    const { prompt, seconds, steps, seed, falKey, log } = opts;
+
+    if (!falKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "Stable Audio 2.5 is not configured (missing FAL_KEY)",
+        });
+    }
+
+    if (prompt.length > 10000) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Prompt too long: ${prompt.length} characters. Maximum is 10000.`,
+        });
+    }
+
+    const secondsTotal = Math.min(190, Math.max(1, seconds ?? 190));
+    const input: Record<string, unknown> = {
+        prompt,
+        seconds_total: secondsTotal,
+    };
+    if (steps !== undefined) input.num_inference_steps = steps;
+    if (seed !== undefined) input.seed = seed;
+
+    log.info(
+        "Stable Audio 2.5 request: chars={chars}, seconds_total={seconds}, steps={steps}",
+        {
+            chars: prompt.length,
+            seconds: secondsTotal,
+            steps: steps ?? "(default)",
+        },
+    );
+
+    const rawResponse = await fetch(STABLE_AUDIO_25_ENDPOINT, {
+        method: "POST",
+        headers: {
+            // fal uses `Authorization: Key <id:secret>`, NOT `Bearer`.
+            Authorization: `Key ${falKey}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(input),
+    });
+    const response = await ensureUpstreamOk(
+        rawResponse,
+        STABLE_AUDIO_25_ENDPOINT,
+    );
+    const result = (await response.json()) as FalAudioOutput;
+    const audioUrl =
+        typeof result.audio === "string" ? result.audio : result.audio?.url;
+    if (!audioUrl) {
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message: "Stable Audio 2.5 returned no audio URL",
+        });
+    }
+
+    const fileResponse = await ensureUpstreamOk(
+        await fetch(audioUrl),
+        audioUrl,
+    );
+    const audioBuffer = await fileResponse.arrayBuffer();
+    // fal SA2.5 always outputs WAV, but its CDN serves the file as
+    // application/octet-stream — only trust the header when it's a real audio/*
+    // type, otherwise label it audio/wav so clients play it correctly.
+    const headerContentType = fileResponse.headers.get("content-type");
+    const contentType = headerContentType?.startsWith("audio/")
+        ? headerContentType
+        : "audio/wav";
+
+    const usageHeaders = buildUsageHeaders("stable-audio-2.5", {
+        completionAudioTokens: 1,
+    });
+
+    log.info("Stable Audio 2.5 success: {bytes} bytes", {
+        bytes: audioBuffer.byteLength,
+    });
+
+    return new Response(audioBuffer, {
+        status: 200,
+        headers: {
+            "Content-Type": contentType,
+            ...usageHeaders,
+        },
+    });
+}
+
 async function dispatchAudioGeneration(
     c: AudioContext,
     opts: {
@@ -1142,6 +1256,8 @@ async function dispatchAudioGeneration(
         responseFormat: string;
         seed?: number;
         duration?: number;
+        seconds?: number;
+        steps?: number;
         style?: string;
         instrumental?: boolean;
         storeForInpainting?: boolean;
@@ -1152,6 +1268,7 @@ async function dispatchAudioGeneration(
         instruct?: string;
         apiKey: string;
         dashScopeApiKey: string;
+        falKey?: string;
         env: Env["Bindings"];
         log: Logger;
     },
@@ -1162,6 +1279,8 @@ async function dispatchAudioGeneration(
         responseFormat,
         seed,
         duration,
+        seconds,
+        steps,
         style,
         instrumental,
         storeForInpainting,
@@ -1172,6 +1291,7 @@ async function dispatchAudioGeneration(
         instruct,
         apiKey,
         dashScopeApiKey,
+        falKey,
         env,
         log,
     } = opts;
@@ -1204,6 +1324,20 @@ async function dispatchAudioGeneration(
                 compositionPlan,
                 referenceAudio,
                 apiKey,
+                log,
+            }),
+        );
+    }
+
+    if (c.var.model.resolved === "stable-audio-2.5") {
+        return withSafetyHeaders(
+            c,
+            await generateStableAudio25({
+                prompt: text,
+                seconds: seconds ?? duration,
+                steps,
+                seed,
+                falKey,
                 log,
             }),
         );
@@ -1266,11 +1400,14 @@ export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
         responseFormat: query.response_format,
         seed: query.seed === -1 ? undefined : query.seed,
         duration: query.duration,
+        seconds: query.seconds,
+        steps: query.steps,
         style: query.style,
         instrumental: query.instrumental,
         instruct: query.instruct,
         apiKey,
         dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
+        falKey: c.env.FAL_KEY,
         env: c.env,
         log,
     });
@@ -1392,7 +1529,7 @@ export const audioRoutes = new Hono<Env>()
             description: [
                 "Generate speech or music from text. Compatible with the OpenAI TTS API for JSON requests.",
                 "",
-                "Set `model` to `elevenmusic` to generate music. For reference-audio conditioning, send multipart/form-data with `reference_audio` plus `input`; for inpainting, pass an ElevenLabs `composition_plan`.",
+                "Set `model` to `elevenmusic`, `acestep`, or `stable-audio-2.5` to generate music. For reference-audio conditioning, send multipart/form-data with `reference_audio` plus `input`; for inpainting, pass an ElevenLabs `composition_plan`.",
                 "",
                 `**Available voices:** ${ELEVENLABS_VOICES.join(", ")}`,
                 "",
@@ -1434,6 +1571,8 @@ export const audioRoutes = new Hono<Env>()
                 voice,
                 response_format,
                 duration,
+                seconds,
+                steps,
                 instrumental,
                 store_for_inpainting,
                 extract_composition_plan,
@@ -1464,6 +1603,8 @@ export const audioRoutes = new Hono<Env>()
                 responseFormat: response_format,
                 seed,
                 duration,
+                seconds,
+                steps,
                 style,
                 instrumental,
                 storeForInpainting: store_for_inpainting,
@@ -1474,6 +1615,7 @@ export const audioRoutes = new Hono<Env>()
                 instruct,
                 apiKey,
                 dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
+                falKey: c.env.FAL_KEY,
                 env: c.env,
                 log,
             });

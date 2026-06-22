@@ -346,6 +346,98 @@ fixtureTest(
 );
 
 fixtureTest(
+    "routes stable-audio-2.5 requests through fal",
+    async ({ paidApiKey }) => {
+        const calls: string[] = [];
+        const falEndpoint =
+            "https://fal.run/fal-ai/stable-audio-25/text-to-audio";
+        const falFileUrl = "https://v3.fal.media/files/test-stable-audio.wav";
+
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                calls.push(request.url);
+
+                if (request.url === falEndpoint) {
+                    // fal auth uses `Key`, not `Bearer`.
+                    expect(request.headers.get("authorization")).toBe(
+                        "Key test-fal-key",
+                    );
+
+                    const body = (await request.json()) as Record<
+                        string,
+                        unknown
+                    >;
+                    expect(body.prompt).toBe("lofi rain loop");
+                    expect(body.seconds_total).toBe(12);
+                    expect(body.num_inference_steps).toBe(6);
+                    expect(body.seed).toBe(42);
+
+                    return Response.json({
+                        audio: { url: falFileUrl, content_type: "audio/wav" },
+                        seed: 42,
+                    });
+                }
+
+                if (request.url === falFileUrl) {
+                    return new Response(new Uint8Array([82, 73, 70, 70]), {
+                        headers: { "Content-Type": "audio/wav" },
+                    });
+                }
+
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(
+                "https://staging.gen.pollinations.ai/audio/lofi%20rain%20loop?model=stable-audio-2.5&seconds=12&steps=6&seed=42",
+                {
+                    headers: { Authorization: `Bearer ${paidApiKey}` },
+                },
+            ),
+            {
+                ...env,
+                FAL_KEY: "test-fal-key",
+            } as unknown as CloudflareBindings,
+            ctx,
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("content-type")).toBe("audio/wav");
+        expect(response.headers.get("x-model-used")).toBe("stable-audio-2.5");
+        expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
+            "1",
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(calls).toContain(falEndpoint);
+        expect(calls).toContain(falFileUrl);
+    },
+);
+
+it("lists stable-audio-2.5 in audio models", async () => {
+    const response = await fetchWorker("/audio/models");
+
+    expect(response.status).toBe(200);
+    const models = (await response.json()) as { name: string }[];
+    expect(models.some((model) => model.name === "stable-audio-2.5")).toBe(
+        true,
+    );
+});
+
+fixtureTest(
     "rejects transcription models on OpenAI speech endpoint",
     async ({ apiKey }) => {
         const calls: string[] = [];

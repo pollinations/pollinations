@@ -15,8 +15,8 @@ export type QuestEvaluationContext = {
  * else on a grant (the idempotency key, questId, title, amount, bucket) is
  * derived from the quest's definition by toGrant — a quest never builds a key.
  *
- * Every quest is per-user: one award per user, deduped on the per-(quest, user)
- * idempotency key. There is no other scope.
+ * The idempotency key's SHAPE comes from the quest's scope (perUser vs once),
+ * resolved in toGrant — not from the award. The award only ever names the user.
  */
 export type QuestAward = {
     userId: string;
@@ -78,13 +78,15 @@ export function toGrant(
 /**
  * Serialize a migrated quest into a catalog card: its definition plus the
  * board-state constants a static quest always has (available). The card's url
- * is the quest's own optional url (null when absent). `findRewards` (behavior)
- * and `balanceBucket` (internal) are dropped.
+ * is the quest's own optional url (null when absent). `findRewards` (behavior),
+ * `balanceBucket` and `scope` (both internal — only the evaluator/toGrant read
+ * them) are dropped so they never leak into the public catalog response.
  */
 export function questToCard(quest: Quest): QuestCard {
     const {
         findRewards: _findRewards,
         balanceBucket: _bucket,
+        scope: _scope,
         url,
         ...definition
     } = quest;
@@ -98,12 +100,13 @@ export function questToCard(quest: Quest): QuestCard {
 /**
  * A uniform quest card = a quest definition serialized for the board, plus the
  * board-state fields the catalog layer adds. A card IS its definition, widened
- * with runtime state. The serializer drops `balanceBucket` (internal) and may
- * null rewardAmount (e.g. a bounty whose reward isn't fixed yet).
+ * with runtime state. The serializer drops `balanceBucket` and `scope` (both
+ * internal) and may null rewardAmount (e.g. a bounty whose reward isn't fixed
+ * yet).
  */
 export type QuestCard = Omit<
     QuestDefinition,
-    "rewardAmount" | "balanceBucket" | "url"
+    "rewardAmount" | "balanceBucket" | "url" | "scope"
 > & {
     availability: "available" | "claimed" | "completed";
     rewardAmount: number | null;

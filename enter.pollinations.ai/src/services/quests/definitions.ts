@@ -1,8 +1,5 @@
 import type { Bucket } from "@shared/billing/deduction.ts";
 
-export const PRODUCT_QUEST_REWARD_SOURCE = "product_quest";
-export const GITHUB_QUEST_REWARD_SOURCE = "code_quest";
-
 export const QUEST_ICON_IDS = [
     "app",
     "card",

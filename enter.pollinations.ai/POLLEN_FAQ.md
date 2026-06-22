@@ -20,15 +20,29 @@ You build the app. We handle the models and the billing.
 
 ## 🛒 How do I get Pollen?
 
-There are **three ways**:
+There are **four ways**:
 
 1. 💳 **Buy** — Pay by card, Pollen goes to your **paid balance**. Expires after 12 months of account inactivity. *(Want other payment options? [Vote here](https://github.com/pollinations/pollinations/issues/4826)!)*
 2. 🌱 **Tier grants** — Free Pollen that refills every hour into your **tier balance**. Contribute to unlock bigger hourly grants.
-3. 🌻 **Dev earnings** — Flip on Developer earnings on an App Key to take +25% on top of model price on user traffic.
+3. 🎯 **Quests** — Complete tasks from the Quests dashboard. Contribute quests pay a fixed reward when your assigned GitHub issue is merged.
+4. 🌻 **Dev earnings** — Flip on Developer earnings on an App Key to take +25% on top of model price on user traffic.
 
 ## 🆓 Can I try it for free?
 
 Free Pollen on every account, refilled hourly. No credit card to register. Contribute on GitHub or ship an app and the hourly grant gets bigger.
+
+## 🎯 How do Contribute quests work?
+
+Contribute quests are GitHub issues with a fixed Pollen reward. The Quests dashboard shows unassigned open issues to everyone, plus your own assigned or completed issues.
+
+1. Open a quest from the **Contribute** section.
+2. Comment that you'd like to work on it. Multiple devs can express interest.
+3. Wait until a maintainer assigns the issue to you before starting work.
+4. Open a PR against `main` and start the description with `Fixes #N`, where `N` is the quest issue number.
+5. Request review from a maintainer. If you're unsure who to tag, ask on the issue or in [Discord #dev-talk](https://discord.com/channels/885844321461485618/920274483896516609).
+6. If review asks for changes, update the PR. When it merges, the reward is credited automatically to your Pollinations wallet.
+
+Assigned or completed quests disappear from other people's dashboards, but your own completed Contribute quests stay visible so you can see what you earned.
 
 ## 💳 What payment methods do you accept?
 
@@ -110,7 +124,7 @@ Text, images, audio, and video — one API.
 
 ## 🚀 What's coming?
 
-- 🎯 **Pollen Quest** — earn Pollen through achievements, milestones, and closing issues.
+- 🎯 **More quests** — more achievements, milestones, and GitHub issue rewards.
 - 🔑 **Pollinations Login** — OAuth sign-in for your users, with token handling handled for you.
 - 🏠 **App Hosting** — run your app on our infra, no separate hosting bill.
 - 🗺️ **App Discovery** — a marketplace for users to find your app.

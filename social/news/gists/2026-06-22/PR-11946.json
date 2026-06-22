@@ -1,0 +1,34 @@
+{
+  "pr_number": 11946,
+  "title": "chore: consolidate stale app submission PRs",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11946",
+  "merged_at": "2026-06-22T17:11:11Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Collapses five stale, conflicting `apps/APPS.md` bot PRs into one clean, mergeable change.\n\n- Add **RoleChar** (chat) — approved (#10492), site live (200)\n- Add **SpiritPet World** (games) — approved (#10588), site live (200)\n- Remove **Athelte Studio** — site returns 404 (dead)\n- Regenerate `GREENHOUSE.md` + `README.md` via `app-update-greenhouse.js`\n\nSupersedes #11521, #11533, #11941, #11804, #11287 — all conflicting, duplicated, or already applied on main.\n\nFixes #10492\nFixes #10588",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Fresh sprouts in the greenhouse",
+    "blurb": "We've tidied up the community showcase and welcomed two new apps to the greenhouse: RoleChar and SpiritPet World!",
+    "summary": "Consolidated several stale app submission PRs to add RoleChar and SpiritPet World to the community showcase while removing a dead link.",
+    "impact": "Users can now discover RoleChar and SpiritPet World in the community apps directory.",
+    "keywords": [
+      "community",
+      "showcase",
+      "apps",
+      "greenhouse"
+    ],
+    "visual_concept": "The bee mascot tending to a greenhouse or garden, planting two new seeds/sprouts (representing the two new apps), while sweeping away a dead leaf (the dead link).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's apron, watering two glowing new code-plants in a lime green (#ecf874) greenhouse. A chunky pixel robot companion happily holds a sign saying 'NEW APPS'. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-22/PR-11946.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's apron, watering two glowing new code-plants in a lime green (#ecf874) greenhouse. A chunky pixel robot companion happily holds a sign saying 'NEW APPS'. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-22T17:12:45.026659+00:00"
+}

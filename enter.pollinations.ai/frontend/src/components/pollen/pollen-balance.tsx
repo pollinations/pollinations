@@ -4,6 +4,7 @@ import {
     CopyButton,
     ExternalLinkButton,
     InfoTip,
+    InlineLink,
     MailIcon,
     SproutIcon,
     Surface,
@@ -339,14 +340,9 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                     <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <span>
                         Credits are instant, never expire, and follow our{" "}
-                        <a
-                            href={REFUND_POLICY_URL}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="underline decoration-theme-text-soft/30 underline-offset-2 transition-colors hover:text-theme-text-soft"
-                        >
+                        <InlineLink href={REFUND_POLICY_URL}>
                             Refund Policy
-                        </a>
+                        </InlineLink>
                         .
                     </span>
                 </p>

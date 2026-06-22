@@ -1,0 +1,35 @@
+{
+  "pr_number": 11641,
+  "title": "fix: neutralize account CSV formulas",
+  "author": "its3li",
+  "url": "https://github.com/pollinations/pollinations/pull/11641",
+  "merged_at": "2026-06-22T17:25:12Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "## Summary\n- Neutralizes spreadsheet-formula prefixes in account CSV exports by prefixing risky cells with an apostrophe before normal CSV quoting.\n- Adds regression coverage for detailed usage CSV and developer earnings CSV formula payloads.\n\n## Security impact\nUser-controlled fields such as API key names / app names can appear in account CSV exports. Without neutralization, values beginning with `=`, `+`, `-`, `@`, tabs, or newlines may be interpreted as formulas when opened in spreadsheet software.\n\n## Verification\n- `npx biome check --write enter.pollinations.ai/src/routes/account.ts enter.pollinations.ai/test/account-usage.test.ts enter.pollinations.ai/test/account-earnings.test.ts`\n- `npx biome check enter.pollinations.ai/src/routes/account.ts enter.pollinations.ai/test/account-usage.test.ts enter.pollinations.ai/test/account-earnings.test.ts`\n- `npx vitest run test/account-usage.test.ts test/account-earnings.test.ts` from `enter.pollinations.ai` (9 passed)\n\nNote: `npm run test --workspace pollinations-enter -- test/account-usage.test.ts test/account-earnings.test.ts` could not start here because the wrapper requires local `sops`, which is not installed in this environment.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Safe Spreadsheets",
+    "blurb": "We've added an extra layer of polish to our CSV exports, ensuring that app names and API keys play nicely with your favorite spreadsheet software.",
+    "summary": "Neutralized spreadsheet-formula prefixes in account CSV exports by prefixing risky cells with an apostrophe to prevent formula injection.",
+    "impact": "User-controlled fields like API key names and app names will no longer be accidentally interpreted as executable formulas when opened in spreadsheet software.",
+    "keywords": [
+      "csv",
+      "export",
+      "security",
+      "sanitization",
+      "bug-fix"
+    ],
+    "visual_concept": "The pollinations bee wearing a tiny inspector's hat, examining a spreadsheet. The Nomnom creature eating dangerous-looking math symbols (=, +, -).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny inspector's hat, examining a glowing spreadsheet on a retro monitor. The round tan nomnom creature happily eats dangerous-looking math symbols like equals and plus signs. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-22/PR-11641.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny inspector's hat, examining a glowing spreadsheet on a retro monitor. The round tan nomnom creature happily eats dangerous-looking math symbols like equals and plus signs. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-22T17:26:23.916555+00:00"
+}

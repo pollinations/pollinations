@@ -125,10 +125,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // -- Fireworks AI (Kimi, GLM, Qwen) --------------------------------------
-    "accounts/fireworks/models/kimi-k2p5": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/kimi-k2p5",
-        }),
     "accounts/fireworks/models/kimi-k2p6": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/kimi-k2p6",
@@ -170,14 +166,16 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "global.anthropic.claude-opus-4-6-v1",
             defaultOptions: { max_tokens: 128000 },
         }),
+    // global.* inference profiles for Opus 4.7/4.8 return Bedrock-side
+    // Internal/ServiceUnavailable errors; the us.* profiles are healthy.
     "claude-opus-4-7": () =>
         createBedrockNativeConfig({
-            model: "global.anthropic.claude-opus-4-7",
+            model: "us.anthropic.claude-opus-4-7",
             defaultOptions: { max_tokens: 128000 },
         }),
     "claude-opus-4-8": () =>
         createBedrockNativeConfig({
-            model: "global.anthropic.claude-opus-4-8",
+            model: "us.anthropic.claude-opus-4-8",
             defaultOptions: { max_tokens: 128000 },
         }),
     "claude-haiku-4-5": () =>
@@ -222,9 +220,9 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/qwen3p7-plus",
         }),
-    "accounts/fireworks/models/glm-5p1": () =>
+    "accounts/fireworks/models/glm-5p2": () =>
         createFireworksModelConfig({
-            model: "accounts/fireworks/models/glm-5p1",
+            model: "accounts/fireworks/models/glm-5p2",
         }),
     "accounts/fireworks/models/minimax-m2p7": () =>
         createFireworksModelConfig({

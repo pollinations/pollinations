@@ -5,6 +5,7 @@ import {
     Dialog,
     DialogTitle,
     Field,
+    InlineLink,
     Input,
     ScrollArea,
     Tooltip,
@@ -20,6 +21,13 @@ import { genDocsUrl } from "../../config.ts";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 import { PublishableKeySettings } from "./publishable-key-settings.tsx";
 import type { CreateApiKey, CreateApiKeyResponse } from "./types.ts";
+
+/**
+ * Pre-filled callback for app keys so local dev works out of the box. Loopback
+ * ports are wildcarded (RFC 8252 §7.3), so only the path needs editing. The
+ * dev sees it in the editor and should remove it before production.
+ */
+const DEFAULT_LOCALHOST_REDIRECT = "http://localhost/callback";
 
 type ApiKeyDialogProps = {
     onSubmit: (state: CreateApiKey) => Promise<CreateApiKeyResponse>;
@@ -53,7 +61,9 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     const keyType: "secret" | "publishable" = simplified
         ? "publishable"
         : "secret";
-    const [redirectUris, setRedirectUris] = useState<string[]>([]);
+    const [redirectUris, setRedirectUris] = useState<string[]>(
+        simplified ? [DEFAULT_LOCALHOST_REDIRECT] : [],
+    );
     const [earningsEnabled, setEarningsEnabled] = useState(true);
     const keyPermissions = useKeyPermissions(
         simplified
@@ -158,7 +168,9 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                     setCreatedKey(null);
                     setError(null);
                     setName(generateFunName());
-                    setRedirectUris([]);
+                    setRedirectUris(
+                        simplified ? [DEFAULT_LOCALHOST_REDIRECT] : [],
+                    );
                     setEarningsEnabled(true);
                     const dateStr = new Date().toLocaleDateString("en-US", {
                         day: "2-digit",
@@ -201,16 +213,13 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                             <li>
                                 Use that key for API requests paid with the
                                 user&apos;s Pollen.{" "}
-                                <a
+                                <InlineLink
                                     href={genDocsUrl(
                                         "#tag/bring-your-own-pollen",
                                     )}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-theme-text-soft underline hover:text-theme-text-strong"
                                 >
                                     Read the guide
-                                </a>
+                                </InlineLink>
                             </li>
                         </ul>
                     ) : (

@@ -46,6 +46,11 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                         Redirect URIs
                     </Field.Label>
                 </div>
+                <p className="text-xs text-theme-text-soft">
+                    A localhost callback is pre-filled for local development —
+                    edit the path to match your dev server, and remove it before
+                    going to production.
+                </p>
                 {redirectUris.map((uri, index) => (
                     <div
                         // biome-ignore lint/suspicious/noArrayIndexKey: stable enough for a small editable list
@@ -79,7 +84,7 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                 <div className="flex min-w-0 items-start justify-between gap-3">
                     <div className="min-w-0">
                         <div className="text-sm font-semibold">
-                            Developer earnings
+                            App earnings
                         </div>
                         <p className="mt-0.5 text-xs text-theme-text-soft">
                             Users pay 25% over base rates. Markup credits to
@@ -92,8 +97,8 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                         disabled={disabled}
                         ariaLabel={
                             earningsEnabled
-                                ? "Turn off developer earnings"
-                                : "Enable developer earnings"
+                                ? "Turn off app earnings"
+                                : "Enable app earnings"
                         }
                     />
                 </div>

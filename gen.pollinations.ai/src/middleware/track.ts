@@ -33,6 +33,7 @@ import {
     type UsagePrice,
 } from "@shared/registry/registry.ts";
 import {
+    FALLBACK_TARGET_HEADER,
     openaiUsageToUsage,
     parseUsageHeaders,
 } from "@shared/registry/usage-headers.ts";
@@ -94,6 +95,7 @@ type ResponseTrackingData = {
     responseOk: boolean;
     cacheData: CacheData;
     isBilledUsage: boolean;
+    fallbackUsed: boolean;
     modelUsed?: string;
     usage?: Usage;
     cost?: UsageCost;
@@ -391,6 +393,7 @@ async function trackResponse(
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
     const cacheInfo = extractCacheHeaders(response);
+    const fallbackUsed = parseFallbackUsed(response);
     const notBilled = (
         extra?: Partial<ResponseTrackingData>,
     ): ResponseTrackingData => ({
@@ -398,6 +401,7 @@ async function trackResponse(
         responseStatus: response.status,
         cacheData: cacheInfo,
         isBilledUsage: false,
+        fallbackUsed,
         ...extra,
     });
 
@@ -446,12 +450,23 @@ async function trackResponse(
         responseStatus: response.status,
         cacheData: cacheInfo,
         isBilledUsage: true,
+        fallbackUsed,
         cost,
         price,
         modelUsed: modelUsage.model,
         usage: modelUsage.usage,
         contentFilterResults,
     };
+}
+
+// Portkey reports the served target as "config.targets[N]" via the
+// x-fallback-target header (re-emitted from x-portkey-last-used-option-index).
+// A fallback fired whenever the served target is not the primary (index 0).
+function parseFallbackUsed(response: Response): boolean {
+    const target = response.headers.get(FALLBACK_TARGET_HEADER);
+    if (!target) return false;
+    const match = target.match(/\[(\d+)\]/);
+    return match ? Number(match[1]) > 0 : false;
 }
 
 // Resolve the per-event content-type expectation for billing. Returns null
@@ -603,6 +618,7 @@ function createTrackingEvent({
         resolvedModelRequested: requestTracking.resolvedModelRequested,
         modelUsed: responseTracking.modelUsed,
         modelProviderUsed: requestTracking.modelProvider,
+        fallbackUsed: responseTracking.fallbackUsed,
 
         isBilledUsage: responseTracking.isBilledUsage,
 

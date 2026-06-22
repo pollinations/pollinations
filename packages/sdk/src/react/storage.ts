@@ -26,24 +26,3 @@ export function resolveStorage(
     if (option === "sessionStorage") return window.sessionStorage;
     return option;
 }
-
-/**
- * In-memory, frame-local storage. Used by `PolliProvider` when it runs inside
- * an iframe: a host-pushed (borrowed) session must never touch the app's own
- * `localStorage`, because same-origin standalone tabs share it — persisting the
- * borrowed key there would overwrite a standalone session, and clearing it on
- * host logout would wipe one. The key lives only for this frame's lifetime; the
- * host re-pushes it on every load, so nothing needs to persist in the frame.
- */
-export function createMemoryStorage(): StorageAdapter {
-    const map = new Map<string, string>();
-    return {
-        getItem: (key) => map.get(key) ?? null,
-        setItem: (key, value) => {
-            map.set(key, value);
-        },
-        removeItem: (key) => {
-            map.delete(key);
-        },
-    };
-}

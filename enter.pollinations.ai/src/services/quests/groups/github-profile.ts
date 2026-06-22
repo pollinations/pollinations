@@ -74,8 +74,9 @@ function githubApiHeaders(env: CloudflareBindings): Record<string, string> {
 
 /**
  * Source loader: every user with a linked GitHub account, capped. Reward dedup
- * is handled downstream by excludeExistingRewards (one fetch per user fans out
- * to all three thresholds), so this does NOT LEFT JOIN reward_grants per quest.
+ * is handled downstream by grantReward's idempotent insert (one fetch per user
+ * fans out to all three thresholds), so this does NOT LEFT JOIN reward_grants
+ * per quest.
  */
 async function loadGitHubUsers(
     db: QuestDb,

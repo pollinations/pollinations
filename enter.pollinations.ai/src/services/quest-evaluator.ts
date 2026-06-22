@@ -1,9 +1,7 @@
 import { getLogger } from "@logtape/logtape";
-import type { GrantRewardInput } from "@shared/billing/grant-reward.ts";
 import { grantReward } from "@shared/billing/grant-reward.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { drizzle } from "drizzle-orm/d1";
-import { excludeExistingRewards } from "./quests/grant-filter.ts";
 import { loadQuests } from "./quests/index.ts";
 import { type QuestEvaluationContext, toGrant } from "./quests/types.ts";
 
@@ -17,12 +15,15 @@ type QuestEvaluatorResult = {
 };
 
 /**
- * Each quest proposes reward CANDIDATES (who it thinks earned it). The evaluator
- * owns the two generic concerns the quests must not: dedup against already-paid
- * rewards (excludeExistingRewards, once over the whole batch), and the actual
- * grant write (grantReward, the idempotent chokepoint). Results are seeded in
- * quest order so the positional array is stable even for a quest that proposes
- * nothing.
+ * Each quest proposes reward CANDIDATES (who it thinks earned it); the evaluator
+ * grants each one via grantReward, the idempotent chokepoint — an INSERT OR
+ * IGNORE on the idempotency key, so a candidate that was already paid credits
+ * nothing and reports granted:false. That single guarantee is the whole dedup
+ * story: no pre-filter needed, re-runs are safe by construction. `scanned` is
+ * the candidate count (before grant); `granted` counts the writes that landed.
+ * Results are seeded in quest order so the positional array is stable even for a
+ * quest that proposes nothing, and a failing quest is isolated (its error is
+ * recorded; others proceed).
  */
 export async function runQuestEvaluator(
     env: CloudflareBindings,
@@ -36,9 +37,6 @@ export async function runQuestEvaluator(
         results.set(quest.id, { questId: quest.id, scanned: 0, granted: 0 });
     }
 
-    // 1. Collect candidates per quest. A failing quest is isolated — its error
-    //    is recorded and it contributes no candidates; others proceed.
-    const candidates: { questId: string; reward: GrantRewardInput }[] = [];
     for (const quest of quests) {
         const entry = results.get(quest.id);
         if (!entry) continue;
@@ -46,10 +44,8 @@ export async function runQuestEvaluator(
             const awards = await quest.findRewards(ctx);
             entry.scanned = awards.length;
             for (const award of awards) {
-                candidates.push({
-                    questId: quest.id,
-                    reward: toGrant(quest, award),
-                });
+                const result = await grantReward(db, toGrant(quest, award));
+                if (result.granted) entry.granted += 1;
             }
         } catch (error) {
             const message =
@@ -60,24 +56,6 @@ export async function runQuestEvaluator(
             );
             entry.error = message;
         }
-    }
-
-    // 2. Generic dedup: drop candidates whose idempotency key was already paid.
-    //    One DB round-trip for the whole batch. (grantReward is still the final
-    //    idempotent backstop against races.)
-    const fresh = await excludeExistingRewards(
-        db,
-        candidates.map((candidate) => candidate.reward),
-    );
-    const freshKeys = new Set(fresh.map((reward) => reward.idempotencyKey));
-
-    // 3. Grant the survivors, bucketing each back to its quest's result.
-    for (const { questId, reward } of candidates) {
-        if (!freshKeys.has(reward.idempotencyKey)) continue;
-        const entry = results.get(questId);
-        if (!entry) continue;
-        const result = await grantReward(db, reward);
-        if (result.granted) entry.granted += 1;
     }
 
     const ordered = [...results.values()];

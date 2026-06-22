@@ -31,17 +31,13 @@ There are **four ways**:
 
 Free Pollen on every account, refilled hourly. No credit card to register. Contribute on GitHub or ship an app and the hourly grant gets bigger.
 
-## 🎯 How do Contribute quests work?
+## 🎯 How do Quests work?
 
-Contribute quests are GitHub issues with a fixed Pollen reward. The Quests dashboard shows the same unassigned open issues to everyone, plus your own completed issue quests.
+Quests are ways to earn Pollen by completing useful actions around Pollinations, like setting up your account, growing an app, or contributing code.
 
-1. Open a quest from the **Contribute** section.
-2. Comment that you'd like to work on it and wait until a maintainer assigns the issue to you.
-3. Open a PR against `main` and start the description with `Fixes #N`, where `N` is the quest issue number.
-4. Request review from [@Circuit-Overtime](https://github.com/Circuit-Overtime).
-5. Address any review comments. When the PR merges, the reward is credited automatically to your Pollinations wallet.
+The Quests dashboard shows what is available to you and what you have completed. Open Contribute quests are GitHub issues with fixed Pollen rewards. If you want to work on one, open the linked issue and comment that you are interested — the issue itself includes the full workflow.
 
-When someone completes a quest, it disappears from other people's dashboards. Your completed Contribute quests stay visible so you can see what you earned.
+When a quest is completed, the reward is credited automatically.
 
 ## 💳 What payment methods do you accept?
 

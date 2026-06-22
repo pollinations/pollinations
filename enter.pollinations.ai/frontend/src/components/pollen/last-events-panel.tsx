@@ -381,7 +381,6 @@ export const LastEventsPanel: FC<{ apiKeys: ApiKey[] }> = ({ apiKeys }) => {
                         <InlineLink href="#activity" showIcon={false}>
                             View full activity
                         </InlineLink>
-                        .
                     </span>
                 </p>
             </div>

@@ -122,12 +122,7 @@ function EventKindChip({ kind }: { kind: LastEvent["kind"] }) {
 
 function MeterSourceChip({ source }: { source: string | null }) {
     if (source === "tier") return <TierChip>tier</TierChip>;
-    if (source === "pack") return <PaidChip>paid</PaidChip>;
-    return (
-        <Chip intent="neutral" size="md">
-            unknown
-        </Chip>
-    );
+    return <PaidChip>paid</PaidChip>;
 }
 
 function buildKeyNameLookup(keys: ApiKey[]) {

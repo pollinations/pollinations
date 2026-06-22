@@ -544,7 +544,7 @@ const dailyUsageRecordSchema = z.object({
         .string()
         .nullable()
         .describe(
-            "Billing source: 'tier' = tier balance, 'pack' = paid balance, 'unknown' = source was not logged",
+            "Billing source: 'tier' = tier balance, 'pack' = paid balance",
         ),
     requests: z.number().describe("Number of requests"),
     cost_usd: z.number().describe("Total cost in USD"),
@@ -697,7 +697,7 @@ const developerEarningsTransactionSchema = z.object({
         .string()
         .nullable()
         .describe(
-            "Billing source: 'tier' = tier balance, 'pack' = paid balance, 'unknown' = source was not logged",
+            "Billing source: 'tier' = tier balance, 'pack' = paid balance",
         ),
     baseline_price: z.number().describe("Model cost before markup"),
     pollen_earned: z
@@ -1300,8 +1300,8 @@ export const accountRoutes = new Hono<Env>()
             const tinybirdToken = requireTinybirdReadToken(c.env);
             const kv = c.env.KV;
             const cacheKeyPrefix = usageUserOverridden
-                ? `usage:daily:v5:debug:${usageUserId}`
-                : `usage:daily:v5:${usageUserId}`;
+                ? `usage:daily:v6:debug:${usageUserId}`
+                : `usage:daily:v6:${usageUserId}`;
             const periodCacheKey =
                 granularity && period ? `${granularity}:${period}` : `${days}d`;
             const filenamePeriod = usageWindowFilenamePart(days, {
@@ -1528,10 +1528,10 @@ export const accountRoutes = new Hono<Env>()
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = requireTinybirdReadToken(c.env);
             const kv = c.env.KV;
-            // v6: refresh rows after meter sources stop falling back to paid.
+            // v7: refresh rows after historical meter sources normalize to paid.
             const cacheKeyPrefix = devUserOverridden
-                ? `earnings:v6:debug:${devUserId}`
-                : `earnings:v6:${devUserId}`;
+                ? `earnings:v7:debug:${devUserId}`
+                : `earnings:v7:${devUserId}`;
             const periodCacheKey =
                 granularity && period ? `${granularity}:${period}` : `${days}d`;
             const cacheKey = `${cacheKeyPrefix}:${periodCacheKey}:grain:${grain}:${apiKeyIds.length > 0 ? `keys:${apiKeyIds.join(",")}` : "all"}`;

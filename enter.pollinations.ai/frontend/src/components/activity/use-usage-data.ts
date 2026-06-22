@@ -147,7 +147,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             if (r.meter_source === "tier") {
                 cur.tierRequests += r.requests || 0;
                 cur.tierPollen += r.cost_usd || 0;
-            } else if (r.meter_source === "pack") {
+            } else {
                 cur.paidRequests += r.requests || 0;
                 cur.paidPollen += r.cost_usd || 0;
             }
@@ -245,7 +245,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 0,
             );
         const paidPollen = filtered
-            .filter((r) => r.meter_source === "pack")
+            .filter((r) => r.meter_source !== "tier")
             .reduce(
                 (s: number, r: DailyUsageRecord) => s + (r.cost_usd || 0),
                 0,

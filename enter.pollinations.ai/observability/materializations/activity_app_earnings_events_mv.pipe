@@ -14,9 +14,9 @@ SQL >
         model_used AS model,
         resolved_model_requested AS resolved_model,
         if(
-            splitByChar(':', selected_meter_slug)[-1] IN ('tier', 'pack'),
-            splitByChar(':', selected_meter_slug)[-1],
-            'unknown'
+            splitByChar(':', selected_meter_slug)[-1] = 'tier',
+            'tier',
+            'pack'
         ) AS meter_source,
         dev_price AS baseline_price,
         total_price AS cost_usd,

@@ -9,6 +9,7 @@ interface CloudflareBindings {
     PLN_GPU_TOKEN: string;
     MUSIC_SERVICE_URL: string;
     DASHSCOPE_API_KEY: string;
+    FAL_KEY: string;
     KV: KVNamespace;
     IMAGE_BUCKET: R2Bucket;
     TEXT_BUCKET: R2Bucket;

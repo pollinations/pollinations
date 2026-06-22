@@ -260,6 +260,27 @@ export const AUDIO_SERVICES = {
         outputModalities: ["audio"],
         alpha: true,
     },
+    "stable-audio-2.5": {
+        aliases: ["stable-audio", "stability-audio"],
+        modelId: "stable-audio-2.5",
+        provider: "fal",
+        brand: "Stability AI",
+        category: "audio",
+        addedDate: new Date("2026-06-18").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            // fal fal-ai/stable-audio-25/text-to-audio: flat $0.20 per output
+            // audio file (verified via fal pricing/estimate API 2026-06-22).
+            completionAudioTokens: 0.2,
+        },
+        title: "Stable Audio 2.5",
+        description:
+            "Stable Audio 2.5 - Long-form 44.1 kHz stereo music and sound generation",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        alpha: true,
+    },
     "qwen-tts": {
         aliases: ["qwen3-tts", "qwen3-tts-flash"],
         modelId: "qwen3-tts-flash",

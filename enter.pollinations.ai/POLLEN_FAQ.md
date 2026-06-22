@@ -37,7 +37,7 @@ Quests are ways to earn Pollen by completing useful actions around Pollinations,
 
 The Quests dashboard shows what is available to you and what you have completed. Open Contribute quests are GitHub issues with fixed Pollen rewards. If you want to work on one, open the linked issue and comment that you are interested — the issue itself includes the full workflow.
 
-When a quest is completed, the reward is credited automatically.
+When a quest is completed, the reward is credited automatically. Completion can be verified from your Pollinations account activity, request usage milestones, app-directory approvals, and linked or public GitHub activity.
 
 ## 💳 What payment methods do you accept?
 

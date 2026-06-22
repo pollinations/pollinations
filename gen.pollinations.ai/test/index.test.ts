@@ -346,6 +346,39 @@ fixtureTest(
 );
 
 fixtureTest(
+    "rejects out-of-range prompt_influence on GET /audio before billing",
+    async ({ paidApiKey }) => {
+        const calls: string[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                calls.push(request.url);
+                return Response.json({ data: [] });
+            },
+        );
+
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(
+                "https://staging.gen.pollinations.ai/audio/tick?model=eleven-sfx&prompt_influence=abc",
+                { headers: { Authorization: `Bearer ${paidApiKey}` } },
+            ),
+            {
+                ...env,
+                ELEVENLABS_API_KEY: "test-eleven-key",
+            } as unknown as CloudflareBindings,
+            ctx,
+        );
+
+        expect(response.status).toBe(400);
+        await waitOnExecutionContext(ctx);
+        expect(
+            calls.some((url) => new URL(url).hostname === "api.elevenlabs.io"),
+        ).toBe(false);
+    },
+);
+
+fixtureTest(
     "rejects transcription models on OpenAI speech endpoint",
     async ({ apiKey }) => {
         const calls: string[] = [];

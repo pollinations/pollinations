@@ -272,25 +272,17 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                         <p className="text-xs text-theme-text-muted">
                             Publishable keys (<code>pk_</code>) deprecated –
                             create via{" "}
-                            <a
+                            <InlineLink
                                 href={genDocsUrl(
                                     "#tag/-account/POST/account/keys",
                                 )}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-theme-text-soft underline hover:text-theme-text-strong"
                             >
                                 API
-                            </a>{" "}
+                            </InlineLink>{" "}
                             or{" "}
-                            <a
-                                href="https://github.com/pollinations/pollinations/tree/main/packages/polli-cli"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-theme-text-soft underline hover:text-theme-text-strong"
-                            >
+                            <InlineLink href="https://github.com/pollinations/pollinations/tree/main/packages/polli-cli">
                                 polli CLI
-                            </a>
+                            </InlineLink>
                             .
                         </p>
                     )}

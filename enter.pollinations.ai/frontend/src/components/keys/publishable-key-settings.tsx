@@ -84,7 +84,7 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                 <div className="flex min-w-0 items-start justify-between gap-3">
                     <div className="min-w-0">
                         <div className="text-sm font-semibold">
-                            Developer earnings
+                            App earnings
                         </div>
                         <p className="mt-0.5 text-xs text-theme-text-soft">
                             Users pay 25% over base rates. Markup credits to
@@ -97,8 +97,8 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                         disabled={disabled}
                         ariaLabel={
                             earningsEnabled
-                                ? "Turn off developer earnings"
-                                : "Enable developer earnings"
+                                ? "Turn off app earnings"
+                                : "Enable app earnings"
                         }
                     />
                 </div>

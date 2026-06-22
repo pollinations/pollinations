@@ -13,4 +13,4 @@ export type {
     Metric,
     ModelBreakdown,
 } from "./types";
-export { UsageGraph } from "./usage-graph";
+export { UsageSection } from "./usage-section";

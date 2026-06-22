@@ -170,3 +170,27 @@ test("GET /api/account/earnings/transactions emits detailed earnings CSV", async
     expect(earningsCalls).toHaveLength(1);
     expect(earningsCalls[0].query.limit).toBe("50000");
 });
+
+test("GET /api/account/earnings?format=csv neutralizes app name formulas", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    mocks.tinybird.state.earningsResponse = [
+        earningsRow({
+            app_name: '=HYPERLINK("https://example.test","click")',
+        }),
+    ];
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/account/earnings?days=30&format=csv",
+        { headers: authHeaders(sessionToken) },
+    );
+
+    expect(response.status).toBe(200);
+    const csv = await response.text();
+    const [, row] = csv.split("\n");
+
+    expect(row).toContain(`"'=HYPERLINK(""https://example.test"",""click"")"`);
+});

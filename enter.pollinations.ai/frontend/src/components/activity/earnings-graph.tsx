@@ -253,7 +253,11 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period }) => {
                         <Surface>
                             <StatCard
                                 label="Active users"
-                                value={stats.activeUsers.toLocaleString()}
+                                value={
+                                    stats.activeUsers === null
+                                        ? "—"
+                                        : stats.activeUsers.toLocaleString()
+                                }
                                 detail={
                                     <span className="text-theme-text-soft">
                                         across {stats.appCount} app

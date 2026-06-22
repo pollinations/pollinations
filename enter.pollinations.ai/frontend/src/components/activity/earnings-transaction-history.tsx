@@ -1,5 +1,6 @@
 import {
     Button,
+    Chip,
     InlineLink,
     Table,
     TableBody,
@@ -9,7 +10,7 @@ import {
     TableRow,
 } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
-import { type FC, useCallback, useEffect, useState } from "react";
+import { type FC, useCallback, useEffect, useRef, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { formatActivityPollenThreshold } from "./format-activity-pollen.ts";
 import type { UsagePeriodSelection } from "./types.ts";
@@ -79,7 +80,12 @@ function formatCost(value: number): string {
 
 function MeterSourceChip({ source }: { source: string | null }) {
     if (source === "tier") return <TierChip>tier</TierChip>;
-    return <PaidChip>paid</PaidChip>;
+    if (source === "pack") return <PaidChip>paid</PaidChip>;
+    return (
+        <Chip intent="neutral" size="md">
+            unknown
+        </Chip>
+    );
 }
 
 function rowKey(row: EarningsTransaction, index: number): string {
@@ -98,9 +104,13 @@ export const EarningsTransactionHistory: FC<
     EarningsTransactionHistoryProps
 > = ({ period, selectedAppKeyIds = EMPTY_FILTER_VALUES }) => {
     const [state, setState] = useState<FetchState>(INITIAL_STATE);
+    const requestSeqRef = useRef(0);
 
     const loadPage = useCallback(
         async (cursor: EarningsCursor | null): Promise<void> => {
+            const requestId = requestSeqRef.current + 1;
+            requestSeqRef.current = requestId;
+            const isCurrentRequest = () => requestSeqRef.current === requestId;
             setState((prev) => ({ ...prev, loading: true, error: null }));
             const query: {
                 limit: string;
@@ -124,46 +134,64 @@ export const EarningsTransactionHistory: FC<
                 query.before_event_id = cursor.eventId;
             }
 
-            const response = await apiClient.account.earnings.transactions.$get(
-                { query },
-            );
-            if (!response.ok) {
+            try {
+                const response =
+                    await apiClient.account.earnings.transactions.$get({
+                        query,
+                    });
+                if (!isCurrentRequest()) return;
+                if (!response.ok) {
+                    setState((prev) => ({
+                        ...prev,
+                        loading: false,
+                        error: `Failed to load earnings (${response.status})`,
+                    }));
+                    return;
+                }
+
+                const data = (await response.json()) as {
+                    transactions: EarningsTransaction[];
+                };
+                if (!isCurrentRequest()) return;
+                const fetchedRows = data.transactions ?? [];
+                const rows = fetchedRows.slice(0, PAGE_SIZE);
+                const hasMore = fetchedRows.length > PAGE_SIZE;
+                const last = rows[rows.length - 1];
+                const nextCursor =
+                    hasMore && last
+                        ? {
+                              timestamp: last.timestamp,
+                              eventId: last.cursor_event_id,
+                          }
+                        : null;
+
+                setState((prev) => ({
+                    rows: cursor ? [...prev.rows, ...rows] : rows,
+                    loading: false,
+                    error: null,
+                    nextCursor,
+                    hasMore,
+                }));
+            } catch (error) {
+                if (!isCurrentRequest()) return;
                 setState((prev) => ({
                     ...prev,
                     loading: false,
-                    error: `Failed to load earnings (${response.status})`,
+                    error:
+                        error instanceof Error
+                            ? error.message
+                            : "Failed to load earnings",
                 }));
-                return;
             }
-
-            const data = (await response.json()) as {
-                transactions: EarningsTransaction[];
-            };
-            const fetchedRows = data.transactions ?? [];
-            const rows = fetchedRows.slice(0, PAGE_SIZE);
-            const hasMore = fetchedRows.length > PAGE_SIZE;
-            const last = rows[rows.length - 1];
-            const nextCursor =
-                hasMore && last
-                    ? {
-                          timestamp: last.timestamp,
-                          eventId: last.cursor_event_id,
-                      }
-                    : null;
-
-            setState((prev) => ({
-                rows: cursor ? [...prev.rows, ...rows] : rows,
-                loading: false,
-                error: null,
-                nextCursor,
-                hasMore,
-            }));
         },
         [period, selectedAppKeyIds],
     );
 
     useEffect(() => {
         loadPage(null);
+        return () => {
+            requestSeqRef.current += 1;
+        };
     }, [loadPage]);
 
     function handleLoadMore(): void {

@@ -61,6 +61,42 @@ test("GET /api/account/usage/daily forwards api_key_ids filter to the pipe", asy
     expect(dailyCalls[0].query.until).toMatch(/^\d{4}-\d{2}-\d{2}/);
 });
 
+test("GET /api/account/usage/daily?format=csv includes API key columns", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    mocks.tinybird.state.dailyResponse = [
+        {
+            date: "2026-04-14",
+            api_key_id: "key_abc123",
+            api_key: "debug-usage-fixture",
+            model: "openai-fast",
+            meter_source: "tier",
+            requests: 3,
+            cost_usd: 10,
+        },
+    ];
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/account/usage/daily?days=30&format=csv",
+        { headers: authHeaders(sessionToken) },
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toBe("text/csv");
+
+    const csv = await response.text();
+    const [header, ...rows] = csv.split("\n");
+
+    expect(header).toBe(
+        "date,api_key_id,api_key,model,meter_source,requests,cost_usd",
+    );
+    expect(rows[0]).toBe(
+        "2026-04-14,key_abc123,debug-usage-fixture,openai-fast,tier,3,10",
+    );
+});
+
 test("GET /api/account/usage/daily maps selected periods to exact windows", async ({
     sessionToken,
     mocks,

@@ -1,5 +1,6 @@
 import {
     Button,
+    Chip,
     InlineLink,
     Table,
     TableBody,
@@ -9,7 +10,14 @@ import {
     TableRow,
 } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
-import { type FC, useCallback, useEffect, useMemo, useState } from "react";
+import {
+    type FC,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 import { apiClient } from "../../api.ts";
 import { formatActivityPollenThreshold } from "./format-activity-pollen.ts";
 import type { UsagePeriodSelection } from "./types.ts";
@@ -81,7 +89,12 @@ function formatCost(value: number): string {
 
 function MeterSourceChip({ source }: { source: string | null }) {
     if (source === "tier") return <TierChip>tier</TierChip>;
-    return <PaidChip>paid</PaidChip>;
+    if (source === "pack") return <PaidChip>paid</PaidChip>;
+    return (
+        <Chip intent="neutral" size="md">
+            unknown
+        </Chip>
+    );
 }
 
 function rowKey(row: UsageRecord, index: number): string {
@@ -115,9 +128,13 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
 }) => {
     const [state, setState] = useState<FetchState>(INITIAL_STATE);
     const lookupKeyName = useMemo(() => buildKeyNameLookup(apiKeys), [apiKeys]);
+    const requestSeqRef = useRef(0);
 
     const loadPage = useCallback(
         async (cursor: UsageCursor | null): Promise<void> => {
+            const requestId = requestSeqRef.current + 1;
+            requestSeqRef.current = requestId;
+            const isCurrentRequest = () => requestSeqRef.current === requestId;
             setState((prev) => ({ ...prev, loading: true, error: null }));
             const query: {
                 limit: string;
@@ -145,42 +162,61 @@ export const TransactionHistory: FC<TransactionHistoryProps> = ({
                 query.before_event_id = cursor.eventId;
             }
 
-            const response = await apiClient.account.usage.$get({ query });
-            if (!response.ok) {
+            try {
+                const response = await apiClient.account.usage.$get({ query });
+                if (!isCurrentRequest()) return;
+                if (!response.ok) {
+                    setState((prev) => ({
+                        ...prev,
+                        loading: false,
+                        error: `Failed to load transactions (${response.status})`,
+                    }));
+                    return;
+                }
+
+                const data = (await response.json()) as {
+                    usage: UsageRecord[];
+                };
+                if (!isCurrentRequest()) return;
+                const fetchedRows = data.usage ?? [];
+                const rows = fetchedRows.slice(0, PAGE_SIZE);
+                const hasMore = fetchedRows.length > PAGE_SIZE;
+                const last = rows[rows.length - 1];
+                const nextCursor =
+                    hasMore && last
+                        ? {
+                              timestamp: last.timestamp,
+                              eventId: last.cursor_event_id,
+                          }
+                        : null;
+
+                setState((prev) => ({
+                    rows: cursor ? [...prev.rows, ...rows] : rows,
+                    loading: false,
+                    error: null,
+                    nextCursor,
+                    hasMore,
+                }));
+            } catch (error) {
+                if (!isCurrentRequest()) return;
                 setState((prev) => ({
                     ...prev,
                     loading: false,
-                    error: `Failed to load transactions (${response.status})`,
+                    error:
+                        error instanceof Error
+                            ? error.message
+                            : "Failed to load transactions",
                 }));
-                return;
             }
-
-            const data = (await response.json()) as { usage: UsageRecord[] };
-            const fetchedRows = data.usage ?? [];
-            const rows = fetchedRows.slice(0, PAGE_SIZE);
-            const hasMore = fetchedRows.length > PAGE_SIZE;
-            const last = rows[rows.length - 1];
-            const nextCursor =
-                hasMore && last
-                    ? {
-                          timestamp: last.timestamp,
-                          eventId: last.cursor_event_id,
-                      }
-                    : null;
-
-            setState((prev) => ({
-                rows: cursor ? [...prev.rows, ...rows] : rows,
-                loading: false,
-                error: null,
-                nextCursor,
-                hasMore,
-            }));
         },
         [period, selectedKeyIds, selectedModels],
     );
 
     useEffect(() => {
         loadPage(null);
+        return () => {
+            requestSeqRef.current += 1;
+        };
     }, [loadPage]);
 
     function handleLoadMore(): void {

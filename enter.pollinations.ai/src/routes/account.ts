@@ -544,7 +544,7 @@ const dailyUsageRecordSchema = z.object({
         .string()
         .nullable()
         .describe(
-            "Billing source: 'tier' = tier balance, 'pack' = paid balance",
+            "Billing source: 'tier' = tier balance, 'pack' = paid balance, 'unknown' = source was not logged",
         ),
     requests: z.number().describe("Number of requests"),
     cost_usd: z.number().describe("Total cost in USD"),
@@ -585,7 +585,7 @@ function usageRecordToCsvRow(row: UsageRecord): string {
 }
 
 function dailyUsageRecordToCsvRow(row: DailyUsageRecord): string {
-    return `${escapeCSV(row.date)},${escapeCSV(row.model)},${escapeCSV(row.meter_source)},${row.requests},${row.cost_usd}`;
+    return `${escapeCSV(row.date)},${escapeCSV(row.api_key_id ?? null)},${escapeCSV(row.api_key ?? null)},${escapeCSV(row.model)},${escapeCSV(row.meter_source)},${row.requests},${row.cost_usd}`;
 }
 
 type DeveloperEarningsRow = {
@@ -697,7 +697,7 @@ const developerEarningsTransactionSchema = z.object({
         .string()
         .nullable()
         .describe(
-            "Billing source: 'tier' = tier balance, 'pack' = paid balance",
+            "Billing source: 'tier' = tier balance, 'pack' = paid balance, 'unknown' = source was not logged",
         ),
     baseline_price: z.number().describe("Model cost before markup"),
     pollen_earned: z
@@ -1251,10 +1251,11 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Daily Usage",
             description:
-                "Returns daily aggregated usage for the requested time window, grouped by date and model. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Useful for dashboards and spending analysis. Supports JSON and CSV export. Results are cached for 1 hour. Requires `account:usage` permission when using API keys.",
+                "Returns aggregated usage for the requested time window, grouped by date, API key, model, and billing source. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Useful for dashboards and spending analysis. Supports JSON and CSV export. Results are cached for 1 hour. Requires `account:usage` permission when using API keys.",
             responses: {
                 200: {
-                    description: "Daily usage records aggregated by date/model",
+                    description:
+                        "Usage records aggregated by date/API key/model/source",
                     content: {
                         "application/json": {
                             schema: resolver(dailyUsageResponseSchema),
@@ -1299,8 +1300,8 @@ export const accountRoutes = new Hono<Env>()
             const tinybirdToken = requireTinybirdReadToken(c.env);
             const kv = c.env.KV;
             const cacheKeyPrefix = usageUserOverridden
-                ? `usage:daily:v4:debug:${usageUserId}`
-                : `usage:daily:v4:${usageUserId}`;
+                ? `usage:daily:v5:debug:${usageUserId}`
+                : `usage:daily:v5:${usageUserId}`;
             const periodCacheKey =
                 granularity && period ? `${granularity}:${period}` : `${days}d`;
             const filenamePeriod = usageWindowFilenamePart(days, {
@@ -1372,7 +1373,8 @@ export const accountRoutes = new Hono<Env>()
                 );
 
                 if (format === "csv") {
-                    const header = "date,model,meter_source,requests,cost_usd";
+                    const header =
+                        "date,api_key_id,api_key,model,meter_source,requests,cost_usd";
                     const rows = usage.map(dailyUsageRecordToCsvRow);
                     const csv = [header, ...rows].join("\n");
 
@@ -1526,11 +1528,10 @@ export const accountRoutes = new Hono<Env>()
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = requireTinybirdReadToken(c.env);
             const kv = c.env.KV;
-            // v5: refresh rows after staging/prod pipes expose paid/tier
-            // request counts for requests-mode stacked charts.
+            // v6: refresh rows after meter sources stop falling back to paid.
             const cacheKeyPrefix = devUserOverridden
-                ? `earnings:v5:debug:${devUserId}`
-                : `earnings:v5:${devUserId}`;
+                ? `earnings:v6:debug:${devUserId}`
+                : `earnings:v6:${devUserId}`;
             const periodCacheKey =
                 granularity && period ? `${granularity}:${period}` : `${days}d`;
             const cacheKey = `${cacheKeyPrefix}:${periodCacheKey}:grain:${grain}:${apiKeyIds.length > 0 ? `keys:${apiKeyIds.join(",")}` : "all"}`;

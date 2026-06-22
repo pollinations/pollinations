@@ -55,7 +55,7 @@ type EarningsDataResult = {
         totalPaid: number;
         totalTier: number;
         averageMarkupRate: number;
-        activeUsers: number;
+        activeUsers: number | null;
         appCount: number;
         topApp: TopApp | null;
     };
@@ -302,13 +302,12 @@ export function useEarningsData(
         const totalBaseline = hasAppFilter
             ? filteredPerApp.reduce((sum, row) => sum + row.baseline_price, 0)
             : (globalSummary?.baseline_price ?? 0);
-        const averageMarkupRate = hasAppFilter
-            ? totalBaseline > 0
-                ? totalPollen / totalBaseline
-                : 0
-            : (globalSummary?.markup_rate ?? 0);
+        const averageMarkupRate =
+            totalBaseline > 0 ? totalPollen / totalBaseline : 0;
         const activeUsers = hasAppFilter
-            ? filteredPerApp.reduce((sum, row) => sum + row.unique_users, 0)
+            ? selectedAppKeyIds.length === 1
+                ? (filteredPerApp[0]?.unique_users ?? 0)
+                : null
             : (globalSummary?.unique_users ?? 0);
         const appCount = filteredPerApp.length;
 

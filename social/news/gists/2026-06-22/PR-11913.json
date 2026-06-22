@@ -1,0 +1,35 @@
+{
+  "pr_number": 11913,
+  "title": "fix(kpi): fail closed on missing dashboard password",
+  "author": "fisventurous",
+  "url": "https://github.com/pollinations/pollinations/pull/11913",
+  "merged_at": "2026-06-22T17:09:33Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "makes kpi dashboard authentication fail closed if dashboard password is not configured\r\n\r\ncloses the fail-open posture gap where missing secrets left Stripe revenue and telemetry public, though we can revert if local backward compatibility is preferred\r\n\r\nchange\r\n\\- return a 500 response when `DASHBOARD_PASSWORD` is empty or undefined",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Locking the dashboard doors",
+    "blurb": "The internal KPI dashboard now requires a password to be explicitly set, keeping our telemetry and metrics safely tucked away.",
+    "summary": "Updated the internal KPI dashboard authentication to fail closed and return a 500 error if the DASHBOARD_PASSWORD environment variable is missing.",
+    "impact": "Prevents accidental exposure of internal metrics by ensuring the dashboard cannot be accessed without proper configuration.",
+    "keywords": [
+      "security",
+      "kpi",
+      "dashboard",
+      "auth",
+      "internal"
+    ],
+    "visual_concept": "The pollinations bee putting a sturdy padlock on a glowing retro server cabinet or a dashboard monitor, representing secure-by-default authentication.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot placing a chunky pixel padlock on a glowing retro server cabinet. A cute robot with a CRT monitor head stands nearby holding a golden key. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-22/PR-11913.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot placing a chunky pixel padlock on a glowing retro server cabinet. A cute robot with a CRT monitor head stands nearby holding a golden key. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-22T17:10:32.377388+00:00"
+}

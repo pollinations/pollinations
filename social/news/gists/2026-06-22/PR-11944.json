@@ -1,0 +1,34 @@
+{
+  "pr_number": 11944,
+  "title": "fix: restore inline link styling",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11944",
+  "merged_at": "2026-06-22T15:22:54Z",
+  "labels": [
+    "DEV-UI-UX"
+  ],
+  "pr_body_excerpt": "- Restores `InlineLink` to the amber, non-strong inline treatment.\n- Removes the accidental bold/white shared link styling from PR #11943.\n- Leaves the existing Enter consumers on the shared primitive.\n\nValidation:\n- `biome check --write packages/ui/src/primitives/InlineLink.tsx`\n- `tsc --noEmit -p packages/ui/tsconfig.json`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Amber is the color of our links",
+    "blurb": "We accidentally painted our inline links bold and white, but we've brought back the classic amber glow you know and love.",
+    "summary": "Restores the amber, normal-weight styling for the InlineLink UI primitive, reverting an accidental bold/white change from a previous update.",
+    "impact": "Inline links across the UI will once again appear in their familiar amber color instead of bold white.",
+    "keywords": [
+      "ui",
+      "styling",
+      "bug-fix",
+      "frontend"
+    ],
+    "visual_concept": "Polly the bee as a painter, restoring the amber color to UI elements. The robot companion assisting with the paint.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, using a small brush to paint a glowing amber text link on a retro computer screen. A chunky pixel robot companion holds a bucket of glowing amber paint. Soft lime green (#ecf874) and warm cream gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-22/PR-11944.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, using a small brush to paint a glowing amber text link on a retro computer screen. A chunky pixel robot companion holds a bucket of glowing amber paint. Soft lime green (#ecf874) and warm cream gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "generated_at": "2026-06-22T15:24:09.462796+00:00"
+}

@@ -352,9 +352,7 @@ function RouteComponent() {
                 </div>
             )}
             {activePage === "quests" && (
-                <Section title="Quests" framed>
-                    <QuestOverview githubUsername={githubUsername} />
-                </Section>
+                <QuestOverview githubUsername={githubUsername} />
             )}
             {activePage === "keys" && (
                 <ApiKeyList

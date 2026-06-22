@@ -1,20 +1,18 @@
 import {
-    AppIcon,
-    CardIcon,
-    ChatIcon,
     CheckIcon,
     Chip,
     ClockIcon,
-    GitHubIcon,
-    ImageIcon,
+    GitBranchIcon,
+    GraduationCapIcon,
+    Heading,
     InlineLink,
-    KeyIcon,
+    RocketIcon,
     SproutIcon,
+    StatCard,
     Surface,
-    TabButton,
+    TargetIcon,
     Text,
-    TokensIcon,
-    WalletIcon,
+    TrendUpIcon,
 } from "@pollinations/ui";
 import {
     formatPollen,
@@ -44,8 +42,6 @@ type QuestGrant = {
     createdAt: string;
 };
 
-type QuestTab = "available" | "completed";
-
 type QuestOverviewProps = {
     githubUsername?: string | null;
 };
@@ -68,83 +64,79 @@ const INITIAL_STATE: FetchState = {
 
 type IconComponent = ComponentType<{ className?: string }>;
 
-// Category metadata decoded from the quest id prefix (onboarding: / spend: /
-// grow: / github:). Drives section grouping, ordering, and the icon medallion.
-// Pure display logic — no new backend data.
-type CategoryKey = "plant" | "grow" | "community";
+// One-off team-welcome easter egg — rendered as a celebratory hero card rather
+// than a normal quest, and kept out of the category lists below.
+const INTERN_QUEST_ID = "easteregg:elixpo_intern";
+
+// Gold accent for icons — the wallet "paid" deep tone. Theme-aware (dark bronze
+// in light mode, light gold in dark), so it keeps contrast on the pale tile in
+// both modes — same token the wallet's paid icon/text uses.
+const GOLD = "text-[color:var(--polli-color-paid-deep)]";
+const CONTRIBUTE_FAQ_HASH = "#how-do-contribute-quests-work";
+
+// ── Category model ──────────────────────────────────────────────────────────
+// Four lanes, decoded from the quest id / icon / kind. Set up · Grow · Dev are
+// finite (everyone can clear them) and feed the "Quest progress" summary;
+// Contribute is an open bounty pool (issues + PRs) and feeds "Contribute score".
+type CategoryKey = "setup" | "grow" | "dev" | "contribute";
 
 type CategoryMeta = {
     key: CategoryKey;
     label: string;
     blurb: string;
     icon: IconComponent;
-    order: number;
-    tint: string;
 };
 
-const CATEGORY_PLANT: CategoryMeta = {
-    key: "plant",
-    label: "Set up",
-    blurb: "Get started",
-    icon: SproutIcon,
-    order: 0,
-    tint: "text-intent-success-text",
-};
-const CATEGORY_GROW: CategoryMeta = {
-    key: "grow",
-    label: "Grow",
-    blurb: "",
-    icon: WalletIcon,
-    order: 1,
-    tint: "text-intent-news-text",
-};
-const CATEGORY_COMMUNITY: CategoryMeta = {
-    key: "community",
-    label: "Community",
-    blurb: "",
-    icon: GitHubIcon,
-    order: 2,
-    tint: "text-theme-text-soft",
-};
-
-const CATEGORY_ORDER: CategoryMeta[] = [
-    CATEGORY_PLANT,
-    CATEGORY_GROW,
-    CATEGORY_COMMUNITY,
+const CATEGORIES: CategoryMeta[] = [
+    {
+        key: "setup",
+        label: "Setup",
+        blurb: "Get started with Pollinations.",
+        icon: RocketIcon,
+    },
+    {
+        key: "grow",
+        label: "Grow",
+        blurb: "Grow your usage and revenue from apps.",
+        icon: TrendUpIcon,
+    },
+    {
+        key: "dev",
+        label: "Dev",
+        blurb: "Your standing as a developer on GitHub.",
+        icon: GraduationCapIcon,
+    },
+    {
+        key: "contribute",
+        label: "Contribute",
+        blurb: "Help build Pollinations — issues and PRs.",
+        icon: GitBranchIcon,
+    },
 ];
 
-const QUEST_ICON_COMPONENTS = {
-    app: AppIcon,
-    card: CardIcon,
-    chat: ChatIcon,
-    github: GitHubIcon,
-    image: ImageIcon,
-    key: KeyIcon,
-    sprout: SproutIcon,
-    tokens: TokensIcon,
-} satisfies Record<QuestCatalogItem["iconId"], IconComponent>;
-
-function categoryForQuest(quest: QuestCatalogItem): CategoryMeta {
-    const id = quest.id;
-    if (id.startsWith("github:") || quest.kind === "github_issue") {
-        return CATEGORY_COMMUNITY;
-    }
-    if (id.startsWith("onboarding:")) return CATEGORY_PLANT;
-    // spend: + grow: + anything else product-y maps to the middle "Grow" lane.
-    return CATEGORY_GROW;
+function categoryKeyFor(id: string, iconId: string, kind: string): CategoryKey {
+    if (id.startsWith("github:") || kind === "github_issue")
+        return "contribute";
+    if (iconId === "github") return "dev"; // account / repos / stars standing
+    if (id.startsWith("onboarding:")) return "setup";
+    return "grow"; // spend: + grow:
 }
 
-function isFiniteProgressQuest(quest: QuestCatalogItem): boolean {
+// Grants don't carry an iconId, so split on the only axis the summaries need:
+// is this a Contribute (GitHub issue) reward, or a normal quest reward?
+function isContributeGrant(grant: QuestGrant): boolean {
     return (
-        categoryForQuest(quest).key !== "community" &&
-        quest.availability !== "completed"
+        (grant.questId?.startsWith("github:") ?? false) ||
+        metadataNumber(grant.metadata, "issueNumber") != null
     );
 }
 
-function iconForQuest(quest: QuestCatalogItem): IconComponent {
-    return QUEST_ICON_COMPONENTS[quest.iconId];
+function issueNumberFromId(id: string): number | null {
+    const match = /^github:issue:(\d+)$/.exec(id);
+    return match ? Number(match[1]) : null;
 }
 
+// ── Formatting helpers ──────────────────────────────────────────────────────
 function formatGrantAmount(value: number | null): string {
     if (value == null) return "TBD";
     const formatted = formatPollen(value);
@@ -153,7 +145,7 @@ function formatGrantAmount(value: number | null): string {
 }
 
 function formatRewardLabel(value: number | null): string {
-    return value == null ? "Reward TBD" : `${formatGrantAmount(value)} Pollen`;
+    return value == null ? "Reward TBD" : `${formatGrantAmount(value)} pollen`;
 }
 
 function formatTimestamp(value: string): string {
@@ -232,141 +224,6 @@ function grantUrl(
     );
 }
 
-function grantLinkLabel(grant: QuestGrant): string {
-    if (metadataString(grant.metadata, "appUrl")) return "Open app";
-    if (metadataString(grant.metadata, "issueUrl")) return "View on GitHub";
-    return "View details";
-}
-
-function grantLinkIsGitHub(grant: QuestGrant): boolean {
-    return (
-        !metadataString(grant.metadata, "appUrl") &&
-        Boolean(metadataString(grant.metadata, "issueUrl"))
-    );
-}
-
-function grantContext(grant: QuestGrant): string | null {
-    const appName = metadataString(grant.metadata, "appName");
-    const issueNumber = metadataNumber(grant.metadata, "issueNumber");
-    const prNumber = metadataNumber(grant.metadata, "prNumber");
-    const githubUsername = metadataString(grant.metadata, "githubUsername");
-    const parts: string[] = [];
-    if (appName) parts.push(`App: ${appName}`);
-    if (issueNumber != null) parts.push(`Issue #${issueNumber}`);
-    if (prNumber != null) parts.push(`PR #${prNumber}`);
-    if (githubUsername) parts.push(`@${githubUsername}`);
-    return parts.length ? parts.join(" · ") : null;
-}
-
-// Tinted circular icon holder left of each quest — keeps the category icon in
-// both states so a quest holds its identity. When completed, the same icon is
-// shown with a small check badge overlaid (rather than swapped for a generic
-// checkmark), so it reads as done without losing its category.
-function IconMedallion({
-    icon: Icon,
-    tint,
-    completed = false,
-}: {
-    icon: IconComponent;
-    tint: string;
-    completed?: boolean;
-}) {
-    return (
-        <span className="relative shrink-0">
-            <span
-                className={[
-                    "flex h-10 w-10 items-center justify-center rounded-full",
-                    `bg-theme-bg-active ${tint}`,
-                ].join(" ")}
-            >
-                <Icon className="h-5 w-5" />
-            </span>
-            {completed && (
-                <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-intent-success-text text-white ring-2 ring-surface-opaque">
-                    <CheckIcon className="h-2.5 w-2.5" />
-                </span>
-            )}
-        </span>
-    );
-}
-
-// Small per-card chip that names the quest's category, so the type is legible
-// on the card itself — not just implied by which section it sits under.
-function CategoryChip({ category }: { category: CategoryMeta }) {
-    const Icon = category.icon;
-    return (
-        <Chip size="sm" intent="neutral" className="gap-1">
-            <Icon className={`h-3 w-3 shrink-0 ${category.tint}`} />
-            {category.label}
-        </Chip>
-    );
-}
-
-// Reward chip: the canonical wallet "paid" chip with its Pollen marker.
-// Uses @pollinations/ui's PaidChip + WalletKindIcon so the reward reads in the
-// same visual language as balances elsewhere in the dashboard.
-function RewardChip({ amount }: { amount: number | null }) {
-    return (
-        <PaidChip size="sm" className="tabular-nums">
-            <WalletKindIcon kind="paid" />
-            {formatRewardLabel(amount)}
-        </PaidChip>
-    );
-}
-
-function CatalogQuestCard({
-    quest,
-    completed,
-}: {
-    quest: QuestCatalogItem;
-    completed: boolean;
-}) {
-    const assignees = quest.assignees ?? [];
-    const category = categoryForQuest(quest);
-
-    return (
-        <Surface className="flex items-start gap-3">
-            <IconMedallion
-                icon={iconForQuest(quest)}
-                tint={category.tint}
-                completed={completed}
-            />
-            <div className="min-w-0 flex-1 space-y-3">
-                <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                            <Text as="span" weight="semibold" tone="strong">
-                                {quest.title}
-                            </Text>
-                            <StatusChip quest={quest} completed={completed} />
-                        </div>
-                        {quest.description && (
-                            <Text size="sm" tone="soft" className="mt-2">
-                                {quest.description}
-                            </Text>
-                        )}
-                        {assignees.length > 0 && (
-                            <Text size="xs" tone="muted" className="mt-1">
-                                {assignees.length === 1
-                                    ? `Claimed by @${assignees[0]}`
-                                    : `${assignees.length} builders on this`}
-                            </Text>
-                        )}
-                    </div>
-                    <div className="shrink-0">
-                        <RewardChip amount={quest.rewardAmount} />
-                    </div>
-                </div>
-                {quest.url && (
-                    <InlineLink href={quest.url} className="text-sm">
-                        View details
-                    </InlineLink>
-                )}
-            </div>
-        </Surface>
-    );
-}
-
 function claimedByUser(
     quest: QuestCatalogItem,
     githubUsername: string | null,
@@ -378,52 +235,209 @@ function claimedByUser(
     );
 }
 
-function StatusChip({
-    quest,
-    completed,
-}: {
-    quest: QuestCatalogItem;
+// ── Card model ──────────────────────────────────────────────────────────────
+// A single quest row, whether it comes from the catalog (open quests) or from a
+// reward grant (completed). Open shows its reward; completed flips to a green
+// check + the banked amount.
+type QuestCard = {
+    key: string;
+    title: string;
+    description?: string;
+    url?: string;
+    issueNumber?: number;
+    reward: number | null;
     completed: boolean;
+    earnedAmount?: number | null;
+};
+
+// ── Presentational primitives (composed from @pollinations/ui) ───────────────
+
+// Progress ring (conic-gradient) with a neutral icon in the hole. Mirrors the
+// dashboard summary ring; the hole matches the card surface so only the rim
+// reads as progress.
+function ProgressRing({
+    percent,
+    icon: Icon,
+}: {
+    percent: number;
+    icon: IconComponent;
 }) {
-    if (completed) {
-        return (
-            <Chip size="sm" intent="success">
-                Completed
-            </Chip>
-        );
-    }
-    if (quest.availability === "claimed") {
-        return (
-            <Chip size="sm" intent="news">
-                Claimed
-            </Chip>
-        );
-    }
-    return null;
+    const clamped = Math.max(0, Math.min(100, percent));
+    return (
+        <span
+            role="progressbar"
+            aria-label="Quest completion"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={clamped}
+            className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-intent-success-text"
+            style={{
+                background: `conic-gradient(currentColor ${clamped * 3.6}deg, var(--color-theme-bg-active) 0)`,
+            }}
+        >
+            <span className="absolute inset-1 rounded-full bg-theme-bg-pale" />
+            <Icon className="relative h-6 w-6" />
+        </span>
+    );
 }
 
-// Resolve a grant back to its quest category, so a completed quest keeps the
-// same icon/identity it had while available. Falls back via the grant's
-// questId when the catalog item is no longer present.
-function categoryForGrant(
-    grant: QuestGrant,
-    catalogById: Map<string, QuestCatalogItem>,
-): CategoryMeta {
-    const catalogKey = catalogKeyForGrant(grant);
-    const catalogItem = catalogKey ? catalogById.get(catalogKey) : null;
-    if (catalogItem) return categoryForQuest(catalogItem);
-    const id = grant.questId ?? "";
-    if (id.startsWith("github:") || id.includes("community"))
-        return CATEGORY_COMMUNITY;
-    if (id.startsWith("onboarding:")) return CATEGORY_PLANT;
-    return CATEGORY_GROW;
+// Tinted circular icon holder (gold) for the Contribute summary card.
+function IconMedallion({ icon: Icon }: { icon: IconComponent }) {
+    return (
+        <span
+            className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-theme-bg-active ${GOLD}`}
+        >
+            <Icon className="h-6 w-6" />
+        </span>
+    );
 }
 
-// One-off team-welcome quest — gets a celebratory "hero" treatment instead of
-// the normal completed card. Uses the wallet "paid" gold palette from
-// @pollinations/ui so the gradient stays on-brand and theme-aware.
-const INTERN_QUEST_ID = "easteregg:elixpo_intern";
+function SummaryCard({
+    ring,
+    label,
+    value,
+    detail,
+}: {
+    ring: React.ReactNode;
+    label: string;
+    value: React.ReactNode;
+    detail: string;
+}) {
+    return (
+        <Surface variant="card-themed" className="flex items-center gap-4">
+            {ring}
+            <StatCard
+                className="min-w-0 flex-1"
+                label={label}
+                value={value}
+                detail={detail}
+            />
+        </Surface>
+    );
+}
 
+function SectionHeader({
+    category,
+    done,
+    total,
+    openCount,
+}: {
+    category: CategoryMeta;
+    done: number;
+    total: number;
+    // Open bounty pools (Contribute) show "N open" instead of a done/total
+    // ratio that would recede as the pool grows.
+    openCount?: number;
+}) {
+    const Icon = category.icon;
+    return (
+        <div className="flex items-center justify-between gap-4 px-1">
+            <div className="flex min-w-0 items-center gap-2.5">
+                <Heading as="h2" size="section">
+                    {category.label}
+                </Heading>
+                <span
+                    className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px]"
+                    style={{
+                        backgroundColor: "var(--polli-color-paid-pale)",
+                    }}
+                >
+                    <Icon className={`h-5 w-5 ${GOLD}`} />
+                </span>
+            </div>
+            <PaidChip size="sm" className="tabular-nums">
+                {openCount != null ? `${openCount} open` : `${done} / ${total}`}
+            </PaidChip>
+        </div>
+    );
+}
+
+function SectionFooter({ category }: { category: CategoryMeta }) {
+    const Icon = category.icon;
+    if (category.key === "contribute") {
+        return (
+            <div className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-theme-text-muted">
+                <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <Text as="p" size="sm" tone="muted">
+                    Comment on an open GitHub quest, wait for assignment, then
+                    open a PR with <code>Fixes #N</code>.{" "}
+                    <InlineLink href={CONTRIBUTE_FAQ_HASH} showIcon={false}>
+                        Read the FAQ
+                    </InlineLink>
+                    .
+                </Text>
+            </div>
+        );
+    }
+
+    return (
+        <div className="mt-4 flex items-center gap-1.5 border-t border-divider pt-4 text-theme-text-muted">
+            <Icon className="h-3.5 w-3.5 shrink-0" />
+            <Text as="span" size="sm" tone="muted">
+                {category.blurb}
+            </Text>
+        </div>
+    );
+}
+
+function QuestRow({ card }: { card: QuestCard }) {
+    return (
+        <Surface variant="card" className="flex items-center gap-4">
+            <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                    <Text
+                        as="span"
+                        weight="semibold"
+                        tone={card.completed ? "muted" : "strong"}
+                    >
+                        {card.title}
+                    </Text>
+                    {card.issueNumber != null && card.url && (
+                        <InlineLink
+                            href={card.url}
+                            showIcon={false}
+                            className="text-sm tabular-nums"
+                        >
+                            #{card.issueNumber}
+                        </InlineLink>
+                    )}
+                    {card.completed && (
+                        <Chip intent="success" size="sm" className="gap-1">
+                            <CheckIcon className="h-3 w-3 shrink-0" />
+                            Completed
+                        </Chip>
+                    )}
+                </div>
+                {!card.completed && card.description && (
+                    <Text size="sm" tone="muted" className="mt-1">
+                        {card.description}
+                    </Text>
+                )}
+            </div>
+            <div className="flex shrink-0 items-center gap-2.5">
+                {card.completed ? (
+                    <Text
+                        as="span"
+                        size="sm"
+                        tone="muted"
+                        className="tabular-nums"
+                    >
+                        +{formatGrantAmount(card.earnedAmount ?? card.reward)}{" "}
+                        pollen
+                    </Text>
+                ) : (
+                    <PaidChip size="sm" className="tabular-nums">
+                        <WalletKindIcon kind="paid" />
+                        {formatRewardLabel(card.reward)}
+                    </PaidChip>
+                )}
+            </div>
+        </Surface>
+    );
+}
+
+// Celebratory hero card for the one-off intern easter egg. Uses the wallet
+// "paid" gold palette so the gradient stays on-brand and theme-aware.
 function InternHeroCard({
     grant,
     catalogById,
@@ -435,20 +449,16 @@ function InternHeroCard({
     const message =
         metadataString(grant.metadata, "message") ??
         "Welcome to the Pollinations crew.";
-
-    // The wallet "paid" gold palette is exposed by @pollinations/ui as CSS
-    // custom properties (--color-paid-{pale,soft,deep}); drive the gradient
-    // from them directly so the card stays on-brand and theme-aware.
-    const deep = "var(--color-paid-deep)";
+    const deep = "var(--polli-color-paid-deep)";
 
     return (
         <div
             className="relative overflow-hidden rounded-xl p-5 shadow-well"
             style={{
                 background:
-                    "linear-gradient(135deg, var(--color-paid-pale), color-mix(in oklch, var(--color-paid-soft) 35%, var(--color-paid-pale)))",
+                    "linear-gradient(135deg, var(--polli-color-paid-pale), color-mix(in oklch, var(--polli-color-paid-soft) 35%, var(--polli-color-paid-pale)))",
                 boxShadow:
-                    "inset 0 0 0 1px color-mix(in oklch, var(--color-paid-soft) 45%, transparent)",
+                    "inset 0 0 0 1px color-mix(in oklch, var(--polli-color-paid-soft) 45%, transparent)",
                 color: deep,
             }}
         >
@@ -457,7 +467,7 @@ function InternHeroCard({
                     className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
                     style={{
                         backgroundColor:
-                            "color-mix(in oklch, var(--color-paid-soft) 30%, transparent)",
+                            "color-mix(in oklch, var(--polli-color-paid-soft) 30%, transparent)",
                         color: deep,
                     }}
                 >
@@ -503,191 +513,7 @@ function InternHeroCard({
     );
 }
 
-function iconForGrant(
-    grant: QuestGrant,
-    catalogById: Map<string, QuestCatalogItem>,
-): IconComponent {
-    const catalogKey = catalogKeyForGrant(grant);
-    const catalogItem = catalogKey ? catalogById.get(catalogKey) : null;
-    if (catalogItem) return iconForQuest(catalogItem);
-    return categoryForGrant(grant, catalogById).icon;
-}
-
-function CompletedGrantCard({
-    grant,
-    catalogById,
-}: {
-    grant: QuestGrant;
-    catalogById: Map<string, QuestCatalogItem>;
-}) {
-    const url = grantUrl(grant, catalogById);
-    const context = grantContext(grant);
-    const showGitHubIcon = grantLinkIsGitHub(grant);
-    const category = categoryForGrant(grant, catalogById);
-
-    return (
-        <Surface className="flex items-start gap-3 opacity-80">
-            <IconMedallion
-                icon={iconForGrant(grant, catalogById)}
-                tint={category.tint}
-                completed
-            />
-            <div className="min-w-0 flex-1 space-y-3">
-                <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                            <Text as="span" weight="semibold" tone="strong">
-                                {grantTitle(grant, catalogById)}
-                            </Text>
-                            <CategoryChip category={category} />
-                        </div>
-                        <div className="mt-2 flex flex-wrap items-center gap-2">
-                            <Text as="span" size="xs" tone="muted">
-                                {formatTimestamp(grant.createdAt)}
-                            </Text>
-                            {context && (
-                                <Text as="span" size="xs" tone="muted">
-                                    {context}
-                                </Text>
-                            )}
-                        </div>
-                    </div>
-                    <div className="shrink-0">
-                        <Text
-                            as="span"
-                            weight="semibold"
-                            tone="strong"
-                            className="tabular-nums text-intent-success-text"
-                        >
-                            +{formatGrantAmount(grant.pollenCredited)}
-                        </Text>
-                    </div>
-                </div>
-                {url && (
-                    <InlineLink href={url} className="text-sm">
-                        {showGitHubIcon && (
-                            <GitHubIcon className="h-3.5 w-3.5 shrink-0" />
-                        )}
-                        {grantLinkLabel(grant)}
-                    </InlineLink>
-                )}
-            </div>
-        </Surface>
-    );
-}
-
-// Finite quest progress is the headline. Repeatable/open-ended bonus grants
-// stay denominator-free as a small "+N bonus" count beside it.
-function QuestSummary({
-    completedFinite,
-    totalFinite,
-    bonusCompleted,
-    totalPollen,
-}: {
-    completedFinite: number;
-    totalFinite: number;
-    bonusCompleted: number;
-    totalPollen: number;
-}) {
-    const progressPercent =
-        totalFinite > 0 ? Math.round((completedFinite / totalFinite) * 100) : 0;
-    const progressDegrees = progressPercent * 3.6;
-
-    return (
-        <Surface
-            variant="card-themed"
-            className="flex items-center gap-5 sm:gap-6"
-        >
-            <span
-                role="progressbar"
-                className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-intent-success-text"
-                style={{
-                    background: `conic-gradient(currentColor ${progressDegrees}deg, var(--color-theme-bg-active) 0)`,
-                }}
-                aria-label="Quest completion"
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={progressPercent}
-            >
-                <span className="absolute inset-1 rounded-full bg-surface-opaque" />
-                <SproutIcon className="relative h-7 w-7" />
-            </span>
-            <div className="min-w-0 flex-1">
-                <Text
-                    as="div"
-                    size="micro"
-                    tone="soft"
-                    weight="bold"
-                    className="uppercase tracking-wide"
-                >
-                    Quest progress
-                </Text>
-                <div className="mt-1 flex flex-wrap items-center gap-2">
-                    {totalFinite > 0 && (
-                        <Text
-                            as="span"
-                            weight="semibold"
-                            tone="strong"
-                            className="text-2xl tabular-nums"
-                        >
-                            {completedFinite} of {totalFinite}
-                        </Text>
-                    )}
-                    {bonusCompleted > 0 && (
-                        <Chip size="sm" intent="success">
-                            +{bonusCompleted} bonus
-                        </Chip>
-                    )}
-                </div>
-                <Text as="div" size="sm" tone="soft" className="mt-0.5">
-                    {formatGrantAmount(totalPollen)} Pollen earned
-                </Text>
-            </div>
-        </Surface>
-    );
-}
-
-function SectionHeader({
-    category,
-    done,
-    total,
-    openCount,
-}: {
-    category: CategoryMeta;
-    done: number;
-    total: number;
-    // When set, this lane is an open pool (community bounties): show a
-    // denominator-free "N open" count instead of a "done / total" ratio that
-    // would recede as the pool grows.
-    openCount?: number;
-}) {
-    const Icon = category.icon;
-    return (
-        <div className="mt-1 flex items-center gap-2">
-            <Icon className={`h-4 w-4 shrink-0 ${category.tint}`} />
-            <Text
-                as="span"
-                size="micro"
-                tone="soft"
-                weight="bold"
-                className="uppercase tracking-wide"
-            >
-                {category.label}
-            </Text>
-            {category.blurb && (
-                <Text as="span" size="xs" tone="muted">
-                    — {category.blurb}
-                </Text>
-            )}
-            <Chip size="sm" intent="neutral" className="ml-auto tabular-nums">
-                {openCount != null ? `${openCount} open` : `${done} / ${total}`}
-            </Chip>
-        </div>
-    );
-}
-
 export const QuestOverview: FC<QuestOverviewProps> = ({ githubUsername }) => {
-    const [activeTab, setActiveTab] = useState<QuestTab>("available");
     const [state, setState] = useState<FetchState>(INITIAL_STATE);
     const normalizedGithubUsername = githubUsername?.trim() || null;
 
@@ -752,212 +578,209 @@ export const QuestOverview: FC<QuestOverviewProps> = ({ githubUsername }) => {
             ),
         [state.grants],
     );
-
-    // Available quests are independent of the selected tab. Keep this separate
-    // from render state so tab labels do not change when switching tabs.
-    const availableCatalog = useMemo(
-        () =>
-            state.catalog.filter((quest) => {
-                if (completedCatalogIds.has(quest.id)) return false;
-                return (
-                    quest.availability === "available" ||
-                    (quest.availability === "claimed" &&
-                        claimedByUser(quest, normalizedGithubUsername))
-                );
-            }),
-        [completedCatalogIds, normalizedGithubUsername, state.catalog],
-    );
-
-    // Group available quests into the journey sections.
-    const grouped = useMemo(() => {
-        const map = new Map<CategoryKey, QuestCatalogItem[]>();
-        for (const quest of availableCatalog) {
-            const key = categoryForQuest(quest).key;
-            const list = map.get(key) ?? [];
-            list.push(quest);
-            map.set(key, list);
-        }
-        // Cheapest reward first within each lane (the always-visible easy win).
-        for (const list of map.values()) {
-            list.sort(
-                (a, b) =>
-                    (a.rewardAmount ?? Number.POSITIVE_INFINITY) -
-                    (b.rewardAmount ?? Number.POSITIVE_INFINITY),
-            );
+    const grantByKey = useMemo(() => {
+        const map = new Map<string, QuestGrant>();
+        for (const grant of state.grants) {
+            const key = catalogKeyForGrant(grant);
+            if (key) map.set(key, grant);
         }
         return map;
-    }, [availableCatalog]);
+    }, [state.grants]);
 
-    // Per-category totals (available + already-completed) for the section count
-    // chips — gives the "2 / 3" goal-gradient cue.
-    const categoryTotals = useMemo(() => {
-        const totals = new Map<CategoryKey, { done: number; total: number }>();
+    // Build the per-category quest rows. Finite categories come straight from
+    // the catalog (open or completed). Contribute mixes open catalog issues
+    // with the user's own completed issue grants.
+    const sections = useMemo(() => {
+        const byCat: Record<CategoryKey, QuestCard[]> = {
+            setup: [],
+            grow: [],
+            dev: [],
+            contribute: [],
+        };
+
         for (const quest of state.catalog) {
-            const key = categoryForQuest(quest).key;
-            const entry = totals.get(key) ?? { done: 0, total: 0 };
-            entry.total += 1;
-            if (completedCatalogIds.has(quest.id)) entry.done += 1;
-            totals.set(key, entry);
+            if (quest.id.startsWith("easteregg:")) continue;
+            const key = categoryKeyFor(quest.id, quest.iconId, quest.kind);
+            if (key === "contribute") {
+                const isOpen =
+                    quest.availability === "available" ||
+                    (quest.availability === "claimed" &&
+                        claimedByUser(quest, normalizedGithubUsername));
+                if (!isOpen) continue; // completions surface via grants below
+                byCat.contribute.push({
+                    key: quest.id,
+                    title: quest.title,
+                    description: quest.description || undefined,
+                    url: quest.url || undefined,
+                    issueNumber: issueNumberFromId(quest.id) ?? undefined,
+                    reward: quest.rewardAmount,
+                    completed: false,
+                });
+                continue;
+            }
+            const completed = completedCatalogIds.has(quest.id);
+            byCat[key].push({
+                key: quest.id,
+                title: quest.title,
+                description: quest.description || undefined,
+                url: quest.url || undefined,
+                reward: quest.rewardAmount,
+                completed,
+                earnedAmount: completed
+                    ? (grantByKey.get(quest.id)?.pollenCredited ??
+                      quest.rewardAmount)
+                    : undefined,
+            });
         }
-        return totals;
-    }, [state.catalog, completedCatalogIds]);
 
-    const availableCount = availableCatalog.length;
-    const completedCount = state.grants.length;
-    const currentItems =
-        activeTab === "completed" ? completedCount : availableCount;
+        for (const grant of state.grants) {
+            if (grant.questId === INTERN_QUEST_ID) continue;
+            if (!isContributeGrant(grant)) continue;
+            const issueNumber = metadataNumber(grant.metadata, "issueNumber");
+            byCat.contribute.push({
+                key: `grant-${grant.questId ?? "quest"}-${grant.sourceRef ?? issueNumber ?? grant.createdAt}`,
+                title: grantTitle(grant, catalogById),
+                url: grantUrl(grant, catalogById) || undefined,
+                issueNumber: issueNumber ?? undefined,
+                reward: grant.pollenCredited,
+                completed: true,
+                earnedAmount: grant.pollenCredited,
+            });
+        }
 
-    const finiteQuestIds = useMemo(
-        () =>
-            new Set(
-                state.catalog
-                    .filter(isFiniteProgressQuest)
-                    .map((quest) => quest.id),
-            ),
-        [state.catalog],
+        // Finite lanes: banked wins first (the progress cue). Contribute: open
+        // bounties first (the actionable pool), completed at the bottom.
+        for (const key of Object.keys(byCat) as CategoryKey[]) {
+            const completedFirst = key !== "contribute";
+            byCat[key].sort((a, b) => {
+                if (a.completed !== b.completed) {
+                    const aRank = a.completed ? 0 : 1;
+                    const bRank = b.completed ? 0 : 1;
+                    return completedFirst ? aRank - bRank : bRank - aRank;
+                }
+                return (
+                    (a.reward ?? Number.POSITIVE_INFINITY) -
+                    (b.reward ?? Number.POSITIVE_INFINITY)
+                );
+            });
+        }
+        return byCat;
+    }, [
+        state.catalog,
+        state.grants,
+        completedCatalogIds,
+        grantByKey,
+        catalogById,
+        normalizedGithubUsername,
+    ]);
+
+    const internGrants = useMemo(
+        () => state.grants.filter((grant) => grant.questId === INTERN_QUEST_ID),
+        [state.grants],
     );
 
-    // Finite progress = product quests only. Dynamic completions like
-    // GitHub issues, app listings, and one-off easter eggs are additive bonuses.
-    const finiteTotals = useMemo(() => {
-        let done = 0;
-        let total = 0;
-        for (const questId of finiteQuestIds) {
-            total += 1;
-            if (completedCatalogIds.has(questId)) done += 1;
-        }
-        return { done, total };
-    }, [finiteQuestIds, completedCatalogIds]);
+    // Summary stats. "Quest progress" = the three finite lanes; "Contribute
+    // score" = the open bounty pool. Pollen is split on the same axis.
+    const finiteCards = [...sections.setup, ...sections.grow, ...sections.dev];
+    const finiteDone = finiteCards.filter((card) => card.completed).length;
+    const finiteTotal = finiteCards.length;
+    const progressPercent =
+        finiteTotal > 0 ? Math.round((finiteDone / finiteTotal) * 100) : 0;
 
-    const bonusCompleted = useMemo(
-        () =>
-            state.grants.filter((grant) => {
-                const key = catalogKeyForGrant(grant);
-                return key == null || !finiteQuestIds.has(key);
-            }).length,
-        [state.grants, finiteQuestIds],
-    );
+    const questPollen = state.grants
+        .filter((grant) => !isContributeGrant(grant))
+        .reduce((sum, grant) => sum + grant.pollenCredited, 0);
+    const contributePollen = state.grants
+        .filter(isContributeGrant)
+        .reduce((sum, grant) => sum + grant.pollenCredited, 0);
+    const contributeDone = sections.contribute.filter(
+        (card) => card.completed,
+    ).length;
+    const contributeOpen = sections.contribute.length - contributeDone;
 
     return (
-        <div className="flex flex-col gap-5">
-            <QuestSummary
-                completedFinite={finiteTotals.done}
-                totalFinite={finiteTotals.total}
-                bonusCompleted={bonusCompleted}
-                totalPollen={state.totalPollen}
-            />
-
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap gap-1.5">
-                    {(["available", "completed"] as const).map((tab) => (
-                        <TabButton
-                            key={tab}
-                            active={activeTab === tab}
-                            onClick={() => setActiveTab(tab)}
-                        >
-                            {tab === "available"
-                                ? `Available (${availableCount})`
-                                : `Completed (${completedCount})`}
-                        </TabButton>
-                    ))}
-                </div>
+        <div className="flex flex-col gap-6">
+            <div className="grid gap-3 sm:grid-cols-2">
+                <SummaryCard
+                    ring={
+                        <ProgressRing
+                            percent={progressPercent}
+                            icon={TargetIcon}
+                        />
+                    }
+                    label="Quest progress"
+                    value={
+                        <span className="tabular-nums">
+                            {finiteDone} of {finiteTotal}
+                        </span>
+                    }
+                    detail={`${formatGrantAmount(questPollen)} pollen earned`}
+                />
+                <SummaryCard
+                    ring={<IconMedallion icon={GitBranchIcon} />}
+                    label="Contribute score"
+                    value={
+                        <span className="tabular-nums">
+                            {formatGrantAmount(contributePollen)} pollen
+                        </span>
+                    }
+                    detail={`${contributeDone} completed · ${contributeOpen} open`}
+                />
             </div>
 
             {state.error && (
-                <p className="text-sm text-intent-danger-500">{state.error}</p>
+                <Text size="sm" className="text-intent-danger-text">
+                    {state.error}
+                </Text>
             )}
 
-            {state.loading && currentItems === 0 && (
-                <Surface className="flex items-center gap-2 text-sm text-theme-text-muted">
+            {state.loading && (
+                <Surface
+                    variant="card"
+                    className="flex items-center gap-2 text-theme-text-muted"
+                >
                     <ClockIcon className="h-4 w-4 shrink-0" />
-                    Loading quests...
+                    <Text size="sm" tone="muted">
+                        Loading quests…
+                    </Text>
                 </Surface>
             )}
 
-            {!state.loading && !state.error && currentItems === 0 && (
-                <Surface className="flex items-start gap-3">
-                    <SproutIcon className="mt-0.5 h-5 w-5 shrink-0 text-theme-text-muted" />
-                    <div className="min-w-0">
-                        <p className="font-semibold text-ink-900">
-                            {activeTab === "available"
-                                ? "You're all caught up"
-                                : "No completed quests yet"}
-                        </p>
-                        <Text size="sm" tone="soft" className="mt-1">
-                            {activeTab === "available"
-                                ? "You've cleared every available quest. Nice work."
-                                : "Complete a quest to get started."}
-                        </Text>
-                    </div>
-                </Surface>
-            )}
+            {internGrants.map((grant, index) => (
+                <InternHeroCard
+                    key={`intern-${grant.sourceRef ?? grant.createdAt}-${index}`}
+                    grant={grant}
+                    catalogById={catalogById}
+                />
+            ))}
 
-            {activeTab === "completed" ? (
-                <div className="flex flex-col gap-3">
-                    {[...state.grants]
-                        .sort(
-                            (a, b) =>
-                                Number(b.questId === INTERN_QUEST_ID) -
-                                Number(a.questId === INTERN_QUEST_ID),
-                        )
-                        .map((grant, index) => {
-                            const key = `${grant.source}-${grant.questId ?? grant.sourceRef ?? "grant"}-${grant.createdAt}-${index}`;
-                            if (grant.questId === INTERN_QUEST_ID) {
-                                return (
-                                    <InternHeroCard
-                                        key={key}
-                                        grant={grant}
-                                        catalogById={catalogById}
-                                    />
-                                );
+            {CATEGORIES.map((category) => {
+                const cards = sections[category.key];
+                if (cards.length === 0) return null;
+                const isContribute = category.key === "contribute";
+                const done = cards.filter((card) => card.completed).length;
+                return (
+                    <section key={category.key} className="flex flex-col gap-3">
+                        <SectionHeader
+                            category={category}
+                            done={done}
+                            total={cards.length}
+                            openCount={
+                                isContribute ? cards.length - done : undefined
                             }
-                            return (
-                                <CompletedGrantCard
-                                    key={key}
-                                    grant={grant}
-                                    catalogById={catalogById}
-                                />
-                            );
-                        })}
-                </div>
-            ) : (
-                <div className="flex flex-col gap-5">
-                    {CATEGORY_ORDER.map((category) => {
-                        const quests = grouped.get(category.key) ?? [];
-                        if (quests.length === 0) return null;
-                        const totals = categoryTotals.get(category.key) ?? {
-                            done: 0,
-                            total: quests.length,
-                        };
-                        return (
-                            <div
-                                key={category.key}
-                                className="flex flex-col gap-3"
-                            >
-                                <SectionHeader
-                                    category={category}
-                                    done={totals.done}
-                                    total={totals.total}
-                                    openCount={
-                                        category.key === "community"
-                                            ? quests.length
-                                            : undefined
-                                    }
-                                />
-                                {quests.map((quest) => (
-                                    <CatalogQuestCard
-                                        key={quest.id}
-                                        quest={quest}
-                                        completed={completedCatalogIds.has(
-                                            quest.id,
-                                        )}
-                                    />
-                                ))}
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
+                        />
+                        <Surface
+                            variant="panel"
+                            className="flex flex-col gap-2"
+                        >
+                            {cards.map((card) => (
+                                <QuestRow key={card.key} card={card} />
+                            ))}
+                            <SectionFooter category={category} />
+                        </Surface>
+                    </section>
+                );
+            })}
         </div>
     );
 };

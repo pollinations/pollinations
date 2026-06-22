@@ -811,7 +811,7 @@ export const proxyRoutes = new Hono<Env>()
                     .default("mp3")
                     .meta({
                         description:
-                            "Audio output format (TTS only). Qwen TTS currently returns WAV regardless of this setting.",
+                            "Audio output format (TTS only). Qwen TTS currently returns WAV regardless of this setting; eleven-sfx supports mp3 only (other values are rejected).",
                         example: "mp3",
                     }),
                 model: z.string().optional().meta({
@@ -823,6 +823,7 @@ export const proxyRoutes = new Hono<Env>()
                     .string()
                     .optional()
                     .transform((v) => (v ? parseFloat(v) : undefined))
+                    .pipe(z.number().min(0.5).max(300).optional())
                     .meta({
                         description:
                             "Music duration in seconds, 3-300 (elevenmusic only)",
@@ -847,6 +848,27 @@ export const proxyRoutes = new Hono<Env>()
                         "Emotion/style instruction (qwen-tts-instruct only)",
                     example: "speak softly and warmly",
                 }),
+                loop: z
+                    .enum(["true", "false"])
+                    .optional()
+                    .transform((v) =>
+                        v === undefined ? undefined : v === "true",
+                    )
+                    .meta({
+                        description:
+                            "Loop the generated sound effect (eleven-sfx only)",
+                        example: "false",
+                    }),
+                prompt_influence: z
+                    .string()
+                    .optional()
+                    .transform((v) => (v ? Number.parseFloat(v) : undefined))
+                    .pipe(z.number().min(0).max(1).optional())
+                    .meta({
+                        description:
+                            "How strictly to follow the prompt, 0-1 (eleven-sfx only)",
+                        example: "0.3",
+                    }),
                 seed: z.coerce
                     .number()
                     .int()

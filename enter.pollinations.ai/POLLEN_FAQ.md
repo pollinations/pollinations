@@ -33,7 +33,7 @@ Free Pollen on every account, refilled hourly. No credit card to register. Contr
 
 ## 🎯 How do Contribute quests work?
 
-Contribute quests are GitHub issues with a fixed Pollen reward. The Quests dashboard shows unassigned open issues to everyone, plus your own assigned or completed issues.
+Contribute quests are GitHub issues with a fixed Pollen reward. The Quests dashboard shows the same unassigned open issues to everyone, plus your own completed issue quests.
 
 1. Open a quest from the **Contribute** section.
 2. Comment that you'd like to work on it. Multiple devs can express interest.
@@ -42,7 +42,7 @@ Contribute quests are GitHub issues with a fixed Pollen reward. The Quests dashb
 5. Request review from a maintainer. If you're unsure who to tag, ask on the issue or in [Discord #dev-talk](https://discord.com/channels/885844321461485618/920274483896516609).
 6. If review asks for changes, update the PR. When it merges, the reward is credited automatically to your Pollinations wallet.
 
-Assigned or completed quests disappear from other people's dashboards, but your own completed Contribute quests stay visible so you can see what you earned.
+When someone completes a quest, it disappears from other people's dashboards. Your completed Contribute quests stay visible so you can see what you earned.
 
 ## 💳 What payment methods do you accept?
 

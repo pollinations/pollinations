@@ -669,8 +669,13 @@ export async function generateMusic(
 
     // Buffer response and extract duration
     const audioBuffer = await response.arrayBuffer();
-    // ElevenLabs returns MP3; estimate duration from byte size (~16 kB/s) rather than parsing the container.
-    const estimatedDuration = audioBuffer.byteLength / 16000;
+    // ElevenLabs Music v2 returns 192 kbps CBR MP3 (= 24 kB/s, ffprobe-verified
+    // across 10s/30s clips). Estimate duration from byte size rather than parsing
+    // the container. NOTE: must match the real output bitrate or billing skews —
+    // the previous 16 kB/s (128 kbps) constant over-counted seconds by 1.5x.
+    const MUSIC_MP3_BYTES_PER_SECOND = 24000;
+    const estimatedDuration =
+        audioBuffer.byteLength / MUSIC_MP3_BYTES_PER_SECOND;
 
     const usageHeaders = buildUsageHeaders(
         "elevenmusic",

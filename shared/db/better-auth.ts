@@ -233,38 +233,34 @@ export const stripeCheckoutCredits = sqliteTable("stripe_checkout_credits", {
   index("idx_stripe_checkout_credits_user_id").on(table.userId),
 ]);
 
-// Generic, source-agnostic ledger for discrete pollen grants (quests,
-// onboarding, referrals, manual credits, …). Makes no GitHub assumptions:
-// `source` discriminates the grant kind and the GitHub-specific bits (issue/PR,
-// role, username) live in optional `sourceRef`/`metadataJson`. One row == one
-// idempotent grant paired with a balance credit. This is the single quest
-// ledger; the old GitHub-shaped quest_payout_credits table was backfilled into
-// here and dropped by the previous migration.
+// The quest ledger: one row == one idempotent pollen grant paired with a
+// balance credit. Everything that credits pollen (onboarding, referrals, manual
+// admin credits, …) is modelled as a quest, so there is no grant-kind
+// discriminator — `questId` already names what was earned. The old
+// GitHub-shaped quest_payout_credits table was backfilled into here and dropped
+// by an earlier migration.
 export const rewardGrants = sqliteTable("reward_grants", {
   id: text("id").primaryKey(),
-  // Idempotency guard. Format is source-specific, e.g.
+  // Idempotency guard. Encodes the quest's completion scope, e.g.
   // "quest:{issue}" or "quest:{questId}:user:{userId}".
   idempotencyKey: text("idempotency_key").notNull().unique(),
   userId: text("user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
-  // Grant kind, e.g. code_quest | product_quest | referral | manual.
-  source: text("source").notNull(),
-  // Catalog id for product quests; null for one-off/manual grants.
+  // Catalog id of the quest that was completed; null for one-off grants.
   questId: text("quest_id"),
+  // Quest title snapshotted at grant time, so history renders it directly.
+  title: text("title").notNull(),
+  // Optional quest link snapshotted at grant time.
+  url: text("url"),
   pollenCredited: real("pollen_credited").notNull(),
   // Which balance bucket was credited: "tier" or "pack".
   balanceBucket: text("balance_bucket").notNull(),
-  // Free-form external reference: PR number, Stripe session, generation id, …
-  sourceRef: text("source_ref"),
-  // JSON snapshot of display metadata (title/url/details) at grant time.
-  metadataJson: text("metadata_json"),
   createdAt: integer("created_at", { mode: "timestamp" })
     .defaultNow()
     .notNull(),
 }, (table) => [
   index("idx_reward_grants_user_id").on(table.userId),
-  index("idx_reward_grants_source").on(table.source),
 ]);
 
 export const githubQuestIssues = sqliteTable("github_quest_issues", {

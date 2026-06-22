@@ -42,9 +42,8 @@ const TABLES: TableConfig[] = [
     },
     {
         datasource: "d1_reward_grants",
-        query: `SELECT id, idempotency_key, user_id, source, quest_id,
-                       pollen_credited, balance_bucket, source_ref,
-                       metadata_json, created_at
+        query: `SELECT id, idempotency_key, user_id, quest_id, title,
+                       pollen_credited, balance_bucket, created_at
                 FROM reward_grants`,
     },
     {

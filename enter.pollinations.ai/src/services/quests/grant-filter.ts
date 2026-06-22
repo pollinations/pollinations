@@ -5,14 +5,19 @@ import type { QuestDb } from "./types.ts";
 
 const SQLITE_BIND_LIMIT_BUFFER = 500;
 
-export async function excludeExistingGrants(
+/**
+ * The one generic reward dedup funnel. Every group's findRewards ends by
+ * passing its proposals through this: any proposal whose idempotency key is
+ * already persisted in reward_grants is dropped, so re-runs never double-pay.
+ */
+export async function excludeExistingRewards(
     db: QuestDb,
-    grants: GrantRewardInput[],
+    rewards: GrantRewardInput[],
 ): Promise<GrantRewardInput[]> {
-    if (!grants.length) return grants;
+    if (!rewards.length) return rewards;
 
     const existing = new Set<string>();
-    const keys = grants.map((grant) => grant.idempotencyKey);
+    const keys = rewards.map((reward) => reward.idempotencyKey);
 
     for (
         let index = 0;
@@ -27,5 +32,5 @@ export async function excludeExistingGrants(
         for (const row of rows) existing.add(row.idempotencyKey);
     }
 
-    return grants.filter((grant) => !existing.has(grant.idempotencyKey));
+    return rewards.filter((reward) => !existing.has(reward.idempotencyKey));
 }

@@ -1,15 +1,20 @@
-import { QUEST_ICON_IDS } from "@shared/quests/definitions.ts";
+import * as schema from "@shared/db/better-auth.ts";
+import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
-import { loadQuestInstances } from "../services/quests/index.ts";
-import type { QuestInstance } from "../services/quests/types.ts";
+import { QUEST_ICON_IDS } from "../services/quests/definitions.ts";
+import { loadQuestCards } from "../services/quests/index.ts";
+import type {
+    QuestCard,
+    QuestEvaluationContext,
+} from "../services/quests/types.ts";
 
 const CACHE_KEY = "quests:catalog:v6";
 const CACHE_TTL = 60;
 
-export type QuestCatalogItem = Omit<QuestInstance, "sortKey">;
+export type QuestCatalogItem = QuestCard;
 
 export type QuestCatalogResponse = {
     quests: QuestCatalogItem[];
@@ -17,14 +22,13 @@ export type QuestCatalogResponse = {
 
 const questCatalogItemSchema = z.object({
     id: z.string(),
-    kind: z.string(),
     title: z.string(),
     description: z.string(),
     iconId: z.enum(QUEST_ICON_IDS),
+    category: z.enum(["plant", "grow", "community"]),
     availability: z.enum(["available", "claimed", "completed"]),
     rewardAmount: z.number().nullable(),
     url: z.string().nullable(),
-    assignees: z.array(z.string()).optional(),
 });
 
 const questCatalogResponseSchema = z.object({
@@ -53,7 +57,7 @@ export const questsRoutes = new Hono<Env>().get(
         const cached = await readCached(c.env.KV);
         if (cached) return c.json(cached);
 
-        const catalog = await buildQuestCatalog(c.env.DB);
+        const catalog = await buildQuestCatalog(c.env);
         await c.env.KV.put(CACHE_KEY, JSON.stringify(catalog), {
             expirationTtl: CACHE_TTL,
         });
@@ -68,30 +72,16 @@ async function readCached(
 }
 
 async function buildQuestCatalog(
-    dbBinding: D1Database,
+    env: CloudflareBindings,
 ): Promise<QuestCatalogResponse> {
-    const quests = (await loadQuestInstances(dbBinding))
-        .sort(compareCatalogItems)
-        .map(stripInternalCatalogFields);
+    const ctx: QuestEvaluationContext = {
+        db: drizzle(env.DB, { schema }),
+        env,
+    };
+    const cards = await loadQuestCards(ctx);
+    const quests = [...cards].sort((a, b) => a.title.localeCompare(b.title));
 
     return {
         quests,
     };
-}
-
-function stripInternalCatalogFields({
-    sortKey: _sortKey,
-    ...quest
-}: QuestInstance): QuestCatalogItem {
-    return quest;
-}
-
-function compareCatalogItems(left: QuestInstance, right: QuestInstance) {
-    if (left.kind !== right.kind) return left.kind === "product" ? -1 : 1;
-    const leftTime = Date.parse(left.sortKey ?? "");
-    const rightTime = Date.parse(right.sortKey ?? "");
-    if (Number.isFinite(leftTime) && Number.isFinite(rightTime)) {
-        return rightTime - leftTime;
-    }
-    return left.title.localeCompare(right.title);
 }

@@ -9,23 +9,20 @@ export const MAX_REWARD_GRANT_AMOUNT = 10_000;
 export interface GrantRewardInput {
     /**
      * Idempotency guard. Must be deterministic for the logical grant so retries
-     * never double-pay, e.g. "quest:{issue}" or
-     * "quest:{questId}:user:{userId}". Mirrors the payout_key pattern of
-     * quest_payout_credits / the session_id of stripe_checkout_credits.
+     * never double-pay; encodes the quest's completion scope, e.g.
+     * "quest:{issue}" or "quest:{questId}:user:{userId}".
      */
     idempotencyKey: string;
     userId: string;
-    /** Grant kind, e.g. code_quest | product_quest | referral | manual. */
-    source: string;
     amount: number;
     /** Which balance bucket to credit. Defaults to "pack"; pass "tier" to override. */
     bucket?: Bucket;
-    /** Catalog id for product quests; null for one-off grants. */
+    /** Catalog id of the quest that was completed; null for one-off grants. */
     questId?: string | null;
-    /** External reference: PR number, Stripe session, generation id, … */
-    sourceRef?: string | null;
-    /** Display metadata snapshot (title/url/details) at grant time. */
-    metadata?: Record<string, unknown> | null;
+    /** Quest title, snapshotted so history renders it without a catalog lookup. */
+    title: string;
+    /** Optional quest link, snapshotted so history renders it directly. */
+    url?: string | null;
 }
 
 export interface GrantRewardResult {
@@ -55,12 +52,11 @@ export async function grantReward(
     const {
         idempotencyKey,
         userId,
-        source,
         amount,
         bucket = "pack",
         questId = null,
-        sourceRef = null,
-        metadata = null,
+        title,
+        url = null,
     } = input;
 
     if (
@@ -86,12 +82,11 @@ export async function grantReward(
                 id: crypto.randomUUID(),
                 idempotencyKey,
                 userId,
-                source,
                 questId,
+                title,
+                url,
                 pollenCredited: amount,
                 balanceBucket: bucket,
-                sourceRef,
-                metadataJson: metadata ? JSON.stringify(metadata) : null,
             })
             .onConflictDoNothing({ target: rewardGrants.idempotencyKey }),
         db

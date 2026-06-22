@@ -19,8 +19,19 @@ export type GitHubRepoStats = {
     fetchedRepoCount: number;
 };
 
+/**
+ * Combined per-user GitHub profile snapshot: the account `created_at` plus
+ * aggregate repo stats. One profile fetch + one repo paging pass, so a single
+ * call can drive all three github-profile thresholds (account age, repo count,
+ * repo stars) without re-fetching the profile per threshold.
+ */
+export type GitHubProfileActivity = GitHubRepoStats & {
+    githubAccountCreatedAt: Date | null;
+};
+
 type GitHubProfileResponse = {
     login?: string;
+    created_at?: string;
 };
 
 type GitHubRepoResponse = {
@@ -42,9 +53,14 @@ export function githubApiHeaders(
     return headers;
 }
 
-export async function loadUsersMissingQuestGrant(
+/**
+ * Source loader for the github-profile group: every user with a linked GitHub
+ * account, capped. Reward dedup is handled downstream by excludeExistingRewards
+ * (one fetch per user fans out to all three thresholds), so this does NOT
+ * LEFT JOIN reward_grants per quest.
+ */
+export async function loadGitHubUsers(
     db: QuestDb,
-    keyPrefix: string,
     limit: number,
 ): Promise<GitHubQuestUserRow[]> {
     return db.all<GitHubQuestUserRow>(
@@ -54,19 +70,15 @@ export async function loadUsersMissingQuestGrant(
             user.github_id AS githubId,
             user.github_username AS githubUsername
         FROM user
-        LEFT JOIN reward_grants
-            ON reward_grants.idempotency_key =
-                ${keyPrefix} || user.id
         WHERE user.github_id IS NOT NULL
-            AND reward_grants.id IS NULL
         LIMIT ${limit}`,
     );
 }
 
-export async function fetchGitHubLogin(
+export async function fetchGitHubProfile(
     env: CloudflareBindings,
     githubId: number,
-): Promise<string | null> {
+): Promise<{ login: string | null; createdAt: Date | null } | null> {
     const response = await fetch(`https://api.github.com/user/${githubId}`, {
         headers: githubApiHeaders(env),
     });
@@ -82,16 +94,19 @@ export async function fetchGitHubLogin(
     }
 
     const profile = (await response.json()) as GitHubProfileResponse;
-    return profile.login ?? null;
+    let createdAt: Date | null = null;
+    if (profile.created_at) {
+        const parsed = new Date(profile.created_at);
+        createdAt = Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+    return { login: profile.login ?? null, createdAt };
 }
 
-export async function fetchGitHubRepoStats(
+async function fetchGitHubRepoStatsForLogin(
     env: CloudflareBindings,
     githubId: number,
+    githubLogin: string,
 ): Promise<GitHubRepoStats | null> {
-    const githubLogin = await fetchGitHubLogin(env, githubId);
-    if (!githubLogin) return null;
-
     let qualityRepoCount = 0;
     let qualityRepoStars = 0;
     let fetchedRepoCount = 0;
@@ -135,4 +150,26 @@ export async function fetchGitHubRepoStats(
         qualityRepoStars,
         fetchedRepoCount,
     };
+}
+
+/**
+ * One-fetch-per-user profile snapshot: a single profile read (login +
+ * created_at) followed by a single repo paging pass. Drives all three
+ * github-profile thresholds from one call.
+ */
+export async function fetchGitHubProfileActivity(
+    env: CloudflareBindings,
+    githubId: number,
+): Promise<GitHubProfileActivity | null> {
+    const profile = await fetchGitHubProfile(env, githubId);
+    if (!profile?.login) return null;
+
+    const stats = await fetchGitHubRepoStatsForLogin(
+        env,
+        githubId,
+        profile.login,
+    );
+    if (!stats) return null;
+
+    return { ...stats, githubAccountCreatedAt: profile.createdAt };
 }

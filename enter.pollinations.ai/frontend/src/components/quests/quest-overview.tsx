@@ -35,12 +35,10 @@ import type {
 } from "../../backend-types.ts";
 
 type QuestGrant = {
-    source: string;
     questId: string | null;
+    title: string;
     pollenCredited: number;
     balanceBucket: string;
-    sourceRef: string | null;
-    metadata: Record<string, unknown> | null;
     createdAt: string;
 };
 
@@ -68,9 +66,9 @@ const INITIAL_STATE: FetchState = {
 
 type IconComponent = ComponentType<{ className?: string }>;
 
-// Category metadata decoded from the quest id prefix (onboarding: / spend: /
-// grow: / github:). Drives section grouping, ordering, and the icon medallion.
-// Pure display logic — no new backend data.
+// Category metadata for each lane. The lane key now ships from the backend on
+// each catalog item (quest.category); this map turns that key into the section
+// label, ordering, and icon medallion. Pure display logic.
 type CategoryKey = "plant" | "grow" | "community";
 
 type CategoryMeta = {
@@ -113,6 +111,12 @@ const CATEGORY_ORDER: CategoryMeta[] = [
     CATEGORY_COMMUNITY,
 ];
 
+const CATEGORY_BY_KEY: Record<CategoryKey, CategoryMeta> = {
+    plant: CATEGORY_PLANT,
+    grow: CATEGORY_GROW,
+    community: CATEGORY_COMMUNITY,
+};
+
 const QUEST_ICON_COMPONENTS = {
     app: AppIcon,
     card: CardIcon,
@@ -125,13 +129,9 @@ const QUEST_ICON_COMPONENTS = {
 } satisfies Record<QuestCatalogItem["iconId"], IconComponent>;
 
 function categoryForQuest(quest: QuestCatalogItem): CategoryMeta {
-    const id = quest.id;
-    if (id.startsWith("github:") || quest.kind === "github_issue") {
-        return CATEGORY_COMMUNITY;
-    }
-    if (id.startsWith("onboarding:")) return CATEGORY_PLANT;
-    // spend: + grow: + anything else product-y maps to the middle "Grow" lane.
-    return CATEGORY_GROW;
+    // The lane now ships from the backend as quest.category; map it to its
+    // display metadata. Defaults to the Grow lane if an unknown value appears.
+    return CATEGORY_BY_KEY[quest.category] ?? CATEGORY_GROW;
 }
 
 function isFiniteProgressQuest(quest: QuestCatalogItem): boolean {
@@ -166,96 +166,10 @@ function formatTimestamp(value: string): string {
     });
 }
 
-function metadataString(
-    metadata: Record<string, unknown> | null,
-    key: string,
-): string | null {
-    const value = metadata?.[key];
-    return typeof value === "string" && value.length > 0 ? value : null;
-}
-
-function metadataNumber(
-    metadata: Record<string, unknown> | null,
-    key: string,
-): number | null {
-    const value = metadata?.[key];
-    return typeof value === "number" && Number.isFinite(value) ? value : null;
-}
-
-function humanizeSlug(slug: string): string {
-    const tail = slug.includes(":")
-        ? slug.slice(slug.lastIndexOf(":") + 1)
-        : slug;
-    const words = tail.replace(/[_-]+/g, " ").trim();
-    if (!words) return slug;
-    return words.charAt(0).toUpperCase() + words.slice(1);
-}
-
+// Maps a grant back to its catalog item / category. With grant metadata gone,
+// the only stable key a grant carries is its questId.
 function catalogKeyForGrant(grant: QuestGrant): string | null {
-    const issueNumber = metadataNumber(grant.metadata, "issueNumber");
-    if (
-        grant.questId === "github:community_issue_quest" &&
-        issueNumber != null
-    ) {
-        return `github:issue:${issueNumber}`;
-    }
     return grant.questId;
-}
-
-function grantTitle(
-    grant: QuestGrant,
-    catalogById: Map<string, QuestCatalogItem>,
-): string {
-    const catalogKey = catalogKeyForGrant(grant);
-    const catalogItem = catalogKey ? catalogById.get(catalogKey) : null;
-    if (catalogItem) return catalogItem.title;
-    return (
-        metadataString(grant.metadata, "issueTitle") ??
-        metadataString(grant.metadata, "title") ??
-        metadataString(grant.metadata, "appName") ??
-        (grant.questId
-            ? humanizeSlug(grant.questId)
-            : humanizeSlug(grant.source))
-    );
-}
-
-function grantUrl(
-    grant: QuestGrant,
-    catalogById: Map<string, QuestCatalogItem>,
-): string | null {
-    const catalogKey = catalogKeyForGrant(grant);
-    const catalogItem = catalogKey ? catalogById.get(catalogKey) : null;
-    return (
-        metadataString(grant.metadata, "appUrl") ??
-        catalogItem?.url ??
-        metadataString(grant.metadata, "issueUrl")
-    );
-}
-
-function grantLinkLabel(grant: QuestGrant): string {
-    if (metadataString(grant.metadata, "appUrl")) return "Open app";
-    if (metadataString(grant.metadata, "issueUrl")) return "View on GitHub";
-    return "View details";
-}
-
-function grantLinkIsGitHub(grant: QuestGrant): boolean {
-    return (
-        !metadataString(grant.metadata, "appUrl") &&
-        Boolean(metadataString(grant.metadata, "issueUrl"))
-    );
-}
-
-function grantContext(grant: QuestGrant): string | null {
-    const appName = metadataString(grant.metadata, "appName");
-    const issueNumber = metadataNumber(grant.metadata, "issueNumber");
-    const prNumber = metadataNumber(grant.metadata, "prNumber");
-    const githubUsername = metadataString(grant.metadata, "githubUsername");
-    const parts: string[] = [];
-    if (appName) parts.push(`App: ${appName}`);
-    if (issueNumber != null) parts.push(`Issue #${issueNumber}`);
-    if (prNumber != null) parts.push(`PR #${prNumber}`);
-    if (githubUsername) parts.push(`@${githubUsername}`);
-    return parts.length ? parts.join(" · ") : null;
 }
 
 // Tinted circular icon holder left of each quest — keeps the category icon in
@@ -321,7 +235,6 @@ function CatalogQuestCard({
     quest: QuestCatalogItem;
     completed: boolean;
 }) {
-    const assignees = quest.assignees ?? [];
     const category = categoryForQuest(quest);
 
     return (
@@ -345,13 +258,6 @@ function CatalogQuestCard({
                                 {quest.description}
                             </Text>
                         )}
-                        {assignees.length > 0 && (
-                            <Text size="xs" tone="muted" className="mt-1">
-                                {assignees.length === 1
-                                    ? `Claimed by @${assignees[0]}`
-                                    : `${assignees.length} builders on this`}
-                            </Text>
-                        )}
                     </div>
                     <div className="shrink-0">
                         <RewardChip amount={quest.rewardAmount} />
@@ -364,17 +270,6 @@ function CatalogQuestCard({
                 )}
             </div>
         </Surface>
-    );
-}
-
-function claimedByUser(
-    quest: QuestCatalogItem,
-    githubUsername: string | null,
-): boolean {
-    if (!githubUsername) return false;
-    const normalizedUsername = githubUsername.toLowerCase();
-    return (quest.assignees ?? []).some(
-        (assignee) => assignee.toLowerCase() === normalizedUsername,
     );
 }
 
@@ -424,17 +319,9 @@ function categoryForGrant(
 // @pollinations/ui so the gradient stays on-brand and theme-aware.
 const INTERN_QUEST_ID = "easteregg:elixpo_intern";
 
-function InternHeroCard({
-    grant,
-    catalogById,
-}: {
-    grant: QuestGrant;
-    catalogById: Map<string, QuestCatalogItem>;
-}) {
-    const title = grantTitle(grant, catalogById);
-    const message =
-        metadataString(grant.metadata, "message") ??
-        "Welcome to the Pollinations crew.";
+function InternHeroCard({ grant }: { grant: QuestGrant }) {
+    const title = grant.title;
+    const message = "Welcome to the Pollinations crew.";
 
     // The wallet "paid" gold palette is exposed by @pollinations/ui as CSS
     // custom properties (--color-paid-{pale,soft,deep}); drive the gradient
@@ -520,9 +407,6 @@ function CompletedGrantCard({
     grant: QuestGrant;
     catalogById: Map<string, QuestCatalogItem>;
 }) {
-    const url = grantUrl(grant, catalogById);
-    const context = grantContext(grant);
-    const showGitHubIcon = grantLinkIsGitHub(grant);
     const category = categoryForGrant(grant, catalogById);
 
     return (
@@ -532,25 +416,18 @@ function CompletedGrantCard({
                 tint={category.tint}
                 completed
             />
-            <div className="min-w-0 flex-1 space-y-3">
+            <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                             <Text as="span" weight="semibold" tone="strong">
-                                {grantTitle(grant, catalogById)}
+                                {grant.title}
                             </Text>
                             <CategoryChip category={category} />
                         </div>
-                        <div className="mt-2 flex flex-wrap items-center gap-2">
-                            <Text as="span" size="xs" tone="muted">
-                                {formatTimestamp(grant.createdAt)}
-                            </Text>
-                            {context && (
-                                <Text as="span" size="xs" tone="muted">
-                                    {context}
-                                </Text>
-                            )}
-                        </div>
+                        <Text as="div" size="xs" tone="muted" className="mt-2">
+                            {formatTimestamp(grant.createdAt)}
+                        </Text>
                     </div>
                     <div className="shrink-0">
                         <Text
@@ -563,14 +440,6 @@ function CompletedGrantCard({
                         </Text>
                     </div>
                 </div>
-                {url && (
-                    <InlineLink href={url} className="text-sm">
-                        {showGitHubIcon && (
-                            <GitHubIcon className="h-3.5 w-3.5 shrink-0" />
-                        )}
-                        {grantLinkLabel(grant)}
-                    </InlineLink>
-                )}
             </div>
         </Surface>
     );
@@ -686,10 +555,9 @@ function SectionHeader({
     );
 }
 
-export const QuestOverview: FC<QuestOverviewProps> = ({ githubUsername }) => {
+export const QuestOverview: FC<QuestOverviewProps> = () => {
     const [activeTab, setActiveTab] = useState<QuestTab>("available");
     const [state, setState] = useState<FetchState>(INITIAL_STATE);
-    const normalizedGithubUsername = githubUsername?.trim() || null;
 
     useEffect(() => {
         let cancelled = false;
@@ -759,13 +627,9 @@ export const QuestOverview: FC<QuestOverviewProps> = ({ githubUsername }) => {
         () =>
             state.catalog.filter((quest) => {
                 if (completedCatalogIds.has(quest.id)) return false;
-                return (
-                    quest.availability === "available" ||
-                    (quest.availability === "claimed" &&
-                        claimedByUser(quest, normalizedGithubUsername))
-                );
+                return quest.availability !== "completed";
             }),
-        [completedCatalogIds, normalizedGithubUsername, state.catalog],
+        [completedCatalogIds, state.catalog],
     );
 
     // Group available quests into the journey sections.
@@ -901,14 +765,10 @@ export const QuestOverview: FC<QuestOverviewProps> = ({ githubUsername }) => {
                                 Number(a.questId === INTERN_QUEST_ID),
                         )
                         .map((grant, index) => {
-                            const key = `${grant.source}-${grant.questId ?? grant.sourceRef ?? "grant"}-${grant.createdAt}-${index}`;
+                            const key = `${grant.questId ?? "grant"}-${grant.createdAt}-${index}`;
                             if (grant.questId === INTERN_QUEST_ID) {
                                 return (
-                                    <InternHeroCard
-                                        key={key}
-                                        grant={grant}
-                                        catalogById={catalogById}
-                                    />
+                                    <InternHeroCard key={key} grant={grant} />
                                 );
                             }
                             return (

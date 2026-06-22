@@ -7,12 +7,10 @@ SCHEMA >
     `id` String `json:$.id`,
     `idempotency_key` String `json:$.idempotency_key`,
     `user_id` String `json:$.user_id`,
-    `source` LowCardinality(String) `json:$.source`,
     `quest_id` Nullable(String) `json:$.quest_id`,
+    `title` String `json:$.title`,
     `pollen_credited` Float64 `json:$.pollen_credited`,
     `balance_bucket` LowCardinality(String) `json:$.balance_bucket`,
-    `source_ref` Nullable(String) `json:$.source_ref`,
-    `metadata_json` Nullable(String) `json:$.metadata_json`,
     `created_at` Int64 `json:$.created_at`,
     `synced_at` DateTime `json:$.synced_at`
 

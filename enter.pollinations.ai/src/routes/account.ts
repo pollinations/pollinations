@@ -118,20 +118,6 @@ function requireUsagePermission(apiKey?: {
     }
 }
 
-function parseGrantMetadata(
-    raw: string | null,
-): Record<string, unknown> | null {
-    if (!raw) return null;
-    try {
-        const parsed = JSON.parse(raw);
-        return parsed && typeof parsed === "object" && !Array.isArray(parsed)
-            ? (parsed as Record<string, unknown>)
-            : null;
-    } catch {
-        return null;
-    }
-}
-
 function formatGrantTimestamp(value: Date | number | string): string {
     return value instanceof Date
         ? value.toISOString()
@@ -778,12 +764,10 @@ const usageResponseSchema = z.object({
 });
 
 const accountQuestGrantSchema = z.object({
-    source: z.string(),
     questId: z.string().nullable(),
+    title: z.string(),
     pollenCredited: z.number(),
     balanceBucket: z.string(),
-    sourceRef: z.string().nullable(),
-    metadata: z.record(z.string(), z.unknown()).nullable(),
     createdAt: z.string(),
 });
 
@@ -1343,12 +1327,10 @@ export const accountRoutes = new Hono<Env>()
             const db = drizzle(c.env.DB);
             const rewardRows = await db
                 .select({
-                    source: rewardGrantsTable.source,
                     questId: rewardGrantsTable.questId,
+                    title: rewardGrantsTable.title,
                     pollenCredited: rewardGrantsTable.pollenCredited,
                     balanceBucket: rewardGrantsTable.balanceBucket,
-                    sourceRef: rewardGrantsTable.sourceRef,
-                    metadataJson: rewardGrantsTable.metadataJson,
                     createdAt: rewardGrantsTable.createdAt,
                 })
                 .from(rewardGrantsTable)
@@ -1356,12 +1338,10 @@ export const accountRoutes = new Hono<Env>()
                 .orderBy(desc(rewardGrantsTable.createdAt));
 
             const grants = rewardRows.map((row) => ({
-                source: row.source,
                 questId: row.questId,
+                title: row.title,
                 pollenCredited: row.pollenCredited,
                 balanceBucket: row.balanceBucket,
-                sourceRef: row.sourceRef,
-                metadata: parseGrantMetadata(row.metadataJson),
                 createdAt: formatGrantTimestamp(row.createdAt),
             }));
 

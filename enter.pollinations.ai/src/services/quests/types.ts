@@ -33,16 +33,6 @@ export type Quest = QuestDefinition & {
 };
 
 /**
- * A group exposes exactly one thing: an async loader that returns its quests.
- * Static groups resolve a constant list; dynamic groups (e.g. issue bounties)
- * build quests from source state. index.ts awaits every group's loadQuests and
- * flattens the results.
- */
-export type QuestGroup = {
-    loadQuests: (ctx: QuestEvaluationContext) => Promise<Quest[]>;
-};
-
-/**
  * Turn a quest + one award into a full grant. The quest supplies the definition
  * fields (questId, title, amount, bucket); the award supplies only the user. The
  * idempotency key is derived here — the one place it is built — from the quest's

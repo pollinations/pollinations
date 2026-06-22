@@ -7,7 +7,6 @@ import {
     type Quest,
     type QuestCard,
     type QuestEvaluationContext,
-    type QuestGroup,
     questToCard,
 } from "./types.ts";
 
@@ -24,13 +23,7 @@ import {
  * each approved app becoming its own once-quest, mirroring github-issues —
  * which removes the need for a per-event scope entirely.
  */
-const GROUPS: QuestGroup[] = [
-    tinybirdUsage,
-    d1Setup,
-    githubProfile,
-    githubIssues,
-    identity,
-];
+const GROUPS = [tinybirdUsage, d1Setup, githubProfile, githubIssues, identity];
 
 /** Every quest across all groups, flattened in stable GROUPS order. */
 export async function loadQuests(

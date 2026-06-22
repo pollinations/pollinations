@@ -72,7 +72,6 @@ const INTERN_QUEST_ID = "easteregg:elixpo_intern";
 // in light mode, light gold in dark), so it keeps contrast on the pale tile in
 // both modes — same token the wallet's paid icon/text uses.
 const GOLD = "text-[color:var(--polli-color-paid-deep)]";
-const CONTRIBUTE_FAQ_HASH = "#how-do-contribute-quests-work";
 
 // ── Category model ──────────────────────────────────────────────────────────
 // Four lanes, decoded from the quest id / icon / kind. Set up · Grow · Dev are
@@ -359,11 +358,8 @@ function SectionFooter({ category }: { category: CategoryMeta }) {
             <div className="mt-4 flex items-center gap-2 border-t border-divider pt-4 text-theme-text-muted">
                 <Icon className="h-3.5 w-3.5 shrink-0" />
                 <Text as="p" size="sm" tone="muted">
-                    Comment on an open GitHub quest, wait for assignment, then
-                    submit a PR for review.{" "}
-                    <InlineLink href={CONTRIBUTE_FAQ_HASH} showIcon={false}>
-                        Read the FAQ.
-                    </InlineLink>
+                    Open a GitHub quest to see the full workflow and comment if
+                    you'd like to work on it.
                 </Text>
             </div>
         );

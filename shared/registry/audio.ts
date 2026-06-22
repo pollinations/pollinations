@@ -92,6 +92,27 @@ export const AUDIO_SERVICES = {
         voices: ELEVENLABS_VOICES as string[],
         alpha: true,
     },
+    "eleven-multilingual-v2": {
+        aliases: ["multilingual-v2", "eleven-v2", "tts-multilingual"],
+        modelId: "eleven_multilingual_v2",
+        provider: "elevenlabs",
+        brand: "ElevenLabs",
+        category: "audio",
+        paidOnly: true,
+        addedDate: new Date("2026-06-22").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            // ElevenLabs Scale plan: Multilingual v2 = 1 credit/char * $0.166/1k credits
+            completionAudioTokens: 0.166 / 1000,
+        },
+        title: "ElevenLabs Multilingual v2",
+        description:
+            "ElevenLabs Multilingual v2 - Lifelike, emotionally rich TTS (29 languages)",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        voices: ELEVENLABS_VOICES as string[],
+        alpha: true,
+    },
     elevenmusic: {
         aliases: ["music"],
         modelId: "music_v2",
@@ -111,6 +132,28 @@ export const AUDIO_SERVICES = {
         description:
             "ElevenLabs Music - Generate studio-grade music from text prompts and reference audio",
         inputModalities: ["text", "audio"],
+        outputModalities: ["audio"],
+        alpha: true,
+    },
+    "eleven-sfx": {
+        aliases: ["sfx", "sound-effects", "eleven-sound-effects"],
+        modelId: "eleven_text_to_sound_v2",
+        provider: "elevenlabs",
+        brand: "ElevenLabs",
+        category: "audio",
+        paidOnly: true,
+        addedDate: new Date("2026-06-22").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            // ElevenLabs Sound Effects v2: billed per second of output audio.
+            // Measured empirically (5s=120cr, 10s=241cr => 24.0 credits/sec, linear).
+            // Scale plan $0.166/1k credits => 24 * 0.166/1000 ≈ $0.004/sec.
+            completionAudioSeconds: 0.004,
+        },
+        title: "ElevenLabs Sound Effects",
+        description:
+            "ElevenLabs Sound Effects - Generate sound effects from text prompts",
+        inputModalities: ["text"],
         outputModalities: ["audio"],
         alpha: true,
     },

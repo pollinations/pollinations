@@ -60,7 +60,7 @@ const CreateSpeechRequestSchema = z
             }),
         duration: z.number().min(3).max(300).optional().meta({
             description:
-                "Music duration in seconds, 3-300 (elevenmusic/acestep)",
+                "Output duration in seconds (elevenmusic/acestep 3-300; eleven-sfx 3-30)",
             example: 30,
         }),
         instrumental: z.boolean().optional().meta({
@@ -705,6 +705,73 @@ export async function generateMusic(
     });
 }
 
+/**
+ * Calls ElevenLabs Sound Effects (text -> sound effect) via /v1/sound-generation.
+ * Billed per second of output audio (see registry `eleven-sfx` cost block).
+ */
+export async function generateSoundEffect(opts: {
+    prompt: string;
+    durationSeconds?: number;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const { prompt, durationSeconds, apiKey, log } = opts;
+
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message:
+                "Sound effects service is not configured (missing API key)",
+        });
+    }
+    if (prompt.length > 1000) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Prompt too long: ${prompt.length} characters. Maximum is 1000.`,
+        });
+    }
+
+    const modelId = AUDIO_SERVICES["eleven-sfx"].modelId;
+    const elevenLabsUrl = "https://api.elevenlabs.io/v1/sound-generation";
+
+    const body: Record<string, unknown> = { text: prompt, model_id: modelId };
+    // ElevenLabs SFX supports 0.5-30s; omit to let the model decide the length.
+    if (durationSeconds !== undefined) {
+        body.duration_seconds = Math.min(Math.max(durationSeconds, 0.5), 30);
+    }
+
+    log.info("Sound effect request: chars={chars}, duration={duration}", {
+        chars: prompt.length,
+        duration: durationSeconds ?? "auto",
+    });
+
+    const rawResponse = await fetch(elevenLabsUrl, {
+        method: "POST",
+        headers: { "xi-api-key": apiKey, "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+    });
+    const response = await ensureUpstreamOk(rawResponse, elevenLabsUrl);
+
+    const contentType = response.headers.get("content-type") || "audio/mpeg";
+    const audioBuffer = await response.arrayBuffer();
+    // ElevenLabs Sound Effects returns 128 kbps CBR MP3 (= 16 kB/s, ffprobe-verified).
+    const SFX_MP3_BYTES_PER_SECOND = 16000;
+    const estimatedDuration = audioBuffer.byteLength / SFX_MP3_BYTES_PER_SECOND;
+
+    const usageHeaders = buildUsageHeaders(
+        "eleven-sfx",
+        createCompletionAudioSecondsUsage(estimatedDuration),
+    );
+
+    log.info("Sound effect success: {bytes} bytes, ~{duration}s", {
+        bytes: audioBuffer.byteLength,
+        duration: Math.round(estimatedDuration),
+    });
+
+    return new Response(audioBuffer, {
+        status: 200,
+        headers: { "Content-Type": contentType, ...usageHeaders },
+    });
+}
+
 const QWEN_TTS_ENDPOINT =
     "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation";
 
@@ -1203,6 +1270,18 @@ async function dispatchAudioGeneration(
                 conditioningRef,
                 compositionPlan,
                 referenceAudio,
+                apiKey,
+                log,
+            }),
+        );
+    }
+
+    if (c.var.model.resolved === "eleven-sfx") {
+        return withSafetyHeaders(
+            c,
+            await generateSoundEffect({
+                prompt: text,
+                durationSeconds: duration,
                 apiKey,
                 log,
             }),

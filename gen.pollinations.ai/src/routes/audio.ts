@@ -1,7 +1,7 @@
 import type { Logger } from "@logtape/logtape";
 import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
-import { validator } from "@shared/middleware/validator.ts";
 import {
+    AUDIO_SERVICES,
     type AudioModelName,
     ELEVENLABS_VOICES,
     resolveElevenLabsVoiceId,
@@ -68,6 +68,24 @@ const CreateSpeechRequestSchema = z
                 "If true, guarantees instrumental output (elevenmusic only)",
             example: false,
         }),
+        store_for_inpainting: z.boolean().optional().meta({
+            description:
+                "If true, stores the generated elevenmusic song and returns its song ID for later inpainting.",
+            example: false,
+        }),
+        extract_composition_plan: z.boolean().optional().meta({
+            description:
+                "If true with reference audio, uploads it and asks ElevenLabs to derive a music_v2 composition plan.",
+            example: false,
+        }),
+        conditioning_ref: z.unknown().optional().meta({
+            description:
+                "ElevenLabs music_v2 AudioRefChunk to apply to the generated chunk. Multipart reference_audio can create this automatically.",
+        }),
+        composition_plan: z.unknown().optional().meta({
+            description:
+                "ElevenLabs composition_plan for music generation/inpainting. Cannot be combined with a plain prompt upstream.",
+        }),
         seed: z.number().int().min(0).max(4294967295).optional().meta({
             description:
                 "Seed for deterministic output. Same seed + params = best-effort return of the same cached result. Omit for random.",
@@ -97,6 +115,28 @@ type SimpleAudioQuery = {
     voice: string;
     response_format: string;
     instruct?: string;
+};
+
+type AudioRefChunk = {
+    song_id: string;
+    range: {
+        start_ms: number;
+        end_ms: number;
+    };
+};
+
+type GenerateMusicOptions = {
+    prompt: string;
+    durationSeconds?: number;
+    forceInstrumental?: boolean;
+    seed?: number;
+    storeForInpainting?: boolean;
+    extractCompositionPlan?: boolean;
+    conditioningRef?: unknown;
+    compositionPlan?: unknown;
+    referenceAudio?: File;
+    apiKey: string;
+    log: Logger;
 };
 
 function mapOutputFormat(format: string): string {
@@ -443,15 +483,86 @@ function finalizeScribeUtterance(group: {
     };
 }
 
-export async function generateMusic(opts: {
+function parseJsonObject(value: string, fieldName: string): unknown {
+    try {
+        return JSON.parse(value);
+    } catch {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `${fieldName} must be valid JSON`,
+        });
+    }
+}
+
+function createConditionedCompositionPlan(opts: {
     prompt: string;
     durationSeconds?: number;
-    forceInstrumental?: boolean;
-    seed?: number;
+    conditioningRef: unknown;
+}): { chunks: unknown[] } {
+    return {
+        chunks: [
+            {
+                text: opts.prompt,
+                duration_ms: Math.round((opts.durationSeconds ?? 30) * 1000),
+                positive_styles: ["great production quality"],
+                conditioning_ref: opts.conditioningRef,
+                condition_strength: "high",
+            },
+        ],
+    };
+}
+
+async function uploadMusicReference(opts: {
+    file: File;
+    extractCompositionPlan?: boolean;
     apiKey: string;
     log: Logger;
-}): Promise<Response> {
-    const { prompt, durationSeconds, forceInstrumental, apiKey, log } = opts;
+}): Promise<{
+    song_id?: string;
+    composition_plan?: unknown;
+}> {
+    const uploadUrl = "https://api.elevenlabs.io/v1/music/upload";
+    const formData = new FormData();
+    const filename =
+        opts.file.name && opts.file.name !== "blob"
+            ? opts.file.name
+            : "reference.mp3";
+    formData.append("file", opts.file, filename);
+    if (opts.extractCompositionPlan) {
+        formData.append("extract_composition_plan", "music_v2");
+    }
+
+    opts.log.info(
+        "ElevenLabs music upload: filename={filename}, size={size}, extractPlan={extractPlan}",
+        {
+            filename,
+            size: opts.file.size,
+            extractPlan: opts.extractCompositionPlan || false,
+        },
+    );
+
+    const rawResponse = await fetch(uploadUrl, {
+        method: "POST",
+        headers: { "xi-api-key": opts.apiKey },
+        body: formData,
+    });
+    const response = await ensureUpstreamOk(rawResponse, uploadUrl);
+    return (await response.json()) as {
+        song_id?: string;
+        composition_plan?: unknown;
+    };
+}
+
+export async function generateMusic(
+    opts: GenerateMusicOptions,
+): Promise<Response> {
+    const {
+        prompt,
+        durationSeconds,
+        forceInstrumental,
+        apiKey,
+        log,
+        referenceAudio,
+    } = opts;
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -465,29 +576,82 @@ export async function generateMusic(opts: {
         });
     }
 
+    const modelId = AUDIO_SERVICES.elevenmusic.modelId;
+    let uploadedSongId: string | undefined;
+    let compositionPlan = opts.compositionPlan;
+    let conditioningRef = opts.conditioningRef;
+
+    if (referenceAudio) {
+        const upload = await uploadMusicReference({
+            file: referenceAudio,
+            extractCompositionPlan: opts.extractCompositionPlan,
+            apiKey,
+            log,
+        });
+        uploadedSongId = upload.song_id;
+        if (!uploadedSongId) {
+            throw new UpstreamError(502 as ContentfulStatusCode, {
+                message: "ElevenLabs music upload response missing song_id",
+            });
+        }
+        if (compositionPlan === undefined && opts.extractCompositionPlan) {
+            compositionPlan = upload.composition_plan;
+        }
+        if (conditioningRef === undefined) {
+            conditioningRef = {
+                song_id: uploadedSongId,
+                range: {
+                    start_ms: 0,
+                    end_ms: Math.min(
+                        Math.round((durationSeconds ?? 30) * 1000),
+                        30_000,
+                    ),
+                },
+            } satisfies AudioRefChunk;
+        }
+    }
+
+    if (compositionPlan === undefined && conditioningRef !== undefined) {
+        compositionPlan = createConditionedCompositionPlan({
+            prompt,
+            durationSeconds,
+            conditioningRef,
+        });
+    }
+
     log.info(
-        "Music request: chars={chars}, duration={duration}, instrumental={instrumental}",
+        "Music request: model={model}, chars={chars}, duration={duration}, instrumental={instrumental}, reference={reference}, plan={plan}",
         {
+            model: modelId,
             chars: prompt.length,
             duration: durationSeconds || "auto",
             instrumental: forceInstrumental || false,
+            reference: Boolean(conditioningRef),
+            plan: Boolean(compositionPlan),
         },
     );
 
     const elevenLabsUrl = "https://api.elevenlabs.io/v1/music";
 
     const elevenLabsBody: Record<string, unknown> = {
-        prompt,
-        model_id: "music_v1",
+        model_id: modelId,
     };
-    if (durationSeconds !== undefined) {
+    if (compositionPlan !== undefined) {
+        elevenLabsBody.composition_plan = compositionPlan;
+    } else {
+        elevenLabsBody.prompt = prompt;
+    }
+    if (durationSeconds !== undefined && compositionPlan === undefined) {
         elevenLabsBody.music_length_ms = Math.round(durationSeconds * 1000);
     }
-    if (forceInstrumental) {
+    if (forceInstrumental && compositionPlan === undefined) {
         elevenLabsBody.force_instrumental = true;
     }
-    if (opts.seed !== undefined) {
+    if (opts.seed !== undefined && compositionPlan === undefined) {
         elevenLabsBody.seed = opts.seed;
+    }
+    if (opts.storeForInpainting) {
+        elevenLabsBody.store_for_inpainting = true;
     }
 
     const rawResponse = await fetch(elevenLabsUrl, {
@@ -505,13 +669,30 @@ export async function generateMusic(opts: {
 
     // Buffer response and extract duration
     const audioBuffer = await response.arrayBuffer();
-    // ElevenLabs returns MP3; estimate duration from byte size (~16 kB/s) rather than parsing the container.
-    const estimatedDuration = audioBuffer.byteLength / 16000;
+    // ElevenLabs Music v2 returns 192 kbps CBR MP3 (= 24 kB/s, ffprobe-verified
+    // across 10s/30s clips). Estimate duration from byte size rather than parsing
+    // the container. NOTE: must match the real output bitrate or billing skews —
+    // the previous 16 kB/s (128 kbps) constant over-counted seconds by 1.5x.
+    const MUSIC_MP3_BYTES_PER_SECOND = 24000;
+    const estimatedDuration =
+        audioBuffer.byteLength / MUSIC_MP3_BYTES_PER_SECOND;
 
     const usageHeaders = buildUsageHeaders(
         "elevenmusic",
         createCompletionAudioSecondsUsage(estimatedDuration),
     );
+    const responseHeaders: Record<string, string> = {
+        "Content-Type": contentType,
+        ...usageHeaders,
+    };
+    const generatedSongId = response.headers.get("song-id");
+    if (generatedSongId) {
+        responseHeaders["song-id"] = generatedSongId;
+        responseHeaders["x-elevenlabs-song-id"] = generatedSongId;
+    }
+    if (uploadedSongId) {
+        responseHeaders["x-elevenlabs-reference-song-id"] = uploadedSongId;
+    }
 
     log.info("Music success: {bytes} bytes, ~{duration}s", {
         bytes: audioBuffer.byteLength,
@@ -520,10 +701,7 @@ export async function generateMusic(opts: {
 
     return new Response(audioBuffer, {
         status: 200,
-        headers: {
-            "Content-Type": contentType,
-            ...usageHeaders,
-        },
+        headers: responseHeaders,
     });
 }
 
@@ -569,6 +747,162 @@ function requireTextToAudioModel(model: ModelName): void {
     throw new UpstreamError(400 as ContentfulStatusCode, {
         message: `Model '${model}' is not supported on text-to-audio endpoints. Use /v1/audio/transcriptions for speech-to-text models.`,
     });
+}
+
+function requireElevenMusicOptions(
+    model: ModelName,
+    opts: {
+        referenceAudio?: File;
+        compositionPlan?: unknown;
+        conditioningRef?: unknown;
+        storeForInpainting?: boolean;
+        extractCompositionPlan?: boolean;
+    },
+): void {
+    if (
+        model === "elevenmusic" ||
+        (!opts.referenceAudio &&
+            opts.compositionPlan === undefined &&
+            opts.conditioningRef === undefined &&
+            !opts.storeForInpainting &&
+            !opts.extractCompositionPlan)
+    ) {
+        return;
+    }
+
+    throw new UpstreamError(400 as ContentfulStatusCode, {
+        message:
+            "Reference audio, conditioning_ref, composition_plan, store_for_inpainting, and extract_composition_plan are only supported with model=elevenmusic.",
+    });
+}
+
+function parseOptionalNumber(
+    value: FormDataEntryValue | null,
+    fieldName: string,
+): number | undefined {
+    if (value === null || value === "") return undefined;
+    if (typeof value !== "string") {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `${fieldName} must be a number`,
+        });
+    }
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `${fieldName} must be a number`,
+        });
+    }
+    return parsed;
+}
+
+function parseOptionalBoolean(
+    value: FormDataEntryValue | null,
+    fieldName: string,
+): boolean | undefined {
+    if (value === null || value === "") return undefined;
+    if (typeof value !== "string") {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `${fieldName} must be a boolean`,
+        });
+    }
+    if (value === "true") return true;
+    if (value === "false") return false;
+    throw new UpstreamError(400 as ContentfulStatusCode, {
+        message: `${fieldName} must be true or false`,
+    });
+}
+
+function parseCreateSpeechRequest(
+    value: unknown,
+): CreateSpeechRequest & { reference_audio?: File } {
+    const parsed = CreateSpeechRequestSchema.extend({
+        reference_audio: z.instanceof(File).optional(),
+    }).safeParse(value);
+    if (parsed.success) return parsed.data;
+
+    const firstIssue = parsed.error.issues[0];
+    const path = firstIssue?.path.join(".") || "body";
+    throw new UpstreamError(400 as ContentfulStatusCode, {
+        message: `${path}: ${firstIssue?.message || "Invalid request body"}`,
+    });
+}
+
+async function parseSpeechRequest(c: AudioContext): Promise<
+    CreateSpeechRequest & {
+        reference_audio?: File;
+    }
+> {
+    const contentType = c.req.header("content-type") || "";
+
+    if (contentType.includes("multipart/form-data")) {
+        let formData: FormData;
+        try {
+            formData = c.get("formData") || (await c.req.formData());
+        } catch {
+            throw new UpstreamError(400 as ContentfulStatusCode, {
+                message: "Invalid multipart form data",
+            });
+        }
+
+        const input = formData.get("input");
+        const referenceAudio =
+            (formData.get("reference_audio") as File | null) ||
+            (formData.get("file") as File | null) ||
+            undefined;
+        const rawCompositionPlan = formData.get("composition_plan");
+        const rawConditioningRef = formData.get("conditioning_ref");
+        const parsed: CreateSpeechRequest & { reference_audio?: File } = {
+            model: (formData.get("model") as string | null) || undefined,
+            input: typeof input === "string" ? input : "",
+            safe: (formData.get("safe") as string | undefined) || undefined,
+            voice: (formData.get("voice") as string | null) || "alloy",
+            response_format:
+                (formData.get("response_format") as
+                    | "wav"
+                    | "mp3"
+                    | "flac"
+                    | "opus"
+                    | "aac"
+                    | "pcm") || "mp3",
+            duration: parseOptionalNumber(formData.get("duration"), "duration"),
+            instrumental: parseOptionalBoolean(
+                formData.get("instrumental"),
+                "instrumental",
+            ),
+            store_for_inpainting: parseOptionalBoolean(
+                formData.get("store_for_inpainting"),
+                "store_for_inpainting",
+            ),
+            extract_composition_plan: parseOptionalBoolean(
+                formData.get("extract_composition_plan"),
+                "extract_composition_plan",
+            ),
+            seed: parseOptionalNumber(formData.get("seed"), "seed"),
+            style: (formData.get("style") as string | null) || undefined,
+            instruct: (formData.get("instruct") as string | null) || undefined,
+            conditioning_ref:
+                typeof rawConditioningRef === "string"
+                    ? parseJsonObject(rawConditioningRef, "conditioning_ref")
+                    : undefined,
+            composition_plan:
+                typeof rawCompositionPlan === "string"
+                    ? parseJsonObject(rawCompositionPlan, "composition_plan")
+                    : undefined,
+            reference_audio: referenceAudio,
+        };
+
+        return parseCreateSpeechRequest(parsed);
+    }
+
+    let body: unknown;
+    try {
+        body = await c.req.json();
+    } catch {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: "Invalid JSON body",
+        });
+    }
+    return parseCreateSpeechRequest(body);
 }
 
 export async function generateQwenTts(opts: {
@@ -810,6 +1144,11 @@ async function dispatchAudioGeneration(
         duration?: number;
         style?: string;
         instrumental?: boolean;
+        storeForInpainting?: boolean;
+        extractCompositionPlan?: boolean;
+        conditioningRef?: unknown;
+        compositionPlan?: unknown;
+        referenceAudio?: File;
         instruct?: string;
         apiKey: string;
         dashScopeApiKey: string;
@@ -825,6 +1164,11 @@ async function dispatchAudioGeneration(
         duration,
         style,
         instrumental,
+        storeForInpainting,
+        extractCompositionPlan,
+        conditioningRef,
+        compositionPlan,
+        referenceAudio,
         instruct,
         apiKey,
         dashScopeApiKey,
@@ -854,6 +1198,11 @@ async function dispatchAudioGeneration(
                 durationSeconds: duration,
                 forceInstrumental: instrumental,
                 seed,
+                storeForInpainting,
+                extractCompositionPlan,
+                conditioningRef,
+                compositionPlan,
+                referenceAudio,
                 apiKey,
                 log,
             }),
@@ -931,14 +1280,119 @@ export const audioRoutes = new Hono<Env>()
     .use("*", edgeRateLimit)
     .use("*", auth(), frontendKeyRateLimit, balance)
     .post(
+        "/music/upload",
+        describeRoute({
+            tags: ["🔊 Audio"],
+            summary: "Upload Music Reference",
+            description:
+                "Upload an audio file to ElevenLabs Music and receive a `song_id` for reference conditioning or inpainting. Set `extract_composition_plan=true` to return a music_v2 composition plan derived from the track.",
+            requestBody: {
+                required: true,
+                content: {
+                    "multipart/form-data": {
+                        schema: {
+                            type: "object",
+                            required: ["file"],
+                            properties: {
+                                file: {
+                                    type: "string",
+                                    format: "binary",
+                                    description: "Music file to upload.",
+                                },
+                                extract_composition_plan: {
+                                    type: "boolean",
+                                    default: false,
+                                    description:
+                                        "Return a music_v2 composition plan extracted from the uploaded track.",
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            responses: {
+                200: {
+                    description:
+                        "Success - Returns ElevenLabs song_id and optional composition_plan",
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                properties: {
+                                    song_id: { type: "string" },
+                                    composition_plan: { type: "object" },
+                                },
+                            },
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
+            },
+        }),
+        resolveModel("generate.audio", { defaultModel: "elevenmusic" }),
+        track("generate.audio"),
+        async (c) => {
+            const log = c.get("log").getChild("music-upload");
+            await requireGenerationAccess(c.var, c.env);
+
+            if (c.var.model.resolved !== "elevenmusic") {
+                throw new UpstreamError(400 as ContentfulStatusCode, {
+                    message: "Music upload only supports model=elevenmusic",
+                });
+            }
+
+            let formData: FormData;
+            try {
+                formData = c.get("formData") || (await c.req.formData());
+            } catch {
+                throw new UpstreamError(400 as ContentfulStatusCode, {
+                    message: "Invalid multipart form data",
+                });
+            }
+
+            const file = formData.get("file") as File | null;
+            if (!file) {
+                throw new UpstreamError(400 as ContentfulStatusCode, {
+                    message: "Missing required field: file",
+                });
+            }
+
+            const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
+                .ELEVENLABS_API_KEY;
+            const upload = await uploadMusicReference({
+                file,
+                extractCompositionPlan:
+                    parseOptionalBoolean(
+                        formData.get("extract_composition_plan"),
+                        "extract_composition_plan",
+                    ) || false,
+                apiKey,
+                log,
+            });
+            const usageHeaders = buildUsageHeaders(
+                "elevenmusic",
+                createCompletionAudioSecondsUsage(file.size / 16000),
+            );
+
+            return Response.json(upload, {
+                headers: {
+                    ...usageHeaders,
+                    ...(upload.song_id
+                        ? { "x-elevenlabs-song-id": upload.song_id }
+                        : {}),
+                },
+            });
+        },
+    )
+    .post(
         "/speech",
         describeRoute({
             tags: ["🔊 Audio"],
             summary: "Text to Speech (OpenAI-compatible)",
             description: [
-                "Generate speech or music from text. Compatible with the OpenAI TTS API — use any OpenAI SDK.",
+                "Generate speech or music from text. Compatible with the OpenAI TTS API for JSON requests.",
                 "",
-                "Set `model` to `elevenmusic` to generate music instead of speech.",
+                "Set `model` to `elevenmusic` to generate music. For reference-audio conditioning, send multipart/form-data with `reference_audio` plus `input`; for inpainting, pass an ElevenLabs `composition_plan`.",
                 "",
                 `**Available voices:** ${ELEVENLABS_VOICES.join(", ")}`,
                 "",
@@ -968,7 +1422,6 @@ export const audioRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(400, 401, 402, 403, 500),
             },
         }),
-        validator("json", CreateSpeechRequestSchema),
         resolveModel("generate.audio"),
         track("generate.audio"),
         async (c) => {
@@ -982,11 +1435,23 @@ export const audioRoutes = new Hono<Env>()
                 response_format,
                 duration,
                 instrumental,
+                store_for_inpainting,
+                extract_composition_plan,
+                conditioning_ref,
+                composition_plan,
+                reference_audio,
                 seed,
                 style,
                 instruct,
-            } = c.req.valid("json" as never) as CreateSpeechRequest;
+            } = await parseSpeechRequest(c);
             requireTextToAudioModel(c.var.model.resolved);
+            requireElevenMusicOptions(c.var.model.resolved, {
+                referenceAudio: reference_audio,
+                compositionPlan: composition_plan,
+                conditioningRef: conditioning_ref,
+                storeForInpainting: store_for_inpainting,
+                extractCompositionPlan: extract_composition_plan,
+            });
             const safeInput = await applySafety(c, input, safe);
 
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
@@ -1001,6 +1466,11 @@ export const audioRoutes = new Hono<Env>()
                 duration,
                 style,
                 instrumental,
+                storeForInpainting: store_for_inpainting,
+                extractCompositionPlan: extract_composition_plan,
+                conditioningRef: conditioning_ref,
+                compositionPlan: composition_plan,
+                referenceAudio: reference_audio,
                 instruct,
                 apiKey,
                 dashScopeApiKey: c.env.DASHSCOPE_API_KEY,

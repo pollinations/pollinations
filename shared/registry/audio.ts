@@ -94,7 +94,7 @@ export const AUDIO_SERVICES = {
     },
     elevenmusic: {
         aliases: ["music"],
-        modelId: "music_v1",
+        modelId: "music_v2",
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
@@ -102,14 +102,15 @@ export const AUDIO_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            // ElevenLabs Music: billed by output audio duration
-            // ~$0.30 per minute ≈ $0.005 per second (Scale plan pricing)
-            completionAudioSeconds: 0.005,
+            // ElevenLabs Music v2: billed per second of output audio.
+            // Measured empirically (ffprobe-verified, 10s & 30s clips): 15.05 credits/sec.
+            // Scale plan $0.166/1k credits => 15.05 * 0.166/1000 ≈ $0.0025/sec ($0.15/min).
+            completionAudioSeconds: 0.0025,
         },
         title: "ElevenLabs Music",
         description:
-            "ElevenLabs Music - Generate studio-grade music from text prompts",
-        inputModalities: ["text"],
+            "ElevenLabs Music - Generate studio-grade music from text prompts and reference audio",
+        inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
         alpha: true,
     },

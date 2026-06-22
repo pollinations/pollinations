@@ -356,15 +356,14 @@ function SectionFooter({ category }: { category: CategoryMeta }) {
     const Icon = category.icon;
     if (category.key === "contribute") {
         return (
-            <div className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-theme-text-muted">
-                <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <div className="mt-4 flex items-center gap-2 border-t border-divider pt-4 text-theme-text-muted">
+                <Icon className="h-3.5 w-3.5 shrink-0" />
                 <Text as="p" size="sm" tone="muted">
                     Comment on an open GitHub quest, wait for assignment, then
-                    open a PR with <code>Fixes #N</code>.{" "}
+                    submit a PR for review.{" "}
                     <InlineLink href={CONTRIBUTE_FAQ_HASH} showIcon={false}>
-                        Read the FAQ
+                        Read the FAQ.
                     </InlineLink>
-                    .
                 </Text>
             </div>
         );

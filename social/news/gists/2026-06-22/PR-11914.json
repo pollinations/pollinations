@@ -1,0 +1,35 @@
+{
+  "pr_number": 11914,
+  "title": "fix(image): remove hardcoded runpod URL fallback for klein",
+  "author": "fisventurous",
+  "url": "https://github.com/pollinations/pollinations/pull/11914",
+  "merged_at": "2026-06-22T17:04:04Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "removes hardcoded runpod proxy url fallback for flux klein model\r\n\r\nchange\r\n\\- throw 500 `HttpError` when `KLEIN_URL` is not configured",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Klein config cleanup",
+    "blurb": "We've swept away some old hardcoded RunPod proxy URLs for the Flux Klein model. Just keeping the hive's configuration clean and predictable!",
+    "summary": "Removed the hardcoded RunPod proxy URL fallback for the Flux Klein model, now throwing a 500 HttpError if the KLEIN_URL environment variable is missing.",
+    "impact": "This ensures the image generation API strictly relies on configured environment variables rather than silently falling back to a hardcoded proxy.",
+    "keywords": [
+      "flux",
+      "klein",
+      "runpod",
+      "config",
+      "api"
+    ],
+    "visual_concept": "The bee mascot (Polly) and the Nomnom creature cleaning up the environment. Nomnom is eating an old, dusty 'hardcoded' sign, while Polly holds a clean, glowing configuration file.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and the round tan Nomnom creature cleaning up a digital garden. Nomnom is happily eating an old dusty wooden sign, while the bee hovers nearby holding a clean, glowing lime green (#ecf874) configuration blueprint. Soft pastel lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-22/PR-11914.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and the round tan Nomnom creature cleaning up a digital garden. Nomnom is happily eating an old dusty wooden sign, while the bee hovers nearby holding a clean, glowing lime green (#ecf874) configuration blueprint. Soft pastel lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-22T17:05:14.927555+00:00"
+}

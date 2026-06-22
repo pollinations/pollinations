@@ -771,7 +771,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "**Output formats:** mp3 (default), opus, aac, flac, wav, pcm",
                 "",
-                "**Music generation:** Set `model=elevenmusic` to generate music instead of speech. Supports `duration` (3-300 seconds) and `instrumental` mode.",
+                "**Music generation:** Set `model=elevenmusic` to generate music instead of speech. Supports `duration` (3-300 seconds) and `instrumental` mode. Use `POST /v1/audio/speech` with multipart `reference_audio` for style transfer, or `POST /v1/audio/music/upload` to register a source track for inpainting.",
             ].join("\n"),
             responses: {
                 200: {

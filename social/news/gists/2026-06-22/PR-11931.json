@@ -1,0 +1,35 @@
+{
+  "pr_number": 11931,
+  "title": "Fixes #11896: Upgrade elevenmusic to music_v2 + reference-audio conditioning",
+  "author": "sharktide",
+  "url": "https://github.com/pollinations/pollinations/pull/11931",
+  "merged_at": "2026-06-22T18:00:17Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Close #11896 - Upgrade elevenmusic to music_v2 + reference-audio conditioning",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Dropping the v2 beat",
+    "blurb": "We've upgraded our ElevenLabs music integration to music_v2. You can now use reference audio to condition your generated tracks, giving you way more control over the final vibe.",
+    "summary": "Upgraded the ElevenLabs music integration to use the music_v2 model and added support for reference-audio conditioning in the audio generation endpoint.",
+    "impact": "Users can now generate higher-quality music and directly guide the style of the output by providing a reference audio track.",
+    "keywords": [
+      "audio",
+      "elevenlabs",
+      "music_v2",
+      "reference-audio",
+      "generation"
+    ],
+    "visual_concept": "Polly the bee as a DJ/producer using a retro mixing desk, feeding a 'reference' cassette tape into the machine to represent reference-audio conditioning. Monitor robot dancing with headphones.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny DJ headphones, placing a retro cassette tape into a glowing lime green (#ecf874) mixing console. A chunky pixel robot with a monitor head wears oversized headphones and dances nearby. Soft pastel lavender and mint gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-22/PR-11931.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny DJ headphones, placing a retro cassette tape into a glowing lime green (#ecf874) mixing console. A chunky pixel robot with a monitor head wears oversized headphones and dances nearby. Soft pastel lavender and mint gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-22T18:02:37.858086+00:00"
+}

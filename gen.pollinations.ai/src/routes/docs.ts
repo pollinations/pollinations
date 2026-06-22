@@ -42,6 +42,7 @@ import IMAGE_GENERATION_MD from "../docs/image-generation.md?raw";
 import INTRODUCTION_MD from "../docs/introduction.md?raw";
 import MEDIA_STORAGE_MD from "../docs/media-storage.md?raw";
 import MODELS_MD from "../docs/models.md?raw";
+import PUBLIC_STATS_MD from "../docs/public-stats.md?raw";
 import QUICK_START_MD from "../docs/quick-start.md?raw";
 import SAFETY_MD from "../docs/safety.md?raw";
 import TEXT_GENERATION_MD from "../docs/text-generation.md?raw";
@@ -74,6 +75,7 @@ const AUTHENTICATION_DOCS = AUTHENTICATION_MD.trim();
 const MODELS_DOCS = MODELS_MD.trim();
 const MEDIA_STORAGE_DOCS = MEDIA_STORAGE_MD.trim();
 const ACCOUNT_DOCS = ACCOUNT_MD.trim();
+const PUBLIC_STATS_DOCS = PUBLIC_STATS_MD.trim();
 const SAFETY_DOCS = SAFETY_MD.trim();
 const ERRORS_DOCS = ERRORS_MD.trim();
 const IMAGE_ALIASES = new Set(
@@ -94,6 +96,7 @@ const ALL_ALIASES = new Set([
     ...AUDIO_ALIASES,
     ...EMBEDDING_ALIASES,
 ]);
+const UNDOCUMENTED_CHAT_COMPAT_FIELDS = ["thinking", "thinking_budget"];
 
 const imageModelDisplayNames = getImageModelIds().join(", ");
 
@@ -116,6 +119,40 @@ function filterAliases(schema: OpenApiSchema): OpenApiSchema {
                 return filtered.length !== value.length ? filtered : value;
             }
             return value;
+        }),
+    ) as OpenApiSchema;
+}
+
+function hideUndocumentedChatCompatFields(
+    schema: OpenApiSchema,
+): OpenApiSchema {
+    return JSON.parse(
+        JSON.stringify(schema, (_key, value) => {
+            if (!value || typeof value !== "object" || Array.isArray(value)) {
+                return value;
+            }
+
+            const record = value as Record<string, unknown>;
+            const properties = record.properties;
+            if (
+                !properties ||
+                typeof properties !== "object" ||
+                Array.isArray(properties)
+            ) {
+                return value;
+            }
+
+            const props = properties as Record<string, unknown>;
+            if (!("reasoning_effort" in props)) {
+                return value;
+            }
+
+            const filtered = { ...props };
+            for (const field of UNDOCUMENTED_CHAT_COMPAT_FIELDS) {
+                delete filtered[field];
+            }
+
+            return { ...record, properties: filtered };
         }),
     ) as OpenApiSchema;
 }
@@ -200,6 +237,7 @@ const GEN_API_DOCS = [
     ACCOUNT_DOCS,
     SAFETY_DOCS,
     ERRORS_DOCS,
+    PUBLIC_STATS_DOCS,
 ].join("\n\n");
 
 const BYOP_SECTION = `## BYOP\n\n${BYOP_DOCS}`;
@@ -314,8 +352,9 @@ function generationDocumentation(): OpenApiSchema {
                     "🤖 Models",
                     "📦 Media Storage",
                     "👤 Account",
-                    "❌ Errors",
                     "🛡️ Safety",
+                    "❌ Errors",
+                    "📊 Public Stats",
                 ],
             },
         ],
@@ -384,6 +423,10 @@ function generationDocumentation(): OpenApiSchema {
                 name: "👤 Account",
                 description: stripLeadingHeading(ACCOUNT_DOCS),
             },
+            {
+                name: "📊 Public Stats",
+                description: stripLeadingHeading(PUBLIC_STATS_DOCS),
+            },
         ],
     };
 }
@@ -404,10 +447,12 @@ function transformGenerationSchema(schema: OpenApiSchema): OpenApiSchema {
         paths[publicPath] = value;
     }
 
-    return filterAliases({
-        ...schema,
-        paths,
-    });
+    return hideUndocumentedChatCompatFields(
+        filterAliases({
+            ...schema,
+            paths,
+        }),
+    );
 }
 
 async function fetchEnterSchema(c: Context<Env>) {
@@ -731,6 +776,25 @@ function guideHtml(guide: Guide): string {
     return guidesPage(rendered);
 }
 
+/**
+ * Build the merged OpenAPI spec (generation + public account + media storage,
+ * with code samples injected). Single source of truth for both the docs
+ * Scalar route and the conventional /openapi.json alias.
+ */
+export async function buildMergedOpenApiSpec(
+    c: Context<Env>,
+    genApp: Hono<Env>,
+): Promise<OpenApiSchema> {
+    const [generationSchema, enterSchema, mediaSchema] = await Promise.all([
+        getGenerationSchema(genApp),
+        fetchEnterSchema(c).catch(() => undefined),
+        fetchMediaSchema().catch(() => undefined),
+    ]);
+    return injectSamples(
+        mergeSchemas(generationSchema, enterSchema, mediaSchema),
+    );
+}
+
 export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
     return new Hono<Env>()
         .get("/", async (c, next) => {
@@ -791,16 +855,7 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             return c.html(guideHtml(guide));
         })
         .get("/open-api/generate-schema", async (c) => {
-            const [generationSchema, enterSchema, mediaSchema] =
-                await Promise.all([
-                    getGenerationSchema(genApp),
-                    fetchEnterSchema(c).catch(() => undefined),
-                    fetchMediaSchema().catch(() => undefined),
-                ]);
-            const merged = injectSamples(
-                mergeSchemas(generationSchema, enterSchema, mediaSchema),
-            );
-
+            const merged = await buildMergedOpenApiSpec(c, genApp);
             if (c.req.query("format") === "yaml") {
                 c.header("Content-Type", "application/yaml; charset=utf-8");
                 return c.body(yamlStringify(merged));

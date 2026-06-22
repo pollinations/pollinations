@@ -517,14 +517,10 @@ class PollyBot(commands.Bot):
             logger.info("Registered doc_search tool handler (doc embeddings enabled)")
 
         # Register web_search handler (always available)
-        from .services.pollinations import web_handler, web_search_handler
+        from .services.pollinations import web_search_handler
 
         pollinations_client.register_tool_handler("web_search", web_search_handler)
         logger.info("Registered web_search tool handler")
-
-        # Register web handler (nomnom - deep research)
-        pollinations_client.register_tool_handler("web", web_handler)
-        logger.info("Registered web tool handler (nomnom)")
 
         # Register web_scrape handler (always available - Crawl4AI powered)
         from .services.web_scraper import web_scrape_handler

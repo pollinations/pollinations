@@ -1,0 +1,35 @@
+{
+  "pr_number": 11940,
+  "title": "chore: update app metrics 2026-06-22",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11940",
+  "merged_at": "2026-06-22T06:03:32Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Daily automated update of app metrics, health checks, and greenhouse",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Greenhouse Checkup",
+    "blurb": "Our automated bots just finished their daily rounds, watering the greenhouse and updating the community app metrics.",
+    "summary": "Automated daily update of community app metrics, health checks, and greenhouse rankings in the documentation.",
+    "impact": "Keeps the app showcase and greenhouse documentation up to date with the latest community usage data.",
+    "keywords": [
+      "metrics",
+      "apps",
+      "greenhouse",
+      "automated",
+      "chore"
+    ],
+    "visual_concept": "The robot companion and the bee checking on plants (representing apps) in a greenhouse, holding a clipboard with metrics.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot in a digital greenhouse. The robot holds a tiny clipboard checking on glowing lime green (#ecf874) code-plants. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-22/PR-11940.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot in a digital greenhouse. The robot holds a tiny clipboard checking on glowing lime green (#ecf874) code-plants. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-22T06:04:31.416769+00:00"
+}

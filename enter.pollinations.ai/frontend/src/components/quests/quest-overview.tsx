@@ -328,22 +328,11 @@ function SectionHeader({
     // ratio that would recede as the pool grows.
     openCount?: number;
 }) {
-    const Icon = category.icon;
     return (
         <div className="flex items-center justify-between gap-4 px-1">
-            <div className="flex min-w-0 items-center gap-2.5">
-                <Heading as="h2" size="section">
-                    {category.label}
-                </Heading>
-                <span
-                    className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px]"
-                    style={{
-                        backgroundColor: "var(--polli-color-paid-pale)",
-                    }}
-                >
-                    <Icon className={`h-5 w-5 ${GOLD}`} />
-                </span>
-            </div>
+            <Heading as="h2" size="section">
+                {category.label}
+            </Heading>
             <PaidChip size="sm" className="tabular-nums">
                 {openCount != null ? `${openCount} open` : `${done} / ${total}`}
             </PaidChip>
@@ -375,9 +364,45 @@ function SectionFooter({ category }: { category: CategoryMeta }) {
     );
 }
 
-function QuestRow({ card }: { card: QuestCard }) {
+// Leading marker for a quest row, wearing its section's icon (Set up · Grow ·
+// Dev · Contribute). Paid gold while open; shifts to the success tint once
+// completed — the icon inherits the color via currentColor. Set inline so it
+// beats the icon's own polli:-prefixed classes without a specificity fight.
+function QuestMarker({
+    icon: Icon,
+    completed,
+}: {
+    icon: IconComponent;
+    completed: boolean;
+}) {
+    return (
+        <span
+            aria-hidden="true"
+            className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] transition-colors"
+            style={{
+                backgroundColor: completed
+                    ? "var(--color-intent-success-bg-light)"
+                    : "var(--polli-color-paid-pale)",
+                color: completed
+                    ? "var(--color-intent-success-text)"
+                    : "var(--polli-color-paid-deep)",
+            }}
+        >
+            <Icon className="h-5 w-5" />
+        </span>
+    );
+}
+
+function QuestRow({ card, icon }: { card: QuestCard; icon: IconComponent }) {
+    // Per-row accent matches the marker: paid gold while open, success green once
+    // completed. Applied inline (like InternHeroCard below) so it overrides the
+    // primitives' own polli:-prefixed color classes without a specificity fight.
+    const accent = card.completed
+        ? "var(--color-intent-success-text)"
+        : "var(--polli-color-paid-deep)";
     return (
         <Surface variant="card" className="flex items-center gap-4">
+            <QuestMarker icon={icon} completed={card.completed} />
             <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                     <Text
@@ -392,6 +417,7 @@ function QuestRow({ card }: { card: QuestCard }) {
                             href={card.url}
                             showIcon={false}
                             className="text-sm tabular-nums"
+                            style={{ color: accent }}
                         >
                             #{card.issueNumber}
                         </InlineLink>
@@ -414,8 +440,8 @@ function QuestRow({ card }: { card: QuestCard }) {
                     <Text
                         as="span"
                         size="sm"
-                        tone="muted"
                         className="tabular-nums"
+                        style={{ color: accent }}
                     >
                         +{formatGrantAmount(card.earnedAmount ?? card.reward)}{" "}
                         pollen
@@ -769,7 +795,11 @@ export const QuestOverview: FC<QuestOverviewProps> = ({ githubUsername }) => {
                             className="flex flex-col gap-2"
                         >
                             {cards.map((card) => (
-                                <QuestRow key={card.key} card={card} />
+                                <QuestRow
+                                    key={card.key}
+                                    card={card}
+                                    icon={category.icon}
+                                />
                             ))}
                             <SectionFooter category={category} />
                         </Surface>

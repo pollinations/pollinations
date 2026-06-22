@@ -1,4 +1,3 @@
-import * as appDirectory from "./groups/app-directory.ts";
 import * as d1Setup from "./groups/d1-setup.ts";
 import * as githubIssues from "./groups/github-issues.ts";
 import * as githubProfile from "./groups/github-profile.ts";
@@ -18,13 +17,18 @@ import {
  * resolve a constant list; dynamic groups build quests from source state.
  * index.ts awaits every group and flattens the results into one list; the
  * consumers (catalog, evaluator) work per-quest from there.
+ *
+ * app-directory is intentionally parked (not listed): "list your app on
+ * Pollinations" was the only per-event quest (per-(user, app) idempotency), and
+ * the only scope beyond perUser/once. It returns when "apps as quests" lands —
+ * each approved app becoming its own once-quest, mirroring github-issues —
+ * which removes the need for a per-event scope entirely.
  */
 const GROUPS: QuestGroup[] = [
     tinybirdUsage,
     d1Setup,
     githubProfile,
     githubIssues,
-    appDirectory,
     identity,
 ];
 

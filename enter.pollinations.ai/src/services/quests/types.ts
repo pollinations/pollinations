@@ -11,16 +11,14 @@ export type QuestEvaluationContext = {
 };
 
 /**
- * What a quest produces per recipient: ONLY the things that vary per award.
- * Everything else on a grant (questId, amount, bucket) is the quest's own
- * definition and is filled in generically by toGrant.
+ * What a quest produces per recipient: just the user who earned it. Everything
+ * else on a grant (the idempotency key, questId, title, amount, bucket) is
+ * derived from the quest's definition by toGrant — a quest never builds a key.
  *
- * `idempotencyKey` lives here, not derived, because the key encodes the quest's
- * completion SCOPE — per-user (`quest:${id}:user:${userId}`) or per-event
- * (`…:event:app:${url}`) — which only the quest knows.
+ * Every quest is per-user: one award per user, deduped on the per-(quest, user)
+ * idempotency key. There is no other scope.
  */
 export type QuestAward = {
-    idempotencyKey: string;
     userId: string;
 };
 
@@ -46,8 +44,14 @@ export type QuestGroup = {
 
 /**
  * Turn a quest + one award into a full grant. The quest supplies the definition
- * fields (questId, title, amount, bucket); the award supplies the per-recipient
- * bits (key, user). This is the one place a GrantRewardInput is assembled.
+ * fields (questId, title, amount, bucket); the award supplies only the user. The
+ * idempotency key is derived here — the one place it is built — from the quest's
+ * scope, so a quest can never mistype or collide a key:
+ *   - "perUser" -> `quest:${id}:user:${userId}` (each user earns it once)
+ *   - "once"    -> `quest:${id}` (one payout total; the userId is who gets paid
+ *                  but is deliberately NOT in the key). If a "once" quest ever
+ *                  proposes awards for two users, they collapse to the same key
+ *                  and only the first is granted — which is exactly "once".
  *
  * `title` is snapshotted onto the grant so the history UI renders it directly
  * (grant.title) without re-deriving from the catalog.
@@ -56,8 +60,12 @@ export function toGrant(
     quest: QuestDefinition,
     award: QuestAward,
 ): GrantRewardInput {
+    const idempotencyKey =
+        quest.scope === "once"
+            ? `quest:${quest.id}`
+            : `quest:${quest.id}:user:${award.userId}`;
     return {
-        idempotencyKey: award.idempotencyKey,
+        idempotencyKey,
         userId: award.userId,
         questId: quest.id,
         title: quest.title,

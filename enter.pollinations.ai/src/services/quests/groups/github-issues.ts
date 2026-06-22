@@ -1,7 +1,6 @@
 import type { Bucket } from "@shared/billing/deduction.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
-import { perUserKey } from "../keys.ts";
 import type { Quest, QuestAward, QuestEvaluationContext } from "../types.ts";
 
 /**
@@ -62,8 +61,10 @@ async function loadAssigneeUserId(
  * Build the per-issue Quest. The closure captures the issue snapshot so
  * findRewards is a pure function of (snapshot, assignee lookup): an OPEN issue
  * yields no award; a COMPLETED + payable issue yields one award to the
- * assignee. Idempotency scope is per-(issue, user):
- *   quest:github:issue:${issueNumber}:user:${userId}
+ * assignee. scope:"once" — toGrant derives the key `quest:github:issue:${N}`
+ * (no userId), so an issue pays out exactly once even if it is reassigned to a
+ * different user after a first payout. The award's userId is who gets paid; it
+ * is deliberately NOT in the key.
  */
 function toIssueQuest(
     issue: typeof schema.githubQuestIssues.$inferSelect,
@@ -82,6 +83,7 @@ function toIssueQuest(
         description: issue.description ?? "",
         iconId: QUEST_ICON_ID,
         category: QUEST_CATEGORY,
+        scope: "once",
         rewardAmount: issue.rewardAmount ?? 0,
         balanceBucket: issue.balanceBucket as Bucket,
         url: issue.url,
@@ -101,7 +103,7 @@ function toIssueQuest(
                 snapshot.assigneeGithubId,
             );
             if (!userId) return [];
-            return [{ idempotencyKey: perUserKey(id, userId), userId }];
+            return [{ userId }];
         },
     };
 }

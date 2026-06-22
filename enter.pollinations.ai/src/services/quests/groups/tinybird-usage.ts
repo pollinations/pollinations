@@ -1,4 +1,3 @@
-import { perUserKey } from "../keys.ts";
 import type { Quest, QuestAward, QuestEvaluationContext } from "../types.ts";
 import { loadUsageQuestSummary } from "../usage-summary.ts";
 
@@ -17,16 +16,14 @@ const firstImageQuest: Quest = {
     description: "Create one image with Pollinations.",
     iconId: "image",
     category: "plant",
+    scope: "perUser",
     rewardAmount: 0.5,
     balanceBucket: "pack",
     async findRewards({ env }): Promise<QuestAward[]> {
         const rows = await loadUsageQuestSummary(env);
         return rows
             .filter((row) => row.imageRequests > 0)
-            .map((row) => ({
-                idempotencyKey: perUserKey(firstImageQuest.id, row.userId),
-                userId: row.userId,
-            }));
+            .map((row) => ({ userId: row.userId }));
     },
 };
 
@@ -36,19 +33,14 @@ const firstChatCompletionQuest: Quest = {
     description: "Send one chat completion request.",
     iconId: "chat",
     category: "plant",
+    scope: "perUser",
     rewardAmount: 0.5,
     balanceBucket: "pack",
     async findRewards({ env }): Promise<QuestAward[]> {
         const rows = await loadUsageQuestSummary(env);
         return rows
             .filter((row) => row.textRequests > 0)
-            .map((row) => ({
-                idempotencyKey: perUserKey(
-                    firstChatCompletionQuest.id,
-                    row.userId,
-                ),
-                userId: row.userId,
-            }));
+            .map((row) => ({ userId: row.userId }));
     },
 };
 
@@ -58,16 +50,14 @@ const tryThreeModelsQuest: Quest = {
     description: "Use three distinct Pollinations models.",
     iconId: "tokens",
     category: "plant",
+    scope: "perUser",
     rewardAmount: 1,
     balanceBucket: "pack",
     async findRewards({ env }): Promise<QuestAward[]> {
         const rows = await loadUsageQuestSummary(env);
         return rows
             .filter((row) => row.distinctModels >= MODEL_THRESHOLD)
-            .map((row) => ({
-                idempotencyKey: perUserKey(tryThreeModelsQuest.id, row.userId),
-                userId: row.userId,
-            }));
+            .map((row) => ({ userId: row.userId }));
     },
 };
 

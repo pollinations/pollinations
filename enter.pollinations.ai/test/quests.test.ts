@@ -209,17 +209,6 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
         rewardAmount: 0,
         url: "https://github.com/pollinations/pollinations/issues/323",
     });
-    expect(
-        payload.quests.find(
-            (quest) => quest.id === "grow:list_app_on_pollinations",
-        ),
-    ).toMatchObject({
-        title: "List an app on Pollinations",
-        iconId: "app",
-        category: "grow",
-        availability: "available",
-        rewardAmount: 5,
-    });
     // The uniform card shape dropped the old board-state fields.
     for (const quest of payload.quests) {
         expect(quest).not.toHaveProperty("kind");
@@ -248,12 +237,10 @@ test("GET /api/quests/catalog returns product quests with no materialized GitHub
 
     expect(payload.quests).toHaveLength(staticCardCount);
     expect(
-        payload.quests.find(
-            (quest) => quest.id === "grow:list_app_on_pollinations",
-        ),
+        payload.quests.find((quest) => quest.id === "onboarding:first_image"),
     ).toMatchObject({
-        iconId: "app",
-        category: "grow",
+        iconId: "image",
+        category: "plant",
         availability: "available",
     });
     expect(
@@ -261,9 +248,13 @@ test("GET /api/quests/catalog returns product quests with no materialized GitHub
     ).toBe(false);
 });
 
-test("per-event reward keys pay once per event", async ({
+test("grantReward dedups on idempotency key and credits distinct keys", async ({
     sessionToken: _sessionToken,
 }) => {
+    // grantReward is the generic idempotent write: it pays a key once and pays
+    // distinct keys independently. Quest scope (perUser/once) decides the key
+    // SHAPE upstream in toGrant; here we verify the write path treats any two
+    // keys independently and collapses repeats of one.
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
     const questId = "github:merged_pr_author";
@@ -342,7 +333,6 @@ test("quest evaluator grants code-defined product quests once", async ({
         },
         NO_GITHUB_PUBLIC_REPOS_RESULT,
         NO_GITHUB_REPO_STARS_RESULT,
-        { questId: "grow:list_app_on_pollinations", scanned: 0, granted: 0 },
         NO_ELIXPO_INTERN_RESULT,
     ]);
 
@@ -363,7 +353,6 @@ test("quest evaluator grants code-defined product quests once", async ({
         },
         NO_GITHUB_PUBLIC_REPOS_RESULT,
         NO_GITHUB_REPO_STARS_RESULT,
-        { questId: "grow:list_app_on_pollinations", scanned: 0, granted: 0 },
         NO_ELIXPO_INTERN_RESULT,
     ]);
 
@@ -532,6 +521,7 @@ test("quest evaluator continues after one quest fails", async ({
         description: "Used to verify runner isolation.",
         iconId: "sprout",
         category: "grow",
+        scope: "perUser",
         rewardAmount: 1,
         balanceBucket: "pack",
         async findRewards(): Promise<never> {
@@ -588,7 +578,6 @@ test("github account age quest waits until threshold", async ({
         },
         NO_GITHUB_PUBLIC_REPOS_RESULT,
         NO_GITHUB_REPO_STARS_RESULT,
-        { questId: "grow:list_app_on_pollinations", scanned: 0, granted: 0 },
         NO_ELIXPO_INTERN_RESULT,
     ]);
 
@@ -654,94 +643,6 @@ test("quest evaluator grants elixpo intern easter egg once", async ({
     });
 });
 
-test("quest evaluator grants approved app quest per app", async ({
-    mocks,
-    sessionToken: _sessionToken,
-}) => {
-    const db = drizzle(env.DB, { schema });
-    const user = await getOnlyUser();
-    mocks.tinybird.state.appDirectoryResponse = [
-        {
-            name: "Demo App",
-            web_url: "https://example.com/demo",
-            github_user_id: "12345",
-            github_username: "testuser",
-            issue_url:
-                "https://github.com/pollinations/pollinations/issues/555",
-            approved_date: "2026-06-19",
-        },
-    ];
-    await mocks.enable("github", "tinybird");
-
-    const first = await runQuestEvaluator(env);
-    expect(first.results).toEqual([
-        NO_FIRST_IMAGE_RESULT,
-        NO_FIRST_CHAT_COMPLETION_RESULT,
-        NO_TRY_THREE_MODELS_RESULT,
-        { questId: "onboarding:first_api_key", scanned: 0, granted: 0 },
-        { questId: "spend:first_top_up", scanned: 0, granted: 0 },
-        {
-            questId: "onboarding:established_github_account",
-            scanned: 1,
-            granted: 1,
-        },
-        NO_GITHUB_PUBLIC_REPOS_RESULT,
-        NO_GITHUB_REPO_STARS_RESULT,
-        { questId: "grow:list_app_on_pollinations", scanned: 1, granted: 1 },
-        NO_ELIXPO_INTERN_RESULT,
-    ]);
-
-    // Second run: every quest funnels proposals through excludeExistingRewards,
-    // so the already-paid list-app event is filtered out before grantReward.
-    // The candidates are still re-scanned (scanned stays at the candidate count),
-    // but granted drops to 0; balance and grant count are unchanged.
-    const second = await runQuestEvaluator(env);
-    expect(second.results).toEqual([
-        NO_FIRST_IMAGE_RESULT,
-        NO_FIRST_CHAT_COMPLETION_RESULT,
-        NO_TRY_THREE_MODELS_RESULT,
-        { questId: "onboarding:first_api_key", scanned: 0, granted: 0 },
-        { questId: "spend:first_top_up", scanned: 0, granted: 0 },
-        {
-            questId: "onboarding:established_github_account",
-            scanned: 1,
-            granted: 0,
-        },
-        NO_GITHUB_PUBLIC_REPOS_RESULT,
-        NO_GITHUB_REPO_STARS_RESULT,
-        { questId: "grow:list_app_on_pollinations", scanned: 1, granted: 0 },
-        NO_ELIXPO_INTERN_RESULT,
-    ]);
-
-    const [balance] = await db
-        .select({ packBalance: schema.user.packBalance })
-        .from(schema.user)
-        .where(eq(schema.user.id, user.id));
-    expect(balance?.packBalance).toBeCloseTo((user.packBalance ?? 0) + 11);
-
-    const grants = await db
-        .select({
-            idempotencyKey: schema.rewardGrants.idempotencyKey,
-            questId: schema.rewardGrants.questId,
-            title: schema.rewardGrants.title,
-            pollenCredited: schema.rewardGrants.pollenCredited,
-        })
-        .from(schema.rewardGrants)
-        .where(
-            eq(schema.rewardGrants.questId, "grow:list_app_on_pollinations"),
-        );
-
-    expect(grants).toHaveLength(1);
-    expect(grants[0]).toMatchObject({
-        idempotencyKey:
-            "quest:grow:list_app_on_pollinations:user:" +
-            user.id +
-            ":event:app:https://github.com/pollinations/pollinations/issues/555",
-        title: "List an app on Pollinations",
-        pollenCredited: 5,
-    });
-});
-
 test("quest evaluator rewards completed GitHub quest issues through shared path", async ({
     mocks,
     sessionToken: _sessionToken,
@@ -773,8 +674,8 @@ test("quest evaluator rewards completed GitHub quest issues through shared path"
         githubUpdatedAt: new Date("2026-06-12T00:00:00Z"),
     });
 
-    // Each issue is its own quest now; the completed-and-payable issue produces
-    // exactly one result entry at id `github:issue:777`.
+    // Each issue is its own scope:"once" quest now; the completed-and-payable
+    // issue produces exactly one result entry at id `github:issue:777`.
     const first = await runQuestEvaluator(env);
     expect(first.results).toEqual([
         NO_FIRST_IMAGE_RESULT,
@@ -790,7 +691,6 @@ test("quest evaluator rewards completed GitHub quest issues through shared path"
         NO_GITHUB_PUBLIC_REPOS_RESULT,
         NO_GITHUB_REPO_STARS_RESULT,
         { questId: issueQuestId, scanned: 1, granted: 1 },
-        { questId: "grow:list_app_on_pollinations", scanned: 0, granted: 0 },
         NO_ELIXPO_INTERN_RESULT,
     ]);
 
@@ -819,13 +719,12 @@ test("quest evaluator rewards completed GitHub quest issues through shared path"
         })
         .where(eq(schema.githubQuestIssues.issueNumber, issueNumber));
 
-    // Second run: the issue is now assigned to a different (existing) user, so
-    // the issue-quest still emits one candidate (scanned: 1). But the reward's
-    // idempotency key is per-(issue, user) and the ORIGINAL assignee was
-    // already paid; the reassigned user's key is fresh, BUT the source row no
-    // longer references the original user — so the original payout is not
-    // double-spent. The new assignee key
-    // (`quest:github:issue:777:user:other-dev`) is granted once.
+    // Second run: the issue is now assigned to a DIFFERENT user, so the
+    // issue-quest still emits one candidate (scanned: 1) — pointing at the new
+    // assignee. But scope:"once" means toGrant derives the SAME userId-free key
+    // `quest:github:issue:777`, which was already paid on the first run. The
+    // generic dedup drops it (granted: 0). Reassigning an issue never pays it a
+    // second time: one issue, one payout, regardless of who is assigned.
     const second = await runQuestEvaluator(env);
     expect(second.results).toEqual([
         NO_FIRST_IMAGE_RESULT,
@@ -840,11 +739,12 @@ test("quest evaluator rewards completed GitHub quest issues through shared path"
         },
         NO_GITHUB_PUBLIC_REPOS_RESULT,
         NO_GITHUB_REPO_STARS_RESULT,
-        { questId: issueQuestId, scanned: 1, granted: 1 },
-        { questId: "grow:list_app_on_pollinations", scanned: 0, granted: 0 },
+        { questId: issueQuestId, scanned: 1, granted: 0 },
         NO_ELIXPO_INTERN_RESULT,
     ]);
 
+    // The original assignee keeps the single payout; the reassigned user gets
+    // nothing (the issue was already paid once).
     const [balance] = await db
         .select({ tierBalance: schema.user.tierBalance })
         .from(schema.user)
@@ -854,7 +754,7 @@ test("quest evaluator rewards completed GitHub quest issues through shared path"
         .select({ tierBalance: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.githubId, otherGithubId));
-    expect(otherBalance?.tierBalance).toBeCloseTo(17);
+    expect(otherBalance?.tierBalance).toBeCloseTo(0);
 
     const grants = await db
         .select({
@@ -868,10 +768,12 @@ test("quest evaluator rewards completed GitHub quest issues through shared path"
         .from(schema.rewardGrants)
         .where(eq(schema.rewardGrants.questId, issueQuestId));
 
-    // Per-(issue, user) idempotency: the original assignee's grant.
-    const originalGrant = grants.find((grant) => grant.userId === user.id);
-    expect(originalGrant).toMatchObject({
-        idempotencyKey: `quest:github:issue:${issueNumber}:user:${user.id}`,
+    // scope:"once" idempotency: exactly one grant, keyed WITHOUT a userId, owned
+    // by the original assignee who triggered the first payout.
+    expect(grants).toHaveLength(1);
+    expect(grants[0]).toMatchObject({
+        idempotencyKey: `quest:github:issue:${issueNumber}`,
+        userId: user.id,
         title: issueTitle,
         pollenCredited: 17,
         balanceBucket: "tier",
@@ -885,7 +787,8 @@ test("account quest history includes GitHub quest reward grants", async ({
     const user = await getOnlyUser();
     const issueNumber = 123;
     const issueQuestId = `github:issue:${issueNumber}`;
-    const payoutKey = `quest:github:issue:${issueNumber}:user:${user.id}`;
+    // scope:"once" issue grants are keyed without a userId.
+    const payoutKey = `quest:github:issue:${issueNumber}`;
 
     await db.insert(schema.rewardGrants).values({
         id: payoutKey,

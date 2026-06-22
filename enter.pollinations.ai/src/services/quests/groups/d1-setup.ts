@@ -1,5 +1,4 @@
 import { sql } from "drizzle-orm";
-import { perUserKey } from "../keys.ts";
 import type { Quest, QuestAward, QuestEvaluationContext } from "../types.ts";
 
 /**
@@ -24,6 +23,7 @@ const firstApiKeyQuest: Quest = {
     description: "Create your first Pollinations API key.",
     iconId: "key",
     category: "plant",
+    scope: "perUser",
     rewardAmount: 1,
     balanceBucket: "pack",
     async findRewards({ db }: QuestEvaluationContext): Promise<QuestAward[]> {
@@ -34,10 +34,7 @@ const firstApiKeyQuest: Quest = {
             GROUP BY apikey.user_id
             LIMIT ${MAX_GRANTS_PER_RUN}`,
         );
-        return rows.map((row) => ({
-            idempotencyKey: perUserKey(firstApiKeyQuest.id, row.userId),
-            userId: row.userId,
-        }));
+        return rows.map((row) => ({ userId: row.userId }));
     },
 };
 
@@ -47,6 +44,7 @@ const firstTopUpQuest: Quest = {
     description: "Buy your first Pollen pack.",
     iconId: "card",
     category: "grow",
+    scope: "perUser",
     rewardAmount: 1,
     balanceBucket: "pack",
     async findRewards({ db }: QuestEvaluationContext): Promise<QuestAward[]> {
@@ -57,10 +55,7 @@ const firstTopUpQuest: Quest = {
             GROUP BY stripe_checkout_credits.user_id
             LIMIT ${MAX_GRANTS_PER_RUN}`,
         );
-        return rows.map((row) => ({
-            idempotencyKey: perUserKey(firstTopUpQuest.id, row.userId),
-            userId: row.userId,
-        }));
+        return rows.map((row) => ({ userId: row.userId }));
     },
 };
 

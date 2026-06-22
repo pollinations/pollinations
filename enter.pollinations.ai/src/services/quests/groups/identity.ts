@@ -1,5 +1,4 @@
 import { sql } from "drizzle-orm";
-import { perUserKey } from "../keys.ts";
 import type { Quest, QuestAward, QuestEvaluationContext } from "../types.ts";
 
 // elixpo (Ayushman Bhattacharya) joined the team as an intern — a one-off
@@ -19,6 +18,7 @@ const elixpoInternQuest: Quest = {
     description: "It's official, elixpo — welcome to the Pollinations crew.",
     iconId: "sprout",
     category: "community",
+    scope: "perUser",
     rewardAmount: 100,
     balanceBucket: "pack",
     async findRewards({ db }: QuestEvaluationContext): Promise<QuestAward[]> {
@@ -29,10 +29,7 @@ const elixpoInternQuest: Quest = {
             WHERE user.github_id = ${TARGET_GITHUB_ID}
             LIMIT ${MAX_GRANTS_PER_RUN}`,
         );
-        return rows.map((row) => ({
-            idempotencyKey: perUserKey(elixpoInternQuest.id, row.userId),
-            userId: row.userId,
-        }));
+        return rows.map((row) => ({ userId: row.userId }));
     },
 };
 

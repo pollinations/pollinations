@@ -3,7 +3,6 @@ import {
     type GitHubProfileActivity,
     loadGitHubUsers,
 } from "../github-profile-activity.ts";
-import { perUserKey } from "../keys.ts";
 import type { Quest, QuestAward, QuestEvaluationContext } from "../types.ts";
 
 /**
@@ -60,9 +59,9 @@ function accountAgeDays(activity: GitHubProfileActivity, now: Date): number {
 }
 
 /**
- * Connect a GitHub account at least one year old. Per-user idempotency key —
- * BYTE-IDENTICAL to the legacy value
- * `quest:onboarding:established_github_account:user:${userId}`.
+ * Connect a GitHub account at least one year old. scope:"perUser" — toGrant
+ * derives the key `quest:onboarding:established_github_account:user:${userId}`,
+ * BYTE-IDENTICAL to the legacy value.
  */
 const establishedGitHubAccountQuest: Quest = {
     id: "onboarding:established_github_account",
@@ -70,6 +69,7 @@ const establishedGitHubAccountQuest: Quest = {
     description: "Connect a GitHub account that is at least one year old.",
     iconId: "github",
     category: "plant",
+    scope: "perUser",
     rewardAmount: 6,
     balanceBucket: "pack",
     async findRewards(ctx: QuestEvaluationContext): Promise<QuestAward[]> {
@@ -83,21 +83,16 @@ const establishedGitHubAccountQuest: Quest = {
             if (accountAgeDays(activity, now) < GITHUB_ACCOUNT_AGE_DAYS) {
                 continue;
             }
-            awards.push({
-                idempotencyKey: perUserKey(
-                    establishedGitHubAccountQuest.id,
-                    row.userId,
-                ),
-                userId: row.userId,
-            });
+            awards.push({ userId: row.userId });
         }
         return awards;
     },
 };
 
 /**
- * Have at least 2 non-empty public GitHub repos. Per-user idempotency key —
- * BYTE-IDENTICAL to `quest:engage:github_2_public_repos:user:${userId}`.
+ * Have at least 2 non-empty public GitHub repos. scope:"perUser" — toGrant
+ * derives `quest:engage:github_2_public_repos:user:${userId}`, BYTE-IDENTICAL
+ * to the legacy value.
  */
 const githubPublicReposQuest: Quest = {
     id: "engage:github_2_public_repos",
@@ -105,6 +100,7 @@ const githubPublicReposQuest: Quest = {
     description: "Have at least 2 non-empty public GitHub repositories.",
     iconId: "github",
     category: "grow",
+    scope: "perUser",
     rewardAmount: 1,
     balanceBucket: "pack",
     async findRewards(ctx: QuestEvaluationContext): Promise<QuestAward[]> {
@@ -114,21 +110,16 @@ const githubPublicReposQuest: Quest = {
             const activity = await loadProfile(ctx, row.githubId);
             if (!activity) continue;
             if (activity.qualityRepoCount < REPO_THRESHOLD) continue;
-            awards.push({
-                idempotencyKey: perUserKey(
-                    githubPublicReposQuest.id,
-                    row.userId,
-                ),
-                userId: row.userId,
-            });
+            awards.push({ userId: row.userId });
         }
         return awards;
     },
 };
 
 /**
- * Earn 50 stars across non-empty public GitHub repos. Per-user idempotency key
- * — BYTE-IDENTICAL to `quest:engage:github_50_repo_stars:user:${userId}`.
+ * Earn 50 stars across non-empty public GitHub repos. scope:"perUser" —
+ * toGrant derives `quest:engage:github_50_repo_stars:user:${userId}`,
+ * BYTE-IDENTICAL to the legacy value.
  */
 const githubRepoStarsQuest: Quest = {
     id: "engage:github_50_repo_stars",
@@ -137,6 +128,7 @@ const githubRepoStarsQuest: Quest = {
         "Earn 50 stars across your non-empty public GitHub repositories.",
     iconId: "github",
     category: "grow",
+    scope: "perUser",
     rewardAmount: 5,
     balanceBucket: "pack",
     async findRewards(ctx: QuestEvaluationContext): Promise<QuestAward[]> {
@@ -146,10 +138,7 @@ const githubRepoStarsQuest: Quest = {
             const activity = await loadProfile(ctx, row.githubId);
             if (!activity) continue;
             if (activity.qualityRepoStars < STAR_THRESHOLD) continue;
-            awards.push({
-                idempotencyKey: perUserKey(githubRepoStarsQuest.id, row.userId),
-                userId: row.userId,
-            });
+            awards.push({ userId: row.userId });
         }
         return awards;
     },

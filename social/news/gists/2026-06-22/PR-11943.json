@@ -1,0 +1,35 @@
+{
+  "pr_number": 11943,
+  "title": "refactor: align shared inline links in enter",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11943",
+  "merged_at": "2026-06-22T15:08:45Z",
+  "labels": [
+    "DEV-UI-UX"
+  ],
+  "pr_body_excerpt": "- Updates `InlineLink` in `packages/ui` to the stronger vanilla inline-link treatment.\n- Replaces hand-styled inline URL links in the Enter key dialog with `InlineLink`.\n- Reuses `InlineLink` in the wallet footer, including the explanatory wallet text and Refund Policy link.\n\nValidation:\n- `biome check --write packages/ui/src/primitives/InlineLink.tsx enter.pollinations.ai/frontend/src/components/keys/api-key-dialog.tsx enter.pollinations.ai/frontend/src/components/pollen/pollen-balance.tsx`\n- `tsc --noEmit -p enter.pollinations.ai/tsconfig.json`",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "A fresh coat of link paint",
+    "blurb": "We've polished up the inline links across the Enter dashboard and wallet footer. Everything is looking a little more cohesive and easier to click!",
+    "summary": "Updated the shared InlineLink component in the UI package and applied it to the API key dialog and wallet footer for consistent styling.",
+    "impact": "Users will notice cleaner, more consistent link styling when viewing their API keys or checking the wallet refund policy.",
+    "keywords": [
+      "ui",
+      "frontend",
+      "styling",
+      "enter",
+      "components"
+    ],
+    "visual_concept": "The bee mascot acting as a designer, painting or connecting glowing chain links to represent UI link alignment.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, carefully painting a glowing lime green (#ecf874) chain link symbol on a retro computer monitor. Soft pastel lavender and cream gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-22/PR-11943.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, carefully painting a glowing lime green (#ecf874) chain link symbol on a retro computer monitor. Soft pastel lavender and cream gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-22T15:09:48.213349+00:00"
+}

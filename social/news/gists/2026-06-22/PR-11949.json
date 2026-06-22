@@ -1,0 +1,35 @@
+{
+  "pr_number": 11949,
+  "title": "feat: add Stable Audio 2.5 (music) via fal",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11949",
+  "merged_at": "2026-06-22T21:00:14Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Adds `stable-audio-2.5` text-to-music via fal.ai (`fal-ai/stable-audio-25/text-to-audio`).\n\n- Ports #11912 (by @sharktide) from Stability's direct API to **fal** — no new direct-Stability provider; fal reuses the existing secret/registry path.\n- `paidOnly`, `priceMultiplier: 1` (at-cost), **$0.20/generation** (verified live via fal's pricing API).\n- Params: `prompt`, `seconds` (1–190), `steps` (4–8), `seed`; WAV output.\n- `FAL_KEY` added to the gen secret allowlist + SOPS (dev/staging/prod); new `providers/fal.md` billing playbook.\n\nWhy 2.5 not 3: Stable Audio 3 is API-only (Large) on Stability, not yet on fal/Replicate — we'll add 3.0 Medium when it's on a provider we use.\n\nTested end-to-end on local gen → fal: 200 WAV, Tinybird `total_cost = total_price = $0.20`, cache MISS→HIT, clean tail.\n\nFixes #11897",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive drops a beat",
+    "blurb": "Stable Audio 2.5 is now live on the API. Turn your text prompts into up to three minutes of pure musical vibes.",
+    "summary": "Added Stable Audio 2.5 text-to-music generation via fal.ai, supporting up to 190-second WAV outputs for $0.20 per generation.",
+    "impact": "Developers can now generate custom music tracks by passing prompts, duration, and steps to the new stable-audio-2.5 endpoint.",
+    "keywords": [
+      "audio",
+      "music",
+      "stable-audio",
+      "fal-ai",
+      "api"
+    ],
+    "visual_concept": "The pollinations.ai bee wearing DJ headphones, spinning a vinyl record on a retro turntable. Musical notes floating in the air. A chunky robot companion dancing nearby.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny DJ headphones, spinning a vinyl record on a retro turntable. A chunky robot with a CRT monitor head dances nearby, with pixelated musical notes floating in the air. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-22/PR-11949.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny DJ headphones, spinning a vinyl record on a retro turntable. A chunky robot with a CRT monitor head dances nearby, with pixelated musical notes floating in the air. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-22T21:01:15.971189+00:00"
+}

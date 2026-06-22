@@ -36,11 +36,10 @@ Free Pollen on every account, refilled hourly. No credit card to register. Contr
 Contribute quests are GitHub issues with a fixed Pollen reward. The Quests dashboard shows the same unassigned open issues to everyone, plus your own completed issue quests.
 
 1. Open a quest from the **Contribute** section.
-2. Comment that you'd like to work on it. Multiple devs can express interest.
-3. Wait until a maintainer assigns the issue to you before starting work.
-4. Open a PR against `main` and start the description with `Fixes #N`, where `N` is the quest issue number.
-5. Request review from a maintainer. If you're unsure who to tag, ask on the issue or in [Discord #dev-talk](https://discord.com/channels/885844321461485618/920274483896516609).
-6. If review asks for changes, update the PR. When it merges, the reward is credited automatically to your Pollinations wallet.
+2. Comment that you'd like to work on it and wait until a maintainer assigns the issue to you.
+3. Open a PR against `main` and start the description with `Fixes #N`, where `N` is the quest issue number.
+4. Request review from [@Circuit-Overtime](https://github.com/Circuit-Overtime).
+5. Address any review comments. When the PR merges, the reward is credited automatically to your Pollinations wallet.
 
 When someone completes a quest, it disappears from other people's dashboards. Your completed Contribute quests stay visible so you can see what you earned.
 

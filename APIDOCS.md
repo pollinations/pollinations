@@ -534,7 +534,7 @@ curl "https://gen.pollinations.ai/video/a%20sunset%20timelapse%20over%20the%20oc
 
 Generate speech or music from text. Compatible with the OpenAI TTS API — use any OpenAI SDK.
 
-Set `model` to `elevenmusic` to generate music instead of speech.
+Set `model` to `elevenmusic`, `acestep`, or `stable-audio-2.5` to generate music instead of speech.
 
 **Available voices:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
 
@@ -633,7 +633,7 @@ Generate speech or music from text via a simple GET request.
 
 **Output formats:** mp3 (default), opus, aac, flac, wav, pcm
 
-**Music generation:** Set `model=elevenmusic` to generate music instead of speech. Supports `duration` (3-300 seconds) and `instrumental` mode.
+**Music generation:** Set `model=elevenmusic`, `acestep`, or `stable-audio-2.5` to generate music instead of speech. `elevenmusic` supports `duration` (3-300 seconds) and `instrumental` mode; `stable-audio-2.5` supports `seconds` (1-190), `steps` (4-8), and `seed`.
 
 ⚙️ **Parameters**
 
@@ -644,6 +644,8 @@ Generate speech or music from text via a simple GET request.
 | `response_format` | `query` | enum (6) — `"mp3"`, `"opus"`, `"aac"`, … | Audio output format (TTS only). Qwen TTS currently returns WAV regardless of this setting. · default: `"mp3"` |
 | `model` | `query` | `string` | Audio model: TTS (default) or elevenmusic for music generation |
 | `duration` | `query` | `string` | Music duration in seconds, 3-300 (elevenmusic only) |
+| `seconds` | `query` | `number` | Audio duration in seconds for stable-audio-2.5, 1-190 |
+| `steps` | `query` | `number` | Sampling steps for stable-audio-2.5, 4-8 |
 | `instrumental` | `query` | `"true"` \| `"false"` | If true, guarantees instrumental output (elevenmusic only) · default: `"false"` |
 | `style` | `query` | `string` | Style/genre tags for music generation (acestep only) |
 | `instruct` | `query` | `string` | Emotion/style instruction (qwen-tts-instruct only) |

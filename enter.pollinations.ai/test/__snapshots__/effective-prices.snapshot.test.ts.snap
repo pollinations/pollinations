@@ -130,10 +130,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "elevenmusic": {
     "cost": {
-      "completionAudioSeconds": 0.005,
+      "completionAudioSeconds": 0.0025,
     },
     "price": {
-      "completionAudioSeconds": 0.005,
+      "completionAudioSeconds": 0.0025,
     },
   },
   "flux": {

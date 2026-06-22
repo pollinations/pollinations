@@ -4,7 +4,7 @@ Validated: **2026-06-22**. Re-validate if a command returns unexpected results.
 
 fal.ai is a generative-media inference platform (image / video / audio / 3D),
 pay-as-you-go, billed per output unit (flat per call for most models). We use it
-for **Stable Audio 3.0 Medium** text-to-audio (added via PR #11912). Many models
+for **Stable Audio 2.5** text-to-audio (added via PR #11949). Many models
 we already run on Replicate (Wan, Seedance, Veo, Kling, FLUX, Ideogram, Qwen,
 LTX) are *also* on fal — see the catalog notes at the bottom.
 
@@ -44,9 +44,9 @@ curl -sS -X POST "https://api.fal.ai/v1/models/pricing/estimate" \
   -H "Content-Type: application/json" \
   -d '{
     "estimate_type": "unit_price",
-    "endpoints": { "fal-ai/stable-audio-3/medium/text-to-audio": { "unit_quantity": 1 } }
+    "endpoints": { "fal-ai/stable-audio-25/text-to-audio": { "unit_quantity": 1 } }
   }'
-# → {"estimate_type":"unit_price","total_cost":0.0376,"currency":"USD"}
+# → {"estimate_type":"unit_price","total_cost":0.2,"currency":"USD"}
 ```
 
 - `estimate_type: "unit_price"` — price for N output units (`unit_quantity`).
@@ -59,10 +59,12 @@ curl -sS -X POST "https://api.fal.ai/v1/models/pricing/estimate" \
 
 | Endpoint | $/unit |
 |---|---|
-| `fal-ai/stable-audio-3/medium/text-to-audio` | **0.0376** |
+| `fal-ai/stable-audio-25/text-to-audio` | **0.20** |
+| `fal-ai/stable-audio-3/medium/text-to-audio` | 0.0376 |
 
-> The public model page showed `$0.0417`; the API estimate returns `$0.0376`.
-> Trust the API estimate — it's what we're actually billed.
+> `stable-audio-25` is what we ship (PR #11949) — **$0.20** on both the model
+> page and the estimate API. 3.0 Medium is cheaper/newer ($0.0376 API vs $0.0417
+> page; trust the API) — add it when we adopt it.
 
 ### 2. Historical usage / spend over time
 
@@ -92,21 +94,21 @@ Hosted models run via the queue or sync endpoints (auth identical):
 
 ```bash
 # Synchronous (small/fast jobs):
-curl -sS -X POST "https://fal.run/fal-ai/stable-audio-3/medium/text-to-audio" \
+curl -sS -X POST "https://fal.run/fal-ai/stable-audio-25/text-to-audio" \
   -H "Authorization: Key $FAL_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"prompt":"lofi rain loop","duration":8,"output_format":"mp3"}'
-# → JSON with an `audio_url` (a fal CDN URL) to fetch the bytes. COSTS ~$0.0376.
+  -d '{"prompt":"lofi rain loop","seconds_total":8,"num_inference_steps":8}'
+# → JSON {"audio":{"url":...},"seed":...} — fetch the URL for the bytes. COSTS ~$0.20.
 
 # Queue (long jobs): POST https://queue.fal.run/<model-id> → request_id,
 # poll GET https://queue.fal.run/<model-id>/requests/<id>/status, then /result.
 ```
 
-`fal-ai/stable-audio-3/medium/text-to-audio` input params: `prompt` (req),
-`duration` (default 30, up to ~380s), `num_inference_steps` (default 8),
-`seed`, `negative_prompt` (default ""), `guidance_scale` (default 1),
-`output_format` (default mp3; one of mp3/wav/flac/ogg/opus/m4a/aac). Output is a
-URL, not inline bytes — fetch it.
+`fal-ai/stable-audio-25/text-to-audio` input params: `prompt` (req),
+`seconds_total` (default 190, max 190), `num_inference_steps` (default 8, 4-8),
+`seed`, `guidance_scale` (default 1). Output is WAV at `audio.url` — not inline
+bytes, fetch it. (3.0 Medium — `fal-ai/stable-audio-3/medium/text-to-audio` —
+additionally takes `negative_prompt`, `output_format`, and `duration` up to ~380s.)
 
 ## Credit / discount handling
 
@@ -121,8 +123,8 @@ Tinybird per-model attribution).
 - **CLI not installed by default** — `pip install fal`. REST works without it.
 - **Model output is a URL**, not raw bytes — the handler must fetch the
   `audio_url`/`audio.url` from the response and stream it back.
-- **API price ≠ web-page price** for SA3 Medium ($0.0376 vs $0.0417). Use the
-  estimate API.
+- **API price can differ from the web-page price** (e.g. 3.0 Medium: $0.0376 API
+  vs $0.0417 page). Use the estimate API. (2.5 agrees at $0.20.)
 - **No confirmed historical-usage REST endpoint** — spend-over-time is
   dashboard/Tinybird only (this is the main open unknown).
 - **ADMIN vs API scope:** never ship an ADMIN key as a runtime secret; mint an

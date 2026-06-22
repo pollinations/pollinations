@@ -1,131 +1,97 @@
-import { PolliProvider } from "@pollinations/sdk/react";
-import { ButtonGroup, cn, TabButton } from "@pollinations/ui";
-import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
+import { cn, useColorMode } from "@pollinations/ui";
 import { createFileRoute } from "@tanstack/react-router";
-import { type EmbedHost, useEmbedHost } from "../components/play/useEmbedHost";
-import { ENTER_URL, POLLI_APP_KEY } from "../config";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-const PLAY_APPS = [
-    {
-        id: "playground",
-        label: "Playground",
-        title: "Pollinations Playground",
-        src: "https://playground.pollinations.ai/?embed=1",
-    },
-    {
-        id: "websim",
-        label: "Websim",
-        title: "Websim",
-        src: "https://websim.pollinations.ai/?embed=1",
-    },
-] as const;
-
-type PlayAppId = (typeof PLAY_APPS)[number]["id"];
-type PlaySearch = {
-    app?: PlayAppId;
-};
-
-function isPlayAppId(value: unknown): value is PlayAppId {
-    return PLAY_APPS.some((app) => app.id === value);
-}
+// /play embeds the Playground app, framed by the site's own page header (so it
+// matches the other routes). The embed runs with `?embed=1`, which tells the app
+// to hide its own header + color-mode toggle and report its content height. The
+// site shares its color mode one-way (header toggle drives the embed) and sizes
+// the iframe to the reported height so the iframe never scrolls — the page does.
+//
+// In dev we point at the local Playground (its `npm run dev` port) so app-side
+// changes are visible on http://127.0.0.1:<vite>/play without deploying; prod
+// embeds the deployed app.
+const PLAYGROUND_SRC = import.meta.env.DEV
+    ? "http://127.0.0.1:4179/?embed=1"
+    : "https://playground.pollinations.ai/?embed=1";
+const APP_ORIGIN = new URL(PLAYGROUND_SRC).origin;
+const EMBED_SOURCE = "polli-embed";
+// Safety cap so a misbehaving app can't request an unbounded iframe.
+const MAX_IFRAME_HEIGHT = 20000;
 
 export const Route = createFileRoute("/play")({
-    validateSearch: (search: Record<string, unknown>): PlaySearch => ({
-        app: isPlayAppId(search.app) ? search.app : undefined,
-    }),
     component: PlayRoute,
 });
 
-/**
- * /play logs in at the site level (top-level, so OAuth works) and lends its key
- * down to the embedded app. PolliProvider holds the site's auth; `AppUserMenu`
- * is the site's own account control; `useEmbedHost` pushes the key to the app.
- */
 function PlayRoute() {
-    return (
-        <PolliProvider appKey={POLLI_APP_KEY} enterUrl={ENTER_URL}>
-            <PlayContent />
-        </PolliProvider>
-    );
-}
+    const { mode } = useColorMode();
+    const iframeRef = useRef<HTMLIFrameElement | null>(null);
+    const [reportedHeight, setReportedHeight] = useState<number | null>(null);
 
-function PlayContent() {
-    const { app } = Route.useSearch();
-    const navigate = Route.useNavigate();
-    const selectedAppId = app ?? "playground";
-    const selectedApp =
-        PLAY_APPS.find((candidate) => candidate.id === selectedAppId) ??
-        PLAY_APPS[0];
+    const pushTheme = useCallback(() => {
+        iframeRef.current?.contentWindow?.postMessage(
+            { source: EMBED_SOURCE, type: "theme", value: mode },
+            APP_ORIGIN,
+        );
+    }, [mode]);
 
-    const selectApp = (nextApp: PlayAppId) => {
-        navigate({ search: { app: nextApp } });
-    };
-
-    const appOrigin = new URL(selectedApp.src).origin;
-    const host = useEmbedHost(appOrigin);
-
-    return (
-        <div className="mx-auto flex w-full max-w-5xl flex-col bg-app-bg py-10">
-            <section className="flex flex-col gap-5 px-4 sm:px-6">
-                <div className="flex items-start justify-between gap-3">
-                    <div className="flex flex-col gap-3">
-                        <h1 className="font-heading text-4xl leading-none text-theme-text-strong sm:text-5xl">
-                            Play
-                        </h1>
-                        <p className="max-w-2xl font-body text-lg text-theme-text-base">
-                            Run a Pollinations app live, right here.
-                        </p>
-                    </div>
-                    <AppUserMenu dashboardHref={ENTER_URL} />
-                </div>
-                <ButtonGroup aria-label="Play">
-                    {PLAY_APPS.map((playApp) => (
-                        <TabButton
-                            key={playApp.id}
-                            active={selectedApp.id === playApp.id}
-                            onClick={() => selectApp(playApp.id)}
-                        >
-                            {playApp.label}
-                        </TabButton>
-                    ))}
-                </ButtonGroup>
-            </section>
-
-            <AppFrame key={selectedApp.id} app={selectedApp} host={host} />
-        </div>
-    );
-}
-
-/**
- * The embedded app. Sizing, the handshake, theme sync, and the auth key push all
- * live in `useEmbedHost`; this is just the iframe. Until a height message arrives
- * we fall back to a fixed viewport-based height — so apps that don't emit behave
- * as before.
- */
-function AppFrame({
-    app,
-    host,
-}: {
-    app: (typeof PLAY_APPS)[number];
-    host: EmbedHost;
-}) {
-    return (
-        <iframe
-            ref={host.iframeRef}
-            title={app.title}
-            src={app.src}
-            onLoad={host.onLoad}
-            className={cn(
-                "block w-full border-0 bg-app-bg",
-                host.reportedHeight === null &&
-                    "h-[calc(100vh-10rem)] min-h-[760px]",
-            )}
-            style={
-                host.reportedHeight !== null
-                    ? { height: host.reportedHeight }
-                    : undefined
+    // Push theme on mode change; answer the app's `app-ready` ping (late mount)
+    // and track its reported content height to size the iframe.
+    useEffect(() => {
+        pushTheme();
+        const onMessage = (event: MessageEvent) => {
+            if (event.origin !== APP_ORIGIN) return;
+            if (event.source !== iframeRef.current?.contentWindow) return;
+            const data = event.data as {
+                source?: unknown;
+                type?: unknown;
+                value?: unknown;
+            } | null;
+            if (data?.source !== EMBED_SOURCE) return;
+            if (data.type === "app-ready") {
+                pushTheme();
+            } else if (
+                data.type === "height" &&
+                typeof data.value === "number" &&
+                Number.isFinite(data.value) &&
+                data.value > 0
+            ) {
+                setReportedHeight(Math.min(data.value, MAX_IFRAME_HEIGHT));
             }
-            allow="clipboard-read; clipboard-write; fullscreen"
-        />
+        };
+        window.addEventListener("message", onMessage);
+        return () => window.removeEventListener("message", onMessage);
+    }, [pushTheme]);
+
+    return (
+        <div className="flex w-full flex-col gap-6 pt-10 pb-10">
+            <section className="mx-auto flex w-full max-w-5xl flex-col gap-3 px-4 sm:px-6">
+                <h1 className="font-heading text-4xl leading-none text-theme-text-strong sm:text-5xl">
+                    Play
+                </h1>
+                <p className="font-body text-lg text-theme-text-base">
+                    Run a Pollinations app live, right here.
+                </p>
+            </section>
+            <iframe
+                ref={iframeRef}
+                title="Pollinations Playground"
+                src={PLAYGROUND_SRC}
+                onLoad={pushTheme}
+                className={cn(
+                    "block w-full border-0 bg-app-bg",
+                    // Fallback height until the app reports its own; once it does
+                    // we size to content so the iframe itself never scrolls.
+                    reportedHeight === null &&
+                        "h-[calc(100dvh-16rem)] min-h-[640px]",
+                )}
+                style={
+                    reportedHeight !== null
+                        ? { height: reportedHeight }
+                        : undefined
+                }
+                allow="clipboard-read; clipboard-write; fullscreen"
+            />
+        </div>
     );
 }

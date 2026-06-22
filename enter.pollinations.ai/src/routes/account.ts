@@ -154,7 +154,8 @@ const CreateKeySchema = z.object({
 // CSV escape helper
 const escapeCSV = (val: string | number | boolean | null) => {
     if (val === null || val === undefined) return "";
-    const str = String(val);
+    const raw = String(val);
+    const str = /^[\t\r\n]|^\s*[=+\-@]/.test(raw) ? `'${raw}` : raw;
     if (str.includes(",") || str.includes('"') || str.includes("\n")) {
         return `"${str.replace(/"/g, '""')}"`;
     }
@@ -410,6 +411,24 @@ export function requireTinybirdReadToken(env: CloudflareBindings): string {
     return env.TINYBIRD_READ_TOKEN;
 }
 
+function parseCommaSeparatedQueryList(value?: string): string[] {
+    return value
+        ? Array.from(
+              new Set(
+                  value
+                      .split(",")
+                      .map((id) => id.trim())
+                      .filter((id) => id.length > 0),
+              ),
+          ).sort()
+        : [];
+}
+
+const commaSeparatedQueryList = z
+    .string()
+    .optional()
+    .transform(parseCommaSeparatedQueryList);
+
 // Query params schema for usage
 const usageQuerySchema = z.object({
     format: z.enum(["json", "csv"]).optional().default("json"),
@@ -430,6 +449,8 @@ const usageQuerySchema = z.object({
         .default(DEFAULT_USAGE_DAYS),
     granularity: z.enum(PERIOD_GRANULARITIES).optional(),
     period: z.string().optional(),
+    api_key_ids: commaSeparatedQueryList,
+    models: commaSeparatedQueryList,
 });
 
 // Query params schema for daily usage
@@ -444,21 +465,7 @@ const usageDailyQuerySchema = z.object({
         .default(DEFAULT_DAILY_USAGE_DAYS),
     granularity: z.enum(PERIOD_GRANULARITIES).optional(),
     period: z.string().optional(),
-    api_key_ids: z
-        .string()
-        .optional()
-        .transform((value) =>
-            value
-                ? Array.from(
-                      new Set(
-                          value
-                              .split(",")
-                              .map((id) => id.trim())
-                              .filter((id) => id.length > 0),
-                      ),
-                  ).sort()
-                : [],
-        ),
+    api_key_ids: commaSeparatedQueryList,
 });
 
 type DailyUsageRecord = {
@@ -609,6 +616,8 @@ async function fetchDetailedUsagePage(
     params: {
         userId: string;
         apiKeyId?: string;
+        apiKeyIds?: string[];
+        models?: string[];
         limit: number;
         since: string;
         until: string;
@@ -623,6 +632,14 @@ async function fetchDetailedUsagePage(
         {
             user_id: params.userId,
             api_key_id: params.apiKeyId,
+            api_key_ids:
+                params.apiKeyIds && params.apiKeyIds.length > 0
+                    ? params.apiKeyIds.join(",")
+                    : undefined,
+            models:
+                params.models && params.models.length > 0
+                    ? params.models.join(",")
+                    : undefined,
             limit: params.limit.toString(),
             since: params.since,
             until: params.until,
@@ -646,6 +663,8 @@ async function respondDetailedUsage(
     params: {
         userId: string;
         apiKeyId?: string;
+        apiKeyIds?: string[];
+        models?: string[];
         filenamePrefix: string;
         filenamePeriod: string;
         format: "json" | "csv";
@@ -666,6 +685,8 @@ async function respondDetailedUsage(
             {
                 userId: params.userId,
                 apiKeyId: params.apiKeyId,
+                apiKeyIds: params.apiKeyIds,
+                models: params.models,
                 limit: params.limit,
                 since: params.since,
                 until: params.until,
@@ -963,6 +984,8 @@ export const accountRoutes = new Hono<Env>()
                 days,
                 granularity,
                 period,
+                api_key_ids: apiKeyIds,
+                models,
             } = c.req.valid("query");
             const { userId: usageUserId, overridden: usageUserOverridden } =
                 resolveUsageTargetUserId(c.env, user.id, apiKey);
@@ -997,6 +1020,8 @@ export const accountRoutes = new Hono<Env>()
                 filenamePeriod,
                 format,
                 limit,
+                apiKeyIds,
+                models,
                 since: usageWindow.since,
                 until: usageWindow.until,
                 before,
@@ -1674,6 +1699,7 @@ export const accountRoutes = new Hono<Env>()
                 days,
                 granularity,
                 period,
+                models,
             } = c.req.valid("query");
             const usageWindow = formatUsageWindow(
                 resolveUsageWindow(days, {
@@ -1698,6 +1724,7 @@ export const accountRoutes = new Hono<Env>()
                 filenamePeriod,
                 format,
                 limit,
+                models,
                 since: usageWindow.since,
                 until: usageWindow.until,
                 before,

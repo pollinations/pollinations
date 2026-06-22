@@ -31,19 +31,6 @@ import type { Quest, QuestAward, QuestEvaluationContext } from "../types.ts";
 const QUEST_ICON_ID = "github" as const;
 const QUEST_CATEGORY = "community" as const;
 
-/**
- * Per-issue snapshot captured in each quest's closure so findRewards never
- * re-queries the issue row — it only needs the assignee's userId, which it
- * looks up by github id at evaluation time.
- */
-type IssueSnapshot = {
-    issueNumber: number;
-    state: string;
-    rewardAmount: number | null;
-    assigneeGithubId: number | null;
-    completedByPrNumber: number | null;
-};
-
 /** Resolve the local user id for an assignee's GitHub id (null if unlinked). */
 async function loadAssigneeUserId(
     ctx: QuestEvaluationContext,
@@ -58,10 +45,10 @@ async function loadAssigneeUserId(
 }
 
 /**
- * Build the per-issue Quest. The closure captures the issue snapshot so
- * findRewards is a pure function of (snapshot, assignee lookup): an OPEN issue
- * yields no award; a COMPLETED + payable issue yields one award to the
- * assignee. scope:"once" — toGrant derives the key `quest:github:issue:${N}`
+ * Build the per-issue Quest. The closure captures the issue row so findRewards
+ * never re-queries it — it is a pure function of (issue, assignee lookup): an
+ * OPEN issue yields no award; a COMPLETED + payable issue yields one award to
+ * the assignee. scope:"once" — toGrant derives the key `quest:github:issue:${N}`
  * (no userId), so an issue pays out exactly once even if it is reassigned to a
  * different user after a first payout. The award's userId is who gets paid; it
  * is deliberately NOT in the key.
@@ -69,16 +56,8 @@ async function loadAssigneeUserId(
 function toIssueQuest(
     issue: typeof schema.githubQuestIssues.$inferSelect,
 ): Quest {
-    const id = `github:issue:${issue.issueNumber}`;
-    const snapshot: IssueSnapshot = {
-        issueNumber: issue.issueNumber,
-        state: issue.state,
-        rewardAmount: issue.rewardAmount,
-        assigneeGithubId: issue.assigneeGithubId,
-        completedByPrNumber: issue.completedByPrNumber,
-    };
     return {
-        id,
+        id: `github:issue:${issue.issueNumber}`,
         title: issue.title,
         description: issue.description ?? "",
         iconId: QUEST_ICON_ID,
@@ -90,17 +69,17 @@ function toIssueQuest(
         async findRewards(ctx: QuestEvaluationContext): Promise<QuestAward[]> {
             // Only a completed, funded, PR-closed, assigned issue pays out.
             if (
-                snapshot.state !== "completed" ||
-                !snapshot.rewardAmount ||
-                snapshot.rewardAmount <= 0 ||
-                snapshot.completedByPrNumber === null ||
-                snapshot.assigneeGithubId === null
+                issue.state !== "completed" ||
+                !issue.rewardAmount ||
+                issue.rewardAmount <= 0 ||
+                issue.completedByPrNumber === null ||
+                issue.assigneeGithubId === null
             ) {
                 return [];
             }
             const userId = await loadAssigneeUserId(
                 ctx,
-                snapshot.assigneeGithubId,
+                issue.assigneeGithubId,
             );
             if (!userId) return [];
             return [{ userId }];

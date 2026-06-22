@@ -6,11 +6,6 @@ import type { Quest, QuestAward, QuestEvaluationContext } from "../types.ts";
 // card, but only the target account can complete it. Hand-written one-off;
 // not a threshold quest.
 const TARGET_GITHUB_ID = 161_109_909;
-const MAX_GRANTS_PER_RUN = 1;
-
-type ElixpoInternRow = {
-    userId: string;
-};
 
 const elixpoInternQuest: Quest = {
     id: "easteregg:elixpo_intern",
@@ -22,12 +17,12 @@ const elixpoInternQuest: Quest = {
     rewardAmount: 100,
     balanceBucket: "pack",
     async findRewards({ db }: QuestEvaluationContext): Promise<QuestAward[]> {
-        const rows = await db.all<ElixpoInternRow>(
+        const rows = await db.all<{ userId: string }>(
             sql`
             SELECT user.id AS userId
             FROM user
             WHERE user.github_id = ${TARGET_GITHUB_ID}
-            LIMIT ${MAX_GRANTS_PER_RUN}`,
+            LIMIT 1`,
         );
         return rows.map((row) => ({ userId: row.userId }));
     },

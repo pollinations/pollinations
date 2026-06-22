@@ -188,24 +188,29 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
             </div>
 
             {/* Learn more */}
-            <div className="mt-4 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
-                <button
-                    type="button"
-                    onClick={() => {
-                        const slug = "how-does-my-pollen-wallet-work";
-                        if (window.location.hash === `#${slug}`) {
-                            window.dispatchEvent(
-                                new HashChangeEvent("hashchange"),
-                            );
-                        } else {
-                            window.location.hash = slug;
-                        }
-                    }}
-                    className="flex items-start gap-1.5 underline decoration-theme-text-soft/30 underline-offset-2 transition-colors hover:text-theme-text-soft"
-                >
-                    <WalletIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>Learn more</span>
-                </button>
+            <div className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                <WalletIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <span>
+                    Your wallet holds Pollen you've purchased plus Pollen you've
+                    earned.{" "}
+                    <InlineLink
+                        as="button"
+                        type="button"
+                        external={false}
+                        onClick={() => {
+                            const slug = "how-does-my-pollen-wallet-work";
+                            if (window.location.hash === `#${slug}`) {
+                                window.dispatchEvent(
+                                    new HashChangeEvent("hashchange"),
+                                );
+                            } else {
+                                window.location.hash = slug;
+                            }
+                        }}
+                    >
+                        How it works
+                    </InlineLink>
+                </span>
             </div>
         </div>
     );

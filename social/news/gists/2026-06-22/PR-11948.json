@@ -1,0 +1,35 @@
+{
+  "pr_number": 11948,
+  "title": "feat: add ElevenLabs SFX + Multilingual v2; correct ElevenLabs TTS pricing",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11948",
+  "merged_at": "2026-06-22T20:25:07Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Adds two ElevenLabs audio models and corrects ElevenLabs TTS pricing across the board.\n\n### New models\n- **`eleven-sfx`** — text → sound effects (`eleven_text_to_sound_v2`). New `generateSoundEffect()` handler on the audio dispatch. `GET /audio/{text}?model=eleven-sfx` and `POST /v1/audio/speech`. Supports `duration` (0.5–30s), `loop`, `prompt_influence`. Aliases: `sfx`, `sound-effects`.\n- **`eleven-multilingual-v2`** — stable, lifelike TTS (`eleven_multilingual_v2`, 29 languages); registry-only (flows through `generateSpeech`). Aliases: `multilingual-v2`, `eleven-v2`.\n\n### Pricing — corrected to measured cost\nMeasured actual credit consumption on our Scale account (the API discounts TTS to ~0.6× the UI credit rate). Now matches elevenlabs.io/pricing/api:\n- `eleven_v3`: $0.166 → **$0.10/1k** (0.602 cr/char measured) — *fixes a live ~66% overcharge*\n- `eleven_flash_v2_5`: $0.083 → **$0.05/1k** (0.301 cr/char) — *live fix*\n- `eleven-multilingual-v2`: $0.166 → **$0.10/1k** (0.601 cr/char)\n- `eleven-sfx`: **$0.004/s** (24 cr/s measured), one exact per-second rate; caps at 30s = $0.12, matching ElevenLabs' \"per generation\" price\n- All `priceMultiplier: 1` (at-cost). No `output_format` for SFX — it would make the byte-based duration billing vary by format (variable pricing).\n\n### Other fixes (from review)\n- TTS input cap 4096 → 10000 (schema + `generateSpeech` guard) for multilingual's 10k limit.\n- SFX `duration` floor lowered (schema min 3 → 0.5).\n- `polli-cli` SKILL.md: added SFX + multilingual examples.\n\n### Verification\nEmpirical (live ElevenLabs): generation for both models, `loop`/`prompt_influence`/short-duration SFX, 5.6k-char multilingual, usage headers, Tinybird billing (multilingual 5625 chars → $0.5625 at the new rate), alias resolution, field-parity. Full suite green: gen 404/404, typecheck clean, price snapshot updated (exactly v3/flash/multilingual repriced).\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Buzzes, beeps, and cheaper speech",
+    "blurb": "We've added ElevenLabs Sound Effects and Multilingual v2 to the audio API. Plus, we crunched the numbers and dropped ElevenLabs TTS prices across the board to match exact API costs.",
+    "summary": "Added ElevenLabs text-to-sound-effects (`eleven-sfx`) and Multilingual v2 (`eleven-multilingual-v2`) models, increased the TTS input cap to 10,000 characters, and reduced ElevenLabs TTS pricing to at-cost (e.g., v3 dropped from $0.166 to $0.10 per 1k characters).",
+    "impact": "Users can now generate sound effects via the audio API, use 29 languages with the new multilingual model, and pay ~40% less for all ElevenLabs speech generation.",
+    "keywords": [
+      "audio",
+      "elevenlabs",
+      "sfx",
+      "tts",
+      "pricing"
+    ],
+    "visual_concept": "Polly the bee acting as a foley artist or DJ, wearing headphones and using a soundboard, representing the new sound effects and audio models.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing tiny DJ headphones, hovering over a retro soundboard with glowing lime green (#ecf874) sliders and buttons. Floating pixelated sound waves and musical notes surround her. Soft pastel lavender and cream gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-22/PR-11948.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing tiny DJ headphones, hovering over a retro soundboard with glowing lime green (#ecf874) sliders and buttons. Floating pixelated sound waves and musical notes surround her. Soft pastel lavender and cream gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-22T20:26:13.624221+00:00"
+}

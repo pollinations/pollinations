@@ -823,6 +823,7 @@ export const proxyRoutes = new Hono<Env>()
                     .string()
                     .optional()
                     .transform((v) => (v ? parseFloat(v) : undefined))
+                    .pipe(z.number().min(0.5).max(300).optional())
                     .meta({
                         description:
                             "Music duration in seconds, 3-300 (elevenmusic only)",
@@ -862,6 +863,7 @@ export const proxyRoutes = new Hono<Env>()
                     .string()
                     .optional()
                     .transform((v) => (v ? Number.parseFloat(v) : undefined))
+                    .pipe(z.number().min(0).max(1).optional())
                     .meta({
                         description:
                             "How strictly to follow the prompt, 0-1 (eleven-sfx only)",

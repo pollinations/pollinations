@@ -725,16 +725,32 @@ export async function generateSoundEffect(opts: {
     durationSeconds?: number;
     loop?: boolean;
     promptInfluence?: number;
+    responseFormat?: string;
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
-    const { prompt, durationSeconds, loop, promptInfluence, apiKey, log } =
-        opts;
+    const {
+        prompt,
+        durationSeconds,
+        loop,
+        promptInfluence,
+        responseFormat,
+        apiKey,
+        log,
+    } = opts;
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
             message:
                 "Sound effects service is not configured (missing API key)",
+        });
+    }
+    // SFX always returns 128 kbps MP3. The per-second price is derived from the
+    // MP3 byte rate, so honoring other formats would need per-format billing
+    // math — reject instead of silently downgrading (default "mp3" passes).
+    if (responseFormat && responseFormat !== "mp3") {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `eleven-sfx only supports mp3 output; response_format=${responseFormat} is not available.`,
         });
     }
     if (prompt.length > 1000) {
@@ -1309,6 +1325,7 @@ async function dispatchAudioGeneration(
                 durationSeconds: duration,
                 loop,
                 promptInfluence,
+                responseFormat,
                 apiKey,
                 log,
             }),

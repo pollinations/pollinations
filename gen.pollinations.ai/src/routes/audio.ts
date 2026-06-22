@@ -37,9 +37,9 @@ import { buildTranscriptionResponse } from "./transcription-response.ts";
 const CreateSpeechRequestSchema = z
     .object({
         model: z.string().optional(),
-        input: z.string().min(1).max(4096).meta({
+        input: z.string().min(1).max(10000).meta({
             description:
-                "The text to generate audio for. Maximum 4096 characters.",
+                "The text to generate audio for. Maximum 10000 characters.",
             example: "Hello, welcome to Pollinations!",
         }),
         safe: SafeSchema,
@@ -55,12 +55,12 @@ const CreateSpeechRequestSchema = z
             .default("mp3")
             .meta({
                 description:
-                    "The audio format for the output. Qwen TTS currently returns WAV regardless of this setting.",
+                    "The audio format for the output. Qwen TTS currently returns WAV regardless of this setting; eleven-sfx supports mp3 only (other values are rejected).",
                 example: "mp3",
             }),
-        duration: z.number().min(3).max(300).optional().meta({
+        duration: z.number().min(0.5).max(300).optional().meta({
             description:
-                "Music duration in seconds, 3-300 (elevenmusic/acestep)",
+                "Output duration in seconds (elevenmusic/acestep 3-300; eleven-sfx 0.5-30)",
             example: 30,
         }),
         seconds: z.number().min(1).max(190).optional().meta({
@@ -71,6 +71,15 @@ const CreateSpeechRequestSchema = z
         steps: z.number().int().min(4).max(8).optional().meta({
             description: "Sampling steps for stable-audio-2.5, 4-8.",
             example: 8,
+        }),
+        loop: z.boolean().optional().meta({
+            description: "Loop the generated sound effect (eleven-sfx only)",
+            example: false,
+        }),
+        prompt_influence: z.number().min(0).max(1).optional().meta({
+            description:
+                "How strictly to follow the prompt, 0-1 (eleven-sfx only)",
+            example: 0.3,
         }),
         instrumental: z.boolean().optional().meta({
             description:
@@ -126,6 +135,8 @@ type SimpleAudioQuery = {
     voice: string;
     response_format: string;
     instruct?: string;
+    loop?: boolean;
+    prompt_influence?: number;
 };
 
 type AudioRefChunk = {
@@ -220,9 +231,9 @@ export async function generateSpeech(opts: {
         });
     }
 
-    if (text.length > 4096) {
+    if (text.length > 10000) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Input text too long: ${text.length} characters. Maximum is 4096.`,
+            message: `Input text too long: ${text.length} characters. Maximum is 10000.`,
         });
     }
 
@@ -284,7 +295,7 @@ export async function generateSpeech(opts: {
     log.info("TTS success: {chars} characters", { chars: text.length });
 
     // WAV needs its RIFF header repaired (ElevenLabs ships a placeholder length),
-    // which requires buffering the body. Audio is small (input capped at 4096
+    // which requires buffering the body. Audio is small (input capped at 10000
     // chars) so this is cheap; all other formats keep streaming.
     if (responseFormat === "wav") {
         const audioBuffer = fixWavHeader(await response.arrayBuffer());
@@ -716,6 +727,94 @@ export async function generateMusic(
     });
 }
 
+/**
+ * Calls ElevenLabs Sound Effects (text -> sound effect) via /v1/sound-generation.
+ * Billed per second of output audio (see registry `eleven-sfx` cost block).
+ */
+export async function generateSoundEffect(opts: {
+    prompt: string;
+    durationSeconds?: number;
+    loop?: boolean;
+    promptInfluence?: number;
+    responseFormat?: string;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const {
+        prompt,
+        durationSeconds,
+        loop,
+        promptInfluence,
+        responseFormat,
+        apiKey,
+        log,
+    } = opts;
+
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message:
+                "Sound effects service is not configured (missing API key)",
+        });
+    }
+    // SFX always returns 128 kbps MP3. The per-second price is derived from the
+    // MP3 byte rate, so honoring other formats would need per-format billing
+    // math — reject instead of silently downgrading (default "mp3" passes).
+    if (responseFormat && responseFormat !== "mp3") {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `eleven-sfx only supports mp3 output; response_format=${responseFormat} is not available.`,
+        });
+    }
+    if (prompt.length > 1000) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Prompt too long: ${prompt.length} characters. Maximum is 1000.`,
+        });
+    }
+
+    const modelId = AUDIO_SERVICES["eleven-sfx"].modelId;
+    const elevenLabsUrl = "https://api.elevenlabs.io/v1/sound-generation";
+
+    const body: Record<string, unknown> = { text: prompt, model_id: modelId };
+    // ElevenLabs SFX supports 0.5-30s; omit to let the model decide the length.
+    if (durationSeconds !== undefined) {
+        body.duration_seconds = Math.min(Math.max(durationSeconds, 0.5), 30);
+    }
+    if (loop !== undefined) body.loop = loop;
+    if (promptInfluence !== undefined) body.prompt_influence = promptInfluence;
+
+    log.info("Sound effect request: chars={chars}, duration={duration}", {
+        chars: prompt.length,
+        duration: durationSeconds ?? "auto",
+    });
+
+    const rawResponse = await fetch(elevenLabsUrl, {
+        method: "POST",
+        headers: { "xi-api-key": apiKey, "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+    });
+    const response = await ensureUpstreamOk(rawResponse, elevenLabsUrl);
+
+    const contentType = response.headers.get("content-type") || "audio/mpeg";
+    const audioBuffer = await response.arrayBuffer();
+    // ElevenLabs Sound Effects returns 128 kbps CBR MP3 (= 16 kB/s, ffprobe-verified).
+    const SFX_MP3_BYTES_PER_SECOND = 16000;
+    const estimatedDuration = audioBuffer.byteLength / SFX_MP3_BYTES_PER_SECOND;
+
+    const usageHeaders = buildUsageHeaders(
+        "eleven-sfx",
+        createCompletionAudioSecondsUsage(estimatedDuration),
+    );
+
+    log.info("Sound effect success: {bytes} bytes, ~{duration}s", {
+        bytes: audioBuffer.byteLength,
+        duration: Math.round(estimatedDuration),
+    });
+
+    return new Response(audioBuffer, {
+        status: 200,
+        headers: { "Content-Type": contentType, ...usageHeaders },
+    });
+}
+
 const QWEN_TTS_ENDPOINT =
     "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation";
 
@@ -891,6 +990,11 @@ async function parseSpeechRequest(c: AudioContext): Promise<
             seed: parseOptionalNumber(formData.get("seed"), "seed"),
             style: (formData.get("style") as string | null) || undefined,
             instruct: (formData.get("instruct") as string | null) || undefined,
+            loop: parseOptionalBoolean(formData.get("loop"), "loop"),
+            prompt_influence: parseOptionalNumber(
+                formData.get("prompt_influence"),
+                "prompt_influence",
+            ),
             conditioning_ref:
                 typeof rawConditioningRef === "string"
                     ? parseJsonObject(rawConditioningRef, "conditioning_ref")
@@ -1139,11 +1243,10 @@ export async function generateAceStepMusic(opts: {
 }
 
 /**
- * Runs the 4-way text-to-audio model cascade (acestep -> elevenmusic ->
- * qwen-tts -> elevenlabs speech) for the resolved model and wraps the result in
- * safety headers. Shared by the GET /audio/:text and POST /v1/audio/speech
- * handlers. Callers normalize their inputs first (GET maps seed=-1 -> undefined
- * since only its schema permits the sentinel).
+ * Dispatches the resolved text-to-audio model and wraps the result in safety
+ * headers. Shared by the GET /audio/:text and POST /v1/audio/speech handlers.
+ * Callers normalize their inputs first (GET maps seed=-1 -> undefined since
+ * only its schema permits the sentinel).
  */
 // fal synchronous inference endpoint. Stable Audio 2.5 generates in ~2s, so the
 // blocking `fal.run` route returns inline without needing the queue/poll API.
@@ -1266,6 +1369,8 @@ async function dispatchAudioGeneration(
         compositionPlan?: unknown;
         referenceAudio?: File;
         instruct?: string;
+        loop?: boolean;
+        promptInfluence?: number;
         apiKey: string;
         dashScopeApiKey: string;
         falKey?: string;
@@ -1289,6 +1394,8 @@ async function dispatchAudioGeneration(
         compositionPlan,
         referenceAudio,
         instruct,
+        loop,
+        promptInfluence,
         apiKey,
         dashScopeApiKey,
         falKey,
@@ -1338,6 +1445,21 @@ async function dispatchAudioGeneration(
                 steps,
                 seed,
                 falKey,
+                log,
+            }),
+        );
+    }
+
+    if (c.var.model.resolved === "eleven-sfx") {
+        return withSafetyHeaders(
+            c,
+            await generateSoundEffect({
+                prompt: text,
+                durationSeconds: duration,
+                loop,
+                promptInfluence,
+                responseFormat,
+                apiKey,
                 log,
             }),
         );
@@ -1405,6 +1527,8 @@ export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
         style: query.style,
         instrumental: query.instrumental,
         instruct: query.instruct,
+        loop: query.loop,
+        promptInfluence: query.prompt_influence,
         apiKey,
         dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
         falKey: c.env.FAL_KEY,
@@ -1582,6 +1706,8 @@ export const audioRoutes = new Hono<Env>()
                 seed,
                 style,
                 instruct,
+                loop,
+                prompt_influence,
             } = await parseSpeechRequest(c);
             requireTextToAudioModel(c.var.model.resolved);
             requireElevenMusicOptions(c.var.model.resolved, {
@@ -1613,6 +1739,8 @@ export const audioRoutes = new Hono<Env>()
                 compositionPlan: composition_plan,
                 referenceAudio: reference_audio,
                 instruct,
+                loop,
+                promptInfluence: prompt_influence,
                 apiKey,
                 dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
                 falKey: c.env.FAL_KEY,

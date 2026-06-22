@@ -96,6 +96,18 @@ Default voice is `sage`. To discover the full live voice list, use the model reg
 polli gen audio "lofi hip-hop beat" --model elevenmusic --duration 30 --instrumental --output track.mp3
 ```
 
+### Generate sound effects (eleven-sfx)
+```bash
+polli gen audio "thunderclap with heavy rain" --model eleven-sfx --duration 5 --output thunder.mp3
+```
+Text-to-sound-effect via ElevenLabs (aliases: `sfx`, `sound-effects`). `--duration` 0.5–30s (omit to let the model pick). Billed per second of output (~$0.004/s, capped at $0.12 for a full 30s).
+
+### Multilingual TTS (eleven-multilingual-v2)
+```bash
+polli gen audio "Bonjour, ceci est un test" --model multilingual-v2 --voice rachel --output fr.mp3
+```
+Stable, lifelike TTS across 29 languages (aliases: `multilingual-v2`, `eleven-v2`) — a non-alpha alternative to the default v3.
+
 ### Generate video
 ```bash
 polli gen video "a spacecraft landing on mars" --model wan-fast --duration 5 --output mars.mp4

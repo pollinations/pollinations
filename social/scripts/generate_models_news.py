@@ -51,7 +51,7 @@ from common import (
     parse_json_response,
 )
 
-CATEGORIES: tuple[str, ...] = ("text", "image", "audio", "embeddings")
+CATEGORIES: tuple[str, ...] = ("text", "image", "video", "audio", "embeddings")
 GEN_BASE = "https://gen.pollinations.ai"
 MODELS_DIR = MODELS_NEWS_DIR
 MODELS_MD_PATH = f"{MODELS_DIR}/models.md"
@@ -74,24 +74,41 @@ class Diff:
         return {"added": self.added, "removed": self.removed, "changed": self.changed}
 
 
-def fetch_models(category: str) -> list[dict[str, Any]]:
-    """GET /{category}/models without auth — auth filters models by key permissions,
-    which would create false 'removed' entries when keys differ. Unauth returns the
-    full public superset including paid_only entries."""
-    url = f"{GEN_BASE}/{category}/models"
+def fetch_all_snapshots() -> dict[str, list[dict[str, Any]]]:
+    """GET /models returns every model in one call with a 'category' field.
+    We bucket by that field into the known categories.
+
+    No auth — authenticated requests filter by key permissions, which would
+    create false 'removed' entries when keys differ between runs."""
+    url = f"{GEN_BASE}/models"
     resp = requests.get(url, headers={"Accept": "application/json"}, timeout=30)
     resp.raise_for_status()
     payload = resp.json()
-    # /v1/models wraps in {data:[...]}. The rich endpoints return a bare list.
-    if isinstance(payload, dict) and "data" in payload:
-        return list(payload["data"])
-    if isinstance(payload, list):
-        return payload
-    raise ValueError(f"Unexpected shape from {url}: {type(payload).__name__}")
+    # /v1/models wraps in {data:[...]}; /models returns a bare list.
+    all_models: list[dict[str, Any]] = (
+        list(payload["data"])
+        if isinstance(payload, dict) and "data" in payload
+        else list(payload)
+        if isinstance(payload, list)
+        else []
+    )
+    if not all_models:
+        raise ValueError(f"Unexpected or empty response from {url}: {payload!r:.200}")
 
-
-def fetch_all_snapshots() -> dict[str, list[dict[str, Any]]]:
-    return {cat: fetch_models(cat) for cat in CATEGORIES}
+    result: dict[str, list[dict[str, Any]]] = {cat: [] for cat in CATEGORIES}
+    unknown: list[str] = []
+    for model in all_models:
+        cat = model.get("category", "")
+        # API returns "embedding" (singular); we bucket under "embeddings"
+        if cat == "embedding":
+            cat = "embeddings"
+        if cat in result:
+            result[cat].append(model)
+        else:
+            unknown.append(f"{model.get('name', '?')}({cat})")
+    if unknown:
+        print(f"  Warning: unrecognised categories, skipped: {unknown[:10]}")
+    return result
 
 
 class GithubProbeError(RuntimeError):
@@ -116,9 +133,7 @@ def _news_branch_exists(github_token: str, owner: str, repo: str) -> bool:
     )
 
 
-def _path_exists_on_news(
-    github_token: str, owner: str, repo: str, path: str
-) -> bool:
+def _path_exists_on_news(github_token: str, owner: str, repo: str, path: str) -> bool:
     """True on confirmed 200, False on confirmed 404, raises on anything else."""
     headers = _github_headers(github_token)
     url = f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{path}?ref={GISTS_BRANCH}"
@@ -189,10 +204,7 @@ def find_previous_snapshot_date(
         return None
     entries = resp.json()
     if not isinstance(entries, list):
-        msg = (
-            f"Unexpected payload listing {SNAPSHOT_PREFIX}: "
-            f"{type(entries).__name__}"
-        )
+        msg = f"Unexpected payload listing {SNAPSHOT_PREFIX}: {type(entries).__name__}"
         if needs_guard:
             raise MissingPriorSnapshotError(msg)
         print(f"  {msg}")
@@ -258,14 +270,67 @@ def load_models_md(github_token: str, owner: str, repo: str) -> str:
     return base64.b64decode(resp.json()["content"]).decode()
 
 
-# Fields ignored when comparing models. Pricing fluctuates frequently and is
-# not user-facing model news; description text gets edited for clarity without
-# any underlying capability change.
-_DIFF_IGNORED_FIELDS: frozenset[str] = frozenset({"pricing", "description"})
+# Fields ignored when comparing models.
+# description: prose edits with no capability change.
+# added_date: static timestamp, never changes for existing models.
+# name / id: identity key fields used for lookup — excluded from value comparison
+#   so that snapshots migrating from 'id' to 'name' don't flood the diff.
+_DIFF_IGNORED_FIELDS: frozenset[str] = frozenset(
+    {"description", "added_date", "name", "id"}
+)
 
 
 def _normalize_for_diff(model: dict[str, Any]) -> dict[str, Any]:
-    return {k: v for k, v in model.items() if k not in _DIFF_IGNORED_FIELDS}
+    result: dict[str, Any] = {}
+    for k, v in model.items():
+        if k in _DIFF_IGNORED_FIELDS:
+            continue
+        # Sort lists so reordering aliases/modalities/capabilities doesn't
+        # trigger false "changed" entries.
+        result[k] = sorted(str(x) for x in v) if isinstance(v, list) else v
+    return result
+
+
+def _migrate_old_snapshot(
+    snapshot: dict[str, list[dict[str, Any]]],
+) -> dict[str, list[dict[str, Any]]]:
+    """One-time migration: old snapshots stored image+video together under 'image'
+    (fetched from /image/models before the video split). If 'video' is absent but
+    'image' is present, re-bucket by each model's 'category' field so the diff
+    doesn't report all video models as removed from image."""
+    if "video" in snapshot or "image" not in snapshot:
+        return snapshot
+    migrated = {k: list(v) for k, v in snapshot.items()}
+    migrated["image"] = [m for m in snapshot["image"] if m.get("category") != "video"]
+    migrated["video"] = [m for m in snapshot["image"] if m.get("category") == "video"]
+    video_count = len(migrated["video"])
+    if video_count:
+        print(f"  Migrated {video_count} video model(s) out of old 'image' bucket.")
+    return migrated
+
+
+def _migrate_old_snapshot(
+    snapshot: dict[str, list[dict[str, Any]]],
+) -> dict[str, list[dict[str, Any]]]:
+    """One-time migration: old snapshots stored image+video together under 'image'
+    (fetched from /image/models before the video split). If 'video' is absent but
+    'image' is present, re-bucket by each model's 'category' field so the diff
+    doesn't report all video models as removed from image."""
+    if "video" in snapshot or "image" not in snapshot:
+        return snapshot
+    migrated = {k: list(v) for k, v in snapshot.items()}
+    migrated["image"] = [m for m in snapshot["image"] if m.get("category") != "video"]
+    migrated["video"] = [m for m in snapshot["image"] if m.get("category") == "video"]
+    video_count = len(migrated["video"])
+    if video_count:
+        print(f"  Migrated {video_count} video model(s) out of old 'image' bucket.")
+    return migrated
+
+
+def _model_key(m: dict[str, Any]) -> str | None:
+    """Return a stable identity key for a model, falling back to 'id' for
+    older snapshots that predate the 'name' field."""
+    return m.get("name") or m.get("id")
 
 
 def diff_models(
@@ -277,15 +342,34 @@ def diff_models(
     changed: dict[str, list[dict[str, Any]]] = {c: [] for c in CATEGORIES}
 
     if previous is None:
-        # First run: do not flood the diff with every existing model. Treat
-        # the very first snapshot as a baseline with no announced changes.
+        # First run: treat the snapshot as baseline with no announced changes.
         return Diff(added=added, removed=removed, changed=changed)
 
     for cat in CATEGORIES:
-        prev_by_name = {
-            m.get("name"): m for m in previous.get(cat, []) if m.get("name")
-        }
-        curr_by_name = {m.get("name"): m for m in current.get(cat, []) if m.get("name")}
+        curr_raw = current.get(cat, [])
+        curr_by_name = {_model_key(m): m for m in curr_raw if _model_key(m)}
+
+        # Category absent from previous snapshot = newly tracked (e.g. 'video'
+        # added after this code change). Treat as no baseline — don't flood the
+        # diff by announcing every existing model as "added".
+        if cat not in previous:
+            print(
+                f"  Info: '{cat}' not in previous snapshot — skipping (new category)."
+            )
+            continue
+
+        prev_raw = previous[cat]
+        prev_by_name = {_model_key(m): m for m in prev_raw if _model_key(m)}
+
+        # Old snapshot has raw models but none resolved to a key — structural
+        # mismatch (e.g. old format used a different field). Skip rather than
+        # reporting every current model as "added".
+        if prev_raw and not prev_by_name:
+            print(
+                f"  Warning: previous snapshot for '{cat}' has {len(prev_raw)} models "
+                "but none have a resolvable key — skipping diff for this category."
+            )
+            continue
 
         for name, model in curr_by_name.items():
             if name not in prev_by_name:
@@ -420,7 +504,9 @@ def main() -> int:
             github_token, owner, repo, target_date
         )
         previous = (
-            load_snapshot_from_news(github_token, owner, repo, previous_date)
+            _migrate_old_snapshot(
+                load_snapshot_from_news(github_token, owner, repo, previous_date)
+            )
             if previous_date
             else None
         )
@@ -503,7 +589,9 @@ def main() -> int:
     for filename, body in contents.items():
         with open(os.path.join(out_dir, filename), "w", encoding="utf-8") as fh:
             fh.write(body)
-    print(f"  Staged {len(contents)} artifacts in {out_dir} (commit deferred to publish)")
+    print(
+        f"  Staged {len(contents)} artifacts in {out_dir} (commit deferred to publish)"
+    )
     return 0
 
 

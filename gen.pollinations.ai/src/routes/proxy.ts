@@ -811,7 +811,7 @@ export const proxyRoutes = new Hono<Env>()
                     .default("mp3")
                     .meta({
                         description:
-                            "Audio output format (TTS only). Qwen TTS currently returns WAV regardless of this setting.",
+                            "Audio output format (TTS only). Qwen TTS currently returns WAV regardless of this setting; eleven-sfx supports mp3 only (other values are rejected).",
                         example: "mp3",
                     }),
                 model: z.string().optional().meta({

@@ -1,0 +1,35 @@
+{
+  "pr_number": 11950,
+  "title": "add Stability AI brand logo",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11950",
+  "merged_at": "2026-06-22T21:51:48Z",
+  "labels": [
+    "DEV-UI-UX"
+  ],
+  "pr_body_excerpt": "The new `stable-audio-2.5` model (brand `Stability AI`) had no brand logo, so the models table fell back to no icon.\n\n- Adds `brand-logos/stability.svg` (monochrome `currentColor` mark, same 24×24 / `<g transform>` convention as the other 25 logos).\n- Maps `\"Stability AI\" → stability` in `model-info.ts` `BRAND_LOGOS`.\n\nNo build artifacts touched (`dist/` isn't committed; `public/` is served statically).",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A stable aesthetic",
+    "blurb": "We've added the official Stability AI logo to the models table. Now stable-audio-2.5 looks just as good as it sounds!",
+    "summary": "Added the Stability AI brand logo to the frontend models table to properly represent the stable-audio-2.5 model.",
+    "impact": "The stable-audio-2.5 model now displays its official brand icon in the directory instead of a blank fallback.",
+    "keywords": [
+      "ui",
+      "icons",
+      "stability-ai",
+      "frontend",
+      "models"
+    ],
+    "visual_concept": "Polly the bee placing a new icon on a display board, with audio waveforms indicating the audio model.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, carefully hanging a glowing new pixelated icon on a wooden display board. A chunky retro monitor nearby shows colorful audio waveforms. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-22/PR-11950.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, carefully hanging a glowing new pixelated icon on a wooden display board. A chunky retro monitor nearby shows colorful audio waveforms. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-06-22T21:52:53.797429+00:00"
+}

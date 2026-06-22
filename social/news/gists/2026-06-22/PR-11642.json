@@ -1,0 +1,35 @@
+{
+  "pr_number": 11642,
+  "title": "fix: sanitize chat markdown urls",
+  "author": "its3li",
+  "url": "https://github.com/pollinations/pollinations/pull/11642",
+  "merged_at": "2026-06-22T17:22:45Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "## Summary\n- sanitize rendered chat markdown href/src attributes before injecting HTML\n- block javascript/data payloads in links while preserving normal http(s), mailto, tel, relative, and safe image data src URLs\n- add markdown formatter checks for unsafe and normal links\n\n## Verification\n- node scripts/test-markdown.js\n- npx eslint src/utils/markdown.js scripts/test-markdown.js\n- npx biome check apps/chat/src/utils/markdown.js apps/chat/scripts/test-markdown.js\n- npm run build",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Sanitized for your protection",
+    "blurb": "The chat interface now scrubs markdown links to prevent sneaky javascript payloads from slipping through. Keep your clicking carefree.",
+    "summary": "Implemented a URL sanitizer in the chat markdown renderer to block javascript and malicious data payloads in href and src attributes.",
+    "impact": "Chat links are now strictly filtered to allow only safe protocols like http(s), mailto, and tel, ensuring malicious payloads cannot be executed via clicks.",
+    "keywords": [
+      "chat",
+      "markdown",
+      "security",
+      "sanitization",
+      "bug-fix"
+    ],
+    "visual_concept": "The pollinations bee wearing a tiny security guard hat, inspecting a glowing link with a magnifying glass. The Nomnom creature eating a 'bad' red link while a 'good' green link passes through.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny security guard hat, inspecting a glowing blue link with a magnifying glass. The round tan Nomnom creature happily eats a red glowing 'javascript:' payload nearby. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-22/PR-11642.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny security guard hat, inspecting a glowing blue link with a magnifying glass. The round tan Nomnom creature happily eats a red glowing 'javascript:' payload nearby. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-22T17:23:50.083795+00:00"
+}

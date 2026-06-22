@@ -57,8 +57,19 @@ function validateJsonMode(data: Record<string, unknown>): boolean {
 }
 
 /**
- * Resolves thinking_budget from either a direct parameter or
- * Anthropic/OpenAI-style thinking object: { type: "enabled"|"disabled", budget_tokens: N }
+ * Resolves an internal `thinking_budget` from the non-standard `thinking` object
+ * or a direct `thinking_budget` integer.
+ *
+ * @deprecated NON-STANDARD compatibility surface — slated for removal.
+ * `thinking:{type}` and `thinking_budget` are NOT OpenAI Chat Completions params
+ * (`thinking` is Anthropic's shape; `thinking_budget` is ours). The standard,
+ * OpenAI-compatible control is the top-level `reasoning_effort` string. This
+ * path is kept ONLY so existing Pollinations/MCP callers that send
+ * `thinking:{type:"disabled"}` don't silently become no-ops where a model
+ * transform consumes `thinking_budget`; it is intentionally undocumented
+ * (removed from APIDOCS). Do not build new public behavior on it. When usage
+ * drops to zero, delete this helper and the `thinking`/`thinking_budget` cases
+ * below, leaving `reasoning_effort` as the sole surface.
  */
 function resolveThinkingBudget(
     data: Record<string, unknown>,

@@ -301,7 +301,7 @@ export interface ChatOptions extends RequestOptions {
     /** Enable thinking/reasoning for supported models */
     thinking?: ThinkingOptions | null;
     /** Reasoning effort for thinking models */
-    reasoningEffort?: "low" | "medium" | "high";
+    reasoningEffort?: "none" | "minimal" | "low" | "medium" | "high" | "xhigh";
     /** Thinking budget in tokens */
     thinkingBudget?: number;
     /** Output modalities */

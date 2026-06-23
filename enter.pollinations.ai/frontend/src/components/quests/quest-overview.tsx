@@ -157,13 +157,6 @@ function formatTimestamp(value: string): string {
     });
 }
 
-// The grant carries its own questId, which is also the catalog key (the grant
-// is keyed by the quest it completed). The earlier issueNumber-rewrite branch
-// is gone — grants no longer carry metadata.
-function catalogKeyForGrant(grant: QuestGrant): string | null {
-    return grant.questId;
-}
-
 // ── Card model ──────────────────────────────────────────────────────────────
 // A single quest row, whether it comes from the catalog (open quests) or from a
 // reward grant (completed). Open shows its reward; completed flips to a green
@@ -511,20 +504,21 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         () => new Map(state.catalog.map((quest) => [quest.id, quest])),
         [state.catalog],
     );
+    // A grant's questId IS the catalog id it completed (one grant == one quest),
+    // so the completed-set / grant lookup key directly off questId.
     const completedCatalogIds = useMemo(
         () =>
             new Set(
                 state.grants
-                    .map(catalogKeyForGrant)
-                    .filter((key): key is string => key != null),
+                    .map((grant) => grant.questId)
+                    .filter((id): id is string => id != null),
             ),
         [state.grants],
     );
     const grantByKey = useMemo(() => {
         const map = new Map<string, QuestGrant>();
         for (const grant of state.grants) {
-            const key = catalogKeyForGrant(grant);
-            if (key) map.set(key, grant);
+            if (grant.questId) map.set(grant.questId, grant);
         }
         return map;
     }, [state.grants]);
@@ -567,8 +561,14 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
             if (quest.id.startsWith("easteregg:")) continue;
             const key = categoryKeyFor(quest.category);
             if (key === "contribute") {
-                const isOpen = quest.availability !== "completed";
-                if (!isOpen) continue; // completions surface via grants below
+                // Three states, kept deliberately simple:
+                //   available — open bounty, anyone can take it → SHOW
+                //   claimed   — someone is working it (not paid to you) → HIDE
+                //   completed — surfaces below via YOUR own grant → skip here
+                // So an issue you don't have a grant for only appears while it's
+                // still unclaimed; once claimed it leaves the board, and it
+                // returns (as completed) only if you were the one paid.
+                if (quest.availability !== "available") continue;
                 byCat.contribute.push({
                     key: quest.id,
                     title: quest.title,

@@ -533,6 +533,213 @@ it("lists stable-audio-3-medium in audio models", async () => {
 });
 
 fixtureTest(
+    "routes stable-audio-3-large text-to-audio through Stability (async submit + poll)",
+    async ({ paidApiKey }) => {
+        const calls: string[] = [];
+        const generationId = "test-generation-id";
+
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                calls.push(request.url);
+
+                // 1) Submit — Stability's direct API is async: returns 202 + { id }.
+                if (
+                    request.url ===
+                    "https://api.stability.ai/v2beta/audio/stable-audio/text-to-audio"
+                ) {
+                    expect(request.method).toBe("POST");
+                    expect(request.headers.get("authorization")).toBe(
+                        "Bearer test-stability-key",
+                    );
+                    expect(request.headers.get("accept")).toBe("audio/*");
+
+                    const formData = await request.formData();
+                    expect(formData.get("prompt")).toBe("lofi rain loop");
+                    // The direct API only accepts model=stable-audio-3.
+                    expect(formData.get("model")).toBe("stable-audio-3");
+                    expect(formData.get("duration")).toBe("12");
+                    expect(formData.get("steps")).toBe("6");
+                    expect(formData.get("seed")).toBe("42");
+                    expect(formData.get("output_format")).toBe("mp3");
+                    expect(formData.get("negative_prompt")).toBe("vocals");
+
+                    return Response.json({ id: generationId }, { status: 202 });
+                }
+
+                // 2) Poll results — wants Accept: */*, returns 200 + audio.
+                if (
+                    request.url ===
+                    `https://api.stability.ai/v2beta/results/${generationId}`
+                ) {
+                    expect(request.headers.get("authorization")).toBe(
+                        "Bearer test-stability-key",
+                    );
+                    expect(request.headers.get("accept")).toBe("*/*");
+
+                    return new Response(new Uint8Array([73, 68, 51, 4]), {
+                        headers: { "Content-Type": "audio/mpeg" },
+                    });
+                }
+
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(
+                "https://staging.gen.pollinations.ai/audio/lofi%20rain%20loop?model=stable-audio-3-large&seconds=12&steps=6&seed=42&negative_prompt=vocals",
+                {
+                    headers: { Authorization: `Bearer ${paidApiKey}` },
+                },
+            ),
+            {
+                ...env,
+                STABILITY_API_KEY: "test-stability-key",
+            } as unknown as CloudflareBindings,
+            ctx,
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("content-type")).toBe("audio/mpeg");
+        expect(response.headers.get("x-model-used")).toBe(
+            "stable-audio-3-large",
+        );
+        expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
+            "1",
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(calls).toContain(
+            "https://api.stability.ai/v2beta/audio/stable-audio/text-to-audio",
+        );
+        expect(calls).toContain(
+            `https://api.stability.ai/v2beta/results/${generationId}`,
+        );
+    },
+    20_000,
+);
+
+fixtureTest(
+    "routes stable-audio-3-large reference_audio through Stability audio-to-audio",
+    async ({ paidApiKey }) => {
+        const calls: string[] = [];
+        const generationId = "test-a2a-generation-id";
+        const a2aEndpoint =
+            "https://api.stability.ai/v2beta/audio/stable-audio/audio-to-audio";
+
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                calls.push(request.url);
+
+                // Submit goes to the audio-to-audio endpoint with the clip.
+                if (request.url === a2aEndpoint) {
+                    expect(request.method).toBe("POST");
+                    expect(request.headers.get("authorization")).toBe(
+                        "Bearer test-stability-key",
+                    );
+                    expect(request.headers.get("accept")).toBe("audio/*");
+
+                    const formData = await request.formData();
+                    expect(formData.get("prompt")).toBe("warm pads");
+                    expect(formData.get("model")).toBe("stable-audio-3");
+                    expect(formData.get("output_format")).toBe("mp3");
+                    // a2a sends the reference clip, not a duration.
+                    expect(formData.get("audio")).toBeInstanceOf(File);
+                    expect(formData.get("duration")).toBeNull();
+
+                    return Response.json({ id: generationId }, { status: 202 });
+                }
+
+                if (
+                    request.url ===
+                    `https://api.stability.ai/v2beta/results/${generationId}`
+                ) {
+                    expect(request.headers.get("accept")).toBe("*/*");
+                    return new Response(new Uint8Array([73, 68, 51, 4]), {
+                        headers: { "Content-Type": "audio/mpeg" },
+                    });
+                }
+
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+
+        const form = new FormData();
+        form.append("model", "stable-audio-3-large");
+        form.append("input", "warm pads");
+        form.append(
+            "reference_audio",
+            new File([new Uint8Array([82, 73, 70, 70])], "ref.wav", {
+                type: "audio/wav",
+            }),
+        );
+
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://staging.gen.pollinations.ai/v1/audio/speech", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${paidApiKey}` },
+                body: form,
+            }),
+            {
+                ...env,
+                STABILITY_API_KEY: "test-stability-key",
+            } as unknown as CloudflareBindings,
+            ctx,
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("x-model-used")).toBe(
+            "stable-audio-3-large",
+        );
+        // a2a bills the same flat fee as text-to-audio ($0.26 = 1 unit).
+        expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
+            "1",
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(calls).toContain(a2aEndpoint);
+        expect(calls).toContain(
+            `https://api.stability.ai/v2beta/results/${generationId}`,
+        );
+    },
+    20_000,
+);
+
+it("lists stable-audio-3-large in audio models", async () => {
+    const response = await fetchWorker("/audio/models");
+
+    expect(response.status).toBe(200);
+    const models = (await response.json()) as { name: string }[];
+    expect(models.some((model) => model.name === "stable-audio-3-large")).toBe(
+        true,
+    );
+});
+
+fixtureTest(
     "rejects out-of-range prompt_influence on GET /audio before billing",
     async ({ paidApiKey }) => {
         const calls: string[] = [];

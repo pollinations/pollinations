@@ -111,6 +111,11 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     isSpecialized?: boolean;
     paidOnly?: boolean; // Models that require paid balance only
     alpha?: boolean; // Experimental models with potential instability
+    // Flat per-generation pricing (one fee per request, independent of output
+    // size/length). Lets the pricing UI show a "/gen" badge instead of guessing
+    // a per-second rate from a per-token cost. Used to disambiguate flat-fee
+    // audio (e.g. Stable Audio) from per-character TTS, which share cost fields.
+    flatRate?: boolean;
     hidden?: boolean; // Hidden from /models endpoints and dashboard, but still usable via API
     videoCapabilities?: VideoCapability[]; // Video-only: which frame controls the provider supports
     maxReferenceImages?: number; // Models with image input: effective accepted reference images

@@ -418,10 +418,12 @@ fixtureTest(
         expect(response.headers.get("x-model-used")).toBe(
             "stable-audio-3-medium",
         );
-        // text-to-audio bills 376 units ($0.0376 at $0.0001/unit).
+        // text-to-audio bills 1 output audio unit ($0.0376 per generation).
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
-            "376",
+            "1",
         );
+        // no reference clip → no input audio unit billed.
+        expect(response.headers.get("x-usage-prompt-audio-tokens")).toBeNull();
 
         await waitOnExecutionContext(ctx);
 
@@ -508,10 +510,12 @@ fixtureTest(
         expect(response.headers.get("x-model-used")).toBe(
             "stable-audio-3-medium",
         );
-        // audio-to-audio bills 417 units ($0.0417 at $0.0001/unit).
+        // audio-to-audio bills 1 output unit + 1 input unit
+        // ($0.0376 + $0.0041 = $0.0417 per generation).
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
-            "417",
+            "1",
         );
+        expect(response.headers.get("x-usage-prompt-audio-tokens")).toBe("1");
         // reference clip is forwarded as a base64 data-URI audio_url.
         expect(String(sentAudioUrl)).toMatch(/^data:audio\/wav;base64,/);
 

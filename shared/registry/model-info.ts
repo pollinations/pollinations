@@ -54,6 +54,7 @@ export const ModelInfoSchema = z.object({
     is_specialized: z.boolean().optional(),
     paid_only: z.boolean().optional(),
     alpha: z.boolean().optional(),
+    flat_rate: z.boolean().optional(),
     added_date: z.number().optional(),
 });
 
@@ -119,6 +120,7 @@ function getModelInfo(modelName: ModelName): ModelInfo {
         is_specialized: service.isSpecialized,
         paid_only: service.paidOnly,
         alpha: service.alpha,
+        flat_rate: service.flatRate,
         added_date: service.addedDate,
     };
 }

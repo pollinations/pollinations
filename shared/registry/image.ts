@@ -588,7 +588,6 @@ export const IMAGE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-01-17").getTime(),
         priceMultiplier: 1,
-        alpha: true,
         cost: {
             completionImageTokens: 0.01,
         },

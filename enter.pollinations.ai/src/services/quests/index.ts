@@ -1,13 +1,13 @@
-import * as d1Setup from "./groups/d1-setup.ts";
-import * as githubIssues from "./groups/github-issues.ts";
+import * as accountSetup from "./groups/account-setup.ts";
+import * as githubContributions from "./groups/github-contributions.ts";
 import * as githubProfile from "./groups/github-profile.ts";
 import * as identity from "./groups/identity.ts";
 import type { QuestCard, QuestEvaluationContext, QuestGroup } from "./types.ts";
 
 export const QUEST_GROUPS: QuestGroup[] = [
-    { id: "d1-setup", ...d1Setup },
+    { id: "account-setup", ...accountSetup },
     { id: "github-profile", ...githubProfile },
-    { id: "github-issues", ...githubIssues },
+    { id: "github-contributions", ...githubContributions },
     { id: "identity", ...identity },
 ];
 

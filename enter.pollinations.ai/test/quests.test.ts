@@ -18,26 +18,17 @@ import { test } from "./fixtures.ts";
 // re-run; only `granted` drops to 0 once the reward is already paid. (The old
 // evaluator deducted dedup before counting, so re-runs reported `scanned: 0`.)
 const ELIXPO_INTERN_QUEST_ID = "easteregg:elixpo_intern";
-const NO_ELIXPO_INTERN_RESULT = {
-    questId: ELIXPO_INTERN_QUEST_ID,
-    scanned: 0,
-    granted: 0,
-};
 const ELIXPO_INTERN_ALREADY_GRANTED = {
     questId: ELIXPO_INTERN_QUEST_ID,
     scanned: 1,
     granted: 0,
 };
-const GITHUB_REPO_STARS_QUEST_ID = "engage:github_50_repo_stars";
-const NO_GITHUB_REPO_STARS_RESULT = {
-    questId: GITHUB_REPO_STARS_QUEST_ID,
-    scanned: 0,
-    granted: 0,
-};
 
 // Number of static "product" catalog cards. Every static group quest
-// serializes to exactly one uniform card; the github-issues group is the only
-// dynamic group (one card per seeded github_quest_issues row, zero when none).
+// serializes to exactly one uniform card; the github-contributions group is the
+// only dynamic one (one card per seeded github_quest_issues row, zero when none,
+// plus its own static "first merged PR" card which is counted as static here
+// since its id is not github:issue:*).
 // We snapshot the static count by loading the catalog with no issues seeded.
 async function countStaticQuestCards(): Promise<number> {
     const ctx: QuestEvaluationContext = {
@@ -309,34 +300,36 @@ test("quest evaluator grants code-defined product quests once", async ({
         createdAt: new Date(),
     });
 
+    // First run grants the three eligible product quests; assert only those
+    // (targeted, so adding/removing unrelated quests never breaks this test).
     const first = await runQuestEvaluator(env);
-    expect(first.results).toEqual([
-        { questId: "onboarding:first_api_key", scanned: 1, granted: 1 },
-        { questId: "spend:first_top_up", scanned: 1, granted: 1 },
-        {
-            questId: "onboarding:established_github_account",
+    for (const questId of [
+        "onboarding:first_api_key",
+        "spend:first_top_up",
+        "onboarding:established_github_account",
+    ]) {
+        expect(first.results).toContainEqual({
+            questId,
             scanned: 1,
             granted: 1,
-        },
-        NO_GITHUB_REPO_STARS_RESULT,
-        NO_ELIXPO_INTERN_RESULT,
-    ]);
+        });
+    }
 
-    // Second run: each quest's source rows still exist, so the same proposals
-    // are emitted (scanned: 1). The generic dedup then filters them out, so
-    // nothing is granted again (granted: 0) and the balance is unchanged.
+    // Second run: source rows persist so the same proposals are emitted
+    // (scanned: 1), but the idempotent grant dedups them (granted: 0) and the
+    // balance is unchanged.
     const second = await runQuestEvaluator(env);
-    expect(second.results).toEqual([
-        { questId: "onboarding:first_api_key", scanned: 1, granted: 0 },
-        { questId: "spend:first_top_up", scanned: 1, granted: 0 },
-        {
-            questId: "onboarding:established_github_account",
+    for (const questId of [
+        "onboarding:first_api_key",
+        "spend:first_top_up",
+        "onboarding:established_github_account",
+    ]) {
+        expect(second.results).toContainEqual({
+            questId,
             scanned: 1,
             granted: 0,
-        },
-        NO_GITHUB_REPO_STARS_RESULT,
-        NO_ELIXPO_INTERN_RESULT,
-    ]);
+        });
+    }
 
     const [balance] = await db
         .select({ packBalance: schema.user.packBalance })
@@ -443,18 +436,15 @@ test("github account age quest waits until threshold", async ({
     mocks.github.state.user.created_at = new Date().toISOString();
     await mocks.enable("github", "tinybird");
 
+    // A brand-new GitHub account is below the age threshold, so the
+    // established-account quest proposes nothing and grants nothing. Assert just
+    // that quest (targeted) plus an unchanged balance.
     const first = await runQuestEvaluator(env);
-    expect(first.results).toEqual([
-        { questId: "onboarding:first_api_key", scanned: 0, granted: 0 },
-        { questId: "spend:first_top_up", scanned: 0, granted: 0 },
-        {
-            questId: "onboarding:established_github_account",
-            scanned: 0,
-            granted: 0,
-        },
-        NO_GITHUB_REPO_STARS_RESULT,
-        NO_ELIXPO_INTERN_RESULT,
-    ]);
+    expect(first.results).toContainEqual({
+        questId: "onboarding:established_github_account",
+        scanned: 0,
+        granted: 0,
+    });
 
     const [balance] = await db
         .select({ packBalance: schema.user.packBalance })
@@ -549,21 +539,14 @@ test("quest evaluator rewards completed GitHub quest issues through shared path"
         githubUpdatedAt: new Date("2026-06-12T00:00:00Z"),
     });
 
-    // Each issue is its own scope:"once" quest now; the completed-and-payable
-    // issue produces exactly one result entry at id `github:issue:777`.
+    // Each issue is its own scope:"once" quest; the completed-and-payable issue
+    // produces exactly one result entry at id `github:issue:777` that pays out.
     const first = await runQuestEvaluator(env);
-    expect(first.results).toEqual([
-        { questId: "onboarding:first_api_key", scanned: 0, granted: 0 },
-        { questId: "spend:first_top_up", scanned: 0, granted: 0 },
-        {
-            questId: "onboarding:established_github_account",
-            scanned: 0,
-            granted: 0,
-        },
-        NO_GITHUB_REPO_STARS_RESULT,
-        { questId: issueQuestId, scanned: 1, granted: 1 },
-        NO_ELIXPO_INTERN_RESULT,
-    ]);
+    expect(first.results).toContainEqual({
+        questId: issueQuestId,
+        scanned: 1,
+        granted: 1,
+    });
 
     const otherGithubId = 987654;
     await db.insert(schema.user).values({
@@ -597,18 +580,11 @@ test("quest evaluator rewards completed GitHub quest issues through shared path"
     // generic dedup drops it (granted: 0). Reassigning an issue never pays it a
     // second time: one issue, one payout, regardless of who is assigned.
     const second = await runQuestEvaluator(env);
-    expect(second.results).toEqual([
-        { questId: "onboarding:first_api_key", scanned: 0, granted: 0 },
-        { questId: "spend:first_top_up", scanned: 0, granted: 0 },
-        {
-            questId: "onboarding:established_github_account",
-            scanned: 0,
-            granted: 0,
-        },
-        NO_GITHUB_REPO_STARS_RESULT,
-        { questId: issueQuestId, scanned: 1, granted: 0 },
-        NO_ELIXPO_INTERN_RESULT,
-    ]);
+    expect(second.results).toContainEqual({
+        questId: issueQuestId,
+        scanned: 1,
+        granted: 0,
+    });
 
     // The original assignee keeps the single payout; the reassigned user gets
     // nothing (the issue was already paid once).
@@ -716,11 +692,15 @@ test("two community issues sharing one quest_id each pay out (production key sha
     const grants = await db
         .select({
             idempotencyKey: schema.rewardGrants.idempotencyKey,
-            questId: schema.rewardGrants.questId,
+            userId: schema.rewardGrants.userId,
+            pollenCredited: schema.rewardGrants.pollenCredited,
         })
         .from(schema.rewardGrants)
         .where(eq(schema.rewardGrants.balanceBucket, "pack"));
 
+    // Assert on the ISSUE grants specifically (not total balance), so unrelated
+    // quests that also pay these users — e.g. first_merged_pr, which these
+    // completed-PR issues happen to trigger — never break this guard.
     const issueGrants = grants.filter((g) =>
         g.idempotencyKey.startsWith("quest:github:issue:"),
     );
@@ -729,18 +709,14 @@ test("two community issues sharing one quest_id each pay out (production key sha
         "quest:github:issue:901",
         "quest:github:issue:902",
     ]);
-
-    // Both assignees were actually credited.
-    const [firstBalance] = await db
-        .select({ packBalance: schema.user.packBalance })
-        .from(schema.user)
-        .where(eq(schema.user.id, user.id));
-    expect(firstBalance?.packBalance).toBeCloseTo((user.packBalance ?? 0) + 11);
-    const [secondBalance] = await db
-        .select({ packBalance: schema.user.packBalance })
-        .from(schema.user)
-        .where(eq(schema.user.githubId, secondGithubId));
-    expect(secondBalance?.packBalance).toBeCloseTo(13);
+    // Both assignees were credited their own issue's reward (901→user, 902→other).
+    expect(
+        issueGrants.find((g) => g.userId === user.id)?.pollenCredited,
+    ).toBeCloseTo(11);
+    expect(
+        issueGrants.find((g) => g.userId === "community-issue-second-user")
+            ?.pollenCredited,
+    ).toBeCloseTo(13);
 });
 
 test("account quest history includes GitHub quest reward grants", async ({

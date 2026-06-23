@@ -1,6 +1,6 @@
 import type { Bucket } from "@shared/billing/deduction.ts";
 import * as schema from "@shared/db/better-auth.ts";
-import { eq } from "drizzle-orm";
+import { and, eq, gt, isNotNull } from "drizzle-orm";
 import type { QuestAvailability, QuestDefinition } from "../definitions.ts";
 import {
     type QuestCard,
@@ -23,19 +23,6 @@ import {
 
 const QUEST_ICON_ID = "github" as const;
 const QUEST_CATEGORY = "build" as const;
-
-/** Resolve the local user id for an assignee's GitHub id (null if unlinked). */
-async function loadAssigneeUserId(
-    ctx: QuestEvaluationContext,
-    assigneeGithubId: number,
-): Promise<string | null> {
-    const rows = await ctx.db
-        .select({ userId: schema.user.id })
-        .from(schema.user)
-        .where(eq(schema.user.githubId, assigneeGithubId))
-        .limit(1);
-    return rows[0]?.userId ?? null;
-}
 
 // Availability is a two-state BOARD concept: "available" = an open bounty
 // anyone can take; "completed" = off the open board. Only a genuinely open
@@ -73,17 +60,6 @@ function toIssueQuestDefinition(
     };
 }
 
-function isPayableIssue(
-    issue: typeof schema.githubQuestIssues.$inferSelect,
-): boolean {
-    return (
-        issue.state === "completed" &&
-        (issue.rewardAmount ?? 0) > 0 &&
-        issue.completedByPrNumber !== null &&
-        issue.assigneeGithubId !== null
-    );
-}
-
 export async function listQuestCards(
     ctx: QuestEvaluationContext,
 ): Promise<QuestCard[]> {
@@ -94,20 +70,27 @@ export async function listQuestCards(
 export async function findRewardProposals(
     ctx: QuestEvaluationContext,
 ): Promise<RewardProposal[]> {
-    const rows = await ctx.db.select().from(schema.githubQuestIssues);
-    const proposals: RewardProposal[] = [];
+    const rows = await ctx.db
+        .select({
+            issue: schema.githubQuestIssues,
+            userId: schema.user.id,
+        })
+        .from(schema.githubQuestIssues)
+        .innerJoin(
+            schema.user,
+            eq(schema.user.githubId, schema.githubQuestIssues.assigneeGithubId),
+        )
+        .where(
+            and(
+                eq(schema.githubQuestIssues.state, "completed"),
+                gt(schema.githubQuestIssues.rewardAmount, 0),
+                isNotNull(schema.githubQuestIssues.completedByPrNumber),
+                isNotNull(schema.githubQuestIssues.assigneeGithubId),
+            ),
+        );
 
-    for (const issue of rows) {
-        if (!isPayableIssue(issue) || issue.assigneeGithubId === null) {
-            continue;
-        }
-        const userId = await loadAssigneeUserId(ctx, issue.assigneeGithubId);
-        if (!userId) continue;
-        proposals.push({
-            quest: toIssueQuestDefinition(issue),
-            userId,
-        });
-    }
-
-    return proposals;
+    return rows.map(({ issue, userId }) => ({
+        quest: toIssueQuestDefinition(issue),
+        userId,
+    }));
 }

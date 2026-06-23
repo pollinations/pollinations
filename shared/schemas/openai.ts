@@ -413,6 +413,7 @@ const ChatCompletionChoiceLogprobsSchema = z
 
 export const CompletionUsageSchema = z
     .object({
+        cached_input_tokens: z.number().int().nonnegative().nullish(),
         cache_creation_input_tokens: z.number().int().nonnegative().nullish(),
         cache_read_input_tokens: z.number().int().nonnegative().nullish(),
         completion_tokens: z.number().int().nonnegative(),
@@ -440,6 +441,7 @@ export const CompletionUsageSchema = z
                 image_tokens: z.number().int().nonnegative().nullish(),
             })
             .nullish(),
+        reasoning_tokens: z.number().int().nonnegative().nullish(),
         total_tokens: z.number().int().nonnegative(),
     })
     .meta({ $id: "CompletionUsage" });

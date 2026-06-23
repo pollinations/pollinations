@@ -560,6 +560,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionVideoSeconds": 0.005,
     },
   },
+  "mercury": {
+    "cost": {
+      "completionTextTokens": 0.00000075,
+      "promptCachedTokens": 0.000000025,
+      "promptTextTokens": 0.00000025,
+    },
+    "price": {
+      "completionTextTokens": 0.00000075,
+      "promptCachedTokens": 0.000000025,
+      "promptTextTokens": 0.00000025,
+    },
+  },
   "midijourney": {
     "cost": {
       "completionTextTokens": 0.0000045,

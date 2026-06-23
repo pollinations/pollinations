@@ -46,6 +46,7 @@ interface CloudflareBindings {
     GOOGLE_PRIVATE_KEY: string;
     GOOGLE_PRIVATE_KEY_ID: string;
     GOOGLE_PROJECT_ID: string;
+    INCEPTION_API_KEY: string;
     KLEIN_URL: string;
     LTX2_BASE_URL: string;
     NOVA_REEL_S3_BUCKET: string;

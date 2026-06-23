@@ -346,12 +346,12 @@ fixtureTest(
 );
 
 fixtureTest(
-    "routes stable-audio-2.5 requests through fal",
+    "routes stable-audio-3-medium requests through fal",
     async ({ paidApiKey }) => {
         const calls: string[] = [];
         const falEndpoint =
-            "https://fal.run/fal-ai/stable-audio-25/text-to-audio";
-        const falFileUrl = "https://v3.fal.media/files/test-stable-audio.wav";
+            "https://fal.run/fal-ai/stable-audio-3/medium/text-to-audio";
+        const falFileUrl = "https://v3.fal.media/files/test-stable-audio.mp3";
 
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
@@ -369,19 +369,19 @@ fixtureTest(
                         unknown
                     >;
                     expect(body.prompt).toBe("lofi rain loop");
-                    expect(body.seconds_total).toBe(12);
+                    expect(body.duration).toBe(12);
                     expect(body.num_inference_steps).toBe(6);
                     expect(body.seed).toBe(42);
 
                     return Response.json({
-                        audio: { url: falFileUrl, content_type: "audio/wav" },
+                        audio: { url: falFileUrl, content_type: "audio/mpeg" },
                         seed: 42,
                     });
                 }
 
                 if (request.url === falFileUrl) {
-                    return new Response(new Uint8Array([82, 73, 70, 70]), {
-                        headers: { "Content-Type": "audio/wav" },
+                    return new Response(new Uint8Array([73, 68, 51, 4]), {
+                        headers: { "Content-Type": "audio/mpeg" },
                     });
                 }
 
@@ -401,7 +401,7 @@ fixtureTest(
         const ctx = createExecutionContext();
         const response = await worker.fetch(
             new Request(
-                "https://staging.gen.pollinations.ai/audio/lofi%20rain%20loop?model=stable-audio-2.5&seconds=12&steps=6&seed=42",
+                "https://staging.gen.pollinations.ai/audio/lofi%20rain%20loop?model=stable-audio-3-medium&seconds=12&steps=6&seed=42",
                 {
                     headers: { Authorization: `Bearer ${paidApiKey}` },
                 },
@@ -414,10 +414,13 @@ fixtureTest(
         );
 
         expect(response.status).toBe(200);
-        expect(response.headers.get("content-type")).toBe("audio/wav");
-        expect(response.headers.get("x-model-used")).toBe("stable-audio-2.5");
+        expect(response.headers.get("content-type")).toBe("audio/mpeg");
+        expect(response.headers.get("x-model-used")).toBe(
+            "stable-audio-3-medium",
+        );
+        // text-to-audio bills 376 units ($0.0376 at $0.0001/unit).
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
-            "1",
+            "376",
         );
 
         await waitOnExecutionContext(ctx);
@@ -427,12 +430,104 @@ fixtureTest(
     },
 );
 
-it("lists stable-audio-2.5 in audio models", async () => {
+fixtureTest(
+    "routes stable-audio-3-medium reference_audio through fal audio-to-audio",
+    async ({ paidApiKey }) => {
+        const calls: string[] = [];
+        const a2aEndpoint =
+            "https://fal.run/fal-ai/stable-audio-3/medium/audio-to-audio";
+        const falFileUrl = "https://v3.fal.media/files/test-a2a.mp3";
+        let sentAudioUrl: unknown;
+
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                calls.push(request.url);
+
+                if (request.url === a2aEndpoint) {
+                    expect(request.headers.get("authorization")).toBe(
+                        "Key test-fal-key",
+                    );
+                    const body = (await request.json()) as Record<
+                        string,
+                        unknown
+                    >;
+                    expect(body.prompt).toBe("warm pads");
+                    sentAudioUrl = body.audio_url;
+
+                    return Response.json({
+                        audio: { url: falFileUrl, content_type: "audio/mpeg" },
+                        seed: 1,
+                    });
+                }
+
+                if (request.url === falFileUrl) {
+                    return new Response(new Uint8Array([73, 68, 51, 4]), {
+                        headers: { "Content-Type": "audio/mpeg" },
+                    });
+                }
+
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+
+        const form = new FormData();
+        form.append("model", "stable-audio-3-medium");
+        form.append("input", "warm pads");
+        form.append(
+            "reference_audio",
+            new File([new Uint8Array([82, 73, 70, 70])], "ref.wav", {
+                type: "audio/wav",
+            }),
+        );
+
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://staging.gen.pollinations.ai/v1/audio/speech", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${paidApiKey}` },
+                body: form,
+            }),
+            {
+                ...env,
+                FAL_KEY: "test-fal-key",
+            } as unknown as CloudflareBindings,
+            ctx,
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("x-model-used")).toBe(
+            "stable-audio-3-medium",
+        );
+        // audio-to-audio bills 417 units ($0.0417 at $0.0001/unit).
+        expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
+            "417",
+        );
+        // reference clip is forwarded as a base64 data-URI audio_url.
+        expect(String(sentAudioUrl)).toMatch(/^data:audio\/wav;base64,/);
+
+        await waitOnExecutionContext(ctx);
+
+        expect(calls).toContain(a2aEndpoint);
+        expect(calls).toContain(falFileUrl);
+    },
+);
+
+it("lists stable-audio-3-medium in audio models", async () => {
     const response = await fetchWorker("/audio/models");
 
     expect(response.status).toBe(200);
     const models = (await response.json()) as { name: string }[];
-    expect(models.some((model) => model.name === "stable-audio-2.5")).toBe(
+    expect(models.some((model) => model.name === "stable-audio-3-medium")).toBe(
         true,
     );
 });

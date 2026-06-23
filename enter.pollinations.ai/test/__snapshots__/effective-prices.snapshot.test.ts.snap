@@ -1024,12 +1024,12 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.035,
     },
   },
-  "stable-audio-2.5": {
+  "stable-audio-3-medium": {
     "cost": {
-      "completionAudioTokens": 0.2,
+      "completionAudioTokens": 0.0001,
     },
     "price": {
-      "completionAudioTokens": 0.2,
+      "completionAudioTokens": 0.0001,
     },
   },
   "step-3.5-flash": {

@@ -4,17 +4,14 @@ import { Hono } from "hono";
 import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
-import {
-    QUEST_CATEGORIES,
-    QUEST_ICON_IDS,
-} from "../services/quests/definitions.ts";
+import { QUEST_CATEGORIES } from "../services/quests/definitions.ts";
 import { listQuestCards } from "../services/quests/index.ts";
 import type {
     QuestCard,
     QuestEvaluationContext,
 } from "../services/quests/types.ts";
 
-const CACHE_KEY = "quests:catalog:v10";
+const CACHE_KEY = "quests:catalog:v11";
 const CACHE_TTL = 60;
 
 export type QuestCatalogItem = QuestCard;
@@ -27,7 +24,6 @@ const questCatalogItemSchema = z.object({
     id: z.string(),
     title: z.string(),
     description: z.string(),
-    iconId: z.enum(QUEST_ICON_IDS),
     category: z.enum(QUEST_CATEGORIES),
     availability: z.enum(["available", "completed"]),
     rewardAmount: z.number().nullable(),

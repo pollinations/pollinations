@@ -1,18 +1,5 @@
 import type { Bucket } from "@shared/billing/deduction.ts";
 
-export const QUEST_ICON_IDS = [
-    "app",
-    "card",
-    "chat",
-    "github",
-    "image",
-    "key",
-    "sprout",
-    "tokens",
-] as const;
-
-export type QuestIconId = (typeof QUEST_ICON_IDS)[number];
-
 export const QUEST_CATEGORIES = [
     "setup",
     "grow",
@@ -54,7 +41,6 @@ export type QuestDefinition = {
     id: string;
     title: string;
     description: string;
-    iconId: QuestIconId;
     category: QuestCategory;
     scope: QuestScope;
     rewardAmount: number;

@@ -179,7 +179,6 @@ const establishedGitHubAccountQuest: QuestDefinition = {
     id: "onboarding:established_github_account",
     title: "Senior dev status",
     description: "Connect a GitHub account that is at least one year old.",
-    iconId: "github",
     category: "build",
     scope: "perUser",
     rewardAmount: 6,
@@ -191,7 +190,6 @@ const githubRepoStarsQuest: QuestDefinition = {
     title: "Earn 50 GitHub stars",
     description:
         "Earn 50 stars across your non-empty public GitHub repositories.",
-    iconId: "github",
     category: "build",
     scope: "perUser",
     rewardAmount: 5,

@@ -42,7 +42,7 @@ query($owner:String!,$name:String!,$cursor:String){
     pullRequests(first:100, after:$cursor, orderBy:{field:CREATED_AT,direction:ASC}){
       pageInfo{ hasNextPage endCursor }
       nodes{
-        number state merged mergedAt updatedAt title url
+        number state merged mergedAt createdAt closedAt updatedAt title url
         author{ login ... on User { databaseId } }
         closingIssuesReferences(first:100){ nodes{ number } }
       }
@@ -55,6 +55,8 @@ type PrNode = {
     state: string;
     merged: boolean;
     mergedAt: string | null;
+    createdAt: string | null;
+    closedAt: string | null;
     updatedAt: string | null;
     title: string;
     url: string;
@@ -84,6 +86,8 @@ function prRow(
         mergedAt: node.mergedAt ? new Date(node.mergedAt) : null,
         title: node.title,
         url: node.url,
+        githubCreatedAt: node.createdAt ? new Date(node.createdAt) : null,
+        githubClosedAt: node.closedAt ? new Date(node.closedAt) : null,
         githubUpdatedAt: node.updatedAt ? new Date(node.updatedAt) : null,
         syncedAt: runStart,
     };
@@ -117,6 +121,17 @@ async function syncPullRequests(
         },
     );
 
+    // Guard against wiping the mirror on an empty-but-"successful" GraphQL
+    // response (a 200 with nodes:[] and no errors — e.g. a throttle/abuse path).
+    // With zero rows seen, the reap below would delete EVERY live row, since a
+    // no-op upsert re-stamps nothing and all rows carry syncedAt < runStart.
+    if (prRows.length === 0) {
+        log.warn(
+            "GITHUB_MIRROR_EMPTY: PR sync returned 0 rows — skipping reap to avoid wiping the mirror",
+        );
+        return { prs: 0, edges: 0, pages };
+    }
+
     const prs = await chunkedUpsert(db, schema.ghPullRequests, prRows);
     const edges = await chunkedUpsert(db, schema.ghPrClosingIssues, edgeRows);
     // Reap rows not seen this run — PRs deleted on GitHub, and (the important
@@ -140,9 +155,9 @@ query($owner:String!,$name:String!,$cursor:String){
     issues(first:100, after:$cursor, orderBy:{field:CREATED_AT,direction:ASC}){
       pageInfo{ hasNextPage endCursor }
       nodes{
-        number state title url body updatedAt
+        number state title url body createdAt closedAt updatedAt
         author{ login ... on User { databaseId } }
-        assignees(first:1){ nodes{ login databaseId } }
+        assignees(first:10){ nodes{ login databaseId } }
         labels(first:100){ nodes{ name } }
       }
     }
@@ -155,6 +170,8 @@ type IssueNode = {
     title: string;
     url: string;
     body: string | null;
+    createdAt: string | null;
+    closedAt: string | null;
     updatedAt: string | null;
     author: GraphqlAuthor;
     assignees: { nodes: { login?: string; databaseId?: number }[] };
@@ -174,7 +191,8 @@ function issueRow(
     node: IssueNode,
     runStart: Date,
 ): typeof schema.ghIssues.$inferInsert {
-    const assignee = node.assignees.nodes[0];
+    const assignees = node.assignees.nodes;
+    const first = assignees[0];
     return {
         number: node.number,
         authorGithubId: node.author?.databaseId ?? null,
@@ -185,8 +203,17 @@ function issueRow(
         url: node.url,
         body: node.body ?? null,
         labelsJson: JSON.stringify(node.labels.nodes.map((l) => l.name)),
-        assigneeGithubId: assignee?.databaseId ?? null,
-        assigneeLogin: assignee?.login ?? null,
+        // First assignee kept as indexed columns; full list as JSON.
+        assigneeGithubId: first?.databaseId ?? null,
+        assigneeLogin: first?.login ?? null,
+        assigneesJson: JSON.stringify(
+            assignees.map((a) => ({
+                login: a.login ?? null,
+                githubId: a.databaseId ?? null,
+            })),
+        ),
+        githubCreatedAt: node.createdAt ? new Date(node.createdAt) : null,
+        githubClosedAt: node.closedAt ? new Date(node.closedAt) : null,
         githubUpdatedAt: node.updatedAt ? new Date(node.updatedAt) : null,
         syncedAt: runStart,
     };
@@ -208,6 +235,14 @@ async function syncIssues(
             for (const node of nodes) issueRows.push(issueRow(node, runStart));
         },
     );
+
+    // Same empty-response guard as PRs: never reap when zero rows were seen.
+    if (issueRows.length === 0) {
+        log.warn(
+            "GITHUB_MIRROR_EMPTY: issue sync returned 0 rows — skipping reap to avoid wiping the mirror",
+        );
+        return { issues: 0, pages };
+    }
 
     const issues = await chunkedUpsert(db, schema.ghIssues, issueRows);
     // Reap issues deleted on GitHub (re-stamped live rows have syncedAt=runStart).

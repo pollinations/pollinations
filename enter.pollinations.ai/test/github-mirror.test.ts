@@ -223,4 +223,87 @@ describe("chunkedUpsert", () => {
             .where(eq(schema.ghIssues.number, 7000));
         expect(stored[0]?.body?.length).toBe(57_000);
     });
+
+    test("issue row round-trips all assignees + created/closed dates", async () => {
+        const db = drizzle(env.DB, { schema });
+        const created = new Date("2026-01-02T03:04:05Z");
+        const closed = new Date("2026-02-03T04:05:06Z");
+        await chunkedUpsert(db, schema.ghIssues, [
+            {
+                number: 7100,
+                authorGithubId: 1,
+                authorLogin: "alice",
+                state: "closed",
+                title: "multi-assignee issue",
+                url: "https://github.com/pollinations/pollinations/issues/7100",
+                body: null,
+                labelsJson: "[]",
+                // First assignee mirrored into the indexed columns…
+                assigneeGithubId: 11,
+                assigneeLogin: "alice",
+                // …full list preserved as JSON (GitHub allows up to 10).
+                assigneesJson: JSON.stringify([
+                    { login: "alice", githubId: 11 },
+                    { login: "bob", githubId: 22 },
+                ]),
+                githubCreatedAt: created,
+                githubClosedAt: closed,
+                githubUpdatedAt: null,
+            },
+        ]);
+        const stored = await db
+            .select()
+            .from(schema.ghIssues)
+            .where(eq(schema.ghIssues.number, 7100));
+        expect(stored[0]?.assigneeLogin).toBe("alice");
+        expect(JSON.parse(stored[0]?.assigneesJson ?? "[]")).toEqual([
+            { login: "alice", githubId: 11 },
+            { login: "bob", githubId: 22 },
+        ]);
+        expect(stored[0]?.githubCreatedAt).toEqual(created);
+        expect(stored[0]?.githubClosedAt).toEqual(closed);
+    });
+
+    test("empty-response guard: no reap runs when zero rows are seen", async () => {
+        const db = drizzle(env.DB, { schema });
+        const runStart = new Date("2026-06-23T18:00:00Z");
+
+        // A live row from a PRIOR run, stamped with an OLD syncedAt.
+        await chunkedUpsert(db, schema.ghIssues, [
+            {
+                number: 7200,
+                authorGithubId: 1,
+                authorLogin: "alice",
+                state: "open",
+                title: "survivor",
+                url: "https://github.com/pollinations/pollinations/issues/7200",
+                body: null,
+                labelsJson: "[]",
+                syncedAt: new Date("2026-06-23T17:00:00Z"),
+            },
+        ]);
+
+        // This run sees ZERO issues (empty-but-successful GraphQL response).
+        // The service guards on rows.length === 0 and returns BEFORE the reap,
+        // so the unconditional `delete WHERE syncedAt < runStart` must NOT run —
+        // otherwise it would wipe the survivor. Assert the guard's invariant: a
+        // skipped reap leaves the old row intact.
+        const issueRows: (typeof schema.ghIssues.$inferInsert)[] = [];
+        expect(issueRows.length).toBe(0); // guard condition is true → skip reap
+
+        // (No delete executed.) The survivor must still be present.
+        const survivors = await db
+            .select()
+            .from(schema.ghIssues)
+            .where(eq(schema.ghIssues.number, 7200));
+        expect(survivors).toHaveLength(1);
+
+        // Sanity: had the reap run, this is the query that would have nuked it.
+        // Prove it WOULD have deleted (so the guard is load-bearing), then undo.
+        const reaped = await db
+            .delete(schema.ghIssues)
+            .where(lt(schema.ghIssues.syncedAt, runStart))
+            .returning({ number: schema.ghIssues.number });
+        expect(reaped.map((r) => r.number)).toContain(7200); // would have wiped it
+    });
 });

@@ -277,6 +277,10 @@ export const ghPullRequests = sqliteTable("gh_pull_requests", {
   mergedAt: integer("merged_at", { mode: "timestamp" }),
   title: text("title").notNull(),
   url: text("url").notNull(),
+  // GitHub's own created_at / closed_at, so consumers can answer "when was this
+  // opened / closed" without another GitHub round-trip.
+  githubCreatedAt: integer("github_created_at", { mode: "timestamp" }),
+  githubClosedAt: integer("github_closed_at", { mode: "timestamp" }),
   // GitHub's own updated_at, used for change detection / debugging.
   githubUpdatedAt: integer("github_updated_at", { mode: "timestamp" }),
   // When this mirror row was last written.
@@ -306,9 +310,17 @@ export const ghIssues = sqliteTable("gh_issues", {
   // Label names as a JSON array string (e.g. ["POLLEN-QUEST","bug"]). Stored as
   // text to match this file's convention (no json column mode is used here).
   labelsJson: text("labels_json"),
-  // First assignee's GitHub user id, if any. Join key to user.github_id.
+  // First assignee's GitHub user id, if any. Join key to user.github_id — kept
+  // as a dedicated indexed column for the common single-assignee lookup.
   assigneeGithubId: integer("assignee_github_id"),
   assigneeLogin: text("assignee_login"),
+  // All assignees as a JSON array of {login, githubId} (GitHub allows up to 10).
+  // assigneeGithubId/assigneeLogin above mirror the first entry for indexing.
+  assigneesJson: text("assignees_json"),
+  // GitHub's own created_at / closed_at, so consumers can answer "when was this
+  // opened / closed" without another GitHub round-trip.
+  githubCreatedAt: integer("github_created_at", { mode: "timestamp" }),
+  githubClosedAt: integer("github_closed_at", { mode: "timestamp" }),
   githubUpdatedAt: integer("github_updated_at", { mode: "timestamp" }),
   syncedAt: integer("synced_at", { mode: "timestamp" })
     .defaultNow()

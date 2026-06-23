@@ -1,0 +1,35 @@
+{
+  "pr_number": 11959,
+  "title": "feat: auto-fetch USD→EUR from ECB in runway rebuild",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11959",
+  "merged_at": "2026-06-23T13:56:07Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- `rebuild-sheet.mjs` now refreshes `usd_to_eur` from the ECB (frankfurter.dev) at run time instead of relying on the static `config.local.json` value\n- Falls back to the config value when the fetch fails (e.g. the daily cron runs offline)\n- New `lib/fx.mjs` (pure parser + fetch wrapper) with unit tests\n- Fixes the FX rate silently going stale — it had been sitting at an April rate for months, overstating USD costs in EUR by ~5%",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Fresh Exchange Rates",
+    "blurb": "Our internal runway scripts now automatically fetch the latest USD to EUR exchange rates from the European Central Bank. No more stale math!",
+    "summary": "The internal runway rebuild script now automatically fetches the latest USD to EUR exchange rate from the European Central Bank via frankfurter.dev, falling back to a static config if offline.",
+    "impact": "Internal financial calculations now use up-to-date currency conversions automatically, fixing a stale rate issue that was overstating USD costs in EUR by about 5%.",
+    "keywords": [
+      "finance",
+      "operations",
+      "exchange-rate",
+      "automation",
+      "internal-tooling"
+    ],
+    "visual_concept": "The bee mascot acting as an accountant, looking at a retro terminal showing currency symbols ($, €) and a chart. The Nomnom creature eating old static config files.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, looking at a retro computer monitor displaying glowing lime green (#ecf874) currency symbols and a small financial chart. The round tan nomnom creature sits nearby, happily eating old paper spreadsheets. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-23/PR-11959.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, looking at a retro computer monitor displaying glowing lime green (#ecf874) currency symbols and a small financial chart. The round tan nomnom creature sits nearby, happily eating old paper spreadsheets. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-06-23T13:57:07.641196+00:00"
+}

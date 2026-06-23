@@ -295,7 +295,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 />
                 <div
                     className={cn(
-                        "absolute inset-y-0 left-0 flex w-[min(20rem,86vw)] transform-gpu flex-col overflow-hidden border-r border-theme-text-strong/10 bg-app-bg shadow-xl transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
+                        "absolute inset-y-0 left-0 flex w-[min(20rem,86vw)] transform-gpu flex-col overflow-hidden border-r border-theme-text-strong/10 bg-app-bg transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
                         "duration-[420ms]",
                         isDrawerOpen ? "translate-x-0" : "-translate-x-full",
                     )}

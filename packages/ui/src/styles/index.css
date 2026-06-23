@@ -13,6 +13,21 @@
 @import "./tokens.css";
 @import "../modules/wallet/styles.css";
 
+.polli-surface-border {
+    outline: 1px solid rgba(50, 38, 24, 0.12);
+    outline-offset: -1px;
+}
+
+.dark .polli-surface-border {
+    outline-color: rgba(255, 255, 255, 0.1);
+}
+
+@supports (color: color-mix(in oklab, currentColor 12%, transparent)) {
+    .polli-surface-border {
+        outline-color: color-mix(in oklab, currentColor 12%, transparent);
+    }
+}
+
 .polli-scrollbar-subtle {
     scrollbar-width: thin;
     scrollbar-color: transparent transparent;

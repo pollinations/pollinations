@@ -99,7 +99,7 @@ export const Tooltip: FC<TooltipProps> = ({
     // theme, while typography opts out of trigger inheritance so bold labels
     // do not make the whole tooltip shout.
     const popupClasses =
-        "polli:fixed polli:w-max polli:px-2 polli:py-1 polli:bg-theme-bg-pale polli:text-theme-text-base polli:font-normal polli:leading-snug polli:tracking-normal polli:normal-case polli:not-italic polli:border polli:border-theme-border polli:text-xs polli:rounded-md polli:shadow-sm polli:z-50 polli:pointer-events-none polli:transition-opacity polli:whitespace-pre-line polli:break-words";
+        "polli:fixed polli:w-max polli:px-2 polli:py-1 polli:bg-theme-bg-pale polli:text-theme-text-base polli:font-normal polli:leading-snug polli:tracking-normal polli:normal-case polli:not-italic polli:border polli:border-theme-border polli:text-xs polli:rounded-md polli:z-50 polli:pointer-events-none polli:transition-opacity polli:whitespace-pre-line polli:break-words";
 
     const contentNode = (
         <>

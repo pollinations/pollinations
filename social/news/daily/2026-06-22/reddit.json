@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-06-22",
+  "period_start": "2026-06-22",
+  "period_end": "2026-06-22",
+  "generated_at": "2026-06-23T07:10:38.665458+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-22/images/reddit.jpg"
+    }
+  ],
+  "title": "Audio update: Stable Audio 2.5, ElevenLabs SFX, and cheaper TTS.",
+  "text": "Merged 5 PRs today. The focus was mostly on audio infrastructure.\n\nFirst, we added Stable Audio 2.5 through fal. If you need longer-form music generation, this is the one to use. It handles structure and progression better than the older models.\n\nWe also pushed a significant update to the ElevenLabs integration. SFX generation is now supported, and we bumped the TTS to Multilingual v2. On the music side, we upgraded to music_v2, which means you can now use reference-audio conditioning. If you've been trying to force a specific style through text prompts alone, passing a reference track works much better.\n\nWhile doing the ElevenLabs update, we noticed our internal TTS pricing calculation was off. That's fixed now, which translates to a roughly 40% drop in Pollen credit cost for text-to-speech.\n\nOn the housekeeping front, we added the Stability AI logo to the frontend and did a sweep of the app showcase repo. We consolidated a bunch of stale app submission PRs. If you submitted an app and it got caught in the cleanup, just let us know or reopen the PR.\n\nDocs and endpoints are updated.\n\nCode: https://github.com/pollinations/pollinations\nDocs: https://docs.pollinations.ai"
+}

@@ -1,7 +1,7 @@
 TOKEN tinybird_read READ
 
 DESCRIPTION >
-    Daily snapshot of D1 reward_grants table (idempotent grant-style rewards)
+    Daily snapshot of D1 rewards table, including pending and claimed rewards.
 
 SCHEMA >
     `id` String `json:$.id`,
@@ -9,9 +9,10 @@ SCHEMA >
     `user_id` String `json:$.user_id`,
     `quest_id` Nullable(String) `json:$.quest_id`,
     `title` String `json:$.title`,
-    `pollen_credited` Float64 `json:$.pollen_credited`,
+    `pollen_amount` Float64 `json:$.pollen_amount`,
     `balance_bucket` LowCardinality(String) `json:$.balance_bucket`,
-    `created_at` Int64 `json:$.created_at`,
+    `earned_at` Int64 `json:$.earned_at`,
+    `claimed_at` Nullable(Int64) `json:$.claimed_at`,
     `synced_at` DateTime `json:$.synced_at`
 
 ENGINE "MergeTree"

@@ -218,6 +218,20 @@
       "when": 1782231035000,
       "tag": "0030_reshape_reward_grants",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "6",
+      "when": 1782231036000,
+      "tag": "0031_drop_github_quest_issues",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "6",
+      "when": 1782231037000,
+      "tag": "0032_rename_rewards_for_claims",
+      "breakpoints": true
     }
   ]
 }

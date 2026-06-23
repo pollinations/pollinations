@@ -1,16 +1,16 @@
 import { getLogger } from "@logtape/logtape";
-import { grantReward } from "@shared/billing/grant-reward.ts";
+import { recordReward } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { QUEST_GROUPS } from "./quests/index.ts";
-import { type QuestEvaluationContext, toGrant } from "./quests/types.ts";
+import { type QuestEvaluationContext, toReward } from "./quests/types.ts";
 
 const log = getLogger(["enter", "quest-evaluator"]);
 
 type QuestEvaluatorResult = {
     questId: string;
     scanned: number;
-    granted: number;
+    recorded: number;
     error?: string;
 };
 
@@ -24,7 +24,7 @@ export async function runQuestEvaluator(
     const ensureResult = (questId: string): QuestEvaluatorResult => {
         let entry = results.get(questId);
         if (!entry) {
-            entry = { questId, scanned: 0, granted: 0 };
+            entry = { questId, scanned: 0, recorded: 0 };
             results.set(questId, entry);
         }
         return entry;
@@ -41,8 +41,8 @@ export async function runQuestEvaluator(
             for (const proposal of proposals) {
                 const entry = ensureResult(proposal.quest.id);
                 entry.scanned += 1;
-                const result = await grantReward(db, toGrant(proposal));
-                if (result.granted) entry.granted += 1;
+                const result = await recordReward(db, toReward(proposal));
+                if (result.recorded) entry.recorded += 1;
             }
         } catch (error) {
             const message =

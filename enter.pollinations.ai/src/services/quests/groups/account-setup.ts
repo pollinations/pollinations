@@ -14,11 +14,11 @@ import {
  *   - first_top_up   -> stripe_checkout_credits   (one paid checkout per user)
  *
  * The SQL decides which users qualify and returns reward proposals. It does
- * not join reward_grants and does not dedup — grantReward is the idempotent
- * write path.
+ * not join rewards and does not dedup — recordReward is the idempotent write
+ * path.
  */
 
-const MAX_GRANTS_PER_RUN = 500;
+const MAX_REWARDS_PER_RUN = 500;
 
 type SetupQuestRow = {
     userId: string;
@@ -70,14 +70,14 @@ export async function findRewardProposals({
         SELECT apikey.user_id AS userId
         FROM apikey
         GROUP BY apikey.user_id
-        LIMIT ${MAX_GRANTS_PER_RUN}`,
+        LIMIT ${MAX_REWARDS_PER_RUN}`,
     );
     const topUpRows = await db.all<SetupQuestRow>(
         sql`
         SELECT stripe_checkout_credits.user_id AS userId
         FROM stripe_checkout_credits
         GROUP BY stripe_checkout_credits.user_id
-        LIMIT ${MAX_GRANTS_PER_RUN}`,
+        LIMIT ${MAX_REWARDS_PER_RUN}`,
     );
     const byopLoginRows = await db.all<SetupQuestRow>(
         sql`
@@ -85,7 +85,7 @@ export async function findRewardProposals({
         FROM apikey
         WHERE apikey.byop_client_key_id IS NOT NULL
         GROUP BY apikey.user_id
-        LIMIT ${MAX_GRANTS_PER_RUN}`,
+        LIMIT ${MAX_REWARDS_PER_RUN}`,
     );
 
     return [

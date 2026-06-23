@@ -12,7 +12,6 @@ import {
     SproutIcon,
     StatCard,
     Surface,
-    TargetIcon,
     Text,
     TrendUpIcon,
 } from "@pollinations/ui";
@@ -30,30 +29,36 @@ import type {
     QuestCatalogResponse,
 } from "../../backend-types.ts";
 
-type QuestGrant = {
+type QuestReward = {
+    id: string;
     questId: string | null;
     title: string;
-    pollenCredited: number;
+    pollenAmount: number;
     balanceBucket: string;
-    createdAt: string;
+    earnedAt: string;
+    claimedAt: string | null;
 };
 
 type QuestOverviewProps = Record<string, never>;
 
 type FetchState = {
     catalog: QuestCatalogItem[];
-    grants: QuestGrant[];
-    totalPollen: number;
+    rewards: QuestReward[];
+    totalClaimedPollen: number;
+    totalClaimablePollen: number;
     loading: boolean;
     error: string | null;
+    claimingRewardId: string | null;
 };
 
 const INITIAL_STATE: FetchState = {
     catalog: [],
-    grants: [],
-    totalPollen: 0,
+    rewards: [],
+    totalClaimedPollen: 0,
+    totalClaimablePollen: 0,
     loading: true,
     error: null,
+    claimingRewardId: null,
 };
 
 type IconComponent = ComponentType<{ className?: string }>;
@@ -116,17 +121,17 @@ function issueNumberFromId(id: string): number | null {
 }
 
 // ── Formatting helpers ──────────────────────────────────────────────────────
-function formatGrantAmount(value: number | null): string {
+function formatRewardAmount(value: number | null): string {
     if (value == null) return "TBD";
     const formatted = formatPollen(value);
     if (value > 0 && formatted === "0") return "<0.0001";
     return formatted;
 }
 
-function questStatusAccent(completed: boolean): string {
-    return completed
-        ? "var(--color-theme-text-muted)"
-        : "var(--color-intent-warning-text)";
+function questStatusAccent(status: QuestCardStatus): string {
+    if (status === "claimed") return "var(--color-theme-text-muted)";
+    if (status === "claimable") return "var(--color-intent-success-text)";
+    return "var(--color-intent-warning-text)";
 }
 
 function rewardIconKind(
@@ -137,19 +142,50 @@ function rewardIconKind(
         : "tier";
 }
 
+type QuestData = Pick<
+    FetchState,
+    "catalog" | "rewards" | "totalClaimedPollen" | "totalClaimablePollen"
+>;
+
+async function loadQuestData(): Promise<QuestData> {
+    const [catalogResponse, rewardsResponse] = await Promise.all([
+        apiClient.quests.catalog.$get(),
+        apiClient.account.quests.$get(),
+    ]);
+    if (!catalogResponse.ok || !rewardsResponse.ok) {
+        throw new Error(
+            `Failed to load quests (${catalogResponse.status}/${rewardsResponse.status})`,
+        );
+    }
+    const catalog = (await catalogResponse.json()) as QuestCatalogResponse;
+    const rewardsPayload = (await rewardsResponse.json()) as {
+        totalClaimedPollen: number;
+        totalClaimablePollen: number;
+        rewards: QuestReward[];
+    };
+    return {
+        catalog: catalog.quests ?? [],
+        rewards: rewardsPayload.rewards ?? [],
+        totalClaimedPollen: rewardsPayload.totalClaimedPollen ?? 0,
+        totalClaimablePollen: rewardsPayload.totalClaimablePollen ?? 0,
+    };
+}
+
 // ── Card model ──────────────────────────────────────────────────────────────
-// A single quest row, whether it comes from the catalog (open quests) or from a
-// reward grant (completed). Open shows its reward; completed flips to a green
-// check + the banked amount.
+// A single quest row. Open shows the possible reward; claimable means the reward
+// exists but has not moved into the balance; claimed means pollen was deposited.
+type QuestCardStatus = "open" | "claimable" | "claimed";
+
 type QuestCard = {
     key: string;
+    rewardId?: string;
     title: string;
     description?: string;
     url?: string;
     issueNumber?: number;
     reward: number | null;
     balanceBucket?: string | null;
-    completed: boolean;
+    status: QuestCardStatus;
     earnedAmount?: number | null;
 };
 
@@ -212,22 +248,22 @@ function SectionFooter({ category }: { category: CategoryMeta }) {
     );
 }
 
-// Leading marker for a quest row. Completed earns the success (green) tint with
-// a check; open is a neutral square with its section icon. The icon rides
+// Leading marker for a quest row. Earned rewards get the success tint with a
+// check; open is a neutral square with its section icon. The icon rides
 // currentColor from the square's text tone.
 function QuestMarker({
     icon: Icon,
-    completed,
+    active,
 }: {
     icon: IconComponent;
-    completed: boolean;
+    active: boolean;
 }) {
-    const MarkerIcon = completed ? CheckIcon : Icon;
+    const MarkerIcon = active ? CheckIcon : Icon;
     return (
         <span
             aria-hidden="true"
             className={`flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] ${
-                completed
+                active
                     ? "bg-intent-success-bg-light text-intent-success-text"
                     : "bg-ink-900/80 text-ink-100"
             }`}
@@ -237,29 +273,38 @@ function QuestMarker({
     );
 }
 
-function QuestRow({ card, icon }: { card: QuestCard; icon: IconComponent }) {
-    const accent = questStatusAccent(card.completed);
-    const rewardAmount = card.completed
+function QuestRow({
+    card,
+    icon,
+    claiming,
+    onClaim,
+}: {
+    card: QuestCard;
+    icon: IconComponent;
+    claiming: boolean;
+    onClaim(rewardId: string): void;
+}) {
+    const earned = card.status !== "open";
+    const claimed = card.status === "claimed";
+    const claimableRewardId =
+        card.status === "claimable" ? card.rewardId : undefined;
+    const accent = questStatusAccent(card.status);
+    const rewardAmount = earned
         ? (card.earnedAmount ?? card.reward)
         : card.reward;
     const rewardIcon = rewardIconKind(card.balanceBucket);
     const rewardLabel =
         rewardAmount == null
             ? "Reward TBD"
-            : `${formatGrantAmount(rewardAmount)} pollen`;
+            : `${formatRewardAmount(rewardAmount)} pollen`;
 
     // Shared pieces, placed differently per breakpoint below.
     const title = (
-        <Text
-            as="span"
-            weight="semibold"
-            tone={card.completed ? "muted" : "strong"}
-        >
+        <Text as="span" weight="semibold" tone={claimed ? "muted" : "strong"}>
             {card.title}
         </Text>
     );
-    const description =
-        !card.completed && card.description ? card.description : null;
+    const description = !earned && card.description ? card.description : null;
     const issueLink =
         card.issueNumber != null && card.url ? (
             <InlineLink
@@ -273,12 +318,24 @@ function QuestRow({ card, icon }: { card: QuestCard; icon: IconComponent }) {
         ) : null;
     const reward = (
         <>
-            {card.completed && (
-                // Reward earned but not yet claimed — opens the claim flow
-                // (handler wiring lands in a follow-up).
-                <Button type="button">Claim</Button>
+            {claimableRewardId && (
+                <Button
+                    type="button"
+                    size="sm"
+                    intent="info"
+                    disabled={claiming}
+                    onClick={() => onClaim(claimableRewardId)}
+                    className="gap-1.5 tabular-nums"
+                >
+                    <CheckIcon className="h-3 w-3 shrink-0" />
+                    {claiming ? "Claiming" : "Claim"}
+                </Button>
             )}
-            <Chip intent="neutral" size="sm" className="gap-1 tabular-nums">
+            <Chip
+                intent={claimed ? "success" : "neutral"}
+                size="sm"
+                className="gap-1 tabular-nums"
+            >
                 <WalletKindIcon kind={rewardIcon} />
                 {rewardLabel}
             </Chip>
@@ -293,7 +350,7 @@ function QuestRow({ card, icon }: { card: QuestCard; icon: IconComponent }) {
             <div className="flex flex-col gap-3 sm:hidden">
                 <div className="flex flex-col gap-1.5">
                     <div className="flex items-center gap-4">
-                        <QuestMarker icon={icon} completed={card.completed} />
+                        <QuestMarker icon={icon} active={earned} />
                         <div className="min-w-0 flex-1">{title}</div>
                     </div>
                     {description && (
@@ -314,7 +371,7 @@ function QuestRow({ card, icon }: { card: QuestCard; icon: IconComponent }) {
                 (title + description, with the issue link at the end of the
                 description) | claim + reward. Keeps the card to two text rows. */}
             <div className="hidden items-center gap-4 sm:flex">
-                <QuestMarker icon={icon} completed={card.completed} />
+                <QuestMarker icon={icon} active={earned} />
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <div>{title}</div>
                     {(description || issueLink) && (
@@ -340,32 +397,13 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         let cancelled = false;
         (async () => {
             try {
-                const [catalogResponse, grantsResponse] = await Promise.all([
-                    apiClient.quests.catalog.$get(),
-                    apiClient.account.quests.$get(),
-                ]);
-                if (cancelled) return;
-                if (!catalogResponse.ok || !grantsResponse.ok) {
-                    setState({
-                        ...INITIAL_STATE,
-                        loading: false,
-                        error: `Failed to load quests (${catalogResponse.status}/${grantsResponse.status})`,
-                    });
-                    return;
-                }
-                const catalog =
-                    (await catalogResponse.json()) as QuestCatalogResponse;
-                const rewards = (await grantsResponse.json()) as {
-                    totalPollen: number;
-                    grants: QuestGrant[];
-                };
+                const questData = await loadQuestData();
                 if (cancelled) return;
                 setState({
-                    catalog: catalog.quests ?? [],
-                    grants: rewards.grants ?? [],
-                    totalPollen: rewards.totalPollen ?? 0,
+                    ...questData,
                     loading: false,
                     error: null,
+                    claimingRewardId: null,
                 });
             } catch (error) {
                 if (cancelled) return;
@@ -384,29 +422,65 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         };
     }, []);
 
-    // A grant's questId IS the catalog id it completed (one grant == one quest),
-    // so the completed-set / grant lookup key directly off questId.
-    const completedCatalogIds = useMemo(
+    async function handleClaimReward(rewardId: string): Promise<void> {
+        setState((current) => ({
+            ...current,
+            claimingRewardId: rewardId,
+            error: null,
+        }));
+
+        try {
+            const response = await apiClient.account.rewards[
+                ":rewardId"
+            ].claim.$post({
+                param: { rewardId },
+            });
+            if (!response.ok) {
+                throw new Error(`Failed to claim reward (${response.status})`);
+            }
+            const questData = await loadQuestData();
+            setState((current) => ({
+                ...current,
+                ...questData,
+                claimingRewardId: null,
+                loading: false,
+                error: null,
+            }));
+        } catch (error) {
+            setState((current) => ({
+                ...current,
+                claimingRewardId: null,
+                error:
+                    error instanceof Error
+                        ? error.message
+                        : "Failed to claim reward",
+            }));
+        }
+    }
+
+    // A reward's questId IS the catalog id it earned (one reward == one quest),
+    // so the earned-set / reward lookup key directly off questId.
+    const rewardedCatalogIds = useMemo(
         () =>
             new Set(
-                state.grants
-                    .map((grant) => grant.questId)
+                state.rewards
+                    .map((reward) => reward.questId)
                     .filter((id): id is string => id != null),
             ),
-        [state.grants],
+        [state.rewards],
     );
-    const grantByKey = useMemo(() => {
-        const map = new Map<string, QuestGrant>();
-        for (const grant of state.grants) {
-            if (grant.questId) map.set(grant.questId, grant);
+    const rewardByKey = useMemo(() => {
+        const map = new Map<string, QuestReward>();
+        for (const reward of state.rewards) {
+            if (reward.questId) map.set(reward.questId, reward);
         }
         return map;
-    }, [state.grants]);
+    }, [state.rewards]);
 
     // Build the per-category quest rows from the catalog — ONE uniform pass, no
     // per-lane special-casing. The catalog is the single source of truth: every
-    // quest (onboarding, GitHub, issue bounty, easter egg) is one card. Grants
-    // only tell us "did YOU earn it" + the banked amount.
+    // quest (onboarding, GitHub, issue bounty, easter egg) is one card. Rewards
+    // only tell us "did YOU earn it" + whether it has been claimed.
     const sections = useMemo(() => {
         const byCat: Record<CategoryKey, QuestCard[]> = {
             setup: [],
@@ -418,38 +492,47 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         };
 
         for (const quest of state.catalog) {
-            const completed = completedCatalogIds.has(quest.id);
-            const grant = completed ? grantByKey.get(quest.id) : undefined;
+            const reward = rewardByKey.get(quest.id);
+            const earned = rewardedCatalogIds.has(quest.id);
             // The single visibility rule: a card shows if it's on the open board
-            // (availability "available"), OR if YOU earned it. So a claimed or
-            // completed issue, and a per-person easter egg you didn't earn,
-            // disappear for everyone except the user who completed it.
-            if (quest.availability !== "available" && !completed) continue;
+            // (availability "available"), OR if YOU earned it. So an off-board
+            // or per-person card you didn't earn disappears.
+            if (quest.availability !== "available" && !earned) continue;
 
             byCat[quest.category].push({
                 key: quest.id,
+                rewardId: reward?.id,
                 title: quest.title,
                 description: quest.description || undefined,
                 url: quest.url || undefined,
                 issueNumber: issueNumberFromId(quest.id) ?? undefined,
                 reward: quest.rewardAmount,
                 balanceBucket:
-                    "balanceBucket" in quest &&
+                    reward?.balanceBucket ??
+                    ("balanceBucket" in quest &&
                     typeof quest.balanceBucket === "string"
                         ? quest.balanceBucket
-                        : "tier",
-                completed,
-                earnedAmount: completed
-                    ? (grant?.pollenCredited ?? quest.rewardAmount)
-                    : undefined,
+                        : "tier"),
+                status: reward
+                    ? reward.claimedAt
+                        ? "claimed"
+                        : "claimable"
+                    : "open",
+                earnedAmount: reward?.pollenAmount ?? undefined,
             });
         }
 
-        // Banked wins float to the top of each lane (the progress cue), then by
-        // reward.
+        // Claimable wins float to the top of each lane, then claimed, then open.
         for (const key of Object.keys(byCat) as CategoryKey[]) {
             byCat[key].sort((a, b) => {
-                if (a.completed !== b.completed) return a.completed ? -1 : 1;
+                const statusOrder: Record<QuestCardStatus, number> = {
+                    claimable: 0,
+                    claimed: 1,
+                    open: 2,
+                };
+                if (a.status !== b.status) {
+                    return statusOrder[a.status] - statusOrder[b.status];
+                }
                 return (
                     (a.reward ?? Number.POSITIVE_INFINITY) -
                     (b.reward ?? Number.POSITIVE_INFINITY)
@@ -457,16 +540,28 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
             });
         }
         return byCat;
-    }, [state.catalog, completedCatalogIds, grantByKey]);
+    }, [state.catalog, rewardedCatalogIds, rewardByKey]);
 
-    const questsDone = state.grants.length;
+    const allCards = [
+        ...sections.setup,
+        ...sections.grow,
+        ...sections.build,
+        ...sections.contribute,
+        ...sections.community,
+        ...sections.easteregg,
+    ];
+    const questsDone = allCards.filter((card) => card.status !== "open").length;
+    const claimedLabel =
+        state.totalClaimablePollen > 0
+            ? `${formatRewardAmount(state.totalClaimedPollen)} claimed · ${formatRewardAmount(state.totalClaimablePollen)} ready`
+            : formatRewardAmount(state.totalClaimedPollen);
 
     return (
         <div className="flex flex-col gap-6">
             <Surface variant="panel">
                 <div className="grid gap-3 sm:grid-cols-2">
                     <SummaryMetricCard
-                        icon={TargetIcon}
+                        icon={CheckIcon}
                         label="Completed quests"
                         value={
                             <span className="tabular-nums">{questsDone}</span>
@@ -474,11 +569,9 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                     />
                     <SummaryMetricCard
                         icon={SproutIcon}
-                        label="Pollen earned"
+                        label="Pollen rewards"
                         value={
-                            <span className="tabular-nums">
-                                {formatGrantAmount(state.totalPollen)}
-                            </span>
+                            <span className="tabular-nums">{claimedLabel}</span>
                         }
                     />
                 </div>
@@ -505,7 +598,9 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
             {CATEGORIES.map((category) => {
                 const cards = sections[category.key];
                 if (cards.length === 0) return null;
-                const done = cards.filter((card) => card.completed).length;
+                const done = cards.filter(
+                    (card) => card.status !== "open",
+                ).length;
                 return (
                     <section key={category.key} className="flex flex-col gap-3">
                         <SectionHeader
@@ -522,6 +617,10 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                                     key={card.key}
                                     card={card}
                                     icon={category.icon}
+                                    claiming={
+                                        state.claimingRewardId === card.rewardId
+                                    }
+                                    onClaim={handleClaimReward}
                                 />
                             ))}
                             <SectionFooter category={category} />

@@ -3,9 +3,11 @@ import {
     type ApiKeyType,
     createApiKeyForUser,
 } from "@shared/auth/api-key-creation.ts";
+import { claimReward } from "@shared/billing/rewards.ts";
+import * as schema from "@shared/db/better-auth.ts";
 import {
     apikey as apikeyTable,
-    rewardGrants as rewardGrantsTable,
+    rewards as rewardsTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
@@ -118,7 +120,7 @@ function requireUsagePermission(apiKey?: {
     }
 }
 
-function formatGrantTimestamp(value: Date | number | string): string {
+function formatRewardTimestamp(value: Date | number | string): string {
     return value instanceof Date
         ? value.toISOString()
         : new Date(value).toISOString();
@@ -783,17 +785,26 @@ const usageResponseSchema = z.object({
     count: z.number().describe("Number of records returned"),
 });
 
-const accountQuestGrantSchema = z.object({
+const accountRewardSchema = z.object({
+    id: z.string(),
     questId: z.string().nullable(),
     title: z.string(),
-    pollenCredited: z.number(),
+    pollenAmount: z.number(),
     balanceBucket: z.string(),
-    createdAt: z.string(),
+    earnedAt: z.string(),
+    claimedAt: z.string().nullable(),
 });
 
 const accountQuestResponseSchema = z.object({
-    totalPollen: z.number(),
-    grants: z.array(accountQuestGrantSchema),
+    totalClaimedPollen: z.number(),
+    totalClaimablePollen: z.number(),
+    rewards: z.array(accountRewardSchema),
+});
+
+const claimRewardResponseSchema = z.object({
+    claimed: z.boolean(),
+    newBalance: z.number().nullable(),
+    reward: accountRewardSchema,
 });
 
 /**
@@ -1322,12 +1333,12 @@ export const accountRoutes = new Hono<Env>()
         "/quests",
         describeRoute({
             tags: ["👤 Account"],
-            summary: "Get Completed Quest Rewards",
+            summary: "Get Quest Rewards",
             description:
-                "Returns completed grant-style quest rewards for the authenticated account from the reward_grants ledger. Requires `account:usage` permission when using API keys.",
+                "Returns earned quest rewards for the authenticated account, including claim state. Requires `account:usage` permission when using API keys.",
             responses: {
                 200: {
-                    description: "Completed quest rewards",
+                    description: "Quest rewards",
                     content: {
                         "application/json": {
                             schema: resolver(accountQuestResponseSchema),
@@ -1351,30 +1362,104 @@ export const accountRoutes = new Hono<Env>()
             const db = drizzle(c.env.DB);
             const rewardRows = await db
                 .select({
-                    questId: rewardGrantsTable.questId,
-                    title: rewardGrantsTable.title,
-                    pollenCredited: rewardGrantsTable.pollenCredited,
-                    balanceBucket: rewardGrantsTable.balanceBucket,
-                    createdAt: rewardGrantsTable.createdAt,
+                    id: rewardsTable.id,
+                    questId: rewardsTable.questId,
+                    title: rewardsTable.title,
+                    pollenAmount: rewardsTable.pollenAmount,
+                    balanceBucket: rewardsTable.balanceBucket,
+                    earnedAt: rewardsTable.earnedAt,
+                    claimedAt: rewardsTable.claimedAt,
                 })
-                .from(rewardGrantsTable)
-                .where(eq(rewardGrantsTable.userId, user.id))
-                .orderBy(desc(rewardGrantsTable.createdAt));
+                .from(rewardsTable)
+                .where(eq(rewardsTable.userId, user.id))
+                .orderBy(desc(rewardsTable.earnedAt));
 
-            const grants = rewardRows.map((row) => ({
+            const rewards = rewardRows.map((row) => ({
+                id: row.id,
                 questId: row.questId,
                 title: row.title,
-                pollenCredited: row.pollenCredited,
+                pollenAmount: row.pollenAmount,
                 balanceBucket: row.balanceBucket,
-                createdAt: formatGrantTimestamp(row.createdAt),
+                earnedAt: formatRewardTimestamp(row.earnedAt),
+                claimedAt: row.claimedAt
+                    ? formatRewardTimestamp(row.claimedAt)
+                    : null,
             }));
 
-            const totalPollen = grants.reduce(
-                (total, grant) => total + grant.pollenCredited,
+            const totalClaimedPollen = rewards.reduce(
+                (total, reward) =>
+                    total + (reward.claimedAt ? reward.pollenAmount : 0),
+                0,
+            );
+            const totalClaimablePollen = rewards.reduce(
+                (total, reward) =>
+                    total + (reward.claimedAt ? 0 : reward.pollenAmount),
                 0,
             );
 
-            return c.json({ totalPollen, grants });
+            return c.json({
+                totalClaimedPollen,
+                totalClaimablePollen,
+                rewards,
+            });
+        },
+    )
+    .post(
+        "/rewards/:rewardId/claim",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Claim Quest Reward",
+            description:
+                "Claims one pending quest reward and credits the authenticated user's balance. Session authentication is required.",
+            responses: {
+                200: {
+                    description: "Reward claim result",
+                    content: {
+                        "application/json": {
+                            schema: resolver(claimRewardResponseSchema),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+                403: { description: "API keys cannot claim rewards" },
+                404: { description: "Reward not found" },
+            },
+        }),
+        async (c) => {
+            await c.var.auth.requireAuthorization({
+                message: "Authentication required to claim quest rewards",
+            });
+            if (c.var.auth.apiKey) {
+                throw new HTTPException(403, {
+                    message: "Reward claims require a dashboard session",
+                });
+            }
+
+            const user = c.var.auth.requireUser();
+            const rewardId = c.req.param("rewardId");
+            const db = drizzle(c.env.DB, { schema });
+            const result = await claimReward(db, { rewardId, userId: user.id });
+            if (!result.reward) {
+                throw new HTTPException(404, {
+                    message: "Reward not found",
+                });
+            }
+
+            return c.json({
+                claimed: result.claimed,
+                newBalance: result.newBalance,
+                reward: {
+                    id: result.reward.id,
+                    questId: result.reward.questId,
+                    title: result.reward.title,
+                    pollenAmount: result.reward.pollenAmount,
+                    balanceBucket: result.reward.balanceBucket,
+                    earnedAt: formatRewardTimestamp(result.reward.earnedAt),
+                    claimedAt: result.reward.claimedAt
+                        ? formatRewardTimestamp(result.reward.claimedAt)
+                        : null,
+                },
+            });
         },
     )
     .get(

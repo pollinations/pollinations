@@ -21,19 +21,19 @@ export const QUEST_CATEGORIES = [
 export type QuestCategory = (typeof QUEST_CATEGORIES)[number];
 
 /**
- * Completion scope — drives the idempotency key shape (see toGrant):
+ * Completion scope — drives the idempotency key shape (see toReward):
  *   - "perUser" — each user earns it independently. Key includes the userId
  *                 (`quest:${id}:user:${userId}`), so every user can complete it.
- *   - "once"    — one payout total, whoever triggers it. Key omits the userId
- *                 (`quest:${id}`), so it can only ever be granted once. Used by
- *                 issue bounties: one issue, one payout, regardless of assignee.
+ *   - "once"    — one reward total, whoever triggers it. Key omits the userId
+ *                 (`quest:${id}`), so it can only ever be recorded once. Used by
+ *                 issue bounties: one issue, one reward, regardless of assignee.
  */
 export type QuestScope = "perUser" | "once";
 
 /**
  * Whether a quest sits on the open board. A two-state BOARD flag, not a
  * per-user status: "available" = open to everyone; "completed" = off the board
- * (shown only to a user who earned it, via their grant).
+ * (shown only to a user who earned it, via their reward).
  */
 export type QuestAvailability = "available" | "completed";
 
@@ -47,7 +47,7 @@ export type QuestDefinition = {
     balanceBucket: Bucket;
     /**
      * Optional static link for the quest (e.g. the GitHub quest board, the app
-     * directory). Snapshotted onto each grant by toGrant and shown on the
+     * directory). Snapshotted onto each reward by toReward and shown on the
      * catalog card, so the history UI renders it directly. Per-quest, not
      * per-recipient — there are no quest instances.
      */
@@ -57,11 +57,11 @@ export type QuestDefinition = {
      *   - "available" (default) — an open quest everyone sees and can complete.
      *   - "completed"           — off the open board; the frontend shows it ONLY
      *                             to a user who has earned it (joined via their
-     *                             grant). Use for per-person/targeted quests
+     *                             reward). Use for per-person/targeted quests
      *                             (e.g. the intern easter egg), and set
      *                             per-instance by dynamic groups (an assigned or
      *                             finished issue bounty leaves the board).
-     * The catalog always emits the card so a grant can join to it; the frontend
+     * The catalog always emits the card so a reward can join to it; the frontend
      * applies the show/hide rule.
      */
     availability?: QuestAvailability;

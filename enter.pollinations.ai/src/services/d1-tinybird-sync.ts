@@ -41,20 +41,10 @@ const TABLES: TableConfig[] = [
                 FROM apikey`,
     },
     {
-        datasource: "d1_reward_grants",
+        datasource: "d1_rewards",
         query: `SELECT id, idempotency_key, user_id, quest_id, title,
-                       pollen_credited, balance_bucket, created_at
-                FROM reward_grants`,
-    },
-    {
-        datasource: "d1_github_quest_issues",
-        query: `SELECT issue_number, quest_id, title, description, url,
-                       reward_amount, balance_bucket, state,
-                       assignee_github_id, assignee_login, assignees_json,
-                       completed_by_pr_number, completed_at,
-                       github_created_at, github_updated_at,
-                       updated_at
-                FROM github_quest_issues`,
+                       pollen_amount, balance_bucket, earned_at, claimed_at
+                FROM rewards`,
     },
     {
         datasource: "d1_session",

@@ -1,5 +1,4 @@
-import * as schema from "@shared/db/better-auth.ts";
-import { inArray, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { fetchTinybirdRows, requireTinybirdReadToken } from "../../tinybird.ts";
 import type { QuestDefinition } from "../definitions.ts";
 import {
@@ -15,25 +14,10 @@ import {
  * definition; the source file only describes where completion data comes from.
  */
 
-const MAX_GRANTS_PER_RUN = 500;
+const MAX_REWARDS_PER_RUN = 500;
 
 type QuestUserRow = {
     userId: string;
-};
-
-type AppDirectoryQuestRow = {
-    github_user_id: string;
-};
-
-const firstAppListedQuest: QuestDefinition = {
-    id: "grow:list_app_on_pollinations",
-    title: "First app listed on Pollinations",
-    description: "Get an app approved for the Pollinations app directory.",
-    category: "setup",
-    scope: "perUser",
-    rewardAmount: 5,
-    balanceBucket: "tier",
-    url: "https://pollinations.ai/apps",
 };
 
 const firstByopExternalUserQuest: QuestDefinition = {
@@ -46,7 +30,17 @@ const firstByopExternalUserQuest: QuestDefinition = {
     balanceBucket: "tier",
 };
 
-const QUESTS = [firstAppListedQuest, firstByopExternalUserQuest];
+const firstPaidSpendInAppQuest: QuestDefinition = {
+    id: "grow:first_paid_spend_in_app",
+    title: "First user spending paid pollen in my app",
+    description: "Have a user spend paid Pollen through your BYOP app.",
+    category: "grow",
+    scope: "perUser",
+    rewardAmount: 2,
+    balanceBucket: "tier",
+};
+
+const QUESTS = [firstByopExternalUserQuest, firstPaidSpendInAppQuest];
 
 export async function listQuestCards(
     _ctx: QuestEvaluationContext,
@@ -57,53 +51,35 @@ export async function listQuestCards(
 export async function findRewardProposals(
     ctx: QuestEvaluationContext,
 ): Promise<RewardProposal[]> {
-    const [listedAppRows, byopExternalRows] = await Promise.all([
-        loadListedAppUsers(ctx),
+    const [paidSpendRows, byopExternalRows] = await Promise.all([
+        loadPaidSpendAppOwners(ctx),
         loadByopExternalAppOwners(ctx),
     ]);
 
     return [
-        ...listedAppRows.map((row) => ({
-            quest: firstAppListedQuest,
-            userId: row.userId,
-        })),
         ...byopExternalRows.map((row) => ({
             quest: firstByopExternalUserQuest,
+            userId: row.userId,
+        })),
+        ...paidSpendRows.map((row) => ({
+            quest: firstPaidSpendInAppQuest,
             userId: row.userId,
         })),
     ];
 }
 
-async function loadListedAppUsers({
-    db,
+async function loadPaidSpendAppOwners({
     env,
 }: QuestEvaluationContext): Promise<QuestUserRow[]> {
     const tinybirdOrigin = new URL(env.TINYBIRD_INGEST_URL).origin;
     const tinybirdToken = requireTinybirdReadToken(env);
-    const apps = await fetchTinybirdRows<AppDirectoryQuestRow>(
+    const rows = await fetchTinybirdRows<QuestUserRow>(
         tinybirdOrigin,
-        "/v0/pipes/app_directory_public.json",
+        "/v0/pipes/quest_paid_app_spend.json",
         tinybirdToken,
         {},
     );
-    const githubIds = [
-        ...new Set(
-            apps
-                .map((app) => Number(app.github_user_id))
-                .filter((githubId) => Number.isInteger(githubId)),
-        ),
-    ];
-    if (githubIds.length === 0) return [];
-
-    const users = await db
-        .select({
-            userId: schema.user.id,
-        })
-        .from(schema.user)
-        .where(inArray(schema.user.githubId, githubIds))
-        .limit(MAX_GRANTS_PER_RUN);
-
-    return uniqueUsers(users);
+    return uniqueUsers(rows).slice(0, MAX_REWARDS_PER_RUN);
 }
 
 async function loadByopExternalAppOwners({
@@ -117,7 +93,7 @@ async function loadByopExternalAppOwners({
             ON app_key.id = user_key.byop_client_key_id
         WHERE user_key.user_id != app_key.user_id
         GROUP BY app_key.user_id
-        LIMIT ${MAX_GRANTS_PER_RUN}`,
+        LIMIT ${MAX_REWARDS_PER_RUN}`,
     );
 
     return uniqueUsers(rows);

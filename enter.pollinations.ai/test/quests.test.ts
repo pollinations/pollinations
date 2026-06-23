@@ -1,5 +1,5 @@
 import { env, SELF } from "cloudflare:test";
-import { grantReward } from "@shared/billing/grant-reward.ts";
+import { claimReward, recordReward } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -13,21 +13,21 @@ import type {
 import { test } from "./fixtures.ts";
 
 // The evaluator records `scanned` as the number of reward proposals a quest's
-// source still produces, recorded BEFORE the
-// generic dedup. So a quest whose source row persists keeps `scanned: 1` on a
-// re-run; only `granted` drops to 0 once the reward is already paid. (The old
-// evaluator deducted dedup before counting, so re-runs reported `scanned: 0`.)
+// source still produces, recorded BEFORE the generic dedup. So a quest whose
+// source row persists keeps `scanned: 1` on a re-run; only `recorded` drops to 0
+// once the reward row already exists.
 const ELIXPO_INTERN_QUEST_ID = "easteregg:elixpo_intern";
-const ELIXPO_INTERN_ALREADY_GRANTED = {
+const ELIXPO_INTERN_ALREADY_RECORDED = {
     questId: ELIXPO_INTERN_QUEST_ID,
     scanned: 1,
-    granted: 0,
+    recorded: 0,
 };
 
 // Number of static "product" catalog cards. Every static group quest
 // serializes to exactly one uniform card; the github-contributions group is the
-// only dynamic one (one card per seeded github_quest_issues row, zero when none).
-// We snapshot the static count by loading the catalog with no issues seeded.
+// only dynamic one (one card per seeded POLLEN-QUEST gh_issues row, zero when
+// none). We snapshot the static count by loading the catalog with no issues
+// seeded.
 async function countStaticQuestCards(): Promise<number> {
     const ctx: QuestEvaluationContext = {
         db: drizzle(env.DB, { schema }),
@@ -35,6 +35,81 @@ async function countStaticQuestCards(): Promise<number> {
     };
     const cards = await questIndex.listQuestCards(ctx);
     return cards.filter((card) => !card.id.startsWith("github:issue:")).length;
+}
+
+// Build an issue body the deriver can parse: a "### Reward" heading (when a
+// reward is given) plus a short Goal section for the description.
+function questIssueBody(reward: number | null, goal: string): string {
+    const rewardBlock = reward !== null ? `### Reward\n${reward}\n\n` : "";
+    return `${rewardBlock}### Goal\n${goal}`;
+}
+
+type SeedQuestIssue = {
+    issueNumber: number;
+    title: string;
+    goal: string;
+    reward: number | null;
+    assigneeGithubId?: number | null;
+    assigneeLogin?: string | null;
+    // When set, a merged PR closes the issue (→ "completed" / payable).
+    completedByPrNumber?: number | null;
+    createdAt?: Date;
+    updatedAt?: Date;
+};
+
+// Seed a POLLEN-QUEST bounty into the gh_* mirror exactly as the real mirror
+// would: the issue row (label + body), and — when completed — a merged PR plus
+// its closing edge. The quest read-path derives everything else from these.
+async function seedQuestIssue(
+    db: ReturnType<typeof drizzle<typeof schema>>,
+    issue: SeedQuestIssue,
+): Promise<void> {
+    const assigneeGithubId = issue.assigneeGithubId ?? null;
+    const assigneeLogin = issue.assigneeLogin ?? null;
+    const completedBy = issue.completedByPrNumber ?? null;
+    const created = issue.createdAt ?? new Date("2026-06-01T00:00:00Z");
+    const updated = issue.updatedAt ?? new Date("2026-06-02T00:00:00Z");
+
+    await db.insert(schema.ghIssues).values({
+        number: issue.issueNumber,
+        authorGithubId: null,
+        authorLogin: null,
+        state: completedBy !== null ? "closed" : "open",
+        title: issue.title,
+        url: `https://github.com/pollinations/pollinations/issues/${issue.issueNumber}`,
+        body: questIssueBody(issue.reward, issue.goal),
+        labelsJson: JSON.stringify(["POLLEN-QUEST"]),
+        assigneeGithubId,
+        assigneeLogin,
+        assigneesJson: assigneeLogin
+            ? JSON.stringify([
+                  { login: assigneeLogin, githubId: assigneeGithubId },
+              ])
+            : JSON.stringify([]),
+        githubCreatedAt: created,
+        githubClosedAt: completedBy !== null ? updated : null,
+        githubUpdatedAt: updated,
+    });
+
+    if (completedBy !== null) {
+        await db.insert(schema.ghPullRequests).values({
+            number: completedBy,
+            authorGithubId: assigneeGithubId,
+            authorLogin: assigneeLogin,
+            state: "merged",
+            mergedAt: updated,
+            title: `PR closing #${issue.issueNumber}`,
+            url: `https://github.com/pollinations/pollinations/pull/${completedBy}`,
+            githubCreatedAt: created,
+            githubClosedAt: updated,
+            githubUpdatedAt: updated,
+        });
+        await db.insert(schema.ghPrClosingIssues).values({
+            edgeKey: `${completedBy}:${issue.issueNumber}`,
+            prNumber: completedBy,
+            issueNumber: issue.issueNumber,
+        });
+    }
 }
 
 async function getOnlyUser() {
@@ -59,59 +134,26 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
     await env.KV.delete("quests:catalog:v11");
     const staticCardCount = await countStaticQuestCards();
     const db = drizzle(env.DB, { schema });
-    await db.insert(schema.githubQuestIssues).values([
-        {
-            issueNumber: 321,
-            questId: "github:issue:321",
-            title: "Add a demo app",
-            description: "Build a focused demo.",
-            url: "https://github.com/pollinations/pollinations/issues/321",
-            rewardAmount: 15,
-            balanceBucket: "tier",
-            state: "available",
-            assigneeGithubId: null,
-            assigneeLogin: null,
-            assigneesJson: JSON.stringify([]),
-            completedByPrNumber: null,
-            completedAt: null,
-            githubCreatedAt: new Date("2026-06-01T00:00:00Z"),
-            githubUpdatedAt: new Date("2026-06-02T00:00:00Z"),
-        },
-        {
-            issueNumber: 322,
-            questId: "github:issue:322",
-            title: "Fix a model config",
-            description: "Wire the missing config.",
-            url: "https://github.com/pollinations/pollinations/issues/322",
-            rewardAmount: 20,
-            balanceBucket: "tier",
-            state: "claimed",
-            assigneeGithubId: 999,
-            assigneeLogin: "dev-user",
-            assigneesJson: JSON.stringify(["dev-user"]),
-            completedByPrNumber: null,
-            completedAt: null,
-            githubCreatedAt: new Date("2026-06-03T00:00:00Z"),
-            githubUpdatedAt: new Date("2026-06-04T00:00:00Z"),
-        },
-        {
-            issueNumber: 323,
-            questId: "github:issue:323",
-            title: "Malformed reward heading",
-            description: "Check reward parsing.",
-            url: "https://github.com/pollinations/pollinations/issues/323",
-            rewardAmount: null,
-            balanceBucket: "tier",
-            state: "available",
-            assigneeGithubId: null,
-            assigneeLogin: null,
-            assigneesJson: JSON.stringify([]),
-            completedByPrNumber: null,
-            completedAt: null,
-            githubCreatedAt: new Date("2026-06-05T00:00:00Z"),
-            githubUpdatedAt: new Date("2026-06-06T00:00:00Z"),
-        },
-    ]);
+    await seedQuestIssue(db, {
+        issueNumber: 321,
+        title: "Add a demo app",
+        goal: "Build a focused demo.",
+        reward: 15,
+    });
+    await seedQuestIssue(db, {
+        issueNumber: 322,
+        title: "Fix a model config",
+        goal: "Wire the missing config.",
+        reward: 20,
+        assigneeGithubId: 999,
+        assigneeLogin: "dev-user",
+    });
+    await seedQuestIssue(db, {
+        issueNumber: 323,
+        title: "Malformed reward heading",
+        goal: "Check reward parsing.",
+        reward: null,
+    });
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -161,17 +203,6 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
     });
     expect(
         payload.quests.find(
-            (quest) => quest.id === "grow:list_app_on_pollinations",
-        ),
-    ).toMatchObject({
-        title: "First app listed on Pollinations",
-        category: "setup",
-        availability: "available",
-        rewardAmount: 5,
-        url: "https://pollinations.ai/apps",
-    });
-    expect(
-        payload.quests.find(
             (quest) => quest.id === "grow:first_byop_external_user",
         ),
     ).toMatchObject({
@@ -179,6 +210,17 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
         category: "grow",
         availability: "available",
         rewardAmount: 3,
+        url: null,
+    });
+    expect(
+        payload.quests.find(
+            (quest) => quest.id === "grow:first_paid_spend_in_app",
+        ),
+    ).toMatchObject({
+        title: "First user spending paid pollen in my app",
+        category: "grow",
+        availability: "available",
+        rewardAmount: 2,
         url: null,
     });
     expect(
@@ -195,7 +237,7 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
         payload.quests.find((quest) => quest.id === "github:issue:321"),
     ).toMatchObject({
         title: "Add a demo app",
-        category: "contribute",
+        category: "build",
         availability: "available",
         rewardAmount: 15,
         url: "https://github.com/pollinations/pollinations/issues/321",
@@ -207,7 +249,7 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
         payload.quests.find((quest) => quest.id === "github:issue:322"),
     ).toMatchObject({
         title: "Fix a model config",
-        category: "contribute",
+        category: "build",
         availability: "completed",
         rewardAmount: 20,
         url: "https://github.com/pollinations/pollinations/issues/322",
@@ -216,7 +258,7 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
         payload.quests.find((quest) => quest.id === "github:issue:323"),
     ).toMatchObject({
         title: "Malformed reward heading",
-        category: "contribute",
+        category: "build",
         availability: "available",
         rewardAmount: 0,
         url: "https://github.com/pollinations/pollinations/issues/323",
@@ -230,7 +272,7 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
     }
 });
 
-test("GET /api/quests/catalog returns product quests with no materialized GitHub issues", async () => {
+test("GET /api/quests/catalog returns product quests with no mirrored GitHub issues", async () => {
     await env.KV.delete("quests:catalog:v11");
     const staticCardCount = await countStaticQuestCards();
 
@@ -256,7 +298,7 @@ test("GET /api/quests/catalog returns product quests with no materialized GitHub
         category: "build",
         availability: "available",
     });
-    // The elixpo easter egg is still emitted into the catalog (so a grant can
+    // The elixpo easter egg is still emitted into the catalog (so a reward can
     // join to it) but is off the open board (availability "completed"), so the
     // frontend hides it until the target account earns it.
     expect(
@@ -270,13 +312,12 @@ test("GET /api/quests/catalog returns product quests with no materialized GitHub
     ).toBe(false);
 });
 
-test("grantReward dedups on idempotency key and credits distinct keys", async ({
+test("recordReward dedups on idempotency key and claimReward credits once", async ({
     sessionToken: _sessionToken,
 }) => {
-    // grantReward is the generic idempotent write: it pays a key once and pays
-    // distinct keys independently. Quest scope (perUser/once) decides the key
-    // SHAPE upstream in toGrant; here we verify the write path treats any two
-    // keys independently and collapses repeats of one.
+    // recordReward is the generic idempotent write: it records a key once and
+    // records distinct keys independently. claimReward is the only path that
+    // credits balance, and it is also idempotent.
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
     const questId = "github:merged_pr_author";
@@ -287,7 +328,7 @@ test("grantReward dedups on idempotency key and credits distinct keys", async ({
     const firstEventKey = `quest:${questId}:user:${user.id}:event:pr-123`;
     const secondEventKey = `quest:${questId}:user:${user.id}:event:pr-124`;
 
-    const first = await grantReward(db, {
+    const first = await recordReward(db, {
         idempotencyKey: firstEventKey,
         userId: user.id,
         questId,
@@ -295,7 +336,7 @@ test("grantReward dedups on idempotency key and credits distinct keys", async ({
         amount: rewardAmount,
         bucket,
     });
-    const duplicate = await grantReward(db, {
+    const duplicate = await recordReward(db, {
         idempotencyKey: firstEventKey,
         userId: user.id,
         questId,
@@ -303,7 +344,7 @@ test("grantReward dedups on idempotency key and credits distinct keys", async ({
         amount: rewardAmount,
         bucket,
     });
-    const secondEvent = await grantReward(db, {
+    const secondEvent = await recordReward(db, {
         idempotencyKey: secondEventKey,
         userId: user.id,
         questId,
@@ -312,18 +353,38 @@ test("grantReward dedups on idempotency key and credits distinct keys", async ({
         bucket,
     });
 
-    expect(first.granted).toBe(true);
-    expect(duplicate.granted).toBe(false);
-    expect(secondEvent.granted).toBe(true);
+    expect(first.recorded).toBe(true);
+    expect(duplicate.recorded).toBe(false);
+    expect(secondEvent.recorded).toBe(true);
 
     const [balance] = await db
         .select({ tierBalance: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
-    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 2);
+    expect(balance?.tierBalance).toBeCloseTo(user.tierBalance ?? 0);
+
+    if (!first.rewardId) throw new Error("Expected recorded reward id");
+    const claimed = await claimReward(db, {
+        rewardId: first.rewardId,
+        userId: user.id,
+    });
+    const duplicateClaim = await claimReward(db, {
+        rewardId: first.rewardId,
+        userId: user.id,
+    });
+    expect(claimed.claimed).toBe(true);
+    expect(duplicateClaim.claimed).toBe(false);
+
+    const [claimedBalance] = await db
+        .select({ tierBalance: schema.user.tierBalance })
+        .from(schema.user)
+        .where(eq(schema.user.id, user.id));
+    expect(claimedBalance?.tierBalance).toBeCloseTo(
+        (user.tierBalance ?? 0) + 1,
+    );
 });
 
-test("quest evaluator grants code-defined product quests once", async ({
+test("quest evaluator records product rewards and claim endpoint credits one", async ({
     apiKey: _apiKey,
     mocks,
     sessionToken,
@@ -341,7 +402,7 @@ test("quest evaluator grants code-defined product quests once", async ({
         createdAt: new Date(),
     });
 
-    // First run grants the three eligible product quests; assert only those
+    // First run records the three eligible product rewards; assert only those
     // (targeted, so adding/removing unrelated quests never breaks this test).
     const first = await runQuestEvaluator(env);
     for (const questId of [
@@ -352,13 +413,12 @@ test("quest evaluator grants code-defined product quests once", async ({
         expect(first.results).toContainEqual({
             questId,
             scanned: 1,
-            granted: 1,
+            recorded: 1,
         });
     }
 
     // Second run: source rows persist so the same proposals are emitted
-    // (scanned: 1), but the idempotent grant dedups them (granted: 0) and the
-    // balance is unchanged.
+    // (scanned: 1), but the idempotent reward insert dedups them (recorded: 0).
     const second = await runQuestEvaluator(env);
     for (const questId of [
         "onboarding:first_api_key",
@@ -368,7 +428,7 @@ test("quest evaluator grants code-defined product quests once", async ({
         expect(second.results).toContainEqual({
             questId,
             scanned: 1,
-            granted: 0,
+            recorded: 0,
         });
     }
 
@@ -376,7 +436,7 @@ test("quest evaluator grants code-defined product quests once", async ({
         .select({ tierBalance: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
-    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 12);
+    expect(balance?.tierBalance).toBeCloseTo(user.tierBalance ?? 0);
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/account/quests",
@@ -389,63 +449,93 @@ test("quest evaluator grants code-defined product quests once", async ({
     expect(response.status).toBe(200);
 
     const payload = (await response.json()) as {
-        totalPollen: number;
-        grants: {
+        totalClaimedPollen: number;
+        totalClaimablePollen: number;
+        rewards: {
+            id: string;
             questId: string | null;
             title: string;
-            pollenCredited: number;
+            pollenAmount: number;
             balanceBucket: string;
+            earnedAt: string;
+            claimedAt: string | null;
         }[];
     };
 
-    expect(payload.totalPollen).toBeCloseTo(12);
-    expect(payload.grants).toHaveLength(3);
-    for (const grant of payload.grants) {
-        expect(grant).not.toHaveProperty("id");
-        expect(grant).not.toHaveProperty("idempotencyKey");
-        expect(grant).not.toHaveProperty("source");
-        expect(grant).not.toHaveProperty("sourceRef");
-        expect(grant).not.toHaveProperty("metadata");
-        expect(grant).not.toHaveProperty("metadataJson");
+    expect(payload.totalClaimedPollen).toBeCloseTo(0);
+    expect(payload.totalClaimablePollen).toBeCloseTo(12);
+    expect(payload.rewards).toHaveLength(3);
+    for (const reward of payload.rewards) {
+        expect(reward).not.toHaveProperty("idempotencyKey");
+        expect(reward).not.toHaveProperty("source");
+        expect(reward).not.toHaveProperty("sourceRef");
+        expect(reward).not.toHaveProperty("metadata");
+        expect(reward).not.toHaveProperty("metadataJson");
+        expect(reward.claimedAt).toBeNull();
+        expect(typeof reward.earnedAt).toBe("string");
     }
-    expect(
-        payload.grants.find(
-            (grant) => grant.questId === "onboarding:first_api_key",
-        ),
-    ).toMatchObject({
-        pollenCredited: 1,
+    const firstApiKeyReward = payload.rewards.find(
+        (reward) => reward.questId === "onboarding:first_api_key",
+    );
+    expect(firstApiKeyReward).toMatchObject({
+        pollenAmount: 1,
         balanceBucket: "tier",
     });
     expect(
-        payload.grants.find((grant) => grant.questId === "spend:first_top_up"),
+        payload.rewards.find(
+            (reward) => reward.questId === "spend:first_top_up",
+        ),
     ).toMatchObject({
-        pollenCredited: 5,
+        pollenAmount: 5,
         balanceBucket: "tier",
     });
     expect(
-        payload.grants.find(
-            (grant) =>
-                grant.questId === "onboarding:established_github_account",
+        payload.rewards.find(
+            (reward) =>
+                reward.questId === "onboarding:established_github_account",
         ),
     ).toMatchObject({
-        pollenCredited: 6,
+        pollenAmount: 6,
         balanceBucket: "tier",
         title: "Senior dev status",
     });
+
+    if (!firstApiKeyReward) throw new Error("Expected first API key reward");
+    const claimResponse = await SELF.fetch(
+        `http://localhost:3000/api/account/rewards/${firstApiKeyReward.id}/claim`,
+        {
+            method: "POST",
+            headers: {
+                cookie: `better-auth.session_token=${sessionToken}`,
+            },
+        },
+    );
+    expect(claimResponse.status).toBe(200);
+    const claimPayload = (await claimResponse.json()) as {
+        claimed: boolean;
+        reward: { claimedAt: string | null; pollenAmount: number };
+    };
+    expect(claimPayload.claimed).toBe(true);
+    expect(claimPayload.reward.claimedAt).not.toBeNull();
+    expect(claimPayload.reward.pollenAmount).toBe(1);
+
+    const [claimedBalance] = await db
+        .select({ tierBalance: schema.user.tierBalance })
+        .from(schema.user)
+        .where(eq(schema.user.id, user.id));
+    expect(claimedBalance?.tierBalance).toBeCloseTo(
+        (user.tierBalance ?? 0) + 1,
+    );
 });
 
-test("quest evaluator grants no-extra-source app growth quests", async ({
+test("quest evaluator records app growth rewards", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
     await mocks.enable("github", "tinybird");
-    mocks.tinybird.state.appDirectoryResponse = [
-        {
-            github_user_id: String(user.githubId),
-        },
-    ];
+    mocks.tinybird.state.paidAppSpendResponse = [{ userId: user.id }];
 
     await db.insert(schema.user).values({
         id: "byop-external-user",
@@ -486,19 +576,19 @@ test("quest evaluator grants no-extra-source app growth quests", async ({
     const result = await runQuestEvaluator(env);
 
     expect(result.results).toContainEqual({
-        questId: "grow:list_app_on_pollinations",
-        scanned: 1,
-        granted: 1,
-    });
-    expect(result.results).toContainEqual({
         questId: "grow:first_byop_external_user",
         scanned: 1,
-        granted: 1,
+        recorded: 1,
+    });
+    expect(result.results).toContainEqual({
+        questId: "grow:first_paid_spend_in_app",
+        scanned: 1,
+        recorded: 1,
     });
     expect(result.results).toContainEqual({
         questId: "setup:byop_login",
         scanned: 1,
-        granted: 1,
+        recorded: 1,
     });
 });
 
@@ -525,7 +615,7 @@ test("quest evaluator continues after one quest fails", async ({
         expect(result.results).toContainEqual({
             questId: "group:test-failing",
             scanned: 0,
-            granted: 0,
+            recorded: 0,
             error: "planned quest failure",
         });
         expect(result.results.map((entry) => entry.questId)).toContain(
@@ -546,13 +636,13 @@ test("github account age quest waits until threshold", async ({
     await mocks.enable("github", "tinybird");
 
     // A brand-new GitHub account is below the age threshold, so the
-    // established-account quest proposes nothing and grants nothing. Assert just
+    // established-account quest proposes nothing and records nothing. Assert just
     // that quest (targeted) plus an unchanged balance.
     const first = await runQuestEvaluator(env);
     expect(first.results).toContainEqual({
         questId: "onboarding:established_github_account",
         scanned: 0,
-        granted: 0,
+        recorded: 0,
     });
 
     const [balance] = await db
@@ -562,7 +652,7 @@ test("github account age quest waits until threshold", async ({
     expect(balance?.tierBalance).toBeCloseTo(user.tierBalance ?? 0);
 });
 
-test("quest evaluator grants elixpo intern easter egg once", async ({
+test("quest evaluator records elixpo intern easter egg once", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -589,35 +679,35 @@ test("quest evaluator grants elixpo intern easter egg once", async ({
     expect(first.results).toContainEqual({
         questId: ELIXPO_INTERN_QUEST_ID,
         scanned: 1,
-        granted: 1,
+        recorded: 1,
     });
 
     // Second run: the elixpo user still matches, so the candidate is re-scanned
-    // (scanned: 1) but the already-paid reward is deduped (granted: 0).
+    // (scanned: 1) but the already-recorded reward is deduped (recorded: 0).
     const second = await runQuestEvaluator(env);
-    expect(second.results).toContainEqual(ELIXPO_INTERN_ALREADY_GRANTED);
+    expect(second.results).toContainEqual(ELIXPO_INTERN_ALREADY_RECORDED);
 
-    const grants = await db
+    const rewards = await db
         .select({
-            idempotencyKey: schema.rewardGrants.idempotencyKey,
-            questId: schema.rewardGrants.questId,
-            title: schema.rewardGrants.title,
-            pollenCredited: schema.rewardGrants.pollenCredited,
-            balanceBucket: schema.rewardGrants.balanceBucket,
+            idempotencyKey: schema.rewards.idempotencyKey,
+            questId: schema.rewards.questId,
+            title: schema.rewards.title,
+            pollenAmount: schema.rewards.pollenAmount,
+            balanceBucket: schema.rewards.balanceBucket,
         })
-        .from(schema.rewardGrants)
-        .where(eq(schema.rewardGrants.questId, ELIXPO_INTERN_QUEST_ID));
+        .from(schema.rewards)
+        .where(eq(schema.rewards.questId, ELIXPO_INTERN_QUEST_ID));
 
-    expect(grants).toHaveLength(1);
-    expect(grants[0]).toMatchObject({
+    expect(rewards).toHaveLength(1);
+    expect(rewards[0]).toMatchObject({
         idempotencyKey: `quest:${ELIXPO_INTERN_QUEST_ID}:user:${user.id}`,
         title: "Developer Relations Intern, unlocked 🌻",
-        pollenCredited: 100,
+        pollenAmount: 100,
         balanceBucket: "tier",
     });
 });
 
-test("quest evaluator rewards completed GitHub quest issues through shared path", async ({
+test("quest evaluator records completed GitHub quest issue rewards through shared path", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -630,36 +720,28 @@ test("quest evaluator rewards completed GitHub quest issues through shared path"
     const issueQuestId = `github:issue:${issueNumber}`;
     const issueTitle = "Ship a focused fix";
 
-    await db.insert(schema.githubQuestIssues).values({
+    await seedQuestIssue(db, {
         issueNumber,
-        questId: issueQuestId,
         title: issueTitle,
-        description: "Merge the quest PR.",
-        url: "https://github.com/pollinations/pollinations/issues/777",
-        rewardAmount: 17,
-        balanceBucket: "tier",
-        state: "completed",
+        goal: "Merge the quest PR.",
+        reward: 17,
         assigneeGithubId: user.githubId,
         assigneeLogin: user.githubUsername,
-        assigneesJson: JSON.stringify([user.githubUsername]),
         completedByPrNumber: 888,
-        completedAt: new Date("2026-06-12T00:00:00Z"),
-        githubCreatedAt: new Date("2026-06-10T00:00:00Z"),
-        githubUpdatedAt: new Date("2026-06-12T00:00:00Z"),
     });
 
     // Each issue is its own scope:"once" quest; the completed-and-payable issue
-    // produces exactly one result entry at id `github:issue:777` that pays out.
+    // produces exactly one result entry at id `github:issue:777`.
     const first = await runQuestEvaluator(env);
     expect(first.results).toContainEqual({
         questId: issueQuestId,
         scanned: 1,
-        granted: 1,
+        recorded: 1,
     });
     expect(first.results).toContainEqual({
         questId: "github:first_merged_pr",
         scanned: 1,
-        granted: 1,
+        recorded: 1,
     });
 
     const otherGithubId = 987654;
@@ -678,75 +760,70 @@ test("quest evaluator rewards completed GitHub quest issues through shared path"
         packBalance: 0,
     });
     await db
-        .update(schema.githubQuestIssues)
+        .update(schema.ghIssues)
         .set({
             assigneeGithubId: otherGithubId,
             assigneeLogin: "other-dev",
-            assigneesJson: JSON.stringify(["other-dev"]),
+            assigneesJson: JSON.stringify([
+                { login: "other-dev", githubId: otherGithubId },
+            ]),
             githubUpdatedAt: new Date("2026-06-13T00:00:00Z"),
         })
-        .where(eq(schema.githubQuestIssues.issueNumber, issueNumber));
+        .where(eq(schema.ghIssues.number, issueNumber));
 
     // Second run: the issue is now assigned to a DIFFERENT user, so the
     // issue-quest still emits one candidate (scanned: 1) — pointing at the new
-    // assignee. But scope:"once" means toGrant derives the SAME userId-free key
-    // `quest:github:issue:777`, which was already paid on the first run. The
-    // generic dedup drops it (granted: 0). Reassigning an issue never pays it a
-    // second time: one issue, one payout, regardless of who is assigned.
+    // assignee. But scope:"once" means toReward derives the SAME userId-free key
+    // `quest:github:issue:777`, which was already recorded on the first run. The
+    // generic dedup drops it (recorded: 0). Reassigning an issue never records it
+    // a second time: one issue, one reward, regardless of who is assigned.
     const second = await runQuestEvaluator(env);
     expect(second.results).toContainEqual({
         questId: issueQuestId,
         scanned: 1,
-        granted: 0,
+        recorded: 0,
     });
 
-    // The original assignee keeps the single issue payout plus their separate
-    // first-merged-PR reward; the reassigned user gets only their own
-    // first-merged-PR reward (the issue was already paid once).
+    // Recording does not credit either balance; pollen moves only when claimed.
     const [balance] = await db
         .select({ tierBalance: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
-    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 22);
+    expect(balance?.tierBalance).toBeCloseTo(user.tierBalance ?? 0);
     const [otherBalance] = await db
         .select({ tierBalance: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.githubId, otherGithubId));
-    expect(otherBalance?.tierBalance).toBeCloseTo(5);
+    expect(otherBalance?.tierBalance).toBeCloseTo(0);
 
-    const grants = await db
+    const rewards = await db
         .select({
-            idempotencyKey: schema.rewardGrants.idempotencyKey,
-            questId: schema.rewardGrants.questId,
-            title: schema.rewardGrants.title,
-            pollenCredited: schema.rewardGrants.pollenCredited,
-            balanceBucket: schema.rewardGrants.balanceBucket,
-            userId: schema.rewardGrants.userId,
+            idempotencyKey: schema.rewards.idempotencyKey,
+            questId: schema.rewards.questId,
+            title: schema.rewards.title,
+            pollenAmount: schema.rewards.pollenAmount,
+            balanceBucket: schema.rewards.balanceBucket,
+            userId: schema.rewards.userId,
         })
-        .from(schema.rewardGrants)
-        .where(eq(schema.rewardGrants.questId, issueQuestId));
+        .from(schema.rewards)
+        .where(eq(schema.rewards.questId, issueQuestId));
 
-    // scope:"once" idempotency: exactly one grant, keyed WITHOUT a userId, owned
-    // by the original assignee who triggered the first payout.
-    expect(grants).toHaveLength(1);
-    expect(grants[0]).toMatchObject({
+    // scope:"once" idempotency: exactly one reward, keyed WITHOUT a userId, owned
+    // by the original assignee who triggered the first recording.
+    expect(rewards).toHaveLength(1);
+    expect(rewards[0]).toMatchObject({
         idempotencyKey: `quest:github:issue:${issueNumber}`,
         userId: user.id,
         title: issueTitle,
-        pollenCredited: 17,
+        pollenAmount: 17,
         balanceBucket: "tier",
     });
 });
 
-// Regression guard for the idempotency-key collapse: PRODUCTION fills
-// github_quest_issues.quest_id with ONE shared constant
-// ("github:community_issue_quest") for every community issue (see
-// .github/scripts/quest-reward-payout.js). The quest id MUST therefore be
-// derived from the per-issue PK (issueNumber), NOT from quest_id — otherwise
-// every scope:"once" bounty keys to the same `quest:github:community_issue_quest`
-// and only the first one ever pays. This test reproduces the production data
-// shape (two issues, same quest_id) and asserts BOTH pay out independently.
-test("two community issues sharing one quest_id each pay out (production key shape)", async ({
+// Regression guard for the idempotency-key collapse: issue bounty quest ids MUST
+// be derived from the issue number. Otherwise every scope:"once" bounty would
+// share one key and only the first one ever records.
+test("two mirrored issue bounties each record independently", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -754,9 +831,6 @@ test("two community issues sharing one quest_id each pay out (production key sha
     const user = await getOnlyUser();
     mocks.github.state.user.created_at = new Date().toISOString();
     await mocks.enable("github", "tinybird");
-
-    // The single shared discriminator the payout script writes for ALL issues.
-    const SHARED_QUEST_ID = "github:community_issue_quest";
 
     const secondGithubId = 424242;
     await db.insert(schema.user).values({
@@ -779,80 +853,72 @@ test("two community issues sharing one quest_id each pay out (production key sha
         { issueNumber: 902, assigneeGithubId: secondGithubId, reward: 13 },
     ];
     for (const issue of issues) {
-        await db.insert(schema.githubQuestIssues).values({
+        await seedQuestIssue(db, {
             issueNumber: issue.issueNumber,
-            // BOTH rows carry the same shared quest_id, exactly like production.
-            questId: SHARED_QUEST_ID,
             title: `Community bounty #${issue.issueNumber}`,
-            description: "Merge the linked PR.",
-            url: `https://github.com/pollinations/pollinations/issues/${issue.issueNumber}`,
-            rewardAmount: issue.reward,
-            balanceBucket: "tier",
-            state: "completed",
+            goal: "Merge the linked PR.",
+            reward: issue.reward,
             assigneeGithubId: issue.assigneeGithubId,
             assigneeLogin: "dev",
-            assigneesJson: JSON.stringify(["dev"]),
             completedByPrNumber: issue.issueNumber + 1000,
-            completedAt: new Date("2026-06-12T00:00:00Z"),
-            githubCreatedAt: new Date("2026-06-10T00:00:00Z"),
-            githubUpdatedAt: new Date("2026-06-12T00:00:00Z"),
         });
     }
 
     await runQuestEvaluator(env);
 
-    // Each issue keys by its own PK, so two DISTINCT grants land — not one. The
-    // grant's questId snapshots the per-issue quest id (NOT the shared column),
-    // so the two grants carry github:issue:901 / :902 and key independently.
-    const grants = await db
+    // Each issue keys by its own PK, so two DISTINCT rewards land — not one. The
+    // reward's questId snapshots the per-issue quest id (NOT the shared column),
+    // so the two rewards carry github:issue:901 / :902 and key independently.
+    const rewards = await db
         .select({
-            idempotencyKey: schema.rewardGrants.idempotencyKey,
-            userId: schema.rewardGrants.userId,
-            pollenCredited: schema.rewardGrants.pollenCredited,
+            idempotencyKey: schema.rewards.idempotencyKey,
+            userId: schema.rewards.userId,
+            pollenAmount: schema.rewards.pollenAmount,
         })
-        .from(schema.rewardGrants)
-        .where(eq(schema.rewardGrants.balanceBucket, "tier"));
+        .from(schema.rewards)
+        .where(eq(schema.rewards.balanceBucket, "tier"));
 
-    // Assert on the ISSUE grants specifically (not total balance), so any
-    // unrelated quest that happens to also pay these users never breaks this
-    // guard (it scopes the assertion to the github:issue:* grants under test).
-    const issueGrants = grants.filter((g) =>
+    // Assert on the ISSUE rewards specifically (not total balance), so any
+    // unrelated quest that happens to also reward these users never breaks this
+    // guard (it scopes the assertion to the github:issue:* rewards under test).
+    const issueRewards = rewards.filter((g) =>
         g.idempotencyKey.startsWith("quest:github:issue:"),
     );
-    expect(issueGrants).toHaveLength(2);
-    expect(issueGrants.map((g) => g.idempotencyKey).sort()).toEqual([
+    expect(issueRewards).toHaveLength(2);
+    expect(issueRewards.map((g) => g.idempotencyKey).sort()).toEqual([
         "quest:github:issue:901",
         "quest:github:issue:902",
     ]);
-    // Both assignees were credited their own issue's reward (901→user, 902→other).
+    // Both assignees have their own issue's reward (901→user, 902→other).
     expect(
-        issueGrants.find((g) => g.userId === user.id)?.pollenCredited,
+        issueRewards.find((g) => g.userId === user.id)?.pollenAmount,
     ).toBeCloseTo(11);
     expect(
-        issueGrants.find((g) => g.userId === "community-issue-second-user")
-            ?.pollenCredited,
+        issueRewards.find((g) => g.userId === "community-issue-second-user")
+            ?.pollenAmount,
     ).toBeCloseTo(13);
 });
 
-test("account quest history includes GitHub quest reward grants", async ({
+test("account quest history includes pending and claimed GitHub quest rewards", async ({
     sessionToken,
 }) => {
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
     const issueNumber = 123;
     const issueQuestId = `github:issue:${issueNumber}`;
-    // scope:"once" issue grants are keyed without a userId.
-    const payoutKey = `quest:github:issue:${issueNumber}`;
+    // scope:"once" issue rewards are keyed without a userId.
+    const rewardKey = `quest:github:issue:${issueNumber}`;
+    const earnedAt = new Date();
 
-    await db.insert(schema.rewardGrants).values({
-        id: payoutKey,
-        idempotencyKey: payoutKey,
+    await db.insert(schema.rewards).values({
+        id: rewardKey,
+        idempotencyKey: rewardKey,
         userId: user.id,
         questId: issueQuestId,
         title: "Ship a focused fix",
-        pollenCredited: 5,
+        pollenAmount: 5,
         balanceBucket: "tier",
-        createdAt: new Date(),
+        earnedAt,
     });
 
     const response = await SELF.fetch(
@@ -866,31 +932,36 @@ test("account quest history includes GitHub quest reward grants", async ({
     expect(response.status).toBe(200);
 
     const payload = (await response.json()) as {
-        totalPollen: number;
-        grants: {
+        totalClaimedPollen: number;
+        totalClaimablePollen: number;
+        rewards: {
+            id: string;
             questId: string | null;
             title: string;
-            pollenCredited: number;
+            pollenAmount: number;
             balanceBucket: string;
-            createdAt: string;
+            earnedAt: string;
+            claimedAt: string | null;
         }[];
     };
 
-    expect(payload.totalPollen).toBe(5);
-    expect(payload.grants).toHaveLength(1);
-    expect(payload.grants[0]).not.toHaveProperty("id");
-    expect(payload.grants[0]).not.toHaveProperty("idempotencyKey");
-    expect(payload.grants[0]).not.toHaveProperty("source");
-    expect(payload.grants[0]).not.toHaveProperty("sourceRef");
-    expect(payload.grants[0]).not.toHaveProperty("metadata");
-    expect(payload.grants[0]).not.toHaveProperty("metadataJson");
-    expect(payload.grants[0]).toMatchObject({
+    expect(payload.totalClaimedPollen).toBe(0);
+    expect(payload.totalClaimablePollen).toBe(5);
+    expect(payload.rewards).toHaveLength(1);
+    expect(payload.rewards[0]).not.toHaveProperty("idempotencyKey");
+    expect(payload.rewards[0]).not.toHaveProperty("source");
+    expect(payload.rewards[0]).not.toHaveProperty("sourceRef");
+    expect(payload.rewards[0]).not.toHaveProperty("metadata");
+    expect(payload.rewards[0]).not.toHaveProperty("metadataJson");
+    expect(payload.rewards[0]).toMatchObject({
+        id: rewardKey,
         questId: issueQuestId,
         title: "Ship a focused fix",
-        pollenCredited: 5,
+        pollenAmount: 5,
         balanceBucket: "tier",
+        claimedAt: null,
     });
-    expect(typeof payload.grants[0].createdAt).toBe("string");
+    expect(typeof payload.rewards[0].earnedAt).toBe("string");
 });
 
 test("account quest history requires account usage permission for API keys", async ({

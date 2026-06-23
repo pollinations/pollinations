@@ -235,13 +235,13 @@ export const stripeCheckoutCredits = sqliteTable("stripe_checkout_credits", {
   index("idx_stripe_checkout_credits_user_id").on(table.userId),
 ]);
 
-// The quest ledger: one row == one idempotent pollen grant paired with a
-// balance credit. Everything that credits pollen (onboarding, referrals, manual
-// admin credits, …) is modelled as a quest, so there is no grant-kind
+// Reward ledger: one row == one earned reward. `claimedAt` is null until the
+// user claims it, and only claiming credits the user's balance. Everything that
+// can earn pollen is modelled as a reward, so there is no reward-kind
 // discriminator — `questId` already names what was earned. The old
 // GitHub-shaped quest_payout_credits table was backfilled into here and dropped
 // by an earlier migration.
-export const rewardGrants = sqliteTable("reward_grants", {
+export const rewards = sqliteTable("rewards", {
   id: text("id").primaryKey(),
   // Idempotency guard. Encodes the quest's completion scope, e.g.
   // "quest:{issue}" or "quest:{questId}:user:{userId}".
@@ -249,48 +249,21 @@ export const rewardGrants = sqliteTable("reward_grants", {
   userId: text("user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
-  // Catalog id of the quest that was completed; null for one-off grants.
+  // Catalog id of the quest that was earned; null for one-off rewards.
   questId: text("quest_id"),
-  // Quest title snapshotted at grant time, so history renders it directly.
+  // Quest title snapshotted when earned, so history renders it directly.
   title: text("title").notNull(),
-  // Optional quest link snapshotted at grant time.
+  // Optional quest link snapshotted when earned.
   url: text("url"),
-  pollenCredited: real("pollen_credited").notNull(),
-  // Which balance bucket was credited: "tier" or "pack".
+  pollenAmount: real("pollen_amount").notNull(),
+  // Which balance bucket will be credited when claimed: "tier" or "pack".
   balanceBucket: text("balance_bucket").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" })
+  earnedAt: integer("earned_at", { mode: "timestamp" })
     .defaultNow()
     .notNull(),
+  claimedAt: integer("claimed_at", { mode: "timestamp" }),
 }, (table) => [
-  index("idx_reward_grants_user_id").on(table.userId),
-]);
-
-export const githubQuestIssues = sqliteTable("github_quest_issues", {
-  issueNumber: integer("issue_number").primaryKey(),
-  questId: text("quest_id").notNull(),
-  title: text("title").notNull(),
-  description: text("description"),
-  url: text("url").notNull(),
-  rewardAmount: real("reward_amount"),
-  balanceBucket: text("balance_bucket").notNull(),
-  state: text("state").notNull(),
-  assigneeGithubId: integer("assignee_github_id"),
-  assigneeLogin: text("assignee_login"),
-  assigneesJson: text("assignees_json"),
-  completedByPrNumber: integer("completed_by_pr_number"),
-  completedAt: integer("completed_at", { mode: "timestamp" }),
-  githubCreatedAt: integer("github_created_at", { mode: "timestamp" }),
-  githubUpdatedAt: integer("github_updated_at", { mode: "timestamp" }),
-  updatedAt: integer("updated_at", { mode: "timestamp" })
-    .defaultNow()
-    .$onUpdate(() => /* @__PURE__ */ new Date())
-    .notNull(),
-}, (table) => [
-  index("idx_github_quest_issues_quest_id").on(table.questId),
-  index("idx_github_quest_issues_state").on(table.state),
-  index("idx_github_quest_issues_assignee_github_id").on(
-    table.assigneeGithubId,
-  ),
+  index("idx_rewards_user_id").on(table.userId),
 ]);
 
 // GitHub repo mirror — a thin, full snapshot of pollinations/pollinations PRs,

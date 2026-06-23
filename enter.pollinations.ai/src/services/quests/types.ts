@@ -1,4 +1,4 @@
-import type { GrantRewardInput } from "@shared/billing/grant-reward.ts";
+import type { RecordRewardInput } from "@shared/billing/rewards.ts";
 import type * as schema from "@shared/db/better-auth.ts";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import type { QuestAvailability, QuestDefinition } from "./definitions.ts";
@@ -21,7 +21,7 @@ export type RewardProposal = {
     userId: string;
 };
 
-export function toGrant(proposal: RewardProposal): GrantRewardInput {
+export function toReward(proposal: RewardProposal): RecordRewardInput {
     const { quest, userId } = proposal;
     const idempotencyKey =
         quest.scope === "once"

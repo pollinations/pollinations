@@ -95,20 +95,28 @@ export default {
         env: CloudflareBindings,
         ctx: ExecutionContext,
     ) {
-        // Isolate the cron tasks: a failure in one must not skip the others.
-        // All are awaited so a manual trigger reflects completion (and errors).
-        // syncGithubMirror already fails soft internally (logs, never throws);
-        // the .catch here is defensive parity with the other two.
+        // The quest evaluator derives community GitHub bounties from the gh_*
+        // mirror, so the mirror must refresh BEFORE the evaluator runs — that
+        // way a bounty completed since the last tick records this tick instead
+        // of waiting another 15 minutes. A mirror failure must not skip the
+        // evaluator (it can still record from the previous snapshot), so it's caught.
+        const mirrorThenEvaluate = syncGithubMirror(env)
+            .catch((error) => {
+                console.error("GitHub mirror sync failed:", error);
+            })
+            .then(() =>
+                runQuestEvaluator(env).catch((error) => {
+                    console.error("Quest evaluator failed:", error);
+                }),
+            );
+
+        // Tier refill is independent of the mirror; run it concurrently. Both
+        // chains are awaited so a manual trigger reflects completion + errors.
         await Promise.allSettled([
             runTierRefill(env, ctx).catch((error) => {
                 console.error("Tier refill failed:", error);
             }),
-            runQuestEvaluator(env).catch((error) => {
-                console.error("Quest evaluator failed:", error);
-            }),
-            syncGithubMirror(env).catch((error) => {
-                console.error("GitHub mirror sync failed:", error);
-            }),
+            mirrorThenEvaluate,
         ]);
     },
 } satisfies ExportedHandler<CloudflareBindings>;

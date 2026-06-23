@@ -11,9 +11,7 @@ import {
     InlineLink,
     KeyIcon,
     SproutIcon,
-    StatCard,
     Surface,
-    TargetIcon,
     Text,
     TrendUpIcon,
 } from "@pollinations/ui";
@@ -46,8 +44,6 @@ type QuestOverviewProps = Record<string, never>;
 type FetchState = {
     catalog: QuestCatalogItem[];
     rewards: QuestReward[];
-    totalClaimedPollen: number;
-    totalClaimablePollen: number;
     loading: boolean;
     error: string | null;
     claimingRewardId: string | null;
@@ -56,8 +52,6 @@ type FetchState = {
 const INITIAL_STATE: FetchState = {
     catalog: [],
     rewards: [],
-    totalClaimedPollen: 0,
-    totalClaimablePollen: 0,
     loading: true,
     error: null,
     claimingRewardId: null,
@@ -130,6 +124,14 @@ function formatRewardAmount(value: number | null): string {
     return formatted;
 }
 
+// "<claimed> · <claimable> ready" when some reward is still unclaimed, else the
+// banked total on its own.
+function pollenRewardValue(claimed: number, claimable: number): string {
+    return claimable > 0
+        ? `${formatRewardAmount(claimed)} · ${formatRewardAmount(claimable)} ready`
+        : formatRewardAmount(claimed);
+}
+
 function questStatusAccent(status: QuestCardStatus): string {
     if (status === "claimed") return "var(--color-theme-text-muted)";
     return "var(--color-intent-warning-text)";
@@ -143,10 +145,7 @@ function rewardIconKind(
         : "tier";
 }
 
-type QuestData = Pick<
-    FetchState,
-    "catalog" | "rewards" | "totalClaimedPollen" | "totalClaimablePollen"
->;
+type QuestData = Pick<FetchState, "catalog" | "rewards">;
 
 async function loadQuestData(): Promise<QuestData> {
     const [catalogResponse, rewardsResponse] = await Promise.all([
@@ -160,15 +159,11 @@ async function loadQuestData(): Promise<QuestData> {
     }
     const catalog = (await catalogResponse.json()) as QuestCatalogResponse;
     const rewardsPayload = (await rewardsResponse.json()) as {
-        totalClaimedPollen: number;
-        totalClaimablePollen: number;
         rewards: QuestReward[];
     };
     return {
         catalog: catalog.quests ?? [],
         rewards: rewardsPayload.rewards ?? [],
-        totalClaimedPollen: rewardsPayload.totalClaimedPollen ?? 0,
-        totalClaimablePollen: rewardsPayload.totalClaimablePollen ?? 0,
     };
 }
 
@@ -192,32 +187,84 @@ type QuestCard = {
 
 // ── Presentational primitives (composed from @pollinations/ui) ───────────────
 
-// Two top-line metrics styled exactly like the wallet's TIER balance card —
-// they reuse its tier-green panel + text classes (quest rewards are tier
-// pollen, so they carry the same tier identity). The icon has no color of its
-// own, so it inherits the panel's deep-green `color`.
-function SummaryMetricCard({
-    icon: Icon,
+// The two top-line cards mirror the wallet's PAID | TIER split: paid rewards on
+// the left (amber), tier rewards on the right (green), reusing the wallet's own
+// panel + text classes so the colors match the wallet exactly. We keep the
+// big-icon layout, but pack two metrics into each card — completed quests and
+// pollen rewards for that bucket. The big icon has no color of its own, so it
+// inherits the panel's deep paid/tier `color`.
+const BUCKET_ICON: Record<RewardIconKind, IconComponent> = {
+    paid: CardIcon,
+    tier: SproutIcon,
+};
+const BUCKET_PANEL_CLASS: Record<RewardIconKind, string> = {
+    paid: "polli-wallet-panel-paid",
+    tier: "polli-wallet-panel-tier",
+};
+const BUCKET_TEXT_CLASS: Record<RewardIconKind, string> = {
+    paid: "polli-wallet-text-paid",
+    tier: "polli-wallet-text-tier",
+};
+
+// One metric row inside a bucket card: an uppercase label on the left, the
+// value on the right, both carrying the bucket's deep color.
+function SummaryStat({
+    textClass,
     label,
     value,
 }: {
-    icon: IconComponent;
+    textClass: string;
     label: string;
     value: React.ReactNode;
 }) {
     return (
+        <div className="flex items-baseline justify-between gap-3">
+            <Text
+                as="span"
+                size="micro"
+                weight="bold"
+                className={`uppercase tracking-wide ${textClass}`}
+            >
+                {label}
+            </Text>
+            <span
+                className={`text-xl font-bold leading-none tabular-nums ${textClass}`}
+            >
+                {value}
+            </span>
+        </div>
+    );
+}
+
+function BucketSummaryCard({
+    kind,
+    completedQuests,
+    pollenRewards,
+}: {
+    kind: RewardIconKind;
+    completedQuests: React.ReactNode;
+    pollenRewards: React.ReactNode;
+}) {
+    const Icon = BUCKET_ICON[kind];
+    const textClass = BUCKET_TEXT_CLASS[kind];
+    return (
         <Surface
             variant="card"
-            className="polli-wallet-panel-tier flex items-center gap-4"
+            className={`${BUCKET_PANEL_CLASS[kind]} flex items-center gap-4`}
         >
             <Icon className="h-10 w-10 shrink-0" />
-            <StatCard
-                className="min-w-0 flex-1"
-                label={label}
-                labelClassName="polli-wallet-text-tier"
-                value={value}
-                valueClassName="polli-wallet-text-tier"
-            />
+            <div className="grid min-w-0 flex-1 gap-2">
+                <SummaryStat
+                    textClass={textClass}
+                    label="Completed quests"
+                    value={completedQuests}
+                />
+                <SummaryStat
+                    textClass={textClass}
+                    label="Pollen rewards"
+                    value={pollenRewards}
+                />
+            </div>
         </Surface>
     );
 }
@@ -239,7 +286,7 @@ function SectionHeader({
             <Chip
                 intent="neutral"
                 size="sm"
-                className="polli-wallet-chip-tier tabular-nums"
+                className="bg-switch-track-on text-switch-thumb tabular-nums"
             >
                 {done} / {total}
             </Chip>
@@ -259,9 +306,10 @@ function SectionFooter({ category }: { category: CategoryMeta }) {
     );
 }
 
-// Leading marker for a quest row. Earned rewards get the success tint with a
-// check; open is a neutral square with its section icon. The icon rides
-// currentColor from the square's text tone.
+// Leading marker for a quest row. Earned rewards get the switch's vivid "on"
+// green with a light check — the same success affordance as the auto top-up
+// toggle — so "done" reads as a real success state, not a tier tint. Open is a
+// neutral dark square with its section icon. The icon rides currentColor.
 function QuestMarker({
     icon: Icon,
     active,
@@ -275,7 +323,7 @@ function QuestMarker({
             aria-hidden="true"
             className={`flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] ${
                 active
-                    ? "bg-intent-success-bg-light text-intent-success-text"
+                    ? "bg-switch-track-on text-switch-thumb"
                     : "bg-ink-900/80 text-ink-100"
             }`}
         >
@@ -554,36 +602,60 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         return byCat;
     }, [state.catalog, rewardedCatalogIds, rewardByKey]);
 
-    const allCards = [
-        ...sections.setup,
-        ...sections.grow,
-        ...sections.build,
-        ...sections.contribute,
-        ...sections.community,
-        ...sections.easteregg,
-    ];
-    const questsDone = allCards.filter((card) => card.status !== "open").length;
-    const claimedLabel =
-        state.totalClaimablePollen > 0
-            ? `${formatRewardAmount(state.totalClaimedPollen)} claimed · ${formatRewardAmount(state.totalClaimablePollen)} ready`
-            : formatRewardAmount(state.totalClaimedPollen);
+    // Per-bucket roll-up for the two summary cards: each earned reward is one
+    // completed quest, and its pollen lands in either the paid or tier bucket
+    // (claimed once banked, claimable until then).
+    const bucketStats = useMemo(() => {
+        const stats: Record<
+            RewardIconKind,
+            { completed: number; claimed: number; claimable: number }
+        > = {
+            paid: { completed: 0, claimed: 0, claimable: 0 },
+            tier: { completed: 0, claimed: 0, claimable: 0 },
+        };
+        for (const reward of state.rewards) {
+            const kind = rewardIconKind(reward.balanceBucket);
+            stats[kind].completed += 1;
+            if (reward.claimedAt) stats[kind].claimed += reward.pollenAmount;
+            else stats[kind].claimable += reward.pollenAmount;
+        }
+        return stats;
+    }, [state.rewards]);
 
     return (
         <div className="flex flex-col gap-6">
             <Surface variant="panel">
                 <div className="grid gap-3 sm:grid-cols-2">
-                    <SummaryMetricCard
-                        icon={TargetIcon}
-                        label="Completed quests"
-                        value={
-                            <span className="tabular-nums">{questsDone}</span>
+                    <BucketSummaryCard
+                        kind="paid"
+                        completedQuests={
+                            <span className="tabular-nums">
+                                {bucketStats.paid.completed}
+                            </span>
+                        }
+                        pollenRewards={
+                            <span className="tabular-nums">
+                                {pollenRewardValue(
+                                    bucketStats.paid.claimed,
+                                    bucketStats.paid.claimable,
+                                )}
+                            </span>
                         }
                     />
-                    <SummaryMetricCard
-                        icon={SproutIcon}
-                        label="Pollen rewards"
-                        value={
-                            <span className="tabular-nums">{claimedLabel}</span>
+                    <BucketSummaryCard
+                        kind="tier"
+                        completedQuests={
+                            <span className="tabular-nums">
+                                {bucketStats.tier.completed}
+                            </span>
+                        }
+                        pollenRewards={
+                            <span className="tabular-nums">
+                                {pollenRewardValue(
+                                    bucketStats.tier.claimed,
+                                    bucketStats.tier.claimable,
+                                )}
+                            </span>
                         }
                     />
                 </div>

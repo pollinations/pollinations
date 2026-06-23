@@ -1,0 +1,34 @@
+{
+  "pr_number": 11960,
+  "title": "fix: update stale finance layout tests",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11960",
+  "merged_at": "2026-06-23T13:57:48Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- 3 `layout.test.mjs` assertions broke when the Runway sheet was redesigned and were never updated (failing on `main`)\n- Updated to current behavior: title `Runway 2026`; KPI shows running cash (anchor + net) and no longer includes a Burn field; header cols A/B are blank with month columns starting at col 2\n- Tests-only — no code change. Full finance suite now green (47/47)\n- Note: the title year in `layout.mjs` is hardcoded (`Runway 2026`) — worth making dynamic in a follow-up",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Green across the board",
+    "blurb": "Updated our internal finance layout tests to match the new Runway sheet design. Everything is green and good to go!",
+    "summary": "Updated stale assertions in the finance layout tests to match the redesigned Runway sheet, bringing the test suite back to green.",
+    "impact": "Internal tests now correctly validate the current Runway sheet layout, ensuring reliable CI checks.",
+    "keywords": [
+      "tests",
+      "finance",
+      "chore",
+      "ci"
+    ],
+    "visual_concept": "The bee mascot checking off a green checklist or looking at a green glowing monitor (representing passing tests).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, happily checking off a green checklist on a clipboard. A retro computer monitor in the background glows with green passing test logs. Soft lime green (#ecf874) and mint gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-23/PR-11960.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, happily checking off a green checklist on a clipboard. A retro computer monitor in the background glows with green passing test logs. Soft lime green (#ecf874) and mint gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-23T13:58:59.197850+00:00"
+}

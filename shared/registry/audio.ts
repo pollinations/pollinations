@@ -261,7 +261,7 @@ export const AUDIO_SERVICES = {
         alpha: true,
     },
     "stable-audio-3-medium": {
-        aliases: ["stable-audio", "stability-audio"],
+        aliases: ["stable-audio", "stability-audio", "stable-audio-2.5"],
         modelId: "stable-audio-3-medium",
         provider: "fal",
         brand: "Stability AI",

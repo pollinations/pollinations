@@ -2,7 +2,6 @@ import {
     CheckIcon,
     Chip,
     ClockIcon,
-    GitBranchIcon,
     GraduationCapIcon,
     Heading,
     InlineLink,
@@ -60,16 +59,11 @@ const INITIAL_STATE: FetchState = {
 
 type IconComponent = ComponentType<{ className?: string }>;
 
-// Gold accent for icons — the wallet "paid" deep tone. Theme-aware (dark bronze
-// in light mode, light gold in dark), so it keeps contrast on the pale tile in
-// both modes — same token the wallet's paid icon/text uses.
-const GOLD = "text-[color:var(--polli-color-paid-deep)]";
-
 // ── Category model ──────────────────────────────────────────────────────────
-// Four lanes, mapped 1:1 from the backend's quest.category. Setup · Grow · Build
-// are finite (everyone can clear them) and feed the "Quest progress" summary;
-// Contribute is an open bounty pool (issues + PRs) and feeds "Contribute score".
-type CategoryKey = "setup" | "grow" | "build" | "contribute" | "easteregg";
+// One lane per backend quest.category, mapped 1:1. Every lane renders the same
+// way (open cards + your own completed cards); the summary is a single roll-up
+// of done/total and pollen across all lanes.
+type CategoryKey = "setup" | "grow" | "build" | "easteregg";
 
 type CategoryMeta = {
     key: CategoryKey;
@@ -94,14 +88,8 @@ const CATEGORIES: CategoryMeta[] = [
     {
         key: "build",
         label: "Build",
-        blurb: "Your standing as a developer: GitHub, issues, PRs.",
+        blurb: "Your standing as a developer: GitHub, stars, issue bounties.",
         icon: GraduationCapIcon,
-    },
-    {
-        key: "contribute",
-        label: "Contribute",
-        blurb: "Help build Pollinations — issues and PRs.",
-        icon: GitBranchIcon,
     },
     {
         key: "easteregg",
@@ -118,19 +106,11 @@ function categoryKeyFor(category: QuestCatalogItem["category"]): CategoryKey {
             return "setup";
         case "build":
             return "build";
-        case "community":
-            return "contribute";
         case "easteregg":
             return "easteregg";
         default:
             return "grow";
     }
-}
-
-// Grants don't carry an iconId, so split on the only axis the summaries need:
-// is this a Contribute (GitHub issue) reward, or a normal quest reward?
-function isContributeGrant(grant: QuestGrant): boolean {
-    return grant.questId?.startsWith("github:") ?? false;
 }
 
 function issueNumberFromId(id: string): number | null {
@@ -196,17 +176,6 @@ function ProgressRing({
     );
 }
 
-// Tinted circular icon holder (gold) for the Contribute summary card.
-function IconMedallion({ icon: Icon }: { icon: IconComponent }) {
-    return (
-        <span
-            className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-theme-bg-active ${GOLD}`}
-        >
-            <Icon className="h-6 w-6" />
-        </span>
-    );
-}
-
 function SummaryCard({
     ring,
     label,
@@ -235,14 +204,10 @@ function SectionHeader({
     category,
     done,
     total,
-    openCount,
 }: {
     category: CategoryMeta;
     done: number;
     total: number;
-    // Open bounty pools (Contribute) show "N open" instead of a done/total
-    // ratio that would recede as the pool grows.
-    openCount?: number;
 }) {
     return (
         <div className="flex items-center justify-between gap-4 px-1">
@@ -250,7 +215,7 @@ function SectionHeader({
                 {category.label}
             </Heading>
             <PaidChip size="sm" className="tabular-nums">
-                {openCount != null ? `${openCount} open` : `${done} / ${total}`}
+                {done} / {total}
             </PaidChip>
         </div>
     );
@@ -258,18 +223,6 @@ function SectionHeader({
 
 function SectionFooter({ category }: { category: CategoryMeta }) {
     const Icon = category.icon;
-    if (category.key === "contribute") {
-        return (
-            <div className="mt-4 flex items-center gap-2 border-t border-divider pt-4 text-theme-text-muted">
-                <Icon className="h-3.5 w-3.5 shrink-0" />
-                <Text as="p" size="sm" tone="muted">
-                    Want to help build Pollinations? Comment on a Contribute
-                    issue if you'd like to work on it.
-                </Text>
-            </div>
-        );
-    }
-
     return (
         <div className="mt-4 flex items-center gap-1.5 border-t border-divider pt-4 text-theme-text-muted">
             <Icon className="h-3.5 w-3.5 shrink-0" />
@@ -280,10 +233,10 @@ function SectionFooter({ category }: { category: CategoryMeta }) {
     );
 }
 
-// Leading marker for a quest row, wearing its section's icon (Set up · Grow ·
-// Dev · Contribute). Paid gold while open; shifts to the success tint once
-// completed — the icon inherits the color via currentColor. Set inline so it
-// beats the icon's own polli:-prefixed classes without a specificity fight.
+// Leading marker for a quest row, wearing its section's icon. Paid gold while
+// open; shifts to the success tint once completed — the icon inherits the color
+// via currentColor. Set inline so it beats the icon's own polli:-prefixed
+// classes without a specificity fight.
 function QuestMarker({
     icon: Icon,
     completed,
@@ -424,10 +377,6 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         };
     }, []);
 
-    const catalogById = useMemo(
-        () => new Map(state.catalog.map((quest) => [quest.id, quest])),
-        [state.catalog],
-    );
     // A grant's questId IS the catalog id it completed (one grant == one quest),
     // so the completed-set / grant lookup key directly off questId.
     const completedCatalogIds = useMemo(
@@ -447,52 +396,32 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         return map;
     }, [state.grants]);
 
-    // Build the per-category quest rows. Finite categories come straight from
-    // the catalog (open or completed). Contribute mixes open catalog issues
-    // with the user's own completed issue grants.
+    // Build the per-category quest rows from the catalog — ONE uniform pass, no
+    // per-lane special-casing. The catalog is the single source of truth: every
+    // quest (onboarding, GitHub, issue bounty, easter egg) is one card. Grants
+    // only tell us "did YOU earn it" + the banked amount.
     const sections = useMemo(() => {
         const byCat: Record<CategoryKey, QuestCard[]> = {
             setup: [],
             grow: [],
             build: [],
-            contribute: [],
             easteregg: [],
         };
 
         for (const quest of state.catalog) {
-            // hideUntilEarned quests (per-person easter eggs) never show as an
-            // open card — they appear ONLY once YOU have the grant, then as a
-            // normal completed card. Skip them here unless completed-by-you.
-            if (quest.hideUntilEarned && !completedCatalogIds.has(quest.id)) {
-                continue;
-            }
-            const key = categoryKeyFor(quest.category);
-            if (key === "contribute") {
-                // Three states, kept deliberately simple:
-                //   available — open bounty, anyone can take it → SHOW
-                //   claimed   — someone is working it (not paid to you) → HIDE
-                //   completed — surfaces below via YOUR own grant → skip here
-                // So an issue you don't have a grant for only appears while it's
-                // still unclaimed; once claimed it leaves the board, and it
-                // returns (as completed) only if you were the one paid.
-                if (quest.availability !== "available") continue;
-                byCat.contribute.push({
-                    key: quest.id,
-                    title: quest.title,
-                    description: quest.description || undefined,
-                    url: quest.url || undefined,
-                    issueNumber: issueNumberFromId(quest.id) ?? undefined,
-                    reward: quest.rewardAmount,
-                    completed: false,
-                });
-                continue;
-            }
             const completed = completedCatalogIds.has(quest.id);
-            byCat[key].push({
+            // The single visibility rule: a card shows if it's on the open board
+            // (availability "available"), OR if YOU earned it. So a claimed or
+            // completed issue, and a per-person easter egg you didn't earn,
+            // disappear for everyone except the user who completed it.
+            if (quest.availability !== "available" && !completed) continue;
+
+            byCat[categoryKeyFor(quest.category)].push({
                 key: quest.id,
                 title: quest.title,
                 description: quest.description || undefined,
                 url: quest.url || undefined,
+                issueNumber: issueNumberFromId(quest.id) ?? undefined,
                 reward: quest.rewardAmount,
                 completed,
                 earnedAmount: completed
@@ -502,30 +431,11 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
             });
         }
 
-        for (const grant of state.grants) {
-            if (!isContributeGrant(grant)) continue;
-            const issueNumber = issueNumberFromId(grant.questId ?? "");
-            byCat.contribute.push({
-                key: `grant-${grant.questId ?? "quest"}-${grant.createdAt}`,
-                title: grant.title,
-                url: catalogById.get(grant.questId ?? "")?.url || undefined,
-                issueNumber: issueNumber ?? undefined,
-                reward: grant.pollenCredited,
-                completed: true,
-                earnedAmount: grant.pollenCredited,
-            });
-        }
-
-        // Finite lanes: banked wins first (the progress cue). Contribute: open
-        // bounties first (the actionable pool), completed at the bottom.
+        // Banked wins float to the top of each lane (the progress cue), then by
+        // reward.
         for (const key of Object.keys(byCat) as CategoryKey[]) {
-            const completedFirst = key !== "contribute";
             byCat[key].sort((a, b) => {
-                if (a.completed !== b.completed) {
-                    const aRank = a.completed ? 0 : 1;
-                    const bRank = b.completed ? 0 : 1;
-                    return completedFirst ? aRank - bRank : bRank - aRank;
-                }
+                if (a.completed !== b.completed) return a.completed ? -1 : 1;
                 return (
                     (a.reward ?? Number.POSITIVE_INFINITY) -
                     (b.reward ?? Number.POSITIVE_INFINITY)
@@ -533,67 +443,35 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
             });
         }
         return byCat;
-    }, [
-        state.catalog,
-        state.grants,
-        completedCatalogIds,
-        grantByKey,
-        catalogById,
-    ]);
+    }, [state.catalog, completedCatalogIds, grantByKey]);
 
-    // Summary stats. "Quest progress" = the three finite lanes; "Contribute
-    // score" = the open bounty pool. Pollen is split on the same axis.
-    const finiteCards = [
+    // One roll-up across every lane: quests done / shown, and total pollen
+    // earned (the authoritative sum from the grants endpoint).
+    const allCards = [
         ...sections.setup,
         ...sections.grow,
         ...sections.build,
         ...sections.easteregg,
     ];
-    const finiteDone = finiteCards.filter((card) => card.completed).length;
-    const finiteTotal = finiteCards.length;
+    const questsDone = allCards.filter((card) => card.completed).length;
+    const questsTotal = allCards.length;
     const progressPercent =
-        finiteTotal > 0 ? Math.round((finiteDone / finiteTotal) * 100) : 0;
-
-    const questPollen = state.grants
-        .filter((grant) => !isContributeGrant(grant))
-        .reduce((sum, grant) => sum + grant.pollenCredited, 0);
-    const contributePollen = state.grants
-        .filter(isContributeGrant)
-        .reduce((sum, grant) => sum + grant.pollenCredited, 0);
-    const contributeDone = sections.contribute.filter(
-        (card) => card.completed,
-    ).length;
-    const contributeOpen = sections.contribute.length - contributeDone;
+        questsTotal > 0 ? Math.round((questsDone / questsTotal) * 100) : 0;
 
     return (
         <div className="flex flex-col gap-6">
-            <div className="grid gap-3 sm:grid-cols-2">
-                <SummaryCard
-                    ring={
-                        <ProgressRing
-                            percent={progressPercent}
-                            icon={TargetIcon}
-                        />
-                    }
-                    label="Quest progress"
-                    value={
-                        <span className="tabular-nums">
-                            {finiteDone} of {finiteTotal}
-                        </span>
-                    }
-                    detail={`${formatGrantAmount(questPollen)} pollen earned`}
-                />
-                <SummaryCard
-                    ring={<IconMedallion icon={GitBranchIcon} />}
-                    label="Contribute score"
-                    value={
-                        <span className="tabular-nums">
-                            {formatGrantAmount(contributePollen)} pollen
-                        </span>
-                    }
-                    detail={`${contributeDone} completed · ${contributeOpen} open`}
-                />
-            </div>
+            <SummaryCard
+                ring={
+                    <ProgressRing percent={progressPercent} icon={TargetIcon} />
+                }
+                label="Quest progress"
+                value={
+                    <span className="tabular-nums">
+                        {questsDone} of {questsTotal}
+                    </span>
+                }
+                detail={`${formatGrantAmount(state.totalPollen)} pollen earned`}
+            />
 
             {state.error && (
                 <Text size="sm" className="text-intent-danger-text">
@@ -616,7 +494,6 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
             {CATEGORIES.map((category) => {
                 const cards = sections[category.key];
                 if (cards.length === 0) return null;
-                const isContribute = category.key === "contribute";
                 const done = cards.filter((card) => card.completed).length;
                 return (
                     <section key={category.key} className="flex flex-col gap-3">
@@ -624,9 +501,6 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                             category={category}
                             done={done}
                             total={cards.length}
-                            openCount={
-                                isContribute ? cards.length - done : undefined
-                            }
                         />
                         <Surface
                             variant="panel"

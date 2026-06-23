@@ -1,7 +1,7 @@
 import type { GrantRewardInput } from "@shared/billing/grant-reward.ts";
 import type * as schema from "@shared/db/better-auth.ts";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import type { QuestDefinition } from "./definitions.ts";
+import type { QuestAvailability, QuestDefinition } from "./definitions.ts";
 
 export type QuestDb = DrizzleD1Database<typeof schema>;
 
@@ -38,23 +38,26 @@ export function toGrant(proposal: RewardProposal): GrantRewardInput {
     };
 }
 
-export function questToCard(
-    quest: QuestDefinition,
-    availability: QuestCard["availability"] = "available",
-): QuestCard {
-    const { balanceBucket: _bucket, scope: _scope, url, ...definition } = quest;
+export function questToCard(quest: QuestDefinition): QuestCard {
+    const {
+        balanceBucket: _bucket,
+        scope: _scope,
+        url,
+        availability,
+        ...definition
+    } = quest;
     return {
         ...definition,
-        availability,
+        availability: availability ?? "available",
         url: url ?? null,
     };
 }
 
 export type QuestCard = Omit<
     QuestDefinition,
-    "rewardAmount" | "balanceBucket" | "url" | "scope"
+    "rewardAmount" | "balanceBucket" | "url" | "scope" | "availability"
 > & {
-    availability: "available" | "claimed" | "completed";
+    availability: QuestAvailability;
     rewardAmount: number | null;
     url: string | null;
 };

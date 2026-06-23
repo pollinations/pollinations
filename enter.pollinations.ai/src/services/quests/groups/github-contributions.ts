@@ -1,7 +1,7 @@
 import type { Bucket } from "@shared/billing/deduction.ts";
 import * as schema from "@shared/db/better-auth.ts";
-import { and, eq, isNotNull } from "drizzle-orm";
-import type { QuestDefinition } from "../definitions.ts";
+import { eq } from "drizzle-orm";
+import type { QuestAvailability, QuestDefinition } from "../definitions.ts";
 import {
     type QuestCard,
     type QuestEvaluationContext,
@@ -10,32 +10,19 @@ import {
 } from "../types.ts";
 
 /**
- * GitHub contribution rewards, all sourced from the materialized
- * github_quest_issues table:
- *   - DYNAMIC per-issue bounties: each issue row is its own scope:"once" quest;
- *     completed payable rows pay the assignee.
- *   - STATIC "first merged PR": one perUser quest that pays anyone who has had
- *     at least one PR merge a quest issue (a completed row with a PR number).
+ * GitHub contribution rewards, sourced from the materialized github_quest_issues
+ * table. Each issue row is its own scope:"once" quest; completed payable rows
+ * pay the assignee.
+ *
+ * NOTE: a "first authored merged PR" quest does NOT belong here — that needs a
+ * PR-merge source keyed on PR author (a `gh_pull_requests` table + a GitHub
+ * sync), independent of quest issues. github_quest_issues only knows issue
+ * assignees and the PR that closed an issue, so it cannot answer "did this user
+ * author a merged PR". Tracked as a follow-up; not built on this table.
  */
 
 const QUEST_ICON_ID = "github" as const;
 const QUEST_CATEGORY = "build" as const;
-
-/**
- * Static "first merged PR" quest. perUser — each contributor earns it once
- * (key `quest:github:first_merged_pr:user:${userId}`). "Merged PR" here means a
- * PR that closed a quest issue (the only merged-PR signal the table records).
- */
-const firstMergedPrQuest: QuestDefinition = {
-    id: "github:first_merged_pr",
-    title: "Land your first merged PR",
-    description: "Get a pull request merged into Pollinations.",
-    iconId: QUEST_ICON_ID,
-    category: QUEST_CATEGORY,
-    scope: "perUser",
-    rewardAmount: 5,
-    balanceBucket: "pack",
-};
 
 /** Resolve the local user id for an assignee's GitHub id (null if unlinked). */
 async function loadAssigneeUserId(
@@ -48,6 +35,19 @@ async function loadAssigneeUserId(
         .where(eq(schema.user.githubId, assigneeGithubId))
         .limit(1);
     return rows[0]?.userId ?? null;
+}
+
+// Availability is a two-state BOARD concept: "available" = an open bounty
+// anyone can take; "completed" = off the open board. Only a genuinely open
+// issue (state "available", nobody assigned) is shown; the moment it's claimed
+// (someone's working it) or completed it leaves the board — it reappears only
+// for the user who earned it, via their grant (see the frontend). So both
+// claimed and completed map to "completed" (off-board).
+function issueAvailability(
+    issue: typeof schema.githubQuestIssues.$inferSelect,
+): QuestAvailability {
+    const open = issue.state === "available" && issue.assigneeGithubId === null;
+    return open ? "available" : "completed";
 }
 
 function toIssueQuestDefinition(
@@ -69,13 +69,8 @@ function toIssueQuestDefinition(
         rewardAmount: issue.rewardAmount ?? 0,
         balanceBucket: issue.balanceBucket as Bucket,
         url: issue.url,
+        availability: issueAvailability(issue),
     };
-}
-
-function issueAvailability(state: string): QuestCard["availability"] {
-    if (state === "completed") return "completed";
-    if (state === "claimed") return "claimed";
-    return "available";
 }
 
 function isPayableIssue(
@@ -93,37 +88,7 @@ export async function listQuestCards(
     ctx: QuestEvaluationContext,
 ): Promise<QuestCard[]> {
     const rows = await ctx.db.select().from(schema.githubQuestIssues);
-    const issueCards = rows.map((issue) =>
-        questToCard(
-            toIssueQuestDefinition(issue),
-            issueAvailability(issue.state),
-        ),
-    );
-    return [questToCard(firstMergedPrQuest), ...issueCards];
-}
-
-/**
- * Distinct local user ids who have had at least one PR merge a quest issue: a
- * completed row with a PR number, joined to the user by github_id. Drives the
- * "first merged PR" quest in one query (no per-row GitHub API calls).
- */
-async function loadMergedPrUserIds(
-    ctx: QuestEvaluationContext,
-): Promise<string[]> {
-    const rows = await ctx.db
-        .selectDistinct({ userId: schema.user.id })
-        .from(schema.githubQuestIssues)
-        .innerJoin(
-            schema.user,
-            eq(schema.user.githubId, schema.githubQuestIssues.assigneeGithubId),
-        )
-        .where(
-            and(
-                eq(schema.githubQuestIssues.state, "completed"),
-                isNotNull(schema.githubQuestIssues.completedByPrNumber),
-            ),
-        );
-    return rows.map((row) => row.userId);
+    return rows.map((issue) => questToCard(toIssueQuestDefinition(issue)));
 }
 
 export async function findRewardProposals(
@@ -142,11 +107,6 @@ export async function findRewardProposals(
             quest: toIssueQuestDefinition(issue),
             userId,
         });
-    }
-
-    const mergedPrUserIds = await loadMergedPrUserIds(ctx);
-    for (const userId of mergedPrUserIds) {
-        proposals.push({ quest: firstMergedPrQuest, userId });
     }
 
     return proposals;

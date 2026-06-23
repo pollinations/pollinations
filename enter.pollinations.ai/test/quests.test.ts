@@ -26,9 +26,7 @@ const ELIXPO_INTERN_ALREADY_GRANTED = {
 
 // Number of static "product" catalog cards. Every static group quest
 // serializes to exactly one uniform card; the github-contributions group is the
-// only dynamic one (one card per seeded github_quest_issues row, zero when none,
-// plus its own static "first merged PR" card which is counted as static here
-// since its id is not github:issue:*).
+// only dynamic one (one card per seeded github_quest_issues row, zero when none).
 // We snapshot the static count by loading the catalog with no issues seeded.
 async function countStaticQuestCards(): Promise<number> {
     const ctx: QuestEvaluationContext = {
@@ -58,7 +56,7 @@ async function getOnlyUser() {
 }
 
 test("GET /api/quests/catalog returns product and GitHub issue quests", async () => {
-    await env.KV.delete("quests:catalog:v7");
+    await env.KV.delete("quests:catalog:v8");
     const staticCardCount = await countStaticQuestCards();
     const db = drizzle(env.DB, { schema });
     await db.insert(schema.githubQuestIssues).values([
@@ -156,13 +154,16 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
         rewardAmount: 15,
         url: "https://github.com/pollinations/pollinations/issues/321",
     });
+    // Issue 322 is "claimed" (assigned, in progress) → off the open board, so
+    // its card is availability "completed" (the frontend then shows it only to
+    // whoever earns it).
     expect(
         payload.quests.find((quest) => quest.id === "github:issue:322"),
     ).toMatchObject({
         title: "Fix a model config",
         iconId: "github",
         category: "build",
-        availability: "claimed",
+        availability: "completed",
         rewardAmount: 20,
         url: "https://github.com/pollinations/pollinations/issues/322",
     });
@@ -185,7 +186,7 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
 });
 
 test("GET /api/quests/catalog returns product quests with no materialized GitHub issues", async () => {
-    await env.KV.delete("quests:catalog:v7");
+    await env.KV.delete("quests:catalog:v8");
     const staticCardCount = await countStaticQuestCards();
 
     const response = await SELF.fetch(
@@ -199,7 +200,6 @@ test("GET /api/quests/catalog returns product quests with no materialized GitHub
             iconId: string;
             category: string;
             availability: string;
-            hideUntilEarned?: boolean;
         }[];
     };
 
@@ -214,15 +214,14 @@ test("GET /api/quests/catalog returns product quests with no materialized GitHub
         availability: "available",
     });
     // The elixpo easter egg is still emitted into the catalog (so a grant can
-    // join to it) but is flagged hideUntilEarned so the frontend hides it until
-    // the target account earns it.
+    // join to it) but is off the open board (availability "completed"), so the
+    // frontend hides it until the target account earns it.
     expect(
         payload.quests.find((quest) => quest.id === "easteregg:elixpo_intern"),
     ).toMatchObject({
         iconId: "sprout",
         category: "easteregg",
-        availability: "available",
-        hideUntilEarned: true,
+        availability: "completed",
     });
     expect(
         payload.quests.some((quest) => quest.id.startsWith("github:issue:")),
@@ -698,9 +697,9 @@ test("two community issues sharing one quest_id each pay out (production key sha
         .from(schema.rewardGrants)
         .where(eq(schema.rewardGrants.balanceBucket, "pack"));
 
-    // Assert on the ISSUE grants specifically (not total balance), so unrelated
-    // quests that also pay these users — e.g. first_merged_pr, which these
-    // completed-PR issues happen to trigger — never break this guard.
+    // Assert on the ISSUE grants specifically (not total balance), so any
+    // unrelated quest that happens to also pay these users never breaks this
+    // guard (it scopes the assertion to the github:issue:* grants under test).
     const issueGrants = grants.filter((g) =>
         g.idempotencyKey.startsWith("quest:github:issue:"),
     );

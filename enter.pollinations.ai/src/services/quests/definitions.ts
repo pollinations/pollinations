@@ -18,19 +18,12 @@ export type QuestIconId = (typeof QUEST_ICON_IDS)[number];
  *   - "plant"     -> "Set up"    (account onboarding: keys, first purchase)
  *   - "grow"      -> "Grow"      (app/usage growth: app earnings, BYOP)
  *   - "build"     -> "Build"     (dev contributions: GitHub account/stars,
- *                                 issue bounties, merged PRs)
- *   - "community" -> "Community" (legacy bucket; kept for any non-build
- *                                 community quest — currently unused)
+ *                                 issue bounties)
  *   - "easteregg" -> "Easter eggs" (per-person targeted quests; only ever
  *                                 shown to the account that earned them, via
- *                                 hideUntilEarned)
+ *                                 availability "completed")
  */
-export type QuestCategory =
-    | "plant"
-    | "grow"
-    | "build"
-    | "community"
-    | "easteregg";
+export type QuestCategory = "plant" | "grow" | "build" | "easteregg";
 
 /**
  * Completion scope — drives the idempotency key shape (see toGrant):
@@ -41,6 +34,13 @@ export type QuestCategory =
  *                 issue bounties: one issue, one payout, regardless of assignee.
  */
 export type QuestScope = "perUser" | "once";
+
+/**
+ * Whether a quest sits on the open board. A two-state BOARD flag, not a
+ * per-user status: "available" = open to everyone; "completed" = off the board
+ * (shown only to a user who earned it, via their grant).
+ */
+export type QuestAvailability = "available" | "completed";
 
 export type QuestDefinition = {
     id: string;
@@ -59,12 +59,16 @@ export type QuestDefinition = {
      */
     url?: string;
     /**
-     * Hide this quest from the open/available board; surface it ONLY once the
-     * viewing user has earned it (then it renders as a normal completed card,
-     * flipped via their grant). For per-person easter eggs / targeted quests
-     * that shouldn't appear as an actionable card to everyone. The catalog
-     * still emits the card (so the grant can join to it) — the FRONTEND skips
-     * it while unearned. Defaults to false/omitted (normal always-visible).
+     * Whether this quest is on the open board:
+     *   - "available" (default) — an open quest everyone sees and can complete.
+     *   - "completed"           — off the open board; the frontend shows it ONLY
+     *                             to a user who has earned it (joined via their
+     *                             grant). Use for per-person/targeted quests
+     *                             (e.g. the intern easter egg), and set
+     *                             per-instance by dynamic groups (an assigned or
+     *                             finished issue bounty leaves the board).
+     * The catalog always emits the card so a grant can join to it; the frontend
+     * applies the show/hide rule.
      */
-    hideUntilEarned?: boolean;
+    availability?: QuestAvailability;
 };

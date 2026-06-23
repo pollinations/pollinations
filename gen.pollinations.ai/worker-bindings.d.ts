@@ -10,6 +10,7 @@ interface CloudflareBindings {
     MUSIC_SERVICE_URL: string;
     DASHSCOPE_API_KEY: string;
     FAL_KEY: string;
+    STABILITY_API_KEY?: string;
     KV: KVNamespace;
     IMAGE_BUCKET: R2Bucket;
     TEXT_BUCKET: R2Bucket;
@@ -46,6 +47,7 @@ interface CloudflareBindings {
     GOOGLE_PRIVATE_KEY: string;
     GOOGLE_PRIVATE_KEY_ID: string;
     GOOGLE_PROJECT_ID: string;
+    INCEPTION_API_KEY: string;
     KLEIN_URL: string;
     LTX2_BASE_URL: string;
     NOVA_REEL_S3_BUCKET: string;

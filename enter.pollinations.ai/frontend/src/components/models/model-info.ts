@@ -13,6 +13,7 @@ const BRAND_LOGOS: Record<string, string> = {
     ElevenLabs: "elevenlabs",
     Google: "google",
     Ideogram: "ideogram",
+    Inception: "inception",
     Lightricks: "lightricks",
     Meta: "meta",
     MiniMax: "minimax",

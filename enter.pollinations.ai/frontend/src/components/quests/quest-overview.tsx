@@ -12,6 +12,7 @@ import {
     KeyIcon,
     SproutIcon,
     Surface,
+    TargetIcon,
     Text,
     TrendUpIcon,
 } from "@pollinations/ui";
@@ -124,14 +125,6 @@ function formatRewardAmount(value: number | null): string {
     return formatted;
 }
 
-// "<claimed> · <claimable> ready" when some reward is still unclaimed, else the
-// banked total on its own.
-function pollenRewardValue(claimed: number, claimable: number): string {
-    return claimable > 0
-        ? `${formatRewardAmount(claimed)} · ${formatRewardAmount(claimable)} ready`
-        : formatRewardAmount(claimed);
-}
-
 function questStatusAccent(status: QuestCardStatus): string {
     if (status === "claimed") return "var(--color-theme-text-muted)";
     return "var(--color-intent-warning-text)";
@@ -187,83 +180,68 @@ type QuestCard = {
 
 // ── Presentational primitives (composed from @pollinations/ui) ───────────────
 
-// The two top-line cards mirror the wallet's PAID | TIER split: paid rewards on
-// the left (amber), tier rewards on the right (green), reusing the wallet's own
-// panel + text classes so the colors match the wallet exactly. We keep the
-// big-icon layout, but pack two metrics into each card — completed quests and
-// pollen rewards for that bucket. The big icon has no color of its own, so it
-// inherits the panel's deep paid/tier `color`.
-const BUCKET_ICON: Record<RewardIconKind, IconComponent> = {
-    paid: CardIcon,
-    tier: SproutIcon,
-};
-const BUCKET_PANEL_CLASS: Record<RewardIconKind, string> = {
-    paid: "polli-wallet-panel-paid",
-    tier: "polli-wallet-panel-tier",
-};
+// The summary keeps the wallet page's big-icon cards — one per metric — but
+// splits each value into its paid (amber) and tier (green) parts, so a paid
+// reward is never forced into tier colors. Paid/tier is carried by color here;
+// the legend can live in a footer or tooltip. Built from the wallet's own text
+// classes so the colors match the wallet exactly.
 const BUCKET_TEXT_CLASS: Record<RewardIconKind, string> = {
     paid: "polli-wallet-text-paid",
     tier: "polli-wallet-text-tier",
 };
 
-// One metric row inside a bucket card: an uppercase label on the left, the
-// value on the right, both carrying the bucket's deep color.
-function SummaryStat({
-    textClass,
-    label,
-    value,
+// A single value in its bucket color — amber (paid) or green (tier).
+function BucketNumber({
+    kind,
+    children,
 }: {
-    textClass: string;
-    label: string;
-    value: React.ReactNode;
+    kind: RewardIconKind;
+    children: React.ReactNode;
 }) {
     return (
-        <div className="flex items-baseline justify-between gap-3">
-            <Text
-                as="span"
-                size="micro"
-                weight="bold"
-                className={`uppercase tracking-wide ${textClass}`}
-            >
-                {label}
-            </Text>
-            <span
-                className={`text-xl font-bold leading-none tabular-nums ${textClass}`}
-            >
-                {value}
-            </span>
-        </div>
+        <span
+            className={`text-2xl font-bold leading-none tabular-nums ${BUCKET_TEXT_CLASS[kind]}`}
+        >
+            {children}
+        </span>
     );
 }
 
-function BucketSummaryCard({
-    kind,
-    completedQuests,
-    pollenRewards,
+// One summary metric: a big icon + label, with the paid and tier values side by
+// side beneath it. Grouping each metric with its own numbers keeps the value
+// reading straight off the label.
+function MetricSummaryCard({
+    icon: Icon,
+    label,
+    paid,
+    tier,
 }: {
-    kind: RewardIconKind;
-    completedQuests: React.ReactNode;
-    pollenRewards: React.ReactNode;
+    icon: IconComponent;
+    label: string;
+    paid: React.ReactNode;
+    tier: React.ReactNode;
 }) {
-    const Icon = BUCKET_ICON[kind];
-    const textClass = BUCKET_TEXT_CLASS[kind];
     return (
-        <Surface
-            variant="card"
-            className={`${BUCKET_PANEL_CLASS[kind]} flex items-center gap-4`}
-        >
-            <Icon className="h-10 w-10 shrink-0" />
-            <div className="grid min-w-0 flex-1 gap-2">
-                <SummaryStat
-                    textClass={textClass}
-                    label="Completed quests"
-                    value={completedQuests}
-                />
-                <SummaryStat
-                    textClass={textClass}
-                    label="Pollen rewards"
-                    value={pollenRewards}
-                />
+        <Surface variant="card" className="flex items-center gap-4">
+            <Icon className="h-10 w-10 shrink-0 text-theme-text-base" />
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                <Text
+                    as="span"
+                    size="micro"
+                    weight="bold"
+                    tone="muted"
+                    className="uppercase tracking-wide"
+                >
+                    {label}
+                </Text>
+                <div className="flex items-center gap-3">
+                    <BucketNumber kind="paid">{paid}</BucketNumber>
+                    <span
+                        aria-hidden="true"
+                        className="h-7 self-center border-l border-divider"
+                    />
+                    <BucketNumber kind="tier">{tier}</BucketNumber>
+                </div>
             </div>
         </Surface>
     );
@@ -602,22 +580,20 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         return byCat;
     }, [state.catalog, rewardedCatalogIds, rewardByKey]);
 
-    // Per-bucket roll-up for the two summary cards: each earned reward is one
-    // completed quest, and its pollen lands in either the paid or tier bucket
-    // (claimed once banked, claimable until then).
+    // Per-bucket roll-up for the summary: each earned reward is one completed
+    // quest, and its pollen total lands in either the paid or tier bucket.
     const bucketStats = useMemo(() => {
         const stats: Record<
             RewardIconKind,
-            { completed: number; claimed: number; claimable: number }
+            { completed: number; pollen: number }
         > = {
-            paid: { completed: 0, claimed: 0, claimable: 0 },
-            tier: { completed: 0, claimed: 0, claimable: 0 },
+            paid: { completed: 0, pollen: 0 },
+            tier: { completed: 0, pollen: 0 },
         };
         for (const reward of state.rewards) {
             const kind = rewardIconKind(reward.balanceBucket);
             stats[kind].completed += 1;
-            if (reward.claimedAt) stats[kind].claimed += reward.pollenAmount;
-            else stats[kind].claimable += reward.pollenAmount;
+            stats[kind].pollen += reward.pollenAmount;
         }
         return stats;
     }, [state.rewards]);
@@ -626,37 +602,17 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         <div className="flex flex-col gap-6">
             <Surface variant="panel">
                 <div className="grid gap-3 sm:grid-cols-2">
-                    <BucketSummaryCard
-                        kind="paid"
-                        completedQuests={
-                            <span className="tabular-nums">
-                                {bucketStats.paid.completed}
-                            </span>
-                        }
-                        pollenRewards={
-                            <span className="tabular-nums">
-                                {pollenRewardValue(
-                                    bucketStats.paid.claimed,
-                                    bucketStats.paid.claimable,
-                                )}
-                            </span>
-                        }
+                    <MetricSummaryCard
+                        icon={TargetIcon}
+                        label="Completed quests"
+                        paid={bucketStats.paid.completed}
+                        tier={bucketStats.tier.completed}
                     />
-                    <BucketSummaryCard
-                        kind="tier"
-                        completedQuests={
-                            <span className="tabular-nums">
-                                {bucketStats.tier.completed}
-                            </span>
-                        }
-                        pollenRewards={
-                            <span className="tabular-nums">
-                                {pollenRewardValue(
-                                    bucketStats.tier.claimed,
-                                    bucketStats.tier.claimable,
-                                )}
-                            </span>
-                        }
+                    <MetricSummaryCard
+                        icon={SproutIcon}
+                        label="Pollen rewards"
+                        paid={formatRewardAmount(bucketStats.paid.pollen)}
+                        tier={formatRewardAmount(bucketStats.tier.pollen)}
                     />
                 </div>
             </Surface>

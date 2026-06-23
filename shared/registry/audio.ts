@@ -284,6 +284,31 @@ export const AUDIO_SERVICES = {
         outputModalities: ["audio"],
         alpha: true,
     },
+    "stable-audio-3-large": {
+        // Distinct from stable-audio-3-medium (fal): this is the larger
+        // API-only model served by Stability's direct API. Keep aliases
+        // non-overlapping with the medium entry.
+        aliases: ["stable-audio-large"],
+        modelId: "stable-audio-3-large",
+        provider: "stability",
+        brand: "Stability AI",
+        category: "audio",
+        addedDate: new Date("2026-06-23").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            // Stability Stable Audio 3 (Large) via the direct API: flat 26
+            // credits/generation. Stability credits are $0.01 each, so bill one
+            // flat audio unit at $0.26.
+            completionAudioTokens: 0.26,
+        },
+        title: "Stable Audio 3 Large",
+        description:
+            "Stable Audio 3 Large - Long-form 44.1 kHz stereo music via Stability's direct API",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        alpha: true,
+    },
     "qwen-tts": {
         aliases: ["qwen3-tts", "qwen3-tts-flash"],
         modelId: "qwen3-tts-flash",

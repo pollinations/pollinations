@@ -771,7 +771,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "**Output formats:** mp3 (default), opus, aac, flac, wav, pcm",
                 "",
-                "**Music generation:** Set `model=elevenmusic`, `acestep`, or `stable-audio-3-medium` to generate music instead of speech. `elevenmusic` supports `duration` (3-300 seconds) and `instrumental` mode; `stable-audio-3-medium` supports `seconds` (1-380), `steps` (1-100), and `seed`. Use `POST /v1/audio/speech` with multipart `reference_audio` for style transfer, or `POST /v1/audio/music/upload` to register a source track for inpainting.",
+                "**Music generation:** Set `model=elevenmusic`, `acestep`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music instead of speech. `elevenmusic` supports `duration` (3-300 seconds) and `instrumental` mode; `stable-audio-3-medium`/`stable-audio-3-large` support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Use `POST /v1/audio/speech` with multipart `reference_audio` for style transfer (medium/large), or `POST /v1/audio/music/upload` to register a source track for inpainting.",
             ].join("\n"),
             responses: {
                 200: {
@@ -831,13 +831,17 @@ export const proxyRoutes = new Hono<Env>()
                     }),
                 seconds: z.coerce.number().min(1).max(380).optional().meta({
                     description:
-                        "Audio duration in seconds for stable-audio-3-medium, 1-380",
+                        "Audio duration in seconds for stable-audio-3-medium/large, 1-380",
                     example: "30",
                 }),
                 steps: z.coerce.number().int().min(1).max(100).optional().meta({
                     description:
-                        "Sampling steps for stable-audio-3-medium, 1-100",
+                        "Sampling steps (stable-audio-3-medium 1-100, stable-audio-3-large 4-8)",
                     example: "8",
+                }),
+                negative_prompt: z.string().optional().meta({
+                    description: "Negative prompt for stable-audio-3-large",
+                    example: "distortion, vocals",
                 }),
                 instrumental: z
                     .enum(["true", "false"])

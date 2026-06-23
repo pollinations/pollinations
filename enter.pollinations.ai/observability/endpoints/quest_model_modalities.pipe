@@ -1,0 +1,27 @@
+DESCRIPTION >
+    Per-user "has this user generated with a text / image / audio model at least
+    once" flags, used by the model-usage quest evaluator. One row per user that
+    has at least one billed, successful generation in any of the three
+    modalities. Lifetime (no time window) — a quest is a one-time milestone.
+
+TOKEN tinybird_read READ
+
+NODE quest_model_modalities_node
+SQL >
+    SELECT
+        user_id AS userId,
+        maxIf(1, event_type = 'generate.text') AS usedText,
+        maxIf(1, event_type = 'generate.image') AS usedImage,
+        maxIf(1, event_type = 'generate.audio') AS usedAudio
+    FROM generation_event
+    WHERE user_id != ''
+      AND user_id != 'undefined'
+      AND response_status >= 200
+      AND response_status < 300
+      AND total_price > 0
+      AND event_type IN ('generate.text', 'generate.image', 'generate.audio')
+    GROUP BY user_id
+    HAVING usedText = 1 OR usedImage = 1 OR usedAudio = 1
+    LIMIT 100000
+
+TYPE endpoint

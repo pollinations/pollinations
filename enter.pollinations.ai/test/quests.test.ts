@@ -585,6 +585,37 @@ test("quest evaluator records app growth rewards", async ({
     });
 });
 
+test("quest evaluator records model-usage rewards per modality", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+    // This user has generated with text and audio, but not image.
+    mocks.tinybird.state.modelModalitiesResponse = [
+        { userId: user.id, usedText: 1, usedImage: 0, usedAudio: 1 },
+    ];
+
+    const result = await runQuestEvaluator(env);
+
+    expect(result.results).toContainEqual({
+        questId: "grow:use_text_model",
+        scanned: 1,
+        recorded: 1,
+    });
+    expect(result.results).toContainEqual({
+        questId: "grow:use_audio_model",
+        scanned: 1,
+        recorded: 1,
+    });
+    // No image generation => the image quest scans nobody.
+    expect(result.results).toContainEqual({
+        questId: "grow:use_image_model",
+        scanned: 0,
+        recorded: 0,
+    });
+});
+
 test("quest evaluator continues after one quest fails", async ({
     apiKey: _apiKey,
     mocks,

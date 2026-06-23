@@ -1298,11 +1298,6 @@ const STABLE_AUDIO_3_LARGE_A2A_ENDPOINT =
     "https://api.stability.ai/v2beta/audio/stable-audio/audio-to-audio";
 const STABILITY_RESULTS_ENDPOINT = "https://api.stability.ai/v2beta/results";
 
-// Flat per-generation fees encoded at $0.0001/unit (see registry cost block) so
-// each path bills fal's exact rate: text-to-audio $0.0376, audio-to-audio $0.0417.
-const SA3M_TEXT_TO_AUDIO_UNITS = 376;
-const SA3M_AUDIO_TO_AUDIO_UNITS = 417;
-
 // fal returns the generated file as a URL (or {url}) on a fal.media CDN, not
 // inline bytes — we fetch it and stream the bytes back to the caller.
 type FalAudioOutput = {
@@ -1398,12 +1393,12 @@ export async function generateStableAudio3Medium(opts: {
         ? headerContentType
         : "audio/mpeg";
 
-    // Flat per-generation fee; the unit count encodes fal's exact price for the
-    // chosen endpoint (see registry cost block, billed at $0.0001/unit).
+    // Flat per-generation fee: always one output audio unit, plus one input
+    // audio unit when a reference clip switches fal to audio-to-audio. The
+    // registry prices the base + audio-input surcharge (see its cost block).
     const usageHeaders = buildUsageHeaders("stable-audio-3-medium", {
-        completionAudioTokens: isAudioToAudio
-            ? SA3M_AUDIO_TO_AUDIO_UNITS
-            : SA3M_TEXT_TO_AUDIO_UNITS,
+        completionAudioTokens: 1,
+        promptAudioTokens: isAudioToAudio ? 1 : 0,
     });
 
     log.info("Stable Audio 3 Medium success: {bytes} bytes", {

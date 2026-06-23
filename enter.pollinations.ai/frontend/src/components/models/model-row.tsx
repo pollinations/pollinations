@@ -70,6 +70,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
             kind: "audioIn",
             subKinds: ["audioIn"],
             perToken: model.perToken,
+            perRequest: model.perRequest,
         },
         {
             prices: [model.promptImagePrice],
@@ -96,6 +97,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
             kind: "audioOut",
             subKinds: ["audioOut"],
             perToken: model.perToken,
+            perRequest: model.perRequest,
         },
         {
             prices: [model.perSecondPrice],
@@ -119,7 +121,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
             prices: [model.perImagePrice],
             kind: "image",
             subKinds: ["image"],
-            perImage: true,
+            perRequest: true,
         },
         {
             prices: [model.completionImagePrice],
@@ -277,7 +279,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 <div className="flex flex-col gap-1 items-end">
                     {inputPriceBadges.map((badge) => (
                         <PriceBadge
-                            key={`${badge.subKinds.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perImage ? "img" : ""}-${badge.perSecond ? "sec" : ""}`}
+                            key={`${badge.subKinds.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perRequest ? "gen" : ""}-${badge.perSecond ? "sec" : ""}`}
                             {...badge}
                         />
                     ))}
@@ -289,7 +291,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 <div className="flex flex-col gap-1 items-end">
                     {outputPriceBadges.map((badge) => (
                         <PriceBadge
-                            key={`${badge.subKinds.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perImage ? "img" : ""}-${badge.perSecond ? "sec" : ""}`}
+                            key={`${badge.subKinds.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perRequest ? "gen" : ""}-${badge.perSecond ? "sec" : ""}`}
                             {...badge}
                         />
                     ))}

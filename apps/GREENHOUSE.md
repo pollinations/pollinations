@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **811** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **812** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -72,7 +72,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🔬 SciVis AI](https://s971153.github.io/scivis-ai/) | Generate sci-fi style science illustrations with SciVis AI by entering any science topic; uses Pollinations Image API (flux model) and supports 6 visual styles and 3 aspect ratios. | [@s971153](https://github.com/s971153) |  | 🐝 |
 | [🏷️ Metadatagenerator](https://metadatagenerator.online/) | Generate metadata and prompts for microstock marketplace with Metadatagenerator. | [@roni72640](https://github.com/roni72640) |  | 🐝 |
 
-<details><summary>Show all 198 apps</summary>
+<details><summary>Show all 197 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -212,7 +212,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🎨 AI Image Studio](https://aistudio.reidaspromocoes.com.br) | Aplicativo de criação de imagens com IA | [@reidaspromocoesofc-hub](https://github.com/reidaspromocoesofc-hub) |  |  |
 | [🖼️ elixpo](https://elixpo.com) | Create images from text prompts using AI | [@Circuit-Overtime](https://github.com/Circuit-Overtime) |  |  |
 | [🎨 eflyer](https://gki-gmm.github.io/eflyer/) | Generate custom electronic flyers from templates with simple controls. | [@gki-gmm](https://github.com/gki-gmm) |  |  |
-| [🎽 Athelte Studio](https://athletestudio.online/) | Turns Strava workouts into cinematic AI-generated sports posters. | [@NaikDeepak](https://github.com/NaikDeepak) |  |  |
 | [🎨 Eflyer Generator](https://gki-gmm.github.io/eflyer/) | Buat flyer digital dengan latar AI untuk kebaktian di GKI Griya Merpati Mas | [@gki-gmm](https://github.com/gki-gmm) |  |  |
 | [🖼️ Pollination Gallery AI](https://lytura-ai-visions-forge.lovable.app/) | Powerful AI image generator based on pollinations.ai API | [@malik498-r](https://github.com/malik498-r) |  |  |
 | [✏️ Baseposing](https://baseposting.online/) | Create Base-style text and convert to AI-generated photos | [@0xnurrabby](https://github.com/0xnurrabby) |  |  |
@@ -430,7 +429,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🧠 Nova.ai](https://github.com/amazonka142/Nova.ai) | iOS AI assistant combining conversational AI, image generation, and project organization using Pollinations text and image APIs for streaming chat and prompt-based image creation. | [@amazonka142](https://github.com/amazonka142) |  | 🐝 |
 | [🧠 AI therapist](https://play.google.com/store/apps/details?id=com.terapeuta.ai) | AI therapy app with chat, personalized routines & user data analysis | [@Mundoapp](https://github.com/Mundoapp) |  | 🐝 |
 
-<details><summary>Show all 132 apps</summary>
+<details><summary>Show all 133 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -476,6 +475,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [💬 Synapse](https://chat.aegis-plus.my.id) | Multi-model AI chat app with streaming, sessions, uploads, and Markdown. | [@Aegis-plus](https://github.com/Aegis-plus) | 1 |  |
 | [📝 Pollinations AI Text Generation API](https://farl.github.io/pollinations-ai-text-generation/) | A web interface for the Pollinations AI API (gen.pollinations.ai). It uses the pollinations.ai API for text generation with multiple OpenAI-compatible models, image analysis (vision), text-to-speech w | [@Farl](https://github.com/Farl) |  | 🫧 |
 | [🤖 ather mini](minitejas.in) | ather mini provides a ChatGPT-like AI chat to help people learn about AI and uses pollinations.ai for teaching. | [@aadarsh-kandula](https://github.com/aadarsh-kandula) |  | 🫧 |
+| [🎭 RoleChar](https://rolechar.com) | RoleChar provides AI character chat and roleplay, plus image and video generation in one place. | [@peacefulfrog](https://github.com/peacefulfrog) |  | 🫧 |
 | [🤖 Xeva AI](https://xeva.tedeca.de/) | Xeva AI lets you ask for support, help, or chat with no chat storage. Chats are kept in a secure database that only the CEO and CTO can access, and data selling is forbidden. | [@DejvidGichev](https://github.com/DejvidGichev) |  | 🫧 |
 | [📻 AnggunFM](https://www.anggunfm.my) | Display a greeting message for the team. | [@cuteanggun](https://github.com/cuteanggun) |  | 🫧 |
 | [🔎 Perplexio](http://tcp.ap-northeast-1.clawcloudrun.com:47049/) | Host Perplexio as a self-hosted Perplexity-style AI search assistant using pollinations.ai as its LLM backend via the OpenAI-compatible API endpoint. | [@foxy1402](https://github.com/foxy1402) |  |  |
@@ -576,7 +576,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🛗 Sirius Cybernetics Elevator Challenge](https://sirius-cybernetics-elevator-challenge.pollinations.ai) | Quirky elevator game with real-time AI-generated encounters and replies | [@voodoohop](https://github.com/voodoohop) | 4.7k | 🏵️ |
 | [🎮 SmartInfiniteYield](https://github.com/BokX1/InfiniteYieldWithAI) | Roblox admin script wrapper using Pollinations AI to translate natural language into executable commands with chat mode for game-specific advice. | [@BokX1](https://github.com/BokX1) | 1 | 🏵️ |
 
-<details><summary>Show all 57 apps</summary>
+<details><summary>Show all 58 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -599,6 +599,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🎮 Kinexus](https://tin2tin.github.io/Kinexus/) | Create cinematic choice-based narrative games, interactive fiction, and graphic novels using a zero-code editor with styling and export features. | [@tin2tin](https://github.com/tin2tin) | 5 |  |
 | [🕹️ Pixel-Colony-God](https://github.com/yava-code/Pixel-Colony-God) | Runs a sandbox web game using pollinations. | [@yava-code](https://github.com/yava-code) | 1 |  |
 | [🎮 DnD Character Sheet Helper](https://rkdn.app/dnd) | A fun tool for creating D&D character sheets with AI-generated character visuali... | [@ArcadianComp](https://github.com/ArcadianComp) | 1 |  |
+| [🐾 SpiritPet World — Feature Overview](https://spiritworldfeatureoverview.netlify.app/) | SpiritPet World — Feature Overview. Provides a quick overview of the app’s features. | [@aumnuay2494-svg](https://github.com/aumnuay2494-svg) |  | 🫧 |
 | [📖 Storytale](https://storytale.net) | Storytale is a multiplayer storytelling game where friends take turns adding sentences to a shared story. Pollinations powers three surfaces: | [@jmeijer19-glitch](https://github.com/jmeijer19-glitch) |  |  |
 | [👻 The room](https://theroom-8mc4.vercel.app/) | Triggers a ghost jumpscare in The room. | [@tuidienanhvan](https://github.com/tuidienanhvan) |  |  |
 | [🎮 idol-interaction](https://spritenguyen.github.io/idol-interaction-game-2/) | idol-interaction uses models from pollinations.ai for interpolation/content generation. Enter keywords in the scout tab to find characters, then chat, complete tasks, or take photos. | [@spritenguyen](https://github.com/spritenguyen) |  |  |

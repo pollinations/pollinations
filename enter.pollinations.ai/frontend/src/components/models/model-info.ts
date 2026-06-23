@@ -23,6 +23,7 @@ const BRAND_LOGOS: Record<string, string> = {
     Pollinations: "pollinations",
     Pruna: "pruna",
     Qwen: "qwen",
+    "Stability AI": "stability",
     StepFun: "stepfun",
     "Z.ai": "zai",
     xAI: "xai",

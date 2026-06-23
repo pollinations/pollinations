@@ -272,3 +272,47 @@ test("GET /api/account/usage?format=csv renders rows and sets filename from limi
     expect(usageCalls).toHaveLength(1);
     expect(usageCalls[0].query.limit).toBe("50000");
 });
+
+test("GET /api/account/usage?format=csv neutralizes spreadsheet formulas", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    mocks.tinybird.state.usageResponse = [
+        {
+            cursor_event_id: "event-1",
+            timestamp: "2026-04-14 12:10:00",
+            type: "generate.text",
+            model: "=1+1",
+            api_key_id: "key_abc123",
+            api_key: "+SUM(1,1)",
+            api_key_type: "secret",
+            meter_source: "tier",
+            input_text_tokens: 10,
+            input_cached_tokens: 0,
+            input_audio_tokens: 0,
+            input_audio_seconds: 0,
+            input_image_tokens: 0,
+            output_text_tokens: 20,
+            output_reasoning_tokens: 0,
+            output_audio_tokens: 0,
+            output_audio_seconds: 0,
+            output_image_tokens: 0,
+            output_video_seconds: 0,
+            cost_usd: 1,
+            response_time_ms: 123,
+        },
+    ];
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/account/usage?format=csv&days=30",
+        { headers: authHeaders(sessionToken) },
+    );
+
+    expect(response.status).toBe(200);
+    const csv = await response.text();
+    const lines = csv.trim().split("\n");
+    expect(lines[1]).toContain(",'=1+1,");
+    expect(lines[1]).toContain(`"'+SUM(1,1)"`);
+});

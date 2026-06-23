@@ -1,5 +1,6 @@
 import {
     Button,
+    CardIcon,
     CheckIcon,
     Chip,
     ClockIcon,
@@ -12,6 +13,7 @@ import {
     SproutIcon,
     StatCard,
     Surface,
+    TargetIcon,
     Text,
     TrendUpIcon,
 } from "@pollinations/ui";
@@ -321,26 +323,27 @@ function QuestRow({
                 #{card.issueNumber}
             </InlineLink>
         ) : null;
-    const reward = (
+    // Claimed rewards are banked, so they read as a quiet greyed "+N pollen"
+    // (no chip fill) — matching the approved mockup. WalletKindIcon forces its
+    // own tier/paid color, so use the raw glyph here to let it grey out.
+    const RewardKindIcon = rewardIcon === "paid" ? CardIcon : SproutIcon;
+    const reward = claimed ? (
+        <span className="flex items-center gap-1 tabular-nums text-theme-text-muted">
+            <RewardKindIcon className="h-3.5 w-3.5 shrink-0" />+
+            {formatRewardAmount(rewardAmount)} pollen
+        </span>
+    ) : (
         <>
             {claimableRewardId && (
                 <Button
                     type="button"
-                    size="sm"
-                    intent="info"
                     disabled={claiming}
                     onClick={() => onClaim(claimableRewardId)}
-                    className="gap-1.5 tabular-nums"
                 >
-                    <CheckIcon className="h-3 w-3 shrink-0" />
                     {claiming ? "Claiming" : "Claim"}
                 </Button>
             )}
-            <Chip
-                intent={claimed ? "success" : "neutral"}
-                size="sm"
-                className="gap-1 tabular-nums"
-            >
+            <Chip intent="neutral" size="sm" className="gap-1 tabular-nums">
                 <WalletKindIcon kind={rewardIcon} />
                 {rewardLabel}
             </Chip>
@@ -566,7 +569,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
             <Surface variant="panel">
                 <div className="grid gap-3 sm:grid-cols-2">
                     <SummaryMetricCard
-                        icon={CheckIcon}
+                        icon={TargetIcon}
                         label="Completed quests"
                         value={
                             <span className="tabular-nums">{questsDone}</span>

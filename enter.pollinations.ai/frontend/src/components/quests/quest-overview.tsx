@@ -167,7 +167,7 @@ function SummaryMetricCard({
     value: React.ReactNode;
 }) {
     return (
-        <Surface variant="card-themed" className="flex items-center gap-4">
+        <Surface variant="card" className="flex items-center gap-4">
             <Icon className="h-10 w-10 shrink-0 text-intent-success-text" />
             <StatCard
                 className="min-w-0 flex-1"
@@ -248,45 +248,86 @@ function QuestRow({ card, icon }: { card: QuestCard; icon: IconComponent }) {
             ? "Reward TBD"
             : `${formatGrantAmount(rewardAmount)} pollen`;
 
+    // Shared pieces, placed differently per breakpoint below.
+    const title = (
+        <Text
+            as="span"
+            weight="semibold"
+            tone={card.completed ? "muted" : "strong"}
+        >
+            {card.title}
+        </Text>
+    );
+    const description =
+        !card.completed && card.description ? card.description : null;
+    const issueLink =
+        card.issueNumber != null && card.url ? (
+            <InlineLink
+                href={card.url}
+                showIcon={false}
+                className="text-sm tabular-nums"
+                style={{ color: accent }}
+            >
+                #{card.issueNumber}
+            </InlineLink>
+        ) : null;
+    const reward = (
+        <>
+            {card.completed && (
+                // Reward earned but not yet claimed — opens the claim flow
+                // (handler wiring lands in a follow-up).
+                <Button type="button">Claim</Button>
+            )}
+            <Chip intent="neutral" size="sm" className="gap-1 tabular-nums">
+                <WalletKindIcon kind={rewardIcon} />
+                {rewardLabel}
+            </Chip>
+        </>
+    );
+
     return (
-        <Surface variant="card" className="flex items-center gap-4">
-            <QuestMarker icon={icon} completed={card.completed} />
-            <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                    <Text
-                        as="span"
-                        weight="semibold"
-                        tone={card.completed ? "muted" : "strong"}
-                    >
-                        {card.title}
-                    </Text>
-                    {card.issueNumber != null && card.url && (
-                        <InlineLink
-                            href={card.url}
-                            showIcon={false}
-                            className="text-sm tabular-nums"
-                            style={{ color: accent }}
-                        >
-                            #{card.issueNumber}
-                        </InlineLink>
+        <Surface variant="card">
+            {/* Mobile: stacked. Icon centered with the (wrappable) title;
+                description full-width below the icon; issue link bottom-left and
+                reward bottom-right. */}
+            <div className="flex flex-col gap-3 sm:hidden">
+                <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center gap-4">
+                        <QuestMarker icon={icon} completed={card.completed} />
+                        <div className="min-w-0 flex-1">{title}</div>
+                    </div>
+                    {description && (
+                        <Text size="sm" tone="muted">
+                            {description}
+                        </Text>
                     )}
                 </div>
-                {!card.completed && card.description && (
-                    <Text size="sm" tone="muted" className="mt-1">
-                        {card.description}
-                    </Text>
-                )}
+                <div className="flex items-center gap-2.5">
+                    {issueLink}
+                    <div className="ml-auto flex items-center gap-2.5">
+                        {reward}
+                    </div>
+                </div>
             </div>
-            <div className="flex shrink-0 items-center gap-2.5">
-                {card.completed && (
-                    // Reward earned but not yet claimed — opens the claim flow
-                    // (handler wiring lands in a follow-up).
-                    <Button type="button">Claim</Button>
-                )}
-                <Chip intent="neutral" size="sm" className="gap-1 tabular-nums">
-                    <WalletKindIcon kind={rewardIcon} />
-                    {rewardLabel}
-                </Chip>
+
+            {/* Desktop: three columns, all vertically centered. Icon | content
+                (title + description, with the issue link at the end of the
+                description) | claim + reward. Keeps the card to two text rows. */}
+            <div className="hidden items-center gap-4 sm:flex">
+                <QuestMarker icon={icon} completed={card.completed} />
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                    <div>{title}</div>
+                    {(description || issueLink) && (
+                        <Text as="div" size="sm" tone="muted">
+                            {description}
+                            {description && issueLink ? " " : null}
+                            {issueLink}
+                        </Text>
+                    )}
+                </div>
+                <div className="flex shrink-0 items-center gap-2.5">
+                    {reward}
+                </div>
             </div>
         </Surface>
     );
@@ -422,22 +463,26 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
 
     return (
         <div className="flex flex-col gap-6">
-            <div className="grid gap-3 sm:grid-cols-2">
-                <SummaryMetricCard
-                    icon={TargetIcon}
-                    label="Completed quests"
-                    value={<span className="tabular-nums">{questsDone}</span>}
-                />
-                <SummaryMetricCard
-                    icon={SproutIcon}
-                    label="Pollen earned"
-                    value={
-                        <span className="tabular-nums">
-                            {formatGrantAmount(state.totalPollen)}
-                        </span>
-                    }
-                />
-            </div>
+            <Surface variant="panel">
+                <div className="grid gap-3 sm:grid-cols-2">
+                    <SummaryMetricCard
+                        icon={TargetIcon}
+                        label="Completed quests"
+                        value={
+                            <span className="tabular-nums">{questsDone}</span>
+                        }
+                    />
+                    <SummaryMetricCard
+                        icon={SproutIcon}
+                        label="Pollen earned"
+                        value={
+                            <span className="tabular-nums">
+                                {formatGrantAmount(state.totalPollen)}
+                            </span>
+                        }
+                    />
+                </div>
+            </Surface>
 
             {state.error && (
                 <Text size="sm" className="text-intent-danger-text">

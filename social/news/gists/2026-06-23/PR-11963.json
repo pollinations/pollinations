@@ -1,0 +1,35 @@
+{
+  "pr_number": 11963,
+  "title": "feat: mirror GitHub repo state into D1",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11963",
+  "merged_at": "2026-06-23T16:38:13Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Mirrors all PRs, issues, and PR→issue close edges from pollinations/pollinations into D1 (`gh_pull_requests`, `gh_issues`, `gh_pr_closing_issues`)\n- Runs on the existing `*/15` Worker cron; fail-soft (logged, never breaks tier refill)\n- GitHub App auth via WebCrypto only (PKCS#1→PKCS#8 wrap); all-GraphQL fetch\n- Generic snapshot — reusable substrate for more data sources later\n- Chunked upserts bounded by row count AND byte size to avoid SQLITE_TOOBIG on large issue bodies\n- Stale-row reap: rows not seen in a run are deleted\n- Verified end-to-end on staging cron: 5021 PRs / 6604 issues / 1816 edges, no errors\n- 8/8 unit tests, biome + tsc clean\n\nNote: needs `GITHUB_APP_ID` + `GITHUB_APP_PRIVATE_KEY` Worker secrets (present on staging; not yet on prod).",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Mirroring the Hive",
+    "blurb": "We've built a cozy little bridge between GitHub and our database. All our open-source history is now safely mirrored in D1!",
+    "summary": "Added a 15-minute cron job to mirror all GitHub PRs, issues, and closing edges into the D1 database using chunked upserts and WebCrypto authentication.",
+    "impact": "This internal infrastructure lays the groundwork for future automated contributor rewards and deeper GitHub integration without hitting API rate limits.",
+    "keywords": [
+      "github",
+      "d1",
+      "database",
+      "cron",
+      "infrastructure"
+    ],
+    "visual_concept": "Nomnom creature eating GitHub documents and storing them in a D1 database server rack, assisted by Polly the bee.",
+    "image_prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating little pixelated GitHub issue documents, while the cute bee mascot organizes them into a glowing lime green (#ecf874) retro server rack. Soft pastel lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-23/PR-11963.jpg",
+    "prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating little pixelated GitHub issue documents, while the cute bee mascot organizes them into a glowing lime green (#ecf874) retro server rack. Soft pastel lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-23T16:41:44.607864+00:00"
+}

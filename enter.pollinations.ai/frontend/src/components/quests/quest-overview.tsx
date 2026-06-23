@@ -11,14 +11,11 @@ import {
     SproutIcon,
     StatCard,
     Surface,
+    TargetIcon,
     Text,
     TrendUpIcon,
 } from "@pollinations/ui";
-import {
-    formatPollen,
-    TierChip,
-    WalletKindIcon,
-} from "@pollinations/ui/wallet";
+import { formatPollen, WalletKindIcon } from "@pollinations/ui/wallet";
 import {
     type ComponentType,
     type FC,
@@ -59,6 +56,7 @@ const INITIAL_STATE: FetchState = {
 };
 
 type IconComponent = ComponentType<{ className?: string }>;
+type RewardIconKind = "paid" | "tier";
 
 // ── Category model ──────────────────────────────────────────────────────────
 // One lane per backend quest.category, mapped 1:1. The source group that found
@@ -124,8 +122,18 @@ function formatGrantAmount(value: number | null): string {
     return formatted;
 }
 
-function formatRewardLabel(value: number | null): string {
-    return value == null ? "Reward TBD" : `${formatGrantAmount(value)} pollen`;
+function questStatusAccent(completed: boolean): string {
+    return completed
+        ? "var(--color-theme-text-muted)"
+        : "var(--color-intent-warning-text)";
+}
+
+function rewardIconKind(
+    balanceBucket: string | null | undefined,
+): RewardIconKind {
+    return balanceBucket === "paid" || balanceBucket === "pack"
+        ? "paid"
+        : "tier";
 }
 
 // ── Card model ──────────────────────────────────────────────────────────────
@@ -139,61 +147,28 @@ type QuestCard = {
     url?: string;
     issueNumber?: number;
     reward: number | null;
+    balanceBucket?: string | null;
     completed: boolean;
     earnedAmount?: number | null;
 };
 
 // ── Presentational primitives (composed from @pollinations/ui) ───────────────
 
-// Progress ring (conic-gradient) with a neutral icon in the hole. Mirrors the
-// dashboard summary ring; the hole matches the card surface so only the rim
-// reads as progress.
-function ProgressRing({
-    percent,
+// Two top-line metrics. The icon is a bare identity glyph (no badge, no status
+// fill) in the soft theme tone, so the bold value stays the focal point.
+function SummaryMetricCard({
     icon: Icon,
-}: {
-    percent: number;
-    icon: IconComponent;
-}) {
-    const clamped = Math.max(0, Math.min(100, percent));
-    return (
-        <span
-            role="progressbar"
-            aria-label="Quest completion"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={clamped}
-            className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-intent-success-text"
-            style={{
-                background: `conic-gradient(currentColor ${clamped * 3.6}deg, var(--color-theme-bg-active) 0)`,
-            }}
-        >
-            <span className="absolute inset-1 rounded-full bg-theme-bg-pale" />
-            <Icon className="relative h-6 w-6" />
-        </span>
-    );
-}
-
-function SummaryCard({
-    ring,
     label,
     value,
-    detail,
 }: {
-    ring: React.ReactNode;
+    icon: IconComponent;
     label: string;
     value: React.ReactNode;
-    detail: string;
 }) {
     return (
         <Surface variant="card-themed" className="flex items-center gap-4">
-            {ring}
-            <StatCard
-                className="min-w-0 flex-1"
-                label={label}
-                value={value}
-                detail={detail}
-            />
+            <Icon className="h-10 w-10 shrink-0 text-theme-text-soft" />
+            <StatCard className="min-w-0 flex-1" label={label} value={value} />
         </Surface>
     );
 }
@@ -207,14 +182,19 @@ function SectionHeader({
     done: number;
     total: number;
 }) {
+    const isComplete = done === total;
     return (
         <div className="flex items-center justify-between gap-4 px-1">
             <Heading as="h2" size="section">
                 {category.label}
             </Heading>
-            <TierChip size="sm" className="tabular-nums">
+            <Chip
+                intent={isComplete ? "success" : "warning"}
+                size="sm"
+                className="tabular-nums"
+            >
                 {done} / {total}
-            </TierChip>
+            </Chip>
         </div>
     );
 }
@@ -231,8 +211,8 @@ function SectionFooter({ category }: { category: CategoryMeta }) {
     );
 }
 
-// Leading marker for a quest row, wearing its section's icon. Tier green while
-// open; shifts to the success tint once completed — the icon inherits the color
+// Leading marker for a quest row. Open rows wear the section icon in amber;
+// completed rows become the check mark in the success tint.
 // via currentColor. Set inline so it beats the icon's own polli:-prefixed
 // classes without a specificity fight.
 function QuestMarker({
@@ -242,6 +222,7 @@ function QuestMarker({
     icon: IconComponent;
     completed: boolean;
 }) {
+    const MarkerIcon = completed ? CheckIcon : Icon;
     return (
         <span
             aria-hidden="true"
@@ -249,24 +230,28 @@ function QuestMarker({
             style={{
                 backgroundColor: completed
                     ? "var(--color-intent-success-bg-light)"
-                    : "var(--polli-color-tier-pale)",
+                    : "var(--color-intent-warning-bg-light)",
                 color: completed
                     ? "var(--color-intent-success-text)"
-                    : "var(--polli-color-tier-deep)",
+                    : "var(--color-intent-warning-text)",
             }}
         >
-            <Icon className="h-5 w-5" />
+            <MarkerIcon className="h-5 w-5" />
         </span>
     );
 }
 
 function QuestRow({ card, icon }: { card: QuestCard; icon: IconComponent }) {
-    // Per-row accent matches the marker: tier green while open, success green once
-    // completed. Applied inline so it overrides the primitives' own
-    // polli:-prefixed color classes without a specificity fight.
-    const accent = card.completed
-        ? "var(--color-intent-success-text)"
-        : "var(--polli-color-tier-deep)";
+    const accent = questStatusAccent(card.completed);
+    const rewardAmount = card.completed
+        ? (card.earnedAmount ?? card.reward)
+        : card.reward;
+    const rewardIcon = rewardIconKind(card.balanceBucket);
+    const rewardLabel =
+        rewardAmount == null
+            ? "Reward TBD"
+            : `${card.completed ? "+" : ""}${formatGrantAmount(rewardAmount)} pollen`;
+
     return (
         <Surface variant="card" className="flex items-center gap-4">
             <QuestMarker icon={icon} completed={card.completed} />
@@ -289,12 +274,6 @@ function QuestRow({ card, icon }: { card: QuestCard; icon: IconComponent }) {
                             #{card.issueNumber}
                         </InlineLink>
                     )}
-                    {card.completed && (
-                        <Chip intent="success" size="sm" className="gap-1">
-                            <CheckIcon className="h-3 w-3 shrink-0" />
-                            Completed
-                        </Chip>
-                    )}
                 </div>
                 {!card.completed && card.description && (
                     <Text size="sm" tone="muted" className="mt-1">
@@ -303,22 +282,14 @@ function QuestRow({ card, icon }: { card: QuestCard; icon: IconComponent }) {
                 )}
             </div>
             <div className="flex shrink-0 items-center gap-2.5">
-                {card.completed ? (
-                    <Text
-                        as="span"
-                        size="sm"
-                        className="tabular-nums"
-                        style={{ color: accent }}
-                    >
-                        +{formatGrantAmount(card.earnedAmount ?? card.reward)}{" "}
-                        pollen
-                    </Text>
-                ) : (
-                    <TierChip size="sm" className="tabular-nums">
-                        <WalletKindIcon kind="tier" />
-                        {formatRewardLabel(card.reward)}
-                    </TierChip>
-                )}
+                <Chip
+                    intent={card.completed ? "neutral" : "warning"}
+                    size="sm"
+                    className="gap-1 tabular-nums"
+                >
+                    <WalletKindIcon kind={rewardIcon} />
+                    {rewardLabel}
+                </Chip>
             </div>
         </Surface>
     );
@@ -410,6 +381,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
 
         for (const quest of state.catalog) {
             const completed = completedCatalogIds.has(quest.id);
+            const grant = completed ? grantByKey.get(quest.id) : undefined;
             // The single visibility rule: a card shows if it's on the open board
             // (availability "available"), OR if YOU earned it. So a claimed or
             // completed issue, and a per-person easter egg you didn't earn,
@@ -423,10 +395,14 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                 url: quest.url || undefined,
                 issueNumber: issueNumberFromId(quest.id) ?? undefined,
                 reward: quest.rewardAmount,
+                balanceBucket:
+                    "balanceBucket" in quest &&
+                    typeof quest.balanceBucket === "string"
+                        ? quest.balanceBucket
+                        : "tier",
                 completed,
                 earnedAmount: completed
-                    ? (grantByKey.get(quest.id)?.pollenCredited ??
-                      quest.rewardAmount)
+                    ? (grant?.pollenCredited ?? quest.rewardAmount)
                     : undefined,
             });
         }
@@ -445,35 +421,26 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         return byCat;
     }, [state.catalog, completedCatalogIds, grantByKey]);
 
-    // One roll-up across every lane: quests done / shown, and total pollen
-    // earned (the authoritative sum from the grants endpoint).
-    const allCards = [
-        ...sections.setup,
-        ...sections.grow,
-        ...sections.build,
-        ...sections.contribute,
-        ...sections.community,
-        ...sections.easteregg,
-    ];
-    const questsDone = allCards.filter((card) => card.completed).length;
-    const questsTotal = allCards.length;
-    const progressPercent =
-        questsTotal > 0 ? Math.round((questsDone / questsTotal) * 100) : 0;
+    const questsDone = state.grants.length;
 
     return (
         <div className="flex flex-col gap-6">
-            <SummaryCard
-                ring={
-                    <ProgressRing percent={progressPercent} icon={CheckIcon} />
-                }
-                label="Quest progress"
-                value={
-                    <span className="tabular-nums">
-                        {questsDone} of {questsTotal}
-                    </span>
-                }
-                detail={`${formatGrantAmount(state.totalPollen)} pollen earned`}
-            />
+            <div className="grid gap-3 sm:grid-cols-2">
+                <SummaryMetricCard
+                    icon={TargetIcon}
+                    label="Completed quests"
+                    value={<span className="tabular-nums">{questsDone}</span>}
+                />
+                <SummaryMetricCard
+                    icon={SproutIcon}
+                    label="Pollen earned"
+                    value={
+                        <span className="tabular-nums">
+                            {formatGrantAmount(state.totalPollen)}
+                        </span>
+                    }
+                />
+            </div>
 
             {state.error && (
                 <Text size="sm" className="text-intent-danger-text">

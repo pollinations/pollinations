@@ -1,0 +1,35 @@
+{
+  "pr_number": 11961,
+  "title": "feat: swap Stable Audio 2.5 for Stable Audio 3 Medium (fal)",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11961",
+  "merged_at": "2026-06-23T14:50:52Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Adds Stable Audio 3 Medium (fal) with text-to-audio and reference-audio (audio-to-audio) support.\n\n- Replaces `stable-audio-2.5` with `stable-audio-3-medium` (fal `fal-ai/stable-audio-3/medium/text-to-audio`). `stable-audio-2.5` is kept as a backward-compat alias (alongside `stable-audio` / `stability-audio`), so existing calls keep resolving.\n- `reference_audio` (multipart) routes to fal audio-to-audio (`.../medium/audio-to-audio`) for style transfer; plain prompts use text-to-audio.\n- Exact per-path billing: cost rate is `$0.0001`/unit and the handler emits the unit count per endpoint — text-to-audio = 376 units (`$0.0376`), audio-to-audio = 417 units (`$0.0417`) — matching fal's posted per-request rates. Flat per generation (not per second).\n- Params: `seconds` 1–380 (fal `duration`), `steps` (`num_inference_steps`), `seed`; output mp3 44.1 kHz stereo. Reuses existing `FAL_KEY` — no new secret, no GPU.\n- The conditioning guard now allows `reference_audio` for `stable-audio-3-medium` (still rejects ElevenLabs-only options); the multipart parser forwards `seconds`/`steps` (a2a is multipart-only).\n\nTested: gen + enter suites green; real e2e through local gen for both paths (t2a 376u/`$0.0376`, a2a 417u/`$0.0417`, valid 192 kbps stereo MP3, cache MISS→HIT, billing rows match).\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Stable Audio 3 Medium drops the beat",
+    "blurb": "We've upgraded our audio generation to Stable Audio 3 Medium! You can now use text-to-audio or even pass in reference audio for style transfer.",
+    "summary": "Upgraded the default Stable Audio model to Stable Audio 3 Medium via fal.ai, adding support for audio-to-audio style transfer alongside standard text-to-audio generation.",
+    "impact": "Users can now generate up to 380 seconds of 44.1 kHz stereo audio using text prompts ($0.0376/gen) or reference audio ($0.0417/gen), with existing stable-audio-2.5 calls automatically routing to the new model.",
+    "keywords": [
+      "audio",
+      "stable-audio",
+      "fal",
+      "audio-to-audio",
+      "models"
+    ],
+    "visual_concept": "The pollinations bee mascot acting as a DJ or music producer, wearing headphones, mixing tracks on a retro soundboard or turntable. A chunky pixel robot listening happily. Musical notes floating in the air.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny DJ headphones, mixing tracks on a retro soundboard. A chunky pixel robot with a CRT monitor head dances nearby, with colorful musical notes floating in the air. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-23/PR-11961.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny DJ headphones, mixing tracks on a retro soundboard. A chunky pixel robot with a CRT monitor head dances nearby, with colorful musical notes floating in the air. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-23T14:51:56.258590+00:00"
+}

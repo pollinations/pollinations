@@ -9,6 +9,7 @@ import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type Stripe from "stripe";
+import { getEurMidRate, usdToEurCents } from "./fx.ts";
 import { createStripeClient } from "./stripe.ts";
 
 const CUSTOMER_CREATE_IDEMPOTENCY_VERSION = "v1";
@@ -57,6 +58,8 @@ type AutoTopUpAttemptRow = {
     stripeInvoiceId: string | null;
     amountUsd: number;
     status: string;
+    chargedCurrency: string | null;
+    chargedAmountCents: number | null;
 };
 
 type AutoTopUpInput = {
@@ -83,11 +86,7 @@ export type BillingOverview = {
         packAmountUsd: number;
         lastIssue: AutoTopUpIssue | null;
     };
-    paymentMethod: {
-        hasDefault: boolean;
-        brand: string | null;
-        last4: string | null;
-    };
+    paymentMethod: PaymentMethodSummary;
     billingDetails: {
         name: string | null;
         email: string | null;
@@ -138,6 +137,43 @@ export async function getOrCreateStripeCustomerId(
     return updated.stripeCustomerId ?? customer.id;
 }
 
+export type PaymentMethodSummary = {
+    hasDefault: boolean;
+    type: "card" | "sepa_debit" | "other" | null;
+    brand: string | null;
+    last4: string | null;
+};
+
+/**
+ * Map a Stripe default payment method to a UI-facing summary. Cards expose
+ * brand + last4; SEPA mandates expose the IBAN last4 (no brand); anything else
+ * degrades to "other" so the UI can render a generic label.
+ */
+export function paymentMethodSummary(
+    paymentMethod: Stripe.PaymentMethod | null,
+): PaymentMethodSummary {
+    if (!paymentMethod) {
+        return { hasDefault: false, type: null, brand: null, last4: null };
+    }
+    if (paymentMethod.type === "card") {
+        return {
+            hasDefault: true,
+            type: "card",
+            brand: paymentMethod.card?.brand ?? null,
+            last4: paymentMethod.card?.last4 ?? null,
+        };
+    }
+    if (paymentMethod.type === "sepa_debit") {
+        return {
+            hasDefault: true,
+            type: "sepa_debit",
+            brand: null,
+            last4: paymentMethod.sepa_debit?.last4 ?? null,
+        };
+    }
+    return { hasDefault: true, type: "other", brand: null, last4: null };
+}
+
 export async function getBillingOverview(
     env: CloudflareBindings,
     userId: string,
@@ -166,13 +202,7 @@ export async function getBillingOverview(
                 user.autoTopUpAmountUsd ?? DEFAULT_AUTO_TOP_UP_AMOUNT_USD,
             lastIssue,
         },
-        paymentMethod: paymentMethod
-            ? {
-                  hasDefault: true,
-                  brand: paymentMethod.card?.brand ?? "card",
-                  last4: paymentMethod.card?.last4 ?? null,
-              }
-            : { hasDefault: false, brand: null, last4: null },
+        paymentMethod: paymentMethodSummary(paymentMethod),
         billingDetails: customer
             ? getBillingDetailsSummary(customer, paymentMethod)
             : null,
@@ -384,6 +414,21 @@ export async function updateAutoTopUpSettings(
     return { ok: true, overview: await getBillingOverview(env, userId) };
 }
 
+/**
+ * Off-session top-up currency. PM capability wins: an iDEAL-with-save checkout
+ * leaves a SEPA mandate (EUR-only) while customer.currency stays "usd"
+ * (multi-currency customers charges EUR without re-pinning). Charging USD on a
+ * SEPA mandate would fail and disable auto top-up — so sepa_debit ⇒ eur.
+ */
+export function resolveAutoTopUpCurrency(
+    paymentMethod: Stripe.PaymentMethod,
+    customer: Stripe.Customer,
+): "eur" | "usd" {
+    if (paymentMethod.type === "sepa_debit") return "eur";
+    if (customer.currency === "eur") return "eur";
+    return "usd";
+}
+
 export async function processAutoTopUpForUser(
     env: CloudflareBindings,
     userId: string,
@@ -483,6 +528,12 @@ export async function processAutoTopUpForUser(
             return { status: "skipped", reason: "missing billing details" };
         }
 
+        const topUpCurrency = resolveAutoTopUpCurrency(paymentMethod, customer);
+        const lineAmountCents =
+            topUpCurrency === "eur"
+                ? usdToEurCents(pack.amountUsd, await getEurMidRate())
+                : pack.amountUsd * 100;
+
         const idempotencyKey = createAutoTopUpIdempotencyKey(attemptId);
         const metadata = {
             [METADATA_USER_ID]: userId,
@@ -495,7 +546,7 @@ export async function processAutoTopUpForUser(
         const invoice = await stripe.invoices.create(
             {
                 customer: customerId,
-                currency: "usd",
+                currency: topUpCurrency,
                 collection_method: "charge_automatically",
                 auto_advance: false,
                 automatic_tax: { enabled: true },
@@ -507,16 +558,22 @@ export async function processAutoTopUpForUser(
         );
         createdInvoiceId = invoice.id;
 
-        await setAutoTopUpAttemptInvoice(env.DB, attemptId, invoice.id);
+        await setAutoTopUpAttemptInvoice(
+            env.DB,
+            attemptId,
+            invoice.id,
+            topUpCurrency,
+            lineAmountCents,
+        );
 
         await stripe.invoiceItems.create(
             {
                 customer: customerId,
                 invoice: invoice.id,
-                amount: pack.amountUsd * 100,
-                currency: "usd",
+                amount: lineAmountCents,
+                currency: topUpCurrency,
                 description: pack.checkoutName,
-                tax_behavior: "inclusive",
+                tax_behavior: "exclusive",
                 tax_code: pack.taxCode,
                 metadata,
             },
@@ -527,6 +584,11 @@ export async function processAutoTopUpForUser(
             invoice.id,
             {},
             { idempotencyKey: `${idempotencyKey}:finalize` },
+        );
+        await updateAutoTopUpAttemptChargedAmount(
+            env.DB,
+            finalized.id,
+            finalized.amount_due,
         );
         try {
             await stripe.invoices.pay(
@@ -587,8 +649,9 @@ export async function creditAutoTopUpInvoice(
             invoiceStatus: invoice.status,
             amountPaid: invoice.amount_paid,
             currency: invoice.currency,
-            expectedAmountCents: attempt.amountUsd * 100,
-            expectedCurrency: "usd",
+            expectedAmountCents:
+                attempt.chargedAmountCents ?? attempt.amountUsd * 100,
+            expectedCurrency: attempt.chargedCurrency ?? "usd",
         });
         await markAttemptFailedByInvoice(
             env.DB,
@@ -963,11 +1026,15 @@ async function setAutoTopUpAttemptInvoice(
     db: D1Database,
     attemptId: string,
     invoiceId: string,
+    chargedCurrency: string,
+    chargedAmountCents: number,
 ): Promise<void> {
     const result = await db
         .prepare(
             `UPDATE stripe_auto_top_up_attempt
                 SET stripe_invoice_id = ?,
+                    charged_currency = ?,
+                    charged_amount_cents = ?,
                     status = ?,
                     updated_at = ?
                 WHERE id = ?
@@ -975,6 +1042,8 @@ async function setAutoTopUpAttemptInvoice(
         )
         .bind(
             invoiceId,
+            chargedCurrency,
+            chargedAmountCents,
             AUTO_TOP_UP_ATTEMPT_STATUS_PENDING,
             Date.now(),
             attemptId,
@@ -985,6 +1054,34 @@ async function setAutoTopUpAttemptInvoice(
     if ((result.meta.changes ?? 0) !== 1) {
         throw new Error(
             `Auto top-up attempt ${attemptId} could not be linked to invoice ${invoiceId}`,
+        );
+    }
+}
+
+async function updateAutoTopUpAttemptChargedAmount(
+    db: D1Database,
+    invoiceId: string,
+    chargedAmountCents: number,
+): Promise<void> {
+    const result = await db
+        .prepare(
+            `UPDATE stripe_auto_top_up_attempt
+                SET charged_amount_cents = ?,
+                    updated_at = ?
+                WHERE stripe_invoice_id = ?
+                    AND status = ?`,
+        )
+        .bind(
+            chargedAmountCents,
+            Date.now(),
+            invoiceId,
+            AUTO_TOP_UP_ATTEMPT_STATUS_PENDING,
+        )
+        .run();
+
+    if ((result.meta.changes ?? 0) !== 1) {
+        throw new Error(
+            `Auto top-up attempt for invoice ${invoiceId} could not persist finalized charged amount`,
         );
     }
 }
@@ -1000,7 +1097,9 @@ async function getAutoTopUpAttemptByInvoiceId(
                     user_id AS userId,
                     stripe_invoice_id AS stripeInvoiceId,
                     amount_usd AS amountUsd,
-                    status
+                    status,
+                    charged_currency AS chargedCurrency,
+                    charged_amount_cents AS chargedAmountCents
                 FROM stripe_auto_top_up_attempt
                 WHERE stripe_invoice_id = ?
                 LIMIT 1`,
@@ -1077,14 +1176,16 @@ function verifyAutoTopUpInvoicePayment(
         return { ok: false, reason: "invoice status is not paid" };
     }
 
-    if (invoice.amount_paid !== attempt.amountUsd * 100) {
+    // Legacy rows (pre-EUR) have null charged_* — fall back to the USD anchor.
+    const expectedCents = attempt.chargedAmountCents ?? attempt.amountUsd * 100;
+    const expectedCurrency = attempt.chargedCurrency ?? "usd";
+
+    if (invoice.amount_paid !== expectedCents) {
         return { ok: false, reason: "amount mismatch" };
     }
-
-    if (invoice.currency !== "usd") {
+    if (invoice.currency !== expectedCurrency) {
         return { ok: false, reason: "currency mismatch" };
     }
-
     return { ok: true };
 }
 

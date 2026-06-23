@@ -232,6 +232,40 @@ curl -sS "https://api.stripe.com/v1/customers?limit=10" -u "$STRIPE_API_KEY:"
 curl -sS "https://api.stripe.com/v1/disputes?limit=10" -u "$STRIPE_API_KEY:"
 ```
 
+## Endpoint: Tax registrations & EU VAT coverage
+
+Validated **2026-06-13** against both live (`acct_1SrY3q7rcjS3l7tr`) and the sandbox/test account — identical config on both. Answers "will we collect VAT for EU buyers?" — relevant to EUR-native checkout.
+
+```bash
+curl -sS https://api.stripe.com/v1/tax/settings                  -u "$STRIPE_API_KEY:"
+curl -sS "https://api.stripe.com/v1/tax/registrations?limit=100" -u "$STRIPE_API_KEY:"
+```
+
+- `tax/settings.status == "active"` → Tax is on. `defaults.tax_behavior = inferred_by_currency`, origin (`head_office.address.country`) = `EE`.
+- `tax/registrations.data[]`: `country`, `status`, `country_options.<cc>.type`. **EU coverage is one OSS registration, NOT per-country**:
+  - `EE` / type `oss_union` → **covers all 27 EU member states** (One-Stop-Shop).
+  - `EE` / type `standard` → Estonia domestic VAT.
+
+So live + sandbox already collect EU VAT — no per-country setup needed. A `€0.00` tax line at checkout is the **pre-address stage** (Stripe computes once the buyer's country is known), not a missing registration.
+
+### Preview VAT for a buyer — `POST /v1/tax/calculations` (no charge created)
+
+```bash
+curl -sS https://api.stripe.com/v1/tax/calculations -u "$STRIPE_API_KEY:" \
+  --data-urlencode "currency=eur" \
+  --data-urlencode "line_items[0][amount]=432" \
+  --data-urlencode "line_items[0][tax_behavior]=exclusive" \
+  --data-urlencode "line_items[0][tax_code]=txcd_10103001" \
+  --data-urlencode "customer_details[address][country]=DE" \
+  --data-urlencode "customer_details[address_source]=billing"
+```
+
+Returns `amount_total`, `tax_amount_inclusive`, `tax_amount_exclusive`, `tax_breakdown[].tax_rate_details.percentage_decimal`.
+
+Pollen packs are **tax-exclusive** in the EUR checkout branch. Deploying that branch enables native EUR checkout for `EU_CORE`; reverting/redeploying disables it. The EUR pack line amount is USD pack value ÷ ECB rate, and Stripe Tax adds VAT on top for registered jurisdictions. For example, a €4.32 exclusive line item in DE adds roughly €0.82 VAT (19%), so `amount_total` changes by country. Pollen credited is still the USD pack amount (5 Pollen for the 5-Pollen pack), never the EUR total.
+
+Auto-top-up uses the same rule: the invoice item amount is the USD-to-EUR pack conversion, `tax_behavior=exclusive`, and the DB `charged_amount_cents` is updated after invoice finalization to Stripe's `invoice.amount_due` including automatic tax. Webhook verification compares `invoice.amount_paid` to that finalized total, while crediting the canonical `amount_usd` Pollen amount.
+
 ## Stripe CLI vs raw curl
 
 The `stripe` CLI wraps the REST API with nicer config (`~/.config/stripe/config.toml`) but **defaults to TEST mode**:

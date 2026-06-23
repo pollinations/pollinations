@@ -35,8 +35,11 @@ const COHORT_BY_COUNTRY: Record<string, CohortId> = {
     EE: "EU_CORE",
     LV: "EU_CORE",
     LT: "EU_CORE",
-    IS: "EU_CORE",
-    LI: "EU_CORE",
+    FI: "EU_CORE", // euro since 1999
+    HR: "EU_CORE", // euro since 2023
+    BG: "EU_CORE", // euro since 2026-01-01
+    // IS (Iceland) uses ISK — not eurozone; falls through to USD default
+    // LI (Liechtenstein) uses CHF — not eurozone; falls through to USD default
 
     IN: "INDIA",
     GB: "UK",
@@ -47,4 +50,29 @@ export function getCohortFromCountry(
 ): CohortId {
     if (!country) return "USD";
     return COHORT_BY_COUNTRY[country.toUpperCase()] ?? "USD";
+}
+
+/**
+ * Buyer country for checkout currency routing. CloudFront is the outermost
+ * proxy, so CF-IPCountry on the Worker reflects CloudFront's edge POP, not the
+ * buyer — CloudFront-Viewer-Country carries the real viewer country and wins.
+ * Falls back to cf-ipcountry for direct Cloudflare hits (local dev, no
+ * CloudFront in front). Both are ISO 3166-1 alpha-2; getCohortFromCountry
+ * upper-cases and null-handles, so no normalization is needed here.
+ */
+export function getCheckoutCountry(c: {
+    req: { header: (name: string) => string | undefined };
+}): string | undefined {
+    return (
+        c.req.header("cloudfront-viewer-country") ??
+        c.req.header("cf-ipcountry")
+    );
+}
+
+/**
+ * Checkout integration currency for a cohort. EU_CORE settles natively in EUR;
+ * every other cohort stays USD (+ Adaptive Pricing presentment).
+ */
+export function checkoutCurrencyForCohort(cohort: CohortId): "eur" | "usd" {
+    return cohort === "EU_CORE" ? "eur" : "usd";
 }

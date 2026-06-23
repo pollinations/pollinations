@@ -22,6 +22,10 @@ import {
     useEffect,
     useState,
 } from "react";
+import {
+    formatPaymentMethodLabel,
+    type PaymentMethodSummary,
+} from "./format-payment-method.ts";
 import { PollenPackSlider } from "./pollen-pack-controls.tsx";
 
 export type AutoTopUpIssue =
@@ -43,11 +47,7 @@ export type BillingState = {
         packAmountUsd: number;
         lastIssue: AutoTopUpIssue | null;
     };
-    paymentMethod: {
-        hasDefault: boolean;
-        brand: string | null;
-        last4: string | null;
-    };
+    paymentMethod: PaymentMethodSummary;
     billingDetails: {
         name: string | null;
         email: string | null;
@@ -536,10 +536,7 @@ const ErrorNotice: FC<{ children: ReactNode }> = ({ children }) => (
 
 function formatPaymentMethod(billingState: BillingState | null): string {
     if (!billingState) return "Unavailable";
-    const { paymentMethod } = billingState;
-    if (!paymentMethod.hasDefault) return "None";
-    const brand = paymentMethod.brand ?? "Card";
-    return paymentMethod.last4 ? `${brand} ****${paymentMethod.last4}` : brand;
+    return formatPaymentMethodLabel(billingState.paymentMethod);
 }
 
 function normalizePackAmount(value: number | null | undefined): number {

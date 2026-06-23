@@ -1,0 +1,31 @@
+{
+  "date": "2026-06-22",
+  "period_start": "2026-06-22",
+  "period_end": "2026-06-22",
+  "title": "ElevenLabs integration gets SFX, Music v2, and 40% cheaper TTS",
+  "summary": "A massive day for audio generation: Stable Audio 2.5, ElevenLabs SFX, reference-audio conditioning, and 40% cheaper TTS.\n\nA massive expansion of our ElevenLabs audio capabilities. You can now generate sound effects via the `eleven-sfx` model, use 29 languages with Multilingual v2, and guide music generation with reference audio on `music_v2`. We also bumped the TTS input cap to 10,000 characters and dropped pricing by ~40% to pass at-cost savings directly to users.\n\nAdded support for Stable Audio 2.5 via fal.ai. Developers can now generate custom WAV music tracks up to 190 seconds long by passing prompts, duration, and steps to the new endpoint. The frontend directory has also been updated with the official Stability AI branding to match.\n\nCleaned up the showcase backlog to welcome RoleChar and SpiritPet World to the community directory, while pruning a dead link.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 11931,
+      "date": "2026-06-22"
+    },
+    {
+      "number": 11946,
+      "date": "2026-06-22"
+    },
+    {
+      "number": 11948,
+      "date": "2026-06-22"
+    },
+    {
+      "number": 11949,
+      "date": "2026-06-22"
+    },
+    {
+      "number": 11950,
+      "date": "2026-06-22"
+    }
+  ],
+  "generated_at": "2026-06-23T07:10:38.665458+00:00"
+}

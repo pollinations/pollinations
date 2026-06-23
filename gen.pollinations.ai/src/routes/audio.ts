@@ -63,13 +63,13 @@ const CreateSpeechRequestSchema = z
                 "Output duration in seconds (elevenmusic/acestep 3-300; eleven-sfx 0.5-30)",
             example: 30,
         }),
-        seconds: z.number().min(1).max(190).optional().meta({
+        seconds: z.number().min(1).max(380).optional().meta({
             description:
-                "Audio duration in seconds for stable-audio-2.5, 1-190.",
+                "Audio duration in seconds for stable-audio-3-medium, 1-380.",
             example: 30,
         }),
-        steps: z.number().int().min(4).max(8).optional().meta({
-            description: "Sampling steps for stable-audio-2.5, 4-8.",
+        steps: z.number().int().min(1).max(100).optional().meta({
+            description: "Sampling steps for stable-audio-3-medium, 1-100.",
             example: 8,
         }),
         loop: z.boolean().optional().meta({
@@ -1248,10 +1248,11 @@ export async function generateAceStepMusic(opts: {
  * Callers normalize their inputs first (GET maps seed=-1 -> undefined since
  * only its schema permits the sentinel).
  */
-// fal synchronous inference endpoint. Stable Audio 2.5 generates in ~2s, so the
-// blocking `fal.run` route returns inline without needing the queue/poll API.
-const STABLE_AUDIO_25_ENDPOINT =
-    "https://fal.run/fal-ai/stable-audio-25/text-to-audio";
+// fal synchronous inference endpoint. Stable Audio 3 Medium generates quickly,
+// so the blocking `fal.run` route returns inline without needing the queue/poll
+// API.
+const STABLE_AUDIO_3_MEDIUM_ENDPOINT =
+    "https://fal.run/fal-ai/stable-audio-3/medium/text-to-audio";
 
 // fal returns the generated file as a URL (or {url}) on a fal.media CDN, not
 // inline bytes — we fetch it and stream the bytes back to the caller.
@@ -1260,7 +1261,7 @@ type FalAudioOutput = {
     seed?: number;
 };
 
-export async function generateStableAudio25(opts: {
+export async function generateStableAudio3Medium(opts: {
     prompt: string;
     seconds?: number;
     steps?: number;
@@ -1272,7 +1273,8 @@ export async function generateStableAudio25(opts: {
 
     if (!falKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
-            message: "Stable Audio 2.5 is not configured (missing FAL_KEY)",
+            message:
+                "Stable Audio 3 Medium is not configured (missing FAL_KEY)",
         });
     }
 
@@ -1282,24 +1284,24 @@ export async function generateStableAudio25(opts: {
         });
     }
 
-    const secondsTotal = Math.min(190, Math.max(1, seconds ?? 190));
+    const duration = Math.min(380, Math.max(1, seconds ?? 30));
     const input: Record<string, unknown> = {
         prompt,
-        seconds_total: secondsTotal,
+        duration,
     };
     if (steps !== undefined) input.num_inference_steps = steps;
     if (seed !== undefined) input.seed = seed;
 
     log.info(
-        "Stable Audio 2.5 request: chars={chars}, seconds_total={seconds}, steps={steps}",
+        "Stable Audio 3 Medium request: chars={chars}, duration={duration}, steps={steps}",
         {
             chars: prompt.length,
-            seconds: secondsTotal,
+            duration,
             steps: steps ?? "(default)",
         },
     );
 
-    const rawResponse = await fetch(STABLE_AUDIO_25_ENDPOINT, {
+    const rawResponse = await fetch(STABLE_AUDIO_3_MEDIUM_ENDPOINT, {
         method: "POST",
         headers: {
             // fal uses `Authorization: Key <id:secret>`, NOT `Bearer`.
@@ -1310,14 +1312,14 @@ export async function generateStableAudio25(opts: {
     });
     const response = await ensureUpstreamOk(
         rawResponse,
-        STABLE_AUDIO_25_ENDPOINT,
+        STABLE_AUDIO_3_MEDIUM_ENDPOINT,
     );
     const result = (await response.json()) as FalAudioOutput;
     const audioUrl =
         typeof result.audio === "string" ? result.audio : result.audio?.url;
     if (!audioUrl) {
         throw new UpstreamError(502 as ContentfulStatusCode, {
-            message: "Stable Audio 2.5 returned no audio URL",
+            message: "Stable Audio 3 Medium returned no audio URL",
         });
     }
 
@@ -1326,19 +1328,19 @@ export async function generateStableAudio25(opts: {
         audioUrl,
     );
     const audioBuffer = await fileResponse.arrayBuffer();
-    // fal SA2.5 always outputs WAV, but its CDN serves the file as
+    // fal SA3 Medium defaults to MP3 output, but its CDN serves the file as
     // application/octet-stream — only trust the header when it's a real audio/*
-    // type, otherwise label it audio/wav so clients play it correctly.
+    // type, otherwise label it audio/mpeg so clients play it correctly.
     const headerContentType = fileResponse.headers.get("content-type");
     const contentType = headerContentType?.startsWith("audio/")
         ? headerContentType
-        : "audio/wav";
+        : "audio/mpeg";
 
-    const usageHeaders = buildUsageHeaders("stable-audio-2.5", {
+    const usageHeaders = buildUsageHeaders("stable-audio-3-medium", {
         completionAudioTokens: 1,
     });
 
-    log.info("Stable Audio 2.5 success: {bytes} bytes", {
+    log.info("Stable Audio 3 Medium success: {bytes} bytes", {
         bytes: audioBuffer.byteLength,
     });
 
@@ -1436,10 +1438,10 @@ async function dispatchAudioGeneration(
         );
     }
 
-    if (c.var.model.resolved === "stable-audio-2.5") {
+    if (c.var.model.resolved === "stable-audio-3-medium") {
         return withSafetyHeaders(
             c,
-            await generateStableAudio25({
+            await generateStableAudio3Medium({
                 prompt: text,
                 seconds: seconds ?? duration,
                 steps,
@@ -1653,7 +1655,7 @@ export const audioRoutes = new Hono<Env>()
             description: [
                 "Generate speech or music from text. Compatible with the OpenAI TTS API for JSON requests.",
                 "",
-                "Set `model` to `elevenmusic`, `acestep`, or `stable-audio-2.5` to generate music. For reference-audio conditioning, send multipart/form-data with `reference_audio` plus `input`; for inpainting, pass an ElevenLabs `composition_plan`.",
+                "Set `model` to `elevenmusic`, `acestep`, or `stable-audio-3-medium` to generate music. For reference-audio conditioning, send multipart/form-data with `reference_audio` plus `input`; for inpainting, pass an ElevenLabs `composition_plan`.",
                 "",
                 `**Available voices:** ${ELEVENLABS_VOICES.join(", ")}`,
                 "",

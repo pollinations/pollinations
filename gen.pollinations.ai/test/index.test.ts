@@ -346,12 +346,12 @@ fixtureTest(
 );
 
 fixtureTest(
-    "routes stable-audio-2.5 requests through fal",
+    "routes stable-audio-3-medium requests through fal",
     async ({ paidApiKey }) => {
         const calls: string[] = [];
         const falEndpoint =
-            "https://fal.run/fal-ai/stable-audio-25/text-to-audio";
-        const falFileUrl = "https://v3.fal.media/files/test-stable-audio.wav";
+            "https://fal.run/fal-ai/stable-audio-3/medium/text-to-audio";
+        const falFileUrl = "https://v3.fal.media/files/test-stable-audio.mp3";
 
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
@@ -369,19 +369,19 @@ fixtureTest(
                         unknown
                     >;
                     expect(body.prompt).toBe("lofi rain loop");
-                    expect(body.seconds_total).toBe(12);
+                    expect(body.duration).toBe(12);
                     expect(body.num_inference_steps).toBe(6);
                     expect(body.seed).toBe(42);
 
                     return Response.json({
-                        audio: { url: falFileUrl, content_type: "audio/wav" },
+                        audio: { url: falFileUrl, content_type: "audio/mpeg" },
                         seed: 42,
                     });
                 }
 
                 if (request.url === falFileUrl) {
-                    return new Response(new Uint8Array([82, 73, 70, 70]), {
-                        headers: { "Content-Type": "audio/wav" },
+                    return new Response(new Uint8Array([73, 68, 51, 4]), {
+                        headers: { "Content-Type": "audio/mpeg" },
                     });
                 }
 
@@ -401,7 +401,7 @@ fixtureTest(
         const ctx = createExecutionContext();
         const response = await worker.fetch(
             new Request(
-                "https://staging.gen.pollinations.ai/audio/lofi%20rain%20loop?model=stable-audio-2.5&seconds=12&steps=6&seed=42",
+                "https://staging.gen.pollinations.ai/audio/lofi%20rain%20loop?model=stable-audio-3-medium&seconds=12&steps=6&seed=42",
                 {
                     headers: { Authorization: `Bearer ${paidApiKey}` },
                 },
@@ -414,8 +414,10 @@ fixtureTest(
         );
 
         expect(response.status).toBe(200);
-        expect(response.headers.get("content-type")).toBe("audio/wav");
-        expect(response.headers.get("x-model-used")).toBe("stable-audio-2.5");
+        expect(response.headers.get("content-type")).toBe("audio/mpeg");
+        expect(response.headers.get("x-model-used")).toBe(
+            "stable-audio-3-medium",
+        );
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
             "1",
         );
@@ -427,12 +429,12 @@ fixtureTest(
     },
 );
 
-it("lists stable-audio-2.5 in audio models", async () => {
+it("lists stable-audio-3-medium in audio models", async () => {
     const response = await fetchWorker("/audio/models");
 
     expect(response.status).toBe(200);
     const models = (await response.json()) as { name: string }[];
-    expect(models.some((model) => model.name === "stable-audio-2.5")).toBe(
+    expect(models.some((model) => model.name === "stable-audio-3-medium")).toBe(
         true,
     );
 });

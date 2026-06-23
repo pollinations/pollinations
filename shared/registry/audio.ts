@@ -260,23 +260,26 @@ export const AUDIO_SERVICES = {
         outputModalities: ["audio"],
         alpha: true,
     },
-    "stable-audio-2.5": {
-        aliases: ["stable-audio", "stability-audio"],
-        modelId: "stable-audio-2.5",
+    "stable-audio-3-medium": {
+        aliases: ["stable-audio", "stability-audio", "stable-audio-2.5"],
+        modelId: "stable-audio-3-medium",
         provider: "fal",
         brand: "Stability AI",
         category: "audio",
-        addedDate: new Date("2026-06-18").getTime(),
+        addedDate: new Date("2026-06-23").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            // fal fal-ai/stable-audio-25/text-to-audio: flat $0.20 per output
-            // audio file (verified via fal pricing/estimate API 2026-06-22).
-            completionAudioTokens: 0.2,
+            // Flat per-generation fee billed in $0.0001 units so each fal
+            // endpoint lands exactly (rates from fal model pages 2026-06-23):
+            //   text-to-audio  -> 376 units = $0.0376
+            //   audio-to-audio -> 417 units = $0.0417
+            // The handler picks the unit count from the request path (audio.ts).
+            completionAudioTokens: 0.0001,
         },
-        title: "Stable Audio 2.5",
+        title: "Stable Audio 3 Medium",
         description:
-            "Stable Audio 2.5 - Long-form 44.1 kHz stereo music and sound generation",
+            "Stable Audio 3 Medium - Long-form 44.1 kHz stereo music and sound generation",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         alpha: true,

@@ -771,7 +771,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "**Output formats:** mp3 (default), opus, aac, flac, wav, pcm",
                 "",
-                "**Music generation:** Set `model=elevenmusic`, `acestep`, or `stable-audio-2.5` to generate music instead of speech. `elevenmusic` supports `duration` (3-300 seconds) and `instrumental` mode; `stable-audio-2.5` supports `seconds` (1-190), `steps` (4-8), and `seed`. Use `POST /v1/audio/speech` with multipart `reference_audio` for style transfer, or `POST /v1/audio/music/upload` to register a source track for inpainting.",
+                "**Music generation:** Set `model=elevenmusic`, `acestep`, or `stable-audio-3-medium` to generate music instead of speech. `elevenmusic` supports `duration` (3-300 seconds) and `instrumental` mode; `stable-audio-3-medium` supports `seconds` (1-380), `steps` (1-100), and `seed`. Use `POST /v1/audio/speech` with multipart `reference_audio` for style transfer, or `POST /v1/audio/music/upload` to register a source track for inpainting.",
             ].join("\n"),
             responses: {
                 200: {
@@ -829,13 +829,14 @@ export const proxyRoutes = new Hono<Env>()
                             "Music duration in seconds, 3-300 (elevenmusic only)",
                         example: "30",
                     }),
-                seconds: z.coerce.number().min(1).max(190).optional().meta({
+                seconds: z.coerce.number().min(1).max(380).optional().meta({
                     description:
-                        "Audio duration in seconds for stable-audio-2.5, 1-190",
+                        "Audio duration in seconds for stable-audio-3-medium, 1-380",
                     example: "30",
                 }),
-                steps: z.coerce.number().int().min(4).max(8).optional().meta({
-                    description: "Sampling steps for stable-audio-2.5, 4-8",
+                steps: z.coerce.number().int().min(1).max(100).optional().meta({
+                    description:
+                        "Sampling steps for stable-audio-3-medium, 1-100",
                     example: "8",
                 }),
                 instrumental: z

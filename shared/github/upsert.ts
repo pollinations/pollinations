@@ -17,10 +17,57 @@ import { getTableConfig } from "drizzle-orm/sqlite-core";
 // D1 limits (not documented in-repo; from Cloudflare's published limits).
 const MAX_BOUND_PARAMS_PER_STATEMENT = 100;
 const MAX_STATEMENTS_PER_BATCH = 100;
+// SQLite rejects an over-long statement with SQLITE_TOOBIG. The inlined text of
+// a multi-row INSERT must stay well under D1's per-statement size limit, so we
+// cap each statement's estimated payload bytes in addition to its row count.
+// One large issue body (~57KB observed) means a row cap alone is not enough.
+const MAX_STATEMENT_BYTES = 80_000;
 
 function chunk<T>(arr: T[], size: number): T[][] {
     const out: T[][] = [];
     for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+    return out;
+}
+
+/** Rough byte size of a row's values (over-estimates the SQL text it becomes). */
+function rowBytes(row: Record<string, unknown>): number {
+    let n = 0;
+    for (const v of Object.values(row)) {
+        if (v == null) n += 4;
+        else if (typeof v === "string") n += v.length;
+        else if (v instanceof Date) n += 16;
+        else n += String(v).length;
+    }
+    return n;
+}
+
+/**
+ * Split rows into chunks bounded by BOTH a max row count and a max byte budget,
+ * so no single multi-row INSERT trips SQLITE_TOOBIG. A row larger than the byte
+ * budget on its own still goes in a chunk of size 1 (can't split a row).
+ */
+function chunkByRowsAndBytes<T extends Record<string, unknown>>(
+    rows: T[],
+    maxRows: number,
+    maxBytes: number,
+): T[][] {
+    const out: T[][] = [];
+    let current: T[] = [];
+    let bytes = 0;
+    for (const row of rows) {
+        const size = rowBytes(row);
+        if (
+            current.length > 0 &&
+            (current.length >= maxRows || bytes + size > maxBytes)
+        ) {
+            out.push(current);
+            current = [];
+            bytes = 0;
+        }
+        current.push(row);
+        bytes += size;
+    }
+    if (current.length > 0) out.push(current);
     return out;
 }
 
@@ -74,8 +121,14 @@ export async function chunkedUpsert(
         Math.floor(MAX_BOUND_PARAMS_PER_STATEMENT / columnsPerRow),
     );
 
-    // rows -> statements
-    const statements = chunk(rows, rowsPerStatement).map((rowChunk) =>
+    // rows -> statements, bounded by both the param-count row cap AND a byte
+    // budget (a single large text column can blow the statement-length limit
+    // long before the row cap is reached).
+    const statements = chunkByRowsAndBytes(
+        rows,
+        rowsPerStatement,
+        MAX_STATEMENT_BYTES,
+    ).map((rowChunk) =>
         db
             .insert(table)
             .values(rowChunk)

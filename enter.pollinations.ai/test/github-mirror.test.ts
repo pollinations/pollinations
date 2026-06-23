@@ -194,4 +194,33 @@ describe("chunkedUpsert", () => {
             .where(eq(schema.ghPrClosingIssues.prNumber, 8000));
         expect(survivors.map((e) => e.issueNumber)).toEqual([1]); // #2 reaped
     });
+
+    test("large bodies don't trip SQLITE_TOOBIG (byte-size chunking)", async () => {
+        const db = drizzle(env.DB, { schema });
+        // Reproduce the staging failure: several issues with large bodies. With
+        // row-count-only chunking, 8 of these in one INSERT exceeded SQLite's
+        // statement-length limit (SQLITE_TOOBIG). Byte-size chunking splits them.
+        const bigBody = "x".repeat(57_000); // ~ the largest real issue body
+        const rows = Array.from({ length: 12 }, (_, i) => ({
+            number: 7000 + i,
+            authorGithubId: 1,
+            authorLogin: "alice",
+            state: "open",
+            title: `big issue ${i}`,
+            url: `https://github.com/pollinations/pollinations/issues/${7000 + i}`,
+            body: bigBody,
+            labelsJson: "[]",
+            assigneeGithubId: null,
+            assigneeLogin: null,
+            githubUpdatedAt: null,
+        }));
+        // Must not throw, and must write every row.
+        const written = await chunkedUpsert(db, schema.ghIssues, rows);
+        expect(written).toBe(12);
+        const stored = await db
+            .select()
+            .from(schema.ghIssues)
+            .where(eq(schema.ghIssues.number, 7000));
+        expect(stored[0]?.body?.length).toBe(57_000);
+    });
 });

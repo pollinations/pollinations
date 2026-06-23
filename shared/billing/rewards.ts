@@ -15,8 +15,8 @@ export interface RecordRewardInput {
     idempotencyKey: string;
     userId: string;
     amount: number;
-    /** Which balance bucket to credit on claim. Defaults to "pack". */
-    bucket?: Bucket;
+    /** Which balance bucket to credit on claim. */
+    bucket: Bucket;
     /** Catalog id of the quest that was earned; null for one-off rewards. */
     questId?: string | null;
     /** Quest title, snapshotted so history renders it without a catalog lookup. */
@@ -67,7 +67,7 @@ export async function recordReward(
         idempotencyKey,
         userId,
         amount,
-        bucket = "pack",
+        bucket,
         questId = null,
         title,
         url = null,

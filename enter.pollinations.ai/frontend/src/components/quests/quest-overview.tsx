@@ -130,7 +130,6 @@ function formatRewardAmount(value: number | null): string {
 
 function questStatusAccent(status: QuestCardStatus): string {
     if (status === "claimed") return "var(--color-theme-text-muted)";
-    if (status === "claimable") return "var(--color-intent-success-text)";
     return "var(--color-intent-warning-text)";
 }
 

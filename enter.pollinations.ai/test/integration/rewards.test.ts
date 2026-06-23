@@ -119,6 +119,7 @@ describe("rewards", () => {
 
         const balance = await getUserBalance(db, userId);
         expect(balance.tierBalance).toBe(0.5);
+        expect(balance.packBalance).toBe(0);
         expect((await listRewards(db, userId))[0]?.claimedAt).toBeInstanceOf(
             Date,
         );
@@ -149,26 +150,6 @@ describe("rewards", () => {
         expect(balance.tierBalance).toBe(0);
     });
 
-    test("defaults to the pack bucket when bucket is omitted", async () => {
-        const db = drizzle(env.DB, { schema });
-        const userId = "reward-user-default";
-        await seedUser(db, userId);
-
-        const result = await recordReward(db, {
-            idempotencyKey: `default:${userId}`,
-            userId,
-            amount: 2,
-            title: "Default reward",
-        });
-        if (!result.rewardId) throw new Error("Expected reward id");
-
-        await claimReward(db, { rewardId: result.rewardId, userId });
-
-        const balance = await getUserBalance(db, userId);
-        expect(balance.packBalance).toBe(2);
-        expect(balance.tierBalance).toBe(0);
-    });
-
     test("rejects non-positive amounts", async () => {
         const db = drizzle(env.DB, { schema });
         const userId = "reward-user-bad";
@@ -179,6 +160,7 @@ describe("rewards", () => {
                 idempotencyKey: `bad:${userId}`,
                 userId,
                 amount: 0,
+                bucket: "tier",
                 title: "Bad reward",
             }),
         ).rejects.toThrow();
@@ -194,6 +176,7 @@ describe("rewards", () => {
                 idempotencyKey: `too-large:${userId}`,
                 userId,
                 amount: MAX_REWARD_AMOUNT + 1,
+                bucket: "tier",
                 title: "Too large",
             }),
         ).rejects.toThrow(String(MAX_REWARD_AMOUNT));

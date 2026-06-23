@@ -9,6 +9,7 @@ import { api } from "./api.ts";
 import type { Env } from "./env.ts";
 import { logger } from "./middleware/logger.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
+import { syncGithubMirror } from "./services/github-mirror.ts";
 import { runQuestEvaluator } from "./services/quest-evaluator.ts";
 import { runTierRefill } from "./services/tier-refill.ts";
 
@@ -94,14 +95,19 @@ export default {
         env: CloudflareBindings,
         ctx: ExecutionContext,
     ) {
-        // Isolate the two cron tasks: a failure in one must not skip the other.
-        // Both are awaited so a manual trigger reflects completion (and errors).
+        // Isolate the cron tasks: a failure in one must not skip the others.
+        // All are awaited so a manual trigger reflects completion (and errors).
+        // syncGithubMirror already fails soft internally (logs, never throws);
+        // the .catch here is defensive parity with the other two.
         await Promise.allSettled([
             runTierRefill(env, ctx).catch((error) => {
                 console.error("Tier refill failed:", error);
             }),
             runQuestEvaluator(env).catch((error) => {
                 console.error("Quest evaluator failed:", error);
+            }),
+            syncGithubMirror(env).catch((error) => {
+                console.error("GitHub mirror sync failed:", error);
             }),
         ]);
     },

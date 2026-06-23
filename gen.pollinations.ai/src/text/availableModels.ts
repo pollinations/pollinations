@@ -54,6 +54,11 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gpt-5.5"],
     },
     {
+        name: "mercury",
+        config: portkeyConfig["mercury-2"],
+        transform: stripReasoning,
+    },
+    {
         name: "qwen-coder",
         config: portkeyConfig["qwen3-coder-30b-a3b-instruct"],
         // OVHcloud Qwen3-Coder 400s on reasoning_effort (no reasoning mode).

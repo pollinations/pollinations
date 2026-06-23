@@ -48,16 +48,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-06-22** – **🎵 ElevenLabs Music v2** Upgraded the music integration to v2 and added reference-audio conditioning. You can now pass an audio track to guide the output style instead of just hoping for the best.
+- **2026-06-22** – **🎶 Stable Audio 2.5** Added text-to-music generation via fal.ai. Hit the `stable-audio-2.5` endpoint with your prompt to get up to 190 seconds of WAV output. Check the [API Docs](https://gen.pollinations.ai/docs).
+- **2026-06-22** – **🔊 Sound Effects & Polyglots** Added `eleven-sfx` for generating sound effects and `eleven-multilingual-v2` for 29 languages. We also bumped the TTS input cap to 10,000 characters for those really long monologues.
+- **2026-06-22** – **🌸 Community Showcase Updates** RoleChar and SpiritPet World have been added to the ecosystem. [View repos](https://pollinations.ai) <!-- app -->
 - **2026-06-17** – **📊 Transaction History** You can now see exactly where your Pollen is going. Check your last 5 requests directly on the Pollen page, or browse the full history on your [Dashboard](https://enter.pollinations.ai).
 - **2026-06-17** – **🚀 Siriusly Fast Elevators** The Sirius Cybernetics Elevator Challenge app now defaults to Mistral, dropping response times from 10s to 1.2s. Even the API errors are now delivered in-character. [Try it](https://pollinations.ai) <!-- app -->
 - **2026-06-17** – **⚡ Faster Image Generation** We rewired the [image generation](https://gen.pollinations.ai/image/models) load balancer to favor GPUs with the lowest recent latency. More traffic goes to the 4090s, meaning fewer timeouts and faster pixels.
 - **2026-06-17** – **🧠 GLM-5.2 Upgrade** The `glm` model slug now points to Z.ai's GLM-5.2, expanding the context window from 198k to a massive 1 million tokens.
 - **2026-06-17** – **✨ Auto-Upgrading Model Slugs** Clean slugs like `openai-large` and `claude-large` now automatically resolve to the latest versions (like GPT-5.5 and Opus 4.8). If you need the old stuff, versioned slugs still work. Check the [available models](https://gen.pollinations.ai/v1/models).
 - **2026-06-16** – **🤖 Unkillable Gemini** Added automatic provider failover for `gemini-3-flash`. If the primary endpoint throws an error, requests instantly reroute to GCP Vertex. Same model, fewer headaches. Check the [available models](https://gen.pollinations.ai/v1/models).
-- **2026-06-16** – **🔗 Localhost by Default** New app keys now pre-fill `http://localhost/callback` for OAuth redirects. Because manually typing localhost every time you spin up a new project is a waste of keystrokes. [Manage keys](https://enter.pollinations.ai).
-- **2026-06-16** – **🎨 Back to the Terminal** The Sirius Cybernetics Elevator Challenge app dropped its heavy background animations and returned to a pure, 170kB ASCII terminal aesthetic. Sometimes less really is more.
-- **2026-06-15** – **🎨 Ideogram 4.0 Models** Three new Ideogram 4.0 image models (`ideogram-v4-turbo`, `ideogram-v4-balanced`, `ideogram-v4-quality`) are now available via the [Unified API](https://gen.pollinations.ai).
-- **2026-06-15** – **🔗 Seamless App Embedding** The [React SDK](https://react.pollinations.ai) now includes an `EmbedBridge` to automatically handle host handshakes, API key sharing, and theme syncing for apps embedded in trusted hosts.
 ---
 
 ## 🌱 Introduction

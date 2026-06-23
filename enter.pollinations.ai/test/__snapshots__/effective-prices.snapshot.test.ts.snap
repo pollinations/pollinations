@@ -560,6 +560,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionVideoSeconds": 0.005,
     },
   },
+  "mercury": {
+    "cost": {
+      "completionTextTokens": 0.00000075,
+      "promptCachedTokens": 0.000000025,
+      "promptTextTokens": 0.00000025,
+    },
+    "price": {
+      "completionTextTokens": 0.00000075,
+      "promptCachedTokens": 0.000000025,
+      "promptTextTokens": 0.00000025,
+    },
+  },
   "midijourney": {
     "cost": {
       "completionTextTokens": 0.0000045,
@@ -1024,12 +1036,12 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.035,
     },
   },
-  "stable-audio-2.5": {
+  "stable-audio-3-medium": {
     "cost": {
-      "completionAudioTokens": 0.2,
+      "completionAudioTokens": 0.0001,
     },
     "price": {
-      "completionAudioTokens": 0.2,
+      "completionAudioTokens": 0.0001,
     },
   },
   "step-3.5-flash": {

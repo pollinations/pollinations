@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "a0105c05-8f19-4c2b-b088-c067d730f958",
-  "prevId": "317c099f-1214-4f19-9b28-85e140ad29a1",
+  "id": "d8b1935e-0e72-44af-b164-45b3d14c2a9a",
+  "prevId": "a0105c05-8f19-4c2b-b088-c067d730f958",
   "tables": {
     "account": {
       "name": "account",
@@ -515,6 +515,27 @@
           "notNull": false,
           "autoincrement": false
         },
+        "assignees_json": {
+          "name": "assignees_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "github_created_at": {
+          "name": "github_created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "github_closed_at": {
+          "name": "github_closed_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "github_updated_at": {
           "name": "github_updated_at",
           "type": "integer",
@@ -663,6 +684,20 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false
+        },
+        "github_created_at": {
+          "name": "github_created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "github_closed_at": {
+          "name": "github_closed_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         },
         "github_updated_at": {

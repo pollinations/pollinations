@@ -105,6 +105,16 @@ export function createOpenRouterModelConfig(
     );
 }
 
+export function createInceptionModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://api.inceptionlabs.ai/v1",
+        process.env.INCEPTION_API_KEY,
+        overrides,
+    );
+}
+
 export function createPerplexityModelConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {

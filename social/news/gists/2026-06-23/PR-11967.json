@@ -1,0 +1,35 @@
+{
+  "pr_number": 11967,
+  "title": "fix: model pricing card — flat-rate /gen for Stable Audio + mobile cleanup",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11967",
+  "merged_at": "2026-06-23T19:35:22Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "Fixes the model pricing card and corrects how Stable Audio is priced/displayed.\n\n**Stable Audio pricing**\n- The pricing page showed `3.9/sec` for Stable Audio 3 Large — it's a flat per-generation fee, not per-second. The audio display was multiplying a flat per-token cost by a TTS chars/sec estimate.\n- New modality-agnostic flat-rate `/gen` badge (replaces `/img`); the icon shows image vs audio. Added a `SparklesIcon` for the legend.\n- Registry: Medium now prices base + audio-input surcharge (text `$0.0376` / audio-to-audio `$0.0417`); Large flat `$0.26` (26 credits — Stable Audio 3.0; 2.5 was 20). New `flatRate` flag distinguishes flat-fee music from per-character TTS (they share `completionAudioTokens`).\n- Handler bills whole units: 1 output, +1 input for audio-to-audio. **Billing amounts unchanged.**\n\n**Mobile pricing card**\n- Info tooltip moved into the expanded panel (was hard to tap); description shows there.\n- `NEW`/`ALPHA` chips moved to their own row below the modalities (fixes 3-line wrap).\n- Dropped the `ALPHA` badge from models that aren't alpha anymore (kept only on LTX-2).\n\n**Verified**\n- gen worker tests (both models, both modes) + live Medium generation; ledger decrements `0.0376` / `0.0417` / `0.26`.\n- `/models` exposes `flat_rate` + flat prices; typecheck + biome clean.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The price is right",
+    "blurb": "We've polished up the model pricing cards to properly show flat-rate fees for Stable Audio, plus some mobile UI tweaks to make browsing models a breeze.",
+    "summary": "Updated the model pricing cards to display a flat-rate '/gen' badge for Stable Audio models instead of a per-second estimate, alongside mobile UI improvements for tooltips and status chips.",
+    "impact": "Users will now see accurate flat-rate pricing for Stable Audio generations, and browsing the model catalog on mobile is much smoother.",
+    "keywords": [
+      "pricing",
+      "ui",
+      "mobile",
+      "stable-audio",
+      "frontend"
+    ],
+    "visual_concept": "Polly the bee organizing a neat, glowing menu board with a music note and a shiny price tag. A chunky retro robot companion holds a small pixelated smartphone showing a clean layout.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot organizing a neat, glowing menu board with a music note and a shiny price tag. A chunky retro robot companion holds a small pixelated smartphone showing a clean layout. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-23/PR-11967.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot organizing a neat, glowing menu board with a music note and a shiny price tag. A chunky retro robot companion holds a small pixelated smartphone showing a clean layout. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites."
+  },
+  "generated_at": "2026-06-23T19:36:31.224026+00:00"
+}

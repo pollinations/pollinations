@@ -15,7 +15,6 @@ import {
  * source: a completed quest issue with a linked PR number.
  */
 
-const QUEST_ICON_ID = "github" as const;
 const BUILD_CATEGORY = "build" as const;
 const CONTRIBUTE_CATEGORY = "contribute" as const;
 
@@ -23,7 +22,6 @@ const firstMergedPrQuest: QuestDefinition = {
     id: "github:first_merged_pr",
     title: "First merged PR",
     description: "Get a pull request merged into Pollinations.",
-    iconId: QUEST_ICON_ID,
     category: BUILD_CATEGORY,
     scope: "perUser",
     rewardAmount: 5,
@@ -56,7 +54,6 @@ function toIssueQuestDefinition(
         id: `github:issue:${issue.issueNumber}`,
         title: issue.title,
         description: issue.description ?? "",
-        iconId: QUEST_ICON_ID,
         category: CONTRIBUTE_CATEGORY,
         scope: "once",
         rewardAmount: issue.rewardAmount ?? 0,

@@ -56,7 +56,7 @@ async function getOnlyUser() {
 }
 
 test("GET /api/quests/catalog returns product and GitHub issue quests", async () => {
-    await env.KV.delete("quests:catalog:v10");
+    await env.KV.delete("quests:catalog:v11");
     const staticCardCount = await countStaticQuestCards();
     const db = drizzle(env.DB, { schema });
     await db.insert(schema.githubQuestIssues).values([
@@ -123,7 +123,6 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
             id: string;
             title: string;
             description: string;
-            iconId: string;
             category: string;
             availability: string;
             rewardAmount: number | null;
@@ -137,7 +136,6 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
         payload.quests.find((quest) => quest.id === "onboarding:first_api_key"),
     ).toMatchObject({
         title: "Mint your first key",
-        iconId: "key",
         category: "setup",
         availability: "available",
         rewardAmount: 1,
@@ -147,7 +145,6 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
         payload.quests.find((quest) => quest.id === "setup:byop_login"),
     ).toMatchObject({
         title: "Login with BYOP (end user)",
-        iconId: "key",
         category: "setup",
         availability: "available",
         rewardAmount: 1,
@@ -157,7 +154,6 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
         payload.quests.find((quest) => quest.id === "spend:first_top_up"),
     ).toMatchObject({
         title: "First pollen purchase",
-        iconId: "card",
         category: "grow",
         availability: "available",
         rewardAmount: 5,
@@ -169,7 +165,6 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
         ),
     ).toMatchObject({
         title: "First app listed on Pollinations",
-        iconId: "app",
         category: "setup",
         availability: "available",
         rewardAmount: 5,
@@ -181,7 +176,6 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
         ),
     ).toMatchObject({
         title: "First BYOP external user connected",
-        iconId: "app",
         category: "grow",
         availability: "available",
         rewardAmount: 3,
@@ -191,7 +185,6 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
         payload.quests.find((quest) => quest.id === "github:first_merged_pr"),
     ).toMatchObject({
         title: "First merged PR",
-        iconId: "github",
         category: "build",
         availability: "available",
         rewardAmount: 5,
@@ -202,7 +195,6 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
         payload.quests.find((quest) => quest.id === "github:issue:321"),
     ).toMatchObject({
         title: "Add a demo app",
-        iconId: "github",
         category: "contribute",
         availability: "available",
         rewardAmount: 15,
@@ -215,7 +207,6 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
         payload.quests.find((quest) => quest.id === "github:issue:322"),
     ).toMatchObject({
         title: "Fix a model config",
-        iconId: "github",
         category: "contribute",
         availability: "completed",
         rewardAmount: 20,
@@ -225,7 +216,6 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
         payload.quests.find((quest) => quest.id === "github:issue:323"),
     ).toMatchObject({
         title: "Malformed reward heading",
-        iconId: "github",
         category: "contribute",
         availability: "available",
         rewardAmount: 0,
@@ -234,13 +224,14 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
     // The uniform card shape dropped the old board-state fields.
     for (const quest of payload.quests) {
         expect(quest).not.toHaveProperty("kind");
+        expect(quest).not.toHaveProperty("iconId");
         expect(quest).not.toHaveProperty("assignees");
         expect(quest).not.toHaveProperty("sortKey");
     }
 });
 
 test("GET /api/quests/catalog returns product quests with no materialized GitHub issues", async () => {
-    await env.KV.delete("quests:catalog:v10");
+    await env.KV.delete("quests:catalog:v11");
     const staticCardCount = await countStaticQuestCards();
 
     const response = await SELF.fetch(
@@ -251,7 +242,6 @@ test("GET /api/quests/catalog returns product quests with no materialized GitHub
     const payload = (await response.json()) as {
         quests: {
             id: string;
-            iconId: string;
             category: string;
             availability: string;
         }[];
@@ -263,7 +253,6 @@ test("GET /api/quests/catalog returns product quests with no materialized GitHub
             (quest) => quest.id === "onboarding:established_github_account",
         ),
     ).toMatchObject({
-        iconId: "github",
         category: "build",
         availability: "available",
     });
@@ -273,7 +262,6 @@ test("GET /api/quests/catalog returns product quests with no materialized GitHub
     expect(
         payload.quests.find((quest) => quest.id === "easteregg:elixpo_intern"),
     ).toMatchObject({
-        iconId: "sprout",
         category: "easteregg",
         availability: "completed",
     });

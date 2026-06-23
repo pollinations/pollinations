@@ -17,7 +17,6 @@ const elixpoInternQuest: QuestDefinition = {
     id: "easteregg:elixpo_intern",
     title: "Developer Relations Intern, unlocked 🌻",
     description: "It's official, elixpo — welcome to the Pollinations crew.",
-    iconId: "sprout",
     category: "easteregg",
     scope: "perUser",
     rewardAmount: 100,

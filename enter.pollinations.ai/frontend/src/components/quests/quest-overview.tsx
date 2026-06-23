@@ -236,7 +236,11 @@ function SectionHeader({
             <Heading as="h2" size="section">
                 {category.label}
             </Heading>
-            <Chip intent="neutral" size="sm" className="tabular-nums">
+            <Chip
+                intent="neutral"
+                size="sm"
+                className="polli-wallet-chip-tier tabular-nums"
+            >
                 {done} / {total}
             </Chip>
         </div>

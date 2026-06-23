@@ -540,6 +540,29 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
             contribute: [],
         };
 
+        // TODO(quests): the "Dev" lane has no backend data source yet — the
+        // backend's quest.category only emits plant/grow/community. Until a
+        // real Dev category ships, seed it with OBVIOUSLY-FAKE placeholder
+        // cards so the lane renders during design. Delete this whole block the
+        // moment real Dev quests exist.
+        byCat.dev.push(
+            {
+                key: "dummy:dev:1",
+                title: "🚧 DUMMY — Dev quest placeholder",
+                description: "Fake card. No backend data wired yet.",
+                reward: 0,
+                completed: false,
+            },
+            {
+                key: "dummy:dev:2",
+                title: "🚧 DUMMY — another fake Dev quest",
+                description: "Placeholder only — remove before launch.",
+                reward: 0,
+                completed: true,
+                earnedAmount: 0,
+            },
+        );
+
         for (const quest of state.catalog) {
             if (quest.id.startsWith("easteregg:")) continue;
             const key = categoryKeyFor(quest.category);

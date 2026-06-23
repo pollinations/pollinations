@@ -1,4 +1,5 @@
 import {
+    Button,
     CheckIcon,
     Chip,
     ClockIcon,
@@ -154,8 +155,8 @@ type QuestCard = {
 
 // ── Presentational primitives (composed from @pollinations/ui) ───────────────
 
-// Two top-line metrics. The icon is a bare identity glyph (no badge, no status
-// fill) in the soft theme tone, so the bold value stays the focal point.
+// Two top-line metrics — positive achievement stats, so the icon + label wear
+// the success (green) accent; the bold value stays neutral as the focal point.
 function SummaryMetricCard({
     icon: Icon,
     label,
@@ -167,8 +168,13 @@ function SummaryMetricCard({
 }) {
     return (
         <Surface variant="card-themed" className="flex items-center gap-4">
-            <Icon className="h-10 w-10 shrink-0 text-theme-text-soft" />
-            <StatCard className="min-w-0 flex-1" label={label} value={value} />
+            <Icon className="h-10 w-10 shrink-0 text-intent-success-text" />
+            <StatCard
+                className="min-w-0 flex-1"
+                label={label}
+                labelClassName="text-intent-success-text"
+                value={value}
+            />
         </Surface>
     );
 }
@@ -182,17 +188,12 @@ function SectionHeader({
     done: number;
     total: number;
 }) {
-    const isComplete = done === total;
     return (
         <div className="flex items-center justify-between gap-4 px-1">
             <Heading as="h2" size="section">
                 {category.label}
             </Heading>
-            <Chip
-                intent={isComplete ? "success" : "warning"}
-                size="sm"
-                className="tabular-nums"
-            >
+            <Chip intent="neutral" size="sm" className="tabular-nums">
                 {done} / {total}
             </Chip>
         </div>
@@ -211,10 +212,9 @@ function SectionFooter({ category }: { category: CategoryMeta }) {
     );
 }
 
-// Leading marker for a quest row. Open rows wear the section icon in amber;
-// completed rows become the check mark in the success tint.
-// via currentColor. Set inline so it beats the icon's own polli:-prefixed
-// classes without a specificity fight.
+// Leading marker for a quest row. Completed earns the success (green) tint with
+// a check; open is a neutral square with its section icon. The icon rides
+// currentColor from the square's text tone.
 function QuestMarker({
     icon: Icon,
     completed,
@@ -226,15 +226,11 @@ function QuestMarker({
     return (
         <span
             aria-hidden="true"
-            className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] transition-colors"
-            style={{
-                backgroundColor: completed
-                    ? "var(--color-intent-success-bg-light)"
-                    : "var(--color-intent-warning-bg-light)",
-                color: completed
-                    ? "var(--color-intent-success-text)"
-                    : "var(--color-intent-warning-text)",
-            }}
+            className={`flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] ${
+                completed
+                    ? "bg-intent-success-bg-light text-intent-success-text"
+                    : "bg-ink-900/80 text-ink-100"
+            }`}
         >
             <MarkerIcon className="h-5 w-5" />
         </span>
@@ -250,7 +246,7 @@ function QuestRow({ card, icon }: { card: QuestCard; icon: IconComponent }) {
     const rewardLabel =
         rewardAmount == null
             ? "Reward TBD"
-            : `${card.completed ? "+" : ""}${formatGrantAmount(rewardAmount)} pollen`;
+            : `${formatGrantAmount(rewardAmount)} pollen`;
 
     return (
         <Surface variant="card" className="flex items-center gap-4">
@@ -282,11 +278,12 @@ function QuestRow({ card, icon }: { card: QuestCard; icon: IconComponent }) {
                 )}
             </div>
             <div className="flex shrink-0 items-center gap-2.5">
-                <Chip
-                    intent={card.completed ? "neutral" : "warning"}
-                    size="sm"
-                    className="gap-1 tabular-nums"
-                >
+                {card.completed && (
+                    // Reward earned but not yet claimed — opens the claim flow
+                    // (handler wiring lands in a follow-up).
+                    <Button type="button">Claim</Button>
+                )}
+                <Chip intent="neutral" size="sm" className="gap-1 tabular-nums">
                     <WalletKindIcon kind={rewardIcon} />
                     {rewardLabel}
                 </Chip>

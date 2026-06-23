@@ -20,15 +20,24 @@ You build the app. We handle the models and the billing.
 
 ## 🛒 How do I get Pollen?
 
-There are **three ways**:
+There are **four ways**:
 
 1. 💳 **Buy** — Pay by card, Pollen goes to your **paid balance**. Expires after 12 months of account inactivity. *(Want other payment options? [Vote here](https://github.com/pollinations/pollinations/issues/4826)!)*
 2. 🌱 **Tier grants** — Free Pollen that refills every hour into your **tier balance**. Contribute to unlock bigger hourly grants.
-3. 🌻 **Dev earnings** — Flip on Developer earnings on an App Key to take +25% on top of model price on user traffic.
+3. 🎯 **Quests** — Complete tasks from the Quests dashboard. Contribute quests pay a fixed reward when your assigned GitHub issue is merged.
+4. 🌻 **Dev earnings** — Flip on Developer earnings on an App Key to take +25% on top of model price on user traffic.
 
 ## 🆓 Can I try it for free?
 
 Free Pollen on every account, refilled hourly. No credit card to register. Contribute on GitHub or ship an app and the hourly grant gets bigger.
+
+## 🎯 How do Quests work?
+
+Quests are ways to earn Pollen by completing useful actions around Pollinations, like setting up your account, growing an app, or contributing code.
+
+The Quests dashboard shows what is available to you and what you have completed. Open Contribute quests are GitHub issues with fixed Pollen rewards. If you want to work on one, open the linked issue and comment that you are interested — the issue itself includes the full workflow.
+
+When a quest is completed, the reward is credited automatically. Completion can be verified from your Pollinations account activity, request usage milestones, app-directory approvals, and linked or public GitHub activity.
 
 ## 💳 What payment methods do you accept?
 
@@ -110,7 +119,7 @@ Text, images, audio, and video — one API.
 
 ## 🚀 What's coming?
 
-- 🎯 **Pollen Quest** — earn Pollen through achievements, milestones, and closing issues.
+- 🎯 **More quests** — more achievements, milestones, and GitHub issue rewards.
 - 🔑 **Pollinations Login** — OAuth sign-in for your users, with token handling handled for you.
 - 🏠 **App Hosting** — run your app on our infra, no separate hosting bill.
 - 🗺️ **App Discovery** — a marketplace for users to find your app.

@@ -1,6 +1,5 @@
 name: Community Quest
 description: Define a maintainer-owned community quest with a fixed Pollen reward
-title: "[🎯 QUEST] "
 body:
   - type: textarea
     id: process

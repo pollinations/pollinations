@@ -106,6 +106,27 @@ export function GenApiIcon(props: IconProps) {
     );
 }
 
+export function GitBranchIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <line x1="6" y1="3" x2="6" y2="15" />
+            <circle cx="18" cy="6" r="3" />
+            <circle cx="6" cy="18" r="3" />
+            <path d="M18 9a9 9 0 0 1-9 9" />
+        </svg>
+    );
+}
+
+export function GraduationCapIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M21.42 10.92a1 1 0 0 0-.02-1.84L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.83l8.57 3.91a2 2 0 0 0 1.66 0z" />
+            <path d="M22 10v6" />
+            <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" />
+        </svg>
+    );
+}
+
 export function GitHubIcon(props: IconProps) {
     return (
         <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
@@ -196,6 +217,16 @@ export function TerminalIcon(props: IconProps) {
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
             <polyline points="4 8 8 12 4 16" />
             <line x1="12" y1="20" x2="20" y2="20" />
+        </svg>
+    );
+}
+
+export function TargetIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <circle cx="12" cy="12" r="9" />
+            <circle cx="12" cy="12" r="5" />
+            <circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none" />
         </svg>
     );
 }
@@ -304,6 +335,17 @@ export function ReasoningIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
             <path d="M9 18h6M10 22h4M15.1 14c.2-1 .6-1.7 1.4-2.5A4.6 4.6 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.8.8 1.2 1.5 1.4 2.5" />
+        </svg>
+    );
+}
+
+export function RocketIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
+            <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
+            <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" />
+            <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
         </svg>
     );
 }

@@ -1,6 +1,6 @@
 # Terms of Service
 
-**Updated: 2026-05-11**
+**Updated: 2026-06-22**
 
 _2026-05-11 — Wallet now expires after 12 months of account inactivity. Effective 2026-06-01; the inactivity clock starts on that date for all existing balances._
 
@@ -32,6 +32,7 @@ Features, plans, or pricing labeled "beta" or "preview" may be modified, suspend
 - Tier structures and associated benefits (for example Pollen allocations and daily/hourly limits)
 - Model availability, capabilities, and per-model pricing
 - Developer-earnings rates and markup percentages
+- Quest availability, eligibility criteria, reward amounts, and payout timing
 - Usage limits, quotas, and rate limits
 - Feature availability and functionality
 
@@ -60,11 +61,13 @@ Fees are per plan/order/invoice; currency is by default USD.
 **Balances.** Your wallet may include:
 
 - **Tier balance:** free Pollen grants and developer earnings. Tier balance refills according to your tier and can be capped by tier rules.
-- **Paid balance:** purchased Pollen and developer earnings credited from paid-balance usage. Paid balance does not automatically refill.
+- **Paid balance:** purchased Pollen, non-refill rewards, and developer earnings credited from paid-balance usage. Paid balance does not automatically refill.
 
 **Wallet inactivity.** Effective **2026-06-01**, if your account remains inactive for 12 consecutive months, any remaining Pollen in your wallet (tier and paid balance) will expire. For balances held before that date, the inactivity clock starts on 2026-06-01, so every existing user gets a full 12-month window from the effective date. Signing in, making API requests, or purchasing Pollen counts as activity and resets the inactivity clock.
 
 **Request billing.** Pollen is consumed when API requests run. Regular models draw from tier balance first; paid-only models draw from paid balance only. We may refuse requests when the available balance can't cover them. If actual usage exceeds our estimate, the balance may briefly go negative and clears from future refills or top-ups.
+
+**Rewards.** We may offer quests, contribution rewards, promotional credits, referral credits, or manual credits. Eligibility may be verified from your Pollinations account activity, API usage metadata, billing events, app-directory records, linked GitHub profile/activity, and public GitHub issue/PR status. Rewards are credited only when our systems or maintainers verify completion. We may withhold, reverse, or adjust rewards for duplicate claims, mistaken payouts, abuse, fraud, failure to follow quest instructions, or other billing corrections. Rewards are Pollen and have no cash value.
 
 **Developer earnings.** App developers may enable developer earnings on their Publishable App Keys, in which case authorized requests include a markup that goes to the developer. The current rate and the user's share are shown before authorization.
 

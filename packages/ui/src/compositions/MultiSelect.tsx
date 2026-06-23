@@ -79,10 +79,10 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                         disabled
                         className={cn(
                             TRIGGER_BASE,
-                            "polli:cursor-not-allowed polli:bg-theme-bg-subtle polli:opacity-60",
+                            "polli:cursor-not-allowed polli:bg-theme-bg-active polli:opacity-50",
                         )}
                     >
-                        <span className="polli:flex-1 polli:truncate polli:text-left polli:text-theme-text-soft/60">
+                        <span className="polli:flex-1 polli:truncate polli:text-left polli:text-theme-text-strong">
                             {displayText}
                         </span>
                         <ChevronIcon

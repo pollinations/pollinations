@@ -41,7 +41,7 @@ export type CreateApiKey = {
     accountPermissions?: string[] | null;
     /** Allowed OAuth redirect URLs for publishable keys (RFC 8252 port-agnostic loopback) */
     redirectUris?: string[];
-    /** Enable BYOP developer earnings for publishable app keys */
+    /** Enable BYOP app earnings for publishable app keys */
     earningsEnabled?: boolean;
 };
 

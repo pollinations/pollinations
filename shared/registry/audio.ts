@@ -270,9 +270,12 @@ export const AUDIO_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            // fal fal-ai/stable-audio-3/medium/text-to-audio: flat $0.0376 per
-            // output audio file (verified via fal model page 2026-06-23).
-            completionAudioTokens: 0.0376,
+            // Flat per-generation fee billed in $0.0001 units so each fal
+            // endpoint lands exactly (rates from fal model pages 2026-06-23):
+            //   text-to-audio  -> 376 units = $0.0376
+            //   audio-to-audio -> 417 units = $0.0417
+            // The handler picks the unit count from the request path (audio.ts).
+            completionAudioTokens: 0.0001,
         },
         title: "Stable Audio 3 Medium",
         description:

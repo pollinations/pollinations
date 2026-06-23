@@ -30,6 +30,7 @@ import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { applySafety, withSafetyHeaders } from "@/middleware/safety.ts";
 import { track } from "@/middleware/track.ts";
+import { arrayBufferToBase64 } from "@/util.ts";
 import { requireGenerationAccess } from "@/utils/generation-access.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
 import { buildTranscriptionResponse } from "./transcription-response.ts";
@@ -869,20 +870,34 @@ function requireElevenMusicOptions(
         extractCompositionPlan?: boolean;
     },
 ): void {
-    if (
-        model === "elevenmusic" ||
-        (!opts.referenceAudio &&
-            opts.compositionPlan === undefined &&
-            opts.conditioningRef === undefined &&
-            !opts.storeForInpainting &&
-            !opts.extractCompositionPlan)
-    ) {
+    // elevenmusic supports every conditioning option.
+    if (model === "elevenmusic") return;
+
+    // ElevenLabs-only options (everything except a plain reference clip).
+    const usesElevenOnlyOptions =
+        opts.compositionPlan !== undefined ||
+        opts.conditioningRef !== undefined ||
+        opts.storeForInpainting === true ||
+        opts.extractCompositionPlan === true;
+
+    // stable-audio-3-medium accepts reference_audio (fal audio-to-audio) but
+    // not the ElevenLabs composition/conditioning options.
+    if (model === "stable-audio-3-medium") {
+        if (usesElevenOnlyOptions) {
+            throw new UpstreamError(400 as ContentfulStatusCode, {
+                message:
+                    "conditioning_ref, composition_plan, store_for_inpainting, and extract_composition_plan are only supported with model=elevenmusic.",
+            });
+        }
         return;
     }
 
+    // Any other model: none of these options are supported.
+    if (!opts.referenceAudio && !usesElevenOnlyOptions) return;
+
     throw new UpstreamError(400 as ContentfulStatusCode, {
         message:
-            "Reference audio, conditioning_ref, composition_plan, store_for_inpainting, and extract_composition_plan are only supported with model=elevenmusic.",
+            "reference_audio, conditioning_ref, composition_plan, store_for_inpainting, and extract_composition_plan are only supported with model=elevenmusic (stable-audio-3-medium also accepts reference_audio).",
     });
 }
 
@@ -975,6 +990,10 @@ async function parseSpeechRequest(c: AudioContext): Promise<
                     | "aac"
                     | "pcm") || "mp3",
             duration: parseOptionalNumber(formData.get("duration"), "duration"),
+            // stable-audio-3-medium controls (also used on the audio-to-audio
+            // multipart path, which is the only way to send reference_audio).
+            seconds: parseOptionalNumber(formData.get("seconds"), "seconds"),
+            steps: parseOptionalNumber(formData.get("steps"), "steps"),
             instrumental: parseOptionalBoolean(
                 formData.get("instrumental"),
                 "instrumental",
@@ -1253,6 +1272,15 @@ export async function generateAceStepMusic(opts: {
 // API.
 const STABLE_AUDIO_3_MEDIUM_ENDPOINT =
     "https://fal.run/fal-ai/stable-audio-3/medium/text-to-audio";
+// A reference clip switches fal to audio-to-audio (style transfer) — a separate
+// endpoint with its own flat fee.
+const STABLE_AUDIO_3_MEDIUM_A2A_ENDPOINT =
+    "https://fal.run/fal-ai/stable-audio-3/medium/audio-to-audio";
+
+// Flat per-generation fees encoded at $0.0001/unit (see registry cost block) so
+// each path bills fal's exact rate: text-to-audio $0.0376, audio-to-audio $0.0417.
+const SA3M_TEXT_TO_AUDIO_UNITS = 376;
+const SA3M_AUDIO_TO_AUDIO_UNITS = 417;
 
 // fal returns the generated file as a URL (or {url}) on a fal.media CDN, not
 // inline bytes — we fetch it and stream the bytes back to the caller.
@@ -1266,10 +1294,11 @@ export async function generateStableAudio3Medium(opts: {
     seconds?: number;
     steps?: number;
     seed?: number;
+    referenceAudio?: File;
     falKey?: string;
     log: Logger;
 }): Promise<Response> {
-    const { prompt, seconds, steps, seed, falKey, log } = opts;
+    const { prompt, seconds, steps, seed, referenceAudio, falKey, log } = opts;
 
     if (!falKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -1284,6 +1313,9 @@ export async function generateStableAudio3Medium(opts: {
         });
     }
 
+    // A reference clip switches fal from text-to-audio to audio-to-audio
+    // (style transfer) — a different endpoint, body field, and flat fee.
+    const isAudioToAudio = referenceAudio !== undefined;
     const duration = Math.min(380, Math.max(1, seconds ?? 30));
     const input: Record<string, unknown> = {
         prompt,
@@ -1291,17 +1323,29 @@ export async function generateStableAudio3Medium(opts: {
     };
     if (steps !== undefined) input.num_inference_steps = steps;
     if (seed !== undefined) input.seed = seed;
+    if (isAudioToAudio) {
+        // fal a2a takes the reference clip as a data-URI `audio_url`.
+        const mime = referenceAudio.type || "audio/wav";
+        input.audio_url = `data:${mime};base64,${arrayBufferToBase64(
+            await referenceAudio.arrayBuffer(),
+        )}`;
+    }
+
+    const endpoint = isAudioToAudio
+        ? STABLE_AUDIO_3_MEDIUM_A2A_ENDPOINT
+        : STABLE_AUDIO_3_MEDIUM_ENDPOINT;
 
     log.info(
-        "Stable Audio 3 Medium request: chars={chars}, duration={duration}, steps={steps}",
+        "Stable Audio 3 Medium {mode} request: chars={chars}, duration={duration}, steps={steps}",
         {
+            mode: isAudioToAudio ? "audio-to-audio" : "text-to-audio",
             chars: prompt.length,
             duration,
             steps: steps ?? "(default)",
         },
     );
 
-    const rawResponse = await fetch(STABLE_AUDIO_3_MEDIUM_ENDPOINT, {
+    const rawResponse = await fetch(endpoint, {
         method: "POST",
         headers: {
             // fal uses `Authorization: Key <id:secret>`, NOT `Bearer`.
@@ -1310,10 +1354,7 @@ export async function generateStableAudio3Medium(opts: {
         },
         body: JSON.stringify(input),
     });
-    const response = await ensureUpstreamOk(
-        rawResponse,
-        STABLE_AUDIO_3_MEDIUM_ENDPOINT,
-    );
+    const response = await ensureUpstreamOk(rawResponse, endpoint);
     const result = (await response.json()) as FalAudioOutput;
     const audioUrl =
         typeof result.audio === "string" ? result.audio : result.audio?.url;
@@ -1336,8 +1377,12 @@ export async function generateStableAudio3Medium(opts: {
         ? headerContentType
         : "audio/mpeg";
 
+    // Flat per-generation fee; the unit count encodes fal's exact price for the
+    // chosen endpoint (see registry cost block, billed at $0.0001/unit).
     const usageHeaders = buildUsageHeaders("stable-audio-3-medium", {
-        completionAudioTokens: 1,
+        completionAudioTokens: isAudioToAudio
+            ? SA3M_AUDIO_TO_AUDIO_UNITS
+            : SA3M_TEXT_TO_AUDIO_UNITS,
     });
 
     log.info("Stable Audio 3 Medium success: {bytes} bytes", {
@@ -1446,6 +1491,7 @@ async function dispatchAudioGeneration(
                 seconds: seconds ?? duration,
                 steps,
                 seed,
+                referenceAudio,
                 falKey,
                 log,
             }),
@@ -1655,7 +1701,7 @@ export const audioRoutes = new Hono<Env>()
             description: [
                 "Generate speech or music from text. Compatible with the OpenAI TTS API for JSON requests.",
                 "",
-                "Set `model` to `elevenmusic`, `acestep`, or `stable-audio-3-medium` to generate music. For reference-audio conditioning, send multipart/form-data with `reference_audio` plus `input`; for inpainting, pass an ElevenLabs `composition_plan`.",
+                "Set `model` to `elevenmusic`, `acestep`, or `stable-audio-3-medium` to generate music. Send multipart/form-data with `reference_audio` plus `input` to run fal audio-to-audio (style transfer) on `stable-audio-3-medium`, or reference-audio conditioning on `elevenmusic`; for ElevenLabs inpainting, pass a `composition_plan`.",
                 "",
                 `**Available voices:** ${ELEVENLABS_VOICES.join(", ")}`,
                 "",

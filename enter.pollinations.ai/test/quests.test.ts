@@ -28,30 +28,6 @@ const ELIXPO_INTERN_ALREADY_GRANTED = {
     scanned: 1,
     granted: 0,
 };
-const FIRST_IMAGE_QUEST_ID = "onboarding:first_image";
-const NO_FIRST_IMAGE_RESULT = {
-    questId: FIRST_IMAGE_QUEST_ID,
-    scanned: 0,
-    granted: 0,
-};
-const FIRST_CHAT_COMPLETION_QUEST_ID = "onboarding:first_chat_completion";
-const NO_FIRST_CHAT_COMPLETION_RESULT = {
-    questId: FIRST_CHAT_COMPLETION_QUEST_ID,
-    scanned: 0,
-    granted: 0,
-};
-const TRY_THREE_MODELS_QUEST_ID = "onboarding:try_three_models";
-const NO_TRY_THREE_MODELS_RESULT = {
-    questId: TRY_THREE_MODELS_QUEST_ID,
-    scanned: 0,
-    granted: 0,
-};
-const GITHUB_PUBLIC_REPOS_QUEST_ID = "engage:github_2_public_repos";
-const NO_GITHUB_PUBLIC_REPOS_RESULT = {
-    questId: GITHUB_PUBLIC_REPOS_QUEST_ID,
-    scanned: 0,
-    granted: 0,
-};
 const GITHUB_REPO_STARS_QUEST_ID = "engage:github_50_repo_stars";
 const NO_GITHUB_REPO_STARS_RESULT = {
     questId: GITHUB_REPO_STARS_QUEST_ID,
@@ -91,7 +67,7 @@ async function getOnlyUser() {
 }
 
 test("GET /api/quests/catalog returns product and GitHub issue quests", async () => {
-    await env.KV.delete("quests:catalog:v6");
+    await env.KV.delete("quests:catalog:v7");
     const staticCardCount = await countStaticQuestCards();
     const db = drizzle(env.DB, { schema });
     await db.insert(schema.githubQuestIssues).values([
@@ -184,7 +160,7 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
     ).toMatchObject({
         title: "Add a demo app",
         iconId: "github",
-        category: "community",
+        category: "build",
         availability: "available",
         rewardAmount: 15,
         url: "https://github.com/pollinations/pollinations/issues/321",
@@ -194,7 +170,7 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
     ).toMatchObject({
         title: "Fix a model config",
         iconId: "github",
-        category: "community",
+        category: "build",
         availability: "claimed",
         rewardAmount: 20,
         url: "https://github.com/pollinations/pollinations/issues/322",
@@ -204,7 +180,7 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
     ).toMatchObject({
         title: "Malformed reward heading",
         iconId: "github",
-        category: "community",
+        category: "build",
         availability: "available",
         rewardAmount: 0,
         url: "https://github.com/pollinations/pollinations/issues/323",
@@ -218,7 +194,7 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
 });
 
 test("GET /api/quests/catalog returns product quests with no materialized GitHub issues", async () => {
-    await env.KV.delete("quests:catalog:v6");
+    await env.KV.delete("quests:catalog:v7");
     const staticCardCount = await countStaticQuestCards();
 
     const response = await SELF.fetch(
@@ -232,16 +208,30 @@ test("GET /api/quests/catalog returns product quests with no materialized GitHub
             iconId: string;
             category: string;
             availability: string;
+            hideUntilEarned?: boolean;
         }[];
     };
 
     expect(payload.quests).toHaveLength(staticCardCount);
     expect(
-        payload.quests.find((quest) => quest.id === "onboarding:first_image"),
+        payload.quests.find(
+            (quest) => quest.id === "onboarding:established_github_account",
+        ),
     ).toMatchObject({
-        iconId: "image",
-        category: "plant",
+        iconId: "github",
+        category: "build",
         availability: "available",
+    });
+    // The elixpo easter egg is still emitted into the catalog (so a grant can
+    // join to it) but is flagged hideUntilEarned so the frontend hides it until
+    // the target account earns it.
+    expect(
+        payload.quests.find((quest) => quest.id === "easteregg:elixpo_intern"),
+    ).toMatchObject({
+        iconId: "sprout",
+        category: "easteregg",
+        availability: "available",
+        hideUntilEarned: true,
     });
     expect(
         payload.quests.some((quest) => quest.id.startsWith("github:issue:")),
@@ -321,9 +311,6 @@ test("quest evaluator grants code-defined product quests once", async ({
 
     const first = await runQuestEvaluator(env);
     expect(first.results).toEqual([
-        NO_FIRST_IMAGE_RESULT,
-        NO_FIRST_CHAT_COMPLETION_RESULT,
-        NO_TRY_THREE_MODELS_RESULT,
         { questId: "onboarding:first_api_key", scanned: 1, granted: 1 },
         { questId: "spend:first_top_up", scanned: 1, granted: 1 },
         {
@@ -331,7 +318,6 @@ test("quest evaluator grants code-defined product quests once", async ({
             scanned: 1,
             granted: 1,
         },
-        NO_GITHUB_PUBLIC_REPOS_RESULT,
         NO_GITHUB_REPO_STARS_RESULT,
         NO_ELIXPO_INTERN_RESULT,
     ]);
@@ -341,9 +327,6 @@ test("quest evaluator grants code-defined product quests once", async ({
     // nothing is granted again (granted: 0) and the balance is unchanged.
     const second = await runQuestEvaluator(env);
     expect(second.results).toEqual([
-        NO_FIRST_IMAGE_RESULT,
-        NO_FIRST_CHAT_COMPLETION_RESULT,
-        NO_TRY_THREE_MODELS_RESULT,
         { questId: "onboarding:first_api_key", scanned: 1, granted: 0 },
         { questId: "spend:first_top_up", scanned: 1, granted: 0 },
         {
@@ -351,7 +334,6 @@ test("quest evaluator grants code-defined product quests once", async ({
             scanned: 1,
             granted: 0,
         },
-        NO_GITHUB_PUBLIC_REPOS_RESULT,
         NO_GITHUB_REPO_STARS_RESULT,
         NO_ELIXPO_INTERN_RESULT,
     ]);
@@ -360,7 +342,7 @@ test("quest evaluator grants code-defined product quests once", async ({
         .select({ packBalance: schema.user.packBalance })
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
-    expect(balance?.packBalance).toBeCloseTo((user.packBalance ?? 0) + 8);
+    expect(balance?.packBalance).toBeCloseTo((user.packBalance ?? 0) + 12);
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/account/quests",
@@ -382,7 +364,7 @@ test("quest evaluator grants code-defined product quests once", async ({
         }[];
     };
 
-    expect(payload.totalPollen).toBeCloseTo(8);
+    expect(payload.totalPollen).toBeCloseTo(12);
     expect(payload.grants).toHaveLength(3);
     for (const grant of payload.grants) {
         expect(grant).not.toHaveProperty("id");
@@ -403,7 +385,7 @@ test("quest evaluator grants code-defined product quests once", async ({
     expect(
         payload.grants.find((grant) => grant.questId === "spend:first_top_up"),
     ).toMatchObject({
-        pollenCredited: 1,
+        pollenCredited: 5,
         balanceBucket: "pack",
     });
     expect(
@@ -414,94 +396,7 @@ test("quest evaluator grants code-defined product quests once", async ({
     ).toMatchObject({
         pollenCredited: 6,
         balanceBucket: "pack",
-        title: "Claim senior dev status",
-    });
-});
-
-test("quest evaluator grants usage onboarding quests once", async ({
-    mocks,
-    sessionToken: _sessionToken,
-}) => {
-    const db = drizzle(env.DB, { schema });
-    const user = await getOnlyUser();
-    mocks.github.state.user.created_at = new Date().toISOString();
-    mocks.tinybird.state.questUsageResponse = [
-        {
-            userId: user.id,
-            firstImageEventId: "evt_first_image",
-            imageRequests: 1,
-            firstTextEventId: "evt_first_text",
-            textRequests: 2,
-            distinctModels: 3,
-            totalRequests: 3,
-            activeDaysLast7: 1,
-        },
-    ];
-    await mocks.enable("github", "tinybird");
-
-    const first = await runQuestEvaluator(env);
-    expect(first.results).toContainEqual({
-        questId: FIRST_IMAGE_QUEST_ID,
-        scanned: 1,
-        granted: 1,
-    });
-    expect(first.results).toContainEqual({
-        questId: FIRST_CHAT_COMPLETION_QUEST_ID,
-        scanned: 1,
-        granted: 1,
-    });
-    expect(first.results).toContainEqual({
-        questId: TRY_THREE_MODELS_QUEST_ID,
-        scanned: 1,
-        granted: 1,
-    });
-
-    // Second run: the Tinybird usage rows still satisfy each threshold, so the
-    // candidates are re-scanned (scanned: 1) but the dedup blocks a second grant.
-    const second = await runQuestEvaluator(env);
-    expect(second.results).toContainEqual({
-        questId: FIRST_IMAGE_QUEST_ID,
-        scanned: 1,
-        granted: 0,
-    });
-    expect(second.results).toContainEqual({
-        questId: FIRST_CHAT_COMPLETION_QUEST_ID,
-        scanned: 1,
-        granted: 0,
-    });
-    expect(second.results).toContainEqual({
-        questId: TRY_THREE_MODELS_QUEST_ID,
-        scanned: 1,
-        granted: 0,
-    });
-
-    const grants = await db
-        .select({
-            questId: schema.rewardGrants.questId,
-            pollenCredited: schema.rewardGrants.pollenCredited,
-            balanceBucket: schema.rewardGrants.balanceBucket,
-        })
-        .from(schema.rewardGrants);
-
-    expect(
-        grants.find((grant) => grant.questId === FIRST_IMAGE_QUEST_ID),
-    ).toMatchObject({
-        pollenCredited: 0.5,
-        balanceBucket: "pack",
-    });
-    expect(
-        grants.find(
-            (grant) => grant.questId === FIRST_CHAT_COMPLETION_QUEST_ID,
-        ),
-    ).toMatchObject({
-        pollenCredited: 0.5,
-        balanceBucket: "pack",
-    });
-    expect(
-        grants.find((grant) => grant.questId === TRY_THREE_MODELS_QUEST_ID),
-    ).toMatchObject({
-        pollenCredited: 1,
-        balanceBucket: "pack",
+        title: "Senior dev status",
     });
 });
 
@@ -550,9 +445,6 @@ test("github account age quest waits until threshold", async ({
 
     const first = await runQuestEvaluator(env);
     expect(first.results).toEqual([
-        NO_FIRST_IMAGE_RESULT,
-        NO_FIRST_CHAT_COMPLETION_RESULT,
-        NO_TRY_THREE_MODELS_RESULT,
         { questId: "onboarding:first_api_key", scanned: 0, granted: 0 },
         { questId: "spend:first_top_up", scanned: 0, granted: 0 },
         {
@@ -560,7 +452,6 @@ test("github account age quest waits until threshold", async ({
             scanned: 0,
             granted: 0,
         },
-        NO_GITHUB_PUBLIC_REPOS_RESULT,
         NO_GITHUB_REPO_STARS_RESULT,
         NO_ELIXPO_INTERN_RESULT,
     ]);
@@ -662,9 +553,6 @@ test("quest evaluator rewards completed GitHub quest issues through shared path"
     // issue produces exactly one result entry at id `github:issue:777`.
     const first = await runQuestEvaluator(env);
     expect(first.results).toEqual([
-        NO_FIRST_IMAGE_RESULT,
-        NO_FIRST_CHAT_COMPLETION_RESULT,
-        NO_TRY_THREE_MODELS_RESULT,
         { questId: "onboarding:first_api_key", scanned: 0, granted: 0 },
         { questId: "spend:first_top_up", scanned: 0, granted: 0 },
         {
@@ -672,7 +560,6 @@ test("quest evaluator rewards completed GitHub quest issues through shared path"
             scanned: 0,
             granted: 0,
         },
-        NO_GITHUB_PUBLIC_REPOS_RESULT,
         NO_GITHUB_REPO_STARS_RESULT,
         { questId: issueQuestId, scanned: 1, granted: 1 },
         NO_ELIXPO_INTERN_RESULT,
@@ -711,9 +598,6 @@ test("quest evaluator rewards completed GitHub quest issues through shared path"
     // second time: one issue, one payout, regardless of who is assigned.
     const second = await runQuestEvaluator(env);
     expect(second.results).toEqual([
-        NO_FIRST_IMAGE_RESULT,
-        NO_FIRST_CHAT_COMPLETION_RESULT,
-        NO_TRY_THREE_MODELS_RESULT,
         { questId: "onboarding:first_api_key", scanned: 0, granted: 0 },
         { questId: "spend:first_top_up", scanned: 0, granted: 0 },
         {
@@ -721,7 +605,6 @@ test("quest evaluator rewards completed GitHub quest issues through shared path"
             scanned: 0,
             granted: 0,
         },
-        NO_GITHUB_PUBLIC_REPOS_RESULT,
         NO_GITHUB_REPO_STARS_RESULT,
         { questId: issueQuestId, scanned: 1, granted: 0 },
         NO_ELIXPO_INTERN_RESULT,

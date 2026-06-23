@@ -16,7 +16,7 @@ import {
  */
 
 const QUEST_ICON_ID = "github" as const;
-const QUEST_CATEGORY = "community" as const;
+const QUEST_CATEGORY = "build" as const;
 
 /** Resolve the local user id for an assignee's GitHub id (null if unlinked). */
 async function loadAssigneeUserId(

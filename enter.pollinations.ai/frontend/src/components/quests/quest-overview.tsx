@@ -60,22 +60,16 @@ const INITIAL_STATE: FetchState = {
 
 type IconComponent = ComponentType<{ className?: string }>;
 
-// One-off team-welcome easter egg — rendered as a celebratory hero card rather
-// than a normal quest, and kept out of the category lists below.
-const INTERN_QUEST_ID = "easteregg:elixpo_intern";
-
 // Gold accent for icons — the wallet "paid" deep tone. Theme-aware (dark bronze
 // in light mode, light gold in dark), so it keeps contrast on the pale tile in
 // both modes — same token the wallet's paid icon/text uses.
 const GOLD = "text-[color:var(--polli-color-paid-deep)]";
 
 // ── Category model ──────────────────────────────────────────────────────────
-// Four lanes, mapped from the backend's quest.category. Set up · Grow · Dev are
-// finite (everyone can clear them) and feed the "Quest progress" summary;
+// Four lanes, mapped 1:1 from the backend's quest.category. Setup · Grow · Build
+// are finite (everyone can clear them) and feed the "Quest progress" summary;
 // Contribute is an open bounty pool (issues + PRs) and feeds "Contribute score".
-// The Dev lane has no category mapped to it yet — it renders empty / hidden by
-// the existing empty-section handling until the backend ships dev quests.
-type CategoryKey = "setup" | "grow" | "dev" | "contribute";
+type CategoryKey = "setup" | "grow" | "build" | "contribute" | "easteregg";
 
 type CategoryMeta = {
     key: CategoryKey;
@@ -98,9 +92,9 @@ const CATEGORIES: CategoryMeta[] = [
         icon: TrendUpIcon,
     },
     {
-        key: "dev",
-        label: "Dev",
-        blurb: "Your standing as a developer on GitHub.",
+        key: "build",
+        label: "Build",
+        blurb: "Your standing as a developer: GitHub, issues, PRs.",
         icon: GraduationCapIcon,
     },
     {
@@ -109,16 +103,25 @@ const CATEGORIES: CategoryMeta[] = [
         blurb: "Help build Pollinations — issues and PRs.",
         icon: GitBranchIcon,
     },
+    {
+        key: "easteregg",
+        label: "Easter eggs",
+        blurb: "One-off rewards unlocked for you.",
+        icon: SproutIcon,
+    },
 ];
 
-// Map the backend's quest.category onto a visual lane. "dev" is intentionally
-// unmapped for now — nothing routes there yet (see the Category model note).
+// Map the backend's quest.category onto a visual lane, 1:1.
 function categoryKeyFor(category: QuestCatalogItem["category"]): CategoryKey {
     switch (category) {
         case "plant":
             return "setup";
+        case "build":
+            return "build";
         case "community":
             return "contribute";
+        case "easteregg":
+            return "easteregg";
         default:
             return "grow";
     }
@@ -145,16 +148,6 @@ function formatGrantAmount(value: number | null): string {
 
 function formatRewardLabel(value: number | null): string {
     return value == null ? "Reward TBD" : `${formatGrantAmount(value)} pollen`;
-}
-
-function formatTimestamp(value: string): string {
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return value;
-    return date.toLocaleDateString(undefined, {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-    });
 }
 
 // ── Card model ──────────────────────────────────────────────────────────────
@@ -318,8 +311,8 @@ function QuestMarker({
 
 function QuestRow({ card, icon }: { card: QuestCard; icon: IconComponent }) {
     // Per-row accent matches the marker: paid gold while open, success green once
-    // completed. Applied inline (like InternHeroCard below) so it overrides the
-    // primitives' own polli:-prefixed color classes without a specificity fight.
+    // completed. Applied inline so it overrides the primitives' own
+    // polli:-prefixed color classes without a specificity fight.
     const accent = card.completed
         ? "var(--color-intent-success-text)"
         : "var(--polli-color-paid-deep)";
@@ -377,75 +370,6 @@ function QuestRow({ card, icon }: { card: QuestCard; icon: IconComponent }) {
                 )}
             </div>
         </Surface>
-    );
-}
-
-// Celebratory hero card for the one-off intern easter egg. Uses the wallet
-// "paid" gold palette so the gradient stays on-brand and theme-aware.
-function InternHeroCard({ grant }: { grant: QuestGrant }) {
-    const title = grant.title;
-    const message = "Welcome to the Pollinations crew.";
-    const deep = "var(--polli-color-paid-deep)";
-
-    return (
-        <div
-            className="relative overflow-hidden rounded-xl p-5 shadow-well"
-            style={{
-                background:
-                    "linear-gradient(135deg, var(--polli-color-paid-pale), color-mix(in oklch, var(--polli-color-paid-soft) 35%, var(--polli-color-paid-pale)))",
-                boxShadow:
-                    "inset 0 0 0 1px color-mix(in oklch, var(--polli-color-paid-soft) 45%, transparent)",
-                color: deep,
-            }}
-        >
-            <div className="relative flex items-start gap-3">
-                <span
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
-                    style={{
-                        backgroundColor:
-                            "color-mix(in oklch, var(--polli-color-paid-soft) 30%, transparent)",
-                        color: deep,
-                    }}
-                >
-                    <SproutIcon className="h-6 w-6" />
-                </span>
-                <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                        <PaidChip size="sm" className="uppercase tracking-wide">
-                            <WalletKindIcon kind="paid" />
-                            Intern
-                        </PaidChip>
-                        <Text as="span" size="xs" style={{ color: deep }}>
-                            {formatTimestamp(grant.createdAt)}
-                        </Text>
-                    </div>
-                    <Text
-                        as="div"
-                        weight="bold"
-                        className="mt-2 text-lg"
-                        style={{ color: deep }}
-                    >
-                        {title}
-                    </Text>
-                    <Text
-                        as="div"
-                        size="sm"
-                        className="mt-0.5"
-                        style={{ color: deep }}
-                    >
-                        {message}
-                    </Text>
-                </div>
-                <Text
-                    as="span"
-                    weight="bold"
-                    className="shrink-0 text-lg tabular-nums"
-                    style={{ color: deep }}
-                >
-                    +{formatGrantAmount(grant.pollenCredited)}
-                </Text>
-            </div>
-        </div>
     );
 }
 
@@ -530,35 +454,18 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         const byCat: Record<CategoryKey, QuestCard[]> = {
             setup: [],
             grow: [],
-            dev: [],
+            build: [],
             contribute: [],
+            easteregg: [],
         };
 
-        // TODO(quests): the "Dev" lane has no backend data source yet — the
-        // backend's quest.category only emits plant/grow/community. Until a
-        // real Dev category ships, seed it with OBVIOUSLY-FAKE placeholder
-        // cards so the lane renders during design. Delete this whole block the
-        // moment real Dev quests exist.
-        byCat.dev.push(
-            {
-                key: "dummy:dev:1",
-                title: "🚧 DUMMY — Dev quest placeholder",
-                description: "Fake card. No backend data wired yet.",
-                reward: 0,
-                completed: false,
-            },
-            {
-                key: "dummy:dev:2",
-                title: "🚧 DUMMY — another fake Dev quest",
-                description: "Placeholder only — remove before launch.",
-                reward: 0,
-                completed: true,
-                earnedAmount: 0,
-            },
-        );
-
         for (const quest of state.catalog) {
-            if (quest.id.startsWith("easteregg:")) continue;
+            // hideUntilEarned quests (per-person easter eggs) never show as an
+            // open card — they appear ONLY once YOU have the grant, then as a
+            // normal completed card. Skip them here unless completed-by-you.
+            if (quest.hideUntilEarned && !completedCatalogIds.has(quest.id)) {
+                continue;
+            }
             const key = categoryKeyFor(quest.category);
             if (key === "contribute") {
                 // Three states, kept deliberately simple:
@@ -596,7 +503,6 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         }
 
         for (const grant of state.grants) {
-            if (grant.questId === INTERN_QUEST_ID) continue;
             if (!isContributeGrant(grant)) continue;
             const issueNumber = issueNumberFromId(grant.questId ?? "");
             byCat.contribute.push({
@@ -635,14 +541,14 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         catalogById,
     ]);
 
-    const internGrants = useMemo(
-        () => state.grants.filter((grant) => grant.questId === INTERN_QUEST_ID),
-        [state.grants],
-    );
-
     // Summary stats. "Quest progress" = the three finite lanes; "Contribute
     // score" = the open bounty pool. Pollen is split on the same axis.
-    const finiteCards = [...sections.setup, ...sections.grow, ...sections.dev];
+    const finiteCards = [
+        ...sections.setup,
+        ...sections.grow,
+        ...sections.build,
+        ...sections.easteregg,
+    ];
     const finiteDone = finiteCards.filter((card) => card.completed).length;
     const finiteTotal = finiteCards.length;
     const progressPercent =
@@ -706,13 +612,6 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                     </Text>
                 </Surface>
             )}
-
-            {internGrants.map((grant, index) => (
-                <InternHeroCard
-                    key={`intern-${grant.createdAt}-${index}`}
-                    grant={grant}
-                />
-            ))}
 
             {CATEGORIES.map((category) => {
                 const cards = sections[category.key];

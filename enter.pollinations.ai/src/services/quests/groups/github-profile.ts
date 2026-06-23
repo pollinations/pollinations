@@ -20,7 +20,6 @@ const log = getLogger(["enter", "quest", "github-profile"]);
 const MAX_GRANTS_PER_RUN = 500;
 const GITHUB_ACCOUNT_AGE_DAYS = 365;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-const REPO_THRESHOLD = 2;
 const STAR_THRESHOLD = 50;
 const MAX_REPO_PAGES = 3;
 const REPOS_PER_PAGE = 100;
@@ -178,23 +177,12 @@ function accountAgeDays(activity: GitHubProfileActivity, now: Date): number {
 
 const establishedGitHubAccountQuest: QuestDefinition = {
     id: "onboarding:established_github_account",
-    title: "Claim senior dev status",
+    title: "Senior dev status",
     description: "Connect a GitHub account that is at least one year old.",
     iconId: "github",
-    category: "plant",
+    category: "build",
     scope: "perUser",
     rewardAmount: 6,
-    balanceBucket: "pack",
-};
-
-const githubPublicReposQuest: QuestDefinition = {
-    id: "engage:github_2_public_repos",
-    title: "Publish 2 public repos",
-    description: "Have at least 2 non-empty public GitHub repositories.",
-    iconId: "github",
-    category: "grow",
-    scope: "perUser",
-    rewardAmount: 1,
     balanceBucket: "pack",
 };
 
@@ -204,17 +192,13 @@ const githubRepoStarsQuest: QuestDefinition = {
     description:
         "Earn 50 stars across your non-empty public GitHub repositories.",
     iconId: "github",
-    category: "grow",
+    category: "build",
     scope: "perUser",
     rewardAmount: 5,
     balanceBucket: "pack",
 };
 
-const QUESTS = [
-    establishedGitHubAccountQuest,
-    githubPublicReposQuest,
-    githubRepoStarsQuest,
-];
+const QUESTS = [establishedGitHubAccountQuest, githubRepoStarsQuest];
 
 export async function listQuestCards(
     _ctx: QuestEvaluationContext,
@@ -242,12 +226,6 @@ export async function findRewardProposals(
         ) {
             proposals.push({
                 quest: establishedGitHubAccountQuest,
-                userId: row.userId,
-            });
-        }
-        if (activity.qualityRepoCount >= REPO_THRESHOLD) {
-            proposals.push({
-                quest: githubPublicReposQuest,
                 userId: row.userId,
             });
         }

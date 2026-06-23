@@ -11,7 +11,7 @@ import type {
     QuestEvaluationContext,
 } from "../services/quests/types.ts";
 
-const CACHE_KEY = "quests:catalog:v6";
+const CACHE_KEY = "quests:catalog:v7";
 const CACHE_TTL = 60;
 
 export type QuestCatalogItem = QuestCard;
@@ -25,10 +25,11 @@ const questCatalogItemSchema = z.object({
     title: z.string(),
     description: z.string(),
     iconId: z.enum(QUEST_ICON_IDS),
-    category: z.enum(["plant", "grow", "community"]),
+    category: z.enum(["plant", "grow", "build", "community", "easteregg"]),
     availability: z.enum(["available", "claimed", "completed"]),
     rewardAmount: z.number().nullable(),
     url: z.string().nullable(),
+    hideUntilEarned: z.boolean().optional(),
 });
 
 const questCatalogResponseSchema = z.object({

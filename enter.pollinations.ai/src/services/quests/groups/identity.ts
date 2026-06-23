@@ -18,9 +18,13 @@ const elixpoInternQuest: QuestDefinition = {
     title: "Developer Relations Intern, unlocked 🌻",
     description: "It's official, elixpo — welcome to the Pollinations crew.",
     iconId: "sprout",
-    category: "community",
+    category: "easteregg",
     scope: "perUser",
     rewardAmount: 100,
+    // Per-person easter egg: hidden from the open board, surfaced only to the
+    // account that earned it (renders as a normal completed card in its own
+    // "Easter eggs" lane — see hideUntilEarned).
+    hideUntilEarned: true,
     balanceBucket: "pack",
 };
 

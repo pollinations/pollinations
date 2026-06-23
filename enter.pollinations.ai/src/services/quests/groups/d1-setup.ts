@@ -36,12 +36,12 @@ const firstApiKeyQuest: QuestDefinition = {
 
 const firstTopUpQuest: QuestDefinition = {
     id: "spend:first_top_up",
-    title: "Stock your pollen pack",
+    title: "First pollen purchase",
     description: "Buy your first Pollen pack.",
     iconId: "card",
-    category: "grow",
+    category: "plant",
     scope: "perUser",
-    rewardAmount: 1,
+    rewardAmount: 5,
     balanceBucket: "pack",
 };
 

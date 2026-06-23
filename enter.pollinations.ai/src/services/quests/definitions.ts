@@ -14,13 +14,23 @@ export const QUEST_ICON_IDS = [
 export type QuestIconId = (typeof QUEST_ICON_IDS)[number];
 
 /**
- * Lane a quest renders in. Replaces the frontend id-prefix matching
- * (categoryForQuest). Preserves today's buckets:
- *   - "plant"     -> "Set up"   (onboarding:* quests)
- *   - "community" -> "Community" (github:* / github_issue quests)
- *   - "grow"      -> "Grow"     (everything else: spend:*, grow:*, engage:*)
+ * Lane a quest renders in. Maps to a frontend lane:
+ *   - "plant"     -> "Set up"    (account onboarding: keys, first purchase)
+ *   - "grow"      -> "Grow"      (app/usage growth: app earnings, BYOP)
+ *   - "build"     -> "Build"     (dev contributions: GitHub account/stars,
+ *                                 issue bounties, merged PRs)
+ *   - "community" -> "Community" (legacy bucket; kept for any non-build
+ *                                 community quest — currently unused)
+ *   - "easteregg" -> "Easter eggs" (per-person targeted quests; only ever
+ *                                 shown to the account that earned them, via
+ *                                 hideUntilEarned)
  */
-export type QuestCategory = "plant" | "grow" | "community";
+export type QuestCategory =
+    | "plant"
+    | "grow"
+    | "build"
+    | "community"
+    | "easteregg";
 
 /**
  * Completion scope — drives the idempotency key shape (see toGrant):
@@ -48,4 +58,13 @@ export type QuestDefinition = {
      * per-recipient — there are no quest instances.
      */
     url?: string;
+    /**
+     * Hide this quest from the open/available board; surface it ONLY once the
+     * viewing user has earned it (then it renders as a normal completed card,
+     * flipped via their grant). For per-person easter eggs / targeted quests
+     * that shouldn't appear as an actionable card to everyone. The catalog
+     * still emits the card (so the grant can join to it) — the FRONTEND skips
+     * it while unearned. Defaults to false/omitted (normal always-visible).
+     */
+    hideUntilEarned?: boolean;
 };

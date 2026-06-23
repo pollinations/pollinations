@@ -22,7 +22,7 @@ type QuestUserRow = {
 
 const firstByopExternalUserQuest: QuestDefinition = {
     id: "grow:first_byop_external_user",
-    title: "First BYOP external user connected",
+    title: "A user logged in to your app",
     description: "Have an external user connect to your app with BYOP.",
     category: "grow",
     scope: "perUser",
@@ -32,7 +32,7 @@ const firstByopExternalUserQuest: QuestDefinition = {
 
 const firstPaidSpendInAppQuest: QuestDefinition = {
     id: "grow:first_paid_spend_in_app",
-    title: "First user spending paid pollen in my app",
+    title: "A user spent paid Pollen in your app",
     description: "Have a user spend paid Pollen through your BYOP app.",
     category: "grow",
     scope: "perUser",

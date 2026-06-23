@@ -30,7 +30,7 @@ const BUILD_CATEGORY = "build" as const;
 const firstMergedPrQuest: QuestDefinition = {
     id: "github:first_merged_pr",
     title: "First merged PR",
-    description: "Get a pull request merged into Pollinations.",
+    description: "A pull request of yours was merged into Pollinations.",
     category: BUILD_CATEGORY,
     scope: "perUser",
     rewardAmount: 5,

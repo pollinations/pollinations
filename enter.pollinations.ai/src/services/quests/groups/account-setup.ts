@@ -26,8 +26,9 @@ type SetupQuestRow = {
 
 const firstApiKeyQuest: QuestDefinition = {
     id: "onboarding:first_api_key",
-    title: "Mint your first key",
-    description: "Create your first Pollinations API key.",
+    title: "Create your first API key",
+    description:
+        "Create an API key for using Pollinations from an app or script.",
     category: "setup",
     scope: "perUser",
     rewardAmount: 1,
@@ -36,8 +37,8 @@ const firstApiKeyQuest: QuestDefinition = {
 
 const byopLoginQuest: QuestDefinition = {
     id: "setup:byop_login",
-    title: "Login with BYOP (end user)",
-    description: "Use Bring Your Own Pollen in an app.",
+    title: "Logged in to a Pollinations app",
+    description: "Authorize a Pollinations app to spend your Pollen.",
     category: "setup",
     scope: "perUser",
     rewardAmount: 1,

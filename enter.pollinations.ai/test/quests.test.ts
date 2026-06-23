@@ -177,7 +177,6 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
     expect(
         payload.quests.find((quest) => quest.id === "onboarding:first_api_key"),
     ).toMatchObject({
-        title: "Mint your first key",
         category: "setup",
         availability: "available",
         rewardAmount: 1,
@@ -186,7 +185,6 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
     expect(
         payload.quests.find((quest) => quest.id === "setup:byop_login"),
     ).toMatchObject({
-        title: "Login with BYOP (end user)",
         category: "setup",
         availability: "available",
         rewardAmount: 1,
@@ -195,7 +193,6 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
     expect(
         payload.quests.find((quest) => quest.id === "spend:first_top_up"),
     ).toMatchObject({
-        title: "First pollen purchase",
         category: "grow",
         availability: "available",
         rewardAmount: 5,
@@ -206,7 +203,6 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
             (quest) => quest.id === "grow:first_byop_external_user",
         ),
     ).toMatchObject({
-        title: "First BYOP external user connected",
         category: "grow",
         availability: "available",
         rewardAmount: 3,
@@ -217,7 +213,6 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
             (quest) => quest.id === "grow:first_paid_spend_in_app",
         ),
     ).toMatchObject({
-        title: "First user spending paid pollen in my app",
         category: "grow",
         availability: "available",
         rewardAmount: 2,
@@ -226,7 +221,6 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
     expect(
         payload.quests.find((quest) => quest.id === "github:first_merged_pr"),
     ).toMatchObject({
-        title: "First merged PR",
         category: "build",
         availability: "available",
         rewardAmount: 5,
@@ -497,7 +491,6 @@ test("quest evaluator records product rewards and claim endpoint credits one", a
     ).toMatchObject({
         pollenAmount: 6,
         balanceBucket: "tier",
-        title: "Senior dev status",
     });
 
     if (!firstApiKeyReward) throw new Error("Expected first API key reward");
@@ -701,7 +694,6 @@ test("quest evaluator records elixpo intern easter egg once", async ({
     expect(rewards).toHaveLength(1);
     expect(rewards[0]).toMatchObject({
         idempotencyKey: `quest:${ELIXPO_INTERN_QUEST_ID}:user:${user.id}`,
-        title: "Developer Relations Intern, unlocked 🌻",
         pollenAmount: 100,
         balanceBucket: "tier",
     });

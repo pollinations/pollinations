@@ -11,7 +11,7 @@ import type {
     QuestEvaluationContext,
 } from "../services/quests/types.ts";
 
-const CACHE_KEY = "quests:catalog:v11";
+const CACHE_KEY = "quests:catalog:v12";
 const CACHE_TTL = 60;
 
 export type QuestCatalogItem = QuestCard;

@@ -190,6 +190,13 @@ const BUCKET_TEXT_CLASS: Record<RewardIconKind, string> = {
     tier: "polli-wallet-text-tier",
 };
 
+// Soft bucket-colored tile for the Claim button — amber (paid) / green (tier),
+// so the action carries the reward's own identity instead of a generic CTA hue.
+const BUCKET_CHIP_CLASS: Record<RewardIconKind, string> = {
+    paid: "polli-wallet-chip-paid",
+    tier: "polli-wallet-chip-tier",
+};
+
 // Bucket-neutral pollen mark — a small blossom. Distinct from the tier sprout
 // and the paid card; stands for aggregate/generic pollen and prefixes pollen
 // amounts. TODO: promote to @pollinations/ui once the shape is settled.
@@ -412,13 +419,17 @@ function QuestRow({
                     type="button"
                     disabled={claiming}
                     onClick={() => onClaim(claimableRewardId)}
-                    className="gap-1.5"
+                    className={`gap-1.5 ${BUCKET_CHIP_CLASS[rewardIcon]}`}
                 >
                     <SparkleIcon className="h-4 w-4 shrink-0" />
                     {claiming ? "Claiming" : "Claim"}
                 </Button>
             )}
-            <Chip intent="neutral" size="sm" className="gap-1 tabular-nums">
+            <Chip
+                intent="neutral"
+                size="sm"
+                className={`gap-1 tabular-nums ${BUCKET_TEXT_CLASS[rewardIcon]}`}
+            >
                 <WalletKindIcon kind={rewardIcon} />
                 {rewardLabel}
             </Chip>
@@ -591,11 +602,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                 issueNumber: issueNumberFromId(quest.id) ?? undefined,
                 reward: quest.rewardAmount,
                 balanceBucket:
-                    reward?.balanceBucket ??
-                    ("balanceBucket" in quest &&
-                    typeof quest.balanceBucket === "string"
-                        ? quest.balanceBucket
-                        : "tier"),
+                    reward?.balanceBucket ?? quest.balanceBucket ?? "tier",
                 status: reward
                     ? reward.claimedAt
                         ? "claimed"
@@ -670,13 +677,14 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                     />
                     <MetricSummaryCard
                         icon={PollenIcon}
-                        label="Pollen rewards"
+                        label="Pollen earned"
                         paid={formatRewardAmount(bucketStats.paid.pollen)}
                         tier={formatRewardAmount(bucketStats.tier.pollen)}
                     />
                 </div>
                 {claimable.length > 0 && (
-                    <div className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 rounded-xl bg-intent-success-bg-light px-4 py-2.5 text-intent-success-text">
+                    <div className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 rounded-xl bg-intent-success-bg-light px-4 py-2.5 text-sm font-semibold text-intent-success-text">
+                        <span>You&apos;ve earned</span>
                         {claimable.map((segment, index) => (
                             <span
                                 key={segment.kind}
@@ -691,14 +699,14 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                                     </span>
                                 )}
                                 <WalletKindIcon kind={segment.kind} />
-                                <span className="text-sm font-semibold tabular-nums">
+                                <span
+                                    className={`tabular-nums ${BUCKET_TEXT_CLASS[segment.kind]}`}
+                                >
                                     {formatRewardAmount(segment.pollen)} pollen
                                 </span>
                             </span>
                         ))}
-                        <span className="text-sm font-semibold">
-                            ready to claim
-                        </span>
+                        <span>— claim it now</span>
                     </div>
                 )}
             </Surface>

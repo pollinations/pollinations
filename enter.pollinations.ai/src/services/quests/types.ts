@@ -39,13 +39,7 @@ export function toReward(proposal: RewardProposal): RecordRewardInput {
 }
 
 export function questToCard(quest: QuestDefinition): QuestCard {
-    const {
-        balanceBucket: _bucket,
-        scope: _scope,
-        url,
-        availability,
-        ...definition
-    } = quest;
+    const { scope: _scope, url, availability, ...definition } = quest;
     return {
         ...definition,
         availability: availability ?? "available",
@@ -55,7 +49,7 @@ export function questToCard(quest: QuestDefinition): QuestCard {
 
 export type QuestCard = Omit<
     QuestDefinition,
-    "rewardAmount" | "balanceBucket" | "url" | "scope" | "availability"
+    "rewardAmount" | "url" | "scope" | "availability"
 > & {
     availability: QuestAvailability;
     rewardAmount: number | null;

@@ -190,8 +190,10 @@ type QuestCard = {
 
 // ── Presentational primitives (composed from @pollinations/ui) ───────────────
 
-// Two top-line metrics — positive achievement stats, so the icon + label wear
-// the success (green) accent; the bold value stays neutral as the focal point.
+// Two top-line metrics styled exactly like the wallet's TIER balance card —
+// they reuse its tier-green panel + text classes (quest rewards are tier
+// pollen, so they carry the same tier identity). The icon has no color of its
+// own, so it inherits the panel's deep-green `color`.
 function SummaryMetricCard({
     icon: Icon,
     label,
@@ -202,13 +204,17 @@ function SummaryMetricCard({
     value: React.ReactNode;
 }) {
     return (
-        <Surface variant="card" className="flex items-center gap-4">
-            <Icon className="h-10 w-10 shrink-0 text-intent-success-text" />
+        <Surface
+            variant="card"
+            className="polli-wallet-panel-tier flex items-center gap-4"
+        >
+            <Icon className="h-10 w-10 shrink-0" />
             <StatCard
                 className="min-w-0 flex-1"
                 label={label}
-                labelClassName="text-intent-success-text"
+                labelClassName="polli-wallet-text-tier"
                 value={value}
+                valueClassName="polli-wallet-text-tier"
             />
         </Surface>
     );

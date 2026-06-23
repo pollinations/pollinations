@@ -142,6 +142,7 @@ export const TEXT_SERVICES = {
         brand: "Inception",
         category: "text",
         addedDate: new Date("2026-06-23").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.25),

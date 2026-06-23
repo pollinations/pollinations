@@ -25,7 +25,7 @@ const elixpoInternQuest: QuestDefinition = {
     // the frontend surfaces it only to the account that earned it — it renders
     // as a normal completed card in its own "Easter eggs" lane.
     availability: "completed",
-    balanceBucket: "pack",
+    balanceBucket: "tier",
 };
 
 export async function listQuestCards(

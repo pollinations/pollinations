@@ -124,7 +124,7 @@ function githubIssueRecordFromLinkedIssue({ issue, pr, amount, assignee }) {
         description: extractDescription(issue.body || ""),
         url: issue.url,
         rewardAmount: amount,
-        balanceBucket: "pack",
+        balanceBucket: "tier",
         state: "completed",
         assigneeGithubId: assignee.databaseId,
         assigneeLogin: assignee.login,
@@ -147,7 +147,7 @@ function githubIssueRecordFromRestIssue(issue) {
         description: extractDescription(body),
         url: issue.html_url,
         rewardAmount: parseReward(body),
-        balanceBucket: "pack",
+        balanceBucket: "tier",
         state:
             issue.state === "closed"
                 ? "completed"

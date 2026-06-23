@@ -10,6 +10,7 @@ import {
 /**
  * D1 setup group: account-setup quests sourced from D1 source tables.
  *   - first_api_key  -> apikey                    (one key per user)
+ *   - byop_login     -> apikey.byop_client_key_id (one BYOP login per user)
  *   - first_top_up   -> stripe_checkout_credits   (one paid checkout per user)
  *
  * The SQL decides which users qualify and returns reward proposals. It does
@@ -28,10 +29,21 @@ const firstApiKeyQuest: QuestDefinition = {
     title: "Mint your first key",
     description: "Create your first Pollinations API key.",
     iconId: "key",
-    category: "plant",
+    category: "setup",
     scope: "perUser",
     rewardAmount: 1,
-    balanceBucket: "pack",
+    balanceBucket: "tier",
+};
+
+const byopLoginQuest: QuestDefinition = {
+    id: "setup:byop_login",
+    title: "Login with BYOP (end user)",
+    description: "Use Bring Your Own Pollen in an app.",
+    iconId: "key",
+    category: "setup",
+    scope: "perUser",
+    rewardAmount: 1,
+    balanceBucket: "tier",
 };
 
 const firstTopUpQuest: QuestDefinition = {
@@ -39,16 +51,16 @@ const firstTopUpQuest: QuestDefinition = {
     title: "First pollen purchase",
     description: "Buy your first Pollen pack.",
     iconId: "card",
-    category: "plant",
+    category: "grow",
     scope: "perUser",
     rewardAmount: 5,
-    balanceBucket: "pack",
+    balanceBucket: "tier",
 };
 
 export async function listQuestCards(
     _ctx: QuestEvaluationContext,
 ): Promise<QuestCard[]> {
-    return [firstApiKeyQuest, firstTopUpQuest].map((quest) =>
+    return [firstApiKeyQuest, byopLoginQuest, firstTopUpQuest].map((quest) =>
         questToCard(quest),
     );
 }
@@ -70,10 +82,22 @@ export async function findRewardProposals({
         GROUP BY stripe_checkout_credits.user_id
         LIMIT ${MAX_GRANTS_PER_RUN}`,
     );
+    const byopLoginRows = await db.all<SetupQuestRow>(
+        sql`
+        SELECT apikey.user_id AS userId
+        FROM apikey
+        WHERE apikey.byop_client_key_id IS NOT NULL
+        GROUP BY apikey.user_id
+        LIMIT ${MAX_GRANTS_PER_RUN}`,
+    );
 
     return [
         ...apiKeyRows.map((row) => ({
             quest: firstApiKeyQuest,
+            userId: row.userId,
+        })),
+        ...byopLoginRows.map((row) => ({
+            quest: byopLoginQuest,
             userId: row.userId,
         })),
         ...topUpRows.map((row) => ({

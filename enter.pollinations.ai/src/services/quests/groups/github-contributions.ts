@@ -1,4 +1,3 @@
-import type { Bucket } from "@shared/billing/deduction.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { and, eq, gt, isNotNull } from "drizzle-orm";
 import type { QuestAvailability, QuestDefinition } from "../definitions.ts";
@@ -12,17 +11,24 @@ import {
 /**
  * GitHub contribution rewards, sourced from the materialized github_quest_issues
  * table. Each issue row is its own scope:"once" quest; completed payable rows
- * pay the assignee.
- *
- * NOTE: a "first authored merged PR" quest does NOT belong here — that needs a
- * PR-merge source keyed on PR author (a `gh_pull_requests` table + a GitHub
- * sync), independent of quest issues. github_quest_issues only knows issue
- * assignees and the PR that closed an issue, so it cannot answer "did this user
- * author a merged PR". Tracked as a follow-up; not built on this table.
+ * pay the assignee. The static merged-PR quest is keyed off the same materialized
+ * source: a completed quest issue with a linked PR number.
  */
 
 const QUEST_ICON_ID = "github" as const;
-const QUEST_CATEGORY = "build" as const;
+const BUILD_CATEGORY = "build" as const;
+const CONTRIBUTE_CATEGORY = "contribute" as const;
+
+const firstMergedPrQuest: QuestDefinition = {
+    id: "github:first_merged_pr",
+    title: "First merged PR",
+    description: "Get a pull request merged into Pollinations.",
+    iconId: QUEST_ICON_ID,
+    category: BUILD_CATEGORY,
+    scope: "perUser",
+    rewardAmount: 5,
+    balanceBucket: "tier",
+};
 
 // Availability is a two-state BOARD concept: "available" = an open bounty
 // anyone can take; "completed" = off the open board. Only a genuinely open
@@ -51,10 +57,10 @@ function toIssueQuestDefinition(
         title: issue.title,
         description: issue.description ?? "",
         iconId: QUEST_ICON_ID,
-        category: QUEST_CATEGORY,
+        category: CONTRIBUTE_CATEGORY,
         scope: "once",
         rewardAmount: issue.rewardAmount ?? 0,
-        balanceBucket: issue.balanceBucket as Bucket,
+        balanceBucket: "tier",
         url: issue.url,
         availability: issueAvailability(issue),
     };
@@ -64,7 +70,10 @@ export async function listQuestCards(
     ctx: QuestEvaluationContext,
 ): Promise<QuestCard[]> {
     const rows = await ctx.db.select().from(schema.githubQuestIssues);
-    return rows.map((issue) => questToCard(toIssueQuestDefinition(issue)));
+    return [
+        questToCard(firstMergedPrQuest),
+        ...rows.map((issue) => questToCard(toIssueQuestDefinition(issue))),
+    ];
 }
 
 export async function findRewardProposals(
@@ -89,8 +98,31 @@ export async function findRewardProposals(
             ),
         );
 
-    return rows.map(({ issue, userId }) => ({
-        quest: toIssueQuestDefinition(issue),
-        userId,
-    }));
+    const mergedPrRows = await ctx.db
+        .selectDistinct({
+            userId: schema.user.id,
+        })
+        .from(schema.githubQuestIssues)
+        .innerJoin(
+            schema.user,
+            eq(schema.user.githubId, schema.githubQuestIssues.assigneeGithubId),
+        )
+        .where(
+            and(
+                eq(schema.githubQuestIssues.state, "completed"),
+                isNotNull(schema.githubQuestIssues.completedByPrNumber),
+                isNotNull(schema.githubQuestIssues.assigneeGithubId),
+            ),
+        );
+
+    return [
+        ...rows.map(({ issue, userId }) => ({
+            quest: toIssueQuestDefinition(issue),
+            userId,
+        })),
+        ...mergedPrRows.map(({ userId }) => ({
+            quest: firstMergedPrQuest,
+            userId,
+        })),
+    ];
 }

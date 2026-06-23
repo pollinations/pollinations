@@ -2,20 +2,21 @@ import {
     CheckIcon,
     Chip,
     ClockIcon,
-    GraduationCapIcon,
+    CodeIcon,
+    DiscordIcon,
+    GitHubIcon,
     Heading,
     InlineLink,
-    RocketIcon,
+    KeyIcon,
     SproutIcon,
     StatCard,
     Surface,
-    TargetIcon,
     Text,
     TrendUpIcon,
 } from "@pollinations/ui";
 import {
     formatPollen,
-    PaidChip,
+    TierChip,
     WalletKindIcon,
 } from "@pollinations/ui/wallet";
 import {
@@ -60,10 +61,9 @@ const INITIAL_STATE: FetchState = {
 type IconComponent = ComponentType<{ className?: string }>;
 
 // ── Category model ──────────────────────────────────────────────────────────
-// One lane per backend quest.category, mapped 1:1. Every lane renders the same
-// way (open cards + your own completed cards); the summary is a single roll-up
-// of done/total and pollen across all lanes.
-type CategoryKey = "setup" | "grow" | "build" | "easteregg";
+// One lane per backend quest.category, mapped 1:1. The source group that found
+// a quest is intentionally separate from the category that organizes it.
+type CategoryKey = QuestCatalogItem["category"];
 
 type CategoryMeta = {
     key: CategoryKey;
@@ -77,7 +77,7 @@ const CATEGORIES: CategoryMeta[] = [
         key: "setup",
         label: "Setup",
         blurb: "Get started with Pollinations.",
-        icon: RocketIcon,
+        icon: KeyIcon,
     },
     {
         key: "grow",
@@ -88,8 +88,20 @@ const CATEGORIES: CategoryMeta[] = [
     {
         key: "build",
         label: "Build",
-        blurb: "Your standing as a developer: GitHub, stars, issue bounties.",
-        icon: GraduationCapIcon,
+        blurb: "Your standing as a developer: GitHub, stars, and PRs.",
+        icon: CodeIcon,
+    },
+    {
+        key: "contribute",
+        label: "Contribute",
+        blurb: "Open-source issues and bounties you can help ship.",
+        icon: GitHubIcon,
+    },
+    {
+        key: "community",
+        label: "Community",
+        blurb: "Low-friction ways to join and support the project.",
+        icon: DiscordIcon,
     },
     {
         key: "easteregg",
@@ -98,20 +110,6 @@ const CATEGORIES: CategoryMeta[] = [
         icon: SproutIcon,
     },
 ];
-
-// Map the backend's quest.category onto a visual lane, 1:1.
-function categoryKeyFor(category: QuestCatalogItem["category"]): CategoryKey {
-    switch (category) {
-        case "plant":
-            return "setup";
-        case "build":
-            return "build";
-        case "easteregg":
-            return "easteregg";
-        default:
-            return "grow";
-    }
-}
 
 function issueNumberFromId(id: string): number | null {
     const match = /^github:issue:(\d+)$/.exec(id);
@@ -214,9 +212,9 @@ function SectionHeader({
             <Heading as="h2" size="section">
                 {category.label}
             </Heading>
-            <PaidChip size="sm" className="tabular-nums">
+            <TierChip size="sm" className="tabular-nums">
                 {done} / {total}
-            </PaidChip>
+            </TierChip>
         </div>
     );
 }
@@ -233,7 +231,7 @@ function SectionFooter({ category }: { category: CategoryMeta }) {
     );
 }
 
-// Leading marker for a quest row, wearing its section's icon. Paid gold while
+// Leading marker for a quest row, wearing its section's icon. Tier green while
 // open; shifts to the success tint once completed — the icon inherits the color
 // via currentColor. Set inline so it beats the icon's own polli:-prefixed
 // classes without a specificity fight.
@@ -251,10 +249,10 @@ function QuestMarker({
             style={{
                 backgroundColor: completed
                     ? "var(--color-intent-success-bg-light)"
-                    : "var(--polli-color-paid-pale)",
+                    : "var(--polli-color-tier-pale)",
                 color: completed
                     ? "var(--color-intent-success-text)"
-                    : "var(--polli-color-paid-deep)",
+                    : "var(--polli-color-tier-deep)",
             }}
         >
             <Icon className="h-5 w-5" />
@@ -263,12 +261,12 @@ function QuestMarker({
 }
 
 function QuestRow({ card, icon }: { card: QuestCard; icon: IconComponent }) {
-    // Per-row accent matches the marker: paid gold while open, success green once
+    // Per-row accent matches the marker: tier green while open, success green once
     // completed. Applied inline so it overrides the primitives' own
     // polli:-prefixed color classes without a specificity fight.
     const accent = card.completed
         ? "var(--color-intent-success-text)"
-        : "var(--polli-color-paid-deep)";
+        : "var(--polli-color-tier-deep)";
     return (
         <Surface variant="card" className="flex items-center gap-4">
             <QuestMarker icon={icon} completed={card.completed} />
@@ -316,10 +314,10 @@ function QuestRow({ card, icon }: { card: QuestCard; icon: IconComponent }) {
                         pollen
                     </Text>
                 ) : (
-                    <PaidChip size="sm" className="tabular-nums">
-                        <WalletKindIcon kind="paid" />
+                    <TierChip size="sm" className="tabular-nums">
+                        <WalletKindIcon kind="tier" />
                         {formatRewardLabel(card.reward)}
-                    </PaidChip>
+                    </TierChip>
                 )}
             </div>
         </Surface>
@@ -405,6 +403,8 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
             setup: [],
             grow: [],
             build: [],
+            contribute: [],
+            community: [],
             easteregg: [],
         };
 
@@ -416,7 +416,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
             // disappear for everyone except the user who completed it.
             if (quest.availability !== "available" && !completed) continue;
 
-            byCat[categoryKeyFor(quest.category)].push({
+            byCat[quest.category].push({
                 key: quest.id,
                 title: quest.title,
                 description: quest.description || undefined,
@@ -451,6 +451,8 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         ...sections.setup,
         ...sections.grow,
         ...sections.build,
+        ...sections.contribute,
+        ...sections.community,
         ...sections.easteregg,
     ];
     const questsDone = allCards.filter((card) => card.completed).length;
@@ -462,7 +464,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         <div className="flex flex-col gap-6">
             <SummaryCard
                 ring={
-                    <ProgressRing percent={progressPercent} icon={TargetIcon} />
+                    <ProgressRing percent={progressPercent} icon={CheckIcon} />
                 }
                 label="Quest progress"
                 value={

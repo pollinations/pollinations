@@ -56,7 +56,7 @@ async function getOnlyUser() {
 }
 
 test("GET /api/quests/catalog returns product and GitHub issue quests", async () => {
-    await env.KV.delete("quests:catalog:v8");
+    await env.KV.delete("quests:catalog:v10");
     const staticCardCount = await countStaticQuestCards();
     const db = drizzle(env.DB, { schema });
     await db.insert(schema.githubQuestIssues).values([
@@ -67,7 +67,7 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
             description: "Build a focused demo.",
             url: "https://github.com/pollinations/pollinations/issues/321",
             rewardAmount: 15,
-            balanceBucket: "pack",
+            balanceBucket: "tier",
             state: "available",
             assigneeGithubId: null,
             assigneeLogin: null,
@@ -84,7 +84,7 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
             description: "Wire the missing config.",
             url: "https://github.com/pollinations/pollinations/issues/322",
             rewardAmount: 20,
-            balanceBucket: "pack",
+            balanceBucket: "tier",
             state: "claimed",
             assigneeGithubId: 999,
             assigneeLogin: "dev-user",
@@ -101,7 +101,7 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
             description: "Check reward parsing.",
             url: "https://github.com/pollinations/pollinations/issues/323",
             rewardAmount: null,
-            balanceBucket: "pack",
+            balanceBucket: "tier",
             state: "available",
             assigneeGithubId: null,
             assigneeLogin: null,
@@ -138,9 +138,63 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
     ).toMatchObject({
         title: "Mint your first key",
         iconId: "key",
-        category: "plant",
+        category: "setup",
         availability: "available",
         rewardAmount: 1,
+        url: null,
+    });
+    expect(
+        payload.quests.find((quest) => quest.id === "setup:byop_login"),
+    ).toMatchObject({
+        title: "Login with BYOP (end user)",
+        iconId: "key",
+        category: "setup",
+        availability: "available",
+        rewardAmount: 1,
+        url: null,
+    });
+    expect(
+        payload.quests.find((quest) => quest.id === "spend:first_top_up"),
+    ).toMatchObject({
+        title: "First pollen purchase",
+        iconId: "card",
+        category: "grow",
+        availability: "available",
+        rewardAmount: 5,
+        url: null,
+    });
+    expect(
+        payload.quests.find(
+            (quest) => quest.id === "grow:list_app_on_pollinations",
+        ),
+    ).toMatchObject({
+        title: "First app listed on Pollinations",
+        iconId: "app",
+        category: "setup",
+        availability: "available",
+        rewardAmount: 5,
+        url: "https://pollinations.ai/apps",
+    });
+    expect(
+        payload.quests.find(
+            (quest) => quest.id === "grow:first_byop_external_user",
+        ),
+    ).toMatchObject({
+        title: "First BYOP external user connected",
+        iconId: "app",
+        category: "grow",
+        availability: "available",
+        rewardAmount: 3,
+        url: null,
+    });
+    expect(
+        payload.quests.find((quest) => quest.id === "github:first_merged_pr"),
+    ).toMatchObject({
+        title: "First merged PR",
+        iconId: "github",
+        category: "build",
+        availability: "available",
+        rewardAmount: 5,
         url: null,
     });
     // Each issue is now its own uniform quest card (no kind/assignees/sortKey).
@@ -149,7 +203,7 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
     ).toMatchObject({
         title: "Add a demo app",
         iconId: "github",
-        category: "build",
+        category: "contribute",
         availability: "available",
         rewardAmount: 15,
         url: "https://github.com/pollinations/pollinations/issues/321",
@@ -162,7 +216,7 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
     ).toMatchObject({
         title: "Fix a model config",
         iconId: "github",
-        category: "build",
+        category: "contribute",
         availability: "completed",
         rewardAmount: 20,
         url: "https://github.com/pollinations/pollinations/issues/322",
@@ -172,7 +226,7 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
     ).toMatchObject({
         title: "Malformed reward heading",
         iconId: "github",
-        category: "build",
+        category: "contribute",
         availability: "available",
         rewardAmount: 0,
         url: "https://github.com/pollinations/pollinations/issues/323",
@@ -186,7 +240,7 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
 });
 
 test("GET /api/quests/catalog returns product quests with no materialized GitHub issues", async () => {
-    await env.KV.delete("quests:catalog:v8");
+    await env.KV.delete("quests:catalog:v10");
     const staticCardCount = await countStaticQuestCards();
 
     const response = await SELF.fetch(
@@ -240,7 +294,7 @@ test("grantReward dedups on idempotency key and credits distinct keys", async ({
     const questId = "github:merged_pr_author";
     const title = "Merge a pull request";
     const rewardAmount = 1;
-    const bucket = "pack";
+    const bucket = "tier";
 
     const firstEventKey = `quest:${questId}:user:${user.id}:event:pr-123`;
     const secondEventKey = `quest:${questId}:user:${user.id}:event:pr-124`;
@@ -275,10 +329,10 @@ test("grantReward dedups on idempotency key and credits distinct keys", async ({
     expect(secondEvent.granted).toBe(true);
 
     const [balance] = await db
-        .select({ packBalance: schema.user.packBalance })
+        .select({ tierBalance: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
-    expect(balance?.packBalance).toBeCloseTo((user.packBalance ?? 0) + 2);
+    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 2);
 });
 
 test("quest evaluator grants code-defined product quests once", async ({
@@ -331,10 +385,10 @@ test("quest evaluator grants code-defined product quests once", async ({
     }
 
     const [balance] = await db
-        .select({ packBalance: schema.user.packBalance })
+        .select({ tierBalance: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
-    expect(balance?.packBalance).toBeCloseTo((user.packBalance ?? 0) + 12);
+    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 12);
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/account/quests",
@@ -372,13 +426,13 @@ test("quest evaluator grants code-defined product quests once", async ({
         ),
     ).toMatchObject({
         pollenCredited: 1,
-        balanceBucket: "pack",
+        balanceBucket: "tier",
     });
     expect(
         payload.grants.find((grant) => grant.questId === "spend:first_top_up"),
     ).toMatchObject({
         pollenCredited: 5,
-        balanceBucket: "pack",
+        balanceBucket: "tier",
     });
     expect(
         payload.grants.find(
@@ -387,8 +441,76 @@ test("quest evaluator grants code-defined product quests once", async ({
         ),
     ).toMatchObject({
         pollenCredited: 6,
-        balanceBucket: "pack",
+        balanceBucket: "tier",
         title: "Senior dev status",
+    });
+});
+
+test("quest evaluator grants no-extra-source app growth quests", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+    mocks.tinybird.state.appDirectoryResponse = [
+        {
+            github_user_id: String(user.githubId),
+        },
+    ];
+
+    await db.insert(schema.user).values({
+        id: "byop-external-user",
+        name: "External User",
+        email: "external-user@example.com",
+        emailVerified: false,
+        image: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        githubId: 555001,
+        githubUsername: "external-user",
+        tier: "spore",
+        tierBalance: 0,
+        packBalance: 0,
+    });
+    await db.insert(schema.apikey).values([
+        {
+            id: "app-key-owner",
+            name: "Owner App",
+            key: "pk_owner_app",
+            prefix: "pk",
+            userId: user.id,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        },
+        {
+            id: "byop-user-key",
+            name: "External BYOP",
+            key: "sk_external_byop",
+            prefix: "sk",
+            userId: "byop-external-user",
+            byopClientKeyId: "app-key-owner",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        },
+    ]);
+
+    const result = await runQuestEvaluator(env);
+
+    expect(result.results).toContainEqual({
+        questId: "grow:list_app_on_pollinations",
+        scanned: 1,
+        granted: 1,
+    });
+    expect(result.results).toContainEqual({
+        questId: "grow:first_byop_external_user",
+        scanned: 1,
+        granted: 1,
+    });
+    expect(result.results).toContainEqual({
+        questId: "setup:byop_login",
+        scanned: 1,
+        granted: 1,
     });
 });
 
@@ -446,10 +568,10 @@ test("github account age quest waits until threshold", async ({
     });
 
     const [balance] = await db
-        .select({ packBalance: schema.user.packBalance })
+        .select({ tierBalance: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
-    expect(balance?.packBalance).toBeCloseTo(user.packBalance ?? 0);
+    expect(balance?.tierBalance).toBeCloseTo(user.tierBalance ?? 0);
 });
 
 test("quest evaluator grants elixpo intern easter egg once", async ({
@@ -503,7 +625,7 @@ test("quest evaluator grants elixpo intern easter egg once", async ({
         idempotencyKey: `quest:${ELIXPO_INTERN_QUEST_ID}:user:${user.id}`,
         title: "Developer Relations Intern, unlocked 🌻",
         pollenCredited: 100,
-        balanceBucket: "pack",
+        balanceBucket: "tier",
     });
 });
 
@@ -546,6 +668,11 @@ test("quest evaluator rewards completed GitHub quest issues through shared path"
         scanned: 1,
         granted: 1,
     });
+    expect(first.results).toContainEqual({
+        questId: "github:first_merged_pr",
+        scanned: 1,
+        granted: 1,
+    });
 
     const otherGithubId = 987654;
     await db.insert(schema.user).values({
@@ -585,18 +712,19 @@ test("quest evaluator rewards completed GitHub quest issues through shared path"
         granted: 0,
     });
 
-    // The original assignee keeps the single payout; the reassigned user gets
-    // nothing (the issue was already paid once).
+    // The original assignee keeps the single issue payout plus their separate
+    // first-merged-PR reward; the reassigned user gets only their own
+    // first-merged-PR reward (the issue was already paid once).
     const [balance] = await db
         .select({ tierBalance: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
-    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 17);
+    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 22);
     const [otherBalance] = await db
         .select({ tierBalance: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.githubId, otherGithubId));
-    expect(otherBalance?.tierBalance).toBeCloseTo(0);
+    expect(otherBalance?.tierBalance).toBeCloseTo(5);
 
     const grants = await db
         .select({
@@ -671,7 +799,7 @@ test("two community issues sharing one quest_id each pay out (production key sha
             description: "Merge the linked PR.",
             url: `https://github.com/pollinations/pollinations/issues/${issue.issueNumber}`,
             rewardAmount: issue.reward,
-            balanceBucket: "pack",
+            balanceBucket: "tier",
             state: "completed",
             assigneeGithubId: issue.assigneeGithubId,
             assigneeLogin: "dev",
@@ -695,7 +823,7 @@ test("two community issues sharing one quest_id each pay out (production key sha
             pollenCredited: schema.rewardGrants.pollenCredited,
         })
         .from(schema.rewardGrants)
-        .where(eq(schema.rewardGrants.balanceBucket, "pack"));
+        .where(eq(schema.rewardGrants.balanceBucket, "tier"));
 
     // Assert on the ISSUE grants specifically (not total balance), so any
     // unrelated quest that happens to also pay these users never breaks this
@@ -735,7 +863,7 @@ test("account quest history includes GitHub quest reward grants", async ({
         questId: issueQuestId,
         title: "Ship a focused fix",
         pollenCredited: 5,
-        balanceBucket: "pack",
+        balanceBucket: "tier",
         createdAt: new Date(),
     });
 
@@ -772,7 +900,7 @@ test("account quest history includes GitHub quest reward grants", async ({
         questId: issueQuestId,
         title: "Ship a focused fix",
         pollenCredited: 5,
-        balanceBucket: "pack",
+        balanceBucket: "tier",
     });
     expect(typeof payload.grants[0].createdAt).toBe("string");
 });

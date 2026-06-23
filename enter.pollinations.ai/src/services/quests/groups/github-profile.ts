@@ -183,7 +183,7 @@ const establishedGitHubAccountQuest: QuestDefinition = {
     category: "build",
     scope: "perUser",
     rewardAmount: 6,
-    balanceBucket: "pack",
+    balanceBucket: "tier",
 };
 
 const githubRepoStarsQuest: QuestDefinition = {
@@ -195,7 +195,7 @@ const githubRepoStarsQuest: QuestDefinition = {
     category: "build",
     scope: "perUser",
     rewardAmount: 5,
-    balanceBucket: "pack",
+    balanceBucket: "tier",
 };
 
 const QUESTS = [establishedGitHubAccountQuest, githubRepoStarsQuest];

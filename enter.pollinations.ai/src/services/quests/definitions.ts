@@ -13,17 +13,25 @@ export const QUEST_ICON_IDS = [
 
 export type QuestIconId = (typeof QUEST_ICON_IDS)[number];
 
+export const QUEST_CATEGORIES = [
+    "setup",
+    "grow",
+    "build",
+    "contribute",
+    "community",
+    "easteregg",
+] as const;
+
 /**
- * Lane a quest renders in. Maps to a frontend lane:
- *   - "plant"     -> "Set up"    (account onboarding: keys, first purchase)
- *   - "grow"      -> "Grow"      (app/usage growth: app earnings, BYOP)
- *   - "build"     -> "Build"     (dev contributions: GitHub account/stars,
- *                                 issue bounties)
- *   - "easteregg" -> "Easter eggs" (per-person targeted quests; only ever
- *                                 shown to the account that earned them, via
- *                                 availability "completed")
+ * Lane a quest renders in:
+ *   - "setup"      -> account setup and onboarding tasks
+ *   - "grow"       -> product usage, billing, and app-growth tasks
+ *   - "build"      -> developer standing and GitHub profile milestones
+ *   - "contribute" -> open-source issue bounties and contribution tasks
+ *   - "community"  -> low-friction community actions around the project
+ *   - "easteregg"  -> hidden special rewards shown only after earning
  */
-export type QuestCategory = "plant" | "grow" | "build" | "easteregg";
+export type QuestCategory = (typeof QUEST_CATEGORIES)[number];
 
 /**
  * Completion scope — drives the idempotency key shape (see toGrant):

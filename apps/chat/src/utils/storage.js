@@ -43,6 +43,26 @@ export const saveChats = (chats) => {
 
         localStorage.setItem(STORAGE_KEYS.CHATS, JSON.stringify(chatsToSave));
     } catch (error) {
+        try {
+            if (
+                error?.name === "QuotaExceededError" ||
+                error?.code === 22 ||
+                error?.name === "NS_ERROR_DOM_QUOTA_REACHED"
+            ) {
+                console.warn(
+                    "[storage] quota exceeded — chat history (including image attachments) could not be saved. Images will be lost on page reload.",
+                    { approximateBytes: JSON.stringify(chats).length },
+                );
+                if (typeof window !== "undefined" && window?.showToast) {
+                    window.showToast(
+                        "Storage full — images can't be saved and will be lost on reload",
+                        "warning",
+                    );
+                }
+            }
+        } catch {
+            // quota detection must never throw
+        }
         console.error("Error saving chats:", error);
     }
 };

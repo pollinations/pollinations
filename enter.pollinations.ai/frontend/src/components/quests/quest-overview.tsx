@@ -190,6 +190,49 @@ const BUCKET_TEXT_CLASS: Record<RewardIconKind, string> = {
     tier: "polli-wallet-text-tier",
 };
 
+// Bucket-neutral pollen mark — a small blossom. Distinct from the tier sprout
+// and the paid card; stands for aggregate/generic pollen and prefixes pollen
+// amounts. TODO: promote to @pollinations/ui once the shape is settled.
+function PollenIcon({ className }: { className?: string }) {
+    return (
+        <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={className}
+        >
+            <circle cx="12" cy="6.8" r="2.8" />
+            <circle cx="17" cy="10.4" r="2.8" />
+            <circle cx="15.1" cy="16.2" r="2.8" />
+            <circle cx="8.9" cy="16.2" r="2.8" />
+            <circle cx="7" cy="10.4" r="2.8" />
+            <circle cx="12" cy="12" r="2.2" />
+        </svg>
+    );
+}
+
+// A 4-point sparkle — the joyful "you earned it" mark for the Claim button.
+function SparkleIcon({ className }: { className?: string }) {
+    return (
+        <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={className}
+        >
+            <path d="M12 3 L13.7 10.3 L21 12 L13.7 13.7 L12 21 L10.3 13.7 L3 12 L10.3 10.3 Z" />
+        </svg>
+    );
+}
+
 // A single value in its bucket color — amber (paid) or green (tier).
 function BucketNumber({
     kind,
@@ -369,7 +412,9 @@ function QuestRow({
                     type="button"
                     disabled={claiming}
                     onClick={() => onClaim(claimableRewardId)}
+                    className="gap-1.5"
                 >
+                    <SparkleIcon className="h-4 w-4 shrink-0" />
                     {claiming ? "Claiming" : "Claim"}
                 </Button>
             )}
@@ -598,6 +643,21 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         return stats;
     }, [state.rewards]);
 
+    // Unclaimed rewards waiting to be banked, split by bucket so the banner can
+    // mark each amount with the kind of pollen it is (tier sprout / paid card).
+    const claimable = useMemo(() => {
+        const byKind: Record<RewardIconKind, number> = { paid: 0, tier: 0 };
+        for (const reward of state.rewards) {
+            if (reward.claimedAt == null) {
+                byKind[rewardIconKind(reward.balanceBucket)] +=
+                    reward.pollenAmount;
+            }
+        }
+        return (["tier", "paid"] as RewardIconKind[])
+            .filter((kind) => byKind[kind] > 0)
+            .map((kind) => ({ kind, pollen: byKind[kind] }));
+    }, [state.rewards]);
+
     return (
         <div className="flex flex-col gap-6">
             <Surface variant="panel">
@@ -609,12 +669,38 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                         tier={bucketStats.tier.completed}
                     />
                     <MetricSummaryCard
-                        icon={SproutIcon}
+                        icon={PollenIcon}
                         label="Pollen rewards"
                         paid={formatRewardAmount(bucketStats.paid.pollen)}
                         tier={formatRewardAmount(bucketStats.tier.pollen)}
                     />
                 </div>
+                {claimable.length > 0 && (
+                    <div className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 rounded-xl bg-intent-success-bg-light px-4 py-2.5 text-intent-success-text">
+                        {claimable.map((segment, index) => (
+                            <span
+                                key={segment.kind}
+                                className="flex items-center gap-1.5"
+                            >
+                                {index > 0 && (
+                                    <span
+                                        aria-hidden="true"
+                                        className="opacity-60"
+                                    >
+                                        ·
+                                    </span>
+                                )}
+                                <WalletKindIcon kind={segment.kind} />
+                                <span className="text-sm font-semibold tabular-nums">
+                                    {formatRewardAmount(segment.pollen)} pollen
+                                </span>
+                            </span>
+                        ))}
+                        <span className="text-sm font-semibold">
+                            ready to claim
+                        </span>
+                    </div>
+                )}
             </Surface>
 
             {state.error && (

@@ -66,12 +66,17 @@ const CreateSpeechRequestSchema = z
         }),
         seconds: z.number().min(1).max(380).optional().meta({
             description:
-                "Audio duration in seconds for stable-audio-3-medium, 1-380.",
+                "Audio duration in seconds for stable-audio-3-medium/large, 1-380.",
             example: 30,
         }),
         steps: z.number().int().min(1).max(100).optional().meta({
-            description: "Sampling steps for stable-audio-3-medium, 1-100.",
+            description:
+                "Sampling steps (stable-audio-3-medium 1-100, stable-audio-3-large 4-8).",
             example: 8,
+        }),
+        negative_prompt: z.string().max(10000).optional().meta({
+            description: "Negative prompt for stable-audio-3-large.",
+            example: "distortion, vocals",
         }),
         loop: z.boolean().optional().meta({
             description: "Loop the generated sound effect (eleven-sfx only)",
@@ -130,6 +135,7 @@ type SimpleAudioQuery = {
     duration?: number;
     seconds?: number;
     steps?: number;
+    negative_prompt?: string;
     style?: string;
     instrumental?: boolean;
     seed?: number;
@@ -880,9 +886,10 @@ function requireElevenMusicOptions(
         opts.storeForInpainting === true ||
         opts.extractCompositionPlan === true;
 
-    // stable-audio-3-medium accepts reference_audio (fal audio-to-audio) but
-    // not the ElevenLabs composition/conditioning options.
-    if (model === "stable-audio-3-medium") {
+    // stable-audio-3-medium (fal) and stable-audio-3-large (Stability direct)
+    // accept reference_audio for audio-to-audio, but not the ElevenLabs
+    // composition/conditioning options.
+    if (model === "stable-audio-3-medium" || model === "stable-audio-3-large") {
         if (usesElevenOnlyOptions) {
             throw new UpstreamError(400 as ContentfulStatusCode, {
                 message:
@@ -897,7 +904,7 @@ function requireElevenMusicOptions(
 
     throw new UpstreamError(400 as ContentfulStatusCode, {
         message:
-            "reference_audio, conditioning_ref, composition_plan, store_for_inpainting, and extract_composition_plan are only supported with model=elevenmusic (stable-audio-3-medium also accepts reference_audio).",
+            "reference_audio, conditioning_ref, composition_plan, store_for_inpainting, and extract_composition_plan are only supported with model=elevenmusic (stable-audio-3-medium and stable-audio-3-large also accept reference_audio).",
     });
 }
 
@@ -994,6 +1001,8 @@ async function parseSpeechRequest(c: AudioContext): Promise<
             // multipart path, which is the only way to send reference_audio).
             seconds: parseOptionalNumber(formData.get("seconds"), "seconds"),
             steps: parseOptionalNumber(formData.get("steps"), "steps"),
+            negative_prompt:
+                (formData.get("negative_prompt") as string | null) || undefined,
             instrumental: parseOptionalBoolean(
                 formData.get("instrumental"),
                 "instrumental",
@@ -1277,6 +1286,18 @@ const STABLE_AUDIO_3_MEDIUM_ENDPOINT =
 const STABLE_AUDIO_3_MEDIUM_A2A_ENDPOINT =
     "https://fal.run/fal-ai/stable-audio-3/medium/audio-to-audio";
 
+// Stable Audio 3 Large runs on Stability's direct API, which is asynchronous:
+// the POST returns 202 + { id } and the rendered audio is retrieved by polling
+// /v2beta/results/{id}.
+const STABLE_AUDIO_3_LARGE_ENDPOINT =
+    "https://api.stability.ai/v2beta/audio/stable-audio/text-to-audio";
+// A reference clip switches Large to audio-to-audio (style transfer) — a
+// separate endpoint that takes the clip in an `audio` field. Stability bills it
+// the same flat 26 credits/$0.26 as text-to-audio.
+const STABLE_AUDIO_3_LARGE_A2A_ENDPOINT =
+    "https://api.stability.ai/v2beta/audio/stable-audio/audio-to-audio";
+const STABILITY_RESULTS_ENDPOINT = "https://api.stability.ai/v2beta/results";
+
 // Flat per-generation fees encoded at $0.0001/unit (see registry cost block) so
 // each path bills fal's exact rate: text-to-audio $0.0376, audio-to-audio $0.0417.
 const SA3M_TEXT_TO_AUDIO_UNITS = 376;
@@ -1398,6 +1419,169 @@ export async function generateStableAudio3Medium(opts: {
     });
 }
 
+export async function generateStableAudio3Large(opts: {
+    prompt: string;
+    seconds?: number;
+    steps?: number;
+    seed?: number;
+    negativePrompt?: string;
+    referenceAudio?: File;
+    responseFormat: string;
+    apiKey?: string;
+    log: Logger;
+}): Promise<Response> {
+    const {
+        prompt,
+        seconds = 190,
+        steps,
+        seed,
+        negativePrompt,
+        referenceAudio,
+        responseFormat,
+        apiKey,
+        log,
+    } = opts;
+
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message:
+                "Stable Audio 3 Large is not configured (missing STABILITY_API_KEY)",
+        });
+    }
+
+    if (prompt.length > 10000) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Prompt too long: ${prompt.length} characters. Maximum is 10000.`,
+        });
+    }
+
+    if (!["mp3", "wav"].includes(responseFormat)) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message:
+                "stable-audio-3-large supports response_format values: mp3, wav",
+        });
+    }
+
+    // A reference clip switches Large to audio-to-audio (style transfer): a
+    // different endpoint that takes the clip in `audio` (which defines the
+    // output length) instead of `duration`. Both modes bill the same flat fee.
+    const isAudioToAudio = referenceAudio !== undefined;
+    const endpoint = isAudioToAudio
+        ? STABLE_AUDIO_3_LARGE_A2A_ENDPOINT
+        : STABLE_AUDIO_3_LARGE_ENDPOINT;
+    const duration = Math.min(380, Math.max(1, seconds));
+
+    const formData = new FormData();
+    formData.append("prompt", prompt);
+    // The direct API's only accepted `model` value is "stable-audio-3" (our
+    // registry key is stable-audio-3-large).
+    formData.append("model", "stable-audio-3");
+    formData.append("output_format", responseFormat);
+    if (isAudioToAudio) {
+        formData.append("audio", referenceAudio);
+    } else {
+        formData.append("duration", String(duration));
+    }
+    if (steps !== undefined) formData.append("steps", String(steps));
+    if (seed !== undefined) formData.append("seed", String(seed));
+    if (negativePrompt) formData.append("negative_prompt", negativePrompt);
+
+    log.info(
+        "Stable Audio 3 Large {mode} request: chars={chars}, duration={duration}, steps={steps}, hasNegativePrompt={hasNegativePrompt}",
+        {
+            mode: isAudioToAudio ? "audio-to-audio" : "text-to-audio",
+            chars: prompt.length,
+            duration: isAudioToAudio ? "(from reference)" : duration,
+            steps: steps ?? "(default)",
+            hasNegativePrompt: Boolean(negativePrompt),
+        },
+    );
+
+    // Submit returns 202 + { id }. Note the two endpoints want different Accept
+    // values — submit requires `audio/*`, while the results endpoint rejects
+    // `audio/*` and expects `*/*` (binary) or `application/json`.
+    const submitResponse = await ensureUpstreamOk(
+        await fetch(endpoint, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                Accept: "audio/*",
+            },
+            body: formData,
+        }),
+        endpoint,
+    );
+
+    const { id } = (await submitResponse.json()) as { id?: string };
+    if (!id) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "Stable Audio 3 Large did not return a generation id",
+        });
+    }
+
+    // Poll until done (202 = still rendering, 200 = audio ready). CF Workers
+    // have wall-clock limits; cap at 180s (long-form renders run longer than
+    // the ~seconds a short clip takes).
+    const resultUrl = `${STABILITY_RESULTS_ENDPOINT}/${id}`;
+    const maxPollTime = 180_000;
+    const pollInterval = 2_000;
+    const startTime = Date.now();
+    let consecutiveErrors = 0;
+
+    while (Date.now() - startTime < maxPollTime) {
+        await new Promise((r) => setTimeout(r, pollInterval));
+
+        const pollResponse = await fetch(resultUrl, {
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                Accept: "*/*",
+            },
+        });
+
+        if (pollResponse.status === 202) {
+            consecutiveErrors = 0;
+            continue;
+        }
+
+        if (!pollResponse.ok) {
+            if (++consecutiveErrors >= 3) {
+                const errorText = await pollResponse.text();
+                throw new UpstreamError(502 as ContentfulStatusCode, {
+                    message:
+                        errorText ||
+                        `Stable Audio 3 Large polling failed: ${pollResponse.status}`,
+                    upstreamStatus: pollResponse.status,
+                    responseBody: errorText,
+                });
+            }
+            continue;
+        }
+
+        const audioBuffer = await pollResponse.arrayBuffer();
+        const usageHeaders = buildUsageHeaders("stable-audio-3-large", {
+            completionAudioTokens: 1,
+        });
+
+        log.info("Stable Audio 3 Large success: {bytes} bytes", {
+            bytes: audioBuffer.byteLength,
+        });
+
+        return new Response(audioBuffer, {
+            status: 200,
+            headers: {
+                "Content-Type":
+                    pollResponse.headers.get("content-type") ||
+                    (responseFormat === "wav" ? "audio/wav" : "audio/mpeg"),
+                ...usageHeaders,
+            },
+        });
+    }
+
+    throw new UpstreamError(504 as ContentfulStatusCode, {
+        message: "Stable Audio 3 Large generation timed out",
+    });
+}
+
 async function dispatchAudioGeneration(
     c: AudioContext,
     opts: {
@@ -1408,6 +1592,7 @@ async function dispatchAudioGeneration(
         duration?: number;
         seconds?: number;
         steps?: number;
+        negativePrompt?: string;
         style?: string;
         instrumental?: boolean;
         storeForInpainting?: boolean;
@@ -1421,6 +1606,7 @@ async function dispatchAudioGeneration(
         apiKey: string;
         dashScopeApiKey: string;
         falKey?: string;
+        stabilityApiKey?: string;
         env: Env["Bindings"];
         log: Logger;
     },
@@ -1433,6 +1619,7 @@ async function dispatchAudioGeneration(
         duration,
         seconds,
         steps,
+        negativePrompt,
         style,
         instrumental,
         storeForInpainting,
@@ -1446,6 +1633,7 @@ async function dispatchAudioGeneration(
         apiKey,
         dashScopeApiKey,
         falKey,
+        stabilityApiKey,
         env,
         log,
     } = opts;
@@ -1493,6 +1681,23 @@ async function dispatchAudioGeneration(
                 seed,
                 referenceAudio,
                 falKey,
+                log,
+            }),
+        );
+    }
+
+    if (c.var.model.resolved === "stable-audio-3-large") {
+        return withSafetyHeaders(
+            c,
+            await generateStableAudio3Large({
+                prompt: text,
+                seconds: seconds ?? duration,
+                steps,
+                seed,
+                negativePrompt,
+                referenceAudio,
+                responseFormat,
+                apiKey: stabilityApiKey,
                 log,
             }),
         );
@@ -1572,6 +1777,7 @@ export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
         duration: query.duration,
         seconds: query.seconds,
         steps: query.steps,
+        negativePrompt: query.negative_prompt,
         style: query.style,
         instrumental: query.instrumental,
         instruct: query.instruct,
@@ -1580,6 +1786,7 @@ export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
         apiKey,
         dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
         falKey: c.env.FAL_KEY,
+        stabilityApiKey: c.env.STABILITY_API_KEY,
         env: c.env,
         log,
     });
@@ -1701,7 +1908,7 @@ export const audioRoutes = new Hono<Env>()
             description: [
                 "Generate speech or music from text. Compatible with the OpenAI TTS API for JSON requests.",
                 "",
-                "Set `model` to `elevenmusic`, `acestep`, or `stable-audio-3-medium` to generate music. Send multipart/form-data with `reference_audio` plus `input` to run fal audio-to-audio (style transfer) on `stable-audio-3-medium`, or reference-audio conditioning on `elevenmusic`; for ElevenLabs inpainting, pass a `composition_plan`.",
+                "Set `model` to `elevenmusic`, `acestep`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music. Send multipart/form-data with `reference_audio` plus `input` to run audio-to-audio (style transfer) on `stable-audio-3-medium` or `stable-audio-3-large`, or reference-audio conditioning on `elevenmusic`; for ElevenLabs inpainting, pass a `composition_plan`.",
                 "",
                 `**Available voices:** ${ELEVENLABS_VOICES.join(", ")}`,
                 "",
@@ -1745,6 +1952,7 @@ export const audioRoutes = new Hono<Env>()
                 duration,
                 seconds,
                 steps,
+                negative_prompt,
                 instrumental,
                 store_for_inpainting,
                 extract_composition_plan,
@@ -1779,6 +1987,7 @@ export const audioRoutes = new Hono<Env>()
                 duration,
                 seconds,
                 steps,
+                negativePrompt: negative_prompt,
                 style,
                 instrumental,
                 storeForInpainting: store_for_inpainting,
@@ -1792,6 +2001,7 @@ export const audioRoutes = new Hono<Env>()
                 apiKey,
                 dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
                 falKey: c.env.FAL_KEY,
+                stabilityApiKey: c.env.STABILITY_API_KEY,
                 env: c.env,
                 log,
             });

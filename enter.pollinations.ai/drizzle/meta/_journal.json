@@ -232,6 +232,13 @@
       "when": 1782231037000,
       "tag": "0032_rename_rewards_for_claims",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "6",
+      "when": 1782231038000,
+      "tag": "0033_normalize_reward_buckets_to_tier",
+      "breakpoints": true
     }
   ]
 }

@@ -1,31 +1,18 @@
 import type { Bucket } from "@shared/billing/deduction.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
-import type { Quest, QuestAward, QuestEvaluationContext } from "../types.ts";
+import type { QuestDefinition } from "../definitions.ts";
+import {
+    type QuestCard,
+    type QuestEvaluationContext,
+    questToCard,
+    type RewardProposal,
+} from "../types.ts";
 
 /**
- * github-issues group — community bounties sourced PURELY from the
- * `github_quest_issues` D1 table (no GitHub API). Unlike the static groups,
- * this one builds quests from source state: EACH issue row becomes its OWN
- * normal Quest (id `github:issue:${issueNumber}`), carrying that row's real
- * per-issue title/description/reward/bucket/url. There is no umbrella
- * "community" quest anymore.
- *
- * loadQuests is called by BOTH consumers (catalog + evaluator), so it must
- * surface every issue that matters to either:
- *   - an OPEN/claimed issue is a board card (catalog) whose findRewards returns
- *     [] (nothing to pay out yet);
- *   - a COMPLETED + payable issue is a quest whose findRewards pays the
- *     assignee (evaluator).
- *
- * TRADEOFF (deliberate, documented): questToCard serializes EVERY loaded quest
- * into a board card uniformly — there is no per-quest "hide from board" hook.
- * Because we must load completed-and-payable issues for the evaluator to pay
- * them, those completed issues ALSO show as cards (always "available", since
- * the card layer hardcodes availability). We accept this collapse for now:
- * the old per-card availability/"completed leaves the board" behaviour is gone.
- * The reward ledger / viewer history remains the source of truth for what a
- * user actually earned.
+ * Community bounties sourced from the materialized github_quest_issues table.
+ * Each issue row is its own quest definition; completed payable rows also emit
+ * reward proposals for the assignee.
  */
 
 const QUEST_ICON_ID = "github" as const;
@@ -44,19 +31,16 @@ async function loadAssigneeUserId(
     return rows[0]?.userId ?? null;
 }
 
-/**
- * Build the per-issue Quest. The closure captures the issue row so findRewards
- * never re-queries it — it is a pure function of (issue, assignee lookup): an
- * OPEN issue yields no award; a COMPLETED + payable issue yields one award to
- * the assignee. scope:"once" — toGrant derives the key `quest:github:issue:${N}`
- * (no userId), so an issue pays out exactly once even if it is reassigned to a
- * different user after a first payout. The award's userId is who gets paid; it
- * is deliberately NOT in the key.
- */
-function toIssueQuest(
+function toIssueQuestDefinition(
     issue: typeof schema.githubQuestIssues.$inferSelect,
-): Quest {
+): QuestDefinition {
     return {
+        // Per-issue idempotency identity. The grant key for a scope:"once" quest
+        // is `quest:${id}` (no userId), so `id` MUST be unique per issue or every
+        // community bounty collapses to one key and only the first ever pays. The
+        // `questId` COLUMN is a shared discriminator ("github:community_issue_quest"
+        // for all rows), NOT a per-issue id — so derive the id from issueNumber
+        // (the table PK), restoring the keying fixed in 6d9a0e5d9.
         id: `github:issue:${issue.issueNumber}`,
         title: issue.title,
         description: issue.description ?? "",
@@ -66,36 +50,55 @@ function toIssueQuest(
         rewardAmount: issue.rewardAmount ?? 0,
         balanceBucket: issue.balanceBucket as Bucket,
         url: issue.url,
-        async findRewards(ctx: QuestEvaluationContext): Promise<QuestAward[]> {
-            // Only a completed, funded, PR-closed, assigned issue pays out.
-            if (
-                issue.state !== "completed" ||
-                !issue.rewardAmount ||
-                issue.rewardAmount <= 0 ||
-                issue.completedByPrNumber === null ||
-                issue.assigneeGithubId === null
-            ) {
-                return [];
-            }
-            const userId = await loadAssigneeUserId(
-                ctx,
-                issue.assigneeGithubId,
-            );
-            if (!userId) return [];
-            return [{ userId }];
-        },
     };
 }
 
-/**
- * One Quest per issue row. We load ALL rows: open issues are board cards,
- * completed-and-payable issues are payout quests, and findRewards decides
- * per-quest which case applies (see the TRADEOFF note above for why completed
- * issues also remain on the board).
- */
-export async function loadQuests(
+function issueAvailability(state: string): QuestCard["availability"] {
+    if (state === "completed") return "completed";
+    if (state === "claimed") return "claimed";
+    return "available";
+}
+
+function isPayableIssue(
+    issue: typeof schema.githubQuestIssues.$inferSelect,
+): boolean {
+    return (
+        issue.state === "completed" &&
+        (issue.rewardAmount ?? 0) > 0 &&
+        issue.completedByPrNumber !== null &&
+        issue.assigneeGithubId !== null
+    );
+}
+
+export async function listQuestCards(
     ctx: QuestEvaluationContext,
-): Promise<Quest[]> {
+): Promise<QuestCard[]> {
     const rows = await ctx.db.select().from(schema.githubQuestIssues);
-    return rows.map(toIssueQuest);
+    return rows.map((issue) =>
+        questToCard(
+            toIssueQuestDefinition(issue),
+            issueAvailability(issue.state),
+        ),
+    );
+}
+
+export async function findRewardProposals(
+    ctx: QuestEvaluationContext,
+): Promise<RewardProposal[]> {
+    const rows = await ctx.db.select().from(schema.githubQuestIssues);
+    const proposals: RewardProposal[] = [];
+
+    for (const issue of rows) {
+        if (!isPayableIssue(issue) || issue.assigneeGithubId === null) {
+            continue;
+        }
+        const userId = await loadAssigneeUserId(ctx, issue.assigneeGithubId);
+        if (!userId) continue;
+        proposals.push({
+            quest: toIssueQuestDefinition(issue),
+            userId,
+        });
+    }
+
+    return proposals;
 }

@@ -302,9 +302,7 @@ function RouteComponent() {
                     />
                 </div>
             )}
-            {activePage === "quests" && (
-                <QuestOverview githubUsername={githubUsername} />
-            )}
+            {activePage === "quests" && <QuestOverview />}
             {activePage === "keys" && (
                 <ApiKeyList
                     apiKeys={apiKeys}

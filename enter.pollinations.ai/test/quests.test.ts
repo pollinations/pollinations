@@ -3,17 +3,17 @@ import { grantReward } from "@shared/billing/grant-reward.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { expect, vi } from "vitest";
+import { expect } from "vitest";
 import { runQuestEvaluator } from "../src/services/quest-evaluator.ts";
 import * as questIndex from "../src/services/quests/index.ts";
 import type {
-    Quest,
     QuestEvaluationContext,
+    QuestGroup,
 } from "../src/services/quests/types.ts";
 import { test } from "./fixtures.ts";
 
-// The migrated evaluator records `scanned = findRewards(...).length` — the
-// number of CANDIDATES a quest's source still produces, recorded BEFORE the
+// The evaluator records `scanned` as the number of reward proposals a quest's
+// source still produces, recorded BEFORE the
 // generic dedup. So a quest whose source row persists keeps `scanned: 1` on a
 // re-run; only `granted` drops to 0 once the reward is already paid. (The old
 // evaluator deducted dedup before counting, so re-runs reported `scanned: 0`.)
@@ -68,7 +68,7 @@ async function countStaticQuestCards(): Promise<number> {
         db: drizzle(env.DB, { schema }),
         env,
     };
-    const cards = await questIndex.loadQuestCards(ctx);
+    const cards = await questIndex.listQuestCards(ctx);
     return cards.filter((card) => !card.id.startsWith("github:issue:")).length;
 }
 
@@ -195,7 +195,7 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
         title: "Fix a model config",
         iconId: "github",
         category: "community",
-        availability: "available",
+        availability: "claimed",
         rewardAmount: 20,
         url: "https://github.com/pollinations/pollinations/issues/322",
     });
@@ -336,9 +336,9 @@ test("quest evaluator grants code-defined product quests once", async ({
         NO_ELIXPO_INTERN_RESULT,
     ]);
 
-    // Second run: each quest's source rows still exist, so findRewards re-emits
-    // the same candidates (scanned: 1). The generic dedup then filters them out,
-    // so nothing is granted again (granted: 0) and the balance is unchanged.
+    // Second run: each quest's source rows still exist, so the same proposals
+    // are emitted (scanned: 1). The generic dedup then filters them out, so
+    // nothing is granted again (granted: 0) and the balance is unchanged.
     const second = await runQuestEvaluator(env);
     expect(second.results).toEqual([
         NO_FIRST_IMAGE_RESULT,
@@ -511,38 +511,22 @@ test("quest evaluator continues after one quest fails", async ({
 }) => {
     await mocks.enable("github", "tinybird");
 
-    // A failing quest: a self-contained quest whose findRewards throws. The
-    // evaluator must isolate it (record its error, contribute no candidates)
-    // and still run every other quest. Groups now expose loadQuests, so we spy
-    // on the index loader to append the failing quest for this run only.
-    const failingQuest: Quest = {
-        id: "test:failing_quest",
-        title: "Failing quest",
-        description: "Used to verify runner isolation.",
-        iconId: "sprout",
-        category: "grow",
-        scope: "perUser",
-        rewardAmount: 1,
-        balanceBucket: "pack",
-        async findRewards(): Promise<never> {
+    const failingGroup: QuestGroup = {
+        id: "test-failing",
+        async listQuestCards() {
+            return [];
+        },
+        async findRewardProposals(): Promise<never> {
             throw new Error("planned quest failure");
         },
     };
 
-    // Capture the real loader before spying so the mock can delegate to it
-    // without recursing.
-    const realLoadQuests = questIndex.loadQuests;
-    const spy = vi
-        .spyOn(questIndex, "loadQuests")
-        .mockImplementation(async (ctx) => {
-            const quests = await realLoadQuests(ctx);
-            return [...quests, failingQuest];
-        });
+    questIndex.QUEST_GROUPS.unshift(failingGroup);
     try {
         const result = await runQuestEvaluator(env);
         expect(result.success).toBe(false);
         expect(result.results).toContainEqual({
-            questId: "test:failing_quest",
+            questId: "group:test-failing",
             scanned: 0,
             granted: 0,
             error: "planned quest failure",
@@ -551,7 +535,7 @@ test("quest evaluator continues after one quest fails", async ({
             "spend:first_top_up",
         );
     } finally {
-        spy.mockRestore();
+        questIndex.QUEST_GROUPS.shift();
     }
 });
 
@@ -778,6 +762,102 @@ test("quest evaluator rewards completed GitHub quest issues through shared path"
         pollenCredited: 17,
         balanceBucket: "tier",
     });
+});
+
+// Regression guard for the idempotency-key collapse: PRODUCTION fills
+// github_quest_issues.quest_id with ONE shared constant
+// ("github:community_issue_quest") for every community issue (see
+// .github/scripts/quest-reward-payout.js). The quest id MUST therefore be
+// derived from the per-issue PK (issueNumber), NOT from quest_id — otherwise
+// every scope:"once" bounty keys to the same `quest:github:community_issue_quest`
+// and only the first one ever pays. This test reproduces the production data
+// shape (two issues, same quest_id) and asserts BOTH pay out independently.
+test("two community issues sharing one quest_id each pay out (production key shape)", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    mocks.github.state.user.created_at = new Date().toISOString();
+    await mocks.enable("github", "tinybird");
+
+    // The single shared discriminator the payout script writes for ALL issues.
+    const SHARED_QUEST_ID = "github:community_issue_quest";
+
+    const secondGithubId = 424242;
+    await db.insert(schema.user).values({
+        id: "community-issue-second-user",
+        name: "Second Dev",
+        email: "second-dev@example.com",
+        emailVerified: false,
+        image: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        githubId: secondGithubId,
+        githubUsername: "second-dev",
+        tier: "spore",
+        tierBalance: 0,
+        packBalance: 0,
+    });
+
+    const issues = [
+        { issueNumber: 901, assigneeGithubId: user.githubId, reward: 11 },
+        { issueNumber: 902, assigneeGithubId: secondGithubId, reward: 13 },
+    ];
+    for (const issue of issues) {
+        await db.insert(schema.githubQuestIssues).values({
+            issueNumber: issue.issueNumber,
+            // BOTH rows carry the same shared quest_id, exactly like production.
+            questId: SHARED_QUEST_ID,
+            title: `Community bounty #${issue.issueNumber}`,
+            description: "Merge the linked PR.",
+            url: `https://github.com/pollinations/pollinations/issues/${issue.issueNumber}`,
+            rewardAmount: issue.reward,
+            balanceBucket: "pack",
+            state: "completed",
+            assigneeGithubId: issue.assigneeGithubId,
+            assigneeLogin: "dev",
+            assigneesJson: JSON.stringify(["dev"]),
+            completedByPrNumber: issue.issueNumber + 1000,
+            completedAt: new Date("2026-06-12T00:00:00Z"),
+            githubCreatedAt: new Date("2026-06-10T00:00:00Z"),
+            githubUpdatedAt: new Date("2026-06-12T00:00:00Z"),
+        });
+    }
+
+    await runQuestEvaluator(env);
+
+    // Each issue keys by its own PK, so two DISTINCT grants land — not one. The
+    // grant's questId snapshots the per-issue quest id (NOT the shared column),
+    // so the two grants carry github:issue:901 / :902 and key independently.
+    const grants = await db
+        .select({
+            idempotencyKey: schema.rewardGrants.idempotencyKey,
+            questId: schema.rewardGrants.questId,
+        })
+        .from(schema.rewardGrants)
+        .where(eq(schema.rewardGrants.balanceBucket, "pack"));
+
+    const issueGrants = grants.filter((g) =>
+        g.idempotencyKey.startsWith("quest:github:issue:"),
+    );
+    expect(issueGrants).toHaveLength(2);
+    expect(issueGrants.map((g) => g.idempotencyKey).sort()).toEqual([
+        "quest:github:issue:901",
+        "quest:github:issue:902",
+    ]);
+
+    // Both assignees were actually credited.
+    const [firstBalance] = await db
+        .select({ packBalance: schema.user.packBalance })
+        .from(schema.user)
+        .where(eq(schema.user.id, user.id));
+    expect(firstBalance?.packBalance).toBeCloseTo((user.packBalance ?? 0) + 11);
+    const [secondBalance] = await db
+        .select({ packBalance: schema.user.packBalance })
+        .from(schema.user)
+        .where(eq(schema.user.githubId, secondGithubId));
+    expect(secondBalance?.packBalance).toBeCloseTo(13);
 });
 
 test("account quest history includes GitHub quest reward grants", async ({

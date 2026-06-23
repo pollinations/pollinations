@@ -5,7 +5,7 @@ import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { QUEST_ICON_IDS } from "../services/quests/definitions.ts";
-import { loadQuestCards } from "../services/quests/index.ts";
+import { listQuestCards } from "../services/quests/index.ts";
 import type {
     QuestCard,
     QuestEvaluationContext,
@@ -78,7 +78,7 @@ async function buildQuestCatalog(
         db: drizzle(env.DB, { schema }),
         env,
     };
-    const cards = await loadQuestCards(ctx);
+    const cards = await listQuestCards(ctx);
     const quests = [...cards].sort((a, b) => a.title.localeCompare(b.title));
 
     return {

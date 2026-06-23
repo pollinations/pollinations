@@ -1,5 +1,11 @@
 import { sql } from "drizzle-orm";
-import type { Quest, QuestAward, QuestEvaluationContext } from "../types.ts";
+import type { QuestDefinition } from "../definitions.ts";
+import {
+    type QuestCard,
+    type QuestEvaluationContext,
+    questToCard,
+    type RewardProposal,
+} from "../types.ts";
 
 // elixpo (Ayushman Bhattacharya) joined the team as an intern — a one-off
 // welcome quest scoped to his GitHub account. Shown to everyone as a static
@@ -7,7 +13,7 @@ import type { Quest, QuestAward, QuestEvaluationContext } from "../types.ts";
 // not a threshold quest.
 const TARGET_GITHUB_ID = 161_109_909;
 
-const elixpoInternQuest: Quest = {
+const elixpoInternQuest: QuestDefinition = {
     id: "easteregg:elixpo_intern",
     title: "Developer Relations Intern, unlocked 🌻",
     description: "It's official, elixpo — welcome to the Pollinations crew.",
@@ -16,20 +22,26 @@ const elixpoInternQuest: Quest = {
     scope: "perUser",
     rewardAmount: 100,
     balanceBucket: "pack",
-    async findRewards({ db }: QuestEvaluationContext): Promise<QuestAward[]> {
-        const rows = await db.all<{ userId: string }>(
-            sql`
-            SELECT user.id AS userId
-            FROM user
-            WHERE user.github_id = ${TARGET_GITHUB_ID}
-            LIMIT 1`,
-        );
-        return rows.map((row) => ({ userId: row.userId }));
-    },
 };
 
-export async function loadQuests(
+export async function listQuestCards(
     _ctx: QuestEvaluationContext,
-): Promise<Quest[]> {
-    return [elixpoInternQuest];
+): Promise<QuestCard[]> {
+    return [questToCard(elixpoInternQuest)];
+}
+
+export async function findRewardProposals({
+    db,
+}: QuestEvaluationContext): Promise<RewardProposal[]> {
+    const rows = await db.all<{ userId: string }>(
+        sql`
+        SELECT user.id AS userId
+        FROM user
+        WHERE user.github_id = ${TARGET_GITHUB_ID}
+        LIMIT 1`,
+    );
+    return rows.map((row) => ({
+        quest: elixpoInternQuest,
+        userId: row.userId,
+    }));
 }

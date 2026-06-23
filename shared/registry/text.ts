@@ -1228,7 +1228,6 @@ export const TEXT_SERVICES = {
         codeExecution: true,
         search: true,
         isSpecialized: false,
-        alpha: true,
     },
     "qwen-coder-large": {
         aliases: ["qwen3-coder-next"],

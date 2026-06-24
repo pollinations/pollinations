@@ -32,11 +32,12 @@ Yes — complete Quests from the Quests dashboard to earn Pollen. No credit card
 
 ## 🎯 How do Quests work?
 
-Quests are ways to earn Pollen by completing useful actions around Pollinations, like setting up your account, growing an app, or contributing code.
+Earn Pollen by completing useful actions — onboarding, growing an app, GitHub contributions, and more.
 
-The Quests dashboard shows what is available to you and what you have completed. Open Contribute quests are GitHub issues with fixed Pollen rewards. If you want to work on one, open the linked issue and comment that you are interested — the issue itself includes the full workflow.
-
-When a quest is completed, the reward is credited automatically. Completion can be verified from your Pollinations account activity, request usage milestones, app-directory approvals, and linked or public GitHub activity.
+- 🧪 **In alpha** — rewards and availability evolve as we tune them.
+- 📋 **Browse** the Quests dashboard for what's open and what you've done.
+- 🐙 **Contribute quests** are GitHub issues with fixed rewards — comment on the issue to claim.
+- ✅ Rewards land automatically once verified.
 
 ## 💳 What payment methods do you accept?
 

@@ -1,0 +1,8 @@
+{
+  "platform": "discord",
+  "scope": "models_weekly",
+  "date": "2026-06-24",
+  "previous_date": "2026-06-17",
+  "generated_at": "2026-06-24T15:05:37.557465+00:00",
+  "text": "<@&1424461167883194418> Model updates — 2026-06-24\n\n### 🆕 New\n- 🧠 **GPT-5.4** (OpenAI) — vision, tool calling, and reasoning\n- 🧠 **Mercury 2** (Inception) — tool calling\n- 🧠 **Mistral Small 3.2** (Mistral) — vision and tool calling\n- 🧠 **Gemini 3 Flash** (Google) — vision, audio/video input, tool calling, web search, and code execution\n- 🧠 **Grok 4.20 Reasoning** (xAI) — vision, tool calling, and reasoning\n- 🧠 **Claude Opus 4.6** (Anthropic) — vision and tool calling\n- 🧠 **Moonshot Kimi K2.7 Code** (Moonshot AI) — vision, tool calling, and reasoning\n- 🧠 **MiniMax M2.7** (MiniMax) — tool calling and reasoning\n- 🔊 **ElevenLabs Multilingual v2** (ElevenLabs) — TTS\n- 🔊 **ElevenLabs Sound Effects** (ElevenLabs) — TTS\n- 🔊 **Stable Audio 3 Medium** (Stability AI) — TTS\n- 🔊 **Stable Audio 3 Large** (Stability AI) — TTS\n\n### 🗑️ Removed\n- `gpt-5.5` (text)\n- `mistral-4` (text)\n- `gemini-3.5-flash` (text)\n- `grok-4.3` (text)\n- `claude-opus-4.8` (text)\n- `kimi-k2.6` (text)\n- `kimi-k2.7-code` (text)\n- `minimax-m3` (text)\n\n### ⬇️ Price cuts\n- 🧠 Text: `grok-large` (~60% off) · `glm` (~30% off)\n- 🔊 Audio: `elevenlabs` (~40% off) · `elevenflash` (~40% off) · `elevenmusic` (~50% off)\n\n### ⬆️ Price increases\n- 🧠 Text: `openai-large` (~100% more) · `mistral` (~200% more) · `gemini` (~200% more) · `kimi` (~35% more)\n\n### ✨ Capability updates\n- `minimax` — added image input\n\nExplore at https://gen.pollinations.ai/docs"
+}

@@ -1,5 +1,43 @@
 # Pollinations Model Changelog
 
+## 2026-06-24
+
+### Added
+- `gpt-5.4` (OpenAI, text) — vision, tool calling, and reasoning.
+- `mercury` (Inception, text) — tool calling.
+- `mistral-small-3.2` (Mistral, text) — vision and tool calling.
+- `gemini-3-flash` (Google, text) — vision, audio/video input, tool calling, web search, and code execution.
+- `grok-4-20-reasoning` (xAI, text) — vision, tool calling, and reasoning.
+- `claude-opus-4.6` (Anthropic, text) — vision and tool calling.
+- `kimi-code` (Moonshot AI, text) — vision, tool calling, and reasoning.
+- `minimax-m2.7` (MiniMax, text) — tool calling and reasoning.
+- `eleven-multilingual-v2` (ElevenLabs, audio) — TTS.
+- `eleven-sfx` (ElevenLabs, audio) — TTS.
+- `stable-audio-3-medium` (Stability AI, audio) — TTS.
+- `stable-audio-3-large` (Stability AI, audio) — TTS.
+
+### Changed
+- `grok-large` — price cut ~60%.
+- `glm` — price cut ~30%.
+- `elevenlabs` — price cut ~40%.
+- `elevenflash` — price cut ~40%.
+- `elevenmusic` — price cut ~50%, added audio input.
+- `openai-large` — price +100%.
+- `mistral` — price +200%, added reasoning.
+- `gemini` — price +200%.
+- `kimi` — price +35%.
+- `minimax` — added image input.
+
+### Removed
+- `gpt-5.5` (was: text)
+- `mistral-4` (was: text)
+- `gemini-3.5-flash` (was: text)
+- `grok-4.3` (was: text)
+- `claude-opus-4.8` (was: text)
+- `kimi-k2.6` (was: text)
+- `kimi-k2.7-code` (was: text)
+- `minimax-m3` (was: text)
+
 ## 2026-06-17
 
 ### Text

@@ -1,0 +1,27 @@
+{
+  "date": "2026-06-23",
+  "period_start": "2026-06-23",
+  "period_end": "2026-06-23",
+  "title": "Stable Audio 3 takes over the soundboard",
+  "summary": "A heavy model day: Stable Audio 3 takes over the soundboard, Inception Mercury 2 joins the text lineup, and the mobile catalog gets some polish.\n\nA massive upgrade to the audio endpoints. We wired up Stable Audio 3 via Stability's official API and swapped out 2.5 for 3 Medium on fal.ai. You can now generate up to 380 seconds of 44.1 kHz stereo audio, and we added support for audio-to-audio style transfer. If your code is still calling 2.5, don't worry—we're automatically routing those requests to the new model.\n\nAdded Inception's Mercury 2 to the text generation lineup. We also wired up the usage parsing to properly handle its advanced token tracking, including cached inputs and reasoning tokens.\n\nUpdated the model pricing cards to show accurate flat-rate '/gen' badges for the new Stable Audio models instead of per-second estimates. While in there, we smoothed out tooltips and status chips for anyone browsing the catalog on mobile.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 11912,
+      "date": "2026-06-23"
+    },
+    {
+      "number": 11961,
+      "date": "2026-06-23"
+    },
+    {
+      "number": 11964,
+      "date": "2026-06-23"
+    },
+    {
+      "number": 11967,
+      "date": "2026-06-23"
+    }
+  ],
+  "generated_at": "2026-06-24T07:07:47.585940+00:00"
+}

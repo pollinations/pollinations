@@ -110,7 +110,7 @@ export async function recordRewards(
 
 /**
  * Single-reward convenience wrapper. Kept for direct callers that need the
- * created reward id; scheduled reconciliation uses recordRewards().
+ * created reward id; quest checks use recordRewards().
  */
 export async function recordReward(
     db: AuthDb,

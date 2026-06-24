@@ -1,12 +1,16 @@
+import { getLogger } from "@logtape/logtape";
 import { sql } from "drizzle-orm";
 import { fetchTinybirdRows, requireTinybirdReadToken } from "../../tinybird.ts";
 import type { QuestDefinition } from "../definitions.ts";
 import {
     type QuestCard,
     type QuestEvaluationContext,
+    type QuestUser,
     questToCard,
     type RewardProposal,
 } from "../types.ts";
+
+const log = getLogger(["enter", "quests", "app-growth"]);
 
 /**
  * App-growth quests intentionally share one source group even though they render
@@ -48,15 +52,16 @@ export async function listQuestCards(
     return QUESTS.map((quest) => questToCard(quest));
 }
 
-export async function findRewardProposals(
+export async function findRewardProposalsForUser(
     ctx: QuestEvaluationContext,
+    user: QuestUser,
 ): Promise<RewardProposal[]> {
     const [paidSpendRows, byopExternalRows] = await Promise.all([
-        loadPaidSpendAppOwners(ctx),
-        loadByopExternalAppOwners(ctx),
+        loadPaidSpendAppOwner(ctx, user),
+        loadByopExternalAppOwner(ctx, user),
     ]);
 
-    return [
+    const proposals = [
         ...byopExternalRows.map((row) => ({
             quest: firstByopExternalUserQuest,
             userId: row.userId,
@@ -66,37 +71,57 @@ export async function findRewardProposals(
             userId: row.userId,
         })),
     ];
+    log.info(
+        "APP_GROWTH_PROPOSALS: userId={userId} byopOwnerRows={byop} paidSpendRows={paid} questIds={questIds}",
+        {
+            userId: user.id,
+            byop: byopExternalRows.length,
+            paid: paidSpendRows.length,
+            questIds: proposals.map((p) => p.quest.id),
+        },
+    );
+    return proposals;
 }
 
-async function loadPaidSpendAppOwners({
-    env,
-}: QuestEvaluationContext): Promise<QuestUserRow[]> {
+async function loadPaidSpendAppOwner(
+    { env }: QuestEvaluationContext,
+    user: QuestUser,
+): Promise<QuestUserRow[]> {
     const tinybirdOrigin = new URL(env.TINYBIRD_INGEST_URL).origin;
     const tinybirdToken = requireTinybirdReadToken(env);
     const rows = await fetchTinybirdRows<QuestUserRow>(
         tinybirdOrigin,
         "/v0/pipes/quest_paid_app_spend.json",
         tinybirdToken,
-        {},
+        { user_id: user.id },
     );
-    // No per-run cap: the pipe returns exactly the qualifying app owners, the
-    // rewards idempotency key dedups re-runs, and recordRewards() batches the
-    // inserts. A fixed slice would stick on the first N owners forever.
-    return uniqueUsers(rows);
+    const matched = uniqueUsers(rows).filter((row) => row.userId === user.id);
+    // Same before/after-filter visibility as model-usage: an un-redeployed/global
+    // pipe returns rows for everyone, which the client filter then drops to 0.
+    log.info(
+        "APP_GROWTH_PAID_SPEND: userId={userId} pipeRows={pipeRows} matchedRows={matchedRows}",
+        {
+            userId: user.id,
+            pipeRows: rows.length,
+            matchedRows: matched.length,
+        },
+    );
+    return matched;
 }
 
-async function loadByopExternalAppOwners({
-    db,
-}: QuestEvaluationContext): Promise<QuestUserRow[]> {
+async function loadByopExternalAppOwner(
+    { db }: QuestEvaluationContext,
+    user: QuestUser,
+): Promise<QuestUserRow[]> {
     const rows = await db.all<QuestUserRow>(
         sql`
         SELECT app_key.user_id AS userId
         FROM apikey AS user_key
         INNER JOIN apikey AS app_key
             ON app_key.id = user_key.byop_client_key_id
-        WHERE user_key.user_id != app_key.user_id
-        GROUP BY app_key.user_id
-        ORDER BY app_key.user_id`,
+        WHERE app_key.user_id = ${user.id}
+          AND user_key.user_id != app_key.user_id
+        LIMIT 1`,
     );
 
     return uniqueUsers(rows);

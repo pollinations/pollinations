@@ -4,7 +4,7 @@ import * as schema from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
-import { runQuestEvaluator } from "../src/services/quest-evaluator.ts";
+import { checkQuestsForUser } from "../src/services/quest-checker.ts";
 import * as questIndex from "../src/services/quests/index.ts";
 import type {
     QuestEvaluationContext,
@@ -12,15 +12,7 @@ import type {
 } from "../src/services/quests/types.ts";
 import { test } from "./fixtures.ts";
 
-// The evaluator records `scanned` as the number of qualifying completions a
-// quest source still produces. The reward writer is the idempotent layer, so
-// persistent source rows can scan again while `recorded` drops to 0.
 const ELIXPO_INTERN_QUEST_ID = "easteregg:elixpo_intern";
-const ELIXPO_INTERN_ALREADY_RECORDED = {
-    questId: ELIXPO_INTERN_QUEST_ID,
-    scanned: 1,
-    recorded: 0,
-};
 
 // Number of static "product" catalog cards. Every static group quest
 // serializes to exactly one uniform card; the github-contributions group is the
@@ -129,7 +121,7 @@ async function getOnlyUser() {
     return user;
 }
 
-test("GET /api/quests/catalog returns product and GitHub issue quests", async () => {
+test("GET /api/quests/catalog returns product quests while issue cards are hidden", async () => {
     await env.KV.delete("quests:catalog:v12");
     const staticCardCount = await countStaticQuestCards();
     const db = drizzle(env.DB, { schema });
@@ -178,8 +170,9 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
         }[];
     };
 
-    // Static product cards plus one card per seeded issue row.
-    expect(payload.quests).toHaveLength(staticCardCount + 3);
+    // GitHub issue cards are currently hidden from the public catalog while the
+    // bounty flow is finalized, even when mirrored issues exist.
+    expect(payload.quests).toHaveLength(staticCardCount);
     // Every card carries a stats block; with no rewards recorded it's all zero.
     expect(
         payload.quests.find((quest) => quest.id === "onboarding:first_api_key")
@@ -253,37 +246,9 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
         rewardAmount: 5,
         url: null,
     });
-    // Each issue is now its own uniform quest card (no kind/assignees/sortKey).
     expect(
-        payload.quests.find((quest) => quest.id === "github:issue:321"),
-    ).toMatchObject({
-        title: "Add a demo app",
-        category: "contribute",
-        availability: "available",
-        rewardAmount: 15,
-        url: "https://github.com/pollinations/pollinations/issues/321",
-    });
-    // Issue 322 is "claimed" (assigned, in progress) → off the open board, so
-    // its card is availability "completed" (the frontend then shows it only to
-    // whoever earns it).
-    expect(
-        payload.quests.find((quest) => quest.id === "github:issue:322"),
-    ).toMatchObject({
-        title: "Fix a model config",
-        category: "contribute",
-        availability: "completed",
-        rewardAmount: 20,
-        url: "https://github.com/pollinations/pollinations/issues/322",
-    });
-    expect(
-        payload.quests.find((quest) => quest.id === "github:issue:323"),
-    ).toMatchObject({
-        title: "Malformed reward heading",
-        category: "contribute",
-        availability: "available",
-        rewardAmount: 0,
-        url: "https://github.com/pollinations/pollinations/issues/323",
-    });
+        payload.quests.some((quest) => quest.id.startsWith("github:issue:")),
+    ).toBe(false);
     // The uniform card shape dropped the old board-state fields.
     for (const quest of payload.quests) {
         expect(quest).not.toHaveProperty("kind");
@@ -453,7 +418,7 @@ test("catalog stats aggregate earned/claimed from the rewards ledger", async ({
     );
 });
 
-test("quest evaluator records product rewards and claim endpoint credits one", async ({
+test("quest check records product rewards and claim endpoint credits one", async ({
     apiKey: _apiKey,
     mocks,
     sessionToken,
@@ -481,37 +446,28 @@ test("quest evaluator records product rewards and claim endpoint credits one", a
         },
     ]);
 
-    // First run records the four eligible product rewards; assert only those
-    // (targeted, so adding/removing unrelated quests never breaks this test).
-    const first = await runQuestEvaluator(env);
-    for (const questId of [
-        "onboarding:first_api_key",
-        "spend:first_top_up",
-        "spend:purchased_over_100_pollen",
-        "onboarding:established_github_account",
-    ]) {
-        expect(first.results).toContainEqual({
-            questId,
-            scanned: 1,
-            recorded: 1,
-        });
-    }
+    const checkResponse = await SELF.fetch(
+        "http://localhost:3000/api/account/quests/check",
+        {
+            method: "POST",
+            headers: {
+                cookie: `better-auth.session_token=${sessionToken}`,
+            },
+        },
+    );
+    expect(checkResponse.status).toBe(200);
+    const checkPayload = (await checkResponse.json()) as {
+        success: boolean;
+        checked: number;
+        recorded: number;
+    };
+    expect(checkPayload.success).toBe(true);
+    expect(checkPayload.checked).toBe(4);
+    expect(checkPayload.recorded).toBe(4);
 
-    // Second run: source rows persist so the same proposals are emitted
-    // (scanned: 1), but the idempotent reward insert dedups them (recorded: 0).
-    const second = await runQuestEvaluator(env);
-    for (const questId of [
-        "onboarding:first_api_key",
-        "spend:first_top_up",
-        "spend:purchased_over_100_pollen",
-        "onboarding:established_github_account",
-    ]) {
-        expect(second.results).toContainEqual({
-            questId,
-            scanned: 1,
-            recorded: 0,
-        });
-    }
+    const secondCheck = await checkQuestsForUser(env, user.id);
+    expect(secondCheck.checked).toBe(4);
+    expect(secondCheck.recorded).toBe(0);
 
     const [balance] = await db
         .select({ tierBalance: schema.user.tierBalance })
@@ -616,7 +572,7 @@ test("quest evaluator records product rewards and claim endpoint credits one", a
     );
 });
 
-test("D1 quest scans all qualifiers and reward writer records only new ones", async ({
+test("D1 quest check only records the requested user", async ({
     apiKey: _apiKey,
     mocks,
 }) => {
@@ -624,12 +580,8 @@ test("D1 quest scans all qualifiers and reward writer records only new ones", as
     const user = await getOnlyUser();
     await mocks.enable("github", "tinybird");
 
-    const first = await runQuestEvaluator(env);
-    expect(first.results).toContainEqual({
-        questId: "onboarding:first_api_key",
-        scanned: 1,
-        recorded: 1,
-    });
+    const first = await checkQuestsForUser(env, user.id);
+    expect(first.recorded).toBeGreaterThan(0);
 
     const secondUserId = "api-key-window-user";
     await db.insert(schema.user).values({
@@ -656,24 +608,29 @@ test("D1 quest scans all qualifiers and reward writer records only new ones", as
         updatedAt: new Date(),
     });
 
-    const second = await runQuestEvaluator(env);
-    expect(second.results).toContainEqual({
-        questId: "onboarding:first_api_key",
-        scanned: 2,
-        recorded: 1,
-    });
+    const second = await checkQuestsForUser(env, user.id);
+    expect(second.recorded).toBe(0);
 
     const rows = await db
         .select({ userId: schema.rewards.userId })
         .from(schema.rewards)
         .where(eq(schema.rewards.questId, "onboarding:first_api_key"));
-    expect(rows).toHaveLength(2);
-    expect(new Set(rows.map((row) => row.userId))).toEqual(
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.userId).toBe(user.id);
+
+    const third = await checkQuestsForUser(env, secondUserId);
+    expect(third.recorded).toBe(1);
+
+    const updatedRows = await db
+        .select({ userId: schema.rewards.userId })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.questId, "onboarding:first_api_key"));
+    expect(new Set(updatedRows.map((row) => row.userId))).toEqual(
         new Set([user.id, secondUserId]),
     );
 });
 
-test("quest evaluator records app growth rewards", async ({
+test("quest check records app growth rewards for the app owner", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -718,29 +675,52 @@ test("quest evaluator records app growth rewards", async ({
         },
     ]);
 
-    const result = await runQuestEvaluator(env);
+    await checkQuestsForUser(env, user.id);
 
-    expect(result.results).toContainEqual({
-        questId: "grow:first_byop_external_user",
-        scanned: 1,
-        recorded: 1,
-    });
-    expect(result.results).toContainEqual({
-        questId: "grow:first_paid_spend_in_app",
-        scanned: 1,
-        recorded: 1,
-    });
-    expect(result.results).toContainEqual({
-        questId: "setup:byop_login",
-        scanned: 1,
-        recorded: 1,
-    });
+    const ownerRewards = await db
+        .select({
+            questId: schema.rewards.questId,
+            userId: schema.rewards.userId,
+        })
+        .from(schema.rewards);
+    expect(ownerRewards).toEqual(
+        expect.arrayContaining([
+            {
+                questId: "grow:first_byop_external_user",
+                userId: user.id,
+            },
+            {
+                questId: "grow:first_paid_spend_in_app",
+                userId: user.id,
+            },
+        ]),
+    );
+    expect(
+        ownerRewards.some(
+            (reward) =>
+                reward.questId === "setup:byop_login" &&
+                reward.userId === user.id,
+        ),
+    ).toBe(false);
+
+    await checkQuestsForUser(env, "byop-external-user");
+    const externalRewards = await db
+        .select({
+            questId: schema.rewards.questId,
+            userId: schema.rewards.userId,
+        })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.questId, "setup:byop_login"));
+    expect(externalRewards).toEqual([
+        { questId: "setup:byop_login", userId: "byop-external-user" },
+    ]);
 });
 
-test("quest evaluator records model-usage rewards per modality", async ({
+test("quest check records model-usage rewards per modality", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
+    const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
     await mocks.enable("github", "tinybird");
     // This user has generated with text and audio, but not image.
@@ -748,63 +728,56 @@ test("quest evaluator records model-usage rewards per modality", async ({
         { userId: user.id, usedText: 1, usedImage: 0, usedAudio: 1 },
     ];
 
-    const result = await runQuestEvaluator(env);
+    await checkQuestsForUser(env, user.id);
 
-    expect(result.results).toContainEqual({
-        questId: "grow:use_text_model",
-        scanned: 1,
-        recorded: 1,
-    });
-    expect(result.results).toContainEqual({
-        questId: "grow:use_audio_model",
-        scanned: 1,
-        recorded: 1,
-    });
-    // No image generation => the image quest scans nobody.
-    expect(result.results).toContainEqual({
-        questId: "grow:use_image_model",
-        scanned: 0,
-        recorded: 0,
-    });
+    const rewards = await db
+        .select({ questId: schema.rewards.questId })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.userId, user.id));
+    const questIds = new Set(rewards.map((reward) => reward.questId));
+    expect(questIds.has("grow:use_text_model")).toBe(true);
+    expect(questIds.has("grow:use_audio_model")).toBe(true);
+    expect(questIds.has("grow:use_image_model")).toBe(false);
+
+    expect(
+        mocks.tinybird.state.pipeCalls.some(
+            (call) =>
+                call.url.includes("/v0/pipes/quest_model_modalities.json") &&
+                call.query.user_id === user.id,
+        ),
+    ).toBe(true);
 });
 
-test("quest evaluator drops Tinybird proposals for users absent from D1", async ({
+test("quest check ignores Tinybird rows for other users", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
+    const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
     await mocks.enable("github", "tinybird");
-    // The pipe returns one real user and one id with no D1 user row (e.g. a
-    // deleted account whose Tinybird generation_events outlive the user). The
-    // orphan must be dropped before insert — rewards.user_id is a NOT NULL FK to
-    // user.id, so keeping it would FK-fail the whole batch and record nothing
-    // for the real user.
     mocks.tinybird.state.modelModalitiesResponse = [
-        { userId: user.id, usedText: 1, usedImage: 0, usedAudio: 0 },
         {
-            userId: "ghost-user-not-in-d1",
+            userId: "different-user",
             usedText: 1,
             usedImage: 0,
             usedAudio: 0,
         },
     ];
 
-    const result = await runQuestEvaluator(env);
+    await checkQuestsForUser(env, user.id);
 
-    // The orphan is filtered out, so only the real user is scanned and recorded.
-    expect(result.results).toContainEqual({
-        questId: "grow:use_text_model",
-        scanned: 1,
-        recorded: 1,
-    });
-    // The group did not error — the orphan never reached the insert.
-    expect(result.success).toBe(true);
+    const rewards = await db
+        .select({ questId: schema.rewards.questId })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.questId, "grow:use_text_model"));
+    expect(rewards).toHaveLength(0);
 });
 
-test("quest evaluator continues after one quest fails", async ({
+test("quest check continues after one group fails", async ({
     apiKey: _apiKey,
     mocks,
 }) => {
+    const user = await getOnlyUser();
     await mocks.enable("github", "tinybird");
 
     const failingGroup: QuestGroup = {
@@ -812,24 +785,17 @@ test("quest evaluator continues after one quest fails", async ({
         async listQuestCards() {
             return [];
         },
-        async findRewardProposals(): Promise<never> {
+        async findRewardProposalsForUser(): Promise<never> {
             throw new Error("planned quest failure");
         },
     };
 
     questIndex.QUEST_GROUPS.unshift(failingGroup);
     try {
-        const result = await runQuestEvaluator(env);
+        const result = await checkQuestsForUser(env, user.id);
         expect(result.success).toBe(false);
-        expect(result.results).toContainEqual({
-            questId: "group:test-failing",
-            scanned: 0,
-            recorded: 0,
-            error: "planned quest failure",
-        });
-        expect(result.results.map((entry) => entry.questId)).toContain(
-            "spend:first_top_up",
-        );
+        expect(result.recorded).toBeGreaterThan(0);
+        expect(result).not.toHaveProperty("results");
     } finally {
         questIndex.QUEST_GROUPS.shift();
     }
@@ -844,15 +810,14 @@ test("github account age quest waits until threshold", async ({
     mocks.github.state.user.created_at = new Date().toISOString();
     await mocks.enable("github", "tinybird");
 
-    // A brand-new GitHub account is below the age threshold, so the
-    // established-account quest proposes nothing and records nothing. Assert just
-    // that quest (targeted) plus an unchanged balance.
-    const first = await runQuestEvaluator(env);
-    expect(first.results).toContainEqual({
-        questId: "onboarding:established_github_account",
-        scanned: 0,
-        recorded: 0,
-    });
+    await checkQuestsForUser(env, user.id);
+    const establishedRows = await db
+        .select({ id: schema.rewards.id })
+        .from(schema.rewards)
+        .where(
+            eq(schema.rewards.questId, "onboarding:established_github_account"),
+        );
+    expect(establishedRows).toHaveLength(0);
 
     const [balance] = await db
         .select({ tierBalance: schema.user.tierBalance })
@@ -861,7 +826,7 @@ test("github account age quest waits until threshold", async ({
     expect(balance?.tierBalance).toBeCloseTo(user.tierBalance ?? 0);
 });
 
-test("quest evaluator records elixpo intern easter egg once", async ({
+test("quest check records elixpo intern easter egg once", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -884,17 +849,11 @@ test("quest evaluator records elixpo intern easter egg once", async ({
     };
     await mocks.enable("github", "tinybird");
 
-    const first = await runQuestEvaluator(env);
-    expect(first.results).toContainEqual({
-        questId: ELIXPO_INTERN_QUEST_ID,
-        scanned: 1,
-        recorded: 1,
-    });
+    const first = await checkQuestsForUser(env, user.id);
+    expect(first.recorded).toBeGreaterThanOrEqual(1);
 
-    // Second run: the elixpo user still matches, so the candidate is re-scanned
-    // (scanned: 1) but the already-recorded reward is deduped (recorded: 0).
-    const second = await runQuestEvaluator(env);
-    expect(second.results).toContainEqual(ELIXPO_INTERN_ALREADY_RECORDED);
+    const second = await checkQuestsForUser(env, user.id);
+    expect(second.recorded).toBe(0);
 
     const rewards = await db
         .select({
@@ -915,7 +874,7 @@ test("quest evaluator records elixpo intern easter egg once", async ({
     });
 });
 
-test("quest evaluator records completed GitHub quest issue rewards through shared path", async ({
+test("quest check records completed GitHub quest issue rewards through shared path", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -938,19 +897,8 @@ test("quest evaluator records completed GitHub quest issue rewards through share
         completedByPrNumber: 888,
     });
 
-    // Each issue is its own scope:"once" quest; the completed-and-payable issue
-    // produces exactly one result entry at id `github:issue:777`.
-    const first = await runQuestEvaluator(env);
-    expect(first.results).toContainEqual({
-        questId: issueQuestId,
-        scanned: 1,
-        recorded: 1,
-    });
-    expect(first.results).toContainEqual({
-        questId: "github:first_merged_pr",
-        scanned: 1,
-        recorded: 1,
-    });
+    const first = await checkQuestsForUser(env, user.id);
+    expect(first.recorded).toBeGreaterThanOrEqual(2);
 
     const otherGithubId = 987654;
     await db.insert(schema.user).values({
@@ -979,18 +927,8 @@ test("quest evaluator records completed GitHub quest issue rewards through share
         })
         .where(eq(schema.ghIssues.number, issueNumber));
 
-    // Second run: the issue is now assigned to a DIFFERENT user, so the
-    // issue-quest still emits one candidate (scanned: 1) — pointing at the new
-    // assignee. But scope:"once" means toReward derives the SAME userId-free key
-    // `quest:github:issue:777`, which was already recorded on the first run. The
-    // generic dedup drops it (recorded: 0). Reassigning an issue never records it
-    // a second time: one issue, one reward, regardless of who is assigned.
-    const second = await runQuestEvaluator(env);
-    expect(second.results).toContainEqual({
-        questId: issueQuestId,
-        scanned: 1,
-        recorded: 0,
-    });
+    const second = await checkQuestsForUser(env, "github-quest-other-user");
+    expect(second.recorded).toBe(0);
 
     // Recording does not credit either balance; pollen moves only when claimed.
     const [balance] = await db
@@ -1072,7 +1010,8 @@ test("two mirrored issue bounties each record independently", async ({
         });
     }
 
-    await runQuestEvaluator(env);
+    await checkQuestsForUser(env, user.id);
+    await checkQuestsForUser(env, "community-issue-second-user");
 
     // Each issue keys by its own PK, so two DISTINCT rewards land — not one. The
     // reward's questId snapshots the per-issue quest id (NOT the shared column),

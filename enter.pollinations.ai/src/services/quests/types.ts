@@ -10,10 +10,19 @@ export type QuestEvaluationContext = {
     env: CloudflareBindings;
 };
 
+export type QuestUser = {
+    id: string;
+    githubId: number | null;
+    githubUsername: string | null;
+};
+
 export type QuestGroup = {
     id: string;
     listQuestCards(ctx: QuestEvaluationContext): Promise<QuestCard[]>;
-    findRewardProposals(ctx: QuestEvaluationContext): Promise<RewardProposal[]>;
+    findRewardProposalsForUser(
+        ctx: QuestEvaluationContext,
+        user: QuestUser,
+    ): Promise<RewardProposal[]>;
 };
 
 export type RewardProposal = {

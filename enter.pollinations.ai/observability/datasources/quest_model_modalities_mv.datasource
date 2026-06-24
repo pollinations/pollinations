@@ -1,12 +1,12 @@
 DESCRIPTION >
-    Per-user lifetime modality flags for the model-usage quests
+    Per-user recent modality flags for the model-usage quests
     (grow:use_text/image/audio_model). Incrementally maintained by the
     quest_model_modalities_populate materialization, so the quest endpoint reads
     one partial-aggregate row per user instead of scanning all of
     generation_event (which times out at prod scale). Flags are "has this user
-    ever had a billed, successful generation in this modality" — a max() of a 0/1
-    indicator, so re-processing the same event (e.g. duplicate rows during the
-    deploy backfill) is idempotent.
+    had a billed, successful generation in this modality within the populated
+    window" — a max() of a 0/1 indicator, so re-processing the same event (e.g.
+    duplicate rows during the deploy backfill) is idempotent.
 
 TOKEN "tinybird_read" READ
 

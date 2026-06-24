@@ -1,8 +1,8 @@
-import { sql } from "drizzle-orm";
 import type { QuestDefinition } from "../definitions.ts";
 import {
     type QuestCard,
     type QuestEvaluationContext,
+    type QuestUser,
     questToCard,
     type RewardProposal,
 } from "../types.ts";
@@ -33,18 +33,10 @@ export async function listQuestCards(
     return [questToCard(elixpoInternQuest)];
 }
 
-export async function findRewardProposals({
-    db,
-}: QuestEvaluationContext): Promise<RewardProposal[]> {
-    const rows = await db.all<{ userId: string }>(
-        sql`
-        SELECT user.id AS userId
-        FROM user
-        WHERE user.github_id = ${TARGET_GITHUB_ID}
-        LIMIT 1`,
-    );
-    return rows.map((row) => ({
-        quest: elixpoInternQuest,
-        userId: row.userId,
-    }));
+export async function findRewardProposalsForUser(
+    _ctx: QuestEvaluationContext,
+    user: QuestUser,
+): Promise<RewardProposal[]> {
+    if (user.githubId !== TARGET_GITHUB_ID) return [];
+    return [{ quest: elixpoInternQuest, userId: user.id }];
 }

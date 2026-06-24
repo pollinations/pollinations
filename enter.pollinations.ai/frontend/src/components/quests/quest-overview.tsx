@@ -54,6 +54,7 @@ type FetchState = {
     catalog: QuestCatalogItem[];
     rewards: QuestReward[];
     loading: boolean;
+    checking: boolean;
     error: string | null;
     claimingRewardId: string | null;
 };
@@ -62,6 +63,7 @@ const INITIAL_STATE: FetchState = {
     catalog: [],
     rewards: [],
     loading: true,
+    checking: false,
     error: null,
     claimingRewardId: null,
 };
@@ -439,6 +441,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                 setState({
                     ...questData,
                     loading: false,
+                    checking: false,
                     error: null,
                     claimingRewardId: null,
                 });
@@ -480,6 +483,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                 ...current,
                 ...questData,
                 claimingRewardId: null,
+                checking: false,
                 loading: false,
                 error: null,
             }));
@@ -491,6 +495,38 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                     error instanceof Error
                         ? error.message
                         : "Failed to claim reward",
+            }));
+        }
+    }
+
+    async function handleCheckQuests(): Promise<void> {
+        setState((current) => ({
+            ...current,
+            checking: true,
+            error: null,
+        }));
+
+        try {
+            const response = await apiClient.account.quests.check.$post();
+            if (!response.ok) {
+                throw new Error(`Failed to check quests (${response.status})`);
+            }
+            const questData = await loadQuestData();
+            setState((current) => ({
+                ...current,
+                ...questData,
+                checking: false,
+                loading: false,
+                error: null,
+            }));
+        } catch (error) {
+            setState((current) => ({
+                ...current,
+                checking: false,
+                error:
+                    error instanceof Error
+                        ? error.message
+                        : "Failed to check quests",
             }));
         }
     }
@@ -759,6 +795,17 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                         <span>pollen ready to claim</span>
                     </div>
                 )}
+                <div className="mt-3 flex justify-end">
+                    <Button
+                        type="button"
+                        disabled={state.loading || state.checking}
+                        onClick={handleCheckQuests}
+                        className="gap-1.5"
+                    >
+                        <SearchIcon className="h-4 w-4 shrink-0" />
+                        {state.checking ? "Checking" : "Check quests"}
+                    </Button>
+                </div>
                 {/* Multi-line footer styled like the keys panel's footer —
                     text-[13px] + leading-snug keeps the two lines visually
                     tight. */}

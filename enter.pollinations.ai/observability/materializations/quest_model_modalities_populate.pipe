@@ -2,7 +2,7 @@ DESCRIPTION >
     Incrementally maintains quest_model_modalities_mv: for every billed,
     successful text/image/audio generation, sets the user's "used this modality"
     flag. Runs at ingest time, so the model-usage quest endpoint never scans raw
-    generation_event (a full-history GROUP BY that times out at prod scale).
+    generation_event (a large raw GROUP BY that times out at prod scale).
     max() of a 0/1 indicator makes backfill duplicates idempotent.
 
     Bounded to the last 3 months: generation_event is partitioned/sorted by

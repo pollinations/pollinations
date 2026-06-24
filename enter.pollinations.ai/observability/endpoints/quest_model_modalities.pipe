@@ -1,26 +1,29 @@
 DESCRIPTION >
     Per-user "has this user generated with a text / image / audio model at least
-    once" flags, used by the model-usage quest evaluator. One row per user that
-    has at least one billed, successful generation in any of the three
-    modalities within the last 3 months (the modality milestone is a one-time quest).
+    once" flags, used by the user-triggered model-usage quest check. Returns at
+    most one row for the requested user when they have at least one billed,
+    successful generation in any of the three modalities within the last 3
+    months (the modality milestone is a one-time quest).
 
     Reads the pre-aggregated quest_model_modalities_mv (one partial-aggregate row
     per user, maintained at ingest) instead of scanning all of generation_event,
     which times out at prod scale. Row shape (userId/usedText/usedImage/usedAudio)
-    is unchanged, so the quest evaluator needs no changes.
+    is unchanged, so user-triggered quest checks can read it directly.
 
 TOKEN tinybird_read READ
 
 NODE quest_model_modalities_node
 SQL >
+    %
     SELECT
         user_id AS userId,
         maxMerge(used_text) AS usedText,
         maxMerge(used_image) AS usedImage,
         maxMerge(used_audio) AS usedAudio
     FROM quest_model_modalities_mv
+    WHERE user_id = {{String(user_id, '')}}
     GROUP BY user_id
     HAVING usedText = 1 OR usedImage = 1 OR usedAudio = 1
-    LIMIT 100000
+    LIMIT 1
 
 TYPE endpoint

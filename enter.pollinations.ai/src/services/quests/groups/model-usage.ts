@@ -1,24 +1,29 @@
+import { getLogger } from "@logtape/logtape";
 import { fetchTinybirdRows, requireTinybirdReadToken } from "../../tinybird.ts";
 import type { QuestDefinition } from "../definitions.ts";
 import {
     type QuestCard,
     type QuestEvaluationContext,
+    type QuestUser,
     questToCard,
     type RewardProposal,
 } from "../types.ts";
 
+const log = getLogger(["enter", "quests", "model-usage"]);
+
 /**
  * Model-usage quests: one per modality (text / image / audio). Completion comes
- * from the quest_model_modalities Tinybird pipe, which returns one row per user
- * with a boolean flag per modality (a billed, successful generation in that
- * modality, lifetime). The pipe decides who qualifies; the rewards table is
- * the idempotent write path.
+ * from the quest_model_modalities Tinybird pipe, which returns the current
+ * user's boolean flags per modality (a billed, successful generation in that
+ * modality within the populated recent window). The pipe decides whether the
+ * user qualifies; the rewards table is the idempotent write path.
  */
 
 const useTextModelQuest: QuestDefinition = {
     id: "grow:use_text_model",
     title: "Use a text model",
-    description: "Make your first request to a text [model](#models).",
+    description:
+        "Make a successful billed request to a text [model](#models) in the last 3 months.",
     category: "setup",
     scope: "perUser",
     rewardAmount: 0.25,
@@ -28,7 +33,8 @@ const useTextModelQuest: QuestDefinition = {
 const useImageModelQuest: QuestDefinition = {
     id: "grow:use_image_model",
     title: "Use an image model",
-    description: "Make your first request to an image [model](#models).",
+    description:
+        "Make a successful billed request to an image [model](#models) in the last 3 months.",
     category: "setup",
     scope: "perUser",
     rewardAmount: 0.25,
@@ -38,7 +44,8 @@ const useImageModelQuest: QuestDefinition = {
 const useAudioModelQuest: QuestDefinition = {
     id: "grow:use_audio_model",
     title: "Use an audio model",
-    description: "Make your first request to an audio [model](#models).",
+    description:
+        "Make a successful billed request to an audio [model](#models) in the last 3 months.",
     category: "setup",
     scope: "perUser",
     rewardAmount: 0.25,
@@ -61,24 +68,41 @@ export async function listQuestCards(
     return QUESTS.map((quest) => questToCard(quest));
 }
 
-export async function findRewardProposals({
-    env,
-}: QuestEvaluationContext): Promise<RewardProposal[]> {
+export async function findRewardProposalsForUser(
+    { env }: QuestEvaluationContext,
+    user: QuestUser,
+): Promise<RewardProposal[]> {
     const tinybirdOrigin = new URL(env.TINYBIRD_INGEST_URL).origin;
     const tinybirdToken = requireTinybirdReadToken(env);
     const rows = await fetchTinybirdRows<ModalityRow>(
         tinybirdOrigin,
         "/v0/pipes/quest_model_modalities.json",
         tinybirdToken,
-        {},
+        { user_id: user.id },
     );
 
-    // The pipe already returns exactly the qualifying users (one row per user,
-    // with per-modality flags), so propose for all of them. The rewards table's
-    // idempotency key dedups re-runs and recordRewards() batches the inserts —
-    // no per-run cap, otherwise the window sticks on the first N users forever.
+    // The pipe SHOULD already filter to this user, but the client-side filter is
+    // the load-bearing guarantee (an un-redeployed/global pipe returns everyone).
+    // Log the before/after-filter delta so "pipe returned N rows, 0 matched this
+    // user" is obvious from the logs instead of looking like "no usage".
+    const matched = rows.filter((entry) => entry.userId === user.id);
+    log.info(
+        "MODEL_USAGE_ROWS: userId={userId} pipeRows={pipeRows} matchedRows={matchedRows} flags={flags}",
+        {
+            userId: user.id,
+            pipeRows: rows.length,
+            matchedRows: matched.length,
+            flags: matched.map((r) => ({
+                userId: r.userId,
+                usedText: r.usedText,
+                usedImage: r.usedImage,
+                usedAudio: r.usedAudio,
+            })),
+        },
+    );
+
     const proposals: RewardProposal[] = [];
-    for (const row of rows) {
+    for (const row of matched) {
         if (row.usedText) {
             proposals.push({ quest: useTextModelQuest, userId: row.userId });
         }
@@ -89,5 +113,13 @@ export async function findRewardProposals({
             proposals.push({ quest: useAudioModelQuest, userId: row.userId });
         }
     }
+    log.info(
+        "MODEL_USAGE_PROPOSALS: userId={userId} count={count} questIds={questIds}",
+        {
+            userId: user.id,
+            count: proposals.length,
+            questIds: proposals.map((p) => p.quest.id),
+        },
+    );
     return proposals;
 }

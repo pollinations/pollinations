@@ -1,10 +1,11 @@
 import * as schema from "@shared/db/better-auth.ts";
-import { eq, inArray, isNotNull, like } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, like } from "drizzle-orm";
 import type { QuestAvailability, QuestDefinition } from "../definitions.ts";
 import {
     type QuestCard,
     type QuestDb,
     type QuestEvaluationContext,
+    type QuestUser,
     questToCard,
     type RewardProposal,
 } from "../types.ts";
@@ -98,7 +99,11 @@ function hasQuestLabel(labelsJson: string | null): boolean {
 // determinism when several merged PRs reference the same issue).
 async function loadMergedCloserByIssue(
     db: QuestDb,
+    issueNumbers: number[],
 ): Promise<Map<number, number>> {
+    if (issueNumbers.length === 0) return new Map();
+
+    const mergedPr = isNotNull(schema.ghPullRequests.mergedAt);
     const edges = await db
         .select({
             prNumber: schema.ghPrClosingIssues.prNumber,
@@ -109,7 +114,12 @@ async function loadMergedCloserByIssue(
             schema.ghPullRequests,
             eq(schema.ghPullRequests.number, schema.ghPrClosingIssues.prNumber),
         )
-        .where(isNotNull(schema.ghPullRequests.mergedAt));
+        .where(
+            and(
+                mergedPr,
+                inArray(schema.ghPrClosingIssues.issueNumber, issueNumbers),
+            ),
+        );
 
     const byIssue = new Map<number, number>();
     for (const { issueNumber, prNumber } of edges) {
@@ -122,16 +132,29 @@ async function loadMergedCloserByIssue(
 }
 
 // Derive every POLLEN-QUEST bounty from the mirror.
-async function loadQuestIssues(db: QuestDb): Promise<DerivedQuestIssue[]> {
+async function loadQuestIssues(
+    db: QuestDb,
+    options: { assigneeGithubId?: number } = {},
+): Promise<DerivedQuestIssue[]> {
     // labels_json is a JSON-array string; SQLite can't index a substring match,
     // so prefilter on the substring then confirm by parsing (kills
     // "POLLEN-QUEST-DRAFT" and similar false positives).
+    const conditions = [like(schema.ghIssues.labelsJson, `%"${QUEST_LABEL}"%`)];
+    if (options.assigneeGithubId !== undefined) {
+        conditions.push(
+            eq(schema.ghIssues.assigneeGithubId, options.assigneeGithubId),
+        );
+    }
+
     const rows = await db
         .select()
         .from(schema.ghIssues)
-        .where(like(schema.ghIssues.labelsJson, `%"${QUEST_LABEL}"%`));
+        .where(and(...conditions));
 
-    const closerByIssue = await loadMergedCloserByIssue(db);
+    const closerByIssue = await loadMergedCloserByIssue(
+        db,
+        rows.map((row) => row.number),
+    );
 
     return rows
         .filter((row) => hasQuestLabel(row.labelsJson))
@@ -184,78 +207,57 @@ function toIssueQuestDefinition(issue: DerivedQuestIssue): QuestDefinition {
 }
 
 export async function listQuestCards(
-    ctx: QuestEvaluationContext,
+    _ctx: QuestEvaluationContext,
 ): Promise<QuestCard[]> {
-    const issues = await loadQuestIssues(ctx.db);
+    // TEMP: GitHub issue ("github:issue:*") quests are hidden from the catalog
+    // while the bounty flow is finalized. Re-enable by restoring the
+    // loadQuestIssues(...) spread below (and the `ctx` param).
     return [
         questToCard(firstMergedPrQuest),
-        ...issues.map((issue) => questToCard(toIssueQuestDefinition(issue))),
+        // ...issues.map((issue) => questToCard(toIssueQuestDefinition(issue))),
     ];
 }
 
-export async function findRewardProposals(
+export async function findRewardProposalsForUser(
     ctx: QuestEvaluationContext,
+    user: QuestUser,
 ): Promise<RewardProposal[]> {
-    const issues = await loadQuestIssues(ctx.db);
+    if (user.githubId === null) return [];
+
+    const issues = await loadQuestIssues(ctx.db, {
+        assigneeGithubId: user.githubId,
+    });
 
     // Payable issue bounties: completed by a merged PR, with a positive reward
-    // and an assignee that maps to a known user.
+    // and assigned to the current user's linked GitHub account.
     const payable = issues.filter(
         (issue) =>
             issue.state === "completed" &&
             issue.completedByPrNumber !== null &&
-            issue.assigneeGithubId !== null &&
             (issue.rewardAmount ?? 0) > 0,
     );
 
-    // Resolve assignee github ids -> user ids in one pass.
-    const assigneeIds = [
-        ...new Set(
-            payable
-                .map((issue) => issue.assigneeGithubId)
-                .filter((id): id is number => id !== null),
-        ),
-    ];
-    const userByGithubId = new Map<number, string>();
-    if (assigneeIds.length > 0) {
-        const users = await ctx.db
-            .select({ id: schema.user.id, githubId: schema.user.githubId })
-            .from(schema.user)
-            .where(inArray(schema.user.githubId, assigneeIds));
-        for (const u of users) {
-            if (u.githubId !== null) userByGithubId.set(u.githubId, u.id);
-        }
-    }
-
-    const issueProposals: RewardProposal[] = [];
-    for (const issue of payable) {
-        const userId =
-            issue.assigneeGithubId !== null
-                ? userByGithubId.get(issue.assigneeGithubId)
-                : undefined;
-        if (!userId) continue;
-        issueProposals.push({
-            quest: toIssueQuestDefinition(issue),
-            userId,
-        });
-    }
+    const issueProposals = payable.map((issue) => ({
+        quest: toIssueQuestDefinition(issue),
+        userId: user.id,
+    }));
 
     const mergedPrRows = await ctx.db
-        .selectDistinct({
-            userId: schema.user.id,
-        })
+        .select({ number: schema.ghPullRequests.number })
         .from(schema.ghPullRequests)
-        .innerJoin(
-            schema.user,
-            eq(schema.user.githubId, schema.ghPullRequests.authorGithubId),
+        .where(
+            and(
+                eq(schema.ghPullRequests.authorGithubId, user.githubId),
+                isNotNull(schema.ghPullRequests.mergedAt),
+            ),
         )
-        .where(isNotNull(schema.ghPullRequests.mergedAt));
+        .limit(1);
 
     return [
         ...issueProposals,
-        ...mergedPrRows.map(({ userId }) => ({
+        ...mergedPrRows.map(() => ({
             quest: firstMergedPrQuest,
-            userId,
+            userId: user.id,
         })),
     ];
 }

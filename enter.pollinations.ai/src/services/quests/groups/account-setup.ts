@@ -3,6 +3,7 @@ import type { QuestDefinition } from "../definitions.ts";
 import {
     type QuestCard,
     type QuestEvaluationContext,
+    type QuestUser,
     questToCard,
     type RewardProposal,
 } from "../types.ts";
@@ -14,8 +15,9 @@ import {
  *   - first_top_up   -> stripe_checkout_credits   (one paid checkout per user)
  *   - over_100_pollen -> stripe_checkout_credits  (>100 total paid Pollen)
  *
- * The SQL decides which users qualify. The rewards table is the single
- * idempotency layer, so quest code does not filter already rewarded users.
+ * The SQL decides whether the current user qualifies. The rewards table is the
+ * single idempotency layer, so quest code does not filter already rewarded
+ * users.
  */
 
 type SetupQuestRow = {
@@ -75,38 +77,40 @@ export async function listQuestCards(
     ].map((quest) => questToCard(quest));
 }
 
-export async function findRewardProposals({
-    db,
-}: QuestEvaluationContext): Promise<RewardProposal[]> {
+export async function findRewardProposalsForUser(
+    { db }: QuestEvaluationContext,
+    user: QuestUser,
+): Promise<RewardProposal[]> {
     const apiKeyRows = await db.all<SetupQuestRow>(
         sql`
         SELECT apikey.user_id AS userId
         FROM apikey
-        GROUP BY apikey.user_id
-        ORDER BY apikey.user_id`,
+        WHERE apikey.user_id = ${user.id}
+        LIMIT 1`,
     );
     const topUpRows = await db.all<SetupQuestRow>(
         sql`
         SELECT stripe_checkout_credits.user_id AS userId
         FROM stripe_checkout_credits
-        GROUP BY stripe_checkout_credits.user_id
-        ORDER BY stripe_checkout_credits.user_id`,
+        WHERE stripe_checkout_credits.user_id = ${user.id}
+        LIMIT 1`,
     );
     const overHundredPollenRows = await db.all<SetupQuestRow>(
         sql`
         SELECT stripe_checkout_credits.user_id AS userId
         FROM stripe_checkout_credits
+        WHERE stripe_checkout_credits.user_id = ${user.id}
         GROUP BY stripe_checkout_credits.user_id
         HAVING SUM(stripe_checkout_credits.pollen_credited) > 100
-        ORDER BY stripe_checkout_credits.user_id`,
+        LIMIT 1`,
     );
     const byopLoginRows = await db.all<SetupQuestRow>(
         sql`
         SELECT apikey.user_id AS userId
         FROM apikey
-        WHERE apikey.byop_client_key_id IS NOT NULL
-        GROUP BY apikey.user_id
-        ORDER BY apikey.user_id`,
+        WHERE apikey.user_id = ${user.id}
+          AND apikey.byop_client_key_id IS NOT NULL
+        LIMIT 1`,
     );
 
     return [

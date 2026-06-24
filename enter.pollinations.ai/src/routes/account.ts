@@ -21,6 +21,7 @@ import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
+import { checkQuestsForUser } from "../services/quest-checker.ts";
 import {
     fetchTinybirdRows,
     requireTinybirdReadToken,
@@ -801,6 +802,13 @@ const accountQuestResponseSchema = z.object({
     rewards: z.array(accountRewardSchema),
 });
 
+const questCheckResponseSchema = z.object({
+    success: z.boolean(),
+    checked: z.number(),
+    recorded: z.number(),
+    rewardIds: z.array(z.string()),
+});
+
 const claimRewardResponseSchema = z.object({
     claimed: z.boolean(),
     newBalance: z.number().nullable(),
@@ -1327,6 +1335,41 @@ export const accountRoutes = new Hono<Env>()
                 log.error("Error fetching earnings: {error}", { error });
                 return c.json({ error: "Failed to fetch earnings data" }, 500);
             }
+        },
+    )
+    .post(
+        "/quests/check",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Check Quest Rewards",
+            description:
+                "Checks the authenticated dashboard user's quest status and records any newly earned pending rewards. Session authentication is required.",
+            responses: {
+                200: {
+                    description: "Quest check result",
+                    content: {
+                        "application/json": {
+                            schema: resolver(questCheckResponseSchema),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+                403: { description: "API keys cannot check quest rewards" },
+            },
+        }),
+        async (c) => {
+            await c.var.auth.requireAuthorization({
+                message: "Authentication required to check quest rewards",
+            });
+            if (c.var.auth.apiKey) {
+                throw new HTTPException(403, {
+                    message: "Quest checks require a dashboard session",
+                });
+            }
+
+            const user = c.var.auth.requireUser();
+            const result = await checkQuestsForUser(c.env, user.id);
+            return c.json(result);
         },
     )
     .get(

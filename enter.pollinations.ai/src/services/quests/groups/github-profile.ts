@@ -1,30 +1,22 @@
 import { getLogger } from "@logtape/logtape";
-import { sql } from "drizzle-orm";
 import type { QuestDefinition } from "../definitions.ts";
 import type {
     QuestCard,
-    QuestDb,
     QuestEvaluationContext,
+    QuestUser,
     RewardProposal,
 } from "../types.ts";
 import { questToCard } from "../types.ts";
 
 /**
- * GitHub profile quests share one source scan: linked users are loaded from D1,
- * each GitHub profile is fetched once, then pure threshold checks emit rewards.
+ * GitHub profile quests fetch the current user's linked GitHub profile, then
+ * pure threshold checks emit rewards.
  */
 
 const log = getLogger(["enter", "quest", "github-profile"]);
 
-const MAX_REWARDS_PER_RUN = 500;
 const GITHUB_ACCOUNT_AGE_DAYS = 365;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
-type GitHubQuestUserRow = {
-    userId: string;
-    githubId: number;
-    githubUsername: string | null;
-};
 
 type GitHubProfileActivity = {
     githubAccountCreatedAt: Date | null;
@@ -46,33 +38,25 @@ function githubApiHeaders(env: CloudflareBindings): Record<string, string> {
     return headers;
 }
 
-async function loadGitHubUsers(
-    db: QuestDb,
-    limit: number,
-): Promise<GitHubQuestUserRow[]> {
-    return db.all<GitHubQuestUserRow>(
-        sql`
-        SELECT
-            user.id AS userId,
-            user.github_id AS githubId,
-            user.github_username AS githubUsername
-        FROM user
-        WHERE user.github_id IS NOT NULL
-        LIMIT ${limit}`,
-    );
-}
-
 async function fetchGitHubProfile(
     env: CloudflareBindings,
     githubId: number,
 ): Promise<{ login: string | null; createdAt: Date | null } | null> {
+    log.info("GITHUB_PROFILE_FETCH_START: githubId={githubId}", { githubId });
     const response = await fetch(`https://api.github.com/user/${githubId}`, {
         headers: githubApiHeaders(env),
     });
+    const rateLimitRemaining = response.headers.get("x-ratelimit-remaining");
+    const rateLimitReset = response.headers.get("x-ratelimit-reset");
     if (!response.ok) {
         log.warn(
-            "GITHUB_PROFILE_FETCH_FAILED: githubId={githubId} status={status}",
-            { githubId, status: response.status },
+            "GITHUB_PROFILE_FETCH_FAILED: githubId={githubId} status={status} rateLimitRemaining={rateLimitRemaining} rateLimitReset={rateLimitReset}",
+            {
+                githubId,
+                status: response.status,
+                rateLimitRemaining,
+                rateLimitReset,
+            },
         );
         return null;
     }
@@ -83,6 +67,17 @@ async function fetchGitHubProfile(
         const parsed = new Date(profile.created_at);
         createdAt = Number.isNaN(parsed.getTime()) ? null : parsed;
     }
+    log.info(
+        "GITHUB_PROFILE_FETCH_OK: githubId={githubId} login={login} createdAtRaw={createdAtRaw} createdAt={createdAt} rateLimitRemaining={rateLimitRemaining} rateLimitReset={rateLimitReset}",
+        {
+            githubId,
+            login: profile.login ?? null,
+            createdAtRaw: profile.created_at ?? null,
+            createdAt: createdAt?.toISOString() ?? null,
+            rateLimitRemaining,
+            rateLimitReset,
+        },
+    );
     return { login: profile.login ?? null, createdAt };
 }
 
@@ -126,29 +121,52 @@ export async function listQuestCards(
     return QUESTS.map((quest) => questToCard(quest));
 }
 
-export async function findRewardProposals(
+export async function findRewardProposalsForUser(
     ctx: QuestEvaluationContext,
+    user: QuestUser,
 ): Promise<RewardProposal[]> {
-    const now = new Date();
-    const rows = await loadGitHubUsers(ctx.db, MAX_REWARDS_PER_RUN);
-    const proposals: RewardProposal[] = [];
-
-    for (const row of rows) {
-        const activity = await fetchGitHubProfileActivity(
-            ctx.env,
-            row.githubId,
+    if (user.githubId === null) {
+        log.info(
+            "GITHUB_PROFILE_SKIPPED: userId={userId} reason=no_github_id",
+            {
+                userId: user.id,
+            },
         );
-        if (!activity) continue;
+        return [];
+    }
 
-        if (
-            activity.githubAccountCreatedAt !== null &&
-            accountAgeDays(activity, now) >= GITHUB_ACCOUNT_AGE_DAYS
-        ) {
-            proposals.push({
-                quest: establishedGitHubAccountQuest,
-                userId: row.userId,
-            });
-        }
+    const now = new Date();
+    const proposals: RewardProposal[] = [];
+    const activity = await fetchGitHubProfileActivity(ctx.env, user.githubId);
+    if (!activity) {
+        log.info(
+            "GITHUB_PROFILE_NO_ACTIVITY: userId={userId} githubId={githubId}",
+            { userId: user.id, githubId: user.githubId },
+        );
+        return proposals;
+    }
+
+    const ageDays = accountAgeDays(activity, now);
+    const qualifies =
+        activity.githubAccountCreatedAt !== null &&
+        ageDays >= GITHUB_ACCOUNT_AGE_DAYS;
+    log.info(
+        "GITHUB_PROFILE_QUEST_DECISION: userId={userId} githubId={githubId} createdAt={createdAt} ageDays={ageDays} thresholdDays={thresholdDays} qualifies={qualifies}",
+        {
+            userId: user.id,
+            githubId: user.githubId,
+            createdAt: activity.githubAccountCreatedAt?.toISOString() ?? null,
+            ageDays,
+            thresholdDays: GITHUB_ACCOUNT_AGE_DAYS,
+            qualifies,
+        },
+    );
+
+    if (qualifies) {
+        proposals.push({
+            quest: establishedGitHubAccountQuest,
+            userId: user.id,
+        });
     }
 
     return proposals;

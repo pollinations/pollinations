@@ -34,6 +34,7 @@ import type { ModelPrice } from "./types.ts";
 export type SectionType =
     | "image"
     | "video"
+    | "3d"
     | "audio"
     | "realtime"
     | "text"
@@ -42,6 +43,7 @@ export type SectionType =
 type UnifiedModelTableProps = {
     imageModels: ModelPrice[];
     videoModels: ModelPrice[];
+    model3dModels: ModelPrice[];
     textModels: ModelPrice[];
     audioModels: ModelPrice[];
     realtimeModels: ModelPrice[];
@@ -102,6 +104,7 @@ const sortModels = (
 export const sectionLabels: Record<SectionType, string> = {
     image: "Image",
     video: "Video",
+    "3d": "3D",
     audio: "Audio",
     realtime: "Realtime",
     text: "Text",
@@ -440,6 +443,7 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
 export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     imageModels,
     videoModels,
+    model3dModels,
     textModels,
     audioModels,
     realtimeModels,
@@ -449,6 +453,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     const sections: { type: SectionType; models: ModelPrice[] }[] = [
         { type: "image", models: imageModels },
         { type: "video", models: videoModels },
+        { type: "3d", models: model3dModels },
         { type: "audio", models: audioModels },
         { type: "realtime", models: realtimeModels },
         { type: "text", models: textModels },

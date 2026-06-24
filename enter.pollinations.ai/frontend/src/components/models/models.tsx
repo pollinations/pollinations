@@ -55,6 +55,7 @@ export const Models: FC = () => {
 
     const imageModels = allModels.filter((m) => m.type === "image");
     const videoModels = allModels.filter((m) => m.type === "video");
+    const model3dModels = allModels.filter((m) => m.type === "3d");
     const audioModels = allModels.filter((m) => m.type === "audio");
     const realtimeModels = allModels.filter((m) => m.type === "realtime");
     const textModels = allModels.filter((m) => m.type === "text");
@@ -62,6 +63,7 @@ export const Models: FC = () => {
     const availableSections: SectionType[] = [
         "image",
         "video",
+        "3d",
         "audio",
         "realtime",
         "text",
@@ -115,6 +117,7 @@ export const Models: FC = () => {
                     <UnifiedModelTable
                         imageModels={imageModels}
                         videoModels={videoModels}
+                        model3dModels={model3dModels}
                         audioModels={audioModels}
                         realtimeModels={realtimeModels}
                         textModels={textModels}

@@ -51,6 +51,7 @@ export const unitLabels: Record<string, string> = {
     text: "responses",
     image: "images",
     video: "videos",
+    "3d": "3D models",
     audio: "responses",
     realtime: "sessions",
     embedding: "embeddings",

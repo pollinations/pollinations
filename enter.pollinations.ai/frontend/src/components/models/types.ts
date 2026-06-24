@@ -3,6 +3,7 @@ export type ModelCategory =
     | "image"
     | "audio"
     | "video"
+    | "3d"
     | "embedding"
     | "realtime";
 

@@ -1,5 +1,5 @@
 import {
-    getModelDefinition,
+    getRegistryModelDefinition,
     resolveModelName,
 } from "@shared/registry/registry.ts";
 import type {
@@ -11,6 +11,10 @@ import type {
 
 type ContentPart = {
     type?: unknown;
+};
+
+type ModelDefinitionLike = {
+    inputModalities?: string[];
 };
 
 function inputModalityError(message: string): ServiceError {
@@ -41,8 +45,20 @@ export function validateInputModalities(
     const requestedModel = options.requestedModel || options.model;
     if (!requestedModel) return { messages, options };
 
-    const modelName = resolveModelName(requestedModel);
-    const definition = getModelDefinition(modelName);
+    const resolvedDefinition = options.modelDef as
+        | ModelDefinitionLike
+        | undefined;
+    let modelName: string;
+    let definition: ModelDefinitionLike;
+    if (resolvedDefinition) {
+        modelName = requestedModel;
+        definition = resolvedDefinition;
+    } else {
+        const resolvedModelName = resolveModelName(requestedModel);
+        modelName = resolvedModelName;
+        definition = getRegistryModelDefinition(resolvedModelName);
+    }
+
     if (definition.inputModalities?.includes("image")) {
         return { messages, options };
     }

@@ -89,7 +89,6 @@ declare namespace Cloudflare {
 		BETTER_AUTH_URL: "https://staging.enter.pollinations.ai";
 		STRIPE_AUTO_TOP_UP_PMC_ID: "pmc_1TUpob6O03AauPe8EgmA4mvg";
 		STRIPE_PMC: "pmc_1SrYT96O03AauPe8ijLy6sZU";
-		STAGING_ALLOWED_GITHUB_IDS: "36901823,5099901,235942848,248917639,241978997";
 		BETTER_AUTH_SECRET: string;
 		GITHUB_CLIENT_ID: string;
 		GITHUB_CLIENT_SECRET: string;

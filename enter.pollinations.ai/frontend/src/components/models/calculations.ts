@@ -53,5 +53,6 @@ export const unitLabels: Record<string, string> = {
     video: "videos",
     audio: "responses",
     realtime: "sessions",
+    community: "responses",
     embedding: "embeddings",
 };

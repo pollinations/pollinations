@@ -5,6 +5,7 @@ import {
 } from "cloudflare:test";
 import type { AuthUser } from "@shared/auth/api-key.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
+import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
@@ -46,6 +47,7 @@ function createTestApp(
         c.set("model", {
             requested: "openai",
             resolved: "openai",
+            definition: getRegistryModelDefinition("openai"),
         });
         await next();
     });
@@ -103,7 +105,11 @@ function createWrongContentTypeApp(
             getBalance: async () => ({ tierBalance: 1, packBalance: 0 }),
         });
         c.set("frontendKeyRateLimit", { consumePollen });
-        c.set("model", { requested: "openai", resolved: "openai" });
+        c.set("model", {
+            requested: "openai",
+            resolved: "openai",
+            definition: getRegistryModelDefinition("openai"),
+        });
         await next();
     });
     app.all("/upstream", track(eventType), () => response.clone());

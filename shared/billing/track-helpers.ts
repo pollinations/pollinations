@@ -3,7 +3,7 @@ import { and, eq, gt, isNull, or } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { apikey as apikeyTable } from "../db/better-auth.ts";
 import type { ModelName } from "../registry/registry.ts";
-import { getModelDefinition } from "../registry/registry.ts";
+import { getRegistryModelDefinition } from "../registry/registry.ts";
 import {
     atomicCreditUserBalance,
     atomicDeductApiKeyBalance,
@@ -21,6 +21,19 @@ export type MarkupResolution = {
     markupRate: number;
 };
 
+export type CommunityModelRewardResolution = {
+    userId: string;
+    modelId: string;
+    rewardRate: number;
+    credit: number;
+};
+
+export type CommunityModelRewardInput = {
+    userId: string;
+    modelId: string;
+    rewardRate: number;
+};
+
 interface DeductionParams {
     db: DrizzleD1Database;
     isBilledUsage: boolean;
@@ -30,6 +43,8 @@ interface DeductionParams {
     apiKeyPollenBalance?: number | null;
     byopClientKeyId?: string | null;
     modelResolved?: string;
+    modelPaidOnly?: boolean;
+    communityModelReward?: CommunityModelRewardInput | null;
 }
 
 function parseMetadata(
@@ -84,8 +99,28 @@ export async function resolveDevMarkup(
     };
 }
 
+export function resolveCommunityModelReward(
+    reward: CommunityModelRewardInput | null | undefined,
+    baselinePrice: number,
+    payerUserId: string | undefined,
+): CommunityModelRewardResolution | null {
+    if (!reward || !payerUserId) return null;
+    if (reward.userId === payerUserId) return null;
+    if (baselinePrice <= 0 || reward.rewardRate <= 0) return null;
+
+    const credit = baselinePrice * reward.rewardRate;
+    if (credit <= 0) return null;
+
+    return {
+        userId: reward.userId,
+        modelId: reward.modelId,
+        rewardRate: reward.rewardRate,
+        credit,
+    };
+}
+
 /**
- * Handles balance deduction and BYOP dev credit for billable requests.
+ * Handles balance deduction and developer credits for billable requests.
  *
  * Returns `billedPrice` — the rounded amount actually debited from the payer
  * (`totalPrice + devCredit`, snapped to `POLLEN_BILLING_PRECISION`). Callers
@@ -93,6 +128,7 @@ export async function resolveDevMarkup(
  */
 export async function handleBalanceDeduction(params: DeductionParams): Promise<{
     markup: MarkupResolution | null;
+    communityModelReward: CommunityModelRewardResolution | null;
     payerBucket: Bucket | null;
     postDeductionPackBalance: number | null;
     billedPrice: number;
@@ -106,11 +142,14 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
         apiKeyPollenBalance,
         byopClientKeyId,
         modelResolved,
+        modelPaidOnly,
+        communityModelReward: communityModelRewardInput,
     } = params;
 
     if (!isBilledUsage || totalPrice == null || totalPrice === 0) {
         return {
             markup: null,
+            communityModelReward: null,
             payerBucket: null,
             postDeductionPackBalance: null,
             billedPrice: 0,
@@ -124,6 +163,11 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
         userId,
     );
     const markup: MarkupResolution | null = resolved;
+    const communityModelReward = resolveCommunityModelReward(
+        communityModelRewardInput,
+        totalPrice,
+        userId,
+    );
     const billedPrice = roundPollenLedgerAmount(
         totalPrice + (markup?.devCredit ?? 0),
     );
@@ -137,6 +181,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
                 userId,
                 billedPrice,
                 modelResolved,
+                modelPaidOnly,
             );
             payerBucket = deduction.bucket;
             postDeductionPackBalance = deduction.postDeductionPackBalance;
@@ -175,7 +220,64 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
                 },
             );
         }
+
+        if (communityModelReward) {
+            if (!payerBucket) {
+                throw new Error(
+                    "Community model reward requires a payer balance bucket",
+                );
+            }
+            const creditAmount = roundPollenLedgerAmount(
+                communityModelReward.credit,
+            );
+            const { ok } = await atomicCreditUserBalance(
+                db,
+                communityModelReward.userId,
+                payerBucket,
+                creditAmount,
+            );
+            if (!ok) {
+                throw new Error(
+                    `Community model reward UPDATE affected 0 rows for ${communityModelReward.userId}`,
+                );
+            }
+            log.debug(
+                "Credited {credit} pollen to community model owner {userId} {bucket} balance (model={modelId}, reward={pct}%)",
+                {
+                    credit: creditAmount,
+                    userId: communityModelReward.userId,
+                    bucket: payerBucket,
+                    modelId: communityModelReward.modelId,
+                    pct: (communityModelReward.rewardRate * 100).toFixed(0),
+                },
+            );
+        }
     } catch (error) {
+        if (communityModelReward) {
+            if (
+                error instanceof Error &&
+                error.message.startsWith("Community model reward")
+            ) {
+                log.error(
+                    "Community model reward failed for {userId}: {error}",
+                    {
+                        userId: communityModelReward.userId,
+                        error: error.message,
+                    },
+                );
+            } else {
+                log.error(
+                    "Failed to bill community model request for owner {userId}: {error}",
+                    {
+                        userId: communityModelReward.userId,
+                        error:
+                            error instanceof Error
+                                ? error.message
+                                : String(error),
+                    },
+                );
+            }
+        }
         if (markup) {
             if (
                 error instanceof Error &&
@@ -201,7 +303,13 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
         throw error;
     }
 
-    return { markup, payerBucket, postDeductionPackBalance, billedPrice };
+    return {
+        markup,
+        communityModelReward,
+        payerBucket,
+        postDeductionPackBalance,
+        billedPrice,
+    };
 }
 
 function hasApiKeyBudget(
@@ -240,14 +348,14 @@ async function deductUserBalance(
     userId: string,
     amount: number,
     modelResolved?: string,
+    modelPaidOnly?: boolean,
 ): Promise<{
     bucket: Bucket | null;
     postDeductionPackBalance: number | null;
 }> {
     try {
-        const isPaidOnly = modelResolved
-            ? (getModelDefinition(modelResolved as ModelName).paidOnly ?? false)
-            : false;
+        const isPaidOnly =
+            modelPaidOnly ?? isRegistryPaidOnlyModel(modelResolved);
 
         const { ok, bucket, packBalance } = await atomicDeductUserBalance(
             db,
@@ -283,5 +391,17 @@ async function deductUserBalance(
             error: error instanceof Error ? error.message : String(error),
         });
         throw error;
+    }
+}
+
+function isRegistryPaidOnlyModel(modelResolved: string | undefined): boolean {
+    if (!modelResolved) return false;
+    try {
+        return (
+            getRegistryModelDefinition(modelResolved as ModelName).paidOnly ??
+            false
+        );
+    } catch {
+        return false;
     }
 }

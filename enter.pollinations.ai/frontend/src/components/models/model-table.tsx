@@ -38,6 +38,7 @@ export type SectionType =
     | "audio"
     | "realtime"
     | "text"
+    | "community"
     | "embedding";
 
 type UnifiedModelTableProps = {
@@ -46,6 +47,7 @@ type UnifiedModelTableProps = {
     textModels: ModelPrice[];
     audioModels: ModelPrice[];
     realtimeModels: ModelPrice[];
+    communityModels: ModelPrice[];
     embeddingModels: ModelPrice[];
     activeTab: SectionType;
 };
@@ -106,6 +108,7 @@ export const sectionLabels: Record<SectionType, string> = {
     audio: "Audio",
     realtime: "Realtime",
     text: "Text",
+    community: "Community",
     embedding: "Embedding",
 };
 
@@ -312,6 +315,12 @@ const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
                       perToken: model.perToken,
                   },
                   {
+                      prices: [model.promptCacheWritePrice],
+                      kind: "cacheWrite",
+                      subKinds: ["cacheWrite"],
+                      perToken: model.perToken,
+                  },
+                  {
                       prices: [model.promptAudioPrice],
                       kind: "audioIn",
                       subKinds: ["audioIn"],
@@ -335,6 +344,12 @@ const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
                       prices: [model.completionTextPrice],
                       kind: "text",
                       subKinds: ["text"],
+                      perToken: model.perToken,
+                  },
+                  {
+                      prices: [model.completionReasoningPrice],
+                      kind: "reasoning",
+                      subKinds: ["reasoning"],
                       perToken: model.perToken,
                   },
                   {
@@ -441,6 +456,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     textModels,
     audioModels,
     realtimeModels,
+    communityModels,
     embeddingModels,
     activeTab,
 }) => {
@@ -450,6 +466,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
         { type: "audio", models: audioModels },
         { type: "realtime", models: realtimeModels },
         { type: "text", models: textModels },
+        { type: "community", models: communityModels },
         { type: "embedding", models: embeddingModels },
     ];
 

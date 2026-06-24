@@ -125,7 +125,7 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
 function convertUsage(
     usage: Usage,
     rateDefinition: CostDefinition,
-    model: ModelName,
+    model: string,
 ): Usage {
     const convertedUsage = Object.fromEntries(
         Object.entries(usage).map(([usageType, amount]) => {
@@ -227,14 +227,24 @@ export const getVisibleRealtimeModels = () =>
     filterVisible(Object.keys(REALTIME_SERVICES) as RealtimeModelName[]);
 
 /**
- * Get a model definition by public model name
+ * Get a model definition from the bundled registry.
+ *
+ * This only covers built-in Pollinations models. Runtime models, such as
+ * community endpoints, should be resolved at the request boundary and then
+ * passed around as a `ModelDefinition`.
  */
-export function getModelDefinition(model: ModelName): ModelDefinition {
+export function getRegistryModelDefinition(model: ModelName): ModelDefinition {
     const definition = MODEL_REGISTRY[model];
     if (!definition) {
         throw new Error(`Invalid model: "${model}"`);
     }
     return definition;
+}
+
+export function getPriceDefinitionForModel(
+    svc: ModelDefinition<string>,
+): PriceDefinition {
+    return derivePrice(svc);
 }
 
 /**
@@ -250,7 +260,7 @@ export function getCostDefinition(model: ModelName): CostDefinition | null {
 export function getPriceDefinition(model: ModelName): PriceDefinition | null {
     const svc = MODEL_REGISTRY[model];
     if (!svc) return null;
-    return derivePrice(svc);
+    return getPriceDefinitionForModel(svc);
 }
 
 /**
@@ -262,6 +272,17 @@ export function calculateCost(model: ModelName, usage: Usage): UsageCost {
         throw new Error(
             `Failed to get current cost for model: ${model.toString()}`,
         );
+    return calculateCostWithDefinition(model, usage, costDefinition);
+}
+
+/**
+ * Calculate cost from an explicit cost definition.
+ */
+export function calculateCostWithDefinition(
+    model: string,
+    usage: Usage,
+    costDefinition: CostDefinition,
+): UsageCost {
     const usageCost = convertUsage(usage, costDefinition, model);
     const totalCost = Object.values(usageCost).reduce(
         (total, cost) => total + cost,
@@ -282,6 +303,17 @@ export function calculatePrice(model: ModelName, usage: Usage): UsagePrice {
         throw new Error(
             `Failed to get current price for model: ${model.toString()}`,
         );
+    return calculatePriceWithDefinition(model, usage, priceDefinition);
+}
+
+/**
+ * Calculate price from an explicit price definition.
+ */
+export function calculatePriceWithDefinition(
+    model: string,
+    usage: Usage,
+    priceDefinition: PriceDefinition,
+): UsagePrice {
     const usagePrice = convertUsage(usage, priceDefinition, model);
     const totalPrice = roundPollenLedgerAmount(
         Object.values(usagePrice).reduce((total, price) => total + price, 0),

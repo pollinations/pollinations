@@ -6,6 +6,8 @@ const TOKEN_TYPE_LABELS: Record<PriceKind, string> = {
     text: "text",
     image: "image",
     cached: "cached",
+    cacheWrite: "cache write",
+    reasoning: "reasoning",
     video: "video",
     audioIn: "audio",
     audioOut: "audio",

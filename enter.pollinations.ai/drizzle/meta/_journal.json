@@ -194,50 +194,71 @@
     {
       "idx": 27,
       "version": "6",
-      "when": 1782220405628,
-      "tag": "0027_gh_repo_mirror",
+      "when": 1780481244086,
+      "tag": "0027_red_thunderbolts",
       "breakpoints": true
     },
     {
       "idx": 28,
       "version": "6",
-      "when": 1782231033008,
-      "tag": "0028_gh_mirror_assignees_dates",
+      "when": 1781532730024,
+      "tag": "0028_groovy_puck",
       "breakpoints": true
     },
     {
       "idx": 29,
       "version": "6",
-      "when": 1782231034000,
-      "tag": "0029_chunky_impossible_man",
+      "when": 1781976760905,
+      "tag": "0029_gray_eternity",
       "breakpoints": true
     },
     {
       "idx": 30,
       "version": "6",
-      "when": 1782231035000,
-      "tag": "0030_reshape_reward_grants",
+      "when": 1782220405628,
+      "tag": "0030_gh_repo_mirror",
       "breakpoints": true
     },
     {
       "idx": 31,
       "version": "6",
-      "when": 1782231036000,
-      "tag": "0031_drop_github_quest_issues",
+      "when": 1782231033008,
+      "tag": "0031_gh_mirror_assignees_dates",
       "breakpoints": true
     },
     {
       "idx": 32,
       "version": "6",
-      "when": 1782231037000,
-      "tag": "0032_rename_rewards_for_claims",
+      "when": 1782231034000,
+      "tag": "0032_chunky_impossible_man",
       "breakpoints": true
     },
     {
       "idx": 33,
       "version": "6",
+      "when": 1782231035000,
+      "tag": "0033_reshape_reward_grants",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "6",
+      "when": 1782231036000,
+      "tag": "0034_drop_github_quest_issues",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "6",
+      "when": 1782231037000,
+      "tag": "0035_rename_rewards_for_claims",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "6",
       "when": 1782231038000,
-      "tag": "0033_normalize_reward_buckets_to_tier",
+      "tag": "0036_normalize_reward_buckets_to_tier",
       "breakpoints": true
     }
   ]

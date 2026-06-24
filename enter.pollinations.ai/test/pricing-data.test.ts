@@ -11,8 +11,8 @@ import {
 import {
     calculateCost,
     calculatePrice,
-    getModelDefinition,
     getPriceDefinition,
+    getRegistryModelDefinition,
 } from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { expect, test } from "vitest";
@@ -60,6 +60,37 @@ test("catalog prices format text rates through formatPricePer1M", () => {
     });
 });
 
+test("catalog prices keep community models in their own category", () => {
+    const [communityModel] = getModelPricesFromCatalog([
+        {
+            name: "community/voodoohop/openai",
+            category: "community",
+            brand: "Community",
+            title: "OpenAI relay",
+            description: "OpenAI relay",
+            pricing: {
+                currency: "pollen",
+                promptTextTokens: "0.0000001",
+                completionTextTokens: "0.0000002",
+            },
+            input_modalities: ["text"],
+            output_modalities: ["text"],
+            capabilities: [],
+        },
+    ]);
+
+    expect(communityModel).toMatchObject({
+        name: "community/voodoohop/openai",
+        type: "community",
+        displayName: "OpenAI relay",
+        brand: "Community",
+        promptTextPrice: "0.1",
+        completionTextPrice: "0.2",
+        capabilities: [],
+    });
+    expect(communityModel.description).toBeUndefined();
+});
+
 test("model info exposes built-in model capabilities without raw implementation flags", () => {
     const geminiSearch = getTextModelsInfo().find(
         (model) => model.name === "gemini-search",
@@ -92,7 +123,9 @@ test("AssemblyAI STT pricing is exposed per input audio second", () => {
         type: "audio",
         perSecondPrice: "0.00006",
     });
-    expect(getModelDefinition("universal-3-pro").paidOnly).toBeUndefined();
+    expect(
+        getRegistryModelDefinition("universal-3-pro").paidOnly,
+    ).toBeUndefined();
 
     expect(
         calculateCost("universal-2", { promptAudioSeconds: 3600 }).totalCost,
@@ -116,13 +149,13 @@ test("Grok 4.20 registry metadata covers verified modalities and costs", () => {
         completionReasoningTokens: 1_000_000,
     };
 
-    const grok = getModelDefinition("grok");
+    const grok = getRegistryModelDefinition("grok");
     // `grok-large` now points at the newer Grok 4.3 (clean slug = newest);
     // the 4.20 reasoning model keeps the versioned slug `grok-4-20-reasoning`.
-    const grokReasoning = getModelDefinition("grok-4-20-reasoning");
+    const grokReasoning = getRegistryModelDefinition("grok-4-20-reasoning");
 
     for (const model of ["grok", "grok-4-20-reasoning"] as const) {
-        const definition = getModelDefinition(model);
+        const definition = getRegistryModelDefinition(model);
         const priceDefinition = getPriceDefinition(model);
         const usage =
             model === "grok-4-20-reasoning" ? reasoningUsage : inputUsage;

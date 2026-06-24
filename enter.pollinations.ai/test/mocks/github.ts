@@ -27,6 +27,7 @@ export type MockGithubState = {
         assignees?: { login: string }[];
         labels?: Array<{ name: string }>;
     }>;
+    commitSearchCount: number;
     failQuestSearch: boolean;
 };
 
@@ -70,6 +71,7 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                 labels: [{ name: "POLLEN-QUEST" }],
             },
         ],
+        commitSearchCount: 0,
         failQuestSearch: false,
     };
 
@@ -89,6 +91,13 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                 return c.json({ message: "rate limited" }, 403);
             }
             return c.json({ items: state.questIssues });
+        })
+        .get("/search/commits", (c) => {
+            return c.json({
+                total_count: state.commitSearchCount,
+                incomplete_results: false,
+                items: [],
+            });
         })
         .use("*", githubAuth)
         .get("/user/emails", (c) => {

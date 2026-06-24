@@ -8,7 +8,8 @@ import {
     TokensIcon,
     TrendUpIcon,
 } from "@pollinations/ui";
-import { type FC, useEffect, useMemo, useState } from "react";
+import { type FC, useCallback, useEffect, useMemo, useState } from "react";
+import { CommunityEndpoints } from "../community-endpoints";
 import {
     type ApiModelInfo,
     fetchModelCatalog,
@@ -21,7 +22,11 @@ import {
 } from "./model-table.tsx";
 import { useModelStats } from "./use-model-stats.ts";
 
-export const Models: FC = () => {
+type ModelsProps = {
+    showCommunityEndpoints?: boolean;
+};
+
+export const Models: FC<ModelsProps> = ({ showCommunityEndpoints = false }) => {
     const [activeTab, setActiveTab] = useState<SectionType>("image");
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const [catalogError, setCatalogError] = useState<string | null>(null);
@@ -31,33 +36,30 @@ export const Models: FC = () => {
         [catalogModels, stats],
     );
 
-    useEffect(() => {
-        let cancelled = false;
-
-        fetchModelCatalog()
-            .then((models) => {
-                if (!cancelled) {
+    const loadModelCatalog = useCallback(
+        (options: { refresh?: boolean } = {}) =>
+            fetchModelCatalog(options)
+                .then((models) => {
                     setCatalogModels(models);
                     setCatalogError(null);
-                }
-            })
-            .catch(() => {
-                if (!cancelled) {
+                })
+                .catch(() => {
                     setCatalogModels([]);
                     setCatalogError("Could not load models.");
-                }
-            });
+                }),
+        [],
+    );
 
-        return () => {
-            cancelled = true;
-        };
-    }, []);
+    useEffect(() => {
+        void loadModelCatalog();
+    }, [loadModelCatalog]);
 
     const imageModels = allModels.filter((m) => m.type === "image");
     const videoModels = allModels.filter((m) => m.type === "video");
     const audioModels = allModels.filter((m) => m.type === "audio");
     const realtimeModels = allModels.filter((m) => m.type === "realtime");
     const textModels = allModels.filter((m) => m.type === "text");
+    const communityModels = allModels.filter((m) => m.type === "community");
     const embeddingModels = allModels.filter((m) => m.type === "embedding");
     const availableSections: SectionType[] = [
         "image",
@@ -65,6 +67,7 @@ export const Models: FC = () => {
         "audio",
         "realtime",
         "text",
+        "community",
         "embedding",
     ];
 
@@ -118,6 +121,7 @@ export const Models: FC = () => {
                         audioModels={audioModels}
                         realtimeModels={realtimeModels}
                         textModels={textModels}
+                        communityModels={communityModels}
                         embeddingModels={embeddingModels}
                         activeTab={activeTab}
                     />
@@ -144,6 +148,13 @@ export const Models: FC = () => {
                     </p>
                 </div>
             </Section>
+            {showCommunityEndpoints && (
+                <CommunityEndpoints
+                    onChange={() => {
+                        void loadModelCatalog({ refresh: true });
+                    }}
+                />
+            )}
         </div>
     );
 };

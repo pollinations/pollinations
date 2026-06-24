@@ -21,6 +21,7 @@ describe("GET /api/account/profile", () => {
         expect(data).toHaveProperty("image");
         expect(data).toHaveProperty("tier");
         expect(data).toHaveProperty("nextResetAt");
+        expect(data.communityEndpointsAllowed).toBe(false);
         expect(data).toHaveProperty("name");
         expect(data).toHaveProperty("email");
     });
@@ -39,6 +40,7 @@ describe("GET /api/account/profile", () => {
         expect(data).toHaveProperty("image");
         expect(data).toHaveProperty("tier");
         expect(data).toHaveProperty("nextResetAt");
+        expect(data.communityEndpointsAllowed).toBe(false);
         expect(data).not.toHaveProperty("name");
         expect(data).not.toHaveProperty("email");
     });
@@ -91,6 +93,7 @@ describe("GET /api/account/profile", () => {
         expect(data).toHaveProperty("image");
         expect(data).toHaveProperty("tier");
         expect(data).toHaveProperty("nextResetAt");
+        expect(data.communityEndpointsAllowed).toBe(false);
         expect(data).toHaveProperty("name");
         expect(data).toHaveProperty("email");
     });

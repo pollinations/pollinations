@@ -1,7 +1,7 @@
 import { z } from "zod";
 import {
-    getModelDefinition,
     getPriceDefinition,
+    getRegistryModelDefinition,
     getVisibleAudioModels,
     getVisibleEmbeddingModels,
     getVisibleImageModels,
@@ -34,6 +34,7 @@ export const ModelInfoSchema = z.object({
         "video",
         "embedding",
         "realtime",
+        "community",
     ]),
     brand: z.string(),
     pricing: z
@@ -68,7 +69,7 @@ function toFixedPoint(n: number): string {
 }
 
 function getCapabilities(
-    service: ReturnType<typeof getModelDefinition>,
+    service: ReturnType<typeof getRegistryModelDefinition>,
 ): ModelCapability[] {
     const capabilities: ModelCapability[] = [];
     if (service.tools) capabilities.push("tool_calling");
@@ -83,7 +84,7 @@ function getCapabilities(
  * Combines pricing from price definitions with metadata from service definition
  */
 function getModelInfo(modelName: ModelName): ModelInfo {
-    const service = getModelDefinition(modelName);
+    const service = getRegistryModelDefinition(modelName);
     const priceDefinition = getPriceDefinition(modelName);
     if (!priceDefinition) {
         throw new Error(`No price definition found for model: ${modelName}`);

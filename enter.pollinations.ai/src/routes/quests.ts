@@ -76,15 +76,6 @@ export const questsRoutes = new Hono<Env>().get(
         },
     }),
     async (c) => {
-        // DEBUG-ONLY: ?debug=1 enriches each quest's stats with a tier/pack
-        // balance-bucket split + unique-user count, and BYPASSES the KV cache so
-        // the debug payload never leaks into normal cached responses. Remove this
-        // branch (and the debug fields) before merge.
-        const debug = c.req.query("debug") === "1";
-        if (debug) {
-            return c.json(await buildQuestCatalog(c.env, true));
-        }
-
         const cached = await readCached(c.env.KV);
         if (cached) return c.json(cached);
 
@@ -112,8 +103,6 @@ const EMPTY_STATS: QuestCardStats = {
 
 async function buildQuestCatalog(
     env: CloudflareBindings,
-    // DEBUG-ONLY flag — see the ?debug=1 branch in the route. Remove before merge.
-    debug = false,
 ): Promise<QuestCatalogResponse> {
     const ctx: QuestEvaluationContext = {
         db: drizzle(env.DB, { schema }),
@@ -121,7 +110,7 @@ async function buildQuestCatalog(
     };
     const [cards, ledger] = await Promise.all([
         listQuestCards(ctx),
-        getRewardLedgerStats(env, debug),
+        getRewardLedgerStats(env),
     ]);
 
     const quests = [...cards]
@@ -137,9 +126,6 @@ async function buildQuestCatalog(
                     unclaimed: stat.unclaimed,
                     pollenAwarded: stat.pollenAwarded,
                     pollenClaimed: stat.pollenClaimed,
-                    // DEBUG-ONLY: per-user-tier breakdown of the same totals.
-                    // Absent (dropped from JSON) unless ?debug=1.
-                    ...(debug && { byTier: stat.byTier ?? {} }),
                 },
             };
         });

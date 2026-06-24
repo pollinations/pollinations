@@ -2,8 +2,9 @@ DESCRIPTION >
     Per-user "has this user generated with a text / image / audio model at least
     once" flags, used by the user-triggered model-usage quest check. Returns at
     most one row for the requested user when they have at least one billed,
-    successful generation in any of the three modalities within the last 3
-    months (the modality milestone is a one-time quest).
+    successful generation in any of the three modalities. Flags are sticky (a
+    max() that never decays); the populate materialization backfills from the
+    last 3 months of generation_event, and live events keep flags set thereafter.
 
     Reads the pre-aggregated quest_model_modalities_mv (one partial-aggregate row
     per user, maintained at ingest) instead of scanning all of generation_event,

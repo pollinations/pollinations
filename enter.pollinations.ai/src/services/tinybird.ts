@@ -33,7 +33,11 @@ export async function fetchTinybirdRows<T>(
     // Log the request (pipe + params + host) BEFORE the call. The URL is safe to
     // log: the token is in the Authorization header, not the query string.
     const startedAt = Date.now();
-    log.info("TINYBIRD_REQUEST: pipe={pipe} host={host} params={params}", {
+    // debug level: fetchTinybirdRows is shared by high-traffic usage/earnings
+    // endpoints too, so keep the per-call request/response lines off the default
+    // info stream (errors below stay at error). Callers that need per-quest
+    // visibility log their own info lines.
+    log.debug("TINYBIRD_REQUEST: pipe={pipe} host={host} params={params}", {
         pipe: path,
         host: url.host,
         params: Object.fromEntries(url.searchParams.entries()),
@@ -68,7 +72,7 @@ export async function fetchTinybirdRows<T>(
     const data = (await response.json()) as { data: T[] };
     // Log the row count the PIPE returned (before any caller-side filtering), so
     // "pipe returned N but caller matched 0" is diagnosable from the logs.
-    log.info(
+    log.debug(
         "TINYBIRD_RESPONSE: pipe={pipe} status={status} durationMs={durationMs} rows={rows}",
         {
             pipe: path,

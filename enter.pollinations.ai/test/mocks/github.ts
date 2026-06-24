@@ -24,8 +24,17 @@ export type MockGithubState = {
         updated_at: string;
         closed_at: string | null;
         user: { login: string } | null;
-        assignees?: { login: string }[];
+        assignees?: { login: string; databaseId?: number | null }[];
         labels?: Array<{ name: string }>;
+        closedByPullRequestsReferences?: Array<{
+            number: number;
+            mergedAt: string | null;
+        }>;
+    }>;
+    mergedPullRequests: Array<{
+        number: number;
+        authorLogin: string;
+        mergedAt: string;
     }>;
     failQuestSearch: boolean;
 };
@@ -40,36 +49,8 @@ export function createMockGithub(): MockAPI<MockGithubState> {
             avatar_url: "https://avatars.githubusercontent.com/u/12345?v=4",
             created_at: "2018-01-01T00:00:00Z",
         },
-        questIssues: [
-            {
-                number: 321,
-                title: "Add a demo app",
-                state: "open",
-                html_url:
-                    "https://github.com/pollinations/pollinations/issues/321",
-                body: "### Goal\nBuild a focused demo.\n\n### Reward\n15",
-                created_at: "2026-06-01T00:00:00Z",
-                updated_at: "2026-06-02T00:00:00Z",
-                closed_at: null,
-                user: { login: "maintainer" },
-                assignees: [],
-                labels: [{ name: "POLLEN-QUEST" }],
-            },
-            {
-                number: 322,
-                title: "Fix a model config",
-                state: "open",
-                html_url:
-                    "https://github.com/pollinations/pollinations/issues/322",
-                body: "### What to build\nWire the missing config.\n\n### Reward\n20 pollen",
-                created_at: "2026-06-03T00:00:00Z",
-                updated_at: "2026-06-04T00:00:00Z",
-                closed_at: null,
-                user: { login: "maintainer" },
-                assignees: [{ login: "dev-user" }],
-                labels: [{ name: "POLLEN-QUEST" }],
-            },
-        ],
+        questIssues: [],
+        mergedPullRequests: [],
         failQuestSearch: false,
     };
 
@@ -91,6 +72,45 @@ export function createMockGithub(): MockAPI<MockGithubState> {
             return c.json({ items: state.questIssues });
         })
         .use("*", githubAuth)
+        .post("/graphql", async (c) => {
+            if (state.failQuestSearch) {
+                return c.json({ errors: [{ message: "rate limited" }] }, 200);
+            }
+            const body = (await c.req.json()) as {
+                variables?: { query?: string };
+            };
+            const search = body.variables?.query ?? "";
+            if (search.includes("is:pr")) {
+                const author = search.match(/\bauthor:([^\s]+)/)?.[1];
+                const nodes = state.mergedPullRequests
+                    .filter((pr) => !author || pr.authorLogin === author)
+                    .slice(0, 1)
+                    .map((pr) => ({
+                        number: pr.number,
+                        mergedAt: pr.mergedAt,
+                    }));
+                return c.json({ data: { search: { nodes } } });
+            }
+
+            const nodes = state.questIssues.map((issue) => ({
+                number: issue.number,
+                state: issue.state.toUpperCase(),
+                title: issue.title,
+                url: issue.html_url,
+                body: issue.body,
+                assignees: {
+                    nodes: (issue.assignees ?? []).map((assignee) => ({
+                        login: assignee.login,
+                        databaseId: assignee.databaseId ?? null,
+                    })),
+                },
+                labels: { nodes: issue.labels ?? [] },
+                closedByPullRequestsReferences: {
+                    nodes: issue.closedByPullRequestsReferences ?? [],
+                },
+            }));
+            return c.json({ data: { search: { nodes } } });
+        })
         .get("/user/emails", (c) => {
             return c.json([
                 {

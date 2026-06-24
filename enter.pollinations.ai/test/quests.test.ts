@@ -11,14 +11,14 @@ import type {
     QuestGroup,
 } from "../src/services/quests/types.ts";
 import { test } from "./fixtures.ts";
+import type { MockGithubState } from "./mocks/github.ts";
 
 const ELIXPO_INTERN_QUEST_ID = "easteregg:elixpo_intern";
 
-// Number of static "product" catalog cards. Every static group quest
-// serializes to exactly one uniform card; the github-contributions group is the
-// only dynamic one (one card per seeded POLLEN-QUEST gh_issues row, zero when
-// none). We snapshot the static count by loading the catalog with no issues
-// seeded.
+// Number of static "product" catalog cards. Every static group quest serializes
+// to exactly one uniform card; the github-contributions group is the only
+// dynamic one (one card per mocked POLLEN-QUEST issue, zero when none). We
+// snapshot the static count by loading the catalog with no mocked issues.
 async function countStaticQuestCards(): Promise<number> {
     const ctx: QuestEvaluationContext = {
         db: drizzle(env.DB, { schema }),
@@ -48,57 +48,40 @@ type SeedQuestIssue = {
     updatedAt?: Date;
 };
 
-// Seed a POLLEN-QUEST bounty into the gh_* mirror exactly as the real mirror
-// would: the issue row (label + body), and — when completed — a merged PR plus
-// its closing edge. The quest read-path derives everything else from these.
-async function seedQuestIssue(
-    db: ReturnType<typeof drizzle<typeof schema>>,
-    issue: SeedQuestIssue,
-): Promise<void> {
+// Seed a POLLEN-QUEST bounty into the GitHub mock exactly as the lazy GitHub
+// reader sees it: issue fields plus the PRs that GitHub says closed it.
+function seedQuestIssue(github: MockGithubState, issue: SeedQuestIssue): void {
     const assigneeGithubId = issue.assigneeGithubId ?? null;
     const assigneeLogin = issue.assigneeLogin ?? null;
     const completedBy = issue.completedByPrNumber ?? null;
     const created = issue.createdAt ?? new Date("2026-06-01T00:00:00Z");
     const updated = issue.updatedAt ?? new Date("2026-06-02T00:00:00Z");
 
-    await db.insert(schema.ghIssues).values({
+    github.questIssues.push({
         number: issue.issueNumber,
-        authorGithubId: null,
-        authorLogin: null,
         state: completedBy !== null ? "closed" : "open",
         title: issue.title,
-        url: `https://github.com/pollinations/pollinations/issues/${issue.issueNumber}`,
+        html_url: `https://github.com/pollinations/pollinations/issues/${issue.issueNumber}`,
         body: questIssueBody(issue.reward, issue.goal),
-        labelsJson: JSON.stringify(["POLLEN-QUEST"]),
-        assigneeGithubId,
-        assigneeLogin,
-        assigneesJson: assigneeLogin
-            ? JSON.stringify([
-                  { login: assigneeLogin, githubId: assigneeGithubId },
-              ])
-            : JSON.stringify([]),
-        githubCreatedAt: created,
-        githubClosedAt: completedBy !== null ? updated : null,
-        githubUpdatedAt: updated,
+        created_at: created.toISOString(),
+        updated_at: updated.toISOString(),
+        closed_at: completedBy !== null ? updated.toISOString() : null,
+        user: { login: "maintainer" },
+        assignees: assigneeLogin
+            ? [{ login: assigneeLogin, databaseId: assigneeGithubId }]
+            : [],
+        labels: [{ name: "POLLEN-QUEST" }],
+        closedByPullRequestsReferences:
+            completedBy !== null
+                ? [{ number: completedBy, mergedAt: updated.toISOString() }]
+                : [],
     });
 
-    if (completedBy !== null) {
-        await db.insert(schema.ghPullRequests).values({
+    if (completedBy !== null && assigneeLogin) {
+        github.mergedPullRequests.push({
             number: completedBy,
-            authorGithubId: assigneeGithubId,
             authorLogin: assigneeLogin,
-            state: "merged",
-            mergedAt: updated,
-            title: `PR closing #${issue.issueNumber}`,
-            url: `https://github.com/pollinations/pollinations/pull/${completedBy}`,
-            githubCreatedAt: created,
-            githubClosedAt: updated,
-            githubUpdatedAt: updated,
-        });
-        await db.insert(schema.ghPrClosingIssues).values({
-            edgeKey: `${completedBy}:${issue.issueNumber}`,
-            prNumber: completedBy,
-            issueNumber: issue.issueNumber,
+            mergedAt: updated.toISOString(),
         });
     }
 }
@@ -121,17 +104,19 @@ async function getOnlyUser() {
     return user;
 }
 
-test("GET /api/quests/catalog returns product quests and issue bounty cards", async () => {
-    await env.KV.delete("quests:catalog:v13");
+test("GET /api/quests/catalog returns product quests and issue bounty cards", async ({
+    mocks,
+}) => {
+    await mocks.enable("github");
+    await env.KV.delete("quests:catalog:v14");
     const staticCardCount = await countStaticQuestCards();
-    const db = drizzle(env.DB, { schema });
-    await seedQuestIssue(db, {
+    seedQuestIssue(mocks.github.state, {
         issueNumber: 321,
         title: "Add a demo app",
         goal: "Build a focused demo.",
         reward: 15,
     });
-    await seedQuestIssue(db, {
+    seedQuestIssue(mocks.github.state, {
         issueNumber: 322,
         title: "Fix a model config",
         goal: "Wire the missing config.",
@@ -139,7 +124,7 @@ test("GET /api/quests/catalog returns product quests and issue bounty cards", as
         assigneeGithubId: 999,
         assigneeLogin: "dev-user",
     });
-    await seedQuestIssue(db, {
+    seedQuestIssue(mocks.github.state, {
         issueNumber: 323,
         title: "Malformed reward heading",
         goal: "Check reward parsing.",
@@ -288,8 +273,11 @@ test("GET /api/quests/catalog returns product quests and issue bounty cards", as
     }
 });
 
-test("GET /api/quests/catalog returns product quests with no mirrored GitHub issues", async () => {
-    await env.KV.delete("quests:catalog:v13");
+test("GET /api/quests/catalog returns product quests with no GitHub issue bounties", async ({
+    mocks,
+}) => {
+    await mocks.enable("github");
+    await env.KV.delete("quests:catalog:v14");
     const staticCardCount = await countStaticQuestCards();
 
     const response = await SELF.fetch(
@@ -401,9 +389,11 @@ test("recordReward dedups on idempotency key and claimReward credits once", asyn
 });
 
 test("catalog stats aggregate earned/claimed from the rewards ledger", async ({
+    mocks,
     sessionToken: _sessionToken,
 }) => {
-    await env.KV.delete("quests:catalog:v13");
+    await mocks.enable("github");
+    await env.KV.delete("quests:catalog:v14");
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
     const questId = "github:first_merged_pr";
@@ -954,7 +944,7 @@ test("quest check records completed GitHub quest issue rewards through shared pa
     const issueQuestId = `github:issue:${issueNumber}`;
     const issueTitle = "Ship a focused fix";
 
-    await seedQuestIssue(db, {
+    seedQuestIssue(mocks.github.state, {
         issueNumber,
         title: issueTitle,
         goal: "Merge the quest PR.",
@@ -965,7 +955,7 @@ test("quest check records completed GitHub quest issue rewards through shared pa
     });
 
     const first = await checkQuestsForUser(env, user.id);
-    expect(first.recorded).toBeGreaterThanOrEqual(2);
+    expect(first.recorded).toBeGreaterThanOrEqual(1);
 
     const otherGithubId = 987654;
     await db.insert(schema.user).values({
@@ -982,17 +972,12 @@ test("quest check records completed GitHub quest issue rewards through shared pa
         tierBalance: 0,
         packBalance: 0,
     });
-    await db
-        .update(schema.ghIssues)
-        .set({
-            assigneeGithubId: otherGithubId,
-            assigneeLogin: "other-dev",
-            assigneesJson: JSON.stringify([
-                { login: "other-dev", githubId: otherGithubId },
-            ]),
-            githubUpdatedAt: new Date("2026-06-13T00:00:00Z"),
-        })
-        .where(eq(schema.ghIssues.number, issueNumber));
+    const mockedIssue = mocks.github.state.questIssues.find(
+        (issue) => issue.number === issueNumber,
+    );
+    if (!mockedIssue) throw new Error("Expected mocked quest issue");
+    mockedIssue.assignees = [{ login: "other-dev", databaseId: otherGithubId }];
+    mockedIssue.updated_at = "2026-06-13T00:00:00Z";
 
     const second = await checkQuestsForUser(env, "github-quest-other-user");
     expect(second.recorded).toBe(0);
@@ -1036,7 +1021,7 @@ test("quest check records completed GitHub quest issue rewards through shared pa
 // Regression guard for the idempotency-key collapse: issue bounty quest ids MUST
 // be derived from the issue number. Otherwise every scope:"once" bounty would
 // share one key and only the first one ever records.
-test("two mirrored issue bounties each record independently", async ({
+test("two lazy GitHub issue bounties each record independently", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -1062,17 +1047,27 @@ test("two mirrored issue bounties each record independently", async ({
     });
 
     const issues = [
-        { issueNumber: 901, assigneeGithubId: user.githubId, reward: 11 },
-        { issueNumber: 902, assigneeGithubId: secondGithubId, reward: 13 },
+        {
+            issueNumber: 901,
+            assigneeGithubId: user.githubId,
+            assigneeLogin: user.githubUsername,
+            reward: 11,
+        },
+        {
+            issueNumber: 902,
+            assigneeGithubId: secondGithubId,
+            assigneeLogin: "second-dev",
+            reward: 13,
+        },
     ];
     for (const issue of issues) {
-        await seedQuestIssue(db, {
+        seedQuestIssue(mocks.github.state, {
             issueNumber: issue.issueNumber,
             title: `Community bounty #${issue.issueNumber}`,
             goal: "Merge the linked PR.",
             reward: issue.reward,
             assigneeGithubId: issue.assigneeGithubId,
-            assigneeLogin: "dev",
+            assigneeLogin: issue.assigneeLogin,
             completedByPrNumber: issue.issueNumber + 1000,
         });
     }

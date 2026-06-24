@@ -12,9 +12,9 @@ import type {
     QuestEvaluationContext,
 } from "../services/quests/types.ts";
 
-// Bumped to v13: GitHub issue bounties are catalogued from the gh_* mirror
-// again, so v12 entries that hid them must not be served.
-const CACHE_KEY = "quests:catalog:v13";
+// Bumped to v14: GitHub issue bounties are now read lazily from GitHub, not a
+// D1 mirror, so old catalog entries should not be served.
+const CACHE_KEY = "quests:catalog:v14";
 const CACHE_TTL = 60;
 
 // Per-quest reward-ledger stats shown on the catalog card. Read from rewards:

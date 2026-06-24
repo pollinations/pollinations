@@ -41,7 +41,7 @@ export const user = sqliteTable("user", {
 }, (table) => [
   index("idx_user_email").on(table.email),
   index("idx_user_auto_top_up_enabled").on(table.autoTopUpEnabled),
-  // GitHub author/assignee joins (gh_pull_requests, gh_issues -> user).
+  // GitHub profile lookup for quest checks and account display.
   index("idx_user_github_id").on(table.githubId),
 ]);
 
@@ -264,99 +264,4 @@ export const rewards = sqliteTable("rewards", {
   claimedAt: integer("claimed_at", { mode: "timestamp" }),
 }, (table) => [
   index("idx_rewards_user_id").on(table.userId),
-]);
-
-// GitHub repo mirror — a thin, full snapshot of pollinations/pollinations PRs,
-// issues, and the PR->issue "closes" edges. Refreshed wholesale by the
-// scheduled syncGithubMirror() (INSERT OR REPLACE every row each run). These
-// tables are deliberately generic: they mirror GitHub state and nothing else
-// (no quest/reward logic) so any consumer can read them. The PR->issue close
-// link is a GraphQL-only relation (closingIssuesReferences) that lives on
-// neither the PR nor the issue payload, so it gets its own edge table.
-
-export const ghPullRequests = sqliteTable("gh_pull_requests", {
-  // GitHub PR number — stable, repo-unique, the natural primary key.
-  number: integer("number").primaryKey(),
-  // Author's GitHub user id (databaseId). Nullable: the author account may be
-  // deleted, in which case GraphQL returns a null author. Join key to
-  // user.github_id.
-  authorGithubId: integer("author_github_id"),
-  authorLogin: text("author_login"),
-  // GitHub PR state: "open" | "closed" | "merged" (GraphQL surfaces MERGED as a
-  // distinct state; we store it lower-cased).
-  state: text("state").notNull(),
-  // The merged signal: NULL = never merged. A closed-but-unmerged PR has a null
-  // mergedAt. Authoritative for "did this PR land".
-  mergedAt: integer("merged_at", { mode: "timestamp" }),
-  title: text("title").notNull(),
-  url: text("url").notNull(),
-  // GitHub's own created_at / closed_at, so consumers can answer "when was this
-  // opened / closed" without another GitHub round-trip.
-  githubCreatedAt: integer("github_created_at", { mode: "timestamp" }),
-  githubClosedAt: integer("github_closed_at", { mode: "timestamp" }),
-  // GitHub's own updated_at, used for change detection / debugging.
-  githubUpdatedAt: integer("github_updated_at", { mode: "timestamp" }),
-  // When this mirror row was last written.
-  syncedAt: integer("synced_at", { mode: "timestamp" })
-    .defaultNow()
-    .$onUpdate(() => /* @__PURE__ */ new Date())
-    .notNull(),
-}, (table) => [
-  index("idx_gh_pull_requests_author_github_id").on(table.authorGithubId),
-  index("idx_gh_pull_requests_merged_at").on(table.mergedAt),
-]);
-
-export const ghIssues = sqliteTable("gh_issues", {
-  // GitHub issue number — primary key. NOTE: GitHub returns PRs in the /issues
-  // feed too; the sync filters those out (only true issues land here).
-  number: integer("number").primaryKey(),
-  authorGithubId: integer("author_github_id"),
-  authorLogin: text("author_login"),
-  // "open" | "closed". An issue's state does NOT say *why* it closed; use the
-  // gh_pr_closing_issues edge to know if a merged PR closed it.
-  state: text("state").notNull(),
-  title: text("title").notNull(),
-  url: text("url").notNull(),
-  // Full issue body, mirrored verbatim so consumers can parse it (e.g. a
-  // "### Reward" amount) in-process without another GitHub round-trip.
-  body: text("body"),
-  // Label names as a JSON array string (e.g. ["POLLEN-QUEST","bug"]). Stored as
-  // text to match this file's convention (no json column mode is used here).
-  labelsJson: text("labels_json"),
-  // First assignee's GitHub user id, if any. Join key to user.github_id — kept
-  // as a dedicated indexed column for the common single-assignee lookup.
-  assigneeGithubId: integer("assignee_github_id"),
-  assigneeLogin: text("assignee_login"),
-  // All assignees as a JSON array of {login, githubId} (GitHub allows up to 10).
-  // assigneeGithubId/assigneeLogin above mirror the first entry for indexing.
-  assigneesJson: text("assignees_json"),
-  // GitHub's own created_at / closed_at, so consumers can answer "when was this
-  // opened / closed" without another GitHub round-trip.
-  githubCreatedAt: integer("github_created_at", { mode: "timestamp" }),
-  githubClosedAt: integer("github_closed_at", { mode: "timestamp" }),
-  githubUpdatedAt: integer("github_updated_at", { mode: "timestamp" }),
-  syncedAt: integer("synced_at", { mode: "timestamp" })
-    .defaultNow()
-    .$onUpdate(() => /* @__PURE__ */ new Date())
-    .notNull(),
-}, (table) => [
-  index("idx_gh_issues_author_github_id").on(table.authorGithubId),
-  index("idx_gh_issues_assignee_github_id").on(table.assigneeGithubId),
-  index("idx_gh_issues_state").on(table.state),
-]);
-
-export const ghPrClosingIssues = sqliteTable("gh_pr_closing_issues", {
-  // Composite identity (pr_number, issue_number) flattened into a single text
-  // key "<pr>:<issue>" so the wholesale re-sync can upsert deterministically
-  // (this file uses only single-column primary keys).
-  edgeKey: text("edge_key").primaryKey(),
-  prNumber: integer("pr_number").notNull(),
-  issueNumber: integer("issue_number").notNull(),
-  syncedAt: integer("synced_at", { mode: "timestamp" })
-    .defaultNow()
-    .$onUpdate(() => /* @__PURE__ */ new Date())
-    .notNull(),
-}, (table) => [
-  index("idx_gh_pr_closing_issues_pr_number").on(table.prNumber),
-  index("idx_gh_pr_closing_issues_issue_number").on(table.issueNumber),
 ]);

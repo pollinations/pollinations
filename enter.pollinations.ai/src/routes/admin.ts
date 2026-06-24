@@ -12,7 +12,6 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "../env.ts";
 import { runD1TinybirdSync } from "../services/d1-tinybird-sync.ts";
-import { syncGithubMirror } from "../services/github-mirror.ts";
 import { runScheduledTasks } from "../services/scheduled-tasks.ts";
 import { runTierRefill } from "../services/tier-refill.ts";
 
@@ -124,13 +123,9 @@ export const adminRoutes = new Hono<Env>()
         const result = await runTierRefill(c.env, c.executionCtx);
         return c.json(result);
     })
-    .post("/trigger-github-mirror", async (c) => {
-        const result = await syncGithubMirror(c.env);
-        return c.json({ success: result.ok, ...result }, result.ok ? 200 : 500);
-    })
     .post("/trigger-scheduled", async (c) => {
-        // Runs the exact same mirror + tier-refill pipeline as the cron so it
-        // can be kicked off by hand.
+        // Runs the exact same scheduled pipeline as the cron so it can be
+        // kicked off by hand.
         const result = await runScheduledTasks(c.env, c.executionCtx);
         return c.json(result);
     })

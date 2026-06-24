@@ -1,6 +1,6 @@
 # Terms of Service
 
-**Updated: 2026-06-22**
+**Updated: 2026-06-24**
 
 _2026-05-11 — Wallet now expires after 12 months of account inactivity. Effective 2026-06-01; the inactivity clock starts on that date for all existing balances._
 
@@ -29,7 +29,7 @@ Third-party app developers are responsible for their own apps, claims, user inte
 
 Features, plans, or pricing labeled "beta" or "preview" may be modified, suspended, or discontinued at any time with in-product notice. This includes changes to:
 
-- Tier structures and associated benefits (for example Pollen allocations and daily/hourly limits)
+- Wallet and reward structures and associated benefits (for example Quest Pollen grants, promotional credits, and usage limits)
 - Model availability, capabilities, and per-model pricing
 - Developer-earnings rates and markup percentages
 - Quest availability, eligibility criteria, reward amounts, and payout timing
@@ -60,12 +60,12 @@ Fees are per plan/order/invoice; currency is by default USD.
 
 **Balances.** Your wallet may include:
 
-- **Tier balance:** free Pollen grants and developer earnings. Tier balance refills according to your tier and can be capped by tier rules.
-- **Paid balance:** purchased Pollen, non-refill rewards, and developer earnings credited from paid-balance usage. Paid balance does not automatically refill.
+- **Quest Pollen balance:** Pollen earned from quests, contribution rewards, free grants, promotional credits, manual credits, and developer earnings credited from Quest Pollen usage. Quest Pollen does not create an entitlement to future credits, fixed grant amounts, or fixed grant timing.
+- **Paid Pollen balance:** purchased Pollen and developer earnings credited from Paid Pollen usage. Paid Pollen does not automatically refill.
 
-**Wallet inactivity.** Effective **2026-06-01**, if your account remains inactive for 12 consecutive months, any remaining Pollen in your wallet (tier and paid balance) will expire. For balances held before that date, the inactivity clock starts on 2026-06-01, so every existing user gets a full 12-month window from the effective date. Signing in, making API requests, or purchasing Pollen counts as activity and resets the inactivity clock.
+**Wallet inactivity.** Effective **2026-06-01**, if your account remains inactive for 12 consecutive months, any remaining Pollen in your wallet (Quest Pollen and Paid Pollen) will expire. For balances held before that date, the inactivity clock starts on 2026-06-01, so every existing user gets a full 12-month window from the effective date. Signing in, making API requests, or purchasing Pollen counts as activity and resets the inactivity clock.
 
-**Request billing.** Pollen is consumed when API requests run. Regular models draw from tier balance first; paid-only models draw from paid balance only. We may refuse requests when the available balance can't cover them. If actual usage exceeds our estimate, the balance may briefly go negative and clears from future refills or top-ups.
+**Request billing.** Pollen is consumed when API requests run. Regular models draw from Quest Pollen first; paid-only models draw from Paid Pollen only. We may refuse requests when the available balance can't cover them. If actual usage exceeds our estimate, the balance that paid for the request may briefly go negative and clears through later credits to that balance or top-ups.
 
 **Rewards.** We may offer quests, contribution rewards, promotional credits, referral credits, or manual credits. Eligibility may be verified from your Pollinations account activity, API usage metadata, billing events, app-directory records, linked GitHub profile/activity, and public GitHub issue/PR status. Rewards are credited only when our systems or maintainers verify completion. We may withhold, reverse, or adjust rewards for duplicate claims, mistaken payouts, abuse, fraud, failure to follow quest instructions, or other billing corrections. Rewards are Pollen and have no cash value.
 
@@ -77,9 +77,9 @@ Developer earnings are credited as Pollen to the developer wallet in the same ba
 
 **Payments.** Payments are processed by Stripe Payments Europe, Limited. Stripe sends purchase invoices by email.
 
-**No late payments.** All Pollen is prepaid: there are no invoices, due dates, or late fees. The only way a balance can go below zero is when final usage on a request exceeds the pre-flight estimate; that negative balance clears automatically through future tier refills or future top-ups, as described under Request billing above. We may refuse new paid-model requests until a negative paid balance is covered.
+**No late payments.** All Pollen is prepaid: there are no invoices, due dates, or late fees. The only way a balance can go below zero is when final usage on a request exceeds the pre-flight estimate; that negative balance clears automatically through later credits to that balance or future top-ups, as described under Request billing above. We may refuse new paid-model requests until a negative Paid Pollen balance is covered.
 
-**Price changes.** Prices, model costs, and Pollen rates may change at any time without notice; what's shown at top-up or in the pre-flight estimate is what applies to that transaction. If a change materially raises the cost of models you actively use, you may request a refund of unused paid balance within 14 days.
+**Price changes.** Prices, model costs, and Pollen rates may change at any time without notice; what's shown at top-up or in the pre-flight estimate is what applies to that transaction. If a change materially raises the cost of models you actively use, you may request a refund of unused Paid Pollen balance within 14 days.
 
 ## 7) Refunds & Cancellations
 

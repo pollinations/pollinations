@@ -34,6 +34,22 @@ type Db = ReturnType<typeof drizzle<typeof schema>>;
 
 type GraphqlAuthor = { login?: string; databaseId?: number } | null;
 
+export type GithubMirrorResult =
+    | {
+          ok: true;
+          prs: number;
+          edges: number;
+          issues: number;
+          prPages: number;
+          issuePages: number;
+          ms: number;
+      }
+    | {
+          ok: false;
+          error: string;
+          ms: number;
+      };
+
 // ---- PR + closing-edge mirror (GraphQL) ----
 
 const PR_QUERY = `
@@ -129,7 +145,7 @@ async function syncPullRequests(
         log.warn(
             "GITHUB_MIRROR_EMPTY: PR sync returned 0 rows — skipping reap to avoid wiping the mirror",
         );
-        return { prs: 0, edges: 0, pages };
+        throw new Error("GitHub PR sync returned 0 rows");
     }
 
     const prs = await chunkedUpsert(db, schema.ghPullRequests, prRows);
@@ -241,7 +257,7 @@ async function syncIssues(
         log.warn(
             "GITHUB_MIRROR_EMPTY: issue sync returned 0 rows — skipping reap to avoid wiping the mirror",
         );
-        return { issues: 0, pages };
+        throw new Error("GitHub issue sync returned 0 rows");
     }
 
     const issues = await chunkedUpsert(db, schema.ghIssues, issueRows);
@@ -255,21 +271,24 @@ async function syncIssues(
 // ---- entry point ----
 
 /**
- * Run a full mirror sync. Fail-soft: logs and returns rather than throwing, so a
- * GitHub hiccup never breaks the scheduled handler's other work.
+ * Run a full mirror sync. The caller decides whether a mirror failure should
+ * fail the HTTP response or just mark one scheduled task as unhealthy.
  */
-export async function syncGithubMirror(env: CloudflareBindings): Promise<void> {
+export async function syncGithubMirror(
+    env: CloudflareBindings,
+): Promise<GithubMirrorResult> {
     let creds: GithubAppCredentials;
+    const startedAt = Date.now();
     try {
         creds = githubAppCredentialsFromEnv(env);
     } catch (err) {
+        const error = String(err);
         log.warn("GITHUB_MIRROR_SKIPPED: missing app credentials ({error})", {
-            error: String(err),
+            error,
         });
-        return;
+        return { ok: false, error, ms: Date.now() - startedAt };
     }
 
-    const startedAt = Date.now();
     // Single per-run timestamp stamped onto every row, so the post-sweep reap
     // can delete anything still carrying an older syncedAt (rows not seen this
     // run). Must be one shared Date across all rows for the `< runStart`
@@ -294,11 +313,22 @@ export async function syncGithubMirror(env: CloudflareBindings): Promise<void> {
                 eventType: "github_mirror_done",
             },
         );
+        return {
+            ok: true,
+            prs: prResult.prs,
+            edges: prResult.edges,
+            issues: issueResult.issues,
+            prPages: prResult.pages,
+            issuePages: issueResult.pages,
+            ms: Date.now() - startedAt,
+        };
     } catch (err) {
+        const error = err instanceof Error ? err.message : String(err);
         log.error("GITHUB_MIRROR_ERROR: {error}", {
-            error: err instanceof Error ? err.message : String(err),
+            error,
             ms: Date.now() - startedAt,
             eventType: "github_mirror_error",
         });
+        return { ok: false, error, ms: Date.now() - startedAt };
     }
 }

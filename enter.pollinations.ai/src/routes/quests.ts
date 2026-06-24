@@ -12,8 +12,9 @@ import type {
     QuestEvaluationContext,
 } from "../services/quests/types.ts";
 
-// Bumped to v13: stats now include per-quest emitted-pollen share, so v12
-// entries must not be served.
+// Bumped to v13: stats now include per-quest emitted-pollen share, and GitHub
+// issue bounties are catalogued from the gh_* mirror again — so v12 entries
+// (stat-less / bounty-hidden) must not be served.
 const CACHE_KEY = "quests:catalog:v13";
 const CACHE_TTL = 60;
 
@@ -51,6 +52,7 @@ const questCatalogItemSchema = z.object({
     category: z.enum(QUEST_CATEGORIES),
     availability: z.enum(["available", "completed"]),
     rewardAmount: z.number().nullable(),
+    balanceBucket: z.enum(["tier", "pack"]),
     url: z.string().nullable(),
     stats: questCardStatsSchema,
 });

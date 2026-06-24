@@ -125,10 +125,8 @@ export const adminRoutes = new Hono<Env>()
         return c.json(result);
     })
     .post("/trigger-github-mirror", async (c) => {
-        // syncGithubMirror logs its own per-table counts and returns void; the
-        // call resolving without throwing is the success signal here.
-        await syncGithubMirror(c.env);
-        return c.json({ success: true });
+        const result = await syncGithubMirror(c.env);
+        return c.json({ success: result.ok, ...result }, result.ok ? 200 : 500);
     })
     .post("/trigger-scheduled", async (c) => {
         // Runs the exact same mirror + tier-refill pipeline as the cron so it

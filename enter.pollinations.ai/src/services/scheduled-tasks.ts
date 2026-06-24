@@ -30,12 +30,18 @@ export async function runScheduledTasks(
             console.error("Tier refill failed:", error);
             result.tierRefill = { ok: false, error: message };
         }),
-        syncGithubMirror(env).catch((error) => {
-            const message =
-                error instanceof Error ? error.message : String(error);
-            console.error("GitHub mirror sync failed:", error);
-            result.mirror = { ok: false, error: message };
-        }),
+        syncGithubMirror(env)
+            .then((mirror) => {
+                if (!mirror.ok) {
+                    result.mirror = { ok: false, error: mirror.error };
+                }
+            })
+            .catch((error) => {
+                const message =
+                    error instanceof Error ? error.message : String(error);
+                console.error("GitHub mirror sync failed:", error);
+                result.mirror = { ok: false, error: message };
+            }),
     ]);
 
     return result;

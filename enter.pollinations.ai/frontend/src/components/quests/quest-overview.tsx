@@ -7,9 +7,10 @@ import {
     ClockIcon,
     DiscordIcon,
     GitHubIcon,
-    Heading,
     InlineLink,
     RocketIcon,
+    Section,
+    SparkleIcon,
     SproutIcon,
     Surface,
     TerminalIcon,
@@ -24,8 +25,6 @@ import {
     useState,
 } from "react";
 import { apiClient } from "../../api.ts";
-// LOCAL ONLY — demo file is git-ignored. Remove this import before committing.
-import { QuestDemo } from "./quest-overview.demo.tsx";
 import type {
     QuestCatalogItem,
     QuestCatalogResponse,
@@ -126,11 +125,6 @@ function formatRewardAmount(value: number | null): string {
     return formatted;
 }
 
-function questStatusAccent(status: QuestCardStatus): string {
-    if (status === "claimed") return "var(--color-theme-text-muted)";
-    return "var(--color-intent-warning-text)";
-}
-
 function rewardIconKind(
     balanceBucket: string | null | undefined,
 ): RewardIconKind {
@@ -198,28 +192,6 @@ const BUCKET_CHIP_CLASS: Record<RewardIconKind, string> = {
     tier: "polli-wallet-chip-tier",
 };
 
-// A sparkle cluster — the joyful "you earned it" mark for the Claim button.
-function SparkleIcon({ className }: { className?: string }) {
-    return (
-        <svg
-            aria-hidden="true"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={className}
-        >
-            <path d="M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.14-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.14a.5.5 0 0 1 .96 0L14.06 8.5A2 2 0 0 0 15.5 9.94l6.14 1.58a.5.5 0 0 1 0 .96L15.5 14.06a2 2 0 0 0-1.44 1.44l-1.58 6.14a.5.5 0 0 1-.96 0z" />
-            <path d="M20 3v4" />
-            <path d="M22 5h-4" />
-            <path d="M4 17v2" />
-            <path d="M5 18H3" />
-        </svg>
-    );
-}
-
 // A single bucket-coloured tile — wallet-style well in the bucket's pale hue,
 // hosting one number (and, for pollen values, the bucket badge that tells you
 // it IS pollen without spelling the word). One of four in the summary 2×2.
@@ -265,31 +237,6 @@ export function TotalCard({ value }: { value: React.ReactNode }) {
     );
 }
 
-function SectionHeader({
-    category,
-    done,
-    total,
-}: {
-    category: CategoryMeta;
-    done: number;
-    total: number;
-}) {
-    return (
-        <div className="flex items-center justify-between gap-4 px-1">
-            <Heading as="h2" size="section">
-                {category.label}
-            </Heading>
-            <Chip
-                intent="neutral"
-                size="sm"
-                className="bg-switch-track-on text-switch-thumb tabular-nums"
-            >
-                {done} / {total}
-            </Chip>
-        </div>
-    );
-}
-
 function SectionFooter({ category }: { category: CategoryMeta }) {
     const Icon = category.icon;
     return (
@@ -305,7 +252,8 @@ function SectionFooter({ category }: { category: CategoryMeta }) {
 // Leading marker for a quest row, by lifecycle stage:
 //   open      → bucket-coloured tile + section icon (amber for paid, green for
 //                tier) so the row signals which pollen it pays before the chip
-//   claimable → dim dark tile + light check (just completed, reward waiting)
+//   claimable → muted theme well + check (works in light and dark — receded
+//                relative to the open tile, but readable on either surface)
 //   claimed   → no tile, muted check (banked already, fully receded)
 function QuestMarker({
     icon: Icon,
@@ -323,12 +271,12 @@ function QuestMarker({
         status === "open"
             ? openTile
             : status === "claimable"
-              ? "bg-ink-900/80 text-ink-100"
+              ? "bg-theme-bg-subtle text-theme-text-muted"
               : "text-theme-text-muted";
     return (
         <span
             aria-hidden="true"
-            className={`flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] ${tile}`}
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${tile}`}
         >
             <MarkerIcon className="h-5 w-5" />
         </span>
@@ -350,7 +298,6 @@ export function QuestRow({
     const claimed = card.status === "claimed";
     const claimableRewardId =
         card.status === "claimable" ? card.rewardId : undefined;
-    const accent = questStatusAccent(card.status);
     const rewardAmount = earned
         ? (card.earnedAmount ?? card.reward)
         : card.reward;
@@ -373,7 +320,6 @@ export function QuestRow({
                 href={card.url}
                 showIcon={false}
                 className="text-sm tabular-nums"
-                style={{ color: accent }}
             >
                 #{card.issueNumber}
             </InlineLink>
@@ -648,14 +594,6 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
             .map((kind) => ({ kind, pollen: byKind[kind] }));
     }, [state.rewards]);
 
-    // LOCAL ONLY — visit ?demo=quests to see the fixture matrix. Remove before commit.
-    if (
-        typeof window !== "undefined" &&
-        window.location.search.includes("demo=quests")
-    ) {
-        return <QuestDemo />;
-    }
-
     return (
         <div className="flex flex-col gap-6">
             <Surface variant="panel">
@@ -759,30 +697,34 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                     (card) => card.status !== "open",
                 ).length;
                 return (
-                    <section key={category.key} className="flex flex-col gap-3">
-                        <SectionHeader
-                            category={category}
-                            done={done}
-                            total={cards.length}
-                        />
-                        <Surface
-                            variant="panel"
-                            className="flex flex-col gap-2"
-                        >
-                            {cards.map((card) => (
-                                <QuestRow
-                                    key={card.key}
-                                    card={card}
-                                    icon={category.icon}
-                                    claiming={
-                                        state.claimingRewardId === card.rewardId
-                                    }
-                                    onClaim={handleClaimReward}
-                                />
-                            ))}
-                            <SectionFooter category={category} />
-                        </Surface>
-                    </section>
+                    <Section
+                        key={category.key}
+                        title={category.label}
+                        framed
+                        panelClassName="flex flex-col gap-2"
+                        action={
+                            <Chip
+                                intent="neutral"
+                                size="sm"
+                                className="tabular-nums"
+                            >
+                                {done} / {cards.length}
+                            </Chip>
+                        }
+                    >
+                        {cards.map((card) => (
+                            <QuestRow
+                                key={card.key}
+                                card={card}
+                                icon={category.icon}
+                                claiming={
+                                    state.claimingRewardId === card.rewardId
+                                }
+                                onClaim={handleClaimReward}
+                            />
+                        ))}
+                        <SectionFooter category={category} />
+                    </Section>
                 );
             })}
         </div>

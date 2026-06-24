@@ -767,11 +767,8 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                             <span className="tabular-nums">
                                 {claimable.count}
                             </span>{" "}
-                            {claimable.count === 1 ? "quest" : "quests"}{" "}
-                            completed
-                        </span>
-                        <span aria-hidden="true" className="opacity-70">
-                            —
+                            new {claimable.count === 1 ? "quest" : "quests"}{" "}
+                            completed ready to claim!
                         </span>
                         {claimable.segments.map((seg, i) => {
                             const SegIcon =
@@ -796,7 +793,6 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                                 </span>
                             );
                         })}
-                        <span>pollen ready to claim</span>
                     </div>
                 )}
                 <div className="mt-3 flex justify-end">

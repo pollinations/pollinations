@@ -593,7 +593,9 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
     }, [state.catalog, state.rewards]);
 
     // Per-bucket roll-up for the summary: each earned reward is one completed
-    // quest, and its pollen total lands in either the paid or tier bucket.
+    // quest, while the pollen total counts only what has actually been claimed
+    // (banked into the balance) — an unclaimed reward is completed but its
+    // pollen has not landed yet, so it must not inflate the claimed total.
     const bucketStats = useMemo(() => {
         const stats: Record<
             RewardIconKind,
@@ -605,7 +607,9 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         for (const reward of state.rewards) {
             const kind = rewardIconKind(reward.balanceBucket);
             stats[kind].completed += 1;
-            stats[kind].pollen += reward.pollenAmount;
+            if (reward.claimedAt != null) {
+                stats[kind].pollen += reward.pollenAmount;
+            }
         }
         return stats;
     }, [state.rewards]);

@@ -162,9 +162,9 @@ async function loadQuestData(): Promise<QuestData> {
 // ── Card model ──────────────────────────────────────────────────────────────
 // A single quest row. Open shows the possible reward; claimable means the reward
 // exists but has not moved into the balance; claimed means pollen was deposited.
-type QuestCardStatus = "open" | "claimable" | "claimed";
+export type QuestCardStatus = "open" | "claimable" | "claimed";
 
-type QuestCard = {
+export type QuestCard = {
     key: string;
     rewardId?: string;
     title: string;
@@ -221,7 +221,7 @@ function SparkleIcon({ className }: { className?: string }) {
 // A single bucket-coloured tile — wallet-style well in the bucket's pale hue,
 // hosting one number (and, for pollen values, the bucket badge that tells you
 // it IS pollen without spelling the word). One of four in the summary 2×2.
-function BucketCard({
+export function BucketCard({
     kind,
     value,
     showBadge,
@@ -250,7 +250,7 @@ function BucketCard({
 // A bucket-agnostic total — one neutral well, used when paid/tier split would
 // be noise rather than signal (e.g. quest counts are all "a quest"). Uses
 // Surface card so the bg + well shadow match the Setup/quest rows exactly.
-function TotalCard({ value }: { value: React.ReactNode }) {
+export function TotalCard({ value }: { value: React.ReactNode }) {
     return (
         <Surface
             variant="card"
@@ -328,7 +328,7 @@ function QuestMarker({
     );
 }
 
-function QuestRow({
+export function QuestRow({
     card,
     icon,
     claiming,

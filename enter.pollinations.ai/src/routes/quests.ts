@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
+import { getRewardLedgerStats } from "../services/quest-stats.ts";
 import { QUEST_CATEGORIES } from "../services/quests/definitions.ts";
 import { listQuestCards } from "../services/quests/index.ts";
 import type {
@@ -11,14 +12,35 @@ import type {
     QuestEvaluationContext,
 } from "../services/quests/types.ts";
 
+// Bumped to v12: catalog cards now carry a `stats` block, so v11 entries
+// (stat-less) must not be served.
 const CACHE_KEY = "quests:catalog:v12";
 const CACHE_TTL = 60;
 
-export type QuestCatalogItem = QuestCard;
+// Per-quest reward-ledger stats shown on the catalog card. Read from the
+// rewards table (the evaluator already materializes every earned reward there),
+// so this needs no evaluator re-scan.
+export type QuestCardStats = {
+    earned: number;
+    claimed: number;
+    unclaimed: number;
+    pollenAwarded: number;
+    pollenClaimed: number;
+};
+
+export type QuestCatalogItem = QuestCard & { stats: QuestCardStats };
 
 export type QuestCatalogResponse = {
     quests: QuestCatalogItem[];
 };
+
+const questCardStatsSchema = z.object({
+    earned: z.number(),
+    claimed: z.number(),
+    unclaimed: z.number(),
+    pollenAwarded: z.number(),
+    pollenClaimed: z.number(),
+});
 
 const questCatalogItemSchema = z.object({
     id: z.string(),
@@ -28,6 +50,7 @@ const questCatalogItemSchema = z.object({
     availability: z.enum(["available", "completed"]),
     rewardAmount: z.number().nullable(),
     url: z.string().nullable(),
+    stats: questCardStatsSchema,
 });
 
 const questCatalogResponseSchema = z.object({
@@ -70,6 +93,14 @@ async function readCached(
     return await kv.get<QuestCatalogResponse>(CACHE_KEY, "json");
 }
 
+const EMPTY_STATS: QuestCardStats = {
+    earned: 0,
+    claimed: 0,
+    unclaimed: 0,
+    pollenAwarded: 0,
+    pollenClaimed: 0,
+};
+
 async function buildQuestCatalog(
     env: CloudflareBindings,
 ): Promise<QuestCatalogResponse> {
@@ -77,8 +108,28 @@ async function buildQuestCatalog(
         db: drizzle(env.DB, { schema }),
         env,
     };
-    const cards = await listQuestCards(ctx);
-    const quests = [...cards].sort((a, b) => a.title.localeCompare(b.title));
+    const [cards, ledger] = await Promise.all([
+        listQuestCards(ctx),
+        getRewardLedgerStats(env),
+    ]);
+
+    const quests = [...cards]
+        .sort((a, b) => a.title.localeCompare(b.title))
+        .map((card) => {
+            const stat = ledger.get(card.id);
+            return {
+                ...card,
+                stats: stat
+                    ? {
+                          earned: stat.earned,
+                          claimed: stat.claimed,
+                          unclaimed: stat.unclaimed,
+                          pollenAwarded: stat.pollenAwarded,
+                          pollenClaimed: stat.pollenClaimed,
+                      }
+                    : EMPTY_STATS,
+            };
+        });
 
     return {
         quests,

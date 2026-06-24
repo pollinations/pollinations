@@ -131,7 +131,7 @@ async function getOnlyUser() {
 }
 
 test("GET /api/quests/catalog returns product and GitHub issue quests", async () => {
-    await env.KV.delete("quests:catalog:v11");
+    await env.KV.delete("quests:catalog:v12");
     const staticCardCount = await countStaticQuestCards();
     const db = drizzle(env.DB, { schema });
     await seedQuestIssue(db, {
@@ -169,11 +169,29 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
             availability: string;
             rewardAmount: number | null;
             url: string | null;
+            stats: {
+                earned: number;
+                claimed: number;
+                unclaimed: number;
+                pollenAwarded: number;
+                pollenClaimed: number;
+            };
         }[];
     };
 
     // Static product cards plus one card per seeded issue row.
     expect(payload.quests).toHaveLength(staticCardCount + 3);
+    // Every card carries a stats block; with no rewards recorded it's all zero.
+    expect(
+        payload.quests.find((quest) => quest.id === "onboarding:first_api_key")
+            ?.stats,
+    ).toEqual({
+        earned: 0,
+        claimed: 0,
+        unclaimed: 0,
+        pollenAwarded: 0,
+        pollenClaimed: 0,
+    });
     expect(
         payload.quests.find((quest) => quest.id === "onboarding:first_api_key"),
     ).toMatchObject({
@@ -267,7 +285,7 @@ test("GET /api/quests/catalog returns product and GitHub issue quests", async ()
 });
 
 test("GET /api/quests/catalog returns product quests with no mirrored GitHub issues", async () => {
-    await env.KV.delete("quests:catalog:v11");
+    await env.KV.delete("quests:catalog:v12");
     const staticCardCount = await countStaticQuestCards();
 
     const response = await SELF.fetch(
@@ -375,6 +393,54 @@ test("recordReward dedups on idempotency key and claimReward credits once", asyn
         .where(eq(schema.user.id, user.id));
     expect(claimedBalance?.tierBalance).toBeCloseTo(
         (user.tierBalance ?? 0) + 1,
+    );
+});
+
+test("catalog stats aggregate earned/claimed from the rewards ledger", async ({
+    sessionToken: _sessionToken,
+}) => {
+    await env.KV.delete("quests:catalog:v12");
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    const questId = "github:first_merged_pr";
+
+    // Two earned rewards for the same quest (distinct idempotency keys), one of
+    // which gets claimed. Catalog stats should report earned=2, claimed=1.
+    const a = await recordReward(db, {
+        idempotencyKey: `quest:${questId}:user:${user.id}:event:pr-1`,
+        userId: user.id,
+        questId,
+        title: "First merged PR",
+        amount: 5,
+        bucket: "tier",
+    });
+    await recordReward(db, {
+        idempotencyKey: `quest:${questId}:user:${user.id}:event:pr-2`,
+        userId: user.id,
+        questId,
+        title: "First merged PR",
+        amount: 5,
+        bucket: "tier",
+    });
+    if (!a.rewardId) throw new Error("Expected recorded reward id");
+    await claimReward(db, { rewardId: a.rewardId, userId: user.id });
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/quests/catalog",
+    );
+    expect(response.status).toBe(200);
+    const payload = (await response.json()) as {
+        quests: { id: string; stats: Record<string, number> }[];
+    };
+
+    expect(payload.quests.find((quest) => quest.id === questId)?.stats).toEqual(
+        {
+            earned: 2,
+            claimed: 1,
+            unclaimed: 1,
+            pollenAwarded: 10,
+            pollenClaimed: 5,
+        },
     );
 });
 

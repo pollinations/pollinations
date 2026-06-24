@@ -22,7 +22,7 @@ type QuestUserRow = {
 
 const firstByopExternalUserQuest: QuestDefinition = {
     id: "grow:first_byop_external_user",
-    title: "Have a user log in to your app",
+    title: "User logs in to your app",
     description:
         "Have an external user connect to your app with [BYOP](https://gen.pollinations.ai/docs#tag/byop).",
     category: "grow",

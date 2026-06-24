@@ -29,7 +29,6 @@ import {
     BuyPollenPanel,
     PollenBalance,
     SidebarWallet,
-    TierPanel,
 } from "../components/pollen";
 import { QuestOverview } from "../components/quests";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
@@ -273,11 +272,6 @@ function RouteComponent() {
                     <Section title="Top-up" framed id="buy-pollen">
                         <BuyPollenPanel initialBillingState={billingState} />
                     </Section>
-                    {tierData && (
-                        <Section title="Tier" framed>
-                            <TierPanel {...tierData} />
-                        </Section>
-                    )}
                 </div>
             )}
             {activePage === "activity" && (

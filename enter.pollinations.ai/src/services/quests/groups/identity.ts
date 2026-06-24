@@ -15,8 +15,9 @@ const TARGET_GITHUB_ID = 161_109_909;
 
 const elixpoInternQuest: QuestDefinition = {
     id: "easteregg:elixpo_intern",
-    title: "Join as Developer Relations Intern 🌻",
-    description: "It's official, elixpo — welcome to the Pollinations crew.",
+    title: "Join the Pollinations team",
+    description:
+        "Welcome aboard, elixpo. This one-off reward marks your start as Developer Relations Intern.",
     category: "easteregg",
     scope: "perUser",
     rewardAmount: 100,

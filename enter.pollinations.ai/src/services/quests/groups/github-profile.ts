@@ -104,9 +104,9 @@ function accountAgeDays(activity: GitHubProfileActivity, now: Date): number {
 
 const establishedGitHubAccountQuest: QuestDefinition = {
     id: "onboarding:established_github_account",
-    title: "Connect an established GitHub account",
+    title: "Link an established GitHub account",
     description:
-        "Link a GitHub account that has existed for at least one year. This unlocks automatically after you connect GitHub.",
+        "Sign in with a GitHub account that is at least one year old. This unlocks automatically after your account is connected.",
     category: "contribute",
     scope: "perUser",
     rewardAmount: 6,

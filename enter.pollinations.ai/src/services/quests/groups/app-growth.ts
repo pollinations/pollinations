@@ -24,9 +24,9 @@ type QuestUserRow = {
 
 const firstByopExternalUserQuest: QuestDefinition = {
     id: "grow:first_byop_external_user",
-    title: "User logs in to your app",
+    title: "Get your first app login",
     description:
-        "Have an external user connect to your app with [BYOP](https://gen.pollinations.ai/docs#tag/byop).",
+        "Create an app key in [Keys](#keys), then have someone else authorize your BYOP app with their Pollinations account.",
     category: "grow",
     scope: "perUser",
     rewardAmount: 3,
@@ -35,9 +35,9 @@ const firstByopExternalUserQuest: QuestDefinition = {
 
 const firstPaidSpendInAppQuest: QuestDefinition = {
     id: "grow:first_paid_spend_in_app",
-    title: "User spends in your app",
+    title: "Drive your first paid app request",
     description:
-        "A user makes a successful request through your [BYOP](https://gen.pollinations.ai/docs#tag/byop) app, paid from their paid Pollen balance.",
+        "Have a user make a paid request through your BYOP app, then track app activity from [Activity](#activity).",
     category: "grow",
     scope: "perUser",
     rewardAmount: 2,

@@ -997,7 +997,7 @@ test("quest check records completed GitHub quest issue rewards through shared pa
     expect(rewards[0]).toMatchObject({
         idempotencyKey: `quest:github:issue:${issueNumber}`,
         userId: user.id,
-        title: issueTitle,
+        title: `Ship bounty #${issueNumber}: ${issueTitle}`,
         pollenAmount: 17,
         balanceBucket: "tier",
     });

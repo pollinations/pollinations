@@ -28,7 +28,7 @@ const firstApiKeyQuest: QuestDefinition = {
     id: "onboarding:first_api_key",
     title: "Create your first API key",
     description:
-        "Create your first API [key](#keys) for using Pollinations from an app or script.",
+        "Create an API key in [Keys](#keys), then use it to make authenticated Pollinations requests from an app or script.",
     category: "setup",
     scope: "perUser",
     rewardAmount: 1,
@@ -37,9 +37,9 @@ const firstApiKeyQuest: QuestDefinition = {
 
 const byopLoginQuest: QuestDefinition = {
     id: "setup:byop_login",
-    title: "Log in to a Pollinations app",
+    title: "Connect a Pollinations app",
     description:
-        "Authorize a Pollinations app with [BYOP](https://gen.pollinations.ai/docs#tag/byop).",
+        "Authorize a Pollinations-powered app with your account. You can review connected keys in [Keys](#keys).",
     category: "setup",
     scope: "perUser",
     rewardAmount: 1,
@@ -49,7 +49,8 @@ const byopLoginQuest: QuestDefinition = {
 const firstTopUpQuest: QuestDefinition = {
     id: "spend:first_top_up",
     title: "Buy your first Pollen pack",
-    description: "Buy your first Pollen [pack](#buy-pollen).",
+    description:
+        "Add paid Pollen from [Top-up](#buy-pollen) so your projects can keep running after tier credits are spent.",
     category: "grow",
     scope: "perUser",
     rewardAmount: 5,
@@ -58,8 +59,9 @@ const firstTopUpQuest: QuestDefinition = {
 
 const overHundredPollenQuest: QuestDefinition = {
     id: "spend:purchased_over_100_pollen",
-    title: "Purchase more than 100 Pollen",
-    description: "Buy more than 100 total [Pollen](#buy-pollen).",
+    title: "Power up with 100+ Pollen",
+    description:
+        "Purchase more than 100 total Pollen through [Top-up](#buy-pollen) and unlock a larger quest reward.",
     category: "grow",
     scope: "perUser",
     rewardAmount: 50,

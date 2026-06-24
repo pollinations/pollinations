@@ -1,5 +1,4 @@
 import {
-    Alert,
     CardIcon,
     ClockIcon,
     CopyButton,
@@ -37,6 +36,18 @@ const REFUND_POLICY_URL = "https://pollinations.ai/refunds";
 function normalizeDisplayBalance(value: number): number {
     return Math.abs(value) < BALANCE_DISPLAY_EPSILON ? 0 : value;
 }
+
+// Filled warning triangle — local since @pollinations/ui doesn't ship one yet.
+const AlertTriangleIcon: FC<{ className?: string }> = ({ className }) => (
+    <svg
+        className={className}
+        viewBox="0 0 16 16"
+        fill="currentColor"
+        aria-hidden="true"
+    >
+        <path d="M7.13 1.71a1 1 0 0 1 1.74 0l6.49 11.32a1 1 0 0 1-.87 1.5H1.51a1 1 0 0 1-.87-1.5L7.13 1.71ZM8 5.5a.75.75 0 0 0-.75.75v3.5a.75.75 0 0 0 1.5 0v-3.5A.75.75 0 0 0 8 5.5Zm0 7a.9.9 0 1 0 0-1.8.9.9 0 0 0 0 1.8Z" />
+    </svg>
+);
 
 const TooltipList: FC<{
     title: string;
@@ -85,10 +96,6 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
 
     return (
         <div className="flex flex-col gap-3">
-            <Alert intent="warning">
-                Tiers are going away. Pollen rewards now come from Quests —
-                your balances and access are unchanged.
-            </Alert>
             {/* Twin headline numbers: Paid + Quest as tinted cards */}
             <div
                 className={
@@ -192,30 +199,39 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                 </div>
             </div>
 
-            {/* Learn more */}
-            <div className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
-                <WalletIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                <span>
-                    Your wallet holds Pollen you've purchased plus Pollen you've
-                    earned.{" "}
-                    <InlineLink
-                        as="button"
-                        type="button"
-                        external={false}
-                        onClick={() => {
-                            const slug = "how-does-my-pollen-wallet-work";
-                            if (window.location.hash === `#${slug}`) {
-                                window.dispatchEvent(
-                                    new HashChangeEvent("hashchange"),
-                                );
-                            } else {
-                                window.location.hash = slug;
-                            }
-                        }}
-                    >
-                        How it works
-                    </InlineLink>
-                </span>
+            {/* Footer: learn more + tier-retirement notice */}
+            <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                <p className="flex items-start gap-1.5">
+                    <WalletIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>
+                        Your wallet holds Pollen you've purchased plus Pollen
+                        you've earned.{" "}
+                        <InlineLink
+                            as="button"
+                            type="button"
+                            external={false}
+                            onClick={() => {
+                                const slug = "how-does-my-pollen-wallet-work";
+                                if (window.location.hash === `#${slug}`) {
+                                    window.dispatchEvent(
+                                        new HashChangeEvent("hashchange"),
+                                    );
+                                } else {
+                                    window.location.hash = slug;
+                                }
+                            }}
+                        >
+                            How it works
+                        </InlineLink>
+                    </span>
+                </p>
+                <p className="flex items-start gap-1.5">
+                    <AlertTriangleIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-intent-danger-text" />
+                    <span>
+                        Tiers are going away. Pollen rewards now come from
+                        Quests — your balances and access are unchanged.
+                    </span>
+                </p>
             </div>
         </div>
     );

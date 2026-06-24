@@ -48,6 +48,9 @@ const USAGE_CHUNK_DAYS = 30;
 const MAX_USAGE_EXPORT_ROWS = 50_000;
 
 const SECONDS_PER_DAY = 86400;
+// Per-user throttle for POST /quests/check — a check fans out a GitHub fetch +
+// Tinybird pipes, so cap it to once per minute to stop rapid re-clicks.
+const QUEST_CHECK_THROTTLE_SECONDS = 60;
 const USAGE_MIN_DATE = "2026-01-01";
 const PERIOD_GRANULARITIES = ["day", "week", "month"] as const;
 type PeriodGranularity = (typeof PERIOD_GRANULARITIES)[number];
@@ -1355,6 +1358,9 @@ export const accountRoutes = new Hono<Env>()
                 },
                 401: { description: "Unauthorized" },
                 403: { description: "API keys cannot check quest rewards" },
+                429: {
+                    description: "Rate limited - one check per 60 seconds",
+                },
             },
         }),
         async (c) => {
@@ -1368,6 +1374,27 @@ export const accountRoutes = new Hono<Env>()
             }
 
             const user = c.var.auth.requireUser();
+
+            // Per-user throttle: a check fans out a GitHub fetch + Tinybird
+            // pipes, so gate it to once per 60s to stop rapid re-clicks from
+            // burning GitHub rate-limit budget and Tinybird vCPU. KV key
+            // auto-expires, so the window is self-cleaning.
+            const throttleKey = `quest-check:throttle:${user.id}`;
+            if (await c.env.KV.get(throttleKey)) {
+                return c.json(
+                    {
+                        error: "rate_limited",
+                        message:
+                            "Quest checks are limited to once per minute. Try again shortly.",
+                    },
+                    429,
+                    { "Retry-After": String(QUEST_CHECK_THROTTLE_SECONDS) },
+                );
+            }
+            await c.env.KV.put(throttleKey, "1", {
+                expirationTtl: QUEST_CHECK_THROTTLE_SECONDS,
+            });
+
             const result = await checkQuestsForUser(c.env, user.id);
             return c.json(result);
         },

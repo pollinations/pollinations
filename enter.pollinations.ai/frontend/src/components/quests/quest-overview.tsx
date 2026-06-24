@@ -354,7 +354,7 @@ export function QuestRow({
                     onClick={() => onClaim(claimableRewardId)}
                     className="gap-1.5"
                 >
-                    <TargetIcon className="h-4 w-4 shrink-0" />
+                    <SparkleIcon className="h-4 w-4 shrink-0" />
                     {claiming ? "Claiming" : "Claim"}
                 </Button>
             )}
@@ -708,7 +708,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                 })()}
                 {claimable.count > 0 && (
                     <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-theme-bg-subtle px-4 py-2.5 text-sm font-semibold text-theme-text-soft">
-                        <TargetIcon className="h-4 w-4 shrink-0" />
+                        <SparkleIcon className="h-4 w-4 shrink-0" />
                         <span>
                             <span className="tabular-nums">
                                 {claimable.count}
@@ -757,7 +757,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                         </span>
                     </p>
                     <p className="flex items-start gap-1.5">
-                        <SparkleIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <TargetIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
                             Complete → claim → credited to your{" "}
                             <InlineLink href="#pollen" showIcon={false}>

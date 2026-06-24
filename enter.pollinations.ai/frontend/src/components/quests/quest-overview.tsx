@@ -24,6 +24,8 @@ import {
     useState,
 } from "react";
 import { apiClient } from "../../api.ts";
+// LOCAL ONLY — demo file is git-ignored. Remove this import before committing.
+import { QuestDemo } from "./quest-overview.demo.tsx";
 import type {
     QuestCatalogItem,
     QuestCatalogResponse,
@@ -237,9 +239,9 @@ export function BucketCard({
         <div
             className={`flex items-center justify-center rounded-xl py-4 sm:py-5 ${panelClass}`}
         >
-            <span className="polli-wallet-balance-value flex items-center gap-2 font-bold leading-none tracking-tight tabular-nums">
+            <span className="flex items-center gap-1.5 text-3xl font-bold leading-none tracking-tight tabular-nums sm:gap-2 sm:text-5xl">
                 {showBadge && (
-                    <BadgeIcon className="h-8 w-8 shrink-0 sm:h-10 sm:w-10" />
+                    <BadgeIcon className="h-7 w-7 shrink-0 sm:h-10 sm:w-10" />
                 )}
                 {value}
             </span>
@@ -256,7 +258,7 @@ export function TotalCard({ value }: { value: React.ReactNode }) {
             variant="card"
             className="flex items-center justify-center py-4 sm:py-5"
         >
-            <span className="polli-wallet-balance-value font-bold leading-none tracking-tight tabular-nums text-theme-text-base">
+            <span className="text-3xl font-bold leading-none tracking-tight tabular-nums text-theme-text-base sm:text-5xl">
                 {value}
             </span>
         </Surface>
@@ -646,49 +648,62 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
             .map((kind) => ({ kind, pollen: byKind[kind] }));
     }, [state.rewards]);
 
+    // LOCAL ONLY — visit ?demo=quests to see the fixture matrix. Remove before commit.
+    if (
+        typeof window !== "undefined" &&
+        window.location.search.includes("demo=quests")
+    ) {
+        return <QuestDemo />;
+    }
+
     return (
         <div className="flex flex-col gap-6">
             <Surface variant="panel">
-                {/* Three equal-width cells across the row: Completed quests
-                    takes one (bucket-agnostic — a quest is a quest); Pollen
-                    earned takes two (paid + tier, since the buckets spend
-                    differently). Section titles sit as headers above their
-                    cards, spanning their group's columns. */}
-                <div className="grid grid-cols-3 gap-x-2 gap-y-2">
+                {/* Responsive summary. Source order is the mobile reading
+                    order (header → total → header → pair); desktop uses
+                    explicit col-start/row-start to put both headers on row 1
+                    and the cards on row 2 of a 3-col grid. */}
+                <div className="grid grid-cols-2 gap-x-2 gap-y-2 sm:grid-cols-3">
                     <Text
                         as="span"
                         size="sm"
                         weight="bold"
                         tone="muted"
-                        className="col-span-1 uppercase tracking-wide"
+                        className="col-span-2 uppercase tracking-wide sm:col-span-1 sm:col-start-1 sm:row-start-1"
                     >
                         Completed quests
                     </Text>
+                    <div className="col-span-2 sm:col-span-1 sm:col-start-1 sm:row-start-2">
+                        <TotalCard
+                            value={
+                                bucketStats.paid.completed +
+                                bucketStats.tier.completed
+                            }
+                        />
+                    </div>
                     <Text
                         as="span"
                         size="sm"
                         weight="bold"
                         tone="muted"
-                        className="col-span-2 uppercase tracking-wide"
+                        className="col-span-2 uppercase tracking-wide sm:col-start-2 sm:row-start-1"
                     >
                         Claimed pollen reward
                     </Text>
-                    <TotalCard
-                        value={
-                            bucketStats.paid.completed +
-                            bucketStats.tier.completed
-                        }
-                    />
-                    <BucketCard
-                        kind="paid"
-                        value={formatRewardAmount(bucketStats.paid.pollen)}
-                        showBadge
-                    />
-                    <BucketCard
-                        kind="tier"
-                        value={formatRewardAmount(bucketStats.tier.pollen)}
-                        showBadge
-                    />
+                    <div className="sm:col-start-2 sm:row-start-2">
+                        <BucketCard
+                            kind="paid"
+                            value={formatRewardAmount(bucketStats.paid.pollen)}
+                            showBadge
+                        />
+                    </div>
+                    <div className="sm:col-start-3 sm:row-start-2">
+                        <BucketCard
+                            kind="tier"
+                            value={formatRewardAmount(bucketStats.tier.pollen)}
+                            showBadge
+                        />
+                    </div>
                 </div>
                 {claimable.length > 0 && (
                     <div className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 rounded-xl bg-intent-success-bg-light px-4 py-2.5 text-sm font-semibold text-intent-success-text">

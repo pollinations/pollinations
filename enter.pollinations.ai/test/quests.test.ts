@@ -108,7 +108,7 @@ test("GET /api/quests/catalog returns product quests and issue bounty cards", as
     mocks,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v14");
+    await env.KV.delete("quests:catalog:v15");
     const staticCardCount = await countStaticQuestCards();
     seedQuestIssue(mocks.github.state, {
         issueNumber: 321,
@@ -281,7 +281,7 @@ test("GET /api/quests/catalog returns product quests with no GitHub issue bounti
     mocks,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v14");
+    await env.KV.delete("quests:catalog:v15");
     const staticCardCount = await countStaticQuestCards();
 
     const response = await SELF.fetch(
@@ -397,7 +397,7 @@ test("catalog stats aggregate earned/claimed from the rewards ledger", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v14");
+    await env.KV.delete("quests:catalog:v15");
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
     const questId = "github:first_merged_pr";
@@ -886,6 +886,50 @@ test("github account age quest waits until threshold", async ({
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
     expect(balance?.tierBalance).toBeCloseTo(user.tierBalance ?? 0);
+});
+
+test("github public repo stars quest requires more than 20 stars", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    mocks.github.state.user.created_at = new Date().toISOString();
+    mocks.github.state.repos = [
+        { name: "core", size: 10, stargazers_count: 10 },
+        { name: "docs", size: 5, stargazers_count: 10 },
+        { name: "fork", fork: true, size: 10, stargazers_count: 500 },
+        { name: "empty", size: 0, stargazers_count: 500 },
+    ];
+    await mocks.enable("github", "tinybird");
+
+    await checkQuestsForUser(env, user.id);
+    let rewards = await db
+        .select({ id: schema.rewards.id })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.questId, "github:public_repo_stars_20"));
+    expect(rewards).toHaveLength(0);
+
+    mocks.github.state.repos[1].stargazers_count = 11;
+    await checkQuestsForUser(env, user.id);
+    rewards = await db
+        .select({
+            idempotencyKey: schema.rewards.idempotencyKey,
+            questId: schema.rewards.questId,
+            title: schema.rewards.title,
+            pollenAmount: schema.rewards.pollenAmount,
+            balanceBucket: schema.rewards.balanceBucket,
+        })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.questId, "github:public_repo_stars_20"));
+
+    expect(rewards).toHaveLength(1);
+    expect(rewards[0]).toMatchObject({
+        idempotencyKey: `quest:github:public_repo_stars_20:user:${user.id}`,
+        title: "Earn over 20 GitHub stars",
+        pollenAmount: 5,
+        balanceBucket: "tier",
+    });
 });
 
 test("quest check records elixpo intern easter egg once", async ({

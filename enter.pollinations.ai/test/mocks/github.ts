@@ -36,6 +36,12 @@ export type MockGithubState = {
         authorLogin: string;
         mergedAt: string;
     }>;
+    repos: Array<{
+        name: string;
+        fork?: boolean;
+        size?: number;
+        stargazers_count?: number;
+    }>;
     failQuestSearch: boolean;
 };
 
@@ -51,6 +57,7 @@ export function createMockGithub(): MockAPI<MockGithubState> {
         },
         questIssues: [],
         mergedPullRequests: [],
+        repos: [],
         failQuestSearch: false,
     };
 
@@ -134,7 +141,10 @@ export function createMockGithub(): MockAPI<MockGithubState> {
             if (c.req.param("login") !== state.user.login) {
                 return c.json({ message: "Not Found" }, 404);
             }
-            return c.json([]);
+            const page = Number(c.req.query("page") ?? "1");
+            const perPage = Number(c.req.query("per_page") ?? "30");
+            const start = (page - 1) * perPage;
+            return c.json(state.repos.slice(start, start + perPage));
         });
 
     // OAuth app (no auth needed)

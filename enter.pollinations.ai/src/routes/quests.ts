@@ -12,10 +12,8 @@ import type {
     QuestEvaluationContext,
 } from "../services/quests/types.ts";
 
-// Bumped to v14: GitHub issue bounties are now read lazily from GitHub (no D1
-// mirror), and stats carry a per-quest emitted-pollen share — so older catalog
-// entries (mirror-shaped / share-less) must not be served.
-const CACHE_KEY = "quests:catalog:v14";
+// Bumped to v15: the GitHub profile group gained the public-repo-stars quest.
+const CACHE_KEY = "quests:catalog:v15";
 const CACHE_TTL = 60;
 
 // Per-quest reward-ledger stats shown on the catalog card. Read from rewards:

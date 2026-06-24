@@ -7,7 +7,11 @@ import {
     Surface,
     Tooltip,
 } from "@pollinations/ui";
-import { PaidChip, TierChip } from "@pollinations/ui/wallet";
+import {
+    PaidChip,
+    TierChip,
+    WalletKindIcon,
+} from "@pollinations/ui/wallet";
 import type { FC } from "react";
 import { calculatePerPollen, unitLabels } from "./calculations.ts";
 import { CAPABILITY_ICON, MODALITY_ICON } from "./model-icons.tsx";
@@ -45,13 +49,30 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const showAlpha = isAlpha(model);
 
     const genPerPollen = calculatePerPollen(model);
-    const balanceLabel = showPaidOnly
-        ? "Paid Pollen only"
-        : "Quest or Paid Pollen";
+    const balanceLabel = showPaidOnly ? (
+        <span className="inline-flex items-center gap-1">
+            <WalletKindIcon kind="paid" />
+            Paid Pollen only
+        </span>
+    ) : (
+        <span className="inline-flex items-center gap-1">
+            <WalletKindIcon kind="tier" />
+            Quest or <WalletKindIcon kind="paid" />
+            Paid Pollen
+        </span>
+    );
     const perPollenTooltip =
-        genPerPollen === "—"
-            ? balanceLabel
-            : `≈ ${genPerPollen} ${unitLabels[model.type] ?? "requests"} per pollen\n${balanceLabel}`;
+        genPerPollen === "—" ? (
+            balanceLabel
+        ) : (
+            <span className="flex flex-col gap-0.5">
+                <span>
+                    ≈ {genPerPollen} {unitLabels[model.type] ?? "requests"} per
+                    pollen
+                </span>
+                {balanceLabel}
+            </span>
+        );
     const inputPriceBadges = groupPriceBadges([
         {
             prices: [model.promptTextPrice],

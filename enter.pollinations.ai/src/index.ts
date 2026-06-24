@@ -9,9 +9,7 @@ import { api } from "./api.ts";
 import type { Env } from "./env.ts";
 import { logger } from "./middleware/logger.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
-import { syncGithubMirror } from "./services/github-mirror.ts";
-import { runQuestEvaluator } from "./services/quest-evaluator.ts";
-import { runTierRefill } from "./services/tier-refill.ts";
+import { runScheduledTasks } from "./services/scheduled-tasks.ts";
 
 function stripTrailingSlash(path: string): string {
     return path.length > 1 ? path.replace(/\/+$/, "") : path;
@@ -95,28 +93,6 @@ export default {
         env: CloudflareBindings,
         ctx: ExecutionContext,
     ) {
-        // The quest evaluator derives community GitHub bounties from the gh_*
-        // mirror, so the mirror must refresh BEFORE the evaluator runs — that
-        // way a bounty completed since the last tick records this tick instead
-        // of waiting another 15 minutes. A mirror failure must not skip the
-        // evaluator (it can still record from the previous snapshot), so it's caught.
-        const mirrorThenEvaluate = syncGithubMirror(env)
-            .catch((error) => {
-                console.error("GitHub mirror sync failed:", error);
-            })
-            .then(() =>
-                runQuestEvaluator(env).catch((error) => {
-                    console.error("Quest evaluator failed:", error);
-                }),
-            );
-
-        // Tier refill is independent of the mirror; run it concurrently. Both
-        // chains are awaited so a manual trigger reflects completion + errors.
-        await Promise.allSettled([
-            runTierRefill(env, ctx).catch((error) => {
-                console.error("Tier refill failed:", error);
-            }),
-            mirrorThenEvaluate,
-        ]);
+        await runScheduledTasks(env, ctx);
     },
 } satisfies ExportedHandler<CloudflareBindings>;

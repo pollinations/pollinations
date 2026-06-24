@@ -197,9 +197,11 @@ const BUCKET_CHIP_CLASS: Record<RewardIconKind, string> = {
     tier: "polli-wallet-chip-tier",
 };
 
-// Bucket-neutral pollen mark — a small blossom. Distinct from the tier sprout
-// and the paid card; stands for aggregate/generic pollen and prefixes pollen
-// amounts. TODO: promote to @pollinations/ui once the shape is settled.
+// Capability mark for the POLLEN EARNED card — a single 4-point "generate" star.
+// Illustrative UI, not a logo or a currency symbol: it signals what pollen powers
+// (generative AI). The calmer sibling of the Claim button's sparkle cluster — same
+// language, lighter weight, since this is a passive label not an action. We are
+// deliberately not committing to a Pollinations/pollen logo here.
 function PollenIcon({ className }: { className?: string }) {
     return (
         <svg
@@ -212,17 +214,12 @@ function PollenIcon({ className }: { className?: string }) {
             strokeLinejoin="round"
             className={className}
         >
-            <circle cx="12" cy="6.8" r="2.8" />
-            <circle cx="17" cy="10.4" r="2.8" />
-            <circle cx="15.1" cy="16.2" r="2.8" />
-            <circle cx="8.9" cy="16.2" r="2.8" />
-            <circle cx="7" cy="10.4" r="2.8" />
-            <circle cx="12" cy="12" r="2.2" />
+            <path d="M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.14-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.14a.5.5 0 0 1 .96 0L14.06 8.5A2 2 0 0 0 15.5 9.94l6.14 1.58a.5.5 0 0 1 0 .96L15.5 14.06a2 2 0 0 0-1.44 1.44l-1.58 6.14a.5.5 0 0 1-.96 0z" />
         </svg>
     );
 }
 
-// A 4-point sparkle — the joyful "you earned it" mark for the Claim button.
+// A sparkle cluster — the joyful "you earned it" mark for the Claim button.
 function SparkleIcon({ className }: { className?: string }) {
     return (
         <svg
@@ -235,7 +232,11 @@ function SparkleIcon({ className }: { className?: string }) {
             strokeLinejoin="round"
             className={className}
         >
-            <path d="M12 3 L13.7 10.3 L21 12 L13.7 13.7 L12 21 L10.3 13.7 L3 12 L10.3 10.3 Z" />
+            <path d="M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.14-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.14a.5.5 0 0 1 .96 0L14.06 8.5A2 2 0 0 0 15.5 9.94l6.14 1.58a.5.5 0 0 1 0 .96L15.5 14.06a2 2 0 0 0-1.44 1.44l-1.58 6.14a.5.5 0 0 1-.96 0z" />
+            <path d="M20 3v4" />
+            <path d="M22 5h-4" />
+            <path d="M4 17v2" />
+            <path d="M5 18H3" />
         </svg>
     );
 }
@@ -334,26 +335,28 @@ function SectionFooter({ category }: { category: CategoryMeta }) {
     );
 }
 
-// Leading marker for a quest row. Earned rewards get the switch's vivid "on"
-// green with a light check — the same success affordance as the auto top-up
-// toggle — so "done" reads as a real success state, not a tier tint. Open is a
-// neutral dark square with its section icon. The icon rides currentColor.
+// Leading marker for a quest row, by lifecycle stage:
+//   open      → tier-green tile + section icon ("available — go earn this")
+//   claimable → dim dark tile + light check (just completed, reward waiting)
+//   claimed   → no tile, muted check (banked already, fully receded)
 function QuestMarker({
     icon: Icon,
-    active,
+    status,
 }: {
     icon: IconComponent;
-    active: boolean;
+    status: QuestCardStatus;
 }) {
-    const MarkerIcon = active ? CheckIcon : Icon;
+    const MarkerIcon = status === "open" ? Icon : CheckIcon;
+    const tile =
+        status === "open"
+            ? "polli-wallet-chip-tier"
+            : status === "claimable"
+              ? "bg-ink-900/80 text-ink-100"
+              : "text-theme-text-muted";
     return (
         <span
             aria-hidden="true"
-            className={`flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] ${
-                active
-                    ? "bg-switch-track-on text-switch-thumb"
-                    : "bg-ink-900/80 text-ink-100"
-            }`}
+            className={`flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] ${tile}`}
         >
             <MarkerIcon className="h-5 w-5" />
         </span>
@@ -428,7 +431,7 @@ function QuestRow({
             <Chip
                 intent="neutral"
                 size="sm"
-                className={`gap-1 tabular-nums ${BUCKET_TEXT_CLASS[rewardIcon]}`}
+                className={`gap-1 tabular-nums ${BUCKET_CHIP_CLASS[rewardIcon]}`}
             >
                 <WalletKindIcon kind={rewardIcon} />
                 {rewardLabel}
@@ -444,7 +447,7 @@ function QuestRow({
             <div className="flex flex-col gap-3 sm:hidden">
                 <div className="flex flex-col gap-1.5">
                     <div className="flex items-center gap-4">
-                        <QuestMarker icon={icon} active={earned} />
+                        <QuestMarker icon={icon} status={card.status} />
                         <div className="min-w-0 flex-1">{title}</div>
                     </div>
                     {description && (
@@ -465,7 +468,7 @@ function QuestRow({
                 (title + description, with the issue link at the end of the
                 description) | claim + reward. Keeps the card to two text rows. */}
             <div className="hidden items-center gap-4 sm:flex">
-                <QuestMarker icon={icon} active={earned} />
+                <QuestMarker icon={icon} status={card.status} />
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <div>{title}</div>
                     {(description || issueLink) && (

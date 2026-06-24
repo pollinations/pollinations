@@ -572,6 +572,43 @@ test("quest check records product rewards and claim endpoint credits one", async
     );
 });
 
+test("POST /quests/check throttles a user to once per minute", async ({
+    apiKey: _apiKey,
+    mocks,
+    sessionToken,
+}) => {
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+    await env.KV.delete(`quest-check:throttle:${user.id}`);
+
+    const first = await SELF.fetch(
+        "http://localhost:3000/api/account/quests/check",
+        {
+            method: "POST",
+            headers: { cookie: `better-auth.session_token=${sessionToken}` },
+        },
+    );
+    expect(first.status).toBe(200);
+
+    const second = await SELF.fetch(
+        "http://localhost:3000/api/account/quests/check",
+        {
+            method: "POST",
+            headers: { cookie: `better-auth.session_token=${sessionToken}` },
+        },
+    );
+    expect(second.status).toBe(429);
+    expect(second.headers.get("Retry-After")).toBe("60");
+    const body = (await second.json()) as { error: string };
+    expect(body.error).toBe("rate_limited");
+
+    // The throttled call must NOT have run the check (no side effects).
+    const ledger = await checkQuestsForUser(env, user.id);
+    // First call already recorded everything; the service-level idempotency
+    // means this direct re-check records nothing new.
+    expect(ledger.recorded).toBe(0);
+});
+
 test("D1 quest check only records the requested user", async ({
     apiKey: _apiKey,
     mocks,

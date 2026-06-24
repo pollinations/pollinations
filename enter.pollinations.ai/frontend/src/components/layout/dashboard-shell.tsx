@@ -401,7 +401,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                             <Chip
                                 intent="neutral"
                                 size="sm"
-                                className="ml-auto bg-transparent text-theme-text-muted"
+                                className="ml-auto bg-transparent text-theme-text-soft"
                             >
                                 New!
                             </Chip>

@@ -210,18 +210,9 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                     )
                                 }
                             >
-                                {(copied) => (
-                                    <>
-                                        <span className="min-w-0 truncate">
-                                            {publicModelName}
-                                        </span>
-                                        {copied && (
-                                            <span className="shrink-0 rounded-lg bg-intent-success-bg-light px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-intent-success-text">
-                                                copied
-                                            </span>
-                                        )}
-                                    </>
-                                )}
+                                <span className="min-w-0 truncate">
+                                    {publicModelName}
+                                </span>
                             </CopyButton>
                             {modelDescription && (
                                 <span className="pointer-events-auto inline-flex">

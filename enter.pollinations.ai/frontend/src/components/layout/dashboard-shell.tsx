@@ -2,6 +2,7 @@ import {
     BookIcon,
     CheckIcon,
     ChevronIcon,
+    Chip,
     ClipboardIcon,
     ColorModeToggle,
     CopyButton,
@@ -396,6 +397,15 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         onClick={() => onPageChange(item.id)}
                     >
                         {item.label}
+                        {item.id === "quests" && (
+                            <Chip
+                                intent="neutral"
+                                size="sm"
+                                className="ml-auto bg-transparent text-theme-text-muted"
+                            >
+                                New!
+                            </Chip>
+                        )}
                     </NavItem>
                 ))}
                 <DashboardSupport action={supportAction} links={supportLinks} />
@@ -488,14 +498,7 @@ const DashboardSupport: FC<{
                     value={action.copyValue}
                     copiedTimeoutMs={1500}
                     tooltip={null}
-                    className={(copied) =>
-                        cn(
-                            "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
-                            copied
-                                ? "bg-intent-success-bg-light text-intent-success-text"
-                                : "bg-theme-bg-active text-theme-text-strong hover:bg-theme-bg-hover",
-                        )
-                    }
+                    className="inline-flex items-center gap-1.5 rounded-full bg-theme-bg-active px-2.5 py-1 text-xs font-medium text-theme-text-strong transition-colors hover:bg-theme-bg-hover"
                 >
                     {(copied) => (
                         <>

@@ -14,8 +14,6 @@ import {
  * definition; the source file only describes where completion data comes from.
  */
 
-const MAX_REWARDS_PER_RUN = 500;
-
 type QuestUserRow = {
     userId: string;
 };
@@ -81,7 +79,10 @@ async function loadPaidSpendAppOwners({
         tinybirdToken,
         {},
     );
-    return uniqueUsers(rows).slice(0, MAX_REWARDS_PER_RUN);
+    // No per-run cap: the pipe returns exactly the qualifying app owners, the
+    // rewards idempotency key dedups re-runs, and recordRewards() batches the
+    // inserts. A fixed slice would stick on the first N owners forever.
+    return uniqueUsers(rows);
 }
 
 async function loadByopExternalAppOwners({

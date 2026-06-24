@@ -2,7 +2,7 @@ DESCRIPTION >
     Per-user "has this user generated with a text / image / audio model at least
     once" flags, used by the model-usage quest evaluator. One row per user that
     has at least one billed, successful generation in any of the three
-    modalities within the last year (the modality milestone is a one-time quest).
+    modalities within the last 3 months (the modality milestone is a one-time quest).
 
     Reads the pre-aggregated quest_model_modalities_mv (one partial-aggregate row
     per user, maintained at ingest) instead of scanning all of generation_event,

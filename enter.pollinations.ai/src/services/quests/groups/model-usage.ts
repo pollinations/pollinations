@@ -15,8 +15,6 @@ import {
  * the idempotent write path.
  */
 
-const MAX_REWARDS_PER_RUN = 1000;
-
 const useTextModelQuest: QuestDefinition = {
     id: "grow:use_text_model",
     title: "Use a text model",
@@ -75,8 +73,12 @@ export async function findRewardProposals({
         {},
     );
 
+    // The pipe already returns exactly the qualifying users (one row per user,
+    // with per-modality flags), so propose for all of them. The rewards table's
+    // idempotency key dedups re-runs and recordRewards() batches the inserts —
+    // no per-run cap, otherwise the window sticks on the first N users forever.
     const proposals: RewardProposal[] = [];
-    for (const row of rows.slice(0, MAX_REWARDS_PER_RUN)) {
+    for (const row of rows) {
         if (row.usedText) {
             proposals.push({ quest: useTextModelQuest, userId: row.userId });
         }

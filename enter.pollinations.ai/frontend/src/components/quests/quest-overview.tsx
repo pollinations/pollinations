@@ -1,20 +1,19 @@
 import {
+    AppIcon,
     Button,
     CardIcon,
     CheckIcon,
     Chip,
     ClockIcon,
-    CodeIcon,
     DiscordIcon,
     GitHubIcon,
     Heading,
     InlineLink,
-    KeyIcon,
+    RocketIcon,
     SproutIcon,
     Surface,
-    TargetIcon,
+    TerminalIcon,
     Text,
-    TrendUpIcon,
 } from "@pollinations/ui";
 import { formatPollen, WalletKindIcon } from "@pollinations/ui/wallet";
 import {
@@ -78,19 +77,19 @@ const CATEGORIES: CategoryMeta[] = [
         key: "setup",
         label: "Setup",
         blurb: "Get started with Pollinations.",
-        icon: KeyIcon,
+        icon: RocketIcon,
     },
     {
         key: "grow",
         label: "Grow",
         blurb: "Grow your usage and revenue from apps.",
-        icon: TrendUpIcon,
+        icon: AppIcon,
     },
     {
         key: "build",
         label: "Build",
         blurb: "Your standing as a developer: GitHub, stars, and PRs.",
-        icon: CodeIcon,
+        icon: TerminalIcon,
     },
     {
         key: "contribute",
@@ -197,28 +196,6 @@ const BUCKET_CHIP_CLASS: Record<RewardIconKind, string> = {
     tier: "polli-wallet-chip-tier",
 };
 
-// Capability mark for the POLLEN EARNED card — a single 4-point "generate" star.
-// Illustrative UI, not a logo or a currency symbol: it signals what pollen powers
-// (generative AI). The calmer sibling of the Claim button's sparkle cluster — same
-// language, lighter weight, since this is a passive label not an action. We are
-// deliberately not committing to a Pollinations/pollen logo here.
-function PollenIcon({ className }: { className?: string }) {
-    return (
-        <svg
-            aria-hidden="true"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={className}
-        >
-            <path d="M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.14-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.14a.5.5 0 0 1 .96 0L14.06 8.5A2 2 0 0 0 15.5 9.94l6.14 1.58a.5.5 0 0 1 0 .96L15.5 14.06a2 2 0 0 0-1.44 1.44l-1.58 6.14a.5.5 0 0 1-.96 0z" />
-        </svg>
-    );
-}
-
 // A sparkle cluster — the joyful "you earned it" mark for the Claim button.
 function SparkleIcon({ className }: { className?: string }) {
     return (
@@ -241,59 +218,47 @@ function SparkleIcon({ className }: { className?: string }) {
     );
 }
 
-// A single value in its bucket color — amber (paid) or green (tier).
-function BucketNumber({
+// A single bucket-coloured tile — wallet-style well in the bucket's pale hue,
+// hosting one number (and, for pollen values, the bucket badge that tells you
+// it IS pollen without spelling the word). One of four in the summary 2×2.
+function BucketCard({
     kind,
-    children,
+    value,
+    showBadge,
 }: {
     kind: RewardIconKind;
-    children: React.ReactNode;
+    value: React.ReactNode;
+    showBadge?: boolean;
 }) {
+    const panelClass =
+        kind === "paid" ? "polli-wallet-panel-paid" : "polli-wallet-panel-tier";
+    const BadgeIcon = kind === "paid" ? CardIcon : SproutIcon;
     return (
-        <span
-            className={`text-2xl font-bold leading-none tabular-nums ${BUCKET_TEXT_CLASS[kind]}`}
+        <div
+            className={`flex items-center justify-center rounded-xl py-4 sm:py-5 ${panelClass}`}
         >
-            {children}
-        </span>
+            <span className="polli-wallet-balance-value flex items-center gap-2 font-bold leading-none tracking-tight tabular-nums">
+                {showBadge && (
+                    <BadgeIcon className="h-8 w-8 shrink-0 sm:h-10 sm:w-10" />
+                )}
+                {value}
+            </span>
+        </div>
     );
 }
 
-// One summary metric: a big icon + label, with the paid and tier values side by
-// side beneath it. Grouping each metric with its own numbers keeps the value
-// reading straight off the label.
-function MetricSummaryCard({
-    icon: Icon,
-    label,
-    paid,
-    tier,
-}: {
-    icon: IconComponent;
-    label: string;
-    paid: React.ReactNode;
-    tier: React.ReactNode;
-}) {
+// A bucket-agnostic total — one neutral well, used when paid/tier split would
+// be noise rather than signal (e.g. quest counts are all "a quest"). Uses
+// Surface card so the bg + well shadow match the Setup/quest rows exactly.
+function TotalCard({ value }: { value: React.ReactNode }) {
     return (
-        <Surface variant="card" className="flex items-center gap-4">
-            <Icon className="h-10 w-10 shrink-0 text-theme-text-base" />
-            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                <Text
-                    as="span"
-                    size="micro"
-                    weight="bold"
-                    tone="muted"
-                    className="uppercase tracking-wide"
-                >
-                    {label}
-                </Text>
-                <div className="flex items-center gap-3">
-                    <BucketNumber kind="paid">{paid}</BucketNumber>
-                    <span
-                        aria-hidden="true"
-                        className="h-7 self-center border-l border-divider"
-                    />
-                    <BucketNumber kind="tier">{tier}</BucketNumber>
-                </div>
-            </div>
+        <Surface
+            variant="card"
+            className="flex items-center justify-center py-4 sm:py-5"
+        >
+            <span className="polli-wallet-balance-value font-bold leading-none tracking-tight tabular-nums text-theme-text-base">
+                {value}
+            </span>
         </Surface>
     );
 }
@@ -671,18 +636,45 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
     return (
         <div className="flex flex-col gap-6">
             <Surface variant="panel">
-                <div className="grid gap-3 sm:grid-cols-2">
-                    <MetricSummaryCard
-                        icon={TargetIcon}
-                        label="Completed quests"
-                        paid={bucketStats.paid.completed}
-                        tier={bucketStats.tier.completed}
+                {/* Three equal-width cells across the row: Completed quests
+                    takes one (bucket-agnostic — a quest is a quest); Pollen
+                    earned takes two (paid + tier, since the buckets spend
+                    differently). Section titles sit as headers above their
+                    cards, spanning their group's columns. */}
+                <div className="grid grid-cols-3 gap-x-2 gap-y-2">
+                    <Text
+                        as="span"
+                        size="sm"
+                        weight="bold"
+                        tone="muted"
+                        className="col-span-1 uppercase tracking-wide"
+                    >
+                        Completed quests
+                    </Text>
+                    <Text
+                        as="span"
+                        size="sm"
+                        weight="bold"
+                        tone="muted"
+                        className="col-span-2 uppercase tracking-wide"
+                    >
+                        Pollen earned
+                    </Text>
+                    <TotalCard
+                        value={
+                            bucketStats.paid.completed +
+                            bucketStats.tier.completed
+                        }
                     />
-                    <MetricSummaryCard
-                        icon={PollenIcon}
-                        label="Pollen earned"
-                        paid={formatRewardAmount(bucketStats.paid.pollen)}
-                        tier={formatRewardAmount(bucketStats.tier.pollen)}
+                    <BucketCard
+                        kind="paid"
+                        value={formatRewardAmount(bucketStats.paid.pollen)}
+                        showBadge
+                    />
+                    <BucketCard
+                        kind="tier"
+                        value={formatRewardAmount(bucketStats.tier.pollen)}
+                        showBadge
                     />
                 </div>
                 {claimable.length > 0 && (

@@ -310,9 +310,9 @@ const tokenRows = [
         "bg-intent-danger-bg-light",
     ],
     [
-        "success-bg",
-        "var(--polli-color-success-bg-light)",
-        "bg-intent-success-bg-light",
+        "success-bright",
+        "var(--polli-color-success-bright)",
+        "bg-intent-success-bg-bright",
     ],
     [
         "warning-bg",
@@ -475,13 +475,7 @@ export const ButtonsDemo: FC = () => (
             <Row label="Copy button">
                 <CopyButton
                     value="pk_showcase_123"
-                    className={(copied) =>
-                        `inline-flex h-8 items-center gap-2 rounded-full px-3 text-sm font-medium transition-colors ${
-                            copied
-                                ? "bg-intent-success-bg-light text-intent-success-text"
-                                : "bg-theme-bg-active text-theme-text-strong"
-                        }`
-                    }
+                    className="inline-flex h-8 items-center gap-2 rounded-full bg-theme-bg-active px-3 text-sm font-medium text-theme-text-strong transition-colors"
                 >
                     {(copied) => (
                         <>
@@ -513,7 +507,6 @@ export const ButtonsDemo: FC = () => (
                 <Chip intent="news">NEW</Chip>
                 <Chip intent="alpha">ALPHA</Chip>
                 <Chip intent="neutral">Neutral</Chip>
-                <Chip intent="success">Success</Chip>
                 <Chip intent="warning">Warning</Chip>
                 <Chip intent="danger">Danger</Chip>
             </Row>
@@ -996,7 +989,7 @@ const tableRows = [
         status: "Healthy",
         requests: "22,115",
         success: "99.9%",
-        intent: "success" as const,
+        intent: "default" as const,
     },
     {
         model: "video-large",
@@ -1024,9 +1017,6 @@ export const FeedbackDemo: FC = () => (
             <Row label="Alert">
                 <div className="grid min-w-0 flex-1 grid-cols-[repeat(auto-fit,minmax(210px,1fr))] gap-2">
                     <Alert title="Info">Catalog metadata is synced.</Alert>
-                    <Alert intent="success" title="Success">
-                        Package assets generated.
-                    </Alert>
                     <Alert intent="warning" title="Warning">
                         Fallback data is active.
                     </Alert>

@@ -959,7 +959,12 @@ export const LayoutDemo: FC = () => (
                                         </span>
                                     </TableCell>
                                     <TableCell>
-                                        <Chip intent={row.intent} size="sm">
+                                        <Chip
+                                            intent={tableStatusChipIntent(
+                                                row.intent,
+                                            )}
+                                            size="sm"
+                                        >
                                             {row.status}
                                         </Chip>
                                     </TableCell>
@@ -1006,6 +1011,10 @@ const tableRows = [
         intent: "danger" as const,
     },
 ] as const;
+
+function tableStatusChipIntent(intent: (typeof tableRows)[number]["intent"]) {
+    return intent === "default" ? "neutral" : intent;
+}
 
 export const FeedbackDemo: FC = () => (
     <ShowcaseSection

@@ -1,4 +1,5 @@
 import {
+    Alert,
     CardIcon,
     ClockIcon,
     CopyButton,
@@ -84,7 +85,11 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
 
     return (
         <div className="flex flex-col gap-3">
-            {/* Twin headline numbers: Paid + Tier as tinted cards */}
+            <Alert intent="warning">
+                Tiers are going away. Pollen rewards now come from Quests —
+                your balances and access are unchanged.
+            </Alert>
+            {/* Twin headline numbers: Paid + Quest as tinted cards */}
             <div
                 className={
                     hideTierColumn
@@ -98,15 +103,15 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     value={formatPollen(displayPaidBalance)}
                     info={
                         <InfoTip
-                            label="About paid balance"
+                            label="About Paid Pollen"
                             text={
                                 <TooltipList
-                                    title="Paid balance"
+                                    title="Paid Pollen"
                                     icon={<CardIcon className="h-4 w-4" />}
                                     items={[
                                         "Pollen you bought",
                                         "Earnings from paid-side spend in your apps",
-                                        "Used for paid-only models, or when Tier can't cover",
+                                        "Used for paid-only models, or when Quest Pollen can't cover",
                                     ]}
                                     earned={paidWeek}
                                 />
@@ -127,20 +132,20 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                 {!hideTierColumn && (
                     <WalletBalanceCard
                         kind="tier"
-                        label="Tier"
+                        label="Quest"
                         value={formatPollen(displayTierBalance)}
                         info={
                             <InfoTip
-                                label="About tier balance"
+                                label="About Quest Pollen"
                                 text={
                                     <TooltipList
-                                        title="Tier balance"
+                                        title="Quest Pollen"
                                         icon={
                                             <SproutIcon className="h-4 w-4" />
                                         }
                                         items={[
-                                            "Hourly Pollen refill from your tier",
-                                            "Earnings from tier-side spend in your apps",
+                                            "Pollen earned from completing Quests",
+                                            "Earnings credited from your apps",
                                             "Used first for regular models, when it can cover",
                                         ]}
                                         earned={tierWeek}
@@ -258,7 +263,7 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
                 <div className="flex items-center justify-between gap-2">
                     <span className="flex items-center gap-1.5 text-xs font-bold text-theme-text-soft">
                         <WalletKindIcon kind="tier" />
-                        Tier
+                        Quest
                     </span>
                     <span className="flex items-baseline gap-1.5">
                         <span className="text-sm font-bold tabular-nums text-theme-text-soft leading-none">

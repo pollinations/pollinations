@@ -1,16 +1,19 @@
 import {
-    AppIcon,
     BeakerIcon,
     Button,
     CardIcon,
+    ChatIcon,
     CheckIcon,
     Chip,
     ClockIcon,
     DiscordIcon,
+    GitBranchIcon,
     GitHubIcon,
     InlineLink,
+    KeyIcon,
     Markdown,
     RocketIcon,
+    SearchIcon,
     Section,
     SparkleIcon,
     SproutIcon,
@@ -18,6 +21,8 @@ import {
     TargetIcon,
     TerminalIcon,
     Text,
+    TrendUpIcon,
+    WalletIcon,
 } from "@pollinations/ui";
 import { formatPollen } from "@pollinations/ui/wallet";
 import {
@@ -74,6 +79,9 @@ type CategoryMeta = {
     label: string;
     blurb: string;
     icon: IconComponent;
+    // Footer glyph — picked to echo the blurb sentence rather than repeat the
+    // section icon (which already marks every row in the lane).
+    footerIcon: IconComponent;
 };
 
 const CATEGORIES: CategoryMeta[] = [
@@ -82,36 +90,42 @@ const CATEGORIES: CategoryMeta[] = [
         label: "Setup",
         blurb: "Get started with Pollinations.",
         icon: RocketIcon,
+        footerIcon: KeyIcon,
     },
     {
         key: "grow",
         label: "Grow",
         blurb: "Grow your usage and revenue from apps.",
-        icon: AppIcon,
+        icon: TrendUpIcon,
+        footerIcon: WalletIcon,
     },
     {
         key: "build",
         label: "Build",
         blurb: "Your standing as a developer: GitHub, stars, and PRs.",
         icon: TerminalIcon,
+        footerIcon: GitBranchIcon,
     },
     {
         key: "contribute",
         label: "Contribute",
         blurb: "Open-source issues and bounties you can help ship.",
         icon: GitHubIcon,
+        footerIcon: SearchIcon,
     },
     {
         key: "community",
         label: "Community",
         blurb: "Low-friction ways to join and support the project.",
         icon: DiscordIcon,
+        footerIcon: ChatIcon,
     },
     {
         key: "easteregg",
         label: "Easter eggs",
         blurb: "One-off rewards unlocked for you.",
         icon: SproutIcon,
+        footerIcon: SparkleIcon,
     },
 ];
 
@@ -223,7 +237,8 @@ export function TotalCard({ value }: { value: React.ReactNode }) {
             variant="card"
             className="flex items-center justify-center py-4 sm:py-5"
         >
-            <span className="text-3xl font-bold leading-none tracking-tight tabular-nums text-theme-text-base sm:text-5xl">
+            <span className="flex items-center gap-1.5 text-3xl font-bold leading-none tracking-tight tabular-nums text-theme-text-base sm:gap-2 sm:text-5xl">
+                <SparkleIcon className="h-7 w-7 shrink-0 sm:h-10 sm:w-10" />
                 {value}
             </span>
         </Surface>
@@ -231,7 +246,7 @@ export function TotalCard({ value }: { value: React.ReactNode }) {
 }
 
 function SectionFooter({ category }: { category: CategoryMeta }) {
-    const Icon = category.icon;
+    const Icon = category.footerIcon;
     return (
         <div className="mt-4 flex items-center gap-1.5 border-t border-divider pt-4 text-theme-text-muted">
             <Icon className="h-3.5 w-3.5 shrink-0" />
@@ -389,11 +404,7 @@ export function QuestRow({
                 (title + description, with the issue link at the end of the
                 description) | claim + reward. Keeps the card to two text rows. */}
             <div className="hidden items-center gap-4 sm:flex">
-                <QuestMarker
-                    icon={icon}
-                    status={card.status}
-                    bucket={rewardIcon}
-                />
+                <QuestMarker icon={icon} status={card.status} />
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <div>{title}</div>
                     {(description || issueLink) && (
@@ -564,9 +575,9 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         return byCat;
     }, [state.catalog, rewardedCatalogIds, rewardByKey]);
 
-    // Which buckets the registry actually pays into — drives whether the
-    // matching summary card is rendered. If no quest pays paid pollen, showing
-    // an always-zero paid card is just noise.
+    // Which buckets the registry or earned rewards actually use — drives
+    // whether the matching summary card is rendered. If no quest/reward touches
+    // paid pollen, showing an always-zero paid card is just noise.
     const usedBuckets = useMemo(() => {
         const used: Record<RewardIconKind, boolean> = {
             paid: false,
@@ -575,8 +586,11 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         for (const quest of state.catalog) {
             used[rewardIconKind(quest.balanceBucket)] = true;
         }
+        for (const reward of state.rewards) {
+            used[rewardIconKind(reward.balanceBucket)] = true;
+        }
         return used;
-    }, [state.catalog]);
+    }, [state.catalog, state.rewards]);
 
     // Per-bucket roll-up for the summary: each earned reward is one completed
     // quest, and its pollen total lands in either the paid or tier bucket.

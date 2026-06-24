@@ -1,6 +1,6 @@
 # Refunds & Cancellations
 
-**Updated: 2026-06-22**
+**Updated: 2026-06-24**
 
 ## Refunds & Cancellations (digital API services & Pollen)
 
@@ -12,20 +12,20 @@ Pollen is an in-service credit used only for Pollinations API usage. It is not l
 
 Your wallet may include:
 
-- **Tier balance:** free Pollen grants and developer earnings.
-- **Paid balance:** purchased Pollen, non-refill rewards, and developer earnings from paid-balance usage.
+- **Quest Pollen balance:** Pollen earned from quests, contribution rewards, free grants, promotional credits, manual credits, and developer earnings from Quest Pollen usage.
+- **Paid Pollen balance:** purchased Pollen and developer earnings from Paid Pollen usage.
 
 ## 2) Final-Sale Policy
 
 All sales are final except where required by law or expressly approved by us. Our API is a digital service delivered immediately after purchase. Once Pollen is spent on API usage, that usage cannot be returned.
 
-Paid Pollen packs/top-ups are non-refundable once provisioned, including unused paid balance. We do not guarantee refunds because you changed your mind, stopped using the Service, disliked an output, chose the wrong model, authorized an app you no longer want to use, or did not use the full balance.
+Paid Pollen packs/top-ups are non-refundable once provisioned, including unused Paid Pollen balance. We do not guarantee refunds because you changed your mind, stopped using the Service, disliked an output, chose the wrong model, authorized an app you no longer want to use, or did not use the full balance.
 
-Used Pollen cannot be refunded or clawed back. Free tier grants, quest or other rewards, promotional credits, and developer earnings have no cash value and are not refundable.
+Used Pollen cannot be refunded or clawed back. Quest Pollen, free or promotional grants, quest or other rewards, and developer earnings have no cash value and are not refundable.
 
 ## 3) Limited Refund Review
 
-We may review refund requests for unused paid balance in these cases:
+We may review refund requests for unused Paid Pollen balance in these cases:
 
 - A refund is required by law.
 - A duplicate or unauthorized charge is proven.

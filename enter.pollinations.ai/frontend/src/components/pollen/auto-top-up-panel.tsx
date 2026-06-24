@@ -10,6 +10,7 @@ import {
     type SwitchStatus,
     Tooltip,
 } from "@pollinations/ui";
+import { WalletKindIcon } from "@pollinations/ui/wallet";
 import {
     AUTO_TOP_UP_PACK_MAX_USD,
     AUTO_TOP_UP_PACK_MIN_USD,
@@ -91,7 +92,8 @@ const AUTO_TOP_UP_TOOLTIP_CONTENT = (
                 for the selected pack
             </li>
             <li>
-                <span className="font-semibold text-theme-text-strong">
+                <span className="inline-flex items-center gap-1 font-semibold text-theme-text-strong">
+                    <WalletKindIcon kind="tier" />
                     Quest Pollen is ignored
                 </span>{" "}
                 for this trigger

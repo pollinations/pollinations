@@ -30,6 +30,7 @@ import {
     type FC,
     useEffect,
     useMemo,
+    useRef,
     useState,
 } from "react";
 import { apiClient } from "../../api.ts";
@@ -431,7 +432,14 @@ export function QuestRow({
 
 export const QuestOverview: FC<QuestOverviewProps> = () => {
     const [state, setState] = useState<FetchState>(INITIAL_STATE);
+    // Guards the auto-check so React 18 StrictMode's double-mount fires it once.
+    const autoCheckedRef = useRef(false);
 
+    // On open: render cached quest data immediately (fast D1 read), THEN run one
+    // automatic quest check (slow GitHub + Tinybird fan-out) and refresh. There
+    // is no manual button — quests check themselves when the page opens. The
+    // whole flow is inlined here (not a separate callback) so the mount-only
+    // effect has a stable, empty dependency list.
     useEffect(() => {
         let cancelled = false;
         (async () => {
@@ -441,7 +449,9 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                 setState({
                     ...questData,
                     loading: false,
-                    checking: false,
+                    // Flag the auto-check as in-flight so the indicator shows
+                    // straight after the initial render, with no idle flash.
+                    checking: true,
                     error: null,
                     claimingRewardId: null,
                 });
@@ -455,6 +465,36 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                             ? error.message
                             : "Failed to load quests",
                 });
+                return;
+            }
+
+            // StrictMode double-mounts the effect; run the check at most once.
+            if (cancelled || autoCheckedRef.current) return;
+            autoCheckedRef.current = true;
+
+            // The automatic check is best-effort: a 429 (per-user throttle still
+            // warm) or any failure leaves the already-loaded quests intact and
+            // does NOT surface a red error — the cached data is still valid.
+            try {
+                const response = await apiClient.account.quests.check.$post();
+                if (cancelled) return;
+                if (response.ok) {
+                    const refreshed = await loadQuestData();
+                    if (cancelled) return;
+                    setState((current) => ({
+                        ...current,
+                        ...refreshed,
+                        checking: false,
+                        loading: false,
+                        error: null,
+                    }));
+                    return;
+                }
+                // Not ok (throttled or failed) — just stop the indicator.
+                setState((current) => ({ ...current, checking: false }));
+            } catch {
+                if (cancelled) return;
+                setState((current) => ({ ...current, checking: false }));
             }
         })();
         return () => {
@@ -495,38 +535,6 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                     error instanceof Error
                         ? error.message
                         : "Failed to claim reward",
-            }));
-        }
-    }
-
-    async function handleCheckQuests(): Promise<void> {
-        setState((current) => ({
-            ...current,
-            checking: true,
-            error: null,
-        }));
-
-        try {
-            const response = await apiClient.account.quests.check.$post();
-            if (!response.ok) {
-                throw new Error(`Failed to check quests (${response.status})`);
-            }
-            const questData = await loadQuestData();
-            setState((current) => ({
-                ...current,
-                ...questData,
-                checking: false,
-                loading: false,
-                error: null,
-            }));
-        } catch (error) {
-            setState((current) => ({
-                ...current,
-                checking: false,
-                error:
-                    error instanceof Error
-                        ? error.message
-                        : "Failed to check quests",
             }));
         }
     }
@@ -669,6 +677,13 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         return { count, segments };
     }, [state.rewards]);
 
+    // While the automatic quest check is running, dim the stats and cards so
+    // the panel reads as "refreshing" — the numbers may be about to change. The
+    // checking indicator itself stays outside this wrapper so it stays crisp.
+    const dimWhileChecking = state.checking
+        ? "pointer-events-none select-none opacity-50 transition-opacity duration-300"
+        : "transition-opacity duration-300";
+
     return (
         <div className="flex flex-col gap-6">
             <Surface variant="panel">
@@ -678,134 +693,140 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                     (header → total → header → pair); desktop uses explicit
                     col-start/row-start to put both headers on row 1 and the
                     cards on row 2. */}
-                {(() => {
-                    const visibleBuckets = (["paid", "tier"] as const).filter(
-                        (k) => usedBuckets[k],
-                    );
-                    const bucketCount = visibleBuckets.length;
-                    const totalCard = (
-                        <TotalCard
-                            value={
-                                bucketStats.paid.completed +
-                                bucketStats.tier.completed
-                            }
-                        />
-                    );
-                    if (bucketCount === 0) {
-                        // No quest pays pollen → just the completed total.
+                <div className={dimWhileChecking}>
+                    {(() => {
+                        const visibleBuckets = (
+                            ["paid", "tier"] as const
+                        ).filter((k) => usedBuckets[k]);
+                        const bucketCount = visibleBuckets.length;
+                        const totalCard = (
+                            <TotalCard
+                                value={
+                                    bucketStats.paid.completed +
+                                    bucketStats.tier.completed
+                                }
+                            />
+                        );
+                        if (bucketCount === 0) {
+                            // No quest pays pollen → just the completed total.
+                            return (
+                                <div className="flex flex-col gap-2">
+                                    <Text
+                                        as="span"
+                                        size="sm"
+                                        weight="bold"
+                                        tone="muted"
+                                        className="uppercase tracking-wide"
+                                    >
+                                        Completed quests
+                                    </Text>
+                                    <div className="sm:w-1/3">{totalCard}</div>
+                                </div>
+                            );
+                        }
+                        const gridCols =
+                            bucketCount === 2
+                                ? "sm:grid-cols-3"
+                                : "sm:grid-cols-2";
+                        const claimedHeaderColSpan =
+                            bucketCount === 2
+                                ? "sm:col-span-2"
+                                : "sm:col-span-1";
                         return (
-                            <div className="flex flex-col gap-2">
+                            <div
+                                className={`grid grid-cols-2 gap-x-2 gap-y-2 ${gridCols}`}
+                            >
                                 <Text
                                     as="span"
                                     size="sm"
                                     weight="bold"
                                     tone="muted"
-                                    className="uppercase tracking-wide"
+                                    className="col-span-2 uppercase tracking-wide sm:col-span-1 sm:col-start-1 sm:row-start-1"
                                 >
                                     Completed quests
                                 </Text>
-                                <div className="sm:w-1/3">{totalCard}</div>
+                                <div className="col-span-2 sm:col-span-1 sm:col-start-1 sm:row-start-2">
+                                    {totalCard}
+                                </div>
+                                <Text
+                                    as="span"
+                                    size="sm"
+                                    weight="bold"
+                                    tone="muted"
+                                    className={`col-span-2 uppercase tracking-wide sm:col-start-2 sm:row-start-1 ${claimedHeaderColSpan}`}
+                                >
+                                    Claimed pollen reward
+                                </Text>
+                                {visibleBuckets.map((kind, i) => {
+                                    const colStart =
+                                        bucketCount === 2 && i === 1
+                                            ? "sm:col-start-3"
+                                            : "sm:col-start-2";
+                                    return (
+                                        <div
+                                            key={kind}
+                                            className={`${colStart} sm:row-start-2`}
+                                        >
+                                            <BucketCard
+                                                kind={kind}
+                                                value={formatRewardAmount(
+                                                    bucketStats[kind].pollen,
+                                                )}
+                                                showBadge
+                                            />
+                                        </div>
+                                    );
+                                })}
                             </div>
                         );
-                    }
-                    const gridCols =
-                        bucketCount === 2 ? "sm:grid-cols-3" : "sm:grid-cols-2";
-                    const claimedHeaderColSpan =
-                        bucketCount === 2 ? "sm:col-span-2" : "sm:col-span-1";
-                    return (
-                        <div
-                            className={`grid grid-cols-2 gap-x-2 gap-y-2 ${gridCols}`}
-                        >
-                            <Text
-                                as="span"
-                                size="sm"
-                                weight="bold"
-                                tone="muted"
-                                className="col-span-2 uppercase tracking-wide sm:col-span-1 sm:col-start-1 sm:row-start-1"
-                            >
-                                Completed quests
-                            </Text>
-                            <div className="col-span-2 sm:col-span-1 sm:col-start-1 sm:row-start-2">
-                                {totalCard}
-                            </div>
-                            <Text
-                                as="span"
-                                size="sm"
-                                weight="bold"
-                                tone="muted"
-                                className={`col-span-2 uppercase tracking-wide sm:col-start-2 sm:row-start-1 ${claimedHeaderColSpan}`}
-                            >
-                                Claimed pollen reward
-                            </Text>
-                            {visibleBuckets.map((kind, i) => {
-                                const colStart =
-                                    bucketCount === 2 && i === 1
-                                        ? "sm:col-start-3"
-                                        : "sm:col-start-2";
+                    })()}
+                    {claimable.count > 0 && (
+                        <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-theme-bg-subtle px-4 py-2.5 text-sm font-semibold text-theme-text-soft">
+                            <SparkleIcon className="h-4 w-4 shrink-0" />
+                            <span>
+                                <span className="tabular-nums">
+                                    {claimable.count}
+                                </span>{" "}
+                                new {claimable.count === 1 ? "quest" : "quests"}{" "}
+                                completed ready to claim!
+                            </span>
+                            {claimable.segments.map((seg, i) => {
+                                const SegIcon =
+                                    seg.kind === "paid" ? CardIcon : SproutIcon;
                                 return (
-                                    <div
-                                        key={kind}
-                                        className={`${colStart} sm:row-start-2`}
+                                    <span
+                                        key={seg.kind}
+                                        className="flex items-center gap-1.5"
                                     >
-                                        <BucketCard
-                                            kind={kind}
-                                            value={formatRewardAmount(
-                                                bucketStats[kind].pollen,
-                                            )}
-                                            showBadge
-                                        />
-                                    </div>
+                                        {i > 0 && (
+                                            <span
+                                                aria-hidden="true"
+                                                className="opacity-60"
+                                            >
+                                                ·
+                                            </span>
+                                        )}
+                                        <SegIcon className="h-4 w-4 shrink-0" />
+                                        <span className="tabular-nums">
+                                            {formatRewardAmount(seg.pollen)}
+                                        </span>
+                                    </span>
                                 );
                             })}
                         </div>
-                    );
-                })()}
-                {claimable.count > 0 && (
-                    <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-theme-bg-subtle px-4 py-2.5 text-sm font-semibold text-theme-text-soft">
-                        <SparkleIcon className="h-4 w-4 shrink-0" />
-                        <span>
-                            <span className="tabular-nums">
-                                {claimable.count}
-                            </span>{" "}
-                            new {claimable.count === 1 ? "quest" : "quests"}{" "}
-                            completed ready to claim!
+                    )}
+                </div>
+                {/* Auto-check indicator: quests check themselves on open, so
+                    there's no button. Show a subtle "checking" line only while
+                    the automatic check is in flight; nothing when idle. */}
+                {state.checking && (
+                    <div className="mt-3 flex justify-end">
+                        <span className="flex animate-[pulse_2s_ease-in-out_infinite] items-center gap-1.5 text-[13px] leading-snug text-theme-text-muted">
+                            <SearchIcon className="h-4 w-4 shrink-0" />
+                            Checking for new quests…
                         </span>
-                        {claimable.segments.map((seg, i) => {
-                            const SegIcon =
-                                seg.kind === "paid" ? CardIcon : SproutIcon;
-                            return (
-                                <span
-                                    key={seg.kind}
-                                    className="flex items-center gap-1.5"
-                                >
-                                    {i > 0 && (
-                                        <span
-                                            aria-hidden="true"
-                                            className="opacity-60"
-                                        >
-                                            ·
-                                        </span>
-                                    )}
-                                    <SegIcon className="h-4 w-4 shrink-0" />
-                                    <span className="tabular-nums">
-                                        {formatRewardAmount(seg.pollen)}
-                                    </span>
-                                </span>
-                            );
-                        })}
                     </div>
                 )}
-                <div className="mt-3 flex justify-end">
-                    <Button
-                        type="button"
-                        disabled={state.loading || state.checking}
-                        onClick={handleCheckQuests}
-                        className="gap-1.5"
-                    >
-                        <SearchIcon className="h-4 w-4 shrink-0" />
-                        {state.checking ? "Checking" : "Check quests"}
-                    </Button>
-                </div>
                 {/* Multi-line footer styled like the keys panel's footer —
                     text-[13px] + leading-snug keeps the two lines visually
                     tight. */}
@@ -848,43 +869,45 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                 </Surface>
             )}
 
-            {CATEGORIES.map((category) => {
-                const cards = sections[category.key];
-                if (cards.length === 0) return null;
-                const done = cards.filter(
-                    (card) => card.status !== "open",
-                ).length;
-                return (
-                    <Section
-                        key={category.key}
-                        title={category.label}
-                        framed
-                        panelClassName="flex flex-col gap-2"
-                        action={
-                            <Chip
-                                intent="neutral"
-                                size="sm"
-                                className="tabular-nums"
-                            >
-                                {done} / {cards.length}
-                            </Chip>
-                        }
-                    >
-                        {cards.map((card) => (
-                            <QuestRow
-                                key={card.key}
-                                card={card}
-                                icon={category.icon}
-                                claiming={
-                                    state.claimingRewardId === card.rewardId
-                                }
-                                onClaim={handleClaimReward}
-                            />
-                        ))}
-                        <SectionFooter category={category} />
-                    </Section>
-                );
-            })}
+            <div className={`flex flex-col gap-6 ${dimWhileChecking}`}>
+                {CATEGORIES.map((category) => {
+                    const cards = sections[category.key];
+                    if (cards.length === 0) return null;
+                    const done = cards.filter(
+                        (card) => card.status !== "open",
+                    ).length;
+                    return (
+                        <Section
+                            key={category.key}
+                            title={category.label}
+                            framed
+                            panelClassName="flex flex-col gap-2"
+                            action={
+                                <Chip
+                                    intent="neutral"
+                                    size="sm"
+                                    className="tabular-nums"
+                                >
+                                    {done} / {cards.length}
+                                </Chip>
+                            }
+                        >
+                            {cards.map((card) => (
+                                <QuestRow
+                                    key={card.key}
+                                    card={card}
+                                    icon={category.icon}
+                                    claiming={
+                                        state.claimingRewardId === card.rewardId
+                                    }
+                                    onClaim={handleClaimReward}
+                                />
+                            ))}
+                            <SectionFooter category={category} />
+                        </Section>
+                    );
+                })}
+            </div>
         </div>
     );
 };

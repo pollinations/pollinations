@@ -1,3 +1,5 @@
+- **2026-06-23** – **🎵 Stable Audio 3** We've wired up Stable Audio 3 to the [audio API](https://gen.pollinations.ai/audio/{text}). Generate up to 380 seconds of 44.1 kHz stereo, or use the newly added audio-to-audio style transfer.
+- **2026-06-23** – **🤖 Mercury 2** Inception's Mercury 2 model is now live on the [text API](https://gen.pollinations.ai/v1/chat/completions). Full support for cached input and reasoning tokens included.
 - **2026-06-22** – **🎵 ElevenLabs Music v2** Upgraded the music integration to v2 and added reference-audio conditioning. You can now pass an audio track to guide the output style instead of just hoping for the best.
 - **2026-06-22** – **🎶 Stable Audio 2.5** Added text-to-music generation via fal.ai. Hit the `stable-audio-2.5` endpoint with your prompt to get up to 190 seconds of WAV output. Check the [API Docs](https://gen.pollinations.ai/docs).
 - **2026-06-22** – **🔊 Sound Effects & Polyglots** Added `eleven-sfx` for generating sound effects and `eleven-multilingual-v2` for 29 languages. We also bumped the TTS input cap to 10,000 characters for those really long monologues.

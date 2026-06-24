@@ -226,17 +226,16 @@ Wallet tokens are public (bundled into `@pollinations/ui/styles.css`):
 
 **Intent (theme-independent):**
 
-| Token                             | Purpose                          |
-| --------------------------------- | -------------------------------- |
-| `--polli-color-danger-bg-light`   | Error surface background.        |
-| `--polli-color-danger-text`       | Error text foreground.           |
-| `--polli-color-danger-border`     | Error border.                    |
-| `--polli-color-success-bg-light`  | Success surface background.      |
-| `--polli-color-success-text`      | Success text foreground.         |
-| `--polli-color-success-border`    | Success border.                  |
-| `--polli-color-warning-bg-light`  | Warning surface background.      |
-| `--polli-color-warning-text`      | Warning text foreground.         |
-| `--polli-color-warning-border`    | Warning border.                  |
+| Token                                      | Purpose                          |
+| ------------------------------------------ | -------------------------------- |
+| `--polli-color-danger-bg-light`            | Error surface background.        |
+| `--polli-color-danger-text`                | Error text foreground.           |
+| `--polli-color-danger-border`              | Error border.                    |
+| `--polli-color-success-text`               | Success text foreground.         |
+| `--polli-color-success-bright`             | Filled success background.       |
+| `--polli-color-success-text-on-bright`     | Text on filled success surfaces. |
+| `--polli-color-warning-bg-light`           | Warning surface background.      |
+| `--polli-color-warning-text`               | Warning text foreground.         |
 
 **Example:**
 

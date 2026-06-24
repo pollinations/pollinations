@@ -28,7 +28,7 @@ const firstApiKeyQuest: QuestDefinition = {
     id: "onboarding:first_api_key",
     title: "Create your first API key",
     description:
-        "Create an API key for using Pollinations from an app or script.",
+        "Create your first API [key](#keys) for using Pollinations from an app or script.",
     category: "setup",
     scope: "perUser",
     rewardAmount: 1,
@@ -37,8 +37,9 @@ const firstApiKeyQuest: QuestDefinition = {
 
 const byopLoginQuest: QuestDefinition = {
     id: "setup:byop_login",
-    title: "Logged in to a Pollinations app",
-    description: "Authorize a Pollinations app to spend your Pollen.",
+    title: "Log in to a Pollinations app",
+    description:
+        "Authorize a Pollinations app with [BYOP](https://gen.pollinations.ai/docs#tag/byop).",
     category: "setup",
     scope: "perUser",
     rewardAmount: 1,
@@ -47,8 +48,8 @@ const byopLoginQuest: QuestDefinition = {
 
 const firstTopUpQuest: QuestDefinition = {
     id: "spend:first_top_up",
-    title: "First pollen purchase",
-    description: "Buy your first Pollen pack.",
+    title: "Buy your first Pollen pack",
+    description: "Buy your first Pollen [pack](#buy-pollen).",
     category: "grow",
     scope: "perUser",
     rewardAmount: 5,

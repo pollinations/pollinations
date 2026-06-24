@@ -8,6 +8,7 @@ import {
     DiscordIcon,
     GitHubIcon,
     InlineLink,
+    Markdown,
     RocketIcon,
     Section,
     SparkleIcon,
@@ -249,6 +250,14 @@ function SectionFooter({ category }: { category: CategoryMeta }) {
     );
 }
 
+function QuestDescription({ children }: { children: string }) {
+    return (
+        <Markdown className="inline text-sm text-theme-text-muted [&_p]:mb-0 [&_p]:inline">
+            {children}
+        </Markdown>
+    );
+}
+
 // Leading marker for a quest row, by lifecycle stage:
 //   open      → bucket-coloured tile + section icon (amber for paid, green for
 //                tier) so the row signals which pollen it pays before the chip
@@ -373,9 +382,7 @@ export function QuestRow({
                         <div className="min-w-0 flex-1">{title}</div>
                     </div>
                     {description && (
-                        <Text size="sm" tone="muted">
-                            {description}
-                        </Text>
+                        <QuestDescription>{description}</QuestDescription>
                     )}
                 </div>
                 <div className="flex items-center gap-2.5">
@@ -398,11 +405,15 @@ export function QuestRow({
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <div>{title}</div>
                     {(description || issueLink) && (
-                        <Text as="div" size="sm" tone="muted">
-                            {description}
+                        <div className="text-sm text-theme-text-muted">
+                            {description && (
+                                <QuestDescription>
+                                    {description}
+                                </QuestDescription>
+                            )}
                             {description && issueLink ? " " : null}
                             {issueLink}
-                        </Text>
+                        </div>
                     )}
                 </div>
                 <div className="flex shrink-0 items-center gap-2.5">

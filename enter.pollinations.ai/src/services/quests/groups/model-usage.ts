@@ -19,8 +19,8 @@ const MAX_REWARDS_PER_RUN = 1000;
 
 const useTextModelQuest: QuestDefinition = {
     id: "grow:use_text_model",
-    title: "Generate with a text model",
-    description: "Make your first request to a text model.",
+    title: "Use a text model",
+    description: "Make your first request to a text [model](#models).",
     category: "grow",
     scope: "perUser",
     rewardAmount: 0.25,
@@ -29,8 +29,8 @@ const useTextModelQuest: QuestDefinition = {
 
 const useImageModelQuest: QuestDefinition = {
     id: "grow:use_image_model",
-    title: "Generate with an image model",
-    description: "Make your first request to an image model.",
+    title: "Use an image model",
+    description: "Make your first request to an image [model](#models).",
     category: "grow",
     scope: "perUser",
     rewardAmount: 0.25,
@@ -39,8 +39,8 @@ const useImageModelQuest: QuestDefinition = {
 
 const useAudioModelQuest: QuestDefinition = {
     id: "grow:use_audio_model",
-    title: "Generate with an audio model",
-    description: "Make your first request to an audio model.",
+    title: "Use an audio model",
+    description: "Make your first request to an audio [model](#models).",
     category: "grow",
     scope: "perUser",
     rewardAmount: 0.25,

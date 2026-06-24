@@ -31,9 +31,9 @@ const CONTRIBUTION_CATEGORY = "contribute" as const;
 
 const firstMergedPrQuest: QuestDefinition = {
     id: "github:first_merged_pr",
-    title: "Get your first PR merged",
+    title: "Merge your first Pollinations PR",
     description:
-        "Merge a pull request into the Pollinations [repo](https://github.com/pollinations/pollinations).",
+        "Open a pull request against the Pollinations repo and get it merged.",
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
     rewardAmount: 5,
@@ -212,8 +212,8 @@ function toIssueQuestDefinition(issue: DerivedQuestIssue): QuestDefinition {
         // community bounty collapses to one key and only the first ever records.
         // Derive the id from issueNumber so the key remains stable across runs.
         id: `github:issue:${issue.issueNumber}`,
-        title: issue.title,
-        description: issue.description,
+        title: `Ship bounty #${issue.issueNumber}: ${issue.title}`,
+        description: `Help close this POLLEN-QUEST issue. ${issue.description}`,
         category: CONTRIBUTION_CATEGORY,
         scope: "once",
         rewardAmount: issue.rewardAmount ?? 0,

@@ -71,7 +71,6 @@ export const AUDIO_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
-        alpha: true,
     },
     elevenflash: {
         aliases: ["tts-flash", "eleven-flash", "flash"],
@@ -94,7 +93,6 @@ export const AUDIO_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
-        alpha: true,
     },
     "eleven-multilingual-v2": {
         aliases: ["multilingual-v2", "eleven-v2", "tts-multilingual"],
@@ -117,7 +115,6 @@ export const AUDIO_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
-        alpha: true,
     },
     elevenmusic: {
         aliases: ["music"],
@@ -139,7 +136,6 @@ export const AUDIO_SERVICES = {
             "ElevenLabs Music - Generate studio-grade music from text prompts and reference audio",
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
-        alpha: true,
     },
     "eleven-sfx": {
         aliases: ["sfx", "sound-effects", "eleven-sound-effects"],
@@ -164,7 +160,6 @@ export const AUDIO_SERVICES = {
             "ElevenLabs Sound Effects - Generate sound effects from text prompts",
         inputModalities: ["text"],
         outputModalities: ["audio"],
-        alpha: true,
     },
     whisper: {
         aliases: ["whisper-1", "whisper-large-v3"],
@@ -182,7 +177,6 @@ export const AUDIO_SERVICES = {
         description: "Whisper Large V3 - Speech to text transcription",
         inputModalities: ["audio"],
         outputModalities: ["text"],
-        alpha: true,
     },
     scribe: {
         aliases: ["scribe_v2", "scribe-v2"],
@@ -258,7 +252,6 @@ export const AUDIO_SERVICES = {
             "ACE-Step 1.5 Turbo - Fast open-source music generation with lyrics support",
         inputModalities: ["text"],
         outputModalities: ["audio"],
-        alpha: true,
     },
     "stable-audio-3-medium": {
         aliases: ["stable-audio", "stability-audio", "stable-audio-2.5"],
@@ -269,20 +262,21 @@ export const AUDIO_SERVICES = {
         addedDate: new Date("2026-06-23").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
+        flatRate: true,
         cost: {
-            // Flat per-generation fee billed in $0.0001 units so each fal
-            // endpoint lands exactly (rates from fal model pages 2026-06-23):
-            //   text-to-audio  -> 376 units = $0.0376
-            //   audio-to-audio -> 417 units = $0.0417
-            // The handler picks the unit count from the request path (audio.ts).
-            completionAudioTokens: 0.0001,
+            // Flat per-generation fee (fal model pages 2026-06-23):
+            //   text-to-audio  $0.0376  (output audio)
+            //   audio-to-audio $0.0417  (+$0.0041 for the reference-clip input)
+            // The handler bills whole units: 1 completion audio unit always, plus
+            // 1 prompt audio unit for audio-to-audio (see gen audio.ts).
+            promptAudioTokens: 0.0417 - 0.0376,
+            completionAudioTokens: 0.0376,
         },
         title: "Stable Audio 3 Medium",
         description:
             "Stable Audio 3 Medium - Long-form 44.1 kHz stereo music and sound generation",
         inputModalities: ["text"],
         outputModalities: ["audio"],
-        alpha: true,
     },
     "stable-audio-3-large": {
         // Distinct from stable-audio-3-medium (fal): this is the larger
@@ -296,10 +290,12 @@ export const AUDIO_SERVICES = {
         addedDate: new Date("2026-06-23").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
+        flatRate: true,
         cost: {
-            // Stability Stable Audio 3 (Large) via the direct API: flat 26
-            // credits/generation. Stability credits are $0.01 each, so bill one
-            // flat audio unit at $0.26.
+            // Stability Stable Audio 3.0 via the direct API: flat 26 credits/
+            // generation (Stable Audio 2.5 was 20); credits are $0.01 each → $0.26.
+            // Same fee for text-to-audio and audio-to-audio, so no audio-input
+            // surcharge — the handler bills one flat completion audio unit.
             completionAudioTokens: 0.26,
         },
         title: "Stable Audio 3 Large",
@@ -307,7 +303,6 @@ export const AUDIO_SERVICES = {
             "Stable Audio 3 Large - Long-form 44.1 kHz stereo music via Stability's direct API",
         inputModalities: ["text"],
         outputModalities: ["audio"],
-        alpha: true,
     },
     "qwen-tts": {
         aliases: ["qwen3-tts", "qwen3-tts-flash"],

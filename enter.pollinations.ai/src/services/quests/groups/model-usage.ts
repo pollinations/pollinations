@@ -21,9 +21,9 @@ const log = getLogger(["enter", "quests", "model-usage"]);
 
 const useTextModelQuest: QuestDefinition = {
     id: "grow:use_text_model",
-    title: "Use a text model",
+    title: "Run a text model",
     description:
-        "Make a successful billed request to a text [model](#models) in the last 3 months.",
+        "Choose any text model from [Models](#models) and make one successful billed text request.",
     category: "setup",
     scope: "perUser",
     rewardAmount: 0.25,
@@ -32,9 +32,9 @@ const useTextModelQuest: QuestDefinition = {
 
 const useImageModelQuest: QuestDefinition = {
     id: "grow:use_image_model",
-    title: "Use an image model",
+    title: "Generate with an image model",
     description:
-        "Make a successful billed request to an image [model](#models) in the last 3 months.",
+        "Choose any image model from [Models](#models) and make one successful billed image request.",
     category: "setup",
     scope: "perUser",
     rewardAmount: 0.25,
@@ -43,9 +43,9 @@ const useImageModelQuest: QuestDefinition = {
 
 const useAudioModelQuest: QuestDefinition = {
     id: "grow:use_audio_model",
-    title: "Use an audio model",
+    title: "Create with an audio model",
     description:
-        "Make a successful billed request to an audio [model](#models) in the last 3 months.",
+        "Choose any audio model from [Models](#models) and make one successful billed audio request.",
     category: "setup",
     scope: "perUser",
     rewardAmount: 0.25,

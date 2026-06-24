@@ -12,8 +12,9 @@ import type {
     QuestEvaluationContext,
 } from "../services/quests/types.ts";
 
-// Bumped to v14: GitHub issue bounties are now read lazily from GitHub, not a
-// D1 mirror, so old catalog entries should not be served.
+// Bumped to v14: GitHub issue bounties are now read lazily from GitHub (no D1
+// mirror), and stats carry a per-quest emitted-pollen share — so older catalog
+// entries (mirror-shaped / share-less) must not be served.
 const CACHE_KEY = "quests:catalog:v14";
 const CACHE_TTL = 60;
 
@@ -26,6 +27,7 @@ export type QuestCardStats = {
     unclaimed: number;
     pollenAwarded: number;
     pollenClaimed: number;
+    pollenAwardedPercent: number;
 };
 
 export type QuestCatalogItem = QuestCard & { stats: QuestCardStats };
@@ -40,6 +42,7 @@ const questCardStatsSchema = z.object({
     unclaimed: z.number(),
     pollenAwarded: z.number(),
     pollenClaimed: z.number(),
+    pollenAwardedPercent: z.number(),
 });
 
 const questCatalogItemSchema = z.object({
@@ -100,6 +103,7 @@ const EMPTY_STATS: QuestCardStats = {
     unclaimed: 0,
     pollenAwarded: 0,
     pollenClaimed: 0,
+    pollenAwardedPercent: 0,
 };
 
 async function buildQuestCatalog(
@@ -113,12 +117,20 @@ async function buildQuestCatalog(
         listQuestCards(ctx),
         getRewardLedgerStats(env),
     ]);
+    const totalPollenAwarded = [...ledger.values()].reduce(
+        (total, stat) => total + stat.pollenAwarded,
+        0,
+    );
 
     const quests = [...cards]
         .sort((a, b) => a.title.localeCompare(b.title))
         .map((card) => {
             const stat = ledger.get(card.id);
             if (!stat) return { ...card, stats: EMPTY_STATS };
+            const pollenAwardedPercent =
+                totalPollenAwarded > 0
+                    ? (stat.pollenAwarded / totalPollenAwarded) * 100
+                    : 0;
             return {
                 ...card,
                 stats: {
@@ -127,6 +139,7 @@ async function buildQuestCatalog(
                     unclaimed: stat.unclaimed,
                     pollenAwarded: stat.pollenAwarded,
                     pollenClaimed: stat.pollenClaimed,
+                    pollenAwardedPercent,
                 },
             };
         });

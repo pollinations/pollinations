@@ -12,9 +12,9 @@ import type {
     QuestEvaluationContext,
 } from "../services/quests/types.ts";
 
-// Bumped to v12: catalog cards now carry a `stats` block, so v11 entries
-// (stat-less) must not be served.
-const CACHE_KEY = "quests:catalog:v12";
+// Bumped to v13: GitHub issue bounties are catalogued from the gh_* mirror
+// again, so v12 entries that hid them must not be served.
+const CACHE_KEY = "quests:catalog:v13";
 const CACHE_TTL = 60;
 
 // Per-quest reward-ledger stats shown on the catalog card. Read from rewards:
@@ -49,6 +49,7 @@ const questCatalogItemSchema = z.object({
     category: z.enum(QUEST_CATEGORIES),
     availability: z.enum(["available", "completed"]),
     rewardAmount: z.number().nullable(),
+    balanceBucket: z.enum(["tier", "pack"]),
     url: z.string().nullable(),
     stats: questCardStatsSchema,
 });

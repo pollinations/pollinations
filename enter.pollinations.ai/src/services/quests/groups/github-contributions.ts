@@ -161,20 +161,22 @@ async function loadQuestIssues(
         .map((row) => {
             const body = row.body ?? "";
             const completedByPrNumber = closerByIssue.get(row.number) ?? null;
+            const state: DerivedQuestIssue["state"] =
+                completedByPrNumber !== null || row.state === "closed"
+                    ? "completed"
+                    : "available";
             return {
                 issueNumber: row.number,
                 title: row.title,
                 description: extractDescription(body),
                 url: row.url,
                 rewardAmount: parseReward(body),
-                state:
-                    completedByPrNumber !== null || row.state === "closed"
-                        ? "completed"
-                        : "available",
+                state,
                 assigneeGithubId: row.assigneeGithubId,
                 completedByPrNumber,
             };
-        });
+        })
+        .filter((issue) => issue.rewardAmount !== null);
 }
 
 // Availability is a two-state BOARD concept: "available" = an open bounty
@@ -207,14 +209,12 @@ function toIssueQuestDefinition(issue: DerivedQuestIssue): QuestDefinition {
 }
 
 export async function listQuestCards(
-    _ctx: QuestEvaluationContext,
+    ctx: QuestEvaluationContext,
 ): Promise<QuestCard[]> {
-    // TEMP: GitHub issue ("github:issue:*") quests are hidden from the catalog
-    // while the bounty flow is finalized. Re-enable by restoring the
-    // loadQuestIssues(...) spread below (and the `ctx` param).
+    const issues = await loadQuestIssues(ctx.db);
     return [
         questToCard(firstMergedPrQuest),
-        // ...issues.map((issue) => questToCard(toIssueQuestDefinition(issue))),
+        ...issues.map((issue) => questToCard(toIssueQuestDefinition(issue))),
     ];
 }
 

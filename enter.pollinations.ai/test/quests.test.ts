@@ -121,8 +121,8 @@ async function getOnlyUser() {
     return user;
 }
 
-test("GET /api/quests/catalog returns product quests while issue cards are hidden", async () => {
-    await env.KV.delete("quests:catalog:v12");
+test("GET /api/quests/catalog returns product quests and issue bounty cards", async () => {
+    await env.KV.delete("quests:catalog:v13");
     const staticCardCount = await countStaticQuestCards();
     const db = drizzle(env.DB, { schema });
     await seedQuestIssue(db, {
@@ -159,6 +159,7 @@ test("GET /api/quests/catalog returns product quests while issue cards are hidde
             category: string;
             availability: string;
             rewardAmount: number | null;
+            balanceBucket: string;
             url: string | null;
             stats: {
                 earned: number;
@@ -170,9 +171,9 @@ test("GET /api/quests/catalog returns product quests while issue cards are hidde
         }[];
     };
 
-    // GitHub issue cards are currently hidden from the public catalog while the
-    // bounty flow is finalized, even when mirrored issues exist.
-    expect(payload.quests).toHaveLength(staticCardCount);
+    // Valid POLLEN-QUEST issues are dynamic quest cards. Malformed reward
+    // bodies are ignored because a bounty without a reward amount cannot pay.
+    expect(payload.quests).toHaveLength(staticCardCount + 2);
     // Every card carries a stats block; with no rewards recorded it's all zero.
     expect(
         payload.quests.find((quest) => quest.id === "onboarding:first_api_key")
@@ -190,6 +191,7 @@ test("GET /api/quests/catalog returns product quests while issue cards are hidde
         category: "setup",
         availability: "available",
         rewardAmount: 1,
+        balanceBucket: "tier",
         url: null,
     });
     expect(
@@ -198,6 +200,7 @@ test("GET /api/quests/catalog returns product quests while issue cards are hidde
         category: "setup",
         availability: "available",
         rewardAmount: 1,
+        balanceBucket: "tier",
         url: null,
     });
     expect(
@@ -206,6 +209,7 @@ test("GET /api/quests/catalog returns product quests while issue cards are hidde
         category: "grow",
         availability: "available",
         rewardAmount: 5,
+        balanceBucket: "tier",
         url: null,
     });
     expect(
@@ -216,6 +220,7 @@ test("GET /api/quests/catalog returns product quests while issue cards are hidde
         category: "grow",
         availability: "available",
         rewardAmount: 50,
+        balanceBucket: "tier",
         url: null,
     });
     expect(
@@ -226,6 +231,7 @@ test("GET /api/quests/catalog returns product quests while issue cards are hidde
         category: "grow",
         availability: "available",
         rewardAmount: 3,
+        balanceBucket: "tier",
         url: null,
     });
     expect(
@@ -236,6 +242,7 @@ test("GET /api/quests/catalog returns product quests while issue cards are hidde
         category: "grow",
         availability: "available",
         rewardAmount: 2,
+        balanceBucket: "tier",
         url: null,
     });
     expect(
@@ -244,10 +251,33 @@ test("GET /api/quests/catalog returns product quests while issue cards are hidde
         category: "contribute",
         availability: "available",
         rewardAmount: 5,
+        balanceBucket: "tier",
         url: null,
     });
     expect(
-        payload.quests.some((quest) => quest.id.startsWith("github:issue:")),
+        payload.quests.find((quest) => quest.id === "github:issue:321"),
+    ).toMatchObject({
+        title: "Add a demo app",
+        description: "Build a focused demo.",
+        category: "contribute",
+        availability: "available",
+        rewardAmount: 15,
+        balanceBucket: "tier",
+        url: "https://github.com/pollinations/pollinations/issues/321",
+    });
+    expect(
+        payload.quests.find((quest) => quest.id === "github:issue:322"),
+    ).toMatchObject({
+        title: "Fix a model config",
+        description: "Wire the missing config.",
+        category: "contribute",
+        availability: "completed",
+        rewardAmount: 20,
+        balanceBucket: "tier",
+        url: "https://github.com/pollinations/pollinations/issues/322",
+    });
+    expect(
+        payload.quests.some((quest) => quest.id === "github:issue:323"),
     ).toBe(false);
     // The uniform card shape dropped the old board-state fields.
     for (const quest of payload.quests) {
@@ -259,7 +289,7 @@ test("GET /api/quests/catalog returns product quests while issue cards are hidde
 });
 
 test("GET /api/quests/catalog returns product quests with no mirrored GitHub issues", async () => {
-    await env.KV.delete("quests:catalog:v12");
+    await env.KV.delete("quests:catalog:v13");
     const staticCardCount = await countStaticQuestCards();
 
     const response = await SELF.fetch(
@@ -373,7 +403,7 @@ test("recordReward dedups on idempotency key and claimReward credits once", asyn
 test("catalog stats aggregate earned/claimed from the rewards ledger", async ({
     sessionToken: _sessionToken,
 }) => {
-    await env.KV.delete("quests:catalog:v12");
+    await env.KV.delete("quests:catalog:v13");
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
     const questId = "github:first_merged_pr";

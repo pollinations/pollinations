@@ -737,153 +737,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "github_quest_issues": {
-      "name": "github_quest_issues",
-      "columns": {
-        "issue_number": {
-          "name": "issue_number",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "quest_id": {
-          "name": "quest_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "title": {
-          "name": "title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "url": {
-          "name": "url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "reward_amount": {
-          "name": "reward_amount",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "balance_bucket": {
-          "name": "balance_bucket",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "state": {
-          "name": "state",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "assignee_github_id": {
-          "name": "assignee_github_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "assignee_login": {
-          "name": "assignee_login",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "assignees_json": {
-          "name": "assignees_json",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "completed_by_pr_number": {
-          "name": "completed_by_pr_number",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "completed_at": {
-          "name": "completed_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "github_created_at": {
-          "name": "github_created_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "github_updated_at": {
-          "name": "github_updated_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
-        }
-      },
-      "indexes": {
-        "idx_github_quest_issues_quest_id": {
-          "name": "idx_github_quest_issues_quest_id",
-          "columns": [
-            "quest_id"
-          ],
-          "isUnique": false
-        },
-        "idx_github_quest_issues_state": {
-          "name": "idx_github_quest_issues_state",
-          "columns": [
-            "state"
-          ],
-          "isUnique": false
-        },
-        "idx_github_quest_issues_assignee_github_id": {
-          "name": "idx_github_quest_issues_assignee_github_id",
-          "columns": [
-            "assignee_github_id"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "reward_grants": {
-      "name": "reward_grants",
+    "rewards": {
+      "name": "rewards",
       "columns": {
         "id": {
           "name": "id",
@@ -906,13 +761,6 @@
           "notNull": true,
           "autoincrement": false
         },
-        "source": {
-          "name": "source",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
         "quest_id": {
           "name": "quest_id",
           "type": "text",
@@ -920,8 +768,22 @@
           "notNull": false,
           "autoincrement": false
         },
-        "pollen_credited": {
-          "name": "pollen_credited",
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "url": {
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "pollen_amount": {
+          "name": "pollen_amount",
           "type": "real",
           "primaryKey": false,
           "notNull": true,
@@ -934,56 +796,42 @@
           "notNull": true,
           "autoincrement": false
         },
-        "source_ref": {
-          "name": "source_ref",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "metadata_json": {
-          "name": "metadata_json",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
+        "earned_at": {
+          "name": "earned_at",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
           "default": "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
+        },
+        "claimed_at": {
+          "name": "claimed_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {
-        "reward_grants_idempotency_key_unique": {
-          "name": "reward_grants_idempotency_key_unique",
+        "rewards_idempotency_key_unique": {
+          "name": "rewards_idempotency_key_unique",
           "columns": [
             "idempotency_key"
           ],
           "isUnique": true
         },
-        "idx_reward_grants_user_id": {
-          "name": "idx_reward_grants_user_id",
+        "idx_rewards_user_id": {
+          "name": "idx_rewards_user_id",
           "columns": [
             "user_id"
-          ],
-          "isUnique": false
-        },
-        "idx_reward_grants_source": {
-          "name": "idx_reward_grants_source",
-          "columns": [
-            "source"
           ],
           "isUnique": false
         }
       },
       "foreignKeys": {
-        "reward_grants_user_id_user_id_fk": {
-          "name": "reward_grants_user_id_user_id_fk",
-          "tableFrom": "reward_grants",
+        "rewards_user_id_user_id_fk": {
+          "name": "rewards_user_id_user_id_fk",
+          "tableFrom": "rewards",
           "tableTo": "user",
           "columnsFrom": [
             "user_id"

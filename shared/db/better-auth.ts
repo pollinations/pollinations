@@ -239,8 +239,8 @@ export const stripeCheckoutCredits = sqliteTable("stripe_checkout_credits", {
 // user claims it, and only claiming credits the user's balance. Everything that
 // can earn pollen is modelled as a reward, so there is no reward-kind
 // discriminator — `questId` already names what was earned. The old
-// GitHub-shaped quest_payout_credits table was backfilled into here and dropped
-// by an earlier migration.
+// GitHub-shaped quest_payout_credits table is backfilled into here and dropped
+// by the rewards migration.
 export const rewards = sqliteTable("rewards", {
   id: text("id").primaryKey(),
   // Idempotency guard. Encodes the quest's completion scope, e.g.

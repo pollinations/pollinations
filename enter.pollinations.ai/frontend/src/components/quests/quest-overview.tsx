@@ -301,20 +301,25 @@ function SectionFooter({ category }: { category: CategoryMeta }) {
 }
 
 // Leading marker for a quest row, by lifecycle stage:
-//   open      → tier-green tile + section icon ("available — go earn this")
+//   open      → bucket-coloured tile + section icon (amber for paid, green for
+//                tier) so the row signals which pollen it pays before the chip
 //   claimable → dim dark tile + light check (just completed, reward waiting)
 //   claimed   → no tile, muted check (banked already, fully receded)
 function QuestMarker({
     icon: Icon,
     status,
+    bucket,
 }: {
     icon: IconComponent;
     status: QuestCardStatus;
+    bucket: RewardIconKind;
 }) {
     const MarkerIcon = status === "open" ? Icon : CheckIcon;
+    const openTile =
+        bucket === "paid" ? "polli-wallet-chip-paid" : "polli-wallet-chip-tier";
     const tile =
         status === "open"
-            ? "polli-wallet-chip-tier"
+            ? openTile
             : status === "claimable"
               ? "bg-ink-900/80 text-ink-100"
               : "text-theme-text-muted";
@@ -412,7 +417,11 @@ export function QuestRow({
             <div className="flex flex-col gap-3 sm:hidden">
                 <div className="flex flex-col gap-1.5">
                     <div className="flex items-center gap-4">
-                        <QuestMarker icon={icon} status={card.status} />
+                        <QuestMarker
+                            icon={icon}
+                            status={card.status}
+                            bucket={rewardIcon}
+                        />
                         <div className="min-w-0 flex-1">{title}</div>
                     </div>
                     {description && (
@@ -433,7 +442,11 @@ export function QuestRow({
                 (title + description, with the issue link at the end of the
                 description) | claim + reward. Keeps the card to two text rows. */}
             <div className="hidden items-center gap-4 sm:flex">
-                <QuestMarker icon={icon} status={card.status} />
+                <QuestMarker
+                    icon={icon}
+                    status={card.status}
+                    bucket={rewardIcon}
+                />
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <div>{title}</div>
                     {(description || issueLink) && (
@@ -658,7 +671,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                         tone="muted"
                         className="col-span-2 uppercase tracking-wide"
                     >
-                        Pollen earned
+                        Claimed pollen reward
                     </Text>
                     <TotalCard
                         value={

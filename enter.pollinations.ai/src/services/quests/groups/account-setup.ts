@@ -12,13 +12,11 @@ import {
  *   - first_api_key  -> apikey                    (one key per user)
  *   - byop_login     -> apikey.byop_client_key_id (one BYOP login per user)
  *   - first_top_up   -> stripe_checkout_credits   (one paid checkout per user)
+ *   - over_100_pollen -> stripe_checkout_credits  (>100 total paid Pollen)
  *
- * The SQL decides which users qualify and returns reward proposals. It does
- * not join rewards and does not dedup — recordReward is the idempotent write
- * path.
+ * The SQL decides which users qualify. The rewards table is the single
+ * idempotency layer, so quest code does not filter already rewarded users.
  */
-
-const MAX_REWARDS_PER_RUN = 500;
 
 type SetupQuestRow = {
     userId: string;
@@ -56,12 +54,25 @@ const firstTopUpQuest: QuestDefinition = {
     balanceBucket: "tier",
 };
 
+const overHundredPollenQuest: QuestDefinition = {
+    id: "spend:purchased_over_100_pollen",
+    title: "Purchase more than 100 Pollen",
+    description: "Buy more than 100 total [Pollen](#buy-pollen).",
+    category: "grow",
+    scope: "perUser",
+    rewardAmount: 50,
+    balanceBucket: "tier",
+};
+
 export async function listQuestCards(
     _ctx: QuestEvaluationContext,
 ): Promise<QuestCard[]> {
-    return [firstApiKeyQuest, byopLoginQuest, firstTopUpQuest].map((quest) =>
-        questToCard(quest),
-    );
+    return [
+        firstApiKeyQuest,
+        byopLoginQuest,
+        firstTopUpQuest,
+        overHundredPollenQuest,
+    ].map((quest) => questToCard(quest));
 }
 
 export async function findRewardProposals({
@@ -72,14 +83,22 @@ export async function findRewardProposals({
         SELECT apikey.user_id AS userId
         FROM apikey
         GROUP BY apikey.user_id
-        LIMIT ${MAX_REWARDS_PER_RUN}`,
+        ORDER BY apikey.user_id`,
     );
     const topUpRows = await db.all<SetupQuestRow>(
         sql`
         SELECT stripe_checkout_credits.user_id AS userId
         FROM stripe_checkout_credits
         GROUP BY stripe_checkout_credits.user_id
-        LIMIT ${MAX_REWARDS_PER_RUN}`,
+        ORDER BY stripe_checkout_credits.user_id`,
+    );
+    const overHundredPollenRows = await db.all<SetupQuestRow>(
+        sql`
+        SELECT stripe_checkout_credits.user_id AS userId
+        FROM stripe_checkout_credits
+        GROUP BY stripe_checkout_credits.user_id
+        HAVING SUM(stripe_checkout_credits.pollen_credited) > 100
+        ORDER BY stripe_checkout_credits.user_id`,
     );
     const byopLoginRows = await db.all<SetupQuestRow>(
         sql`
@@ -87,7 +106,7 @@ export async function findRewardProposals({
         FROM apikey
         WHERE apikey.byop_client_key_id IS NOT NULL
         GROUP BY apikey.user_id
-        LIMIT ${MAX_REWARDS_PER_RUN}`,
+        ORDER BY apikey.user_id`,
     );
 
     return [
@@ -101,6 +120,10 @@ export async function findRewardProposals({
         })),
         ...topUpRows.map((row) => ({
             quest: firstTopUpQuest,
+            userId: row.userId,
+        })),
+        ...overHundredPollenRows.map((row) => ({
+            quest: overHundredPollenQuest,
             userId: row.userId,
         })),
     ];

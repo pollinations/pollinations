@@ -25,7 +25,7 @@ describe("docs routes", () => {
         vi.restoreAllMocks();
     });
 
-    it("serves a gen-owned OpenAPI schema and merges public account paths only", async () => {
+    it("serves a gen-owned OpenAPI schema and merges public Enter paths only", async () => {
         const ctx = createExecutionContext();
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(
@@ -50,7 +50,11 @@ describe("docs routes", () => {
         const enterSchema = {
             openapi: "3.1.0",
             info: { title: "Enter", version: "0.0.0" },
-            tags: [{ name: "👤 Account" }, { name: "Customer" }],
+            tags: [
+                { name: "👤 Account" },
+                { name: "Quests" },
+                { name: "Customer" },
+            ],
             components: {
                 schemas: {
                     EnterOnly: { type: "object" },
@@ -59,6 +63,8 @@ describe("docs routes", () => {
             paths: {
                 "/account/key": { get: { tags: ["Account"] } },
                 "/api/account/profile": { get: { tags: ["👤 Account"] } },
+                "/api/quests/catalog": { get: { tags: ["Quests"] } },
+                "/api/quests/private": { get: { tags: ["Quests"] } },
                 "/api/customer/portal": { get: { tags: ["Customer"] } },
                 "/api-keys": { get: { tags: ["Customer"] } },
                 "/generate/text/{prompt}": { get: { tags: ["Old"] } },
@@ -91,8 +97,11 @@ describe("docs routes", () => {
         expect(schema.paths["/image/{prompt}"]).toBeDefined();
         expect(schema.paths["/account/key"]).toBeDefined();
         expect(schema.paths["/account/profile"]).toBeDefined();
+        expect(schema.paths["/quests/catalog"]).toBeDefined();
         expect(schema.paths["/api/account/key"]).toBeUndefined();
         expect(schema.paths["/api/account/profile"]).toBeUndefined();
+        expect(schema.paths["/api/quests/catalog"]).toBeUndefined();
+        expect(schema.paths["/api/quests/private"]).toBeUndefined();
         expect(schema.paths["/api/customer/portal"]).toBeUndefined();
         expect(schema.paths["/api-keys"]).toBeUndefined();
         expect(schema.paths["/generate/text/{prompt}"]).toBeUndefined();
@@ -104,6 +113,7 @@ describe("docs routes", () => {
         expect(schema.tags.map((tag) => tag.name)).toContain(
             "📦 Media Storage",
         );
+        expect(schema.tags.map((tag) => tag.name)).toContain("Quests");
         expect(schema.tags.map((tag) => tag.name)).not.toContain("Customer");
         expect(schema.components.schemas.EnterOnly).toBeDefined();
         expect(schema.components.schemas.MediaOnly).toBeDefined();
@@ -128,6 +138,11 @@ describe("docs routes", () => {
             schema.paths["/account/key"] as Record<string, unknown>
         )?.get as Record<string, unknown> | undefined;
         expect(accountKeyGet?.["x-codeSamples"]).toBeDefined();
+
+        const questsCatalogGet = (
+            schema.paths["/quests/catalog"] as Record<string, unknown>
+        )?.get as Record<string, unknown> | undefined;
+        expect(questsCatalogGet?.security).toEqual([]);
     });
 
     it("does not add noindex to docs responses at the worker boundary", async () => {

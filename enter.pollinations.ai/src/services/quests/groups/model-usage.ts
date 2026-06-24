@@ -11,8 +11,8 @@ import {
  * Model-usage quests: one per modality (text / image / audio). Completion comes
  * from the quest_model_modalities Tinybird pipe, which returns one row per user
  * with a boolean flag per modality (a billed, successful generation in that
- * modality, lifetime). The pipe decides who qualifies; recordReward is the
- * idempotent write path.
+ * modality, lifetime). The pipe decides who qualifies; the rewards table is
+ * the idempotent write path.
  */
 
 const MAX_REWARDS_PER_RUN = 1000;

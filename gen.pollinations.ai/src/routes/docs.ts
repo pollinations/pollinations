@@ -350,6 +350,7 @@ function generationDocumentation(): OpenApiSchema {
                 name: "Resources",
                 tags: [
                     "🤖 Models",
+                    "Quests",
                     "📦 Media Storage",
                     "👤 Account",
                     "🛡️ Safety",
@@ -414,6 +415,11 @@ function generationDocumentation(): OpenApiSchema {
             {
                 name: "🤖 Models",
                 description: stripLeadingHeading(MODELS_DOCS),
+            },
+            {
+                name: "Quests",
+                description:
+                    "Public quest catalog, including available rewards and aggregate claim stats.",
             },
             {
                 name: "📦 Media Storage",
@@ -510,11 +516,17 @@ function isPublicMediaRead(method: string, path: string): boolean {
 function transformEnterSchema(schema: OpenApiSchema): OpenApiSchema {
     const paths: OpenApiSchema = {};
     for (const [path, value] of Object.entries(asRecord(schema.paths))) {
-        if (!isPublicAccountPath(path)) continue;
-        const publicPath = path.replace(/^\/api\/account(?=\/|$)/, "/account");
-        paths[publicPath] = value;
+        if (!isPublicEnterPath(path)) continue;
+        const publicPath = publicEnterPath(path);
+        paths[publicPath] = isPublicQuestCatalogPath(path)
+            ? markOperationsPublic(value)
+            : value;
     }
     return { ...schema, tags: tagsForPaths(schema, paths), paths };
+}
+
+function isPublicEnterPath(path: string): boolean {
+    return isPublicAccountPath(path) || isPublicQuestCatalogPath(path);
 }
 
 function isPublicAccountPath(path: string): boolean {
@@ -524,6 +536,50 @@ function isPublicAccountPath(path: string): boolean {
         path === "/api/account" ||
         path.startsWith("/api/account/")
     );
+}
+
+function isPublicQuestCatalogPath(path: string): boolean {
+    return path === "/quests/catalog" || path === "/api/quests/catalog";
+}
+
+function publicEnterPath(path: string): string {
+    return path
+        .replace(/^\/api\/account(?=\/|$)/, "/account")
+        .replace(/^\/api\/quests(?=\/|$)/, "/quests");
+}
+
+const OPENAPI_METHODS = new Set([
+    "get",
+    "put",
+    "post",
+    "delete",
+    "options",
+    "head",
+    "patch",
+    "trace",
+]);
+
+function markOperationsPublic(pathItem: unknown): unknown {
+    if (!pathItem || typeof pathItem !== "object" || Array.isArray(pathItem)) {
+        return pathItem;
+    }
+
+    const next = { ...(pathItem as Record<string, unknown>) };
+    for (const [method, operation] of Object.entries(next)) {
+        if (!OPENAPI_METHODS.has(method.toLowerCase())) continue;
+        if (
+            !operation ||
+            typeof operation !== "object" ||
+            Array.isArray(operation)
+        ) {
+            continue;
+        }
+        next[method] = {
+            ...(operation as Record<string, unknown>),
+            security: [],
+        };
+    }
+    return next;
 }
 
 function tagsForPaths(

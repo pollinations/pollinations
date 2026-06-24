@@ -25,14 +25,14 @@ const QUEST_LABEL = "POLLEN-QUEST";
 // GitHub Actions parser so already-parsed bounties keep their reward amount.
 const QUEST_REWARD_REGEX = /###\s*Reward\s*\n+\s*([0-9]+(?:\.[0-9]+)?)/i;
 
-const BUILD_CATEGORY = "build" as const;
+const CONTRIBUTION_CATEGORY = "contribute" as const;
 
 const firstMergedPrQuest: QuestDefinition = {
     id: "github:first_merged_pr",
     title: "Get your first PR merged",
     description:
         "Merge a pull request into the Pollinations [repo](https://github.com/pollinations/pollinations).",
-    category: BUILD_CATEGORY,
+    category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
     rewardAmount: 5,
     balanceBucket: "tier",
@@ -174,7 +174,7 @@ function toIssueQuestDefinition(issue: DerivedQuestIssue): QuestDefinition {
         id: `github:issue:${issue.issueNumber}`,
         title: issue.title,
         description: issue.description,
-        category: BUILD_CATEGORY,
+        category: CONTRIBUTION_CATEGORY,
         scope: "once",
         rewardAmount: issue.rewardAmount ?? 0,
         balanceBucket: "tier",

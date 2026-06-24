@@ -112,7 +112,7 @@ const establishedGitHubAccountQuest: QuestDefinition = {
     title: "Connect an established GitHub account",
     description:
         "Link a GitHub account that has existed for at least one year. This unlocks automatically after you connect GitHub.",
-    category: "build",
+    category: "contribute",
     scope: "perUser",
     rewardAmount: 6,
     balanceBucket: "tier",

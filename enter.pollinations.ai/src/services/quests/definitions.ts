@@ -13,7 +13,7 @@ export const QUEST_CATEGORIES = [
  * Lane a quest renders in:
  *   - "setup"      -> account setup and onboarding tasks
  *   - "grow"       -> product usage, billing, and app-growth tasks
- *   - "build"      -> developer standing and GitHub profile milestones
+ *   - "build"      -> reserved for future build milestones
  *   - "contribute" -> open-source issue bounties and contribution tasks
  *   - "community"  -> low-friction community actions around the project
  *   - "easteregg"  -> hidden special rewards shown only after earning

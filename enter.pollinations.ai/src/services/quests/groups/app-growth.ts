@@ -95,7 +95,7 @@ async function loadByopExternalAppOwners({
             ON app_key.id = user_key.byop_client_key_id
         WHERE user_key.user_id != app_key.user_id
         GROUP BY app_key.user_id
-        LIMIT ${MAX_REWARDS_PER_RUN}`,
+        ORDER BY app_key.user_id`,
     );
 
     return uniqueUsers(rows);

@@ -31,6 +31,13 @@ export interface RecordRewardResult {
     rewardId: string | null;
 }
 
+export interface RecordRewardsResult {
+    /** Number of newly created pending rewards. */
+    recorded: number;
+    /** IDs of newly created pending rewards. Duplicate inputs are omitted. */
+    rewardIds: string[];
+}
+
 export interface ClaimRewardResult {
     claimed: boolean;
     reward: {
@@ -55,44 +62,65 @@ function assertRewardAmount(amount: number): void {
     }
 }
 
+// D1 binds every value as a parameter and caps a statement at 100 bound
+// variables. Each reward row binds 8 columns, so 12 rows (96 params) is the
+// largest safe chunk.
+const REWARD_INSERT_CHUNK = 12;
+
 /**
- * Records an earned reward without moving pollen. The unique idempotency key
+ * Records earned rewards without moving pollen. The unique idempotency key
  * makes scanner retries safe; only claimReward() credits the user's balance.
+ */
+export async function recordRewards(
+    db: AuthDb,
+    inputs: RecordRewardInput[],
+): Promise<RecordRewardsResult> {
+    if (inputs.length === 0) return { recorded: 0, rewardIds: [] };
+
+    const rows = inputs.map((input) => {
+        assertRewardAmount(input.amount);
+        return {
+            id: crypto.randomUUID(),
+            idempotencyKey: input.idempotencyKey,
+            userId: input.userId,
+            questId: input.questId ?? null,
+            title: input.title,
+            url: input.url ?? null,
+            pollenAmount: input.amount,
+            balanceBucket: input.bucket,
+        };
+    });
+
+    const rewardIds: string[] = [];
+    for (let i = 0; i < rows.length; i += REWARD_INSERT_CHUNK) {
+        const chunk = rows.slice(i, i + REWARD_INSERT_CHUNK);
+        const inserted = await db
+            .insert(rewards)
+            .values(chunk)
+            .onConflictDoNothing({ target: rewards.idempotencyKey })
+            .returning({ id: rewards.id });
+        rewardIds.push(...inserted.map((row) => row.id));
+    }
+
+    return {
+        recorded: rewardIds.length,
+        rewardIds,
+    };
+}
+
+/**
+ * Single-reward convenience wrapper. Kept for direct callers that need the
+ * created reward id; scheduled reconciliation uses recordRewards().
  */
 export async function recordReward(
     db: AuthDb,
     input: RecordRewardInput,
 ): Promise<RecordRewardResult> {
-    const {
-        idempotencyKey,
-        userId,
-        amount,
-        bucket,
-        questId = null,
-        title,
-        url = null,
-    } = input;
-
-    assertRewardAmount(amount);
-
-    const inserted = await db
-        .insert(rewards)
-        .values({
-            id: crypto.randomUUID(),
-            idempotencyKey,
-            userId,
-            questId,
-            title,
-            url,
-            pollenAmount: amount,
-            balanceBucket: bucket,
-        })
-        .onConflictDoNothing({ target: rewards.idempotencyKey })
-        .returning({ id: rewards.id });
+    const result = await recordRewards(db, [input]);
 
     return {
-        recorded: inserted.length === 1,
-        rewardId: inserted[0]?.id ?? null,
+        recorded: result.recorded === 1,
+        rewardId: result.rewardIds[0] ?? null,
     };
 }
 

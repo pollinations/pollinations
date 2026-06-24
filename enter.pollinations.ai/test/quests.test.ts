@@ -167,6 +167,7 @@ test("GET /api/quests/catalog returns product quests and issue bounty cards", as
                 unclaimed: number;
                 pollenAwarded: number;
                 pollenClaimed: number;
+                pollenAwardedPercent: number;
             };
         }[];
     };
@@ -184,6 +185,7 @@ test("GET /api/quests/catalog returns product quests and issue bounty cards", as
         unclaimed: 0,
         pollenAwarded: 0,
         pollenClaimed: 0,
+        pollenAwardedPercent: 0,
     });
     expect(
         payload.quests.find((quest) => quest.id === "onboarding:first_api_key"),
@@ -257,8 +259,9 @@ test("GET /api/quests/catalog returns product quests and issue bounty cards", as
     expect(
         payload.quests.find((quest) => quest.id === "github:issue:321"),
     ).toMatchObject({
-        title: "Add a demo app",
-        description: "Build a focused demo.",
+        title: "Ship bounty #321: Add a demo app",
+        description:
+            "Help close this POLLEN-QUEST issue. Build a focused demo.",
         category: "contribute",
         availability: "available",
         rewardAmount: 15,
@@ -268,8 +271,9 @@ test("GET /api/quests/catalog returns product quests and issue bounty cards", as
     expect(
         payload.quests.find((quest) => quest.id === "github:issue:322"),
     ).toMatchObject({
-        title: "Fix a model config",
-        description: "Wire the missing config.",
+        title: "Ship bounty #322: Fix a model config",
+        description:
+            "Help close this POLLEN-QUEST issue. Wire the missing config.",
         category: "contribute",
         availability: "completed",
         rewardAmount: 20,
@@ -444,6 +448,7 @@ test("catalog stats aggregate earned/claimed from the rewards ledger", async ({
             unclaimed: 1,
             pollenAwarded: 10,
             pollenClaimed: 5,
+            pollenAwardedPercent: 100,
         },
     );
 });

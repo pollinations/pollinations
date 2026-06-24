@@ -92,7 +92,7 @@ const AUTO_TOP_UP_TOOLTIP_CONTENT = (
             </li>
             <li>
                 <span className="font-semibold text-theme-text-strong">
-                    Tier pollen is ignored
+                    Quest Pollen is ignored
                 </span>{" "}
                 for this trigger
             </li>

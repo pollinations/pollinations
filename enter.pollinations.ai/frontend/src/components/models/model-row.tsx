@@ -46,8 +46,8 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
 
     const genPerPollen = calculatePerPollen(model);
     const balanceLabel = showPaidOnly
-        ? "Paid balance only"
-        : "Tier or Paid balance";
+        ? "Paid Pollen only"
+        : "Quest or Paid Pollen";
     const perPollenTooltip =
         genPerPollen === "—"
             ? balanceLabel

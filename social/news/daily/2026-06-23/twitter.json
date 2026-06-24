@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-06-23",
+  "period_start": "2026-06-23",
+  "period_end": "2026-06-23",
+  "generated_at": "2026-06-24T07:07:47.585940+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-23/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped stable audio 3 today. swapped out 2.5 and flattened the generation pricing so you don't need a spreadsheet to predict costs. also added inception mercury to the text roster. fixed some mobile ui too, because eventually you have to look at it on a phone."
+}

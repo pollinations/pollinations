@@ -165,7 +165,7 @@ test("catalog stats aggregate earned/claimed from the rewards ledger", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v17");
+    await env.KV.delete("quests:catalog:v18");
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
     const questId = "merged_pr";
@@ -191,22 +191,30 @@ test("catalog stats aggregate earned/claimed from the rewards ledger", async ({
     if (!a.rewardId) throw new Error("Expected recorded reward id");
     await claimReward(db, { rewardId: a.rewardId, userId: user.id });
 
-    const response = await SELF.fetch("http://localhost:3000/api/quests");
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/quests/catalog",
+    );
     expect(response.status).toBe(200);
     const payload = (await response.json()) as {
-        quests: { id: string; stats: Record<string, number> }[];
+        quests: {
+            id: string;
+            state: string;
+            availability?: unknown;
+            stats: Record<string, number>;
+        }[];
     };
+    const catalogQuest = payload.quests.find((quest) => quest.id === questId);
 
-    expect(payload.quests.find((quest) => quest.id === questId)?.stats).toEqual(
-        {
-            earned: 2,
-            claimed: 1,
-            unclaimed: 1,
-            pollenAwarded: 10,
-            pollenClaimed: 5,
-            pollenAwardedPercent: 100,
-        },
-    );
+    expect(catalogQuest?.state).toBe("available");
+    expect(catalogQuest).not.toHaveProperty("availability");
+    expect(catalogQuest?.stats).toEqual({
+        earned: 2,
+        claimed: 1,
+        unclaimed: 1,
+        pollenAwarded: 10,
+        pollenClaimed: 5,
+        pollenAwardedPercent: 100,
+    });
 });
 
 test("quest check records product rewards and claim endpoint credits one", async ({
@@ -238,7 +246,7 @@ test("quest check records product rewards and claim endpoint credits one", async
     ]);
 
     const checkResponse = await SELF.fetch(
-        "http://localhost:3000/api/account/quests/check",
+        "http://localhost:3000/api/quests/check",
         {
             method: "POST",
             headers: {
@@ -267,7 +275,7 @@ test("quest check records product rewards and claim endpoint credits one", async
     expect(balance?.tierBalance).toBeCloseTo(user.tierBalance ?? 0);
 
     const response = await SELF.fetch(
-        "http://localhost:3000/api/account/quests",
+        "http://localhost:3000/api/quests/rewards",
         {
             headers: {
                 cookie: `better-auth.session_token=${sessionToken}`,
@@ -309,7 +317,7 @@ test("quest check records product rewards and claim endpoint credits one", async
 
     if (!firstApiKeyReward) throw new Error("Expected first API key reward");
     const claimResponse = await SELF.fetch(
-        `http://localhost:3000/api/account/rewards/${firstApiKeyReward.id}/claim`,
+        `http://localhost:3000/api/quests/rewards/${firstApiKeyReward.id}/claim`,
         {
             method: "POST",
             headers: {
@@ -353,7 +361,7 @@ test("claim endpoint rejects coming_soon quest rewards", async ({
     if (!reward.rewardId) throw new Error("Expected recorded reward id");
 
     const response = await SELF.fetch(
-        `http://localhost:3000/api/account/rewards/${reward.rewardId}/claim`,
+        `http://localhost:3000/api/quests/rewards/${reward.rewardId}/claim`,
         {
             method: "POST",
             headers: {
@@ -385,22 +393,16 @@ test("POST /quests/check throttles a user to once per minute", async ({
     await mocks.enable("github", "tinybird");
     await env.KV.delete(`quest-check:throttle:${user.id}`);
 
-    const first = await SELF.fetch(
-        "http://localhost:3000/api/account/quests/check",
-        {
-            method: "POST",
-            headers: { cookie: `better-auth.session_token=${sessionToken}` },
-        },
-    );
+    const first = await SELF.fetch("http://localhost:3000/api/quests/check", {
+        method: "POST",
+        headers: { cookie: `better-auth.session_token=${sessionToken}` },
+    });
     expect(first.status).toBe(200);
 
-    const second = await SELF.fetch(
-        "http://localhost:3000/api/account/quests/check",
-        {
-            method: "POST",
-            headers: { cookie: `better-auth.session_token=${sessionToken}` },
-        },
-    );
+    const second = await SELF.fetch("http://localhost:3000/api/quests/check", {
+        method: "POST",
+        headers: { cookie: `better-auth.session_token=${sessionToken}` },
+    });
     expect(second.status).toBe(429);
     expect(second.headers.get("Retry-After")).toBe("60");
     const body = (await second.json()) as { error: string };
@@ -668,7 +670,7 @@ test("github established-account quest is coming_soon and never records", async 
     mocks,
     sessionToken: _sessionToken,
 }) => {
-    // Built but launch-gated (availability "coming_soon"): even an account well
+    // Built but launch-gated (state "coming_soon"): even an account well
     // over the one-year age threshold records no reward, because the
     // quest-checker drops coming_soon proposals.
     const db = drizzle(env.DB, { schema });
@@ -696,9 +698,9 @@ test("github public repo stars quest is coming_soon and never records", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
-    // The stars quest is built but launch-gated (availability "coming_soon"), so
+    // The stars quest is built but launch-gated (state "coming_soon"), so
     // the quest-checker drops its proposal — even a user well over the 20-star
-    // threshold records no reward. Flip availability back to "available" in
+    // threshold records no reward. Flip state back to "available" in
     // github-profile.ts to re-enable granting.
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
@@ -965,7 +967,7 @@ test("account quest history includes pending and claimed GitHub quest rewards", 
     });
 
     const response = await SELF.fetch(
-        "http://localhost:3000/api/account/quests",
+        "http://localhost:3000/api/quests/rewards",
         {
             headers: {
                 cookie: `better-auth.session_token=${sessionToken}`,
@@ -1011,7 +1013,7 @@ test("account quest history requires account usage permission for API keys", asy
     apiKey,
 }) => {
     const response = await SELF.fetch(
-        "http://localhost:3000/api/account/quests",
+        "http://localhost:3000/api/quests/rewards",
         {
             headers: {
                 authorization: `Bearer ${apiKey}`,

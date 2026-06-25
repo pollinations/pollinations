@@ -32,7 +32,7 @@ const firstByopExternalUserQuest: QuestDefinition = {
     rewardAmount: 10,
     balanceBucket: "tier",
     // Built but not launched — hidden from the UI, not grantable.
-    availability: "coming_soon",
+    state: "coming_soon",
 };
 
 const firstPaidSpendInAppQuest: QuestDefinition = {
@@ -45,7 +45,7 @@ const firstPaidSpendInAppQuest: QuestDefinition = {
     rewardAmount: 20,
     balanceBucket: "tier",
     // Built but not launched — hidden from the UI, not grantable.
-    availability: "coming_soon",
+    state: "coming_soon",
 };
 
 const appListedQuest: QuestDefinition = {
@@ -59,7 +59,7 @@ const appListedQuest: QuestDefinition = {
     balanceBucket: "tier",
     url: "https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml",
     // Built but not launched — hidden from the UI, not grantable.
-    availability: "coming_soon",
+    state: "coming_soon",
 };
 
 const QUESTS = [

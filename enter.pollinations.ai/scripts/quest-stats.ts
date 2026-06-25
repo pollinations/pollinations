@@ -4,7 +4,7 @@
  * the public quest catalog, which the worker computes from the rewards ledger.
  *
  * All computation lives in enter (src/routes/quests.ts -> quest-stats.ts); this
- * script just fetches /api/quests and tabulates the `stats` block, so it
+ * script just fetches /api/quests/catalog and tabulates the `stats` block, so it
  * never duplicates the reward-accounting logic.
  *
  * Usage:
@@ -26,7 +26,7 @@ type QuestCatalogItem = {
     title: string;
     category: string;
     rewardAmount: number | null;
-    availability: string;
+    state: string;
     stats: QuestCardStats;
 };
 
@@ -49,7 +49,7 @@ function pad(value: string | number, width: number, right = false): string {
 
 async function main(): Promise<void> {
     const { base, json } = parseArgs(process.argv.slice(2));
-    const url = `${base}/api/quests`;
+    const url = `${base}/api/quests/catalog`;
 
     const res = await fetch(url);
     if (!res.ok) {

@@ -1,7 +1,7 @@
 import type { RecordRewardInput } from "@shared/billing/rewards.ts";
 import type * as schema from "@shared/db/better-auth.ts";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import type { QuestAvailability, QuestDefinition } from "./definitions.ts";
+import type { QuestDefinition, QuestState } from "./definitions.ts";
 
 export type QuestDb = DrizzleD1Database<typeof schema>;
 
@@ -48,18 +48,15 @@ export function toReward(proposal: RewardProposal): RecordRewardInput {
 }
 
 export function questToCard(quest: QuestDefinition): QuestCard {
-    const { scope: _scope, url, availability, ...definition } = quest;
+    const { scope: _scope, url, state, ...definition } = quest;
     return {
         ...definition,
-        availability: availability ?? "available",
+        state: state ?? "available",
         url: url ?? null,
     };
 }
 
-export type QuestCard = Omit<
-    QuestDefinition,
-    "url" | "scope" | "availability"
-> & {
-    availability: QuestAvailability;
+export type QuestCard = Omit<QuestDefinition, "url" | "scope" | "state"> & {
+    state: QuestState;
     url: string | null;
 };

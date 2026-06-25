@@ -3,16 +3,13 @@ import {
     type ApiKeyType,
     createApiKeyForUser,
 } from "@shared/auth/api-key-creation.ts";
-import { claimReward } from "@shared/billing/rewards.ts";
-import * as schema from "@shared/db/better-auth.ts";
 import {
     apikey as apikeyTable,
-    rewards as rewardsTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { getTierCadence, tierNames } from "@shared/tier-config.ts";
-import { and, desc, eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -21,8 +18,6 @@ import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
-import { checkQuestsForUser } from "../services/quest-checker.ts";
-import { findQuestCardByIdBestEffort } from "../services/quests/index.ts";
 import {
     fetchTinybirdRows,
     requireTinybirdReadToken,
@@ -49,9 +44,6 @@ const USAGE_CHUNK_DAYS = 30;
 const MAX_USAGE_EXPORT_ROWS = 50_000;
 
 const SECONDS_PER_DAY = 86400;
-// Per-user throttle for POST /quests/check — a check fans out a GitHub fetch +
-// Tinybird pipes, so cap it to once per minute to stop rapid re-clicks.
-const QUEST_CHECK_THROTTLE_SECONDS = 60;
 const USAGE_MIN_DATE = "2026-01-01";
 const PERIOD_GRANULARITIES = ["day", "week", "month"] as const;
 type PeriodGranularity = (typeof PERIOD_GRANULARITIES)[number];
@@ -113,22 +105,6 @@ function requireKeysPermission(apiKey?: {
             message: "API key does not have 'account:keys' permission",
         });
     }
-}
-
-function requireUsagePermission(apiKey?: {
-    permissions?: Record<string, string[]>;
-}): void {
-    if (apiKey && !apiKey.permissions?.account?.includes("usage")) {
-        throw new HTTPException(403, {
-            message: "API key does not have 'account:usage' permission",
-        });
-    }
-}
-
-function formatRewardTimestamp(value: Date | number | string): string {
-    return value instanceof Date
-        ? value.toISOString()
-        : new Date(value).toISOString();
 }
 
 // Schema for creating an API key via the API
@@ -790,35 +766,6 @@ const usageResponseSchema = z.object({
     count: z.number().describe("Number of records returned"),
 });
 
-const accountRewardSchema = z.object({
-    id: z.string(),
-    questId: z.string().nullable(),
-    title: z.string(),
-    pollenAmount: z.number(),
-    balanceBucket: z.string(),
-    earnedAt: z.string(),
-    claimedAt: z.string().nullable(),
-});
-
-const accountQuestResponseSchema = z.object({
-    totalClaimedPollen: z.number(),
-    totalClaimablePollen: z.number(),
-    rewards: z.array(accountRewardSchema),
-});
-
-const questCheckResponseSchema = z.object({
-    success: z.boolean(),
-    checked: z.number(),
-    recorded: z.number(),
-    rewardIds: z.array(z.string()),
-});
-
-const claimRewardResponseSchema = z.object({
-    claimed: z.boolean(),
-    newBalance: z.number().nullable(),
-    reward: accountRewardSchema,
-});
-
 /**
  * Account routes - profile, balance and usage endpoints.
  * Supports both session cookies and API keys with permission checks.
@@ -1339,227 +1286,6 @@ export const accountRoutes = new Hono<Env>()
                 log.error("Error fetching earnings: {error}", { error });
                 return c.json({ error: "Failed to fetch earnings data" }, 500);
             }
-        },
-    )
-    .post(
-        "/quests/check",
-        describeRoute({
-            tags: ["👤 Account"],
-            summary: "Check Quest Rewards",
-            description:
-                "Checks the authenticated dashboard user's quest status and records any newly earned pending rewards. Session authentication is required.",
-            responses: {
-                200: {
-                    description: "Quest check result",
-                    content: {
-                        "application/json": {
-                            schema: resolver(questCheckResponseSchema),
-                        },
-                    },
-                },
-                401: { description: "Unauthorized" },
-                403: { description: "API keys cannot check quest rewards" },
-                429: {
-                    description: "Rate limited - one check per 60 seconds",
-                },
-            },
-        }),
-        async (c) => {
-            await c.var.auth.requireAuthorization({
-                message: "Authentication required to check quest rewards",
-            });
-            if (c.var.auth.apiKey) {
-                throw new HTTPException(403, {
-                    message: "Quest checks require a dashboard session",
-                });
-            }
-
-            const user = c.var.auth.requireUser();
-
-            // Per-user throttle: a check fans out a GitHub fetch + Tinybird
-            // pipes, so gate it to once per 60s to stop rapid re-clicks from
-            // burning GitHub rate-limit budget and Tinybird vCPU. KV key
-            // auto-expires, so the window is self-cleaning.
-            const throttleKey = `quest-check:throttle:${user.id}`;
-            if (await c.env.KV.get(throttleKey)) {
-                return c.json(
-                    {
-                        error: "rate_limited",
-                        message:
-                            "Quest checks are limited to once per minute. Try again shortly.",
-                    },
-                    429,
-                    { "Retry-After": String(QUEST_CHECK_THROTTLE_SECONDS) },
-                );
-            }
-            await c.env.KV.put(throttleKey, "1", {
-                expirationTtl: QUEST_CHECK_THROTTLE_SECONDS,
-            });
-
-            const result = await checkQuestsForUser(c.env, user.id);
-            return c.json(result);
-        },
-    )
-    .get(
-        "/quests",
-        describeRoute({
-            tags: ["👤 Account"],
-            summary: "Get Quest Rewards",
-            description:
-                "Returns earned quest rewards for the authenticated account, including claim state. Requires `account:usage` permission when using API keys.",
-            responses: {
-                200: {
-                    description: "Quest rewards",
-                    content: {
-                        "application/json": {
-                            schema: resolver(accountQuestResponseSchema),
-                        },
-                    },
-                },
-                401: { description: "Unauthorized" },
-                403: {
-                    description:
-                        "Permission denied - API key missing `account:usage` permission",
-                },
-            },
-        }),
-        async (c) => {
-            await c.var.auth.requireAuthorization({
-                message: "Authentication required to view quest rewards",
-            });
-            const user = c.var.auth.requireUser();
-            requireUsagePermission(c.var.auth.apiKey);
-
-            const db = drizzle(c.env.DB);
-            const rewardRows = await db
-                .select({
-                    id: rewardsTable.id,
-                    questId: rewardsTable.questId,
-                    title: rewardsTable.title,
-                    pollenAmount: rewardsTable.pollenAmount,
-                    balanceBucket: rewardsTable.balanceBucket,
-                    earnedAt: rewardsTable.earnedAt,
-                    claimedAt: rewardsTable.claimedAt,
-                })
-                .from(rewardsTable)
-                .where(eq(rewardsTable.userId, user.id))
-                .orderBy(desc(rewardsTable.earnedAt));
-
-            const rewards = rewardRows.map((row) => ({
-                id: row.id,
-                questId: row.questId,
-                title: row.title,
-                pollenAmount: row.pollenAmount,
-                balanceBucket: row.balanceBucket,
-                earnedAt: formatRewardTimestamp(row.earnedAt),
-                claimedAt: row.claimedAt
-                    ? formatRewardTimestamp(row.claimedAt)
-                    : null,
-            }));
-
-            const totalClaimedPollen = rewards.reduce(
-                (total, reward) =>
-                    total + (reward.claimedAt ? reward.pollenAmount : 0),
-                0,
-            );
-            const totalClaimablePollen = rewards.reduce(
-                (total, reward) =>
-                    total + (reward.claimedAt ? 0 : reward.pollenAmount),
-                0,
-            );
-
-            return c.json({
-                totalClaimedPollen,
-                totalClaimablePollen,
-                rewards,
-            });
-        },
-    )
-    .post(
-        "/rewards/:rewardId/claim",
-        describeRoute({
-            tags: ["👤 Account"],
-            summary: "Claim Quest Reward",
-            description:
-                "Claims one pending quest reward and credits the authenticated user's balance. Session authentication is required.",
-            responses: {
-                200: {
-                    description: "Reward claim result",
-                    content: {
-                        "application/json": {
-                            schema: resolver(claimRewardResponseSchema),
-                        },
-                    },
-                },
-                401: { description: "Unauthorized" },
-                403: { description: "API keys cannot claim rewards" },
-                404: { description: "Reward not found" },
-                409: { description: "Reward cannot be claimed yet" },
-            },
-        }),
-        async (c) => {
-            await c.var.auth.requireAuthorization({
-                message: "Authentication required to claim quest rewards",
-            });
-            if (c.var.auth.apiKey) {
-                throw new HTTPException(403, {
-                    message: "Reward claims require a dashboard session",
-                });
-            }
-
-            const user = c.var.auth.requireUser();
-            const rewardId = c.req.param("rewardId");
-            const db = drizzle(c.env.DB, { schema });
-            const rewardRows = await db
-                .select({ questId: rewardsTable.questId })
-                .from(rewardsTable)
-                .where(
-                    and(
-                        eq(rewardsTable.id, rewardId),
-                        eq(rewardsTable.userId, user.id),
-                    ),
-                )
-                .limit(1);
-            const reward = rewardRows[0];
-            if (!reward) {
-                throw new HTTPException(404, {
-                    message: "Reward not found",
-                });
-            }
-            if (reward.questId) {
-                const card = await findQuestCardByIdBestEffort(
-                    { db, env: c.env },
-                    reward.questId,
-                );
-                if (card?.availability === "coming_soon") {
-                    throw new HTTPException(409, {
-                        message: "This quest is coming soon",
-                    });
-                }
-            }
-
-            const result = await claimReward(db, { rewardId, userId: user.id });
-            if (!result.reward) {
-                throw new HTTPException(404, {
-                    message: "Reward not found",
-                });
-            }
-
-            return c.json({
-                claimed: result.claimed,
-                newBalance: result.newBalance,
-                reward: {
-                    id: result.reward.id,
-                    questId: result.reward.questId,
-                    title: result.reward.title,
-                    pollenAmount: result.reward.pollenAmount,
-                    balanceBucket: result.reward.balanceBucket,
-                    earnedAt: formatRewardTimestamp(result.reward.earnedAt),
-                    claimedAt: result.reward.claimedAt
-                        ? formatRewardTimestamp(result.reward.claimedAt)
-                        : null,
-                },
-            });
         },
     )
     .get(

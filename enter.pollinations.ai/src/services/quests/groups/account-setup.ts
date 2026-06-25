@@ -45,7 +45,7 @@ const byopLoginQuest: QuestDefinition = {
     rewardAmount: 0.25,
     balanceBucket: "tier",
     // Built but not launched — hidden from the UI, not grantable.
-    availability: "coming_soon",
+    state: "coming_soon",
 };
 
 const sixMonthAccountQuest: QuestDefinition = {
@@ -57,7 +57,7 @@ const sixMonthAccountQuest: QuestDefinition = {
     rewardAmount: 1,
     balanceBucket: "tier",
     // Built but not launched — hidden from the UI, not grantable.
-    availability: "coming_soon",
+    state: "coming_soon",
 };
 
 const firstTopUpQuest: QuestDefinition = {

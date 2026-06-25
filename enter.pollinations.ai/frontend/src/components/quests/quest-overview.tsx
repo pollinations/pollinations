@@ -175,8 +175,8 @@ async function loadQuestData(): Promise<QuestData> {
     // logged-out visitor still gets the full catalog (rendered all-open as a
     // preview), so a 401 on rewards is expected, not an error.
     const [catalogResponse, rewardsResponse] = await Promise.all([
-        apiClient.quests.$get(),
-        apiClient.account.quests.$get(),
+        apiClient.quests.catalog.$get(),
+        apiClient.quests.rewards.$get(),
     ]);
     if (!catalogResponse.ok) {
         throw new Error(`Failed to load quests (${catalogResponse.status})`);
@@ -529,7 +529,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
             // warm) or any failure leaves the already-loaded quests intact and
             // does NOT surface a red error — the cached data is still valid.
             try {
-                const response = await apiClient.account.quests.check.$post();
+                const response = await apiClient.quests.check.$post();
                 if (cancelled) return;
                 if (response.ok) {
                     const refreshed = await loadQuestData();
@@ -563,7 +563,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         }));
 
         try {
-            const response = await apiClient.account.rewards[
+            const response = await apiClient.quests.rewards[
                 ":rewardId"
             ].claim.$post({
                 param: { rewardId },
@@ -627,7 +627,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         for (const quest of state.catalog) {
             const reward = rewardByKey.get(quest.id);
             const earned = rewardedCatalogIds.has(quest.id);
-            const comingSoon = quest.availability === "coming_soon";
+            const comingSoon = quest.state === "coming_soon";
             // Visibility rule:
             //  - "coming_soon" always shows (at the bottom of its lane, in the
             //    receded style with a clock + "Coming soon" — see QuestRow).
@@ -635,8 +635,8 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
             //  - Logged in: show "available" OR anything YOU earned.
             if (!comingSoon) {
                 if (previewAll) {
-                    if (quest.availability !== "available") continue;
-                } else if (quest.availability !== "available" && !earned) {
+                    if (quest.state !== "available") continue;
+                } else if (quest.state !== "available" && !earned) {
                     continue;
                 }
             }

@@ -31,14 +31,14 @@ export type QuestCategory = (typeof QUEST_CATEGORIES)[number];
 export type QuestScope = "perUser" | "once";
 
 /**
- * Whether a quest sits on the open board. A BOARD flag, not a per-user status:
+ * Quest board state. A BOARD flag, not a per-user status:
  *   - "available"   = open to everyone.
  *   - "completed"   = off the board (shown only to a user who earned it).
  *   - "coming_soon" = on the board but NOT yet live: shown with a "coming soon"
  *                     marker and never grants a reward (inert — the quest-checker
  *                     drops its proposals). Use for built-but-unlaunched quests.
  */
-export type QuestAvailability = "available" | "completed" | "coming_soon";
+export type QuestState = "available" | "completed" | "coming_soon";
 
 export type QuestDefinition = {
     id: string;
@@ -56,7 +56,7 @@ export type QuestDefinition = {
      */
     url?: string;
     /**
-     * Whether this quest is on the open board:
+     * Quest board state:
      *   - "available" (default) — an open quest everyone sees and can complete.
      *   - "completed"           — off the open board; the frontend shows it ONLY
      *                             to a user who has earned it (joined via their
@@ -70,5 +70,5 @@ export type QuestDefinition = {
      * The catalog always emits the card so a reward can join to it; the frontend
      * applies the show/hide rule.
      */
-    availability?: QuestAvailability;
+    state?: QuestState;
 };

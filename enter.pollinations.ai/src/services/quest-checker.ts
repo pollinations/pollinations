@@ -57,7 +57,7 @@ export async function checkQuestsForUser(
     // grantable, so drop their proposals before recording any reward.
     const proposals = sourceResults
         .flatMap((entry) => entry.proposals)
-        .filter((proposal) => proposal.quest.availability !== "coming_soon");
+        .filter((proposal) => proposal.quest.state !== "coming_soon");
     const rewardInputs = proposals.map(toReward);
     log.info(
         "QUEST_CHECK_PROPOSALS: userId={userId} count={count} proposals={proposals}",

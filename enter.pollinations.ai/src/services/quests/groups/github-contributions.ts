@@ -3,7 +3,7 @@ import {
     githubAppCredentialsFromEnv,
 } from "@shared/github/app-auth.ts";
 import { graphql } from "@shared/github/client.ts";
-import type { QuestAvailability, QuestDefinition } from "../definitions.ts";
+import type { QuestDefinition, QuestState } from "../definitions.ts";
 import {
     type QuestCard,
     type QuestEvaluationContext,
@@ -194,13 +194,13 @@ async function loadQuestIssues(token: string): Promise<DerivedQuestIssue[]> {
         .filter((issue) => issue.rewardAmount !== null);
 }
 
-// Availability is a two-state BOARD concept: "available" = an open bounty
+// State is a two-state BOARD concept: "available" = an open bounty
 // anyone can take; "completed" = off the open board. Only a genuinely open
 // issue (not completed, nobody assigned) is shown; the moment it's claimed
 // (someone's working it) or completed it leaves the board — it reappears only
 // for the user who earned it, via their reward (see the frontend). So both
 // claimed and completed map to "completed" (off-board).
-function issueAvailability(issue: DerivedQuestIssue): QuestAvailability {
+function issueState(issue: DerivedQuestIssue): QuestState {
     const open = issue.state === "available" && issue.assigneeGithubId === null;
     return open ? "available" : "completed";
 }
@@ -219,7 +219,7 @@ function toIssueQuestDefinition(issue: DerivedQuestIssue): QuestDefinition {
         rewardAmount: issue.rewardAmount ?? 0,
         balanceBucket: "tier",
         url: issue.url,
-        availability: issueAvailability(issue),
+        state: issueState(issue),
     };
 }
 

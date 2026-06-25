@@ -21,10 +21,10 @@ const elixpoInternQuest: QuestDefinition = {
     category: "easteregg",
     scope: "perUser",
     rewardAmount: 100,
-    // Per-person easter egg: off the open board (availability "completed"), so
+    // Per-person easter egg: off the open board (state "completed"), so
     // the frontend surfaces it only to the account that earned it — it renders
     // as a normal completed card in its own "Easter eggs" lane.
-    availability: "completed",
+    state: "completed",
     balanceBucket: "tier",
 };
 

@@ -194,7 +194,7 @@ const establishedGitHubAccountQuest: QuestDefinition = {
     rewardAmount: 2,
     balanceBucket: "tier",
     // Built but not launched — hidden from the UI, not grantable.
-    availability: "coming_soon",
+    state: "coming_soon",
 };
 
 const publicRepoStarsQuest: QuestDefinition = {
@@ -207,7 +207,7 @@ const publicRepoStarsQuest: QuestDefinition = {
     rewardAmount: 5,
     balanceBucket: "tier",
     // Built but not launched — hidden from the UI, not grantable.
-    availability: "coming_soon",
+    state: "coming_soon",
 };
 
 const QUESTS = [establishedGitHubAccountQuest, publicRepoStarsQuest];

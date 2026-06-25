@@ -108,7 +108,7 @@ test("GET /api/quests/catalog returns product quests and issue bounty cards", as
     mocks,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v15");
+    await env.KV.delete("quests:catalog:v17");
     const staticCardCount = await countStaticQuestCards();
     seedQuestIssue(mocks.github.state, {
         issueNumber: 321,
@@ -244,6 +244,16 @@ test("GET /api/quests/catalog returns product quests and issue bounty cards", as
         url: null,
     });
     expect(
+        payload.quests.find((quest) => quest.id === "grow:app_listed"),
+    ).toMatchObject({
+        title: "Get your app listed on Pollinations",
+        category: "grow",
+        availability: "available",
+        rewardAmount: 5,
+        balanceBucket: "tier",
+        url: "https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml",
+    });
+    expect(
         payload.quests.find((quest) => quest.id === "github:first_merged_pr"),
     ).toMatchObject({
         category: "contribute",
@@ -292,7 +302,7 @@ test("GET /api/quests/catalog returns product quests with no GitHub issue bounti
     mocks,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v15");
+    await env.KV.delete("quests:catalog:v17");
     const staticCardCount = await countStaticQuestCards();
 
     const response = await SELF.fetch(
@@ -408,7 +418,7 @@ test("catalog stats aggregate earned/claimed from the rewards ledger", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v15");
+    await env.KV.delete("quests:catalog:v17");
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
     const questId = "github:first_merged_pr";
@@ -865,6 +875,9 @@ test("quest check records app growth rewards for the app owner", async ({
                 reward.questId === "setup:byop_login" &&
                 reward.userId === user.id,
         ),
+    ).toBe(false);
+    expect(
+        ownerRewards.some((reward) => reward.questId === "grow:app_listed"),
     ).toBe(false);
 
     await checkQuestsForUser(env, "byop-external-user");

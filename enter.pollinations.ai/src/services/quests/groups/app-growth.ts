@@ -44,7 +44,23 @@ const firstPaidSpendInAppQuest: QuestDefinition = {
     balanceBucket: "tier",
 };
 
-const QUESTS = [firstByopExternalUserQuest, firstPaidSpendInAppQuest];
+const appListedQuest: QuestDefinition = {
+    id: "grow:app_listed",
+    title: "Get your app listed on Pollinations",
+    description:
+        "Submit your app for review, get it approved, and have it listed in the [Pollinations app directory](https://pollinations.ai/apps).",
+    category: "grow",
+    scope: "perUser",
+    rewardAmount: 5,
+    balanceBucket: "tier",
+    url: "https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml",
+};
+
+const QUESTS = [
+    firstByopExternalUserQuest,
+    firstPaidSpendInAppQuest,
+    appListedQuest,
+];
 
 export async function listQuestCards(
     _ctx: QuestEvaluationContext,

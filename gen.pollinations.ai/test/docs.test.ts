@@ -125,14 +125,17 @@ describe("docs routes", () => {
         expect(schema.paths["/api-keys"]).toBeUndefined();
         expect(schema.paths["/generate/text/{prompt}"]).toBeUndefined();
         expect(schema.paths["/{hash}"]).toBeDefined();
-        // BYOP, CLI, MCP are surfaced as tags in the Integrations group.
-        expect(schema.tags.map((tag) => tag.name)).toContain("🌸 BYOP");
-        expect(schema.tags.map((tag) => tag.name)).toContain("🖥 CLI");
-        expect(schema.tags.map((tag) => tag.name)).toContain("🔌 MCP Server");
-        expect(schema.tags.map((tag) => tag.name)).toContain(
-            "📦 Media Storage",
-        );
-        expect(schema.tags.map((tag) => tag.name)).toContain("✨ Quests");
+        // BYOP, CLI, MCP are surfaced as plain tags in the Integrations group;
+        // the drawer icons are presentation, not part of the OpenAPI names.
+        expect(schema.tags.map((tag) => tag.name)).toContain("BYOP");
+        expect(schema.tags.map((tag) => tag.name)).toContain("CLI");
+        expect(schema.tags.map((tag) => tag.name)).toContain("MCP Server");
+        expect(schema.tags.map((tag) => tag.name)).toContain("Quests");
+        expect(schema.tags.map((tag) => tag.name)).toContain("Media Storage");
+        expect(schema.tags.map((tag) => tag.name)).toContain("Account");
+        expect(schema.tags.map((tag) => tag.name)).not.toContain("🌸 BYOP");
+        expect(schema.tags.map((tag) => tag.name)).not.toContain("👤 Account");
+        expect(schema.tags.map((tag) => tag.name)).not.toContain("✨ Quests");
         expect(schema.tags.map((tag) => tag.name)).not.toContain("Customer");
         expect(schema.components.schemas.EnterOnly).toBeDefined();
         expect(schema.components.schemas.MediaOnly).toBeDefined();
@@ -192,8 +195,20 @@ describe("docs routes", () => {
 
         expect(response.status).toBe(200);
         const html = await response.text();
+        expect(html).toContain('<html class="dark"');
         expect(html).toContain(".scalar-app .markdown table");
         expect(html).toContain("overflow-x: auto");
+        expect(html).toContain("--polli-color-bg-active");
+        expect(html).toContain("var(--polli-color-bg-active)");
+        expect(html).toContain("var(--polli-color-text-strong)");
+        expect(html).toContain(
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAPoAAAD6AG1e1Jr",
+        );
+        expect(html).toContain("ph-doc-nav-item");
+        expect(html).toContain("ph-doc-icon");
+        expect(html).toContain("ph-doc-nav-icon");
+        expect(html).toContain("normalizeScalarNavLabel");
+        expect(html).toContain("Open|Close");
         expect(html).toContain(
             'property="og:title" content="Docs | pollinations.ai"',
         );
@@ -233,7 +248,10 @@ describe("docs routes", () => {
         );
         expect(indexRes.status).toBe(200);
         const indexHtml = await indexRes.text();
+        expect(indexHtml).toContain('<html lang="en" class="dark">');
         expect(indexHtml).toContain("guide-card");
+        expect(indexHtml).toContain("ph-doc-icon");
+        expect(indexHtml).toContain("var(--polli-color-surface-opaque)");
         expect(indexHtml).toContain("/docs/guides/byop");
         expect(indexHtml).toContain("/docs/guides/cli");
         expect(indexHtml).toContain("/docs/guides/mcp");

@@ -425,6 +425,21 @@ function pollinationsHeaderHtml(scalarHosted = false): string {
 </script>`;
 }
 
+function withHtmlClass(html: string, className: string): string {
+    return html.replace(/<html([^>]*)>/i, (match, attrs: string) => {
+        const classMatch = attrs.match(/\sclass=(["'])(.*?)\1/i);
+        if (!classMatch) return `<html${attrs} class="${className}">`;
+
+        const classes = classMatch[2].split(/\s+/).filter(Boolean);
+        if (classes.includes(className)) return match;
+
+        return match.replace(
+            classMatch[0],
+            ` class=${classMatch[1]}${[...classes, className].join(" ")}${classMatch[1]}`,
+        );
+    });
+}
+
 function generationDocumentation(): OpenApiSchema {
     return {
         servers: [{ url: "https://gen.pollinations.ai" }],
@@ -920,7 +935,7 @@ const GUIDES_BY_ID = new Map(GUIDES.map((g) => [g.id, g]));
 
 function guidesPage(c: Context<Env>, body: string): string {
     return `<!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -1009,7 +1024,10 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             })(c, next);
             if (!response) return;
             const html = await response.text();
-            const htmlWithMeta = injectDocsSocialHead(html, c);
+            const htmlWithMeta = withHtmlClass(
+                injectDocsSocialHead(html, c),
+                "dark",
+            );
             const bodyOpenMatch = htmlWithMeta.match(/<body[^>]*>/);
             if (!bodyOpenMatch || bodyOpenMatch.index === undefined) {
                 return c.html(htmlWithMeta);

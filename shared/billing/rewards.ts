@@ -82,6 +82,10 @@ export async function recordRewards(
             url: input.url ?? null,
             pollenAmount: input.amount,
             balanceBucket: input.bucket,
+            // Set earnedAt explicitly so drizzle stores it as Unix seconds
+            // (mode:"timestamp"), matching claimedAt and every other timestamp
+            // column. Relying on the column default emits milliseconds instead.
+            earnedAt: new Date(),
         };
     });
 

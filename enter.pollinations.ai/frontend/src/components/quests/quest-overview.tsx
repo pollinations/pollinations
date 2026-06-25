@@ -881,7 +881,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                                     bucketStats.paid.claimed +
                                     bucketStats.tier.claimed
                                 }
-                                pollenLabel="Claimed reward"
+                                pollenLabel="Claimed pollen"
                                 pollenCards={(["tier", "paid"] as const)
                                     .filter((k) => usedBuckets[k])
                                     .map((kind) => ({

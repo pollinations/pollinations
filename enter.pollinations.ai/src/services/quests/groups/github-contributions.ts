@@ -42,7 +42,7 @@ const firstMergedPrQuest: QuestDefinition = {
 
 const solveGithubIssueQuest: QuestDefinition = {
     id: "solve_github_issue",
-    title: "Solve issue in GitHub",
+    title: "Solve a 'Quest' issue in GitHub",
     description: "A demi description",
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",

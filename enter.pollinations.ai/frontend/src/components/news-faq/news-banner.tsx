@@ -40,12 +40,12 @@ const PINNED_NEWS: Highlight[] = [
         date: "2026-06-22",
         dateLabel: "Starting Jun 22",
         emoji: "🎯",
-        title: "Tiers & quests are changing",
-        description: "Bigger updates to tiers and how you earn Pollen.",
+        title: "Tiers are going away",
+        description: "Pollen rewards now come from Quests instead.",
         details: [
-            "Spore, Seed, Flower & Nectar: the hourly Pollen refill becomes a one-time Pollen bonus.",
-            "Earn Pollen from quests — new quest dashboard, more ways to earn.",
-            "Another round of price cuts.",
+            "No more tiers — everyone earns Pollen the same way, through Quests.",
+            "Your balance and access stay the same; what was Tier Pollen is now Quest Pollen.",
+            "Earn more Pollen from the quest dashboard — new ways to earn.",
         ],
     },
 ];

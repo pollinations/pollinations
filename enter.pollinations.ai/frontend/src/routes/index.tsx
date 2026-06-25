@@ -29,8 +29,8 @@ import {
     BuyPollenPanel,
     PollenBalance,
     SidebarWallet,
-    TierPanel,
 } from "../components/pollen";
+import { QuestOverview } from "../components/quests";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 
 const ACTIVITY_MIN_DATE = new Date("2026-01-01T00:00:00.000Z");
@@ -143,7 +143,7 @@ function RouteComponent() {
         setIsSigningOut(true);
         try {
             await authClient.signOut();
-            window.location.href = "/";
+            window.location.href = "/sign-in#news-faq";
         } catch (error) {
             console.error("Sign out failed:", error);
         } finally {
@@ -272,11 +272,6 @@ function RouteComponent() {
                     <Section title="Top-up" framed id="buy-pollen">
                         <BuyPollenPanel initialBillingState={billingState} />
                     </Section>
-                    {tierData && (
-                        <Section title="Tier" framed>
-                            <TierPanel {...tierData} />
-                        </Section>
-                    )}
                 </div>
             )}
             {activePage === "activity" && (
@@ -301,6 +296,7 @@ function RouteComponent() {
                     />
                 </div>
             )}
+            {activePage === "quests" && <QuestOverview />}
             {activePage === "keys" && (
                 <ApiKeyList
                     apiKeys={apiKeys}

@@ -41,12 +41,6 @@ const TABLES: TableConfig[] = [
                 FROM apikey`,
     },
     {
-        datasource: "d1_rewards",
-        query: `SELECT id, idempotency_key, user_id, quest_id, title,
-                       pollen_amount, balance_bucket, earned_at, claimed_at
-                FROM rewards`,
-    },
-    {
         datasource: "d1_session",
         query: `SELECT id, expires_at, created_at, updated_at, user_agent, user_id,
                        impersonated_by

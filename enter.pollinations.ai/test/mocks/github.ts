@@ -42,6 +42,7 @@ export type MockGithubState = {
         size?: number;
         stargazers_count?: number;
     }>;
+    requests: Array<{ method: string; path: string; url: string }>;
     failQuestSearch: boolean;
 };
 
@@ -58,6 +59,7 @@ export function createMockGithub(): MockAPI<MockGithubState> {
         questIssues: [],
         mergedPullRequests: [],
         repos: [],
+        requests: [],
         failQuestSearch: false,
     };
 
@@ -70,8 +72,18 @@ export function createMockGithub(): MockAPI<MockGithubState> {
         }
         return await next();
     });
+    const trackRequest = createMiddleware(async (c, next) => {
+        const url = new URL(c.req.url);
+        state.requests.push({
+            method: c.req.method,
+            path: url.pathname,
+            url: c.req.url,
+        });
+        return await next();
+    });
 
     const githubAPI = new Hono()
+        .use("*", trackRequest)
         .get("/search/issues", (c) => {
             if (state.failQuestSearch) {
                 return c.json({ message: "rate limited" }, 403);
@@ -161,7 +173,9 @@ export function createMockGithub(): MockAPI<MockGithubState> {
         "api.github.com": createHonoMockHandler(githubAPI),
     };
 
-    const reset = () => {};
+    const reset = () => {
+        state.requests = [];
+    };
 
     return {
         state,

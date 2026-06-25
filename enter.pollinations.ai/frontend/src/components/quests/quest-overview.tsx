@@ -671,6 +671,23 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         return byCat;
     }, [state.catalog, rewardedCatalogIds, rewardByKey, previewAll]);
 
+    // Logged-out totals for the summary cards: across every available quest
+    // shown (coming_soon excluded), how many there are and the pollen on offer.
+    // Mirrors the logged-in "completed quests / claimed pollen" pair, but the
+    // numbers are the whole catalog's potential rather than this user's history.
+    const previewTotals = useMemo(() => {
+        let count = 0;
+        let pollen = 0;
+        for (const cards of Object.values(sections)) {
+            for (const card of cards) {
+                if (card.comingSoon || card.reward == null) continue;
+                count += 1;
+                pollen += card.reward;
+            }
+        }
+        return { count, pollen };
+    }, [sections]);
+
     // Which buckets the registry or earned rewards actually use — drives
     // whether the matching summary card is rendered. If no quest/reward touches
     // paid pollen, showing an always-zero paid card is just noise.
@@ -897,6 +914,41 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                         )}
                     </>
                 )}
+                {/* Logged-out summary: the same two-card pair, but the numbers are
+                    catalog totals (how many quests are live, how much pollen they
+                    pay) instead of this visitor's completed/claimed history. */}
+                {state.anonymous && (
+                    <div className="grid grid-cols-2 gap-x-2 gap-y-2 sm:grid-cols-2">
+                        <Text
+                            as="span"
+                            size="sm"
+                            weight="bold"
+                            tone="muted"
+                            className="col-span-1 uppercase tracking-wide sm:row-start-1"
+                        >
+                            Available quests
+                        </Text>
+                        <Text
+                            as="span"
+                            size="sm"
+                            weight="bold"
+                            tone="muted"
+                            className="col-span-1 uppercase tracking-wide sm:col-start-2 sm:row-start-1"
+                        >
+                            Available pollen
+                        </Text>
+                        <div className="col-span-1 sm:col-start-1 sm:row-start-2">
+                            <TotalCard value={previewTotals.count} />
+                        </div>
+                        <div className="col-span-1 sm:col-start-2 sm:row-start-2">
+                            <BucketCard
+                                kind="tier"
+                                value={formatRewardAmount(previewTotals.pollen)}
+                                showBadge
+                            />
+                        </div>
+                    </div>
+                )}
                 {/* Multi-line footer styled like the keys panel's footer —
                     text-[13px] + leading-snug keeps the two lines visually
                     tight. Always shown — explains quests to logged-out
@@ -944,18 +996,12 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                 {CATEGORIES.map((category) => {
                     const cards = sections[category.key];
                     if (cards.length === 0) return null;
-                    // The chip counts only real (grantable) quests — coming_soon
-                    // rows are excluded. Logged in: per-user progress (done /
-                    // total). Logged out: no per-user state, so show the total
-                    // pollen up for grabs across the quests with a real value.
+                    // The progress chip counts only real (grantable) quests —
+                    // coming_soon rows are excluded from both done and total.
                     const liveCards = cards.filter((card) => !card.comingSoon);
                     const done = liveCards.filter(
                         (card) => card.status !== "open",
                     ).length;
-                    const totalReward = liveCards.reduce(
-                        (sum, card) => sum + (card.reward ?? 0),
-                        0,
-                    );
                     return (
                         <Section
                             key={category.key}
@@ -966,16 +1012,9 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                                 <Chip
                                     intent="neutral"
                                     size="sm"
-                                    className="gap-1 tabular-nums"
+                                    className="tabular-nums"
                                 >
-                                    {previewAll ? (
-                                        <>
-                                            <SproutIcon className="h-3.5 w-3.5 shrink-0" />
-                                            {formatRewardAmount(totalReward)}
-                                        </>
-                                    ) : (
-                                        `${done} / ${liveCards.length}`
-                                    )}
+                                    {done} / {liveCards.length}
                                 </Chip>
                             }
                         >

@@ -72,6 +72,11 @@ const APPS = {
                 "Pollinations dashboard for AI generation APIs. Create API keys, track usage, monitor Pollen, and connect apps across image, text, video, and audio.",
         },
     },
+    gen: {
+        outDir: "gen.pollinations.ai/public",
+        og: true,
+        maskable: true,
+    },
     "model-monitor": {
         outDir: "apps/model-monitor/public",
         og: true,
@@ -137,7 +142,7 @@ function manifestJson(cfg, brandColor, contrastColor) {
         theme_color: brandColor,
         background_color: contrastColor,
         display: "standalone",
-        start_url: "/",
+        start_url: cfg.manifest.start_url ?? "/",
     };
 }
 
@@ -181,8 +186,8 @@ async function generate(name) {
         await write(file, await renderSolidIcon(svg, size, solid));
     }
 
-    // Maskable PWA icon: washed field + extra safe-zone margin (manifest apps only).
-    if (cfg.manifest) {
+    // Maskable PWA icon: washed field + extra safe-zone margin.
+    if (cfg.manifest || cfg.maskable) {
         await write(
             "icon-maskable-512.png",
             await renderSolidIcon(svg, 512, { ...solid, fraction: 0.6 }),

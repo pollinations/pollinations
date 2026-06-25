@@ -12,16 +12,17 @@ import {
 const log = getLogger(["enter", "quests", "model-usage"]);
 
 /**
- * Model-usage quests: one per modality (text / image / audio). Completion comes
- * from the quest_model_modalities Tinybird pipe, which returns the current
- * user's boolean flags per modality (a billed, successful generation in that
- * modality within the populated recent window). The pipe decides whether the
- * user qualifies; the rewards table is the idempotent write path.
+ * Model-usage quests: one per modality (text / image / audio / video).
+ * Completion comes from the quest_model_modalities Tinybird pipe, which returns
+ * the current user's boolean flags per modality (a billed, successful
+ * generation in that modality within the populated recent window). The pipe
+ * decides whether the user qualifies; the rewards table is the idempotent write
+ * path.
  */
 
 const useTextModelQuest: QuestDefinition = {
     id: "grow:use_text_model",
-    title: "Run a text model",
+    title: "Use a text model",
     description:
         "Choose any text model from [Models](#models) and make one successful billed text request.",
     category: "setup",
@@ -32,7 +33,7 @@ const useTextModelQuest: QuestDefinition = {
 
 const useImageModelQuest: QuestDefinition = {
     id: "grow:use_image_model",
-    title: "Generate with an image model",
+    title: "Use an image model",
     description:
         "Choose any image model from [Models](#models) and make one successful billed image request.",
     category: "setup",
@@ -43,7 +44,7 @@ const useImageModelQuest: QuestDefinition = {
 
 const useAudioModelQuest: QuestDefinition = {
     id: "grow:use_audio_model",
-    title: "Create with an audio model",
+    title: "Use an audio model",
     description:
         "Choose any audio model from [Models](#models) and make one successful billed audio request.",
     category: "setup",
@@ -52,7 +53,23 @@ const useAudioModelQuest: QuestDefinition = {
     balanceBucket: "tier",
 };
 
-const QUESTS = [useTextModelQuest, useImageModelQuest, useAudioModelQuest];
+const useVideoModelQuest: QuestDefinition = {
+    id: "grow:use_video_model",
+    title: "Use a video model",
+    description:
+        "Choose any video model from [Models](#models) and make one successful billed video request.",
+    category: "setup",
+    scope: "perUser",
+    rewardAmount: 0.5,
+    balanceBucket: "tier",
+};
+
+const QUESTS = [
+    useTextModelQuest,
+    useImageModelQuest,
+    useAudioModelQuest,
+    useVideoModelQuest,
+];
 
 // One row per user from quest_model_modalities.json. Flags are 0/1 (UInt8).
 type ModalityRow = {
@@ -60,6 +77,7 @@ type ModalityRow = {
     usedText: number;
     usedImage: number;
     usedAudio: number;
+    usedVideo: number;
 };
 
 export async function listQuestCards(
@@ -97,6 +115,7 @@ export async function findRewardProposalsForUser(
                 usedText: r.usedText,
                 usedImage: r.usedImage,
                 usedAudio: r.usedAudio,
+                usedVideo: r.usedVideo,
             })),
         },
     );
@@ -111,6 +130,9 @@ export async function findRewardProposalsForUser(
         }
         if (row.usedAudio) {
             proposals.push({ quest: useAudioModelQuest, userId: row.userId });
+        }
+        if (row.usedVideo) {
+            proposals.push({ quest: useVideoModelQuest, userId: row.userId });
         }
     }
     log.info(

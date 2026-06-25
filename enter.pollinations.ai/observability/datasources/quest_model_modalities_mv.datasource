@@ -1,6 +1,6 @@
 DESCRIPTION >
     Per-user recent modality flags for the model-usage quests
-    (grow:use_text/image/audio_model). Incrementally maintained by the
+    (grow:use_text/image/audio/video_model). Incrementally maintained by the
     quest_model_modalities_populate materialization, so the quest endpoint reads
     one partial-aggregate row per user instead of scanning all of
     generation_event (which times out at prod scale). Flags are "has this user
@@ -14,7 +14,8 @@ SCHEMA >
     `user_id` String,
     `used_text` AggregateFunction(max, UInt8),
     `used_image` AggregateFunction(max, UInt8),
-    `used_audio` AggregateFunction(max, UInt8)
+    `used_audio` AggregateFunction(max, UInt8),
+    `used_video` AggregateFunction(max, UInt8)
 
 ENGINE AggregatingMergeTree
 ENGINE_SORTING_KEY user_id

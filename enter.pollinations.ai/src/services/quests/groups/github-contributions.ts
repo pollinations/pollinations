@@ -31,12 +31,12 @@ const CONTRIBUTION_CATEGORY = "contribute" as const;
 
 const firstMergedPrQuest: QuestDefinition = {
     id: "github:first_merged_pr",
-    title: "Merge your first Pollinations PR",
+    title: "Contribute to the Pollinations OSS codebase",
     description:
         "Open a pull request against the Pollinations repo and get it merged.",
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
-    rewardAmount: 20,
+    rewardAmount: 5,
     balanceBucket: "tier",
 };
 

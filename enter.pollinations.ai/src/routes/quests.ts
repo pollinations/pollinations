@@ -12,8 +12,8 @@ import type {
     QuestEvaluationContext,
 } from "../services/quests/types.ts";
 
-// Bumped to v15: the GitHub profile group gained the public-repo-stars quest.
-const CACHE_KEY = "quests:catalog:v15";
+// Bumped to v16: the account setup group gained the six-month account quest.
+const CACHE_KEY = "quests:catalog:v16";
 const CACHE_TTL = 60;
 
 // Per-quest reward-ledger stats shown on the catalog card. Read from rewards:

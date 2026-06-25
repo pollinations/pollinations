@@ -12,6 +12,7 @@ import {
  * D1 setup group: account-setup quests sourced from D1 source tables.
  *   - first_api_key  -> apikey                    (one key per user)
  *   - byop_login     -> apikey.byop_client_key_id (one BYOP login per user)
+ *   - six_month_account -> user.created_at        (registered 6+ months ago)
  *   - first_top_up   -> stripe_checkout_credits   (one paid checkout per user)
  *   - over_100_pollen -> stripe_checkout_credits  (>100 total paid Pollen)
  *
@@ -46,6 +47,17 @@ const byopLoginQuest: QuestDefinition = {
     balanceBucket: "tier",
 };
 
+const sixMonthAccountQuest: QuestDefinition = {
+    id: "community:six_month_account",
+    title: "Early Pollinations adopter",
+    description:
+        "Have a Pollinations account that was created at least six months ago. This unlocks automatically for early adopters.",
+    category: "grow",
+    scope: "perUser",
+    rewardAmount: 1,
+    balanceBucket: "tier",
+};
+
 const firstTopUpQuest: QuestDefinition = {
     id: "spend:first_top_up",
     title: "Buy your first Pollen pack",
@@ -74,6 +86,7 @@ export async function listQuestCards(
     return [
         firstApiKeyQuest,
         byopLoginQuest,
+        sixMonthAccountQuest,
         firstTopUpQuest,
         overHundredPollenQuest,
     ].map((quest) => questToCard(quest));
@@ -114,6 +127,14 @@ export async function findRewardProposalsForUser(
           AND apikey.byop_client_key_id IS NOT NULL
         LIMIT 1`,
     );
+    const sixMonthAccountRows = await db.all<SetupQuestRow>(
+        sql`
+        SELECT "user".id AS userId
+        FROM "user"
+        WHERE "user".id = ${user.id}
+          AND "user".created_at <= CAST(strftime('%s', 'now', '-6 months') AS integer)
+        LIMIT 1`,
+    );
 
     return [
         ...apiKeyRows.map((row) => ({
@@ -122,6 +143,10 @@ export async function findRewardProposalsForUser(
         })),
         ...byopLoginRows.map((row) => ({
             quest: byopLoginQuest,
+            userId: row.userId,
+        })),
+        ...sixMonthAccountRows.map((row) => ({
+            quest: sixMonthAccountQuest,
             userId: row.userId,
         })),
         ...topUpRows.map((row) => ({

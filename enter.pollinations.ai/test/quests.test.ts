@@ -191,6 +191,17 @@ test("GET /api/quests/catalog returns product quests and issue bounty cards", as
         url: null,
     });
     expect(
+        payload.quests.find(
+            (quest) => quest.id === "community:six_month_account",
+        ),
+    ).toMatchObject({
+        category: "grow",
+        availability: "available",
+        rewardAmount: 1,
+        balanceBucket: "tier",
+        url: null,
+    });
+    expect(
         payload.quests.find((quest) => quest.id === "spend:first_top_up"),
     ).toMatchObject({
         category: "grow",
@@ -690,6 +701,97 @@ test("D1 quest check only records the requested user", async ({
     expect(new Set(updatedRows.map((row) => row.userId))).toEqual(
         new Set([user.id, secondUserId]),
     );
+});
+
+test("quest check records six-month account age reward", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+    const oldDate = new Date("2025-01-01T00:00:00Z");
+
+    await db
+        .update(schema.user)
+        .set({ createdAt: oldDate, updatedAt: oldDate })
+        .where(eq(schema.user.id, user.id));
+
+    await checkQuestsForUser(env, user.id);
+
+    const rewards = await db
+        .select({
+            questId: schema.rewards.questId,
+            userId: schema.rewards.userId,
+            pollenAmount: schema.rewards.pollenAmount,
+            balanceBucket: schema.rewards.balanceBucket,
+        })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.questId, "community:six_month_account"));
+    expect(rewards).toEqual([
+        {
+            questId: "community:six_month_account",
+            userId: user.id,
+            pollenAmount: 1,
+            balanceBucket: "tier",
+        },
+    ]);
+});
+
+test("six-month account quest ignores old API keys for new accounts", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+    const oldDate = new Date("2025-01-01T00:00:00Z");
+
+    await db.insert(schema.apikey).values([
+        {
+            id: "old-publishable-app-key",
+            name: "Old Publishable App Key",
+            key: "pk_old_publishable_app",
+            prefix: "pk",
+            userId: user.id,
+            createdAt: oldDate,
+            updatedAt: oldDate,
+        },
+        {
+            id: "old-plain-secret-key",
+            name: "Old Plain Secret Key",
+            key: "sk_old_plain_secret",
+            prefix: "sk",
+            userId: user.id,
+            createdAt: oldDate,
+            updatedAt: oldDate,
+        },
+    ]);
+
+    await checkQuestsForUser(env, user.id);
+
+    const rewards = await db
+        .select({ id: schema.rewards.id })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.questId, "community:six_month_account"));
+    expect(rewards).toHaveLength(0);
+});
+
+test("six-month account quest waits until threshold", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+
+    await checkQuestsForUser(env, user.id);
+
+    const rewards = await db
+        .select({ id: schema.rewards.id })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.questId, "community:six_month_account"));
+    expect(rewards).toHaveLength(0);
 });
 
 test("quest check records app growth rewards for the app owner", async ({

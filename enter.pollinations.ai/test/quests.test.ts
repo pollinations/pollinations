@@ -1,5 +1,5 @@
 import { env, SELF } from "cloudflare:test";
-import { claimReward, recordReward } from "@shared/billing/rewards.ts";
+import { claimReward, recordRewards } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -90,10 +90,10 @@ async function getOnlyUser() {
     return user;
 }
 
-test("recordReward dedups on idempotency key and claimReward credits once", async ({
+test("recordRewards dedups on idempotency key and claimReward credits once", async ({
     sessionToken: _sessionToken,
 }) => {
-    // recordReward is the generic idempotent write: it records a key once and
+    // recordRewards is the generic idempotent write: it records a key once and
     // records distinct keys independently. claimReward is the only path that
     // credits balance, and it is also idempotent.
     const db = drizzle(env.DB, { schema });
@@ -106,34 +106,40 @@ test("recordReward dedups on idempotency key and claimReward credits once", asyn
     const firstEventKey = `quest:${questId}:user:${user.id}:event:pr-123`;
     const secondEventKey = `quest:${questId}:user:${user.id}:event:pr-124`;
 
-    const first = await recordReward(db, {
-        idempotencyKey: firstEventKey,
-        userId: user.id,
-        questId,
-        title,
-        amount: rewardAmount,
-        bucket,
-    });
-    const duplicate = await recordReward(db, {
-        idempotencyKey: firstEventKey,
-        userId: user.id,
-        questId,
-        title,
-        amount: rewardAmount,
-        bucket,
-    });
-    const secondEvent = await recordReward(db, {
-        idempotencyKey: secondEventKey,
-        userId: user.id,
-        questId,
-        title,
-        amount: rewardAmount,
-        bucket,
-    });
+    const first = await recordRewards(db, [
+        {
+            idempotencyKey: firstEventKey,
+            userId: user.id,
+            questId,
+            title,
+            amount: rewardAmount,
+            bucket,
+        },
+    ]);
+    const duplicate = await recordRewards(db, [
+        {
+            idempotencyKey: firstEventKey,
+            userId: user.id,
+            questId,
+            title,
+            amount: rewardAmount,
+            bucket,
+        },
+    ]);
+    const secondEvent = await recordRewards(db, [
+        {
+            idempotencyKey: secondEventKey,
+            userId: user.id,
+            questId,
+            title,
+            amount: rewardAmount,
+            bucket,
+        },
+    ]);
 
-    expect(first.recorded).toBe(true);
-    expect(duplicate.recorded).toBe(false);
-    expect(secondEvent.recorded).toBe(true);
+    expect(first.recorded).toBe(1);
+    expect(duplicate.recorded).toBe(0);
+    expect(secondEvent.recorded).toBe(1);
 
     const [balance] = await db
         .select({ tierBalance: schema.user.tierBalance })
@@ -141,13 +147,14 @@ test("recordReward dedups on idempotency key and claimReward credits once", asyn
         .where(eq(schema.user.id, user.id));
     expect(balance?.tierBalance).toBeCloseTo(user.tierBalance ?? 0);
 
-    if (!first.rewardId) throw new Error("Expected recorded reward id");
+    const firstRewardId = first.rewardIds[0];
+    if (!firstRewardId) throw new Error("Expected recorded reward id");
     const claimed = await claimReward(db, {
-        rewardId: first.rewardId,
+        rewardId: firstRewardId,
         userId: user.id,
     });
     const duplicateClaim = await claimReward(db, {
-        rewardId: first.rewardId,
+        rewardId: firstRewardId,
         userId: user.id,
     });
     expect(claimed.claimed).toBe(true);
@@ -174,24 +181,29 @@ test("catalog stats aggregate earned/claimed from the rewards ledger", async ({
 
     // Two earned rewards for the same quest (distinct idempotency keys), one of
     // which gets claimed. Catalog stats should report earned=2, claimed=1.
-    const a = await recordReward(db, {
-        idempotencyKey: `quest:${questId}:user:${user.id}:event:pr-1`,
-        userId: user.id,
-        questId,
-        title: "First merged PR",
-        amount: 5,
-        bucket: "tier",
-    });
-    await recordReward(db, {
-        idempotencyKey: `quest:${questId}:user:${user.id}:event:pr-2`,
-        userId: user.id,
-        questId,
-        title: "First merged PR",
-        amount: 5,
-        bucket: "tier",
-    });
-    if (!a.rewardId) throw new Error("Expected recorded reward id");
-    await claimReward(db, { rewardId: a.rewardId, userId: user.id });
+    const a = await recordRewards(db, [
+        {
+            idempotencyKey: `quest:${questId}:user:${user.id}:event:pr-1`,
+            userId: user.id,
+            questId,
+            title: "First merged PR",
+            amount: 5,
+            bucket: "tier",
+        },
+    ]);
+    await recordRewards(db, [
+        {
+            idempotencyKey: `quest:${questId}:user:${user.id}:event:pr-2`,
+            userId: user.id,
+            questId,
+            title: "First merged PR",
+            amount: 5,
+            bucket: "tier",
+        },
+    ]);
+    const rewardId = a.rewardIds[0];
+    if (!rewardId) throw new Error("Expected recorded reward id");
+    await claimReward(db, { rewardId, userId: user.id });
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -342,7 +354,6 @@ test("quest check records product rewards and claim endpoint credits one", async
     expect(checkResponse.status).toBe(200);
     const checkPayload = (await checkResponse.json()) as {
         success: boolean;
-        checked: number;
         recorded: number;
     };
     // Behavior, not exact catalog: a check records at least one reward and is

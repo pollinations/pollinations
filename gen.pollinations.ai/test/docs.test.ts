@@ -52,7 +52,7 @@ describe("docs routes", () => {
             info: { title: "Enter", version: "0.0.0" },
             tags: [
                 { name: "👤 Account" },
-                { name: "Quests" },
+                { name: "✨ Quests" },
                 { name: "Customer" },
             ],
             components: {
@@ -63,9 +63,15 @@ describe("docs routes", () => {
             paths: {
                 "/account/key": { get: { tags: ["Account"] } },
                 "/api/account/profile": { get: { tags: ["👤 Account"] } },
-                "/api/quests/catalog": { get: { tags: ["Quests"] } },
+                "/api/quests/catalog": { get: { tags: ["✨ Quests"] } },
+                "/api/quests/check": {
+                    post: { tags: ["✨ Quests"], security: [{ session: [] }] },
+                },
                 "/api/quests/rewards": {
-                    get: { tags: ["Quests"], security: [{ session: [] }] },
+                    get: { tags: ["✨ Quests"], security: [{ session: [] }] },
+                },
+                "/api/quests/rewards/{rewardId}/claim": {
+                    post: { tags: ["✨ Quests"], security: [{ session: [] }] },
                 },
                 "/api/customer/portal": { get: { tags: ["Customer"] } },
                 "/api-keys": { get: { tags: ["Customer"] } },
@@ -100,11 +106,19 @@ describe("docs routes", () => {
         expect(schema.paths["/account/key"]).toBeDefined();
         expect(schema.paths["/account/profile"]).toBeDefined();
         expect(schema.paths["/quests/catalog"]).toBeDefined();
-        expect(schema.paths["/quests/rewards"]).toBeDefined();
         expect(schema.paths["/api/account/key"]).toBeUndefined();
         expect(schema.paths["/api/account/profile"]).toBeUndefined();
         expect(schema.paths["/api/quests/catalog"]).toBeUndefined();
+        expect(schema.paths["/quests/check"]).toBeUndefined();
+        expect(schema.paths["/quests/rewards"]).toBeUndefined();
+        expect(
+            schema.paths["/quests/rewards/{rewardId}/claim"],
+        ).toBeUndefined();
+        expect(schema.paths["/api/quests/check"]).toBeUndefined();
         expect(schema.paths["/api/quests/rewards"]).toBeUndefined();
+        expect(
+            schema.paths["/api/quests/rewards/{rewardId}/claim"],
+        ).toBeUndefined();
         expect(schema.paths["/api/customer/portal"]).toBeUndefined();
         expect(schema.paths["/api-keys"]).toBeUndefined();
         expect(schema.paths["/generate/text/{prompt}"]).toBeUndefined();
@@ -116,7 +130,7 @@ describe("docs routes", () => {
         expect(schema.tags.map((tag) => tag.name)).toContain(
             "📦 Media Storage",
         );
-        expect(schema.tags.map((tag) => tag.name)).toContain("Quests");
+        expect(schema.tags.map((tag) => tag.name)).toContain("✨ Quests");
         expect(schema.tags.map((tag) => tag.name)).not.toContain("Customer");
         expect(schema.components.schemas.EnterOnly).toBeDefined();
         expect(schema.components.schemas.MediaOnly).toBeDefined();
@@ -147,11 +161,6 @@ describe("docs routes", () => {
             schema.paths["/quests/catalog"] as Record<string, unknown>
         )?.get as Record<string, unknown> | undefined;
         expect(questsCatalogGet?.security).toEqual([]);
-        // /rewards is session-gated → its security block is preserved, not voided.
-        const questsRewardsGet = (
-            schema.paths["/quests/rewards"] as Record<string, unknown>
-        )?.get as Record<string, unknown> | undefined;
-        expect(questsRewardsGet?.security).toEqual([{ session: [] }]);
     });
 
     it("does not add noindex to docs responses at the worker boundary", async () => {

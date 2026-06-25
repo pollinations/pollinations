@@ -25,12 +25,6 @@ export interface RecordRewardInput {
     url?: string | null;
 }
 
-export interface RecordRewardResult {
-    /** true if this call created a new pending reward; false if duplicate. */
-    recorded: boolean;
-    rewardId: string | null;
-}
-
 export interface RecordRewardsResult {
     /** Number of newly created pending rewards. */
     recorded: number;
@@ -105,22 +99,6 @@ export async function recordRewards(
     return {
         recorded: rewardIds.length,
         rewardIds,
-    };
-}
-
-/**
- * Single-reward convenience wrapper. Kept for direct callers that need the
- * created reward id; quest checks use recordRewards().
- */
-export async function recordReward(
-    db: AuthDb,
-    input: RecordRewardInput,
-): Promise<RecordRewardResult> {
-    const result = await recordRewards(db, [input]);
-
-    return {
-        recorded: result.recorded === 1,
-        rewardId: result.rewardIds[0] ?? null,
     };
 }
 

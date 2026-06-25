@@ -54,13 +54,14 @@ const sixMonthAccountQuest: QuestDefinition = {
     scope: "perUser",
     rewardAmount: 1,
     balanceBucket: "tier",
+    // Built but not launched — hidden from the UI, not grantable.
+    availability: "coming_soon",
 };
 
 const firstTopUpQuest: QuestDefinition = {
     id: "spend:first_top_up",
     title: "First Pollen top up",
-    description:
-        "Purchased Pollen with a credit card from [Top-up](#buy-pollen).",
+    description: "[Top up](#buy-pollen) Pollen with a credit card.",
     category: "grow",
     scope: "perUser",
     rewardAmount: 10,

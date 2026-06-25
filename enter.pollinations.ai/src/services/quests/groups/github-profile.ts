@@ -193,7 +193,7 @@ const establishedGitHubAccountQuest: QuestDefinition = {
     scope: "perUser",
     rewardAmount: 2,
     balanceBucket: "tier",
-    // Built but not launched — shown with a "coming soon" marker, not grantable.
+    // Built but not launched — hidden from the UI, not grantable.
     availability: "coming_soon",
 };
 
@@ -206,7 +206,7 @@ const publicRepoStarsQuest: QuestDefinition = {
     scope: "perUser",
     rewardAmount: 5,
     balanceBucket: "tier",
-    // Built but not launched — shown with a "coming soon" marker, not grantable.
+    // Built but not launched — hidden from the UI, not grantable.
     availability: "coming_soon",
 };
 

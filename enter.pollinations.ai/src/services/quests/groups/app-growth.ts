@@ -54,7 +54,7 @@ const appListedQuest: QuestDefinition = {
     rewardAmount: 5,
     balanceBucket: "tier",
     url: "https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml",
-    // Built but not launched — shown with a "coming soon" marker, not grantable.
+    // Built but not launched — hidden from the UI, not grantable.
     availability: "coming_soon",
 };
 

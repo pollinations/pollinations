@@ -1,0 +1,35 @@
+{
+  "pr_number": 11984,
+  "title": "chore: update app metrics 2026-06-25",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11984",
+  "merged_at": "2026-06-25T05:32:21Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Daily automated update of app metrics, health checks, and greenhouse",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Daily Greenhouse Check",
+    "blurb": "Our automated bots just finished watering the plants and updating the daily app metrics in the greenhouse.",
+    "summary": "Automated daily update of application metrics and health checks in the APPS and GREENHOUSE markdown files.",
+    "impact": "Keeps the community app directory and greenhouse statistics up to date with the latest health and usage data.",
+    "keywords": [
+      "metrics",
+      "automated",
+      "chore",
+      "greenhouse",
+      "apps"
+    ],
+    "visual_concept": "The pollinations bee and the monitor robot checking on a digital greenhouse, holding a clipboard with charts.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot checking on a digital greenhouse full of glowing code-plants. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. The robot holds a tiny clipboard with pixelated charts, chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Text in pixel font: 'METRICS'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-25/PR-11984.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot checking on a digital greenhouse full of glowing code-plants. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. The robot holds a tiny clipboard with pixelated charts, chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Text in pixel font: 'METRICS'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-25T05:33:18.762692+00:00"
+}

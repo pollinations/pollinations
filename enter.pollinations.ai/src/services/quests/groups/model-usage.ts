@@ -24,7 +24,7 @@ const useTextModelQuest: QuestDefinition = {
     id: "use_text_model",
     title: "Use a text model",
     description:
-        "Make one successful request from any of the text [models](#models).",
+        "Make one successful request from any of the text [models](https://gen.pollinations.ai/docs#tag/text).",
     category: "setup",
     scope: "perUser",
     rewardAmount: 0.25,
@@ -35,7 +35,7 @@ const useImageModelQuest: QuestDefinition = {
     id: "use_image_model",
     title: "Use an image model",
     description:
-        "Make one successful request from any of the image [models](#models).",
+        "Make one successful request from any of the image [models](https://gen.pollinations.ai/docs#tag/image).",
     category: "setup",
     scope: "perUser",
     rewardAmount: 0.25,
@@ -46,7 +46,7 @@ const useAudioModelQuest: QuestDefinition = {
     id: "use_audio_model",
     title: "Use an audio model",
     description:
-        "Make one successful request from any of the audio [models](#models).",
+        "Make one successful request from any of the audio [models](https://gen.pollinations.ai/docs#tag/audio).",
     category: "setup",
     scope: "perUser",
     rewardAmount: 0.25,

@@ -58,9 +58,8 @@ export function questToCard(quest: QuestDefinition): QuestCard {
 
 export type QuestCard = Omit<
     QuestDefinition,
-    "rewardAmount" | "url" | "scope" | "availability"
+    "url" | "scope" | "availability"
 > & {
     availability: QuestAvailability;
-    rewardAmount: number | null;
     url: string | null;
 };

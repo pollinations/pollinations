@@ -49,7 +49,7 @@ const questCatalogItemSchema = z.object({
     description: z.string(),
     category: z.enum(QUEST_CATEGORIES),
     availability: z.enum(["available", "completed", "coming_soon"]),
-    rewardAmount: z.number().nullable(),
+    rewardAmount: z.number(),
     balanceBucket: z.enum(["tier", "pack"]),
     url: z.string().nullable(),
     stats: questCardStatsSchema,

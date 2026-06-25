@@ -113,7 +113,7 @@ export const questsRoutes = new Hono<Env>()
     .get(
         "/catalog",
         describeRoute({
-            tags: ["Quests"],
+            tags: ["✨ Quests"],
             summary: "Get Quest Catalog",
             description:
                 "Returns product quests and GitHub issue quest instances in one list.",
@@ -142,7 +142,7 @@ export const questsRoutes = new Hono<Env>()
     .post(
         "/check",
         describeRoute({
-            tags: ["Quests"],
+            tags: ["✨ Quests"],
             summary: "Check Quest Rewards",
             description:
                 "Checks the authenticated dashboard user's quest status and records any newly earned pending rewards. Session authentication is required.",
@@ -197,7 +197,7 @@ export const questsRoutes = new Hono<Env>()
     .get(
         "/rewards",
         describeRoute({
-            tags: ["Quests"],
+            tags: ["✨ Quests"],
             summary: "Get Quest Rewards",
             description:
                 "Returns earned quest rewards for the authenticated account, including claim state. Requires `account:usage` permission when using API keys.",
@@ -258,7 +258,7 @@ export const questsRoutes = new Hono<Env>()
     .post(
         "/rewards/:rewardId/claim",
         describeRoute({
-            tags: ["Quests"],
+            tags: ["✨ Quests"],
             summary: "Claim Quest Reward",
             description:
                 "Claims one pending quest reward and credits the authenticated user's balance. Session authentication is required.",

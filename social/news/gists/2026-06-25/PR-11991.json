@@ -1,0 +1,35 @@
+{
+  "pr_number": 11991,
+  "title": "[codex] add gen docs social metadata",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11991",
+  "merged_at": "2026-06-25T21:01:46Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "- Adds gen docs favicon, app icons, manifest metadata, and social preview assets.\n- Adds docs/root SEO metadata and guide-page social tags.\n- Serves generated icon/OG files from `gen.pollinations.ai/public`.\n- Keeps `/manifest.webmanifest` and `/` Worker-owned with `run_worker_first`, so the Worker manifest route is the single manifest source.\n- Updates the icon generator to keep gen maskable icons/OG assets without recreating a duplicate static manifest.\n\nChecks:\n- `npx biome check --write ...`\n- `npx vitest run test/index.test.ts test/docs.test.ts` from `gen.pollinations.ai` (`index.test.ts` passed; combined run hit a docs YAML timeout)\n- `npx vitest run test/docs.test.ts` from `gen.pollinations.ai`\n- `npm run typecheck` from `gen.pollinations.ai`\n- `npm run build:production` from `gen.pollinations.ai`\n- `npm run generate -- --app gen` from `tools/icons`",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A fresh face for Gen Docs",
+    "blurb": "The Gen API documentation just got a visual upgrade with fresh favicons, social preview images, and SEO metadata. Sharing links to the docs now looks as good as the code inside them.",
+    "summary": "Added favicons, Open Graph images, and SEO metadata to the Gen API documentation, served directly from the Worker.",
+    "impact": "Links to the Gen docs will now unfurl with proper preview images on social media, and the site can be saved to home screens with crisp app icons.",
+    "keywords": [
+      "seo",
+      "metadata",
+      "docs",
+      "icons",
+      "open-graph"
+    ],
+    "visual_concept": "The pollinations bee mascot holding up a shiny new picture frame (representing an Open Graph image) next to a retro computer monitor displaying a social media post. The robot companion is looking at the frame excitedly.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny beret, holding up a glowing lime green (#ecf874) picture frame. A chunky pixel robot with a CRT monitor head looks at the frame excitedly. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-25/PR-11991.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny beret, holding up a glowing lime green (#ecf874) picture frame. A chunky pixel robot with a CRT monitor head looks at the frame excitedly. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "generated_at": "2026-06-25T21:03:02.456041+00:00"
+}

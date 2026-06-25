@@ -40,6 +40,17 @@ const firstMergedPrQuest: QuestDefinition = {
     balanceBucket: "tier",
 };
 
+const solveGithubIssueQuest: QuestDefinition = {
+    id: "solve_github_issue",
+    title: "Solve a 'Quest' issue in GitHub",
+    description: "A demi description",
+    category: CONTRIBUTION_CATEGORY,
+    scope: "perUser",
+    rewardAmount: 0,
+    balanceBucket: "tier",
+    state: "coming_soon",
+};
+
 // A quest-shaped projection of one POLLEN-QUEST issue, computed from GitHub.
 type DerivedQuestIssue = {
     issueNumber: number;
@@ -165,9 +176,7 @@ function toDerivedQuestIssue(issue: GitHubIssueNode): DerivedQuestIssue {
     const body = issue.body ?? "";
     const completedByPrNumber = firstMergedCloser(issue);
     const state: DerivedQuestIssue["state"] =
-        completedByPrNumber !== null || issue.state === "CLOSED"
-            ? "completed"
-            : "available";
+        completedByPrNumber !== null ? "completed" : "available";
     const firstAssignee = issue.assignees.nodes[0];
     return {
         issueNumber: issue.number,
@@ -190,6 +199,10 @@ async function loadQuestIssues(token: string): Promise<DerivedQuestIssue[]> {
 
     return data.search.nodes
         .filter((issue) => hasQuestLabel(issue.labels.nodes))
+        .filter(
+            (issue) =>
+                issue.state === "OPEN" || firstMergedCloser(issue) !== null,
+        )
         .map(toDerivedQuestIssue)
         .filter((issue) => issue.rewardAmount !== null);
 }
@@ -229,6 +242,7 @@ export async function listQuestCards(
     const issues = await loadQuestIssues(await githubToken(ctx.env));
     return [
         questToCard(firstMergedPrQuest),
+        questToCard(solveGithubIssueQuest),
         ...issues.map((issue) => questToCard(toIssueQuestDefinition(issue))),
     ];
 }

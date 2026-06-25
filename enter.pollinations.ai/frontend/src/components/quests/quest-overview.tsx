@@ -816,24 +816,23 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         return used;
     }, [state.catalog, state.rewards]);
 
-    // Per-bucket roll-up for the summary: each earned reward is one completed
-    // quest, while the pollen total counts only what has actually been claimed
-    // (banked into the balance) — an unclaimed reward is completed but its
-    // pollen has not landed yet, so it must not inflate the claimed total.
+    // Per-bucket roll-up for the summary: a reward only counts once it has been
+    // claimed (banked into the balance). Both the count and the pollen total are
+    // gated on claimedAt, so an unclaimed reward inflates neither — it sits in
+    // the "ready to claim" banner instead.
     const bucketStats = useMemo(() => {
         const stats: Record<
             RewardIconKind,
-            { completed: number; pollen: number }
+            { claimed: number; pollen: number }
         > = {
-            paid: { completed: 0, pollen: 0 },
-            tier: { completed: 0, pollen: 0 },
+            paid: { claimed: 0, pollen: 0 },
+            tier: { claimed: 0, pollen: 0 },
         };
         for (const reward of state.rewards) {
+            if (reward.claimedAt == null) continue;
             const kind = rewardIconKind(reward.balanceBucket);
-            stats[kind].completed += 1;
-            if (reward.claimedAt != null) {
-                stats[kind].pollen += reward.pollenAmount;
-            }
+            stats[kind].claimed += 1;
+            stats[kind].pollen += reward.pollenAmount;
         }
         return stats;
     }, [state.rewards]);
@@ -881,12 +880,12 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                     cards on row 2. */}
                         <div className={dimWhileChecking}>
                             <QuestSummaryGrid
-                                totalLabel="Completed quests"
+                                totalLabel="Claimed quests"
                                 totalValue={
-                                    bucketStats.paid.completed +
-                                    bucketStats.tier.completed
+                                    bucketStats.paid.claimed +
+                                    bucketStats.tier.claimed
                                 }
-                                pollenLabel="Claimed reward"
+                                pollenLabel="Claimed pollen"
                                 pollenCards={(["tier", "paid"] as const)
                                     .filter((k) => usedBuckets[k])
                                     .map((kind) => ({

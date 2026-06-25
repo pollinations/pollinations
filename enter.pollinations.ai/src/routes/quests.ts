@@ -1,7 +1,7 @@
 import { claimReward } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { rewards as rewardsTable } from "@shared/db/better-auth.ts";
-import { and, desc, eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -12,10 +12,7 @@ import { auth } from "../middleware/auth.ts";
 import { checkQuestsForUser } from "../services/quest-checker.ts";
 import { getRewardLedgerStats } from "../services/quest-stats.ts";
 import { QUEST_CATEGORIES } from "../services/quests/definitions.ts";
-import {
-    findQuestCardByIdBestEffort,
-    listQuestCards,
-} from "../services/quests/index.ts";
+import { listQuestCards } from "../services/quests/index.ts";
 import type {
     QuestCard,
     QuestEvaluationContext,
@@ -80,8 +77,6 @@ const rewardSchema = z.object({
 });
 
 const questRewardsResponseSchema = z.object({
-    totalClaimedPollen: z.number(),
-    totalClaimablePollen: z.number(),
     rewards: z.array(rewardSchema),
 });
 
@@ -257,22 +252,7 @@ export const questsRoutes = new Hono<Env>()
                     : null,
             }));
 
-            const totalClaimedPollen = rewards.reduce(
-                (total, reward) =>
-                    total + (reward.claimedAt ? reward.pollenAmount : 0),
-                0,
-            );
-            const totalClaimablePollen = rewards.reduce(
-                (total, reward) =>
-                    total + (reward.claimedAt ? 0 : reward.pollenAmount),
-                0,
-            );
-
-            return c.json({
-                totalClaimedPollen,
-                totalClaimablePollen,
-                rewards,
-            });
+            return c.json({ rewards });
         },
     )
     .post(
@@ -294,7 +274,6 @@ export const questsRoutes = new Hono<Env>()
                 401: { description: "Unauthorized" },
                 403: { description: "API keys cannot claim rewards" },
                 404: { description: "Reward not found" },
-                409: { description: "Reward cannot be claimed yet" },
             },
         }),
         auth({ allowApiKey: true, allowSessionCookie: true }),
@@ -311,33 +290,6 @@ export const questsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const rewardId = c.req.param("rewardId");
             const db = drizzle(c.env.DB, { schema });
-            const rewardRows = await db
-                .select({ questId: rewardsTable.questId })
-                .from(rewardsTable)
-                .where(
-                    and(
-                        eq(rewardsTable.id, rewardId),
-                        eq(rewardsTable.userId, user.id),
-                    ),
-                )
-                .limit(1);
-            const reward = rewardRows[0];
-            if (!reward) {
-                throw new HTTPException(404, {
-                    message: "Reward not found",
-                });
-            }
-            if (reward.questId) {
-                const card = await findQuestCardByIdBestEffort(
-                    { db, env: c.env },
-                    reward.questId,
-                );
-                if (card?.state === "coming_soon") {
-                    throw new HTTPException(409, {
-                        message: "This quest is coming soon",
-                    });
-                }
-            }
 
             const result = await claimReward(db, { rewardId, userId: user.id });
             if (!result.reward) {

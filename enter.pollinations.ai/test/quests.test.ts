@@ -26,6 +26,7 @@ type SeedQuestIssue = {
     reward: number | null;
     assigneeGithubId?: number | null;
     assigneeLogin?: string | null;
+    closed?: boolean;
     // When set, a merged PR closes the issue (→ "completed" / payable).
     completedByPrNumber?: number | null;
     createdAt?: Date;
@@ -43,13 +44,14 @@ function seedQuestIssue(github: MockGithubState, issue: SeedQuestIssue): void {
 
     github.questIssues.push({
         number: issue.issueNumber,
-        state: completedBy !== null ? "closed" : "open",
+        state: completedBy !== null || issue.closed ? "closed" : "open",
         title: issue.title,
         html_url: `https://github.com/pollinations/pollinations/issues/${issue.issueNumber}`,
         body: questIssueBody(issue.reward, issue.goal),
         created_at: created.toISOString(),
         updated_at: updated.toISOString(),
-        closed_at: completedBy !== null ? updated.toISOString() : null,
+        closed_at:
+            completedBy !== null || issue.closed ? updated.toISOString() : null,
         user: { login: "maintainer" },
         assignees: assigneeLogin
             ? [{ login: assigneeLogin, databaseId: assigneeGithubId }]
@@ -165,7 +167,7 @@ test("catalog stats aggregate earned/claimed from the rewards ledger", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v18");
+    await env.KV.delete("quests:catalog:v19");
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
     const questId = "merged_pr";
@@ -215,6 +217,89 @@ test("catalog stats aggregate earned/claimed from the rewards ledger", async ({
         pollenClaimed: 5,
         pollenAwardedPercent: 100,
     });
+});
+
+test("catalog includes coming-soon GitHub issue placeholder", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    await mocks.enable("github");
+    await env.KV.delete("quests:catalog:v19");
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/quests/catalog",
+    );
+    expect(response.status).toBe(200);
+    const payload = (await response.json()) as {
+        quests: {
+            id: string;
+            title: string;
+            description: string;
+            category: string;
+            state: string;
+            rewardAmount: number;
+            balanceBucket: string;
+            url: string | null;
+        }[];
+    };
+    const placeholder = payload.quests.find(
+        (quest) => quest.id === "solve_github_issue",
+    );
+
+    expect(placeholder).toMatchObject({
+        title: "Solve a 'Quest' issue in GitHub",
+        description: "A demi description",
+        category: "contribute",
+        state: "coming_soon",
+        rewardAmount: 0,
+        balanceBucket: "tier",
+        url: null,
+    });
+});
+
+test("catalog excludes closed GitHub quest issues without merged PRs", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    await mocks.enable("github");
+    await env.KV.delete("quests:catalog:v19");
+
+    seedQuestIssue(mocks.github.state, {
+        issueNumber: 801,
+        title: "Open bounty",
+        goal: "Still available.",
+        reward: 3,
+    });
+    seedQuestIssue(mocks.github.state, {
+        issueNumber: 802,
+        title: "Closed without merge",
+        goal: "Closed by maintainers without a merged quest PR.",
+        reward: 4,
+        closed: true,
+    });
+    seedQuestIssue(mocks.github.state, {
+        issueNumber: 803,
+        title: "Merged bounty",
+        goal: "Closed by a merged quest PR.",
+        reward: 5,
+        completedByPrNumber: 1803,
+    });
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/quests/catalog",
+    );
+    expect(response.status).toBe(200);
+    const payload = (await response.json()) as {
+        quests: {
+            id: string;
+            state: string;
+        }[];
+    };
+    const byId = new Map(payload.quests.map((quest) => [quest.id, quest]));
+
+    expect(byId.get("github:issue:801")?.state).toBe("available");
+    expect(byId.has("github:issue:802")).toBe(false);
+    expect(byId.get("github:issue:803")?.state).toBe("completed");
 });
 
 test("quest check records product rewards and claim endpoint credits one", async ({
@@ -285,8 +370,6 @@ test("quest check records product rewards and claim endpoint credits one", async
     expect(response.status).toBe(200);
 
     const payload = (await response.json()) as {
-        totalClaimedPollen: number;
-        totalClaimablePollen: number;
         rewards: {
             id: string;
             questId: string | null;
@@ -298,9 +381,9 @@ test("quest check records product rewards and claim endpoint credits one", async
         }[];
     };
 
-    // History shape, not exact amounts: nothing claimed yet, no internal fields
-    // leak, and the first-API-key reward is present so we can claim it below.
-    expect(payload.totalClaimedPollen).toBeCloseTo(0);
+    // History shape, not exact amounts: nothing claimed yet (every reward's
+    // claimedAt is null, asserted below), no internal fields leak, and the
+    // first-API-key reward is present so we can claim it below.
     expect(payload.rewards.length).toBeGreaterThan(0);
     for (const reward of payload.rewards) {
         expect(reward).not.toHaveProperty("idempotencyKey");
@@ -341,47 +424,6 @@ test("quest check records product rewards and claim endpoint credits one", async
     expect(claimedBalance?.tierBalance).toBeCloseTo(
         (user.tierBalance ?? 0) + 0.25,
     );
-});
-
-test("claim endpoint rejects coming_soon quest rewards", async ({
-    mocks,
-    sessionToken,
-}) => {
-    const db = drizzle(env.DB, { schema });
-    const user = await getOnlyUser();
-    await mocks.enable("github", "tinybird");
-    const reward = await recordReward(db, {
-        idempotencyKey: `quest:github_stars:user:${user.id}`,
-        userId: user.id,
-        questId: "github_stars",
-        title: "Earn over 20 GitHub stars",
-        amount: 5,
-        bucket: "tier",
-    });
-    if (!reward.rewardId) throw new Error("Expected recorded reward id");
-
-    const response = await SELF.fetch(
-        `http://localhost:3000/api/quests/rewards/${reward.rewardId}/claim`,
-        {
-            method: "POST",
-            headers: {
-                cookie: `better-auth.session_token=${sessionToken}`,
-            },
-        },
-    );
-    expect(response.status).toBe(409);
-
-    const [storedReward] = await db
-        .select({ claimedAt: schema.rewards.claimedAt })
-        .from(schema.rewards)
-        .where(eq(schema.rewards.id, reward.rewardId));
-    expect(storedReward?.claimedAt).toBeNull();
-
-    const [balance] = await db
-        .select({ tierBalance: schema.user.tierBalance })
-        .from(schema.user)
-        .where(eq(schema.user.id, user.id));
-    expect(balance?.tierBalance).toBeCloseTo(user.tierBalance ?? 0);
 });
 
 test("POST /quests/check throttles a user to once per minute", async ({
@@ -480,8 +522,8 @@ test("six-month account quest is coming_soon and never records", async ({
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
     await mocks.enable("github", "tinybird");
-    // Account old enough to qualify on age — but the quest is coming_soon, so
-    // the checker drops its proposal and nothing is recorded.
+    // Account old enough to qualify on age, but the quest is coming_soon, so the
+    // account-setup group never evaluates it.
     const oldDate = new Date("2025-01-01T00:00:00Z");
     await db
         .update(schema.user)
@@ -542,6 +584,7 @@ test("app-growth quests are coming_soon and never record", async ({
         },
     ]);
 
+    mocks.tinybird.state.pipeCalls = [];
     await checkQuestsForUser(env, user.id);
 
     const ownerRewards = await db
@@ -563,8 +606,14 @@ test("app-growth quests are coming_soon and never record", async ({
                 reward.questId === "use_app" && reward.userId === user.id,
         ),
     ).toBe(false);
+    expect(
+        mocks.tinybird.state.pipeCalls.some((call) =>
+            call.url.includes("/v0/pipes/quest_paid_app_spend.json"),
+        ),
+    ).toBe(false);
 
-    // byop_login is coming_soon (inert), so logging in records nothing.
+    // byop_login is coming_soon (inert), so the group never evaluates it.
+    mocks.tinybird.state.pipeCalls = [];
     await checkQuestsForUser(env, "byop-external-user");
     const externalRewards = await db
         .select({
@@ -670,9 +719,9 @@ test("github established-account quest is coming_soon and never records", async 
     mocks,
     sessionToken: _sessionToken,
 }) => {
-    // Built but launch-gated (state "coming_soon"): even an account well
-    // over the one-year age threshold records no reward, because the
-    // quest-checker drops coming_soon proposals.
+    // Built but launch-gated (state "coming_soon"): even an account well over
+    // the one-year age threshold records no reward, and the group does not call
+    // GitHub profile endpoints for inert quests.
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
     mocks.github.state.user.created_at = new Date(
@@ -680,6 +729,7 @@ test("github established-account quest is coming_soon and never records", async 
     ).toISOString();
     await mocks.enable("github", "tinybird");
 
+    mocks.github.state.requests = [];
     await checkQuestsForUser(env, user.id);
     const establishedRows = await db
         .select({ id: schema.rewards.id })
@@ -692,16 +742,22 @@ test("github established-account quest is coming_soon and never records", async 
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
     expect(balance?.tierBalance).toBeCloseTo(user.tierBalance ?? 0);
+    expect(
+        mocks.github.state.requests.some(
+            (request) =>
+                request.path === `/user/${user.githubId}` ||
+                request.path.startsWith("/users/"),
+        ),
+    ).toBe(false);
 });
 
 test("github public repo stars quest is coming_soon and never records", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
-    // The stars quest is built but launch-gated (state "coming_soon"), so
-    // the quest-checker drops its proposal — even a user well over the 20-star
-    // threshold records no reward. Flip state back to "available" in
-    // github-profile.ts to re-enable granting.
+    // The stars quest is built but launch-gated (state "coming_soon"), so the
+    // group does not fetch public repos or record a reward. Flip state back to
+    // "available" in github-profile.ts to re-enable granting.
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
     mocks.github.state.user.created_at = new Date().toISOString();
@@ -711,12 +767,18 @@ test("github public repo stars quest is coming_soon and never records", async ({
     ];
     await mocks.enable("github", "tinybird");
 
+    mocks.github.state.requests = [];
     await checkQuestsForUser(env, user.id);
     const rewards = await db
         .select({ id: schema.rewards.id })
         .from(schema.rewards)
         .where(eq(schema.rewards.questId, "github_stars"));
     expect(rewards).toHaveLength(0);
+    expect(
+        mocks.github.state.requests.some((request) =>
+            request.path.startsWith("/users/"),
+        ),
+    ).toBe(false);
 });
 
 test("quest check records elixpo intern easter egg once", async ({
@@ -977,8 +1039,6 @@ test("account quest history includes pending and claimed GitHub quest rewards", 
     expect(response.status).toBe(200);
 
     const payload = (await response.json()) as {
-        totalClaimedPollen: number;
-        totalClaimablePollen: number;
         rewards: {
             id: string;
             questId: string | null;
@@ -990,9 +1050,11 @@ test("account quest history includes pending and claimed GitHub quest rewards", 
         }[];
     };
 
-    expect(payload.totalClaimedPollen).toBe(0);
-    expect(payload.totalClaimablePollen).toBe(5);
+    // Flat list: clients derive claimed/claimable totals from the rewards
+    // themselves. Here the one reward is unclaimed and worth 5 pollen.
     expect(payload.rewards).toHaveLength(1);
+    expect(payload.rewards[0].claimedAt).toBeNull();
+    expect(payload.rewards[0].pollenAmount).toBe(5);
     expect(payload.rewards[0]).not.toHaveProperty("idempotencyKey");
     expect(payload.rewards[0]).not.toHaveProperty("source");
     expect(payload.rewards[0]).not.toHaveProperty("sourceRef");

@@ -1,5 +1,5 @@
 import { getLogger } from "@logtape/logtape";
-import type { QuestDefinition } from "../definitions.ts";
+import { type QuestDefinition, rewardableQuests } from "../definitions.ts";
 import type {
     QuestCard,
     QuestEvaluationContext,
@@ -18,11 +18,6 @@ const log = getLogger(["enter", "quest", "github-profile"]);
 const GITHUB_ACCOUNT_AGE_DAYS = 365;
 const PUBLIC_REPO_STAR_THRESHOLD = 20;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
-type GitHubProfileActivity = {
-    githubAccountCreatedAt: Date | null;
-    publicRepoStars: number | null;
-};
 
 type GitHubProfileResponse = {
     login?: string;
@@ -159,30 +154,9 @@ async function fetchPublicRepoStars(
     }
 }
 
-/**
- * One profile snapshot per user. The profile gives us account age and the login
- * needed for public-repo milestone checks.
- */
-async function fetchGitHubProfileActivity(
-    env: CloudflareBindings,
-    githubId: number,
-    fallbackLogin: string | null,
-): Promise<GitHubProfileActivity | null> {
-    const profile = await fetchGitHubProfile(env, githubId);
-    if (!profile) return null;
-    const login = profile.login ?? fallbackLogin;
-    return {
-        githubAccountCreatedAt: profile.createdAt,
-        publicRepoStars: login ? await fetchPublicRepoStars(env, login) : null,
-    };
-}
-
-function accountAgeDays(activity: GitHubProfileActivity, now: Date): number {
-    if (!activity.githubAccountCreatedAt) return -1;
-    return Math.floor(
-        (now.getTime() - activity.githubAccountCreatedAt.getTime()) /
-            MS_PER_DAY,
-    );
+function accountAgeDays(createdAt: Date | null, now: Date): number {
+    if (!createdAt) return -1;
+    return Math.floor((now.getTime() - createdAt.getTime()) / MS_PER_DAY);
 }
 
 const establishedGitHubAccountQuest: QuestDefinition = {
@@ -222,6 +196,17 @@ export async function findRewardProposalsForUser(
     ctx: QuestEvaluationContext,
     user: QuestUser,
 ): Promise<RewardProposal[]> {
+    const rewardableQuestIds = new Set(
+        rewardableQuests(QUESTS).map((quest) => quest.id),
+    );
+    if (rewardableQuestIds.size === 0) {
+        log.info(
+            "GITHUB_PROFILE_SKIPPED: userId={userId} reason=no_rewardable_quests",
+            { userId: user.id },
+        );
+        return [];
+    }
+
     if (user.githubId === null) {
         log.info(
             "GITHUB_PROFILE_SKIPPED: userId={userId} reason=no_github_id",
@@ -234,12 +219,8 @@ export async function findRewardProposalsForUser(
 
     const now = new Date();
     const proposals: RewardProposal[] = [];
-    const activity = await fetchGitHubProfileActivity(
-        ctx.env,
-        user.githubId,
-        user.githubUsername,
-    );
-    if (!activity) {
+    const profile = await fetchGitHubProfile(ctx.env, user.githubId);
+    if (!profile) {
         log.info(
             "GITHUB_PROFILE_NO_ACTIVITY: userId={userId} githubId={githubId}",
             { userId: user.id, githubId: user.githubId },
@@ -247,48 +228,55 @@ export async function findRewardProposalsForUser(
         return proposals;
     }
 
-    const ageDays = accountAgeDays(activity, now);
-    const qualifies =
-        activity.githubAccountCreatedAt !== null &&
-        ageDays >= GITHUB_ACCOUNT_AGE_DAYS;
-    log.info(
-        "GITHUB_PROFILE_QUEST_DECISION: userId={userId} githubId={githubId} createdAt={createdAt} ageDays={ageDays} thresholdDays={thresholdDays} qualifies={qualifies}",
-        {
-            userId: user.id,
-            githubId: user.githubId,
-            createdAt: activity.githubAccountCreatedAt?.toISOString() ?? null,
-            ageDays,
-            thresholdDays: GITHUB_ACCOUNT_AGE_DAYS,
-            qualifies,
-        },
-    );
+    if (rewardableQuestIds.has(establishedGitHubAccountQuest.id)) {
+        const ageDays = accountAgeDays(profile.createdAt, now);
+        const qualifies =
+            profile.createdAt !== null && ageDays >= GITHUB_ACCOUNT_AGE_DAYS;
+        log.info(
+            "GITHUB_PROFILE_QUEST_DECISION: userId={userId} githubId={githubId} createdAt={createdAt} ageDays={ageDays} thresholdDays={thresholdDays} qualifies={qualifies}",
+            {
+                userId: user.id,
+                githubId: user.githubId,
+                createdAt: profile.createdAt?.toISOString() ?? null,
+                ageDays,
+                thresholdDays: GITHUB_ACCOUNT_AGE_DAYS,
+                qualifies,
+            },
+        );
 
-    if (qualifies) {
-        proposals.push({
-            quest: establishedGitHubAccountQuest,
-            userId: user.id,
-        });
+        if (qualifies) {
+            proposals.push({
+                quest: establishedGitHubAccountQuest,
+                userId: user.id,
+            });
+        }
     }
 
-    const starsQualify =
-        activity.publicRepoStars !== null &&
-        activity.publicRepoStars > PUBLIC_REPO_STAR_THRESHOLD;
-    log.info(
-        "GITHUB_PROFILE_STARS_QUEST_DECISION: userId={userId} githubId={githubId} stars={stars} threshold={threshold} qualifies={qualifies}",
-        {
-            userId: user.id,
-            githubId: user.githubId,
-            stars: activity.publicRepoStars,
-            threshold: PUBLIC_REPO_STAR_THRESHOLD,
-            qualifies: starsQualify,
-        },
-    );
+    if (rewardableQuestIds.has(publicRepoStarsQuest.id)) {
+        const login = profile.login ?? user.githubUsername;
+        const publicRepoStars = login
+            ? await fetchPublicRepoStars(ctx.env, login)
+            : null;
+        const starsQualify =
+            publicRepoStars !== null &&
+            publicRepoStars > PUBLIC_REPO_STAR_THRESHOLD;
+        log.info(
+            "GITHUB_PROFILE_STARS_QUEST_DECISION: userId={userId} githubId={githubId} stars={stars} threshold={threshold} qualifies={qualifies}",
+            {
+                userId: user.id,
+                githubId: user.githubId,
+                stars: publicRepoStars,
+                threshold: PUBLIC_REPO_STAR_THRESHOLD,
+                qualifies: starsQualify,
+            },
+        );
 
-    if (starsQualify) {
-        proposals.push({
-            quest: publicRepoStarsQuest,
-            userId: user.id,
-        });
+        if (starsQualify) {
+            proposals.push({
+                quest: publicRepoStarsQuest,
+                userId: user.id,
+            });
+        }
     }
 
     return proposals;

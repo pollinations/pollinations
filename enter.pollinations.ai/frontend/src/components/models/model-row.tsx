@@ -7,11 +7,7 @@ import {
     Surface,
     Tooltip,
 } from "@pollinations/ui";
-import {
-    PaidChip,
-    TierChip,
-    WalletKindIcon,
-} from "@pollinations/ui/wallet";
+import { PaidChip, TierChip, WalletKindIcon } from "@pollinations/ui/wallet";
 import type { FC } from "react";
 import { calculatePerPollen, unitLabels } from "./calculations.ts";
 import { CAPABILITY_ICON, MODALITY_ICON } from "./model-icons.tsx";

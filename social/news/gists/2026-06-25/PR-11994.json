@@ -1,0 +1,35 @@
+{
+  "pr_number": 11994,
+  "title": "fix: align gen docs drawer icons",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11994",
+  "merged_at": "2026-06-25T22:10:03Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "- Replaces emoji-prefixed gen docs tag labels with plain OpenAPI tag names.\n- Injects drawer icons using the same SVG geometry as existing `packages/ui` icons.\n- Applies the same icon treatment to BYOP, CLI, and MCP guide cards/pages.\n- Keeps legacy emoji route/upstream tags normalized to the new plain labels.\n- Updates APIDOCS generation tag ordering for the new tag names.\n\nChecks:\n- `npx biome check --write gen.pollinations.ai/scripts/generate-apidocs.ts gen.pollinations.ai/src/routes/docs.ts gen.pollinations.ai/src/routes/docs-styles.ts gen.pollinations.ai/test/docs.test.ts`\n- `npx vitest run test/docs.test.ts` from `gen.pollinations.ai`\n- `npm run typecheck` from `gen.pollinations.ai`\n- `npm run build:production` from `gen.pollinations.ai`",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Iconic documentation",
+    "blurb": "We've swapped out the old emoji prefixes in our API docs for sleek, custom SVG icons. Navigating the guides for BYOP, CLI, and MCP just got a whole lot prettier.",
+    "summary": "Replaced emoji-prefixed tags in the API documentation with plain OpenAPI tag names and custom SVG icons that match the main UI.",
+    "impact": "Developers browsing the API docs will see a cleaner, more unified navigation drawer with proper icons for BYOP, CLI, and MCP guides instead of legacy emojis.",
+    "keywords": [
+      "docs",
+      "ui",
+      "icons",
+      "openapi",
+      "navigation"
+    ],
+    "visual_concept": "The bee mascot acting as a librarian or designer, replacing old emoji stickers with sleek glowing SVG icons on a stack of documentation or a digital menu.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, carefully painting glowing lime green (#ecf874) icons onto a stack of digital documentation books. A chunky retro monitor nearby displays clean, organized folders. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-25/PR-11994.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, carefully painting glowing lime green (#ecf874) icons onto a stack of digital documentation books. A chunky retro monitor nearby displays clean, organized folders. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-06-25T22:11:00.898914+00:00"
+}

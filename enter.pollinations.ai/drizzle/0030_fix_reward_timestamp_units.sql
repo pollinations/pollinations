@@ -1,7 +1,7 @@
 -- Data-only fix: normalize reward timestamps to Unix SECONDS.
 --
--- `mode:"timestamp"` columns store seconds across the whole schema. Two rows of
--- bad data ended up in milliseconds:
+-- `mode:"timestamp"` columns store seconds across the whole schema. Two sources
+-- of bad data ended up in milliseconds:
 --   1. earned_at on every reward — recordRewards() never set earnedAt, so it
 --      fell through to the column's default expression, which emits ms.
 --   2. claimed_at on the 5 backfilled community-issue rewards — migration 0029

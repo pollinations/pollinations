@@ -177,7 +177,7 @@ test("GET /api/quests/catalog returns product quests and issue bounty cards", as
     ).toMatchObject({
         category: "setup",
         availability: "available",
-        rewardAmount: 1,
+        rewardAmount: 0.25,
         balanceBucket: "tier",
         url: null,
     });
@@ -186,7 +186,7 @@ test("GET /api/quests/catalog returns product quests and issue bounty cards", as
     ).toMatchObject({
         category: "setup",
         availability: "available",
-        rewardAmount: 1,
+        rewardAmount: 0.25,
         balanceBucket: "tier",
         url: null,
     });
@@ -206,7 +206,7 @@ test("GET /api/quests/catalog returns product quests and issue bounty cards", as
     ).toMatchObject({
         category: "grow",
         availability: "available",
-        rewardAmount: 5,
+        rewardAmount: 10,
         balanceBucket: "tier",
         url: null,
     });
@@ -228,7 +228,7 @@ test("GET /api/quests/catalog returns product quests and issue bounty cards", as
     ).toMatchObject({
         category: "grow",
         availability: "available",
-        rewardAmount: 3,
+        rewardAmount: 10,
         balanceBucket: "tier",
         url: null,
     });
@@ -239,7 +239,7 @@ test("GET /api/quests/catalog returns product quests and issue bounty cards", as
     ).toMatchObject({
         category: "grow",
         availability: "available",
-        rewardAmount: 2,
+        rewardAmount: 20,
         balanceBucket: "tier",
         url: null,
     });
@@ -258,7 +258,7 @@ test("GET /api/quests/catalog returns product quests and issue bounty cards", as
     ).toMatchObject({
         category: "contribute",
         availability: "available",
-        rewardAmount: 5,
+        rewardAmount: 20,
         balanceBucket: "tier",
         url: null,
     });
@@ -546,7 +546,7 @@ test("quest check records product rewards and claim endpoint credits one", async
     };
 
     expect(payload.totalClaimedPollen).toBeCloseTo(0);
-    expect(payload.totalClaimablePollen).toBeCloseTo(62);
+    expect(payload.totalClaimablePollen).toBeCloseTo(62.25);
     expect(payload.rewards).toHaveLength(4);
     for (const reward of payload.rewards) {
         expect(reward).not.toHaveProperty("idempotencyKey");
@@ -561,7 +561,7 @@ test("quest check records product rewards and claim endpoint credits one", async
         (reward) => reward.questId === "onboarding:first_api_key",
     );
     expect(firstApiKeyReward).toMatchObject({
-        pollenAmount: 1,
+        pollenAmount: 0.25,
         balanceBucket: "tier",
     });
     expect(
@@ -569,7 +569,7 @@ test("quest check records product rewards and claim endpoint credits one", async
             (reward) => reward.questId === "spend:first_top_up",
         ),
     ).toMatchObject({
-        pollenAmount: 5,
+        pollenAmount: 10,
         balanceBucket: "tier",
     });
     expect(
@@ -586,7 +586,7 @@ test("quest check records product rewards and claim endpoint credits one", async
                 reward.questId === "onboarding:established_github_account",
         ),
     ).toMatchObject({
-        pollenAmount: 6,
+        pollenAmount: 2,
         balanceBucket: "tier",
     });
 
@@ -607,14 +607,14 @@ test("quest check records product rewards and claim endpoint credits one", async
     };
     expect(claimPayload.claimed).toBe(true);
     expect(claimPayload.reward.claimedAt).not.toBeNull();
-    expect(claimPayload.reward.pollenAmount).toBe(1);
+    expect(claimPayload.reward.pollenAmount).toBe(0.25);
 
     const [claimedBalance] = await db
         .select({ tierBalance: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
     expect(claimedBalance?.tierBalance).toBeCloseTo(
-        (user.tierBalance ?? 0) + 1,
+        (user.tierBalance ?? 0) + 0.25,
     );
 });
 

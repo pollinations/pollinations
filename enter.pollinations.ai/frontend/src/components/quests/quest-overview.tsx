@@ -918,36 +918,45 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                     catalog totals (how many quests are live, how much pollen they
                     pay) instead of this visitor's completed/claimed history. */}
                 {state.anonymous && (
-                    <div className="grid grid-cols-2 gap-x-2 gap-y-2 sm:grid-cols-2">
-                        <Text
-                            as="span"
-                            size="sm"
-                            weight="bold"
-                            tone="muted"
-                            className="col-span-1 uppercase tracking-wide sm:row-start-1"
-                        >
-                            Available quests
-                        </Text>
-                        <Text
-                            as="span"
-                            size="sm"
-                            weight="bold"
-                            tone="muted"
-                            className="col-span-1 uppercase tracking-wide sm:col-start-2 sm:row-start-1"
-                        >
-                            Available pollen
-                        </Text>
-                        <div className="col-span-1 sm:col-start-1 sm:row-start-2">
-                            <TotalCard value={previewTotals.count} />
+                    <>
+                        <div className="grid grid-cols-2 gap-x-2 gap-y-2 sm:grid-cols-2">
+                            <Text
+                                as="span"
+                                size="sm"
+                                weight="bold"
+                                tone="muted"
+                                className="col-span-1 uppercase tracking-wide sm:row-start-1"
+                            >
+                                Available quests
+                            </Text>
+                            <Text
+                                as="span"
+                                size="sm"
+                                weight="bold"
+                                tone="muted"
+                                className="col-span-1 uppercase tracking-wide sm:col-start-2 sm:row-start-1"
+                            >
+                                Available pollen
+                            </Text>
+                            <div className="col-span-1 sm:col-start-1 sm:row-start-2">
+                                <TotalCard value={previewTotals.count} />
+                            </div>
+                            <div className="col-span-1 sm:col-start-2 sm:row-start-2">
+                                <BucketCard
+                                    kind="tier"
+                                    value={formatRewardAmount(
+                                        previewTotals.pollen,
+                                    )}
+                                    showBadge
+                                />
+                            </div>
                         </div>
-                        <div className="col-span-1 sm:col-start-2 sm:row-start-2">
-                            <BucketCard
-                                kind="tier"
-                                value={formatRewardAmount(previewTotals.pollen)}
-                                showBadge
-                            />
+                        {/* Light, emphasized prompt — no background well. Not a
+                            link yet; the real login CTA is a follow-up commit. */}
+                        <div className="mt-3 text-sm font-semibold text-theme-text-soft">
+                            Log in to start earning.
                         </div>
-                    </div>
+                    </>
                 )}
                 {/* Multi-line footer styled like the keys panel's footer —
                     text-[13px] + leading-snug keeps the two lines visually

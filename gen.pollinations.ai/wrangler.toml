@@ -51,6 +51,9 @@ BEDROCK_GUARDRAIL_VERSION = "2"
 [dev]
 port = 8788
 
+[assets]
+directory = "public"
+
 # Production routes
 [env.production]
 

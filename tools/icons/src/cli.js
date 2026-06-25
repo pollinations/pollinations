@@ -72,6 +72,17 @@ const APPS = {
                 "Pollinations dashboard for AI generation APIs. Create API keys, track usage, monitor Pollen, and connect apps across image, text, video, and audio.",
         },
     },
+    gen: {
+        outDir: "gen.pollinations.ai/public",
+        og: true,
+        manifest: {
+            name: "Docs | pollinations.ai",
+            short_name: "Docs",
+            description:
+                "API docs for pollinations.ai. Generate images, text, audio, and video with easy APIs, model lists, authentication, and OpenAI-compatible endpoints.",
+            start_url: "/docs",
+        },
+    },
     "model-monitor": {
         outDir: "apps/model-monitor/public",
         og: true,
@@ -137,7 +148,7 @@ function manifestJson(cfg, brandColor, contrastColor) {
         theme_color: brandColor,
         background_color: contrastColor,
         display: "standalone",
-        start_url: "/",
+        start_url: cfg.manifest.start_url ?? "/",
     };
 }
 

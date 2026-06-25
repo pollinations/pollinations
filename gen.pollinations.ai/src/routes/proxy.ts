@@ -836,7 +836,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 `**Available models:** ${model3dModelNames}. \`${DEFAULT_3D_MODEL}\` is the default.`,
                 "",
-                "Pass reference image URL(s) via the `image` parameter for image-to-3D models (e.g. `trellis`, `triposr`, `sf3d`). Separate multiple URLs with `|` or `,`.",
+                "Pass reference image URL(s) via the `image` parameter for image-to-3D models (e.g. `triposr`, `sf3d`, `asset-harvester`). Separate multiple URLs with `|` or `,`.",
                 "",
                 "Browse all available models and their input requirements at [`/3d/models`](https://gen.pollinations.ai/3d/models).",
             ].join("\n"),

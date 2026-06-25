@@ -6,10 +6,15 @@
  * then polls GET /v1/3d/jobs/{job_id} until a terminal status. Token from
  * INFERENCEPORT_API_KEY.
  *
- * Confirmed `model` values (per provider, see plan doc): "tripoSR", "sf3d",
- * "trellis-2", "asset-harvester". Output format per model is GLB for tripoSR
- * (model_glb_b64_bytes) — sf3d/trellis-2 output format is unconfirmed as of
- * this client, see plan §4.
+ * Confirmed `model` values (per provider): "tripoSR", "sf3d", "trellis-2",
+ * "asset-harvester". Output format is GLB (model_glb_b64_bytes) for every
+ * model except asset-harvester, which returns PLY (+ an orbit-video preview,
+ * not exposed via our endpoint) — confirmed by the provider.
+ *
+ * Confirmed pricing (USD/generation): tripoSR $0.02, sf3d $0.02,
+ * asset-harvester $0.07, trellis-2 $0.24/$0.29/$0.35 for resolution
+ * low/medium/high (resolution is sent as a request field, not encoded in the
+ * `model` value).
  */
 
 import { sleep } from "../../image/util.ts";
@@ -47,11 +52,14 @@ interface RunOptions {
     model: string;
     imageUrls: string[];
     prompt?: string;
+    // trellis-2 only: "low" | "medium" | "high", controls output quality/price.
+    resolution?: "low" | "medium" | "high";
 }
 
 export interface InferenceportResult {
     glbBase64?: string;
     plyBase64?: string;
+    orbitVideoBase64?: string;
     jobId: string;
 }
 
@@ -70,6 +78,7 @@ export async function runInferenceportJob(
         image_urls: opts.imageUrls,
     };
     if (opts.prompt) body.prompt = opts.prompt;
+    if (opts.resolution) body.resolution = opts.resolution;
 
     let job = await inferenceportFetch<InferenceportJob>(token, {
         method: "POST",
@@ -105,6 +114,7 @@ export async function runInferenceportJob(
     return {
         glbBase64: job.model_glb_b64_bytes,
         plyBase64: job.model_ply_b64_bytes,
+        orbitVideoBase64: job.orbit_video_b64_bytes,
         jobId: job.job_id,
     };
 }

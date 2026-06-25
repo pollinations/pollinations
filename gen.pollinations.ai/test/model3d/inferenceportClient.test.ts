@@ -51,6 +51,29 @@ describe("runInferenceportJob", () => {
         expect(body.image_urls).toEqual(["https://example.com/ref.jpg"]);
     });
 
+    it("includes the resolution field in the request body when provided", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(
+                JSON.stringify({
+                    job_id: "job_res",
+                    status: "completed",
+                    model_glb_b64_bytes: "Zm9v",
+                }),
+                { status: 200 },
+            ),
+        );
+
+        await runInferenceportJob({
+            model: "trellis-2",
+            imageUrls: ["https://example.com/ref.jpg"],
+            resolution: "medium",
+        });
+
+        const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+        const body = JSON.parse(init.body as string);
+        expect(body.resolution).toBe("medium");
+    });
+
     it("polls /3d/jobs/{job_id} while pending/processing", async () => {
         vi.useFakeTimers();
         const fetchSpy = vi.spyOn(globalThis, "fetch");

@@ -30,13 +30,13 @@ function baseParams(model: string): Model3dParams {
 // (already covered per-client in inferenceportClient/falClient tests).
 describe("createAndReturnModel3d dispatch", () => {
     it.each([
-        ["trellis", "sharktide-lightning"],
         ["triposr", "sharktide-lightning"],
         ["sf3d", "sharktide-lightning"],
+        ["asset-harvester", "sharktide-lightning"],
+        ["trellis-2-low", "sharktide-lightning"],
+        ["trellis-2-medium", "sharktide-lightning"],
+        ["trellis-2-high", "sharktide-lightning"],
         ["tripo3d-h3.1", "queue.fal.run"],
-        ["trellis-2-512", "queue.fal.run"],
-        ["trellis-2-1024", "queue.fal.run"],
-        ["trellis-2-1536", "queue.fal.run"],
         ["hunyuan3d-v3", "queue.fal.run"],
         ["hyper3d-rodin", "queue.fal.run"],
         ["hyper3d-rodin-highpack", "queue.fal.run"],

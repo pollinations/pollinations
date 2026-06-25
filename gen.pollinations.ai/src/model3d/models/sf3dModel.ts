@@ -42,23 +42,15 @@ async function runViaInferenceport(
         model: INFERENCEPORT_MODEL_ID,
         imageUrls: [params.image[0]],
     });
-    // sf3d's output format on inferenceport is unconfirmed (see plan §4) —
-    // handle both GLB and PLY in case it returns the latter.
-    if (result.glbBase64) {
-        return {
-            buffer: base64ToBuffer(result.glbBase64),
-            contentType: "model/gltf-binary",
-        };
+    if (!result.glbBase64) {
+        throw new InferenceportError(
+            "inferenceport sf3d returned no GLB output",
+        );
     }
-    if (result.plyBase64) {
-        return {
-            buffer: base64ToBuffer(result.plyBase64),
-            contentType: "model/ply",
-        };
-    }
-    throw new InferenceportError(
-        "inferenceport sf3d returned no usable output",
-    );
+    return {
+        buffer: base64ToBuffer(result.glbBase64),
+        contentType: "model/gltf-binary",
+    };
 }
 
 async function runViaFal(

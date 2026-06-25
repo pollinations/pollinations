@@ -10,25 +10,6 @@ export type Model3dId = (typeof MODEL3D_SERVICES)[Model3dName]["modelId"];
 // new UsageType, which would require new fields in
 // shared/schemas/generation-event.ts and a Tinybird schema change.
 export const MODEL3D_SERVICES = {
-    "trellis": {
-        aliases: [],
-        modelId: "trellis",
-        provider: "inferenceport",
-        fallbackProvider: "fal",
-        brand: "Microsoft",
-        category: "3d",
-        addedDate: new Date("2026-06-24").getTime(),
-        priceMultiplier: 1,
-        flatRate: true,
-        cost: {
-            completionImageTokens: 0.02, // per generation (inferenceport primary)
-        },
-        title: "Trellis",
-        description: "Trellis - Multi-image to 3D model generation",
-        inputModalities: ["image"],
-        outputModalities: ["3d"],
-        maxReferenceImages: 4,
-    },
     "triposr": {
         aliases: [],
         modelId: "triposr",
@@ -40,7 +21,7 @@ export const MODEL3D_SERVICES = {
         priceMultiplier: 1,
         flatRate: true,
         cost: {
-            completionImageTokens: 0.07, // per generation (inferenceport primary)
+            completionImageTokens: 0.02, // per generation (inferenceport primary, confirmed by provider)
         },
         title: "TripoSR",
         description: "TripoSR - Fast image-to-3D model generation",
@@ -60,14 +41,31 @@ export const MODEL3D_SERVICES = {
         flatRate: true,
         paidOnly: true,
         cost: {
-            // Inferenceport pricing for sf3d is unconfirmed as of this entry —
-            // placeholder set to TripoSR's rate. Confirm with provider before
-            // relying on this for real billing.
-            completionImageTokens: 0.07,
+            completionImageTokens: 0.02, // per generation (inferenceport primary, confirmed by provider)
         },
         title: "SF3D",
         description:
             "Stable Fast 3D - Rapid single-image to 3D model generation",
+        inputModalities: ["image"],
+        outputModalities: ["3d"],
+        maxReferenceImages: 1,
+    },
+    "asset-harvester": {
+        aliases: [],
+        modelId: "asset-harvester",
+        provider: "inferenceport",
+        brand: "inferenceport",
+        category: "3d",
+        addedDate: new Date("2026-06-25").getTime(),
+        priceMultiplier: 1,
+        flatRate: true,
+        paidOnly: true,
+        cost: {
+            completionImageTokens: 0.07, // per generation (inferenceport-only, no fal.ai equivalent)
+        },
+        title: "Asset Harvester",
+        description:
+            "Asset Harvester - Image-to-3D mesh extraction, returns a PLY mesh",
         inputModalities: ["image"],
         outputModalities: ["3d"],
         maxReferenceImages: 1,
@@ -91,10 +89,11 @@ export const MODEL3D_SERVICES = {
         outputModalities: ["3d"],
         maxReferenceImages: 1,
     },
-    "trellis-2-512": {
+    "trellis-2-low": {
         aliases: [],
-        modelId: "trellis-2-512",
-        provider: "fal",
+        modelId: "trellis-2-low",
+        provider: "inferenceport",
+        fallbackProvider: "fal",
         brand: "Microsoft",
         category: "3d",
         addedDate: new Date("2026-06-24").getTime(),
@@ -102,18 +101,19 @@ export const MODEL3D_SERVICES = {
         flatRate: true,
         paidOnly: true,
         cost: {
-            completionImageTokens: 0.25, // per generation, 512p resolution
+            completionImageTokens: 0.24, // per generation, "low" resolution (inferenceport primary)
         },
-        title: "Trellis 2 (512p)",
-        description: "Trellis 2 - High-quality image-to-3D, 512p resolution",
+        title: "Trellis 2 (Low)",
+        description: "Trellis 2 - High-quality image-to-3D, low resolution",
         inputModalities: ["image"],
         outputModalities: ["3d"],
         maxReferenceImages: 1,
     },
-    "trellis-2-1024": {
+    "trellis-2-medium": {
         aliases: [],
-        modelId: "trellis-2-1024",
-        provider: "fal",
+        modelId: "trellis-2-medium",
+        provider: "inferenceport",
+        fallbackProvider: "fal",
         brand: "Microsoft",
         category: "3d",
         addedDate: new Date("2026-06-24").getTime(),
@@ -121,18 +121,19 @@ export const MODEL3D_SERVICES = {
         flatRate: true,
         paidOnly: true,
         cost: {
-            completionImageTokens: 0.3, // per generation, 1024p resolution
+            completionImageTokens: 0.29, // per generation, "medium" resolution (inferenceport primary)
         },
-        title: "Trellis 2 (1024p)",
-        description: "Trellis 2 - High-quality image-to-3D, 1024p resolution",
+        title: "Trellis 2 (Medium)",
+        description: "Trellis 2 - High-quality image-to-3D, medium resolution",
         inputModalities: ["image"],
         outputModalities: ["3d"],
         maxReferenceImages: 1,
     },
-    "trellis-2-1536": {
+    "trellis-2-high": {
         aliases: [],
-        modelId: "trellis-2-1536",
-        provider: "fal",
+        modelId: "trellis-2-high",
+        provider: "inferenceport",
+        fallbackProvider: "fal",
         brand: "Microsoft",
         category: "3d",
         addedDate: new Date("2026-06-24").getTime(),
@@ -140,10 +141,10 @@ export const MODEL3D_SERVICES = {
         flatRate: true,
         paidOnly: true,
         cost: {
-            completionImageTokens: 0.35, // per generation, 1536p resolution
+            completionImageTokens: 0.35, // per generation, "high" resolution (inferenceport primary)
         },
-        title: "Trellis 2 (1536p)",
-        description: "Trellis 2 - High-quality image-to-3D, 1536p resolution",
+        title: "Trellis 2 (High)",
+        description: "Trellis 2 - High-quality image-to-3D, high resolution",
         inputModalities: ["image"],
         outputModalities: ["3d"],
         maxReferenceImages: 1,

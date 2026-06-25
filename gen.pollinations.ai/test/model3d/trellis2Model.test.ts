@@ -1,7 +1,7 @@
 import { env } from "cloudflare:test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { syncModel3dEnvironment } from "../../src/model3d/env.ts";
-import { callTrellisWithFallback } from "../../src/model3d/models/trellisModel.ts";
+import { callTrellis2WithFallback } from "../../src/model3d/models/trellis2Model.ts";
 import type { Model3dParams } from "../../src/model3d/params.ts";
 
 beforeEach(() => {
@@ -18,7 +18,7 @@ afterEach(() => {
 });
 
 const params: Model3dParams = {
-    model: "trellis",
+    model: "trellis-2-medium",
     image: ["https://example.com/ref.jpg"],
     format: "glb",
     safe: false,
@@ -39,9 +39,9 @@ const falSuccessResponses = () => [
         JSON.stringify({
             request_id: "req_1",
             status_url:
-                "https://queue.fal.run/fal-ai/trellis/multi/requests/req_1/status",
+                "https://queue.fal.run/fal-ai/trellis-2/requests/req_1/status",
             response_url:
-                "https://queue.fal.run/fal-ai/trellis/multi/requests/req_1",
+                "https://queue.fal.run/fal-ai/trellis-2/requests/req_1",
         }),
         { status: 202 },
     ),
@@ -55,20 +55,34 @@ const falSuccessResponses = () => [
     new Response(new Uint8Array([1, 2, 3]), { status: 200 }),
 ];
 
-describe("callTrellisWithFallback", () => {
+describe("callTrellis2WithFallback", () => {
+    it("sends the inferenceport-mapped resolution for the model id", async () => {
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValue(inferenceportSuccessResponse());
+
+        const result = await callTrellis2WithFallback(params);
+
+        expect(result.contentType).toBe("model/gltf-binary");
+        const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+        const body = JSON.parse(init.body as string);
+        expect(body.model).toBe("trellis-2");
+        expect(body.resolution).toBe("medium");
+    });
+
     it("returns inferenceport's result and never calls fal.ai when inferenceport succeeds", async () => {
         const fetchSpy = vi
             .spyOn(globalThis, "fetch")
             .mockResolvedValue(inferenceportSuccessResponse());
 
-        const result = await callTrellisWithFallback(params);
+        const result = await callTrellis2WithFallback(params);
 
         expect(result.contentType).toBe("model/gltf-binary");
         expect(fetchSpy.mock.calls.length).toBe(1);
         expect(fetchSpy.mock.calls[0]?.[0]).toContain("sharktide-lightning");
     });
 
-    it("falls back to fal.ai and returns its result when inferenceport fails", async () => {
+    it("falls back to fal.ai with the mapped pixel resolution when inferenceport fails", async () => {
         vi.useFakeTimers();
         const fetchSpy = vi.spyOn(globalThis, "fetch");
         fetchSpy.mockResolvedValueOnce(
@@ -81,7 +95,7 @@ describe("callTrellisWithFallback", () => {
             .mockResolvedValueOnce(result)
             .mockResolvedValueOnce(download);
 
-        const promise = callTrellisWithFallback(params);
+        const promise = callTrellis2WithFallback(params);
         await vi.advanceTimersByTimeAsync(10_000);
         const generationResult = await promise;
 
@@ -90,6 +104,9 @@ describe("callTrellisWithFallback", () => {
         expect(fetchSpy.mock.calls.length).toBe(5);
         expect(fetchSpy.mock.calls[0]?.[0]).toContain("sharktide-lightning");
         expect(fetchSpy.mock.calls[1]?.[0]).toContain("queue.fal.run");
+        const [, submitInit] = fetchSpy.mock.calls[1] as [string, RequestInit];
+        const submitBody = JSON.parse(submitInit.body as string);
+        expect(submitBody.resolution).toBe("1024");
         vi.useRealTimers();
     });
 
@@ -98,7 +115,7 @@ describe("callTrellisWithFallback", () => {
             new Response(JSON.stringify({ detail: "down" }), { status: 500 }),
         );
 
-        await expect(callTrellisWithFallback(params)).rejects.toMatchObject({
+        await expect(callTrellis2WithFallback(params)).rejects.toMatchObject({
             name: "HttpError",
         });
     });
@@ -107,7 +124,7 @@ describe("callTrellisWithFallback", () => {
         const fetchSpy = vi.spyOn(globalThis, "fetch");
 
         await expect(
-            callTrellisWithFallback({ ...params, image: [] }),
+            callTrellis2WithFallback({ ...params, image: [] }),
         ).rejects.toMatchObject({ name: "HttpError", status: 400 });
         expect(fetchSpy).not.toHaveBeenCalled();
     });

@@ -535,9 +535,9 @@ curl "https://gen.pollinations.ai/video/a%20sunset%20timelapse%20over%20the%20oc
 
 Generate a 3D model from a text prompt or reference image(s). Returns GLB by default.
 
-**Available models:** `trellis`, `triposr`, `sf3d`, `tripo3d-h3.1`, `trellis-2-512`, `trellis-2-1024`, `trellis-2-1536`, `hunyuan3d-v3`, `hyper3d-rodin`, `hyper3d-rodin-highpack`. `triposr` is the default.
+**Available models:** `triposr`, `sf3d`, `asset-harvester`, `trellis-2-low`, `trellis-2-medium`, `trellis-2-high`, `tripo3d-h3.1`, `hunyuan3d-v3`, `hyper3d-rodin`, `hyper3d-rodin-highpack`. `triposr` is the default. `asset-harvester` returns a PLY mesh instead of GLB.
 
-Pass reference image URL(s) via the `image` parameter for image-to-3D models (e.g. `trellis`, `triposr`, `sf3d`). Separate multiple URLs with `|` or `,`.
+Pass reference image URL(s) via the `image` parameter for image-to-3D models (e.g. `triposr`, `sf3d`, `asset-harvester`, `trellis-2-low`). Separate multiple URLs with `|` or `,`.
 
 Browse all available models and their input requirements at [`/3d/models`](https://gen.pollinations.ai/3d/models).
 
@@ -547,7 +547,7 @@ Browse all available models and their input requirements at [`/3d/models`](https
 |---|---|---|---|
 | `prompt` * | `path` | `string` | Text description of the 3D model to generate (required for text-to-3D models; ignored by image-only models) |
 | `model` | `query` | `string` | Model to use. See /3d/models for the full list and per-model input requirements. · default: `"triposr"` |
-| `image` | `query` | `string` | Reference image URL(s) for image-to-3D generation. Separate multiple URLs with `\|` or `,`. Required for image-only models (e.g. `trellis`, `triposr`, `sf3d`). |
+| `image` | `query` | `string` | Reference image URL(s) for image-to-3D generation. Separate multiple URLs with `\|` or `,`. Required for image-only models (e.g. `triposr`, `sf3d`, `asset-harvester`). |
 | `format` | `query` | `string` | Output 3D file format. Not all models support all formats — falls back to glb if unsupported. · default: `"glb"` |
 | `safe` | `query` | `string` \| `boolean` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
 
@@ -558,7 +558,7 @@ Browse all available models and their input requirements at [`/3d/models`](https
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/3d/a%20low-poly%20treasure%20chest?model=trellis&image=https://example.com/ref.jpg" \
+curl "https://gen.pollinations.ai/3d/a%20low-poly%20treasure%20chest?model=triposr&image=https://example.com/ref.jpg" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   --output model.glb
 ```

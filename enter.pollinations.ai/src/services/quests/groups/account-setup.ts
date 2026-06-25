@@ -44,6 +44,8 @@ const byopLoginQuest: QuestDefinition = {
     scope: "perUser",
     rewardAmount: 0.25,
     balanceBucket: "tier",
+    // Built but not launched — hidden from the UI, not grantable.
+    availability: "coming_soon",
 };
 
 const sixMonthAccountQuest: QuestDefinition = {

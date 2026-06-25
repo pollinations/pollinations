@@ -573,6 +573,7 @@ test("quest check records app growth rewards for the app owner", async ({
         ownerRewards.some((reward) => reward.questId === "grow:app_listed"),
     ).toBe(false);
 
+    // byop_login is coming_soon (inert), so logging in records nothing.
     await checkQuestsForUser(env, "byop-external-user");
     const externalRewards = await db
         .select({
@@ -581,9 +582,7 @@ test("quest check records app growth rewards for the app owner", async ({
         })
         .from(schema.rewards)
         .where(eq(schema.rewards.questId, "setup:byop_login"));
-    expect(externalRewards).toEqual([
-        { questId: "setup:byop_login", userId: "byop-external-user" },
-    ]);
+    expect(externalRewards).toHaveLength(0);
 });
 
 test("quest check records model-usage rewards per modality", async ({

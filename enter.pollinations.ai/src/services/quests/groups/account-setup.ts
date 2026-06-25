@@ -74,7 +74,7 @@ const overHundredPollenQuest: QuestDefinition = {
     id: "top_up_100",
     title: "Top up 100 Pollen",
     description:
-        "You have [topped up](#buy-pollen) more than 100 Pollen in total.",
+        "You have [topped up](#buy-pollen) 100 Pollen or more in total.",
     category: "grow",
     scope: "perUser",
     rewardAmount: 50,

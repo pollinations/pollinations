@@ -20,7 +20,7 @@ Tiers (`microbe` / `spore` / `seed` / `flower` / `nectar`) are static account-cl
 
 This skill is **read-only**: it looks up a user's tier and balance. It does not change tiers.
 
-> The hourly tier-balance refill (surfaced to users as the Quest Pollen balance) is out of scope here.
+> How the Quest Pollen balance (the `tier_balance` column) is funded is out of scope here.
 
 ---
 
@@ -59,4 +59,3 @@ Use the model-debugging skill to find users hitting 402 errors (billing/quota):
 | File | Purpose |
 |------|---------|
 | `shared/tier-config.ts` | Tier → pollen mapping (source of truth) |
-| `enter.pollinations.ai/src/services/tier-refill.ts` | Hourly tier-balance refill (the drip) |

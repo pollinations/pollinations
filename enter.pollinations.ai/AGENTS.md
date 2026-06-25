@@ -624,28 +624,16 @@ URL-based identity lookup was removed — identity is derived from `client_id` o
 
 ---
 
-## 🎫 User Tier Management
+## 🎫 Wallet & Balance Lookups
 
 > Claude skill available: `.claude/skills/tier-management/SKILL.md`
 
-### Tier Levels
-
-> Pollen is earned via Quests. Tiers are frozen account-classification levels; the tier balance is shown to users as the Quest Pollen balance.
-
-| Tier   | Emoji | Criteria                 |
-| ------ | ----- | ------------------------ |
-| microbe| 🦠    | Entry tier (auto-upgrades once verified) |
-| spore  | 🍄    | Verified accounts        |
-| seed   | 🌱    | GitHub engagement        |
-| flower | 🌸    | Contributor              |
-| nectar | 🍯    | Legacy — still supported for existing users, no longer granted |
+Pollen is earned by completing **Quests**. The `tier`, `tier_balance`, and `pack_balance` columns remain in D1 as the active wallet data model — do not treat the `tier` column as a runtime product level or mutate it to "upgrade" a user. The `tier_balance` bucket is shown to users as the **Quest Pollen** balance; `pack_balance` is the **Paid** balance. The old account-level upgrade/downgrade paths (Spore→Seed, app→Flower, admin tier-update) are removed.
 
 ### Lookups (read-only)
 
-Tiers are **frozen** — nothing upgrades or downgrades a user's tier (the automatic Spore→Seed, app→Flower, and admin tier-update paths were removed). Pollen is earned via Quests.
-
 ```bash
-# Look up a user's tier + balance
+# Look up a user's balance
 .claude/skills/tier-management/scripts/check-user-balance.sh USERNAME_OR_EMAIL
 
 # Or query D1 directly

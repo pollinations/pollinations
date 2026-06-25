@@ -580,9 +580,6 @@ Helper scripts for common debugging tasks. Run from repo root.
 ```bash
 # Find users with >10 403 errors in last 24 hours
 .claude/skills/model-debugging/scripts/find-403-users.sh 24 10
-
-# Filter by tier (e.g., only spore users)
-.claude/skills/model-debugging/scripts/find-403-users.sh 24 10 spore
 ```
 
 ## Find 500 Errors (Backend Issues)

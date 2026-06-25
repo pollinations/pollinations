@@ -8,7 +8,7 @@
 - 500+ apps built by people around the world
 - Used by indie devs, artists, tinkerers, students, researchers, hobbyists, people with more ideas than budget
 - Everything is in the open — code, roadmap, conversations
-- Pollen credits for heavy usage. earn Pollen from Quests. no subscriptions
+- Pollen credits for heavy usage. free tier is generous. no subscriptions
 
 ## What You Can Build With It
 
@@ -30,9 +30,9 @@ The name evokes nature, growth, organic systems — bees, flowers, seeds, garden
 
 Think: the tone of a well-written README, a CCC talk abstract, or a Phrack article. technical, wry, respects the reader's time.
 
-## Quests
+## Tier System
 
-Earn Pollen by completing useful actions — onboarding, using models, growing an app, GitHub contributions.
-- complete a Quest, claim the reward, Pollen lands in your wallet
-- Contribute quests pay a fixed reward when your assigned GitHub issue is merged
-- in alpha — rewards and availability evolve
+Contributors level up organically:
+- **Spore** 🍄 (0.01 pollen/hour) — you showed up
+- **Seed** 🌱 (0.15 pollen/hour) — auto-upgraded from GitHub activity
+- **Flower** 🌸 (0.4 pollen/hour) — submit an app to the showcase

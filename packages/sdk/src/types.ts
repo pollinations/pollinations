@@ -588,7 +588,7 @@ export interface AccountProfile {
     image: string | null;
     /** Current tier level (e.g. `"spore"`, `"seed"`, `"flower"`, `"nectar"`). */
     tier: string;
-    /** Legacy tier-balance reset timestamp (ISO 8601), or `null`. Retained for backward compatibility. */
+    /** ISO 8601 timestamp of the next pollen refill. `null` for tiers with no refill. */
     nextResetAt: string | null;
     /** Only returned when the API key has the `profile` permission */
     name?: string | null;

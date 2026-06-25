@@ -701,7 +701,7 @@ const profileResponseSchema = z.object({
         .datetime()
         .nullable()
         .describe(
-            "Legacy tier-balance reset timestamp (ISO 8601), or `null`. Retained for backward compatibility.",
+            "Next pollen refill timestamp (ISO 8601). `null` for tiers with no refill.",
         ),
     name: z
         .string()
@@ -831,7 +831,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Profile",
             description:
-                "Returns your account profile. GitHub username, profile image, current tier, and tier-balance reset timestamp are always returned. Name and email are returned only when the API key has the `account:profile` permission.",
+                "Returns your account profile. GitHub username, profile image, current tier, and next pollen refill timestamp are always returned. Name and email are returned only when the API key has the `account:profile` permission.",
             responses: {
                 200: {
                     description: "User profile",

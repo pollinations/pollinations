@@ -1088,7 +1088,7 @@ export const ModuleRecipesDemo: FC = () => {
                     </span>
                     <span className="inline-flex items-center gap-2 text-sm text-theme-text-strong">
                         <WalletKindIcon kind="tier" />
-                        quest balance
+                        tier balance
                     </span>
                 </Row>
                 <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3">
@@ -1108,7 +1108,7 @@ export const ModuleRecipesDemo: FC = () => {
                     />
                     <WalletBalanceCard
                         kind="tier"
-                        label="Quest"
+                        label="Tier"
                         value={formatPollen(183.4)}
                         footer={
                             <>
@@ -1118,9 +1118,7 @@ export const ModuleRecipesDemo: FC = () => {
                                 </span>
                             </>
                         }
-                        info={
-                            <InfoTip content="Quest Pollen earned from completing Quests." />
-                        }
+                        info={<InfoTip content="Tier allowance balance." />}
                     />
                 </div>
                 <Row label="ModalityDot">

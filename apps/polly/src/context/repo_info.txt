@@ -21,24 +21,23 @@ Image (default: zimage): flux, zimage, gptimage, klein|klein-large, imagen-4, gr
 Video: seedance (free default), veo (audio), seedance-pro, wan (audio), ltx-2 (audio), grok-video
 Audio: elevenlabs (TTS), elevenmusic, whisper (STT alpha), scribe (STT 90+ lang)
 
-Paid-only models (require Paid Pollen; Quest Pollen won't work): claude, claude-large, claude-opus-4.7, gemini, gemini-large, grok, kontext, nanobanana(-pro), seedream(-pro), gptimage-large, veo, seedance-pro, wan, ltx-2
+Paid-only models (require purchased/crypto pollen, tier grants won't work): claude, claude-large, claude-opus-4.7, gemini, gemini-large, grok, kontext, nanobanana(-pro), seedream(-pro), gptimage-large, veo, seedance-pro, wan, ltx-2
 
 Tool calling supported: openai (all), claude (all), gemini (non-search), deepseek, kimi, glm, minimax, mistral, qwen-coder, nova-fast, grok. NOT supported: perplexity-*, gemini-search
 
-## Quests (earn Pollen by completing tasks)
+## Tiers (must progress in order — CANNOT skip)
 
-Complete quests from the Quests dashboard at enter.pollinations.ai → rewards land as Quest Pollen.
-- Lanes: onboarding, model usage, app growth, GitHub contributions
-- Contribute quests: comment on a POLLEN-QUEST GitHub issue to claim; fixed reward paid when merged
-- In alpha — rewards and availability evolve
-- Quest Pollen spent BEFORE Paid Pollen | Paid-only models require Paid Pollen
+Microbe(0)→Spore(0.01/hr)→Seed(0.15/hr)→Flower(0.4/hr)→Nectar(0.8/hr)→Router(10/hr)
+- Spore: log in at enter.pollinations.ai | Seed: auto (age+activity+commits) | Flower: submit app OR merged PR (requires Seed!) | Nectar: significant contributions (requires Flower!)
+- Grant pollen spent BEFORE purchased | Unused grants EXPIRE each period | Purchased pollen NEVER expires
+- Paid-only models CANNOT use tier grant pollen — only purchased/crypto
 
 ## Auth & Keys
 
 pk_ (publishable, 16ch): client-side, rate-limited 1 pollen/hr per key+IP | sk_ (secret, 32ch): server-only, unlimited
 Usage: `Authorization: Bearer <key>` or `?key=<key>` | Get keys: enter.pollinations.ai
 Per-key features: model restrictions, pollen budget cap, expiry (0-365 days)
-Balances (spent in order): Quest Pollen → Paid Pollen
+Balance buckets (deducted in order): tierBalance → cryptoBalance → packBalance
 Empty balance: HTTP 402 | Rate limited: HTTP 429 with Retry-After
 
 ## BYOP (Bring Your Own Pollen)

@@ -22,6 +22,7 @@ export const AUTH_COPY = {
     // Dropdown
     enterLink: "Dashboard",
     defaultUsername: "User",
+    tierLabel: "Tier",
 
     // BYOP CTA
     byopTitle: "🐝 Register your app for BYOP",

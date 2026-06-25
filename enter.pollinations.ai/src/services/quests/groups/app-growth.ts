@@ -29,7 +29,7 @@ const firstByopExternalUserQuest: QuestDefinition = {
         "Create an app key in [Keys](#keys), then have someone else authorize your BYOP app with their Pollinations account.",
     category: "grow",
     scope: "perUser",
-    rewardAmount: 3,
+    rewardAmount: 10,
     balanceBucket: "tier",
 };
 
@@ -40,7 +40,7 @@ const firstPaidSpendInAppQuest: QuestDefinition = {
         "Have a user make a paid request through your BYOP app, then track app activity from [Activity](#activity).",
     category: "grow",
     scope: "perUser",
-    rewardAmount: 2,
+    rewardAmount: 20,
     balanceBucket: "tier",
 };
 

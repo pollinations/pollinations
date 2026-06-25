@@ -192,7 +192,7 @@ const establishedGitHubAccountQuest: QuestDefinition = {
         "Sign in with a GitHub account that is at least one year old. This unlocks automatically after your account is connected.",
     category: "contribute",
     scope: "perUser",
-    rewardAmount: 6,
+    rewardAmount: 2,
     balanceBucket: "tier",
 };
 

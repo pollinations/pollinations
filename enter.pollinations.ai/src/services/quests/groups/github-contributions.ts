@@ -36,7 +36,7 @@ const firstMergedPrQuest: QuestDefinition = {
         "Open a pull request against the Pollinations repo and get it merged.",
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
-    rewardAmount: 5,
+    rewardAmount: 20,
     balanceBucket: "tier",
 };
 

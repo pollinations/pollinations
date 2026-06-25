@@ -32,7 +32,7 @@ const firstApiKeyQuest: QuestDefinition = {
         "Create an API key in [Keys](#keys), then use it to make authenticated Pollinations requests from an app or script.",
     category: "setup",
     scope: "perUser",
-    rewardAmount: 1,
+    rewardAmount: 0.25,
     balanceBucket: "tier",
 };
 
@@ -43,7 +43,7 @@ const byopLoginQuest: QuestDefinition = {
         "Authorize a Pollinations-powered app with your account. You can review connected keys in [Keys](#keys).",
     category: "setup",
     scope: "perUser",
-    rewardAmount: 1,
+    rewardAmount: 0.25,
     balanceBucket: "tier",
 };
 
@@ -65,7 +65,7 @@ const firstTopUpQuest: QuestDefinition = {
         "Add paid Pollen from [Top-up](#buy-pollen) so your projects can keep running after tier credits are spent.",
     category: "grow",
     scope: "perUser",
-    rewardAmount: 5,
+    rewardAmount: 10,
     balanceBucket: "tier",
 };
 

@@ -750,181 +750,189 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
 
     return (
         <div className="flex flex-col gap-6">
-            {/* The summary panel (completed/claimed cards + claimable banner +
-                claim footer) is per-user accounting — hidden for logged-out
-                visitors, who only see the quest catalog as a preview. */}
-            {!state.anonymous && (
-                <Surface variant="panel">
-                    {/* Responsive summary. Bucket cards are conditional on the
+            {/* Summary panel. The per-user accounting (completed/claimed cards +
+                claimable banner + checking indicator) is hidden for logged-out
+                visitors, but the alpha + claim-flow footer stays so the preview
+                still explains how quests work. */}
+            <Surface variant="panel">
+                {!state.anonymous && (
+                    <>
+                        {/* Responsive summary. Bucket cards are conditional on the
                     registry actually using that bucket (no point showing a
                     permanent zero). Source order is the mobile reading order
                     (header → total → header → pair); desktop uses explicit
                     col-start/row-start to put both headers on row 1 and the
                     cards on row 2. */}
-                    <div className={dimWhileChecking}>
-                        {(() => {
-                            const visibleBuckets = (
-                                ["paid", "tier"] as const
-                            ).filter((k) => usedBuckets[k]);
-                            const bucketCount = visibleBuckets.length;
-                            const totalCard = (
-                                <TotalCard
-                                    value={
-                                        bucketStats.paid.completed +
-                                        bucketStats.tier.completed
-                                    }
-                                />
-                            );
-                            if (bucketCount === 0) {
-                                // No quest pays pollen → just the completed total.
+                        <div className={dimWhileChecking}>
+                            {(() => {
+                                const visibleBuckets = (
+                                    ["paid", "tier"] as const
+                                ).filter((k) => usedBuckets[k]);
+                                const bucketCount = visibleBuckets.length;
+                                const totalCard = (
+                                    <TotalCard
+                                        value={
+                                            bucketStats.paid.completed +
+                                            bucketStats.tier.completed
+                                        }
+                                    />
+                                );
+                                if (bucketCount === 0) {
+                                    // No quest pays pollen → just the completed total.
+                                    return (
+                                        <div className="flex flex-col gap-2">
+                                            <Text
+                                                as="span"
+                                                size="sm"
+                                                weight="bold"
+                                                tone="muted"
+                                                className="uppercase tracking-wide"
+                                            >
+                                                Completed quests
+                                            </Text>
+                                            <div className="sm:w-1/3">
+                                                {totalCard}
+                                            </div>
+                                        </div>
+                                    );
+                                }
+                                const gridCols =
+                                    bucketCount === 2
+                                        ? "sm:grid-cols-3"
+                                        : "sm:grid-cols-2";
+                                const claimedHeaderColSpan =
+                                    bucketCount === 2
+                                        ? "sm:col-span-2"
+                                        : "sm:col-span-1";
                                 return (
-                                    <div className="flex flex-col gap-2">
+                                    <div
+                                        className={`grid grid-cols-2 gap-x-2 gap-y-2 ${gridCols}`}
+                                    >
                                         <Text
                                             as="span"
                                             size="sm"
                                             weight="bold"
                                             tone="muted"
-                                            className="uppercase tracking-wide"
+                                            className="col-span-2 uppercase tracking-wide sm:col-span-1 sm:col-start-1 sm:row-start-1"
                                         >
                                             Completed quests
                                         </Text>
-                                        <div className="sm:w-1/3">
+                                        <div className="col-span-2 sm:col-span-1 sm:col-start-1 sm:row-start-2">
                                             {totalCard}
                                         </div>
+                                        <Text
+                                            as="span"
+                                            size="sm"
+                                            weight="bold"
+                                            tone="muted"
+                                            className={`col-span-2 uppercase tracking-wide sm:col-start-2 sm:row-start-1 ${claimedHeaderColSpan}`}
+                                        >
+                                            Claimed pollen reward
+                                        </Text>
+                                        {visibleBuckets.map((kind, i) => {
+                                            const colStart =
+                                                bucketCount === 2 && i === 1
+                                                    ? "sm:col-start-3"
+                                                    : "sm:col-start-2";
+                                            return (
+                                                <div
+                                                    key={kind}
+                                                    className={`${colStart} sm:row-start-2`}
+                                                >
+                                                    <BucketCard
+                                                        kind={kind}
+                                                        value={formatRewardAmount(
+                                                            bucketStats[kind]
+                                                                .pollen,
+                                                        )}
+                                                        showBadge
+                                                    />
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 );
-                            }
-                            const gridCols =
-                                bucketCount === 2
-                                    ? "sm:grid-cols-3"
-                                    : "sm:grid-cols-2";
-                            const claimedHeaderColSpan =
-                                bucketCount === 2
-                                    ? "sm:col-span-2"
-                                    : "sm:col-span-1";
-                            return (
-                                <div
-                                    className={`grid grid-cols-2 gap-x-2 gap-y-2 ${gridCols}`}
-                                >
-                                    <Text
-                                        as="span"
-                                        size="sm"
-                                        weight="bold"
-                                        tone="muted"
-                                        className="col-span-2 uppercase tracking-wide sm:col-span-1 sm:col-start-1 sm:row-start-1"
-                                    >
-                                        Completed quests
-                                    </Text>
-                                    <div className="col-span-2 sm:col-span-1 sm:col-start-1 sm:row-start-2">
-                                        {totalCard}
-                                    </div>
-                                    <Text
-                                        as="span"
-                                        size="sm"
-                                        weight="bold"
-                                        tone="muted"
-                                        className={`col-span-2 uppercase tracking-wide sm:col-start-2 sm:row-start-1 ${claimedHeaderColSpan}`}
-                                    >
-                                        Claimed pollen reward
-                                    </Text>
-                                    {visibleBuckets.map((kind, i) => {
-                                        const colStart =
-                                            bucketCount === 2 && i === 1
-                                                ? "sm:col-start-3"
-                                                : "sm:col-start-2";
+                            })()}
+                            {claimable.count > 0 && (
+                                <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-theme-bg-subtle px-4 py-2.5 text-sm font-semibold text-theme-text-soft">
+                                    <SparkleIcon className="h-4 w-4 shrink-0" />
+                                    <span>
+                                        <span className="tabular-nums">
+                                            {claimable.count}
+                                        </span>{" "}
+                                        new{" "}
+                                        {claimable.count === 1
+                                            ? "quest"
+                                            : "quests"}{" "}
+                                        completed ready to claim!
+                                    </span>
+                                    {claimable.segments.map((seg, i) => {
+                                        const SegIcon =
+                                            seg.kind === "paid"
+                                                ? CardIcon
+                                                : SproutIcon;
                                         return (
-                                            <div
-                                                key={kind}
-                                                className={`${colStart} sm:row-start-2`}
+                                            <span
+                                                key={seg.kind}
+                                                className="flex items-center gap-1.5"
                                             >
-                                                <BucketCard
-                                                    kind={kind}
-                                                    value={formatRewardAmount(
-                                                        bucketStats[kind]
-                                                            .pollen,
+                                                {i > 0 && (
+                                                    <span
+                                                        aria-hidden="true"
+                                                        className="opacity-60"
+                                                    >
+                                                        ·
+                                                    </span>
+                                                )}
+                                                <SegIcon className="h-4 w-4 shrink-0" />
+                                                <span className="tabular-nums">
+                                                    {formatRewardAmount(
+                                                        seg.pollen,
                                                     )}
-                                                    showBadge
-                                                />
-                                            </div>
+                                                </span>
+                                            </span>
                                         );
                                     })}
                                 </div>
-                            );
-                        })()}
-                        {claimable.count > 0 && (
-                            <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-theme-bg-subtle px-4 py-2.5 text-sm font-semibold text-theme-text-soft">
-                                <SparkleIcon className="h-4 w-4 shrink-0" />
-                                <span>
-                                    <span className="tabular-nums">
-                                        {claimable.count}
-                                    </span>{" "}
-                                    new{" "}
-                                    {claimable.count === 1 ? "quest" : "quests"}{" "}
-                                    completed ready to claim!
-                                </span>
-                                {claimable.segments.map((seg, i) => {
-                                    const SegIcon =
-                                        seg.kind === "paid"
-                                            ? CardIcon
-                                            : SproutIcon;
-                                    return (
-                                        <span
-                                            key={seg.kind}
-                                            className="flex items-center gap-1.5"
-                                        >
-                                            {i > 0 && (
-                                                <span
-                                                    aria-hidden="true"
-                                                    className="opacity-60"
-                                                >
-                                                    ·
-                                                </span>
-                                            )}
-                                            <SegIcon className="h-4 w-4 shrink-0" />
-                                            <span className="tabular-nums">
-                                                {formatRewardAmount(seg.pollen)}
-                                            </span>
-                                        </span>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
-                    {/* Auto-check indicator: quests check themselves on open, so
+                            )}
+                        </div>
+                        {/* Auto-check indicator: quests check themselves on open, so
                     there's no button. Show a subtle "checking" line only while
                     the automatic check is in flight; nothing when idle. */}
-                    {state.checking && (
-                        <div className="mt-3 flex justify-end">
-                            <span className="flex animate-[pulse_2s_ease-in-out_infinite] items-center gap-1.5 text-[13px] leading-snug text-theme-text-muted">
-                                <SearchIcon className="h-4 w-4 shrink-0" />
-                                Checking for new quests…
-                            </span>
-                        </div>
-                    )}
-                    {/* Multi-line footer styled like the keys panel's footer —
+                        {state.checking && (
+                            <div className="mt-3 flex justify-end">
+                                <span className="flex animate-[pulse_2s_ease-in-out_infinite] items-center gap-1.5 text-[13px] leading-snug text-theme-text-muted">
+                                    <SearchIcon className="h-4 w-4 shrink-0" />
+                                    Checking for new quests…
+                                </span>
+                            </div>
+                        )}
+                    </>
+                )}
+                {/* Multi-line footer styled like the keys panel's footer —
                     text-[13px] + leading-snug keeps the two lines visually
-                    tight. */}
-                    <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
-                        <p className="flex items-start gap-1.5">
-                            <BeakerIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                            <span>
-                                Quests are in alpha — rewards and availability
-                                evolve as we tune them.
-                            </span>
-                        </p>
-                        <p className="flex items-start gap-1.5">
-                            <TargetIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                            <span>
-                                Complete → claim → credited to your{" "}
-                                <InlineLink href="#pollen" showIcon={false}>
-                                    pollen wallet
-                                </InlineLink>
-                                .
-                            </span>
-                        </p>
-                    </div>
-                </Surface>
-            )}
+                    tight. Always shown — explains quests to logged-out
+                    visitors too. */}
+                <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                    <p className="flex items-start gap-1.5">
+                        <BeakerIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            Quests are in alpha — rewards and availability
+                            evolve as we tune them.
+                        </span>
+                    </p>
+                    <p className="flex items-start gap-1.5">
+                        <TargetIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            Complete → claim → credited to your{" "}
+                            <InlineLink href="#pollen" showIcon={false}>
+                                pollen wallet
+                            </InlineLink>
+                            .
+                        </span>
+                    </p>
+                </div>
+            </Surface>
 
             {state.error && (
                 <Text size="sm" className="text-intent-danger-text">

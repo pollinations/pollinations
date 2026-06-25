@@ -905,8 +905,8 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                     <p className="flex items-start gap-1.5">
                         <BeakerIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
-                            Quests are in alpha — rewards and availability
-                            evolve as we tune them.
+                            Quests are in alpha — new quests are added, rewards
+                            and availability evolve as we tune them.
                         </span>
                     </p>
                     <p className="flex items-start gap-1.5">

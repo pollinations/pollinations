@@ -50,6 +50,100 @@ import VIDEO_GENERATION_MD from "../docs/video-generation.md?raw";
 
 type OpenApiSchema = Record<string, unknown>;
 
+const DOC_TAGS = {
+    quickStart: "Quick Start",
+    authentication: "Authentication",
+    byop: "BYOP",
+    cli: "CLI",
+    mcpServer: "MCP Server",
+    errors: "Errors",
+    safety: "Safety",
+    text: "Text",
+    image: "Image",
+    video: "Video",
+    realtime: "Realtime",
+    audio: "Audio",
+    embeddings: "Embeddings",
+    models: "Models",
+    mediaStorage: "Media Storage",
+    account: "Account",
+    publicStats: "Public Stats",
+} as const;
+
+const LEGACY_DOC_TAGS: Record<string, string> = {
+    "🚀 Quick Start": DOC_TAGS.quickStart,
+    "🔐 Authentication": DOC_TAGS.authentication,
+    "🌸 BYOP": DOC_TAGS.byop,
+    "🖥 CLI": DOC_TAGS.cli,
+    "🔌 MCP Server": DOC_TAGS.mcpServer,
+    "❌ Errors": DOC_TAGS.errors,
+    "🛡️ Safety": DOC_TAGS.safety,
+    "✍️ Text": DOC_TAGS.text,
+    "🖼️ Image": DOC_TAGS.image,
+    "🎬 Video": DOC_TAGS.video,
+    "🎙️ Realtime": DOC_TAGS.realtime,
+    "🔊 Audio": DOC_TAGS.audio,
+    "🔢 Embeddings": DOC_TAGS.embeddings,
+    "🤖 Models": DOC_TAGS.models,
+    "📦 Media Storage": DOC_TAGS.mediaStorage,
+    "👤 Account": DOC_TAGS.account,
+    "📊 Public Stats": DOC_TAGS.publicStats,
+    "media.pollinations.ai": DOC_TAGS.mediaStorage,
+};
+
+const docsIcon = (body: string): string =>
+    `<svg class="ph-doc-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
+
+const DOC_TAG_ICON_HTML: Record<string, string> = {
+    [DOC_TAGS.quickStart]: docsIcon(
+        '<path d="M7 20h10" /><path d="M10 20c5.5-2.5.8-6.4 3-10" /><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z" /><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z" />',
+    ),
+    [DOC_TAGS.authentication]: docsIcon(
+        '<rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />',
+    ),
+    [DOC_TAGS.byop]: docsIcon(
+        '<path d="M3 7a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v2H5a2 2 0 0 0-2 2V7Z" /><path d="M3 11a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6Z" /><circle cx="17" cy="14" r="1.25" fill="currentColor" />',
+    ),
+    [DOC_TAGS.cli]: docsIcon(
+        '<polyline points="4 8 8 12 4 16" /><line x1="12" y1="20" x2="20" y2="20" />',
+    ),
+    [DOC_TAGS.mcpServer]: docsIcon(
+        '<rect x="2" y="7" width="8" height="10" rx="1.5" /><rect x="14" y="7" width="8" height="10" rx="1.5" /><path d="M10 12h4" />',
+    ),
+    [DOC_TAGS.errors]: docsIcon('<path d="M18 6 6 18M6 6l12 12" />'),
+    [DOC_TAGS.safety]: docsIcon('<polyline points="20 6 9 17 4 12" />'),
+    [DOC_TAGS.text]: docsIcon(
+        '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />',
+    ),
+    [DOC_TAGS.image]: docsIcon(
+        '<rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-5-5L5 21" />',
+    ),
+    [DOC_TAGS.video]: docsIcon(
+        '<path d="m22 8-6 4 6 4V8z" /><rect x="2" y="6" width="14" height="12" rx="2" />',
+    ),
+    [DOC_TAGS.realtime]: docsIcon(
+        '<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><path d="M12 19v3" />',
+    ),
+    [DOC_TAGS.audio]: docsIcon(
+        '<path d="M11 5 6 9H2v6h4l5 4z" /><path d="M15.54 8.46a5 5 0 0 1 0 7.07" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14" />',
+    ),
+    [DOC_TAGS.embeddings]: docsIcon(
+        '<path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18" />',
+    ),
+    [DOC_TAGS.models]: docsIcon(
+        '<path d="M9 3h6" /><path d="M10 3v6.5L4.5 18a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L14 9.5V3" /><path d="M7 14h10" />',
+    ),
+    [DOC_TAGS.mediaStorage]: docsIcon(
+        '<ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M3 5v14a9 3 0 0 0 18 0V5" /><path d="M3 12a9 3 0 0 0 18 0" />',
+    ),
+    [DOC_TAGS.account]: docsIcon(
+        '<circle cx="7.5" cy="15.5" r="5.5" /><path d="m21 2-9.6 9.6" /><path d="m15.5 7.5 3 3L22 7l-3-3" />',
+    ),
+    [DOC_TAGS.publicStats]: docsIcon(
+        '<polyline points="3 17 9 11 13 15 21 7" /><polyline points="15 7 21 7 21 13" />',
+    ),
+};
+
 const BYOP_DOCS = BYOP_MD.trim();
 
 const CLI_DOCS = CLI_README.replace(/^# .*\n+/, "")
@@ -264,6 +358,7 @@ function pollinationsHeaderHtml(scalarHosted = false): string {
     const contextCss = scalarHosted
         ? POLLINATIONS_HEADER_SCALAR_CSS
         : POLLINATIONS_HEADER_STANDALONE_CSS;
+    const navIcons = JSON.stringify(DOC_TAG_ICON_HTML);
     return `<style>${POLLINATIONS_HEADER_CSS}${contextCss}</style>
 <header class="ph-bar">
   <a href="/" class="ph-brand"><img src="/docs/logo.svg" alt="Pollinations" /></a>
@@ -292,12 +387,17 @@ function pollinationsHeaderHtml(scalarHosted = false): string {
   // Text-based DOM scan for Scalar buttons whose class names get hashed
   // by the CDN bundle — we tag them by their stable label so our CSS can
   // hide ("Ask AI") or style ("Show more") them in amber.
+  var navIcons = ${navIcons};
   function scanScalarButtons() {
     var nodes = document.querySelectorAll('button, a, [role="button"]');
     for (var i = 0; i < nodes.length; i++) {
       var text = (nodes[i].textContent || '').trim();
       if (/^ask ai\\b/i.test(text)) nodes[i].style.display = 'none';
       else if (/^show more\\b/i.test(text)) nodes[i].classList.add('ph-show-more');
+      else if (navIcons[text] && !nodes[i].querySelector('.ph-doc-icon')) {
+        nodes[i].classList.add('ph-doc-nav-item');
+        nodes[i].insertAdjacentHTML('afterbegin', navIcons[text]);
+      }
     }
   }
   scanScalarButtons();
@@ -329,102 +429,102 @@ function generationDocumentation(): OpenApiSchema {
         "x-tagGroups": [
             {
                 name: "Get Started",
-                tags: ["🚀 Quick Start", "🔐 Authentication"],
+                tags: [DOC_TAGS.quickStart, DOC_TAGS.authentication],
             },
             {
                 name: "Integrations",
-                tags: ["🌸 BYOP", "🖥 CLI", "🔌 MCP Server"],
+                tags: [DOC_TAGS.byop, DOC_TAGS.cli, DOC_TAGS.mcpServer],
             },
             {
                 name: "Generation",
                 tags: [
-                    "✍️ Text",
-                    "🖼️ Image",
-                    "🎬 Video",
-                    "🎙️ Realtime",
-                    "🔊 Audio",
-                    "🔢 Embeddings",
+                    DOC_TAGS.text,
+                    DOC_TAGS.image,
+                    DOC_TAGS.video,
+                    DOC_TAGS.realtime,
+                    DOC_TAGS.audio,
+                    DOC_TAGS.embeddings,
                 ],
             },
             {
                 name: "Resources",
                 tags: [
-                    "🤖 Models",
-                    "📦 Media Storage",
-                    "👤 Account",
-                    "🛡️ Safety",
-                    "❌ Errors",
-                    "📊 Public Stats",
+                    DOC_TAGS.models,
+                    DOC_TAGS.mediaStorage,
+                    DOC_TAGS.account,
+                    DOC_TAGS.safety,
+                    DOC_TAGS.errors,
+                    DOC_TAGS.publicStats,
                 ],
             },
         ],
         tags: [
             {
-                name: "🚀 Quick Start",
+                name: DOC_TAGS.quickStart,
                 description: stripLeadingHeading(QUICK_START_DOCS),
             },
             {
-                name: "🔐 Authentication",
+                name: DOC_TAGS.authentication,
                 description: stripLeadingHeading(AUTHENTICATION_DOCS),
             },
             {
-                name: "🌸 BYOP",
+                name: DOC_TAGS.byop,
                 description: BYOP_DOCS,
             },
             {
-                name: "🖥 CLI",
+                name: DOC_TAGS.cli,
                 description: CLI_DOCS,
             },
             {
-                name: "🔌 MCP Server",
+                name: DOC_TAGS.mcpServer,
                 description: MCP_DOCS,
             },
             {
-                name: "❌ Errors",
+                name: DOC_TAGS.errors,
                 description: stripLeadingHeading(ERRORS_DOCS),
             },
             {
-                name: "🛡️ Safety",
+                name: DOC_TAGS.safety,
                 description: stripLeadingHeading(SAFETY_DOCS),
             },
             {
-                name: "✍️ Text",
+                name: DOC_TAGS.text,
                 description: stripLeadingHeading(TEXT_GENERATION_DOCS),
             },
             {
-                name: "🖼️ Image",
+                name: DOC_TAGS.image,
                 description: stripLeadingHeading(IMAGE_GENERATION_DOCS),
             },
             {
-                name: "🎬 Video",
+                name: DOC_TAGS.video,
                 description: stripLeadingHeading(VIDEO_GENERATION_DOCS),
             },
             {
-                name: "🎙️ Realtime",
+                name: DOC_TAGS.realtime,
                 description: stripLeadingHeading(REALTIME_DOCS),
             },
             {
-                name: "🔊 Audio",
+                name: DOC_TAGS.audio,
                 description: stripLeadingHeading(AUDIO_GENERATION_DOCS),
             },
             {
-                name: "🔢 Embeddings",
+                name: DOC_TAGS.embeddings,
                 description: stripLeadingHeading(EMBEDDINGS_DOCS),
             },
             {
-                name: "🤖 Models",
+                name: DOC_TAGS.models,
                 description: stripLeadingHeading(MODELS_DOCS),
             },
             {
-                name: "📦 Media Storage",
+                name: DOC_TAGS.mediaStorage,
                 description: stripLeadingHeading(MEDIA_STORAGE_DOCS),
             },
             {
-                name: "👤 Account",
+                name: DOC_TAGS.account,
                 description: stripLeadingHeading(ACCOUNT_DOCS),
             },
             {
-                name: "📊 Public Stats",
+                name: DOC_TAGS.publicStats,
                 description: stripLeadingHeading(PUBLIC_STATS_DOCS),
             },
         ],
@@ -440,12 +540,42 @@ function getGenerationSchema(genApp: Hono<Env>): Promise<OpenApiSchema> {
     return generationSchemaPromise;
 }
 
+function normalizeDocTagName(tag: string): string {
+    return LEGACY_DOC_TAGS[tag] ?? tag;
+}
+
+function normalizeDocTagObjects(tags: OpenApiSchema[]): OpenApiSchema[] {
+    return mergeTags(
+        tags.map((tag) =>
+            typeof tag.name === "string"
+                ? { ...tag, name: normalizeDocTagName(tag.name) }
+                : tag,
+        ),
+        [],
+    );
+}
+
+function normalizeOperationTags(paths: OpenApiSchema): void {
+    for (const pathItem of Object.values(paths)) {
+        if (!pathItem || typeof pathItem !== "object") continue;
+        for (const operation of Object.values(pathItem as OpenApiSchema)) {
+            if (!operation || typeof operation !== "object") continue;
+            const record = operation as { tags?: unknown };
+            if (!Array.isArray(record.tags)) continue;
+            record.tags = record.tags.map((tag) =>
+                typeof tag === "string" ? normalizeDocTagName(tag) : tag,
+            );
+        }
+    }
+}
+
 function transformGenerationSchema(schema: OpenApiSchema): OpenApiSchema {
     const paths: OpenApiSchema = {};
     for (const [path, value] of Object.entries(asRecord(schema.paths))) {
         const publicPath = path.replace(/^\/api\/account(?=\/|$)/, "/account");
         paths[publicPath] = value;
     }
+    normalizeOperationTags(paths);
 
     return hideUndocumentedChatCompatFields(
         filterAliases({
@@ -487,7 +617,7 @@ async function fetchMediaSchema(): Promise<OpenApiSchema | undefined> {
             const record = operation as { tags?: unknown; security?: unknown };
             if (!Array.isArray(record.tags)) continue;
             record.tags = record.tags.map((tag) =>
-                tag === "media.pollinations.ai" ? "📦 Media Storage" : tag,
+                typeof tag === "string" ? normalizeDocTagName(tag) : tag,
             );
             // Public read routes do not require auth. Defensive override in
             // case the upstream media spec hasn't been redeployed with the
@@ -514,7 +644,18 @@ function transformEnterSchema(schema: OpenApiSchema): OpenApiSchema {
         const publicPath = path.replace(/^\/api\/account(?=\/|$)/, "/account");
         paths[publicPath] = value;
     }
-    return { ...schema, tags: tagsForPaths(schema, paths), paths };
+    normalizeOperationTags(paths);
+    return {
+        ...schema,
+        tags: tagsForPaths(
+            {
+                ...schema,
+                tags: normalizeDocTagObjects(asRecordArray(schema.tags)),
+            },
+            paths,
+        ),
+        paths,
+    };
 }
 
 function isPublicAccountPath(path: string): boolean {
@@ -704,7 +845,7 @@ function asRecordArray(value: unknown): OpenApiSchema[] {
 type Guide = {
     id: GuideId;
     title: string;
-    emoji: string;
+    icon: string;
     summary: string;
     markdown: string;
 };
@@ -713,7 +854,7 @@ const GUIDES: Guide[] = [
     {
         id: "byop",
         title: "BYOP",
-        emoji: "🌸",
+        icon: DOC_TAGS.byop,
         summary:
             "Let your users authorize your app to spend their own Pollen on Pollinations requests.",
         markdown: BYOP_DOCS,
@@ -721,7 +862,7 @@ const GUIDES: Guide[] = [
     {
         id: "cli",
         title: "CLI",
-        emoji: "🖥️",
+        icon: DOC_TAGS.cli,
         summary:
             "The Pollinations CLI — for humans, AI agents, and everything in between.",
         markdown: CLI_DOCS,
@@ -729,7 +870,7 @@ const GUIDES: Guide[] = [
     {
         id: "mcp",
         title: "MCP Server",
-        emoji: "🔌",
+        icon: DOC_TAGS.mcpServer,
         summary:
             "Wire Pollinations into Claude Desktop, Cursor, and other MCP-compatible clients.",
         markdown: MCP_DOCS,
@@ -758,10 +899,14 @@ ${pollinationsHeaderHtml()}
 function guidesIndexHtml(): string {
     const cards = GUIDES.map(
         (g) =>
-            `<a class="guide-card" href="/docs/guides/${g.id}"><h3>${g.emoji} ${g.title}</h3><p>${g.summary}</p></a>`,
+            `<a class="guide-card" href="/docs/guides/${g.id}"><h3>${guideIconHtml(g.icon)}<span>${g.title}</span></h3><p>${g.summary}</p></a>`,
     ).join("");
     const body = `<h1>Guides</h1><p>Integration paths beyond the raw API.</p><div class="guide-cards">${cards}</div>`;
     return guidesPage(body);
+}
+
+function guideIconHtml(icon: string): string {
+    return DOC_TAG_ICON_HTML[icon] ?? "";
 }
 
 function guideHtml(guide: Guide): string {
@@ -769,11 +914,10 @@ function guideHtml(guide: Guide): string {
     // Source READMEs have their H1 stripped (because we render the page title
     // separately) — re-adding it here gives the rendered page a proper title
     // without duplicating it across surfaces.
-    const rendered = marked.parse(
-        `# ${guide.emoji} ${guide.title}\n\n${guide.markdown}`,
-        { async: false },
-    ) as string;
-    return guidesPage(rendered);
+    const rendered = marked.parse(guide.markdown, { async: false }) as string;
+    return guidesPage(
+        `<h1 class="guide-title">${guideIconHtml(guide.icon)}<span>${guide.title}</span></h1>${rendered}`,
+    );
 }
 
 /**

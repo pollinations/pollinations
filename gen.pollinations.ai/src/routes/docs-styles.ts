@@ -95,6 +95,22 @@ export const API_REFERENCE_CUSTOM_CSS = `
   color: #fbbf24;
 }
 
+.scalar-app .ph-doc-nav-item {
+  align-items: center;
+}
+.scalar-app .ph-doc-nav-item .ph-doc-icon {
+  width: 14px;
+  height: 14px;
+  margin-right: 7px;
+  flex: 0 0 auto;
+  color: var(--scalar-sidebar-color-2);
+}
+.scalar-app .ph-doc-nav-item:hover .ph-doc-icon,
+.scalar-app .ph-doc-nav-item[aria-current="page"] .ph-doc-icon,
+.scalar-app .ph-doc-nav-item[aria-current="true"] .ph-doc-icon {
+  color: var(--scalar-sidebar-color-active);
+}
+
 /* Hide Scalar's native download UI — we surface it via the floating
    action cluster (see .ph-fab-cluster below) for layout consistency. */
 .scalar-app .download-container { display: none !important; }
@@ -215,6 +231,18 @@ img { max-width: 100%; height: auto; }
     background: #131316; color: #fafafa; text-decoration: none; transition: border-color .15s, background .15s;
 }
 .guide-card:hover { border-color: #f59e0b; background: #161618; }
-.guide-card h3 { margin: 0 0 .375rem; font-size: 1.05rem; color: #fafafa; }
+.guide-card h3 { display: flex; align-items: center; gap: .5rem; margin: 0 0 .375rem; font-size: 1.05rem; color: #fafafa; }
 .guide-card p { margin: 0; color: #a1a1aa; font-size: .9rem; }
+.guide-title { display: flex; align-items: center; gap: .6rem; }
+.guide-card .ph-doc-icon,
+.guide-title .ph-doc-icon {
+    width: 1.1rem;
+    height: 1.1rem;
+    flex: 0 0 auto;
+    color: #f59e0b;
+}
+.guide-title .ph-doc-icon {
+    width: 1.35rem;
+    height: 1.35rem;
+}
 `;

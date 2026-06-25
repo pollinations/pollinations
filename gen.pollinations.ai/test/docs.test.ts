@@ -97,13 +97,15 @@ describe("docs routes", () => {
         expect(schema.paths["/api-keys"]).toBeUndefined();
         expect(schema.paths["/generate/text/{prompt}"]).toBeUndefined();
         expect(schema.paths["/{hash}"]).toBeDefined();
-        // BYOP, CLI, MCP are surfaced as tags in the Integrations group.
-        expect(schema.tags.map((tag) => tag.name)).toContain("🌸 BYOP");
-        expect(schema.tags.map((tag) => tag.name)).toContain("🖥 CLI");
-        expect(schema.tags.map((tag) => tag.name)).toContain("🔌 MCP Server");
-        expect(schema.tags.map((tag) => tag.name)).toContain(
-            "📦 Media Storage",
-        );
+        // BYOP, CLI, MCP are surfaced as plain tags in the Integrations group;
+        // the drawer icons are presentation, not part of the OpenAPI names.
+        expect(schema.tags.map((tag) => tag.name)).toContain("BYOP");
+        expect(schema.tags.map((tag) => tag.name)).toContain("CLI");
+        expect(schema.tags.map((tag) => tag.name)).toContain("MCP Server");
+        expect(schema.tags.map((tag) => tag.name)).toContain("Media Storage");
+        expect(schema.tags.map((tag) => tag.name)).toContain("Account");
+        expect(schema.tags.map((tag) => tag.name)).not.toContain("🌸 BYOP");
+        expect(schema.tags.map((tag) => tag.name)).not.toContain("👤 Account");
         expect(schema.tags.map((tag) => tag.name)).not.toContain("Customer");
         expect(schema.components.schemas.EnterOnly).toBeDefined();
         expect(schema.components.schemas.MediaOnly).toBeDefined();
@@ -159,6 +161,8 @@ describe("docs routes", () => {
         const html = await response.text();
         expect(html).toContain(".scalar-app .markdown table");
         expect(html).toContain("overflow-x: auto");
+        expect(html).toContain("ph-doc-nav-item");
+        expect(html).toContain("ph-doc-icon");
     });
 
     it("serves the OpenAPI schema as YAML when ?format=yaml", async () => {
@@ -192,6 +196,7 @@ describe("docs routes", () => {
         expect(indexRes.status).toBe(200);
         const indexHtml = await indexRes.text();
         expect(indexHtml).toContain("guide-card");
+        expect(indexHtml).toContain("ph-doc-icon");
         expect(indexHtml).toContain("/docs/guides/byop");
         expect(indexHtml).toContain("/docs/guides/cli");
         expect(indexHtml).toContain("/docs/guides/mcp");

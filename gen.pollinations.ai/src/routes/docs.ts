@@ -144,6 +144,16 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
     ),
 };
 
+const DOC_TAG_NAV_ICON_HTML: Record<string, string> = Object.fromEntries(
+    Object.entries(DOC_TAG_ICON_HTML).map(([tag, icon]) => [
+        tag,
+        icon.replace(
+            'class="ph-doc-icon"',
+            'class="ph-doc-icon ph-doc-nav-icon"',
+        ),
+    ]),
+);
+
 const BYOP_DOCS = BYOP_MD.trim();
 
 const CLI_DOCS = CLI_README.replace(/^# .*\n+/, "")
@@ -358,7 +368,7 @@ function pollinationsHeaderHtml(scalarHosted = false): string {
     const contextCss = scalarHosted
         ? POLLINATIONS_HEADER_SCALAR_CSS
         : POLLINATIONS_HEADER_STANDALONE_CSS;
-    const navIcons = JSON.stringify(DOC_TAG_ICON_HTML);
+    const navIcons = JSON.stringify(DOC_TAG_NAV_ICON_HTML);
     return `<style>${POLLINATIONS_HEADER_CSS}${contextCss}</style>
 <header class="ph-bar">
   <a href="/" class="ph-brand"><img src="/docs/logo.svg" alt="Pollinations" /></a>

@@ -163,6 +163,7 @@ describe("docs routes", () => {
         expect(html).toContain("overflow-x: auto");
         expect(html).toContain("ph-doc-nav-item");
         expect(html).toContain("ph-doc-icon");
+        expect(html).toContain("ph-doc-nav-icon");
     });
 
     it("serves the OpenAPI schema as YAML when ?format=yaml", async () => {

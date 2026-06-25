@@ -98,16 +98,22 @@ export const API_REFERENCE_CUSTOM_CSS = `
 .scalar-app .ph-doc-nav-item {
   align-items: center;
 }
-.scalar-app .ph-doc-nav-item .ph-doc-icon {
-  width: 14px;
-  height: 14px;
+.ph-doc-nav-icon {
+  display: inline-block !important;
+  width: 14px !important;
+  height: 14px !important;
+  min-width: 14px !important;
+  min-height: 14px !important;
+  max-width: 14px !important;
+  max-height: 14px !important;
   margin-right: 7px;
-  flex: 0 0 auto;
+  flex: 0 0 14px !important;
+  align-self: center;
   color: var(--scalar-sidebar-color-2);
 }
-.scalar-app .ph-doc-nav-item:hover .ph-doc-icon,
-.scalar-app .ph-doc-nav-item[aria-current="page"] .ph-doc-icon,
-.scalar-app .ph-doc-nav-item[aria-current="true"] .ph-doc-icon {
+.scalar-app .ph-doc-nav-item:hover .ph-doc-nav-icon,
+.scalar-app .ph-doc-nav-item[aria-current="page"] .ph-doc-nav-icon,
+.scalar-app .ph-doc-nav-item[aria-current="true"] .ph-doc-nav-icon {
   color: var(--scalar-sidebar-color-active);
 }
 

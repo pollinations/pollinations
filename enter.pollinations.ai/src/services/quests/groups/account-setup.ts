@@ -28,7 +28,7 @@ type SetupQuestRow = {
 const firstApiKeyQuest: QuestDefinition = {
     id: "onboarding:first_api_key",
     title: "Create your first API key",
-    description: "Create an API key in [Keys](#keys).",
+    description: "Create an API [key](#keys).",
     category: "setup",
     scope: "perUser",
     rewardAmount: 0.25,

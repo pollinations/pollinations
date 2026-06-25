@@ -1,0 +1,35 @@
+{
+  "pr_number": 11993,
+  "title": "fix: preserve dashboard auth navigation",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11993",
+  "merged_at": "2026-06-25T21:05:25Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Keeps the current dashboard hash when redirecting signed-out users to sign-in.\n- Sends GitHub sign-in back to the same dashboard tab/hash instead of the default page.\n- Sends logout to the signed-out News & FAQ tab.\n\nChecks:\n- `npx biome check --write enter.pollinations.ai/frontend/src/auth.ts enter.pollinations.ai/frontend/src/routes/index.tsx enter.pollinations.ai/frontend/src/routes/sign-in.tsx`\n- `npm run typecheck` from `enter.pollinations.ai`\n- `npm run build:frontend` from `enter.pollinations.ai`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "No more lost tabs",
+    "blurb": "Signing in won't lose your place anymore. We've fixed the dashboard navigation so you always return to the exact tab you were looking at.",
+    "summary": "Dashboard authentication flows now preserve the active URL hash, ensuring users return to their specific tab after signing in via GitHub or redirecting to the sign-in page.",
+    "impact": "Users will no longer lose their place in the dashboard when logging in, and logging out now cleanly routes to the News & FAQ tab.",
+    "keywords": [
+      "dashboard",
+      "auth",
+      "navigation",
+      "ux",
+      "frontend"
+    ],
+    "visual_concept": "The bee mascot holding a tiny map or compass, navigating a path. Represents preserving the user's location/navigation state during auth flows.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny explorer's hat, holding a small map while standing next to a wooden signpost with glowing arrows. Soft lime green (#ecf874) and peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-25/PR-11993.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny explorer's hat, holding a small map while standing next to a wooden signpost with glowing arrows. Soft lime green (#ecf874) and peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-25T21:06:23.102175+00:00"
+}

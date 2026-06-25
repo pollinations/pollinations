@@ -201,6 +201,9 @@ describe("docs routes", () => {
         expect(html).toContain("--polli-color-bg-active");
         expect(html).toContain("var(--polli-color-bg-active)");
         expect(html).toContain("var(--polli-color-text-strong)");
+        expect(html).toContain(
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAPoAAAD6AG1e1Jr",
+        );
         expect(html).toContain("ph-doc-nav-item");
         expect(html).toContain("ph-doc-icon");
         expect(html).toContain("ph-doc-nav-icon");

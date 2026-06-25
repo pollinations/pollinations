@@ -383,3 +383,6 @@ apps/operation/finance/config.local.json
 # Local-only demo / sandbox files — never committed.
 *.demo.tsx
 *.demo.ts
+
+# Playwright MCP scratch output (snapshots, screenshots, console logs)
+.playwright-mcp/

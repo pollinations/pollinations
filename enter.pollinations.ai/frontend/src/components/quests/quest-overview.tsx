@@ -205,7 +205,6 @@ export type QuestCard = {
     balanceBucket?: string | null;
     status: QuestCardStatus;
     earnedAmount?: number | null;
-    comingSoon?: boolean;
 };
 
 // ── Presentational primitives (composed from @pollinations/ui) ───────────────
@@ -327,9 +326,7 @@ export function QuestRow({
     const earned = card.status !== "open";
     const claimed = card.status === "claimed";
     const claimableRewardId =
-        card.status === "claimable" && !card.comingSoon
-            ? card.rewardId
-            : undefined;
+        card.status === "claimable" ? card.rewardId : undefined;
     const rewardAmount = earned
         ? (card.earnedAmount ?? card.reward)
         : card.reward;
@@ -343,11 +340,6 @@ export function QuestRow({
     const title = (
         <Text as="span" weight="semibold" tone={claimed ? "muted" : "strong"}>
             {card.title}
-            {card.comingSoon && (
-                <span className="ml-2 text-xs font-medium uppercase tracking-wide text-theme-text-muted">
-                    · coming soon
-                </span>
-            )}
         </Text>
     );
     const description = !earned && card.description ? card.description : null;
@@ -588,16 +580,6 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         }
         return map;
     }, [state.rewards]);
-    const comingSoonCatalogIds = useMemo(
-        () =>
-            new Set(
-                state.catalog
-                    .filter((quest) => quest.availability === "coming_soon")
-                    .map((quest) => quest.id),
-            ),
-        [state.catalog],
-    );
-
     // Build the per-category quest rows from the catalog — ONE uniform pass, no
     // per-lane special-casing. The catalog is the single source of truth: every
     // quest (onboarding, GitHub, issue bounty, easter egg) is one card. Rewards
@@ -615,22 +597,17 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         for (const quest of state.catalog) {
             const reward = rewardByKey.get(quest.id);
             const earned = rewardedCatalogIds.has(quest.id);
-            const comingSoon = quest.availability === "coming_soon";
-            const completed = quest.availability === "completed";
             // Visibility rule:
-            //  - Logged out (previewAll): show the catalog as a preview —
-            //    "available" + "coming_soon", but NEVER "completed" (off-board
-            //    one-offs like easter eggs / shipped bounties aren't a preview
-            //    of what a new visitor can earn).
-            //  - Logged in: show "available", "coming_soon", OR anything YOU
-            //    earned (so an off-board/per-person card you earned still shows).
+            //  - "coming_soon" is hidden everywhere (it stays in the catalog as
+            //    an inert, never-granted quest, but never renders).
+            //  - Logged out (previewAll): show only "available" — a preview of
+            //    what a new visitor can earn (no off-board "completed" one-offs).
+            //  - Logged in: show "available" OR anything YOU earned (so an
+            //    off-board/per-person card you earned still shows).
+            if (quest.availability === "coming_soon") continue;
             if (previewAll) {
-                if (completed) continue;
-            } else if (
-                !comingSoon &&
-                quest.availability !== "available" &&
-                !earned
-            ) {
+                if (quest.availability !== "available") continue;
+            } else if (quest.availability !== "available" && !earned) {
                 continue;
             }
 
@@ -651,12 +628,9 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                     : reward
                       ? reward.claimedAt
                           ? "claimed"
-                          : comingSoon
-                            ? "open"
-                            : "claimable"
+                          : "claimable"
                       : "open",
                 earnedAmount: reward?.pollenAmount ?? undefined,
-                comingSoon,
             });
         }
 
@@ -726,10 +700,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         const byKind: Record<RewardIconKind, number> = { paid: 0, tier: 0 };
         let count = 0;
         for (const reward of state.rewards) {
-            const comingSoonReward =
-                reward.questId != null &&
-                comingSoonCatalogIds.has(reward.questId);
-            if (reward.claimedAt == null && !comingSoonReward) {
+            if (reward.claimedAt == null) {
                 byKind[rewardIconKind(reward.balanceBucket)] +=
                     reward.pollenAmount;
                 count += 1;
@@ -739,7 +710,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
             .filter((kind) => byKind[kind] > 0)
             .map((kind) => ({ kind, pollen: byKind[kind] }));
         return { count, segments };
-    }, [comingSoonCatalogIds, state.rewards]);
+    }, [state.rewards]);
 
     // While the automatic quest check is running, dim the stats and cards so
     // the panel reads as "refreshing" — the numbers may be about to change. The

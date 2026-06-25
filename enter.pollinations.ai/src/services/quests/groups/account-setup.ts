@@ -37,7 +37,7 @@ const firstApiKeyQuest: QuestDefinition = {
 
 const byopLoginQuest: QuestDefinition = {
     id: "setup:byop_login",
-    title: "App Login",
+    title: "Use a Pollinations app",
     description:
         "Connect to a Pollinations app. Log in to any app in the [apps directory](https://pollinations.ai/apps) that supports it.",
     category: "setup",

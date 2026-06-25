@@ -24,7 +24,7 @@ type QuestUserRow = {
 
 const firstByopExternalUserQuest: QuestDefinition = {
     id: "grow:first_byop_external_user",
-    title: "First app login",
+    title: "Your app is being actively used",
     description:
         "A user logs in to your app using the [authorize](https://gen.pollinations.ai/docs#tag/byop) flow.",
     category: "grow",

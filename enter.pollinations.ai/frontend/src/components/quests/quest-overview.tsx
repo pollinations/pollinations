@@ -2,15 +2,12 @@ import {
     BeakerIcon,
     Button,
     CardIcon,
-    ChatIcon,
     CheckIcon,
     Chip,
     ClockIcon,
     DiscordIcon,
-    GitBranchIcon,
     GitHubIcon,
     InlineLink,
-    KeyIcon,
     Markdown,
     RocketIcon,
     SearchIcon,
@@ -22,7 +19,6 @@ import {
     TerminalIcon,
     Text,
     TrendUpIcon,
-    WalletIcon,
 } from "@pollinations/ui";
 import { formatPollen } from "@pollinations/ui/wallet";
 import {
@@ -85,55 +81,39 @@ type CategoryKey = QuestCatalogItem["category"];
 type CategoryMeta = {
     key: CategoryKey;
     label: string;
-    blurb: string;
     icon: IconComponent;
-    // Footer glyph — picked to echo the blurb sentence rather than repeat the
-    // section icon (which already marks every row in the lane).
-    footerIcon: IconComponent;
 };
 
 const CATEGORIES: CategoryMeta[] = [
     {
         key: "setup",
         label: "Setup",
-        blurb: "Get started with Pollinations.",
         icon: RocketIcon,
-        footerIcon: KeyIcon,
     },
     {
         key: "grow",
         label: "Grow",
-        blurb: "Grow your usage and revenue from apps.",
         icon: TrendUpIcon,
-        footerIcon: WalletIcon,
     },
     {
         key: "build",
         label: "Build",
-        blurb: "Your standing as a developer: GitHub, stars, and PRs.",
         icon: TerminalIcon,
-        footerIcon: GitBranchIcon,
     },
     {
         key: "contribute",
         label: "Contribute",
-        blurb: "Open-source issues and bounties you can help ship.",
         icon: GitHubIcon,
-        footerIcon: SearchIcon,
     },
     {
         key: "community",
         label: "Community",
-        blurb: "Low-friction ways to join and support the project.",
         icon: DiscordIcon,
-        footerIcon: ChatIcon,
     },
     {
         key: "easteregg",
         label: "Easter eggs",
-        blurb: "One-off rewards unlocked for you.",
         icon: SproutIcon,
-        footerIcon: SparkleIcon,
     },
 ];
 
@@ -259,18 +239,6 @@ export function TotalCard({ value }: { value: React.ReactNode }) {
                 {value}
             </span>
         </Surface>
-    );
-}
-
-function SectionFooter({ category }: { category: CategoryMeta }) {
-    const Icon = category.footerIcon;
-    return (
-        <div className="mt-4 flex items-center gap-1.5 border-t border-divider pt-4 text-theme-text-muted">
-            <Icon className="h-3.5 w-3.5 shrink-0" />
-            <Text as="span" size="sm" tone="muted">
-                {category.blurb}
-            </Text>
-        </div>
     );
 }
 
@@ -654,6 +622,17 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         return byCat;
     }, [state.catalog, rewardedCatalogIds, rewardByKey, previewAll]);
 
+    // Coming-soon quests aren't on the board — list their titles (no links) in a
+    // simple "Upcoming quests" section so people can see what's planned.
+    const upcoming = useMemo(
+        () =>
+            state.catalog
+                .filter((quest) => quest.availability === "coming_soon")
+                .map((quest) => quest.title)
+                .sort((a, b) => a.localeCompare(b)),
+        [state.catalog],
+    );
+
     // Which buckets the registry or earned rewards actually use — drives
     // whether the matching summary card is rendered. If no quest/reward touches
     // paid pollen, showing an always-zero paid card is just noise.
@@ -957,10 +936,25 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                                     onClaim={handleClaimReward}
                                 />
                             ))}
-                            <SectionFooter category={category} />
                         </Section>
                     );
                 })}
+
+                {upcoming.length > 0 && (
+                    <Section title="Upcoming quests" framed>
+                        <ul className="flex flex-col gap-1.5">
+                            {upcoming.map((title) => (
+                                <li
+                                    key={title}
+                                    className="flex items-center gap-2 text-sm text-theme-text-muted"
+                                >
+                                    <ClockIcon className="h-3.5 w-3.5 shrink-0" />
+                                    {title}
+                                </li>
+                            ))}
+                        </ul>
+                    </Section>
+                )}
             </div>
         </div>
     );

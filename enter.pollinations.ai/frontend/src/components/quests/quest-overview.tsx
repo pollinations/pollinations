@@ -995,9 +995,9 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                                     ),
                                 }))}
                         />
-                        {/* Light, emphasized prompt — no background well. Not a
-                            link yet; the real login CTA is a follow-up commit. */}
-                        <div className="mt-3 text-sm font-semibold text-theme-text-soft">
+                        {/* Same banner as the logged-in "ready to claim" line.
+                            Not a link yet; the real login CTA is a follow-up. */}
+                        <div className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 rounded-xl bg-theme-bg-subtle px-4 py-2.5 text-sm font-semibold text-theme-text-soft">
                             Log in to start earning.
                         </div>
                     </>

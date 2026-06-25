@@ -51,6 +51,13 @@ export const OPENAI_CHAT_USAGE_PATHS: Record<
 };
 
 /**
+ * Internal worker header carrying Portkey's served fallback target (e.g.
+ * "config.targets[1]"), re-emitted from x-portkey-last-used-option-index so
+ * tracking can read it off the worker response like the other usage headers.
+ */
+export const FALLBACK_TARGET_HEADER = "x-fallback-target";
+
+/**
  * Convert OpenAI usage format to Usage format.
  *
  * The OpenAI spec defines `completion_tokens` (and `prompt_tokens`) as the
@@ -75,8 +82,10 @@ export function openaiUsageToUsage(openaiUsage: {
         audio_tokens?: number | null;
         image_tokens?: number | null;
     } | null;
+    cached_input_tokens?: number | null;
     cache_read_input_tokens?: number | null;
     cache_creation_input_tokens?: number | null;
+    reasoning_tokens?: number | null;
     completion_tokens_details?: {
         reasoning_tokens?: number | null;
         audio_tokens?: number | null;
@@ -86,6 +95,7 @@ export function openaiUsageToUsage(openaiUsage: {
 }): Usage {
     const promptCachedTokens =
         openaiUsage.prompt_tokens_details?.cached_tokens ||
+        openaiUsage.cached_input_tokens ||
         openaiUsage.cache_read_input_tokens ||
         0;
     const promptCacheWriteTokens = openaiUsage.cache_creation_input_tokens ?? 0;
@@ -97,7 +107,9 @@ export function openaiUsageToUsage(openaiUsage: {
     ];
 
     const rawCompletionReasoningTokens =
-        openaiUsage.completion_tokens_details?.reasoning_tokens || 0;
+        openaiUsage.completion_tokens_details?.reasoning_tokens ||
+        openaiUsage.reasoning_tokens ||
+        0;
     const completionDetails = [
         openaiUsage.completion_tokens_details?.accepted_prediction_tokens || 0,
         openaiUsage.completion_tokens_details?.rejected_prediction_tokens || 0,

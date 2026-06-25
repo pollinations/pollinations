@@ -6,6 +6,7 @@ import {
 } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
+    FALLBACK_TARGET_HEADER,
     openaiUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
@@ -30,6 +31,7 @@ const TEXT_ENV_KEYS = [
     "GOOGLE_PRIVATE_KEY",
     "GOOGLE_PRIVATE_KEY_ID",
     "GOOGLE_PROJECT_ID",
+    "INCEPTION_API_KEY",
     "OPENROUTER_API_KEY",
     "OVHCLOUD_API_KEY",
     "PERPLEXITY_API_KEY",
@@ -121,6 +123,9 @@ function usageHeaders(completion: ChatCompletion): Headers {
             headers.set(key, String(value));
         }
     }
+    if (completion?.fallbackTarget) {
+        headers.set(FALLBACK_TARGET_HEADER, completion.fallbackTarget);
+    }
     return headers;
 }
 
@@ -191,6 +196,11 @@ function sendTextStreamResponse(completion: ChatCompletion): Response {
         "Cache-Control": "no-cache",
         Connection: "keep-alive",
     });
+    // sendTextStreamResponse bypasses usageHeaders(), so set the fallback
+    // header here too — tracking reads it off the worker response for streams.
+    if (completion.fallbackTarget) {
+        headers.set(FALLBACK_TARGET_HEADER, completion.fallbackTarget);
+    }
 
     if (completion.responseStream instanceof ReadableStream) {
         return new Response(completion.responseStream, { headers });

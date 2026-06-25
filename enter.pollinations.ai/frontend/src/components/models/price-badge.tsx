@@ -6,7 +6,7 @@ export type PriceBadgeConfig = {
     prices: (string | undefined)[];
     kind: PriceKind;
     subKinds: PriceKind[];
-    perImage?: boolean;
+    perRequest?: boolean;
     perToken?: boolean;
     perSecond?: boolean;
     className?: string;
@@ -25,7 +25,7 @@ export const groupPriceBadges = (
 
         const key = [
             validPrices[0],
-            badge.perImage ? "img" : "",
+            badge.perRequest ? "gen" : "",
             badge.perToken ? "token" : "",
             badge.perSecond ? "sec" : "",
             badge.className ?? "",
@@ -56,7 +56,7 @@ export const PriceBadge: FC<PriceBadgeConfig> = ({
     prices,
     kind,
     subKinds,
-    perImage,
+    perRequest,
     perToken,
     perSecond,
     className,
@@ -69,8 +69,8 @@ export const PriceBadge: FC<PriceBadgeConfig> = ({
     // Compact suffix based on pricing type
     const suffix = perSecond
         ? "/sec"
-        : perImage
-          ? "/img"
+        : perRequest
+          ? "/gen"
           : perToken
             ? "/M"
             : "";

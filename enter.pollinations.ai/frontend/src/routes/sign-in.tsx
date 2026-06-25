@@ -13,10 +13,12 @@ import {
 import { usePageFromHash } from "../components/layout/use-page-from-hash.ts";
 import { Models } from "../components/models";
 import { NewsFaq } from "../components/news-faq";
+import { QuestOverview } from "../components/quests";
 
 const SIGNED_OUT_PAGES: ReadonlySet<DashboardPage> = new Set([
     "news-faq",
     "models",
+    "quests",
 ]);
 
 const SIGNED_OUT_NAV_ITEMS = DASHBOARD_NAV_ITEMS.filter((item) =>
@@ -56,10 +58,19 @@ export const Route = createFileRoute("/sign-in")({
                     },
                 });
             }
-            throw redirect({ to: "/" });
+            throw redirect({
+                to: "/",
+                hash: window.location.hash.slice(1) || undefined,
+            });
         }
     },
 });
+
+function dashboardCallbackUrl(activePage: DashboardPage): string {
+    const url = new URL("/", window.location.href);
+    url.hash = window.location.hash.slice(1) || activePage;
+    return url.href;
+}
 
 function RouteComponent() {
     const [loading, setLoading] = useState(false);
@@ -69,6 +80,7 @@ function RouteComponent() {
         setLoading(true);
         const { error } = await authClient.signIn.social({
             provider: "github",
+            callbackURL: dashboardCallbackUrl(activePage),
         });
         if (error) {
             setLoading(false);
@@ -100,6 +112,7 @@ function RouteComponent() {
         >
             {activePage === "news-faq" && <NewsFaq />}
             {activePage === "models" && <Models />}
+            {activePage === "quests" && <QuestOverview />}
         </DashboardShell>
     );
 }

@@ -3,7 +3,6 @@ import {
     ChevronIcon,
     CopyButton,
     cn,
-    InfoTip,
     SproutIcon,
     Tooltip,
 } from "@pollinations/ui";
@@ -213,32 +212,10 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                     )
                                 }
                             >
-                                 {(copied) => (
-                                     <>
-                                         <span className="min-w-0 whitespace-normal break-words">
-                                             {publicModelName}
-                                         </span>
-                                        {copied && (
-                                            <span className="shrink-0 rounded-lg bg-intent-success-bg-light px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-intent-success-text">
-                                                copied
-                                            </span>
-                                        )}
-                                    </>
-                                )}
-                            </CopyButton>
-                            {modelDescription && (
-                                <span className="pointer-events-auto inline-flex">
-                                    <InfoTip
-                                        content={modelDescription}
-                                        label={`About ${publicModelName}`}
-                                    />
+                                <span className="min-w-0 whitespace-normal break-words">
+                                    {publicModelName}
                                 </span>
-                            )}
-                            <ModelStatusChips
-                                showNew={showNew}
-                                showAlpha={showAlpha}
-                                alphaTooltip={false}
-                            />
+                            </CopyButton>
                         </div>
                         {(inputModalities.length > 0 ||
                             capabilities.length > 0) && (
@@ -246,6 +223,15 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 <MobileMetadataBadges
                                     inputModalities={inputModalities}
                                     capabilities={capabilities}
+                                />
+                            </div>
+                        )}
+                        {(showNew || showAlpha) && (
+                            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                                <ModelStatusChips
+                                    showNew={showNew}
+                                    showAlpha={showAlpha}
+                                    alphaTooltip={false}
                                 />
                             </div>
                         )}
@@ -264,10 +250,15 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                 </div>
             </div>
 
-            {/* Expanded: capabilities + full pricing */}
+            {/* Expanded: description + full pricing */}
             {expanded && (
                 <div className="px-4 pb-4 pt-0">
                     <div className="flex min-w-0 flex-col gap-2 pl-6">
+                        {modelDescription && (
+                            <p className="mb-2 text-sm leading-relaxed text-theme-text-muted">
+                                {modelDescription}
+                            </p>
+                        )}
                         <MobilePriceGroup
                             label="In"
                             model={model}
@@ -325,6 +316,7 @@ const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
                       kind: "audioIn",
                       subKinds: ["audioIn"],
                       perToken: model.perToken,
+                      perRequest: model.perRequest,
                   },
                   {
                       prices: [model.promptImagePrice],
@@ -357,6 +349,7 @@ const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
                       kind: "audioOut",
                       subKinds: ["audioOut"],
                       perToken: model.perToken,
+                      perRequest: model.perRequest,
                   },
                   {
                       prices: [model.perSecondPrice],
@@ -380,7 +373,7 @@ const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
                       prices: [model.perImagePrice],
                       kind: "image",
                       subKinds: ["image"],
-                      perImage: true,
+                      perRequest: true,
                   },
                   {
                       prices: [model.completionImagePrice],
@@ -401,7 +394,7 @@ const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
             <div className="flex min-w-0 flex-wrap justify-end gap-1">
                 {badges.map((badge) => (
                     <PriceBadge
-                        key={`${badge.subKinds.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perImage ? "img" : ""}-${badge.perSecond ? "sec" : ""}`}
+                        key={`${badge.subKinds.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perRequest ? "gen" : ""}-${badge.perSecond ? "sec" : ""}`}
                         {...badge}
                     />
                 ))}

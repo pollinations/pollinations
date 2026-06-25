@@ -668,7 +668,7 @@ function PriceRow({
                         {row.label}
                     </span>
                     {returned && (
-                        <Chip intent="success" size="sm">
+                        <Chip intent="neutral" size="sm">
                             returned
                         </Chip>
                     )}

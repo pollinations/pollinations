@@ -9,15 +9,26 @@ export type ServerType = (typeof VALID_TYPES)[number];
 type ServerEntry = {
     url: string;
     lastHeartbeat: number;
+    // Last observed /generate latency (ms), measured by the gen worker. Used to
+    // weight load balancing toward faster backends so a slow GPU (e.g. a 3090
+    // next to a 4090) does not get an equal share and drown. Absent until the
+    // first request to that server has completed.
+    lastMs?: number;
 };
 
 const SERVER_TIMEOUT = 180000;
 const REGISTRY_TTL_SECONDS = 240;
 const REGISTRY_WRITE_THROTTLE_MS = 30_000;
+// Persist a server's latest latency at most this often (KV ~1 write/sec/key).
+const LATENCY_WRITE_THROTTLE_MS = 20_000;
+// Latency assumed for a server with no measurement yet, so it still gets
+// sampled (not starved or flooded) on cold start.
+const DEFAULT_LATENCY_MS = 8000;
 
 let serverRegistry: KVNamespace | null = null;
 let registryEnvironment = "development";
 const recentWrites = new Map<string, number>();
+const recentLatencyWrites = new Map<string, number>();
 
 export function setServerRegistryBinding(
     binding: KVNamespace,
@@ -40,6 +51,13 @@ export function isValidType(type: string): type is ServerType {
 
 function prefix(type: ServerType): string {
     return `image:server:${registryEnvironment}:${type}:`;
+}
+
+// Latency is stored under a separate key from the heartbeat entry so the two
+// writers (registerServer heartbeats vs recordLatency samples) never touch the
+// same key. That makes lastMs impossible to clobber via a stale heartbeat read.
+function latencyKey(type: ServerType, hash: string): string {
+    return `image:latency:${registryEnvironment}:${type}:${hash}`;
 }
 
 async function urlHash(url: string): Promise<string> {
@@ -68,6 +86,8 @@ export const registerServer = async (
         logServer(`Skipped throttled write for ${type} server ${url}`);
         return;
     }
+    // Heartbeat writes only the liveness entry. Latency lives under its own key
+    // (recordLatency), so this write can never wipe a server's routing weight.
     const entry: ServerEntry = { url, lastHeartbeat: now };
     await kv.put(key, JSON.stringify(entry), {
         expirationTtl: REGISTRY_TTL_SECONDS,
@@ -85,12 +105,36 @@ export async function getRegisteredServers(
 
     const now = Date.now();
     const entries = await Promise.all(
-        keys.map((k) => kv.get<ServerEntry>(k.name, "json")),
+        keys.map(async (k) => {
+            const entry = await kv.get<ServerEntry>(k.name, "json");
+            if (!entry || now - entry.lastHeartbeat >= SERVER_TIMEOUT) {
+                return null;
+            }
+            // Merge the latency recorded under the separate latency key.
+            const hash = k.name.slice(prefix(type).length);
+            const lastMs = await kv.get<number>(latencyKey(type, hash), "json");
+            return lastMs != null ? { ...entry, lastMs } : entry;
+        }),
     );
-    return entries.filter(
-        (e): e is ServerEntry =>
-            e !== null && now - e.lastHeartbeat < SERVER_TIMEOUT,
-    );
+    return entries.filter((e): e is ServerEntry => e !== null);
+}
+
+// Weighted-random pick over active servers, weighted by 1/lastMs so faster
+// backends receive proportionally more traffic (a 3090 next to a 4090 gets a
+// smaller share instead of an equal one). Weighted rather than always-pick-the-
+// fastest to avoid herding every request onto one server between updates.
+// Unmeasured servers use a neutral default so they still get sampled. Pure
+// function — exported for testing.
+export function chooseWeightedServer(servers: ServerEntry[]): string {
+    if (servers.length === 1) return servers[0].url;
+    const weights = servers.map((s) => 1 / (s.lastMs ?? DEFAULT_LATENCY_MS));
+    const total = weights.reduce((a, b) => a + b, 0);
+    let r = Math.random() * total;
+    for (let i = 0; i < servers.length; i++) {
+        r -= weights[i];
+        if (r <= 0) return servers[i].url;
+    }
+    return servers[servers.length - 1].url;
 }
 
 export const getNextServerUrl = async (
@@ -100,15 +144,63 @@ export const getNextServerUrl = async (
     if (activeServers.length === 0) {
         throw new Error(`No active ${type} servers available`);
     }
-    return activeServers[Math.floor(Math.random() * activeServers.length)].url;
+    return chooseWeightedServer(activeServers);
 };
 
-export const fetchFromLeastBusyServer = async (
+// Save the latency of the most recent successful /generate under the server's
+// dedicated latency key, so chooseWeightedServer can weight toward faster
+// backends. Separate key = a heartbeat can never overwrite it. Throttled to one
+// write per LATENCY_WRITE_THROTTLE_MS per server (KV caps at ~1 write/sec/key).
+// Best-effort: never throws into the request path.
+export const recordLatency = async (
+    type: ServerType,
+    url: string,
+    lastMs: number,
+): Promise<void> => {
+    if (!serverRegistry || !Number.isFinite(lastMs) || lastMs <= 0) return;
+    const hash = await urlHash(url);
+    const key = latencyKey(type, hash);
+    const now = Date.now();
+    const lastWrite = recentLatencyWrites.get(key);
+    if (
+        lastWrite !== undefined &&
+        now - lastWrite < LATENCY_WRITE_THROTTLE_MS
+    ) {
+        return;
+    }
+    try {
+        await serverRegistry.put(key, JSON.stringify(lastMs), {
+            expirationTtl: REGISTRY_TTL_SECONDS,
+        });
+        recentLatencyWrites.set(key, now);
+        logServer(`Recorded latency ${lastMs}ms for ${url}`);
+    } catch (err) {
+        logServer(`Failed to record latency for ${url}: ${err}`);
+    }
+};
+
+// Test-only: clear in-process throttle state between cases.
+export function __resetLatencyStateForTests(): void {
+    recentLatencyWrites.clear();
+    recentWrites.clear();
+}
+
+export const fetchFromWeightedServer = async (
     type: ServerType = "flux",
     options: RequestInit,
 ): Promise<Response> => {
     const serverUrl = await getNextServerUrl(type);
+    const startedAt = Date.now();
     const response = await fetch(`${serverUrl}/generate`, options);
+    // Record latency for successful responses only (a 5xx/timeout would record
+    // the full timeout window and wrongly down-weight a recovering server).
+    // Awaited (not fire-and-forget): a floating promise can be cancelled when
+    // the Worker invocation completes, dropping the KV write. The cost is
+    // bounded — recordLatency hits the in-memory throttle and returns without
+    // any KV I/O on all but ~1 request per LATENCY_WRITE_THROTTLE_MS per server.
+    if (response.ok) {
+        await recordLatency(type, serverUrl, Date.now() - startedAt);
+    }
     if (!response.ok) {
         let errorBody = "";
         try {

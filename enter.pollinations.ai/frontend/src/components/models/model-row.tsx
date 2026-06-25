@@ -7,7 +7,7 @@ import {
     Surface,
     Tooltip,
 } from "@pollinations/ui";
-import { PaidChip, TierChip } from "@pollinations/ui/wallet";
+import { PaidChip, TierChip, WalletKindIcon } from "@pollinations/ui/wallet";
 import type { FC } from "react";
 import { calculatePerPollen, unitLabels } from "./calculations.ts";
 import { CAPABILITY_ICON, MODALITY_ICON } from "./model-icons.tsx";
@@ -45,13 +45,30 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const showAlpha = isAlpha(model);
 
     const genPerPollen = calculatePerPollen(model);
-    const balanceLabel = showPaidOnly
-        ? "Paid balance only"
-        : "Tier or Paid balance";
+    const balanceLabel = showPaidOnly ? (
+        <span className="inline-flex items-center gap-1">
+            <WalletKindIcon kind="paid" />
+            Paid Pollen only
+        </span>
+    ) : (
+        <span className="inline-flex items-center gap-1">
+            <WalletKindIcon kind="tier" />
+            Quest or <WalletKindIcon kind="paid" />
+            Paid Pollen
+        </span>
+    );
     const perPollenTooltip =
-        genPerPollen === "—"
-            ? balanceLabel
-            : `≈ ${genPerPollen} ${unitLabels[model.type] ?? "requests"} per pollen\n${balanceLabel}`;
+        genPerPollen === "—" ? (
+            balanceLabel
+        ) : (
+            <span className="flex flex-col gap-0.5">
+                <span>
+                    ≈ {genPerPollen} {unitLabels[model.type] ?? "requests"} per
+                    pollen
+                </span>
+                {balanceLabel}
+            </span>
+        );
     const inputPriceBadges = groupPriceBadges([
         {
             prices: [model.promptTextPrice],
@@ -76,6 +93,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
             kind: "audioIn",
             subKinds: ["audioIn"],
             perToken: model.perToken,
+            perRequest: model.perRequest,
         },
         {
             prices: [model.promptImagePrice],
@@ -108,6 +126,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
             kind: "audioOut",
             subKinds: ["audioOut"],
             perToken: model.perToken,
+            perRequest: model.perRequest,
         },
         {
             prices: [model.perSecondPrice],
@@ -131,7 +150,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
             prices: [model.perImagePrice],
             kind: "image",
             subKinds: ["image"],
-            perImage: true,
+            perRequest: true,
         },
         {
             prices: [model.completionImagePrice],
@@ -197,18 +216,9 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 )
                             }
                         >
-                            {(copied) => (
-                                <>
-                                    <span className="min-w-0 whitespace-normal break-words">
-                                        {publicModelName}
-                                    </span>
-                                    {copied && (
-                                        <span className="shrink-0 rounded-lg bg-intent-success-bg-light px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-intent-success-text">
-                                            copied
-                                        </span>
-                                    )}
-                                </>
-                            )}
+                            <span className="min-w-0 whitespace-normal break-words">
+                                {publicModelName}
+                            </span>
                         </CopyButton>
                         {modelDescription && (
                             <InfoTip
@@ -289,7 +299,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 <div className="flex flex-col gap-1 items-end">
                     {inputPriceBadges.map((badge) => (
                         <PriceBadge
-                            key={`${badge.subKinds.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perImage ? "img" : ""}-${badge.perSecond ? "sec" : ""}`}
+                            key={`${badge.subKinds.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perRequest ? "gen" : ""}-${badge.perSecond ? "sec" : ""}`}
                             {...badge}
                         />
                     ))}
@@ -301,7 +311,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 <div className="flex flex-col gap-1 items-end">
                     {outputPriceBadges.map((badge) => (
                         <PriceBadge
-                            key={`${badge.subKinds.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perImage ? "img" : ""}-${badge.perSecond ? "sec" : ""}`}
+                            key={`${badge.subKinds.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perRequest ? "gen" : ""}-${badge.perSecond ? "sec" : ""}`}
                             {...badge}
                         />
                     ))}

@@ -3,8 +3,8 @@ import {
     ClockIcon,
     ExternalLinkButton,
     GitHubIcon,
-    ImageIcon,
     Section,
+    SparklesIcon,
     TabButton,
     TokensIcon,
     TrendUpIcon,
@@ -133,9 +133,10 @@ export const Models: FC<ModelsProps> = ({ showCommunityEndpoints = false }) => {
                 </div>
                 <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                     <p className="flex items-start gap-1.5">
-                        <ImageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <SparklesIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
-                            <strong>/img</strong> — flat rate per image.
+                            <strong>/gen</strong> — flat rate per image or audio
+                            generation.
                         </span>
                     </p>
                     <p className="flex items-start gap-1.5">

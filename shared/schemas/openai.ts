@@ -132,7 +132,7 @@ export type MessageContentPart = z.infer<
     typeof ChatCompletionRequestMessageContentPartSchema
 >;
 
-// Thinking (provider-specific; requires strict_openai_compliance=false)
+// Provider response content blocks. These are not request-level controls.
 const ChatCompletionMessageContentPartThinkingSchema = z.object({
     type: z.literal("thinking"),
     thinking: z.string(),
@@ -323,9 +323,15 @@ export const CreateChatCompletionRequestSchema = z
         stream: z.boolean().nullable().optional().default(false),
         stream_options: ChatCompletionStreamOptionsSchema,
         safe: SafeSchema,
+        // Compatibility-only request fields. Keep runtime acceptance for older
+        // Pollinations/MCP callers, but public docs should point users to
+        // standard OpenAI `reasoning_effort` instead.
         thinking: ThinkingSchema,
         reasoning_effort: z
             .enum(["none", "minimal", "low", "medium", "high", "xhigh"])
+            .describe(
+                'Requests reasoning depth for models that support adjustable reasoning. "none" requests no reasoning.',
+            )
             .optional(),
         thinking_budget: z.number().int().min(0).optional(),
         temperature: z.number().min(0).max(2).nullable().optional(),
@@ -407,6 +413,7 @@ const ChatCompletionChoiceLogprobsSchema = z
 
 export const CompletionUsageSchema = z
     .object({
+        cached_input_tokens: z.number().int().nonnegative().nullish(),
         cache_creation_input_tokens: z.number().int().nonnegative().nullish(),
         cache_read_input_tokens: z.number().int().nonnegative().nullish(),
         completion_tokens: z.number().int().nonnegative(),
@@ -434,6 +441,7 @@ export const CompletionUsageSchema = z
                 image_tokens: z.number().int().nonnegative().nullish(),
             })
             .nullish(),
+        reasoning_tokens: z.number().int().nonnegative().nullish(),
         total_tokens: z.number().int().nonnegative(),
     })
     .meta({ $id: "CompletionUsage" });

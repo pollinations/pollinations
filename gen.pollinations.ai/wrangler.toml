@@ -50,6 +50,13 @@ BEDROCK_GUARDRAIL_VERSION = "2"
 [dev]
 port = 8788
 
+[assets]
+directory = "public"
+# Static assets are only icons/images. Keep dynamic SEO routes Worker-owned:
+# `/manifest.webmanifest` is generated from src/routes/seo.ts, and `/` is the
+# docs SEO landing page. No public/index.html is intentionally shipped.
+run_worker_first = ["/", "/manifest.webmanifest"]
+
 # Production routes
 [env.production]
 
@@ -220,6 +227,8 @@ AZURE_MYCELI_PROD_SWEDEN_API_KEY = "not-a-secret-workers-test-only"
 AZURE_CONTENT_SAFETY_API_KEY = "not-a-secret-workers-test-only"
 AZURE_CONTENT_SAFETY_ENDPOINT = "https://content-safety.test"
 FIREWORKS_API_KEY = "not-a-secret-workers-test-only"
+FAL_KEY = "not-a-secret-workers-test-only"
+STABILITY_API_KEY = "not-a-secret-workers-test-only"
 GOOGLE_CLIENT_EMAIL = "test@example.com"
 GOOGLE_PRIVATE_KEY = "not-a-secret-workers-test-only"
 GOOGLE_PRIVATE_KEY_ID = "not-a-secret-workers-test-only"

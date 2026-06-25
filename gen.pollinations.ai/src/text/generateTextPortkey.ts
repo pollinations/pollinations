@@ -40,11 +40,12 @@ export async function generateTextPortkey(
     if (state.options.model) {
         const modelDef = findModelByName(state.options.model);
         if (modelDef?.transform) {
-            const result = await modelDef.transform(messages, state.options);
-            state = {
-                messages: result.messages,
-                options: { ...state.options, ...result.options },
-            };
+            // Transforms return the complete intended options (a copy of the
+            // input with mutations applied), so replace state wholesale — a
+            // spread-merge here would resurrect keys the transform deleted
+            // (e.g. reasoning_effort:"none" stripped for mandatory-reasoning
+            // models, which then 400 upstream).
+            state = await modelDef.transform(messages, state.options);
         }
     }
 

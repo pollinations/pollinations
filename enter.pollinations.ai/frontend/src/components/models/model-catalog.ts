@@ -1,7 +1,7 @@
 import {
     formatPrice,
+    formatPriceFlat,
     formatPricePer1M,
-    formatPricePerImage,
 } from "./formatters.ts";
 import type { ModelCapability, ModelCategory, ModelPrice } from "./types.ts";
 import type { ModelStats } from "./use-model-stats.ts";
@@ -29,6 +29,7 @@ export type ApiModelInfo = {
     is_specialized?: boolean;
     paid_only?: boolean;
     alpha?: boolean;
+    flat_rate?: boolean;
     added_date?: number;
 };
 
@@ -253,14 +254,31 @@ function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
         return {
             ...price,
             perToken: false,
-            perImagePrice: formatPrice(
-                completionImageTokens,
-                formatPricePerImage,
-            ),
+            perImagePrice: formatPrice(completionImageTokens, formatPriceFlat),
         };
     }
 
     if (price.type === "audio") {
+        // Flat per-generation models (e.g. Stable Audio): one fee per request,
+        // independent of length. Show flat "/gen" In/Out audio prices instead of
+        // estimating a per-second rate. Both flat-fee music and per-character TTS
+        // store their price in completionAudioTokens, so the registry flat_rate
+        // flag is what tells them apart.
+        if (model.flat_rate) {
+            return {
+                ...price,
+                perToken: false,
+                perRequest: true,
+                promptAudioPrice: formatPrice(
+                    promptAudioTokens,
+                    formatPriceFlat,
+                ),
+                completionAudioPrice: formatPrice(
+                    completionAudioTokens,
+                    formatPriceFlat,
+                ),
+            };
+        }
         if (promptAudioSeconds) {
             return {
                 ...price,

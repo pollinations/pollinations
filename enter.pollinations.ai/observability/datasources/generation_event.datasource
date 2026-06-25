@@ -48,6 +48,7 @@ SCHEMA >
 `resolved_model_requested`  LowCardinality(String) `json:$.resolvedModelRequested` DEFAULT 'undefined',
 `model_used`                LowCardinality(String) `json:$.modelUsed` DEFAULT 'undefined',
 `model_provider_used`       LowCardinality(String) `json:$.modelProviderUsed` DEFAULT 'undefined',
+`fallback_used`             Bool                   `json:$.fallbackUsed` DEFAULT false,
 `is_billed_usage`           Bool                   `json:$.isBilledUsage`,
 
 -- Pricing

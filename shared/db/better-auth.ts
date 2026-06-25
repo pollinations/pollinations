@@ -48,6 +48,8 @@ export const user = sqliteTable("user", {
 }, (table) => [
   index("idx_user_email").on(table.email),
   index("idx_user_auto_top_up_enabled").on(table.autoTopUpEnabled),
+  // GitHub profile lookup for quest checks and account display.
+  index("idx_user_github_id").on(table.githubId),
 ]);
 
 export const session = sqliteTable("session", {
@@ -281,20 +283,33 @@ export const stripeCheckoutCredits = sqliteTable("stripe_checkout_credits", {
   index("idx_stripe_checkout_credits_user_id").on(table.userId),
 ]);
 
-export const questPayoutCredits = sqliteTable("quest_payout_credits", {
-  payoutKey: text("payout_key").primaryKey(),
-  questIssueNumber: integer("quest_issue_number").notNull(),
-  prNumber: integer("pr_number").notNull(),
-  role: text("role").notNull(),
-  githubUsername: text("github_username").notNull(),
+// Reward ledger: one row == one earned reward. `claimedAt` is null until the
+// user claims it, and only claiming credits the user's balance. Everything that
+// can earn pollen is modelled as a reward, so there is no reward-kind
+// discriminator — `questId` already names what was earned. The old
+// GitHub-shaped quest_payout_credits table is backfilled into here and dropped
+// by the rewards migration.
+export const rewards = sqliteTable("rewards", {
+  id: text("id").primaryKey(),
+  // Idempotency guard. Encodes the quest's completion scope, e.g.
+  // "quest:{issue}" or "quest:{questId}:user:{userId}".
+  idempotencyKey: text("idempotency_key").notNull().unique(),
   userId: text("user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
-  pollenCredited: real("pollen_credited").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" })
+  // Catalog id of the quest that was earned; null for one-off rewards.
+  questId: text("quest_id"),
+  // Quest title snapshotted when earned, so history renders it directly.
+  title: text("title").notNull(),
+  // Optional quest link snapshotted when earned.
+  url: text("url"),
+  pollenAmount: real("pollen_amount").notNull(),
+  // Which balance bucket will be credited when claimed: "tier" or "pack".
+  balanceBucket: text("balance_bucket").notNull(),
+  earnedAt: integer("earned_at", { mode: "timestamp" })
     .defaultNow()
     .notNull(),
+  claimedAt: integer("claimed_at", { mode: "timestamp" }),
 }, (table) => [
-  index("idx_quest_payout_credits_user_id").on(table.userId),
-  index("idx_quest_payout_credits_quest_issue").on(table.questIssueNumber),
+  index("idx_rewards_user_id").on(table.userId),
 ]);

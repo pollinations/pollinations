@@ -1,4 +1,4 @@
-import { Button, DownloadIcon, Section } from "@pollinations/ui";
+import { Section } from "@pollinations/ui";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { apiClient } from "../api.ts";
@@ -8,8 +8,8 @@ import {
     EarningsGraph,
     getEarningsEnabledApps,
     PeriodPicker,
-    UsageGraph,
     type UsagePeriodSelection,
+    UsageSection,
 } from "../components/activity";
 import {
     type ApiKey,
@@ -29,25 +29,11 @@ import {
     BuyPollenPanel,
     PollenBalance,
     SidebarWallet,
-    TierPanel,
 } from "../components/pollen";
+import { QuestOverview } from "../components/quests";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 
-const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
 const ACTIVITY_MIN_DATE = new Date("2026-01-01T00:00:00.000Z");
-
-function DownloadCsvButton({ onClick }: { onClick: () => void }) {
-    return (
-        <Button
-            as="button"
-            onClick={onClick}
-            className="flex items-center gap-1.5"
-        >
-            <DownloadIcon className="h-3.5 w-3.5 shrink-0" />
-            Download CSV
-        </Button>
-    );
-}
 
 function pageFromHash(hash: string): DashboardPage {
     const page = hash.replace(/^#/, "");
@@ -56,7 +42,8 @@ function pageFromHash(hash: string): DashboardPage {
         return "news-faq";
     if (page === "buy-pollen") return "pollen";
     if (page === "pricing") return "models";
-    if (page === "earnings" || page === "usage") return "activity";
+    if (page === "earnings" || page === "usage" || page === "activity-table")
+        return "activity";
     // Kebab-case slugs are FAQ anchors — route to news-faq and let the
     // FAQ component scroll/expand the matching question.
     if (page && /^[a-z0-9]+(-[a-z0-9]+)+$/.test(page)) return "news-faq";
@@ -160,7 +147,7 @@ function RouteComponent() {
         setIsSigningOut(true);
         try {
             await authClient.signOut();
-            window.location.href = "/";
+            window.location.href = "/sign-in#news-faq";
         } catch (error) {
             console.error("Sign out failed:", error);
         } finally {
@@ -243,21 +230,6 @@ function RouteComponent() {
         router.invalidate();
     }
 
-    function downloadDetailedUsage(): void {
-        const params = new URLSearchParams({
-            format: "csv",
-            granularity: activityPeriod.granularity,
-            period: activityPeriod.period,
-            limit: DETAILED_USAGE_DOWNLOAD_LIMIT.toString(),
-        });
-        const anchor = document.createElement("a");
-        anchor.href = `/api/account/usage?${params.toString()}`;
-        anchor.rel = "noopener";
-        document.body.appendChild(anchor);
-        anchor.click();
-        anchor.remove();
-    }
-
     function handlePageChange(page: DashboardPage): void {
         setActivePage(page);
         try {
@@ -304,11 +276,6 @@ function RouteComponent() {
                     <Section title="Top-up" framed id="buy-pollen">
                         <BuyPollenPanel initialBillingState={billingState} />
                     </Section>
-                    {tierData && (
-                        <Section title="Tier" framed>
-                            <TierPanel {...tierData} />
-                        </Section>
-                    )}
                 </div>
             )}
             {activePage === "activity" && (
@@ -320,26 +287,20 @@ function RouteComponent() {
                             minDate={ACTIVITY_MIN_DATE}
                         />
                         <p className="text-micro text-theme-text-muted">
-                            Data refreshes every hour. Times shown in UTC.
+                            Usage refreshes hourly. Times are shown in UTC.
                         </p>
                     </div>
-                    <UsageGraph
+                    <UsageSection
                         period={activityPeriod}
                         apiKeys={selectableKeys}
-                        action={
-                            <DownloadCsvButton
-                                onClick={downloadDetailedUsage}
-                            />
-                        }
                     />
-                    {earningsEnabledApps.length > 0 && (
-                        <EarningsGraph
-                            period={activityPeriod}
-                            apps={earningsEnabledApps}
-                        />
-                    )}
+                    <EarningsGraph
+                        period={activityPeriod}
+                        apps={earningsEnabledApps}
+                    />
                 </div>
             )}
+            {activePage === "quests" && <QuestOverview />}
             {activePage === "keys" && (
                 <ApiKeyList
                     apiKeys={apiKeys}

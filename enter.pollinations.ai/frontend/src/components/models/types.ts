@@ -30,6 +30,9 @@ export type ModelPrice = {
     inputSortPrice?: number;
     outputSortPrice?: number;
     perToken?: boolean;
+    // Flat per-generation pricing (one fee per request) — renders the "/gen"
+    // badge. Set for flat-fee audio (Stable Audio); images render flat directly.
+    perRequest?: boolean;
     // Text pricing
     promptTextPrice?: string;
     promptCachedPrice?: string;

@@ -1,10 +1,10 @@
 import {
-    formatPollen,
     PAID_BALANCE_CHART_COLOR,
     TIER_BALANCE_CHART_COLOR,
 } from "@pollinations/ui/wallet";
 import type { FC } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { formatActivityPollen } from "./format-activity-pollen";
 import type { DataPoint, Metric } from "./types";
 
 const CHART_COLORS = {
@@ -18,6 +18,17 @@ type ChartProps = {
     metric: Metric;
     showModelBreakdown: boolean;
 };
+
+function getYAxisPadding({
+    isCompact,
+    needsPrecisePollenScale,
+}: {
+    isCompact: boolean;
+    needsPrecisePollenScale: boolean;
+}): number {
+    if (needsPrecisePollenScale) return isCompact ? 58 : 68;
+    return isCompact ? 36 : 55;
+}
 
 export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
     const [hovered, setHovered] = useState<number | null>(null);
@@ -60,11 +71,15 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
 
     const height = 180;
     const isCompact = width < 480;
+    const maxDataValue =
+        data.length > 0 ? Math.max(...data.map((d) => d.value)) : 0;
+    const needsPrecisePollenScale =
+        metric === "pollen" && maxDataValue > 0 && maxDataValue < 0.0001;
     const pad = {
         top: 24,
         right: isCompact ? 10 : 20,
         bottom: 32,
-        left: isCompact ? 36 : 55,
+        left: getYAxisPadding({ isCompact, needsPrecisePollenScale }),
     };
     const cw = width - pad.left - pad.right;
     const ch = height - pad.top - pad.bottom;
@@ -72,8 +87,7 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
     const { bars, yTicks } = useMemo(() => {
         if (data.length === 0) return { bars: [], yTicks: [] };
 
-        const vals = data.map((d) => d.value);
-        const max = Math.max(...vals);
+        const max = maxDataValue;
 
         // Calculate nice tick spacing based on data max
         const getNiceStep = (maxVal: number): number => {
@@ -127,7 +141,7 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
         }).filter((t) => t.value <= niceMaxVal);
 
         return { bars: barData, yTicks: ticks };
-    }, [data, cw, ch, pad.left, pad.top]);
+    }, [data, cw, ch, pad.left, pad.top, maxDataValue]);
 
     const formatCompactVal = (v: number): string => {
         const abs = Math.abs(v);
@@ -143,13 +157,13 @@ export const Chart: FC<ChartProps> = ({ data, metric, showModelBreakdown }) => {
     };
 
     const formatVal = (v: number) => {
-        if (metric === "pollen") return formatPollen(v);
+        if (metric === "pollen") return formatActivityPollen(v);
         if (Math.abs(v) >= 1e3) return formatCompactVal(v);
         return Math.round(v).toString();
     };
 
     const formatTooltipVal = (v: number) => {
-        if (metric === "pollen") return formatPollen(v);
+        if (metric === "pollen") return formatActivityPollen(v);
         if (Number.isInteger(v)) {
             return v.toLocaleString();
         }

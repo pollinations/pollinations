@@ -30,10 +30,9 @@ import {
     useState,
 } from "react";
 import { apiClient } from "../../api.ts";
-import type {
-    QuestCatalogItem,
-    QuestCatalogResponse,
-} from "../../backend-types.ts";
+import type { QuestCatalogResponse } from "../../backend-types.ts";
+
+type QuestCatalogItem = QuestCatalogResponse["quests"][number];
 
 type QuestReward = {
     id: string;

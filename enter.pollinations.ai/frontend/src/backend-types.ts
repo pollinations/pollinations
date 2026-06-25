@@ -3,7 +3,4 @@
 // generated declarations. Naive tsc declaration emit is not enough today
 // because route types include hono-openapi declarations.
 export type { FrontendApiRoutes as ApiRoutes } from "../../src/frontend-api.ts";
-export type {
-    QuestCatalogItem,
-    QuestCatalogResponse,
-} from "../../src/routes/quests.ts";
+export type { QuestCatalogResponse } from "../../src/routes/quests.ts";

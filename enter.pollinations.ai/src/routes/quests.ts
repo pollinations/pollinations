@@ -77,8 +77,6 @@ const rewardSchema = z.object({
 });
 
 const questRewardsResponseSchema = z.object({
-    totalClaimedPollen: z.number(),
-    totalClaimablePollen: z.number(),
     rewards: z.array(rewardSchema),
 });
 
@@ -254,22 +252,7 @@ export const questsRoutes = new Hono<Env>()
                     : null,
             }));
 
-            const totalClaimedPollen = rewards.reduce(
-                (total, reward) =>
-                    total + (reward.claimedAt ? reward.pollenAmount : 0),
-                0,
-            );
-            const totalClaimablePollen = rewards.reduce(
-                (total, reward) =>
-                    total + (reward.claimedAt ? 0 : reward.pollenAmount),
-                0,
-            );
-
-            return c.json({
-                totalClaimedPollen,
-                totalClaimablePollen,
-                rewards,
-            });
+            return c.json({ rewards });
         },
     )
     .post(

@@ -323,8 +323,6 @@ test("quest check records product rewards and claim endpoint credits one", async
     expect(response.status).toBe(200);
 
     const payload = (await response.json()) as {
-        totalClaimedPollen: number;
-        totalClaimablePollen: number;
         rewards: {
             id: string;
             questId: string | null;
@@ -336,9 +334,9 @@ test("quest check records product rewards and claim endpoint credits one", async
         }[];
     };
 
-    // History shape, not exact amounts: nothing claimed yet, no internal fields
-    // leak, and the first-API-key reward is present so we can claim it below.
-    expect(payload.totalClaimedPollen).toBeCloseTo(0);
+    // History shape, not exact amounts: nothing claimed yet (every reward's
+    // claimedAt is null, asserted below), no internal fields leak, and the
+    // first-API-key reward is present so we can claim it below.
     expect(payload.rewards.length).toBeGreaterThan(0);
     for (const reward of payload.rewards) {
         expect(reward).not.toHaveProperty("idempotencyKey");
@@ -994,8 +992,6 @@ test("account quest history includes pending and claimed GitHub quest rewards", 
     expect(response.status).toBe(200);
 
     const payload = (await response.json()) as {
-        totalClaimedPollen: number;
-        totalClaimablePollen: number;
         rewards: {
             id: string;
             questId: string | null;
@@ -1007,9 +1003,11 @@ test("account quest history includes pending and claimed GitHub quest rewards", 
         }[];
     };
 
-    expect(payload.totalClaimedPollen).toBe(0);
-    expect(payload.totalClaimablePollen).toBe(5);
+    // Flat list: clients derive claimed/claimable totals from the rewards
+    // themselves. Here the one reward is unclaimed and worth 5 pollen.
     expect(payload.rewards).toHaveLength(1);
+    expect(payload.rewards[0].claimedAt).toBeNull();
+    expect(payload.rewards[0].pollenAmount).toBe(5);
     expect(payload.rewards[0]).not.toHaveProperty("idempotencyKey");
     expect(payload.rewards[0]).not.toHaveProperty("source");
     expect(payload.rewards[0]).not.toHaveProperty("sourceRef");

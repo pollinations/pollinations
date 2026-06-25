@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "a0105c05-8f19-4c2b-b088-c067d730f958",
-  "prevId": "317c099f-1214-4f19-9b28-85e140ad29a1",
+  "id": "a1738551-5007-4b45-b7b7-948c5c066e89",
+  "prevId": "d8b1935e-0e72-44af-b164-45b3d14c2a9a",
   "tables": {
     "account": {
       "name": "account",
@@ -442,299 +442,18 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "gh_issues": {
-      "name": "gh_issues",
+    "rewards": {
+      "name": "rewards",
       "columns": {
-        "number": {
-          "name": "number",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "author_github_id": {
-          "name": "author_github_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "author_login": {
-          "name": "author_login",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "state": {
-          "name": "state",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "title": {
-          "name": "title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "url": {
-          "name": "url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "body": {
-          "name": "body",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "labels_json": {
-          "name": "labels_json",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "assignee_github_id": {
-          "name": "assignee_github_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "assignee_login": {
-          "name": "assignee_login",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "github_updated_at": {
-          "name": "github_updated_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "synced_at": {
-          "name": "synced_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
-        }
-      },
-      "indexes": {
-        "idx_gh_issues_author_github_id": {
-          "name": "idx_gh_issues_author_github_id",
-          "columns": [
-            "author_github_id"
-          ],
-          "isUnique": false
-        },
-        "idx_gh_issues_assignee_github_id": {
-          "name": "idx_gh_issues_assignee_github_id",
-          "columns": [
-            "assignee_github_id"
-          ],
-          "isUnique": false
-        },
-        "idx_gh_issues_state": {
-          "name": "idx_gh_issues_state",
-          "columns": [
-            "state"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "gh_pr_closing_issues": {
-      "name": "gh_pr_closing_issues",
-      "columns": {
-        "edge_key": {
-          "name": "edge_key",
+        "id": {
+          "name": "id",
           "type": "text",
           "primaryKey": true,
           "notNull": true,
           "autoincrement": false
         },
-        "pr_number": {
-          "name": "pr_number",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "issue_number": {
-          "name": "issue_number",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "synced_at": {
-          "name": "synced_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
-        }
-      },
-      "indexes": {
-        "idx_gh_pr_closing_issues_pr_number": {
-          "name": "idx_gh_pr_closing_issues_pr_number",
-          "columns": [
-            "pr_number"
-          ],
-          "isUnique": false
-        },
-        "idx_gh_pr_closing_issues_issue_number": {
-          "name": "idx_gh_pr_closing_issues_issue_number",
-          "columns": [
-            "issue_number"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "gh_pull_requests": {
-      "name": "gh_pull_requests",
-      "columns": {
-        "number": {
-          "name": "number",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "author_github_id": {
-          "name": "author_github_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "author_login": {
-          "name": "author_login",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "state": {
-          "name": "state",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "merged_at": {
-          "name": "merged_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "title": {
-          "name": "title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "url": {
-          "name": "url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "github_updated_at": {
-          "name": "github_updated_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "synced_at": {
-          "name": "synced_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
-        }
-      },
-      "indexes": {
-        "idx_gh_pull_requests_author_github_id": {
-          "name": "idx_gh_pull_requests_author_github_id",
-          "columns": [
-            "author_github_id"
-          ],
-          "isUnique": false
-        },
-        "idx_gh_pull_requests_merged_at": {
-          "name": "idx_gh_pull_requests_merged_at",
-          "columns": [
-            "merged_at"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "quest_payout_credits": {
-      "name": "quest_payout_credits",
-      "columns": {
-        "payout_key": {
-          "name": "payout_key",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "quest_issue_number": {
-          "name": "quest_issue_number",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "pr_number": {
-          "name": "pr_number",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "role": {
-          "name": "role",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "github_username": {
-          "name": "github_username",
+        "idempotency_key": {
+          "name": "idempotency_key",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -747,42 +466,77 @@
           "notNull": true,
           "autoincrement": false
         },
-        "pollen_credited": {
-          "name": "pollen_credited",
+        "quest_id": {
+          "name": "quest_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "url": {
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "pollen_amount": {
+          "name": "pollen_amount",
           "type": "real",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "created_at": {
-          "name": "created_at",
+        "balance_bucket": {
+          "name": "balance_bucket",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "earned_at": {
+          "name": "earned_at",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
           "default": "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
+        },
+        "claimed_at": {
+          "name": "claimed_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {
-        "idx_quest_payout_credits_user_id": {
-          "name": "idx_quest_payout_credits_user_id",
+        "rewards_idempotency_key_unique": {
+          "name": "rewards_idempotency_key_unique",
+          "columns": [
+            "idempotency_key"
+          ],
+          "isUnique": true
+        },
+        "idx_rewards_user_id": {
+          "name": "idx_rewards_user_id",
           "columns": [
             "user_id"
-          ],
-          "isUnique": false
-        },
-        "idx_quest_payout_credits_quest_issue": {
-          "name": "idx_quest_payout_credits_quest_issue",
-          "columns": [
-            "quest_issue_number"
           ],
           "isUnique": false
         }
       },
       "foreignKeys": {
-        "quest_payout_credits_user_id_user_id_fk": {
-          "name": "quest_payout_credits_user_id_user_id_fk",
-          "tableFrom": "quest_payout_credits",
+        "rewards_user_id_user_id_fk": {
+          "name": "rewards_user_id_user_id_fk",
+          "tableFrom": "rewards",
           "tableTo": "user",
           "columnsFrom": [
             "user_id"

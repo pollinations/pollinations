@@ -14,6 +14,9 @@ CREATE TABLE `rewards` (
 --> statement-breakpoint
 CREATE UNIQUE INDEX `rewards_idempotency_key_unique` ON `rewards` (`idempotency_key`);--> statement-breakpoint
 CREATE INDEX `idx_rewards_user_id` ON `rewards` (`user_id`);--> statement-breakpoint
+DROP TABLE `gh_issues`;--> statement-breakpoint
+DROP TABLE `gh_pr_closing_issues`;--> statement-breakpoint
+DROP TABLE `gh_pull_requests`;--> statement-breakpoint
 INSERT OR IGNORE INTO rewards (
 		id,
 		idempotency_key,

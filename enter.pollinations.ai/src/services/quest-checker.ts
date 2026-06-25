@@ -53,7 +53,11 @@ export async function checkQuestsForUser(
     const sourceResults = await Promise.all(
         QUEST_GROUPS.map((group) => findGroupRewardProposals(ctx, group, user)),
     );
-    const proposals = sourceResults.flatMap((entry) => entry.proposals);
+    // "coming_soon" quests are inert: shown on the board with a marker but never
+    // grantable, so drop their proposals before recording any reward.
+    const proposals = sourceResults
+        .flatMap((entry) => entry.proposals)
+        .filter((proposal) => proposal.quest.availability !== "coming_soon");
     const rewardInputs = proposals.map(toReward);
     log.info(
         "QUEST_CHECK_PROPOSALS: userId={userId} count={count} proposals={proposals}",

@@ -22,6 +22,7 @@ import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { checkQuestsForUser } from "../services/quest-checker.ts";
+import { findQuestCardByIdBestEffort } from "../services/quests/index.ts";
 import {
     fetchTinybirdRows,
     requireTinybirdReadToken,
@@ -1493,6 +1494,7 @@ export const accountRoutes = new Hono<Env>()
                 401: { description: "Unauthorized" },
                 403: { description: "API keys cannot claim rewards" },
                 404: { description: "Reward not found" },
+                409: { description: "Reward cannot be claimed yet" },
             },
         }),
         async (c) => {
@@ -1508,6 +1510,34 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const rewardId = c.req.param("rewardId");
             const db = drizzle(c.env.DB, { schema });
+            const rewardRows = await db
+                .select({ questId: rewardsTable.questId })
+                .from(rewardsTable)
+                .where(
+                    and(
+                        eq(rewardsTable.id, rewardId),
+                        eq(rewardsTable.userId, user.id),
+                    ),
+                )
+                .limit(1);
+            const reward = rewardRows[0];
+            if (!reward) {
+                throw new HTTPException(404, {
+                    message: "Reward not found",
+                });
+            }
+            if (reward.questId) {
+                const card = await findQuestCardByIdBestEffort(
+                    { db, env: c.env },
+                    reward.questId,
+                );
+                if (card?.availability === "coming_soon") {
+                    throw new HTTPException(409, {
+                        message: "This quest is coming soon",
+                    });
+                }
+            }
+
             const result = await claimReward(db, { rewardId, userId: user.id });
             if (!result.reward) {
                 throw new HTTPException(404, {

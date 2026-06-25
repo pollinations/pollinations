@@ -24,4 +24,19 @@ export async function listQuestCards(
     return lists.flat();
 }
 
+export async function findQuestCardByIdBestEffort(
+    ctx: QuestEvaluationContext,
+    questId: string,
+): Promise<QuestCard | null> {
+    const lists = await Promise.allSettled(
+        QUEST_GROUPS.map((group) => group.listQuestCards(ctx)),
+    );
+    for (const result of lists) {
+        if (result.status !== "fulfilled") continue;
+        const card = result.value.find((candidate) => candidate.id === questId);
+        if (card) return card;
+    }
+    return null;
+}
+
 export type { QuestCard };

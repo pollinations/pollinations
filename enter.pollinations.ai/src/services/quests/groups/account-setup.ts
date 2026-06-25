@@ -11,10 +11,10 @@ import {
 /**
  * D1 setup group: account-setup quests sourced from D1 source tables.
  *   - first_api_key  -> apikey                    (one key per user)
- *   - byop_login     -> apikey.byop_client_key_id (one BYOP login per user)
- *   - six_month_account -> user.created_at        (registered 6+ months ago)
+ *   - use_app        -> apikey.byop_client_key_id (one BYOP login per user)
+ *   - early_adopter  -> user.created_at           (registered 6+ months ago)
  *   - first_top_up   -> stripe_checkout_credits   (one paid checkout per user)
- *   - over_100_pollen -> stripe_checkout_credits  (>100 total paid Pollen)
+ *   - top_up_100     -> stripe_checkout_credits   (>100 total paid Pollen)
  *
  * The SQL decides whether the current user qualifies. The rewards table is the
  * single idempotency layer, so quest code does not filter already rewarded
@@ -26,7 +26,7 @@ type SetupQuestRow = {
 };
 
 const firstApiKeyQuest: QuestDefinition = {
-    id: "onboarding:first_api_key",
+    id: "first_api_key",
     title: "Create your first API key",
     description: "Create an API [key](#keys).",
     category: "setup",
@@ -36,7 +36,7 @@ const firstApiKeyQuest: QuestDefinition = {
 };
 
 const byopLoginQuest: QuestDefinition = {
-    id: "setup:byop_login",
+    id: "use_app",
     title: "Use a Pollinations app",
     description:
         "Connect to a Pollinations app. Log in to any app in the [apps directory](https://pollinations.ai/apps) that supports it.",
@@ -49,7 +49,7 @@ const byopLoginQuest: QuestDefinition = {
 };
 
 const sixMonthAccountQuest: QuestDefinition = {
-    id: "community:six_month_account",
+    id: "early_adopter",
     title: "Early Pollinations adopter",
     description: "Your Pollinations account is older than six months.",
     category: "grow",
@@ -61,7 +61,7 @@ const sixMonthAccountQuest: QuestDefinition = {
 };
 
 const firstTopUpQuest: QuestDefinition = {
-    id: "spend:first_top_up",
+    id: "first_top_up",
     title: "First Pollen top up",
     description: "[Top up](#buy-pollen) Pollen with a credit card.",
     category: "grow",
@@ -71,7 +71,7 @@ const firstTopUpQuest: QuestDefinition = {
 };
 
 const overHundredPollenQuest: QuestDefinition = {
-    id: "spend:purchased_over_100_pollen",
+    id: "top_up_100",
     title: "Top up 100 Pollen",
     description:
         "You have [topped up](#buy-pollen) more than 100 Pollen in total.",

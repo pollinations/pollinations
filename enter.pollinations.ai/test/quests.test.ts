@@ -10,7 +10,7 @@ import type { QuestGroup } from "../src/services/quests/types.ts";
 import { test } from "./fixtures.ts";
 import type { MockGithubState } from "./mocks/github.ts";
 
-const ELIXPO_INTERN_QUEST_ID = "easteregg:elixpo_intern";
+const ELIXPO_INTERN_QUEST_ID = "elixpo_intern";
 
 // Build an issue body the deriver can parse: a "### Reward" heading (when a
 // reward is given) plus a short Goal section for the description.
@@ -168,7 +168,7 @@ test("catalog stats aggregate earned/claimed from the rewards ledger", async ({
     await env.KV.delete("quests:catalog:v17");
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
-    const questId = "github:first_merged_pr";
+    const questId = "merged_pr";
 
     // Two earned rewards for the same quest (distinct idempotency keys), one of
     // which gets claimed. Catalog stats should report earned=2, claimed=1.
@@ -306,7 +306,7 @@ test("quest check records product rewards and claim endpoint credits one", async
         expect(typeof reward.earnedAt).toBe("string");
     }
     const firstApiKeyReward = payload.rewards.find(
-        (reward) => reward.questId === "onboarding:first_api_key",
+        (reward) => reward.questId === "first_api_key",
     );
 
     if (!firstApiKeyReward) throw new Error("Expected first API key reward");
@@ -345,9 +345,9 @@ test("claim endpoint rejects coming_soon quest rewards", async ({
     const user = await getOnlyUser();
     await mocks.enable("github", "tinybird");
     const reward = await recordReward(db, {
-        idempotencyKey: `quest:github:public_repo_stars_20:user:${user.id}`,
+        idempotencyKey: `quest:github_stars:user:${user.id}`,
         userId: user.id,
-        questId: "github:public_repo_stars_20",
+        questId: "github_stars",
         title: "Earn over 20 GitHub stars",
         amount: 5,
         bucket: "tier",
@@ -457,7 +457,7 @@ test("D1 quest check only records the requested user", async ({
     const rows = await db
         .select({ userId: schema.rewards.userId })
         .from(schema.rewards)
-        .where(eq(schema.rewards.questId, "onboarding:first_api_key"));
+        .where(eq(schema.rewards.questId, "first_api_key"));
     expect(rows).toHaveLength(1);
     expect(rows[0]?.userId).toBe(user.id);
 
@@ -467,7 +467,7 @@ test("D1 quest check only records the requested user", async ({
     const updatedRows = await db
         .select({ userId: schema.rewards.userId })
         .from(schema.rewards)
-        .where(eq(schema.rewards.questId, "onboarding:first_api_key"));
+        .where(eq(schema.rewards.questId, "first_api_key"));
     expect(new Set(updatedRows.map((row) => row.userId))).toEqual(
         new Set([user.id, secondUserId]),
     );
@@ -493,7 +493,7 @@ test("six-month account quest is coming_soon and never records", async ({
     const rewards = await db
         .select({ id: schema.rewards.id })
         .from(schema.rewards)
-        .where(eq(schema.rewards.questId, "community:six_month_account"));
+        .where(eq(schema.rewards.questId, "early_adopter"));
     expect(rewards).toHaveLength(0);
 });
 
@@ -552,11 +552,7 @@ test("app-growth quests are coming_soon and never record", async ({
         .from(schema.rewards);
     // All app-growth quests are coming_soon (inert), so the owner earns none of
     // them even though the source data qualifies.
-    for (const questId of [
-        "grow:first_byop_external_user",
-        "grow:first_paid_spend_in_app",
-        "grow:app_listed",
-    ]) {
+    for (const questId of ["app_active", "app_paid_request", "app_listed"]) {
         expect(ownerRewards.some((reward) => reward.questId === questId)).toBe(
             false,
         );
@@ -564,8 +560,7 @@ test("app-growth quests are coming_soon and never record", async ({
     expect(
         ownerRewards.some(
             (reward) =>
-                reward.questId === "setup:byop_login" &&
-                reward.userId === user.id,
+                reward.questId === "use_app" && reward.userId === user.id,
         ),
     ).toBe(false);
 
@@ -577,7 +572,7 @@ test("app-growth quests are coming_soon and never record", async ({
             userId: schema.rewards.userId,
         })
         .from(schema.rewards)
-        .where(eq(schema.rewards.questId, "setup:byop_login"));
+        .where(eq(schema.rewards.questId, "use_app"));
     expect(externalRewards).toHaveLength(0);
 });
 
@@ -605,9 +600,9 @@ test("quest check records model-usage rewards per modality", async ({
         .from(schema.rewards)
         .where(eq(schema.rewards.userId, user.id));
     const questIds = new Set(rewards.map((reward) => reward.questId));
-    expect(questIds.has("grow:use_text_model")).toBe(true);
-    expect(questIds.has("grow:use_audio_model")).toBe(true);
-    expect(questIds.has("grow:use_image_model")).toBe(false);
+    expect(questIds.has("use_text_model")).toBe(true);
+    expect(questIds.has("use_audio_model")).toBe(true);
+    expect(questIds.has("use_image_model")).toBe(false);
 
     expect(
         mocks.tinybird.state.pipeCalls.some(
@@ -639,7 +634,7 @@ test("quest check ignores Tinybird rows for other users", async ({
     const rewards = await db
         .select({ questId: schema.rewards.questId })
         .from(schema.rewards)
-        .where(eq(schema.rewards.questId, "grow:use_text_model"));
+        .where(eq(schema.rewards.questId, "use_text_model"));
     expect(rewards).toHaveLength(0);
 });
 
@@ -689,9 +684,7 @@ test("github established-account quest is coming_soon and never records", async 
     const establishedRows = await db
         .select({ id: schema.rewards.id })
         .from(schema.rewards)
-        .where(
-            eq(schema.rewards.questId, "onboarding:established_github_account"),
-        );
+        .where(eq(schema.rewards.questId, "github_established"));
     expect(establishedRows).toHaveLength(0);
 
     const [balance] = await db
@@ -722,7 +715,7 @@ test("github public repo stars quest is coming_soon and never records", async ({
     const rewards = await db
         .select({ id: schema.rewards.id })
         .from(schema.rewards)
-        .where(eq(schema.rewards.questId, "github:public_repo_stars_20"));
+        .where(eq(schema.rewards.questId, "github_stars"));
     expect(rewards).toHaveLength(0);
 });
 

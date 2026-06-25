@@ -186,7 +186,7 @@ function accountAgeDays(activity: GitHubProfileActivity, now: Date): number {
 }
 
 const establishedGitHubAccountQuest: QuestDefinition = {
-    id: "onboarding:established_github_account",
+    id: "github_established",
     title: "Established GitHub account",
     description: "Sign in with a GitHub account that is at least one year old.",
     category: "contribute",
@@ -198,7 +198,7 @@ const establishedGitHubAccountQuest: QuestDefinition = {
 };
 
 const publicRepoStarsQuest: QuestDefinition = {
-    id: "github:public_repo_stars_20",
+    id: "github_stars",
     title: "Earn over 20 GitHub stars",
     description:
         "The sum of stars across your public repositories is more than 20.",

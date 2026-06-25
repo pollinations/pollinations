@@ -30,7 +30,7 @@ const QUEST_REWARD_REGEX = /###\s*Reward\s*\n+\s*([0-9]+(?:\.[0-9]+)?)/i;
 const CONTRIBUTION_CATEGORY = "contribute" as const;
 
 const firstMergedPrQuest: QuestDefinition = {
-    id: "github:first_merged_pr",
+    id: "merged_pr",
     title: "Contribute a pull request",
     description:
         "Your pull request got merged to the Pollinations [repository](https://github.com/pollinations/pollinations).",

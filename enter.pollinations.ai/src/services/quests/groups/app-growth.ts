@@ -23,7 +23,7 @@ type QuestUserRow = {
 };
 
 const firstByopExternalUserQuest: QuestDefinition = {
-    id: "grow:first_byop_external_user",
+    id: "app_active",
     title: "Your app is being actively used",
     description:
         "A user logs in to your app using the [authorize](https://gen.pollinations.ai/docs#tag/byop) flow.",
@@ -36,7 +36,7 @@ const firstByopExternalUserQuest: QuestDefinition = {
 };
 
 const firstPaidSpendInAppQuest: QuestDefinition = {
-    id: "grow:first_paid_spend_in_app",
+    id: "app_paid_request",
     title: "User pays in your app",
     description:
         "A user makes a paid request in your [BYOP](https://gen.pollinations.ai/docs#tag/byop) app.",
@@ -49,7 +49,7 @@ const firstPaidSpendInAppQuest: QuestDefinition = {
 };
 
 const appListedQuest: QuestDefinition = {
-    id: "grow:app_listed",
+    id: "app_listed",
     title: "App listed on Pollinations",
     description:
         "Submit your app for review, get it approved, and have it listed in the [app directory](https://pollinations.ai/apps).",

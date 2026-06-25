@@ -21,7 +21,7 @@ const log = getLogger(["enter", "quests", "model-usage"]);
  */
 
 const useTextModelQuest: QuestDefinition = {
-    id: "grow:use_text_model",
+    id: "use_text_model",
     title: "Use a text model",
     description:
         "Make one successful request from any of the text [models](#models).",
@@ -32,7 +32,7 @@ const useTextModelQuest: QuestDefinition = {
 };
 
 const useImageModelQuest: QuestDefinition = {
-    id: "grow:use_image_model",
+    id: "use_image_model",
     title: "Use an image model",
     description:
         "Make one successful request from any of the image [models](#models).",
@@ -43,7 +43,7 @@ const useImageModelQuest: QuestDefinition = {
 };
 
 const useAudioModelQuest: QuestDefinition = {
-    id: "grow:use_audio_model",
+    id: "use_audio_model",
     title: "Use an audio model",
     description:
         "Make one successful request from any of the audio [models](#models).",

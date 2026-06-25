@@ -14,7 +14,7 @@ import {
 const TARGET_GITHUB_ID = 161_109_909;
 
 const elixpoInternQuest: QuestDefinition = {
-    id: "easteregg:elixpo_intern",
+    id: "elixpo_intern",
     title: "Join the Pollinations team",
     description:
         "Welcome aboard, elixpo. This one-off reward marks your start as Developer Relations Intern.",

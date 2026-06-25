@@ -630,46 +630,29 @@ URL-based identity lookup was removed — identity is derived from `client_id` o
 
 ### Tier Levels
 
-| Tier   | Emoji | Pollen   | Cadence | Criteria                 |
-| ------ | ----- | -------- | ------- | ------------------------ |
-| microbe| 🦠    | 0        | none    | Entry tier (auto-upgrades once verified) |
-| spore  | 🍄    | 0.01     | hourly  | Verified accounts        |
-| seed   | 🌱    | 0.15     | hourly  | GitHub engagement        |
-| flower | 🌸    | 0.4      | hourly  | Contributor              |
-| nectar | 🍯    | 0.8      | hourly  | Legacy — still supported for existing users, no longer granted |
+> Pollen is earned via Quests, not hourly tier refills (the drip is being retired). Tiers are account-classification levels.
 
-### Quick Tier Update
+| Tier   | Emoji | Criteria                 |
+| ------ | ----- | ------------------------ |
+| microbe| 🦠    | Entry tier (auto-upgrades once verified) |
+| spore  | 🍄    | Verified accounts        |
+| seed   | 🌱    | GitHub engagement        |
+| flower | 🌸    | Contributor              |
+| nectar | 🍯    | Legacy — still supported for existing users, no longer granted |
+
+### Lookups (read-only)
+
+Tiers are **frozen** — nothing upgrades or downgrades a user's tier (the automatic Spore→Seed, app→Flower, and admin tier-update paths were removed). Pollen is earned via Quests.
 
 ```bash
+# Look up a user's current tier + balance
+.claude/skills/tier-management/scripts/check-user-balance.sh USERNAME_OR_EMAIL
+
+# Or query D1 directly
 cd enter.pollinations.ai
-
-# 1. Find user
 npx wrangler d1 execute DB --remote --env production \
-  --command "SELECT github_username, email, tier FROM user WHERE LOWER(github_username) LIKE '%USERNAME%';"
-
-# 2. Update DB tier
-npx wrangler d1 execute DB --remote --env production \
-  --command "UPDATE user SET tier='flower' WHERE github_username='USERNAME';"
-
+  --command "SELECT github_username, email, tier, tier_balance FROM user WHERE LOWER(github_username) LIKE '%USERNAME%';"
 ```
-
-### Evaluate User for Upgrade
-
-**Flower tier** (any ONE qualifies):
-
-- Has commits: `gh api 'search/commits?q=repo:pollinations/pollinations+author:USERNAME' --jq '.total_count'`
-- Has project: `grep -ri "author.*USERNAME" pollinations.ai/src/config/projects/`
-
-**Seed tier** (any ONE qualifies):
-
-- Issue involvement: `gh api 'search/issues?q=repo:pollinations/pollinations+involves:USERNAME' --jq '.total_count'`
-- Starred repo: `.claude/skills/tier-management/fetch-stargazers.sh USERNAME`
-
-### Notes
-
-- **DB tier** = what user CAN activate
-- **Polar subscription** = what user HAS activated
-- If no Polar subscription, user must click "Activate" at enter.pollinations.ai
 
 ---
 

@@ -24,7 +24,7 @@ const useTextModelQuest: QuestDefinition = {
     id: "grow:use_text_model",
     title: "Use a text model",
     description:
-        "Choose any text model from [Models](#models) and make one successful billed text request.",
+        "Make one successful request from any of the text [Models](#models).",
     category: "setup",
     scope: "perUser",
     rewardAmount: 0.25,
@@ -35,7 +35,7 @@ const useImageModelQuest: QuestDefinition = {
     id: "grow:use_image_model",
     title: "Use an image model",
     description:
-        "Choose any image model from [Models](#models) and make one successful billed image request.",
+        "Make one successful request from any of the image [Models](#models).",
     category: "setup",
     scope: "perUser",
     rewardAmount: 0.25,
@@ -46,7 +46,7 @@ const useAudioModelQuest: QuestDefinition = {
     id: "grow:use_audio_model",
     title: "Use an audio model",
     description:
-        "Choose any audio model from [Models](#models) and make one successful billed audio request.",
+        "Make one successful request from any of the audio [Models](#models).",
     category: "setup",
     scope: "perUser",
     rewardAmount: 0.25,

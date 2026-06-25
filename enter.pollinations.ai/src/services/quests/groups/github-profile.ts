@@ -194,17 +194,21 @@ const establishedGitHubAccountQuest: QuestDefinition = {
     scope: "perUser",
     rewardAmount: 2,
     balanceBucket: "tier",
+    // Built but not launched — shown with a "coming soon" marker, not grantable.
+    availability: "coming_soon",
 };
 
 const publicRepoStarsQuest: QuestDefinition = {
     id: "github:public_repo_stars_20",
     title: "Earn over 20 GitHub stars",
     description:
-        "Have more than 20 total stars across your public, non-fork GitHub repositories.",
+        "The sum of stars across your public repositories is more than 20. Requires an established GitHub account.",
     category: "contribute",
     scope: "perUser",
     rewardAmount: 5,
     balanceBucket: "tier",
+    // Built but not launched — shown with a "coming soon" marker, not grantable.
+    availability: "coming_soon",
 };
 
 const QUESTS = [establishedGitHubAccountQuest, publicRepoStarsQuest];

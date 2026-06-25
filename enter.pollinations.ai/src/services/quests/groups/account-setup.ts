@@ -28,8 +28,7 @@ type SetupQuestRow = {
 const firstApiKeyQuest: QuestDefinition = {
     id: "onboarding:first_api_key",
     title: "Create your first API key",
-    description:
-        "Create an API key in [Keys](#keys), then use it to make authenticated Pollinations requests from an app or script.",
+    description: "Create an API key in [Keys](#keys).",
     category: "setup",
     scope: "perUser",
     rewardAmount: 0.25,
@@ -38,9 +37,9 @@ const firstApiKeyQuest: QuestDefinition = {
 
 const byopLoginQuest: QuestDefinition = {
     id: "setup:byop_login",
-    title: "Connect a Pollinations app",
+    title: "Login",
     description:
-        "Authorize a Pollinations-powered app with your account. You can review connected keys in [Keys](#keys).",
+        "Connect to a Pollinations app. Log in to any app in the [apps directory](https://pollinations.ai/apps) that supports it.",
     category: "setup",
     scope: "perUser",
     rewardAmount: 0.25,
@@ -51,7 +50,7 @@ const sixMonthAccountQuest: QuestDefinition = {
     id: "community:six_month_account",
     title: "Early Pollinations adopter",
     description:
-        "Have a Pollinations account that was created at least six months ago. This unlocks automatically for early adopters.",
+        "Have a Pollinations account that was created at least six months ago.",
     category: "grow",
     scope: "perUser",
     rewardAmount: 1,
@@ -60,9 +59,8 @@ const sixMonthAccountQuest: QuestDefinition = {
 
 const firstTopUpQuest: QuestDefinition = {
     id: "spend:first_top_up",
-    title: "Buy your first Pollen pack",
-    description:
-        "Add paid Pollen from [Top-up](#buy-pollen) so your projects can keep running after tier credits are spent.",
+    title: "Top up with paid Pollen",
+    description: "Top up with paid Pollen from [Top-up](#buy-pollen).",
     category: "grow",
     scope: "perUser",
     rewardAmount: 10,
@@ -71,9 +69,9 @@ const firstTopUpQuest: QuestDefinition = {
 
 const overHundredPollenQuest: QuestDefinition = {
     id: "spend:purchased_over_100_pollen",
-    title: "Power up with 100+ Pollen",
+    title: "Power up with more than 100 Pollen",
     description:
-        "Purchase more than 100 total Pollen through [Top-up](#buy-pollen) and unlock a larger quest reward.",
+        "Purchase more than 100 total Pollen through [Top-up](#buy-pollen).",
     category: "grow",
     scope: "perUser",
     rewardAmount: 50,

@@ -31,11 +31,14 @@ export type QuestCategory = (typeof QUEST_CATEGORIES)[number];
 export type QuestScope = "perUser" | "once";
 
 /**
- * Whether a quest sits on the open board. A two-state BOARD flag, not a
- * per-user status: "available" = open to everyone; "completed" = off the board
- * (shown only to a user who earned it, via their reward).
+ * Whether a quest sits on the open board. A BOARD flag, not a per-user status:
+ *   - "available"   = open to everyone.
+ *   - "completed"   = off the board (shown only to a user who earned it).
+ *   - "coming_soon" = on the board but NOT yet live: shown with a "coming soon"
+ *                     marker and never grants a reward (inert — the quest-checker
+ *                     drops its proposals). Use for built-but-unlaunched quests.
  */
-export type QuestAvailability = "available" | "completed";
+export type QuestAvailability = "available" | "completed" | "coming_soon";
 
 export type QuestDefinition = {
     id: string;
@@ -61,6 +64,9 @@ export type QuestDefinition = {
      *                             (e.g. the intern easter egg), and set
      *                             per-instance by dynamic groups (an assigned or
      *                             finished issue bounty leaves the board).
+     *   - "coming_soon"         — shown to everyone with a "coming soon" marker
+     *                             but inert: the quest-checker never records its
+     *                             rewards. For built-but-unlaunched quests.
      * The catalog always emits the card so a reward can join to it; the frontend
      * applies the show/hide rule.
      */

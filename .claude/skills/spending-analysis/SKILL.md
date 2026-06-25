@@ -22,8 +22,8 @@ Must run from the `pollinations` repo root with access to `enter.pollinations.ai
 - **Customers**: User payment info linked by `external_id`
 
 ## Tinybird
-- **generation_event**: Usage data with `user_id`, `total_price`, and `meter_source`
-- Use `meter_source` to split spend by active balance bucket:
+- **generation_event**: Usage data with `user_id`, `total_price`, and `selected_meter_slug`
+- Use `selected_meter_slug` to split spend by active balance bucket:
   - `v1:meter:tier` / `local:tier`
   - `v1:meter:pack` / `local:pack`
 
@@ -98,7 +98,7 @@ curl -sL "https://api.polar.sh/v1/orders?limit=100&product_id=$PRODUCT_ID" \
 ```bash
 curl -sL "https://api.europe-west2.gcp.tinybird.co/v0/sql" \
   -H "Authorization: Bearer $TINYBIRD_TOKEN" \
-  --data-urlencode "q=SELECT toStartOfWeek(start_time) as week, meter_source, sum(total_price) as total_spend, count() as requests FROM generation_event WHERE start_time >= now() - INTERVAL 60 DAY AND environment = 'production' GROUP BY week, meter_source ORDER BY week DESC FORMAT JSON" | jq '.data'
+  --data-urlencode "q=SELECT toStartOfWeek(start_time) as week, splitByChar(':', selected_meter_slug)[-1] as meter_source, sum(total_price) as total_spend, count() as requests FROM generation_event WHERE start_time >= now() - INTERVAL 60 DAY AND environment = 'production' GROUP BY week, meter_source ORDER BY week DESC FORMAT JSON" | jq '.data'
 ```
 
 ## Top Paying Users by Pack Spend
@@ -106,7 +106,7 @@ curl -sL "https://api.europe-west2.gcp.tinybird.co/v0/sql" \
 ```bash
 curl -sL "https://api.europe-west2.gcp.tinybird.co/v0/sql" \
   -H "Authorization: Bearer $TINYBIRD_TOKEN" \
-  --data-urlencode "q=SELECT user_id, user_github_username, sum(total_price) as pack_spend, count() as requests FROM generation_event WHERE start_time >= now() - INTERVAL 30 DAY AND environment = 'production' AND meter_source IN ('v1:meter:pack', 'local:pack') GROUP BY user_id, user_github_username ORDER BY pack_spend DESC LIMIT 50 FORMAT JSON" | jq '.data'
+  --data-urlencode "q=SELECT user_id, user_github_username, sum(total_price) as pack_spend, count() as requests FROM generation_event WHERE start_time >= now() - INTERVAL 30 DAY AND environment = 'production' AND selected_meter_slug = 'v1:meter:pack' GROUP BY user_id, user_github_username ORDER BY pack_spend DESC LIMIT 50 FORMAT JSON" | jq '.data'
 ```
 
 ---

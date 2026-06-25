@@ -72,7 +72,7 @@ FROM (
     SELECT
         g.user_id,
         count() as total_reqs,
-        round(sumIf(g.total_price, g.meter_source IN ('v1:meter:pack', 'local:pack')), 4) as pack_spend,
+        round(sumIf(g.total_price, g.selected_meter_slug IN ('v1:meter:pack', 'local:pack')), 4) as pack_spend,
         countIf(g.response_status >= 400) * 100.0 / count() as err_pct
     FROM generation_event g
     WHERE g.start_time >= now() - INTERVAL 7 DAY
@@ -91,7 +91,7 @@ WHERE pack_spend = 0 AND err_pct >= 95
 
 ## 1. Full Abuse Scoring Query
 
-Returns all users with abuse score, sorted by score descending. The spend signal uses `meter_source` to distinguish paid pack consumption from the other active balance bucket.
+Returns all users with abuse score, sorted by score descending. The spend signal uses `selected_meter_slug` to distinguish paid pack consumption from the other active balance bucket.
 
 ```sql
 SELECT
@@ -103,7 +103,7 @@ FROM (
     SELECT
         g.user_id, u.github_username, u.email,
         count() as total_reqs,
-        round(sumIf(g.total_price, g.meter_source IN ('v1:meter:pack', 'local:pack')), 4) as pack_spend,
+        round(sumIf(g.total_price, g.selected_meter_slug IN ('v1:meter:pack', 'local:pack')), 4) as pack_spend,
         round(sum(g.total_price), 4) as total_spend,
         max(coalesce(ips.ip_cluster_size, 0)) as max_ip_cluster,
         countDistinct(g.ip_hash) as distinct_ips,
@@ -169,7 +169,7 @@ LIMIT 30
 ```sql
 SELECT DISTINCT
     g.user_id, u.github_username, u.email,
-    sumIf(g.total_price, g.meter_source IN ('v1:meter:pack', 'local:pack')) as pack_spend,
+    sumIf(g.total_price, g.selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as pack_spend,
     sum(g.total_price) as total_spend
 FROM generation_event g
 LEFT JOIN d1_user u ON g.user_id = u.id
@@ -301,7 +301,7 @@ npx wrangler d1 execute production-pollinations-enter-db --remote \
 
 | Table | Key columns for abuse |
 |-------|----------------------|
-| `generation_event` | `user_id`, `ip_hash`, `ip_subnet`, `response_status`, `total_price`, `meter_source`, `moderation_prompt_*`, `event_type` |
+| `generation_event` | `user_id`, `ip_hash`, `ip_subnet`, `response_status`, `total_price`, `selected_meter_slug`, `moderation_prompt_*`, `event_type` |
 | `d1_user` | `id`, `email`, `github_username`, `banned`, `banReason`, `created_at` |
 
 **IP implementation** (`src/middleware/track.ts`):

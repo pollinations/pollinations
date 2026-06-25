@@ -42,6 +42,8 @@ const firstPaidSpendInAppQuest: QuestDefinition = {
     scope: "perUser",
     rewardAmount: 20,
     balanceBucket: "tier",
+    // Built but not launched — hidden from the UI, not grantable.
+    availability: "coming_soon",
 };
 
 const appListedQuest: QuestDefinition = {

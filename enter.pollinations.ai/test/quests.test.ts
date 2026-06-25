@@ -556,10 +556,6 @@ test("quest check records app growth rewards for the app owner", async ({
                 questId: "grow:first_byop_external_user",
                 userId: user.id,
             },
-            {
-                questId: "grow:first_paid_spend_in_app",
-                userId: user.id,
-            },
         ]),
     );
     expect(
@@ -567,6 +563,12 @@ test("quest check records app growth rewards for the app owner", async ({
             (reward) =>
                 reward.questId === "setup:byop_login" &&
                 reward.userId === user.id,
+        ),
+    ).toBe(false);
+    // first_paid_spend_in_app and app_listed are coming_soon (inert).
+    expect(
+        ownerRewards.some(
+            (reward) => reward.questId === "grow:first_paid_spend_in_app",
         ),
     ).toBe(false);
     expect(

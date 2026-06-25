@@ -34,10 +34,10 @@ Yes — complete Quests from the Quests dashboard to earn Pollen. No credit card
 
 Earn Pollen by completing useful actions — onboarding, growing an app, GitHub contributions, and more.
 
-- 🧪 **In alpha** — rewards and availability evolve as we tune them.
+- 🧪 **In alpha** — new quests are added, rewards and details are evolving.
 - 📋 **Browse** the Quests dashboard for what's open and what you've done.
-- 🐙 **Contribute quests** are GitHub issues with fixed rewards — comment on the issue to claim.
-- ✅ Rewards land automatically once verified.
+- ✅ **Claim** a completed quest's reward from the dashboard to credit your wallet. Past activity counts.
+- 🐙 **Contribute quests** are GitHub issues with fixed rewards — get your assigned issue merged, then claim it.
 
 ## 💳 What payment methods do you accept?
 

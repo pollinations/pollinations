@@ -516,10 +516,7 @@ function transformEnterSchema(schema: OpenApiSchema): OpenApiSchema {
     const paths: OpenApiSchema = {};
     for (const [path, value] of Object.entries(asRecord(schema.paths))) {
         if (!isPublicEnterPath(path)) continue;
-        const publicPath = publicEnterPath(path);
-        paths[publicPath] = isPublicQuestCatalogPath(path)
-            ? markOperationsPublic(value)
-            : value;
+        paths[publicEnterPath(path)] = value;
     }
     return { ...schema, tags: tagsForPaths(schema, paths), paths };
 }
@@ -547,40 +544,6 @@ function publicEnterPath(path: string): string {
     return path
         .replace(/^\/api\/account(?=\/|$)/, "/account")
         .replace(/^\/api\/quests(?=\/|$)/, "/quests");
-}
-
-const OPENAPI_METHODS = new Set([
-    "get",
-    "put",
-    "post",
-    "delete",
-    "options",
-    "head",
-    "patch",
-    "trace",
-]);
-
-function markOperationsPublic(pathItem: unknown): unknown {
-    if (!pathItem || typeof pathItem !== "object" || Array.isArray(pathItem)) {
-        return pathItem;
-    }
-
-    const next = { ...(pathItem as Record<string, unknown>) };
-    for (const [method, operation] of Object.entries(next)) {
-        if (!OPENAPI_METHODS.has(method.toLowerCase())) continue;
-        if (
-            !operation ||
-            typeof operation !== "object" ||
-            Array.isArray(operation)
-        ) {
-            continue;
-        }
-        next[method] = {
-            ...(operation as Record<string, unknown>),
-            security: [],
-        };
-    }
-    return next;
 }
 
 function tagsForPaths(

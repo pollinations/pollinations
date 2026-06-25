@@ -89,6 +89,7 @@ export const questsRoutes = new Hono<Env>()
         describeRoute({
             tags: ["✨ Quests"],
             summary: "Get Quest Catalog",
+            security: [],
             description:
                 "Returns product quests and GitHub issue quest instances in one list.",
             responses: {

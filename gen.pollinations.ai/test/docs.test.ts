@@ -63,7 +63,9 @@ describe("docs routes", () => {
             paths: {
                 "/account/key": { get: { tags: ["Account"] } },
                 "/api/account/profile": { get: { tags: ["👤 Account"] } },
-                "/api/quests/catalog": { get: { tags: ["✨ Quests"] } },
+                "/api/quests/catalog": {
+                    get: { tags: ["✨ Quests"], security: [] },
+                },
                 "/api/quests/check": {
                     post: { tags: ["✨ Quests"], security: [{ session: [] }] },
                 },

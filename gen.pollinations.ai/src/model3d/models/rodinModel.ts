@@ -3,8 +3,11 @@ import { downloadMesh, requirePrompt, toHttpError } from "../modelUtils.ts";
 import type { Model3dParams } from "../params.ts";
 import { extractFalModelMesh, runFalJob } from "./falClient.ts";
 
-const FAL_IMAGE_ENDPOINT = "fal-ai/hyper3d/rodin/v2.5/fast";
-const FAL_TEXT_ENDPOINT = "fal-ai/hyper3d/rodin/v2.5/text-to-3d/fast";
+export const RODIN_FAL_IMAGE_ENDPOINT = "fal-ai/hyper3d/rodin/v2.5/fast";
+export const RODIN_FAL_TEXT_ENDPOINT =
+    "fal-ai/hyper3d/rodin/v2.5/text-to-3d/fast";
+const FAL_IMAGE_ENDPOINT = RODIN_FAL_IMAGE_ENDPOINT;
+const FAL_TEXT_ENDPOINT = RODIN_FAL_TEXT_ENDPOINT;
 
 export async function callRodinFalAPI(
     prompt: string,

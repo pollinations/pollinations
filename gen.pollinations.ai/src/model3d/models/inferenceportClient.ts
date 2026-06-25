@@ -63,16 +63,51 @@ export interface InferenceportResult {
     jobId: string;
 }
 
-export async function runInferenceportJob(
-    opts: RunOptions,
-): Promise<InferenceportResult> {
+// Single-shot state of a job, returned by both submit and check — lets the
+// async job API (POST /3d/generations + GET /3d/jobs/{id}) inspect a job
+// without committing to runInferenceportJob's internal poll loop.
+export type InferenceportJobState =
+    | { status: "pending" | "processing"; jobId: string }
+    | ({ status: "completed"; jobId: string } & Omit<
+          InferenceportResult,
+          "jobId"
+      >);
+
+function toJobState(job: InferenceportJob): InferenceportJobState {
+    if (job.status === "failed") {
+        throw new InferenceportError(job.error || "3D generation failed", 502);
+    }
+    if (job.status === "completed") {
+        if (!job.model_glb_b64_bytes && !job.model_ply_b64_bytes) {
+            throw new InferenceportError(
+                "3D generation succeeded but output is missing",
+            );
+        }
+        return {
+            status: "completed",
+            jobId: job.job_id,
+            glbBase64: job.model_glb_b64_bytes,
+            plyBase64: job.model_ply_b64_bytes,
+            orbitVideoBase64: job.orbit_video_b64_bytes,
+        };
+    }
+    return { status: job.status, jobId: job.job_id };
+}
+
+function requireInferenceportToken(): string {
     const token = getModel3dEnv("INFERENCEPORT_API_KEY");
     if (!token) {
         throw new InferenceportError(
             "INFERENCEPORT_API_KEY environment variable is required",
         );
     }
+    return token;
+}
 
+export async function submitInferenceportJob(
+    opts: RunOptions,
+): Promise<InferenceportJobState> {
+    const token = requireInferenceportToken();
     const body: Record<string, unknown> = {
         model: opts.model,
         image_urls: opts.imageUrls,
@@ -80,42 +115,53 @@ export async function runInferenceportJob(
     if (opts.prompt) body.prompt = opts.prompt;
     if (opts.resolution) body.resolution = opts.resolution;
 
-    let job = await inferenceportFetch<InferenceportJob>(token, {
+    const job = await inferenceportFetch<InferenceportJob>(token, {
         method: "POST",
         url: `${API_BASE}/3d/generations`,
         body,
     });
+    return toJobState(job);
+}
+
+export async function checkInferenceportJob(
+    jobId: string,
+): Promise<InferenceportJobState> {
+    const token = requireInferenceportToken();
+    const job = await inferenceportFetch<InferenceportJob>(token, {
+        method: "GET",
+        url: `${API_BASE}/3d/jobs/${jobId}`,
+    });
+    return toJobState(job);
+}
+
+export async function runInferenceportJob(
+    opts: RunOptions,
+): Promise<InferenceportResult> {
+    let state = await submitInferenceportJob(opts);
 
     let pollAttempts = 0;
-    while (job.status === "pending" || job.status === "processing") {
+    while (state.status === "pending" || state.status === "processing") {
         if (pollAttempts >= POLL_MAX_ATTEMPTS) {
             throw new InferenceportError(
-                `Inferenceport job ${job.job_id} timed out after ${(POLL_MAX_ATTEMPTS * POLL_INTERVAL_MS) / 1000}s (status=${job.status})`,
+                `Inferenceport job ${state.jobId} timed out after ${(POLL_MAX_ATTEMPTS * POLL_INTERVAL_MS) / 1000}s (status=${state.status})`,
                 504,
             );
         }
         await sleep(POLL_INTERVAL_MS);
-        job = await inferenceportFetch<InferenceportJob>(token, {
-            method: "GET",
-            url: `${API_BASE}/3d/jobs/${job.job_id}`,
-        });
+        state = await checkInferenceportJob(state.jobId);
         pollAttempts++;
     }
 
-    if (job.status === "failed") {
-        throw new InferenceportError(job.error || "3D generation failed", 502);
-    }
-    if (!job.model_glb_b64_bytes && !job.model_ply_b64_bytes) {
+    if (state.status !== "completed") {
         throw new InferenceportError(
-            "3D generation succeeded but output is missing",
+            "3D generation ended in an unexpected state",
         );
     }
-
     return {
-        glbBase64: job.model_glb_b64_bytes,
-        plyBase64: job.model_ply_b64_bytes,
-        orbitVideoBase64: job.orbit_video_b64_bytes,
-        jobId: job.job_id,
+        glbBase64: state.glbBase64,
+        plyBase64: state.plyBase64,
+        orbitVideoBase64: state.orbitVideoBase64,
+        jobId: state.jobId,
     };
 }
 

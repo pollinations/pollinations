@@ -8,11 +8,13 @@ import {
     runInferenceportJob,
 } from "./inferenceportClient.ts";
 
-const INFERENCEPORT_MODEL_ID = "sf3d";
+export const SF3D_INFERENCEPORT_MODEL_ID = "sf3d";
 // fal.ai slug for Stable Fast 3D used by convention (fal-ai/stable-fast-3d) —
 // unverified against fal's docs directly, see plan §4/open items. Confirm
 // before relying on this fallback path in production.
-const FAL_ENDPOINT = "fal-ai/stable-fast-3d";
+export const SF3D_FAL_ENDPOINT = "fal-ai/stable-fast-3d";
+const INFERENCEPORT_MODEL_ID = SF3D_INFERENCEPORT_MODEL_ID;
+const FAL_ENDPOINT = SF3D_FAL_ENDPOINT;
 
 export async function callSf3dWithFallback(
     params: Model3dParams,

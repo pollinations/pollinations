@@ -14,7 +14,7 @@ import { type Model3dParams, Model3dParamsSchema } from "./params.ts";
 
 type Model3dContext = Context<Env>;
 
-const EXTENSION_BY_CONTENT_TYPE: Record<string, string> = {
+export const EXTENSION_BY_CONTENT_TYPE: Record<string, string> = {
     "model/gltf-binary": "glb",
     "model/ply": "ply",
     "model/obj": "obj",
@@ -48,7 +48,7 @@ export async function handle3dPrompt(
     return generate3dResponse(c, prompt, await readJsonBody(c));
 }
 
-async function readJsonBody(
+export async function readJsonBody(
     c: Model3dContext,
 ): Promise<Record<string, unknown>> {
     if (c.req.method !== "POST") return {};
@@ -61,7 +61,7 @@ async function readJsonBody(
     }
 }
 
-function decodePrompt(rawPrompt: string): string {
+export function decodePrompt(rawPrompt: string): string {
     try {
         return decodeURIComponent(rawPrompt);
     } catch {
@@ -69,7 +69,7 @@ function decodePrompt(rawPrompt: string): string {
     }
 }
 
-function parseModel3dParams(
+export function parseModel3dParams(
     c: Model3dContext,
     body: Record<string, unknown>,
 ): Model3dParams {
@@ -92,7 +92,7 @@ function parseModel3dParams(
     return parseResult.data;
 }
 
-function assertNonEmptyMedia(result: Model3dGenerationResult): void {
+export function assertNonEmptyMedia(result: Model3dGenerationResult): void {
     if (!result.buffer || result.buffer.length === 0) {
         throw new HttpError("3D provider returned an empty response", 502);
     }
@@ -109,7 +109,7 @@ function contentDisposition(prompt: string, extension: string): string {
     return `inline; filename="${baseFilename || "generated-model"}.${extension}"`;
 }
 
-function mediaHeaders(
+export function mediaHeaders(
     prompt: string,
     safeParams: Model3dParams,
     result: Model3dGenerationResult,
@@ -131,7 +131,7 @@ function mediaHeaders(
     return headers;
 }
 
-function throw3dError(error: unknown): never {
+export function throw3dError(error: unknown): never {
     if (error instanceof UpstreamError) throw error;
 
     if (error instanceof HttpError) {

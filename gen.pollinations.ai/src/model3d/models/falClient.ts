@@ -50,42 +50,91 @@ export interface RunFalJobOptions {
     input: Record<string, unknown>;
 }
 
-export async function runFalJob(
-    opts: RunFalJobOptions,
-): Promise<Record<string, unknown>> {
+// Handle returned by submitFalJob — enough to check status and fetch the
+// result later without resubmitting, used by both the blocking runFalJob
+// loop and the async job API (POST /3d/generations + GET /3d/jobs/{id}).
+export interface FalJobHandle {
+    requestId: string;
+    statusUrl: string;
+    responseUrl: string;
+}
+
+export type FalJobState =
+    | { status: "pending"; handle: FalJobHandle }
+    | { status: "completed"; result: Record<string, unknown> };
+
+function requireFalApiKey(): string {
     const apiKey = getModel3dEnv("FAL_KEY");
     if (!apiKey) {
         throw new FalError("FAL_KEY environment variable is required");
     }
+    return apiKey;
+}
 
+export async function submitFalJob(
+    opts: RunFalJobOptions,
+): Promise<FalJobHandle> {
+    const apiKey = requireFalApiKey();
     const submission = await falFetch<FalQueueSubmitResponse>(apiKey, {
         method: "POST",
         url: `${QUEUE_BASE}/${opts.endpoint}`,
         body: opts.input,
     });
+    return {
+        requestId: submission.request_id,
+        statusUrl: submission.status_url,
+        responseUrl: submission.response_url,
+    };
+}
+
+// Cheap status-only check (no result fetch) — lets callers claim a job
+// before paying the cost of downloading its (potentially large) result.
+export async function isFalJobReady(handle: FalJobHandle): Promise<boolean> {
+    const apiKey = requireFalApiKey();
+    const statusResponse = await falFetch<FalQueueStatusResponse>(apiKey, {
+        method: "GET",
+        url: handle.statusUrl,
+    });
+    return statusResponse.status === "COMPLETED";
+}
+
+export async function fetchFalJobResult(
+    handle: FalJobHandle,
+): Promise<Record<string, unknown>> {
+    const apiKey = requireFalApiKey();
+    return await falFetch<Record<string, unknown>>(apiKey, {
+        method: "GET",
+        url: handle.responseUrl,
+    });
+}
+
+export async function checkFalJob(handle: FalJobHandle): Promise<FalJobState> {
+    if (!(await isFalJobReady(handle))) {
+        return { status: "pending", handle };
+    }
+    const result = await fetchFalJobResult(handle);
+    return { status: "completed", result };
+}
+
+export async function runFalJob(
+    opts: RunFalJobOptions,
+): Promise<Record<string, unknown>> {
+    const handle = await submitFalJob(opts);
 
     let pollAttempts = 0;
-    let status: FalQueueStatusResponse["status"] = "IN_QUEUE";
-    while (status === "IN_QUEUE" || status === "IN_PROGRESS") {
+    let state: FalJobState = { status: "pending", handle };
+    while (state.status === "pending") {
         if (pollAttempts >= POLL_MAX_ATTEMPTS) {
             throw new FalError(
-                `fal.ai request ${submission.request_id} timed out after ${(POLL_MAX_ATTEMPTS * POLL_INTERVAL_MS) / 1000}s (status=${status})`,
+                `fal.ai request ${handle.requestId} timed out after ${(POLL_MAX_ATTEMPTS * POLL_INTERVAL_MS) / 1000}s`,
                 504,
             );
         }
         await sleep(POLL_INTERVAL_MS);
-        const statusResponse = await falFetch<FalQueueStatusResponse>(apiKey, {
-            method: "GET",
-            url: submission.status_url,
-        });
-        status = statusResponse.status;
+        state = await checkFalJob(handle);
         pollAttempts++;
     }
-
-    return await falFetch<Record<string, unknown>>(apiKey, {
-        method: "GET",
-        url: submission.response_url,
-    });
+    return state.result;
 }
 
 // fal.ai's 3D models use either `model_mesh` (triposr, trellis/multi, rodin,

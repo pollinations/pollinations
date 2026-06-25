@@ -533,6 +533,8 @@ curl "https://gen.pollinations.ai/video/a%20sunset%20timelapse%20over%20the%20oc
 
 #### `GET` `/3d/{prompt}` — Generate 3D Model
 
+⚠️ **This endpoint blocks until generation finishes**, which can take up to ~5 minutes for some models (e.g. `triposr`, `sf3d`) and may hit client/proxy timeouts. Prefer the async API below for those models.
+
 Generate a 3D model from a text prompt or reference image(s). Returns GLB by default.
 
 **Available models:** `triposr`, `sf3d`, `asset-harvester`, `trellis-2-low`, `trellis-2-medium`, `trellis-2-high`, `tripo3d-h3.1`, `hunyuan3d-v3`, `hyper3d-rodin`, `hyper3d-rodin-highpack`. `triposr` is the default. `asset-harvester` returns a PLY mesh instead of GLB.
@@ -559,6 +561,33 @@ Browse all available models and their input requirements at [`/3d/models`](https
 
 ```bash
 curl "https://gen.pollinations.ai/3d/a%20low-poly%20treasure%20chest?model=triposr&image=https://example.com/ref.jpg" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  --output model.glb
+```
+
+#### `POST` `/3d/generations` — Submit an Async 3D Generation Job
+
+Recommended alternative to the blocking endpoint above. Submits a generation and returns immediately with a `job_id` instead of waiting for it to finish. Accepts the same `model`/`image`/`format` fields as JSON body, plus `prompt` for text-to-3D models.
+
+📤 **Response** · `202` — `{"job_id": "...", "status": "pending"}`
+
+💻 **Example**
+
+```bash
+curl "https://gen.pollinations.ai/3d/generations" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "triposr", "image": ["https://example.com/ref.jpg"]}'
+```
+
+#### `GET` `/3d/jobs/{job_id}` — Check an Async 3D Generation Job
+
+Poll for the status of a job created via `POST /3d/generations`. Returns `{"status": "pending"}` while running, `{"status": "failed", "error": "..."}` on failure, or the generated 3D model binary (same headers as `GET /3d/{prompt}`) once complete.
+
+💻 **Example**
+
+```bash
+curl "https://gen.pollinations.ai/3d/jobs/$JOB_ID" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   --output model.glb
 ```

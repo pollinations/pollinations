@@ -8,8 +8,10 @@ import {
     runInferenceportJob,
 } from "./inferenceportClient.ts";
 
-const INFERENCEPORT_MODEL_ID = "tripoSR";
-const FAL_ENDPOINT = "fal-ai/triposr";
+export const TRIPOSR_INFERENCEPORT_MODEL_ID = "tripoSR";
+export const TRIPOSR_FAL_ENDPOINT = "fal-ai/triposr";
+const INFERENCEPORT_MODEL_ID = TRIPOSR_INFERENCEPORT_MODEL_ID;
+const FAL_ENDPOINT = TRIPOSR_FAL_ENDPOINT;
 
 export async function callTripoSRWithFallback(
     params: Model3dParams,

@@ -3,7 +3,8 @@ import { downloadMesh, requirePrompt, toHttpError } from "../modelUtils.ts";
 import type { Model3dParams } from "../params.ts";
 import { extractFalModelMesh, runFalJob } from "./falClient.ts";
 
-const FAL_ENDPOINT = "tripo3d/h3.1/text-to-3d";
+export const TRIPO3D_FAL_ENDPOINT = "tripo3d/h3.1/text-to-3d";
+const FAL_ENDPOINT = TRIPO3D_FAL_ENDPOINT;
 
 export async function callTripo3dFalAPI(
     prompt: string,

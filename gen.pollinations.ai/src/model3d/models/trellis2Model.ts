@@ -8,13 +8,15 @@ import {
     runInferenceportJob,
 } from "./inferenceportClient.ts";
 
-const INFERENCEPORT_MODEL_ID = "trellis-2";
-const FAL_ENDPOINT = "fal-ai/trellis-2";
+export const TRELLIS2_INFERENCEPORT_MODEL_ID = "trellis-2";
+export const TRELLIS2_FAL_ENDPOINT = "fal-ai/trellis-2";
+const INFERENCEPORT_MODEL_ID = TRELLIS2_INFERENCEPORT_MODEL_ID;
+const FAL_ENDPOINT = TRELLIS2_FAL_ENDPOINT;
 
 // inferenceport (primary) takes "low"/"medium"/"high"; fal.ai's trellis-2
 // endpoint (fallback) takes a pixel resolution instead — map our registry
 // model id to each provider's expected value.
-const INFERENCEPORT_RESOLUTION_BY_MODEL_ID: Record<
+export const TRELLIS2_INFERENCEPORT_RESOLUTION_BY_MODEL_ID: Record<
     string,
     "low" | "medium" | "high"
 > = {
@@ -22,11 +24,17 @@ const INFERENCEPORT_RESOLUTION_BY_MODEL_ID: Record<
     "trellis-2-medium": "medium",
     "trellis-2-high": "high",
 };
-const FAL_RESOLUTION_BY_MODEL_ID: Record<string, "512" | "1024" | "1536"> = {
+export const TRELLIS2_FAL_RESOLUTION_BY_MODEL_ID: Record<
+    string,
+    "512" | "1024" | "1536"
+> = {
     "trellis-2-low": "512",
     "trellis-2-medium": "1024",
     "trellis-2-high": "1536",
 };
+const INFERENCEPORT_RESOLUTION_BY_MODEL_ID =
+    TRELLIS2_INFERENCEPORT_RESOLUTION_BY_MODEL_ID;
+const FAL_RESOLUTION_BY_MODEL_ID = TRELLIS2_FAL_RESOLUTION_BY_MODEL_ID;
 
 export async function callTrellis2WithFallback(
     params: Model3dParams,

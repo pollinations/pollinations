@@ -64,3 +64,41 @@ export const Generate3dRequestQueryParamsSchema = z.object({
 export type Generate3dRequestQueryParams = z.infer<
     typeof Generate3dRequestQueryParamsSchema
 >;
+
+export const Generate3dJobRequestBodySchema = z.object({
+    model: z
+        .preprocess(
+            (val) => (val === "" ? undefined : val),
+            z
+                .enum(VALID_3D_MODELS as unknown as [string, ...string[]])
+                .optional()
+                .default(DEFAULT_3D_MODEL),
+        )
+        .meta({
+            description:
+                "Model to use. See /3d/models for the full list and per-model input requirements.",
+        }),
+    prompt: z.string().optional().meta({
+        description:
+            "Text description of the 3D model to generate (required for text-to-3D models; ignored by image-only models).",
+    }),
+    image: z
+        .union([z.array(z.string()), z.string()])
+        .optional()
+        .meta({
+            description:
+                "Reference image URL(s) for image-to-3D generation. Required for image-only models (e.g. `triposr`, `sf3d`, `asset-harvester`).",
+        }),
+    format: z
+        .enum(FORMATS as unknown as [string, ...string[]])
+        .optional()
+        .default("glb")
+        .meta({
+            description:
+                "Output 3D file format. Not all models support all formats — falls back to glb if unsupported.",
+        }),
+});
+
+export type Generate3dJobRequestBody = z.infer<
+    typeof Generate3dJobRequestBodySchema
+>;

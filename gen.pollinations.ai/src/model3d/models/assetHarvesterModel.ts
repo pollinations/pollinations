@@ -7,7 +7,8 @@ import {
     runInferenceportJob,
 } from "./inferenceportClient.ts";
 
-const INFERENCEPORT_MODEL_ID = "asset-harvester";
+export const ASSET_HARVESTER_INFERENCEPORT_MODEL_ID = "asset-harvester";
+const INFERENCEPORT_MODEL_ID = ASSET_HARVESTER_INFERENCEPORT_MODEL_ID;
 
 // inferenceport-only — no fal.ai equivalent exists, so there's no fallback
 // path here (unlike trellis-2/triposr/sf3d).

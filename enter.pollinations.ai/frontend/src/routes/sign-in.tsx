@@ -13,10 +13,12 @@ import {
 import { usePageFromHash } from "../components/layout/use-page-from-hash.ts";
 import { Models } from "../components/models";
 import { NewsFaq } from "../components/news-faq";
+import { QuestOverview } from "../components/quests";
 
 const SIGNED_OUT_PAGES: ReadonlySet<DashboardPage> = new Set([
     "news-faq",
     "models",
+    "quests",
 ]);
 
 const SIGNED_OUT_NAV_ITEMS = DASHBOARD_NAV_ITEMS.filter((item) =>
@@ -110,6 +112,7 @@ function RouteComponent() {
         >
             {activePage === "news-faq" && <NewsFaq />}
             {activePage === "models" && <Models />}
+            {activePage === "quests" && <QuestOverview />}
         </DashboardShell>
     );
 }

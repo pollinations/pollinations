@@ -30,7 +30,10 @@ const STRUCTURAL_TOKENS = [
 // [name, pill classes (literal so Tailwind emits them)]
 const INTENT_TOKENS = [
     ["danger", "bg-intent-danger-bg-light text-intent-danger-text"],
-    ["success", "bg-intent-success-bg-light text-intent-success-text"],
+    [
+        "success",
+        "bg-intent-success-bg-bright text-intent-success-text-on-bright",
+    ],
     ["warning", "bg-intent-warning-bg-light text-intent-warning-text"],
     ["news", "bg-intent-news-bg-light text-intent-news-text"],
     ["alpha", "bg-intent-alpha-bg-light text-intent-alpha-text"],

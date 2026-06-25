@@ -26,6 +26,7 @@ type SeedQuestIssue = {
     reward: number | null;
     assigneeGithubId?: number | null;
     assigneeLogin?: string | null;
+    closed?: boolean;
     // When set, a merged PR closes the issue (→ "completed" / payable).
     completedByPrNumber?: number | null;
     createdAt?: Date;
@@ -43,13 +44,14 @@ function seedQuestIssue(github: MockGithubState, issue: SeedQuestIssue): void {
 
     github.questIssues.push({
         number: issue.issueNumber,
-        state: completedBy !== null ? "closed" : "open",
+        state: completedBy !== null || issue.closed ? "closed" : "open",
         title: issue.title,
         html_url: `https://github.com/pollinations/pollinations/issues/${issue.issueNumber}`,
         body: questIssueBody(issue.reward, issue.goal),
         created_at: created.toISOString(),
         updated_at: updated.toISOString(),
-        closed_at: completedBy !== null ? updated.toISOString() : null,
+        closed_at:
+            completedBy !== null || issue.closed ? updated.toISOString() : null,
         user: { login: "maintainer" },
         assignees: assigneeLogin
             ? [{ login: assigneeLogin, databaseId: assigneeGithubId }]
@@ -253,6 +255,51 @@ test("catalog includes coming-soon GitHub issue placeholder", async ({
         balanceBucket: "tier",
         url: null,
     });
+});
+
+test("catalog excludes closed GitHub quest issues without merged PRs", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    await mocks.enable("github");
+    await env.KV.delete("quests:catalog:v19");
+
+    seedQuestIssue(mocks.github.state, {
+        issueNumber: 801,
+        title: "Open bounty",
+        goal: "Still available.",
+        reward: 3,
+    });
+    seedQuestIssue(mocks.github.state, {
+        issueNumber: 802,
+        title: "Closed without merge",
+        goal: "Closed by maintainers without a merged quest PR.",
+        reward: 4,
+        closed: true,
+    });
+    seedQuestIssue(mocks.github.state, {
+        issueNumber: 803,
+        title: "Merged bounty",
+        goal: "Closed by a merged quest PR.",
+        reward: 5,
+        completedByPrNumber: 1803,
+    });
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/quests/catalog",
+    );
+    expect(response.status).toBe(200);
+    const payload = (await response.json()) as {
+        quests: {
+            id: string;
+            state: string;
+        }[];
+    };
+    const byId = new Map(payload.quests.map((quest) => [quest.id, quest]));
+
+    expect(byId.get("github:issue:801")?.state).toBe("available");
+    expect(byId.has("github:issue:802")).toBe(false);
+    expect(byId.get("github:issue:803")?.state).toBe("completed");
 });
 
 test("quest check records product rewards and claim endpoint credits one", async ({

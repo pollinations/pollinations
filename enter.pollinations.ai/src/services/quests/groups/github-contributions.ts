@@ -176,9 +176,7 @@ function toDerivedQuestIssue(issue: GitHubIssueNode): DerivedQuestIssue {
     const body = issue.body ?? "";
     const completedByPrNumber = firstMergedCloser(issue);
     const state: DerivedQuestIssue["state"] =
-        completedByPrNumber !== null || issue.state === "CLOSED"
-            ? "completed"
-            : "available";
+        completedByPrNumber !== null ? "completed" : "available";
     const firstAssignee = issue.assignees.nodes[0];
     return {
         issueNumber: issue.number,
@@ -201,6 +199,10 @@ async function loadQuestIssues(token: string): Promise<DerivedQuestIssue[]> {
 
     return data.search.nodes
         .filter((issue) => hasQuestLabel(issue.labels.nodes))
+        .filter(
+            (issue) =>
+                issue.state === "OPEN" || firstMergedCloser(issue) !== null,
+        )
         .map(toDerivedQuestIssue)
         .filter((issue) => issue.rewardAmount !== null);
 }

@@ -191,9 +191,7 @@ test("catalog stats aggregate earned/claimed from the rewards ledger", async ({
     if (!a.rewardId) throw new Error("Expected recorded reward id");
     await claimReward(db, { rewardId: a.rewardId, userId: user.id });
 
-    const response = await SELF.fetch(
-        "http://localhost:3000/api/quests/catalog",
-    );
+    const response = await SELF.fetch("http://localhost:3000/api/quests");
     expect(response.status).toBe(200);
     const payload = (await response.json()) as {
         quests: { id: string; stats: Record<string, number> }[];

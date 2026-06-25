@@ -539,7 +539,7 @@ function isPublicAccountPath(path: string): boolean {
 }
 
 function isPublicQuestCatalogPath(path: string): boolean {
-    return path === "/quests/catalog" || path === "/api/quests/catalog";
+    return path === "/quests" || path === "/api/quests";
 }
 
 function publicEnterPath(path: string): string {

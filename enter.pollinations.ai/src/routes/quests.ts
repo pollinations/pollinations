@@ -60,12 +60,12 @@ const questCatalogResponseSchema = z.object({
 });
 
 export const questsRoutes = new Hono<Env>().get(
-    "/catalog",
+    "/",
     describeRoute({
         tags: ["Quests"],
-        summary: "Get Quest Catalog",
+        summary: "Get Quests",
         description:
-            "Returns product quests and GitHub issue quest instances in one catalog.",
+            "Returns product quests and GitHub issue quest instances in one list.",
         responses: {
             200: {
                 description: "Quest catalog",

@@ -63,7 +63,7 @@ describe("docs routes", () => {
             paths: {
                 "/account/key": { get: { tags: ["Account"] } },
                 "/api/account/profile": { get: { tags: ["👤 Account"] } },
-                "/api/quests/catalog": { get: { tags: ["Quests"] } },
+                "/api/quests": { get: { tags: ["Quests"] } },
                 "/api/quests/private": { get: { tags: ["Quests"] } },
                 "/api/customer/portal": { get: { tags: ["Customer"] } },
                 "/api-keys": { get: { tags: ["Customer"] } },
@@ -97,10 +97,10 @@ describe("docs routes", () => {
         expect(schema.paths["/image/{prompt}"]).toBeDefined();
         expect(schema.paths["/account/key"]).toBeDefined();
         expect(schema.paths["/account/profile"]).toBeDefined();
-        expect(schema.paths["/quests/catalog"]).toBeDefined();
+        expect(schema.paths["/quests"]).toBeDefined();
         expect(schema.paths["/api/account/key"]).toBeUndefined();
         expect(schema.paths["/api/account/profile"]).toBeUndefined();
-        expect(schema.paths["/api/quests/catalog"]).toBeUndefined();
+        expect(schema.paths["/api/quests"]).toBeUndefined();
         expect(schema.paths["/api/quests/private"]).toBeUndefined();
         expect(schema.paths["/api/customer/portal"]).toBeUndefined();
         expect(schema.paths["/api-keys"]).toBeUndefined();
@@ -140,7 +140,7 @@ describe("docs routes", () => {
         expect(accountKeyGet?.["x-codeSamples"]).toBeDefined();
 
         const questsCatalogGet = (
-            schema.paths["/quests/catalog"] as Record<string, unknown>
+            schema.paths["/quests"] as Record<string, unknown>
         )?.get as Record<string, unknown> | undefined;
         expect(questsCatalogGet?.security).toEqual([]);
     });

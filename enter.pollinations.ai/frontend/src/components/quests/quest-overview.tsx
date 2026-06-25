@@ -175,7 +175,7 @@ async function loadQuestData(): Promise<QuestData> {
     // logged-out visitor still gets the full catalog (rendered all-open as a
     // preview), so a 401 on rewards is expected, not an error.
     const [catalogResponse, rewardsResponse] = await Promise.all([
-        apiClient.quests.catalog.$get(),
+        apiClient.quests.$get(),
         apiClient.account.quests.$get(),
     ]);
     if (!catalogResponse.ok) {

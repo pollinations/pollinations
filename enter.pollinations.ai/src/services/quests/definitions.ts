@@ -72,3 +72,19 @@ export type QuestDefinition = {
      */
     state?: QuestState;
 };
+
+export function questState(quest: Pick<QuestDefinition, "state">): QuestState {
+    return quest.state ?? "available";
+}
+
+export function isRewardableQuest(
+    quest: Pick<QuestDefinition, "state">,
+): boolean {
+    return questState(quest) !== "coming_soon";
+}
+
+export function rewardableQuests<T extends QuestDefinition>(
+    quests: readonly T[],
+): T[] {
+    return quests.filter((quest) => isRewardableQuest(quest));
+}

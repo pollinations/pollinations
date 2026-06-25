@@ -1,7 +1,7 @@
 import { getLogger } from "@logtape/logtape";
 import { sql } from "drizzle-orm";
 import { fetchTinybirdRows, requireTinybirdReadToken } from "../../tinybird.ts";
-import type { QuestDefinition } from "../definitions.ts";
+import { type QuestDefinition, rewardableQuests } from "../definitions.ts";
 import {
     type QuestCard,
     type QuestEvaluationContext,
@@ -78,9 +78,26 @@ export async function findRewardProposalsForUser(
     ctx: QuestEvaluationContext,
     user: QuestUser,
 ): Promise<RewardProposal[]> {
+    const rewardableQuestIds = new Set(
+        rewardableQuests(QUESTS).map((quest) => quest.id),
+    );
+    if (rewardableQuestIds.size === 0) {
+        log.info(
+            "APP_GROWTH_SKIPPED: userId={userId} reason=no_rewardable_quests",
+            {
+                userId: user.id,
+            },
+        );
+        return [];
+    }
+
     const [paidSpendRows, byopExternalRows] = await Promise.all([
-        loadPaidSpendAppOwner(ctx, user),
-        loadByopExternalAppOwner(ctx, user),
+        rewardableQuestIds.has(firstPaidSpendInAppQuest.id)
+            ? loadPaidSpendAppOwner(ctx, user)
+            : [],
+        rewardableQuestIds.has(firstByopExternalUserQuest.id)
+            ? loadByopExternalAppOwner(ctx, user)
+            : [],
     ]);
 
     const proposals = [

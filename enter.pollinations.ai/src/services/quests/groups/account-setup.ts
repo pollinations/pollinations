@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import type { QuestDefinition } from "../definitions.ts";
+import { type QuestDefinition, rewardableQuests } from "../definitions.ts";
 import {
     type QuestCard,
     type QuestEvaluationContext,
@@ -81,61 +81,74 @@ const overHundredPollenQuest: QuestDefinition = {
     balanceBucket: "tier",
 };
 
+const QUESTS = [
+    firstApiKeyQuest,
+    byopLoginQuest,
+    sixMonthAccountQuest,
+    firstTopUpQuest,
+    overHundredPollenQuest,
+];
+
 export async function listQuestCards(
     _ctx: QuestEvaluationContext,
 ): Promise<QuestCard[]> {
-    return [
-        firstApiKeyQuest,
-        byopLoginQuest,
-        sixMonthAccountQuest,
-        firstTopUpQuest,
-        overHundredPollenQuest,
-    ].map((quest) => questToCard(quest));
+    return QUESTS.map((quest) => questToCard(quest));
 }
 
 export async function findRewardProposalsForUser(
     { db }: QuestEvaluationContext,
     user: QuestUser,
 ): Promise<RewardProposal[]> {
-    const apiKeyRows = await db.all<SetupQuestRow>(
-        sql`
+    const rewardableQuestIds = new Set(
+        rewardableQuests(QUESTS).map((quest) => quest.id),
+    );
+    const [
+        apiKeyRows,
+        topUpRows,
+        overHundredPollenRows,
+        byopLoginRows,
+        sixMonthAccountRows,
+    ] = await Promise.all([
+        rewardableQuestIds.has(firstApiKeyQuest.id)
+            ? db.all<SetupQuestRow>(sql`
         SELECT apikey.user_id AS userId
         FROM apikey
         WHERE apikey.user_id = ${user.id}
-        LIMIT 1`,
-    );
-    const topUpRows = await db.all<SetupQuestRow>(
-        sql`
+        LIMIT 1`)
+            : [],
+        rewardableQuestIds.has(firstTopUpQuest.id)
+            ? db.all<SetupQuestRow>(sql`
         SELECT stripe_checkout_credits.user_id AS userId
         FROM stripe_checkout_credits
         WHERE stripe_checkout_credits.user_id = ${user.id}
-        LIMIT 1`,
-    );
-    const overHundredPollenRows = await db.all<SetupQuestRow>(
-        sql`
+        LIMIT 1`)
+            : [],
+        rewardableQuestIds.has(overHundredPollenQuest.id)
+            ? db.all<SetupQuestRow>(sql`
         SELECT stripe_checkout_credits.user_id AS userId
         FROM stripe_checkout_credits
         WHERE stripe_checkout_credits.user_id = ${user.id}
         GROUP BY stripe_checkout_credits.user_id
         HAVING SUM(stripe_checkout_credits.pollen_credited) > 100
-        LIMIT 1`,
-    );
-    const byopLoginRows = await db.all<SetupQuestRow>(
-        sql`
+        LIMIT 1`)
+            : [],
+        rewardableQuestIds.has(byopLoginQuest.id)
+            ? db.all<SetupQuestRow>(sql`
         SELECT apikey.user_id AS userId
         FROM apikey
         WHERE apikey.user_id = ${user.id}
           AND apikey.byop_client_key_id IS NOT NULL
-        LIMIT 1`,
-    );
-    const sixMonthAccountRows = await db.all<SetupQuestRow>(
-        sql`
+        LIMIT 1`)
+            : [],
+        rewardableQuestIds.has(sixMonthAccountQuest.id)
+            ? db.all<SetupQuestRow>(sql`
         SELECT "user".id AS userId
         FROM "user"
         WHERE "user".id = ${user.id}
           AND "user".created_at <= CAST(strftime('%s', 'now', '-6 months') AS integer)
-        LIMIT 1`,
-    );
+        LIMIT 1`)
+            : [],
+    ]);
 
     return [
         ...apiKeyRows.map((row) => ({

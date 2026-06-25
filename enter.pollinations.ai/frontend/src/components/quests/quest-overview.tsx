@@ -260,15 +260,28 @@ export function BucketCard({
 
 // A bucket-agnostic total — one neutral well, used when paid/tier split would
 // be noise rather than signal (e.g. quest counts are all "a quest"). Uses
-// Surface card so the bg + well shadow match the Setup/quest rows exactly.
-export function TotalCard({ value }: { value: React.ReactNode }) {
+// Surface card so the bg + well shadow match the Setup/quest rows exactly. The
+// glyph defaults to the sparkle; pass `icon` (and an `iconClassName` tint) to
+// label a different metric — e.g. a green sprout for the logged-out pollen
+// total, which must read as "on offer", never as an owned (green-well) balance.
+export function TotalCard({
+    value,
+    icon: Icon = SparkleIcon,
+    iconClassName,
+}: {
+    value: React.ReactNode;
+    icon?: IconComponent;
+    iconClassName?: string;
+}) {
     return (
         <Surface
             variant="card"
             className="flex items-center justify-center py-4 sm:py-5"
         >
             <span className="flex items-center gap-1.5 text-3xl font-bold leading-none tracking-tight tabular-nums text-theme-text-base sm:gap-2 sm:text-5xl">
-                <SparkleIcon className="h-7 w-7 shrink-0 sm:h-10 sm:w-10" />
+                <Icon
+                    className={`h-7 w-7 shrink-0 sm:h-10 sm:w-10 ${iconClassName ?? ""}`}
+                />
                 {value}
             </span>
         </Surface>
@@ -941,13 +954,16 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                             <div className="col-span-1 sm:col-start-1 sm:row-start-2">
                                 <TotalCard value={previewTotals.count} />
                             </div>
+                            {/* Neutral tile (not the green owned-balance well) so
+                                the pollen on offer never reads as a balance the
+                                visitor holds. Green sprout keeps the pollen cue. */}
                             <div className="col-span-1 sm:col-start-2 sm:row-start-2">
-                                <BucketCard
-                                    kind="tier"
+                                <TotalCard
                                     value={formatRewardAmount(
                                         previewTotals.pollen,
                                     )}
-                                    showBadge
+                                    icon={SproutIcon}
+                                    iconClassName="polli-wallet-text-tier"
                                 />
                             </div>
                         </div>

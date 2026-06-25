@@ -5,7 +5,7 @@
  * billing UI, and other control-plane routes remain owned by enter.pollinations.ai.
  *
  * URL Mapping:
- *   gen.pollinations.ai/              -> redirect to /docs
+ *   gen.pollinations.ai/              -> docs SEO landing
  *   gen.pollinations.ai/docs          -> docs handled locally
  *   gen.pollinations.ai/models        -> generation models
  *   gen.pollinations.ai/account/*     -> enter account API
@@ -28,6 +28,7 @@ import { logger } from "@/middleware/logger.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
+import { docsLandingHtml, manifestResponse } from "./routes/seo.ts";
 
 export { PollenRateLimiter } from "./durable-objects/PollenRateLimiter.ts";
 
@@ -106,7 +107,8 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .use("*", requestId())
     .use("*", logger)
     .get("/robots.txt", () => robotsTxt())
-    .get("/", (c) => c.redirect(`${getPublicOrigin(c)}/docs`, 301))
+    .get("/manifest.webmanifest", () => manifestResponse())
+    .get("/", (c) => c.html(docsLandingHtml(c)))
     .get("/docs/", (c) => c.redirect(`${getPublicOrigin(c)}/docs`, 301))
     .all("/api/docs", redirectLegacyDocs)
     .all("/api/docs/", redirectLegacyDocs)

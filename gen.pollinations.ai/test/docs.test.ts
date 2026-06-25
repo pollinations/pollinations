@@ -194,6 +194,13 @@ describe("docs routes", () => {
         const html = await response.text();
         expect(html).toContain(".scalar-app .markdown table");
         expect(html).toContain("overflow-x: auto");
+        expect(html).toContain(
+            'property="og:title" content="Docs | pollinations.ai"',
+        );
+        expect(html).toContain(
+            'property="og:image" content="https://gen.pollinations.ai/og-image.png"',
+        );
+        expect(html).toContain('rel="manifest" href="/manifest.webmanifest"');
     });
 
     it("serves the OpenAPI schema as YAML when ?format=yaml", async () => {

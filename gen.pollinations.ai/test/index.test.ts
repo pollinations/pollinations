@@ -56,12 +56,48 @@ async function optionsWorker(
 }
 
 describe("gen worker routing", () => {
-    it("redirects root to docs", async () => {
+    it("serves root metadata for social previews", async () => {
         const response = await fetchWorker("/");
 
-        expect(response.status).toBe(301);
-        expect(response.headers.get("Location")).toBe(
-            "https://staging.gen.pollinations.ai/docs",
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Content-Type")).toContain("text/html");
+        expect(response.headers.get("X-Robots-Tag")).toBeNull();
+
+        const html = await response.text();
+        expect(html).toContain("<title>Docs | pollinations.ai</title>");
+        expect(html).toContain('http-equiv="refresh" content="0;url=/docs"');
+        expect(html).toContain(
+            'property="og:image" content="https://staging.gen.pollinations.ai/og-image.png"',
+        );
+        expect(html).toContain('rel="manifest" href="/manifest.webmanifest"');
+    });
+
+    it("serves the docs web app manifest", async () => {
+        const response = await fetchWorker("/manifest.webmanifest");
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Content-Type")).toContain(
+            "application/manifest+json",
+        );
+
+        const manifest = (await response.json()) as {
+            name: string;
+            short_name: string;
+            start_url: string;
+            icons: { src: string; purpose?: string }[];
+        };
+        expect(manifest).toMatchObject({
+            name: "Docs | pollinations.ai",
+            short_name: "Docs",
+            start_url: "/docs",
+        });
+        expect(manifest.icons).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    src: "/icon-maskable-512.png",
+                    purpose: "maskable",
+                }),
+            ]),
         );
     });
 

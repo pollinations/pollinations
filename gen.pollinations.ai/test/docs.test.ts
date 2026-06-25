@@ -63,8 +63,10 @@ describe("docs routes", () => {
             paths: {
                 "/account/key": { get: { tags: ["Account"] } },
                 "/api/account/profile": { get: { tags: ["👤 Account"] } },
-                "/api/quests": { get: { tags: ["Quests"] } },
-                "/api/quests/private": { get: { tags: ["Quests"] } },
+                "/api/quests/catalog": { get: { tags: ["Quests"] } },
+                "/api/quests/rewards": {
+                    get: { tags: ["Quests"], security: [{ session: [] }] },
+                },
                 "/api/customer/portal": { get: { tags: ["Customer"] } },
                 "/api-keys": { get: { tags: ["Customer"] } },
                 "/generate/text/{prompt}": { get: { tags: ["Old"] } },
@@ -97,11 +99,12 @@ describe("docs routes", () => {
         expect(schema.paths["/image/{prompt}"]).toBeDefined();
         expect(schema.paths["/account/key"]).toBeDefined();
         expect(schema.paths["/account/profile"]).toBeDefined();
-        expect(schema.paths["/quests"]).toBeDefined();
+        expect(schema.paths["/quests/catalog"]).toBeDefined();
+        expect(schema.paths["/quests/rewards"]).toBeDefined();
         expect(schema.paths["/api/account/key"]).toBeUndefined();
         expect(schema.paths["/api/account/profile"]).toBeUndefined();
-        expect(schema.paths["/api/quests"]).toBeUndefined();
-        expect(schema.paths["/api/quests/private"]).toBeUndefined();
+        expect(schema.paths["/api/quests/catalog"]).toBeUndefined();
+        expect(schema.paths["/api/quests/rewards"]).toBeUndefined();
         expect(schema.paths["/api/customer/portal"]).toBeUndefined();
         expect(schema.paths["/api-keys"]).toBeUndefined();
         expect(schema.paths["/generate/text/{prompt}"]).toBeUndefined();
@@ -139,10 +142,16 @@ describe("docs routes", () => {
         )?.get as Record<string, unknown> | undefined;
         expect(accountKeyGet?.["x-codeSamples"]).toBeDefined();
 
+        // The catalog is unauthenticated → marked public (security: []).
         const questsCatalogGet = (
-            schema.paths["/quests"] as Record<string, unknown>
+            schema.paths["/quests/catalog"] as Record<string, unknown>
         )?.get as Record<string, unknown> | undefined;
         expect(questsCatalogGet?.security).toEqual([]);
+        // /rewards is session-gated → its security block is preserved, not voided.
+        const questsRewardsGet = (
+            schema.paths["/quests/rewards"] as Record<string, unknown>
+        )?.get as Record<string, unknown> | undefined;
+        expect(questsRewardsGet?.security).toEqual([{ session: [] }]);
     });
 
     it("does not add noindex to docs responses at the worker boundary", async () => {

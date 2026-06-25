@@ -119,6 +119,15 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
         url.pathname = `/api${stripTrailingSlash(url.pathname)}`;
         return fetchEnter(c, url);
     })
+    // Quests are a public product surface: the catalog is unauthenticated, while
+    // /check + /rewards stay session-gated (they 401 over the proxy exactly like
+    // /account/*). All quest endpoints are subpaths, so one prefix rule covers
+    // them; the request — cookie and all — is forwarded verbatim to enter.
+    .all("/quests/*", (c) => {
+        const url = new URL(c.req.url);
+        url.pathname = `/api${stripTrailingSlash(url.pathname)}`;
+        return fetchEnter(c, url);
+    })
     // Generation routes: docs, models, and media/text/audio/video APIs live at
     // the public gen origin without an internal /api prefix.
     .use("*", async (c, next) => {

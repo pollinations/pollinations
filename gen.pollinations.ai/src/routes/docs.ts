@@ -526,7 +526,16 @@ function transformEnterSchema(schema: OpenApiSchema): OpenApiSchema {
 }
 
 function isPublicEnterPath(path: string): boolean {
-    return isPublicAccountPath(path) || isPublicQuestCatalogPath(path);
+    return isPublicAccountPath(path) || isPublicQuestPath(path);
+}
+
+function isPublicQuestPath(path: string): boolean {
+    return (
+        path === "/quests" ||
+        path.startsWith("/quests/") ||
+        path === "/api/quests" ||
+        path.startsWith("/api/quests/")
+    );
 }
 
 function isPublicAccountPath(path: string): boolean {
@@ -538,8 +547,10 @@ function isPublicAccountPath(path: string): boolean {
     );
 }
 
+// Only the catalog is unauthenticated, so only it gets marked public in the
+// docs. /check + /rewards stay session-gated and keep their security block.
 function isPublicQuestCatalogPath(path: string): boolean {
-    return path === "/quests" || path === "/api/quests";
+    return path === "/quests/catalog" || path === "/api/quests/catalog";
 }
 
 function publicEnterPath(path: string): string {

@@ -58,10 +58,19 @@ export const Route = createFileRoute("/sign-in")({
                     },
                 });
             }
-            throw redirect({ to: "/" });
+            throw redirect({
+                to: "/",
+                hash: window.location.hash.slice(1) || undefined,
+            });
         }
     },
 });
+
+function dashboardCallbackUrl(activePage: DashboardPage): string {
+    const url = new URL("/", window.location.href);
+    url.hash = window.location.hash.slice(1) || activePage;
+    return url.href;
+}
 
 function RouteComponent() {
     const [loading, setLoading] = useState(false);
@@ -71,6 +80,7 @@ function RouteComponent() {
         setLoading(true);
         const { error } = await authClient.signIn.social({
             provider: "github",
+            callbackURL: dashboardCallbackUrl(activePage),
         });
         if (error) {
             setLoading(false);

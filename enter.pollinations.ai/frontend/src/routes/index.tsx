@@ -143,7 +143,7 @@ function RouteComponent() {
         setIsSigningOut(true);
         try {
             await authClient.signOut();
-            window.location.href = "/";
+            window.location.href = "/sign-in#news-faq";
         } catch (error) {
             console.error("Sign out failed:", error);
         } finally {

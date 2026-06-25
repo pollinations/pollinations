@@ -49,8 +49,7 @@ const byopLoginQuest: QuestDefinition = {
 const sixMonthAccountQuest: QuestDefinition = {
     id: "community:six_month_account",
     title: "Early Pollinations adopter",
-    description:
-        "Have a Pollinations account that was created at least six months ago.",
+    description: "Your Pollinations account is older than six months.",
     category: "grow",
     scope: "perUser",
     rewardAmount: 1,

@@ -26,7 +26,7 @@ const firstByopExternalUserQuest: QuestDefinition = {
     id: "grow:first_byop_external_user",
     title: "First app login",
     description:
-        "Someone else logs into your app using the [authorize](https://gen.pollinations.ai/docs#tag/byop) flow.",
+        "A user logs in to your app using the [authorize](https://gen.pollinations.ai/docs#tag/byop) flow.",
     category: "grow",
     scope: "perUser",
     rewardAmount: 10,
@@ -48,7 +48,7 @@ const appListedQuest: QuestDefinition = {
     id: "grow:app_listed",
     title: "App listed on Pollinations",
     description:
-        "Submit your app for review, get it approved, and have it listed in the [Pollinations app directory](https://pollinations.ai/apps).",
+        "Submit your app for review, get it approved, and have it listed in the [app directory](https://pollinations.ai/apps).",
     category: "grow",
     scope: "perUser",
     rewardAmount: 5,

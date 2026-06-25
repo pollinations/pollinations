@@ -247,7 +247,7 @@ test("catalog includes coming-soon GitHub issue placeholder", async ({
     );
 
     expect(placeholder).toMatchObject({
-        title: "Solve a 'Quest' issue in GitHub",
+        title: "Solve a quest issue in GitHub",
         description: "A demi description",
         category: "contribute",
         state: "coming_soon",

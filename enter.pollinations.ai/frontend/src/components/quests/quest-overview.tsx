@@ -899,7 +899,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                                     }))}
                             />
                             {claimable.count > 0 && (
-                                <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-theme-bg-subtle px-4 py-2.5 text-sm font-semibold text-theme-text-soft">
+                                <div className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 rounded-xl bg-theme-bg-subtle px-4 py-2.5 text-sm font-semibold text-theme-text-soft">
                                     <SparkleIcon className="h-4 w-4 shrink-0" />
                                     <span>
                                         <span className="tabular-nums">
@@ -909,8 +909,11 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                                         {claimable.count === 1
                                             ? "quest"
                                             : "quests"}{" "}
-                                        completed ready to claim!
+                                        completed
                                     </span>
+                                    {/* Reward amount pulled inline — "…completed
+                                        🌱 5 pollen ready to claim!" — so it reads
+                                        as one sentence, not a trailing chip. */}
                                     {claimable.segments.map((seg, i) => {
                                         const SegIcon =
                                             seg.kind === "paid"
@@ -938,6 +941,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                                             </span>
                                         );
                                     })}
+                                    <span>pollen ready to claim!</span>
                                 </div>
                             )}
                         </div>

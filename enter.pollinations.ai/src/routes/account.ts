@@ -20,7 +20,7 @@ import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { parseMetadata } from "./metadata-utils.ts";
 
-// Calculate next tier refill time (null for tiers with no refill).
+// Calculate the next tier-balance refill timestamp.
 // Matches the `0 * * * *` cron in wrangler.toml — top of the next UTC hour.
 function getNextRefillAt(tier?: string | null): string | null {
     const cadence = tier ? getTierCadence(tier) : "none";
@@ -722,13 +722,11 @@ const profileResponseSchema = z.object({
         .describe("Profile picture URL (e.g. GitHub avatar)"),
     tier: z
         .enum(["anonymous", ...tierNames])
-        .describe("User's current tier level"),
+        .describe("User's current tier level."),
     nextResetAt: z.iso
         .datetime()
         .nullable()
-        .describe(
-            "Next pollen refill timestamp (ISO 8601). `null` for tiers with no refill.",
-        ),
+        .describe("Next Quest Pollen refill timestamp (ISO 8601), or `null`."),
     name: z
         .string()
         .nullable()
@@ -828,7 +826,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Profile",
             description:
-                "Returns your account profile. GitHub username, profile image, current tier, and next pollen refill timestamp are always returned. Name and email are returned only when the API key has the `account:profile` permission.",
+                "Returns your account profile. GitHub username, profile image, current tier, and next Quest Pollen refill timestamp are always returned. Name and email are returned only when the API key has the `account:profile` permission.",
             responses: {
                 200: {
                     description: "User profile",

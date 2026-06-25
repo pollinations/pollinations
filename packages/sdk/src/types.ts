@@ -586,9 +586,9 @@ export interface AuthorizeOptions {
 export interface AccountProfile {
     githubUsername: string | null;
     image: string | null;
-    /** Current tier level (e.g. `"spore"`, `"seed"`, `"flower"`, `"nectar"`). */
+    /** Current tier level. */
     tier: string;
-    /** ISO 8601 timestamp of the next pollen refill. `null` for tiers with no refill. */
+    /** Next Quest Pollen refill timestamp (ISO 8601), or `null`. */
     nextResetAt: string | null;
     /** Only returned when the API key has the `profile` permission */
     name?: string | null;

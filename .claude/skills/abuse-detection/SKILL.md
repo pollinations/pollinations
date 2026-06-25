@@ -312,24 +312,6 @@ npx wrangler d1 execute production-pollinations-enter-db --remote \
   --command "UPDATE user SET banned = 1, ban_reason = 'Temporary: rate abuse', ban_expires = $(date -v+7d +%s)000 WHERE id = '<USER_ID>'"
 ```
 
-## Demote Commands (spore → microbe)
-
-Demotion is preferred over banning for spore-tier abuse — it removes their pollen and rate-limits them without a hard block.
-
-```bash
-# Batch demote (from a file of user IDs, one per line)
-IDS=$(cat user_ids_to_demote.txt | sed "s/^/'/;s/$/'/" | paste -sd, -)
-npx wrangler d1 execute production-pollinations-enter-db --remote \
-  --command "UPDATE user SET tier = 'microbe', tier_balance = 0 WHERE id IN ($IDS) AND tier = 'spore'"
-
-# Verify (check a sample)
-IDS=$(head -5 user_ids_to_demote.txt | sed "s/^/'/;s/$/'/" | paste -sd, -)
-npx wrangler d1 execute production-pollinations-enter-db --remote \
-  --command "SELECT id, tier, tier_balance FROM user WHERE id IN ($IDS)"
-```
-
-> **Important**: Always include `AND tier = 'spore'` as a safety guard — prevents accidentally demoting users who were already upgraded.
-
 **D1 database names:**
 - Production: `production-pollinations-enter-db`
 - Staging: `staging-pollinations-enter-db`

@@ -10,7 +10,6 @@ import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { checkQuestsForUser } from "../services/quest-checker.ts";
-import { getRewardLedgerStats } from "../services/quest-stats.ts";
 import { QUEST_CATEGORIES } from "../services/quests/definitions.ts";
 import { listQuestCards } from "../services/quests/index.ts";
 import type {
@@ -18,37 +17,14 @@ import type {
     QuestEvaluationContext,
 } from "../services/quests/types.ts";
 
-// Bumped to v19: catalog returns quests in definition order (was title-sorted).
-const CACHE_KEY = "quests:catalog:v19";
+// Bumped to v20: catalog no longer includes reward-ledger stats.
+const CACHE_KEY = "quests:catalog:v20";
 const CACHE_TTL = 60;
 const QUEST_CHECK_THROTTLE_SECONDS = 60;
 
-// Per-quest reward-ledger stats shown on the catalog card. Read from rewards:
-// rows exist once users have checked their quests, so these are ledger stats,
-// not total latent eligibility counts.
-export type QuestCardStats = {
-    earned: number;
-    claimed: number;
-    unclaimed: number;
-    pollenAwarded: number;
-    pollenClaimed: number;
-    pollenAwardedPercent: number;
-};
-
-export type QuestCatalogItem = QuestCard & { stats: QuestCardStats };
-
 export type QuestCatalogResponse = {
-    quests: QuestCatalogItem[];
+    quests: QuestCard[];
 };
-
-const questCardStatsSchema = z.object({
-    earned: z.number(),
-    claimed: z.number(),
-    unclaimed: z.number(),
-    pollenAwarded: z.number(),
-    pollenClaimed: z.number(),
-    pollenAwardedPercent: z.number(),
-});
 
 const questCatalogItemSchema = z.object({
     id: z.string(),
@@ -59,7 +35,6 @@ const questCatalogItemSchema = z.object({
     rewardAmount: z.number(),
     balanceBucket: z.enum(["tier", "pack"]),
     url: z.string().nullable(),
-    stats: questCardStatsSchema,
 });
 
 const questCatalogResponseSchema = z.object({
@@ -321,15 +296,6 @@ async function readCached(
     return await kv.get<QuestCatalogResponse>(CACHE_KEY, "json");
 }
 
-const EMPTY_STATS: QuestCardStats = {
-    earned: 0,
-    claimed: 0,
-    unclaimed: 0,
-    pollenAwarded: 0,
-    pollenClaimed: 0,
-    pollenAwardedPercent: 0,
-};
-
 async function buildQuestCatalog(
     env: CloudflareBindings,
 ): Promise<QuestCatalogResponse> {
@@ -337,41 +303,14 @@ async function buildQuestCatalog(
         db: drizzle(env.DB, { schema }),
         env,
     };
-    const [cards, ledger] = await Promise.all([
-        listQuestCards(ctx),
-        getRewardLedgerStats(env),
-    ]);
-    const totalPollenAwarded = [...ledger.values()].reduce(
-        (total, stat) => total + stat.pollenAwarded,
-        0,
-    );
+    const cards = await listQuestCards(ctx);
 
     // Preserve definition order from listQuestCards (group + within-group), so
     // each lane reads in its intended sequence, e.g. Setup: API key -> text ->
     // image -> audio. The frontend still sorts every lane by lifecycle + reward;
     // this order is only the stable tiebreak for equal-reward quests. (Was
     // sorted alphabetically by title, which placed "audio" before "image".)
-    const quests = cards.map((card) => {
-        const stat = ledger.get(card.id);
-        if (!stat) return { ...card, stats: EMPTY_STATS };
-        const pollenAwardedPercent =
-            totalPollenAwarded > 0
-                ? (stat.pollenAwarded / totalPollenAwarded) * 100
-                : 0;
-        return {
-            ...card,
-            stats: {
-                earned: stat.earned,
-                claimed: stat.claimed,
-                unclaimed: stat.unclaimed,
-                pollenAwarded: stat.pollenAwarded,
-                pollenClaimed: stat.pollenClaimed,
-                pollenAwardedPercent,
-            },
-        };
-    });
-
     return {
-        quests,
+        quests: cards,
     };
 }

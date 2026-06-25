@@ -418,8 +418,7 @@ function generationDocumentation(): OpenApiSchema {
             },
             {
                 name: "✨ Quests",
-                description:
-                    "Public quest catalog, including available rewards and aggregate claim stats.",
+                description: "Public quest catalog and available rewards.",
             },
             {
                 name: "📦 Media Storage",

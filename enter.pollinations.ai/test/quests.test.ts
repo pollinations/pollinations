@@ -169,41 +169,12 @@ test("recordRewards dedups on idempotency key and claimReward credits once", asy
     );
 });
 
-test("catalog stats aggregate earned/claimed from the rewards ledger", async ({
+test("catalog returns quest definitions without ledger stats", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v19");
-    const db = drizzle(env.DB, { schema });
-    const user = await getOnlyUser();
-    const questId = "merged_pr";
-
-    // Two earned rewards for the same quest (distinct idempotency keys), one of
-    // which gets claimed. Catalog stats should report earned=2, claimed=1.
-    const a = await recordRewards(db, [
-        {
-            idempotencyKey: `quest:${questId}:user:${user.id}:event:pr-1`,
-            userId: user.id,
-            questId,
-            title: "First merged PR",
-            amount: 5,
-            bucket: "tier",
-        },
-    ]);
-    await recordRewards(db, [
-        {
-            idempotencyKey: `quest:${questId}:user:${user.id}:event:pr-2`,
-            userId: user.id,
-            questId,
-            title: "First merged PR",
-            amount: 5,
-            bucket: "tier",
-        },
-    ]);
-    const rewardId = a.rewardIds[0];
-    if (!rewardId) throw new Error("Expected recorded reward id");
-    await claimReward(db, { rewardId, userId: user.id });
+    await env.KV.delete("quests:catalog:v20");
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -214,21 +185,16 @@ test("catalog stats aggregate earned/claimed from the rewards ledger", async ({
             id: string;
             state: string;
             availability?: unknown;
-            stats: Record<string, number>;
+            stats?: unknown;
         }[];
     };
-    const catalogQuest = payload.quests.find((quest) => quest.id === questId);
+    const catalogQuest = payload.quests.find(
+        (quest) => quest.id === "merged_pr",
+    );
 
     expect(catalogQuest?.state).toBe("available");
     expect(catalogQuest).not.toHaveProperty("availability");
-    expect(catalogQuest?.stats).toEqual({
-        earned: 2,
-        claimed: 1,
-        unclaimed: 1,
-        pollenAwarded: 10,
-        pollenClaimed: 5,
-        pollenAwardedPercent: 100,
-    });
+    expect(catalogQuest).not.toHaveProperty("stats");
 });
 
 test("catalog includes coming-soon GitHub issue placeholder", async ({
@@ -236,7 +202,7 @@ test("catalog includes coming-soon GitHub issue placeholder", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v19");
+    await env.KV.delete("quests:catalog:v20");
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -274,7 +240,7 @@ test("catalog excludes closed GitHub quest issues without merged PRs", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v19");
+    await env.KV.delete("quests:catalog:v20");
 
     seedQuestIssue(mocks.github.state, {
         issueNumber: 801,

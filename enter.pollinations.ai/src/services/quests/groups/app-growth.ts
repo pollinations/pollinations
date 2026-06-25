@@ -37,7 +37,7 @@ const firstPaidSpendInAppQuest: QuestDefinition = {
     id: "grow:first_paid_spend_in_app",
     title: "Drive your first paid app request",
     description:
-        "Have a user make a paid request through your [BYOP](https://gen.pollinations.ai/docs#tag/byop) app.",
+        "A user makes a paid request through your [BYOP](https://gen.pollinations.ai/docs#tag/byop) app.",
     category: "grow",
     scope: "perUser",
     rewardAmount: 20,

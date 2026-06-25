@@ -59,8 +59,9 @@ const sixMonthAccountQuest: QuestDefinition = {
 
 const firstTopUpQuest: QuestDefinition = {
     id: "spend:first_top_up",
-    title: "First paid Pollen top up",
-    description: "First payment.",
+    title: "First Pollen top up",
+    description:
+        "Purchased Pollen with a credit card from [Top-up](#buy-pollen).",
     category: "grow",
     scope: "perUser",
     rewardAmount: 10,

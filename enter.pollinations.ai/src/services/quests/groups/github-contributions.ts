@@ -32,7 +32,8 @@ const CONTRIBUTION_CATEGORY = "contribute" as const;
 const firstMergedPrQuest: QuestDefinition = {
     id: "github:first_merged_pr",
     title: "Contribute a pull request",
-    description: "A pull request offered by you got merged to Pollinations.",
+    description:
+        "Your pull request got merged to the Pollinations [repository](https://github.com/pollinations/pollinations).",
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
     rewardAmount: 5,

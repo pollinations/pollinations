@@ -122,6 +122,36 @@ function issueNumberFromId(id: string): number | null {
     return match ? Number(match[1]) : null;
 }
 
+// Lifecycle stage for one quest row:
+//  - coming_soon always renders in the receded (claimed) style.
+//  - Logged-out preview (previewAll) forces every row open.
+//  - Logged in: a reward you earned is claimed once banked, claimable until
+//    then; no reward means the quest is still open.
+function deriveCardStatus(
+    comingSoon: boolean,
+    previewAll: boolean,
+    reward: QuestReward | undefined,
+): QuestCardStatus {
+    if (comingSoon) return "claimed";
+    if (previewAll) return "open";
+    if (!reward) return "open";
+    return reward.claimedAt ? "claimed" : "claimable";
+}
+
+// Lane ordering rank: claimable first, then claimed, then open, then
+// coming_soon last.
+function cardSortRank(card: QuestCard): number {
+    if (card.comingSoon) return 3;
+    switch (card.status) {
+        case "claimable":
+            return 0;
+        case "claimed":
+            return 1;
+        default:
+            return 2;
+    }
+}
+
 // ── Formatting helpers ──────────────────────────────────────────────────────
 function formatRewardAmount(value: number | null): string {
     if (value == null) return "TBD";
@@ -268,17 +298,24 @@ function QuestMarker({
     status: QuestCardStatus;
     comingSoon?: boolean;
 }) {
-    const MarkerIcon = comingSoon
-        ? ClockIcon
-        : status === "open"
-          ? Icon
-          : CheckIcon;
-    const tile =
-        !comingSoon && status === "open"
-            ? "bg-theme-bg-active text-theme-text-strong"
-            : status === "claimable"
-              ? "bg-theme-bg-subtle text-theme-text-muted"
-              : "text-theme-text-muted";
+    // coming_soon → clock; open → the lane's section icon; otherwise the
+    // earned/banked check.
+    function resolveIcon(): IconComponent {
+        if (comingSoon) return ClockIcon;
+        if (status === "open") return Icon;
+        return CheckIcon;
+    }
+    // open → ambient active tile; claimable → muted well; claimed (and
+    // coming_soon, which always renders claimed) → no tile, muted glyph.
+    function resolveTile(): string {
+        if (!comingSoon && status === "open")
+            return "bg-theme-bg-active text-theme-text-strong";
+        if (status === "claimable")
+            return "bg-theme-bg-subtle text-theme-text-muted";
+        return "text-theme-text-muted";
+    }
+    const MarkerIcon = resolveIcon();
+    const tile = resolveTile();
     return (
         <span
             aria-hidden="true"
@@ -309,9 +346,8 @@ export function QuestRow({
         : card.reward;
     const rewardIcon = rewardIconKind(card.balanceBucket);
     // The icon next to the number IS the "this is pollen" signal, so the word
-    // "pollen" would just repeat it.
-    const rewardLabel =
-        rewardAmount == null ? "TBD" : formatRewardAmount(rewardAmount);
+    // "pollen" would just repeat it. formatRewardAmount renders null as "TBD".
+    const rewardLabel = formatRewardAmount(rewardAmount);
 
     // Shared pieces, placed differently per breakpoint below.
     const title = (
@@ -615,35 +651,17 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                 reward: quest.rewardAmount,
                 balanceBucket:
                     reward?.balanceBucket ?? quest.balanceBucket ?? "tier",
-                // coming_soon renders in the receded (claimed) style; otherwise
-                // the logged-out preview forces every row open.
-                status: comingSoon
-                    ? "claimed"
-                    : previewAll
-                      ? "open"
-                      : reward
-                        ? reward.claimedAt
-                            ? "claimed"
-                            : "claimable"
-                        : "open",
+                status: deriveCardStatus(comingSoon, previewAll, reward),
                 earnedAmount: reward?.pollenAmount ?? undefined,
                 comingSoon,
             });
         }
 
-        // Order per lane: claimable first, then claimed, then open, then
-        // coming_soon last. Within a rank, cheaper reward first.
+        // Order per lane by lifecycle rank; within a rank, cheaper reward first.
         for (const key of Object.keys(byCat) as CategoryKey[]) {
             byCat[key].sort((a, b) => {
-                const rank = (card: QuestCard) =>
-                    card.comingSoon
-                        ? 3
-                        : card.status === "claimable"
-                          ? 0
-                          : card.status === "claimed"
-                            ? 1
-                            : 2;
-                if (rank(a) !== rank(b)) return rank(a) - rank(b);
+                const rankDelta = cardSortRank(a) - cardSortRank(b);
+                if (rankDelta !== 0) return rankDelta;
                 return (
                     (a.reward ?? Number.POSITIVE_INFINITY) -
                     (b.reward ?? Number.POSITIVE_INFINITY)

@@ -497,7 +497,7 @@ test("six-month account quest is coming_soon and never records", async ({
     expect(rewards).toHaveLength(0);
 });
 
-test("quest check records app growth rewards for the app owner", async ({
+test("app-growth quests are coming_soon and never record", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -550,29 +550,23 @@ test("quest check records app growth rewards for the app owner", async ({
             userId: schema.rewards.userId,
         })
         .from(schema.rewards);
-    expect(ownerRewards).toEqual(
-        expect.arrayContaining([
-            {
-                questId: "grow:first_byop_external_user",
-                userId: user.id,
-            },
-        ]),
-    );
+    // All app-growth quests are coming_soon (inert), so the owner earns none of
+    // them even though the source data qualifies.
+    for (const questId of [
+        "grow:first_byop_external_user",
+        "grow:first_paid_spend_in_app",
+        "grow:app_listed",
+    ]) {
+        expect(ownerRewards.some((reward) => reward.questId === questId)).toBe(
+            false,
+        );
+    }
     expect(
         ownerRewards.some(
             (reward) =>
                 reward.questId === "setup:byop_login" &&
                 reward.userId === user.id,
         ),
-    ).toBe(false);
-    // first_paid_spend_in_app and app_listed are coming_soon (inert).
-    expect(
-        ownerRewards.some(
-            (reward) => reward.questId === "grow:first_paid_spend_in_app",
-        ),
-    ).toBe(false);
-    expect(
-        ownerRewards.some((reward) => reward.questId === "grow:app_listed"),
     ).toBe(false);
 
     // byop_login is coming_soon (inert), so logging in records nothing.

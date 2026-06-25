@@ -31,6 +31,8 @@ const firstByopExternalUserQuest: QuestDefinition = {
     scope: "perUser",
     rewardAmount: 10,
     balanceBucket: "tier",
+    // Built but not launched — hidden from the UI, not grantable.
+    availability: "coming_soon",
 };
 
 const firstPaidSpendInAppQuest: QuestDefinition = {

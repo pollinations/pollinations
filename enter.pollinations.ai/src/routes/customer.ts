@@ -10,9 +10,9 @@ import { balance } from "../middleware/balance.ts";
 import {
     fetchTinybirdRows,
     requireTinybirdReadToken,
-    resolveUsageTargetUserId,
     TinybirdRateLimitError,
-} from "./account.ts";
+} from "../services/tinybird.ts";
+import { resolveUsageTargetUserId } from "./account.ts";
 
 type EarningsTodayRow = {
     paid_week: number;

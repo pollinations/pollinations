@@ -23,10 +23,10 @@ import {
     POLLINATIONS_HEADER_SCALAR_CSS,
     POLLINATIONS_HEADER_STANDALONE_CSS,
 } from "./docs-styles.ts";
+import { docsSocialHeadTags, injectDocsSocialHead, SEO_TITLE } from "./seo.ts";
 
-// Same favicon as enter.pollinations.ai (32×32 PNG, ~1.3kB → inlined as a
-// data URI so we don't need a separate binary asset route or a build-time
-// step. Update this if enter's favicon ever changes.
+// Same favicon as enter.pollinations.ai. Scalar needs this as a data URI, while
+// conventional browser/favicon URLs are served from gen.pollinations.ai/public.
 const FAVICON_DATA_URI =
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAE9ElEQVR4nMVXaWhdVRB+7gsWNxQVQVxQEYsbIqhFsEjd/WGVWtHiTltccS1Yan9ocK1VqRoVqkUkFRUFUawWUxWVNG/m5ZlgXNLcmZtaWmuKJnkzTz0y55z78raQpYsDFx73nDvznTnffDMvl9sOWz/Uf9T64YFjcv+HrXVuTxT+FpV++MYl++1yACD0JAj9hsopKr2+ywJ3uI69UGgpCEte+Foo8+UorCC8rM/17bvTAYAmd6JQGYRuyN5hia8E4RFUWrRTg3dqcjYI/QPKrQ3AhFtQ2WGZZ25XEBB6EZRfqX5QaAWUk1kovBaUsc25Peq/c87tDkJfGzEL5fQiEHqh0Q+/3Ot69xkPwL+o9CsIfZY9xnR/OmVnjsf6FoUfr+xT/qnWB/fa+x63edq4AEB5cd3pdkOhx0ZBcEtDcKVFVevL6k+KSvfYWtFtOmDSAMxAqB2FB1DoqXDXdMkoMdPz/Tvh5f7kypirs8kCeLTJ+3ZUZnMAym2g1N/h0v29ICn9CMIfd7hfDgSlHlAujAVgzCvocZunQYlP9BwQXt7hNhzZBEBqvwsj/ceZDhQkuT5fpsusMjpLA6eEbFB3PYCi6zsChZ+I13NG3vUdNOp4ZOOxqOmDPr3xDkM6qQzKq0HpLvvA1A6Fh03/AyD+EpQ+AKU3jKT2zu8THkTld2Om5oPS2yBcqvO9DYWWdI30H5/zUiq0zdhd0IGzUGkDKL8Kkt6CQp/GDzZlJLQTRwBzPMOV21CSW0Oa0xmRC3Zajr+/8ECEnwXh3y1GkHHeamBzKHQbCg11Oz7UOxFah0IfZRkylCj8SVUZrvEAysnF1gtAKcESzQ4A+L2qfe12LVZBcW0lKhftt3EFhTaj8gPh7sO9tdrmILU8CG7j4TUcKCezQOhPnwXhmwxAJaUlmg0lutoTOPaILHBNQKElMXvPWaYLrv/g4LzEVxiRLJVFlxwCQltM/RoqoUwXGg8MSF7pjgxAQel2C2DBsZRe1VSghIeNjAXhayIZb64rE15oZLE7Rkmvi2q2uDkIGgrNp0Kqv/zJIz9q/dLd0dd86xP+u5iJBgPlVbYBlO/zrA93+VJDSSrfX8PqAGJp9R7jVCCel/bXPAChISN20+CZodK9fqNyFyp1RiYPWqMBpYcLSg9VOl8tgGdsLaxTuzE+nJy6rRLizNAybi8wQ0nPROHPG4JM9RFa16V8bm6yhpJMR+UFqPwWKHXYY85idzMilexkWZBQ83Gf0jt2/6Z8uR1pEEYwU7suUzzrAX44DUSck9vRlre5T/nnqFx/REZDpxs4DJXfRKUPowR/N8oX3mrNKlPIKRtKMheF/kbh763f+3rXdEbW6zMA2bBq92x7jIgo9FWoAF4wteBDdHQsydXNRrAIYGUGoN6CqvIqy4pvOpMGIEGMiiPJCc3WbQ4ApfeNeGON4/Ga3KSzUCilJ0ctcDZsVDS7ykDpkaoye7p+3f4tZbwwmc8Lnz5hAKhctMEUhed5dteN4V1Cp8XJqRWFnw/9ILmgxoeNbqFv3BiaHSWTAEB91pJt+LAKsJquXs9rel44eTLXl2XVnFAFYAUok3HJdMT3/gkDEJ7n/4AYCYW2gNI51etFV9zbyGdTU5BYWmPzYfUekOTUMMj4LFg1LJwwAA+izDNDm02mN1s3ENZSrdbrg1d8lPgkX5ZlunSsQP8BPbyNNiarxF0AAAAASUVORK5CYII=";
 
@@ -350,6 +350,7 @@ function generationDocumentation(): OpenApiSchema {
                 name: "Resources",
                 tags: [
                     "🤖 Models",
+                    "✨ Quests",
                     "📦 Media Storage",
                     "👤 Account",
                     "🛡️ Safety",
@@ -414,6 +415,10 @@ function generationDocumentation(): OpenApiSchema {
             {
                 name: "🤖 Models",
                 description: stripLeadingHeading(MODELS_DOCS),
+            },
+            {
+                name: "✨ Quests",
+                description: "Public quest catalog and available rewards.",
             },
             {
                 name: "📦 Media Storage",
@@ -510,11 +515,14 @@ function isPublicMediaRead(method: string, path: string): boolean {
 function transformEnterSchema(schema: OpenApiSchema): OpenApiSchema {
     const paths: OpenApiSchema = {};
     for (const [path, value] of Object.entries(asRecord(schema.paths))) {
-        if (!isPublicAccountPath(path)) continue;
-        const publicPath = path.replace(/^\/api\/account(?=\/|$)/, "/account");
-        paths[publicPath] = value;
+        if (!isPublicEnterPath(path)) continue;
+        paths[publicEnterPath(path)] = value;
     }
     return { ...schema, tags: tagsForPaths(schema, paths), paths };
+}
+
+function isPublicEnterPath(path: string): boolean {
+    return isPublicAccountPath(path) || isPublicQuestCatalogPath(path);
 }
 
 function isPublicAccountPath(path: string): boolean {
@@ -524,6 +532,18 @@ function isPublicAccountPath(path: string): boolean {
         path === "/api/account" ||
         path.startsWith("/api/account/")
     );
+}
+
+// Only the catalog is part of the public gen API. Session-only dashboard quest
+// actions stay on enter and are omitted from the merged gen docs.
+function isPublicQuestCatalogPath(path: string): boolean {
+    return path === "/quests/catalog" || path === "/api/quests/catalog";
+}
+
+function publicEnterPath(path: string): string {
+    return path
+        .replace(/^\/api\/account(?=\/|$)/, "/account")
+        .replace(/^\/api\/quests(?=\/|$)/, "/quests");
 }
 
 function tagsForPaths(
@@ -738,14 +758,15 @@ const GUIDES: Guide[] = [
 
 const GUIDES_BY_ID = new Map(GUIDES.map((g) => [g.id, g]));
 
-function guidesPage(body: string): string {
+function guidesPage(c: Context<Env>, body: string): string {
     return `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>pollinations.ai - Docs</title>
+<title>${SEO_TITLE}</title>
 <link rel="icon" type="image/png" href="${FAVICON_DATA_URI}" />
+${docsSocialHeadTags(c)}
 <style>${GUIDES_CSS}</style>
 </head>
 <body>
@@ -755,16 +776,16 @@ ${pollinationsHeaderHtml()}
 </html>`;
 }
 
-function guidesIndexHtml(): string {
+function guidesIndexHtml(c: Context<Env>): string {
     const cards = GUIDES.map(
         (g) =>
             `<a class="guide-card" href="/docs/guides/${g.id}"><h3>${g.emoji} ${g.title}</h3><p>${g.summary}</p></a>`,
     ).join("");
     const body = `<h1>Guides</h1><p>Integration paths beyond the raw API.</p><div class="guide-cards">${cards}</div>`;
-    return guidesPage(body);
+    return guidesPage(c, body);
 }
 
-function guideHtml(guide: Guide): string {
+function guideHtml(c: Context<Env>, guide: Guide): string {
     // Prepend the guide title as an H1 so each guide page has a clear heading.
     // Source READMEs have their H1 stripped (because we render the page title
     // separately) — re-adding it here gives the rendered page a proper title
@@ -773,7 +794,7 @@ function guideHtml(guide: Guide): string {
         `# ${guide.emoji} ${guide.title}\n\n${guide.markdown}`,
         { async: false },
     ) as string;
-    return guidesPage(rendered);
+    return guidesPage(c, rendered);
 }
 
 /**
@@ -799,8 +820,8 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
     return new Hono<Env>()
         .get("/", async (c, next) => {
             const response = await Scalar<Env>({
-                pageTitle: "pollinations.ai - Docs",
-                title: "pollinations.ai - Docs",
+                pageTitle: SEO_TITLE,
+                title: SEO_TITLE,
                 favicon: FAVICON_DATA_URI,
                 theme: "saturn",
                 darkMode: true,
@@ -824,15 +845,16 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             })(c, next);
             if (!response) return;
             const html = await response.text();
-            const bodyOpenMatch = html.match(/<body[^>]*>/);
+            const htmlWithMeta = injectDocsSocialHead(html, c);
+            const bodyOpenMatch = htmlWithMeta.match(/<body[^>]*>/);
             if (!bodyOpenMatch || bodyOpenMatch.index === undefined) {
-                return c.html(html);
+                return c.html(htmlWithMeta);
             }
             const insertAt = bodyOpenMatch.index + bodyOpenMatch[0].length;
             return c.html(
-                html.slice(0, insertAt) +
+                htmlWithMeta.slice(0, insertAt) +
                     pollinationsHeaderHtml(true) +
-                    html.slice(insertAt),
+                    htmlWithMeta.slice(insertAt),
             );
         })
         .get("/logo.svg", (c) => {
@@ -848,11 +870,11 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             if (!content) return c.text("Section not found", 404);
             return c.text(content);
         })
-        .get("/guides", (c) => c.html(guidesIndexHtml()))
+        .get("/guides", (c) => c.html(guidesIndexHtml(c)))
         .get("/guides/:id", (c) => {
             const guide = GUIDES_BY_ID.get(c.req.param("id") as GuideId);
             if (!guide) return c.text("Guide not found", 404);
-            return c.html(guideHtml(guide));
+            return c.html(guideHtml(c, guide));
         })
         .get("/open-api/generate-schema", async (c) => {
             const merged = await buildMergedOpenApiSpec(c, genApp);

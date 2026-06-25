@@ -13,7 +13,7 @@
  */
 
 const GITHUB_API = "https://api.github.com";
-const USER_AGENT = "pollinations-github-mirror";
+const USER_AGENT = "pollinations-enter";
 
 export type GithubAppCredentials = {
     appId: string;

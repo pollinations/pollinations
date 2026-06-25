@@ -398,15 +398,19 @@ function pollinationsHeaderHtml(scalarHosted = false): string {
   // by the CDN bundle — we tag them by their stable label so our CSS can
   // hide ("Ask AI") or style ("Show more") them in amber.
   var navIcons = ${navIcons};
+  function normalizeScalarNavLabel(text) {
+    return text.replace(/\\s+/g, ' ').trim().replace(/\\s*(Open|Close)\\s*Group$/i, '').trim();
+  }
   function scanScalarButtons() {
     var nodes = document.querySelectorAll('button, a, [role="button"]');
     for (var i = 0; i < nodes.length; i++) {
       var text = (nodes[i].textContent || '').trim();
+      var navText = normalizeScalarNavLabel(text);
       if (/^ask ai\\b/i.test(text)) nodes[i].style.display = 'none';
       else if (/^show more\\b/i.test(text)) nodes[i].classList.add('ph-show-more');
-      else if (navIcons[text] && !nodes[i].querySelector('.ph-doc-icon')) {
+      else if (navIcons[navText] && !nodes[i].querySelector('.ph-doc-icon')) {
         nodes[i].classList.add('ph-doc-nav-item');
-        nodes[i].insertAdjacentHTML('afterbegin', navIcons[text]);
+        nodes[i].insertAdjacentHTML('afterbegin', navIcons[navText]);
       }
     }
   }

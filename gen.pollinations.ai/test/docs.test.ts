@@ -164,6 +164,8 @@ describe("docs routes", () => {
         expect(html).toContain("ph-doc-nav-item");
         expect(html).toContain("ph-doc-icon");
         expect(html).toContain("ph-doc-nav-icon");
+        expect(html).toContain("normalizeScalarNavLabel");
+        expect(html).toContain("Open|Close");
     });
 
     it("serves the OpenAPI schema as YAML when ?format=yaml", async () => {

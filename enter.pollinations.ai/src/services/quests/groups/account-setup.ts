@@ -59,8 +59,8 @@ const sixMonthAccountQuest: QuestDefinition = {
 
 const firstTopUpQuest: QuestDefinition = {
     id: "spend:first_top_up",
-    title: "Top up with paid Pollen",
-    description: "Top up with paid Pollen from [Top-up](#buy-pollen).",
+    title: "First paid Pollen top up",
+    description: "First payment.",
     category: "grow",
     scope: "perUser",
     rewardAmount: 10,
@@ -69,9 +69,9 @@ const firstTopUpQuest: QuestDefinition = {
 
 const overHundredPollenQuest: QuestDefinition = {
     id: "spend:purchased_over_100_pollen",
-    title: "Power up with more than 100 Pollen",
+    title: "Top up 100 Pollen",
     description:
-        "Purchase more than 100 total Pollen through [Top-up](#buy-pollen).",
+        "Top up more than 100 Pollen in total through [Top-up](#buy-pollen).",
     category: "grow",
     scope: "perUser",
     rewardAmount: 50,

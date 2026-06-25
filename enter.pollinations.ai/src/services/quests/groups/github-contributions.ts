@@ -31,7 +31,7 @@ const CONTRIBUTION_CATEGORY = "contribute" as const;
 
 const firstMergedPrQuest: QuestDefinition = {
     id: "github:first_merged_pr",
-    title: "Contribute a pull request to Pollinations",
+    title: "Contribute a pull request",
     description: "A pull request offered by you got merged to Pollinations.",
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",

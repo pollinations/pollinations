@@ -914,9 +914,9 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                         <span>
                             Complete → claim → credited to your{" "}
                             <InlineLink href="#pollen" showIcon={false}>
-                                pollen wallet
+                                wallet
                             </InlineLink>
-                            .
+                            . Past activity counts.
                         </span>
                     </p>
                 </div>
@@ -944,12 +944,18 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                 {CATEGORIES.map((category) => {
                     const cards = sections[category.key];
                     if (cards.length === 0) return null;
-                    // The progress chip counts only real (grantable) quests —
-                    // coming_soon rows are excluded from both done and total.
+                    // The chip counts only real (grantable) quests — coming_soon
+                    // rows are excluded. Logged in: per-user progress (done /
+                    // total). Logged out: no per-user state, so show the total
+                    // pollen up for grabs across the quests with a real value.
                     const liveCards = cards.filter((card) => !card.comingSoon);
                     const done = liveCards.filter(
                         (card) => card.status !== "open",
                     ).length;
+                    const totalReward = liveCards.reduce(
+                        (sum, card) => sum + (card.reward ?? 0),
+                        0,
+                    );
                     return (
                         <Section
                             key={category.key}
@@ -960,9 +966,16 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                                 <Chip
                                     intent="neutral"
                                     size="sm"
-                                    className="tabular-nums"
+                                    className="gap-1 tabular-nums"
                                 >
-                                    {done} / {liveCards.length}
+                                    {previewAll ? (
+                                        <>
+                                            <SproutIcon className="h-3.5 w-3.5 shrink-0" />
+                                            {formatRewardAmount(totalReward)}
+                                        </>
+                                    ) : (
+                                        `${done} / ${liveCards.length}`
+                                    )}
                                 </Chip>
                             }
                         >

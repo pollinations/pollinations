@@ -3,7 +3,7 @@ import { getUserBalance } from "@shared/billing/balance.ts";
 import {
     claimReward,
     MAX_REWARD_AMOUNT,
-    recordReward,
+    recordRewards,
 } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { rewards, user as userTable } from "@shared/db/better-auth.ts";
@@ -52,17 +52,19 @@ describe("rewards", () => {
         const userId = "reward-user-tier";
         await seedUser(db, userId);
 
-        const result = await recordReward(db, {
-            idempotencyKey: "quest:1",
-            userId,
-            amount: 5,
-            bucket: "tier",
-            questId: "1",
-            title: "Test reward",
-        });
+        const result = await recordRewards(db, [
+            {
+                idempotencyKey: "quest:1",
+                userId,
+                amount: 5,
+                bucket: "tier",
+                questId: "1",
+                title: "Test reward",
+            },
+        ]);
 
-        expect(result.recorded).toBe(true);
-        expect(result.rewardId).toEqual(expect.any(String));
+        expect(result.recorded).toBe(1);
+        expect(result.rewardIds[0]).toEqual(expect.any(String));
 
         const balance = await getUserBalance(db, userId);
         expect(balance.tierBalance).toBe(0);
@@ -84,32 +86,37 @@ describe("rewards", () => {
         await seedUser(db, userId);
 
         const key = `first_image:${userId}`;
-        const first = await recordReward(db, {
-            idempotencyKey: key,
-            userId,
-            amount: 0.5,
-            bucket: "tier",
-            title: "First image",
-        });
-        const second = await recordReward(db, {
-            idempotencyKey: key,
-            userId,
-            amount: 0.5,
-            bucket: "tier",
-            title: "First image",
-        });
+        const first = await recordRewards(db, [
+            {
+                idempotencyKey: key,
+                userId,
+                amount: 0.5,
+                bucket: "tier",
+                title: "First image",
+            },
+        ]);
+        const second = await recordRewards(db, [
+            {
+                idempotencyKey: key,
+                userId,
+                amount: 0.5,
+                bucket: "tier",
+                title: "First image",
+            },
+        ]);
 
-        expect(first.recorded).toBe(true);
-        expect(second.recorded).toBe(false);
+        expect(first.recorded).toBe(1);
+        expect(second.recorded).toBe(0);
         expect(await listRewards(db, userId)).toHaveLength(1);
 
-        if (!first.rewardId) throw new Error("Expected reward id");
+        const firstRewardId = first.rewardIds[0];
+        if (!firstRewardId) throw new Error("Expected reward id");
         const claimed = await claimReward(db, {
-            rewardId: first.rewardId,
+            rewardId: firstRewardId,
             userId,
         });
         const duplicateClaim = await claimReward(db, {
-            rewardId: first.rewardId,
+            rewardId: firstRewardId,
             userId,
         });
 
@@ -130,17 +137,20 @@ describe("rewards", () => {
         const userId = "reward-user-pack";
         await seedUser(db, userId);
 
-        const result = await recordReward(db, {
-            idempotencyKey: `manual:${userId}:1`,
-            userId,
-            amount: 3,
-            bucket: "pack",
-            title: "Manual reward",
-        });
-        if (!result.rewardId) throw new Error("Expected reward id");
+        const result = await recordRewards(db, [
+            {
+                idempotencyKey: `manual:${userId}:1`,
+                userId,
+                amount: 3,
+                bucket: "pack",
+                title: "Manual reward",
+            },
+        ]);
+        const rewardId = result.rewardIds[0];
+        if (!rewardId) throw new Error("Expected reward id");
 
         const claimed = await claimReward(db, {
-            rewardId: result.rewardId,
+            rewardId,
             userId,
         });
 
@@ -156,13 +166,15 @@ describe("rewards", () => {
         await seedUser(db, userId);
 
         await expect(
-            recordReward(db, {
-                idempotencyKey: `bad:${userId}`,
-                userId,
-                amount: 0,
-                bucket: "tier",
-                title: "Bad reward",
-            }),
+            recordRewards(db, [
+                {
+                    idempotencyKey: `bad:${userId}`,
+                    userId,
+                    amount: 0,
+                    bucket: "tier",
+                    title: "Bad reward",
+                },
+            ]),
         ).rejects.toThrow();
     });
 
@@ -172,13 +184,15 @@ describe("rewards", () => {
         await seedUser(db, userId);
 
         await expect(
-            recordReward(db, {
-                idempotencyKey: `too-large:${userId}`,
-                userId,
-                amount: MAX_REWARD_AMOUNT + 1,
-                bucket: "tier",
-                title: "Too large",
-            }),
+            recordRewards(db, [
+                {
+                    idempotencyKey: `too-large:${userId}`,
+                    userId,
+                    amount: MAX_REWARD_AMOUNT + 1,
+                    bucket: "tier",
+                    title: "Too large",
+                },
+            ]),
         ).rejects.toThrow(String(MAX_REWARD_AMOUNT));
     });
 });

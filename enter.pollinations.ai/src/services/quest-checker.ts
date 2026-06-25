@@ -20,7 +20,6 @@ type QuestProposalSourceResult = {
 
 export type QuestCheckResult = {
     success: boolean;
-    checked: number;
     recorded: number;
     rewardIds: string[];
 };
@@ -73,7 +72,6 @@ export async function checkQuestsForUser(
 
     const result = {
         success: sourceResults.every((entry) => !entry.error),
-        checked: proposals.length,
         recorded: recorded.recorded,
         rewardIds: recorded.rewardIds,
     };

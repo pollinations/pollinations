@@ -350,7 +350,7 @@ function generationDocumentation(): OpenApiSchema {
                 name: "Resources",
                 tags: [
                     "🤖 Models",
-                    "Quests",
+                    "✨ Quests",
                     "📦 Media Storage",
                     "👤 Account",
                     "🛡️ Safety",
@@ -417,7 +417,7 @@ function generationDocumentation(): OpenApiSchema {
                 description: stripLeadingHeading(MODELS_DOCS),
             },
             {
-                name: "Quests",
+                name: "✨ Quests",
                 description:
                     "Public quest catalog, including available rewards and aggregate claim stats.",
             },
@@ -526,16 +526,7 @@ function transformEnterSchema(schema: OpenApiSchema): OpenApiSchema {
 }
 
 function isPublicEnterPath(path: string): boolean {
-    return isPublicAccountPath(path) || isPublicQuestPath(path);
-}
-
-function isPublicQuestPath(path: string): boolean {
-    return (
-        path === "/quests" ||
-        path.startsWith("/quests/") ||
-        path === "/api/quests" ||
-        path.startsWith("/api/quests/")
-    );
+    return isPublicAccountPath(path) || isPublicQuestCatalogPath(path);
 }
 
 function isPublicAccountPath(path: string): boolean {
@@ -547,8 +538,8 @@ function isPublicAccountPath(path: string): boolean {
     );
 }
 
-// Only the catalog is unauthenticated, so only it gets marked public in the
-// docs. /check + /rewards stay session-gated and keep their security block.
+// Only the catalog is part of the public gen API. Session-only dashboard quest
+// actions stay on enter and are omitted from the merged gen docs.
 function isPublicQuestCatalogPath(path: string): boolean {
     return path === "/quests/catalog" || path === "/api/quests/catalog";
 }

@@ -82,7 +82,6 @@ const questRewardsResponseSchema = z.object({
 
 const questCheckResponseSchema = z.object({
     success: z.boolean(),
-    checked: z.number(),
     recorded: z.number(),
     rewardIds: z.array(z.string()),
 });

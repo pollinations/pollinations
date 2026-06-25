@@ -206,6 +206,35 @@ describe("gen worker routing", () => {
         expect(response.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
     });
 
+    it("proxies only the public quest catalog to enter", async () => {
+        let proxiedUrl: string | undefined;
+        const env = envWithEnter(async (request) => {
+            proxiedUrl = new Request(request).url;
+            return Response.json({ quests: [] });
+        });
+
+        const response = await fetchWorker("/quests/catalog", env);
+
+        expect(response.status).toBe(200);
+        expect(proxiedUrl).toBe(
+            "https://staging.gen.pollinations.ai/api/quests/catalog",
+        );
+        expect(response.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
+    });
+
+    it("does not proxy dashboard quest actions on gen", async () => {
+        let proxied = false;
+        const env = envWithEnter(async () => {
+            proxied = true;
+            return new Response("unexpected");
+        });
+
+        const response = await fetchWorker("/quests/rewards", env);
+
+        expect(response.status).toBe(404);
+        expect(proxied).toBe(false);
+    });
+
     it("routes docs through the generation app without noindex", async () => {
         const response = await fetchWorker("/docs/llm.txt", envWithEnter());
 

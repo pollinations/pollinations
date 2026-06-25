@@ -30,9 +30,11 @@ export const ModelsBadge: FC<{
     return (
         <Tooltip content={tooltipContent()} ariaLabel="Show allowed models">
             <Chip
-                intent={isAllModels ? "success" : undefined}
+                intent="neutral"
                 size="sm"
-                className="cursor-default transition-colors hover:brightness-95"
+                className={`cursor-default transition-colors hover:brightness-95 ${
+                    isAllModels ? "text-intent-success-text" : ""
+                }`}
             >
                 {isAllModels ? "All" : modelCount}
             </Chip>

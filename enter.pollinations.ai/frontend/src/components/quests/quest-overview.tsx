@@ -503,30 +503,26 @@ export function QuestRow({
             {rewardLabel}
         </Chip>
     );
-    const reward = claimed ? (
-        rewardChip
-    ) : (
-        <>
-            {claimableRewardId && (
-                <Button
-                    type="button"
-                    disabled={claiming}
-                    onClick={() => onClaim(claimableRewardId)}
-                    className="gap-1.5"
-                >
-                    <SparkleIcon className="h-4 w-4 shrink-0" />
-                    {claiming ? "Claiming" : "Claim"}
-                </Button>
-            )}
-            {rewardChip}
-        </>
-    );
+    const claimButton = claimableRewardId ? (
+        <Button
+            type="button"
+            disabled={claiming}
+            onClick={() => onClaim(claimableRewardId)}
+            className="gap-1.5"
+        >
+            <SparkleIcon className="h-4 w-4 shrink-0" />
+            {claiming ? "Claiming" : "Claim"}
+        </Button>
+    ) : null;
+    // Both layouts place the claim button and reward chip separately: claim
+    // beside the text, chip pinned to the right edge (ml-auto).
 
     return (
         <Surface variant="card">
-            {/* Mobile: stacked. Icon centered with the (wrappable) title;
-                description full-width below the icon; issue link bottom-left and
-                reward bottom-right. */}
+            {/* Mobile: stacked. Icon centered with the (wrappable) title; the
+                description (issue link at its end) full-width below; action row
+                last, mirroring desktop — Claim on the left, reward chip pinned
+                right. */}
             <div className="flex flex-col gap-3 sm:hidden">
                 <div className="flex flex-col gap-1.5">
                     <div className="flex items-center gap-4">
@@ -537,28 +533,39 @@ export function QuestRow({
                         />
                         <div className="min-w-0 flex-1">{title}</div>
                     </div>
-                    {description && (
-                        <QuestDescription>{description}</QuestDescription>
+                    {(description || issueLink) && (
+                        <div className="text-sm text-theme-text-muted">
+                            {description && (
+                                <QuestDescription>
+                                    {description}
+                                </QuestDescription>
+                            )}
+                            {description && issueLink ? " " : null}
+                            {issueLink}
+                        </div>
                     )}
                 </div>
                 <div className="flex items-center gap-2.5">
-                    {issueLink}
+                    {claimButton}
                     <div className="ml-auto flex items-center gap-2.5">
-                        {reward}
+                        {rewardChip}
                     </div>
                 </div>
             </div>
 
-            {/* Desktop: three columns, all vertically centered. Icon | content
-                (title + description, with the issue link at the end of the
-                description) | claim + reward. Keeps the card to two text rows. */}
+            {/* Desktop: icon | content (title + description, with the issue link
+                at the end of the description) | claim | reward. The content is
+                sized to its text (no flex-1), so the claim button sits right
+                beside it; the reward chip is pushed to the far-right edge with
+                ml-auto so amounts line up in a column. Keeps the card to two
+                text rows. */}
             <div className="hidden items-center gap-4 sm:flex">
                 <QuestMarker
                     icon={icon}
                     status={card.status}
                     comingSoon={card.comingSoon}
                 />
-                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <div className="flex min-w-0 flex-col gap-1">
                     <div>{title}</div>
                     {(description || issueLink) && (
                         <div className="text-sm text-theme-text-muted">
@@ -572,8 +579,9 @@ export function QuestRow({
                         </div>
                     )}
                 </div>
-                <div className="flex shrink-0 items-center gap-2.5">
-                    {reward}
+                {claimButton}
+                <div className="ml-auto flex shrink-0 items-center gap-2.5">
+                    {rewardChip}
                 </div>
             </div>
         </Surface>

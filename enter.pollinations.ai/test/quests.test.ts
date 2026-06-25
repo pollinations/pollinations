@@ -269,11 +269,6 @@ test("GET /api/quests/catalog returns product quests and issue bounty cards", as
             title: "Use an audio model",
             rewardAmount: 0.25,
         },
-        {
-            id: "grow:use_video_model",
-            title: "Use a video model",
-            rewardAmount: 0.5,
-        },
     ]) {
         expect(
             payload.quests.find((quest) => quest.id === expectedModelQuest.id),
@@ -934,14 +929,13 @@ test("quest check records model-usage rewards per modality", async ({
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
     await mocks.enable("github", "tinybird");
-    // This user has generated with text, audio, and video, but not image.
+    // This user has generated with text and audio, but not image.
     mocks.tinybird.state.modelModalitiesResponse = [
         {
             userId: user.id,
             usedText: 1,
             usedImage: 0,
             usedAudio: 1,
-            usedVideo: 1,
         },
     ];
 
@@ -954,7 +948,6 @@ test("quest check records model-usage rewards per modality", async ({
     const questIds = new Set(rewards.map((reward) => reward.questId));
     expect(questIds.has("grow:use_text_model")).toBe(true);
     expect(questIds.has("grow:use_audio_model")).toBe(true);
-    expect(questIds.has("grow:use_video_model")).toBe(true);
     expect(questIds.has("grow:use_image_model")).toBe(false);
 
     expect(
@@ -979,7 +972,6 @@ test("quest check ignores Tinybird rows for other users", async ({
             usedText: 1,
             usedImage: 0,
             usedAudio: 0,
-            usedVideo: 1,
         },
     ];
 

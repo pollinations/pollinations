@@ -185,6 +185,9 @@ export type QuestCard = {
     balanceBucket?: string | null;
     status: QuestCardStatus;
     earnedAmount?: number | null;
+    // coming_soon quests render at the bottom of their lane in the receded
+    // (claimed) style, with a clock + "Coming soon" in place of the reward.
+    comingSoon?: boolean;
 };
 
 // ── Presentational primitives (composed from @pollinations/ui) ───────────────
@@ -259,13 +262,19 @@ function QuestDescription({ children }: { children: string }) {
 function QuestMarker({
     icon: Icon,
     status,
+    comingSoon,
 }: {
     icon: IconComponent;
     status: QuestCardStatus;
+    comingSoon?: boolean;
 }) {
-    const MarkerIcon = status === "open" ? Icon : CheckIcon;
+    const MarkerIcon = comingSoon
+        ? ClockIcon
+        : status === "open"
+          ? Icon
+          : CheckIcon;
     const tile =
-        status === "open"
+        !comingSoon && status === "open"
             ? "bg-theme-bg-active text-theme-text-strong"
             : status === "claimable"
               ? "bg-theme-bg-subtle text-theme-text-muted"
@@ -329,7 +338,16 @@ export function QuestRow({
     // deep when open, muted grey when claimed — instead of being forced to
     // the bucket hue regardless of state.
     const RewardKindIcon = rewardIcon === "paid" ? CardIcon : SproutIcon;
-    const rewardChip = (
+    const rewardChip = card.comingSoon ? (
+        <Chip
+            intent="neutral"
+            size="lg"
+            className="gap-1.5 bg-transparent text-theme-text-muted"
+        >
+            <SparkleIcon className="h-4 w-4 shrink-0" />
+            Coming soon
+        </Chip>
+    ) : (
         <Chip
             intent="neutral"
             size="lg"
@@ -370,7 +388,11 @@ export function QuestRow({
             <div className="flex flex-col gap-3 sm:hidden">
                 <div className="flex flex-col gap-1.5">
                     <div className="flex items-center gap-4">
-                        <QuestMarker icon={icon} status={card.status} />
+                        <QuestMarker
+                            icon={icon}
+                            status={card.status}
+                            comingSoon={card.comingSoon}
+                        />
                         <div className="min-w-0 flex-1">{title}</div>
                     </div>
                     {description && (
@@ -389,7 +411,11 @@ export function QuestRow({
                 (title + description, with the issue link at the end of the
                 description) | claim + reward. Keeps the card to two text rows. */}
             <div className="hidden items-center gap-4 sm:flex">
-                <QuestMarker icon={icon} status={card.status} />
+                <QuestMarker
+                    icon={icon}
+                    status={card.status}
+                    comingSoon={card.comingSoon}
+                />
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <div>{title}</div>
                     {(description || issueLink) && (
@@ -565,18 +591,18 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         for (const quest of state.catalog) {
             const reward = rewardByKey.get(quest.id);
             const earned = rewardedCatalogIds.has(quest.id);
+            const comingSoon = quest.availability === "coming_soon";
             // Visibility rule:
-            //  - "coming_soon" is hidden everywhere (it stays in the catalog as
-            //    an inert, never-granted quest, but never renders).
-            //  - Logged out (previewAll): show only "available" — a preview of
-            //    what a new visitor can earn (no off-board "completed" one-offs).
-            //  - Logged in: show "available" OR anything YOU earned (so an
-            //    off-board/per-person card you earned still shows).
-            if (quest.availability === "coming_soon") continue;
-            if (previewAll) {
-                if (quest.availability !== "available") continue;
-            } else if (quest.availability !== "available" && !earned) {
-                continue;
+            //  - "coming_soon" always shows (at the bottom of its lane, in the
+            //    receded style with a clock + "Coming soon" — see QuestRow).
+            //  - Logged out (previewAll): otherwise show only "available".
+            //  - Logged in: show "available" OR anything YOU earned.
+            if (!comingSoon) {
+                if (previewAll) {
+                    if (quest.availability !== "available") continue;
+                } else if (quest.availability !== "available" && !earned) {
+                    continue;
+                }
             }
 
             byCat[quest.category].push({
@@ -589,30 +615,35 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                 reward: quest.rewardAmount,
                 balanceBucket:
                     reward?.balanceBucket ?? quest.balanceBucket ?? "tier",
-                // Logged-out preview forces every row open so descriptions
-                // render and nothing shows as claimed/claimable.
-                status: previewAll
-                    ? "open"
-                    : reward
-                      ? reward.claimedAt
-                          ? "claimed"
-                          : "claimable"
-                      : "open",
+                // coming_soon renders in the receded (claimed) style; otherwise
+                // the logged-out preview forces every row open.
+                status: comingSoon
+                    ? "claimed"
+                    : previewAll
+                      ? "open"
+                      : reward
+                        ? reward.claimedAt
+                            ? "claimed"
+                            : "claimable"
+                        : "open",
                 earnedAmount: reward?.pollenAmount ?? undefined,
+                comingSoon,
             });
         }
 
-        // Claimable wins float to the top of each lane, then claimed, then open.
+        // Order per lane: claimable first, then claimed, then open, then
+        // coming_soon last. Within a rank, cheaper reward first.
         for (const key of Object.keys(byCat) as CategoryKey[]) {
             byCat[key].sort((a, b) => {
-                const statusOrder: Record<QuestCardStatus, number> = {
-                    claimable: 0,
-                    claimed: 1,
-                    open: 2,
-                };
-                if (a.status !== b.status) {
-                    return statusOrder[a.status] - statusOrder[b.status];
-                }
+                const rank = (card: QuestCard) =>
+                    card.comingSoon
+                        ? 3
+                        : card.status === "claimable"
+                          ? 0
+                          : card.status === "claimed"
+                            ? 1
+                            : 2;
+                if (rank(a) !== rank(b)) return rank(a) - rank(b);
                 return (
                     (a.reward ?? Number.POSITIVE_INFINITY) -
                     (b.reward ?? Number.POSITIVE_INFINITY)
@@ -621,17 +652,6 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
         }
         return byCat;
     }, [state.catalog, rewardedCatalogIds, rewardByKey, previewAll]);
-
-    // Coming-soon quests aren't on the board — list their titles (no links) in a
-    // simple "Upcoming quests" section so people can see what's planned.
-    const upcoming = useMemo(
-        () =>
-            state.catalog
-                .filter((quest) => quest.availability === "coming_soon")
-                .map((quest) => quest.title)
-                .sort((a, b) => a.localeCompare(b)),
-        [state.catalog],
-    );
 
     // Which buckets the registry or earned rewards actually use — drives
     // whether the matching summary card is rendered. If no quest/reward touches
@@ -906,7 +926,10 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                 {CATEGORIES.map((category) => {
                     const cards = sections[category.key];
                     if (cards.length === 0) return null;
-                    const done = cards.filter(
+                    // The progress chip counts only real (grantable) quests —
+                    // coming_soon rows are excluded from both done and total.
+                    const liveCards = cards.filter((card) => !card.comingSoon);
+                    const done = liveCards.filter(
                         (card) => card.status !== "open",
                     ).length;
                     return (
@@ -921,7 +944,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                                     size="sm"
                                     className="tabular-nums"
                                 >
-                                    {done} / {cards.length}
+                                    {done} / {liveCards.length}
                                 </Chip>
                             }
                         >
@@ -939,22 +962,6 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                         </Section>
                     );
                 })}
-
-                {upcoming.length > 0 && (
-                    <Section title="Upcoming quests" framed>
-                        <ul className="flex flex-col gap-1.5">
-                            {upcoming.map((title) => (
-                                <li
-                                    key={title}
-                                    className="flex items-center gap-2 text-sm text-theme-text-muted"
-                                >
-                                    <ClockIcon className="h-3.5 w-3.5 shrink-0" />
-                                    {title}
-                                </li>
-                            ))}
-                        </ul>
-                    </Section>
-                )}
             </div>
         </div>
     );

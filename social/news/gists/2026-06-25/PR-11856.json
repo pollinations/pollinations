@@ -1,0 +1,35 @@
+{
+  "pr_number": 11856,
+  "title": "feat: quest system — rewards ledger + per-user check + public catalog",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11856",
+  "merged_at": "2026-06-25T20:52:56Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Systematic quest rollout: earn pollen by completing quests, claim into your wallet.\n\n**Core**\n- Single `rewards` ledger (`shared/billing/rewards.ts`): one row per earned reward; `claimedAt` null until claimed; only claiming credits balance. Idempotent record + claim.\n- Lazy per-user check (`quest-checker.ts`): dashboard runs `POST /quests/check` on demand — no global scan, no cron evaluator.\n- Quest modules own definitions + per-user proposals: account-setup, app-growth, github-contributions, github-profile, model-usage, identity.\n- Quests: GitHub issue bounties, onboarding, top-up, per-modality model use, plus coming-soon placeholders.\n\n**API**\n- Enter: `/api/quests/catalog` (public, cached), `/check` (session), `/rewards` + `/rewards/:id/claim` (session/apikey).\n- `GET /quests/rewards` returns a flat `{ rewards }` — totals derived client-side.\n- gen exposes the public `/quests/*` surface, mirroring `/account/*` (cookie passes via service binding).\n\n**Removed (clean break)**\n- GitHub→D1 mirror (`github-mirror.ts`, `gh_*` tables), the `.github` quest-payout workflow/script, tier UI panels, `quest-grant-pollen.ts`.\n\n**Migration**\n- `0029_create_rewards`: creates `rewards`, drops the obsolete `gh_*` + `quest_payout_credits` tables, backfills rewards from `quest_payout_credits`. Stacks cleanly on main's 0027/0028 (regenerated via drizzle-kit; `drizzle-kit check` passes).\n\n**Frontend**\n- Quest dashboard: Available / Claimable / Claimed lanes; logged-out preview shows catalog totals.\n\n**Validation**\n- `tsc --noEmit` + `biome check` clean\n- `vitest run test/quests.test.ts test/integration/rewards.test.ts` — green\n- gen `docs.test.ts` — green\n- staging deployed + verified (catalog 200, session endpoints 401, gen proxy ok)\n\n**Follow-up**\n- Docs architecture rework tracked in #11992 (kill enter OpenAPI/Scalar; gen owns the public surface).",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Side quests unlocked",
+    "blurb": "We added a quest system. Complete tasks, earn Pollen, claim it to your wallet. It's like an RPG, but instead of slaying dragons, you're making API calls and contributing to open source.",
+    "summary": "Replaced the passive tier system with an active Quest ledger, allowing users to earn and claim Pollen credits for specific actions like GitHub contributions, account setup, and cross-modality model usage.",
+    "impact": "You can now track available bounties and claim earned Pollen credits directly from the new Quest dashboard.",
+    "keywords": [
+      "quests",
+      "pollen",
+      "rewards",
+      "dashboard",
+      "billing"
+    ],
+    "visual_concept": "An RPG-style quest board. Polly the bee as an adventurer checking available bounties, with the Robot companion helping process claimed rewards.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny adventurer's hat, looking at a wooden quest board covered in glowing lime green (#ecf874) parchment scrolls. A chunky retro robot companion stands nearby holding a stamped 'CLAIMED' ticket. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic, emotionally warm, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-25/PR-11856.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny adventurer's hat, looking at a wooden quest board covered in glowing lime green (#ecf874) parchment scrolls. A chunky retro robot companion stands nearby holding a stamped 'CLAIMED' ticket. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic, emotionally warm, chunky sprites."
+  },
+  "generated_at": "2026-06-25T20:54:04.645472+00:00"
+}

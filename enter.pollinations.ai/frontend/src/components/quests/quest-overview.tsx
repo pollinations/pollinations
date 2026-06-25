@@ -964,20 +964,27 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                     visitors too. */}
                 <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                     <p className="flex items-start gap-1.5">
-                        <BeakerIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            Quests are in alpha — new quests are added, rewards
-                            and details are evolving.
-                        </span>
-                    </p>
-                    <p className="flex items-start gap-1.5">
                         <TargetIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
                             Complete → claim → credited to your{" "}
                             <InlineLink href="#pollen" showIcon={false}>
                                 wallet
                             </InlineLink>
-                            . Past activity counts.
+                            .
+                        </span>
+                    </p>
+                    <p className="flex items-start gap-1.5">
+                        <CheckIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            Quests are retroactive — if you already qualify,
+                            just claim the reward.
+                        </span>
+                    </p>
+                    <p className="flex items-start gap-1.5">
+                        <BeakerIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            Early days — quests are in alpha, with more coming
+                            and rewards still evolving.
                         </span>
                     </p>
                 </div>

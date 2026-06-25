@@ -457,7 +457,11 @@ export function QuestRow({
             {card.title}
         </Text>
     );
-    const description = !earned && card.description ? card.description : null;
+    // Show the "how to" description while the quest is actionable (open or
+    // claimable); drop it only once it's done: claimed, or coming_soon (which
+    // also derives to "claimed").
+    const description =
+        card.status !== "claimed" && card.description ? card.description : null;
     const issueLink =
         card.issueNumber != null && card.url ? (
             <InlineLink

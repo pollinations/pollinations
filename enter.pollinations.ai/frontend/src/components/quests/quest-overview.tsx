@@ -288,6 +288,95 @@ export function TotalCard({
     );
 }
 
+// The summary card frame shared by the logged-in view (your completed quests +
+// claimed pollen) and the logged-out preview (quests + pollen on offer). One
+// layout, two callers: the caller supplies the already-styled pollen card
+// node(s) — green/amber owned wells when logged in, neutral tiles when logged
+// out — and this only positions them.
+//
+// We only ever render two or three cards (count + 1 or 2 pollen buckets):
+//   • two   → one row, side by side, at every width.
+//   • three → three across once the container is wide enough (@lg); below that,
+//     the count takes a full-width row and the pollen pair folds underneath.
+// Width-driven via a container query (not the viewport) because the panel is
+// narrower than the screen when the sidebar is open.
+function QuestSummaryGrid({
+    totalLabel,
+    totalValue,
+    pollenLabel,
+    pollenCards,
+}: {
+    totalLabel: string;
+    totalValue: React.ReactNode;
+    pollenLabel: string;
+    pollenCards: { key: string; node: React.ReactNode }[];
+}) {
+    const header = (label: string, className: string) => (
+        <Text
+            as="span"
+            size="sm"
+            weight="bold"
+            tone="muted"
+            className={`uppercase tracking-wide ${className}`}
+        >
+            {label}
+        </Text>
+    );
+    const totalCard = <TotalCard value={totalValue} />;
+
+    // No pollen on offer at all → just the count (kept for safety; in practice
+    // there is always at least the tier bucket).
+    if (pollenCards.length === 0) {
+        return (
+            <div className="flex flex-col gap-2">
+                {header(totalLabel, "")}
+                <div className="sm:w-1/3">{totalCard}</div>
+            </div>
+        );
+    }
+
+    // Two cards (count + one pollen bucket) → one row, side by side, any width.
+    if (pollenCards.length === 1) {
+        return (
+            <div className="grid grid-cols-2 gap-x-2 gap-y-2">
+                {header(totalLabel, "col-span-1")}
+                {header(pollenLabel, "col-span-1")}
+                <div className="col-span-1">{totalCard}</div>
+                <div className="col-span-1">{pollenCards[0].node}</div>
+            </div>
+        );
+    }
+
+    // Three cards (count + tier + paid) → three across when the container is
+    // wide enough; otherwise the count spans a full row and the pollen pair
+    // sits side by side beneath it.
+    return (
+        <div className="@container">
+            <div className="grid grid-cols-2 gap-x-2 gap-y-2 @lg:grid-cols-3">
+                {header(
+                    totalLabel,
+                    "col-span-2 @lg:col-span-1 @lg:col-start-1 @lg:row-start-1",
+                )}
+                <div className="col-span-2 @lg:col-span-1 @lg:col-start-1 @lg:row-start-2">
+                    {totalCard}
+                </div>
+                {header(
+                    pollenLabel,
+                    "col-span-2 @lg:col-span-2 @lg:col-start-2 @lg:row-start-1",
+                )}
+                {pollenCards.map((card, i) => (
+                    <div
+                        key={card.key}
+                        className={`${i === 1 ? "@lg:col-start-3" : "@lg:col-start-2"} @lg:row-start-2`}
+                    >
+                        {card.node}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
 function QuestDescription({ children }: { children: string }) {
     return (
         <Markdown className="inline text-sm text-theme-text-muted [&_p]:mb-0 [&_p]:inline">
@@ -685,20 +774,25 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
     }, [state.catalog, rewardedCatalogIds, rewardByKey, previewAll]);
 
     // Logged-out totals for the summary cards: across every available quest
-    // shown (coming_soon excluded), how many there are and the pollen on offer.
-    // Mirrors the logged-in "completed quests / claimed pollen" pair, but the
-    // numbers are the whole catalog's potential rather than this user's history.
+    // shown (coming_soon excluded), how many there are and the pollen on offer,
+    // split per bucket so the preview shows a paid card exactly when (and only
+    // when) some available quest pays paid pollen — the same rule the logged-in
+    // view uses, with catalog potential instead of this user's history.
     const previewTotals = useMemo(() => {
+        const byBucket: Record<RewardIconKind, number> = { paid: 0, tier: 0 };
         let count = 0;
-        let pollen = 0;
         for (const cards of Object.values(sections)) {
             for (const card of cards) {
                 if (card.comingSoon || card.reward == null) continue;
                 count += 1;
-                pollen += card.reward;
+                byBucket[rewardIconKind(card.balanceBucket)] += card.reward;
             }
         }
-        return { count, pollen };
+        const usedBuckets: Record<RewardIconKind, boolean> = {
+            tier: byBucket.tier > 0,
+            paid: byBucket.paid > 0,
+        };
+        return { count, byBucket, usedBuckets };
     }, [sections]);
 
     // Which buckets the registry or earned rewards actually use — drives
@@ -782,95 +876,28 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                     col-start/row-start to put both headers on row 1 and the
                     cards on row 2. */}
                         <div className={dimWhileChecking}>
-                            {(() => {
-                                const visibleBuckets = (
-                                    ["paid", "tier"] as const
-                                ).filter((k) => usedBuckets[k]);
-                                const bucketCount = visibleBuckets.length;
-                                const totalCard = (
-                                    <TotalCard
-                                        value={
-                                            bucketStats.paid.completed +
-                                            bucketStats.tier.completed
-                                        }
-                                    />
-                                );
-                                if (bucketCount === 0) {
-                                    // No quest pays pollen → just the completed total.
-                                    return (
-                                        <div className="flex flex-col gap-2">
-                                            <Text
-                                                as="span"
-                                                size="sm"
-                                                weight="bold"
-                                                tone="muted"
-                                                className="uppercase tracking-wide"
-                                            >
-                                                Completed quests
-                                            </Text>
-                                            <div className="sm:w-1/3">
-                                                {totalCard}
-                                            </div>
-                                        </div>
-                                    );
+                            <QuestSummaryGrid
+                                totalLabel="Completed quests"
+                                totalValue={
+                                    bucketStats.paid.completed +
+                                    bucketStats.tier.completed
                                 }
-                                const gridCols =
-                                    bucketCount === 2
-                                        ? "sm:grid-cols-3"
-                                        : "sm:grid-cols-2";
-                                const claimedHeaderColSpan =
-                                    bucketCount === 2
-                                        ? "sm:col-span-2"
-                                        : "sm:col-span-1";
-                                return (
-                                    <div
-                                        className={`grid grid-cols-2 gap-x-2 gap-y-2 ${gridCols}`}
-                                    >
-                                        <Text
-                                            as="span"
-                                            size="sm"
-                                            weight="bold"
-                                            tone="muted"
-                                            className="col-span-2 uppercase tracking-wide sm:col-span-1 sm:col-start-1 sm:row-start-1"
-                                        >
-                                            Completed quests
-                                        </Text>
-                                        <div className="col-span-2 sm:col-span-1 sm:col-start-1 sm:row-start-2">
-                                            {totalCard}
-                                        </div>
-                                        <Text
-                                            as="span"
-                                            size="sm"
-                                            weight="bold"
-                                            tone="muted"
-                                            className={`col-span-2 uppercase tracking-wide sm:col-start-2 sm:row-start-1 ${claimedHeaderColSpan}`}
-                                        >
-                                            Claimed pollen reward
-                                        </Text>
-                                        {visibleBuckets.map((kind, i) => {
-                                            const colStart =
-                                                bucketCount === 2 && i === 1
-                                                    ? "sm:col-start-3"
-                                                    : "sm:col-start-2";
-                                            return (
-                                                <div
-                                                    key={kind}
-                                                    className={`${colStart} sm:row-start-2`}
-                                                >
-                                                    <BucketCard
-                                                        kind={kind}
-                                                        value={formatRewardAmount(
-                                                            bucketStats[kind]
-                                                                .pollen,
-                                                        )}
-                                                        showBadge
-                                                    />
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                );
-                            })()}
+                                pollenLabel="Claimed pollen reward"
+                                pollenCards={(["tier", "paid"] as const)
+                                    .filter((k) => usedBuckets[k])
+                                    .map((kind) => ({
+                                        key: kind,
+                                        node: (
+                                            <BucketCard
+                                                kind={kind}
+                                                value={formatRewardAmount(
+                                                    bucketStats[kind].pollen,
+                                                )}
+                                                showBadge
+                                            />
+                                        ),
+                                    }))}
+                            />
                             {claimable.count > 0 && (
                                 <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-theme-bg-subtle px-4 py-2.5 text-sm font-semibold text-theme-text-soft">
                                     <SparkleIcon className="h-4 w-4 shrink-0" />
@@ -932,41 +959,38 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                     pay) instead of this visitor's completed/claimed history. */}
                 {state.anonymous && (
                     <>
-                        <div className="grid grid-cols-2 gap-x-2 gap-y-2 sm:grid-cols-2">
-                            <Text
-                                as="span"
-                                size="sm"
-                                weight="bold"
-                                tone="muted"
-                                className="col-span-1 uppercase tracking-wide sm:row-start-1"
-                            >
-                                Available quests
-                            </Text>
-                            <Text
-                                as="span"
-                                size="sm"
-                                weight="bold"
-                                tone="muted"
-                                className="col-span-1 uppercase tracking-wide sm:col-start-2 sm:row-start-1"
-                            >
-                                Available pollen
-                            </Text>
-                            <div className="col-span-1 sm:col-start-1 sm:row-start-2">
-                                <TotalCard value={previewTotals.count} />
-                            </div>
-                            {/* Neutral tile (not the green owned-balance well) so
-                                the pollen on offer never reads as a balance the
-                                visitor holds. Green sprout keeps the pollen cue. */}
-                            <div className="col-span-1 sm:col-start-2 sm:row-start-2">
-                                <TotalCard
-                                    value={formatRewardAmount(
-                                        previewTotals.pollen,
-                                    )}
-                                    icon={SproutIcon}
-                                    iconClassName="polli-wallet-text-tier"
-                                />
-                            </div>
-                        </div>
+                        {/* Same frame as the logged-in summary, but neutral tiles
+                            (not the green/amber owned wells) so the pollen on
+                            offer never reads as a balance the visitor holds. The
+                            bucket glyph still marks tier (green sprout) vs paid
+                            (amber card). */}
+                        <QuestSummaryGrid
+                            totalLabel="Available quests"
+                            totalValue={previewTotals.count}
+                            pollenLabel="Available pollen"
+                            pollenCards={(["tier", "paid"] as const)
+                                .filter((k) => previewTotals.usedBuckets[k])
+                                .map((kind) => ({
+                                    key: kind,
+                                    node: (
+                                        <TotalCard
+                                            value={formatRewardAmount(
+                                                previewTotals.byBucket[kind],
+                                            )}
+                                            icon={
+                                                kind === "paid"
+                                                    ? CardIcon
+                                                    : SproutIcon
+                                            }
+                                            iconClassName={
+                                                kind === "paid"
+                                                    ? "polli-wallet-text-paid"
+                                                    : "polli-wallet-text-tier"
+                                            }
+                                        />
+                                    ),
+                                }))}
+                        />
                         {/* Light, emphasized prompt — no background well. Not a
                             link yet; the real login CTA is a follow-up commit. */}
                         <div className="mt-3 text-sm font-semibold text-theme-text-soft">

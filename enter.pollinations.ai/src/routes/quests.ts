@@ -21,8 +21,8 @@ import type {
     QuestEvaluationContext,
 } from "../services/quests/types.ts";
 
-// Bumped to v18: catalog route moved to /quests/catalog and emits `state`.
-const CACHE_KEY = "quests:catalog:v18";
+// Bumped to v19: catalog returns quests in definition order (was title-sorted).
+const CACHE_KEY = "quests:catalog:v19";
 const CACHE_TTL = 60;
 const QUEST_CHECK_THROTTLE_SECONDS = 60;
 
@@ -395,27 +395,30 @@ async function buildQuestCatalog(
         0,
     );
 
-    const quests = [...cards]
-        .sort((a, b) => a.title.localeCompare(b.title))
-        .map((card) => {
-            const stat = ledger.get(card.id);
-            if (!stat) return { ...card, stats: EMPTY_STATS };
-            const pollenAwardedPercent =
-                totalPollenAwarded > 0
-                    ? (stat.pollenAwarded / totalPollenAwarded) * 100
-                    : 0;
-            return {
-                ...card,
-                stats: {
-                    earned: stat.earned,
-                    claimed: stat.claimed,
-                    unclaimed: stat.unclaimed,
-                    pollenAwarded: stat.pollenAwarded,
-                    pollenClaimed: stat.pollenClaimed,
-                    pollenAwardedPercent,
-                },
-            };
-        });
+    // Preserve definition order from listQuestCards (group + within-group), so
+    // each lane reads in its intended sequence, e.g. Setup: API key -> text ->
+    // image -> audio. The frontend still sorts every lane by lifecycle + reward;
+    // this order is only the stable tiebreak for equal-reward quests. (Was
+    // sorted alphabetically by title, which placed "audio" before "image".)
+    const quests = cards.map((card) => {
+        const stat = ledger.get(card.id);
+        if (!stat) return { ...card, stats: EMPTY_STATS };
+        const pollenAwardedPercent =
+            totalPollenAwarded > 0
+                ? (stat.pollenAwarded / totalPollenAwarded) * 100
+                : 0;
+        return {
+            ...card,
+            stats: {
+                earned: stat.earned,
+                claimed: stat.claimed,
+                unclaimed: stat.unclaimed,
+                pollenAwarded: stat.pollenAwarded,
+                pollenClaimed: stat.pollenClaimed,
+                pollenAwardedPercent,
+            },
+        };
+    });
 
     return {
         quests,

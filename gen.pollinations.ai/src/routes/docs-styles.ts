@@ -6,10 +6,6 @@ import POLLI_UI_TOKENS_CSS from "../../../packages/ui/src/styles/tokens.css?raw"
 
 const POLLINATIONS_UI_CSS = `
 ${POLLI_UI_TOKENS_CSS}
-
-:root {
-  color-scheme: dark;
-}
 `;
 
 export const POLLINATIONS_HEADER_CSS = `
@@ -105,7 +101,7 @@ export const API_REFERENCE_CUSTOM_CSS = `
 }
 
 .scalar-app .markdown a {
-  color: var(--polli-color-text-strong);
+  color: var(--polli-color-text-soft);
   text-decoration-color: var(--polli-color-border);
   text-decoration-thickness: 2px;
   text-underline-offset: 3px;
@@ -223,12 +219,12 @@ h3 { font-size: 1.125rem; }
 p, li, blockquote { overflow-wrap: anywhere; word-break: break-word; }
 p { margin: .75rem 0; }
 code {
-    background: var(--polli-color-bg-active); padding: 2px 5px; border-radius: 4px; color: var(--polli-color-text-strong);
+    background: var(--polli-color-surface-opaque); padding: 2px 5px; border-radius: 4px; color: var(--polli-color-text-strong);
     font: 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     overflow-wrap: anywhere; word-break: break-word;
 }
 pre {
-    background: var(--polli-color-bg-active); color: var(--polli-color-text-strong); padding: 1rem; border-radius: 8px;
+    background: var(--polli-color-surface-opaque); color: var(--polli-color-text-strong); padding: 1rem; border-radius: 8px;
     border: 1px solid var(--polli-color-divider); overflow-x: auto; font-size: 13px; line-height: 1.5;
     max-width: 100%;
 }
@@ -242,9 +238,9 @@ table {
     border-collapse: collapse; margin: 1rem 0; font-size: .9rem;
 }
 th, td { padding: .5rem .75rem; border: 1px solid var(--polli-color-divider); text-align: left; vertical-align: top; }
-th { background: var(--polli-color-bg-active); font-weight: 600; color: var(--polli-color-text-strong); }
-a { color: var(--polli-color-text-strong); text-decoration-color: var(--polli-color-border); text-decoration-thickness: 2px; text-underline-offset: 3px; overflow-wrap: anywhere; word-break: break-word; }
-a:hover { text-decoration-color: var(--polli-color-text-soft); }
+th { background: var(--polli-color-surface-opaque); font-weight: 600; color: var(--polli-color-text-strong); }
+a { color: var(--polli-color-text-soft); text-decoration-color: var(--polli-color-border); text-decoration-thickness: 2px; text-underline-offset: 3px; overflow-wrap: anywhere; word-break: break-word; }
+a:hover { color: var(--polli-color-text-strong); text-decoration-color: var(--polli-color-text-soft); }
 blockquote { border-left: 3px solid var(--polli-color-border); padding: .25rem 1rem; color: var(--polli-color-text-soft); margin: 1rem 0; background: var(--polli-color-bg-subtle); }
 ul, ol { padding-left: 1.5rem; }
 li { margin: .25rem 0; }

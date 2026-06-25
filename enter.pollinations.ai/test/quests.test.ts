@@ -165,7 +165,7 @@ test("catalog stats aggregate earned/claimed from the rewards ledger", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v18");
+    await env.KV.delete("quests:catalog:v19");
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
     const questId = "merged_pr";
@@ -214,6 +214,44 @@ test("catalog stats aggregate earned/claimed from the rewards ledger", async ({
         pollenAwarded: 10,
         pollenClaimed: 5,
         pollenAwardedPercent: 100,
+    });
+});
+
+test("catalog includes coming-soon GitHub issue placeholder", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    await mocks.enable("github");
+    await env.KV.delete("quests:catalog:v19");
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/quests/catalog",
+    );
+    expect(response.status).toBe(200);
+    const payload = (await response.json()) as {
+        quests: {
+            id: string;
+            title: string;
+            description: string;
+            category: string;
+            state: string;
+            rewardAmount: number;
+            balanceBucket: string;
+            url: string | null;
+        }[];
+    };
+    const placeholder = payload.quests.find(
+        (quest) => quest.id === "solve_github_issue",
+    );
+
+    expect(placeholder).toMatchObject({
+        title: "Solve issue in GitHub",
+        description: "A demi description",
+        category: "contribute",
+        state: "coming_soon",
+        rewardAmount: 0,
+        balanceBucket: "tier",
+        url: null,
     });
 });
 

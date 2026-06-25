@@ -21,8 +21,8 @@ import type {
     QuestEvaluationContext,
 } from "../services/quests/types.ts";
 
-// Bumped to v18: catalog route moved to /quests/catalog and emits `state`.
-const CACHE_KEY = "quests:catalog:v18";
+// Bumped to v19: added the Contribute coming-soon GitHub issue placeholder.
+const CACHE_KEY = "quests:catalog:v19";
 const CACHE_TTL = 60;
 const QUEST_CHECK_THROTTLE_SECONDS = 60;
 

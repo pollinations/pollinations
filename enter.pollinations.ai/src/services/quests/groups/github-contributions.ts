@@ -40,6 +40,17 @@ const firstMergedPrQuest: QuestDefinition = {
     balanceBucket: "tier",
 };
 
+const solveGithubIssueQuest: QuestDefinition = {
+    id: "solve_github_issue",
+    title: "Solve issue in GitHub",
+    description: "A demi description",
+    category: CONTRIBUTION_CATEGORY,
+    scope: "perUser",
+    rewardAmount: 0,
+    balanceBucket: "tier",
+    state: "coming_soon",
+};
+
 // A quest-shaped projection of one POLLEN-QUEST issue, computed from GitHub.
 type DerivedQuestIssue = {
     issueNumber: number;
@@ -229,6 +240,7 @@ export async function listQuestCards(
     const issues = await loadQuestIssues(await githubToken(ctx.env));
     return [
         questToCard(firstMergedPrQuest),
+        questToCard(solveGithubIssueQuest),
         ...issues.map((issue) => questToCard(toIssueQuestDefinition(issue))),
     ];
 }

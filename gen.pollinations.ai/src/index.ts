@@ -9,6 +9,7 @@
  *   gen.pollinations.ai/docs          -> docs handled locally
  *   gen.pollinations.ai/models        -> generation models
  *   gen.pollinations.ai/account/*     -> enter account API
+ *   gen.pollinations.ai/quests/catalog -> public quest catalog from enter
  *   gen.pollinations.ai/image/*       -> image generation
  *   gen.pollinations.ai/text/*        -> text generation
  *   gen.pollinations.ai/audio/*       -> audio generation
@@ -115,6 +116,16 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .all("/account", (c) => fetchEnter(c, new URL(c.req.url)))
     .all("/account/", (c) => fetchEnter(c, new URL(c.req.url)))
     .all("/account/*", (c) => {
+        const url = new URL(c.req.url);
+        url.pathname = `/api${stripTrailingSlash(url.pathname)}`;
+        return fetchEnter(c, url);
+    })
+    // Only the read-only quest catalog is part of the public gen API. Dashboard
+    // quest actions (/check, /rewards, /claim) stay on enter's session API.
+    .all("/quests/catalog", (c) => {
+        if (c.req.method !== "GET" && c.req.method !== "HEAD") {
+            return notFound();
+        }
         const url = new URL(c.req.url);
         url.pathname = `/api${stripTrailingSlash(url.pathname)}`;
         return fetchEnter(c, url);

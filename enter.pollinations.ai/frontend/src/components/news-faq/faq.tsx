@@ -4,9 +4,6 @@ import { useEffect, useState } from "react";
 import faqMarkdown from "../../../../POLLEN_FAQ.md?raw";
 import { PollenExamples } from "../models/pollen-examples.tsx";
 
-export const FAQ_GITHUB_URL =
-    "https://github.com/pollinations/pollinations/blob/master/enter.pollinations.ai/POLLEN_FAQ.md";
-
 type FAQItem = {
     question: string;
     answer: string;

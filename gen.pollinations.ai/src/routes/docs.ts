@@ -350,6 +350,7 @@ function generationDocumentation(): OpenApiSchema {
                 name: "Resources",
                 tags: [
                     "🤖 Models",
+                    "✨ Quests",
                     "📦 Media Storage",
                     "👤 Account",
                     "🛡️ Safety",
@@ -414,6 +415,10 @@ function generationDocumentation(): OpenApiSchema {
             {
                 name: "🤖 Models",
                 description: stripLeadingHeading(MODELS_DOCS),
+            },
+            {
+                name: "✨ Quests",
+                description: "Public quest catalog and available rewards.",
             },
             {
                 name: "📦 Media Storage",
@@ -510,11 +515,14 @@ function isPublicMediaRead(method: string, path: string): boolean {
 function transformEnterSchema(schema: OpenApiSchema): OpenApiSchema {
     const paths: OpenApiSchema = {};
     for (const [path, value] of Object.entries(asRecord(schema.paths))) {
-        if (!isPublicAccountPath(path)) continue;
-        const publicPath = path.replace(/^\/api\/account(?=\/|$)/, "/account");
-        paths[publicPath] = value;
+        if (!isPublicEnterPath(path)) continue;
+        paths[publicEnterPath(path)] = value;
     }
     return { ...schema, tags: tagsForPaths(schema, paths), paths };
+}
+
+function isPublicEnterPath(path: string): boolean {
+    return isPublicAccountPath(path) || isPublicQuestCatalogPath(path);
 }
 
 function isPublicAccountPath(path: string): boolean {
@@ -524,6 +532,18 @@ function isPublicAccountPath(path: string): boolean {
         path === "/api/account" ||
         path.startsWith("/api/account/")
     );
+}
+
+// Only the catalog is part of the public gen API. Session-only dashboard quest
+// actions stay on enter and are omitted from the merged gen docs.
+function isPublicQuestCatalogPath(path: string): boolean {
+    return path === "/quests/catalog" || path === "/api/quests/catalog";
+}
+
+function publicEnterPath(path: string): string {
+    return path
+        .replace(/^\/api\/account(?=\/|$)/, "/account")
+        .replace(/^\/api\/quests(?=\/|$)/, "/quests");
 }
 
 function tagsForPaths(

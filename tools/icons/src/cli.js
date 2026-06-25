@@ -75,13 +75,7 @@ const APPS = {
     gen: {
         outDir: "gen.pollinations.ai/public",
         og: true,
-        manifest: {
-            name: "Docs | pollinations.ai",
-            short_name: "Docs",
-            description:
-                "API docs for pollinations.ai. Generate images, text, audio, and video with easy APIs, model lists, authentication, and OpenAI-compatible endpoints.",
-            start_url: "/docs",
-        },
+        maskable: true,
     },
     "model-monitor": {
         outDir: "apps/model-monitor/public",
@@ -192,8 +186,8 @@ async function generate(name) {
         await write(file, await renderSolidIcon(svg, size, solid));
     }
 
-    // Maskable PWA icon: washed field + extra safe-zone margin (manifest apps only).
-    if (cfg.manifest) {
+    // Maskable PWA icon: washed field + extra safe-zone margin.
+    if (cfg.manifest || cfg.maskable) {
         await write(
             "icon-maskable-512.png",
             await renderSolidIcon(svg, 512, { ...solid, fraction: 0.6 }),

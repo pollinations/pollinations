@@ -37,7 +37,7 @@ const firstApiKeyQuest: QuestDefinition = {
 
 const byopLoginQuest: QuestDefinition = {
     id: "setup:byop_login",
-    title: "Login",
+    title: "App Login",
     description:
         "Connect to a Pollinations app. Log in to any app in the [apps directory](https://pollinations.ai/apps) that supports it.",
     category: "setup",
@@ -71,7 +71,7 @@ const overHundredPollenQuest: QuestDefinition = {
     id: "spend:purchased_over_100_pollen",
     title: "Top up 100 Pollen",
     description:
-        "Top up more than 100 Pollen in total through [Top-up](#buy-pollen).",
+        "You have [topped up](#buy-pollen) more than 100 Pollen in total.",
     category: "grow",
     scope: "perUser",
     rewardAmount: 50,

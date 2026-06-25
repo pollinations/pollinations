@@ -35,9 +35,9 @@ const firstByopExternalUserQuest: QuestDefinition = {
 
 const firstPaidSpendInAppQuest: QuestDefinition = {
     id: "grow:first_paid_spend_in_app",
-    title: "Drive your first paid app request",
+    title: "User pays in your app",
     description:
-        "A user makes a paid request through your [BYOP](https://gen.pollinations.ai/docs#tag/byop) app.",
+        "A user makes a paid request in your [BYOP](https://gen.pollinations.ai/docs#tag/byop) app.",
     category: "grow",
     scope: "perUser",
     rewardAmount: 20,
@@ -54,6 +54,8 @@ const appListedQuest: QuestDefinition = {
     rewardAmount: 5,
     balanceBucket: "tier",
     url: "https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml",
+    // Built but not launched — shown with a "coming soon" marker, not grantable.
+    availability: "coming_soon",
 };
 
 const QUESTS = [

@@ -17,8 +17,8 @@ import type {
     QuestEvaluationContext,
 } from "../services/quests/types.ts";
 
-// Bumped to v20: catalog no longer includes reward-ledger stats.
-const CACHE_KEY = "quests:catalog:v20";
+// Bumped to v21: launch-era top-up quests use new ids; legacy top-up cards are completed.
+const CACHE_KEY = "quests:catalog:v21";
 const CACHE_TTL = 60;
 const QUEST_CHECK_THROTTLE_SECONDS = 60;
 

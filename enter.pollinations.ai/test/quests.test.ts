@@ -195,39 +195,52 @@ test("catalog returns quest definitions without ledger stats", async ({
             id: string;
             title: string;
             description: string;
+            rewardAmount: number;
+            balanceBucket: string;
             state: string;
             availability?: unknown;
             stats?: unknown;
         }[];
     };
     const byId = new Map(payload.quests.map((quest) => [quest.id, quest]));
+    const expectStableCatalogFields = (
+        id: string,
+        expected: {
+            state: string;
+            rewardAmount: number;
+            balanceBucket: string;
+        },
+    ) => {
+        const quest = byId.get(id);
+
+        expect(quest).toMatchObject(expected);
+        expect(typeof quest?.title).toBe("string");
+        expect(typeof quest?.description).toBe("string");
+    };
     const catalogQuest = byId.get("merged_pr");
 
     expect(catalogQuest?.state).toBe("available");
     expect(catalogQuest).not.toHaveProperty("availability");
     expect(catalogQuest).not.toHaveProperty("stats");
-    expect(byId.get(LEGACY_FIRST_TOP_UP_QUEST_ID)).toMatchObject({
-        title: "First Pollen top up",
-        description: "[Top up](#buy-pollen) Pollen with a credit card.",
+    expectStableCatalogFields(LEGACY_FIRST_TOP_UP_QUEST_ID, {
         state: "completed",
+        rewardAmount: 10,
+        balanceBucket: "tier",
     });
-    expect(byId.get(LEGACY_TOP_UP_100_QUEST_ID)).toMatchObject({
-        title: "Top up 100 Pollen",
-        description:
-            "You have [topped up](#buy-pollen) 100 Pollen or more in total.",
+    expectStableCatalogFields(LEGACY_TOP_UP_100_QUEST_ID, {
         state: "completed",
+        rewardAmount: 50,
+        balanceBucket: "tier",
     });
-    expect(byId.get(TOP_UP_SINCE_LAUNCH_QUEST_ID)).toMatchObject({
-        title: "Top up Pollen",
-        description:
-            "[Top up](#buy-pollen) Pollen with a credit card. _(from 21/06/26)_",
+    expectStableCatalogFields(TOP_UP_SINCE_LAUNCH_QUEST_ID, {
         state: "available",
+        rewardAmount: 10,
+        balanceBucket: "tier",
     });
-    expect(byId.get(TOP_UP_100_SINCE_LAUNCH_QUEST_ID)).toMatchObject({
-        title: "Top up 100 Pollen",
-        description:
-            "You have [topped up](#buy-pollen) 100 Pollen or more. _(from 21/06/26)_",
+    expectStableCatalogFields(TOP_UP_100_SINCE_LAUNCH_QUEST_ID, {
         state: "available",
+        rewardAmount: 50,
+        balanceBucket: "tier",
     });
 });
 

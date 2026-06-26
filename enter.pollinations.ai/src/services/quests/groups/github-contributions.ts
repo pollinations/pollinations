@@ -43,8 +43,7 @@ const firstMergedPrQuest: QuestDefinition = {
 const solveGithubIssueQuest: QuestDefinition = {
     id: "solve_github_issue",
     title: "Solve a quest issue in GitHub",
-    description:
-        "Pick an open POLLEN-QUEST issue, get assigned, and ship a PR. Claim your reward after merge.",
+    description: "A demi description",
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
     rewardAmount: 0,

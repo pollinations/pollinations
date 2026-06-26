@@ -114,6 +114,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         createOpenRouterModelConfig({
             model: "google/gemma-4-26b-a4b-it",
         }),
+    "google/gemma-4-31b-it": () =>
+        createOpenRouterModelConfig({
+            model: "google/gemma-4-31b-it",
+        }),
 
     // -- Inception Labs (Mercury) -------------------------------------------
     "mercury-2": () =>

@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-06-25",
+  "period_start": "2026-06-25",
+  "period_end": "2026-06-25",
+  "generated_at": "2026-06-26T07:14:20.118306+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-25/images/reddit.jpg"
+    }
+  ],
+  "title": "Quest system merged, API docs social metadata, and auth fixes",
+  "text": "Merged 5 PRs today. The main chunk of work was getting the initial quest system wired up.\n\nWe added a rewards ledger, per-user checks, and a public catalog (#11856). The goal is to let you earn Pollen credits organically for building and interacting. Followed that up quickly with #11998 to store reward timestamps as Unix seconds, keeping the ledger math predictable across different clients.\n\nOn the API docs side, we added social metadata to the generated docs (#11991). Links will actually unfurl with context now instead of looking like bare URLs when shared. Also aligned the gen docs drawer icons (#11994) which were off by a few pixels and bothering everyone looking at the sidebar.\n\nFinally, fixed a dashboard auth navigation bug (#11993). The router was dropping state on certain redirects, causing what basically amounted to auth amnesia. It preserves your session properly during dashboard navigation now.\n\nCode is open as always. Let us know if the auth routing is still acting up for anyone."
+}

@@ -13,4 +13,4 @@ Two ways to authenticate:
 - Query param: `?key=YOUR_API_KEY`
 
 > **Warning:** Never expose secret keys (`sk_`) in client-side code. Use publishable keys (`pk_`) for frontend apps.
-> **Warning:** Using a publishable key for frontend apps can be dangerous because users will get a continous stream of 1 pollen per ip per hour, which can be abusedd against you. It is recommended to use the BYOP authorization flow or setup your own proxy with authentication instead.
+> **Warning:** Using a publishable key for frontend apps can be dangerous because users will get a continous stream of 1 Pollen/IP/hour, which can be used against you. It is recommended to use the BYOP authorization flow or setup your own proxy with authentication instead.

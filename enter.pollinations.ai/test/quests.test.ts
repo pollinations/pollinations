@@ -220,13 +220,13 @@ test("catalog returns quest definitions without ledger stats", async ({
     expect(byId.get(TOP_UP_SINCE_LAUNCH_QUEST_ID)).toMatchObject({
         title: "Top up Pollen",
         description:
-            "[Top up](#buy-pollen) Pollen with a credit card. _(from June 21, 2026)_",
+            "[Top up](#buy-pollen) Pollen with a credit card. _(from 21/06/26)_",
         state: "available",
     });
     expect(byId.get(TOP_UP_100_SINCE_LAUNCH_QUEST_ID)).toMatchObject({
         title: "Top up 100 Pollen",
         description:
-            "You have [topped up](#buy-pollen) 100 Pollen or more. _(from June 21, 2026)_",
+            "You have [topped up](#buy-pollen) 100 Pollen or more. _(from 21/06/26)_",
         state: "available",
     });
 });

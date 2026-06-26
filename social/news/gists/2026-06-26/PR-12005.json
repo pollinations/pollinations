@@ -1,0 +1,34 @@
+{
+  "pr_number": 12005,
+  "title": "fix: count exact 100 pollen top-ups",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12005",
+  "merged_at": "2026-06-26T09:18:02Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Changes the 100 Pollen top-up quest threshold from `> 100` to `>= 100`.\n- Keeps eligibility sourced from the existing `stripe_checkout_credits` ledger.\n- Adds a regression test for exactly 100 paid checkout Pollen.\n\nValidation:\n- `npx biome check --write enter.pollinations.ai/src/services/quests/groups/account-setup.ts enter.pollinations.ai/test/quests.test.ts`\n- `npm run decrypt-vars && npx vitest run test/quests.test.ts`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Right on the money",
+    "blurb": "Math is hard, especially when it involves greater-than versus greater-than-or-equal-to. Buying exactly 100 Pollen now correctly triggers your top-up quest.",
+    "summary": "Updated the top-up quest logic to trigger on exactly 100 Pollen (>= 100) instead of strictly greater than 100.",
+    "impact": "Purchasing exactly 100 Pollen now correctly unlocks the account setup quest reward.",
+    "keywords": [
+      "quests",
+      "billing",
+      "pollen",
+      "bug-fix"
+    ],
+    "visual_concept": "Polly the bee completing a quest by placing exactly 100 coins into a slot or chest. A retro RPG quest board showing a checkmark.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot placing a shiny golden coin marked '100' into a glowing wooden treasure chest. A retro RPG quest board in the background shows a green checkmark. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-26/PR-12005.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot placing a shiny golden coin marked '100' into a glowing wooden treasure chest. A retro RPG quest board in the background shows a green checkmark. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-26T09:19:01.159149+00:00"
+}

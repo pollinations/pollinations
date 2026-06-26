@@ -1,6 +1,7 @@
 import { Chip, cn, Tooltip } from "@pollinations/ui";
 import type { FC } from "react";
 import { PRICE_ICON, type PriceKind } from "./model-icons.tsx";
+import type { ModelPrice } from "./types.ts";
 
 const TOKEN_TYPE_LABELS: Record<PriceKind, string> = {
     text: "text",
@@ -20,6 +21,8 @@ export type PriceBadgeConfig = {
     perSecond?: boolean;
     className?: string;
 };
+
+export type PriceDirection = "input" | "output";
 
 export const groupPriceBadges = (
     badges: PriceBadgeConfig[],
@@ -60,6 +63,117 @@ export const groupPriceBadges = (
 
     return [...grouped.values()];
 };
+
+export const getModelPriceBadges = (
+    model: ModelPrice,
+    direction: PriceDirection,
+): PriceBadgeConfig[] =>
+    groupPriceBadges(
+        direction === "input"
+            ? [
+                  {
+                      prices: [model.promptTextPrice],
+                      kind: "text",
+                      subKinds: ["text"],
+                      perToken: model.perToken,
+                  },
+                  {
+                      prices: [model.promptCachedPrice],
+                      kind: "cached",
+                      subKinds: ["cached"],
+                      perToken: model.perToken,
+                  },
+                  {
+                      prices: [model.promptAudioPrice],
+                      kind: "audioIn",
+                      subKinds: ["audioIn"],
+                      perToken: model.perToken,
+                      perRequest: model.perRequest,
+                  },
+                  {
+                      prices: [model.promptImagePrice],
+                      kind: "image",
+                      subKinds: ["image"],
+                      perToken: model.perToken,
+                  },
+                  {
+                      prices: [model.promptVideoPrice],
+                      kind: "video",
+                      subKinds: ["video"],
+                      perToken: model.perToken,
+                  },
+              ]
+            : [
+                  {
+                      prices: [model.completionTextPrice],
+                      kind: "text",
+                      subKinds: ["text"],
+                      perToken: model.perToken,
+                  },
+                  {
+                      prices: [model.completionAudioPrice],
+                      kind: "audioOut",
+                      subKinds: ["audioOut"],
+                      perToken: model.perToken,
+                      perRequest: model.perRequest,
+                  },
+                  {
+                      prices: [model.perSecondPrice],
+                      kind: model.type === "audio" ? "audioOut" : "video",
+                      subKinds: [model.type === "audio" ? "audioOut" : "video"],
+                      perSecond: true,
+                  },
+                  {
+                      prices: [model.perAudioSecondPrice],
+                      kind: "audioOut",
+                      subKinds: ["audioOut"],
+                      perSecond: true,
+                  },
+                  {
+                      prices: [model.perTokenPrice],
+                      kind: "video",
+                      subKinds: ["video"],
+                      perToken: true,
+                  },
+                  {
+                      prices: [model.perImagePrice],
+                      kind: "image",
+                      subKinds: ["image"],
+                      perRequest: true,
+                  },
+                  {
+                      prices: [model.completionImagePrice],
+                      kind: "image",
+                      subKinds: ["image"],
+                      perToken: model.perToken,
+                  },
+              ],
+    );
+
+const getPriceBadgeKey = (badge: PriceBadgeConfig): string =>
+    [
+        badge.subKinds.join(""),
+        badge.prices[0],
+        badge.perToken ? "token" : "",
+        badge.perRequest ? "gen" : "",
+        badge.perSecond ? "sec" : "",
+    ].join("-");
+
+type PriceBadgeListProps = {
+    badges: PriceBadgeConfig[];
+    className?: string;
+};
+
+export const PriceBadgeList: FC<PriceBadgeListProps> = ({
+    badges,
+    className,
+}) => (
+    <div className={className}>
+        {badges.map((badge) => (
+            <PriceBadge key={getPriceBadgeKey(badge)} {...badge} />
+        ))}
+    </div>
+);
 
 export const PriceBadge: FC<PriceBadgeConfig> = ({
     prices,

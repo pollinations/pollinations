@@ -37,9 +37,17 @@ function formatCount(num: number): string {
  * Uses real average cost from Tinybird when available (rolling 7-day average).
  * Returns "—" when no data is available.
  */
-export function calculatePerPollen(model: ModelPrice): string {
+export function calculatePerPollenValue(model: ModelPrice): number | undefined {
     if (model.realAvgCost && model.realAvgCost > 0) {
-        const unitsPerPollen = 1 / model.realAvgCost;
+        return 1 / model.realAvgCost;
+    }
+
+    return undefined;
+}
+
+export function calculatePerPollen(model: ModelPrice): string {
+    const unitsPerPollen = calculatePerPollenValue(model);
+    if (unitsPerPollen !== undefined) {
         return formatCount(unitsPerPollen);
     }
 

@@ -1,0 +1,35 @@
+{
+  "pr_number": 12006,
+  "title": "fix: include Polar top-ups in quest checks",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12006",
+  "merged_at": "2026-06-26T10:16:29Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Adds a local `polar_checkout_credits` D1 ledger for historical Polar top-up orders.\n- Makes `first_top_up` and `top_up_100` read Stripe plus Polar local credit ledgers.\n- Adds regressions for Polar-only first top-up and mixed Stripe/Polar 100-pollen completion.\n\nValidation:\n- `npm run decrypt-vars && npx vitest run test/quests.test.ts`\n- PR checks are green.\n- Simulated production merge with `git merge-tree --write-tree origin/production origin/codex/polar-topup-ledger` with no conflicts.\n- `wrangler d1 migrations list DB --remote --env production` reports no migrations to apply after the manual apply.\n\nBackfill state:\n- `0031_lucky_alex_power.sql` has already been applied to staging and production D1.\n- Production `polar_checkout_credits` has 430 rows for 315 existing D1 users.\n- Scratch prod table `polar_checkout_credits_backfill_test_20260626` remains with 431 candidates.\n- MeatyChunks maps to one 40-pollen Polar top-up on 2025-11-14.\n- No rows were inserted into `stripe_checkout_credits`, and no `user.pack_balance` values were changed.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Credit where credit is due",
+    "blurb": "We fixed a glitch where Polar top-ups were being ignored by the quest system. Your ledger is now fully synced, so go claim those hard-earned achievements.",
+    "summary": "Updated the `first_top_up` and `top_up_100` quest checks to read from both Stripe and the newly added `polar_checkout_credits` D1 ledger.",
+    "impact": "Users who purchased Pollen via Polar will now correctly unlock their top-up achievements, with historical data already backfilled.",
+    "keywords": [
+      "quests",
+      "polar",
+      "billing",
+      "achievements",
+      "bugfix"
+    ],
+    "visual_concept": "Polly the bee and a cute chunky polar bear (representing Polar) looking at a glowing quest board or ledger. The polar bear is handing over a coin to check off a quest.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky friendly polar bear looking at a glowing wooden quest board. The polar bear is handing the bee a shiny gold coin to complete a quest. Soft lime green (#ecf874) and icy blue pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-26/PR-12006.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky friendly polar bear looking at a glowing wooden quest board. The polar bear is handing the bee a shiny gold coin to complete a quest. Soft lime green (#ecf874) and icy blue pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-26T10:17:35.697060+00:00"
+}

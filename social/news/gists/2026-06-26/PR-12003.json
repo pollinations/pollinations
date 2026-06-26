@@ -1,0 +1,35 @@
+{
+  "pr_number": 12003,
+  "title": "chore: update app metrics 2026-06-26",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12003",
+  "merged_at": "2026-06-26T05:37:46Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Daily automated update of app metrics, health checks, and greenhouse",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Watering the Greenhouse",
+    "blurb": "Our automated bot just finished its daily rounds, updating health metrics and stats for all the community apps in the greenhouse.",
+    "summary": "Automated daily update of community app metrics, health checks, and greenhouse statistics in APPS.md and GREENHOUSE.md.",
+    "impact": "Ensures the community app directory reflects the latest health statuses and usage metrics.",
+    "keywords": [
+      "metrics",
+      "apps",
+      "greenhouse",
+      "automated",
+      "bot"
+    ],
+    "visual_concept": "Polly the bee acting as a gardener, checking on the 'greenhouse' of apps. She holds a clipboard to represent the metrics/health checks, surrounded by healthy glowing code-plants.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's straw hat, holding a small clipboard and checking on glowing code-plants in a digital greenhouse. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-26/PR-12003.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's straw hat, holding a small clipboard and checking on glowing code-plants in a digital greenhouse. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-26T05:38:40.334012+00:00"
+}

@@ -14,7 +14,7 @@ import {
  *   - use_app        -> apikey.byop_client_key_id (one BYOP login per user)
  *   - early_adopter  -> user.created_at           (registered 6+ months ago)
  *   - first_top_up   -> stripe_checkout_credits   (one paid checkout per user)
- *   - top_up_100     -> stripe_checkout_credits   (>100 total paid Pollen)
+ *   - top_up_100     -> stripe_checkout_credits   (>=100 total paid Pollen)
  *
  * The SQL decides whether the current user qualifies. The rewards table is the
  * single idempotency layer, so quest code does not filter already rewarded
@@ -129,7 +129,7 @@ export async function findRewardProposalsForUser(
         FROM stripe_checkout_credits
         WHERE stripe_checkout_credits.user_id = ${user.id}
         GROUP BY stripe_checkout_credits.user_id
-        HAVING SUM(stripe_checkout_credits.pollen_credited) > 100
+        HAVING SUM(stripe_checkout_credits.pollen_credited) >= 100
         LIMIT 1`)
             : [],
         rewardableQuestIds.has(byopLoginQuest.id)

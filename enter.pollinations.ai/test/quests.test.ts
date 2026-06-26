@@ -403,6 +403,34 @@ test("quest check records product rewards and claim endpoint credits one", async
     );
 });
 
+test("top-up 100 quest records for exactly 100 paid checkout pollen", async ({
+    apiKey: _apiKey,
+    mocks,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+
+    await db.insert(schema.stripeCheckoutCredits).values({
+        sessionId: `cs_test_${user.id}_exact_100`,
+        eventId: `evt_${user.id}_exact_100`,
+        eventType: "checkout.session.completed",
+        userId: user.id,
+        pollenCredited: 100,
+        createdAt: new Date(),
+    });
+
+    await checkQuestsForUser(env, user.id);
+
+    const rewards = await db
+        .select({ questId: schema.rewards.questId })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.userId, user.id));
+    const questIds = new Set(rewards.map((reward) => reward.questId));
+    expect(questIds.has("first_top_up")).toBe(true);
+    expect(questIds.has("top_up_100")).toBe(true);
+});
+
 test("POST /quests/check throttles a user to once per minute", async ({
     apiKey: _apiKey,
     mocks,

@@ -11,6 +11,10 @@ import { test } from "./fixtures.ts";
 import type { MockGithubState } from "./mocks/github.ts";
 
 const ELIXPO_INTERN_QUEST_ID = "elixpo_intern";
+const LEGACY_FIRST_TOP_UP_QUEST_ID = "first_top_up";
+const LEGACY_TOP_UP_100_QUEST_ID = "top_up_100";
+const TOP_UP_SINCE_LAUNCH_QUEST_ID = "top_up_since_launch";
+const TOP_UP_100_SINCE_LAUNCH_QUEST_ID = "top_up_100_since_launch";
 const QUEST_REWARDS_LAUNCH_CUTOFF_MILLIS = Date.parse(
     "2026-06-21T00:00:00.000Z",
 );
@@ -180,7 +184,7 @@ test("catalog returns quest definitions without ledger stats", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v20");
+    await env.KV.delete("quests:catalog:v21");
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -189,18 +193,41 @@ test("catalog returns quest definitions without ledger stats", async ({
     const payload = (await response.json()) as {
         quests: {
             id: string;
+            title: string;
+            description: string;
             state: string;
             availability?: unknown;
             stats?: unknown;
         }[];
     };
-    const catalogQuest = payload.quests.find(
-        (quest) => quest.id === "merged_pr",
-    );
+    const byId = new Map(payload.quests.map((quest) => [quest.id, quest]));
+    const catalogQuest = byId.get("merged_pr");
 
     expect(catalogQuest?.state).toBe("available");
     expect(catalogQuest).not.toHaveProperty("availability");
     expect(catalogQuest).not.toHaveProperty("stats");
+    expect(byId.get(LEGACY_FIRST_TOP_UP_QUEST_ID)).toMatchObject({
+        title: "First Pollen top up",
+        description: "[Top up](#buy-pollen) Pollen with a credit card.",
+        state: "completed",
+    });
+    expect(byId.get(LEGACY_TOP_UP_100_QUEST_ID)).toMatchObject({
+        title: "Top up 100 Pollen",
+        description:
+            "You have [topped up](#buy-pollen) 100 Pollen or more in total.",
+        state: "completed",
+    });
+    expect(byId.get(TOP_UP_SINCE_LAUNCH_QUEST_ID)).toMatchObject({
+        title: "Top up Pollen",
+        description: "[Top up](#buy-pollen) Pollen since June 21, 2026.",
+        state: "available",
+    });
+    expect(byId.get(TOP_UP_100_SINCE_LAUNCH_QUEST_ID)).toMatchObject({
+        title: "Top up 100 Pollen",
+        description:
+            "[Top up](#buy-pollen) 100 Pollen or more since June 21, 2026.",
+        state: "available",
+    });
 });
 
 test("catalog includes coming-soon GitHub issue placeholder", async ({
@@ -208,7 +235,7 @@ test("catalog includes coming-soon GitHub issue placeholder", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v20");
+    await env.KV.delete("quests:catalog:v21");
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -246,7 +273,7 @@ test("catalog excludes closed GitHub quest issues without merged PRs", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v20");
+    await env.KV.delete("quests:catalog:v21");
 
     seedQuestIssue(mocks.github.state, {
         issueNumber: 801,
@@ -433,8 +460,10 @@ test("top-up 100 quest records for exactly 100 paid checkout pollen", async ({
         .from(schema.rewards)
         .where(eq(schema.rewards.userId, user.id));
     const questIds = new Set(rewards.map((reward) => reward.questId));
-    expect(questIds.has("first_top_up")).toBe(true);
-    expect(questIds.has("top_up_100")).toBe(true);
+    expect(questIds.has(TOP_UP_SINCE_LAUNCH_QUEST_ID)).toBe(true);
+    expect(questIds.has(TOP_UP_100_SINCE_LAUNCH_QUEST_ID)).toBe(true);
+    expect(questIds.has(LEGACY_FIRST_TOP_UP_QUEST_ID)).toBe(false);
+    expect(questIds.has(LEGACY_TOP_UP_100_QUEST_ID)).toBe(false);
 });
 
 test("top-up quests ignore paid checkout pollen before quest launch", async ({
@@ -472,8 +501,10 @@ test("top-up quests ignore paid checkout pollen before quest launch", async ({
         .from(schema.rewards)
         .where(eq(schema.rewards.userId, user.id));
     const questIds = new Set(rewards.map((reward) => reward.questId));
-    expect(questIds.has("first_top_up")).toBe(false);
-    expect(questIds.has("top_up_100")).toBe(false);
+    expect(questIds.has(TOP_UP_SINCE_LAUNCH_QUEST_ID)).toBe(false);
+    expect(questIds.has(TOP_UP_100_SINCE_LAUNCH_QUEST_ID)).toBe(false);
+    expect(questIds.has(LEGACY_FIRST_TOP_UP_QUEST_ID)).toBe(false);
+    expect(questIds.has(LEGACY_TOP_UP_100_QUEST_ID)).toBe(false);
 });
 
 test("first top-up quest records paid Polar checkout pollen", async ({
@@ -509,8 +540,10 @@ test("first top-up quest records paid Polar checkout pollen", async ({
         .from(schema.rewards)
         .where(eq(schema.rewards.userId, user.id));
     const questIds = new Set(rewards.map((reward) => reward.questId));
-    expect(questIds.has("first_top_up")).toBe(true);
-    expect(questIds.has("top_up_100")).toBe(false);
+    expect(questIds.has(TOP_UP_SINCE_LAUNCH_QUEST_ID)).toBe(true);
+    expect(questIds.has(TOP_UP_100_SINCE_LAUNCH_QUEST_ID)).toBe(false);
+    expect(questIds.has(LEGACY_FIRST_TOP_UP_QUEST_ID)).toBe(false);
+    expect(questIds.has(LEGACY_TOP_UP_100_QUEST_ID)).toBe(false);
 });
 
 test("top-up 100 quest only sums checkout pollen since quest launch", async ({
@@ -565,8 +598,10 @@ test("top-up 100 quest only sums checkout pollen since quest launch", async ({
         .from(schema.rewards)
         .where(eq(schema.rewards.userId, user.id));
     const questIds = new Set(rewards.map((reward) => reward.questId));
-    expect(questIds.has("first_top_up")).toBe(true);
-    expect(questIds.has("top_up_100")).toBe(false);
+    expect(questIds.has(TOP_UP_SINCE_LAUNCH_QUEST_ID)).toBe(true);
+    expect(questIds.has(TOP_UP_100_SINCE_LAUNCH_QUEST_ID)).toBe(false);
+    expect(questIds.has(LEGACY_FIRST_TOP_UP_QUEST_ID)).toBe(false);
+    expect(questIds.has(LEGACY_TOP_UP_100_QUEST_ID)).toBe(false);
 });
 
 test("top-up 100 quest sums Stripe and Polar checkout pollen", async ({
@@ -610,8 +645,10 @@ test("top-up 100 quest sums Stripe and Polar checkout pollen", async ({
         .from(schema.rewards)
         .where(eq(schema.rewards.userId, user.id));
     const questIds = new Set(rewards.map((reward) => reward.questId));
-    expect(questIds.has("first_top_up")).toBe(true);
-    expect(questIds.has("top_up_100")).toBe(true);
+    expect(questIds.has(TOP_UP_SINCE_LAUNCH_QUEST_ID)).toBe(true);
+    expect(questIds.has(TOP_UP_100_SINCE_LAUNCH_QUEST_ID)).toBe(true);
+    expect(questIds.has(LEGACY_FIRST_TOP_UP_QUEST_ID)).toBe(false);
+    expect(questIds.has(LEGACY_TOP_UP_100_QUEST_ID)).toBe(false);
 });
 
 test("POST /quests/check throttles a user to once per minute", async ({

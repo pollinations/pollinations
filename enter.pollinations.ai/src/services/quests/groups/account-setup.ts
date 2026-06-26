@@ -13,8 +13,8 @@ import {
  *   - first_api_key  -> apikey                    (one key per user)
  *   - use_app        -> apikey.byop_client_key_id (one BYOP login per user)
  *   - early_adopter  -> user.created_at           (registered 6+ months ago)
- *   - first_top_up   -> checkout credit ledgers (one recent paid checkout)
- *   - top_up_100     -> checkout credit ledgers (>=100 recent paid Pollen)
+ *   - top_up_since_launch -> checkout credit ledgers (one launch-era checkout)
+ *   - top_up_100_since_launch -> checkout credit ledgers (>=100 launch-era Pollen)
  *
  * The SQL decides whether the current user qualifies. The rewards table is the
  * single idempotency layer, so quest code does not filter already rewarded
@@ -70,8 +70,31 @@ const sixMonthAccountQuest: QuestDefinition = {
     state: "coming_soon",
 };
 
-const firstTopUpQuest: QuestDefinition = {
+const legacyFirstTopUpQuest: QuestDefinition = {
     id: "first_top_up",
+    title: "First Pollen top up",
+    description: "[Top up](#buy-pollen) Pollen with a credit card.",
+    category: "grow",
+    scope: "perUser",
+    rewardAmount: 10,
+    balanceBucket: "tier",
+    state: "completed",
+};
+
+const legacyOverHundredPollenQuest: QuestDefinition = {
+    id: "top_up_100",
+    title: "Top up 100 Pollen",
+    description:
+        "You have [topped up](#buy-pollen) 100 Pollen or more in total.",
+    category: "grow",
+    scope: "perUser",
+    rewardAmount: 50,
+    balanceBucket: "tier",
+    state: "completed",
+};
+
+const topUpSinceLaunchQuest: QuestDefinition = {
+    id: "top_up_since_launch",
     title: "Top up Pollen",
     description: `[Top up](#buy-pollen) Pollen since ${QUEST_REWARDS_LAUNCH_DATE_LABEL}.`,
     category: "grow",
@@ -80,8 +103,8 @@ const firstTopUpQuest: QuestDefinition = {
     balanceBucket: "tier",
 };
 
-const overHundredPollenQuest: QuestDefinition = {
-    id: "top_up_100",
+const overHundredPollenSinceLaunchQuest: QuestDefinition = {
+    id: "top_up_100_since_launch",
     title: "Top up 100 Pollen",
     description: `[Top up](#buy-pollen) 100 Pollen or more since ${QUEST_REWARDS_LAUNCH_DATE_LABEL}.`,
     category: "grow",
@@ -94,8 +117,18 @@ const QUESTS = [
     firstApiKeyQuest,
     byopLoginQuest,
     sixMonthAccountQuest,
-    firstTopUpQuest,
-    overHundredPollenQuest,
+    legacyFirstTopUpQuest,
+    legacyOverHundredPollenQuest,
+    topUpSinceLaunchQuest,
+    overHundredPollenSinceLaunchQuest,
+];
+
+const EVALUATED_QUESTS = [
+    firstApiKeyQuest,
+    byopLoginQuest,
+    sixMonthAccountQuest,
+    topUpSinceLaunchQuest,
+    overHundredPollenSinceLaunchQuest,
 ];
 
 export async function listQuestCards(
@@ -109,7 +142,7 @@ export async function findRewardProposalsForUser(
     user: QuestUser,
 ): Promise<RewardProposal[]> {
     const rewardableQuestIds = new Set(
-        rewardableQuests(QUESTS).map((quest) => quest.id),
+        rewardableQuests(EVALUATED_QUESTS).map((quest) => quest.id),
     );
     const [apiKeyRows, topUpSummaryRows, byopLoginRows, sixMonthAccountRows] =
         await Promise.all([
@@ -120,8 +153,8 @@ export async function findRewardProposalsForUser(
         WHERE apikey.user_id = ${user.id}
         LIMIT 1`)
                 : [],
-            rewardableQuestIds.has(firstTopUpQuest.id) ||
-            rewardableQuestIds.has(overHundredPollenQuest.id)
+            rewardableQuestIds.has(topUpSinceLaunchQuest.id) ||
+            rewardableQuestIds.has(overHundredPollenSinceLaunchQuest.id)
                 ? db.all<TopUpSummaryRow>(sql`
         SELECT userId
              , SUM(pollenCredited) AS totalPollen
@@ -190,20 +223,20 @@ export async function findRewardProposalsForUser(
             quest: sixMonthAccountQuest,
             userId: row.userId,
         })),
-        ...(rewardableQuestIds.has(firstTopUpQuest.id) &&
+        ...(rewardableQuestIds.has(topUpSinceLaunchQuest.id) &&
         topUpSummaryRows.length > 0
             ? [
                   {
-                      quest: firstTopUpQuest,
+                      quest: topUpSinceLaunchQuest,
                       userId: topUpSummaryRows[0].userId,
                   },
               ]
             : []),
-        ...(rewardableQuestIds.has(overHundredPollenQuest.id) &&
+        ...(rewardableQuestIds.has(overHundredPollenSinceLaunchQuest.id) &&
         (topUpSummaryRows[0]?.totalPollen ?? 0) >= 100
             ? [
                   {
-                      quest: overHundredPollenQuest,
+                      quest: overHundredPollenSinceLaunchQuest,
                       userId: topUpSummaryRows[0].userId,
                   },
               ]

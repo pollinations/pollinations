@@ -11,10 +11,10 @@ import {
     truncateIpToSubnet,
 } from "@shared/client-ip.ts";
 import { sendToTinybird } from "@shared/events.ts";
-import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
 import {
     calculateCost,
     calculatePrice,
+    DEFAULT_REALTIME_MODEL,
     getModelDefinition,
     getPriceDefinition,
     type Usage,
@@ -653,11 +653,6 @@ export async function handleRealtimeWebSocket(
 
     const query = c.req.valid("query" as never) as RealtimeRequestQueryParams;
     const requestedModel = query.model;
-    if (requestedModel !== DEFAULT_REALTIME_MODEL) {
-        throw new HTTPException(400, {
-            message: `Only ${DEFAULT_REALTIME_MODEL} is currently supported for realtime sessions.`,
-        });
-    }
     requireAllowedModel(c, requestedModel);
 
     // Same model-independent, estimated-price balance gate as every other

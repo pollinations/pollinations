@@ -1,4 +1,4 @@
-import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
+import { DEFAULT_REALTIME_MODEL } from "@shared/registry/registry.ts";
 import { z } from "zod";
 
 export const RealtimeRequestQueryParamsSchema = z

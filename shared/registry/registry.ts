@@ -14,12 +14,11 @@ import {
     type ImageModelId,
     type ImageModelName,
 } from "./image";
-import {
-    REALTIME_SERVICES,
-    type RealtimeModelId,
-    type RealtimeModelName,
-} from "./realtime";
 import { TEXT_SERVICES, type TextModelId, type TextModelName } from "./text";
+
+export const DEFAULT_REALTIME_MODEL = "gpt-realtime-2" as const;
+type RealtimeModelId = typeof DEFAULT_REALTIME_MODEL;
+type RealtimeModelName = typeof DEFAULT_REALTIME_MODEL;
 
 export type Category =
     | "text"
@@ -122,6 +121,31 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
 };
 
+const REALTIME_MODEL_DEFINITION = {
+    aliases: [],
+    modelId: DEFAULT_REALTIME_MODEL,
+    provider: "azure",
+    brand: "OpenAI",
+    category: "realtime",
+    addedDate: new Date("2026-05-23").getTime(),
+    priceMultiplier: 1,
+    cost: {
+        promptTextTokens: 0.000004,
+        promptCachedTokens: 0.0000004,
+        promptAudioTokens: 0.000032,
+        promptImageTokens: 0.000005,
+        completionTextTokens: 0.000024,
+        completionAudioTokens: 0.000064,
+    },
+    title: "GPT Realtime 2",
+    description: "GPT Realtime 2 - realtime voice reasoning",
+    inputModalities: ["text", "audio", "image"],
+    outputModalities: ["text", "audio"],
+    tools: true,
+    reasoning: true,
+    contextLength: 128000,
+} satisfies ModelDefinition<RealtimeModelId>;
+
 // Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.
 // When a usage type is reported by upstream but the registry has no rate for it,
 // log a warning (so we know which (model, usageType) pair needs adding) and bill
@@ -166,7 +190,7 @@ const MODEL_REGISTRY = {
     ...IMAGE_SERVICES,
     ...AUDIO_SERVICES,
     ...EMBEDDING_SERVICES,
-    ...REALTIME_SERVICES,
+    [DEFAULT_REALTIME_MODEL]: REALTIME_MODEL_DEFINITION,
 } as Record<ModelName, ModelDefinition>;
 
 /**
@@ -229,7 +253,7 @@ export const getVisibleAudioModels = () => filterVisible(getAudioModels());
 export const getVisibleEmbeddingModels = () =>
     filterVisible(Object.keys(EMBEDDING_SERVICES) as EmbeddingServiceId[]);
 export const getVisibleRealtimeModels = () =>
-    filterVisible(Object.keys(REALTIME_SERVICES) as RealtimeModelName[]);
+    filterVisible([DEFAULT_REALTIME_MODEL] as RealtimeModelName[]);
 
 /**
  * Get a model definition by public model name

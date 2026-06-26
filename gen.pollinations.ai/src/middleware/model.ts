@@ -5,29 +5,29 @@ import {
 } from "@shared/registry/embeddings.ts";
 import { DEFAULT_IMAGE_MODEL, IMAGE_SERVICES } from "@shared/registry/image.ts";
 import {
-    DEFAULT_REALTIME_MODEL,
-    REALTIME_SERVICES,
-} from "@shared/registry/realtime.ts";
-import { type ModelName, resolveModelName } from "@shared/registry/registry.ts";
+    getModelDefinition,
+    type ModelName,
+    resolveModelName,
+} from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL, TEXT_SERVICES } from "@shared/registry/text.ts";
 import type { EventType } from "@shared/schemas/generation-event.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
+
+type ResolvedModelEventType = Exclude<EventType, "generate.realtime">;
 
 const SERVICES_BY_EVENT_TYPE = {
     "generate.text": TEXT_SERVICES,
     "generate.image": IMAGE_SERVICES,
     "generate.audio": AUDIO_SERVICES,
     "generate.embedding": EMBEDDING_SERVICES,
-    "generate.realtime": REALTIME_SERVICES,
-} as const satisfies Record<EventType, Record<string, unknown>>;
+} as const satisfies Record<ResolvedModelEventType, Record<string, unknown>>;
 
-const ENDPOINT_LABEL: Record<EventType, string> = {
+const ENDPOINT_LABEL: Record<ResolvedModelEventType, string> = {
     "generate.text": "text",
     "generate.image": "image",
     "generate.audio": "audio",
     "generate.embedding": "embeddings",
-    "generate.realtime": "realtime",
 };
 
 export type ModelVariables = {
@@ -63,7 +63,7 @@ function getValidatedJsonBody<T>(req: {
  * Must run before auth and track middlewares.
  */
 export function resolveModel(
-    eventType: EventType,
+    eventType: ResolvedModelEventType,
     options?: ResolveModelOptions,
 ) {
     return createMiddleware<{ Variables: ModelVariables }>(async (c, next) => {
@@ -108,9 +108,7 @@ export function resolveModel(
                   ? DEFAULT_AUDIO_MODEL
                   : eventType === "generate.embedding"
                     ? DEFAULT_EMBEDDING_MODEL
-                    : eventType === "generate.realtime"
-                      ? DEFAULT_REALTIME_MODEL
-                      : DEFAULT_IMAGE_MODEL);
+                    : DEFAULT_IMAGE_MODEL);
         const model = rawModel || defaultModel;
 
         // Resolve alias to canonical model name
@@ -138,14 +136,20 @@ export function resolveModel(
                     "generate.image",
                     "generate.audio",
                     "generate.embedding",
-                    "generate.realtime",
                 ] as const
             ).find((et) => resolved in SERVICES_BY_EVENT_TYPE[et]);
-            const actualLabel = actualCategory
-                ? ENDPOINT_LABEL[actualCategory]
+            const actualLabel =
+                actualCategory ??
+                (getModelDefinition(resolved).category === "realtime"
+                    ? "generate.realtime"
+                    : undefined);
+            const actualEndpointLabel = actualLabel
+                ? actualLabel === "generate.realtime"
+                    ? "realtime"
+                    : ENDPOINT_LABEL[actualLabel]
                 : "unknown";
             throw new HTTPException(400, {
-                message: `Model "${model}" is a ${actualLabel} model and cannot be used on the ${ENDPOINT_LABEL[eventType]} endpoint. Use the ${actualLabel} endpoint instead.`,
+                message: `Model "${model}" is a ${actualEndpointLabel} model and cannot be used on the ${ENDPOINT_LABEL[eventType]} endpoint. Use the ${actualEndpointLabel} endpoint instead.`,
             });
         }
 

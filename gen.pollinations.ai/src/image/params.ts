@@ -1,11 +1,14 @@
 import { z } from "zod";
-import { IMAGE_CONFIG } from "./models.js";
+import {
+    IMAGE_SERVICES,
+    type ImageModelName,
+} from "@shared/registry/image.ts";
+import { getDefaultSideLength } from "./models.js";
 
-type ModelName = keyof typeof IMAGE_CONFIG;
-
-const allowedModels = Object.keys(IMAGE_CONFIG) as Array<
-    keyof typeof IMAGE_CONFIG
->;
+const allowedModels = Object.keys(IMAGE_SERVICES) as [
+    ImageModelName,
+    ...ImageModelName[],
+];
 const validQualities = ["low", "medium", "high", "hd"] as const;
 // Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
 const MAX_RANDOM_SEED = 2147483647; // INT32_MAX (2^31 - 1)
@@ -31,13 +34,11 @@ const sanitizedSideLength = z.preprocess((v) => {
 }, z.int().optional());
 
 function adjustImageSizeForModel(
-    model: ModelName,
+    model: ImageModelName,
     width?: number,
     height?: number,
 ): { width: number; height: number } {
-    const defaultSideLength =
-        (IMAGE_CONFIG[model] as { defaultSideLength?: number })
-            .defaultSideLength ?? 1024;
+    const defaultSideLength = getDefaultSideLength(model);
 
     // Use provided dimensions or default - no scaling/limiting
     const sanitizedWidth =

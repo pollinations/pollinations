@@ -2,14 +2,12 @@ import { Button, GitHubIcon } from "@pollinations/ui";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { authClient } from "../auth.ts";
+import { dashboardPageFromHash } from "../components/layout/dashboard-routing.ts";
 import {
     type DashboardPage,
     DashboardShell,
 } from "../components/layout/dashboard-shell.tsx";
-import {
-    DASHBOARD_NAV_ITEMS,
-    isDashboardPage,
-} from "../components/layout/dashboard-theme.ts";
+import { DASHBOARD_NAV_ITEMS } from "../components/layout/dashboard-theme.ts";
 import { usePageFromHash } from "../components/layout/use-page-from-hash.ts";
 import { Models } from "../components/models";
 import { NewsFaq } from "../components/news-faq";
@@ -26,12 +24,10 @@ const SIGNED_OUT_NAV_ITEMS = DASHBOARD_NAV_ITEMS.filter((item) =>
 );
 
 function pageFromHash(hash: string): DashboardPage {
-    const page = hash.replace(/^#/, "");
-    if (isDashboardPage(page) && SIGNED_OUT_PAGES.has(page)) return page;
-    if (page === "news" || page === "faq" || page === "updates")
-        return "news-faq";
-    if (page === "pricing") return "models";
-    return "news-faq";
+    return dashboardPageFromHash(hash, {
+        allowedPages: SIGNED_OUT_PAGES,
+        fallbackPage: "news-faq",
+    });
 }
 
 export const Route = createFileRoute("/sign-in")({

@@ -18,10 +18,13 @@ import {
     type CreateApiKeyResponse,
 } from "../components/keys";
 import {
+    AUTHENTICATED_DASHBOARD_HASH_ALIASES,
+    dashboardPageFromHash,
+} from "../components/layout/dashboard-routing.ts";
+import {
     type DashboardPage,
     DashboardShell,
 } from "../components/layout/dashboard-shell.tsx";
-import { isDashboardPage } from "../components/layout/dashboard-theme.ts";
 import { usePageFromHash } from "../components/layout/use-page-from-hash.ts";
 import { Models } from "../components/models";
 import { NewsFaq } from "../components/news-faq";
@@ -36,18 +39,11 @@ import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 const ACTIVITY_MIN_DATE = new Date("2026-01-01T00:00:00.000Z");
 
 function pageFromHash(hash: string): DashboardPage {
-    const page = hash.replace(/^#/, "");
-    if (isDashboardPage(page)) return page;
-    if (page === "news" || page === "faq" || page === "updates")
-        return "news-faq";
-    if (page === "buy-pollen") return "pollen";
-    if (page === "pricing") return "models";
-    if (page === "earnings" || page === "usage" || page === "activity-table")
-        return "activity";
-    // Kebab-case slugs are FAQ anchors — route to news-faq and let the
-    // FAQ component scroll/expand the matching question.
-    if (page && /^[a-z0-9]+(-[a-z0-9]+)+$/.test(page)) return "news-faq";
-    return "pollen";
+    return dashboardPageFromHash(hash, {
+        aliases: AUTHENTICATED_DASHBOARD_HASH_ALIASES,
+        fallbackPage: "pollen",
+        faqAnchorPage: "news-faq",
+    });
 }
 
 export const Route = createFileRoute("/")({

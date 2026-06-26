@@ -29,6 +29,12 @@ type TopUpSummaryRow = SetupQuestRow & {
     totalPollen: number;
 };
 
+const QUEST_REWARDS_LAUNCH_DATE_LABEL = "June 21, 2026";
+const QUEST_REWARDS_LAUNCH_CUTOFF_SECONDS = 1_782_000_000; // 2026-06-21T00:00:00Z
+const QUEST_REWARDS_LAUNCH_CUTOFF_MILLIS =
+    QUEST_REWARDS_LAUNCH_CUTOFF_SECONDS * 1000;
+const TIMESTAMP_MILLIS_THRESHOLD = 100_000_000_000;
+
 const firstApiKeyQuest: QuestDefinition = {
     id: "first_api_key",
     title: "Create your first API key",
@@ -67,7 +73,7 @@ const sixMonthAccountQuest: QuestDefinition = {
 const firstTopUpQuest: QuestDefinition = {
     id: "first_top_up",
     title: "Top up Pollen",
-    description: "[Top up](#buy-pollen) Pollen in the last 30 days.",
+    description: `[Top up](#buy-pollen) Pollen since ${QUEST_REWARDS_LAUNCH_DATE_LABEL}.`,
     category: "grow",
     scope: "perUser",
     rewardAmount: 10,
@@ -77,8 +83,7 @@ const firstTopUpQuest: QuestDefinition = {
 const overHundredPollenQuest: QuestDefinition = {
     id: "top_up_100",
     title: "Top up 100 Pollen",
-    description:
-        "[Top up](#buy-pollen) 100 Pollen or more in the last 30 days.",
+    description: `[Top up](#buy-pollen) 100 Pollen or more since ${QUEST_REWARDS_LAUNCH_DATE_LABEL}.`,
     category: "grow",
     scope: "perUser",
     rewardAmount: 50,
@@ -118,41 +123,36 @@ export async function findRewardProposalsForUser(
             rewardableQuestIds.has(firstTopUpQuest.id) ||
             rewardableQuestIds.has(overHundredPollenQuest.id)
                 ? db.all<TopUpSummaryRow>(sql`
-        WITH cutoff AS (
-          SELECT
-            CAST(strftime('%s', 'now', '-30 days') AS integer) AS seconds,
-            CAST(strftime('%s', 'now', '-30 days') AS integer) * 1000 AS millis
-        )
         SELECT userId
              , SUM(pollenCredited) AS totalPollen
         FROM (
           SELECT stripe_checkout_credits.user_id AS userId,
                  stripe_checkout_credits.pollen_credited AS pollenCredited
-          FROM stripe_checkout_credits, cutoff
+          FROM stripe_checkout_credits
           WHERE stripe_checkout_credits.user_id = ${user.id}
             AND (
               (
-                stripe_checkout_credits.created_at > 100000000000
-                AND stripe_checkout_credits.created_at >= cutoff.millis
+                stripe_checkout_credits.created_at > ${TIMESTAMP_MILLIS_THRESHOLD}
+                AND stripe_checkout_credits.created_at >= ${QUEST_REWARDS_LAUNCH_CUTOFF_MILLIS}
               )
               OR (
-                stripe_checkout_credits.created_at <= 100000000000
-                AND stripe_checkout_credits.created_at >= cutoff.seconds
+                stripe_checkout_credits.created_at <= ${TIMESTAMP_MILLIS_THRESHOLD}
+                AND stripe_checkout_credits.created_at >= ${QUEST_REWARDS_LAUNCH_CUTOFF_SECONDS}
               )
             )
           UNION ALL
           SELECT polar_checkout_credits.user_id AS userId,
                  polar_checkout_credits.pollen_credited AS pollenCredited
-          FROM polar_checkout_credits, cutoff
+          FROM polar_checkout_credits
           WHERE polar_checkout_credits.user_id = ${user.id}
             AND (
               (
-                polar_checkout_credits.created_at > 100000000000
-                AND polar_checkout_credits.created_at >= cutoff.millis
+                polar_checkout_credits.created_at > ${TIMESTAMP_MILLIS_THRESHOLD}
+                AND polar_checkout_credits.created_at >= ${QUEST_REWARDS_LAUNCH_CUTOFF_MILLIS}
               )
               OR (
-                polar_checkout_credits.created_at <= 100000000000
-                AND polar_checkout_credits.created_at >= cutoff.seconds
+                polar_checkout_credits.created_at <= ${TIMESTAMP_MILLIS_THRESHOLD}
+                AND polar_checkout_credits.created_at >= ${QUEST_REWARDS_LAUNCH_CUTOFF_SECONDS}
               )
             )
         )

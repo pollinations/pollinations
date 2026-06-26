@@ -11,7 +11,12 @@ import { test } from "./fixtures.ts";
 import type { MockGithubState } from "./mocks/github.ts";
 
 const ELIXPO_INTERN_QUEST_ID = "elixpo_intern";
-const DAY_MS = 24 * 60 * 60 * 1000;
+const QUEST_REWARDS_LAUNCH_CUTOFF_MILLIS = Date.parse(
+    "2026-06-21T00:00:00.000Z",
+);
+const BEFORE_QUEST_REWARDS_LAUNCH_MILLIS =
+    QUEST_REWARDS_LAUNCH_CUTOFF_MILLIS - 1;
+const AFTER_QUEST_REWARDS_LAUNCH_DATE = new Date("2026-06-22T00:00:00.000Z");
 
 // Build an issue body the deriver can parse: a "### Reward" heading (when a
 // reward is given) plus a short Goal section for the description.
@@ -418,7 +423,7 @@ test("top-up 100 quest records for exactly 100 paid checkout pollen", async ({
         eventType: "checkout.session.completed",
         userId: user.id,
         pollenCredited: 100,
-        createdAt: new Date(),
+        createdAt: AFTER_QUEST_REWARDS_LAUNCH_DATE,
     });
 
     await checkQuestsForUser(env, user.id);
@@ -432,7 +437,7 @@ test("top-up 100 quest records for exactly 100 paid checkout pollen", async ({
     expect(questIds.has("top_up_100")).toBe(true);
 });
 
-test("top-up quests ignore paid checkout pollen older than 30 days", async ({
+test("top-up quests ignore paid checkout pollen before quest launch", async ({
     apiKey: _apiKey,
     mocks,
 }) => {
@@ -456,7 +461,7 @@ test("top-up quests ignore paid checkout pollen older than 30 days", async ({
             "checkout.session.completed",
             user.id,
             100,
-            Date.now() - 31 * DAY_MS,
+            BEFORE_QUEST_REWARDS_LAUNCH_MILLIS,
         )
         .run();
 
@@ -494,7 +499,7 @@ test("first top-up quest records paid Polar checkout pollen", async ({
         productName: "20 pollen + 20 FREE",
         productSlug: "v1:product:pack:20x2",
         metadataJson: JSON.stringify({ source: "test" }),
-        createdAt: new Date(),
+        createdAt: AFTER_QUEST_REWARDS_LAUNCH_DATE,
     });
 
     await checkQuestsForUser(env, user.id);
@@ -508,7 +513,7 @@ test("first top-up quest records paid Polar checkout pollen", async ({
     expect(questIds.has("top_up_100")).toBe(false);
 });
 
-test("top-up 100 quest only sums checkout pollen from the last 30 days", async ({
+test("top-up 100 quest only sums checkout pollen since quest launch", async ({
     apiKey: _apiKey,
     mocks,
 }) => {
@@ -532,7 +537,7 @@ test("top-up 100 quest only sums checkout pollen from the last 30 days", async (
             "checkout.session.completed",
             user.id,
             80,
-            Date.now() - 31 * DAY_MS,
+            BEFORE_QUEST_REWARDS_LAUNCH_MILLIS,
         )
         .run();
     await db.insert(schema.polarCheckoutCredits).values({
@@ -550,7 +555,7 @@ test("top-up 100 quest only sums checkout pollen from the last 30 days", async (
         productName: "20 pollen + 20 FREE",
         productSlug: "v1:product:pack:20x2",
         metadataJson: JSON.stringify({ source: "test" }),
-        createdAt: new Date(),
+        createdAt: AFTER_QUEST_REWARDS_LAUNCH_DATE,
     });
 
     await checkQuestsForUser(env, user.id);
@@ -578,7 +583,7 @@ test("top-up 100 quest sums Stripe and Polar checkout pollen", async ({
         eventType: "checkout.session.completed",
         userId: user.id,
         pollenCredited: 60,
-        createdAt: new Date(),
+        createdAt: AFTER_QUEST_REWARDS_LAUNCH_DATE,
     });
     await db.insert(schema.polarCheckoutCredits).values({
         orderId: `polar_order_${user.id}_partial_40`,
@@ -595,7 +600,7 @@ test("top-up 100 quest sums Stripe and Polar checkout pollen", async ({
         productName: "20 pollen + 20 FREE",
         productSlug: "v1:product:pack:20x2",
         metadataJson: JSON.stringify({ source: "test" }),
-        createdAt: new Date(),
+        createdAt: AFTER_QUEST_REWARDS_LAUNCH_DATE,
     });
 
     await checkQuestsForUser(env, user.id);

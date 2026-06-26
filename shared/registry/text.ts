@@ -456,10 +456,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "gemma-large": {
-        aliases: [
-            "gemma-4-31b",
-            "gemma-4-31b-it"
-        ],
+        aliases: ["gemma-4-31b", "gemma-4-31b-it"],
         modelId: "google/gemma-4-31b-it",
         provider: "openrouter",
         addedDate: new Date("2026-06-26").getTime(),

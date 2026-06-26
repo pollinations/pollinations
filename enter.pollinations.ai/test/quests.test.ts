@@ -11,6 +11,7 @@ import { test } from "./fixtures.ts";
 import type { MockGithubState } from "./mocks/github.ts";
 
 const ELIXPO_INTERN_QUEST_ID = "elixpo_intern";
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 // Build an issue body the deriver can parse: a "### Reward" heading (when a
 // reward is given) plus a short Goal section for the description.
@@ -431,6 +432,45 @@ test("top-up 100 quest records for exactly 100 paid checkout pollen", async ({
     expect(questIds.has("top_up_100")).toBe(true);
 });
 
+test("top-up quests ignore paid checkout pollen older than 30 days", async ({
+    apiKey: _apiKey,
+    mocks,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+
+    await env.DB.prepare(
+        `INSERT INTO stripe_checkout_credits (
+            session_id,
+            event_id,
+            event_type,
+            user_id,
+            pollen_credited,
+            created_at
+        ) VALUES (?, ?, ?, ?, ?, ?)`,
+    )
+        .bind(
+            `cs_test_${user.id}_old_100`,
+            `evt_${user.id}_old_100`,
+            "checkout.session.completed",
+            user.id,
+            100,
+            Date.now() - 31 * DAY_MS,
+        )
+        .run();
+
+    await checkQuestsForUser(env, user.id);
+
+    const rewards = await db
+        .select({ questId: schema.rewards.questId })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.userId, user.id));
+    const questIds = new Set(rewards.map((reward) => reward.questId));
+    expect(questIds.has("first_top_up")).toBe(false);
+    expect(questIds.has("top_up_100")).toBe(false);
+});
+
 test("first top-up quest records paid Polar checkout pollen", async ({
     apiKey: _apiKey,
     mocks,
@@ -446,6 +486,62 @@ test("first top-up quest records paid Polar checkout pollen", async ({
         userId: user.id,
         pollenCredited: 40,
         polarCreatedAt: Date.parse("2025-11-14T21:11:20.339Z"),
+        amount: 2000,
+        totalAmount: 2400,
+        currency: "usd",
+        customerId: `polar_customer_${user.id}`,
+        productId: "polar_product_20x2",
+        productName: "20 pollen + 20 FREE",
+        productSlug: "v1:product:pack:20x2",
+        metadataJson: JSON.stringify({ source: "test" }),
+        createdAt: new Date(),
+    });
+
+    await checkQuestsForUser(env, user.id);
+
+    const rewards = await db
+        .select({ questId: schema.rewards.questId })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.userId, user.id));
+    const questIds = new Set(rewards.map((reward) => reward.questId));
+    expect(questIds.has("first_top_up")).toBe(true);
+    expect(questIds.has("top_up_100")).toBe(false);
+});
+
+test("top-up 100 quest only sums checkout pollen from the last 30 days", async ({
+    apiKey: _apiKey,
+    mocks,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+
+    await env.DB.prepare(
+        `INSERT INTO stripe_checkout_credits (
+            session_id,
+            event_id,
+            event_type,
+            user_id,
+            pollen_credited,
+            created_at
+        ) VALUES (?, ?, ?, ?, ?, ?)`,
+    )
+        .bind(
+            `cs_test_${user.id}_old_80`,
+            `evt_${user.id}_old_80`,
+            "checkout.session.completed",
+            user.id,
+            80,
+            Date.now() - 31 * DAY_MS,
+        )
+        .run();
+    await db.insert(schema.polarCheckoutCredits).values({
+        orderId: `polar_order_${user.id}_recent_40`,
+        eventId: `polar:${user.id}:recent_40`,
+        eventType: "polar.order.paid",
+        userId: user.id,
+        pollenCredited: 40,
+        polarCreatedAt: Date.now(),
         amount: 2000,
         totalAmount: 2400,
         currency: "usd",

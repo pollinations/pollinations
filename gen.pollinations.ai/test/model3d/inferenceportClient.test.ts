@@ -27,7 +27,7 @@ describe("runInferenceportJob", () => {
                 JSON.stringify({
                     job_id: "job_123",
                     status: "completed",
-                    model_glb_b64_bytes: "Zm9v",
+                    data: [{ model_glb_b64_bytes: "Zm9v" }],
                 }),
                 { status: 200 },
             ),
@@ -57,7 +57,7 @@ describe("runInferenceportJob", () => {
                 JSON.stringify({
                     job_id: "job_res",
                     status: "completed",
-                    model_glb_b64_bytes: "Zm9v",
+                    data: [{ model_glb_b64_bytes: "Zm9v" }],
                 }),
                 { status: 200 },
             ),
@@ -95,7 +95,7 @@ describe("runInferenceportJob", () => {
                 JSON.stringify({
                     job_id: "job_poll",
                     status: "completed",
-                    model_glb_b64_bytes: "YmFy",
+                    data: [{ model_glb_b64_bytes: "YmFy" }],
                 }),
                 { status: 200 },
             ),

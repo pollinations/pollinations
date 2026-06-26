@@ -29,7 +29,7 @@ const inferenceportSuccessResponse = () =>
         JSON.stringify({
             job_id: "job_1",
             status: "completed",
-            model_glb_b64_bytes: "aW5mZXJlbmNlcG9ydA==",
+            data: [{ model_glb_b64_bytes: "aW5mZXJlbmNlcG9ydA==" }],
         }),
         { status: 200 },
     );

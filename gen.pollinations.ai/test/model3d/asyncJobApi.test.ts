@@ -22,7 +22,7 @@ afterEach(async () => {
 
 type InferenceportJobState = {
     status: "pending" | "processing" | "completed" | "failed";
-    model_glb_b64_bytes?: string;
+    data?: { model_glb_b64_bytes?: string }[];
     error?: string;
 };
 
@@ -213,7 +213,7 @@ describe("async 3D job API", () => {
         // job_id — this is the first (only) submission in this test.
         mocks.inferenceport.state.jobs.ip_job_1 = {
             status: "completed",
-            model_glb_b64_bytes: "aW5mZXJlbmNlcG9ydA==",
+            data: [{ model_glb_b64_bytes: "aW5mZXJlbmNlcG9ydA==" }],
         };
 
         const { response: completedResponse, wait: waitCompleted } =

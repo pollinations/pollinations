@@ -39,13 +39,18 @@ export class InferenceportError extends Error {
 
 type InferenceportJobStatus = "pending" | "processing" | "completed" | "failed";
 
+// Output payload is nested under data[0] (confirmed via live API test).
+interface InferenceportJobData {
+    model_glb_b64_bytes?: string;
+    model_ply_b64_bytes?: string;
+    orbit_video_b64_bytes?: string;
+}
+
 interface InferenceportJob {
     job_id: string;
     status: InferenceportJobStatus;
     error?: string | null;
-    model_glb_b64_bytes?: string;
-    model_ply_b64_bytes?: string;
-    orbit_video_b64_bytes?: string;
+    data?: InferenceportJobData[];
 }
 
 interface RunOptions {
@@ -78,7 +83,8 @@ function toJobState(job: InferenceportJob): InferenceportJobState {
         throw new InferenceportError(job.error || "3D generation failed", 502);
     }
     if (job.status === "completed") {
-        if (!job.model_glb_b64_bytes && !job.model_ply_b64_bytes) {
+        const output = job.data?.[0];
+        if (!output?.model_glb_b64_bytes && !output?.model_ply_b64_bytes) {
             throw new InferenceportError(
                 "3D generation succeeded but output is missing",
             );
@@ -86,9 +92,9 @@ function toJobState(job: InferenceportJob): InferenceportJobState {
         return {
             status: "completed",
             jobId: job.job_id,
-            glbBase64: job.model_glb_b64_bytes,
-            plyBase64: job.model_ply_b64_bytes,
-            orbitVideoBase64: job.orbit_video_b64_bytes,
+            glbBase64: output?.model_glb_b64_bytes,
+            plyBase64: output?.model_ply_b64_bytes,
+            orbitVideoBase64: output?.orbit_video_b64_bytes,
         };
     }
     return { status: job.status, jobId: job.job_id };

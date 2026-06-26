@@ -378,7 +378,7 @@ function QuestSummaryGrid({
 
 function QuestDescription({ children }: { children: string }) {
     return (
-        <Markdown className="inline text-sm text-theme-text-muted [&_p]:mb-0 [&_p]:inline">
+        <Markdown className="inline text-sm text-theme-text-muted [&_em]:text-xs [&_em]:text-theme-text-muted [&_em]:opacity-85 [&_p]:mb-0 [&_p]:inline">
             {children}
         </Markdown>
     );

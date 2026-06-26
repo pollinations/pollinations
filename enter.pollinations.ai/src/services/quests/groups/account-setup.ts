@@ -96,7 +96,7 @@ const legacyOverHundredPollenQuest: QuestDefinition = {
 const topUpSinceLaunchQuest: QuestDefinition = {
     id: "top_up_since_launch",
     title: "Top up Pollen",
-    description: `[Top up](#buy-pollen) Pollen since ${QUEST_REWARDS_LAUNCH_DATE_LABEL}.`,
+    description: `[Top up](#buy-pollen) Pollen with a credit card. _(since ${QUEST_REWARDS_LAUNCH_DATE_LABEL})_`,
     category: "grow",
     scope: "perUser",
     rewardAmount: 10,
@@ -106,7 +106,7 @@ const topUpSinceLaunchQuest: QuestDefinition = {
 const overHundredPollenSinceLaunchQuest: QuestDefinition = {
     id: "top_up_100_since_launch",
     title: "Top up 100 Pollen",
-    description: `[Top up](#buy-pollen) 100 Pollen or more since ${QUEST_REWARDS_LAUNCH_DATE_LABEL}.`,
+    description: `You have [topped up](#buy-pollen) 100 Pollen or more. _(since ${QUEST_REWARDS_LAUNCH_DATE_LABEL})_`,
     category: "grow",
     scope: "perUser",
     rewardAmount: 50,

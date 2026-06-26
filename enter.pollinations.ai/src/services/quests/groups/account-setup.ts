@@ -99,7 +99,7 @@ const topUpSinceLaunchQuest: QuestDefinition = {
     description: `[Top up](#buy-pollen) Pollen with a credit card. _(from ${QUEST_REWARDS_LAUNCH_DATE_LABEL})_`,
     category: "grow",
     scope: "perUser",
-    rewardAmount: 10,
+    rewardAmount: 5,
     balanceBucket: "tier",
 };
 

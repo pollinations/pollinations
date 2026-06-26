@@ -235,6 +235,30 @@ export const stripeCheckoutCredits = sqliteTable("stripe_checkout_credits", {
   index("idx_stripe_checkout_credits_user_id").on(table.userId),
 ]);
 
+export const polarCheckoutCredits = sqliteTable("polar_checkout_credits", {
+  orderId: text("order_id").primaryKey(),
+  eventId: text("event_id").notNull(),
+  eventType: text("event_type").notNull(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  pollenCredited: real("pollen_credited").notNull(),
+  polarCreatedAt: integer("polar_created_at").notNull(),
+  amount: integer("amount"),
+  totalAmount: integer("total_amount"),
+  currency: text("currency"),
+  customerId: text("customer_id"),
+  productId: text("product_id"),
+  productName: text("product_name"),
+  productSlug: text("product_slug"),
+  metadataJson: text("metadata_json"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+}, (table) => [
+  index("idx_polar_checkout_credits_user_id").on(table.userId),
+]);
+
 // Reward ledger: one row == one earned reward. `claimedAt` is null until the
 // user claims it, and only claiming credits the user's balance. Everything that
 // can earn pollen is modelled as a reward, so there is no reward-kind

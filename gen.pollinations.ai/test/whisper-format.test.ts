@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { formatWhisperResponse } from "../src/routes/audio.ts";
+import { validateWhisperResponseFormat } from "../src/routes/audio.ts";
+import { buildTranscriptionResponse } from "../src/routes/transcription-response.ts";
 
 const VERBOSE = {
     text: "El ciclo del agua",
@@ -11,9 +12,24 @@ const VERBOSE = {
 };
 const usageHeaders = { "x-usage-seconds": "3.5" };
 
-describe("formatWhisperResponse", () => {
+function buildWhisperResponse(responseFormat: string | null): Response {
+    return buildTranscriptionResponse({
+        normalized: {
+            text: VERBOSE.text,
+            duration: VERBOSE.usage.seconds,
+            words: [],
+            diarizedSegments: [],
+            subtitleSegments: VERBOSE.segments,
+            verboseJson: { ...VERBOSE },
+        },
+        responseFormat,
+        usageHeaders,
+    });
+}
+
+describe("buildTranscriptionResponse for Whisper", () => {
     it("returns plain text for response_format=text (the #9028 bug)", async () => {
-        const res = formatWhisperResponse(VERBOSE, "text", usageHeaders);
+        const res = buildWhisperResponse("text");
         expect(res.headers.get("content-type")).toBe(
             "text/plain; charset=utf-8",
         );
@@ -22,17 +38,13 @@ describe("formatWhisperResponse", () => {
     });
 
     it("defaults to OpenAI-style { text } json", async () => {
-        const res = formatWhisperResponse(VERBOSE, null, usageHeaders);
+        const res = buildWhisperResponse(null);
         expect(res.headers.get("content-type")).toContain("application/json");
         expect(await res.json()).toEqual({ text: "El ciclo del agua" });
     });
 
     it("strips internal usage from verbose_json", async () => {
-        const res = formatWhisperResponse(
-            VERBOSE,
-            "verbose_json",
-            usageHeaders,
-        );
+        const res = buildWhisperResponse("verbose_json");
         const body = (await res.json()) as Record<string, unknown>;
         expect(body.usage).toBeUndefined();
         expect(body.text).toBe("El ciclo del agua");
@@ -40,7 +52,7 @@ describe("formatWhisperResponse", () => {
     });
 
     it("builds SRT cues from segments", async () => {
-        const res = formatWhisperResponse(VERBOSE, "srt", usageHeaders);
+        const res = buildWhisperResponse("srt");
         const srt = await res.text();
         expect(res.headers.get("content-type")).toBe(
             "text/plain; charset=utf-8",
@@ -50,16 +62,14 @@ describe("formatWhisperResponse", () => {
     });
 
     it("builds VTT with a WEBVTT header and dot separators", async () => {
-        const res = formatWhisperResponse(VERBOSE, "vtt", usageHeaders);
+        const res = buildWhisperResponse("vtt");
         const vtt = await res.text();
         expect(vtt.startsWith("WEBVTT\n\n")).toBe(true);
         expect(vtt).toContain("00:00:00.000 --> 00:00:01.500");
     });
 
     it("rejects unsupported Whisper response formats", () => {
-        expect(() =>
-            formatWhisperResponse(VERBOSE, "diarized_json", usageHeaders),
-        ).toThrow(
+        expect(() => validateWhisperResponseFormat("diarized_json")).toThrow(
             "Unsupported response_format for whisper model: diarized_json",
         );
     });

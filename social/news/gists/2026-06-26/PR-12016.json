@@ -1,0 +1,34 @@
+{
+  "pr_number": 12016,
+  "title": "fix: reduce top-up quest reward",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12016",
+  "merged_at": "2026-06-26T19:01:18Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Reduces the active Top up Pollen quest reward from 10 to 5 tier pollen.\n- Updates the catalog test expectation.\n- Leaves existing reward rows untouched.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Balancing the nectar",
+    "blurb": "We've fine-tuned the rewards for the Top-up Pollen quest to keep the hive's economy perfectly balanced.",
+    "summary": "The reward for the Top-up Pollen quest has been adjusted from 10 to 5 tier pollen for new completions.",
+    "impact": "Users completing the top-up quest will now receive 5 tier pollen, while previously claimed rewards remain untouched.",
+    "keywords": [
+      "quests",
+      "rewards",
+      "pollen",
+      "economy"
+    ],
+    "visual_concept": "Polly the bee organizing glowing jars of pollen on a cozy wooden shelf, representing economy balancing.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot carefully organizing small glowing jars of golden pollen on a rustic wooden shelf. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-26/PR-12016.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot carefully organizing small glowing jars of golden pollen on a rustic wooden shelf. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-26T19:02:36.231507+00:00"
+}

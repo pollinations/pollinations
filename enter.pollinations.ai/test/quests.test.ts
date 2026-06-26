@@ -234,7 +234,7 @@ test("catalog returns quest definitions without ledger stats", async ({
     });
     expectStableCatalogFields(TOP_UP_SINCE_LAUNCH_QUEST_ID, {
         state: "available",
-        rewardAmount: 10,
+        rewardAmount: 5,
         balanceBucket: "tier",
     });
     expectStableCatalogFields(TOP_UP_100_SINCE_LAUNCH_QUEST_ID, {

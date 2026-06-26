@@ -521,7 +521,7 @@ test("top-up quests ignore paid checkout pollen before quest launch", async ({
     expect(questIds.has(LEGACY_TOP_UP_100_QUEST_ID)).toBe(false);
 });
 
-test("first top-up quest records paid Polar checkout pollen", async ({
+test("top-up quests ignore Polar checkout pollen", async ({
     apiKey: _apiKey,
     mocks,
 }) => {
@@ -535,7 +535,7 @@ test("first top-up quest records paid Polar checkout pollen", async ({
         eventType: "polar.order.paid",
         userId: user.id,
         pollenCredited: 40,
-        polarCreatedAt: Date.parse("2025-11-14T21:11:20.339Z"),
+        polarCreatedAt: AFTER_QUEST_REWARDS_LAUNCH_DATE.getTime(),
         amount: 2000,
         totalAmount: 2400,
         currency: "usd",
@@ -554,7 +554,7 @@ test("first top-up quest records paid Polar checkout pollen", async ({
         .from(schema.rewards)
         .where(eq(schema.rewards.userId, user.id));
     const questIds = new Set(rewards.map((reward) => reward.questId));
-    expect(questIds.has(TOP_UP_SINCE_LAUNCH_QUEST_ID)).toBe(true);
+    expect(questIds.has(TOP_UP_SINCE_LAUNCH_QUEST_ID)).toBe(false);
     expect(questIds.has(TOP_UP_100_SINCE_LAUNCH_QUEST_ID)).toBe(false);
     expect(questIds.has(LEGACY_FIRST_TOP_UP_QUEST_ID)).toBe(false);
     expect(questIds.has(LEGACY_TOP_UP_100_QUEST_ID)).toBe(false);
@@ -587,21 +587,12 @@ test("top-up 100 quest only sums checkout pollen since quest launch", async ({
             BEFORE_QUEST_REWARDS_LAUNCH_MILLIS,
         )
         .run();
-    await db.insert(schema.polarCheckoutCredits).values({
-        orderId: `polar_order_${user.id}_recent_40`,
-        eventId: `polar:${user.id}:recent_40`,
-        eventType: "polar.order.paid",
+    await db.insert(schema.stripeCheckoutCredits).values({
+        sessionId: `cs_test_${user.id}_recent_40`,
+        eventId: `evt_${user.id}_recent_40`,
+        eventType: "checkout.session.completed",
         userId: user.id,
         pollenCredited: 40,
-        polarCreatedAt: Date.now(),
-        amount: 2000,
-        totalAmount: 2400,
-        currency: "usd",
-        customerId: `polar_customer_${user.id}`,
-        productId: "polar_product_20x2",
-        productName: "20 pollen + 20 FREE",
-        productSlug: "v1:product:pack:20x2",
-        metadataJson: JSON.stringify({ source: "test" }),
         createdAt: AFTER_QUEST_REWARDS_LAUNCH_DATE,
     });
 
@@ -618,7 +609,7 @@ test("top-up 100 quest only sums checkout pollen since quest launch", async ({
     expect(questIds.has(LEGACY_TOP_UP_100_QUEST_ID)).toBe(false);
 });
 
-test("top-up 100 quest sums Stripe and Polar checkout pollen", async ({
+test("top-up 100 quest sums multiple Stripe checkout rows", async ({
     apiKey: _apiKey,
     mocks,
 }) => {
@@ -634,21 +625,12 @@ test("top-up 100 quest sums Stripe and Polar checkout pollen", async ({
         pollenCredited: 60,
         createdAt: AFTER_QUEST_REWARDS_LAUNCH_DATE,
     });
-    await db.insert(schema.polarCheckoutCredits).values({
-        orderId: `polar_order_${user.id}_partial_40`,
-        eventId: `polar:${user.id}:partial_40`,
-        eventType: "polar.order.paid",
+    await db.insert(schema.stripeCheckoutCredits).values({
+        sessionId: `cs_test_${user.id}_partial_40`,
+        eventId: `evt_${user.id}_partial_40`,
+        eventType: "checkout.session.completed",
         userId: user.id,
         pollenCredited: 40,
-        polarCreatedAt: Date.parse("2025-11-14T21:11:20.339Z"),
-        amount: 2000,
-        totalAmount: 2400,
-        currency: "usd",
-        customerId: `polar_customer_${user.id}`,
-        productId: "polar_product_20x2",
-        productName: "20 pollen + 20 FREE",
-        productSlug: "v1:product:pack:20x2",
-        metadataJson: JSON.stringify({ source: "test" }),
         createdAt: AFTER_QUEST_REWARDS_LAUNCH_DATE,
     });
 

@@ -13,8 +13,8 @@ import {
  *   - first_api_key  -> apikey                    (one key per user)
  *   - use_app        -> apikey.byop_client_key_id (one BYOP login per user)
  *   - early_adopter  -> user.created_at           (registered 6+ months ago)
- *   - top_up_since_launch -> checkout credit ledgers (one launch-era checkout)
- *   - top_up_100_since_launch -> checkout credit ledgers (>=100 launch-era Pollen)
+ *   - top_up_since_launch -> stripe_checkout_credits (one launch-era checkout)
+ *   - top_up_100_since_launch -> stripe_checkout_credits (>=100 launch-era Pollen)
  *
  * The SQL decides whether the current user qualifies. The rewards table is the
  * single idempotency layer, so quest code does not filter already rewarded
@@ -156,40 +156,21 @@ export async function findRewardProposalsForUser(
             rewardableQuestIds.has(topUpSinceLaunchQuest.id) ||
             rewardableQuestIds.has(overHundredPollenSinceLaunchQuest.id)
                 ? db.all<TopUpSummaryRow>(sql`
-        SELECT userId
-             , SUM(pollenCredited) AS totalPollen
-        FROM (
-          SELECT stripe_checkout_credits.user_id AS userId,
-                 stripe_checkout_credits.pollen_credited AS pollenCredited
-          FROM stripe_checkout_credits
-          WHERE stripe_checkout_credits.user_id = ${user.id}
-            AND (
-              (
-                stripe_checkout_credits.created_at > ${TIMESTAMP_MILLIS_THRESHOLD}
-                AND stripe_checkout_credits.created_at >= ${QUEST_REWARDS_LAUNCH_CUTOFF_MILLIS}
-              )
-              OR (
-                stripe_checkout_credits.created_at <= ${TIMESTAMP_MILLIS_THRESHOLD}
-                AND stripe_checkout_credits.created_at >= ${QUEST_REWARDS_LAUNCH_CUTOFF_SECONDS}
-              )
+        SELECT stripe_checkout_credits.user_id AS userId,
+               SUM(stripe_checkout_credits.pollen_credited) AS totalPollen
+        FROM stripe_checkout_credits
+        WHERE stripe_checkout_credits.user_id = ${user.id}
+          AND (
+            (
+              stripe_checkout_credits.created_at > ${TIMESTAMP_MILLIS_THRESHOLD}
+              AND stripe_checkout_credits.created_at >= ${QUEST_REWARDS_LAUNCH_CUTOFF_MILLIS}
             )
-          UNION ALL
-          SELECT polar_checkout_credits.user_id AS userId,
-                 polar_checkout_credits.pollen_credited AS pollenCredited
-          FROM polar_checkout_credits
-          WHERE polar_checkout_credits.user_id = ${user.id}
-            AND (
-              (
-                polar_checkout_credits.created_at > ${TIMESTAMP_MILLIS_THRESHOLD}
-                AND polar_checkout_credits.created_at >= ${QUEST_REWARDS_LAUNCH_CUTOFF_MILLIS}
-              )
-              OR (
-                polar_checkout_credits.created_at <= ${TIMESTAMP_MILLIS_THRESHOLD}
-                AND polar_checkout_credits.created_at >= ${QUEST_REWARDS_LAUNCH_CUTOFF_SECONDS}
-              )
+            OR (
+              stripe_checkout_credits.created_at <= ${TIMESTAMP_MILLIS_THRESHOLD}
+              AND stripe_checkout_credits.created_at >= ${QUEST_REWARDS_LAUNCH_CUTOFF_SECONDS}
             )
-        )
-        GROUP BY userId
+          )
+        GROUP BY stripe_checkout_credits.user_id
         LIMIT 1`)
                 : [],
             rewardableQuestIds.has(byopLoginQuest.id)

@@ -13,8 +13,8 @@ import {
  *   - first_api_key  -> apikey                    (one key per user)
  *   - use_app        -> apikey.byop_client_key_id (one BYOP login per user)
  *   - early_adopter  -> user.created_at           (registered 6+ months ago)
- *   - first_top_up   -> stripe_checkout_credits   (one paid checkout per user)
- *   - top_up_100     -> stripe_checkout_credits   (>=100 total paid Pollen)
+ *   - first_top_up   -> checkout credit ledgers (one paid checkout per user)
+ *   - top_up_100     -> checkout credit ledgers (>=100 total paid Pollen)
  *
  * The SQL decides whether the current user qualifies. The rewards table is the
  * single idempotency layer, so quest code does not filter already rewarded
@@ -118,18 +118,34 @@ export async function findRewardProposalsForUser(
             : [],
         rewardableQuestIds.has(firstTopUpQuest.id)
             ? db.all<SetupQuestRow>(sql`
-        SELECT stripe_checkout_credits.user_id AS userId
-        FROM stripe_checkout_credits
-        WHERE stripe_checkout_credits.user_id = ${user.id}
+        SELECT userId
+        FROM (
+          SELECT stripe_checkout_credits.user_id AS userId
+          FROM stripe_checkout_credits
+          WHERE stripe_checkout_credits.user_id = ${user.id}
+          UNION ALL
+          SELECT polar_checkout_credits.user_id AS userId
+          FROM polar_checkout_credits
+          WHERE polar_checkout_credits.user_id = ${user.id}
+        )
         LIMIT 1`)
             : [],
         rewardableQuestIds.has(overHundredPollenQuest.id)
             ? db.all<SetupQuestRow>(sql`
-        SELECT stripe_checkout_credits.user_id AS userId
-        FROM stripe_checkout_credits
-        WHERE stripe_checkout_credits.user_id = ${user.id}
-        GROUP BY stripe_checkout_credits.user_id
-        HAVING SUM(stripe_checkout_credits.pollen_credited) >= 100
+        SELECT userId
+        FROM (
+          SELECT stripe_checkout_credits.user_id AS userId,
+                 stripe_checkout_credits.pollen_credited AS pollenCredited
+          FROM stripe_checkout_credits
+          WHERE stripe_checkout_credits.user_id = ${user.id}
+          UNION ALL
+          SELECT polar_checkout_credits.user_id AS userId,
+                 polar_checkout_credits.pollen_credited AS pollenCredited
+          FROM polar_checkout_credits
+          WHERE polar_checkout_credits.user_id = ${user.id}
+        )
+        GROUP BY userId
+        HAVING SUM(pollenCredited) >= 100
         LIMIT 1`)
             : [],
         rewardableQuestIds.has(byopLoginQuest.id)

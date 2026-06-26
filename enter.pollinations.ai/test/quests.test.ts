@@ -431,6 +431,88 @@ test("top-up 100 quest records for exactly 100 paid checkout pollen", async ({
     expect(questIds.has("top_up_100")).toBe(true);
 });
 
+test("first top-up quest records paid Polar checkout pollen", async ({
+    apiKey: _apiKey,
+    mocks,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+
+    await db.insert(schema.polarCheckoutCredits).values({
+        orderId: `polar_order_${user.id}_first_top_up`,
+        eventId: `polar:${user.id}:first_top_up`,
+        eventType: "polar.order.paid",
+        userId: user.id,
+        pollenCredited: 40,
+        polarCreatedAt: Date.parse("2025-11-14T21:11:20.339Z"),
+        amount: 2000,
+        totalAmount: 2400,
+        currency: "usd",
+        customerId: `polar_customer_${user.id}`,
+        productId: "polar_product_20x2",
+        productName: "20 pollen + 20 FREE",
+        productSlug: "v1:product:pack:20x2",
+        metadataJson: JSON.stringify({ source: "test" }),
+        createdAt: new Date(),
+    });
+
+    await checkQuestsForUser(env, user.id);
+
+    const rewards = await db
+        .select({ questId: schema.rewards.questId })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.userId, user.id));
+    const questIds = new Set(rewards.map((reward) => reward.questId));
+    expect(questIds.has("first_top_up")).toBe(true);
+    expect(questIds.has("top_up_100")).toBe(false);
+});
+
+test("top-up 100 quest sums Stripe and Polar checkout pollen", async ({
+    apiKey: _apiKey,
+    mocks,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+
+    await db.insert(schema.stripeCheckoutCredits).values({
+        sessionId: `cs_test_${user.id}_partial_60`,
+        eventId: `evt_${user.id}_partial_60`,
+        eventType: "checkout.session.completed",
+        userId: user.id,
+        pollenCredited: 60,
+        createdAt: new Date(),
+    });
+    await db.insert(schema.polarCheckoutCredits).values({
+        orderId: `polar_order_${user.id}_partial_40`,
+        eventId: `polar:${user.id}:partial_40`,
+        eventType: "polar.order.paid",
+        userId: user.id,
+        pollenCredited: 40,
+        polarCreatedAt: Date.parse("2025-11-14T21:11:20.339Z"),
+        amount: 2000,
+        totalAmount: 2400,
+        currency: "usd",
+        customerId: `polar_customer_${user.id}`,
+        productId: "polar_product_20x2",
+        productName: "20 pollen + 20 FREE",
+        productSlug: "v1:product:pack:20x2",
+        metadataJson: JSON.stringify({ source: "test" }),
+        createdAt: new Date(),
+    });
+
+    await checkQuestsForUser(env, user.id);
+
+    const rewards = await db
+        .select({ questId: schema.rewards.questId })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.userId, user.id));
+    const questIds = new Set(rewards.map((reward) => reward.questId));
+    expect(questIds.has("first_top_up")).toBe(true);
+    expect(questIds.has("top_up_100")).toBe(true);
+});
+
 test("POST /quests/check throttles a user to once per minute", async ({
     apiKey: _apiKey,
     mocks,

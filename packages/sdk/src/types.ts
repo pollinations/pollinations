@@ -588,7 +588,7 @@ export interface AccountProfile {
     image: string | null;
     /** Current tier level. */
     tier: string;
-    /** Next Quest Pollen refill timestamp (ISO 8601), or `null`. */
+    /** Always `null`. */
     nextResetAt: string | null;
     /** Only returned when the API key has the `profile` permission */
     name?: string | null;

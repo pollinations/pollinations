@@ -8,7 +8,7 @@ import {
     user as userTable,
 } from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { getTierCadence, tierNames } from "@shared/tier-config.ts";
+import { tierNames } from "@shared/tier-config.ts";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
@@ -23,17 +23,6 @@ import {
     requireTinybirdReadToken,
 } from "../services/tinybird.ts";
 import { parseMetadata } from "./metadata-utils.ts";
-
-// Calculate the next tier-balance refill timestamp.
-// Matches the `0 * * * *` cron in wrangler.toml — top of the next UTC hour.
-function getNextRefillAt(tier?: string | null): string | null {
-    const cadence = tier ? getTierCadence(tier) : "none";
-    if (cadence === "none") return null;
-    const next = new Date();
-    next.setUTCMinutes(0, 0, 0);
-    next.setUTCHours(next.getUTCHours() + 1);
-    return next.toISOString();
-}
 
 // Cache TTL in seconds
 const CACHE_TTL = 60 * 60; // 1 hour
@@ -673,10 +662,7 @@ const profileResponseSchema = z.object({
     tier: z
         .enum(["anonymous", ...tierNames])
         .describe("User's current tier level."),
-    nextResetAt: z.iso
-        .datetime()
-        .nullable()
-        .describe("Next Quest Pollen refill timestamp (ISO 8601), or `null`."),
+    nextResetAt: z.iso.datetime().nullable().describe("Always `null`."),
     name: z
         .string()
         .nullable()
@@ -776,7 +762,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Profile",
             description:
-                "Returns your account profile. GitHub username, profile image, current tier, and next Quest Pollen refill timestamp are always returned. Name and email are returned only when the API key has the `account:profile` permission.",
+                "Returns your account profile. GitHub username, profile image, and current tier are always returned. Name and email are returned only when the API key has the `account:profile` permission.",
             responses: {
                 200: {
                     description: "User profile",
@@ -818,7 +804,7 @@ export const accountRoutes = new Hono<Env>()
                 githubUsername: profile.githubUsername ?? null,
                 image: profile.image ?? null,
                 tier: profile.tier,
-                nextResetAt: getNextRefillAt(profile.tier),
+                nextResetAt: null,
                 ...(includeProfilePII && {
                     name: profile.name ?? null,
                     email: profile.email ?? null,

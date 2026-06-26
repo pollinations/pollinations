@@ -5,12 +5,12 @@ All generation requests require an API key from [enter.pollinations.ai](https://
 | Type | Prefix | Use case | Rate limits |
 |------|--------|----------|-------------|
 | Secret | `sk_` | Server-side apps | None |
-| Publishable | `pk_` | Client-side apps (beta) | 1 pollen/IP/hour |
+| Publishable/App Key | `pk_` | Client-side apps (beta) | BYOP |
 
 Two ways to authenticate:
 
 - Header: `Authorization: Bearer YOUR_API_KEY`
 - Query param: `?key=YOUR_API_KEY`
 
-> **Warning:** Never expose secret keys (`sk_`) in client-side code. Use publishable keys (`pk_`) for frontend apps.
-> **Warning:** Using a publishable key for frontend apps can be dangerous because users will get a continous stream of 1 Pollen/IP/hour, which can be used against you. It is recommended to use the BYOP authorization flow or setup your own proxy with authentication instead.
+> **Warning:** Never expose secret keys (`sk_`) in client-side code. Use BYOP App Keys for frontend apps.
+> **Warning:** The old publishable keys are deprecated, and have been replaced with BYOP app keys. You can create an app key from the [dashboard](https://enter.pollinations.ai/#keys)

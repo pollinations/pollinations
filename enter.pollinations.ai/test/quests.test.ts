@@ -21,6 +21,8 @@ const QUEST_REWARDS_LAUNCH_CUTOFF_MILLIS = Date.parse(
 const BEFORE_QUEST_REWARDS_LAUNCH_MILLIS =
     QUEST_REWARDS_LAUNCH_CUTOFF_MILLIS - 1;
 const AFTER_QUEST_REWARDS_LAUNCH_DATE = new Date("2026-06-22T00:00:00.000Z");
+const AFTER_QUEST_REWARDS_LAUNCH_MILLIS =
+    AFTER_QUEST_REWARDS_LAUNCH_DATE.getTime();
 
 // Build an issue body the deriver can parse: a "### Reward" heading (when a
 // reward is given) plus a short Goal section for the description.
@@ -535,7 +537,7 @@ test("first top-up quest records paid Polar checkout pollen", async ({
         eventType: "polar.order.paid",
         userId: user.id,
         pollenCredited: 40,
-        polarCreatedAt: Date.parse("2025-11-14T21:11:20.339Z"),
+        polarCreatedAt: AFTER_QUEST_REWARDS_LAUNCH_MILLIS,
         amount: 2000,
         totalAmount: 2400,
         currency: "usd",
@@ -555,6 +557,45 @@ test("first top-up quest records paid Polar checkout pollen", async ({
         .where(eq(schema.rewards.userId, user.id));
     const questIds = new Set(rewards.map((reward) => reward.questId));
     expect(questIds.has(TOP_UP_SINCE_LAUNCH_QUEST_ID)).toBe(true);
+    expect(questIds.has(TOP_UP_100_SINCE_LAUNCH_QUEST_ID)).toBe(false);
+    expect(questIds.has(LEGACY_FIRST_TOP_UP_QUEST_ID)).toBe(false);
+    expect(questIds.has(LEGACY_TOP_UP_100_QUEST_ID)).toBe(false);
+});
+
+test("top-up quests ignore old Polar orders synced after quest launch", async ({
+    apiKey: _apiKey,
+    mocks,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+
+    await db.insert(schema.polarCheckoutCredits).values({
+        orderId: `polar_order_${user.id}_old_synced_late`,
+        eventId: `polar:${user.id}:old_synced_late`,
+        eventType: "polar.order.paid",
+        userId: user.id,
+        pollenCredited: 40,
+        polarCreatedAt: BEFORE_QUEST_REWARDS_LAUNCH_MILLIS,
+        amount: 2000,
+        totalAmount: 2400,
+        currency: "usd",
+        customerId: `polar_customer_${user.id}`,
+        productId: "polar_product_20x2",
+        productName: "20 pollen + 20 FREE",
+        productSlug: "v1:product:pack:20x2",
+        metadataJson: JSON.stringify({ source: "test" }),
+        createdAt: AFTER_QUEST_REWARDS_LAUNCH_DATE,
+    });
+
+    await checkQuestsForUser(env, user.id);
+
+    const rewards = await db
+        .select({ questId: schema.rewards.questId })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.userId, user.id));
+    const questIds = new Set(rewards.map((reward) => reward.questId));
+    expect(questIds.has(TOP_UP_SINCE_LAUNCH_QUEST_ID)).toBe(false);
     expect(questIds.has(TOP_UP_100_SINCE_LAUNCH_QUEST_ID)).toBe(false);
     expect(questIds.has(LEGACY_FIRST_TOP_UP_QUEST_ID)).toBe(false);
     expect(questIds.has(LEGACY_TOP_UP_100_QUEST_ID)).toBe(false);
@@ -593,7 +634,7 @@ test("top-up 100 quest only sums checkout pollen since quest launch", async ({
         eventType: "polar.order.paid",
         userId: user.id,
         pollenCredited: 40,
-        polarCreatedAt: Date.now(),
+        polarCreatedAt: AFTER_QUEST_REWARDS_LAUNCH_MILLIS,
         amount: 2000,
         totalAmount: 2400,
         currency: "usd",
@@ -640,7 +681,7 @@ test("top-up 100 quest sums Stripe and Polar checkout pollen", async ({
         eventType: "polar.order.paid",
         userId: user.id,
         pollenCredited: 40,
-        polarCreatedAt: Date.parse("2025-11-14T21:11:20.339Z"),
+        polarCreatedAt: AFTER_QUEST_REWARDS_LAUNCH_MILLIS,
         amount: 2000,
         totalAmount: 2400,
         currency: "usd",

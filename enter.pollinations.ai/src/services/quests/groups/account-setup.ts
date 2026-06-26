@@ -180,12 +180,12 @@ export async function findRewardProposalsForUser(
           WHERE polar_checkout_credits.user_id = ${user.id}
             AND (
               (
-                polar_checkout_credits.created_at > ${TIMESTAMP_MILLIS_THRESHOLD}
-                AND polar_checkout_credits.created_at >= ${QUEST_REWARDS_LAUNCH_CUTOFF_MILLIS}
+                polar_checkout_credits.polar_created_at > ${TIMESTAMP_MILLIS_THRESHOLD}
+                AND polar_checkout_credits.polar_created_at >= ${QUEST_REWARDS_LAUNCH_CUTOFF_MILLIS}
               )
               OR (
-                polar_checkout_credits.created_at <= ${TIMESTAMP_MILLIS_THRESHOLD}
-                AND polar_checkout_credits.created_at >= ${QUEST_REWARDS_LAUNCH_CUTOFF_SECONDS}
+                polar_checkout_credits.polar_created_at <= ${TIMESTAMP_MILLIS_THRESHOLD}
+                AND polar_checkout_credits.polar_created_at >= ${QUEST_REWARDS_LAUNCH_CUTOFF_SECONDS}
               )
             )
         )

@@ -1,0 +1,34 @@
+{
+  "pr_number": 12008,
+  "title": "fix: split legacy and launch top-up quests",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12008",
+  "merged_at": "2026-06-26T17:12:32Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Keeps old top-up quest ids as completed legacy cards so users who earned them still see the old quest.\n- Adds new launch-era top-up quest ids gated to paid checkout credits from June 21, 2026.\n- Shows the launch cutoff as a compact inline note, `from 21/06/26`, in the quest descriptions.\n- Evaluates only the new launch-era ids; legacy top-up cards are catalog-only.\n- Covers old/new catalog + reward behavior without asserting exact static quest copy.\n\nChecks:\n- `npx biome check --write enter.pollinations.ai/test/quests.test.ts`\n- `npm run decrypt-vars && npx vitest run test/quests.test.ts`\n- `git diff --check`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A tale of two quests",
+    "blurb": "We've split the top-up quests into legacy and launch-era versions. If you earned the old ones, they'll stay in your trophy case forever, while new top-ups from June 21st onward will trigger the fresh launch quests.",
+    "summary": "Split top-up quests into legacy and launch-era IDs, preserving completed legacy cards for existing users while gating new top-up quests to checkouts from June 21, 2026.",
+    "impact": "Users who previously completed top-up quests will retain their legacy cards in the catalog, while new top-ups will correctly trigger the updated launch-era quests.",
+    "keywords": [
+      "quests",
+      "rewards",
+      "legacy",
+      "billing"
+    ],
+    "visual_concept": "Polly the bee organizing a quest board or trophy case, separating old glowing legacy scrolls from shiny new quest cards.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny adventurer's hat, organizing a wooden quest board. On one side are glowing, dusty legacy scrolls, and on the other are shiny new quest cards. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-26/PR-12008.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny adventurer's hat, organizing a wooden quest board. On one side are glowing, dusty legacy scrolls, and on the other are shiny new quest cards. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-26T17:13:49.533130+00:00"
+}

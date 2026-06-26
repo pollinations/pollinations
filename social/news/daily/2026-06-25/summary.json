@@ -1,0 +1,31 @@
+{
+  "date": "2026-06-25",
+  "period_start": "2026-06-25",
+  "period_end": "2026-06-25",
+  "title": "Quests: Earn Pollen for doing things",
+  "summary": "We rolled out an active quest system for earning Pollen credits, polished the API docs, and cured dashboard auth amnesia.\n\nWe replaced the passive tier system with an active Quest ledger. You can now earn and claim Pollen credits for specific actions—like setting up your account, contributing on GitHub, or testing cross-modality models—directly from the new dashboard. We also fixed a minor time-travel bug that was briefly sending quest completion dates back to 1970.\n\nThe Gen API documentation is looking a bit more put together. We stripped out the legacy emoji tags in the navigation drawer in favor of clean SVG icons that match the main UI. We also wired up proper Open Graph metadata and favicons, so docs links actually unfurl with preview images when you share them.\n\nFixed an annoying UX quirk where authenticating via GitHub would drop your active URL hash and make you lose your place in the dashboard. The auth flow now remembers exactly which tab you were looking at before you signed in.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 11856,
+      "date": "2026-06-25"
+    },
+    {
+      "number": 11991,
+      "date": "2026-06-25"
+    },
+    {
+      "number": 11993,
+      "date": "2026-06-25"
+    },
+    {
+      "number": 11994,
+      "date": "2026-06-25"
+    },
+    {
+      "number": 11998,
+      "date": "2026-06-25"
+    }
+  ],
+  "generated_at": "2026-06-26T07:14:20.118306+00:00"
+}

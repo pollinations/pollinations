@@ -44,30 +44,23 @@ function normalizeEffort(value: unknown): string | undefined {
 }
 
 /**
- * Creates a transform that maps the standard `reasoning_effort` (and the
- * deprecated internal `thinking_budget`) onto Claude's native extended-thinking
- * request shape for Bedrock. Thinking is OFF by default; it is only enabled
- * when the caller asks for it. `reasoning_effort:"none"` / `thinking_budget===0`
- * leave thinking off.
+ * Creates a transform that maps the standard `reasoning_effort` onto Claude's
+ * native extended-thinking request shape for Bedrock. Thinking is OFF by
+ * default; it is only enabled when the caller asks for it.
+ * `reasoning_effort:"none"` leaves thinking off.
  */
 export function createClaudeThinkingTransform(
     mode: ClaudeThinkingMode,
 ): TransformFn {
     return (messages, options) => {
         const updated: TransformOptions = { ...options };
-        const budget = updated.thinking_budget;
         const effort = normalizeEffort(updated.reasoning_effort);
 
-        // These are internal/standard inputs, not Claude-native params — never
-        // forward them raw to Bedrock.
-        delete updated.thinking_budget;
+        // This is a standard input, not a Claude-native param — never forward
+        // it raw to Bedrock.
         delete updated.reasoning_effort;
 
-        const explicitlyOff = budget === 0 || effort === "none";
-        const wantsThinking =
-            !explicitlyOff &&
-            ((typeof budget === "number" && budget > 0) ||
-                effort !== undefined);
+        const wantsThinking = effort !== undefined && effort !== "none";
 
         if (!wantsThinking) {
             // Off (default): emit no thinking block.
@@ -85,12 +78,10 @@ export function createClaudeThinkingTransform(
             // the requested budget through as-is — if it exceeds the caller's
             // max_tokens, Bedrock returns its own clear 400 ("max_tokens must be
             // greater than thinking budget"). Thin proxy: surface the upstream
-            // error rather than silently shrinking a budget the caller set.
+            // error rather than silently changing the caller's requested effort.
             const budgetTokens =
-                typeof budget === "number" && budget > 0
-                    ? budget
-                    : (effort && EFFORT_TO_BUDGET[effort]) ||
-                      EFFORT_TO_BUDGET.medium;
+                (effort && EFFORT_TO_BUDGET[effort]) ||
+                EFFORT_TO_BUDGET.medium;
             updated.thinking = {
                 type: "enabled",
                 budget_tokens: budgetTokens,

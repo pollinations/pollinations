@@ -1,0 +1,35 @@
+{
+  "pr_number": 12010,
+  "title": "Add REKTY AI to bots",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12010",
+  "merged_at": "2026-06-26T14:28:44Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [REKTY AI](https://github.com/rekty/Rekty-AI) to bots\n- REKTY AI description not provided.\n\nFixes #11987",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "New Bot in the Garden: REKTY AI",
+    "blurb": "A new bot has sprouted in the community greenhouse! REKTY AI just joined the Pollinations ecosystem.",
+    "summary": "Added the community-built REKTY AI bot to the Pollinations app directory and greenhouse.",
+    "impact": "Users can now discover and interact with REKTY AI through the community apps showcase.",
+    "keywords": [
+      "community",
+      "apps",
+      "bots",
+      "showcase",
+      "greenhouse"
+    ],
+    "visual_concept": "Polly the bee welcoming a new robot friend (REKTY AI) into a lush digital greenhouse filled with code-plants.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny gardener's hat, welcoming a cute, slightly battered little robot into a lush digital greenhouse. The robot has a CRT monitor head with a friendly glitchy smile. Code-plants sprout from lime green (#ecf874) flower pots around them. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-26/PR-12010.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny gardener's hat, welcoming a cute, slightly battered little robot into a lush digital greenhouse. The robot has a CRT monitor head with a friendly glitchy smile. Code-plants sprout from lime green (#ecf874) flower pots around them. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-26T14:29:54.617848+00:00",
+  "app_name": "REKTY AI",
+  "app_url": "https://github.com/rekty/Rekty-AI"
+}

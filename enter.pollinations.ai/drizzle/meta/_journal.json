@@ -218,6 +218,13 @@
       "when": 1782416177948,
       "tag": "0030_fix_reward_timestamp_units",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "6",
+      "when": 1782467647638,
+      "tag": "0031_lucky_alex_power",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,16 @@
+name = "quest-dash-live"
+main = "worker.js"
+compatibility_date = "2025-06-01"
+
+# Prod D1 — bound by id at the account level, no secrets needed.
+[[d1_databases]]
+binding = "DB"
+database_name = "enter-prod"
+database_id = "fc771b05-4e24-48bf-980c-d09f21279bd1"
+
+# Static assets (the @pollinations/ui browser bundle + stylesheet), served
+# from /bundle.js and /styles.css so they cache and the page only re-fetches
+# the tiny /data JSON on each refresh.
+[assets]
+directory = "./assets"
+binding = "ASSETS"

@@ -117,7 +117,26 @@ const response = await client.chat.completions.create({
 });
 console.log(response.choices[0].message.content);
 ```
+**Python (DeepSeek with System Prompt)**
 
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://gen.pollinations.ai/v1",
+    api_key="sk_your_secret_key",
+)
+
+# Call the DeepSeek reasoning model with a system instruction
+response = client.chat.completions.create(
+    model="deepseek",
+    messages=[
+        {"role": "system", "content": "You are DeepSeek, a helpful coding assistant."},
+        {"role": "user", "content": "Write a quick Python function to reverse a list."}
+    ],
+)
+print(response.choices[0].message.content)
+---
 Model IDs come from `GET /v1/models`. Anything `openai`, `claude`, `mistral`, `deepseek`, etc. routes to the corresponding provider on our side — you don't need separate keys per provider.
 
 ## 🌊 Streaming chat completions

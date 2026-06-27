@@ -1,0 +1,35 @@
+{
+  "pr_number": 12033,
+  "title": "cleanup: remove obsolete Enter scripts",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12033",
+  "merged_at": "2026-06-27T10:24:30Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Removes the broken formatted `npm run tail` path and its stale `scripts/format-logs.ts` helper.\n- Deletes the unreferenced regex-only dead-code scanner and unused scripts tsconfig.\n- Deletes the stale app URL checker that requires missing `apps_urls.csv` and fails under Enter ESM.\n- Deletes old manual shell smoke scripts now covered by real tests.\n- Net diff: 7 files, 625 deletions.\n\nEvidence:\n- `rg -n \"format-logs|\"tail\"|find-dead-code|check-app-urls|apps_urls\\.csv|test-image-tracking|test-logging|scripts/tsconfig\" ...` found no Enter refs after deletion.\n- `node src/tier-progression/shared/check-app-urls.js` failed before deletion because `require` is unavailable in Enter ESM.\n- `scripts/format-logs.ts` imported nonexistent `../src/logger.ts`.\n\nChecks:\n- `npx biome check --write enter.pollinations.ai/package.json`\n- `npm run typecheck --workspace pollinations-enter`\n- `npm run build:frontend --workspace pollinations-enter`\n- `npm run test --workspace pollinations-enter -- test/events.test.ts test/track-image.test.ts` (13 tests)\n- `git diff --check origin/main`\n\nNote: validation used temporary symlinks to the existing local dependency tree; they were removed before commit.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring Cleaning the Hive",
+    "blurb": "We did some spring cleaning in the Enter codebase, sweeping away old, broken scripts to keep our workspace tidy.",
+    "summary": "Removed 625 lines of obsolete developer scripts from the Enter service, including broken log formatters, dead-code scanners, and old smoke tests.",
+    "impact": "Developers get a cleaner, more maintainable codebase with fewer broken or unused tools cluttering the repository.",
+    "keywords": [
+      "cleanup",
+      "chore",
+      "scripts",
+      "enter",
+      "maintenance"
+    ],
+    "visual_concept": "The Nomnom creature eating old, dusty scrolls or papers (representing obsolete scripts) while Polly the bee sweeps up with a tiny broom.",
+    "image_prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating a stack of dusty, old paper scrolls representing obsolete code scripts. Polly the bee mascot hovers nearby wearing a tiny maid's bandana, holding a small broom. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-27/PR-12033.jpg",
+    "prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating a stack of dusty, old paper scrolls representing obsolete code scripts. Polly the bee mascot hovers nearby wearing a tiny maid's bandana, holding a small broom. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-27T10:25:32.079444+00:00"
+}

@@ -238,12 +238,12 @@ function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
         };
     }
 
-    if (price.type === "3d") {
+    if ((price.type as string) === "3d") {
         return {
             ...price,
             perRequest: true,
             perImagePrice: formatPrice(completionImageTokens, formatPriceFlat),
-        };
+        } as ModelPrice;
     }
 
     if (price.type === "audio") {

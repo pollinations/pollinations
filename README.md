@@ -324,7 +324,6 @@ graph LR
     classDef gpuNode fill:#064E3B,stroke:#34D399,color:#ECFDF5,stroke-width:2px
     classDef provider fill:#1E3A8A,stroke:#60A5FA,color:#EFF6FF,stroke-width:1px
 ```
-
 ## 🔮 Future Developments
 
 We're constantly exploring new ways to push the boundaries of AI-driven content creation. Some areas we're excited about include:

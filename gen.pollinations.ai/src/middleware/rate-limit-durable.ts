@@ -1,8 +1,12 @@
+import {
+    isPublishableKeyMetadata,
+    PUBLISHABLE_API_KEY_PREFIX,
+} from "@shared/auth/api-key-metadata.ts";
 import { getRealClientIp } from "@shared/client-ip.ts";
+import type { LoggerVariables } from "@shared/middleware/logger.ts";
 import { createMiddleware } from "hono/factory";
 import type { PollenRateLimiter } from "@/durable-objects/PollenRateLimiter.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
-import type { LoggerVariables } from "@/middleware/logger.ts";
 import { safeRound } from "@/util.ts";
 
 export type FrontendKeyRateLimitVariables = {
@@ -25,16 +29,13 @@ export const frontendKeyRateLimit = createMiddleware<FrontendKeyRateLimitEnv>(
             log.debug("Skipping rate limit, no API key");
             return next();
         }
-        const apiKeyMetadata = apiKey.metadata as
-            | Record<string, unknown>
-            | undefined;
-        if (apiKeyMetadata?.keyType !== "publishable") {
+        if (!isPublishableKeyMetadata(apiKey.metadata)) {
             log.debug("Skipping rate limit, not a publishable key");
             return next();
         }
 
         const ip = getRealClientIp(c);
-        const identifier = `pk_${apiKey.id}:ip:${ip}`;
+        const identifier = `${PUBLISHABLE_API_KEY_PREFIX}_${apiKey.id}:ip:${ip}`;
 
         log.debug(
             "Applying rate limit for publishable key: id={keyId} ip={ip} identifier={identifier}",

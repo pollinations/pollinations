@@ -2,13 +2,19 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { HTTPException } from "hono/http-exception";
 import * as schema from "../db/better-auth.ts";
+import {
+    type ApiKeyType,
+    getRedirectUris,
+    PUBLISHABLE_API_KEY_PREFIX,
+    parseApiKeyMetadata,
+} from "./api-key-metadata.ts";
 import { sanitizeAuthorizeAccountPermissions } from "./authorize-config.ts";
 import {
     isAllowedRedirectUrl,
     redirectUriMatchesAllowlist,
 } from "./redirect-uri.ts";
 
-export type ApiKeyType = "secret" | "publishable";
+export type { ApiKeyType } from "./api-key-metadata.ts";
 
 export type CallerMetadata = {
     redirectUris?: string[];
@@ -91,28 +97,6 @@ export function validateRedirectUriFormat(redirectUri: string): void {
     }
 }
 
-function parseMetadata(
-    raw: string | null | undefined,
-): Record<string, unknown> {
-    if (!raw) return {};
-    try {
-        const parsed = JSON.parse(raw);
-        return parsed && typeof parsed === "object" && !Array.isArray(parsed)
-            ? parsed
-            : {};
-    } catch {
-        return {};
-    }
-}
-
-function getRedirectUris(meta: Record<string, unknown>): string[] {
-    const list = meta.redirectUris;
-    if (Array.isArray(list)) {
-        return list.filter((v): v is string => typeof v === "string" && !!v);
-    }
-    return [];
-}
-
 function cleanRedirectUris(redirectUris: string[]): string[] {
     return redirectUris
         .map((uri) => uri.trim())
@@ -164,7 +148,7 @@ async function validateClientRedirectBinding(
         return null;
     }
 
-    if (!requestedClientId.startsWith("pk_")) {
+    if (!requestedClientId.startsWith(`${PUBLISHABLE_API_KEY_PREFIX}_`)) {
         rejectInvalidClientId();
     }
 
@@ -179,7 +163,7 @@ async function validateClientRedirectBinding(
     const clientKey = await db.query.apikey.findFirst({
         where: eq(schema.apikey.id, clientKeyId),
     });
-    if (!clientKey || clientKey.prefix !== "pk") {
+    if (!clientKey || clientKey.prefix !== PUBLISHABLE_API_KEY_PREFIX) {
         rejectInvalidClientId();
     }
     const attribution = {
@@ -215,7 +199,7 @@ async function validateClientRedirectBinding(
     // enforced at registration (validateRedirectUriFormat on the app key's
     // redirectUris). The allowlist match below is the only gate the auth flow
     // applies, so a registered URI of any kind round-trips unchanged.
-    const allowlist = getRedirectUris(parseMetadata(clientKey.metadata));
+    const allowlist = getRedirectUris(parseApiKeyMetadata(clientKey.metadata));
     if (!redirectUriMatchesAllowlist(metadata.redirectUri, allowlist)) {
         throw new HTTPException(400, {
             message: "redirect_uri not in allowlist for this client_id",

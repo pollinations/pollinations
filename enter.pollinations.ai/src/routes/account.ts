@@ -1,12 +1,15 @@
 import type { Logger } from "@logtape/logtape";
+import { createApiKeyForUser } from "@shared/auth/api-key-creation.ts";
 import {
+    API_KEY_TYPES,
     type ApiKeyType,
-    createApiKeyForUser,
-} from "@shared/auth/api-key-creation.ts";
+    getApiKeyType,
+} from "@shared/auth/api-key-metadata.ts";
 import {
     apikey as apikeyTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
+import { setPrivateNoStoreHeaders } from "@shared/http/cache-control.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { getTierCadence, tierNames } from "@shared/tier-config.ts";
 import { and, eq } from "drizzle-orm";
@@ -23,6 +26,10 @@ import {
     requireTinybirdReadToken,
 } from "../services/tinybird.ts";
 import { parseMetadata } from "./metadata-utils.ts";
+import {
+    ACCOUNT_USAGE_PERMISSION_DESCRIPTION,
+    requireAccountUsagePermission,
+} from "./permissions.ts";
 
 // Calculate next tier refill time (null for tiers with no refill).
 // Matches the `0 * * * *` cron in wrangler.toml — top of the next UTC hour.
@@ -94,8 +101,7 @@ function requireKeysPermission(apiKey?: {
     metadata?: Record<string, unknown>;
 }): void {
     if (!apiKey) return; // session auth — always allowed
-    const keyType = (apiKey.metadata?.keyType as string) || "secret";
-    if (keyType !== "secret") {
+    if (getApiKeyType(apiKey.metadata) !== "secret") {
         throw new HTTPException(403, {
             message: "Only secret keys (sk_) can manage API keys",
         });
@@ -111,7 +117,7 @@ function requireKeysPermission(apiKey?: {
 const CreateKeySchema = z.object({
     name: z.string().min(1).max(253).describe("Name for the API key"),
     type: z
-        .enum(["secret", "publishable"])
+        .enum(API_KEY_TYPES)
         .optional()
         .default("secret")
         .describe(
@@ -604,6 +610,19 @@ function stripUsageCursor(row: UsageRecordWithCursor): UsageRecord {
     return usage;
 }
 
+function todayDatePart(): string {
+    return new Date().toISOString().split("T")[0];
+}
+
+function csvAttachmentResponse(filenameStem: string, rows: string[]): Response {
+    return new Response(rows.join("\n"), {
+        headers: {
+            "Content-Type": "text/csv",
+            "Content-Disposition": `attachment; filename="${filenameStem}-${todayDatePart()}.csv"`,
+        },
+    });
+}
+
 // Shared tail for the detailed-usage endpoints (/usage, /key/usage):
 // fetch a page from the user_usage pipe, return the cursor for JSON pagination,
 // but keep CSV output on its established public columns.
@@ -647,13 +666,10 @@ async function respondDetailedUsage(
 
         if (params.format === "csv") {
             const rows = usage.map(stripUsageCursor).map(usageRecordToCsvRow);
-            const csv = [USAGE_CSV_HEADER, ...rows].join("\n");
-            return new Response(csv, {
-                headers: {
-                    "Content-Type": "text/csv",
-                    "Content-Disposition": `attachment; filename="${params.filenamePrefix}-${usage.length}-rows-${params.filenamePeriod}-${new Date().toISOString().split("T")[0]}.csv"`,
-                },
-            });
+            return csvAttachmentResponse(
+                `${params.filenamePrefix}-${usage.length}-rows-${params.filenamePeriod}`,
+                [USAGE_CSV_HEADER, ...rows],
+            );
         }
 
         return c.json({ usage, count: usage.length });
@@ -903,8 +919,7 @@ export const accountRoutes = new Hono<Env>()
                 },
                 401: { description: "Unauthorized" },
                 403: {
-                    description:
-                        "Permission denied - API key missing `account:usage` permission",
+                    description: ACCOUNT_USAGE_PERMISSION_DESCRIPTION,
                 },
             },
         }),
@@ -919,12 +934,7 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
-            // Check permission for API key access
-            if (apiKey && !apiKey.permissions?.account?.includes("usage")) {
-                throw new HTTPException(403, {
-                    message: "API key does not have 'account:usage' permission",
-                });
-            }
+            requireAccountUsagePermission(apiKey);
 
             const {
                 format,
@@ -997,8 +1007,7 @@ export const accountRoutes = new Hono<Env>()
                 },
                 401: { description: "Unauthorized" },
                 403: {
-                    description:
-                        "Permission denied - API key missing `account:usage` permission",
+                    description: ACCOUNT_USAGE_PERMISSION_DESCRIPTION,
                 },
             },
         }),
@@ -1013,11 +1022,7 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
-            if (apiKey && !apiKey.permissions?.account?.includes("usage")) {
-                throw new HTTPException(403, {
-                    message: "API key does not have 'account:usage' permission",
-                });
-            }
+            requireAccountUsagePermission(apiKey);
 
             const {
                 format,
@@ -1108,14 +1113,10 @@ export const accountRoutes = new Hono<Env>()
                 if (format === "csv") {
                     const header = "date,model,meter_source,requests,cost_usd";
                     const rows = usage.map(dailyUsageRecordToCsvRow);
-                    const csv = [header, ...rows].join("\n");
-
-                    return new Response(csv, {
-                        headers: {
-                            "Content-Type": "text/csv",
-                            "Content-Disposition": `attachment; filename="pollinations-usage-daily-${filenamePeriod}-${new Date().toISOString().split("T")[0]}.csv"`,
-                        },
-                    });
+                    return csvAttachmentResponse(
+                        `pollinations-usage-daily-${filenamePeriod}`,
+                        [header, ...rows],
+                    );
                 }
 
                 return c.json({
@@ -1146,8 +1147,7 @@ export const accountRoutes = new Hono<Env>()
                 },
                 401: { description: "Unauthorized" },
                 403: {
-                    description:
-                        "Permission denied - API key missing `account:usage` permission",
+                    description: ACCOUNT_USAGE_PERMISSION_DESCRIPTION,
                 },
             },
         }),
@@ -1162,11 +1162,7 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
-            if (apiKey && !apiKey.permissions?.account?.includes("usage")) {
-                throw new HTTPException(403, {
-                    message: "API key does not have 'account:usage' permission",
-                });
-            }
+            requireAccountUsagePermission(apiKey);
 
             const {
                 format,
@@ -1271,14 +1267,10 @@ export const accountRoutes = new Hono<Env>()
                     const header =
                         "date,app_key_id,app_name,requests,baseline_price,pollen_earned,cost_usd,markup_rate";
                     const rows = payload.daily.map(dailyEarningsRowToCsvRow);
-                    const csv = [header, ...rows].join("\n");
-
-                    return new Response(csv, {
-                        headers: {
-                            "Content-Type": "text/csv",
-                            "Content-Disposition": `attachment; filename="pollinations-earnings-${filenamePeriod}-${new Date().toISOString().split("T")[0]}.csv"`,
-                        },
-                    });
+                    return csvAttachmentResponse(
+                        `pollinations-earnings-${filenamePeriod}`,
+                        [header, ...rows],
+                    );
                 }
 
                 return c.json(payload);
@@ -1325,7 +1317,7 @@ export const accountRoutes = new Hono<Env>()
                 .where(eq(apikeyTable.userId, user.id))
                 .all();
 
-            c.header("Cache-Control", "private, no-store, max-age=0");
+            setPrivateNoStoreHeaders(c);
             return c.json({
                 data: keys.map((key) => ({
                     id: key.id,
@@ -1480,7 +1472,7 @@ export const accountRoutes = new Hono<Env>()
                                             "Whether the API key is valid and active",
                                         ),
                                     type: z
-                                        .enum(["publishable", "secret"])
+                                        .enum(API_KEY_TYPES)
                                         .describe("Type of API key"),
                                     name: z
                                         .string()
@@ -1555,8 +1547,7 @@ export const accountRoutes = new Hono<Env>()
             });
 
             // Get key type from metadata (set at key creation time)
-            const keyType: ApiKeyType =
-                (apiKey.metadata?.keyType as ApiKeyType) || "secret";
+            const keyType: ApiKeyType = getApiKeyType(apiKey.metadata);
 
             // Fetch additional key details from DB
             const db = drizzle(c.env.DB);

@@ -4,6 +4,7 @@ import {
 } from "@shared/auth/api-key-creation.ts";
 import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-config.ts";
 import * as schema from "@shared/db/better-auth.ts";
+import { setPrivateNoStoreHeaders } from "@shared/http/cache-control.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -16,13 +17,6 @@ import { auth } from "../middleware/auth.ts";
 import { parseMetadata } from "./metadata-utils.ts";
 
 const SECONDS_PER_DAY = 24 * 60 * 60;
-
-function setPrivateNoStoreHeaders(c: {
-    header: (name: string, value: string) => void;
-}): void {
-    c.header("Cache-Control", "private, no-store, max-age=0");
-    c.header("Pragma", "no-cache");
-}
 
 /**
  * Build updated permissions object based on changes.

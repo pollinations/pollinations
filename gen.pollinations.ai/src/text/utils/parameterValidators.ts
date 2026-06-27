@@ -1,5 +1,4 @@
-/** INT32_MAX - for compatibility with strict providers like Vertex AI */
-const MAX_SEED_VALUE = 2147483647;
+import { randomSeed } from "@/util.ts";
 
 function validateFloat(value: unknown): number | undefined {
     if (value === undefined || value === null) return undefined;
@@ -19,7 +18,7 @@ function validateInt(value: unknown): number | undefined {
 function processSeed(value: unknown): number | undefined {
     const seed = validateInt(value);
     if (seed === undefined) return undefined;
-    return seed === -1 ? Math.floor(Math.random() * MAX_SEED_VALUE) : seed;
+    return seed === -1 ? randomSeed() : seed;
 }
 
 function validateBoolean(value: unknown): boolean | undefined {

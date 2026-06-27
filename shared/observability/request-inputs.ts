@@ -1,4 +1,5 @@
 import type { Context } from "hono";
+import { redactQueryParam } from "../http/redaction.ts";
 
 export type RequestInputs = {
     params?: Record<string, string>;
@@ -7,13 +8,6 @@ export type RequestInputs = {
 };
 
 const BODY_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
-const CREDENTIAL_QUERY_PARAMS = new Set([
-    "access_token",
-    "api_key",
-    "key",
-    "token",
-]);
-const REDACTED = "[redacted]";
 
 export async function collectRequestInputs(c: Context): Promise<RequestInputs> {
     const inputs: RequestInputs = {
@@ -87,13 +81,6 @@ function queryParams(c: Context): Record<string, string | string[]> {
             redactQueryParam(key, values.length === 1 ? values[0] : values),
         ]),
     );
-}
-
-function redactQueryParam(
-    key: string,
-    value: string | string[],
-): string | string[] {
-    return CREDENTIAL_QUERY_PARAMS.has(key.toLowerCase()) ? REDACTED : value;
 }
 
 function formDataToObject(formData: FormData): Record<string, unknown> {

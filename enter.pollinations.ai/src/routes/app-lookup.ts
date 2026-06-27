@@ -1,3 +1,4 @@
+import { PUBLISHABLE_API_KEY_PREFIX } from "@shared/auth/api-key-metadata.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { eq } from "drizzle-orm";
@@ -42,14 +43,14 @@ async function resolveAttribution(
 const AppLookupQuerySchema = z.object({
     client_id: z
         .string()
-        .startsWith("pk_")
+        .startsWith(`${PUBLISHABLE_API_KEY_PREFIX}_`)
         .optional()
         .describe(
             "Your publishable App Key (pk_...). When provided, the consent screen shows your app name and GitHub username. Canonical OAuth name.",
         ),
     app_key: z
         .string()
-        .startsWith("pk_")
+        .startsWith(`${PUBLISHABLE_API_KEY_PREFIX}_`)
         .optional()
         .describe(
             "Legacy alias for `client_id`. Accepted for backwards compatibility.",

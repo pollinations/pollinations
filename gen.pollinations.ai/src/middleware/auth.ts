@@ -5,9 +5,9 @@ import {
     BannedAccountError,
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
+import type { LoggerVariables } from "@shared/middleware/logger.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
-import type { LoggerVariables } from "./logger.ts";
 
 type ModelVariables = {
     model: {

@@ -1,7 +1,6 @@
 /** Minimal GitHub GraphQL client for GitHub App installation tokens. */
 
-const GITHUB_API = "https://api.github.com";
-const USER_AGENT = "pollinations-enter";
+import { GITHUB_API, GITHUB_USER_AGENT } from "./api.ts";
 
 /** Run a single GraphQL query. Throws if the response carries `errors`. */
 export async function graphql<T>(
@@ -13,7 +12,7 @@ export async function graphql<T>(
         method: "POST",
         headers: {
             Authorization: `token ${token}`,
-            "User-Agent": USER_AGENT,
+            "User-Agent": GITHUB_USER_AGENT,
             "Content-Type": "application/json",
         },
         body: JSON.stringify({ query, variables }),

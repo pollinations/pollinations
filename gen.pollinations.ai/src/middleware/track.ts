@@ -1,5 +1,8 @@
 import { getLogger } from "@logtape/logtape";
-import type { ApiKeyType } from "@shared/auth/api-key-creation.ts";
+import {
+    type ApiKeyType,
+    getApiKeyType,
+} from "@shared/auth/api-key-metadata.ts";
 import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import {
@@ -20,6 +23,7 @@ import {
     UpstreamError,
 } from "@shared/error.ts";
 import { sendToTinybird } from "@shared/events.ts";
+import type { LoggerVariables } from "@shared/middleware/logger.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import {
@@ -65,7 +69,6 @@ import { z } from "zod";
 import { mergeContentFilterResults } from "@/content-filter.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
-import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
 import { generateRandomId, parseBooleanLike } from "@/util.ts";
 
@@ -138,10 +141,9 @@ export const track = (eventType: EventType) =>
             rawIp !== "unknown" ? stripIPv4MappedPrefix(rawIp) : undefined;
         const ipSubnet = truncateIpToSubnet(clientIp);
 
-        const apiKeyMetadata = c.var.auth.apiKey?.metadata as
-            | Record<string, unknown>
-            | undefined;
-        const byopClientKeyId = c.var.auth.apiKey?.byopClientKeyId;
+        const apiKey = c.var.auth.apiKey;
+        const byopClientKeyId = apiKey?.byopClientKeyId;
+        const apiKeyType = apiKey ? getApiKeyType(apiKey.metadata) : undefined;
         const userTracking: UserData = {
             userId: c.var.auth.user?.id,
             userTier: c.var.auth.user?.tier,
@@ -149,16 +151,15 @@ export const track = (eventType: EventType) =>
                 ? String(c.var.auth.user.githubId)
                 : undefined,
             userGithubUsername: c.var.auth.user?.githubUsername ?? undefined,
-            apiKeyId: c.var.auth.apiKey?.id,
-            apiKeyType: apiKeyMetadata?.keyType as ApiKeyType,
-            apiKeyName: c.var.auth.apiKey?.name,
+            apiKeyId: apiKey?.id,
+            apiKeyType,
+            apiKeyName: apiKey?.name,
             apiKeyCreatedVia: byopClientKeyId
                 ? "redirect-auth"
-                : (apiKeyMetadata?.createdVia as string | undefined),
+                : (apiKey?.metadata?.createdVia as string | undefined),
             apiKeyClientId: byopClientKeyId ?? undefined,
-            apiKeyCreatedForApp: c.var.auth.apiKey?.byopClientName ?? undefined,
-            apiKeyCreatedForUserId:
-                c.var.auth.apiKey?.byopClientUserId ?? undefined,
+            apiKeyCreatedForApp: apiKey?.byopClientName ?? undefined,
+            apiKeyCreatedForUserId: apiKey?.byopClientUserId ?? undefined,
         } satisfies UserData;
 
         let responseOverride = null;

@@ -1,3 +1,7 @@
+import {
+    type ApiKeyType,
+    getApiKeyType,
+} from "@shared/auth/api-key-metadata.ts";
 import { getUserBalance, payerBucketToMeter } from "@shared/billing/balance.ts";
 import {
     handleBalanceDeduction,
@@ -11,6 +15,7 @@ import {
     truncateIpToSubnet,
 } from "@shared/client-ip.ts";
 import { sendToTinybird } from "@shared/events.ts";
+import { redactCredentialQueryParams } from "@shared/http/redaction.ts";
 import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
 import {
     calculateCost,
@@ -48,12 +53,6 @@ const AZURE_REALTIME_WEBSOCKET_URL =
 // Azure CLI). Matches DEFAULT_REALTIME_MODEL here, but kept separate because
 // Azure deployment names are independent of the public model id.
 const AZURE_REALTIME_DEPLOYMENT = "gpt-realtime-2";
-const CREDENTIAL_QUERY_PARAMS = new Set([
-    "access_token",
-    "api_key",
-    "key",
-    "token",
-]);
 const UNSUPPORTED_TRANSCRIPTION_MESSAGE =
     "Realtime input transcription is not supported yet.";
 type WebSocketResponse = Response & { webSocket?: WebSocket };
@@ -66,7 +65,7 @@ type RealtimeBillingContext = {
     userGithubUsername?: string;
     apiKeyId?: string;
     apiKeyName?: string;
-    apiKeyType?: "secret" | "publishable";
+    apiKeyType?: ApiKeyType;
     apiKeyCreatedVia?: string;
     apiKeyCreatedForApp?: string;
     apiKeyCreatedForUserId?: string;
@@ -353,16 +352,6 @@ function extractReferrerHeader(c: Context<Env>): {
     }
 }
 
-function redactCredentialQueryParams(url: URL): string {
-    const redacted = new URL(url);
-    for (const param of redacted.searchParams.keys()) {
-        if (CREDENTIAL_QUERY_PARAMS.has(param.toLowerCase())) {
-            redacted.searchParams.set(param, "[redacted]");
-        }
-    }
-    return redacted.toString();
-}
-
 function getPostDeductionBalances(
     payerBucket: "tier" | "pack" | null,
     balances: { tierBalance: number; packBalance: number },
@@ -600,9 +589,8 @@ async function createRealtimeBillingContext(
     c: Context<Env>,
 ): Promise<RealtimeBillingContext> {
     const user = c.var.auth.requireUser();
-    const apiKeyMetadata = c.var.auth.apiKey?.metadata as
-        | Record<string, unknown>
-        | undefined;
+    const apiKey = c.var.auth.apiKey;
+    const apiKeyMetadata = apiKey?.metadata;
     const rawIp = getRealClientIp(c);
     const clientIp =
         rawIp !== "unknown" ? stripIPv4MappedPrefix(rawIp) : undefined;
@@ -613,16 +601,15 @@ async function createRealtimeBillingContext(
         userTier: user.tier,
         userGithubId: user.githubId ? String(user.githubId) : undefined,
         userGithubUsername: user.githubUsername ?? undefined,
-        apiKeyId: c.var.auth.apiKey?.id,
-        apiKeyName: c.var.auth.apiKey?.name,
-        apiKeyType: apiKeyMetadata?.keyType as "secret" | "publishable",
+        apiKeyId: apiKey?.id,
+        apiKeyName: apiKey?.name,
+        apiKeyType: apiKey ? getApiKeyType(apiKeyMetadata) : undefined,
         apiKeyCreatedVia: apiKeyMetadata?.createdVia as string | undefined,
-        apiKeyCreatedForApp: c.var.auth.apiKey?.byopClientName ?? undefined,
-        apiKeyCreatedForUserId:
-            c.var.auth.apiKey?.byopClientUserId ?? undefined,
-        apiKeyClientId: c.var.auth.apiKey?.byopClientKeyId ?? undefined,
-        apiKeyPollenBalance: c.var.auth.apiKey?.pollenBalance,
-        byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
+        apiKeyCreatedForApp: apiKey?.byopClientName ?? undefined,
+        apiKeyCreatedForUserId: apiKey?.byopClientUserId ?? undefined,
+        apiKeyClientId: apiKey?.byopClientKeyId ?? undefined,
+        apiKeyPollenBalance: apiKey?.pollenBalance,
+        byopClientKeyId: apiKey?.byopClientKeyId,
         requestId: c.get("requestId"),
         requestPath: getRoutePath(c),
         environment: c.env.ENVIRONMENT,

@@ -1,15 +1,12 @@
 import { IMAGE_SERVICES, type ImageModelName } from "@shared/registry/image.ts";
 import { z } from "zod";
+import { IMAGE_QUALITIES, MAX_RANDOM_SEED, randomSeed } from "@/util.ts";
 import { getDefaultSideLength } from "./models.js";
 
 const allowedModels = Object.keys(IMAGE_SERVICES) as [
     ImageModelName,
     ...ImageModelName[],
 ];
-const validQualities = ["low", "medium", "high", "hd"] as const;
-// Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
-const MAX_RANDOM_SEED = 2147483647; // INT32_MAX (2^31 - 1)
-
 const sanitizedBoolean = z
     .union([z.string(), z.boolean()])
     .transform((value) => {
@@ -22,7 +19,7 @@ const sanitizedSeed = z.preprocess((v) => {
     const parsedSeed = Number.parseInt(seed, 10);
     const parsed = Number.isInteger(parsedSeed) ? parsedSeed : 42;
     // seed=-1 means "random" - generate a random seed
-    return parsed === -1 ? Math.floor(Math.random() * MAX_RANDOM_SEED) : parsed;
+    return parsed === -1 ? randomSeed() : parsed;
 }, z.int().min(0).max(MAX_RANDOM_SEED).catch(42));
 
 const sanitizedSideLength = z.preprocess((v) => {
@@ -57,7 +54,7 @@ export const ImageParamsSchema = z
         seed: sanitizedSeed,
         model: z.enum(allowedModels),
         safe: sanitizedBoolean.catch(false),
-        quality: z.literal(validQualities).catch("medium"),
+        quality: z.literal(IMAGE_QUALITIES).catch("medium"),
         image: z
             .union([z.array(z.string()), z.string(), z.null(), z.undefined()])
             .transform((value?: string[] | string | null) => {

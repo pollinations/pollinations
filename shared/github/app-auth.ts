@@ -12,8 +12,7 @@
  * the one non-obvious bit; everything else is a standard JWT.
  */
 
-const GITHUB_API = "https://api.github.com";
-const USER_AGENT = "pollinations-enter";
+import { GITHUB_API, githubRestHeaders } from "./api.ts";
 
 export type GithubAppCredentials = {
     appId: string;
@@ -150,12 +149,10 @@ async function mintAppJwt(creds: GithubAppCredentials): Promise<string> {
 
 async function appJsonGet<T>(path: string, jwt: string): Promise<T> {
     const res = await fetch(`${GITHUB_API}${path}`, {
-        headers: {
-            Authorization: `Bearer ${jwt}`,
-            Accept: "application/vnd.github+json",
-            "X-GitHub-Api-Version": "2022-11-28",
-            "User-Agent": USER_AGENT,
-        },
+        headers: githubRestHeaders({
+            authorization: `Bearer ${jwt}`,
+            apiVersion: true,
+        }),
     });
     if (!res.ok) {
         throw new Error(
@@ -214,12 +211,10 @@ export async function getInstallationToken(
         `${GITHUB_API}/app/installations/${installationId}/access_tokens`,
         {
             method: "POST",
-            headers: {
-                Authorization: `Bearer ${jwt}`,
-                Accept: "application/vnd.github+json",
-                "X-GitHub-Api-Version": "2022-11-28",
-                "User-Agent": USER_AGENT,
-            },
+            headers: githubRestHeaders({
+                authorization: `Bearer ${jwt}`,
+                apiVersion: true,
+            }),
         },
     );
     if (res.status !== 201) {

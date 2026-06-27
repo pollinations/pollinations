@@ -5,9 +5,9 @@
  */
 
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import type { LoggerVariables } from "@shared/middleware/logger.ts";
 import { createMiddleware } from "hono/factory";
 import type { RequestIdVariables } from "hono/request-id";
-import type { LoggerVariables } from "@/middleware/logger.ts";
 import {
     createCaptureStream,
     generateCacheKey,

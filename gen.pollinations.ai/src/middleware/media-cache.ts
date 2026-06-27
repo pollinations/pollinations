@@ -9,11 +9,11 @@
  */
 
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import type { LoggerVariables } from "@shared/middleware/logger.ts";
 import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
 import { createMiddleware } from "hono/factory";
 import type { RequestIdVariables } from "hono/request-id";
-import type { LoggerVariables } from "@/middleware/logger.ts";
 import {
     cacheMediaResponse,
     generateCacheKey,

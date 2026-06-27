@@ -25,6 +25,11 @@ type EmbeddingData = {
     index: number;
 };
 
+type IndexedEmbedding = {
+    embedding: number[];
+    index: number;
+};
+
 const OPENAI_MAX_DIMENSIONS: Record<string, number> = {
     "text-embedding-3-small": 1536,
     "text-embedding-3-large": 3072,
@@ -79,15 +84,11 @@ async function generateCohereAzureEmbeddings(
     );
     const usage = extractCohereAzureUsage(result);
 
-    const data = [...result.data]
-        .sort((a, b) => a.index - b.index)
-        .map(({ embedding, index }) => ({
-            object: "embedding" as const,
-            embedding: encodeEmbedding(embedding, request.encoding_format),
-            index,
-        }));
-
-    return embeddingsResponse(responseModel, data, usage);
+    return embeddingsResponse(
+        responseModel,
+        toEmbeddingData(result.data, request.encoding_format),
+        usage,
+    );
 }
 
 async function generateFireworksEmbeddings(
@@ -114,15 +115,11 @@ async function generateFireworksEmbeddings(
     );
     const usage = extractFireworksUsage(result);
 
-    const data = [...result.data]
-        .sort((a, b) => a.index - b.index)
-        .map(({ embedding, index }) => ({
-            object: "embedding" as const,
-            embedding: encodeEmbedding(embedding, request.encoding_format),
-            index,
-        }));
-
-    return embeddingsResponse(responseModel, data, usage);
+    return embeddingsResponse(
+        responseModel,
+        toEmbeddingData(result.data, request.encoding_format),
+        usage,
+    );
 }
 
 async function generateGeminiEmbeddings(
@@ -187,15 +184,11 @@ async function generateOpenAIEmbeddings(
     );
     const usage = extractOpenAIUsage(result);
 
-    const data = [...result.data]
-        .sort((a, b) => a.index - b.index)
-        .map(({ embedding, index }) => ({
-            object: "embedding" as const,
-            embedding: encodeEmbedding(embedding, request.encoding_format),
-            index,
-        }));
-
-    return embeddingsResponse(responseModel, data, usage);
+    return embeddingsResponse(
+        responseModel,
+        toEmbeddingData(result.data, request.encoding_format),
+        usage,
+    );
 }
 
 function validateOpenAIDimensions(
@@ -222,6 +215,19 @@ function encodeEmbedding(
     }
 
     return values;
+}
+
+function toEmbeddingData(
+    embeddings: IndexedEmbedding[],
+    encodingFormat: EmbeddingRequest["encoding_format"],
+): EmbeddingData[] {
+    return [...embeddings]
+        .sort((a, b) => a.index - b.index)
+        .map(({ embedding, index }) => ({
+            object: "embedding" as const,
+            embedding: encodeEmbedding(embedding, encodingFormat),
+            index,
+        }));
 }
 
 function addUsage(target: Usage, usage: Usage) {

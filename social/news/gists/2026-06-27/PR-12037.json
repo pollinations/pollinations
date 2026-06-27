@@ -1,0 +1,34 @@
+{
+  "pr_number": 12037,
+  "title": "docs: document publishable keys replaced by BYOP in authentication.md",
+  "author": "tuidienanhvan",
+  "url": "https://github.com/pollinations/pollinations/pull/12037",
+  "merged_at": "2026-06-27T12:02:08Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "Closes #12001. Documented that Publishable Keys have been replaced by the BYOP (Bring Your Own Pollen) flow in authentication.md.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Bring Your Own Pollen",
+    "blurb": "The docs are officially caught up with reality: Publishable Keys are out, and the Bring Your Own Pollen (BYOP) flow is in. Grab your jars and let's go.",
+    "summary": "Updated authentication.md to officially document the deprecation of Publishable Keys in favor of the new Bring Your Own Pollen (BYOP) flow.",
+    "impact": "Developers reading the auth docs will now see the correct BYOP implementation steps instead of legacy publishable key instructions.",
+    "keywords": [
+      "docs",
+      "authentication",
+      "BYOP",
+      "api"
+    ],
+    "visual_concept": "Polly the bee in a cozy library or study (representing documentation), holding a glowing jar of pollen (BYOP) while a traditional metal key sits discarded on a desk.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot in a warm wooden library, happily holding a glowing glass jar of golden pollen. A rusty metal key rests forgotten on a desk nearby. Soft lime green (#ecf874) and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'BYOP'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-27/PR-12037.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot in a warm wooden library, happily holding a glowing glass jar of golden pollen. A rusty metal key rests forgotten on a desk nearby. Soft lime green (#ecf874) and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'BYOP'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-27T12:03:05.190904+00:00"
+}

@@ -50,8 +50,7 @@ export function createGeminiThinkingTransform(
                 budget_tokens:
                     effort === "none"
                         ? 0
-                        : (EFFORT_TO_BUDGET[effort] ??
-                          EFFORT_TO_BUDGET.medium),
+                        : (EFFORT_TO_BUDGET[effort] ?? EFFORT_TO_BUDGET.medium),
             };
             delete updatedOptions.reasoning_effort;
         } else if (modelType === "v3-pro" && effort === "none") {

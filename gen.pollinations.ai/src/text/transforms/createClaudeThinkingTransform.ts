@@ -80,8 +80,7 @@ export function createClaudeThinkingTransform(
             // greater than thinking budget"). Thin proxy: surface the upstream
             // error rather than silently changing the caller's requested effort.
             const budgetTokens =
-                (effort && EFFORT_TO_BUDGET[effort]) ||
-                EFFORT_TO_BUDGET.medium;
+                (effort && EFFORT_TO_BUDGET[effort]) || EFFORT_TO_BUDGET.medium;
             updated.thinking = {
                 type: "enabled",
                 budget_tokens: budgetTokens,

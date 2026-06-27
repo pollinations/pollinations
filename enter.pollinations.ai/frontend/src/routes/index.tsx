@@ -1,4 +1,4 @@
-import { Section } from "@pollinations/ui";
+import { Section, Switch } from "@pollinations/ui";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { apiClient } from "../api.ts";
@@ -34,6 +34,108 @@ import { QuestOverview } from "../components/quests";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 
 const ACTIVITY_MIN_DATE = new Date("2026-01-01T00:00:00.000Z");
+
+type GenerationSettingsState = {
+    cacheWritesDisabled: boolean;
+    privacyModeEnabled: boolean;
+};
+
+type GenerationSettingsProps = {
+    initialCacheWritesDisabled: boolean;
+    initialPrivacyModeEnabled: boolean;
+};
+
+function GenerationSettings({
+    initialCacheWritesDisabled,
+    initialPrivacyModeEnabled,
+}: GenerationSettingsProps) {
+    const [settings, setSettings] = useState<GenerationSettingsState>({
+        cacheWritesDisabled: initialCacheWritesDisabled,
+        privacyModeEnabled: initialPrivacyModeEnabled,
+    });
+    const [saving, setSaving] = useState<keyof GenerationSettingsState | null>(
+        null,
+    );
+
+    async function updateSetting(
+        key: keyof GenerationSettingsState,
+        value: boolean,
+    ): Promise<void> {
+        const previous = settings;
+        const next = { ...settings, [key]: value };
+        setSettings(next);
+        setSaving(key);
+
+        try {
+            const response = await apiClient.account.settings.$patch({
+                json: { [key]: value } as Partial<GenerationSettingsState>,
+            });
+            if (!response.ok) {
+                throw new Error(await response.text());
+            }
+            const saved = (await response.json()) as GenerationSettingsState;
+            setSettings(saved);
+        } catch (error) {
+            console.error("Failed to update generation settings", error);
+            setSettings(previous);
+        } finally {
+            setSaving(null);
+        }
+    }
+
+    return (
+        <Section title="Generation settings" framed>
+            <div className="flex flex-col gap-5">
+                <div className="flex min-w-0 items-start justify-between gap-4">
+                    <div className="min-w-0">
+                        <div className="text-sm font-semibold">
+                            Disable cache writes
+                        </div>
+                        <p className="mt-0.5 text-xs text-theme-text-soft">
+                            New generated results are not written to caches.
+                            Cached reads can still be used.
+                        </p>
+                    </div>
+                    <Switch
+                        checked={settings.cacheWritesDisabled}
+                        onChange={(checked) =>
+                            updateSetting("cacheWritesDisabled", checked)
+                        }
+                        disabled={saving !== null}
+                        ariaLabel={
+                            settings.cacheWritesDisabled
+                                ? "Enable cache writes"
+                                : "Disable cache writes"
+                        }
+                    />
+                </div>
+                <div className="flex min-w-0 items-start justify-between gap-4">
+                    <div className="min-w-0">
+                        <div className="text-sm font-semibold">
+                            Privacy mode
+                        </div>
+                        <p className="mt-0.5 text-xs text-theme-text-soft">
+                            Redacts sensitive text with existing safety
+                            guardrails before provider calls.
+                        </p>
+                    </div>
+                    <Switch
+                        checked={settings.privacyModeEnabled}
+                        onChange={(checked) =>
+                            updateSetting("privacyModeEnabled", checked)
+                        }
+                        disabled={saving !== null}
+                        ariaLabel={
+                            settings.privacyModeEnabled
+                                ? "Disable privacy mode"
+                                : "Enable privacy mode"
+                        }
+                    />
+                </div>
+            </div>
+        </Section>
+    );
+}
 
 function pageFromHash(hash: string): DashboardPage {
     const page = hash.replace(/^#/, "");
@@ -91,10 +193,14 @@ export const Route = createFileRoute("/")({
             | undefined;
         const githubUsername =
             profileResult?.githubUsername ?? sessionUser?.githubUsername ?? "";
+        const cacheWritesDisabled = profileResult?.cacheWritesDisabled === true;
+        const privacyModeEnabled = profileResult?.privacyModeEnabled === true;
 
         return {
             user: context.user,
             githubUsername,
+            cacheWritesDisabled,
+            privacyModeEnabled,
             apiKeys,
             tierData,
             tierBalance,
@@ -111,6 +217,8 @@ function RouteComponent() {
     const {
         user,
         githubUsername,
+        cacheWritesDisabled,
+        privacyModeEnabled,
         apiKeys,
         tierData,
         tierBalance,
@@ -298,12 +406,18 @@ function RouteComponent() {
             )}
             {activePage === "quests" && <QuestOverview />}
             {activePage === "keys" && (
-                <ApiKeyList
-                    apiKeys={apiKeys}
-                    onCreate={handleCreateApiKey}
-                    onUpdate={handleUpdateApiKey}
-                    onDelete={handleDeleteApiKey}
-                />
+                <div className="flex flex-col gap-6">
+                    <GenerationSettings
+                        initialCacheWritesDisabled={cacheWritesDisabled}
+                        initialPrivacyModeEnabled={privacyModeEnabled}
+                    />
+                    <ApiKeyList
+                        apiKeys={apiKeys}
+                        onCreate={handleCreateApiKey}
+                        onUpdate={handleUpdateApiKey}
+                        onDelete={handleDeleteApiKey}
+                    />
+                </div>
             )}
             {activePage === "models" && <Models />}
         </DashboardShell>

@@ -13,5 +13,15 @@ export const authAdditionalFields = {
             defaultValue: "spore",
             input: false,
         },
+        cacheWritesDisabled: {
+            type: "boolean",
+            defaultValue: false,
+            input: false,
+        },
+        privacyModeEnabled: {
+            type: "boolean",
+            defaultValue: false,
+            input: false,
+        },
     },
 } as const;

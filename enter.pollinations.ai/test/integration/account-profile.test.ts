@@ -20,6 +20,8 @@ describe("GET /api/account/profile", () => {
         expect(data).toHaveProperty("githubUsername");
         expect(data).toHaveProperty("image");
         expect(data).toHaveProperty("tier");
+        expect(data).toHaveProperty("cacheWritesDisabled", false);
+        expect(data).toHaveProperty("privacyModeEnabled", false);
         expect(data).toHaveProperty("nextResetAt");
         expect(data).toHaveProperty("name");
         expect(data).toHaveProperty("email");
@@ -38,6 +40,8 @@ describe("GET /api/account/profile", () => {
         expect(data).toHaveProperty("githubUsername");
         expect(data).toHaveProperty("image");
         expect(data).toHaveProperty("tier");
+        expect(data).toHaveProperty("cacheWritesDisabled", false);
+        expect(data).toHaveProperty("privacyModeEnabled", false);
         expect(data).toHaveProperty("nextResetAt");
         expect(data).not.toHaveProperty("name");
         expect(data).not.toHaveProperty("email");
@@ -90,8 +94,52 @@ describe("GET /api/account/profile", () => {
         expect(data).toHaveProperty("githubUsername");
         expect(data).toHaveProperty("image");
         expect(data).toHaveProperty("tier");
+        expect(data).toHaveProperty("cacheWritesDisabled", false);
+        expect(data).toHaveProperty("privacyModeEnabled", false);
         expect(data).toHaveProperty("nextResetAt");
         expect(data).toHaveProperty("name");
         expect(data).toHaveProperty("email");
+    });
+});
+
+describe("PATCH /api/account/settings", () => {
+    test("session auth updates global generation preferences", async ({
+        sessionToken,
+    }) => {
+        const update = await SELF.fetch(
+            "http://localhost:3000/api/account/settings",
+            {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+                body: JSON.stringify({
+                    cacheWritesDisabled: true,
+                    privacyModeEnabled: true,
+                }),
+            },
+        );
+
+        expect(update.status).toBe(200);
+        await expect(update.json()).resolves.toMatchObject({
+            cacheWritesDisabled: true,
+            privacyModeEnabled: true,
+        });
+
+        const profile = await SELF.fetch(
+            "http://localhost:3000/api/account/profile",
+            {
+                headers: {
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+            },
+        );
+
+        expect(profile.status).toBe(200);
+        await expect(profile.json()).resolves.toMatchObject({
+            cacheWritesDisabled: true,
+            privacyModeEnabled: true,
+        });
     });
 });

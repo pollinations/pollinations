@@ -38,6 +38,12 @@ export const user = sqliteTable("user", {
     .default(sql`0`)
     .notNull(),
   autoTopUpAmountUsd: integer("auto_top_up_amount_usd"),
+  cacheWritesDisabled: integer("cache_writes_disabled", { mode: "boolean" })
+    .default(sql`0`)
+    .notNull(),
+  privacyModeEnabled: integer("privacy_mode_enabled", { mode: "boolean" })
+    .default(sql`0`)
+    .notNull(),
 }, (table) => [
   index("idx_user_email").on(table.email),
   index("idx_user_auto_top_up_enabled").on(table.autoTopUpEnabled),

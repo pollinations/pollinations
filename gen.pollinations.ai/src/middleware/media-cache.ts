@@ -10,9 +10,11 @@
 
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
+import type { SafetyFeature } from "@shared/schemas/safety.ts";
 import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
 import { createMiddleware } from "hono/factory";
 import type { RequestIdVariables } from "hono/request-id";
+import type { AuthVariables } from "@/middleware/auth.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import {
     cacheMediaResponse,
@@ -22,8 +24,18 @@ import {
 
 type MediaCacheEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables & RequestIdVariables;
+    Variables: LoggerVariables & RequestIdVariables & Partial<AuthVariables>;
 };
+
+function cacheWritesDisabled(c: { var: Partial<AuthVariables> }): boolean {
+    return c.var.auth?.user?.cacheWritesDisabled === true;
+}
+
+function defaultSafetyFeatures(c: {
+    var: Partial<AuthVariables>;
+}): SafetyFeature[] {
+    return c.var.auth?.user?.privacyModeEnabled === true ? ["privacy"] : [];
+}
 
 type MediaCacheConfig = {
     /** Content types to cache, e.g. ["image/", "video/"] or ["audio/"] */
@@ -44,11 +56,17 @@ export function createMediaCache(config: MediaCacheConfig) {
             return next();
         }
 
+        const accountSafetyFeatures = defaultSafetyFeatures(c);
         const cacheKey = generateCacheKey(
             new URL(c.req.url),
             c.req.header(SAFETY_HEADER_NAME),
+            {
+                defaultSafetyFeatures: accountSafetyFeatures,
+                opaque: accountSafetyFeatures.length > 0,
+            },
         );
         log.debug("Cache key: {key}", { key: cacheKey });
+        const skipCacheWrites = cacheWritesDisabled(c);
 
         try {
             const cached = await c.env.IMAGE_BUCKET.get(cacheKey);
@@ -64,18 +82,20 @@ export function createMediaCache(config: MediaCacheConfig) {
                 c.header("X-Cache", "HIT");
                 c.header("X-Cache-Type", "EXACT");
                 return c.body(
-                    refreshR2ObjectTtl(
-                        c.env.IMAGE_BUCKET,
-                        cacheKey,
-                        cached,
-                        (promise) => c.executionCtx.waitUntil(promise),
-                        (error) => {
-                            log.error(
-                                "Error refreshing media cache TTL: {error}",
-                                { error },
-                            );
-                        },
-                    ),
+                    skipCacheWrites
+                        ? cached.body
+                        : refreshR2ObjectTtl(
+                              c.env.IMAGE_BUCKET,
+                              cacheKey,
+                              cached,
+                              (promise) => c.executionCtx.waitUntil(promise),
+                              (error) => {
+                                  log.error(
+                                      "Error refreshing media cache TTL: {error}",
+                                      { error },
+                                  );
+                              },
+                          ),
                 );
             }
 
@@ -93,6 +113,12 @@ export function createMediaCache(config: MediaCacheConfig) {
         const isMatchingContent = config.mediaTypes.some((type) =>
             contentType?.includes(type),
         );
+        if (c.res?.ok && isMatchingContent && skipCacheWrites) {
+            log.debug("Cache writes disabled for user");
+            c.res.headers.set("X-Cache-Write", "SKIP");
+            return;
+        }
+
         if (c.res?.ok && isMatchingContent && xCache !== "HIT") {
             log.debug("Caching response");
             cacheMediaResponse(

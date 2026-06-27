@@ -4,6 +4,7 @@ export type RequestInputs = {
     params?: Record<string, string>;
     query?: Record<string, string | string[]>;
     body?: unknown;
+    privacy?: "redacted";
 };
 
 const BODY_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
@@ -16,6 +17,10 @@ const CREDENTIAL_QUERY_PARAMS = new Set([
 const REDACTED = "[redacted]";
 
 export async function collectRequestInputs(c: Context): Promise<RequestInputs> {
+    if (privacyModeEnabled(c)) {
+        return { privacy: "redacted" };
+    }
+
     const inputs: RequestInputs = {
         params: removeEmptyRecord(safeParams(c)),
         query: removeEmptyRecord(queryParams(c)),
@@ -27,6 +32,16 @@ export async function collectRequestInputs(c: Context): Promise<RequestInputs> {
     }
 
     return removeUndefined(inputs);
+}
+
+function privacyModeEnabled(c: Context): boolean {
+    return (
+        (
+            c.var as {
+                auth?: { user?: { privacyModeEnabled?: boolean } };
+            }
+        ).auth?.user?.privacyModeEnabled === true
+    );
 }
 
 // Hono's c.req.param() throws TypeError when called on a request that didn't

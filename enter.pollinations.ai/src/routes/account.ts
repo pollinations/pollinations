@@ -666,6 +666,12 @@ async function respondDetailedUsage(
 // Response schemas for OpenAPI documentation
 const profileResponseSchema = z.object({
     githubUsername: z.string().nullable().describe("GitHub username if linked"),
+    cacheWritesDisabled: z
+        .boolean()
+        .describe("Whether generation cache writes are disabled"),
+    privacyModeEnabled: z
+        .boolean()
+        .describe("Whether generation privacy mode is enabled"),
     image: z
         .string()
         .nullable()
@@ -693,6 +699,23 @@ const profileResponseSchema = z.object({
         .describe(
             "User's email address (only returned when the key has `account:profile`)",
         ),
+});
+
+const accountSettingsRequestSchema = z
+    .object({
+        cacheWritesDisabled: z.boolean().optional(),
+        privacyModeEnabled: z.boolean().optional(),
+    })
+    .refine(
+        (settings) =>
+            settings.cacheWritesDisabled !== undefined ||
+            settings.privacyModeEnabled !== undefined,
+        { message: "At least one setting is required" },
+    );
+
+const accountSettingsResponseSchema = z.object({
+    cacheWritesDisabled: z.boolean(),
+    privacyModeEnabled: z.boolean(),
 });
 
 const balanceResponseSchema = z.object({
@@ -804,6 +827,8 @@ export const accountRoutes = new Hono<Env>()
                     githubUsername: userTable.githubUsername,
                     image: userTable.image,
                     tier: userTable.tier,
+                    cacheWritesDisabled: userTable.cacheWritesDisabled,
+                    privacyModeEnabled: userTable.privacyModeEnabled,
                     name: userTable.name,
                     email: userTable.email,
                 })
@@ -820,12 +845,82 @@ export const accountRoutes = new Hono<Env>()
                 githubUsername: profile.githubUsername ?? null,
                 image: profile.image ?? null,
                 tier: profile.tier,
+                cacheWritesDisabled: profile.cacheWritesDisabled,
+                privacyModeEnabled: profile.privacyModeEnabled,
                 nextResetAt: getNextRefillAt(profile.tier),
                 ...(includeProfilePII && {
                     name: profile.name ?? null,
                     email: profile.email ?? null,
                 }),
             });
+        },
+    )
+    .patch(
+        "/settings",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Update Generation Settings",
+            description:
+                "Updates account-wide generation settings. Requires session authentication.",
+            responses: {
+                200: {
+                    description: "Updated generation settings",
+                    content: {
+                        "application/json": {
+                            schema: resolver(accountSettingsResponseSchema),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+                403: {
+                    description:
+                        "Session authentication required to update account settings",
+                },
+            },
+        }),
+        validator("json", accountSettingsRequestSchema),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            if (c.var.auth.apiKey) {
+                throw new HTTPException(403, {
+                    message: "Session authentication required",
+                });
+            }
+
+            const user = c.var.auth.requireUser();
+            const body = c.req.valid("json");
+            const updates: {
+                cacheWritesDisabled?: boolean;
+                privacyModeEnabled?: boolean;
+            } = {};
+
+            if (body.cacheWritesDisabled !== undefined) {
+                updates.cacheWritesDisabled = body.cacheWritesDisabled;
+            }
+            if (body.privacyModeEnabled !== undefined) {
+                updates.privacyModeEnabled = body.privacyModeEnabled;
+            }
+
+            const db = drizzle(c.env.DB);
+            await db
+                .update(userTable)
+                .set(updates)
+                .where(eq(userTable.id, user.id));
+
+            const [settings] = await db
+                .select({
+                    cacheWritesDisabled: userTable.cacheWritesDisabled,
+                    privacyModeEnabled: userTable.privacyModeEnabled,
+                })
+                .from(userTable)
+                .where(eq(userTable.id, user.id))
+                .limit(1);
+
+            if (!settings) {
+                throw new HTTPException(404, { message: "User not found" });
+            }
+
+            return c.json(settings);
         },
     )
     .get(

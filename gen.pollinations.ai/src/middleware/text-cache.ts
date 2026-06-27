@@ -5,8 +5,10 @@
  */
 
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import type { SafetyFeature } from "@shared/schemas/safety.ts";
 import { createMiddleware } from "hono/factory";
 import type { RequestIdVariables } from "hono/request-id";
+import type { AuthVariables } from "@/middleware/auth.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import {
     createCaptureStream,
@@ -16,8 +18,18 @@ import {
 
 type TextCacheEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables & RequestIdVariables;
+    Variables: LoggerVariables & RequestIdVariables & Partial<AuthVariables>;
 };
+
+function cacheWritesDisabled(c: { var: Partial<AuthVariables> }): boolean {
+    return c.var.auth?.user?.cacheWritesDisabled === true;
+}
+
+function defaultSafetyFeatures(c: {
+    var: Partial<AuthVariables>;
+}): SafetyFeature[] {
+    return c.var.auth?.user?.privacyModeEnabled === true ? ["privacy"] : [];
+}
 
 /**
  * Text cache middleware
@@ -79,14 +91,20 @@ export const textCache = createMiddleware<TextCacheEnv>(async (c, next) => {
     }
 
     // Generate cache key
-    const cacheKey = await generateCacheKey(c.req.raw, bodyText);
+    const accountSafetyFeatures = defaultSafetyFeatures(c);
+    const cacheKey = await generateCacheKey(c.req.raw, bodyText, {
+        defaultSafetyFeatures: accountSafetyFeatures,
+    });
     log.debug("[TEXT-CACHE] Cache key: {key}", {
         key: `${cacheKey.substring(0, 16)}...`,
     });
+    const skipCacheWrites = cacheWritesDisabled(c);
 
     // Try to get from cache
     try {
-        const cachedResponse = await getCachedResponse(c, cacheKey);
+        const cachedResponse = await getCachedResponse(c, cacheKey, {
+            refreshTtl: !skipCacheWrites,
+        });
         if (cachedResponse) {
             log.info("[TEXT-CACHE] Cache HIT");
             return cachedResponse;
@@ -107,6 +125,13 @@ export const textCache = createMiddleware<TextCacheEnv>(async (c, next) => {
         log.debug("[TEXT-CACHE] Not caching non-OK response: {status}", {
             status: c.res?.status,
         });
+        return;
+    }
+
+    if (skipCacheWrites) {
+        log.debug("[TEXT-CACHE] Cache writes disabled for user");
+        c.res.headers.set("X-Cache", "MISS");
+        c.res.headers.set("X-Cache-Write", "SKIP");
         return;
     }
 

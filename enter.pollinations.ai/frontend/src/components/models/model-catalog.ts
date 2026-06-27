@@ -239,13 +239,8 @@ function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
     }
 
     if (price.type === "3d") {
-        // 3D models are always flat per-generation (registry stores the price
-        // under completionImageTokens, the same flat-fee convention image
-        // models use) — never per-token, so skip the per-token branch image
-        // models have.
         return {
             ...price,
-            perToken: false,
             perRequest: true,
             perImagePrice: formatPrice(completionImageTokens, formatPriceFlat),
         };

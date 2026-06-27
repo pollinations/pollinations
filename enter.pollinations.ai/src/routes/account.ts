@@ -1317,7 +1317,7 @@ export const accountRoutes = new Hono<Env>()
                 .where(eq(apikeyTable.userId, user.id))
                 .all();
 
-            setPrivateNoStoreHeaders(c);
+            setPrivateNoStoreHeaders(c, { pragma: false });
             return c.json({
                 data: keys.map((key) => ({
                     id: key.id,

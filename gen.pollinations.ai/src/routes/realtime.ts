@@ -1,7 +1,4 @@
-import {
-    type ApiKeyType,
-    getApiKeyType,
-} from "@shared/auth/api-key-metadata.ts";
+import type { ApiKeyType } from "@shared/auth/api-key-metadata.ts";
 import { getUserBalance, payerBucketToMeter } from "@shared/billing/balance.ts";
 import {
     handleBalanceDeduction,
@@ -603,7 +600,7 @@ async function createRealtimeBillingContext(
         userGithubUsername: user.githubUsername ?? undefined,
         apiKeyId: apiKey?.id,
         apiKeyName: apiKey?.name,
-        apiKeyType: apiKey ? getApiKeyType(apiKeyMetadata) : undefined,
+        apiKeyType: apiKeyMetadata?.keyType as ApiKeyType | undefined,
         apiKeyCreatedVia: apiKeyMetadata?.createdVia as string | undefined,
         apiKeyCreatedForApp: apiKey?.byopClientName ?? undefined,
         apiKeyCreatedForUserId: apiKey?.byopClientUserId ?? undefined,

@@ -1,0 +1,35 @@
+{
+  "pr_number": 12029,
+  "title": "cleanup: remove thinking aliases",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12029",
+  "merged_at": "2026-06-27T12:14:25Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Removes deprecated `thinking` and `thinking_budget` chat request handling from Gen, SDK, and MCP request surfaces.\n- Keeps standard `reasoning_effort` behavior and maps it to provider-native Claude/Gemini request shapes where needed.\n- Removes docs-only compatibility hiding now that the schema no longer exposes the aliases.\n- Adds parser, transform, SDK, and OpenAPI regressions.\n- Net diff against current `main`: 18 files, 169 insertions, 251 deletions.\n\nChecks:\n- `rg -n \"thinking_budget|\\bthinking\\b|reasoning_effort\" gen.pollinations.ai/src packages/sdk packages/mcp shared/schemas gen.pollinations.ai/test packages/sdk/src --glob \"!**/node_modules/**\"`\n- `npx biome check --write <changed files>`\n- `npm run test --prefix gen.pollinations.ai -- test/text/requestUtils.test.ts test/text/transforms/createReasoningEffortTransform.test.ts test/text/transforms/createClaudeThinkingTransform.test.ts test/text/transforms/createGeminiThinkingTransform.test.ts test/openapi-json.test.ts` (49 tests)\n- `npm run test --prefix packages/sdk -- src/client.test.ts` (13 tests)\n- `npm run typecheck --prefix gen.pollinations.ai`\n- `npm run typecheck --prefix packages/sdk`\n- `npm run docs:validate --prefix gen.pollinations.ai`\n- `node --check packages/mcp/src/services/textService.js`\n- `git diff --check origin/main...HEAD`\n\nNote: this is an intentional clean break for deprecated non-standard aliases; callers should use `reasoning_effort`.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Streamlined reasoning",
+    "blurb": "We've tidied up our API schema by sweeping away the old thinking aliases. Just use reasoning_effort and let the models do the heavy lifting!",
+    "summary": "Removed the deprecated thinking and thinking_budget aliases from the Gen API, SDK, and MCP server to standardize exclusively on the reasoning_effort parameter.",
+    "impact": "Developers configuring model thinking behavior will now use the standard reasoning_effort field across all endpoints and SDKs.",
+    "keywords": [
+      "api",
+      "sdk",
+      "reasoning",
+      "cleanup",
+      "schema"
+    ],
+    "visual_concept": "The Nomnom creature eating old deprecated code snippets (representing the removed aliases) while Polly the bee holds a shiny new sign or block representing the standard reasoning_effort parameter.",
+    "image_prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating old deprecated code snippets on paper, while the cute bee mascot wearing tiny wizard glasses holds a glowing block. Soft lime green (#ecf874) and lavender gradient background. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-27/PR-12029.jpg",
+    "prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating old deprecated code snippets on paper, while the cute bee mascot wearing tiny wizard glasses holds a glowing block. Soft lime green (#ecf874) and lavender gradient background. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-27T12:15:28.220962+00:00"
+}

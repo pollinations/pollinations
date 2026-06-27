@@ -6,7 +6,7 @@ import type { ImageParams } from "../params.ts";
 import { sanitizeString } from "../util.ts";
 import { closestByRatio } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
-import { transformImage } from "../utils/imageTransform.ts";
+import { transformImage, ensureBaselineJpeg } from "../utils/imageTransform.ts";
 
 const logOps = debug("pollinations:fireworks-flux:ops");
 
@@ -41,6 +41,7 @@ export async function callFireworksFluxSchnellAPI(
         safeParams.height || 1024,
         FIREWORKS_ASPECT_RATIOS,
     ).label;
+    
     const body = {
         prompt: sanitizeString(prompt),
         aspect_ratio: aspectRatio,
@@ -74,7 +75,10 @@ export async function callFireworksFluxSchnellAPI(
         );
     }
 
+    // Получаем буфер от Fireworks API
     let buffer: Buffer = Buffer.from(await response.arrayBuffer());
+
+    // ✅ Если нужен ресайз - делаем его с принудительным baseline
     if (safeParams.dimensionsExplicit) {
         buffer = await transformImage(buffer, {
             width: safeParams.width,
@@ -82,7 +86,20 @@ export async function callFireworksFluxSchnellAPI(
             fit: "cover",
             format: "image/jpeg",
             quality: 90,
+            forceBaseline: true, // ✅ Принудительно baseline
         });
+        logOps("Image resized and converted to baseline JPEG");
+    } else {
+        // ✅ Если ресайз не нужен - проверяем и конвертируем только при необходимости
+        const beforeIsProgressive = isProgressiveJpeg(buffer);
+        buffer = await ensureBaselineJpeg(buffer, 90);
+        const afterIsProgressive = isProgressiveJpeg(buffer);
+        
+        if (beforeIsProgressive && !afterIsProgressive) {
+            logOps("Converted progressive JPEG to baseline JPEG");
+        } else if (!beforeIsProgressive) {
+            logOps("Image already baseline JPEG, no conversion needed");
+        }
     }
 
     return {

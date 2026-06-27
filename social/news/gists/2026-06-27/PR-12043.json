@@ -1,0 +1,34 @@
+{
+  "pr_number": 12043,
+  "title": "cleanup: remove stale MCP hosted auth docs",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12043",
+  "merged_at": "2026-06-27T12:31:04Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "## Summary\n- Removes the stale MCP GitHub OAuth/referrer auth document.\n- Removes the non-packaged Cloudflare tunnel setup helper for the old hosted MCP path.\n- Leaves the current stdio MCP README/source/auth tools unchanged.\n\n## Evidence\n- Current MCP package exposes `setApiKey`, `getKeyInfo`, and `clearApiKey`; the deleted doc referenced missing hosted-auth tools/scripts/endpoints.\n- `packages/mcp/package.json` publishes only `src/**/*`, `pollinations-mcp.js`, `README.md`, and `LICENSE`, so the deleted script was not shipped.\n\n## Validation\n- `rg -n \"GITHUB_AUTH|start-auth|start-auth-test|isAuthenticated|getAuthUrl|listReferrers|addReferrer|removeReferrer|verify-referrer|setup-cloudflare-tunnel|cloudflared\" packages/mcp .github package.json --glob '!**/node_modules/**'`\n- `npm pack --dry-run` in `packages/mcp`\n- `git diff --check origin/main`",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring Cleaning the MCP Docs",
+    "blurb": "Swept away some stale documentation and unused scripts for the Model Context Protocol. Keeping the hive clean and tidy!",
+    "summary": "Removed outdated documentation and unused Cloudflare tunnel scripts related to legacy hosted MCP authentication.",
+    "impact": "Developers exploring the MCP package will no longer be confused by stale references to unsupported GitHub OAuth and referrer auth flows.",
+    "keywords": [
+      "mcp",
+      "docs",
+      "cleanup",
+      "auth"
+    ],
+    "visual_concept": "Polly the bee holding a feather duster, sweeping away old dusty papers (documents) and a broken tunnel pipe (Cloudflare tunnel). Nomnom creature eating the old papers.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding a tiny feather duster, sweeping away dusty old papers. The round tan nomnom creature happily eats the discarded documents. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-27/PR-12043.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot holding a tiny feather duster, sweeping away dusty old papers. The round tan nomnom creature happily eats the discarded documents. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-27T12:32:03.650676+00:00"
+}

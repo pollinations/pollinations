@@ -1,0 +1,35 @@
+{
+  "pr_number": 12044,
+  "title": "[codex] fix: pass text modalities to providers",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12044",
+  "merged_at": "2026-06-27T12:49:02Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Removes Pollinations-side image modality rejection from the text Portkey path.\n- Leaves registry modality metadata available for catalog/UI use.\n- Keeps provider-specific image URL fetch safety in the base64 transform.\n\nChecks:\n- `npx biome check --write gen.pollinations.ai/src/text/generateTextPortkey.ts`\n- `npm run test --prefix gen.pollinations.ai -- test/text/transforms/imageUrlToBase64Transform.test.ts`\n- `npm run typecheck --prefix gen.pollinations.ai`\n- `git diff --check`\n\nFixes #12025",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Opening the multimodal gates",
+    "blurb": "We've removed our strict modality bouncers from the text API. Your multimodal requests now flow straight through to the providers, just as nature intended.",
+    "summary": "Removed Pollinations-side image modality validation from the text Portkey path, allowing multimodal requests to pass directly to providers.",
+    "impact": "Developers can now send multimodal inputs to supported text models without encountering premature validation errors from our gateway.",
+    "keywords": [
+      "api",
+      "text-generation",
+      "multimodal",
+      "portkey",
+      "bug-fix"
+    ],
+    "visual_concept": "The bee (Polly) opening a gate or removing a barrier for different types of data (text documents, image files) to flow freely into a glowing portal (Portkey/provider). Nomnom creature happily watching the data flow.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot opening a small wooden toll gate, allowing a stream of glowing text documents and pixelated image files to flow freely into a glowing portal. The round tan nomnom creature sits nearby, happily watching the data flow. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-27/PR-12044.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot opening a small wooden toll gate, allowing a stream of glowing text documents and pixelated image files to flow freely into a glowing portal. The round tan nomnom creature sits nearby, happily watching the data flow. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-27T12:50:05.851229+00:00"
+}

@@ -1,0 +1,35 @@
+{
+  "pr_number": 12038,
+  "title": "cleanup: remove obsolete Devvit Reddit app",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12038",
+  "merged_at": "2026-06-27T12:32:32Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "## Summary\n- Removes the superseded Devvit-based Reddit app under `social/reddit`.\n- Keeps the active Reddit path through `publish_daily.py` / `publish_weekly.py` intact.\n- Drops formatter/CI exclusions that only existed for the removed Reddit package.\n\n## Validation\n- `npx biome check --write package.json biome.jsonc`\n- `python3 -m py_compile social/scripts/publish_daily.py social/scripts/publish_weekly.py social/scripts/common.py`\n- `rg -n \"social/reddit|Devvit|!\\*\\*/reddit|node_modules\\|reddit|reddit\\|dist|reddit, node_modules\" . --glob '!**/node_modules/**' --glob '!**/package-lock.json' --glob '!**/.git/**'`\n- `git diff --check origin/main`",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Sweeping up the Reddit crumbs",
+    "blurb": "We've swept away the old Devvit-based Reddit app from our social pipeline. The active Reddit publishing scripts are still buzzing along perfectly.",
+    "summary": "Removed the obsolete Devvit-based Reddit app from the social pipeline, cleaning up associated CI exclusions and dependencies.",
+    "impact": "This reduces repository bloat and simplifies the CI configuration without affecting our active Reddit publishing pipeline.",
+    "keywords": [
+      "cleanup",
+      "reddit",
+      "social",
+      "devvit",
+      "chore"
+    ],
+    "visual_concept": "The bee mascot cleaning up or sweeping away old code/files, while the Nomnom creature eats the deprecated Devvit documents.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny scarf, sweeping up old dusty code blocks with a small broom. The round tan Nomnom creature happily eats a stack of deprecated documents. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-27/PR-12038.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny scarf, sweeping up old dusty code blocks with a small broom. The round tan Nomnom creature happily eats a stack of deprecated documents. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-27T12:33:30.133005+00:00"
+}

@@ -1,0 +1,27 @@
+{
+  "date": "2026-06-26",
+  "period_start": "2026-06-26",
+  "period_end": "2026-06-26",
+  "title": "Quest logic and top-up achievements",
+  "summary": "A day of tying up loose ends: fixing quest triggers for Pollen top-ups and welcoming a new community bot to the greenhouse.\n\nWe ironed out a few edge cases in the achievement system. Buying exactly 100 Pollen now correctly triggers the 100-Pollen quest (because >= makes more sense than >), Polar checkouts are now properly wired into the rewards ledger with backfilled data, and legacy quest cards have been cleanly split from the new launch-era ones so early adopters keep their old badges.\n\nThe community app directory continues to expand. REKTY AI has been officially added to the bots showcase and is now live for discovery in the greenhouse.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 12005,
+      "date": "2026-06-26"
+    },
+    {
+      "number": 12006,
+      "date": "2026-06-26"
+    },
+    {
+      "number": 12008,
+      "date": "2026-06-26"
+    },
+    {
+      "number": 12010,
+      "date": "2026-06-26"
+    }
+  ],
+  "generated_at": "2026-06-27T07:01:50.614720+00:00"
+}

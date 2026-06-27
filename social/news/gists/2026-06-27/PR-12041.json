@@ -1,0 +1,34 @@
+{
+  "pr_number": 12041,
+  "title": "cleanup: remove duplicate frontend logo assets",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12041",
+  "merged_at": "2026-06-27T12:44:58Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "## Summary\n- Removes unused legacy logo files from `pollinations.ai/src/assets`.\n- Keeps the live logo source at `pollinations.ai/src/ui/assets/logo.svg`, which is what `Logo.tsx` and the icon generator use.\n\n## Evidence\n- `pollinations.ai/src/assets/logo.svg` had the same SHA as `pollinations.ai/src/ui/assets/logo.svg`.\n- `pollinations.ai/src/assets/logo-text.svg` had no references.\n\n## Validation\n- `rg -n \"src/assets/logo|assets/logo-text|logo-text|src/assets/logo\\.svg\" pollinations.ai/src pollinations.ai/scripts pollinations.ai/public pollinations.ai/index.html --glob '!**/node_modules/**'`\n- `npm run build` in `pollinations.ai` with a temporary symlink to the existing frontend `node_modules`\n- `git diff --check origin/main`",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring cleaning the hive",
+    "blurb": "Swept away some duplicate logo files from the frontend codebase to keep things tidy.",
+    "summary": "Removed unused legacy logo files from the frontend assets directory to reduce repository clutter.",
+    "impact": "Developers will find a cleaner assets folder with a single source of truth for the pollinations logo.",
+    "keywords": [
+      "cleanup",
+      "frontend",
+      "assets",
+      "chore"
+    ],
+    "visual_concept": "The bee mascot and the nomnom creature cleaning up duplicate pictures/logos in a cozy room.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bandana, sweeping up duplicate pixelated logo pictures with a small broom. The round tan nomnom creature happily eats a stack of old files. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-27/PR-12041.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny bandana, sweeping up duplicate pixelated logo pictures with a small broom. The round tan nomnom creature happily eats a stack of old files. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-06-27T12:45:59.947649+00:00"
+}

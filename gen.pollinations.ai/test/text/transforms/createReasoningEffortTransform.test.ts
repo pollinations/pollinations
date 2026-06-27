@@ -5,12 +5,6 @@ import { createReasoningEffortTransform } from "../../../src/text/transforms/cre
 describe("createReasoningEffortTransform — toggle", () => {
     const toggle = createReasoningEffortTransform("toggle");
 
-    it("maps thinking_budget=0 to reasoning_effort=none", async () => {
-        const { options } = await toggle([], { thinking_budget: 0 });
-        expect(options.reasoning_effort).toBe("none");
-        expect(options.thinking_budget).toBeUndefined();
-    });
-
     it("normalizes minimal to none (Fireworks rejects minimal)", async () => {
         const { options } = await toggle([], { reasoning_effort: "minimal" });
         expect(options.reasoning_effort).toBe("none");
@@ -48,12 +42,6 @@ describe("createReasoningEffortTransform — mandatory", () => {
         expect(options.reasoning_effort).toBe("low");
     });
 
-    it("drops a thinking_budget=0 disable request", async () => {
-        const { options } = await mandatory([], { thinking_budget: 0 });
-        expect(options.reasoning_effort).toBeUndefined();
-        expect(options.thinking_budget).toBeUndefined();
-    });
-
     it("keeps low/medium/high", async () => {
         const { options } = await mandatory([], { reasoning_effort: "medium" });
         expect(options.reasoning_effort).toBe("medium");
@@ -68,14 +56,12 @@ describe("createReasoningEffortTransform — mandatory", () => {
 describe("createReasoningEffortTransform — strip", () => {
     const strip = createReasoningEffortTransform("strip");
 
-    it("removes reasoning_effort and thinking_budget entirely", async () => {
+    it("removes reasoning_effort entirely", async () => {
         const { options } = await strip([], {
             reasoning_effort: "high",
-            thinking_budget: 4000,
             temperature: 0.7,
         });
         expect(options.reasoning_effort).toBeUndefined();
-        expect(options.thinking_budget).toBeUndefined();
         expect(options.temperature).toBe(0.7);
     });
 
@@ -100,7 +86,7 @@ describe("reasoning_effort model wiring", () => {
         const transform = findModelByName(modelName)?.transform;
         if (!transform) throw new Error(`${modelName} transform missing`);
         const { options } = await transform([{ role: "user", content: "hi" }], {
-            thinking_budget: 0,
+            reasoning_effort: "none",
         });
         expect(options.reasoning_effort).toBe("none");
     });

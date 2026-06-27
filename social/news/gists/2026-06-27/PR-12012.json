@@ -1,0 +1,35 @@
+{
+  "pr_number": 12012,
+  "title": "Add quest dashboard Worker",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12012",
+  "merged_at": "2026-06-27T12:37:33Z",
+  "labels": [
+    "DEV-APP"
+  ],
+  "pr_body_excerpt": "- Adds `apps/operation/quest-dashboard` as a standalone Cloudflare Worker for the live quest dashboard.\n- Serves the dashboard shell plus cached UI assets, with `/data` backed by the prod D1 rewards ledger.\n- Orders the live feed by normalized reward timestamps and ranks quests by claimed Pollen.\n- Validated with `npx biome check --write ...`, `npm run deploy -- --dry-run`, and live `/data` checks.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The Quest Board is Live",
+    "blurb": "We've launched a live quest dashboard! Now you can track the latest rewards, see who's claiming Pollen, and check out the top-ranked quests in real-time.",
+    "summary": "Added a standalone Cloudflare Worker for the live quest dashboard that serves real-time data directly from the production D1 rewards ledger.",
+    "impact": "Users can now view a live feed of completed quests ordered by timestamp and see which quests are generating the most claimed Pollen.",
+    "keywords": [
+      "quests",
+      "dashboard",
+      "rewards",
+      "pollen",
+      "cloudflare-worker"
+    ],
+    "visual_concept": "A retro RPG-style wooden quest notice board. Polly the bee wearing a tiny adventurer's hat looking at the board. The board has glowing digital bounties or papers on it.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny adventurer's hat, looking at a wooden quest notice board covered in glowing digital bounties. A chunky retro robot companion points excitedly at a quest paper. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi RPG vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-27/PR-12012.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny adventurer's hat, looking at a wooden quest notice board covered in glowing digital bounties. A chunky retro robot companion points excitedly at a quest paper. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi RPG vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-27T12:38:31.316110+00:00"
+}

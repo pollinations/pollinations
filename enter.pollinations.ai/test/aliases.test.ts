@@ -42,6 +42,27 @@ test.for(
     expect(resolved).toBe(shouldResolveTo);
 });
 
+test("gemini-search applies grounding cost on top of shared token rates", () => {
+    const usage = {
+        promptTextTokens: 1_000_000,
+        completionTextTokens: 1_000_000,
+    };
+    const geminiFastCost = calculateCost("gemini-fast", usage);
+    const geminiSearchCost = calculateCost("gemini-search", usage, {
+        choices: [
+            {
+                groundingMetadata: {
+                    webSearchQueries: ["latest Gemini pricing"],
+                },
+            },
+        ],
+    });
+
+    expect(geminiSearchCost.totalCost).toBeGreaterThan(
+        geminiFastCost.totalCost,
+    );
+});
+
 test("public price equals provider cost times priceMultiplier for every model", () => {
     // Invariant: price = cost × priceMultiplier, for every model, no exceptions.
     // Asserted per cost field so it holds at any multiplier (currently all 1×).

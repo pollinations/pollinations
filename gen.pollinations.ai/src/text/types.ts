@@ -74,7 +74,7 @@ export interface ChatCompletion {
     created?: number;
     model?: string;
     choices?: CompletionChoice[];
-    usage?: Record<string, number>;
+    usage?: Record<string, unknown>;
     citations?: string[];
     error?: string | { message?: string; status?: number; details?: unknown };
     stream?: boolean;

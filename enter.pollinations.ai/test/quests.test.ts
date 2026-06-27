@@ -11,6 +11,16 @@ import { test } from "./fixtures.ts";
 import type { MockGithubState } from "./mocks/github.ts";
 
 const ELIXPO_INTERN_QUEST_ID = "elixpo_intern";
+const LEGACY_FIRST_TOP_UP_QUEST_ID = "first_top_up";
+const LEGACY_TOP_UP_100_QUEST_ID = "top_up_100";
+const TOP_UP_SINCE_LAUNCH_QUEST_ID = "top_up_since_launch";
+const TOP_UP_100_SINCE_LAUNCH_QUEST_ID = "top_up_100_since_launch";
+const QUEST_REWARDS_LAUNCH_CUTOFF_MILLIS = Date.parse(
+    "2026-06-21T00:00:00.000Z",
+);
+const BEFORE_QUEST_REWARDS_LAUNCH_MILLIS =
+    QUEST_REWARDS_LAUNCH_CUTOFF_MILLIS - 1;
+const AFTER_QUEST_REWARDS_LAUNCH_DATE = new Date("2026-06-22T00:00:00.000Z");
 
 // Build an issue body the deriver can parse: a "### Reward" heading (when a
 // reward is given) plus a short Goal section for the description.
@@ -174,7 +184,7 @@ test("catalog returns quest definitions without ledger stats", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v20");
+    await env.KV.delete("quests:catalog:v21");
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -183,18 +193,55 @@ test("catalog returns quest definitions without ledger stats", async ({
     const payload = (await response.json()) as {
         quests: {
             id: string;
+            title: string;
+            description: string;
+            rewardAmount: number;
+            balanceBucket: string;
             state: string;
             availability?: unknown;
             stats?: unknown;
         }[];
     };
-    const catalogQuest = payload.quests.find(
-        (quest) => quest.id === "merged_pr",
-    );
+    const byId = new Map(payload.quests.map((quest) => [quest.id, quest]));
+    const expectStableCatalogFields = (
+        id: string,
+        expected: {
+            state: string;
+            rewardAmount: number;
+            balanceBucket: string;
+        },
+    ) => {
+        const quest = byId.get(id);
+
+        expect(quest).toMatchObject(expected);
+        expect(typeof quest?.title).toBe("string");
+        expect(typeof quest?.description).toBe("string");
+    };
+    const catalogQuest = byId.get("merged_pr");
 
     expect(catalogQuest?.state).toBe("available");
     expect(catalogQuest).not.toHaveProperty("availability");
     expect(catalogQuest).not.toHaveProperty("stats");
+    expectStableCatalogFields(LEGACY_FIRST_TOP_UP_QUEST_ID, {
+        state: "completed",
+        rewardAmount: 10,
+        balanceBucket: "tier",
+    });
+    expectStableCatalogFields(LEGACY_TOP_UP_100_QUEST_ID, {
+        state: "completed",
+        rewardAmount: 50,
+        balanceBucket: "tier",
+    });
+    expectStableCatalogFields(TOP_UP_SINCE_LAUNCH_QUEST_ID, {
+        state: "available",
+        rewardAmount: 5,
+        balanceBucket: "tier",
+    });
+    expectStableCatalogFields(TOP_UP_100_SINCE_LAUNCH_QUEST_ID, {
+        state: "available",
+        rewardAmount: 50,
+        balanceBucket: "tier",
+    });
 });
 
 test("catalog includes coming-soon GitHub issue placeholder", async ({
@@ -202,7 +249,7 @@ test("catalog includes coming-soon GitHub issue placeholder", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v20");
+    await env.KV.delete("quests:catalog:v21");
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -240,7 +287,7 @@ test("catalog excludes closed GitHub quest issues without merged PRs", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v20");
+    await env.KV.delete("quests:catalog:v21");
 
     seedQuestIssue(mocks.github.state, {
         issueNumber: 801,
@@ -417,7 +464,7 @@ test("top-up 100 quest records for exactly 100 paid checkout pollen", async ({
         eventType: "checkout.session.completed",
         userId: user.id,
         pollenCredited: 100,
-        createdAt: new Date(),
+        createdAt: AFTER_QUEST_REWARDS_LAUNCH_DATE,
     });
 
     await checkQuestsForUser(env, user.id);
@@ -427,11 +474,54 @@ test("top-up 100 quest records for exactly 100 paid checkout pollen", async ({
         .from(schema.rewards)
         .where(eq(schema.rewards.userId, user.id));
     const questIds = new Set(rewards.map((reward) => reward.questId));
-    expect(questIds.has("first_top_up")).toBe(true);
-    expect(questIds.has("top_up_100")).toBe(true);
+    expect(questIds.has(TOP_UP_SINCE_LAUNCH_QUEST_ID)).toBe(true);
+    expect(questIds.has(TOP_UP_100_SINCE_LAUNCH_QUEST_ID)).toBe(true);
+    expect(questIds.has(LEGACY_FIRST_TOP_UP_QUEST_ID)).toBe(false);
+    expect(questIds.has(LEGACY_TOP_UP_100_QUEST_ID)).toBe(false);
 });
 
-test("first top-up quest records paid Polar checkout pollen", async ({
+test("top-up quests ignore paid checkout pollen before quest launch", async ({
+    apiKey: _apiKey,
+    mocks,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+
+    await env.DB.prepare(
+        `INSERT INTO stripe_checkout_credits (
+            session_id,
+            event_id,
+            event_type,
+            user_id,
+            pollen_credited,
+            created_at
+        ) VALUES (?, ?, ?, ?, ?, ?)`,
+    )
+        .bind(
+            `cs_test_${user.id}_old_100`,
+            `evt_${user.id}_old_100`,
+            "checkout.session.completed",
+            user.id,
+            100,
+            BEFORE_QUEST_REWARDS_LAUNCH_MILLIS,
+        )
+        .run();
+
+    await checkQuestsForUser(env, user.id);
+
+    const rewards = await db
+        .select({ questId: schema.rewards.questId })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.userId, user.id));
+    const questIds = new Set(rewards.map((reward) => reward.questId));
+    expect(questIds.has(TOP_UP_SINCE_LAUNCH_QUEST_ID)).toBe(false);
+    expect(questIds.has(TOP_UP_100_SINCE_LAUNCH_QUEST_ID)).toBe(false);
+    expect(questIds.has(LEGACY_FIRST_TOP_UP_QUEST_ID)).toBe(false);
+    expect(questIds.has(LEGACY_TOP_UP_100_QUEST_ID)).toBe(false);
+});
+
+test("top-up quests ignore Polar checkout pollen", async ({
     apiKey: _apiKey,
     mocks,
 }) => {
@@ -445,7 +535,7 @@ test("first top-up quest records paid Polar checkout pollen", async ({
         eventType: "polar.order.paid",
         userId: user.id,
         pollenCredited: 40,
-        polarCreatedAt: Date.parse("2025-11-14T21:11:20.339Z"),
+        polarCreatedAt: AFTER_QUEST_REWARDS_LAUNCH_DATE.getTime(),
         amount: 2000,
         totalAmount: 2400,
         currency: "usd",
@@ -454,7 +544,7 @@ test("first top-up quest records paid Polar checkout pollen", async ({
         productName: "20 pollen + 20 FREE",
         productSlug: "v1:product:pack:20x2",
         metadataJson: JSON.stringify({ source: "test" }),
-        createdAt: new Date(),
+        createdAt: AFTER_QUEST_REWARDS_LAUNCH_DATE,
     });
 
     await checkQuestsForUser(env, user.id);
@@ -464,11 +554,62 @@ test("first top-up quest records paid Polar checkout pollen", async ({
         .from(schema.rewards)
         .where(eq(schema.rewards.userId, user.id));
     const questIds = new Set(rewards.map((reward) => reward.questId));
-    expect(questIds.has("first_top_up")).toBe(true);
-    expect(questIds.has("top_up_100")).toBe(false);
+    expect(questIds.has(TOP_UP_SINCE_LAUNCH_QUEST_ID)).toBe(false);
+    expect(questIds.has(TOP_UP_100_SINCE_LAUNCH_QUEST_ID)).toBe(false);
+    expect(questIds.has(LEGACY_FIRST_TOP_UP_QUEST_ID)).toBe(false);
+    expect(questIds.has(LEGACY_TOP_UP_100_QUEST_ID)).toBe(false);
 });
 
-test("top-up 100 quest sums Stripe and Polar checkout pollen", async ({
+test("top-up 100 quest only sums checkout pollen since quest launch", async ({
+    apiKey: _apiKey,
+    mocks,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+
+    await env.DB.prepare(
+        `INSERT INTO stripe_checkout_credits (
+            session_id,
+            event_id,
+            event_type,
+            user_id,
+            pollen_credited,
+            created_at
+        ) VALUES (?, ?, ?, ?, ?, ?)`,
+    )
+        .bind(
+            `cs_test_${user.id}_old_80`,
+            `evt_${user.id}_old_80`,
+            "checkout.session.completed",
+            user.id,
+            80,
+            BEFORE_QUEST_REWARDS_LAUNCH_MILLIS,
+        )
+        .run();
+    await db.insert(schema.stripeCheckoutCredits).values({
+        sessionId: `cs_test_${user.id}_recent_40`,
+        eventId: `evt_${user.id}_recent_40`,
+        eventType: "checkout.session.completed",
+        userId: user.id,
+        pollenCredited: 40,
+        createdAt: AFTER_QUEST_REWARDS_LAUNCH_DATE,
+    });
+
+    await checkQuestsForUser(env, user.id);
+
+    const rewards = await db
+        .select({ questId: schema.rewards.questId })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.userId, user.id));
+    const questIds = new Set(rewards.map((reward) => reward.questId));
+    expect(questIds.has(TOP_UP_SINCE_LAUNCH_QUEST_ID)).toBe(true);
+    expect(questIds.has(TOP_UP_100_SINCE_LAUNCH_QUEST_ID)).toBe(false);
+    expect(questIds.has(LEGACY_FIRST_TOP_UP_QUEST_ID)).toBe(false);
+    expect(questIds.has(LEGACY_TOP_UP_100_QUEST_ID)).toBe(false);
+});
+
+test("top-up 100 quest sums multiple Stripe checkout rows", async ({
     apiKey: _apiKey,
     mocks,
 }) => {
@@ -482,24 +623,15 @@ test("top-up 100 quest sums Stripe and Polar checkout pollen", async ({
         eventType: "checkout.session.completed",
         userId: user.id,
         pollenCredited: 60,
-        createdAt: new Date(),
+        createdAt: AFTER_QUEST_REWARDS_LAUNCH_DATE,
     });
-    await db.insert(schema.polarCheckoutCredits).values({
-        orderId: `polar_order_${user.id}_partial_40`,
-        eventId: `polar:${user.id}:partial_40`,
-        eventType: "polar.order.paid",
+    await db.insert(schema.stripeCheckoutCredits).values({
+        sessionId: `cs_test_${user.id}_partial_40`,
+        eventId: `evt_${user.id}_partial_40`,
+        eventType: "checkout.session.completed",
         userId: user.id,
         pollenCredited: 40,
-        polarCreatedAt: Date.parse("2025-11-14T21:11:20.339Z"),
-        amount: 2000,
-        totalAmount: 2400,
-        currency: "usd",
-        customerId: `polar_customer_${user.id}`,
-        productId: "polar_product_20x2",
-        productName: "20 pollen + 20 FREE",
-        productSlug: "v1:product:pack:20x2",
-        metadataJson: JSON.stringify({ source: "test" }),
-        createdAt: new Date(),
+        createdAt: AFTER_QUEST_REWARDS_LAUNCH_DATE,
     });
 
     await checkQuestsForUser(env, user.id);
@@ -509,8 +641,10 @@ test("top-up 100 quest sums Stripe and Polar checkout pollen", async ({
         .from(schema.rewards)
         .where(eq(schema.rewards.userId, user.id));
     const questIds = new Set(rewards.map((reward) => reward.questId));
-    expect(questIds.has("first_top_up")).toBe(true);
-    expect(questIds.has("top_up_100")).toBe(true);
+    expect(questIds.has(TOP_UP_SINCE_LAUNCH_QUEST_ID)).toBe(true);
+    expect(questIds.has(TOP_UP_100_SINCE_LAUNCH_QUEST_ID)).toBe(true);
+    expect(questIds.has(LEGACY_FIRST_TOP_UP_QUEST_ID)).toBe(false);
+    expect(questIds.has(LEGACY_TOP_UP_100_QUEST_ID)).toBe(false);
 });
 
 test("POST /quests/check throttles a user to once per minute", async ({

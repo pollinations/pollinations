@@ -40,7 +40,6 @@
         "decrypt-vars:production": "sops decrypt secrets/prod.vars.json --output-type dotenv > .dev.vars",
         "push-secrets:staging": "sops exec-file --no-fifo secrets/staging.vars.json 'npx wrangler secret bulk {} --env staging'",
         "push-secrets:production": "sops exec-file --no-fifo secrets/prod.vars.json 'npx wrangler secret bulk {} --env production'",
-        "tail": "wrangler tail --env production | jq -c '.logs[].message[] | fromjson' | tsx scripts/format-logs.ts",
         "tail:json": "wrangler tail --env production | jq '.logs[].message[] | fromjson'"
     },
     "dependencies": {
@@ -81,7 +80,6 @@
         "@types/react-dom": "^19.2.3",
         "@vitejs/plugin-react": "^5.1.1",
         "drizzle-kit": "^0.31.7",
-        "easymidi": "^3.1.0",
         "openai": "^6.29.0",
         "tsx": "^4.20.6",
         "typescript": "^5.9.3",

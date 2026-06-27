@@ -184,10 +184,6 @@ type Row = {
     extras: string[];
 };
 
-const UNDOCUMENTED_CHAT_COMPAT_FIELDS = new Set([
-    "thinking",
-    "thinking_budget",
-]);
 const JS_MAX_INT = 9007199254740991;
 const JS_MIN_INT = -9007199254740991;
 
@@ -223,14 +219,6 @@ function collectRows(
     const rows: Row[] = [];
 
     for (const [name, raw] of Object.entries(props)) {
-        if (
-            parent === "" &&
-            "reasoning_effort" in props &&
-            UNDOCUMENTED_CHAT_COMPAT_FIELDS.has(name)
-        ) {
-            continue;
-        }
-
         const prop = asObj(raw);
         const path = parent ? `${parent}.${name}` : name;
         const extras = collectExtras(prop);

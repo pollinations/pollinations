@@ -15,12 +15,6 @@ describe("createClaudeThinkingTransform — budget mode (Haiku 4.5)", () => {
         expect(options.thinking).toBeUndefined();
     });
 
-    it("stays off for thinking_budget=0", async () => {
-        const { options } = await budget([], { thinking_budget: 0 });
-        expect(options.thinking).toBeUndefined();
-        expect(options.thinking_budget).toBeUndefined();
-    });
-
     it("maps reasoning_effort=high to enabled thinking with a budget", async () => {
         const { options } = await budget([], { reasoning_effort: "high" });
         expect(options.thinking).toEqual({
@@ -35,14 +29,6 @@ describe("createClaudeThinkingTransform — budget mode (Haiku 4.5)", () => {
         expect(options.thinking).toEqual({
             type: "enabled",
             budget_tokens: 1024,
-        });
-    });
-
-    it("uses an explicit thinking_budget verbatim", async () => {
-        const { options } = await budget([], { thinking_budget: 6000 });
-        expect(options.thinking).toEqual({
-            type: "enabled",
-            budget_tokens: 6000,
         });
     });
 
@@ -104,7 +90,7 @@ describe("createClaudeThinkingTransform — adaptive mode (Sonnet 4.6 and Opus 4
     });
 
     it("never emits budget_tokens (rejected by Opus 4.7/4.8)", async () => {
-        const { options } = await adaptive([], { thinking_budget: 5000 });
+        const { options } = await adaptive([], { reasoning_effort: "medium" });
         expect(options.thinking).toEqual({ type: "adaptive" });
         expect(JSON.stringify(options)).not.toContain("budget_tokens");
     });

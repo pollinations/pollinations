@@ -1,0 +1,35 @@
+{
+  "pr_number": 12034,
+  "title": "cleanup: remove unused Enter VCR snapshots",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12034",
+  "merged_at": "2026-06-27T11:00:49Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Deletes 31 orphaned JSON snapshots under `enter.pollinations.ai/test/mocks/snapshots`.\n- Keeps active Enter test mocks (`github.ts`, `stripe.ts`) unchanged.\n- Net diff: 31 files, 3,875 deletions.\n\nEvidence:\n- `rg -n \"createMockVcr|MockVcr|mockVcr|vcr|test/mocks/snapshots|replay-or-record|TEST_VCR_MODE\" enter.pollinations.ai/test enter.pollinations.ai/src enter.pollinations.ai --glob \"!**/node_modules/**\"` returns no Enter references.\n- `find enter.pollinations.ai/test/mocks/snapshots -type f | wc -l` showed 31 tracked snapshot files before deletion.\n\nChecks:\n- `npm run typecheck --workspace pollinations-enter`\n- `npm run build:frontend --workspace pollinations-enter`\n- `npm run test --workspace pollinations-enter -- test/events.test.ts` (3 tests)\n- `git diff --check origin/main`\n\nNote: validation used temporary symlinks to the existing local dependency tree; they were removed before commit.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Sweeping up old snapshots",
+    "blurb": "Just doing a little spring cleaning in the codebase! We swept away some old test files that were gathering digital dust.",
+    "summary": "Removed 31 orphaned JSON VCR test snapshots from the Enter gateway, deleting nearly 4,000 lines of unused mock data.",
+    "impact": "This keeps the repository clean and reduces clutter for developers working on the authentication and billing gateway.",
+    "keywords": [
+      "cleanup",
+      "tests",
+      "chore",
+      "enter",
+      "refactor"
+    ],
+    "visual_concept": "The Nomnom creature eating old papers/documents (representing the deleted JSON snapshots), with Polly the bee wearing a tiny janitor hat or holding a broom to represent the cleanup chore.",
+    "image_prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating a stack of old dusty documents. Polly the bee mascot hovers nearby wearing a tiny janitor hat and holding a small broom. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-27/PR-12034.jpg",
+    "prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating a stack of old dusty documents. Polly the bee mascot hovers nearby wearing a tiny janitor hat and holding a small broom. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-27T11:01:47.833028+00:00"
+}

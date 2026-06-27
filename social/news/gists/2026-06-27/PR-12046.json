@@ -1,0 +1,35 @@
+{
+  "pr_number": 12046,
+  "title": "docs: scrub tier and drip copy",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12046",
+  "merged_at": "2026-06-27T13:13:21Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "Splits the copy-only wording changes out of #11996.\n\n- Updates docs, prompts, and site copy from tier/drip framing to Quests/Pollen wording.\n- Updates site metadata and string constants only; no runtime, service, test, or workflow deletions are included.\n- Leaves behavioral changes for the companion code split.\n\nValidation:\n- npx biome check --write on the touched supported files\n- git diff --cached --check\n\nRefs #11996.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "From drips to Pollen",
+    "blurb": "We've updated our documentation and website copy to fully embrace our new Quests and Pollen system. Say goodbye to 'tiers' and 'drips', and hello to earning Pollen!",
+    "summary": "Updated documentation, prompts, and website copy to replace legacy 'tier' and 'drip' terminology with the new 'Quests' and 'Pollen' framing.",
+    "impact": "Users will see consistent Quests and Pollen terminology across the website, documentation, and AI agent prompts.",
+    "keywords": [
+      "docs",
+      "copy",
+      "pollen",
+      "quests",
+      "terminology"
+    ],
+    "visual_concept": "Polly the bee mascot acting as a painter or editor, updating signs in a garden. The old concepts (tiers/drips) are being painted over with the new concepts (Quests/Pollen).",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny painter's beret, painting a wooden sign in a lush digital garden. The sign reads 'QUESTS' and 'POLLEN' in chunky pixel font, covering up old faded text. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and inviting."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-27/PR-12046.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny painter's beret, painting a wooden sign in a lush digital garden. The sign reads 'QUESTS' and 'POLLEN' in chunky pixel font, covering up old faded text. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and inviting."
+  },
+  "generated_at": "2026-06-27T13:14:22.337453+00:00"
+}

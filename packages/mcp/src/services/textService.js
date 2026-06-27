@@ -27,7 +27,6 @@ async function generateText(params) {
         frequency_penalty,
         presence_penalty,
         json: jsonMode,
-        private: isPrivate,
     } = params;
 
     if (!prompt || typeof prompt !== "string") {

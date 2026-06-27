@@ -27,7 +27,6 @@
             // exclude dependencies
             ".github/**",
             "!**/node_modules/**",
-            "!**/reddit/**",
             // exclude build outputs (force-ignore with !!)
             "!**/dist/**",
             "!**/build/**",

@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-06-26",
+  "period_start": "2026-06-26",
+  "period_end": "2026-06-26",
+  "generated_at": "2026-06-27T07:01:50.614720+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-26/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-26/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-26/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Greenhouse keeping. We spent some time untangling quest logic this week. If you've been doing pollen top-ups (including Polar), your achievements should actually track correctly now—exact 100s count, and we split legacy from launch quests so things make a bit more sense.\n\nOh, and REKTY AI just joined the bot roster. Go say hi.\n\nEverything is live. Code is in the open.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #gamedev #openAI #developer",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

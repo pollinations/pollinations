@@ -86,7 +86,7 @@ graph LR
         MCP_C["🔌 MCP"]
     end
 
-    ENTER["⚡ gen → 🔐 enter\nEdge Router → Gateway\nAuth · Tiers · Billing\n280M req/month"]:::cfWorker
+    ENTER["⚡ gen → 🔐 enter\nEdge Router → Gateway\nAuth · Billing\n280M req/month"]:::cfWorker
 
     CLIENTS --> ENTER
 
@@ -188,7 +188,7 @@ graph TD
     GEN -->|"service binding\n(zero latency)"| ENTER
 
     subgraph CF["☁️ Cloudflare Workers"]
-        ENTER["🔐 enter.pollinations.ai · API Gateway\n─────────────────\n🔑 OAuth + API Keys (pk_ / sk_)\n🏷️ 6 Tiers: microbe → router\n💰 Pollen balance (tier + packs + crypto)\n⏱️ Rate Limiting (Durable Objects)\n📊 Usage → TinyBird\n🔄 Response dedup"]:::cfWorker
+        ENTER["🔐 enter.pollinations.ai · API Gateway\n─────────────────\n🔑 OAuth + API Keys (pk_ / sk_)\n💰 Pollen wallet (Quest + Paid buckets)\n⏱️ Rate Limiting (Durable Objects)\n📊 Usage → TinyBird\n🔄 Response dedup"]:::cfWorker
         IMG_ROUTER["🎨 Image/video router\nHono routes · KV heartbeats\nProvider + GPU dispatch"]:::cfWorkerLight
         PORTKEY_W["🔀 portkey.pollinations.ai\nText routing worker"]:::cfWorkerLight
         MEDIA["📁 media.pollinations.ai\nSHA-256 uploads · 10MB"]:::cfWorkerLight
@@ -196,8 +196,8 @@ graph TD
     end
 
     subgraph STORAGE["💾 Cloudflare Storage"]
-        D1["🗃️ D1 SQLite\n40K users · auth\nkeys · tiers · balance"]:::cfStorage
-        KV_S["⚡ KV Store\nstats · refills · dedup"]:::cfStorage
+        D1["🗃️ D1 SQLite\n40K users · auth\nkeys · balances"]:::cfStorage
+        KV_S["⚡ KV Store\nstats · dedup"]:::cfStorage
         R2["📦 R2 · 48 TB\n4 buckets · images\ntext · media · cache"]:::cfStorage
         DO["🔒 Durable Objects\nPollenRateLimiter\n10K req/10s per IP"]:::cfStorage
     end
@@ -261,7 +261,7 @@ graph TD
     GH -.->|"wrangler deploy"| CF
     SOPS_S -.->|"wrangler secrets"| CF
 
-    ENTER -.->|"cron: refills\nabuse · D1 sync"| D1
+    ENTER -.->|"abuse · D1 sync"| D1
 
     style CF fill:none,stroke:#888,stroke-width:2px,stroke-dasharray: 5 5
     style STORAGE fill:none,stroke:#888,stroke-width:2px,stroke-dasharray: 5 5

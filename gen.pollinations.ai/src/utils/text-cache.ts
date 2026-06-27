@@ -7,6 +7,7 @@
 import type { Logger } from "@logtape/logtape";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
+import type { SafetyFeature } from "@shared/schemas/safety.ts";
 import {
     parseSafeFeatures,
     SAFETY_HEADER_NAME,
@@ -26,6 +27,16 @@ function hasActiveSafety(value: unknown): boolean {
     );
 }
 
+function normalizeSafetyFeatures(
+    features: readonly SafetyFeature[] | undefined,
+): string {
+    return [...new Set(features ?? [])].sort().join(",");
+}
+
+type GenerateCacheKeyOptions = {
+    defaultSafetyFeatures?: readonly SafetyFeature[];
+};
+
 /**
  * Generate a cache key for the request using SHA-256 hash
  * Handles both GET and POST requests
@@ -36,6 +47,7 @@ function hasActiveSafety(value: unknown): boolean {
 export async function generateCacheKey(
     request: Request,
     bodyText?: string,
+    options: GenerateCacheKeyOptions = {},
 ): Promise<string> {
     const url = new URL(request.url);
 
@@ -61,6 +73,13 @@ export async function generateCacheKey(
     const hasQuerySafe = url.searchParams.has("safe");
     let hasBodySafe = false;
     let usesSafety = hasActiveSafety(url.searchParams.get("safe"));
+    const defaultSafetyFeatures = normalizeSafetyFeatures(
+        options.defaultSafetyFeatures,
+    );
+    if (defaultSafetyFeatures) {
+        parts.push(`default-safe:${defaultSafetyFeatures}`);
+        usesSafety = true;
+    }
 
     // Add filtered body for POST/PUT requests
     if (bodyText && (request.method === "POST" || request.method === "PUT")) {
@@ -144,6 +163,7 @@ type TextCacheEnv = {
 export async function getCachedResponse<TEnv extends TextCacheEnv>(
     c: Context<TEnv>,
     key: string,
+    options: { refreshTtl?: boolean } = {},
 ): Promise<Response | null> {
     try {
         const cachedObject = await c.env.TEXT_BUCKET.get(key);
@@ -175,18 +195,21 @@ export async function getCachedResponse<TEnv extends TextCacheEnv>(
         // Browser cache: immutable since same request = same response
         headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
 
-        const responseBody = refreshR2ObjectTtl(
-            c.env.TEXT_BUCKET,
-            key,
-            cachedObject,
-            (promise) => c.executionCtx.waitUntil(promise),
-            (error) => {
-                c.get("log")?.error(
-                    "[TEXT-CACHE] Error refreshing cached response TTL: {error}",
-                    { error },
-                );
-            },
-        );
+        const responseBody =
+            options.refreshTtl === false
+                ? cachedObject.body
+                : refreshR2ObjectTtl(
+                      c.env.TEXT_BUCKET,
+                      key,
+                      cachedObject,
+                      (promise) => c.executionCtx.waitUntil(promise),
+                      (error) => {
+                          c.get("log")?.error(
+                              "[TEXT-CACHE] Error refreshing cached response TTL: {error}",
+                              { error },
+                          );
+                      },
+                  );
 
         // Create response from cached object
         return new Response(responseBody, {

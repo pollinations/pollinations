@@ -10,6 +10,7 @@ import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { Hono } from "hono";
 import type { RequestIdVariables } from "hono/request-id";
 import { describe, expect, it } from "vitest";
+import type { AuthVariables } from "@/middleware/auth.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 
@@ -23,15 +24,40 @@ const testLog = {
 
 type TestEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables & RequestIdVariables;
+    Variables: LoggerVariables & RequestIdVariables & Partial<AuthVariables>;
 };
 
-function createTextCacheApp() {
+function createAuthState(opts: {
+    cacheWritesDisabled?: boolean;
+    privacyModeEnabled?: boolean;
+}): AuthVariables["auth"] {
+    const user = {
+        id: "user-cache-pref",
+        cacheWritesDisabled: opts.cacheWritesDisabled === true,
+        privacyModeEnabled: opts.privacyModeEnabled === true,
+    } as NonNullable<AuthVariables["auth"]["user"]>;
+    return {
+        user,
+        requireAuthorization: async () => {},
+        requireUser: () => user,
+        requireModelAccess: () => {},
+    };
+}
+
+function createTextCacheApp(
+    opts: { cacheWritesDisabled?: boolean; privacyModeEnabled?: boolean } = {},
+) {
     let originHits = 0;
     const app = new Hono<TestEnv>()
         .use("*", async (c, next) => {
             c.set("log", testLog);
             c.set("requestId", "test-request");
+            if (
+                typeof opts.cacheWritesDisabled === "boolean" ||
+                typeof opts.privacyModeEnabled === "boolean"
+            ) {
+                c.set("auth", createAuthState(opts));
+            }
             await next();
         })
         .post(
@@ -309,6 +335,72 @@ describe("text cache", () => {
         expect(second.response.headers.get("X-Cache")).toBe("HIT");
         expect(body).toBe("hit:1:ttl-refresh");
         expect(cache.originHits).toBe(1);
+        expect(bucket.putCount).toBe(2);
+    });
+
+    it("skips text cache writes for users with cache writes disabled", async () => {
+        const cache = createTextCacheApp({ cacheWritesDisabled: true });
+        const { app } = cache;
+        const bucket = createTestR2Bucket();
+        const env = createTextCacheEnv(bucket);
+        const path = "/text/no-write?model=openai-fast";
+
+        const first = await dispatch(app, path, undefined, env);
+        expect(await consumeAndWait(first)).toBe("hit:1:no-write");
+        expect(first.response.headers.get("X-Cache")).toBe("MISS");
+        expect(first.response.headers.get("X-Cache-Write")).toBe("SKIP");
+        expect(bucket.putCount).toBe(0);
+
+        const second = await dispatch(app, path, undefined, env);
+        expect(await consumeAndWait(second)).toBe("hit:2:no-write");
+        expect(second.response.headers.get("X-Cache")).toBe("MISS");
+        expect(second.response.headers.get("X-Cache-Write")).toBe("SKIP");
+        expect(cache.originHits).toBe(2);
+        expect(bucket.putCount).toBe(0);
+    });
+
+    it("serves text cache hits without TTL refresh when cache writes are disabled", async () => {
+        const writer = createTextCacheApp();
+        const bucket = createTestR2Bucket();
+        const env = createTextCacheEnv(bucket);
+        const path = "/text/read-existing?model=openai-fast";
+
+        const warm = await dispatch(writer.app, path, undefined, env);
+        expect(await consumeAndWait(warm)).toBe("hit:1:read-existing");
+        expect(bucket.putCount).toBe(1);
+
+        const reader = createTextCacheApp({ cacheWritesDisabled: true });
+        const cached = await dispatch(reader.app, path, undefined, env);
+        expect(await consumeAndWait(cached)).toBe("hit:1:read-existing");
+        expect(cached.response.headers.get("X-Cache")).toBe("HIT");
+        expect(reader.originHits).toBe(0);
+        expect(bucket.putCount).toBe(1);
+    });
+
+    it("does not serve non-privacy text cache entries to privacy-mode users", async () => {
+        const writer = createTextCacheApp();
+        const bucket = createTestR2Bucket();
+        const env = createTextCacheEnv(bucket);
+        const path = "/text/privacy-namespace?model=openai-fast";
+
+        const warm = await dispatch(writer.app, path, undefined, env);
+        expect(await consumeAndWait(warm)).toBe("hit:1:privacy-namespace");
+        expect(bucket.putCount).toBe(1);
+
+        const reader = createTextCacheApp({ privacyModeEnabled: true });
+        const privacyModeResponse = await dispatch(
+            reader.app,
+            path,
+            undefined,
+            env,
+        );
+        expect(await consumeAndWait(privacyModeResponse)).toBe(
+            "hit:1:privacy-namespace",
+        );
+        expect(privacyModeResponse.response.headers.get("X-Cache")).toBe(
+            "MISS",
+        );
+        expect(reader.originHits).toBe(1);
         expect(bucket.putCount).toBe(2);
     });
 

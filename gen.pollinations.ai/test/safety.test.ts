@@ -43,6 +43,18 @@ function safetyApp() {
         .use("*", async (c, next) => {
             c.set("log", testLog);
             c.set("requestId", "test-request");
+            if (c.req.header("x-test-privacy-mode") === "true") {
+                const user = {
+                    id: "user-privacy-mode",
+                    privacyModeEnabled: true,
+                } as NonNullable<Env["Variables"]["auth"]["user"]>;
+                c.set("auth", {
+                    user,
+                    requireAuthorization: async () => {},
+                    requireUser: () => user,
+                    requireModelAccess: () => {},
+                });
+            }
             await next();
         })
         .get("/scan/:text", async (c) => {
@@ -163,6 +175,62 @@ describe("applySafety", { timeout: 30000 }, () => {
         expect(await response.text()).toBe("email {EMAIL}");
         expect(response.headers.get("X-Safety-Applied")).toBe("privacy");
         expect(response.headers.get("X-Safety-Redacted")).toBe("EMAIL");
+    });
+
+    it("applies account privacy mode when safe is omitted", async () => {
+        guardrailResponse = intervened(
+            {
+                sensitiveInformationPolicy: {
+                    piiEntities: [
+                        {
+                            action: "ANONYMIZED",
+                            match: "a@example.com",
+                            type: "EMAIL",
+                        },
+                    ],
+                },
+            },
+            [{ text: "email {EMAIL}" }],
+        );
+
+        const response = await safetyApp().request(
+            "/scan/email%20a%40example.com",
+            { headers: { "x-test-privacy-mode": "true" } },
+            configuredEnv,
+        );
+
+        expect(response.status).toBe(200);
+        expect(await response.text()).toBe("email {EMAIL}");
+        expect(response.headers.get("X-Safety-Applied")).toBe("privacy");
+        expect(fetchMock).toHaveBeenCalledOnce();
+    });
+
+    it("does not let safe=false disable account privacy mode", async () => {
+        guardrailResponse = intervened(
+            {
+                sensitiveInformationPolicy: {
+                    piiEntities: [
+                        {
+                            action: "ANONYMIZED",
+                            match: "a@example.com",
+                            type: "EMAIL",
+                        },
+                    ],
+                },
+            },
+            [{ text: "email {EMAIL}" }],
+        );
+
+        const response = await safetyApp().request(
+            "/scan/email%20a%40example.com?safe=false",
+            { headers: { "x-test-privacy-mode": "true" } },
+            configuredEnv,
+        );
+
+        expect(response.status).toBe(200);
+        expect(await response.text()).toBe("email {EMAIL}");
+        expect(response.headers.get("X-Safety-Applied")).toBe("privacy");
+        expect(fetchMock).toHaveBeenCalledOnce();
     });
 
     it("accepts safety from the request header", async () => {
@@ -514,6 +582,21 @@ describe("safety cache keys", () => {
         expect(withQueryOverride).not.toBe(withHeaderSafety);
     });
 
+    it("separates text cache keys when account privacy mode is active", async () => {
+        const noSafety = await generateTextCacheKey(
+            new Request("https://gen.pollinations.ai/text/hello?model=openai"),
+        );
+        const withAccountPrivacy = await generateTextCacheKey(
+            new Request(
+                "https://gen.pollinations.ai/text/hello?model=openai&safe=false",
+            ),
+            undefined,
+            { defaultSafetyFeatures: ["privacy"] },
+        );
+
+        expect(withAccountPrivacy).not.toBe(noSafety);
+    });
+
     it("adds a visible safety namespace to media cache keys when safe is active", () => {
         const withSafety = generateMediaCacheKey(
             new URL("https://gen.pollinations.ai/image/hello?safe=true"),
@@ -524,6 +607,19 @@ describe("safety cache keys", () => {
 
         expect(withSafety).toContain("safety_bedrock-input-v1");
         expect(withoutSafety).not.toContain("safety_bedrock-input-v1");
+    });
+
+    it("uses opaque media cache keys when account privacy mode is active", () => {
+        const withAccountPrivacy = generateMediaCacheKey(
+            new URL(
+                "https://gen.pollinations.ai/image/email%20a%40example.com",
+            ),
+            null,
+            { defaultSafetyFeatures: ["privacy"], opaque: true },
+        );
+
+        expect(withAccountPrivacy).toMatch(/^private-[a-f0-9]+$/);
+        expect(withAccountPrivacy).not.toContain("email");
     });
 
     it("adds header safety to media cache keys", () => {

@@ -5,6 +5,7 @@
  */
 
 import type { Logger } from "@logtape/logtape";
+import type { SafetyFeature } from "@shared/schemas/safety.ts";
 import { parseSafeFeatures } from "@shared/schemas/safety.ts";
 import { removeUnset } from "@shared/util.ts";
 import type { Context } from "hono";
@@ -21,11 +22,29 @@ function hasActiveSafety(value: string | null | undefined): boolean {
     return parseSafeFeatures(value).size > 0;
 }
 
-export function generateCacheKey(url: URL, safeHeader?: string | null): string {
+function normalizeSafetyFeatures(
+    features: readonly SafetyFeature[] | undefined,
+): string {
+    return [...new Set(features ?? [])].sort().join(",");
+}
+
+type GenerateCacheKeyOptions = {
+    defaultSafetyFeatures?: readonly SafetyFeature[];
+    opaque?: boolean;
+};
+
+export function generateCacheKey(
+    url: URL,
+    safeHeader?: string | null,
+    options: GenerateCacheKeyOptions = {},
+): string {
     const normalizedUrl = new URL(url);
     const hasQuerySafe = normalizedUrl.searchParams.has("safe");
     const usesSafety = hasActiveSafety(normalizedUrl.searchParams.get("safe"));
     const usesHeaderSafety = !hasQuerySafe && hasActiveSafety(safeHeader);
+    const defaultSafetyFeatures = normalizeSafetyFeatures(
+        options.defaultSafetyFeatures,
+    );
     const params = Array.from(normalizedUrl.searchParams.entries()).sort(
         ([keyA], [keyB]) => keyA.localeCompare(keyB),
     );
@@ -39,12 +58,21 @@ export function generateCacheKey(url: URL, safeHeader?: string | null): string {
     if (safeHeader !== undefined && safeHeader !== null && !hasQuerySafe) {
         normalizedUrl.searchParams.append("__safe_header", safeHeader);
     }
-    if (usesSafety || usesHeaderSafety) {
+    if (defaultSafetyFeatures) {
+        normalizedUrl.searchParams.append(
+            "__default_safe",
+            defaultSafetyFeatures,
+        );
+    }
+    if (usesSafety || usesHeaderSafety || defaultSafetyFeatures) {
         normalizedUrl.searchParams.append("__safety", SAFETY_CACHE_VERSION);
     }
 
     const fullPath = normalizedUrl.pathname + normalizedUrl.search;
     const hash = createHash(fullPath);
+    if (options.opaque) {
+        return `private-${hash}`;
+    }
     const safePath = fullPath.replace(/[/\s?=&]/g, "_");
     const trimmedPath = safePath.substring(0, 990);
 

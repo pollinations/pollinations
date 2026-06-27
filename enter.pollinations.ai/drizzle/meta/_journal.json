@@ -225,6 +225,13 @@
       "when": 1782467647638,
       "tag": "0031_lucky_alex_power",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "6",
+      "when": 1782555975697,
+      "tag": "0032_generation_preferences",
+      "breakpoints": true
     }
   ]
 }

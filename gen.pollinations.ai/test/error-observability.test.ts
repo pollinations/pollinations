@@ -186,6 +186,77 @@ describe("error observability", () => {
         });
     });
 
+    it("redacts request inputs in error events when account privacy mode is enabled", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+
+        const app = new Hono<Env>();
+        app.use("*", requestId());
+        app.use("*", logger);
+        app.post("/v1/chat/completions", async (c) => {
+            const user = {
+                id: "user-privacy-mode",
+                privacyModeEnabled: true,
+            } as NonNullable<Env["Variables"]["auth"]["user"]>;
+            c.set("auth", {
+                user,
+                requireAuthorization: async () => {},
+                requireUser: () => user,
+                requireModelAccess: () => {},
+            });
+            await c.req.json();
+            throw new Error("privacy-mode failure");
+        });
+        app.onError(handleError);
+
+        const ctx = createExecutionContext();
+        const response = await app.fetch(
+            new Request(
+                "https://gen.pollinations.ai/v1/chat/completions?system=secret",
+                {
+                    method: "POST",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({
+                        model: "openai",
+                        messages: [
+                            {
+                                role: "user",
+                                content: "email a@example.com",
+                            },
+                        ],
+                    }),
+                },
+            ),
+            {
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(500);
+        expect(tinybirdRequests).toHaveLength(1);
+        const tinybirdPayload = (await tinybirdRequests[0].json()) as Record<
+            string,
+            unknown
+        >;
+        expect(tinybirdPayload).toMatchObject({
+            kind: "server_error",
+            request_inputs: JSON.stringify({ privacy: "redacted" }),
+        });
+    });
+
     it("does not mask 5xx errors when no route matched", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(

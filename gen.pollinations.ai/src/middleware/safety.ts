@@ -2,11 +2,12 @@ import type {
     CreateChatCompletionRequest,
     MessageContentPart,
 } from "@shared/schemas/openai.ts";
-import type { SafeValue } from "@shared/schemas/safety.ts";
+import type { SafetyFeature, SafeValue } from "@shared/schemas/safety.ts";
 import {
     invalidSafeTokens,
     normalizeSafeValue,
     parseSafeFeatures,
+    SAFETY_FEATURES,
     SAFETY_HEADER_NAME,
     VALID_SAFE_TOKENS,
 } from "@shared/schemas/safety.ts";
@@ -46,13 +47,13 @@ export async function applySafetyToTexts(
     bodySafe?: SafeValue,
 ): Promise<string[]> {
     const safeValue = resolveSafeValue(c, bodySafe);
-    const features = getRequestFeatures(safeValue);
+    const features = getRequestFeatures(c, safeValue);
     if (features.size === 0) return texts;
 
     const guardrailInputs = selectGuardrailInputs(texts);
     if (guardrailInputs.length === 0) return texts;
 
-    setSafetyHeader(c, "X-Safety-Applied", [...features].join(","));
+    setSafetyHeader(c, "X-Safety-Applied", formatSafetyFeatures(features));
 
     let response: BedrockResponse;
     try {
@@ -155,6 +156,10 @@ function resolveSafeValue(
         return providedSafe;
     }
     return c.req.query("safe") ?? c.req.header(SAFETY_HEADER_NAME);
+}
+
+function isAccountPrivacyModeEnabled(c: SafetyContext): boolean {
+    return c.var.auth?.user?.privacyModeEnabled === true;
 }
 
 export function withSafetyHeaders(
@@ -282,7 +287,7 @@ function isTextPart(part: MessageContentPart): part is MessageContentPart & {
     return part.type === "text" && typeof part.text === "string";
 }
 
-function getRequestFeatures(safeValue: SafeValue) {
+function getRequestFeatures(c: SafetyContext, safeValue: SafeValue) {
     const normalized = normalizeSafeValue(safeValue);
     const invalid = invalidSafeTokens(normalized);
     if (invalid.length > 0) {
@@ -294,7 +299,16 @@ function getRequestFeatures(safeValue: SafeValue) {
         });
     }
 
-    return parseSafeFeatures(normalized);
+    const features = parseSafeFeatures(normalized);
+    if (isAccountPrivacyModeEnabled(c)) {
+        features.add("privacy");
+    }
+
+    return features;
+}
+
+function formatSafetyFeatures(features: Set<SafetyFeature>): string {
+    return SAFETY_FEATURES.filter((feature) => features.has(feature)).join(",");
 }
 
 function safetyError(

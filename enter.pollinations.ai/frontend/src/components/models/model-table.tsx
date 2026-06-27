@@ -28,12 +28,8 @@ import {
 } from "./model-info.ts";
 import { ModelRow } from "./model-row.tsx";
 import { ModelStatusChips } from "./model-status-chips.tsx";
-import {
-    getModelPriceBadges,
-    PriceBadgeList,
-    type PriceDirection,
-} from "./price-badge.tsx";
-import type { ModelPrice } from "./types.ts";
+import { getModelPriceBadges, PriceBadgeList } from "./price-badge.tsx";
+import type { ModelPrice, PriceDirection } from "./types.ts";
 
 export type SectionType =
     | "image"

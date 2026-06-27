@@ -1,0 +1,34 @@
+{
+  "pr_number": 12036,
+  "title": "test: reduce brittle catalog assertions",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12036",
+  "merged_at": "2026-06-27T11:16:51Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Replaces copied catalog values in Enter/Gen tests with registry- and catalog-derived contract assertions.\\n- Keeps billing and safety contracts explicit: positive configured rates, capability mapping, restricted model filtering, and safety cache versioning.\\n- Leaves unrelated untracked pnpm files out of the branch.\\n\\nValidation:\\n- npm run decrypt-vars\\n- npx biome check --write <touched files>\\n- enter unit slice: 237 passed\\n- enter integration slice: 71 passed\\n- gen focused slice: 61 passed\\n- git diff --check",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Sweeping the test suite",
+    "blurb": "We've cleaned up our test suite to use dynamic catalog assertions instead of hardcoded values. This makes our internal checks much more robust as we add new models.",
+    "summary": "Replaced hardcoded catalog values in the Enter and Gen test suites with dynamic registry-derived assertions to reduce brittleness.",
+    "impact": "This internal refactor ensures our test suite automatically adapts to new models and pricing changes without requiring manual updates.",
+    "keywords": [
+      "tests",
+      "refactor",
+      "chore",
+      "catalog"
+    ],
+    "visual_concept": "Polly the bee wearing a tiny janitor's hat, sweeping up broken pixelated code blocks (representing brittle tests) in a cozy server room.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny janitor's hat, sweeping up broken pixelated code blocks with a small broom. A chunky retro server rack glows softly in the background. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-27/PR-12036.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny janitor's hat, sweeping up broken pixelated code blocks with a small broom. A chunky retro server rack glows softly in the background. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-27T11:17:57.208692+00:00"
+}

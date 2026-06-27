@@ -1,6 +1,7 @@
 name = "quest-dash-live"
 main = "worker.js"
 compatibility_date = "2025-06-01"
+account_id = "b6ec751c0862027ba269faf7029b2501"
 
 # Prod D1 — bound by id at the account level, no secrets needed.
 [[d1_databases]]

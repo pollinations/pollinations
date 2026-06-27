@@ -1,0 +1,35 @@
+{
+  "pr_number": 12030,
+  "title": "chore: update app metrics 2026-06-27",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12030",
+  "merged_at": "2026-06-27T05:28:15Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Daily automated update of app metrics, health checks, and greenhouse",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Watering the Apps",
+    "blurb": "Our automated bots just finished their daily rounds, updating health metrics and stats for all community apps in the greenhouse.",
+    "summary": "Automated daily update of community app metrics, health checks, and greenhouse statistics in APPS.md and GREENHOUSE.md.",
+    "impact": "Ensures the community app directory reflects the latest health statuses and usage data.",
+    "keywords": [
+      "metrics",
+      "apps",
+      "greenhouse",
+      "automated",
+      "chore"
+    ],
+    "visual_concept": "A chunky robot watering plants in a greenhouse, representing the automated health checks and metrics updates for the community apps. Polly the bee hovering nearby with a clipboard.",
+    "image_prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head watering glowing code-plants in a digital greenhouse. The cute bee mascot hovers nearby holding a tiny clipboard. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-27/PR-12030.jpg",
+    "prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head watering glowing code-plants in a digital greenhouse. The cute bee mascot hovers nearby holding a tiny clipboard. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-27T05:29:14.572489+00:00"
+}

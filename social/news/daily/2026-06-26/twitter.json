@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-06-26",
+  "period_start": "2026-06-26",
+  "period_end": "2026-06-26",
+  "generated_at": "2026-06-27T07:01:50.614720+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-26/images/twitter.jpg"
+    }
+  ],
+  "text": "added REKTY AI to the bot roster. also spent the morning fixing quest logic because the achievement system was ignoring exact 100 pollen top-ups. the math has been corrected."
+}

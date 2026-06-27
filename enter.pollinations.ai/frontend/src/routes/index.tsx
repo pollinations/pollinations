@@ -56,14 +56,12 @@ export const Route = createFileRoute("/")({
     loader: async ({ context }) => {
         // Parallelize independent API calls for faster loading
         const [
-            tierData,
             apiKeysResult,
             d1BalanceResult,
             profileResult,
             billingState,
             earningsTodayResult,
         ] = await Promise.all([
-            apiClient.tiers.view.$get().then((r) => (r.ok ? r.json() : null)),
             apiClient["api-keys"]
                 .$get()
                 .then((r) => (r.ok ? r.json() : { data: [] })),
@@ -96,7 +94,6 @@ export const Route = createFileRoute("/")({
             user: context.user,
             githubUsername,
             apiKeys,
-            tierData,
             tierBalance,
             packBalance,
             billingState,
@@ -112,7 +109,6 @@ function RouteComponent() {
         user,
         githubUsername,
         apiKeys,
-        tierData,
         tierBalance,
         packBalance,
         billingState,
@@ -251,7 +247,6 @@ function RouteComponent() {
                 <SidebarWallet
                     tierBalance={tierBalance}
                     packBalance={packBalance}
-                    tier={tierData?.active?.tier}
                     paidWeek={paidWeek}
                     tierWeek={tierWeek}
                 />
@@ -264,7 +259,6 @@ function RouteComponent() {
                         <PollenBalance
                             tierBalance={tierBalance}
                             packBalance={packBalance}
-                            tier={tierData?.active?.tier}
                             paidWeek={paidWeek}
                             tierWeek={tierWeek}
                         />

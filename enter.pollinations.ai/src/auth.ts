@@ -11,7 +11,7 @@ import {
 } from "@shared/db/better-auth.ts";
 import { sendTierEventToTinybird } from "@shared/events.ts";
 import { AUTH_TRUSTED_ORIGINS } from "@shared/public-urls.ts";
-import { DEFAULT_TIER, getTierPollen } from "@shared/tier-config.ts";
+import { DEFAULT_TIER } from "@shared/tier-config.ts";
 import {
     type BetterAuthOptions,
     type BetterAuthPlugin,
@@ -227,8 +227,8 @@ function onAfterSessionCreate(
 }
 
 /**
- * Set initial tier balance in D1 after user creation.
- * This guarantees new users get their default tier pollen.
+ * Runs after user creation. Logs a registration event. New users no longer
+ * receive an automatic Pollen grant — Pollen is earned by completing Quests.
  */
 function onAfterUserCreate(
     env: Cloudflare.Env,
@@ -236,17 +236,8 @@ function onAfterUserCreate(
 ) {
     return async (user: GenericUser, _ctx: GenericEndpointContext | null) => {
         try {
-            const db = drizzle(env.DB);
-            const tierBalance = getTierPollen(DEFAULT_TIER);
-            await db
-                .update(userTable)
-                .set({
-                    tierBalance,
-                    lastTierGrant: Date.now(),
-                })
-                .where(eq(userTable.id, user.id));
-
-            // Log user registration event to Tinybird
+            // Log user registration to Tinybird. New users no longer receive an
+            // automatic Pollen grant — Pollen is earned by completing Quests.
             // Use the ExecutionContext passed from createAuth, not better-auth's internal context
             executionCtx?.waitUntil(
                 sendTierEventToTinybird(
@@ -255,7 +246,7 @@ function onAfterUserCreate(
                         environment: env.ENVIRONMENT || "unknown",
                         user_id: user.id,
                         tier: DEFAULT_TIER,
-                        pollen_amount: tierBalance,
+                        pollen_amount: 0,
                     },
                     env.TINYBIRD_TIER_INGEST_URL,
                     env.TINYBIRD_INGEST_TOKEN,

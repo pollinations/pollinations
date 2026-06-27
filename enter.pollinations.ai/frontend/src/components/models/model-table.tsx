@@ -8,7 +8,11 @@ import {
 } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import { type FC, useState } from "react";
-import { calculatePerPollen, unitLabels } from "./calculations.ts";
+import {
+    calculatePerPollen,
+    calculatePerPollenValue,
+    unitLabels,
+} from "./calculations.ts";
 import { CAPABILITY_ICON, MODALITY_ICON } from "./model-icons.tsx";
 import {
     type DisplayCapability,
@@ -24,12 +28,8 @@ import {
 } from "./model-info.ts";
 import { ModelRow } from "./model-row.tsx";
 import { ModelStatusChips } from "./model-status-chips.tsx";
-import {
-    groupPriceBadges,
-    PriceBadge,
-    type PriceBadgeConfig,
-} from "./price-badge.tsx";
-import type { ModelPrice } from "./types.ts";
+import { getModelPriceBadges, PriceBadgeList } from "./price-badge.tsx";
+import type { ModelPrice, PriceDirection } from "./types.ts";
 
 export type SectionType =
     | "image"
@@ -37,7 +37,6 @@ export type SectionType =
     | "audio"
     | "realtime"
     | "text"
-    | "community"
     | "embedding";
 
 type UnifiedModelTableProps = {
@@ -46,18 +45,8 @@ type UnifiedModelTableProps = {
     textModels: ModelPrice[];
     audioModels: ModelPrice[];
     realtimeModels: ModelPrice[];
-    communityModels: ModelPrice[];
     embeddingModels: ModelPrice[];
     activeTab: SectionType;
-};
-
-// Helper to convert per pollen string to numeric value for sorting
-const getPerPollenNumeric = (perPollen: string): number => {
-    if (perPollen === "—") return -1;
-    const cleaned = perPollen.replace(" min", "");
-    if (cleaned.endsWith("K")) return parseFloat(cleaned) * 1000;
-    if (cleaned.endsWith("M")) return parseFloat(cleaned) * 1000000;
-    return parseFloat(cleaned) || -1;
 };
 
 type SortKey = "name" | "perPollen" | "input" | "output";
@@ -84,13 +73,13 @@ const sortModels = (
         }
         const av =
             sortKey === "perPollen"
-                ? getPerPollenNumeric(calculatePerPollen(a))
+                ? (calculatePerPollenValue(a) ?? -1)
                 : sortKey === "input"
                   ? (a.inputSortPrice ?? -1)
                   : (a.outputSortPrice ?? -1);
         const bv =
             sortKey === "perPollen"
-                ? getPerPollenNumeric(calculatePerPollen(b))
+                ? (calculatePerPollenValue(b) ?? -1)
                 : sortKey === "input"
                   ? (b.inputSortPrice ?? -1)
                   : (b.outputSortPrice ?? -1);
@@ -107,7 +96,6 @@ export const sectionLabels: Record<SectionType, string> = {
     audio: "Audio",
     realtime: "Realtime",
     text: "Text",
-    community: "Community",
     embedding: "Embedding",
 };
 
@@ -212,7 +200,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                     )
                                 }
                             >
-                                <span className="min-w-0 whitespace-normal break-words">
+                                <span className="min-w-0 truncate">
                                     {publicModelName}
                                 </span>
                             </CopyButton>
@@ -282,7 +270,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
 type MobilePriceGroupProps = {
     label: string;
     model: ModelPrice;
-    direction: "input" | "output";
+    direction: PriceDirection;
 };
 
 const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
@@ -290,99 +278,7 @@ const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
     model,
     direction,
 }) => {
-    const badges: PriceBadgeConfig[] = groupPriceBadges(
-        direction === "input"
-            ? [
-                  {
-                      prices: [model.promptTextPrice],
-                      kind: "text",
-                      subKinds: ["text"],
-                      perToken: model.perToken,
-                  },
-                  {
-                      prices: [model.promptCachedPrice],
-                      kind: "cached",
-                      subKinds: ["cached"],
-                      perToken: model.perToken,
-                  },
-                  {
-                      prices: [model.promptCacheWritePrice],
-                      kind: "cacheWrite",
-                      subKinds: ["cacheWrite"],
-                      perToken: model.perToken,
-                  },
-                  {
-                      prices: [model.promptAudioPrice],
-                      kind: "audioIn",
-                      subKinds: ["audioIn"],
-                      perToken: model.perToken,
-                      perRequest: model.perRequest,
-                  },
-                  {
-                      prices: [model.promptImagePrice],
-                      kind: "image",
-                      subKinds: ["image"],
-                      perToken: model.perToken,
-                  },
-                  {
-                      prices: [model.promptVideoPrice],
-                      kind: "video",
-                      subKinds: ["video"],
-                      perToken: model.perToken,
-                  },
-              ]
-            : [
-                  {
-                      prices: [model.completionTextPrice],
-                      kind: "text",
-                      subKinds: ["text"],
-                      perToken: model.perToken,
-                  },
-                  {
-                      prices: [model.completionReasoningPrice],
-                      kind: "reasoning",
-                      subKinds: ["reasoning"],
-                      perToken: model.perToken,
-                  },
-                  {
-                      prices: [model.completionAudioPrice],
-                      kind: "audioOut",
-                      subKinds: ["audioOut"],
-                      perToken: model.perToken,
-                      perRequest: model.perRequest,
-                  },
-                  {
-                      prices: [model.perSecondPrice],
-                      kind: model.type === "audio" ? "audioOut" : "video",
-                      subKinds: [model.type === "audio" ? "audioOut" : "video"],
-                      perSecond: true,
-                  },
-                  {
-                      prices: [model.perAudioSecondPrice],
-                      kind: "audioOut",
-                      subKinds: ["audioOut"],
-                      perSecond: true,
-                  },
-                  {
-                      prices: [model.perTokenPrice],
-                      kind: "video",
-                      subKinds: ["video"],
-                      perToken: true,
-                  },
-                  {
-                      prices: [model.perImagePrice],
-                      kind: "image",
-                      subKinds: ["image"],
-                      perRequest: true,
-                  },
-                  {
-                      prices: [model.completionImagePrice],
-                      kind: "image",
-                      subKinds: ["image"],
-                      perToken: model.perToken,
-                  },
-              ],
-    );
+    const badges = getModelPriceBadges(model, direction);
 
     if (badges.length === 0) return null;
 
@@ -391,14 +287,10 @@ const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
             <span className="text-xs font-bold text-theme-text-muted uppercase tracking-wide">
                 {label}
             </span>
-            <div className="flex min-w-0 flex-wrap justify-end gap-1">
-                {badges.map((badge) => (
-                    <PriceBadge
-                        key={`${badge.subKinds.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perRequest ? "gen" : ""}-${badge.perSecond ? "sec" : ""}`}
-                        {...badge}
-                    />
-                ))}
-            </div>
+            <PriceBadgeList
+                badges={badges}
+                className="flex min-w-0 flex-wrap justify-end gap-1"
+            />
         </div>
     );
 };
@@ -449,7 +341,6 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     textModels,
     audioModels,
     realtimeModels,
-    communityModels,
     embeddingModels,
     activeTab,
 }) => {
@@ -459,7 +350,6 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
         { type: "audio", models: audioModels },
         { type: "realtime", models: realtimeModels },
         { type: "text", models: textModels },
-        { type: "community", models: communityModels },
         { type: "embedding", models: embeddingModels },
     ];
 

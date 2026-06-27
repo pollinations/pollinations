@@ -3,7 +3,12 @@ import {
     formatPriceFlat,
     formatPricePer1M,
 } from "./formatters.ts";
-import type { ModelCapability, ModelCategory, ModelPrice } from "./types.ts";
+import type {
+    ModelCapability,
+    ModelCategory,
+    ModelPrice,
+    ModelPriceLine,
+} from "./types.ts";
 import type { ModelStats } from "./use-model-stats.ts";
 
 type ApiPricing = Partial<Record<PriceField, string>> & {
@@ -144,6 +149,18 @@ function priceSum(pricing: ApiPricing | undefined, fields: PriceField[]) {
     return total > 0 ? total : undefined;
 }
 
+type PriceLineInput = [
+    ModelPriceLine["direction"],
+    ModelPriceLine["kind"],
+    string | undefined,
+    ModelPriceLine["unit"],
+];
+
+const priceLines = (...lines: PriceLineInput[]): ModelPriceLine[] =>
+    lines.flatMap(([direction, kind, price, unit]) =>
+        price ? [{ direction, kind, price, unit }] : [],
+    );
+
 export function getCatalogCategory(model: ApiModelInfo): ModelCategory {
     if (model.category) return model.category;
     const outputModalities = model.output_modalities ?? [];
@@ -172,6 +189,7 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
         addedDate: model.added_date,
         inputSortPrice: priceSum(model.pricing, INPUT_PRICE_FIELDS),
         outputSortPrice: priceSum(model.pricing, OUTPUT_PRICE_FIELDS),
+        prices: [],
     };
 }
 
@@ -213,21 +231,29 @@ function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
         if (completionVideoTokens) {
             return {
                 ...price,
-                perToken: true,
-                perTokenPrice: formatPrice(
-                    completionVideoTokens,
-                    formatPricePer1M,
-                ),
+                prices: priceLines([
+                    "output",
+                    "video",
+                    formatPrice(completionVideoTokens, formatPricePer1M),
+                    "token",
+                ]),
             };
         }
         return {
             ...price,
-            perToken: false,
-            perSecondPrice: formatPrice(completionVideoSeconds, (v) =>
-                v.toFixed(3),
-            ),
-            perAudioSecondPrice: formatPrice(completionAudioSeconds, (v) =>
-                v.toFixed(3),
+            prices: priceLines(
+                [
+                    "output",
+                    "video",
+                    formatPrice(completionVideoSeconds, (v) => v.toFixed(3)),
+                    "second",
+                ],
+                [
+                    "output",
+                    "audioOut",
+                    formatPrice(completionAudioSeconds, (v) => v.toFixed(3)),
+                    "second",
+                ],
             ),
         };
     }
@@ -236,25 +262,36 @@ function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
         if (promptTextTokens || promptImageTokens) {
             return {
                 ...price,
-                perToken: true,
-                promptTextPrice: formatPrice(
-                    promptTextTokens,
-                    formatPricePer1M,
-                ),
-                promptImagePrice: formatPrice(
-                    promptImageTokens,
-                    formatPricePer1M,
-                ),
-                completionImagePrice: formatPrice(
-                    completionImageTokens,
-                    formatPricePer1M,
+                prices: priceLines(
+                    [
+                        "input",
+                        "text",
+                        formatPrice(promptTextTokens, formatPricePer1M),
+                        "token",
+                    ],
+                    [
+                        "input",
+                        "image",
+                        formatPrice(promptImageTokens, formatPricePer1M),
+                        "token",
+                    ],
+                    [
+                        "output",
+                        "image",
+                        formatPrice(completionImageTokens, formatPricePer1M),
+                        "token",
+                    ],
                 ),
             };
         }
         return {
             ...price,
-            perToken: false,
-            perImagePrice: formatPrice(completionImageTokens, formatPriceFlat),
+            prices: priceLines([
+                "output",
+                "image",
+                formatPrice(completionImageTokens, formatPriceFlat),
+                "request",
+            ]),
         };
     }
 
@@ -267,83 +304,141 @@ function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
         if (model.flat_rate) {
             return {
                 ...price,
-                perToken: false,
-                perRequest: true,
-                promptAudioPrice: formatPrice(
-                    promptAudioTokens,
-                    formatPriceFlat,
-                ),
-                completionAudioPrice: formatPrice(
-                    completionAudioTokens,
-                    formatPriceFlat,
+                prices: priceLines(
+                    [
+                        "input",
+                        "audioIn",
+                        formatPrice(promptAudioTokens, formatPriceFlat),
+                        "request",
+                    ],
+                    [
+                        "output",
+                        "audioOut",
+                        formatPrice(completionAudioTokens, formatPriceFlat),
+                        "request",
+                    ],
                 ),
             };
         }
         if (promptAudioSeconds) {
             return {
                 ...price,
-                perToken: false,
-                perSecondPrice: formatPrice(promptAudioSeconds, (v) =>
-                    v.toFixed(5),
-                ),
+                prices: priceLines([
+                    "input",
+                    "audioIn",
+                    formatPrice(promptAudioSeconds, (v) => v.toFixed(5)),
+                    "second",
+                ]),
             };
         }
         if (completionAudioSeconds) {
             return {
                 ...price,
-                perToken: false,
-                perSecondPrice: formatPrice(completionAudioSeconds, (v) =>
-                    v.toFixed(4),
-                ),
+                prices: priceLines([
+                    "output",
+                    "audioOut",
+                    formatPrice(completionAudioSeconds, (v) => v.toFixed(4)),
+                    "second",
+                ]),
             };
         }
         return {
             ...price,
-            perToken: false,
-            perSecondPrice: formatPrice(
-                completionAudioTokens,
-                formatEstimatedTtsPricePerSecond,
-            ),
+            prices: priceLines([
+                "output",
+                "audioOut",
+                formatPrice(
+                    completionAudioTokens,
+                    formatEstimatedTtsPricePerSecond,
+                ),
+                "second",
+            ]),
         };
     }
 
     if (price.type === "embedding") {
         return {
             ...price,
-            perToken: true,
-            promptTextPrice: formatPrice(promptTextTokens, formatPricePer1M),
-            promptImagePrice: formatPrice(promptImageTokens, formatPricePer1M),
-            promptAudioPrice: formatPrice(promptAudioTokens, formatPricePer1M),
-            promptVideoPrice: formatPrice(promptVideoTokens, formatPricePer1M),
+            prices: priceLines(
+                [
+                    "input",
+                    "text",
+                    formatPrice(promptTextTokens, formatPricePer1M),
+                    "token",
+                ],
+                [
+                    "input",
+                    "image",
+                    formatPrice(promptImageTokens, formatPricePer1M),
+                    "token",
+                ],
+                [
+                    "input",
+                    "audioIn",
+                    formatPrice(promptAudioTokens, formatPricePer1M),
+                    "token",
+                ],
+                [
+                    "input",
+                    "video",
+                    formatPrice(promptVideoTokens, formatPricePer1M),
+                    "token",
+                ],
+            ),
         };
     }
 
     return {
         ...price,
-        perToken: true,
-        promptTextPrice: formatPrice(promptTextTokens, formatPricePer1M),
-        promptCachedPrice: formatPrice(promptCachedTokens, formatPricePer1M),
-        promptCacheWritePrice: formatPrice(
-            promptCacheWriteTokens,
-            formatPricePer1M,
-        ),
-        promptAudioPrice: formatPrice(promptAudioTokens, formatPricePer1M),
-        promptImagePrice: formatPrice(promptImageTokens, formatPricePer1M),
-        completionTextPrice: formatPrice(
-            completionTextTokens,
-            formatPricePer1M,
-        ),
-        completionReasoningPrice: formatPrice(
-            completionReasoningTokens,
-            formatPricePer1M,
-        ),
-        completionAudioPrice: formatPrice(
-            completionAudioTokens,
-            formatPricePer1M,
-        ),
-        completionAudioTokens: formatPrice(
-            completionAudioTokens,
-            formatPricePer1M,
+        prices: priceLines(
+            [
+                "input",
+                "text",
+                formatPrice(promptTextTokens, formatPricePer1M),
+                "token",
+            ],
+            [
+                "input",
+                "cached",
+                formatPrice(promptCachedTokens, formatPricePer1M),
+                "token",
+            ],
+            [
+                "input",
+                "cacheWrite",
+                formatPrice(promptCacheWriteTokens, formatPricePer1M),
+                "token",
+            ],
+            [
+                "input",
+                "audioIn",
+                formatPrice(promptAudioTokens, formatPricePer1M),
+                "token",
+            ],
+            [
+                "input",
+                "image",
+                formatPrice(promptImageTokens, formatPricePer1M),
+                "token",
+            ],
+            [
+                "output",
+                "text",
+                formatPrice(completionTextTokens, formatPricePer1M),
+                "token",
+            ],
+            [
+                "output",
+                "reasoning",
+                formatPrice(completionReasoningTokens, formatPricePer1M),
+                "token",
+            ],
+            [
+                "output",
+                "audioOut",
+                formatPrice(completionAudioTokens, formatPricePer1M),
+                "token",
+            ],
         ),
     };
 }

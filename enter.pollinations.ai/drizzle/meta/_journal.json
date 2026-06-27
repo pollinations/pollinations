@@ -222,8 +222,15 @@
     {
       "idx": 31,
       "version": "6",
-      "when": 1782431149125,
-      "tag": "0031_community_endpoints",
+      "when": 1782467647638,
+      "tag": "0031_lucky_alex_power",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "6",
+      "when": 1782557977942,
+      "tag": "0032_parallel_albert_cleary",
       "breakpoints": true
     }
   ]

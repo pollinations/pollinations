@@ -1,97 +1,116 @@
-import { Chip, cn } from "@pollinations/ui";
+import { Chip, Tooltip } from "@pollinations/ui";
 import type { FC } from "react";
-import { PRICE_ICON, type PriceKind } from "./model-icons.tsx";
+import { PRICE_ICON } from "./model-icons.tsx";
+import type {
+    ModelPrice,
+    ModelPriceLine,
+    PriceDirection,
+    PriceKind,
+} from "./types.ts";
 
-export type PriceBadgeConfig = {
-    prices: (string | undefined)[];
-    kind: PriceKind;
-    subKinds: PriceKind[];
-    perRequest?: boolean;
-    perToken?: boolean;
-    perSecond?: boolean;
-    className?: string;
+const TOKEN_TYPE_LABELS: Record<PriceKind, string> = {
+    text: "text",
+    image: "image",
+    cached: "cached",
+    cacheWrite: "cache write",
+    reasoning: "reasoning",
+    video: "video",
+    audioIn: "audio",
+    audioOut: "audio",
 };
 
-export const groupPriceBadges = (
-    badges: PriceBadgeConfig[],
-): PriceBadgeConfig[] => {
+const PRICE_UNIT_SUFFIX: Record<ModelPriceLine["unit"], string> = {
+    token: "/M",
+    second: "/sec",
+    request: "/gen",
+};
+
+type PriceBadgeConfig = Omit<ModelPriceLine, "direction"> & {
+    subKinds: PriceKind[];
+};
+
+const groupPriceBadges = (prices: ModelPriceLine[]): PriceBadgeConfig[] => {
     const grouped = new Map<string, PriceBadgeConfig>();
 
-    for (const badge of badges) {
-        const validPrices = badge.prices.filter((p): p is string =>
-            Boolean(p && p !== "—"),
-        );
-        if (validPrices.length === 0) continue;
-
-        const key = [
-            validPrices[0],
-            badge.perRequest ? "gen" : "",
-            badge.perToken ? "token" : "",
-            badge.perSecond ? "sec" : "",
-            badge.className ?? "",
-        ].join("|");
-
+    for (const price of prices) {
+        const key = [price.price, price.unit].join("|");
         const existing = grouped.get(key);
         if (existing) {
-            const nextSubKinds = [
-                ...existing.subKinds,
-                ...badge.subKinds,
-                badge.kind,
+            existing.subKinds = [
+                ...new Set([...existing.subKinds, price.kind]),
             ];
-            existing.subKinds = [...new Set(nextSubKinds)];
             continue;
         }
 
         grouped.set(key, {
-            ...badge,
-            prices: [validPrices[0]],
-            subKinds: [...new Set([...badge.subKinds, badge.kind])],
+            price: price.price,
+            kind: price.kind,
+            unit: price.unit,
+            subKinds: [price.kind],
         });
     }
 
     return [...grouped.values()];
 };
 
-export const PriceBadge: FC<PriceBadgeConfig> = ({
-    prices,
-    kind,
-    subKinds,
-    perRequest,
-    perToken,
-    perSecond,
-    className,
-}) => {
-    const validPrices = prices.filter((p): p is string =>
-        Boolean(p && p !== "—"),
+export const getModelPriceBadges = (
+    model: ModelPrice,
+    direction: PriceDirection,
+): PriceBadgeConfig[] =>
+    groupPriceBadges(
+        model.prices.filter((price) => price.direction === direction),
     );
-    if (validPrices.length === 0) return null;
 
-    // Compact suffix based on pricing type
-    const suffix = perSecond
-        ? "/sec"
-        : perRequest
-          ? "/gen"
-          : perToken
-            ? "/M"
-            : "";
+const getPriceBadgeKey = (badge: PriceBadgeConfig): string =>
+    [badge.subKinds.join(""), badge.price, badge.unit].join("-");
 
-    // One compact pill: glyph(s) + value grouped so it reads as a single unit.
-    return (
+type PriceBadgeListProps = {
+    badges: PriceBadgeConfig[];
+    className?: string;
+};
+
+export const PriceBadgeList: FC<PriceBadgeListProps> = ({
+    badges,
+    className,
+}) => (
+    <div className={className}>
+        {badges.map((badge) => (
+            <PriceBadge key={getPriceBadgeKey(badge)} {...badge} />
+        ))}
+    </div>
+);
+
+const PriceBadge: FC<PriceBadgeConfig> = ({ price, unit, subKinds }) => {
+    const tokenTypes = [
+        ...new Set(subKinds.map((item) => TOKEN_TYPE_LABELS[item])),
+    ];
+    const tokenTypeLabel =
+        tokenTypes.length > 1
+            ? `Token types: ${tokenTypes.join(", ")}`
+            : `Token type: ${tokenTypes[0]}`;
+
+    const badge = (
         <Chip
             intent="neutral"
             size="sm"
-            className={cn("whitespace-nowrap tabular-nums", className)}
+            className="whitespace-nowrap tabular-nums"
         >
             <span className="inline-flex items-center gap-0.5">
-                {(subKinds.length > 0 ? subKinds : [kind]).map((item) => {
+                {subKinds.map((item) => {
                     const Icon = PRICE_ICON[item];
                     return <Icon key={item} className="h-3.5 w-3.5" />;
                 })}
             </span>
             <span>
-                {validPrices[0]}
-                {suffix}
+                {price}
+                {PRICE_UNIT_SUFFIX[unit]}
             </span>
         </Chip>
+    );
+
+    return tokenTypeLabel ? (
+        <Tooltip content={tokenTypeLabel}>{badge}</Tooltip>
+    ) : (
+        badge
     );
 };

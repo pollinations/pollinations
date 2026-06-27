@@ -378,7 +378,7 @@ function QuestSummaryGrid({
 
 function QuestDescription({ children }: { children: string }) {
     return (
-        <Markdown className="inline text-sm text-theme-text-muted [&_p]:mb-0 [&_p]:inline">
+        <Markdown className="inline text-sm text-theme-text-muted [&_em]:text-xs [&_em]:text-theme-text-muted [&_em]:opacity-85 [&_p]:mb-0 [&_p]:inline">
             {children}
         </Markdown>
     );
@@ -1030,8 +1030,8 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                     <p className="flex items-start gap-1.5">
                         <CheckIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
-                            Quests are retroactive — if you already qualify,
-                            just claim the reward.
+                            Quests can be retroactive — if you qualify under a
+                            quest's rules, just claim the reward.
                         </span>
                     </p>
                     <p className="flex items-start gap-1.5">

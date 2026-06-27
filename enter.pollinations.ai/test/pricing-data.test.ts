@@ -28,6 +28,14 @@ const getCatalogModelPrices = () =>
         ...getEmbeddingModelsInfo(),
     ]);
 
+const priceRows = (rows: [string, string, string, string][]) =>
+    rows.map(([direction, kind, price, unit]) => ({
+        direction,
+        kind,
+        price,
+        unit,
+    }));
+
 // Catalog pricing pipes every model rate through formatPricePer1M, so this file
 // is the sole coverage of that formatter. Pin each decimal branch and the
 // trailing-zero path directly against representative per-token inputs rather
@@ -53,11 +61,37 @@ test("catalog prices format text rates through formatPricePer1M", () => {
     expect(geminiFast).toMatchObject({
         name: "gemini-fast",
         type: "text",
-        promptTextPrice: formatPricePer1M(price.promptTextTokens ?? 0),
-        promptCachedPrice: formatPricePer1M(price.promptCachedTokens ?? 0),
-        promptAudioPrice: formatPricePer1M(price.promptAudioTokens ?? 0),
-        completionTextPrice: formatPricePer1M(price.completionTextTokens ?? 0),
     });
+    expect(geminiFast?.prices).toEqual(
+        expect.arrayContaining(
+            priceRows([
+                [
+                    "input",
+                    "text",
+                    formatPricePer1M(price.promptTextTokens ?? 0),
+                    "token",
+                ],
+                [
+                    "input",
+                    "cached",
+                    formatPricePer1M(price.promptCachedTokens ?? 0),
+                    "token",
+                ],
+                [
+                    "input",
+                    "audioIn",
+                    formatPricePer1M(price.promptAudioTokens ?? 0),
+                    "token",
+                ],
+                [
+                    "output",
+                    "text",
+                    formatPricePer1M(price.completionTextTokens ?? 0),
+                    "token",
+                ],
+            ]),
+        ),
+    );
 });
 
 test("catalog prices keep community text models flagged for display", () => {
@@ -86,10 +120,16 @@ test("catalog prices keep community text models flagged for display", () => {
         community: true,
         displayName: "OpenAI relay",
         brand: "Community",
-        promptTextPrice: "0.1",
-        completionTextPrice: "0.2",
         capabilities: [],
     });
+    expect(communityModel?.prices).toEqual(
+        expect.arrayContaining(
+            priceRows([
+                ["input", "text", "0.1", "token"],
+                ["output", "text", "0.2", "token"],
+            ]),
+        ),
+    );
     expect(communityModel.description).toBeUndefined();
 });
 
@@ -118,13 +158,17 @@ test("AssemblyAI STT pricing is exposed per input audio second", () => {
     expect(universal2).toMatchObject({
         name: "universal-2",
         type: "audio",
-        perSecondPrice: "0.00004",
     });
     expect(universal3Pro).toMatchObject({
         name: "universal-3-pro",
         type: "audio",
-        perSecondPrice: "0.00006",
     });
+    expect(universal2?.prices).toContainEqual(
+        priceRows([["input", "audioIn", "0.00004", "second"]])[0],
+    );
+    expect(universal3Pro?.prices).toContainEqual(
+        priceRows([["input", "audioIn", "0.00006", "second"]])[0],
+    );
     expect(
         getRegistryModelDefinition("universal-3-pro").paidOnly,
     ).toBeUndefined();

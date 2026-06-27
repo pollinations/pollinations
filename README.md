@@ -20,6 +20,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🤖 REKTY AI](https://github.com/rekty/Rekty-AI) | REKTY AI description not provided. | [@rekty](https://github.com/rekty) |
 | [🎭 RoleChar](https://rolechar.com) | RoleChar provides AI character chat and roleplay, plus image and video generation in one place. | [@peacefulfrog](https://github.com/peacefulfrog) |
 | [🐾 SpiritPet World — Feature Overview](https://spiritworldfeatureoverview.netlify.app/) | SpiritPet World — Feature Overview. Provides a quick overview of the app’s features. | [@aumnuay2494-svg](https://github.com/aumnuay2494-svg) |
 | [💸 Cashflower](https://cashflower.cru2.net) | Cashflower turns Pollinations generation into income for everyday users, with results provided using their own numbers. | [@davealan74](https://github.com/davealan74) |
@@ -29,7 +30,6 @@
 | [🧩 AuraForge](https://autoforge-iota.vercel.app/) | AuraForge is an Identity Orchestration Studio that generates strict, flat 2D vector mascots for AI agents, team members, or digital personas, acting as a profiling tool for visual identities. | [@dreamm160-ops](https://github.com/dreamm160-ops) |
 | [📝 Pollinations AI Text Generation API](https://farl.github.io/pollinations-ai-text-generation/) | A web interface for the Pollinations AI API (gen.pollinations.ai). It uses the pollinations.ai API for text generation with multiple OpenAI-compatible models, image analysis (vision), text-to-speech w | [@Farl](https://github.com/Farl) |
 | [🤖 OtakuBox Bot](https://badamchuk.github.io/otakubox/) | OtakuBox Bot is a Telegram bot for anime fans that uses the Pollinations.ai API. | [@badamchuk](https://github.com/badamchuk) |
-| [🖼️ Imagio  AI image generator](https://imagio-ai.vercel.app/) | Imagio  AI image generator converts text prompts into original images using AI. It generates images in seconds. | [@its3li](https://github.com/its3li) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live
@@ -48,6 +48,8 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-06-26** – **🤖 REKTY AI** The community app directory grows by one. REKTY AI is now live in the [showcase](https://pollinations.ai). [View repo](https://github.com/rekty/Rekty-AI) <!-- app -->
+- **2026-06-25** – **🎯 Side Quests Unlocked** The passive tier system is out. You can now track bounties and claim Pollen credits for things like GitHub contributions or cross-modality model usage directly from the new Quest [dashboard](https://enter.pollinations.ai).
 - **2026-06-23** – **🎵 Stable Audio 3** We've wired up Stable Audio 3 to the [audio API](https://gen.pollinations.ai/audio/{text}). Generate up to 380 seconds of 44.1 kHz stereo, or use the newly added audio-to-audio style transfer.
 - **2026-06-23** – **🤖 Mercury 2** Inception's Mercury 2 model is now live on the [text API](https://gen.pollinations.ai/v1/chat/completions). Full support for cached input and reasoning tokens included.
 - **2026-06-22** – **🎵 ElevenLabs Music v2** Upgraded the music integration to v2 and added reference-audio conditioning. You can now pass an audio track to guide the output style instead of just hoping for the best.
@@ -56,8 +58,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-06-22** – **🌸 Community Showcase Updates** RoleChar and SpiritPet World have been added to the ecosystem. [View repos](https://pollinations.ai) <!-- app -->
 - **2026-06-17** – **📊 Transaction History** You can now see exactly where your Pollen is going. Check your last 5 requests directly on the Pollen page, or browse the full history on your [Dashboard](https://enter.pollinations.ai).
 - **2026-06-17** – **🚀 Siriusly Fast Elevators** The Sirius Cybernetics Elevator Challenge app now defaults to Mistral, dropping response times from 10s to 1.2s. Even the API errors are now delivered in-character. [Try it](https://pollinations.ai) <!-- app -->
-- **2026-06-17** – **⚡ Faster Image Generation** We rewired the [image generation](https://gen.pollinations.ai/image/models) load balancer to favor GPUs with the lowest recent latency. More traffic goes to the 4090s, meaning fewer timeouts and faster pixels.
-- **2026-06-17** – **🧠 GLM-5.2 Upgrade** The `glm` model slug now points to Z.ai's GLM-5.2, expanding the context window from 198k to a massive 1 million tokens.
 ---
 
 ## 🌱 Introduction

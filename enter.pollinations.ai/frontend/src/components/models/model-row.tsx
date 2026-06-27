@@ -24,7 +24,7 @@ import {
     isPaidOnly,
 } from "./model-info.ts";
 import { ModelStatusChips } from "./model-status-chips.tsx";
-import { groupPriceBadges, PriceBadge } from "./price-badge.tsx";
+import { getModelPriceBadges, PriceBadgeList } from "./price-badge.tsx";
 import type { ModelPrice } from "./types.ts";
 
 type ModelRowProps = {
@@ -69,96 +69,8 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 {balanceLabel}
             </span>
         );
-    const inputPriceBadges = groupPriceBadges([
-        {
-            prices: [model.promptTextPrice],
-            kind: "text",
-            subKinds: ["text"],
-            perToken: model.perToken,
-        },
-        {
-            prices: [model.promptCachedPrice],
-            kind: "cached",
-            subKinds: ["cached"],
-            perToken: model.perToken,
-        },
-        {
-            prices: [model.promptCacheWritePrice],
-            kind: "cacheWrite",
-            subKinds: ["cacheWrite"],
-            perToken: model.perToken,
-        },
-        {
-            prices: [model.promptAudioPrice],
-            kind: "audioIn",
-            subKinds: ["audioIn"],
-            perToken: model.perToken,
-            perRequest: model.perRequest,
-        },
-        {
-            prices: [model.promptImagePrice],
-            kind: "image",
-            subKinds: ["image"],
-            perToken: model.perToken,
-        },
-        {
-            prices: [model.promptVideoPrice],
-            kind: "video",
-            subKinds: ["video"],
-            perToken: model.perToken,
-        },
-    ]);
-    const outputPriceBadges = groupPriceBadges([
-        {
-            prices: [model.completionTextPrice],
-            kind: "text",
-            subKinds: ["text"],
-            perToken: model.perToken,
-        },
-        {
-            prices: [model.completionReasoningPrice],
-            kind: "reasoning",
-            subKinds: ["reasoning"],
-            perToken: model.perToken,
-        },
-        {
-            prices: [model.completionAudioPrice],
-            kind: "audioOut",
-            subKinds: ["audioOut"],
-            perToken: model.perToken,
-            perRequest: model.perRequest,
-        },
-        {
-            prices: [model.perSecondPrice],
-            kind: model.type === "audio" ? "audioOut" : "video",
-            subKinds: [model.type === "audio" ? "audioOut" : "video"],
-            perSecond: true,
-        },
-        {
-            prices: [model.perAudioSecondPrice],
-            kind: "audioOut",
-            subKinds: ["audioOut"],
-            perSecond: true,
-        },
-        {
-            prices: [model.perTokenPrice],
-            kind: "video",
-            subKinds: ["video"],
-            perToken: true,
-        },
-        {
-            prices: [model.perImagePrice],
-            kind: "image",
-            subKinds: ["image"],
-            perRequest: true,
-        },
-        {
-            prices: [model.completionImagePrice],
-            kind: "image",
-            subKinds: ["image"],
-            perToken: model.perToken,
-        },
-    ]);
+    const inputPriceBadges = getModelPriceBadges(model, "input");
+    const outputPriceBadges = getModelPriceBadges(model, "output");
 
     return (
         <Surface className="flex items-center transition-colors hover:bg-surface-opaque/90">
@@ -216,7 +128,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 )
                             }
                         >
-                            <span className="min-w-0 whitespace-normal break-words">
+                            <span className="min-w-0 truncate">
                                 {publicModelName}
                             </span>
                         </CopyButton>
@@ -296,26 +208,18 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
 
             {/* Input prices — fixed width */}
             <div className="w-[100px] shrink-0">
-                <div className="flex flex-col gap-1 items-end">
-                    {inputPriceBadges.map((badge) => (
-                        <PriceBadge
-                            key={`${badge.subKinds.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perRequest ? "gen" : ""}-${badge.perSecond ? "sec" : ""}`}
-                            {...badge}
-                        />
-                    ))}
-                </div>
+                <PriceBadgeList
+                    badges={inputPriceBadges}
+                    className="flex flex-col gap-1 items-end"
+                />
             </div>
 
             {/* Output prices — fixed width */}
             <div className="w-[100px] shrink-0">
-                <div className="flex flex-col gap-1 items-end">
-                    {outputPriceBadges.map((badge) => (
-                        <PriceBadge
-                            key={`${badge.subKinds.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perRequest ? "gen" : ""}-${badge.perSecond ? "sec" : ""}`}
-                            {...badge}
-                        />
-                    ))}
-                </div>
+                <PriceBadgeList
+                    badges={outputPriceBadges}
+                    className="flex flex-col gap-1 items-end"
+                />
             </div>
         </Surface>
     );

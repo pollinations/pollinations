@@ -1,5 +1,8 @@
 import { getLogger } from "@logtape/logtape";
-import type { ApiKeyType } from "@shared/auth/api-key-metadata.ts";
+import {
+    type ApiKeyType,
+    getApiKeyType,
+} from "@shared/auth/api-key-metadata.ts";
 import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import {
@@ -140,7 +143,7 @@ export const track = (eventType: EventType) =>
 
         const apiKey = c.var.auth.apiKey;
         const byopClientKeyId = apiKey?.byopClientKeyId;
-        const apiKeyType = apiKey?.metadata?.keyType as ApiKeyType | undefined;
+        const apiKeyType = apiKey ? getApiKeyType(apiKey.metadata) : undefined;
         const userTracking: UserData = {
             userId: c.var.auth.user?.id,
             userTier: c.var.auth.user?.tier,

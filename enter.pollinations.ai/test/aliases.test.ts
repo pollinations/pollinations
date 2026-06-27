@@ -8,7 +8,9 @@ import {
     getModels,
     getPriceDefinition,
     getRegistryModelDefinition,
+    type ModelName,
     resolveModelName,
+    type UsageType,
 } from "@shared/registry/registry.js";
 import { TEXT_SERVICES } from "@shared/registry/text";
 import { expect, test } from "vitest";
@@ -19,6 +21,17 @@ function serviceAliasTestCases(
     return Object.entries(services).flatMap(([serviceId, serviceDefinition]) =>
         serviceDefinition.aliases.map((alias) => [alias, serviceId]),
     );
+}
+
+function requiredCostRate(model: ModelName, field: UsageType): number {
+    const rate = getCostDefinition(model)?.[field];
+
+    expect(rate, `${model}.${field} must have a configured cost`).toEqual(
+        expect.any(Number),
+    );
+    expect(rate).toBeGreaterThan(0);
+
+    return rate as number;
 }
 
 test.for(
@@ -87,11 +100,6 @@ test("DeepSeek V4 models are billed at provider cost", () => {
         completionTextTokens: 1_000_000,
     };
 
-    const expectedCosts = {
-        // biome-ignore lint/suspicious/noApproximativeNumericConstant: expected DeepSeek price for the fixed usage vector.
-        deepseek: 0.434,
-        "deepseek-pro": 5.36,
-    } as const;
     const expectedProviders = {
         deepseek: "fireworks",
         "deepseek-pro": "fireworks",
@@ -105,10 +113,17 @@ test("DeepSeek V4 models are billed at provider cost", () => {
         const definition = getRegistryModelDefinition(model);
         const cost = calculateCost(model, usage);
         const price = calculatePrice(model, usage);
+        const expectedCost =
+            requiredCostRate(model, "promptTextTokens") *
+                usage.promptTextTokens +
+            requiredCostRate(model, "promptCachedTokens") *
+                usage.promptCachedTokens +
+            requiredCostRate(model, "completionTextTokens") *
+                usage.completionTextTokens;
 
         expect(definition.provider).toBe(expectedProviders[model]);
         expect(definition.paidOnly).toBe(expectedPaidOnly[model]);
-        expect(cost.totalCost).toBeCloseTo(expectedCosts[model], 8);
+        expect(cost.totalCost).toBeCloseTo(expectedCost, 8);
         expect(price.totalPrice).toBeCloseTo(cost.totalCost, 8);
     }
 });

@@ -1,8 +1,5 @@
+import { IMAGE_SERVICES, type ImageModelName } from "@shared/registry/image.ts";
 import { z } from "zod";
-import {
-    IMAGE_SERVICES,
-    type ImageModelName,
-} from "@shared/registry/image.ts";
 import { getDefaultSideLength } from "./models.js";
 
 const allowedModels = Object.keys(IMAGE_SERVICES) as [

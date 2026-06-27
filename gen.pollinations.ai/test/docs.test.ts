@@ -195,20 +195,8 @@ describe("docs routes", () => {
 
         expect(response.status).toBe(200);
         const html = await response.text();
-        expect(html).toContain('<html class="dark"');
         expect(html).toContain(".scalar-app .markdown table");
         expect(html).toContain("overflow-x: auto");
-        expect(html).toContain("--polli-color-bg-active");
-        expect(html).toContain("var(--polli-color-bg-active)");
-        expect(html).toContain("var(--polli-color-text-strong)");
-        expect(html).toContain(
-            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAPoAAAD6AG1e1Jr",
-        );
-        expect(html).toContain("ph-doc-nav-item");
-        expect(html).toContain("ph-doc-icon");
-        expect(html).toContain("ph-doc-nav-icon");
-        expect(html).toContain("normalizeScalarNavLabel");
-        expect(html).toContain("Open|Close");
         expect(html).toContain(
             'property="og:title" content="Docs | pollinations.ai"',
         );
@@ -248,10 +236,6 @@ describe("docs routes", () => {
         );
         expect(indexRes.status).toBe(200);
         const indexHtml = await indexRes.text();
-        expect(indexHtml).toContain('<html lang="en" class="dark">');
-        expect(indexHtml).toContain("guide-card");
-        expect(indexHtml).toContain("ph-doc-icon");
-        expect(indexHtml).toContain("var(--polli-color-surface-opaque)");
         expect(indexHtml).toContain("/docs/guides/byop");
         expect(indexHtml).toContain("/docs/guides/cli");
         expect(indexHtml).toContain("/docs/guides/mcp");

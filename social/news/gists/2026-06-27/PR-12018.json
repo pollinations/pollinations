@@ -1,0 +1,34 @@
+{
+  "pr_number": 12018,
+  "title": "Fix placeholder description in github-contributions quest",
+  "author": "MarcosFRG",
+  "url": "https://github.com/pollinations/pollinations/pull/12018",
+  "merged_at": "2026-06-27T12:57:01Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "The `solve_github_issue` quest has a placeholder description `'A demi description'` that will appear in the public quest catalog. Replacing with a real description.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Quest text leveled up",
+    "blurb": "Swapped out a placeholder description in the GitHub contributions quest for the real deal. No more 'demi descriptions' in the catalog!",
+    "summary": "Replaced a placeholder 'demi description' for the solve_github_issue quest with its actual text in the public quest catalog.",
+    "impact": "Users browsing the quest catalog will now see an accurate description for the GitHub issue quest instead of placeholder text.",
+    "keywords": [
+      "quests",
+      "github",
+      "catalog",
+      "text-fix"
+    ],
+    "visual_concept": "Polly the bee acting as a quest-giver or adventurer, updating a wooden quest board. RPG/fantasy cozy vibes.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny adventurer's hat, pinning a new parchment scroll to a wooden quest board. The board is surrounded by lime green (#ecf874) glowing mushrooms and pastel flowers. Soft warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-27/PR-12018.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny adventurer's hat, pinning a new parchment scroll to a wooden quest board. The board is surrounded by lime green (#ecf874) glowing mushrooms and pastel flowers. Soft warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-27T12:57:59.626632+00:00"
+}

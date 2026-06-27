@@ -159,7 +159,7 @@ describe("async 3D job API", () => {
                 authorization: `Bearer ${apiKey}`,
             },
             body: JSON.stringify({
-                model: "triposr",
+                model: "trellis-2-low",
                 image: ["https://example.com/ref.jpg"],
             }),
         });
@@ -188,7 +188,7 @@ describe("async 3D job API", () => {
                     authorization: `Bearer ${apiKey}`,
                 },
                 body: JSON.stringify({
-                    model: "triposr",
+                    model: "trellis-2-low",
                     image: ["https://example.com/ref.jpg"],
                 }),
             });
@@ -226,13 +226,15 @@ describe("async 3D job API", () => {
         expect(completedResponse.headers.get("content-type")).toBe(
             "model/gltf-binary",
         );
-        expect(completedResponse.headers.get("x-model-used")).toBe("triposr");
+        expect(completedResponse.headers.get("x-model-used")).toBe(
+            "trellis-2-low",
+        );
 
         const billedEvents = mocks.tinybird.state.events.filter(
             (e) => e.isBilledUsage,
         );
         expect(billedEvents).toHaveLength(1);
-        expect(billedEvents[0]?.resolvedModelRequested).toBe("triposr");
+        expect(billedEvents[0]?.resolvedModelRequested).toBe("trellis-2-low");
 
         // Re-poll the now-completed job: served from cache, not re-billed.
         const { response: replayResponse, wait: waitReplay } =
@@ -260,31 +262,5 @@ describe("async 3D job API", () => {
         await wait();
 
         expect(response.status).toBe(404);
-    });
-
-    test("falls back to fal.ai at submission when inferenceport submit fails", async ({
-        apiKey,
-        mocks,
-    }) => {
-        await mocks.enable("tinybird", "inferenceport", "fal");
-        mocks.inferenceport.state.failSubmits = true;
-
-        const { response, wait } = await fetchWorker("/3d/generations", {
-            method: "POST",
-            headers: {
-                "content-type": "application/json",
-                authorization: `Bearer ${apiKey}`,
-            },
-            body: JSON.stringify({
-                model: "triposr",
-                image: ["https://example.com/ref.jpg"],
-            }),
-        });
-        const body = (await response.json()) as { status: string };
-        await wait();
-
-        expect(response.status).toBe(202);
-        expect(body.status).toBe("pending");
-        expect(mocks.fal.state.submitCount).toBe(1);
     });
 });

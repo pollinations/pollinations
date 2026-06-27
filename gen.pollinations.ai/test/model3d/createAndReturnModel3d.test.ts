@@ -26,20 +26,13 @@ function baseParams(model: string): Model3dParams {
 }
 
 // Every dispatch path eventually calls fetch; we only care that the right
-// upstream host is hit first for each model id, not the full happy path
-// (already covered per-client in inferenceportClient/falClient tests).
+// upstream host is hit first for each model id.
 describe("createAndReturnModel3d dispatch", () => {
     it.each([
-        ["triposr", "sharktide-lightning"],
-        ["sf3d", "sharktide-lightning"],
-        ["asset-harvester", "sharktide-lightning"],
         ["trellis-2-low", "sharktide-lightning"],
         ["trellis-2-medium", "sharktide-lightning"],
         ["trellis-2-high", "sharktide-lightning"],
-        ["tripo3d-h3.1", "queue.fal.run"],
-        ["hunyuan3d-v3", "queue.fal.run"],
         ["hyper3d-rodin", "queue.fal.run"],
-        ["hyper3d-rodin-highpack", "queue.fal.run"],
     ])("routes %s to the expected primary provider host", async (model, expectedHost) => {
         const fetchSpy = vi
             .spyOn(globalThis, "fetch")

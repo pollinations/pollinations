@@ -533,13 +533,13 @@ curl "https://gen.pollinations.ai/video/a%20sunset%20timelapse%20over%20the%20oc
 
 #### `GET` `/3d/{prompt}` — Generate 3D Model
 
-⚠️ **This endpoint blocks until generation finishes**, which can take up to ~5 minutes for some models (e.g. `triposr`, `sf3d`) and may hit client/proxy timeouts. Prefer the async API below for those models.
+⚠️ **This endpoint blocks until generation finishes**, which may take up to ~2 minutes depending on the model. Prefer the async API below for long-running jobs.
 
 Generate a 3D model from a text prompt or reference image(s). Returns GLB by default.
 
-**Available models:** `triposr`, `sf3d`, `asset-harvester`, `trellis-2-low`, `trellis-2-medium`, `trellis-2-high`, `tripo3d-h3.1`, `hunyuan3d-v3`, `hyper3d-rodin`, `hyper3d-rodin-highpack`. `triposr` is the default. `asset-harvester` returns a PLY mesh instead of GLB.
+**Available models:** `trellis-2-low`, `trellis-2-medium`, `trellis-2-high`, `hyper3d-rodin`. `trellis-2-low` is the default. All models return GLB.
 
-Pass reference image URL(s) via the `image` parameter for image-to-3D models (e.g. `triposr`, `sf3d`, `asset-harvester`, `trellis-2-low`). Separate multiple URLs with `|` or `,`.
+Pass reference image URL(s) via the `image` parameter for image-to-3D models (`trellis-2-*`). Separate multiple URLs with `|` or `,`. `hyper3d-rodin` accepts both images and a text prompt.
 
 Browse all available models and their input requirements at [`/3d/models`](https://gen.pollinations.ai/3d/models).
 
@@ -548,8 +548,8 @@ Browse all available models and their input requirements at [`/3d/models`](https
 | Param | In | Type | Description |
 |---|---|---|---|
 | `prompt` * | `path` | `string` | Text description of the 3D model to generate (required for text-to-3D models; ignored by image-only models) |
-| `model` | `query` | `string` | Model to use. See /3d/models for the full list and per-model input requirements. · default: `"triposr"` |
-| `image` | `query` | `string` | Reference image URL(s) for image-to-3D generation. Separate multiple URLs with `\|` or `,`. Required for image-only models (e.g. `triposr`, `sf3d`, `asset-harvester`). |
+| `model` | `query` | `string` | Model to use. See /3d/models for the full list and per-model input requirements. · default: `"trellis-2-low"` |
+| `image` | `query` | `string` | Reference image URL(s) for image-to-3D generation. Separate multiple URLs with `\|` or `,`. Required for `trellis-2-*` models. |
 | `format` | `query` | `string` | Output 3D file format. Not all models support all formats — falls back to glb if unsupported. · default: `"glb"` |
 | `safe` | `query` | `string` \| `boolean` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
 
@@ -560,7 +560,7 @@ Browse all available models and their input requirements at [`/3d/models`](https
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/3d/a%20low-poly%20treasure%20chest?model=triposr&image=https://example.com/ref.jpg" \
+curl "https://gen.pollinations.ai/3d/a%20low-poly%20treasure%20chest?model=trellis-2-low&image=https://example.com/ref.jpg" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   --output model.glb
 ```
@@ -577,7 +577,7 @@ Recommended alternative to the blocking endpoint above. Submits a generation and
 curl "https://gen.pollinations.ai/3d/generations" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"model": "triposr", "image": ["https://example.com/ref.jpg"]}'
+  -d '{"model": "trellis-2-low", "image": ["https://example.com/ref.jpg"]}'
 ```
 
 #### `GET` `/3d/jobs/{job_id}` — Check an Async 3D Generation Job

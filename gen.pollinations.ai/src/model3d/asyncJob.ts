@@ -1,27 +1,18 @@
 /**
  * Async job dispatch for 3D generation — POST /3d/generations + GET
  * /3d/jobs/{job_id}, added per reviewer feedback (sharktide, PR #11979):
- * inferenceport's cheap-hardware models (tripoSR/sf3d) can take up to 5
- * minutes, too long for a single blocking HTTP request to ride out reliably.
+ * long-running jobs should be submittable without blocking a single HTTP
+ * request for minutes.
  *
- * This proxies the upstream providers' own job/queue APIs directly — both
- * inferenceport and fal.ai are already async queue APIs under the hood — so
- * a "job" here is just a thin pointer to an upstream job, with no long-lived
- * Worker execution required (resolveModel3dJob does ONE fast status check per
- * call, not a poll loop).
+ * Trellis-2 uses inferenceport's async job API (submit → job_id → poll).
+ * Rodin uses fal.ai's queue API (submit → request_id → poll).
  *
- * The existing blocking GET /3d/{prompt} endpoint and its per-model
- * call*WithFallback()/call*FalAPI() functions are unchanged and reuse the
- * same submit/check primitives internally (see e.g. trellis2Model.ts).
- *
- * Fallback scope (v1): inferenceport→fal fallback is decided at submission
- * time only. If inferenceport's job fails after running for a while, the job
- * fails — there's no later retry on fal once it's underway.
+ * The GET /3d/{prompt} blocking endpoint uses inferenceport's sync API
+ * (?sync=true) for trellis-2 — see trellis2Model.ts.
  */
 
 import type { Buffer } from "node:buffer";
 import { base64ToBuffer } from "../image/utils/imageDownload.ts";
-import { ASSET_HARVESTER_INFERENCEPORT_MODEL_ID } from "./models/assetHarvesterModel.ts";
 import {
     extractFalModelMesh,
     FalError,
@@ -30,31 +21,16 @@ import {
     isFalJobReady,
     submitFalJob,
 } from "./models/falClient.ts";
-import { HUNYUAN3D_FAL_ENDPOINT } from "./models/hunyuan3dModel.ts";
 import {
     checkInferenceportJob,
     InferenceportError,
     submitInferenceportJob,
 } from "./models/inferenceportClient.ts";
+import { RODIN_FAL_ENDPOINT } from "./models/rodinModel.ts";
 import {
-    RODIN_FAL_IMAGE_ENDPOINT,
-    RODIN_FAL_TEXT_ENDPOINT,
-} from "./models/rodinModel.ts";
-import {
-    SF3D_FAL_ENDPOINT,
-    SF3D_INFERENCEPORT_MODEL_ID,
-} from "./models/sf3dModel.ts";
-import {
-    TRELLIS2_FAL_ENDPOINT,
-    TRELLIS2_FAL_RESOLUTION_BY_MODEL_ID,
     TRELLIS2_INFERENCEPORT_MODEL_ID,
     TRELLIS2_INFERENCEPORT_RESOLUTION_BY_MODEL_ID,
 } from "./models/trellis2Model.ts";
-import { TRIPO3D_FAL_ENDPOINT } from "./models/tripo3dModel.ts";
-import {
-    TRIPOSR_FAL_ENDPOINT,
-    TRIPOSR_INFERENCEPORT_MODEL_ID,
-} from "./models/triposrModel.ts";
 import {
     downloadMesh,
     requireImages,
@@ -78,7 +54,6 @@ type SubmitRequest =
           imageUrls: string[];
           prompt?: string;
           resolution?: "low" | "medium" | "high";
-          fallback?: { falEndpoint: string; falInput: Record<string, unknown> };
       }
     | {
           provider: "fal";
@@ -92,35 +67,6 @@ function buildSubmitRequest(
     params: Model3dParams,
 ): SubmitRequest {
     switch (resolvedModel) {
-        case "triposr":
-            requireImages(params, "triposr");
-            return {
-                provider: "inferenceport",
-                inferenceportModel: TRIPOSR_INFERENCEPORT_MODEL_ID,
-                imageUrls: [params.image[0]],
-                fallback: {
-                    falEndpoint: TRIPOSR_FAL_ENDPOINT,
-                    falInput: { image_url: params.image[0] },
-                },
-            };
-        case "sf3d":
-            requireImages(params, "sf3d");
-            return {
-                provider: "inferenceport",
-                inferenceportModel: SF3D_INFERENCEPORT_MODEL_ID,
-                imageUrls: [params.image[0]],
-                fallback: {
-                    falEndpoint: SF3D_FAL_ENDPOINT,
-                    falInput: { image_url: params.image[0] },
-                },
-            };
-        case "asset-harvester":
-            requireImages(params, "asset-harvester");
-            return {
-                provider: "inferenceport",
-                inferenceportModel: ASSET_HARVESTER_INFERENCEPORT_MODEL_ID,
-                imageUrls: [params.image[0]],
-            };
         case "trellis-2-low":
         case "trellis-2-medium":
         case "trellis-2-high":
@@ -133,42 +79,16 @@ function buildSubmitRequest(
                     TRELLIS2_INFERENCEPORT_RESOLUTION_BY_MODEL_ID[
                         resolvedModel
                     ],
-                fallback: {
-                    falEndpoint: TRELLIS2_FAL_ENDPOINT,
-                    falInput: {
-                        image_url: params.image[0],
-                        resolution:
-                            TRELLIS2_FAL_RESOLUTION_BY_MODEL_ID[resolvedModel],
-                    },
-                },
             };
-        case "tripo3d-h3.1":
-            requirePrompt(prompt, "tripo3d-h3.1");
-            return {
-                provider: "fal",
-                falEndpoint: TRIPO3D_FAL_ENDPOINT,
-                falInput: { prompt, texture: false, pbr: false },
-            };
-        case "hunyuan3d-v3":
-            requirePrompt(prompt, "hunyuan3d-v3");
-            return {
-                provider: "fal",
-                falEndpoint: HUNYUAN3D_FAL_ENDPOINT,
-                falInput: { prompt },
-            };
-        case "hyper3d-rodin":
-        case "hyper3d-rodin-highpack": {
+        case "hyper3d-rodin": {
             const hasImages = params.image.length > 0;
             if (!hasImages) requirePrompt(prompt, "hyper3d-rodin");
             return {
                 provider: "fal",
-                falEndpoint: hasImages
-                    ? RODIN_FAL_IMAGE_ENDPOINT
-                    : RODIN_FAL_TEXT_ENDPOINT,
+                falEndpoint: RODIN_FAL_ENDPOINT,
                 falInput: {
                     ...(hasImages ? { image_urls: params.image } : {}),
                     ...(prompt.trim() ? { prompt } : {}),
-                    hd_texture: resolvedModel === "hyper3d-rodin-highpack",
                 },
             };
         }
@@ -213,28 +133,15 @@ export async function submitModel3dJob(
         });
         return { provider: "inferenceport", providerJobId: state.jobId };
     } catch (err) {
-        if (!(err instanceof InferenceportError) || !request.fallback) {
-            throw toHttpError(err);
-        }
-    }
-
-    try {
-        const handle = await submitFalJob({
-            endpoint: request.fallback.falEndpoint,
-            input: request.fallback.falInput,
-        });
-        return { provider: "fal", providerJobId: handle.requestId, ...handle };
-    } catch (err) {
         throw toHttpError(err);
     }
 }
 
 /**
  * Checks a job once. `onReady` is called the instant completion is observed
- * upstream, *before* the (potentially slow, for fal — up to ~50MB per the
- * issue) result download. The caller uses it to claim the job in KV right
- * away, so a second poll arriving mid-download sees the claim and backs off
- * instead of re-observing completion and billing again.
+ * upstream, *before* the (potentially slow) result download. The caller uses
+ * it to claim the job in KV right away, so a concurrent poll backs off instead
+ * of re-observing completion and billing again.
  */
 export async function checkModel3dJob(
     submission: Model3dSubmission,
@@ -242,9 +149,6 @@ export async function checkModel3dJob(
 ): Promise<Model3dCheckResult> {
     try {
         if (submission.provider === "inferenceport") {
-            // inferenceport returns the output inline with the status check
-            // (no separate download step), so there's no slow gap to claim
-            // around — checking and "fetching" are the same cheap call.
             const state = await checkInferenceportJob(submission.providerJobId);
             if (state.status !== "completed") return { status: "pending" };
             await onReady();
@@ -253,13 +157,6 @@ export async function checkModel3dJob(
                     status: "completed",
                     buffer: base64ToBuffer(state.glbBase64),
                     contentType: "model/gltf-binary",
-                };
-            }
-            if (state.plyBase64) {
-                return {
-                    status: "completed",
-                    buffer: base64ToBuffer(state.plyBase64),
-                    contentType: "model/ply",
                 };
             }
             throw new InferenceportError(

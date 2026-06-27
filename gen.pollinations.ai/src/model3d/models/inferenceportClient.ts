@@ -1,31 +1,21 @@
 /**
  * Generic inferenceport.ai 3D generation client.
  *
- * Submits to POST /v1/3d/generations (default async mode, not ?sync=true —
- * async matches our own internal polling loop and is the documented default),
- * then polls GET /v1/3d/jobs/{job_id} until a terminal status. Token from
- * INFERENCEPORT_API_KEY.
+ * Two modes:
+ * - Sync (blocking endpoint): POST /v1/3d/generations?sync=true → HTTP 200
+ *   with data[0].model_glb_b64_bytes inline. Used by GET /3d/{prompt}.
+ * - Async (job API): POST /v1/3d/generations → HTTP 202 with job_id, then
+ *   poll GET /v1/3d/jobs/{job_id}. Used by POST /3d/generations + GET
+ *   /3d/jobs/{id}.
  *
- * Confirmed `model` values (per provider): "tripoSR", "sf3d", "trellis-2",
- * "asset-harvester". Output format is GLB (model_glb_b64_bytes) for every
- * model except asset-harvester, which returns PLY (+ an orbit-video preview,
- * not exposed via our endpoint) — confirmed by the provider.
- *
- * Confirmed pricing (USD/generation): tripoSR $0.02, sf3d $0.02,
- * asset-harvester $0.07, trellis-2 $0.24/$0.29/$0.35 for resolution
- * low/medium/high (resolution is sent as a request field, not encoded in the
- * `model` value).
+ * Confirmed model value (per provider docs): "trellis2".
+ * Confirmed output fields: data[0].model_glb_b64_bytes (live API test).
+ * Confirmed pricing: $0.24/$0.29/$0.35 for resolution low/medium/high.
  */
 
-import { sleep } from "../../image/util.ts";
 import { getModel3dEnv } from "../env.ts";
 
 const API_BASE = "https://sharktide-lightning.hf.space/v1";
-const POLL_INTERVAL_MS = 5000;
-// Inferenceport docs state jobs typically complete in 1-5 min; cap generously
-// so a stuck job surfaces as a controlled 504 instead of running until the
-// Worker is killed.
-const POLL_MAX_ATTEMPTS = 90;
 
 export class InferenceportError extends Error {
     constructor(
@@ -39,11 +29,10 @@ export class InferenceportError extends Error {
 
 type InferenceportJobStatus = "pending" | "processing" | "completed" | "failed";
 
-// Output payload is nested under data[0] (confirmed via live API test).
+// Output payload nested under data[0] (confirmed via live API test).
 interface InferenceportJobData {
     model_glb_b64_bytes?: string;
     model_ply_b64_bytes?: string;
-    orbit_video_b64_bytes?: string;
 }
 
 interface InferenceportJob {
@@ -53,30 +42,27 @@ interface InferenceportJob {
     data?: InferenceportJobData[];
 }
 
+interface InferenceportSyncResponse {
+    data: InferenceportJobData[];
+}
+
 interface RunOptions {
     model: string;
     imageUrls: string[];
     prompt?: string;
-    // trellis-2 only: "low" | "medium" | "high", controls output quality/price.
     resolution?: "low" | "medium" | "high";
 }
 
-export interface InferenceportResult {
+export interface InferenceportSyncResult {
     glbBase64?: string;
     plyBase64?: string;
-    orbitVideoBase64?: string;
-    jobId: string;
 }
 
-// Single-shot state of a job, returned by both submit and check — lets the
-// async job API (POST /3d/generations + GET /3d/jobs/{id}) inspect a job
-// without committing to runInferenceportJob's internal poll loop.
+// Single-shot state of an async job — used by the async job API to check
+// status without looping.
 export type InferenceportJobState =
     | { status: "pending" | "processing"; jobId: string }
-    | ({ status: "completed"; jobId: string } & Omit<
-          InferenceportResult,
-          "jobId"
-      >);
+    | ({ status: "completed"; jobId: string } & InferenceportSyncResult);
 
 function toJobState(job: InferenceportJob): InferenceportJobState {
     if (job.status === "failed") {
@@ -94,7 +80,6 @@ function toJobState(job: InferenceportJob): InferenceportJobState {
             jobId: job.job_id,
             glbBase64: output?.model_glb_b64_bytes,
             plyBase64: output?.model_ply_b64_bytes,
-            orbitVideoBase64: output?.orbit_video_b64_bytes,
         };
     }
     return { status: job.status, jobId: job.job_id };
@@ -110,25 +95,55 @@ function requireInferenceportToken(): string {
     return token;
 }
 
-export async function submitInferenceportJob(
-    opts: RunOptions,
-): Promise<InferenceportJobState> {
-    const token = requireInferenceportToken();
+function buildBody(opts: RunOptions): Record<string, unknown> {
     const body: Record<string, unknown> = {
         model: opts.model,
         image_urls: opts.imageUrls,
     };
     if (opts.prompt) body.prompt = opts.prompt;
     if (opts.resolution) body.resolution = opts.resolution;
+    return body;
+}
 
+// Blocking call — waits for inferenceport to complete before responding.
+// Used by the GET /3d/{prompt} endpoint.
+export async function runInferenceportSync(
+    opts: RunOptions,
+): Promise<InferenceportSyncResult> {
+    const token = requireInferenceportToken();
+    const response = await inferenceportFetch<InferenceportSyncResponse>(
+        token,
+        {
+            method: "POST",
+            url: `${API_BASE}/3d/generations?sync=true`,
+            body: buildBody(opts),
+        },
+    );
+    const output = response.data?.[0];
+    if (!output?.model_glb_b64_bytes && !output?.model_ply_b64_bytes) {
+        throw new InferenceportError("inferenceport sync returned no output");
+    }
+    return {
+        glbBase64: output?.model_glb_b64_bytes,
+        plyBase64: output?.model_ply_b64_bytes,
+    };
+}
+
+// Submits an async job and returns the job_id immediately.
+// Used by POST /3d/generations.
+export async function submitInferenceportJob(
+    opts: RunOptions,
+): Promise<InferenceportJobState> {
+    const token = requireInferenceportToken();
     const job = await inferenceportFetch<InferenceportJob>(token, {
         method: "POST",
         url: `${API_BASE}/3d/generations`,
-        body,
+        body: buildBody(opts),
     });
     return toJobState(job);
 }
 
+// Single-shot status check — does NOT loop. Used by GET /3d/jobs/{id}.
 export async function checkInferenceportJob(
     jobId: string,
 ): Promise<InferenceportJobState> {
@@ -138,37 +153,6 @@ export async function checkInferenceportJob(
         url: `${API_BASE}/3d/jobs/${jobId}`,
     });
     return toJobState(job);
-}
-
-export async function runInferenceportJob(
-    opts: RunOptions,
-): Promise<InferenceportResult> {
-    let state = await submitInferenceportJob(opts);
-
-    let pollAttempts = 0;
-    while (state.status === "pending" || state.status === "processing") {
-        if (pollAttempts >= POLL_MAX_ATTEMPTS) {
-            throw new InferenceportError(
-                `Inferenceport job ${state.jobId} timed out after ${(POLL_MAX_ATTEMPTS * POLL_INTERVAL_MS) / 1000}s (status=${state.status})`,
-                504,
-            );
-        }
-        await sleep(POLL_INTERVAL_MS);
-        state = await checkInferenceportJob(state.jobId);
-        pollAttempts++;
-    }
-
-    if (state.status !== "completed") {
-        throw new InferenceportError(
-            "3D generation ended in an unexpected state",
-        );
-    }
-    return {
-        glbBase64: state.glbBase64,
-        plyBase64: state.plyBase64,
-        orbitVideoBase64: state.orbitVideoBase64,
-        jobId: state.jobId,
-    };
 }
 
 async function inferenceportFetch<T>(
@@ -190,7 +174,6 @@ async function inferenceportFetch<T>(
         body: args.body ? JSON.stringify(args.body) : undefined,
     });
 
-    // 202 (async job accepted) and 200 (poll result) are both success.
     if (!response.ok) {
         const text = await response.text().catch(() => "<no body>");
         throw new InferenceportError(
@@ -202,9 +185,7 @@ async function inferenceportFetch<T>(
 }
 
 export function classifyInferenceportHttpStatus(httpStatus: number): number {
-    // 429 → 429 (rate limit, client can back off).
-    // 402 → 402 (insufficient inferenceport credits — our operational concern,
-    // not the user's input, but worth a distinct status for monitoring).
+    // 429 → 429 (rate limit). 402 → 402 (insufficient credits).
     // Other 4xx/5xx → 502 (our config / upstream outage).
     if (httpStatus === 429 || httpStatus === 402) return httpStatus;
     return 502;

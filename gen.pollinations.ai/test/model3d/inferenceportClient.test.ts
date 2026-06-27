@@ -2,8 +2,10 @@ import { env } from "cloudflare:test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { syncModel3dEnvironment } from "../../src/model3d/env.ts";
 import {
+    checkInferenceportJob,
     InferenceportError,
-    runInferenceportJob,
+    runInferenceportSync,
+    submitInferenceportJob,
 } from "../../src/model3d/models/inferenceportClient.ts";
 
 beforeEach(() => {
@@ -15,85 +17,122 @@ beforeEach(() => {
 
 afterEach(() => {
     vi.restoreAllMocks();
-    vi.useRealTimers();
 });
 
 const SUBMIT_URL = "https://sharktide-lightning.hf.space/v1/3d/generations";
 
-describe("runInferenceportJob", () => {
-    it("submits and returns immediately when job completes synchronously", async () => {
+describe("runInferenceportSync", () => {
+    it("POSTs to ?sync=true and returns GLB from data[0]", async () => {
         const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(
                 JSON.stringify({
-                    job_id: "job_123",
-                    status: "completed",
                     data: [{ model_glb_b64_bytes: "Zm9v" }],
                 }),
                 { status: 200 },
             ),
         );
 
-        const result = await runInferenceportJob({
-            model: "tripoSR",
-            imageUrls: ["https://example.com/ref.jpg"],
-        });
-
-        expect(result.glbBase64).toBe("Zm9v");
-        expect(result.jobId).toBe("job_123");
-
-        const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
-        expect(url).toBe(SUBMIT_URL);
-        expect(init.method).toBe("POST");
-        const headers = new Headers(init.headers);
-        expect(headers.get("Authorization")).toBe("Bearer ip_test_token");
-        const body = JSON.parse(init.body as string);
-        expect(body.model).toBe("tripoSR");
-        expect(body.image_urls).toEqual(["https://example.com/ref.jpg"]);
-    });
-
-    it("includes the resolution field in the request body when provided", async () => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-            new Response(
-                JSON.stringify({
-                    job_id: "job_res",
-                    status: "completed",
-                    data: [{ model_glb_b64_bytes: "Zm9v" }],
-                }),
-                { status: 200 },
-            ),
-        );
-
-        await runInferenceportJob({
-            model: "trellis-2",
+        const result = await runInferenceportSync({
+            model: "trellis2",
             imageUrls: ["https://example.com/ref.jpg"],
             resolution: "medium",
         });
 
-        const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+        expect(result.glbBase64).toBe("Zm9v");
+
+        const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+        expect(url).toBe(`${SUBMIT_URL}?sync=true`);
+        expect(init.method).toBe("POST");
+        const headers = new Headers(init.headers);
+        expect(headers.get("Authorization")).toBe("Bearer ip_test_token");
         const body = JSON.parse(init.body as string);
+        expect(body.model).toBe("trellis2");
         expect(body.resolution).toBe("medium");
+        expect(body.image_urls).toEqual(["https://example.com/ref.jpg"]);
     });
 
-    it("polls /3d/jobs/{job_id} while pending/processing", async () => {
-        vi.useFakeTimers();
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
+    it("throws when sync response has no output", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(JSON.stringify({ data: [{}] }), { status: 200 }),
+        );
 
-        fetchSpy.mockResolvedValueOnce(
+        await expect(
+            runInferenceportSync({
+                model: "trellis2",
+                imageUrls: ["https://example.com/a.jpg"],
+            }),
+        ).rejects.toThrowError(InferenceportError);
+    });
+
+    it("passes through 402 (insufficient credits)", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(JSON.stringify({ detail: "Insufficient credits" }), {
+                status: 402,
+            }),
+        );
+
+        await expect(
+            runInferenceportSync({
+                model: "trellis2",
+                imageUrls: ["https://example.com/a.jpg"],
+            }),
+        ).rejects.toMatchObject({ name: "InferenceportError", status: 402 });
+    });
+
+    it("passes through 429 (rate limit)", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(JSON.stringify({ detail: "Rate limited" }), {
+                status: 429,
+            }),
+        );
+
+        await expect(
+            runInferenceportSync({
+                model: "trellis2",
+                imageUrls: ["https://example.com/a.jpg"],
+            }),
+        ).rejects.toMatchObject({ name: "InferenceportError", status: 429 });
+    });
+
+    it("maps other HTTP errors to 502", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(JSON.stringify({ detail: "Invalid token" }), {
+                status: 401,
+            }),
+        );
+
+        await expect(
+            runInferenceportSync({
+                model: "trellis2",
+                imageUrls: ["https://example.com/a.jpg"],
+            }),
+        ).rejects.toMatchObject({ name: "InferenceportError", status: 502 });
+    });
+});
+
+describe("async job API (submitInferenceportJob / checkInferenceportJob)", () => {
+    it("submit returns pending job state with a job_id", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(
-                JSON.stringify({ job_id: "job_poll", status: "pending" }),
+                JSON.stringify({ job_id: "job_123", status: "pending" }),
                 { status: 202 },
             ),
         );
-        fetchSpy.mockResolvedValueOnce(
-            new Response(
-                JSON.stringify({ job_id: "job_poll", status: "processing" }),
-                { status: 200 },
-            ),
-        );
-        fetchSpy.mockResolvedValueOnce(
+
+        const state = await submitInferenceportJob({
+            model: "trellis2",
+            imageUrls: ["https://example.com/ref.jpg"],
+        });
+
+        expect(state.status).toBe("pending");
+        expect(state.jobId).toBe("job_123");
+    });
+
+    it("checkInferenceportJob returns completed state with GLB from data[0]", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(
                 JSON.stringify({
-                    job_id: "job_poll",
+                    job_id: "job_123",
                     status: "completed",
                     data: [{ model_glb_b64_bytes: "YmFy" }],
                 }),
@@ -101,20 +140,12 @@ describe("runInferenceportJob", () => {
             ),
         );
 
-        const promise = runInferenceportJob({
-            model: "tripoSR",
-            imageUrls: ["https://example.com/a.jpg"],
-        });
-        await vi.advanceTimersByTimeAsync(10_000);
-        const result = await promise;
+        const state = await checkInferenceportJob("job_123");
 
-        expect(result.glbBase64).toBe("YmFy");
-        expect(fetchSpy).toHaveBeenCalledTimes(3);
-        const [pollUrl] = fetchSpy.mock.calls[1] as [string];
-        expect(pollUrl).toBe(
-            "https://sharktide-lightning.hf.space/v1/3d/jobs/job_poll",
-        );
-        vi.useRealTimers();
+        expect(state.status).toBe("completed");
+        if (state.status === "completed") {
+            expect(state.glbBase64).toBe("YmFy");
+        }
     });
 
     it("throws InferenceportError when job status is failed", async () => {
@@ -129,83 +160,8 @@ describe("runInferenceportJob", () => {
             ),
         );
 
-        await expect(
-            runInferenceportJob({
-                model: "sf3d",
-                imageUrls: ["https://example.com/a.jpg"],
-            }),
-        ).rejects.toThrowError(InferenceportError);
-    });
-
-    it("passes through 402 (insufficient credits)", async () => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
-            new Response(JSON.stringify({ detail: "Insufficient credits" }), {
-                status: 402,
-            }),
+        await expect(checkInferenceportJob("job_fail")).rejects.toThrowError(
+            InferenceportError,
         );
-
-        await expect(
-            runInferenceportJob({
-                model: "tripoSR",
-                imageUrls: ["https://example.com/a.jpg"],
-            }),
-        ).rejects.toMatchObject({ name: "InferenceportError", status: 402 });
-    });
-
-    it("passes through 429 (rate limit)", async () => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
-            new Response(JSON.stringify({ detail: "Rate limited" }), {
-                status: 429,
-            }),
-        );
-
-        await expect(
-            runInferenceportJob({
-                model: "tripoSR",
-                imageUrls: ["https://example.com/a.jpg"],
-            }),
-        ).rejects.toMatchObject({ name: "InferenceportError", status: 429 });
-    });
-
-    it("maps other HTTP errors to 502", async () => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
-            new Response(JSON.stringify({ detail: "Invalid token" }), {
-                status: 401,
-            }),
-        );
-
-        await expect(
-            runInferenceportJob({
-                model: "tripoSR",
-                imageUrls: ["https://example.com/a.jpg"],
-            }),
-        ).rejects.toMatchObject({ name: "InferenceportError", status: 502 });
-    });
-
-    it("times out with 504 when job stays processing past poll budget", async () => {
-        vi.useFakeTimers();
-        const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(
-            async () =>
-                new Response(
-                    JSON.stringify({
-                        job_id: "job_stuck",
-                        status: "processing",
-                    }),
-                    { status: 200 },
-                ),
-        );
-
-        const promise = runInferenceportJob({
-            model: "tripoSR",
-            imageUrls: ["https://example.com/a.jpg"],
-        });
-        const assertion = expect(promise).rejects.toMatchObject({
-            name: "InferenceportError",
-            status: 504,
-        });
-        await vi.advanceTimersByTimeAsync(90 * 5_000 + 1_000);
-        await assertion;
-        expect(fetchSpy.mock.calls.length).toBeLessThanOrEqual(91);
-        vi.useRealTimers();
     });
 });

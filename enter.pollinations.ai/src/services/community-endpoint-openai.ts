@@ -8,13 +8,10 @@ import { openaiUsageToUsage } from "@shared/registry/usage-headers.ts";
 
 type EndpointAuth = {
     baseUrl: string;
-    bearerToken?: string;
-};
-
-type EndpointTestInput = EndpointAuth & {
-    model: string;
     bearerToken: string;
 };
+
+type EndpointTestInput = EndpointAuth & { model: string };
 
 export type CommunityEndpointUsage = Record<string, unknown>;
 
@@ -25,8 +22,7 @@ export type CommunityEndpointTestResult = {
 
 const REQUEST_TIMEOUT_MS = 10_000;
 
-function authorizationHeaders(bearerToken?: string): HeadersInit {
-    if (!bearerToken?.trim()) return {};
+function authorizationHeaders(bearerToken: string): HeadersInit {
     return {
         Authorization: `Bearer ${normalizeCommunityEndpointBearerToken(bearerToken)}`,
     };

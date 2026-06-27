@@ -1,17 +1,18 @@
 DESCRIPTION >
     Developer earnings for a dev — returns daily/hourly buckets, per-entity
-    rollups, and one global rollup in a single response. Rows include BYOP
+    rollups, and per-source rollups in a single response. Rows include BYOP
     markup rewards and community model owner rewards.
     Daily rows have a non-empty `date`; rollup rows have empty `date`.
-    Within rollups, the global row has empty `app_key_id`.
+    Per-source rows have empty `entity_id` and a non-empty `source`.
     BYOP earnings per event = total_price - dev_price. Community model
-    earnings per event = dev_price * community_model_reward_rate.
+    earnings per event = community_model_reward_amount.
     Attribution uses immutable recipient ids recorded on each event. Names come
     from left joins against the latest D1 snapshots; deleted/unsynced entities
     fall back to their recorded ids.
     Use 'since' and 'until' for date range filtering.
     Use 'grain=hour' to group daily buckets by hour; defaults to daily.
-    Use 'api_key_ids' (comma-separated) to filter to specific BYOP apps.
+    Use 'entity_ids' (comma-separated) to filter to specific earning entities.
+    Legacy 'api_key_ids' is still accepted as an alias.
 
 TOKEN tinybird_read READ
 
@@ -19,8 +20,8 @@ NODE app_labels
 SQL >
     %
     SELECT
-        id AS app_key_id,
-        coalesce(nullIf(name, ''), id) AS app_name
+        id AS entity_id,
+        coalesce(nullIf(name, ''), id) AS entity_name
     FROM d1_apikey
     WHERE synced_at = (SELECT max(synced_at) FROM d1_apikey)
 
@@ -28,108 +29,123 @@ NODE community_model_labels
 SQL >
     %
     SELECT
-        id AS model_id,
-        coalesce(nullIf(name, ''), id) AS model_name
-    FROM d1_community_model
-    WHERE synced_at = (SELECT max(synced_at) FROM d1_community_model)
+        concat('community/', u.github_username, '/', cm.name) AS entity_id,
+        coalesce(nullIf(cm.name, ''), concat('community/', u.github_username, '/', cm.name)) AS entity_name
+    FROM d1_community_model cm
+    LEFT JOIN d1_user u ON cm.owner_user_id = u.id
+    WHERE cm.synced_at = (SELECT max(synced_at) FROM d1_community_model)
+      AND u.synced_at = (SELECT max(synced_at) FROM d1_user)
+      AND u.github_username != ''
 
-NODE dev_events
+NODE byop_earning_events
 SQL >
     %
     SELECT
-        *
-    FROM (
-        SELECT
-            ge.api_key_client_id AS app_key_id,
-            ge.user_id AS user_id,
-            if(
-                {{String(grain, 'day')}} = 'hour',
-                formatDateTime(toStartOfHour(ge.start_time), '%F %T'),
-                formatDateTime(toStartOfDay(ge.start_time), '%F')
-            ) AS date,
-            ge.dev_price AS baseline_price,
-            ge.total_price AS cost_usd,
-            ge.total_price - ge.dev_price AS earned,
-            ge.markup_rate AS markup_rate,
-            coalesce(nullIf(al.app_name, ''), ge.api_key_client_id) AS app_name,
-            'byop_markup' AS source
-        FROM generation_event ge
-        LEFT JOIN app_labels al ON ge.api_key_client_id = al.app_key_id
-        WHERE ge.api_key_created_for_user_id = {{String(dev_user_id, '')}}
-          AND ge.markup_rate > 0
-          AND ge.total_price > ge.dev_price
-        {% if defined(since) %}
-        AND ge.start_time >= {{DateTime(since)}}
-        {% end %}
-        {% if defined(until) %}
-        AND ge.start_time < {{DateTime(until)}}
-        {% end %}
-        {% if defined(api_key_ids) %}
-        AND ge.api_key_client_id IN {{Array(api_key_ids, 'String')}}
-        {% end %}
+        'byop_markup' AS source,
+        ge.api_key_client_id AS entity_id,
+        coalesce(nullIf(al.entity_name, ''), ge.api_key_client_id) AS entity_name,
+        ge.user_id AS user_id,
+        ge.selected_meter_slug AS selected_meter_slug,
+        if(
+            {{String(grain, 'day')}} = 'hour',
+            formatDateTime(toStartOfHour(ge.start_time), '%F %T'),
+            formatDateTime(toStartOfDay(ge.start_time), '%F')
+        ) AS date,
+        ge.dev_price AS baseline_price,
+        ge.total_price AS cost_usd,
+        ge.total_price - ge.dev_price AS earned,
+        ge.markup_rate AS reward_rate
+    FROM generation_event ge
+    LEFT JOIN app_labels al ON ge.api_key_client_id = al.entity_id
+    WHERE ge.api_key_created_for_user_id = {{String(dev_user_id, '')}}
+      AND ge.markup_rate > 0
+      AND ge.total_price > ge.dev_price
+    {% if defined(since) %}
+    AND ge.start_time >= {{DateTime(since)}}
+    {% end %}
+    {% if defined(until) %}
+    AND ge.start_time < {{DateTime(until)}}
+    {% end %}
+    {% if defined(entity_ids) %}
+    AND ge.api_key_client_id IN {{Array(entity_ids, 'String')}}
+    {% end %}
+    {% if defined(api_key_ids) %}
+    AND ge.api_key_client_id IN {{Array(api_key_ids, 'String')}}
+    {% end %}
 
-        UNION ALL
+NODE community_model_earning_events
+SQL >
+    %
+    SELECT
+        'community_model' AS source,
+        ge.resolved_model_requested AS entity_id,
+        coalesce(
+            nullIf(cml.entity_name, ''),
+            ge.resolved_model_requested
+        ) AS entity_name,
+        ge.user_id AS user_id,
+        ge.selected_meter_slug AS selected_meter_slug,
+        if(
+            {{String(grain, 'day')}} = 'hour',
+            formatDateTime(toStartOfHour(ge.start_time), '%F %T'),
+            formatDateTime(toStartOfDay(ge.start_time), '%F')
+        ) AS date,
+        ge.dev_price AS baseline_price,
+        ge.dev_price AS cost_usd,
+        ge.community_model_reward_amount AS earned,
+        ge.community_model_reward_rate AS reward_rate
+    FROM generation_event ge
+    LEFT JOIN community_model_labels cml
+        ON ge.resolved_model_requested = cml.entity_id
+    WHERE ge.community_model_reward_user_id = {{String(dev_user_id, '')}}
+      AND ge.community_model_reward_amount > 0
+      AND startsWith(ge.resolved_model_requested, 'community/')
+    {% if defined(since) %}
+    AND ge.start_time >= {{DateTime(since)}}
+    {% end %}
+    {% if defined(until) %}
+    AND ge.start_time < {{DateTime(until)}}
+    {% end %}
+    {% if defined(entity_ids) %}
+    AND ge.resolved_model_requested IN {{Array(entity_ids, 'String')}}
+    {% end %}
+    {% if defined(api_key_ids) %}
+    AND ge.resolved_model_requested IN {{Array(api_key_ids, 'String')}}
+    {% end %}
 
-        SELECT
-            ge.community_model_reward_model_id AS app_key_id,
-            ge.user_id AS user_id,
-            if(
-                {{String(grain, 'day')}} = 'hour',
-                formatDateTime(toStartOfHour(ge.start_time), '%F %T'),
-                formatDateTime(toStartOfDay(ge.start_time), '%F')
-            ) AS date,
-            ge.dev_price AS baseline_price,
-            ge.dev_price AS cost_usd,
-            ge.dev_price * ge.community_model_reward_rate AS earned,
-            ge.community_model_reward_rate AS markup_rate,
-            coalesce(
-                nullIf(cml.model_name, ''),
-                ge.community_model_reward_model_id
-            ) AS app_name,
-            'community_model' AS source
-        FROM generation_event ge
-        LEFT JOIN community_model_labels cml
-            ON ge.community_model_reward_model_id = cml.model_id
-        WHERE ge.community_model_reward_user_id = {{String(dev_user_id, '')}}
-          AND ge.community_model_reward_rate > 0
-          AND ge.dev_price > 0
-          AND ge.community_model_reward_model_id != 'undefined'
-        {% if defined(since) %}
-        AND ge.start_time >= {{DateTime(since)}}
-        {% end %}
-        {% if defined(until) %}
-        AND ge.start_time < {{DateTime(until)}}
-        {% end %}
-        {% if defined(api_key_ids) %}
-        AND ge.community_model_reward_model_id IN {{Array(api_key_ids, 'String')}}
-        {% end %}
-    ) AS reward_events
+NODE earning_events
+SQL >
+    %
+    SELECT * FROM byop_earning_events
+    UNION ALL
+    SELECT * FROM community_model_earning_events
 
-# Single pass over dev_events. GROUPING SETS emits, in one scan, the three row
-# kinds the old pipe produced via three separate scans + UNION ALL:
-#   (date, app_key_id, app_name, source) -> daily/hourly buckets (date non-empty)
-#   (app_key_id, app_name, source)       -> per-entity rollup (date='')
-#   ()                                   -> global rollup (date='', app_key_id='')
-# Columns outside a set default to '' (String), matching the old '' literals.
+# Single pass over earning_events. GROUPING SETS emits source-specific rows only:
+#   (date, entity_id, entity_name, source) -> daily/hourly buckets
+#   (entity_id, entity_name, source)       -> per-entity rollup
+#   (source)                              -> per-source rollup
+# Columns outside a set default to '' (String), matching previous rollup style.
 # GROUPING(date)=0 only on daily rows, preserving their unique_users=0.
 NODE developer_earnings_node
 SQL >
     SELECT
         date,
-        app_key_id,
-        app_name,
+        entity_id,
+        entity_name,
         source,
         count() AS requests,
         sum(baseline_price) AS baseline_price,
         sum(earned) AS pollen_earned,
+        sumIf(earned, selected_meter_slug = 'v1:meter:pack') AS paid_earned,
+        sumIf(earned, selected_meter_slug = 'v1:meter:tier') AS tier_earned,
         sum(cost_usd) AS cost_usd,
-        if(count() = 0, toFloat64(0), avg(markup_rate)) AS markup_rate,
+        if(count() = 0, toFloat64(0), avg(reward_rate)) AS reward_rate,
         if(GROUPING(date) = 0, toUInt64(0), uniq(user_id)) AS unique_users
-    FROM dev_events
+    FROM earning_events
     GROUP BY GROUPING SETS (
-        (date, app_key_id, app_name, source),
-        (app_key_id, app_name, source),
-        ()
+        (date, entity_id, entity_name, source),
+        (entity_id, entity_name, source),
+        (source)
     )
 
 TYPE endpoint

@@ -513,7 +513,6 @@ describe("BYOP markup", () => {
         expect(billedPrice).toBe(1);
         expect(communityModelReward).toEqual({
             userId: ownerId,
-            modelId: "community/owner/model",
             rewardRate: COMMUNITY_MODEL_REWARD_RATE,
             credit: COMMUNITY_MODEL_REWARD_RATE,
         });
@@ -565,7 +564,7 @@ describe("BYOP markup", () => {
         );
     });
 
-    it("does not credit a community model owner for their own request", async () => {
+    it("credits a community model owner for their own request", async () => {
         const ownerId = await createBalanceUser("community-owner", {
             tier: 2,
             pack: 0,
@@ -584,10 +583,14 @@ describe("BYOP markup", () => {
                 },
             });
 
-        expect(communityModelReward).toBeNull();
         expect(billedPrice).toBe(1);
+        expect(communityModelReward).toEqual({
+            userId: ownerId,
+            rewardRate: COMMUNITY_MODEL_REWARD_RATE,
+            credit: COMMUNITY_MODEL_REWARD_RATE,
+        });
         expect((await getUserBalance(db, ownerId)).tierBalance).toBeCloseTo(
-            1,
+            2 - 1 + COMMUNITY_MODEL_REWARD_RATE,
             10,
         );
     });

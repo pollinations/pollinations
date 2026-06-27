@@ -22,7 +22,8 @@ import { COMMUNITY_ENDPOINT_PRICE_FIELDS } from "@shared/community-endpoints.ts"
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
-import { PRICE_ICON, type PriceKind } from "../models/model-icons.tsx";
+import { PRICE_ICON } from "../models/model-icons.tsx";
+import type { PriceKind } from "../models/types.ts";
 import {
     type ActionState,
     type CommunityEndpoint,
@@ -99,9 +100,7 @@ export function CommunityEndpointDialog({
     }, [open, endpoint]);
 
     const hasToken = form.bearerToken.trim().length > 0;
-    const tokenForRequest = hasToken
-        ? { bearerToken: form.bearerToken.trim() }
-        : {};
+    const tokenForRequest = { bearerToken: form.bearerToken.trim() };
 
     function updateForm(key: keyof EndpointFormState, value: string): void {
         setForm((current) => nextFormState(current, key, value));
@@ -126,21 +125,14 @@ export function CommunityEndpointDialog({
     async function handleFetchModels(): Promise<void> {
         setModelListState({ status: "loading", message: "Fetching models…" });
         try {
-            const json = {
-                baseUrl: form.baseUrl.trim(),
-                ...tokenForRequest,
-            };
-            const response =
-                isEdit && endpoint
-                    ? await apiClient["community-endpoints"][
-                          ":id"
-                      ].models.$post({
-                          param: { id: endpoint.id },
-                          json,
-                      })
-                    : await apiClient["community-endpoints"].models.$post({
-                          json,
-                      });
+            const response = await apiClient[
+                "community-endpoints"
+            ].models.$post({
+                json: {
+                    baseUrl: form.baseUrl.trim(),
+                    ...tokenForRequest,
+                },
+            });
             if (!response.ok) throw new Error(await readError(response));
             const body = (await response.json()) as { data: string[] };
             setModelOptions(body.data);
@@ -165,23 +157,13 @@ export function CommunityEndpointDialog({
     async function handleTest(): Promise<void> {
         setTestState({ status: "loading", message: "Testing endpoint…" });
         try {
-            const json = {
-                baseUrl: form.baseUrl.trim(),
-                model: form.upstreamModel.trim() || form.name.trim(),
-                ...tokenForRequest,
-            };
-            const response =
-                isEdit && endpoint
-                    ? await apiClient["community-endpoints"][":id"].test.$post({
-                          param: { id: endpoint.id },
-                          json,
-                      })
-                    : await apiClient["community-endpoints"].test.$post({
-                          json: {
-                              ...json,
-                              bearerToken: form.bearerToken.trim(),
-                          },
-                      });
+            const response = await apiClient["community-endpoints"].test.$post({
+                json: {
+                    baseUrl: form.baseUrl.trim(),
+                    bearerToken: form.bearerToken.trim(),
+                    model: form.upstreamModel.trim() || form.name.trim(),
+                },
+            });
             if (!response.ok) throw new Error(await readError(response));
             const body =
                 (await response.json()) as CommunityEndpointTestResponse;
@@ -250,6 +232,7 @@ export function CommunityEndpointDialog({
     );
     const testRequirementMet =
         testState.status === "success" && returnedFields.length > 0;
+    const saveRequirementMet = isEdit || (testRequirementMet && hasToken);
     const providerModelQuery = form.upstreamModel.trim().toLowerCase();
     const visibleModelOptions =
         providerModelQuery === ""
@@ -264,8 +247,7 @@ export function CommunityEndpointDialog({
         hasVisiblePriceFields &&
         hasValidVisiblePrices &&
         hasRequiredReturnedPrices &&
-        testRequirementMet &&
-        (isEdit || hasToken);
+        saveRequirementMet;
 
     return (
         <Dialog
@@ -370,6 +352,7 @@ export function CommunityEndpointDialog({
                                     intent="info"
                                     className="shrink-0 text-sm"
                                     disabled={
+                                        !hasToken ||
                                         form.baseUrl.trim() === "" ||
                                         modelListState.status === "loading"
                                     }
@@ -482,7 +465,7 @@ export function CommunityEndpointDialog({
                         label="API bearer token"
                         helper={
                             isEdit
-                                ? "Saved token is configured. Leave blank to keep it; fetch models and test use it unless you enter a replacement."
+                                ? "Leave blank to keep the saved token. Enter a token to fetch models, test, or replace it."
                                 : "Stored encrypted and sent as Authorization: Bearer to your endpoint."
                         }
                         alignLabelRow
@@ -491,9 +474,7 @@ export function CommunityEndpointDialog({
                             name="community-api-bearer-token"
                             type="password"
                             value={form.bearerToken}
-                            placeholder={
-                                isEdit ? "Saved token configured" : undefined
-                            }
+                            placeholder={isEdit ? "Re-enter token" : undefined}
                             autoComplete="new-password"
                             autoCapitalize="none"
                             data-lpignore="true"
@@ -512,7 +493,7 @@ export function CommunityEndpointDialog({
                             intent="info"
                             onClick={() => void handleTest()}
                             disabled={
-                                (!isEdit && !hasToken) ||
+                                !hasToken ||
                                 form.baseUrl.trim() === "" ||
                                 testState.status === "loading"
                             }

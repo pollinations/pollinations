@@ -23,14 +23,12 @@ export type MarkupResolution = {
 
 export type CommunityModelRewardResolution = {
     userId: string;
-    modelId: string;
     rewardRate: number;
     credit: number;
 };
 
 export type CommunityModelRewardInput = {
     userId: string;
-    modelId: string;
     rewardRate: number;
 };
 
@@ -105,15 +103,13 @@ export function resolveCommunityModelReward(
     payerUserId: string | undefined,
 ): CommunityModelRewardResolution | null {
     if (!reward || !payerUserId) return null;
-    if (reward.userId === payerUserId) return null;
     if (baselinePrice <= 0 || reward.rewardRate <= 0) return null;
 
-    const credit = baselinePrice * reward.rewardRate;
+    const credit = roundPollenLedgerAmount(baselinePrice * reward.rewardRate);
     if (credit <= 0) return null;
 
     return {
         userId: reward.userId,
-        modelId: reward.modelId,
         rewardRate: reward.rewardRate,
         credit,
     };
@@ -227,9 +223,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
                     "Community model reward requires a payer balance bucket",
                 );
             }
-            const creditAmount = roundPollenLedgerAmount(
-                communityModelReward.credit,
-            );
+            const creditAmount = communityModelReward.credit;
             const { ok } = await atomicCreditUserBalance(
                 db,
                 communityModelReward.userId,
@@ -242,12 +236,11 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
                 );
             }
             log.debug(
-                "Credited {credit} pollen to community model owner {userId} {bucket} balance (model={modelId}, reward={pct}%)",
+                "Credited {credit} pollen to community model owner {userId} {bucket} balance (reward={pct}%)",
                 {
                     credit: creditAmount,
                     userId: communityModelReward.userId,
                     bucket: payerBucket,
-                    modelId: communityModelReward.modelId,
                     pct: (communityModelReward.rewardRate * 100).toFixed(0),
                 },
             );

@@ -7,33 +7,43 @@ DESCRIPTION >
 
 TOKEN tinybird_read READ
 
+NODE byop_earnings
+SQL >
+    %
+    SELECT
+        selected_meter_slug,
+        total_price - dev_price AS earned
+    FROM generation_event
+    WHERE api_key_created_for_user_id = {{String(dev_user_id, '')}}
+      AND markup_rate > 0
+      AND total_price > dev_price
+      AND start_time >= now() - INTERVAL 7 DAY
+
+NODE community_model_earnings
+SQL >
+    %
+    SELECT
+        selected_meter_slug,
+        community_model_reward_amount AS earned
+    FROM generation_event
+    WHERE community_model_reward_user_id = {{String(dev_user_id, '')}}
+      AND community_model_reward_amount > 0
+      AND startsWith(resolved_model_requested, 'community/')
+      AND start_time >= now() - INTERVAL 7 DAY
+
+NODE earnings
+SQL >
+    %
+    SELECT * FROM byop_earnings
+    UNION ALL
+    SELECT * FROM community_model_earnings
+
 NODE today
 SQL >
     %
     SELECT
         sumIf(earned, selected_meter_slug = 'v1:meter:pack') AS paid_week,
         sumIf(earned, selected_meter_slug = 'v1:meter:tier') AS tier_week
-    FROM (
-        SELECT
-            selected_meter_slug,
-            total_price - dev_price AS earned
-        FROM generation_event
-        WHERE api_key_created_for_user_id = {{String(dev_user_id, '')}}
-          AND markup_rate > 0
-          AND total_price > dev_price
-          AND start_time >= now() - INTERVAL 7 DAY
-
-        UNION ALL
-
-        SELECT
-            selected_meter_slug,
-            dev_price * community_model_reward_rate AS earned
-        FROM generation_event
-        WHERE community_model_reward_user_id = {{String(dev_user_id, '')}}
-          AND community_model_reward_rate > 0
-          AND dev_price > 0
-          AND community_model_reward_model_id != 'undefined'
-          AND start_time >= now() - INTERVAL 7 DAY
-    ) AS reward_events
+    FROM earnings
 
 TYPE endpoint

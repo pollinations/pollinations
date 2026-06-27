@@ -834,20 +834,18 @@ fixtureTest(
 
         const testResponse = await fetchEnterApi(
             enterApi,
-            new Request(
-                `http://localhost:3000/api/community-endpoints/${registered.id}/test`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Cookie: await signedSessionCookie(sessionToken),
-                    },
-                    body: JSON.stringify({
-                        baseUrl: registered.baseUrl,
-                        model: registered.upstreamModel,
-                    }),
+            new Request("http://localhost:3000/api/community-endpoints/test", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
                 },
-            ),
+                body: JSON.stringify({
+                    baseUrl: registered.baseUrl,
+                    bearerToken: "Bearer sk_pollinations_upstream",
+                    model: registered.upstreamModel,
+                }),
+            }),
         );
         expect(testResponse.status).toBe(200);
         await expect(testResponse.json()).resolves.toMatchObject({
@@ -856,6 +854,27 @@ fixtureTest(
                 promptTextTokens: 2,
                 completionTextTokens: 3,
             },
+        });
+
+        const throttledTestResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints/test", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify({
+                    baseUrl: registered.baseUrl,
+                    bearerToken: "Bearer sk_pollinations_upstream",
+                    model: registered.upstreamModel,
+                }),
+            }),
+        );
+        expect(throttledTestResponse.status).toBe(429);
+        expect(throttledTestResponse.headers.get("Retry-After")).toBe("30");
+        await expect(throttledTestResponse.json()).resolves.toMatchObject({
+            error: "rate_limited",
         });
 
         const response = await SELF.fetch(

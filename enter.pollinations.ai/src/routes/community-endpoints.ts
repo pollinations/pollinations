@@ -9,9 +9,10 @@ import {
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { decryptSecret, encryptSecret } from "@shared/secret-encryption.ts";
+import { encryptSecret } from "@shared/secret-encryption.ts";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
+import type { Context } from "hono";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
@@ -43,18 +44,14 @@ const CreateEndpointSchema = EndpointFieldsSchema;
 const UpdateEndpointSchema = EndpointFieldsSchema.partial();
 const ModelListSchema = z.object({
     baseUrl: z.string().url(),
-    bearerToken: z.string().optional(),
+    bearerToken: z.string().min(1),
 });
 const TestEndpointSchema = z.object({
     baseUrl: z.string().url(),
     bearerToken: z.string().min(1),
     model: z.string().trim().min(1).max(253),
 });
-const SavedEndpointTestSchema = z.object({
-    baseUrl: z.string().url(),
-    bearerToken: z.string().optional(),
-    model: z.string().trim().min(1).max(253),
-});
+const ENDPOINT_TEST_THROTTLE_SECONDS = 30;
 type Db = ReturnType<typeof drizzle<typeof schema>>;
 type CommunityEndpointRow = typeof schema.communityEndpoint.$inferSelect;
 
@@ -168,6 +165,33 @@ function throwEndpointTestError(error: unknown): never {
     });
 }
 
+async function enforceEndpointTestThrottle(
+    c: Pick<Context<Env>, "env" | "json">,
+    userId: string,
+): Promise<Response | undefined> {
+    const throttleKey = `community-endpoint-test:throttle:${userId}`;
+    const now = Date.now();
+    const throttleUntil = Number(await c.env.KV.get(throttleKey));
+    if (Number.isFinite(throttleUntil) && throttleUntil > now) {
+        return c.json(
+            {
+                error: "rate_limited",
+                message: "Endpoint tests are limited to once every 30 seconds.",
+            },
+            429,
+            { "Retry-After": String(ENDPOINT_TEST_THROTTLE_SECONDS) },
+        );
+    }
+    await c.env.KV.put(
+        throttleKey,
+        String(now + ENDPOINT_TEST_THROTTLE_SECONDS * 1000),
+        {
+            expirationTtl: 60,
+        },
+    );
+    return undefined;
+}
+
 export const communityEndpointsRoutes = new Hono<Env>()
     .use(auth({ allowSessionCookie: true, allowApiKey: false }))
     .get("/", async (c) => {
@@ -234,6 +258,8 @@ export const communityEndpointsRoutes = new Hono<Env>()
         const input = c.req.valid("json");
         const db = drizzle(c.env.DB, { schema });
         await requireCommunityEndpointAccess(db, user.id);
+        const throttled = await enforceEndpointTestThrottle(c, user.id);
+        if (throttled) return throttled;
         try {
             const result = await testCommunityEndpoint(input);
             return c.json({
@@ -245,59 +271,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
             throwEndpointTestError(error);
         }
     })
-    .post("/:id/models", validator("json", ModelListSchema), async (c) => {
-        const user = c.var.auth.requireUser();
-        const input = c.req.valid("json");
-        const { id } = c.req.param();
-        const db = drizzle(c.env.DB, { schema });
-        await requireCommunityEndpointAccess(db, user.id);
-        const endpoint = await requireOwnedEndpoint(db, id, user.id);
-        try {
-            const models = await listCommunityEndpointModels({
-                baseUrl: input.baseUrl,
-                bearerToken:
-                    input.bearerToken ??
-                    (await decryptSecret(
-                        endpoint.bearerTokenCiphertext,
-                        c.env.BETTER_AUTH_SECRET,
-                    )),
-            });
-            return c.json({ data: models });
-        } catch (error) {
-            throwEndpointTestError(error);
-        }
-    })
-    .post(
-        "/:id/test",
-        validator("json", SavedEndpointTestSchema),
-        async (c) => {
-            const user = c.var.auth.requireUser();
-            const input = c.req.valid("json");
-            const { id } = c.req.param();
-            const db = drizzle(c.env.DB, { schema });
-            await requireCommunityEndpointAccess(db, user.id);
-            const endpoint = await requireOwnedEndpoint(db, id, user.id);
-            try {
-                const result = await testCommunityEndpoint({
-                    baseUrl: input.baseUrl,
-                    bearerToken:
-                        input.bearerToken ??
-                        (await decryptSecret(
-                            endpoint.bearerTokenCiphertext,
-                            c.env.BETTER_AUTH_SECRET,
-                        )),
-                    model: input.model,
-                });
-                return c.json({
-                    ok: true,
-                    message: "Endpoint responded with usage",
-                    ...result,
-                });
-            } catch (error) {
-                throwEndpointTestError(error);
-            }
-        },
-    )
     .post("/:id/update", validator("json", UpdateEndpointSchema), async (c) => {
         const user = c.var.auth.requireUser();
         const input = c.req.valid("json");

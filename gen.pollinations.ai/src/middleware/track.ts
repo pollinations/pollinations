@@ -233,7 +233,6 @@ export const track = (eventType: EventType) =>
                         communityModelReward: communityEndpoint
                             ? {
                                   userId: communityEndpoint.ownerUserId,
-                                  modelId: communityEndpoint.modelId,
                                   rewardRate: COMMUNITY_MODEL_REWARD_RATE,
                               }
                             : null,
@@ -307,6 +306,7 @@ export const track = (eventType: EventType) =>
                         "  totalPrice={event.totalPrice}",
                         "  devPrice={event.devPrice}",
                         "  communityModelRewardRate={event.communityModelRewardRate}",
+                        "  communityModelRewardAmount={event.communityModelRewardAmount}",
                     ].join("\n"),
                     { event: finalEvent },
                 );
@@ -663,8 +663,8 @@ function createTrackingEvent({
         devPrice: responseTracking.price?.totalPrice || 0,
         markupRate: markup?.markupRate ?? 0,
         communityModelRewardUserId: communityModelReward?.userId,
-        communityModelRewardModelId: communityModelReward?.modelId,
         communityModelRewardRate: communityModelReward?.rewardRate ?? 0,
+        communityModelRewardAmount: communityModelReward?.credit ?? 0,
 
         ...responseTracking.contentFilterResults,
         ...errorTracking,

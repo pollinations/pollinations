@@ -9,11 +9,13 @@ afterEach(() => {
 });
 
 describe("community endpoint OpenAI service", () => {
-    it("fetches model lists without Authorization when no token is provided", async () => {
+    it("fetches model lists with Authorization", async () => {
         const fetchMock = vi.fn(async (input, init) => {
             const request = new Request(input, init);
             expect(request.url).toBe("https://api.example.com/v1/models");
-            expect(request.headers.get("authorization")).toBeNull();
+            expect(request.headers.get("authorization")).toBe(
+                "Bearer sk_saved_token",
+            );
             return Response.json({
                 data: [{ id: "gpt-4.1-mini" }, { id: "gpt-4.1" }],
             });
@@ -23,6 +25,7 @@ describe("community endpoint OpenAI service", () => {
         await expect(
             listCommunityEndpointModels({
                 baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
             }),
         ).resolves.toEqual(["gpt-4.1", "gpt-4.1-mini"]);
 

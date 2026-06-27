@@ -9,13 +9,12 @@ import {
     Surface,
     TerminalIcon,
     TokensIcon,
-    Tooltip,
     XIcon,
 } from "@pollinations/ui";
 import { COMMUNITY_ENDPOINT_PRICE_FIELDS } from "@shared/community-endpoints.ts";
 import type { ReactNode } from "react";
-import type { PriceKind } from "../models/model-icons.tsx";
 import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
+import type { PriceKind } from "../models/types.ts";
 import { type CommunityEndpoint, pricePerTokenToPerMillion } from "./types.ts";
 
 type CommunityEndpointCardProps = {
@@ -152,15 +151,11 @@ function CommunityDetailRow({
 function CommunityPriceBadges({ group }: { group: CommunityPriceGroup }) {
     return (
         <span className="flex min-w-0 flex-wrap items-center gap-1">
-            {group.badges.map(({ badge, tooltip }) => (
-                <Tooltip
-                    key={`${group.key}-${badge.kind}-${badge.prices[0]}`}
-                    triggerAs="span"
-                    content={tooltip}
-                    ariaLabel={tooltip}
-                >
-                    <PriceBadge {...badge} />
-                </Tooltip>
+            {group.badges.map(({ badge }) => (
+                <PriceBadge
+                    key={`${group.key}-${badge.kind}-${badge.price}`}
+                    {...badge}
+                />
             ))}
         </span>
     );
@@ -173,7 +168,6 @@ type CommunityPriceGroup = {
 };
 
 type CommunityPriceBadge = {
-    tooltip: string;
     badge: PriceBadgeConfig;
 };
 
@@ -192,12 +186,11 @@ function communityPriceGroups(
         if (!groupKey) continue;
         const kind = communityPriceKind(field.usageType);
         groups[groupKey].push({
-            tooltip: communityPriceTooltip(field.usageType),
             badge: {
-                prices: [pricePerTokenToPerMillion(price)],
+                price: pricePerTokenToPerMillion(price),
                 kind,
                 subKinds: [kind],
-                perToken: true,
+                unit: "token",
             },
         });
     }
@@ -216,15 +209,6 @@ function communityPriceGroupKey(
     if (usageType.startsWith("prompt")) return "input";
     if (usageType.startsWith("completion")) return "output";
     return null;
-}
-
-function communityPriceTooltip(usageType: string): string {
-    if (usageType === "promptCachedTokens") return "Cached token";
-    if (usageType === "promptCacheWriteTokens") return "Cache write token";
-    if (usageType.includes("Reasoning")) return "Reasoning token";
-    if (usageType.includes("Audio")) return "Audio token";
-    if (usageType.includes("Image")) return "Image token";
-    return "Text token";
 }
 
 function communityPriceKind(usageType: string): PriceKind {

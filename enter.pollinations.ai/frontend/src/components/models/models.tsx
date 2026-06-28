@@ -22,11 +22,22 @@ import {
     sectionLabels,
     UnifiedModelTable,
 } from "./model-table.tsx";
+import type { ModelPrice } from "./types.ts";
 import { useModelStats } from "./use-model-stats.ts";
 
 type ModelsProps = {
     showCommunityEndpoints?: boolean;
 };
+
+const SECTION_ORDER: SectionType[] = [
+    "image",
+    "video",
+    "audio",
+    "realtime",
+    "text",
+    "community",
+    "embedding",
+];
 
 export const Models: FC<ModelsProps> = ({ showCommunityEndpoints = false }) => {
     const [activeTab, setActiveTab] = useState<SectionType>("image");
@@ -65,15 +76,25 @@ export const Models: FC<ModelsProps> = ({ showCommunityEndpoints = false }) => {
     );
     const communityModels = allModels.filter((m) => m.community);
     const embeddingModels = allModels.filter((m) => m.type === "embedding");
-    const availableSections: SectionType[] = [
-        "image",
-        "video",
-        "audio",
-        "realtime",
-        "text",
-        "community",
-        "embedding",
-    ];
+    const sectionModels: Record<SectionType, ModelPrice[]> = {
+        image: imageModels,
+        video: videoModels,
+        audio: audioModels,
+        realtime: realtimeModels,
+        text: textModels,
+        community: communityModels,
+        embedding: embeddingModels,
+    };
+    const availableSections =
+        allModels.length > 0
+            ? SECTION_ORDER.filter((section) => sectionModels[section].length)
+            : SECTION_ORDER;
+
+    useEffect(() => {
+        if (!availableSections.includes(activeTab)) {
+            setActiveTab(availableSections[0] ?? "text");
+        }
+    }, [activeTab, availableSections]);
 
     return (
         <div className="flex flex-col gap-6">

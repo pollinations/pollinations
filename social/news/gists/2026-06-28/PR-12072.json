@@ -1,0 +1,35 @@
+{
+  "pr_number": 12072,
+  "title": "Add AIMANA Asparagus to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12072",
+  "merged_at": "2026-06-28T08:42:43Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [AIMANA Asparagus](https://github.com/rontea/AIMANA-Asparagus) to build\n- A local-first Digital Asset Management (DAM) system that combines asset organization with an AI-powered workspace for generating and managing multimedia content, including images, video, audio, chat i\n\nFixes #12015",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Fresh Asparagus in the Greenhouse",
+    "blurb": "AIMANA Asparagus just sprouted in our community apps! It's a local-first digital asset manager that brings an AI-powered workspace right to your files.",
+    "summary": "Added AIMANA Asparagus, a local-first Digital Asset Management (DAM) system with an integrated AI workspace for multimedia generation, to the community apps directory.",
+    "impact": "Creators can now discover AIMANA Asparagus in the ecosystem to organize and generate images, video, audio, and chat content locally.",
+    "keywords": [
+      "community",
+      "app",
+      "dam",
+      "workspace",
+      "multimedia"
+    ],
+    "visual_concept": "The app is named 'AIMANA Asparagus' and focuses on Digital Asset Management (organizing files). The visual should feature Polly the bee in a greenhouse or garden setting, organizing glowing digital asparagus stalks into neat, folder-like crates, representing the DAM aspect.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's apron, happily organizing glowing digital asparagus stalks into neat wooden crates inside a lush greenhouse. A retro computer monitor nearby displays organized folders and multimedia files. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-28/PR-12072.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's apron, happily organizing glowing digital asparagus stalks into neat wooden crates inside a lush greenhouse. A retro computer monitor nearby displays organized folders and multimedia files. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-28T08:43:41.947692+00:00",
+  "app_name": "AIMANA Asparagus",
+  "app_url": "https://github.com/rontea/AIMANA-Asparagus"
+}

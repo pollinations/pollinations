@@ -3,6 +3,7 @@ import {
     env,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import { getTextModelsInfo } from "@shared/registry/model-info.ts";
 import { test as fixtureTest } from "@shared/test/fixtures/index.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import worker from "../src/index.ts";
@@ -315,13 +316,20 @@ describe("gen worker routing", () => {
             name: string;
             context_length?: number;
         }[];
-        const modelsWithContext = models.filter(
+        const modelsByName = new Map(
+            models.map((model) => [model.name, model]),
+        );
+        const expectedModelsWithContext = getTextModelsInfo().filter(
             (model) => model.context_length != null,
         );
 
-        expect(modelsWithContext.length).toBeGreaterThan(10);
-        for (const model of modelsWithContext) {
+        expect(expectedModelsWithContext.length).toBeGreaterThan(0);
+        for (const model of expectedModelsWithContext) {
+            const servedModel = modelsByName.get(model.name);
+
             expect(model.context_length).toBeGreaterThan(0);
+            expect(servedModel?.context_length).toBeGreaterThan(0);
+            expect(servedModel?.context_length).toBe(model.context_length);
         }
     });
 });

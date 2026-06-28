@@ -151,27 +151,15 @@ ads to earn pollen is winning! 🗳️
 
 **still in beta — values may shift as we find balance**
 
-## ⚡ pollen rebalance
+## ⚡ pollen update
 
-adjusting pollen grants to sustain compute
-effective from next refill
+hourly grants are ending. existing balances remain spendable, and paid pollen packs keep working.
 
-\`\`\`
-🍄 spore    0.01/hour
-🌱 seed     0.15/hour
-🌸 flower   0.4/hour
-🍯 nectar   0.8/hour
-\`\`\`
+## 🛠️ app showcase
 
-## 🌱 🌸 upgrade paths
-
-**🍄 → 🌱** show us you're part of the community
-- ⭐ star [repo](https://github.com/pollinations/pollinations)
-- 🔀 merged PR
-
-**🌱 → 🌸** build something with pollinations
-- 🛠️ push code
-- 📦 project in [showcase](https://pollinations.ai)
+building with pollinations? submit your project:
+- 📦 add it to [showcase](https://pollinations.ai)
+- 🐙 open an app submission issue
 
 register → https://enter.pollinations.ai
 
@@ -189,7 +177,7 @@ video  veo 3.1 · seedance
 
 📖 [docs](https://enter.pollinations.ai/api/docs) · 🐙 [github](https://github.com/pollinations/pollinations) · 🗳️ [vote for models](https://github.com/pollinations/pollinations/issues/5321) · 💬 questions welcome
 
-*we're figuring this out together — free tiers may evolve as we grow* 🌱
+*we're figuring this out together as usage grows*
 ```
 
 ---

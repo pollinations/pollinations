@@ -22,6 +22,10 @@ type QuestUserRow = {
     userId: string;
 };
 
+type AppDirectoryRow = {
+    github_user_id: string;
+};
+
 const firstByopExternalUserQuest: QuestDefinition = {
     id: "app_active",
     title: "Your app is being used",
@@ -55,11 +59,9 @@ const appListedQuest: QuestDefinition = {
         "Submit your app for review, get it approved, and have it listed in the [app directory](https://pollinations.ai/apps).",
     category: "grow",
     scope: "perUser",
-    rewardAmount: 5,
+    rewardAmount: 15,
     balanceBucket: "tier",
     url: "https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml",
-    // Built but not launched — hidden from the UI, not grantable.
-    state: "coming_soon",
 };
 
 const QUESTS = [
@@ -91,12 +93,15 @@ export async function findRewardProposalsForUser(
         return [];
     }
 
-    const [paidSpendRows, byopExternalRows] = await Promise.all([
+    const [paidSpendRows, byopExternalRows, listedAppRows] = await Promise.all([
         rewardableQuestIds.has(firstPaidSpendInAppQuest.id)
             ? loadPaidSpendAppOwner(ctx, user)
             : [],
         rewardableQuestIds.has(firstByopExternalUserQuest.id)
             ? loadByopExternalAppOwner(ctx, user)
+            : [],
+        rewardableQuestIds.has(appListedQuest.id)
+            ? loadListedAppOwner(ctx, user)
             : [],
     ]);
 
@@ -109,13 +114,18 @@ export async function findRewardProposalsForUser(
             quest: firstPaidSpendInAppQuest,
             userId: row.userId,
         })),
+        ...listedAppRows.map((row) => ({
+            quest: appListedQuest,
+            userId: row.userId,
+        })),
     ];
     log.info(
-        "APP_GROWTH_PROPOSALS: userId={userId} byopOwnerRows={byop} paidSpendRows={paid} questIds={questIds}",
+        "APP_GROWTH_PROPOSALS: userId={userId} byopOwnerRows={byop} paidSpendRows={paid} listedAppRows={listed} questIds={questIds}",
         {
             userId: user.id,
             byop: byopExternalRows.length,
             paid: paidSpendRows.length,
+            listed: listedAppRows.length,
             questIds: proposals.map((p) => p.quest.id),
         },
     );
@@ -146,6 +156,35 @@ async function loadPaidSpendAppOwner(
         },
     );
     return matched;
+}
+
+async function loadListedAppOwner(
+    { env }: QuestEvaluationContext,
+    user: QuestUser,
+): Promise<QuestUserRow[]> {
+    if (user.githubId === null) return [];
+
+    const githubUserId = String(user.githubId);
+    const tinybirdOrigin = new URL(env.TINYBIRD_INGEST_URL).origin;
+    const tinybirdToken = requireTinybirdReadToken(env);
+    const rows = await fetchTinybirdRows<AppDirectoryRow>(
+        tinybirdOrigin,
+        "/v0/pipes/app_directory_public.json",
+        tinybirdToken,
+        { limit: "5000" },
+    );
+    const listed = rows.some((row) => row.github_user_id === githubUserId);
+    log.info(
+        "APP_GROWTH_APP_LISTED: userId={userId} githubId={githubId} directoryRows={rows} listed={listed}",
+        {
+            userId: user.id,
+            githubId: user.githubId,
+            rows: rows.length,
+            listed,
+        },
+    );
+
+    return listed ? [{ userId: user.id }] : [];
 }
 
 async function loadByopExternalAppOwner(

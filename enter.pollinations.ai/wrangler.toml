@@ -70,13 +70,7 @@ STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 
-[env.local.triggers]
-crons = ["*/15 * * * *"]
-
 [env.production]
-
-[env.production.triggers]
-crons = ["*/15 * * * *"]
 
 [env.production.observability]
 enabled = true
@@ -116,9 +110,6 @@ STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TVU4T7rcjS3l7trqtBuve71"
 STRIPE_PMC = "pmc_1SrY4O7rcjS3l7trnGXDTuat"
 
 [env.staging]
-
-[env.staging.triggers]
-crons = ["*/15 * * * *"]
 
 [[env.staging.routes]]
 pattern = "staging.enter.myceli.ai"

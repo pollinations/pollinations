@@ -81,6 +81,7 @@ export async function getCommunityTextModelsInfo(
                 category: "text",
                 brand: "Community",
                 community: true,
+                alpha: true,
                 pricing,
                 title,
                 description: row.description ?? undefined,

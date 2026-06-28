@@ -581,6 +581,7 @@ fixtureTest(
             name: string;
             category?: string;
             community?: boolean;
+            alpha?: boolean;
             description?: string;
             pricing?: Record<string, string>;
             baseUrl?: string;
@@ -600,6 +601,7 @@ fixtureTest(
                 name: modelId,
                 category: "text",
                 community: true,
+                alpha: true,
                 description: "Public community model",
                 pricing: {
                     currency: "pollen",

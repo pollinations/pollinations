@@ -175,6 +175,7 @@ export function communityModelDefinition(
         inputModalities: ["text"],
         outputModalities: ["text"],
         paidOnly: false,
+        alpha: true,
     };
 }
 

@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { alias } from "drizzle-orm/sqlite-core";
 import * as schema from "../db/better-auth.ts";
-import { isCommunityModelAllowedGithubId } from "./github-id-list.ts";
+import { parseGithubIdList } from "./github-id-list.ts";
 
 export { parseGithubIdList } from "./github-id-list.ts";
 
@@ -34,6 +34,7 @@ export interface ApiKeyAuthResult {
 export interface ApiKeyAuthBindings {
     DB: D1Database;
     ENVIRONMENT?: string;
+    STAGING_ALLOWED_GITHUB_IDS?: string;
 }
 
 export class BannedAccountError extends Error {
@@ -52,19 +53,20 @@ export class StagingAccessDeniedError extends Error {
 
 /**
  * Throws StagingAccessDeniedError if the env is staging and the user's GitHub
- * ID is not in the shared community-model rollout allowlist. No-op outside
- * staging. Fails closed for a missing githubId.
+ * ID is not in STAGING_ALLOWED_GITHUB_IDS. No-op outside staging.
+ * Fails closed: a missing githubId or empty/missing allowlist denies access.
  *
  * Called at request-time (every API-key or session-cookie request) to defend
  * against pre-existing sessions/keys that predate the lockdown. See #11137.
  */
 export function assertStagingAccess(
-    env: { ENVIRONMENT?: string },
+    env: { ENVIRONMENT?: string; STAGING_ALLOWED_GITHUB_IDS?: string },
     user: { githubId?: number | null } | null | undefined,
 ): void {
     if (env.ENVIRONMENT !== "staging") return;
+    const allowed = parseGithubIdList(env.STAGING_ALLOWED_GITHUB_IDS);
     const ghId = user?.githubId;
-    if (!isCommunityModelAllowedGithubId(ghId)) {
+    if (!ghId || !allowed.has(Number(ghId))) {
         throw new StagingAccessDeniedError();
     }
 }

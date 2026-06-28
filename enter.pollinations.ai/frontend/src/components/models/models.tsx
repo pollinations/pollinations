@@ -1,5 +1,6 @@
 import {
     Alert,
+    Chip,
     ClockIcon,
     ExternalLinkButton,
     GitHubIcon,
@@ -109,8 +110,20 @@ export const Models: FC<ModelsProps> = ({ showCommunityEndpoints = false }) => {
                             key={section}
                             active={activeTab === section}
                             onClick={() => setActiveTab(section)}
+                            ariaLabel={
+                                section === "community"
+                                    ? "Community alpha models"
+                                    : undefined
+                            }
                         >
-                            {sectionLabels[section]}
+                            <span className="inline-flex items-center gap-1.5">
+                                {sectionLabels[section]}
+                                {section === "community" && (
+                                    <Chip intent="alpha" size="sm">
+                                        ALPHA
+                                    </Chip>
+                                )}
+                            </span>
                         </TabButton>
                     ))}
                 </div>

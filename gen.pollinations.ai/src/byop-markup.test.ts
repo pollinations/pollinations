@@ -505,7 +505,6 @@ describe("BYOP markup", () => {
                 userId: payerId,
                 communityModelReward: {
                     userId: ownerId,
-                    modelId: "community/owner/model",
                     rewardRate: COMMUNITY_MODEL_REWARD_RATE,
                 },
             });
@@ -539,7 +538,6 @@ describe("BYOP markup", () => {
                 byopClientKeyId: pkId,
                 communityModelReward: {
                     userId: ownerId,
-                    modelId: "community/owner/model",
                     rewardRate: COMMUNITY_MODEL_REWARD_RATE,
                 },
             });
@@ -578,7 +576,6 @@ describe("BYOP markup", () => {
                 userId: ownerId,
                 communityModelReward: {
                     userId: ownerId,
-                    modelId: "community/owner/model",
                     rewardRate: COMMUNITY_MODEL_REWARD_RATE,
                 },
             });

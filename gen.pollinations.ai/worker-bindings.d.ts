@@ -22,6 +22,7 @@ interface CloudflareBindings {
         | "dev"
         | "test"
         | "development";
+    STAGING_ALLOWED_GITHUB_IDS?: string;
     LOG_LEVEL?: "trace" | "debug";
     LOG_FORMAT?: "text" | "json";
     TINYBIRD_INGEST_URL: string;

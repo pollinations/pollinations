@@ -1,0 +1,34 @@
+{
+  "pr_number": 12069,
+  "title": "Add AI Boss Chat to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12069",
+  "merged_at": "2026-06-28T08:31:06Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [AI Boss Chat](https://greggelong.github.io/aiBossChat/) to chat\n- AI Boss Chat: p dir=\"auto\" style=\"box-sizing: border-box; margin-top: 0px; margin-bottom: 16px; color: rgb(240, 246, 252); font-size: 16px\n\nFixes #11970",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The Boss will see you now",
+    "blurb": "Step into the corner office! We've just added AI Boss Chat by greggelong to the community Greenhouse.",
+    "summary": "Added the 'AI Boss Chat' application by greggelong to the community Greenhouse directory.",
+    "impact": "Users can now discover and try out the AI Boss Chat app directly from the community showcase.",
+    "keywords": [
+      "community",
+      "apps",
+      "greenhouse",
+      "chat"
+    ],
+    "visual_concept": "A chunky robot in a business suit sitting at a desk (the 'AI Boss'), with Polly the bee wearing a tiny necktie and holding a clipboard, having a friendly chat. Office setting but cozy and warm.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny necktie and holding a clipboard, having a friendly chat with a chunky robot wearing a business suit sitting behind a wooden desk. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Text in pixel font: 'BOSS CHAT'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-28/PR-12069.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny necktie and holding a clipboard, having a friendly chat with a chunky robot wearing a business suit sitting behind a wooden desk. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Text in pixel font: 'BOSS CHAT'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-28T08:32:18.860751+00:00",
+  "app_name": "AI Boss Chat",
+  "app_url": "https://greggelong.github.io/aiBossChat/"
+}

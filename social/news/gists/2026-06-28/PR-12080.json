@@ -1,0 +1,35 @@
+{
+  "pr_number": 12080,
+  "title": "Add Textylize to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12080",
+  "merged_at": "2026-06-28T09:16:01Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Textylize](https://textylize.vercel.app/) to writing\n- Textylize is a mainly client-side text stylizer. It lets users apply text styling changes.\n\nFixes #11848",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Textylize joins the hive",
+    "blurb": "Textylize just landed in the community directory. It's a neat client-side tool for applying fun text styles to your writing.",
+    "summary": "Added Textylize, a client-side text styling tool, to the community apps directory under the writing category.",
+    "impact": "Users can now discover Textylize in the apps directory to easily format and stylize their text.",
+    "keywords": [
+      "community",
+      "apps",
+      "textylize",
+      "writing",
+      "tools"
+    ],
+    "visual_concept": "The bee mascot (Polly) using a retro typewriter or painting letters with a brush, surrounded by floating stylized text characters. Warm, cozy pixel art.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, using a paintbrush to stylize floating text characters. A retro typewriter sits on a wooden desk nearby. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-28/PR-12080.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, using a paintbrush to stylize floating text characters. A retro typewriter sits on a wooden desk nearby. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-28T09:17:01.608493+00:00",
+  "app_name": "Textylize",
+  "app_url": "https://textylize.vercel.app/"
+}

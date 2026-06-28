@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "weekly",
+  "date": "2026-06-28",
+  "period_start": "2026-06-21",
+  "period_end": "2026-06-27",
+  "generated_at": "2026-06-28T07:18:18.267347+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-06-28/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-06-28/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-06-28/images/instagram-3.jpg"
+    }
+  ],
+  "text": "22 PRs merged this week. mostly we taught the servers how to sing and stopped charging for things.\n\nthe big ones:\n- The Great Audio Upgrade: Stable Audio 3 and ElevenLabs SFX/Music are live. make some noise.\n- Quests & Pollen: subscription tiers are officially out. complete quests, earn Pollen, fund your API habits.\n- Mercury 2 & Multimodal: unblocked and ready for your text/image/audio pipelines.\n- Docs: BYOP (Bring Your Own Provider) is fully documented, legacy tier copy is scrubbed.\n\ncode is open. go build something weird. link in bio. 🐝💻\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #stableaudio #elevenlabs #generativeai #buildinpublic #api",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

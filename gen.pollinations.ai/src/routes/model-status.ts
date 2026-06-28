@@ -11,104 +11,27 @@ const TINYBIRD_PUBLIC_TOKEN =
     "p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICI5ZWZmMGM3Ni1kOTZkLTQwYjgtYWQwOC1mNDFlMmRiYjBmYTIiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.6VnVkAQ5h_fkcDZVDUoU38dzTxaw0xo3DnmKkhECbA8";
 
 const CACHE_TTL_MS = 60_000;
+const DEFAULT_MINUTES = 60;
+const MAX_MINUTES = 24 * 60;
 
-let cachedRaw: { data: unknown; timestamp: number } | null = null;
-let cachedJson: { data: unknown; timestamp: number } | null = null;
+type ModelHealthResponse = {
+    data: unknown[];
+    meta?: unknown;
+    [key: string]: unknown;
+};
 
-interface HealthRow {
-    model: string;
-    event_type: string;
-    provider: string;
-    model_used: string;
-    total_requests: number;
-    status_2xx: number;
-    errors_4xx: number;
-    errors_5xx: number;
-    last_error_at: string;
-    latency_p50_ms: number;
-    latency_p95_ms: number;
-    avg_latency_ms: number;
-    last_request_at: string;
-}
+const cache = new Map<
+    number,
+    { data: ModelHealthResponse; timestamp: number }
+>();
 
-function computeStatus(failures: number, successes: number): string {
-    const total = failures + successes;
-    if (total === 0) return "unknown";
-    const rate = failures / total;
-    if (rate >= 0.5) return "off";
-    if (rate >= 0.1) return "degraded";
-    return "on";
-}
+function parseMinutes(value: string | undefined): number | null {
+    if (value === undefined) return DEFAULT_MINUTES;
+    if (!/^\d+$/.test(value)) return null;
 
-function formatJson(data: HealthRow[], minutes: string, now: Date) {
-    const models: Record<
-        string,
-        {
-            status: string;
-            success_rate: number;
-            avg_latency_ms: number;
-            total_requests: number;
-            modalities: Record<
-                string,
-                {
-                    status: string;
-                    success_rate: number;
-                    avg_latency_ms: number;
-                    total_requests: number;
-                }
-            >;
-        }
-    > = {};
-
-    for (const row of data) {
-        if (!models[row.model]) {
-            models[row.model] = {
-                status: "unknown",
-                success_rate: 0,
-                avg_latency_ms: 0,
-                total_requests: 0,
-                modalities: {},
-            };
-        }
-
-        const failures = row.errors_5xx;
-        const successes = row.status_2xx;
-        const total = row.total_requests;
-
-        models[row.model].modalities[row.event_type] = {
-            status: computeStatus(failures, successes),
-            success_rate: total > 0 ? +(successes / total).toFixed(4) : 0,
-            avg_latency_ms: row.avg_latency_ms,
-            total_requests: total,
-        };
-    }
-
-    for (const [model, data] of Object.entries(models)) {
-        const mods = Object.values(data.modalities);
-        const totalReqs = mods.reduce((s, m) => s + m.total_requests, 0);
-        const totalSuccesses = mods.reduce(
-            (s, m) => s + m.success_rate * m.total_requests,
-            0,
-        );
-        const totalFailures = mods.reduce(
-            (s, m) => s + (1 - m.success_rate) * m.total_requests,
-            0,
-        );
-        data.status = computeStatus(totalFailures, totalReqs);
-        data.success_rate =
-            totalReqs > 0 ? +(totalSuccesses / totalReqs).toFixed(4) : 0;
-        data.avg_latency_ms = Math.round(
-            mods.reduce((s, m) => s + m.avg_latency_ms * m.total_requests, 0) /
-                totalReqs,
-        );
-        data.total_requests = totalReqs;
-    }
-
-    return {
-        timestamp: now.toISOString(),
-        minutes: parseInt(minutes, 10),
-        models,
-    };
+    const minutes = Number(value);
+    if (minutes < 1 || minutes > MAX_MINUTES) return null;
+    return minutes;
 }
 
 export const modelStatusRoutes = new Hono<Env>().get(
@@ -117,17 +40,9 @@ export const modelStatusRoutes = new Hono<Env>().get(
         tags: ["📊 Monitor"],
         summary: "Model Health Status",
         description: [
-            "Returns real-time health status for all models.",
+            "Returns raw model health rows from the public Tinybird `model_health` pipe.",
             "",
-            "**Formats:**",
-            "- `raw`: Pass-through from Tinybird `model_health` pipe (default)",
-            "- `json`: Grouped by model with computed status and per-modality breakdown",
-            "",
-            "**Status values:**",
-            "- `on`: 5xx rate < 10%",
-            "- `degraded`: 5xx rate between 10% and 50%",
-            "- `off`: 5xx rate >= 50%",
-            "- `unknown`: No request data in the window",
+            "The optional `minutes` query parameter controls the rolling window and must be an integer between 1 and 1440.",
         ].join("\n"),
         responses: {
             200: {
@@ -137,7 +52,7 @@ export const modelStatusRoutes = new Hono<Env>().get(
                         schema: {
                             type: "object",
                             description:
-                                "Model health data. Schema depends on format parameter.",
+                                "Tinybird response containing raw model health rows.",
                         },
                     },
                 },
@@ -146,62 +61,56 @@ export const modelStatusRoutes = new Hono<Env>().get(
         },
     }),
     async (c) => {
-        const now = new Date();
-        const minutes = c.req.query("minutes") || "60";
-        const format = c.req.query("format") || "raw";
+        const format = c.req.query("format");
+        if (format !== undefined && format !== "raw") {
+            return c.json(
+                {
+                    error: "format must be raw or omitted; this endpoint returns the raw Tinybird response",
+                },
+                400,
+            );
+        }
 
-        log("Format requested: %s", format);
+        const minutes = parseMinutes(c.req.query("minutes"));
+        if (minutes === null) {
+            return c.json(
+                {
+                    error: `minutes must be an integer between 1 and ${MAX_MINUTES}`,
+                },
+                400,
+            );
+        }
 
-        if (format === "json") {
-            if (
-                cachedJson &&
-                now.getTime() - cachedJson.timestamp < CACHE_TTL_MS
-            ) {
-                log("Returning cached json response");
-                return c.json(cachedJson.data);
-            }
-        } else {
-            if (
-                cachedRaw &&
-                now.getTime() - cachedRaw.timestamp < CACHE_TTL_MS
-            ) {
-                log("Returning cached raw response");
-                return c.json(cachedRaw.data);
-            }
+        const now = Date.now();
+        const cached = cache.get(minutes);
+        if (cached && now - cached.timestamp < CACHE_TTL_MS) {
+            log(
+                "Returning cached model health response for %d minutes",
+                minutes,
+            );
+            return c.json(cached.data);
         }
 
         try {
-            const url = `${TINYBIRD_HOST}/v0/pipes/model_health.json?token=${TINYBIRD_PUBLIC_TOKEN}&minutes=${minutes}`;
-            log("Fetching model health from Tinybird: %s", url);
+            const url = new URL("/v0/pipes/model_health.json", TINYBIRD_HOST);
+            url.searchParams.set("token", TINYBIRD_PUBLIC_TOKEN);
+            url.searchParams.set("minutes", String(minutes));
+            log("Fetching model health from Tinybird: %s", url.toString());
 
-            const response = await fetch(url);
+            const response = await fetch(url.toString());
             if (!response.ok) {
-                log("Tinybird responded with %d", response.status);
-                return c.json(
-                    { error: "Failed to fetch model health data" },
-                    502,
-                );
+                throw new Error(`Tinybird responded with ${response.status}`);
             }
 
-            const tinybirdData = (await response.json()) as {
-                data: HealthRow[];
-            };
-            const rows = tinybirdData.data || [];
-
-            if (format === "json") {
-                const formatted = formatJson(rows, minutes, now);
-                cachedJson = { data: formatted, timestamp: now.getTime() };
-                return c.json(formatted);
-            }
-
-            cachedRaw = { data: tinybirdData, timestamp: now.getTime() };
+            const tinybirdData = (await response.json()) as ModelHealthResponse;
+            cache.set(minutes, { data: tinybirdData, timestamp: now });
             return c.json(tinybirdData);
         } catch (error) {
             log("Error fetching model health: %O", error);
-            const fallback = format === "json" ? cachedJson : cachedRaw;
-            if (fallback) {
-                log("Falling back to stale cache");
-                return c.json(fallback.data);
+            const stale = cache.get(minutes);
+            if (stale) {
+                log("Falling back to stale cache for %d minutes", minutes);
+                return c.json(stale.data);
             }
             return c.json({ error: "Failed to fetch model health data" }, 502);
         }

@@ -1,0 +1,35 @@
+{
+  "pr_number": 12085,
+  "title": "Add VoiceEnable Agent to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12085",
+  "merged_at": "2026-06-28T15:09:11Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [VoiceEnable Agent](https://metamysteries8.github.io/realtimed/) to chat\n- Enable voice functionality for VoiceEnable Agent.\n\nFixes #12081",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The hive finds its voice",
+    "blurb": "The VoiceEnable Agent has sprouted in the community greenhouse, bringing voice-enabled chat to the ecosystem.",
+    "summary": "Added the VoiceEnable Agent to the community apps directory and greenhouse, enabling voice functionality for chat interactions.",
+    "impact": "Users can now discover and interact with the VoiceEnable Agent directly from the community apps list.",
+    "keywords": [
+      "community",
+      "apps",
+      "voice",
+      "agent",
+      "greenhouse"
+    ],
+    "visual_concept": "Polly the bee wearing a tiny headset with a microphone, talking to a retro computer in a greenhouse setting with pixelated sound waves.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny headset with a microphone, happily chatting with a chunky retro computer monitor in a lush digital greenhouse. Soft lime green (#ecf874) and pastel lavender gradient background. Small pixelated sound waves float in the air. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-28/PR-12085.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny headset with a microphone, happily chatting with a chunky retro computer monitor in a lush digital greenhouse. Soft lime green (#ecf874) and pastel lavender gradient background. Small pixelated sound waves float in the air. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, retro gaming vibes."
+  },
+  "generated_at": "2026-06-28T15:10:20.242437+00:00",
+  "app_name": "VoiceEnable Agent",
+  "app_url": "https://metamysteries8.github.io/realtimed/"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 12088,
+  "title": "feat: enable app listed quest",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12088",
+  "merged_at": "2026-06-28T19:10:15Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Enables `app_listed` by checking the existing Tinybird `app_directory_public` read model.\n- Keeps BYOP app-growth quests as `coming_soon` and inert.\n- Bumps the quest catalog cache key so the available state is visible after deploy.\n- Validated with `npx vitest run test/quests.test.ts` and `npm run typecheck`.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive directory grows",
+    "blurb": "The 'App Listed' quest is officially live! Get your app into the public directory and earn some sweet Pollen for your efforts.",
+    "summary": "Enabled the 'app_listed' quest by integrating with the Tinybird app directory read model, allowing users to earn Pollen when their app is listed publicly.",
+    "impact": "Developers can now claim Pollen rewards for successfully listing their applications in the public directory.",
+    "keywords": [
+      "quests",
+      "pollen",
+      "app directory",
+      "rewards"
+    ],
+    "visual_concept": "The bee mascot (Polly) pinning a tiny app icon or poster onto a public directory notice board, receiving a glowing Pollen coin in return.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot pinning a tiny pixelated app icon onto a wooden community notice board. A glowing golden Pollen coin drops into her little tool belt. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi Stardew Valley vibes. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-28/PR-12088.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot pinning a tiny pixelated app icon onto a wooden community notice board. A glowing golden Pollen coin drops into her little tool belt. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi Stardew Valley vibes. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-28T19:11:27.474643+00:00"
+}

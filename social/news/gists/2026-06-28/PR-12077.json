@@ -1,0 +1,35 @@
+{
+  "pr_number": 12077,
+  "title": "feat: add /v1/models/status endpoint (Tinybird proxy with cache)",
+  "author": "YoannDev90",
+  "url": "https://github.com/pollinations/pollinations/pull/12077",
+  "merged_at": "2026-06-28T14:55:23Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Exposes **GET /v1/models/status?minutes=60**\n\n- Returns the raw Tinybird `model_health` public pipe response\n- Validates `minutes` as an integer from 1 to 1440\n- Uses a 60s in-memory cache keyed by `minutes`, with stale fallback on upstream error\n- OpenAPI docs added via `describeRoute` (visible in Scalar UI under Monitor)\n\nFixes #9263",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive's heartbeat",
+    "blurb": "Added a new /v1/models/status endpoint so you can check the health of our models in real-time. Keep an eye on the hive's pulse with up to 24 hours of cached history.",
+    "summary": "Added a new GET /v1/models/status endpoint that proxies Tinybird's model health data, featuring a 60-second cache and a configurable minutes parameter (1-1440).",
+    "impact": "Developers can now programmatically check the real-time health and uptime of all models directly through the API.",
+    "keywords": [
+      "api",
+      "monitoring",
+      "models",
+      "health",
+      "endpoint"
+    ],
+    "visual_concept": "Polly the bee acting as a doctor or system admin, checking the health of the models. A retro monitor showing a heartbeat line or status bars. Medical/health metaphor mixed with tech.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny doctor's stethoscope, checking the health of a glowing retro server rack. A chunky CRT monitor nearby displays a green heartbeat line and status bars. Soft lime green (#ecf874) and mint gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-28/PR-12077.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny doctor's stethoscope, checking the health of a glowing retro server rack. A chunky CRT monitor nearby displays a green heartbeat line and status bars. Soft lime green (#ecf874) and mint gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-28T14:56:18.938719+00:00"
+}

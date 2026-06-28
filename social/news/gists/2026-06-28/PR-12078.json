@@ -1,0 +1,35 @@
+{
+  "pr_number": 12078,
+  "title": "Add PolliArt Studio to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12078",
+  "merged_at": "2026-06-28T09:05:10Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [PolliArt Studio](https://github.com/wwishao/polli-art-studio) to image\n- Generate AI artwork from text prompts using the pollinations.ai API in PolliArt Studio. Choose Flux (free) or Turbo models and save generation history in local storage with a gallery view.\n\nFixes #11865",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "PolliArt Studio joins the Greenhouse",
+    "blurb": "PolliArt Studio has sprouted in the Greenhouse! Generate AI artwork with Flux or Turbo models and keep track of your masterpieces in a local gallery.",
+    "summary": "Added PolliArt Studio to the community apps directory, featuring text-to-image generation via Flux and Turbo models with local gallery history.",
+    "impact": "Users can now discover PolliArt Studio in the Greenhouse to generate and manage their AI artwork locally.",
+    "keywords": [
+      "community",
+      "apps",
+      "greenhouse",
+      "polliart-studio",
+      "image-generation"
+    ],
+    "visual_concept": "Polly the bee as an artist in a cozy studio, representing 'PolliArt Studio'. The Monitor Robot admiring a gallery wall to represent the local storage gallery view.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, painting on a digital canvas in a warm art studio. A chunky retro monitor robot stands nearby, admiring a gallery wall of pixelated landscapes. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-28/PR-12078.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, painting on a digital canvas in a warm art studio. A chunky retro monitor robot stands nearby, admiring a gallery wall of pixelated landscapes. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-28T09:06:19.789696+00:00",
+  "app_name": "PolliArt Studio",
+  "app_url": "https://github.com/wwishao/polli-art-studio"
+}

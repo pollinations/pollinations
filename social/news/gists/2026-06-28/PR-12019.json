@@ -1,0 +1,35 @@
+{
+  "pr_number": 12019,
+  "title": "[codex] fix: disable tier refill cron",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12019",
+  "merged_at": "2026-06-28T19:16:08Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "- Removes Cloudflare cron triggers for Enter local, staging, and production environments.\n- Stops the scheduled tier refill pipeline from running recurring hourly tier drips.\n- Leaves manual admin refill code and broader tier-to-rewards cleanup untouched for the larger #11375 work.\n\nValidation:\n- `npx biome check --write enter.pollinations.ai/wrangler.toml` (ignored by Biome)\n- `npx wrangler deploy --dry-run --config wrangler.toml --env production`\n- `npx wrangler deploy --dry-run --config wrangler.toml --env staging`\n- `npx wrangler deploy --dry-run --config wrangler.toml --env local`",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Pausing the drip",
+    "blurb": "We've paused the automated hourly tier refills while we work on some larger infrastructure updates. Manual refills are still standing by!",
+    "summary": "Disabled the Cloudflare cron triggers for automated hourly tier refills across all environments in preparation for broader tier-to-rewards cleanup.",
+    "impact": "Automated hourly tier drips are paused, though manual admin refills remain available during this transition.",
+    "keywords": [
+      "cron",
+      "infrastructure",
+      "cloudflare",
+      "billing",
+      "tiers"
+    ],
+    "visual_concept": "The bee mascot turning off a dripping faucet or a giant hourglass, with the robot companion holding a wrench.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny yellow hardhat, turning a large valve to stop a dripping water pipe. A chunky pixel robot with a CRT monitor head stands nearby holding a wrench. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-28/PR-12019.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny yellow hardhat, turning a large valve to stop a dripping water pipe. A chunky pixel robot with a CRT monitor head stands nearby holding a wrench. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-06-28T19:17:13.549261+00:00"
+}

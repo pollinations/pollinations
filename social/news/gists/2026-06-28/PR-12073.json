@@ -1,0 +1,35 @@
+{
+  "pr_number": 12073,
+  "title": "Add PolliCross to games",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12073",
+  "merged_at": "2026-06-28T08:48:18Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [PolliCross](https://zqigolden.github.io/pollicross/) to games\n- PolliCross is a web-based Picross / Nonogram puzzle game where every level is generated from an AI image. The player enters a text prompt and picks an art style, and the app calls the Pollinations ima\n\nFixes #11947",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Prompt your own puzzles",
+    "blurb": "A new community game just dropped! PolliCross lets you generate custom Picross puzzles from AI images using your own text prompts.",
+    "summary": "Added PolliCross to the community apps directory, a web-based Picross/Nonogram game that generates playable puzzle levels from AI images via the Pollinations API.",
+    "impact": "Players can now generate and solve custom nonogram puzzles based on any text prompt and art style they choose.",
+    "keywords": [
+      "community",
+      "games",
+      "picross",
+      "nonogram",
+      "apps"
+    ],
+    "visual_concept": "The bee mascot playing a Picross/Nonogram puzzle game. A grid with numbers on the side, with some squares filled in to reveal a pixel art picture. The bee is holding a giant pencil or stylus, actively solving the puzzle.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding a giant wooden pencil, solving a glowing Picross nonogram puzzle on a retro computer screen. The puzzle grid shows partially filled squares revealing a pixelated flower. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-28/PR-12073.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot holding a giant wooden pencil, solving a glowing Picross nonogram puzzle on a retro computer screen. The puzzle grid shows partially filled squares revealing a pixelated flower. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-28T08:49:17.068131+00:00",
+  "app_name": "PolliCross",
+  "app_url": "https://zqigolden.github.io/pollicross/"
+}

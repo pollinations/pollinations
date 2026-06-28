@@ -20,16 +20,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [🤖 REKTY AI](https://github.com/rekty/Rekty-AI) | REKTY AI description not provided. | [@rekty](https://github.com/rekty) |
-| [🎭 RoleChar](https://rolechar.com) | RoleChar provides AI character chat and roleplay, plus image and video generation in one place. | [@peacefulfrog](https://github.com/peacefulfrog) |
-| [🐾 SpiritPet World — Feature Overview](https://spiritworldfeatureoverview.netlify.app/) | SpiritPet World — Feature Overview. Provides a quick overview of the app’s features. | [@aumnuay2494-svg](https://github.com/aumnuay2494-svg) |
-| [💸 Cashflower](https://cashflower.cru2.net) | Cashflower turns Pollinations generation into income for everyday users, with results provided using their own numbers. | [@davealan74](https://github.com/davealan74) |
-| [🧪 Pollen Studio](https://pollenstudio.cru2.net) | Pollen Studio is a static-files BYOP comparator for Pollinations.AI. Users connect via enter.pollinations.ai authorize flow and compare image, text, and TTS models side-by-side across three modes. | [@davealan74](https://github.com/davealan74) |
-| [📝 Lingua Memory Card](https://lingua-memory-card.vercel.app/) | Lingua Memory Card is a multilingual writing practice app for language learners. Users paste their own practice text, then the app uses Pollinations text models to provide sentence-by-sentence correct | [@Minor-fun](https://github.com/Minor-fun) |
-| [🧠 Wikimind AI](https://chpalitom09-bot.github.io/Wikimind-5/) | Wikimind AI is a French chatbot with over 29 functional AI models. | [@chpalitom09-bot](https://github.com/chpalitom09-bot) |
-| [🧩 AuraForge](https://autoforge-iota.vercel.app/) | AuraForge is an Identity Orchestration Studio that generates strict, flat 2D vector mascots for AI agents, team members, or digital personas, acting as a profiling tool for visual identities. | [@dreamm160-ops](https://github.com/dreamm160-ops) |
-| [📝 Pollinations AI Text Generation API](https://farl.github.io/pollinations-ai-text-generation/) | A web interface for the Pollinations AI API (gen.pollinations.ai). It uses the pollinations.ai API for text generation with multiple OpenAI-compatible models, image analysis (vision), text-to-speech w | [@Farl](https://github.com/Farl) |
-| [🤖 OtakuBox Bot](https://badamchuk.github.io/otakubox/) | OtakuBox Bot is a Telegram bot for anime fans that uses the Pollinations.ai API. | [@badamchuk](https://github.com/badamchuk) |
+| [📝 Textylize](https://textylize.vercel.app/) | Textylize is a mainly client-side text stylizer. It lets users apply text styling changes. | [@bytetilde](https://github.com/bytetilde) |
+| [🖼️ Poli image and chat](https://poli-sparkle-studio.lovable.app) | Use Poli image and chat to access free source providers and generate professional images or run chat tools. | [@malik4498](https://github.com/malik4498) |
+| [🎨 PolliArt Studio](https://github.com/wwishao/polli-art-studio) | Generate AI artwork from text prompts using the pollinations.ai API in PolliArt Studio. Choose Flux (free) or Turbo models and save generation history in local storage with a gallery view. | [@wwishao](https://github.com/wwishao) |
+| [📚 BeDream APP](https://bedream.xyz) | **BeDream APP** is a comprehensive AI roleplay and creative writing platform designed for immersive, unrestricted storytelling. Users can craft deeply detailed characters, build elaborate worlds and s | [@budibudi7](https://github.com/budibudi7) |
+| [🗺️ World Weaver](https://github.com/MrMegnis/world-generator) | Generate worlds with AI using GPT-5.4, render scenes with gpt-image-2, and create videos with ltx-2 via pollinations.ai unified API. | [@MrMegnis](https://github.com/MrMegnis) |
+| [🧩 PolliCross](https://zqigolden.github.io/pollicross/) | PolliCross is a web-based Picross / Nonogram puzzle game where every level is generated from an AI image. The player enters a text prompt and picks an art style, and the app calls the Pollinations ima | [@zqigolden](https://github.com/zqigolden) |
+| [🥦 AIMANA Asparagus](https://github.com/rontea/AIMANA-Asparagus) | A local-first Digital Asset Management (DAM) system that combines asset organization with an AI-powered workspace for generating and managing multimedia content, including images, video, audio, chat i | [@rontea](https://github.com/rontea) |
+| [🎶 Generative Soundscape](https://generative-soundscape.vercel.app/) | Convert your words into endless music with Generative Soundscape. | [@elethy](https://github.com/elethy) |
+| [🤖 AI Boss Chat](https://greggelong.github.io/aiBossChat/) | AI Boss Chat: p dir="auto" style="box-sizing: border-box; margin-top: 0px; margin-bottom: 16px; color: rgb(240, 246, 252); font-size: 16px | [@greggelong](https://github.com/greggelong) |
+| [📚 Storiva](https://play.google.com/store/apps/details?id=com.ismafly.storiva) | Storiva is an Android app that generates personalized illustrated children's stories where the child's own face appears in every illustration using AI inpainting. | [@ismailazdad](https://github.com/ismailazdad) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live
@@ -48,6 +48,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-06-26** – **🤖 REKTY AI** The community app directory grows by one. REKTY AI is now live in the [showcase](https://pollinations.ai). [View repo](https://github.com/rekty/Rekty-AI) <!-- app -->
 - **2026-06-25** – **🎯 Side Quests Unlocked** The passive tier system is out. You can now track bounties and claim Pollen credits for things like GitHub contributions or cross-modality model usage directly from the new Quest [dashboard](https://enter.pollinations.ai).
 - **2026-06-23** – **🎵 Stable Audio 3** We've wired up Stable Audio 3 to the [audio API](https://gen.pollinations.ai/audio/{text}). Generate up to 380 seconds of 44.1 kHz stereo, or use the newly added audio-to-audio style transfer.
 - **2026-06-23** – **🤖 Mercury 2** Inception's Mercury 2 model is now live on the [text API](https://gen.pollinations.ai/v1/chat/completions). Full support for cached input and reasoning tokens included.
@@ -57,7 +58,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-06-22** – **🌸 Community Showcase Updates** RoleChar and SpiritPet World have been added to the ecosystem. [View repos](https://pollinations.ai) <!-- app -->
 - **2026-06-17** – **📊 Transaction History** You can now see exactly where your Pollen is going. Check your last 5 requests directly on the Pollen page, or browse the full history on your [Dashboard](https://enter.pollinations.ai).
 - **2026-06-17** – **🚀 Siriusly Fast Elevators** The Sirius Cybernetics Elevator Challenge app now defaults to Mistral, dropping response times from 10s to 1.2s. Even the API errors are now delivered in-character. [Try it](https://pollinations.ai) <!-- app -->
-- **2026-06-17** – **⚡ Faster Image Generation** We rewired the [image generation](https://gen.pollinations.ai/image/models) load balancer to favor GPUs with the lowest recent latency. More traffic goes to the 4090s, meaning fewer timeouts and faster pixels.
 ---
 
 ## 🌱 Introduction
@@ -68,7 +68,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 - 🔓 **100% Open Source** — code, decisions, roadmap all public
 - 🤝 **Community-Built** — 500+ projects already using our APIs
-- 🌱 **Pollen Tiers** — earn credits by contributing (tiers in beta)
+- 🌱 **Pollen Quests** — earn Pollen by completing Quests (in alpha)
 - 🖼️ **Image Generation** — Flux, GPT Image, Seedream, Kontext
 - 🎬 **Video Generation** — Seedance, Veo (alpha)
 - 🎵 **Audio** — Text-to-speech and speech-to-text

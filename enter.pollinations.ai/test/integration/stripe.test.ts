@@ -1,7 +1,12 @@
 import { env, SELF } from "cloudflare:test";
 import { createHmac } from "node:crypto";
 import { user as userTable } from "@shared/db/better-auth.ts";
-import { getPollenPackByAmount } from "@shared/pollen-packs.ts";
+import {
+    describePollenPack,
+    getPollenPackByAmount,
+    getPollenPackByKey,
+    POLLEN_PACKS,
+} from "@shared/pollen-packs.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
@@ -11,14 +16,7 @@ import { mockCardPaymentMethod, mockCustomer } from "../mocks/stripe.ts";
 const base = "http://localhost:3000/api/stripe";
 const stripeWebhookUrl = "http://localhost:3000/api/webhooks/stripe";
 const stripePmcId = "pmc_1SrYT96O03AauPe8ijLy6sZU";
-const checkoutAmounts = [
-    "/checkout/p2",
-    "/checkout/p5",
-    "/checkout/p10",
-    "/checkout/p20",
-    "/checkout/p50",
-    "/checkout/p100",
-];
+const checkoutAmounts = POLLEN_PACKS.map((pack) => `/checkout/${pack.packKey}`);
 
 function signStripeWebhookPayload(payload: string): string {
     const timestamp = Math.floor(Date.now() / 1000);
@@ -184,16 +182,13 @@ test("GET /api/stripe/products returns pack list", async () => {
             description: string;
         }[];
     };
-    expect(data.packs).toHaveLength(6);
-    expect(data.packs.map((p) => p.packKey)).toEqual([
-        "p2",
-        "p5",
-        "p10",
-        "p20",
-        "p50",
-        "p100",
-    ]);
-    expect(data.packs.map((p) => p.amount)).toEqual([2, 5, 10, 20, 50, 100]);
+    expect(data.packs).toEqual(
+        POLLEN_PACKS.map((pack) => ({
+            packKey: pack.packKey,
+            amount: pack.amountUsd,
+            description: describePollenPack(pack),
+        })),
+    );
 });
 
 test("GET /api/stripe/checkout/:packKey returns 400 for invalid pack keys", async ({
@@ -255,9 +250,11 @@ test("GET /api/stripe/checkout/p10 sets pack identity in session metadata", asyn
     sessionToken,
     mocks,
 }) => {
+    const pack = getPollenPackByKey("p10");
+    expect(pack).toBeDefined();
     await mocks.enable("stripe", "tinybird");
 
-    const response = await SELF.fetch(`${base}/checkout/p10`, {
+    const response = await SELF.fetch(`${base}/checkout/${pack?.packKey}`, {
         method: "GET",
         headers: { cookie: `better-auth.session_token=${sessionToken}` },
         redirect: "manual",
@@ -271,27 +268,31 @@ test("GET /api/stripe/checkout/p10 sets pack identity in session metadata", asyn
 
     // No cf-ipcountry header → USD default cohort. Checkout stays USD-native
     // and Adaptive Pricing may localize presentment where supported.
-    expectUsdPriceData(body, 10);
+    expectUsdPriceData(body, pack?.amountUsd ?? 0);
     expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
 
     // Session metadata carries the pack identity so the webhook can look up
     // the pack's fixed USD amount to credit. cohort identifies which routing
     // branch was taken.
-    expect(body?.["metadata[packKey]"]).toBe("p10");
+    expect(body?.["metadata[packKey]"]).toBe(pack?.packKey);
     expect(body?.["metadata[cohort]"]).toBe("USD");
 
     // payment_intent metadata mirrors session metadata for Stripe dashboard
     // inspection and reconciliation.
-    expect(body?.["payment_intent_data[metadata][packKey]"]).toBe("p10");
+    expect(body?.["payment_intent_data[metadata][packKey]"]).toBe(
+        pack?.packKey,
+    );
 });
 
 test("GET /api/stripe/checkout/p2 uses the plain Pollen label", async ({
     sessionToken,
     mocks,
 }) => {
+    const pack = getPollenPackByKey("p2");
+    expect(pack).toBeDefined();
     await mocks.enable("stripe", "tinybird");
 
-    const response = await SELF.fetch(`${base}/checkout/p2`, {
+    const response = await SELF.fetch(`${base}/checkout/${pack?.packKey}`, {
         method: "GET",
         headers: { cookie: `better-auth.session_token=${sessionToken}` },
         redirect: "manual",
@@ -304,12 +305,14 @@ test("GET /api/stripe/checkout/p2 uses the plain Pollen label", async ({
     expect(body).toBeTruthy();
 
     // No cf-ipcountry header → USD default cohort.
-    expectUsdPriceData(body, 2, "🪷 2 Pollen");
+    expectUsdPriceData(body, pack?.amountUsd ?? 0, pack?.checkoutName);
     expect(body?.["adaptive_pricing[enabled]"]).toBe("true");
 
-    expect(body?.["metadata[packKey]"]).toBe("p2");
+    expect(body?.["metadata[packKey]"]).toBe(pack?.packKey);
     expect(body?.["metadata[cohort]"]).toBe("USD");
-    expect(body?.["payment_intent_data[metadata][packKey]"]).toBe("p2");
+    expect(body?.["payment_intent_data[metadata][packKey]"]).toBe(
+        pack?.packKey,
+    );
 });
 
 // Cohort routing: cf-ipcountry determines analytics metadata. Checkout sends

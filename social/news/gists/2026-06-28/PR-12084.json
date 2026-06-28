@@ -1,0 +1,35 @@
+{
+  "pr_number": 12084,
+  "title": "fix: deploy gen worker before pushing secrets",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12084",
+  "merged_at": "2026-06-28T13:40:31Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "- `wrangler secret bulk` edits the latest worker version's settings and fails with Cloudflare 10214 when the latest version isn't the deployed one\n- That drift state is left behind by a manual `wrangler versions upload` + rollback (happened 2026-06-27), and silently breaks the next CI deploy\n- Reordering so deploy runs first guarantees latest == deployed before the secret push, eliminating the 10214 class\n- A brand-new secret is briefly absent in the seconds between deploy and push, which self-heals\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Deploy first, secrets later",
+    "blurb": "We've reordered our Cloudflare deployment steps so the gen worker deploys before secrets are pushed, fixing a pesky CI error.",
+    "summary": "Reordered the Cloudflare deployment workflow for the gen worker to run `wrangler deploy` before pushing secrets, preventing Cloudflare error 10214 after manual rollbacks.",
+    "impact": "Internal CI deployments for the gen worker are now more resilient to version drift and manual rollbacks.",
+    "keywords": [
+      "ci",
+      "cloudflare",
+      "deployment",
+      "infrastructure",
+      "wrangler"
+    ],
+    "visual_concept": "The bee mascot organizing glowing server boxes (deployments) before putting locks (secrets) on them, representing the new CI step order.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot organizing glowing lime green (#ecf874) server boxes before carefully placing tiny padlocks on them. A chunky robot with a CRT monitor head gives a thumbs up. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-28/PR-12084.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot organizing glowing lime green (#ecf874) server boxes before carefully placing tiny padlocks on them. A chunky robot with a CRT monitor head gives a thumbs up. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-06-28T13:41:28.978349+00:00"
+}

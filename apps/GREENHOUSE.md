@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **822** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **823** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -44,6 +44,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🎨 PolliArt Studio](https://github.com/wwishao/polli-art-studio) | Generate AI artwork from text prompts using the pollinations.ai API in PolliArt Studio. Choose Flux (free) or Turbo models and save generation history in local storage with a gallery view. | [@wwishao](https://github.com/wwishao) |  | 🫧 |
 | [📚 BeDream APP](https://bedream.xyz) | **BeDream APP** is a comprehensive AI roleplay and creative writing platform designed for immersive, unrestricted storytelling. Users can craft deeply detailed characters, build elaborate worlds and s | [@budibudi7](https://github.com/budibudi7) |  | 🫧 |
 | [🗺️ World Weaver](https://github.com/MrMegnis/world-generator) | Generate worlds with AI using GPT-5.4, render scenes with gpt-image-2, and create videos with ltx-2 via pollinations.ai unified API. | [@MrMegnis](https://github.com/MrMegnis) |  | 🫧 |
 | [🧩 PolliCross](https://zqigolden.github.io/pollicross/) | PolliCross is a web-based Picross / Nonogram puzzle game where every level is generated from an AI image. The player enters a text prompt and picks an art style, and the app calls the Pollinations ima | [@zqigolden](https://github.com/zqigolden) |  | 🫧 |
@@ -53,7 +54,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [📚 Storiva](https://play.google.com/store/apps/details?id=com.ismafly.storiva) | Storiva is an Android app that generates personalized illustrated children's stories where the child's own face appears in every illustration using AI inpainting. | [@ismailazdad](https://github.com/ismailazdad) |  | 🫧 |
 | [🌸 Imagipedia](https://imagipedia.vercel.app/) | Generate AI images in Imagipedia using Pollinations as its processing backend. Use it as a creative studio for creating image outputs. | [@uveskhanx](https://github.com/uveskhanx) |  | 🫧 |
 | [🤖 Elfy AI](https://dmonink.github.io/Elfy-AI/) | Use Elfy AI to chat with an AI Discord bot via the Gemini API and generate AI images from text prompts using the Pollinations.ai API. | [@DMONINK](https://github.com/DMONINK) |  | 🫧 |
-| [🤖 REKTY AI](https://github.com/rekty/Rekty-AI) | REKTY AI description not provided. | [@rekty](https://github.com/rekty) | 1 | 🫧 |
 
 ---
 
@@ -72,7 +72,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🏷️ Metadatagenerator](https://metadatagenerator.online/) | Generate metadata and prompts for microstock marketplace with Metadatagenerator. | [@roni72640](https://github.com/roni72640) |  | 🐝 |
 | [🧑‍🎨 Pollinations Avatar Gen](https://github.com/Nidelon/pollinations-avatar-gen) | An extension for SillyTavern that generates character avatars based on their text descriptions using the Pollinations.ai API. Everything is done at the click of a button. | [@Nidelon](https://github.com/Nidelon) |  | 🐝 |
 
-<details><summary>Show all 197 apps</summary>
+<details><summary>Show all 198 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -134,6 +134,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🧩 TileTile](https://tiletile.netlify.app/) | Generate seamless tile textures with TileTile using the Flux Schnell image generation model provided by Pollinations. | [@xaw1](https://github.com/xaw1) | 1 |  |
 | [🎨 SpecAI](https://specai.pages.dev) | Provide an interactive UI for Pollinations AI that generates images with custom resolutions and reproducible seeds. | [@spectre365](https://github.com/spectre365) | 1 |  |
 | [🎨 Inkly AI](https://inkly-ai.vercel.app/) | Generate images from text or transform images via image-to-image, view your gallery, and download generated files. | [@Auspicious14](https://github.com/Auspicious14) | 1 |  |
+| [🎨 PolliArt Studio](https://github.com/wwishao/polli-art-studio) | Generate AI artwork from text prompts using the pollinations.ai API in PolliArt Studio. Choose Flux (free) or Turbo models and save generation history in local storage with a gallery view. | [@wwishao](https://github.com/wwishao) |  | 🫧 |
 | [🖼️ Photo Ai](https://apps.apple.com/pk/app/photo-ai-image-generator/id6759615194) | Use Pollination Api to generate or process photos in Photo Ai. | [@hussainmunir](https://github.com/hussainmunir) |  | 🫧 |
 | [🖼️ PixelDream](https://upixeldream.netlify.app/) | Turn any idea into an image. Free to use. | [@Saema87](https://github.com/Saema87) |  | 🫧 |
 | [🖼️ AI Image Forge](https://hilarious-seahorse-09c5c6.netlify.app/) | AI Image Forge is an all-in-one web-based AI art tool integrated with Pollinations.ai API. Enter prompts, choose Pollinations.ai models, and adjust image resolution. | [@bombom0704](https://github.com/bombom0704) |  | 🫧 |

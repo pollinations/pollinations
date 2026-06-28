@@ -1,0 +1,35 @@
+{
+  "pr_number": 12068,
+  "title": "Add Storiva to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12068",
+  "merged_at": "2026-06-28T08:25:48Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Storiva](https://play.google.com/store/apps/details?id=com.ismafly.storiva) to writing\n- Storiva is an Android app that generates personalized illustrated children's stories where the child's own face appears in every illustration using AI inpainting.\n\nFixes #12013",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Once upon a pixel",
+    "blurb": "Storiva just joined the ecosystem! It's a magical Android app that uses AI to put your child's face right into the illustrations of personalized stories.",
+    "summary": "Added Storiva, an Android app that generates personalized children's stories using AI inpainting to feature the child's face in illustrations, to the community apps directory.",
+    "impact": "The community can now discover Storiva in the apps list and see a creative implementation of AI inpainting for personalized storybooks.",
+    "keywords": [
+      "community",
+      "apps",
+      "storiva",
+      "storytelling",
+      "inpainting"
+    ],
+    "visual_concept": "A cozy storytelling scene. Polly the bee reading a glowing, magical children's book to the round Nomnom creature. The book's pages show a tiny pixelated face, representing the personalized inpainting feature.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, reading a glowing magical storybook to the round tan Nomnom creature. The book's pages show a tiny pixelated face. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic, emotionally warm, magical storytelling vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-28/PR-12068.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, reading a glowing magical storybook to the round tan Nomnom creature. The book's pages show a tiny pixelated face. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic, emotionally warm, magical storytelling vibes."
+  },
+  "generated_at": "2026-06-28T08:26:45.880578+00:00",
+  "app_name": "Storiva",
+  "app_url": "https://play.google.com/store/apps/details?id=com.ismafly.storiva"
+}

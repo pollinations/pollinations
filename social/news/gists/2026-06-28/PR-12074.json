@@ -1,0 +1,35 @@
+{
+  "pr_number": 12074,
+  "title": "Add World Weaver to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12074",
+  "merged_at": "2026-06-28T08:53:42Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [World Weaver](https://github.com/MrMegnis/world-generator) to build\n- Generate worlds with AI using GPT-5.4, render scenes with gpt-image-2, and create videos with ltx-2 via pollinations.ai unified API.\n\nFixes #11911",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Weaving new worlds",
+    "blurb": "World Weaver just landed in the Greenhouse! Generate entire worlds, render scenes, and create videos using our unified API.",
+    "summary": "Added World Weaver to the community apps list, a tool that generates worlds, renders scenes, and creates videos using GPT-5.4, gpt-image-2, and ltx-2 via the unified API.",
+    "impact": "Creators can now discover World Weaver in the Greenhouse and use it to build complete AI-generated environments with text, image, and video models.",
+    "keywords": [
+      "community",
+      "apps",
+      "world-weaver",
+      "generation",
+      "video"
+    ],
+    "visual_concept": "The PR is about 'World Weaver', an app that generates worlds, scenes, and videos. Visual metaphor: Polly the bee weaving a tiny glowing digital globe or landscape using a small loom, surrounded by screens showing generated environments.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot using a tiny wooden loom to weave a glowing digital globe. A chunky retro monitor nearby displays a lush generated landscape. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and magical."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-28/PR-12074.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot using a tiny wooden loom to weave a glowing digital globe. A chunky retro monitor nearby displays a lush generated landscape. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and magical."
+  },
+  "generated_at": "2026-06-28T08:54:41.257954+00:00",
+  "app_name": "World Weaver",
+  "app_url": "https://github.com/MrMegnis/world-generator"
+}

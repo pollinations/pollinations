@@ -413,7 +413,7 @@ For development setup and environment management, see [DEVELOP.md](./DEVELOP.md)
 The best way to support pollinations.ai is by using our product! Get your API key and start building at **[enter.pollinations.ai](https://enter.pollinations.ai)**.
 
 ## 📣 Stay Connected
-
+[News & FAQ](https://enter.pollinations.ai/#news-faq) · 
 [𝕏 Twitter](https://twitter.com/pollinations_ai) · [Instagram](https://instagram.com/pollinations_ai) · [LinkedIn](https://www.linkedin.com/company/pollinations-ai) · [Facebook](https://facebook.com/pollinations) · [Reddit](https://www.reddit.com/r/pollinations_ai/) · [YouTube](https://www.youtube.com/c/pollinations)
 
 ## 📜 License

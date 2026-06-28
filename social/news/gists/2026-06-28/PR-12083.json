@@ -1,0 +1,35 @@
+{
+  "pr_number": 12083,
+  "title": "fix: repoint gptimage to new Azure resource (eastus2 blocked)",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12083",
+  "merged_at": "2026-06-28T13:10:45Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Azure blocked image generation on `myceli-prod-eastus2` (resource-level content-policy block — every `gptimage`/`gptimage-large` request returned 403, surfaced to users as a misleading 422 \"content_policy_violation\")\n- Verified live: even a benign \"red car\" prompt 403s; chat on the same resources still works, so the block is image-modality-specific\n- Repoint `gptimage` (gpt-image-1-mini) and `gptimage-large` (gpt-image-1.5) to a fresh `myceli-prod-img-westus3` resource — both deployments verified returning 200\n- Add `AZURE_MYCELI_PROD_IMG_WESTUS3_API_KEY` to sops secrets (prod/staging/dev) + worker bindings; CI pushes it on deploy\n\nFixes #12067\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Moving the studio out West",
+    "blurb": "Our GPT image models hit a roadblock, so we packed up and moved them to a fresh new server out West. The pixels are flowing smoothly once again!",
+    "summary": "Repointed the gptimage and gptimage-large models to a new Azure westus3 resource to resolve 403 content policy errors from the previous eastus2 endpoint.",
+    "impact": "Users will no longer receive false-positive 422 content policy violations for benign image prompts when using the GPT image models.",
+    "keywords": [
+      "bug fix",
+      "azure",
+      "gptimage",
+      "image generation",
+      "api"
+    ],
+    "visual_concept": "The bee mascot plugging a glowing cable into a new server rack, while the robot companion holds up a freshly generated picture of a red car (referencing the benign prompt from the PR description).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot plugging a glowing lime green (#ecf874) cable into a new retro server rack. Nearby, a chunky pixel robot with a monitor head happily holds up a freshly generated pixel painting of a red car. Soft pastel gradient background with warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-28/PR-12083.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot plugging a glowing lime green (#ecf874) cable into a new retro server rack. Nearby, a chunky pixel robot with a monitor head happily holds up a freshly generated pixel painting of a red car. Soft pastel gradient background with warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-28T13:11:59.429912+00:00"
+}

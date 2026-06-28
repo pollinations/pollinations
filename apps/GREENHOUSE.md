@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **816** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **817** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -44,6 +44,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [💬 Flow Linnom](https://flow.linnom.com) | Flow Linnom provides a chat interface to access multiple AI language models. | [@omarsenusi](https://github.com/omarsenusi) |  | 🫧 |
 | [📚 Storiva](https://play.google.com/store/apps/details?id=com.ismafly.storiva) | Storiva is an Android app that generates personalized illustrated children's stories where the child's own face appears in every illustration using AI inpainting. | [@ismailazdad](https://github.com/ismailazdad) |  | 🫧 |
 | [🌸 Imagipedia](https://imagipedia.vercel.app/) | Generate AI images in Imagipedia using Pollinations as its processing backend. Use it as a creative studio for creating image outputs. | [@uveskhanx](https://github.com/uveskhanx) |  | 🫧 |
 | [🤖 Elfy AI](https://dmonink.github.io/Elfy-AI/) | Use Elfy AI to chat with an AI Discord bot via the Gemini API and generate AI images from text prompts using the Pollinations.ai API. | [@DMONINK](https://github.com/DMONINK) |  | 🫧 |
@@ -53,7 +54,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [📝 Lingua Memory Card](https://lingua-memory-card.vercel.app/) | Lingua Memory Card is a multilingual writing practice app for language learners. Users paste their own practice text, then the app uses Pollinations text models to provide sentence-by-sentence correct | [@Minor-fun](https://github.com/Minor-fun) |  | 🫧 |
 | [🧠 Wikimind AI](https://chpalitom09-bot.github.io/Wikimind-5/) | Wikimind AI is a French chatbot with over 29 functional AI models. | [@chpalitom09-bot](https://github.com/chpalitom09-bot) | 2 | 🐝 🫧 |
 | [🧩 AuraForge](https://autoforge-iota.vercel.app/) | AuraForge is an Identity Orchestration Studio that generates strict, flat 2D vector mascots for AI agents, team members, or digital personas, acting as a profiling tool for visual identities. | [@dreamm160-ops](https://github.com/dreamm160-ops) |  | 🏵️ 🫧 |
-| [📝 Pollinations AI Text Generation API](https://farl.github.io/pollinations-ai-text-generation/) | A web interface for the Pollinations AI API (gen.pollinations.ai). It uses the pollinations.ai API for text generation with multiple OpenAI-compatible models, image analysis (vision), text-to-speech w | [@Farl](https://github.com/Farl) |  | 🫧 |
 
 ---
 
@@ -430,7 +430,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🖼️ PixPal](https://pixpal.chat) | Analyze, edit, and generate images, build websites from screenshots, create 3D games, and draft blog posts within a single chat interface. | [@andreaspaps](https://github.com/andreaspaps) |  | 🐝 |
 | [💬 pollinations-ui](https://pollinations-ui.vercel.app) | Use pollinations-ui to interact with the Pollinations AI ecosystem via a chat interface and generate text, images, video, and audio through a unified workflow. | [@Amine-SGM](https://github.com/Amine-SGM) | 4 | 🏵️ |
 
-<details><summary>Show all 134 apps</summary>
+<details><summary>Show all 135 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -470,6 +470,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🔒 Polli AI Client](https://polli-plum.vercel.app/) | Privacy-focused serverless AI client for Pollinations API and advanced models. | [@soyangelromero](https://github.com/soyangelromero) | 1 |  |
 | [🎨 Pollination App](https://github.com/aheadmujtaba/PollinationsApp) | Android client for Pollinations.ai to generate images and chat with AI. | [@aheadmujtaba](https://github.com/aheadmujtaba) | 1 |  |
 | [💬 AI Chat Studio](https://github.com/Universe-shifting/AI-Chat-Studio) | Provide a local desktop AI chat with multimodal attachments, in-chat image generation, isolated project file management, saved chats with export, and streaming responses. | [@Universe-shifting](https://github.com/Universe-shifting) | 1 |  |
+| [💬 Flow Linnom](https://flow.linnom.com) | Flow Linnom provides a chat interface to access multiple AI language models. | [@omarsenusi](https://github.com/omarsenusi) |  | 🫧 |
 | [🤖 Elfy AI](https://dmonink.github.io/Elfy-AI/) | Use Elfy AI to chat with an AI Discord bot via the Gemini API and generate AI images from text prompts using the Pollinations.ai API. | [@DMONINK](https://github.com/DMONINK) |  | 🫧 |
 | [📝 Pollinations AI Text Generation API](https://farl.github.io/pollinations-ai-text-generation/) | A web interface for the Pollinations AI API (gen.pollinations.ai). It uses the pollinations.ai API for text generation with multiple OpenAI-compatible models, image analysis (vision), text-to-speech w | [@Farl](https://github.com/Farl) |  | 🫧 |
 | [🤖 ather mini](minitejas.in) | ather mini provides a ChatGPT-like AI chat to help people learn about AI and uses pollinations.ai for teaching. | [@aadarsh-kandula](https://github.com/aadarsh-kandula) |  | 🫧 |

@@ -17,8 +17,8 @@ import type {
     QuestEvaluationContext,
 } from "../services/quests/types.ts";
 
-// Bumped to v21: launch-era top-up quests use new ids; legacy top-up cards are completed.
-const CACHE_KEY = "quests:catalog:v21";
+// Bumped to v22: app_listed is now available instead of coming_soon.
+const CACHE_KEY = "quests:catalog:v22";
 const CACHE_TTL = 60;
 const QUEST_CHECK_THROTTLE_SECONDS = 60;
 

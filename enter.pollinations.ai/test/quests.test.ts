@@ -184,7 +184,7 @@ test("catalog returns quest definitions without ledger stats", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v21");
+    await env.KV.delete("quests:catalog:v22");
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -242,6 +242,11 @@ test("catalog returns quest definitions without ledger stats", async ({
         rewardAmount: 50,
         balanceBucket: "tier",
     });
+    expectStableCatalogFields("app_listed", {
+        state: "available",
+        rewardAmount: 15,
+        balanceBucket: "tier",
+    });
 });
 
 test("catalog includes coming-soon GitHub issue placeholder", async ({
@@ -249,7 +254,7 @@ test("catalog includes coming-soon GitHub issue placeholder", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v21");
+    await env.KV.delete("quests:catalog:v22");
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -273,13 +278,13 @@ test("catalog includes coming-soon GitHub issue placeholder", async ({
 
     expect(placeholder).toMatchObject({
         title: "Solve a quest issue in GitHub",
-        description: "A demi description",
         category: "contribute",
         state: "coming_soon",
         rewardAmount: 0,
         balanceBucket: "tier",
         url: null,
     });
+    expect(placeholder?.description).toEqual(expect.any(String));
 });
 
 test("catalog excludes closed GitHub quest issues without merged PRs", async ({
@@ -287,7 +292,7 @@ test("catalog excludes closed GitHub quest issues without merged PRs", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v21");
+    await env.KV.delete("quests:catalog:v22");
 
     seedQuestIssue(mocks.github.state, {
         issueNumber: 801,
@@ -760,7 +765,7 @@ test("six-month account quest is coming_soon and never records", async ({
     expect(rewards).toHaveLength(0);
 });
 
-test("app-growth quests are coming_soon and never record", async ({
+test("app-listed quest records from Tinybird while other app-growth quests stay coming_soon", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -768,6 +773,9 @@ test("app-growth quests are coming_soon and never record", async ({
     const user = await getOnlyUser();
     await mocks.enable("github", "tinybird");
     mocks.tinybird.state.paidAppSpendResponse = [{ userId: user.id }];
+    mocks.tinybird.state.appDirectoryResponse = [
+        { github_user_id: String(user.githubId) },
+    ];
 
     await db.insert(schema.user).values({
         id: "byop-external-user",
@@ -814,13 +822,19 @@ test("app-growth quests are coming_soon and never record", async ({
             userId: schema.rewards.userId,
         })
         .from(schema.rewards);
-    // All app-growth quests are coming_soon (inert), so the owner earns none of
-    // them even though the source data qualifies.
-    for (const questId of ["app_active", "app_paid_request", "app_listed"]) {
+    // The listed-app quest is live; the other app-growth quests are still inert
+    // even though the source data qualifies.
+    for (const questId of ["app_active", "app_paid_request"]) {
         expect(ownerRewards.some((reward) => reward.questId === questId)).toBe(
             false,
         );
     }
+    expect(
+        ownerRewards.some(
+            (reward) =>
+                reward.questId === "app_listed" && reward.userId === user.id,
+        ),
+    ).toBe(true);
     expect(
         ownerRewards.some(
             (reward) =>
@@ -832,6 +846,11 @@ test("app-growth quests are coming_soon and never record", async ({
             call.url.includes("/v0/pipes/quest_paid_app_spend.json"),
         ),
     ).toBe(false);
+    expect(
+        mocks.tinybird.state.pipeCalls.some((call) =>
+            call.url.includes("/v0/pipes/app_directory_public.json"),
+        ),
+    ).toBe(true);
 
     // byop_login is coming_soon (inert), so the group never evaluates it.
     mocks.tinybird.state.pipeCalls = [];

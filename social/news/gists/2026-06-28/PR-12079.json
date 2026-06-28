@@ -1,0 +1,35 @@
+{
+  "pr_number": 12079,
+  "title": "Add Poli image and chat to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12079",
+  "merged_at": "2026-06-28T09:10:25Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Poli image and chat](https://poli-sparkle-studio.lovable.app) to image\n- Use Poli image and chat to access free source providers and generate professional images or run chat tools.\n\nFixes #11859",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Meet Poli Sparkle Studio",
+    "blurb": "A new community app just landed in the Greenhouse! Poli Sparkle Studio lets you generate professional images and run chat tools, all powered by our free source providers.",
+    "summary": "Added the community-built 'Poli image and chat' app to the Greenhouse and Apps directory.",
+    "impact": "Users can now explore Poli Sparkle Studio to generate professional images and interact with chat tools using free source providers.",
+    "keywords": [
+      "community",
+      "app",
+      "greenhouse",
+      "image-generation",
+      "chat"
+    ],
+    "visual_concept": "The app is called 'Poli Sparkle Studio' and focuses on image generation and chat. Visuals should include a sparkling digital canvas, speech bubbles, and the bee mascot acting as an artist.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, painting on a glowing digital canvas that emits soft sparkles. A chunky retro monitor nearby displays pixelated speech bubbles. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-28/PR-12079.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, painting on a glowing digital canvas that emits soft sparkles. A chunky retro monitor nearby displays pixelated speech bubbles. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-28T09:11:24.079222+00:00",
+  "app_name": "Poli image and chat",
+  "app_url": "https://poli-sparkle-studio.lovable.app"
+}

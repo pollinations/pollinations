@@ -23,6 +23,11 @@ async function setSessionUserTier(sessionToken: string, tier: string) {
 }
 
 describe("API Key Management", () => {
+    type ListedApiKey = {
+        id: string;
+        permissions: Record<string, string[]> | null;
+    };
+
     describe("POST /api/api-keys", () => {
         test("should create publishable key metadata in one step", async ({
             sessionToken,
@@ -253,6 +258,7 @@ describe("API Key Management", () => {
             expect(created.metadata.redirectUris).toEqual([
                 "https://legit.example/callback",
             ]);
+            expect(created.permissions).toBeNull();
         });
 
         test("allows unbranded redirect-auth key creation without client_id", async ({
@@ -961,6 +967,57 @@ describe("API Key Management", () => {
             expect(updatedKey.permissions).toEqual({
                 models: ["flux", "openai"],
                 account: ["profile", "usage"],
+            });
+        });
+
+        test("should strip account permissions from publishable keys on update", async ({
+            auth,
+            sessionToken,
+        }) => {
+            const createResponse = await auth.apiKey.create({
+                name: "publishable-permissions-test",
+                prefix: "pk",
+                metadata: { keyType: "publishable" },
+                fetchOptions: {
+                    headers: {
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            });
+            if (!createResponse.data) throw new Error("Failed to create key");
+            const keyId = createResponse.data.id;
+
+            const updateResponse = await SELF.fetch(
+                `http://localhost:3000/api/api-keys/${keyId}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        allowedModels: ["flux"],
+                        accountPermissions: ["profile", "usage", "keys"],
+                    }),
+                },
+            );
+
+            expect(updateResponse.status).toBe(200);
+
+            const listResponse = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    headers: {
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+            const keys = (await listResponse.json()) as {
+                data: ListedApiKey[];
+            };
+            const updatedKey = keys.data.find((k) => k.id === keyId);
+            expect(updatedKey.permissions).toEqual({
+                models: ["flux"],
             });
         });
 

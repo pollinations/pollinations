@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "weekly",
+  "date": "2026-06-28",
+  "period_start": "2026-06-21",
+  "period_end": "2026-06-27",
+  "generated_at": "2026-06-28T07:18:18.267347+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-06-28/images/reddit.jpg"
+    }
+  ],
+  "title": "Infrastructure update: Stable Audio 3, ElevenLabs SFX, and replacing tiers with Quests",
+  "text": "Merged 22 PRs this week. The bulk of the work went into overhauling the audio endpoints and ripping out the old subscription tier logic in favor of the new Quest system.\n\nOn the audio side, we upgraded ElevenLabs to music_v2 and added reference-audio conditioning. We also wired up their SFX and Multilingual v2 models. For generation, we added Stable Audio 3 via Stability's official API, and swapped Stable Audio 2.5 for 3 Medium via fal. Pricing cards on the frontend were updated to reflect flat-rate per-generation costs for these models.\n\nFor the platform itself, we've entirely scrubbed the old subscription and \"drip\" copy. Moving forward, heavy usage is funded via Pollen credits earned through Quests. The backend for this is live: rewards ledger, per-user checks, and the public catalog. We also split legacy and launch top-up quests and fixed a bug where we weren't counting exact 100 pollen top-ups correctly.\n\nOther notable changes:\n- Unblocked multimodal text passing for providers.\n- Added the Inception Mercury model to Codex.\n- Updated auth docs to reflect BYOP (Bring Your Own Provider) replacing publishable keys.\n- Added REKTY AI to the community bots list.\n\nCode and docs are in the open as always. If you're building with the new audio endpoints, let us know what breaks."
+}

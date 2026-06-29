@@ -1,0 +1,35 @@
+{
+  "pr_number": 12103,
+  "title": "fix: stop nanobanana from clobbering reference images",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12103",
+  "merged_at": "2026-06-29T13:23:37Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "## Problem\nnanobanana models (esp. nanobanana-2) ignore user reference images at non-square sizes — output drifts from the supplied images.\n\n## Root cause\n`processNanobananaRequest` applied a legacy transparent-image aspect-ratio hack (from #4162, before Vertex exposed native aspect control) to **all** nanobanana models on non-1:1 requests:\n- appended a blank transparent image as the **last** reference image, and\n- appended a post-prompt: *\"…completely replacing the last image while keeping its dimensions. Make sure no blank areas are left.\"*\n\nWith user reference images present, the request became `[userRefImage, transparentImage]` + a \"replace the last image\" instruction — diluting/overriding reference adherence.\n\n## Why it's safe to remove\n`imageConfig.aspectRatio` is now set **unconditionally for all nanobanana models** (`vertexAIClient.ts`), so the hack is redundant. Verified against prod `nanobanana` (gemini-2.5-flash-image) **without** the hack:\n- 16:9 (1280×720) → 1344×768 ✓\n- 9:16 (720×1280) → 768×1344 ✓\n- 21:9 (2520×1080) → 1536×672 ✓ (a ratio the transparent-canvas trick can't produce — proves native config drives it)\n\n## Changes\n- Remove `processNanobananaRequest` + the transparent-image append\n- Delete now-unused `utils/transparentImage.ts`\n- Reference images pass through untouched; aspect ratio handled natively\n\n**−199 / +16 lines.** tsc clean, biome clean, all 108 gen image tests pass.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Nanobanana remembers",
+    "blurb": "We cleared out some old aspect-ratio cobwebs that were confusing the nanobanana models. Your reference images will now be respected perfectly, even at non-square sizes.",
+    "summary": "Removed a legacy transparent-image hack from the nanobanana pipeline, fixing an issue where user-provided reference images were ignored at non-square aspect ratios.",
+    "impact": "Reference images now work correctly with nanobanana models across all aspect ratios, as dimensions are now handled natively by Vertex AI.",
+    "keywords": [
+      "nanobanana",
+      "image generation",
+      "bug fix",
+      "reference images",
+      "aspect ratio"
+    ],
+    "visual_concept": "Polly the bee holding up a reference photo (polaroid) to the Monitor Robot, who is successfully painting an exact match on a wide, non-square canvas.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding up a small polaroid reference photo to a chunky robot with a CRT monitor head. The robot is happily painting an exact match of the photo onto a wide rectangular canvas. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-29/PR-12103.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot holding up a small polaroid reference photo to a chunky robot with a CRT monitor head. The robot is happily painting an exact match of the photo onto a wide rectangular canvas. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-29T13:24:45.316095+00:00"
+}

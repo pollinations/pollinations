@@ -1,0 +1,34 @@
+{
+  "pr_number": 12111,
+  "title": "feat: allowlist CloudCompile for community models",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12111",
+  "merged_at": "2026-06-29T21:00:58Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Adds GitHub ID `201248601` (`CloudCompile` / CJ Hauser) to the community model owner allowlist.\n\n- Verified `CloudCompile` is the correct login — it owns the repo fork and has an extensive contribution history (PRs #10927, #10787, #10753, #10538, #9942). The similarly-named `cjhauser` account is unrelated (zero pollinations activity).\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Welcome to the hive, CloudCompile!",
+    "blurb": "We've added CloudCompile to the community model owner allowlist. Get ready for some fresh new models from CJ Hauser!",
+    "summary": "Added GitHub ID 201248601 (CloudCompile) to the community model owner allowlist.",
+    "impact": "CJ Hauser can now publish and manage community models on the platform.",
+    "keywords": [
+      "allowlist",
+      "community",
+      "models",
+      "auth"
+    ],
+    "visual_concept": "The pollinations bee welcoming a new builder to the garden. A chunky robot holding a glowing blueprint or model, representing CloudCompile.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot welcoming a chunky retro robot friend into a digital garden. The robot holds a glowing blueprint. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-29/PR-12111.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot welcoming a chunky retro robot friend into a digital garden. The robot holds a glowing blueprint. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-29T21:01:58.646376+00:00"
+}

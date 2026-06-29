@@ -976,6 +976,14 @@ fixtureTest(
                 githubUsername: ownerGithubUsername,
             },
         });
+        const publishable = await createTestApiKey({
+            type: "publishable",
+            accountPermissions: ["keys"],
+            user: {
+                githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+                githubUsername: `pk-${crypto.randomUUID().slice(0, 8)}`,
+            },
+        });
         const denied = await createTestApiKey({
             user: {
                 githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
@@ -993,6 +1001,19 @@ fixtureTest(
             }),
         );
         expect(deniedResponse.status).toBe(403);
+
+        const publishableResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/account/my-models", {
+                headers: {
+                    Authorization: `Bearer ${publishable.key}`,
+                },
+            }),
+        );
+        expect(publishableResponse.status).toBe(403);
+        await expect(publishableResponse.text()).resolves.toBe(
+            "Only secret keys (sk_) can manage my models",
+        );
 
         const listResponse = await fetchEnterApi(
             enterApi,
@@ -1025,7 +1046,11 @@ fixtureTest(
             }),
         );
         expect(createResponse.status).toBe(200);
-        await expect(createResponse.json()).resolves.toMatchObject({
+        const created = (await createResponse.json()) as Record<
+            string,
+            unknown
+        >;
+        expect(created).toMatchObject({
             modelId: `community/${ownerGithubUsername}/my-test-model`,
             name: "my-test-model",
             baseUrl: "https://api.example.com/v1",
@@ -1033,5 +1058,23 @@ fixtureTest(
             promptTextPrice: 0.1,
             completionTextPrice: 0.2,
         });
+        expect(created).not.toHaveProperty("bearerToken");
+        expect(created).not.toHaveProperty("bearerTokenCiphertext");
+
+        const secondListResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/account/my-models", {
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                },
+            }),
+        );
+        expect(secondListResponse.status).toBe(200);
+        const secondList = (await secondListResponse.json()) as {
+            data: Record<string, unknown>[];
+        };
+        expect(secondList.data).toHaveLength(1);
+        expect(secondList.data[0]).not.toHaveProperty("bearerToken");
+        expect(secondList.data[0]).not.toHaveProperty("bearerTokenCiphertext");
     },
 );

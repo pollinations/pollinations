@@ -2,8 +2,6 @@ import { getLogger } from "@logtape/logtape";
 import { and, eq, gt, isNull, or } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { apikey as apikeyTable } from "../db/better-auth.ts";
-import type { ModelName } from "../registry/registry.ts";
-import { getRegistryModelDefinition } from "../registry/registry.ts";
 import {
     atomicCreditUserBalance,
     atomicDeductApiKeyBalance,
@@ -40,7 +38,6 @@ interface DeductionParams {
     apiKeyId?: string;
     apiKeyPollenBalance?: number | null;
     byopClientKeyId?: string | null;
-    modelResolved?: string;
     modelPaidOnly?: boolean;
     communityModelReward?: CommunityModelRewardInput | null;
 }
@@ -137,7 +134,6 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
         apiKeyId,
         apiKeyPollenBalance,
         byopClientKeyId,
-        modelResolved,
         modelPaidOnly,
         communityModelReward: communityModelRewardInput,
     } = params;
@@ -176,7 +172,6 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
                 db,
                 userId,
                 billedPrice,
-                modelResolved,
                 modelPaidOnly,
             );
             payerBucket = deduction.bucket;
@@ -340,21 +335,17 @@ async function deductUserBalance(
     db: DrizzleD1Database,
     userId: string,
     amount: number,
-    modelResolved?: string,
     modelPaidOnly?: boolean,
 ): Promise<{
     bucket: Bucket | null;
     postDeductionPackBalance: number | null;
 }> {
     try {
-        const isPaidOnly =
-            modelPaidOnly ?? isRegistryPaidOnlyModel(modelResolved);
-
         const { ok, bucket, packBalance } = await atomicDeductUserBalance(
             db,
             userId,
             amount,
-            isPaidOnly,
+            modelPaidOnly ?? false,
         );
         if (!ok) {
             throw new Error(
@@ -384,17 +375,5 @@ async function deductUserBalance(
             error: error instanceof Error ? error.message : String(error),
         });
         throw error;
-    }
-}
-
-function isRegistryPaidOnlyModel(modelResolved: string | undefined): boolean {
-    if (!modelResolved) return false;
-    try {
-        return (
-            getRegistryModelDefinition(modelResolved as ModelName).paidOnly ??
-            false
-        );
-    } catch {
-        return false;
     }
 }

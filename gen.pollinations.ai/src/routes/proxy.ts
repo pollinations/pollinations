@@ -509,6 +509,7 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         validator("query", RealtimeRequestQueryParamsSchema),
+        resolveModel("generate.realtime"),
         handleRealtimeWebSocket,
     )
     .post(

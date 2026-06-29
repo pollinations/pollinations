@@ -1,9 +1,6 @@
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import {
-    getRegistryModelDefinition,
-    type ModelName,
-} from "@shared/registry/registry.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
@@ -71,17 +68,12 @@ function createExpressLikeRequest(
     };
 }
 
-function prepareRequestParameters(requestParams: RequestData): RequestData {
-    let isAudioModel = false;
-    try {
-        const serviceDef = getRegistryModelDefinition(
-            requestParams.model as ModelName,
-        );
-        isAudioModel = serviceDef?.outputModalities?.includes("audio") ?? false;
-    } catch {
-        // Model not in registry.
-    }
-
+function prepareRequestParameters(
+    requestParams: RequestData,
+    modelDefinition: ModelDefinition<string>,
+): RequestData {
+    const isAudioModel =
+        modelDefinition.outputModalities?.includes("audio") ?? false;
     if (!isAudioModel) return requestParams;
 
     const voice = requestParams.voice || requestParams.audio?.voice || "alloy";
@@ -269,6 +261,7 @@ async function generateTextResponse(
         const gatewayContext = communityEndpoint
             ? await communityEndpointGatewayContext(
                   communityEndpoint,
+                  c.var.model.definition,
                   requestData,
                   c.env.BETTER_AUTH_SECRET,
                   c.env.PORTKEY_GATEWAY_URL,
@@ -319,7 +312,10 @@ export async function handleTextContentLocal(
     body: Record<string, unknown>,
 ): Promise<Response> {
     const req = createExpressLikeRequest(c, body, c.req.path);
-    const requestData = prepareRequestParameters(getRequestData(req));
+    const requestData = prepareRequestParameters(
+        getRequestData(req),
+        c.var.model.definition,
+    );
     return generateTextResponse(c, requestData, true);
 }
 
@@ -333,9 +329,12 @@ export async function handleSimpleTextLocal(
         ...c.req.param(),
         0: prompt,
     });
-    const requestData = prepareRequestParameters({
-        ...getRequestData(req),
-        model,
-    });
+    const requestData = prepareRequestParameters(
+        {
+            ...getRequestData(req),
+            model,
+        },
+        c.var.model.definition,
+    );
     return generateTextResponse(c, requestData, true);
 }

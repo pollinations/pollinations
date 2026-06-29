@@ -3,6 +3,7 @@ import {
     type CommunityEndpointRuntime,
     communityChatCompletionsUrl,
     communityEndpointPrices,
+    communityModelDefinition,
     communityModelId,
     communityOpenAIBaseUrl,
     isCommunityEndpointOwnerAllowed,
@@ -199,9 +200,11 @@ describe("community endpoint helpers", () => {
                 completionTextPrice: 0.1,
             }),
         };
+        const modelDefinition = communityModelDefinition(endpoint);
 
         const context = await communityEndpointGatewayContext(
             endpoint,
+            modelDefinition,
             {
                 messages: [{ role: "user", content: "hello" }],
                 max_tokens: 5,
@@ -222,15 +225,8 @@ describe("community endpoint helpers", () => {
                 authKey: "sk_saved_token",
                 model: "gpt-4.1-mini",
             },
-            modelDef: {
-                provider: "community",
-                category: "text",
-                cost: {
-                    promptTextTokens: 0.1,
-                    completionTextTokens: 0.1,
-                },
-            },
         });
+        expect(context.modelDef).toBe(modelDefinition);
         expect(context).not.toHaveProperty("messages");
     });
 });

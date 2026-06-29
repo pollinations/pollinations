@@ -112,7 +112,7 @@ describe("billing deduction", () => {
             isBilledUsage: true,
             totalPrice: 0.01,
             userId,
-            modelResolved,
+            modelPaidOnly: model.paidOnly,
         });
         let balance = await getUserBalance(db, userId);
         expect(balance.tierBalance).toBeCloseTo(0.01, 10);
@@ -123,7 +123,7 @@ describe("billing deduction", () => {
             isBilledUsage: true,
             totalPrice: 0.01,
             userId,
-            modelResolved,
+            modelPaidOnly: model.paidOnly,
         });
         balance = await getUserBalance(db, userId);
         expect(balance.tierBalance).toBeCloseTo(0.01, 10);

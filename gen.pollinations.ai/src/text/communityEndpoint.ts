@@ -1,14 +1,15 @@
 import {
     type CommunityEndpointRuntime,
-    communityModelDefinition,
     communityOpenAIBaseUrl,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
 import type { RequestData, TransformOptions } from "./types.js";
 
 export async function communityEndpointGatewayContext(
     endpoint: CommunityEndpointRuntime,
+    modelDefinition: ModelDefinition<string>,
     requestData: RequestData,
     secret: string,
     portkeyGatewayUrl: string,
@@ -28,7 +29,7 @@ export async function communityEndpointGatewayContext(
             authKey: normalizeCommunityEndpointBearerToken(bearerToken),
             model: endpoint.upstreamModel,
         },
-        modelDef: communityModelDefinition(endpoint),
+        modelDef: modelDefinition,
         requestedModel: endpoint.modelId,
         portkeyGatewayUrl,
         userApiKey,

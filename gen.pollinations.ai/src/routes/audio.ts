@@ -6,10 +6,7 @@ import {
     ELEVENLABS_VOICES,
     resolveElevenLabsVoiceId,
 } from "@shared/registry/audio.ts";
-import {
-    getRegistryModelDefinition,
-    type ModelName,
-} from "@shared/registry/registry.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
     createAudioSecondsUsage,
@@ -220,7 +217,8 @@ export function fixWavHeader(buffer: ArrayBuffer): ArrayBuffer {
 }
 
 export async function generateSpeech(opts: {
-    modelName?: AudioModelName;
+    modelName: string;
+    modelId: string;
     text: string;
     voice: string;
     responseFormat: string;
@@ -228,10 +226,8 @@ export async function generateSpeech(opts: {
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
-    const { modelName, text, voice, responseFormat, apiKey, log } = opts;
-    const resolvedModelName: AudioModelName = modelName ?? "elevenlabs";
-    const elevenLabsModelId =
-        getRegistryModelDefinition(resolvedModelName).modelId;
+    const { modelName, modelId, text, voice, responseFormat, apiKey, log } =
+        opts;
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -267,7 +263,7 @@ export async function generateSpeech(opts: {
 
     const elevenLabsBody: Record<string, unknown> = {
         text,
-        model_id: elevenLabsModelId,
+        model_id: modelId,
         voice_settings: {
             stability: 0.5,
             similarity_boost: 0.75,
@@ -293,10 +289,7 @@ export async function generateSpeech(opts: {
     const contentType = response.headers.get("content-type") || "audio/mpeg";
 
     const usageHeaders = {
-        ...buildUsageHeaders(
-            resolvedModelName,
-            createAudioTokenUsage(text.length),
-        ),
+        ...buildUsageHeaders(modelName, createAudioTokenUsage(text.length)),
         "x-tts-voice": voice,
     };
 
@@ -855,8 +848,10 @@ export function isQwenTtsModel(model: string): model is QwenTtsModelName {
     return QWEN_TTS_MODELS.includes(model as QwenTtsModelName);
 }
 
-function requireTextToAudioModel(model: ModelName): void {
-    const definition = getRegistryModelDefinition(model);
+function requireTextToAudioModel(
+    model: string,
+    definition: ModelDefinition<string>,
+): void {
     const acceptsText = definition.inputModalities?.includes("text");
     const returnsAudio = definition.outputModalities?.includes("audio");
 
@@ -868,7 +863,7 @@ function requireTextToAudioModel(model: ModelName): void {
 }
 
 function requireElevenMusicOptions(
-    model: ModelName,
+    model: string,
     opts: {
         referenceAudio?: File;
         compositionPlan?: unknown;
@@ -1051,13 +1046,14 @@ async function parseSpeechRequest(c: AudioContext): Promise<
 
 export async function generateQwenTts(opts: {
     modelName: QwenTtsModelName;
+    modelId: string;
     text: string;
     voice: string;
     instruct?: string;
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
-    const { modelName, text, voice, instruct, apiKey, log } = opts;
+    const { modelName, modelId, text, voice, instruct, apiKey, log } = opts;
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -1072,17 +1068,16 @@ export async function generateQwenTts(opts: {
         });
     }
 
-    const model = getRegistryModelDefinition(modelName).modelId;
     const qwenVoice = resolveQwenVoice(voice);
 
     log.info("Qwen TTS request: model={model}, voice={voice}, chars={chars}", {
-        model,
+        model: modelId,
         voice: qwenVoice,
         chars: text.length,
     });
 
     const body: Record<string, unknown> = {
-        model,
+        model: modelId,
         input: { text, voice: qwenVoice },
         parameters:
             modelName === "qwen-tts-instruct" && instruct ? { instruct } : {},
@@ -1718,7 +1713,8 @@ async function dispatchAudioGeneration(
         return withSafetyHeaders(
             c,
             await generateQwenTts({
-                modelName: c.var.model.resolved,
+                modelName: c.var.model.resolved as QwenTtsModelName,
+                modelId: c.var.model.definition.modelId,
                 text,
                 voice,
                 instruct,
@@ -1731,7 +1727,8 @@ async function dispatchAudioGeneration(
     return withSafetyHeaders(
         c,
         await generateSpeech({
-            modelName: c.var.model.resolved as AudioModelName,
+            modelName: c.var.model.resolved,
+            modelId: c.var.model.definition.modelId,
             text,
             voice,
             responseFormat,
@@ -1757,7 +1754,7 @@ export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
     }
 
     const query = c.req.valid("query" as never) as SimpleAudioQuery;
-    requireTextToAudioModel(c.var.model.resolved as ModelName);
+    requireTextToAudioModel(c.var.model.resolved, c.var.model.definition);
     text = await applySafety(c, text, query.safe);
 
     const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
@@ -1961,8 +1958,11 @@ export const audioRoutes = new Hono<Env>()
                 loop,
                 prompt_influence,
             } = await parseSpeechRequest(c);
-            requireTextToAudioModel(c.var.model.resolved as ModelName);
-            requireElevenMusicOptions(c.var.model.resolved as ModelName, {
+            requireTextToAudioModel(
+                c.var.model.resolved,
+                c.var.model.definition,
+            );
+            requireElevenMusicOptions(c.var.model.resolved, {
                 referenceAudio: reference_audio,
                 compositionPlan: composition_plan,
                 conditioningRef: conditioning_ref,

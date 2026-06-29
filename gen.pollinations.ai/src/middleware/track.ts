@@ -228,7 +228,6 @@ export const track = (eventType: EventType) =>
                         apiKeyId: c.var.auth?.apiKey?.id,
                         apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
                         byopClientKeyId,
-                        modelResolved: c.var.model?.resolved,
                         modelPaidOnly: c.var.model?.definition.paidOnly,
                         communityModelReward: communityEndpoint
                             ? {

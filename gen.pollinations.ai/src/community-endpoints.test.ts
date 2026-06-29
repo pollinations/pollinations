@@ -966,22 +966,15 @@ fixtureTest(
 );
 
 fixtureTest(
-    "manages my-models through account API with a secret key that has account keys permission",
+    "manages my-models through account API with a key that has account keys permission",
     async () => {
-        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerGithubUsername = `pk-${crypto.randomUUID().slice(0, 8)}`;
         const { key } = await createTestApiKey({
-            accountPermissions: ["keys"],
-            user: {
-                githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
-                githubUsername: ownerGithubUsername,
-            },
-        });
-        const publishable = await createTestApiKey({
             type: "publishable",
             accountPermissions: ["keys"],
             user: {
                 githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
-                githubUsername: `pk-${crypto.randomUUID().slice(0, 8)}`,
+                githubUsername: ownerGithubUsername,
             },
         });
         const denied = await createTestApiKey({
@@ -1001,19 +994,6 @@ fixtureTest(
             }),
         );
         expect(deniedResponse.status).toBe(403);
-
-        const publishableResponse = await fetchEnterApi(
-            enterApi,
-            new Request("http://localhost:3000/api/account/my-models", {
-                headers: {
-                    Authorization: `Bearer ${publishable.key}`,
-                },
-            }),
-        );
-        expect(publishableResponse.status).toBe(403);
-        await expect(publishableResponse.text()).resolves.toBe(
-            "Only secret keys (sk_) can manage my models",
-        );
 
         const listResponse = await fetchEnterApi(
             enterApi,

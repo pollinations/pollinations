@@ -1454,7 +1454,7 @@ test("account quest history requires account usage permission for API keys", asy
     expect(response.status).toBe(403);
 });
 
-test("account quest history accepts secret account keys admin permission", async ({
+test("account quest history accepts account keys admin permission", async ({
     sessionToken,
 }) => {
     const adminKey = await createAdminApiKey(

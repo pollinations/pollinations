@@ -229,7 +229,7 @@ test("GET /api/account/usage forwards stable cursor and returns event cursor", a
     expect(usageCalls[0].query.before_event_id).toBe("event-1");
 });
 
-test("GET /api/account/usage accepts secret account keys admin permission", async ({
+test("GET /api/account/usage accepts account keys admin permission", async ({
     sessionToken,
     mocks,
 }) => {

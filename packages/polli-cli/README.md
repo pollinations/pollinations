@@ -93,7 +93,7 @@ polli quests --completed     # completed and earned quests
 polli my-models list         # registered community text models
 ```
 
-`account:usage` is enough for read-only account state like usage and quests. A secret key with `account:keys` is an account-admin key: it can manage keys and my-models, and can also read usage and quests. Quest claiming remains in the dashboard.
+`account:usage` is enough for read-only account state like usage and quests. Any key with `account:keys` is an account-admin key: it can manage keys and my-models, and can also read usage and quests. Quest claiming remains in the dashboard.
 
 ## Links
 

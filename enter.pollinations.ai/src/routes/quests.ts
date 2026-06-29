@@ -75,7 +75,7 @@ function requireUsagePermission(apiKey?: {
     if (apiKey && !hasAccountReadPermission(apiKey, "usage")) {
         throw new HTTPException(403, {
             message:
-                "API key does not have 'account:usage' permission or secret 'account:keys' admin permission",
+                "API key does not have 'account:usage' or 'account:keys' permission",
         });
     }
 }
@@ -178,7 +178,7 @@ export const questsRoutes = new Hono<Env>()
             tags: ["✨ Quests"],
             summary: "Get Quest Rewards",
             description:
-                "Returns earned quest rewards for the authenticated account, including claim state. Requires `account:usage` or secret-key `account:keys` admin permission when using API keys.",
+                "Returns earned quest rewards for the authenticated account, including claim state. Requires `account:usage` or `account:keys` admin permission when using API keys.",
             responses: {
                 200: {
                     description: "Quest rewards",
@@ -191,7 +191,7 @@ export const questsRoutes = new Hono<Env>()
                 401: { description: "Unauthorized" },
                 403: {
                     description:
-                        "Permission denied - API key missing `account:usage` or secret-key `account:keys` permission",
+                        "Permission denied - API key missing `account:usage` or `account:keys` permission",
                 },
             },
         }),

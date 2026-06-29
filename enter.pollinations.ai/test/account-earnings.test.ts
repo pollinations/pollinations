@@ -8,18 +8,21 @@ const authHeaders = (sessionToken: string) => ({
 
 const earningsRow = (overrides: Record<string, unknown> = {}) => ({
     date: "2026-04-14",
-    app_key_id: "key_byop_app_1",
-    app_name: "BYOP App",
+    entity_id: "key_byop_app_1",
+    entity_name: "BYOP App",
+    source: "byop_markup",
     requests: 5,
     baseline_price: 0.4,
     pollen_earned: 0.1,
+    paid_earned: 0.08,
+    tier_earned: 0.02,
     cost_usd: 0.5,
-    markup_rate: 0.25,
+    reward_rate: 0.25,
     unique_users: 0,
     ...overrides,
 });
 
-test("GET /api/account/earnings returns baseline_price, pollen_earned, and cost_usd in JSON", async ({
+test("GET /api/account/earnings returns source rollups and additive money totals in JSON", async ({
     sessionToken,
     mocks,
 }) => {
@@ -32,18 +35,51 @@ test("GET /api/account/earnings returns baseline_price, pollen_earned, and cost_
             requests: 5,
             baseline_price: 0.4,
             pollen_earned: 0.1,
+            paid_earned: 0.08,
+            tier_earned: 0.02,
             cost_usd: 0.5,
             unique_users: 3,
         }),
         earningsRow({
             date: "",
-            app_key_id: "",
-            app_name: "",
+            entity_id: "community/owner/model",
+            entity_name: "Community Model",
+            source: "community_model",
+            requests: 7,
+            baseline_price: 0.4,
+            pollen_earned: 0.3,
+            paid_earned: 0.12,
+            tier_earned: 0.18,
+            cost_usd: 0.4,
+            reward_rate: 0.75,
+            unique_users: 4,
+        }),
+        earningsRow({
+            date: "",
+            entity_id: "",
+            entity_name: "",
+            source: "byop_markup",
             requests: 5,
             baseline_price: 0.4,
             pollen_earned: 0.1,
+            paid_earned: 0.08,
+            tier_earned: 0.02,
             cost_usd: 0.5,
             unique_users: 3,
+        }),
+        earningsRow({
+            date: "",
+            entity_id: "",
+            entity_name: "",
+            source: "community_model",
+            requests: 7,
+            baseline_price: 0.4,
+            pollen_earned: 0.3,
+            paid_earned: 0.12,
+            tier_earned: 0.18,
+            cost_usd: 0.4,
+            reward_rate: 0.75,
+            unique_users: 4,
         }),
     ];
 
@@ -54,9 +90,10 @@ test("GET /api/account/earnings returns baseline_price, pollen_earned, and cost_
     expect(response.status).toBe(200);
 
     const body = (await response.json()) as {
-        daily: Record<string, number>[];
-        perApp: Record<string, number>[];
-        global: Record<string, number> | null;
+        daily: Record<string, unknown>[];
+        perEntity: Record<string, unknown>[];
+        bySource: Record<string, unknown>[];
+        total: Record<string, unknown>;
     };
 
     expect(body.daily).toHaveLength(1);
@@ -64,18 +101,42 @@ test("GET /api/account/earnings returns baseline_price, pollen_earned, and cost_
         baseline_price: 0.4,
         pollen_earned: 0.1,
         cost_usd: 0.5,
-        markup_rate: 0.25,
+        reward_rate: 0.25,
     });
-    expect(body.perApp).toHaveLength(1);
-    expect(body.perApp[0]).toMatchObject({
-        baseline_price: 0.4,
-        pollen_earned: 0.1,
-        cost_usd: 0.5,
+    expect(body.perEntity).toHaveLength(2);
+    expect(body.perEntity[0]).toMatchObject({
+        source: "community_model",
+        pollen_earned: 0.3,
     });
-    expect(body.global).toMatchObject({
-        baseline_price: 0.4,
+    expect(body.bySource).toHaveLength(2);
+    expect(body.bySource).toEqual([
+        expect.objectContaining({
+            source: "community_model",
+            requests: 7,
+            pollen_earned: 0.3,
+            reward_rate: 0.75,
+            unique_users: 4,
+        }),
+        expect.objectContaining({
+            source: "byop_markup",
+            requests: 5,
+            pollen_earned: 0.1,
+            reward_rate: 0.25,
+            unique_users: 3,
+        }),
+    ]);
+    expect(Number(body.total.pollen_earned)).toBeCloseTo(0.4);
+    expect(Number(body.total.paid_earned)).toBeCloseTo(0.2);
+    expect(Number(body.total.tier_earned)).toBeCloseTo(0.2);
+    expect(body.total).not.toHaveProperty("requests");
+    expect(body.total).not.toHaveProperty("unique_users");
+    expect(body.total).not.toHaveProperty("reward_rate");
+    expect(body).not.toHaveProperty("global");
+    expect(
+        body.bySource.find((row) => row.source === "byop_markup"),
+    ).toMatchObject({
+        source: "byop_markup",
         pollen_earned: 0.1,
-        cost_usd: 0.5,
     });
 });
 
@@ -90,15 +151,19 @@ test("GET /api/account/earnings emits baseline_price/pollen_earned/cost_usd colu
             date: "2026-04-14",
             baseline_price: 0.4,
             pollen_earned: 0.1,
+            paid_earned: 0.08,
+            tier_earned: 0.02,
             cost_usd: 0.5,
-            markup_rate: 0.25,
+            reward_rate: 0.25,
         }),
         earningsRow({
             date: "2026-04-15",
             baseline_price: 0.8,
             pollen_earned: 0.2,
+            paid_earned: 0.12,
+            tier_earned: 0.08,
             cost_usd: 1,
-            markup_rate: 0.25,
+            reward_rate: 0.25,
         }),
     ];
 
@@ -113,12 +178,14 @@ test("GET /api/account/earnings emits baseline_price/pollen_earned/cost_usd colu
     const [header, ...rows] = csv.split("\n");
 
     expect(header).toBe(
-        "date,app_key_id,app_name,requests,baseline_price,pollen_earned,cost_usd,markup_rate",
+        "date,source,entity_id,entity_name,requests,baseline_price,pollen_earned,paid_earned,tier_earned,cost_usd,reward_rate",
     );
     expect(rows[0]).toBe(
-        "2026-04-14,key_byop_app_1,BYOP App,5,0.4,0.1,0.5,0.25",
+        "2026-04-14,byop_markup,key_byop_app_1,BYOP App,5,0.4,0.1,0.08,0.02,0.5,0.25",
     );
-    expect(rows[1]).toBe("2026-04-15,key_byop_app_1,BYOP App,5,0.8,0.2,1,0.25");
+    expect(rows[1]).toBe(
+        "2026-04-15,byop_markup,key_byop_app_1,BYOP App,5,0.8,0.2,0.12,0.08,1,0.25",
+    );
 });
 
 test("GET /api/account/earnings?format=csv neutralizes app name formulas", async ({
@@ -129,7 +196,7 @@ test("GET /api/account/earnings?format=csv neutralizes app name formulas", async
 
     mocks.tinybird.state.earningsResponse = [
         earningsRow({
-            app_name: '=HYPERLINK("https://example.test","click")',
+            entity_name: '=HYPERLINK("https://example.test","click")',
         }),
     ];
 

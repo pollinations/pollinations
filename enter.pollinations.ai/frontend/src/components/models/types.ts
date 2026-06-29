@@ -6,6 +6,8 @@ export type ModelCategory =
     | "embedding"
     | "realtime";
 
+export type ModelDisplayCategory = ModelCategory | "community";
+
 export type ModelCapability =
     | "tool_calling"
     | "reasoning"
@@ -16,6 +18,8 @@ export type PriceKind =
     | "text"
     | "image"
     | "cached"
+    | "cacheWrite"
+    | "reasoning"
     | "video"
     | "audioIn"
     | "audioOut";
@@ -34,6 +38,7 @@ export type ModelPriceLine = {
 export type ModelPrice = {
     name: string;
     type: ModelCategory;
+    community?: boolean;
     displayName?: string;
     description?: string;
     brand?: string;

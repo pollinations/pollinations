@@ -3,7 +3,7 @@ import { getUserBalance } from "@shared/billing/balance.ts";
 import { atomicDeductUserBalance } from "@shared/billing/deduction.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
-import { getModelDefinition } from "@shared/registry/registry.ts";
+import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
 import { TIER_POLLEN, type TierName } from "@shared/tier-config.ts";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -431,7 +431,7 @@ describe("Tier System End-to-End", () => {
             const db = drizzle(env.DB);
             const userId = `azure-depletion-${crypto.randomUUID()}`;
             const modelResolved = "openai-fast";
-            const model = getModelDefinition(modelResolved);
+            const model = getRegistryModelDefinition(modelResolved);
 
             expect(model.provider).toBe("azure");
             expect(model.paidOnly).not.toBe(true);

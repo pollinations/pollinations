@@ -3,6 +3,7 @@ import {
     type ApiKeyType,
     createApiKeyForUser,
 } from "@shared/auth/api-key-creation.ts";
+import { isCommunityEndpointOwnerAllowed } from "@shared/community-endpoints.ts";
 import {
     apikey as apikeyTable,
     user as userTable,
@@ -418,6 +419,10 @@ const usageDailyQuerySchema = z.object({
     api_key_ids: commaSeparatedQueryList,
 });
 
+const earningsQuerySchema = usageDailyQuerySchema.extend({
+    entity_ids: commaSeparatedQueryList,
+});
+
 type DailyUsageRecord = {
     date: string;
     model: string | null;
@@ -504,14 +509,23 @@ function dailyUsageRecordToCsvRow(row: DailyUsageRecord): string {
 
 type DeveloperEarningsRow = {
     date: string;
-    app_key_id: string;
-    app_name: string;
+    entity_id: string;
+    entity_name: string;
+    source: "byop_markup" | "community_model";
     requests: number;
     baseline_price: number;
     pollen_earned: number;
+    paid_earned: number;
+    tier_earned: number;
     cost_usd: number;
-    markup_rate: number;
+    reward_rate: number;
     unique_users: number;
+};
+
+type DeveloperEarningsTotal = {
+    pollen_earned: number;
+    paid_earned: number;
+    tier_earned: number;
 };
 
 const developerEarningsRowSchema = z.object({
@@ -520,23 +534,34 @@ const developerEarningsRowSchema = z.object({
         .describe(
             "Date bucket (YYYY-MM-DD or hourly); empty string on rollup rows",
         ),
-    app_key_id: z
+    entity_id: z
         .string()
-        .describe("BYOP app key id; empty string on the global rollup row"),
-    app_name: z.string().describe("App display name"),
+        .describe(
+            "Earning entity id (BYOP app key or community model); empty string on source rollup rows",
+        ),
+    entity_name: z.string().describe("Earning entity display name"),
+    source: z
+        .enum(["byop_markup", "community_model"])
+        .describe("Reward source, such as byop_markup or community_model"),
     requests: z.number().describe("Number of billed requests"),
     baseline_price: z
         .number()
         .describe("Model cost before markup (sum over the bucket)"),
     pollen_earned: z
         .number()
-        .describe("Developer credit — markup take (cost_usd − baseline_price)"),
+        .describe("Developer credit earned over the bucket"),
+    paid_earned: z
+        .number()
+        .describe("Developer credit earned from paid-balance spend"),
+    tier_earned: z
+        .number()
+        .describe("Developer credit earned from tier-balance spend"),
     cost_usd: z
         .number()
         .describe(
-            "Markup-inclusive total charged to payers (sum over the bucket)",
+            "Reward basis total for the bucket; BYOP rows use payer charge, community model rows use model price",
         ),
-    markup_rate: z.number().describe("Average markup rate applied"),
+    reward_rate: z.number().describe("Average reward or markup rate applied"),
     unique_users: z
         .number()
         .describe(
@@ -544,20 +569,50 @@ const developerEarningsRowSchema = z.object({
         ),
 });
 
+const developerEarningsTotalSchema = z.object({
+    pollen_earned: z
+        .number()
+        .describe("Total developer credit earned across earning sources"),
+    paid_earned: z
+        .number()
+        .describe("Total developer credit earned from paid-balance spend"),
+    tier_earned: z
+        .number()
+        .describe("Total developer credit earned from tier-balance spend"),
+});
+
 const developerEarningsResponseSchema = z.object({
     daily: z
         .array(developerEarningsRowSchema)
-        .describe("Per-(date, app) buckets for the period"),
-    perApp: z
+        .describe("Per-(date, earning entity) buckets for the period"),
+    perEntity: z
         .array(developerEarningsRowSchema)
-        .describe("Per-app rollups for the period"),
-    global: developerEarningsRowSchema
-        .nullable()
-        .describe("Global rollup across all apps for the period"),
+        .describe("Per-earning-entity rollups for the period"),
+    bySource: z
+        .array(developerEarningsRowSchema)
+        .describe(
+            "Per-source rollups for the period. Source-specific request, user, basis, and rate metrics are meaningful here.",
+        ),
+    total: developerEarningsTotalSchema.describe(
+        "Additive money totals across all earning sources. Non-additive metrics such as requests, users, basis, and rates are intentionally source-specific.",
+    ),
 });
 
 function dailyEarningsRowToCsvRow(row: DeveloperEarningsRow): string {
-    return `${escapeCSV(row.date)},${escapeCSV(row.app_key_id)},${escapeCSV(row.app_name)},${row.requests},${row.baseline_price},${row.pollen_earned},${row.cost_usd},${row.markup_rate}`;
+    return `${escapeCSV(row.date)},${escapeCSV(row.source)},${escapeCSV(row.entity_id)},${escapeCSV(row.entity_name)},${row.requests},${row.baseline_price},${row.pollen_earned},${row.paid_earned},${row.tier_earned},${row.cost_usd},${row.reward_rate}`;
+}
+
+function totalDeveloperEarnings(
+    rows: DeveloperEarningsRow[],
+): DeveloperEarningsTotal {
+    return rows.reduce(
+        (total, row) => ({
+            pollen_earned: total.pollen_earned + row.pollen_earned,
+            paid_earned: total.paid_earned + row.paid_earned,
+            tier_earned: total.tier_earned + row.tier_earned,
+        }),
+        { pollen_earned: 0, paid_earned: 0, tier_earned: 0 },
+    );
 }
 
 async function fetchDetailedUsagePage(
@@ -678,6 +733,11 @@ const profileResponseSchema = z.object({
         .nullable()
         .describe(
             "Next pollen refill timestamp (ISO 8601). `null` for tiers with no refill.",
+        ),
+    communityEndpointsAllowed: z
+        .boolean()
+        .describe(
+            "Whether the account is allowed to manage community endpoints.",
         ),
     name: z
         .string()
@@ -801,6 +861,7 @@ export const accountRoutes = new Hono<Env>()
             const db = drizzle(c.env.DB);
             const users = await db
                 .select({
+                    githubId: userTable.githubId,
                     githubUsername: userTable.githubUsername,
                     image: userTable.image,
                     tier: userTable.tier,
@@ -821,6 +882,8 @@ export const accountRoutes = new Hono<Env>()
                 image: profile.image ?? null,
                 tier: profile.tier,
                 nextResetAt: getNextRefillAt(profile.tier),
+                communityEndpointsAllowed:
+                    isCommunityEndpointOwnerAllowed(profile),
                 ...(includeProfilePII && {
                     name: profile.name ?? null,
                     email: profile.email ?? null,
@@ -1134,10 +1197,11 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Developer Earnings",
             description:
-                "Returns developer earnings (BYOP markup) in one response: per-(date, app) buckets, per-app rollups, and the global rollup across all apps. Each row breaks the markup math down into `baseline_price` (model cost before markup), `pollen_earned` (developer credit = `cost_usd − baseline_price`), `cost_usd` (markup-inclusive total charged to payers), and average `markup_rate`. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. Requires `account:usage` permission when using API keys.",
+                "Returns developer earnings in one response: per-(date, entity) buckets, per-entity rollups, per-source rollups, and additive money totals across BYOP apps and community models. Source-specific rows include `requests`, `baseline_price`, reward basis `cost_usd`, `reward_rate`, and `unique_users`; the top-level total only includes additive earned-pollen fields. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. Requires `account:usage` permission when using API keys.",
             responses: {
                 200: {
-                    description: "Combined earnings buckets and rollups",
+                    description:
+                        "Source-specific earnings buckets and additive totals",
                     content: {
                         "application/json": {
                             schema: resolver(developerEarningsResponseSchema),
@@ -1151,7 +1215,7 @@ export const accountRoutes = new Hono<Env>()
                 },
             },
         }),
-        validator("query", usageDailyQuerySchema),
+        validator("query", earningsQuerySchema),
         async (c) => {
             const log = c.get("log").getChild("earnings");
 
@@ -1174,21 +1238,23 @@ export const accountRoutes = new Hono<Env>()
                 granularity,
                 period,
                 api_key_ids: apiKeyIds,
+                entity_ids: entityIds,
             } = c.req.valid("query");
             const grain = granularity === "day" ? "hour" : "day";
+            const selectedEntityIds =
+                entityIds.length > 0 ? entityIds : apiKeyIds;
             const { userId: devUserId, overridden: devUserOverridden } =
                 resolveUsageTargetUserId(c.env, user.id, apiKey);
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = requireTinybirdReadToken(c.env);
             const kv = c.env.KV;
-            // v2: payload added `baseline_price` and `cost_usd` — bump to drop
-            // any old cached rows that would render as undefined in CSV.
+            // v5: no blended global row; total contains additive money fields only.
             const cacheKeyPrefix = devUserOverridden
-                ? `earnings:v2:debug:${devUserId}`
-                : `earnings:v2:${devUserId}`;
+                ? `earnings:v5:debug:${devUserId}`
+                : `earnings:v5:${devUserId}`;
             const periodCacheKey =
                 granularity && period ? `${granularity}:${period}` : `${days}d`;
-            const cacheKey = `${cacheKeyPrefix}:${periodCacheKey}:grain:${grain}:${apiKeyIds.length > 0 ? `keys:${apiKeyIds.join(",")}` : "all"}`;
+            const cacheKey = `${cacheKeyPrefix}:${periodCacheKey}:grain:${grain}:${selectedEntityIds.length > 0 ? `entities:${selectedEntityIds.join(",")}` : "all"}`;
             const filenamePeriod = usageWindowFilenamePart(days, {
                 granularity,
                 period,
@@ -1199,8 +1265,9 @@ export const accountRoutes = new Hono<Env>()
 
             type EarningsPayload = {
                 daily: DeveloperEarningsRow[];
-                perApp: DeveloperEarningsRow[];
-                global: DeveloperEarningsRow | null;
+                perEntity: DeveloperEarningsRow[];
+                bySource: DeveloperEarningsRow[];
+                total: DeveloperEarningsTotal;
             };
 
             try {
@@ -1230,20 +1297,26 @@ export const accountRoutes = new Hono<Env>()
                             since: window.since,
                             until: window.until,
                             grain,
-                            api_key_ids:
-                                apiKeyIds.length > 0
-                                    ? apiKeyIds.join(",")
+                            entity_ids:
+                                selectedEntityIds.length > 0
+                                    ? selectedEntityIds.join(",")
                                     : undefined,
                         },
                     );
                     const daily = rows.filter((r) => r.date !== "");
                     const rollups = rows.filter((r) => r.date === "");
-                    const perApp = [...rollups]
-                        .filter((r) => r.app_key_id !== "")
+                    const perEntity = [...rollups]
+                        .filter((r) => r.entity_id !== "")
                         .sort((a, b) => b.pollen_earned - a.pollen_earned);
-                    const global =
-                        rollups.find((r) => r.app_key_id === "") ?? null;
-                    payload = { daily, perApp, global };
+                    const bySource = [...rollups]
+                        .filter((r) => r.entity_id === "")
+                        .sort((a, b) => b.pollen_earned - a.pollen_earned);
+                    payload = {
+                        daily,
+                        perEntity,
+                        bySource,
+                        total: totalDeveloperEarnings(bySource),
+                    };
 
                     try {
                         await kv.put(cacheKey, JSON.stringify(payload), {
@@ -1255,21 +1328,21 @@ export const accountRoutes = new Hono<Env>()
                 }
 
                 log.debug(
-                    "Fetched earnings: requesterUserId={requesterUserId} devUserId={devUserId} override={override} days={days} dailyCount={dailyCount} appCount={appCount} cached={cached}",
+                    "Fetched earnings: requesterUserId={requesterUserId} devUserId={devUserId} override={override} days={days} dailyCount={dailyCount} entityCount={entityCount} cached={cached}",
                     {
                         requesterUserId: user.id,
                         devUserId,
                         override: devUserOverridden,
                         days,
                         dailyCount: payload.daily.length,
-                        appCount: payload.perApp.length,
+                        entityCount: payload.perEntity.length,
                         cached,
                     },
                 );
 
                 if (format === "csv") {
                     const header =
-                        "date,app_key_id,app_name,requests,baseline_price,pollen_earned,cost_usd,markup_rate";
+                        "date,source,entity_id,entity_name,requests,baseline_price,pollen_earned,paid_earned,tier_earned,cost_usd,reward_rate";
                     const rows = payload.daily.map(dailyEarningsRowToCsvRow);
                     const csv = [header, ...rows].join("\n");
 

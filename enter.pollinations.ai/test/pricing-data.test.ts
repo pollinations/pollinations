@@ -12,9 +12,9 @@ import {
     calculateCost,
     calculatePrice,
     getCostDefinition,
-    getModelDefinition,
     getModels,
     getPriceDefinition,
+    getRegistryModelDefinition,
     type ModelName,
 } from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
@@ -47,6 +47,11 @@ const tokenPriceRows = [
         kind: "cached",
     },
     {
+        registryField: "promptCacheWriteTokens",
+        direction: "input",
+        kind: "cacheWrite",
+    },
+    {
         registryField: "promptAudioTokens",
         direction: "input",
         kind: "audioIn",
@@ -56,6 +61,11 @@ const tokenPriceRows = [
         registryField: "completionTextTokens",
         direction: "output",
         kind: "text",
+    },
+    {
+        registryField: "completionReasoningTokens",
+        direction: "output",
+        kind: "reasoning",
     },
     {
         registryField: "completionAudioTokens",
@@ -130,12 +140,59 @@ test("catalog prices format token rates through formatPricePer1M", () => {
     expect(checkedFields).toBeGreaterThan(0);
 });
 
+test("catalog prices keep community text models flagged for display", () => {
+    const [communityModel] = getModelPricesFromCatalog([
+        {
+            name: "community/voodoohop/openai",
+            category: "text",
+            community: true,
+            brand: "Community",
+            title: "OpenAI relay",
+            description: "OpenAI relay",
+            pricing: {
+                currency: "pollen",
+                promptTextTokens: "0.0000001",
+                completionTextTokens: "0.0000002",
+            },
+            input_modalities: ["text"],
+            output_modalities: ["text"],
+            capabilities: [],
+        },
+    ]);
+
+    expect(communityModel).toMatchObject({
+        name: "community/voodoohop/openai",
+        type: "text",
+        community: true,
+        displayName: "OpenAI relay",
+        brand: "Community",
+        capabilities: [],
+    });
+    expect(communityModel?.prices).toEqual(
+        expect.arrayContaining([
+            {
+                direction: "input",
+                kind: "text",
+                price: "0.1",
+                unit: "token",
+            },
+            {
+                direction: "output",
+                kind: "text",
+                price: "0.2",
+                unit: "token",
+            },
+        ]),
+    );
+    expect(communityModel.description).toBeUndefined();
+});
+
 test("model info exposes public capabilities without raw implementation flags", () => {
     let checkedCapabilities = 0;
 
     for (const model of getCatalogModels()) {
         const publicModel = model as Record<string, unknown>;
-        const definition = getModelDefinition(model.name as ModelName);
+        const definition = getRegistryModelDefinition(model.name as ModelName);
         const expectedCapabilities = [
             definition.tools ? "tool_calling" : undefined,
             definition.reasoning ? "reasoning" : undefined,

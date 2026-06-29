@@ -37,12 +37,14 @@ export type SectionType =
     | "audio"
     | "realtime"
     | "text"
+    | "community"
     | "embedding";
 
 type UnifiedModelTableProps = {
     imageModels: ModelPrice[];
     videoModels: ModelPrice[];
     textModels: ModelPrice[];
+    communityModels: ModelPrice[];
     audioModels: ModelPrice[];
     realtimeModels: ModelPrice[];
     embeddingModels: ModelPrice[];
@@ -96,6 +98,7 @@ export const sectionLabels: Record<SectionType, string> = {
     audio: "Audio",
     realtime: "Realtime",
     text: "Text",
+    community: "Community",
     embedding: "Embedding",
 };
 
@@ -339,6 +342,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     imageModels,
     videoModels,
     textModels,
+    communityModels,
     audioModels,
     realtimeModels,
     embeddingModels,
@@ -350,6 +354,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
         { type: "audio", models: audioModels },
         { type: "realtime", models: realtimeModels },
         { type: "text", models: textModels },
+        { type: "community", models: communityModels },
         { type: "embedding", models: embeddingModels },
     ];
 

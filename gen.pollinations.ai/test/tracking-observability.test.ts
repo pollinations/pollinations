@@ -4,7 +4,14 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import type { AuthUser } from "@shared/auth/api-key.ts";
+import {
+    COMMUNITY_MODEL_REWARD_RATE,
+    type CommunityEndpointRuntime,
+    communityEndpointPrices,
+    communityModelDefinition,
+} from "@shared/community-endpoints.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
+import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
@@ -12,6 +19,7 @@ import { requestId } from "hono/request-id";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
 import { logger } from "@/middleware/logger.ts";
+import type { ModelVariables } from "@/middleware/model.ts";
 import { track } from "@/middleware/track.ts";
 
 afterEach(() => {
@@ -21,6 +29,11 @@ afterEach(() => {
 function createTestApp(
     consumePollen: (amount: number) => Promise<void>,
     user?: AuthUser,
+    model: ModelVariables["model"] = {
+        requested: "openai",
+        resolved: "openai",
+        definition: getRegistryModelDefinition("openai"),
+    },
 ) {
     const app = new Hono<Env>();
 
@@ -43,10 +56,7 @@ function createTestApp(
             }),
         });
         c.set("frontendKeyRateLimit", { consumePollen });
-        c.set("model", {
-            requested: "openai",
-            resolved: "openai",
-        });
+        c.set("model", model);
         await next();
     });
     app.post(
@@ -79,6 +89,25 @@ function createTestApp(
     return app;
 }
 
+function createCommunityEndpoint(
+    ownerUserId: string,
+): CommunityEndpointRuntime {
+    return {
+        id: "community-endpoint-test",
+        ownerUserId,
+        modelId: "community/test-owner/test-model",
+        name: "test-model",
+        description: null,
+        baseUrl: "https://community.example.test/openai",
+        upstreamModel: "upstream-test-model",
+        bearerTokenCiphertext: "encrypted",
+        ...communityEndpointPrices({
+            promptTextPrice: 0.0001,
+            completionTextPrice: 0.0002,
+        }),
+    };
+}
+
 // App that returns a wrong content-type for the given event type, exercising
 // the not-billed content-type guards in trackResponse.
 function createWrongContentTypeApp(
@@ -103,7 +132,11 @@ function createWrongContentTypeApp(
             getBalance: async () => ({ tierBalance: 1, packBalance: 0 }),
         });
         c.set("frontendKeyRateLimit", { consumePollen });
-        c.set("model", { requested: "openai", resolved: "openai" });
+        c.set("model", {
+            requested: "openai",
+            resolved: "openai",
+            definition: getRegistryModelDefinition("openai"),
+        });
         await next();
     });
     app.all("/upstream", track(eventType), () => response.clone());
@@ -131,7 +164,11 @@ function createHeaderApp(extraHeaders: Record<string, string>) {
             getBalance: async () => ({ tierBalance: 1, packBalance: 0 }),
         });
         c.set("frontendKeyRateLimit", { consumePollen: async () => {} });
-        c.set("model", { requested: "openai", resolved: "openai" });
+        c.set("model", {
+            requested: "openai",
+            resolved: "openai",
+            definition: getRegistryModelDefinition("openai"),
+        });
         await next();
     });
     app.post(
@@ -321,6 +358,108 @@ describe("tracking observability", () => {
 
         expect(response.status).toBe(200);
         expect(enterFetch).not.toHaveBeenCalled();
+    });
+
+    it("emits the credited community model reward amount", async () => {
+        const db = drizzle(env.DB);
+        const payerId = `track-community-payer-${crypto.randomUUID()}`;
+        const ownerId = `track-community-owner-${crypto.randomUUID()}`;
+        await db.insert(userTable).values([
+            {
+                id: payerId,
+                email: `${payerId}@test.local`,
+                name: "Track Community Payer",
+                tier: "flower",
+                tierBalance: 1,
+                packBalance: 0,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+            {
+                id: ownerId,
+                email: `${ownerId}@test.local`,
+                name: "Track Community Owner",
+                tier: "flower",
+                tierBalance: 0,
+                packBalance: 0,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+        ]);
+        const [payer] = await db
+            .select()
+            .from(userTable)
+            .where(eq(userTable.id, payerId))
+            .limit(1);
+        if (!payer) throw new Error("Expected inserted payer");
+
+        const endpoint = createCommunityEndpoint(ownerId);
+        const model: ModelVariables["model"] = {
+            requested: endpoint.modelId,
+            resolved: endpoint.modelId,
+            definition: communityModelDefinition(endpoint),
+            communityEndpoint: endpoint,
+        };
+
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+
+        const ctx = createExecutionContext();
+        const response = await createTestApp(consumePollen, payer, model).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: endpoint.modelId,
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                ...env,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as unknown as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = (await tinybirdRequests[0].json()) as Record<
+            string,
+            unknown
+        >;
+        expect(event).toMatchObject({
+            resolvedModelRequested: endpoint.modelId,
+            communityModelRewardUserId: ownerId,
+            communityModelRewardRate: COMMUNITY_MODEL_REWARD_RATE,
+            communityModelRewardAmount: 0.15,
+            devPrice: 0.2,
+            totalPrice: 0.2,
+        });
+        expect(event).not.toHaveProperty("communityModelRewardModelId");
+
+        const [owner] = await db
+            .select({ tierBalance: userTable.tierBalance })
+            .from(userTable)
+            .where(eq(userTable.id, ownerId))
+            .limit(1);
+        expect(owner?.tierBalance).toBeCloseTo(0.15, 10);
     });
 
     it("does not bill image generation that returns a JSON (non-image) content-type", async () => {

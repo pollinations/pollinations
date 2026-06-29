@@ -35,7 +35,6 @@ import {
     getTextModelsInfo,
     type ModelInfo,
 } from "@shared/registry/model-info.ts";
-import { getModelDefinition } from "@shared/registry/registry.ts";
 import {
     type CreateChatCompletionRequest,
     CreateChatCompletionRequestSchema,
@@ -68,6 +67,10 @@ import {
     handleTextContentLocal,
 } from "@/text/handler.ts";
 import { generationAccess } from "@/utils/generation-access.ts";
+import {
+    communityTextSupportedEndpoints,
+    getCommunityTextModelsInfo,
+} from "../community-models.ts";
 import { handleSimpleAudio } from "./audio.ts";
 import { handleRealtimeWebSocket } from "./realtime.ts";
 
@@ -84,6 +87,11 @@ const factory = createFactory<Env>();
 const textBodyLimit = bodyLimit({
     maxSize: 20 * 1024 * 1024,
 });
+const TEXT_MODEL_ENDPOINTS = [
+    "/v1/chat/completions",
+    "/text",
+    "/text/{prompt}",
+];
 
 // Shared handler for image and video generation (used by both /image/ and /video/ routes)
 const imageVideoHandlers = factory.createHandlers(
@@ -200,11 +208,16 @@ function hasPaidBalance(c: any): boolean | undefined {
 // Factory for model-list endpoints: filters the given models by API key
 // permissions and paid balance, then returns them as JSON.
 const modelsListHandler =
-    (getModels: () => ModelInfo[]) => (c: Context<Env>) => {
+    (getModels: (c: Context<Env>) => ModelInfo[] | Promise<ModelInfo[]>) =>
+    async (c: Context<Env>) => {
         const allowedModels = c.var.auth?.apiKey?.permissions?.models;
         const paidBalance = hasPaidBalance(c);
         return c.json(
-            filterModelsByPermissions(getModels(), allowedModels, paidBalance),
+            filterModelsByPermissions(
+                await getModels(c),
+                allowedModels,
+                paidBalance,
+            ),
         );
     };
 
@@ -224,7 +237,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models (OpenAI-compatible)",
             description:
-                'Returns available models (text, image, realtime, audio, embeddings) in the OpenAI-compatible format (`{object: "list", data: [...]}`). Use this endpoint if you\'re using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.',
+                'Returns available models (text, community text, image, realtime, audio, embeddings) in the OpenAI-compatible format (`{object: "list", data: [...]}`). Use this endpoint if you\'re using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.',
             responses: {
                 200: {
                     description: "Success",
@@ -241,7 +254,10 @@ export const proxyRoutes = new Hono<Env>()
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
             const textModels = filterModelsByPermissions(
-                getTextModelsInfo(),
+                [
+                    ...getTextModelsInfo(),
+                    ...(await getCommunityTextModelsInfo(c.env.DB)),
+                ],
                 allowedModels,
                 paidBalance,
             );
@@ -268,9 +284,7 @@ export const proxyRoutes = new Hono<Env>()
             const now = Date.now();
 
             const toModelEntry = (
-                m:
-                    | (typeof textModels)[number]
-                    | (typeof realtimeModels)[number],
+                m: ModelInfo,
                 supportedEndpoints: string[],
             ) => ({
                 id: m.name,
@@ -290,11 +304,12 @@ export const proxyRoutes = new Hono<Env>()
                 object: "list" as const,
                 data: [
                     ...textModels.map((m) =>
-                        toModelEntry(m, [
-                            "/v1/chat/completions",
-                            "/text",
-                            "/text/{prompt}",
-                        ]),
+                        toModelEntry(
+                            m,
+                            m.community
+                                ? communityTextSupportedEndpoints()
+                                : TEXT_MODEL_ENDPOINTS,
+                        ),
                     ),
                     ...imageModels.map((m) =>
                         toModelEntry(m, [
@@ -322,7 +337,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models",
             description:
-                "Returns all available text, image, video, realtime, audio, and embedding models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available text, community text, image, video, realtime, audio, and embedding models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
             responses: {
                 200: {
                     description: "Success",
@@ -340,8 +355,9 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(500),
             },
         }),
-        modelsListHandler(() => [
+        modelsListHandler(async (c) => [
             ...getTextModelsInfo(),
+            ...(await getCommunityTextModelsInfo(c.env.DB)),
             ...getImageModelsInfo(),
             ...getRealtimeModelsInfo(),
             ...getAudioModelsInfo(),
@@ -380,7 +396,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Text Models (Detailed)",
             description:
-                "Returns all available text generation models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available text generation and community text models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
             responses: {
                 200: {
                     description: "Success",
@@ -398,7 +414,10 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(500),
             },
         }),
-        modelsListHandler(getTextModelsInfo),
+        modelsListHandler(async (c) => [
+            ...getTextModelsInfo(),
+            ...(await getCommunityTextModelsInfo(c.env.DB)),
+        ]),
     )
     .get(
         "/audio/models",
@@ -424,7 +443,7 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(500),
             },
         }),
-        modelsListHandler(getAudioModelsInfo),
+        modelsListHandler(() => getAudioModelsInfo()),
     )
     .get(
         "/embeddings/models",
@@ -450,7 +469,7 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(500),
             },
         }),
-        modelsListHandler(getEmbeddingModelsInfo),
+        modelsListHandler(() => getEmbeddingModelsInfo()),
     )
     .post("/register", handleRegisterServer)
     .get("/register", handleRegisterServer)
@@ -490,6 +509,7 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         validator("query", RealtimeRequestQueryParamsSchema),
+        resolveModel("generate.realtime"),
         handleRealtimeWebSocket,
     )
     .post(
@@ -555,7 +575,7 @@ export const proxyRoutes = new Hono<Env>()
             const requestBody = c.req.valid("json" as never) as z.infer<
                 typeof CreateEmbeddingRequestSchema
             >;
-            const serviceDef = getModelDefinition(c.var.model.resolved);
+            const serviceDef = c.var.model.definition;
             return generateEmbeddings(
                 c.env,
                 { ...requestBody, model: serviceDef.modelId },

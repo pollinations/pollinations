@@ -939,7 +939,7 @@ curl "https://gen.pollinations.ai/a1b2c3d4e5f60718/metadata"
 
 ### 👤 Account
 
-Account endpoints use scoped account permissions. `account:usage` reads account state such as balances, usage, quests, and earnings. `account:keys` is account-admin: it can manage keys and my-models, and it also satisfies read-only account-state checks. Newly created child keys cannot receive `account:keys` through this API.
+Account endpoints use scoped account permissions. `account:usage` reads account state such as balances, usage, quests, and earnings. `account:keys` is account-admin: it can manage keys and, where enabled, my-models. It also satisfies read-only account-state checks. Newly created child keys cannot receive `account:keys` through this API.
 
 #### `GET` `/account/profile` — Get Profile
 
@@ -1335,7 +1335,7 @@ curl "https://gen.pollinations.ai/account/key/usage?format=json&limit=100" \
 
 #### `/account/my-models` — Manage My Models
 
-Manage registered community text models owned by the authenticated account. API keys require `account:keys`; dashboard sessions can manage models directly. Responses never include the stored upstream bearer token.
+Invite-only community text model administration for accounts with `communityEndpointsAllowed: true`. API keys require `account:keys`; dashboard sessions can manage models directly when enabled. Responses never include the stored upstream bearer token.
 
 | Endpoint | Description |
 |---|---|

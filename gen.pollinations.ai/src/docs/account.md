@@ -2,7 +2,7 @@
 
 Self-service endpoints for the authenticated user. All endpoints require authentication (API key or session). API keys need the relevant `account:<scope>` permission. Base path: `/account`.
 
-`account:usage` is the read-only account-state scope for balances, usage, quests, and earnings. Keys with `account:keys` are account-admin keys: they can manage keys and my-models, and they also satisfy read-only account-state checks. Newly created child keys cannot receive `account:keys` through this API.
+`account:usage` is the read-only account-state scope for balances, usage, quests, and earnings. Keys with `account:keys` are account-admin keys: they can manage keys and, where enabled, my-models. They also satisfy read-only account-state checks. Newly created child keys cannot receive `account:keys` through this API.
 
 | Endpoint | Description |
 |----------|-------------|
@@ -11,7 +11,7 @@ Self-service endpoints for the authenticated user. All endpoints require authent
 | `GET /account/quests` | Read-only quest status |
 | `GET /account/usage` | Per-request usage history with costs |
 | `GET /account/usage/daily` | Daily aggregated usage for dashboards |
-| `/account/my-models` | Manage your registered community models |
+| `/account/my-models` | Invite-only community model management |
 | `GET /account/key` | API key validity, type, and permissions |
 
 ### GET /account/profile
@@ -40,4 +40,4 @@ Returns the current API key's validity, type, and permissions.
 
 ### /account/my-models
 
-Manage your registered community text models: list, create, update, delete, inspect upstream models, and test an upstream model. API keys require `account:keys`; dashboard sessions can manage models directly.
+Invite-only community text model management: list, create, update, delete, inspect upstream models, and test an upstream model. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`; dashboard sessions can manage models directly when enabled.

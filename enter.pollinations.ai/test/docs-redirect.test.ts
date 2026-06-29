@@ -25,6 +25,7 @@ test("enter docs schema remains available for gen service binding", async () => 
     };
 
     expect(schema.paths?.["/account/profile"]).toBeDefined();
+    expect(schema.paths?.["/account/quests"]).toBeDefined();
 });
 
 test("legacy enter docs redirect keeps the docs path boundary", async () => {

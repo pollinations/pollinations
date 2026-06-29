@@ -63,6 +63,13 @@ describe("docs routes", () => {
             paths: {
                 "/account/key": { get: { tags: ["Account"] } },
                 "/api/account/profile": { get: { tags: ["👤 Account"] } },
+                "/api/account/quests": {
+                    get: {
+                        tags: ["👤 Account"],
+                        description:
+                            "Returns quest status. API keys require `account:usage` or `account:keys`.",
+                    },
+                },
                 "/api/quests/catalog": {
                     get: { tags: ["✨ Quests"], security: [] },
                 },
@@ -107,9 +114,11 @@ describe("docs routes", () => {
         expect(schema.paths["/image/{prompt}"]).toBeDefined();
         expect(schema.paths["/account/key"]).toBeDefined();
         expect(schema.paths["/account/profile"]).toBeDefined();
+        expect(schema.paths["/account/quests"]).toBeDefined();
         expect(schema.paths["/quests/catalog"]).toBeDefined();
         expect(schema.paths["/api/account/key"]).toBeUndefined();
         expect(schema.paths["/api/account/profile"]).toBeUndefined();
+        expect(schema.paths["/api/account/quests"]).toBeUndefined();
         expect(schema.paths["/api/quests/catalog"]).toBeUndefined();
         expect(schema.paths["/quests/check"]).toBeUndefined();
         expect(schema.paths["/quests/rewards"]).toBeUndefined();
@@ -160,6 +169,11 @@ describe("docs routes", () => {
             schema.paths["/account/key"] as Record<string, unknown>
         )?.get as Record<string, unknown> | undefined;
         expect(accountKeyGet?.["x-codeSamples"]).toBeDefined();
+
+        const accountQuestsGet = (
+            schema.paths["/account/quests"] as Record<string, unknown>
+        )?.get as Record<string, unknown> | undefined;
+        expect(accountQuestsGet?.description).toContain("account:usage");
 
         // The catalog is unauthenticated → marked public (security: []).
         const questsCatalogGet = (

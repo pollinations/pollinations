@@ -6,7 +6,7 @@ allowed-tools: Bash(polli *)
 
 # polli — Pollinations CLI
 
-Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video; transcribes speech; manages API keys, usage, quests, and my-models.
+Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video; transcribes speech; manages API keys, usage, quests, and invite-only my-models.
 
 ## When to use this skill
 
@@ -15,7 +15,7 @@ Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video;
 - User wants to **transcribe speech** or run TTS
 - User asks about their **pollen balance, usage, or API keys**
 - User wants to **browse or filter available models**
-- User wants to inspect **quests** or manage owned **my-models**
+- User wants to inspect **quests** or manage invite-only **my-models**
 
 ## Quick reference
 
@@ -37,7 +37,7 @@ Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video;
 | Model health + latency | `polli models --stats` (default 60m, `--window <min>`) |
 | Check balance | `polli usage` |
 | List quests | `polli quests` |
-| Manage owned community models | `polli my-models list` |
+| Manage invite-only community models | `polli my-models list` |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup
@@ -156,7 +156,7 @@ polli my-models create --name my-model --base-url https://api.example.com/v1 --b
 polli my-models update <id> --description "Updated description"
 polli my-models delete <id>
 ```
-`my-models` manages owned community text models. It requires a key with `account:keys` or an authenticated dashboard session through the API. `account:usage` is enough for read-only usage and quest commands; an `account:keys` key also satisfies those read-only account checks. Quest claiming is dashboard-only; `polli quests` is read-only.
+`my-models` manages owned community text models for invite-only accounts. It requires `communityEndpointsAllowed: true` plus a key with `account:keys`, or an authenticated dashboard session through the API. `account:usage` is enough for read-only usage and quest commands; an `account:keys` key also satisfies those read-only account checks. Quest claiming is dashboard-only; `polli quests` is read-only.
 
 ### Manage API keys
 ```bash
@@ -166,7 +166,7 @@ polli keys create --name "my-bot" --type secret --budget 1000 --permissions prof
 polli keys create --name "my-app" --type publishable --redirect-uri https://app.example/callback --earnings
 polli keys revoke <id>                                             # id comes from `keys list --json`
 ```
-`--permissions <perms...>` scopes what the new key can do on the account (e.g. `profile usage` lets it call `polli --key <new> usage`). **Without `--permissions`, new scoped keys can generate media but cannot read account state** — `polli --key <new> usage` will 403. `"keys"` is auto-stripped from the list so a scoped key can never mint further keys. Keys that already have `account:keys` are account-admin keys and can also read usage and quests. Publishable app keys default developer earnings off; pass `--earnings` to enable them. To inspect a specific key other than the current one, use `polli keys list --json | jq '.[] | select(.id == "<id>")'`. `keys info` is intentionally scoped to the caller's own key.
+`--permissions <perms...>` scopes what the new key can do on the account (e.g. `profile usage` lets it call `polli --key <new> usage`). **Without `--permissions`, new scoped keys can generate media but cannot read account state** — `polli --key <new> usage` will 403. `"keys"` is auto-stripped from the list so a scoped key can never mint further keys. Keys that already have `account:keys` are account-admin keys and can also read usage and quests, plus manage my-models where that invite-only feature is enabled. Publishable app keys default developer earnings off; pass `--earnings` to enable them. To inspect a specific key other than the current one, use `polli keys list --json | jq '.[] | select(.id == "<id>")'`. `keys info` is intentionally scoped to the caller's own key.
 
 ### Read API docs
 ```bash

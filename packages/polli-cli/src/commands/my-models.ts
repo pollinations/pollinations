@@ -283,7 +283,7 @@ const test = new Command("test")
     });
 
 export const myModelsCommand = new Command("my-models")
-    .description("Manage your community text models")
+    .description("Manage your invite-only community text models")
     .addCommand(list)
     .addCommand(create)
     .addCommand(update)

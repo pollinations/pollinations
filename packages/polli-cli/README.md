@@ -90,10 +90,10 @@ polli usage                  # pollen balance
 polli usage --history        # recent requests
 polli usage --daily          # daily spend
 polli quests --completed     # completed and earned quests
-polli my-models list         # registered community text models
+polli my-models list         # invite-only community text models
 ```
 
-`account:usage` is enough for read-only account state like usage and quests. Any key with `account:keys` is an account-admin key: it can manage keys and my-models, and can also read usage and quests. Quest claiming remains in the dashboard.
+`account:usage` is enough for read-only account state like usage and quests. Any key with `account:keys` is an account-admin key: it can manage keys and, where invite-only My Models access is enabled, my-models. It can also read usage and quests. Quest claiming remains in the dashboard.
 
 ## Links
 

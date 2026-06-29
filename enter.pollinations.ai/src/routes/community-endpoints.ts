@@ -167,6 +167,36 @@ function throwEndpointTestError(error: unknown): never {
 
 type EndpointProbeKind = "models" | "test";
 
+function requireCommunityEndpointManagePermission(apiKey?: {
+    permissions?: Record<string, string[]>;
+    metadata?: Record<string, unknown>;
+}): void {
+    if (!apiKey) return;
+    const keyType = (apiKey.metadata?.keyType as string) || "secret";
+    if (keyType !== "secret") {
+        throw new HTTPException(403, {
+            message: "Only secret keys (sk_) can manage my models",
+        });
+    }
+    if (!apiKey.permissions?.account?.includes("keys")) {
+        throw new HTTPException(403, {
+            message: "API key does not have 'account:keys' permission",
+        });
+    }
+}
+
+async function requireCommunityEndpointManageAccess(
+    db: Db,
+    userId: string,
+    apiKey?: {
+        permissions?: Record<string, string[]>;
+        metadata?: Record<string, unknown>;
+    },
+): Promise<void> {
+    requireCommunityEndpointManagePermission(apiKey);
+    await requireCommunityEndpointAccess(db, userId);
+}
+
 async function enforceEndpointProbeThrottle(
     c: Pick<Context<Env>, "env" | "json">,
     userId: string,
@@ -197,11 +227,15 @@ async function enforceEndpointProbeThrottle(
 }
 
 export const communityEndpointsRoutes = new Hono<Env>()
-    .use(auth({ allowSessionCookie: true, allowApiKey: false }))
+    .use(auth({ allowSessionCookie: true, allowApiKey: true }))
     .get("/", async (c) => {
         const user = c.var.auth.requireUser();
         const db = drizzle(c.env.DB, { schema });
-        await requireCommunityEndpointAccess(db, user.id);
+        await requireCommunityEndpointManageAccess(
+            db,
+            user.id,
+            c.var.auth.apiKey,
+        );
         const ownerGithubUsername = await requireOwnerGithubUsername(
             db,
             user.id,
@@ -218,7 +252,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
         const user = c.var.auth.requireUser();
         const input = c.req.valid("json");
         const db = drizzle(c.env.DB, { schema });
-        await requireCommunityEndpointAccess(db, user.id);
+        await requireCommunityEndpointManageAccess(
+            db,
+            user.id,
+            c.var.auth.apiKey,
+        );
         const ownerGithubUsername = await requireOwnerGithubUsername(
             db,
             user.id,
@@ -249,7 +287,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
         const user = c.var.auth.requireUser();
         const input = c.req.valid("json");
         const db = drizzle(c.env.DB, { schema });
-        await requireCommunityEndpointAccess(db, user.id);
+        await requireCommunityEndpointManageAccess(
+            db,
+            user.id,
+            c.var.auth.apiKey,
+        );
         const throttled = await enforceEndpointProbeThrottle(
             c,
             user.id,
@@ -267,7 +309,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
         const user = c.var.auth.requireUser();
         const input = c.req.valid("json");
         const db = drizzle(c.env.DB, { schema });
-        await requireCommunityEndpointAccess(db, user.id);
+        await requireCommunityEndpointManageAccess(
+            db,
+            user.id,
+            c.var.auth.apiKey,
+        );
         const throttled = await enforceEndpointProbeThrottle(
             c,
             user.id,
@@ -290,7 +336,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
         const input = c.req.valid("json");
         const { id } = c.req.param();
         const db = drizzle(c.env.DB, { schema });
-        await requireCommunityEndpointAccess(db, user.id);
+        await requireCommunityEndpointManageAccess(
+            db,
+            user.id,
+            c.var.auth.apiKey,
+        );
         const ownerGithubUsername = await requireOwnerGithubUsername(
             db,
             user.id,
@@ -343,7 +393,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
         const user = c.var.auth.requireUser();
         const { id } = c.req.param();
         const db = drizzle(c.env.DB, { schema });
-        await requireCommunityEndpointAccess(db, user.id);
+        await requireCommunityEndpointManageAccess(
+            db,
+            user.id,
+            c.var.auth.apiKey,
+        );
         await requireOwnedEndpoint(db, id, user.id);
         await db
             .delete(schema.communityEndpoint)

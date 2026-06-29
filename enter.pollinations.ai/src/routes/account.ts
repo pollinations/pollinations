@@ -4,13 +4,15 @@ import {
     createApiKeyForUser,
 } from "@shared/auth/api-key-creation.ts";
 import { isCommunityEndpointOwnerAllowed } from "@shared/community-endpoints.ts";
+import * as schema from "@shared/db/better-auth.ts";
 import {
     apikey as apikeyTable,
+    rewards as rewardsTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { getTierCadence, tierNames } from "@shared/tier-config.ts";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -19,10 +21,13 @@ import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
+import { QUEST_CATEGORIES } from "../services/quests/definitions.ts";
+import { listQuestCards } from "../services/quests/index.ts";
 import {
     fetchTinybirdRows,
     requireTinybirdReadToken,
 } from "../services/tinybird.ts";
+import { communityEndpointsRoutes } from "./community-endpoints.ts";
 import { parseMetadata } from "./metadata-utils.ts";
 
 // Calculate next tier refill time (null for tiers with no refill).
@@ -104,6 +109,16 @@ function requireKeysPermission(apiKey?: {
     if (!apiKey.permissions?.account?.includes("keys")) {
         throw new HTTPException(403, {
             message: "API key does not have 'account:keys' permission",
+        });
+    }
+}
+
+function requireUsagePermission(apiKey?: {
+    permissions?: Record<string, string[]>;
+}): void {
+    if (apiKey && !apiKey.permissions?.account?.includes("usage")) {
+        throw new HTTPException(403, {
+            message: "API key does not have 'account:usage' permission",
         });
     }
 }
@@ -763,6 +778,39 @@ const balanceResponseSchema = z.object({
         ),
 });
 
+const accountQuestRewardSchema = z.object({
+    id: z.string(),
+    questId: z.string().nullable(),
+    title: z.string(),
+    pollenAmount: z.number(),
+    balanceBucket: z.string(),
+    earnedAt: z.string(),
+    claimedAt: z.string().nullable(),
+});
+
+const accountQuestSchema = z.object({
+    id: z.string(),
+    title: z.string(),
+    description: z.string(),
+    category: z.enum(QUEST_CATEGORIES),
+    state: z.enum(["available", "completed", "coming_soon"]),
+    status: z.enum(["open", "completed", "coming_soon"]),
+    rewardAmount: z.number(),
+    balanceBucket: z.enum(["tier", "pack"]),
+    url: z.string().nullable(),
+    reward: accountQuestRewardSchema.nullable(),
+});
+
+const accountQuestsResponseSchema = z.object({
+    quests: z.array(accountQuestSchema),
+});
+
+function formatRewardTimestamp(value: Date | number | string): string {
+    return value instanceof Date
+        ? value.toISOString()
+        : new Date(value).toISOString();
+}
+
 const usageRecordSchema = z.object({
     timestamp: z
         .string()
@@ -832,6 +880,7 @@ const usageResponseSchema = z.object({
  */
 export const accountRoutes = new Hono<Env>()
     .use(auth({ allowApiKey: true, allowSessionCookie: true }))
+    .route("/my-models", communityEndpointsRoutes)
     .get(
         "/profile",
         describeRoute({
@@ -889,6 +938,93 @@ export const accountRoutes = new Hono<Env>()
                     email: profile.email ?? null,
                 }),
             });
+        },
+    )
+    .get(
+        "/quests",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Get Quest Status",
+            description:
+                "Returns the quest catalog with the authenticated account's read-only status. Globally completed quests and quests earned by the account are both returned as `completed`. Claiming rewards remains dashboard-only.",
+            responses: {
+                200: {
+                    description: "Quest status for the authenticated account",
+                    content: {
+                        "application/json": {
+                            schema: resolver(accountQuestsResponseSchema),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+                403: {
+                    description:
+                        "Permission denied - API key missing `account:usage` permission",
+                },
+            },
+        }),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            const user = c.var.auth.requireUser();
+            requireUsagePermission(c.var.auth.apiKey);
+
+            const db = drizzle(c.env.DB, { schema });
+            const [cards, rewardRows] = await Promise.all([
+                listQuestCards({ db, env: c.env }),
+                db
+                    .select({
+                        id: rewardsTable.id,
+                        questId: rewardsTable.questId,
+                        title: rewardsTable.title,
+                        pollenAmount: rewardsTable.pollenAmount,
+                        balanceBucket: rewardsTable.balanceBucket,
+                        earnedAt: rewardsTable.earnedAt,
+                        claimedAt: rewardsTable.claimedAt,
+                    })
+                    .from(rewardsTable)
+                    .where(eq(rewardsTable.userId, user.id))
+                    .orderBy(desc(rewardsTable.earnedAt)),
+            ]);
+
+            const rewardsByQuestId = new Map<
+                string,
+                (typeof rewardRows)[number]
+            >();
+            for (const reward of rewardRows) {
+                if (reward.questId && !rewardsByQuestId.has(reward.questId)) {
+                    rewardsByQuestId.set(reward.questId, reward);
+                }
+            }
+
+            const quests = cards.map((card) => {
+                const reward = rewardsByQuestId.get(card.id) ?? null;
+                const status =
+                    card.state === "coming_soon"
+                        ? "coming_soon"
+                        : card.state === "completed" || reward
+                          ? "completed"
+                          : "open";
+
+                return {
+                    ...card,
+                    status,
+                    reward: reward
+                        ? {
+                              id: reward.id,
+                              questId: reward.questId,
+                              title: reward.title,
+                              pollenAmount: reward.pollenAmount,
+                              balanceBucket: reward.balanceBucket,
+                              earnedAt: formatRewardTimestamp(reward.earnedAt),
+                              claimedAt: reward.claimedAt
+                                  ? formatRewardTimestamp(reward.claimedAt)
+                                  : null,
+                          }
+                        : null,
+                };
+            });
+
+            return c.json({ quests });
         },
     )
     .get(

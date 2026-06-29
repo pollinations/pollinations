@@ -332,6 +332,78 @@ test("catalog excludes closed GitHub quest issues without merged PRs", async ({
     expect(byId.get("github:issue:803")?.state).toBe("completed");
 });
 
+test("account quests merge earned rewards into completed status", async ({
+    mocks,
+    sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    await mocks.enable("github", "tinybird");
+    await env.KV.delete("quests:catalog:v22");
+    const user = await getOnlyUser();
+
+    const createKeyResponse = await SELF.fetch(
+        "http://localhost:3000/api/account/keys",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({
+                name: "quest-status-key",
+                accountPermissions: ["usage"],
+            }),
+        },
+    );
+    expect(createKeyResponse.status).toBe(200);
+    const createdKey = (await createKeyResponse.json()) as { key: string };
+
+    const recorded = await recordRewards(db, [
+        {
+            idempotencyKey: `quest:test-earned:${user.id}`,
+            userId: user.id,
+            questId: "first_api_key",
+            title: "Create your first API key",
+            amount: 0.25,
+            bucket: "tier",
+        },
+    ]);
+    expect(recorded.recorded).toBe(1);
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/account/quests",
+        {
+            headers: {
+                authorization: `Bearer ${createdKey.key}`,
+            },
+        },
+    );
+    expect(response.status).toBe(200);
+    const payload = (await response.json()) as {
+        quests: {
+            id: string;
+            state: string;
+            status: string;
+            reward: { id: string; claimedAt: string | null } | null;
+        }[];
+    };
+    const byId = new Map(payload.quests.map((quest) => [quest.id, quest]));
+
+    expect(byId.get("first_api_key")).toMatchObject({
+        state: "available",
+        status: "completed",
+        reward: {
+            id: recorded.rewardIds[0],
+            claimedAt: null,
+        },
+    });
+    expect(byId.get(LEGACY_FIRST_TOP_UP_QUEST_ID)).toMatchObject({
+        state: "completed",
+        status: "completed",
+        reward: null,
+    });
+});
+
 test("quest check records product rewards and claim endpoint credits one", async ({
     apiKey: _apiKey,
     mocks,

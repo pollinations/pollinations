@@ -6,8 +6,10 @@ Self-service endpoints for the authenticated user. All endpoints require authent
 |----------|-------------|
 | `GET /account/profile` | GitHub username, image, tier, reset time |
 | `GET /account/balance` | Current pollen balance |
+| `GET /account/quests` | Read-only quest status |
 | `GET /account/usage` | Per-request usage history with costs |
 | `GET /account/usage/daily` | Daily aggregated usage for dashboards |
+| `/account/my-models` | Manage your registered community models |
 | `GET /account/key` | API key validity, type, and permissions |
 
 ### GET /account/profile
@@ -17,6 +19,10 @@ Returns user profile. `githubUsername`, `image`, `tier`, and `nextResetAt` are a
 ### GET /account/balance
 
 Returns remaining pollen. If the API key has a budget, returns key budget instead.
+
+### GET /account/quests
+
+Returns the quest catalog with account status. `completed` includes both globally completed quests and quests earned by the account. Claiming rewards is dashboard-only.
 
 ### GET /account/usage
 
@@ -29,3 +35,7 @@ Daily aggregated usage suitable for dashboards.
 ### GET /account/key
 
 Returns the current API key's validity, type, and permissions.
+
+### /account/my-models
+
+Manage your registered community text models: list, create, update, delete, inspect upstream models, and test an upstream model. API keys must be secret keys with `account:keys`; dashboard sessions can manage models directly.

@@ -64,6 +64,7 @@ polli models --stats         # health + perf (last 60m)
 polli docs                   # full API reference in the terminal
 polli docs /image            # one endpoint
 polli docs --open            # open in browser
+polli quests                 # quest catalog, with earned status when logged in
 ```
 
 ## Account
@@ -88,7 +89,11 @@ Keys can't be edited — to change a name, budget, or model list, revoke and rec
 polli usage                  # pollen balance
 polli usage --history        # recent requests
 polli usage --daily          # daily spend
+polli quests --completed     # completed and earned quests
+polli my-models list         # registered community text models
 ```
+
+`polli my-models` requires a secret key with `account:keys`; quest claiming remains in the dashboard.
 
 ## Links
 

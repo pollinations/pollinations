@@ -1,12 +1,12 @@
 ---
 name: polli
-description: Generate images, text, audio, video, and transcribe speech via the Pollinations API using the polli CLI. Use when asked to generate media, call pollinations.ai, check pollen balance, list models, manage API keys, or run polli commands.
+description: Generate images, text, audio, video, and transcribe speech via the Pollinations API using the polli CLI. Use when asked to generate media, call pollinations.ai, check pollen balance, list models, manage API keys, inspect quests, manage my-models, or run polli commands.
 allowed-tools: Bash(polli *)
 ---
 
 # polli — Pollinations CLI
 
-Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video; transcribes speech; manages API keys and usage.
+Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video; transcribes speech; manages API keys, usage, quests, and my-models.
 
 ## When to use this skill
 
@@ -15,6 +15,7 @@ Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video;
 - User wants to **transcribe speech** or run TTS
 - User asks about their **pollen balance, usage, or API keys**
 - User wants to **browse or filter available models**
+- User wants to inspect **quests** or manage owned **my-models**
 
 ## Quick reference
 
@@ -35,6 +36,8 @@ Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video;
 | Filter models by type | `polli models --type image` |
 | Model health + latency | `polli models --stats` (default 60m, `--window <min>`) |
 | Check balance | `polli usage` |
+| List quests | `polli quests` |
+| Manage owned community models | `polli my-models list` |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup
@@ -140,8 +143,20 @@ Use `--stats` before choosing a model. **Caveat**: the `err%` column counts **5x
 polli usage              # current pollen balance
 polli usage --history    # recent individual requests
 polli usage --daily      # daily cost summary
+polli quests             # quest catalog; account earned/completed status when logged in
+polli quests --completed # completed and earned quests
 ```
 **History is eventually consistent** — a request you just made may not appear for 30–60s. When matching costs to freshly-generated media, use `--limit 50` and filter by timestamp, and retry if the expected entry is missing. `polli usage --json` returns `{"pollen": <number>}` — the current balance only; use `--history --json` or `--daily --json` for cost breakdowns.
+
+### Manage my-models
+```bash
+polli my-models list
+polli my-models models --base-url https://api.example.com/v1 --bearer-token "$UPSTREAM_KEY"
+polli my-models create --name my-model --base-url https://api.example.com/v1 --bearer-token "$UPSTREAM_KEY" --upstream-model gpt-4.1-mini
+polli my-models update <id> --description "Updated description"
+polli my-models delete <id>
+```
+`my-models` manages owned community text models. It requires a secret key with `account:keys` or an authenticated dashboard session through the API. Quest claiming is dashboard-only; `polli quests` is read-only.
 
 ### Manage API keys
 ```bash

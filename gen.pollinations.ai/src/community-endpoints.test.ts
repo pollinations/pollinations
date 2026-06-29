@@ -18,6 +18,7 @@ import {
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import {
+    createTestApiKey,
     createTestUser,
     test as fixtureTest,
 } from "@shared/test/fixtures/index.ts";
@@ -52,6 +53,19 @@ async function createEnterCommunityApi(): Promise<Hono> {
             await next();
         })
         .route("/api/community-endpoints", communityEndpointsRoutes);
+}
+
+async function createEnterFrontendApi(): Promise<Hono> {
+    const routePath = "../../enter.pollinations.ai/src/frontend-api.ts";
+    const { frontendApi } = (await import(routePath)) as {
+        frontendApi: Hono;
+    };
+    return new Hono()
+        .use("*", async (c, next) => {
+            c.set("log" as never, testLog);
+            await next();
+        })
+        .route("/api", frontendApi);
 }
 
 async function fetchEnterApi(app: Hono, request: Request): Promise<Response> {
@@ -948,5 +962,76 @@ fixtureTest(
                 isPortkeyChatCompletionsRequest(new Request(input, init)),
             ),
         ).toHaveLength(2);
+    },
+);
+
+fixtureTest(
+    "manages my-models through account API with a secret key that has account keys permission",
+    async () => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const { key } = await createTestApiKey({
+            accountPermissions: ["keys"],
+            user: {
+                githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+                githubUsername: ownerGithubUsername,
+            },
+        });
+        const denied = await createTestApiKey({
+            user: {
+                githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+                githubUsername: `denied-${crypto.randomUUID().slice(0, 8)}`,
+            },
+        });
+        const enterApi = await createEnterFrontendApi();
+
+        const deniedResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/account/my-models", {
+                headers: {
+                    Authorization: `Bearer ${denied.key}`,
+                },
+            }),
+        );
+        expect(deniedResponse.status).toBe(403);
+
+        const listResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/account/my-models", {
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                },
+            }),
+        );
+        expect(listResponse.status).toBe(200);
+        await expect(listResponse.json()).resolves.toEqual({ data: [] });
+
+        const createResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/account/my-models", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    name: "my-test-model",
+                    description: "Account API model",
+                    baseUrl: "https://api.example.com/v1",
+                    upstreamModel: "gpt-4.1-mini",
+                    bearerToken: "sk_saved_token",
+                    promptTextPrice: 0.1,
+                    completionTextPrice: 0.2,
+                }),
+            }),
+        );
+        expect(createResponse.status).toBe(200);
+        await expect(createResponse.json()).resolves.toMatchObject({
+            modelId: `community/${ownerGithubUsername}/my-test-model`,
+            name: "my-test-model",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "gpt-4.1-mini",
+            promptTextPrice: 0.1,
+            completionTextPrice: 0.2,
+        });
     },
 );

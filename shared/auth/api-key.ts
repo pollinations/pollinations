@@ -5,8 +5,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { alias } from "drizzle-orm/sqlite-core";
 import * as schema from "../db/better-auth.ts";
-
-const PUBLISHABLE_KEY_PREFIX = "pk";
+import { PUBLISHABLE_API_KEY_PREFIX } from "./api-key-metadata.ts";
 
 export type AuthUser = typeof schema.user.$inferSelect;
 
@@ -108,7 +107,7 @@ export function createApiKeyPlugin() {
     return apiKey({
         enableMetadata: true,
         deferUpdates: true,
-        defaultPrefix: PUBLISHABLE_KEY_PREFIX,
+        defaultPrefix: PUBLISHABLE_API_KEY_PREFIX,
         defaultKeyLength: 16,
         minimumNameLength: 1,
         maximumNameLength: 253,
@@ -119,7 +118,7 @@ export function createApiKeyPlugin() {
             length: number;
             prefix: string | undefined;
         }) => {
-            const isPublishable = options.prefix === PUBLISHABLE_KEY_PREFIX;
+            const isPublishable = options.prefix === PUBLISHABLE_API_KEY_PREFIX;
             const keyLength = isPublishable ? 16 : 32;
             const chars =
                 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";

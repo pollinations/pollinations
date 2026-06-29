@@ -1,4 +1,5 @@
 import { getLogger } from "@logtape/logtape";
+import { githubOAuthAppHeaders } from "@shared/github/api.ts";
 import { type QuestDefinition, rewardableQuests } from "../definitions.ts";
 import type {
     QuestCard,
@@ -30,24 +31,13 @@ type GitHubRepoResponse = {
     stargazers_count?: number;
 };
 
-function githubApiHeaders(env: CloudflareBindings): Record<string, string> {
-    const headers: Record<string, string> = {
-        Accept: "application/vnd.github+json",
-        "User-Agent": "pollinations-enter",
-    };
-    if (env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET) {
-        headers.Authorization = `Basic ${btoa(`${env.GITHUB_CLIENT_ID}:${env.GITHUB_CLIENT_SECRET}`)}`;
-    }
-    return headers;
-}
-
 async function fetchGitHubProfile(
     env: CloudflareBindings,
     githubId: number,
 ): Promise<{ login: string | null; createdAt: Date | null } | null> {
     log.info("GITHUB_PROFILE_FETCH_START: githubId={githubId}", { githubId });
     const response = await fetch(`https://api.github.com/user/${githubId}`, {
-        headers: githubApiHeaders(env),
+        headers: githubOAuthAppHeaders(env),
     });
     const rateLimitRemaining = response.headers.get("x-ratelimit-remaining");
     const rateLimitReset = response.headers.get("x-ratelimit-reset");
@@ -101,7 +91,7 @@ async function fetchPublicRepoStars(
         });
         const response = await fetch(
             `https://api.github.com/users/${encodeURIComponent(login)}/repos?type=owner&per_page=100&page=${page}`,
-            { headers: githubApiHeaders(env) },
+            { headers: githubOAuthAppHeaders(env) },
         );
         const rateLimitRemaining = response.headers.get(
             "x-ratelimit-remaining",

@@ -1,10 +1,7 @@
 import { DEFAULT_IMAGE_MODEL, IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
 import { z } from "zod";
-
-const QUALITIES = ["low", "medium", "high", "hd"] as const;
-// Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
-const MAX_SEED_VALUE = 2147483647; // INT32_MAX (2^31 - 1)
+import { IMAGE_QUALITIES, MAX_RANDOM_SEED } from "@/util.ts";
 
 // Build list of valid model names: service IDs + all aliases
 const VALID_IMAGE_MODELS = [
@@ -48,7 +45,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         .number()
         .int()
         .min(-1)
-        .max(MAX_SEED_VALUE)
+        .max(MAX_RANDOM_SEED)
         .optional()
         .default(0)
         .meta({
@@ -57,7 +54,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         }),
     safe: SafeSchema,
     quality: z
-        .enum(QUALITIES as unknown as [string, ...string[]])
+        .enum(IMAGE_QUALITIES as unknown as [string, ...string[]])
         .optional()
         .default("medium")
         .meta({

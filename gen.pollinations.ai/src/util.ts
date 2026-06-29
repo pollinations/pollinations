@@ -1,5 +1,7 @@
 const RANDOM_ID_ALPHABET =
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+export const MAX_RANDOM_SEED = 2147483647; // INT32_MAX (2^31 - 1)
+export const IMAGE_QUALITIES = ["low", "medium", "high", "hd"] as const;
 
 export function generateRandomId(): string {
     const bytes = crypto.getRandomValues(new Uint8Array(32));
@@ -7,6 +9,10 @@ export function generateRandomId(): string {
         bytes,
         (byte) => RANDOM_ID_ALPHABET[byte % RANDOM_ID_ALPHABET.length],
     ).join("");
+}
+
+export function randomSeed(): number {
+    return Math.floor(Math.random() * MAX_RANDOM_SEED);
 }
 
 export function safeRound(amount: number, precision: number = 6): number {

@@ -3,10 +3,10 @@ import {
     getUserBalance,
     type UserBalance,
 } from "@shared/billing/balance.ts";
+import type { LoggerVariables } from "@shared/middleware/logger.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { createMiddleware } from "hono/factory";
 import type { AuthVariables } from "./auth.ts";
-import type { LoggerVariables } from "./logger.ts";
 
 export { getAvailableBalance };
 export type { UserBalance };

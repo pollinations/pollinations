@@ -10,6 +10,7 @@ import {
     user as userTable,
 } from "@shared/db/better-auth.ts";
 import { sendTierEventToTinybird } from "@shared/events.ts";
+import { githubOAuthAppHeaders } from "@shared/github/api.ts";
 import { AUTH_TRUSTED_ORIGINS } from "@shared/public-urls.ts";
 import { DEFAULT_TIER, getTierPollen } from "@shared/tier-config.ts";
 import {
@@ -185,17 +186,9 @@ function onAfterSessionCreate(
                             .where(eq(userTable.id, session.userId));
                     }
 
-                    const headers: Record<string, string> = {
-                        Accept: "application/vnd.github+json",
-                        "User-Agent": "pollinations-enter",
-                    };
-                    // Use OAuth app credentials for 5,000 req/hr (vs 60 unauthenticated)
-                    if (env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET) {
-                        headers.Authorization = `Basic ${btoa(`${env.GITHUB_CLIENT_ID}:${env.GITHUB_CLIENT_SECRET}`)}`;
-                    }
                     const res = await fetch(
                         `https://api.github.com/user/${githubId}`,
-                        { headers },
+                        { headers: githubOAuthAppHeaders(env) },
                     );
                     if (!res.ok) {
                         console.error(

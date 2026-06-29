@@ -16,6 +16,10 @@ import type {
     QuestCard,
     QuestEvaluationContext,
 } from "../services/quests/types.ts";
+import {
+    ACCOUNT_USAGE_PERMISSION_DESCRIPTION,
+    requireAccountUsagePermission,
+} from "./permissions.ts";
 
 // Bumped to v22: app_listed is now available instead of coming_soon.
 const CACHE_KEY = "quests:catalog:v22";
@@ -66,16 +70,6 @@ const claimRewardResponseSchema = z.object({
     newBalance: z.number().nullable(),
     reward: rewardSchema,
 });
-
-function requireUsagePermission(apiKey?: {
-    permissions?: Record<string, string[]>;
-}): void {
-    if (apiKey && !apiKey.permissions?.account?.includes("usage")) {
-        throw new HTTPException(403, {
-            message: "API key does not have 'account:usage' permission",
-        });
-    }
-}
 
 function formatRewardTimestamp(value: Date | number | string): string {
     return value instanceof Date
@@ -187,8 +181,7 @@ export const questsRoutes = new Hono<Env>()
                 },
                 401: { description: "Unauthorized" },
                 403: {
-                    description:
-                        "Permission denied - API key missing `account:usage` permission",
+                    description: ACCOUNT_USAGE_PERMISSION_DESCRIPTION,
                 },
             },
         }),
@@ -198,7 +191,7 @@ export const questsRoutes = new Hono<Env>()
                 message: "Authentication required to view quest rewards",
             });
             const user = c.var.auth.requireUser();
-            requireUsagePermission(c.var.auth.apiKey);
+            requireAccountUsagePermission(c.var.auth.apiKey);
 
             const db = drizzle(c.env.DB);
             const rewardRows = await db

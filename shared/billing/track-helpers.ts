@@ -1,6 +1,7 @@
 import { getLogger } from "@logtape/logtape";
 import { and, eq, gt, isNull, or } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
+import { parseApiKeyMetadata } from "../auth/api-key-metadata.ts";
 import { apikey as apikeyTable } from "../db/better-auth.ts";
 import type { ModelName } from "../registry/registry.ts";
 import { getModelDefinition } from "../registry/registry.ts";
@@ -32,20 +33,6 @@ interface DeductionParams {
     modelResolved?: string;
 }
 
-function parseMetadata(
-    raw: string | null | undefined,
-): Record<string, unknown> {
-    if (!raw) return {};
-    try {
-        const parsed = JSON.parse(raw);
-        return parsed && typeof parsed === "object" && !Array.isArray(parsed)
-            ? parsed
-            : {};
-    } catch {
-        return {};
-    }
-}
-
 export async function resolveDevMarkup(
     db: DrizzleD1Database,
     byopClientKeyId: string | null | undefined,
@@ -74,7 +61,9 @@ export async function resolveDevMarkup(
         .limit(1);
 
     if (!clientRow?.userId) return null;
-    if (parseMetadata(clientRow.metadata).earningsEnabled !== true) return null;
+    if (parseApiKeyMetadata(clientRow.metadata).earningsEnabled !== true) {
+        return null;
+    }
     if (clientRow.userId === payerUserId) return null;
 
     return {

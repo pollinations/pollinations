@@ -17,7 +17,7 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
 import { generateImageOrVideoResponse } from "@/image/handler.ts";
 import { applySafety, withSafetyHeaders } from "@/middleware/safety.ts";
-import { arrayBufferToBase64 } from "@/util.ts";
+import { arrayBufferToBase64, randomSeed } from "@/util.ts";
 import { requireGenerationAccess } from "@/utils/generation-access.ts";
 
 // --- Helpers ---
@@ -58,7 +58,7 @@ function resolveParams(opts: {
         ...(Number.isInteger(width) ? { width } : {}),
         ...(Number.isInteger(height) ? { height } : {}),
         quality: QUALITY_MAP[opts.quality || ""] || opts.quality || "medium",
-        seed: opts.seed ?? Math.floor(Math.random() * 2147483647),
+        seed: opts.seed ?? randomSeed(),
     };
 }
 

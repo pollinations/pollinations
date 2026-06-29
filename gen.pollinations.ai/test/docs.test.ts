@@ -67,7 +67,7 @@ describe("docs routes", () => {
                     get: {
                         tags: ["👤 Account"],
                         description:
-                            "Returns quest status. API keys require `account:usage` or `account:keys`.",
+                            "Returns quest status. API keys require `account:usage`.",
                     },
                 },
                 "/api/account/my-models": {

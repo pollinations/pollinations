@@ -2,7 +2,7 @@
 
 Self-service endpoints for the authenticated user. All endpoints require authentication (API key or session). API keys need the relevant `account:<scope>` permission. Base path: `/account`.
 
-`account:usage` is the read-only account-state scope for balances, usage, quests, and earnings. Keys with `account:keys` are account-admin keys: they can manage keys and, where enabled, my-models. They also satisfy read-only account-state checks. Newly created child keys cannot receive `account:keys` through this API.
+`account:usage` is the read-only account-state scope for balances, usage, quests, and earnings. `account:keys` manages keys and, where enabled, my-models. These permissions are independent; request both when a client needs both. Newly created child keys cannot receive `account:keys` through this API.
 
 | Endpoint | Description |
 |----------|-------------|
@@ -16,23 +16,23 @@ Self-service endpoints for the authenticated user. All endpoints require authent
 
 ### GET /account/profile
 
-Returns user profile. `githubUsername`, `image`, `tier`, and `nextResetAt` are always included. `name` and `email` are included only when the API key has `account:profile` or `account:keys`.
+Returns user profile. `githubUsername`, `image`, `tier`, and `nextResetAt` are always included. `name` and `email` are included only when the API key has `account:profile`.
 
 ### GET /account/balance
 
-Returns remaining pollen. If the API key has a budget, returns key budget instead. Full account balance requires `account:usage` or `account:keys`.
+Returns remaining pollen. If the API key has a budget, returns key budget instead. Full account balance requires `account:usage`.
 
 ### GET /account/quests
 
-Returns the quest catalog with account status. `completed` includes both globally completed quests and quests earned by the account. Requires `account:usage` or `account:keys`. Claiming rewards is dashboard-only.
+Returns the quest catalog with account status. `completed` includes both globally completed quests and quests earned by the account. Requires `account:usage`. Claiming rewards is dashboard-only.
 
 ### GET /account/usage
 
-Per-request usage history: model, token counts, cost, response time. Requires `account:usage` or `account:keys`.
+Per-request usage history: model, token counts, cost, response time. Requires `account:usage`.
 
 ### GET /account/usage/daily
 
-Daily aggregated usage suitable for dashboards. Requires `account:usage` or `account:keys`.
+Daily aggregated usage suitable for dashboards. Requires `account:usage`.
 
 ### GET /account/key
 

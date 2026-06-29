@@ -94,7 +94,7 @@ polli quests mine --completed # completed and earned quests
 polli my-models list         # invite-only community text models
 ```
 
-`polli auth login` creates an account-admin key for Polli. `account:usage` is enough for read-only account state like usage and quests. Any key with `account:keys` is an account-admin key: it can manage keys and, where invite-only My Models access is enabled, my-models. It can also read usage and quests. Quest claiming remains in the dashboard.
+`polli auth login` creates a key with all account permissions Polli needs: `profile`, `usage`, and `keys`. Use `account:usage` for narrow read-only account state like usage and quests. Use `account:keys` to manage keys and, where invite-only My Models access is enabled, my-models. Quest claiming remains in the dashboard.
 
 ## Links
 

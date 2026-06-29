@@ -939,11 +939,11 @@ curl "https://gen.pollinations.ai/a1b2c3d4e5f60718/metadata"
 
 ### 👤 Account
 
-Account endpoints use scoped account permissions. `account:usage` reads account state such as balances, usage, quests, and earnings. `account:keys` is account-admin: it can manage keys and, where enabled, my-models. It also satisfies read-only account-state checks. Newly created child keys cannot receive `account:keys` through this API.
+Account endpoints use scoped account permissions. `account:usage` reads account state such as balances, usage, quests, and earnings. `account:keys` manages keys and, where enabled, my-models. These permissions are independent; request both when a client needs both. Newly created child keys cannot receive `account:keys` through this API.
 
 #### `GET` `/account/profile` — Get Profile
 
-Returns your account profile. GitHub username, profile image, current tier, next pollen refill timestamp, and community model access are always returned. Name and email are returned only when the API key has `account:profile` or `account:keys`.
+Returns your account profile. GitHub username, profile image, current tier, next pollen refill timestamp, and community model access are always returned. Name and email are returned only when the API key has `account:profile`.
 
 📤 **Response** · `200` · `application/json` — User profile
 
@@ -954,8 +954,8 @@ Returns your account profile. GitHub username, profile image, current tier, next
 | `tier` * | enum (7) — `"anonymous"`, `"microbe"`, `"spore"`, … | User's current tier level |
 | `nextResetAt` * | `string · date-time` \| `null` | Next pollen refill timestamp (ISO 8601). `null` for tiers with no refill. |
 | `communityEndpointsAllowed` * | `boolean` | Whether the account is allowed to manage community endpoints. |
-| `name` | `string` \| `null` | User's display name (only returned when the key has `account:profile` or `account:keys`) |
-| `email` | `string · email` \| `null` | User's email address (only returned when the key has `account:profile` or `account:keys`) |
+| `name` | `string` \| `null` | User's display name (only returned when the key has `account:profile`) |
+| `email` | `string · email` \| `null` | User's email address (only returned when the key has `account:profile`) |
 
 <sub>`*` = required field</sub>
 
@@ -977,7 +977,7 @@ curl "https://gen.pollinations.ai/account/profile" \
 
 #### `GET` `/account/quests` — Get Quest Status
 
-Returns the quest catalog with the authenticated account's read-only status. `completed` includes both globally completed quests and quests earned by the account. API keys require `account:usage` or `account:keys`. Claiming rewards remains dashboard-only.
+Returns the quest catalog with the authenticated account's read-only status. `completed` includes both globally completed quests and quests earned by the account. API keys require `account:usage`. Claiming rewards remains dashboard-only.
 
 📤 **Response** · `200` · `application/json` — Quest status for the authenticated account
 
@@ -1008,7 +1008,7 @@ curl "https://gen.pollinations.ai/account/quests" \
 
 #### `GET` `/account/balance` — Get Balance
 
-Returns the pollen balance visible to the caller. API keys with a budget always see their remaining budget (no scope needed). Session auth, API keys with `account:usage`, or keys with `account:keys` see the full account balance.
+Returns the pollen balance visible to the caller. API keys with a budget always see their remaining budget (no scope needed). Full account balance requires `account:usage`.
 
 📤 **Response** · `200` · `application/json` — Pollen balance
 
@@ -1029,7 +1029,7 @@ curl "https://gen.pollinations.ai/account/balance" \
 
 #### `GET` `/account/usage` — Get Usage History
 
-Returns your request history with per-request details: model used, token counts, cost, and response time. Defaults to the last 30 days, supports up to 90 days via `days`, or exact day/week/month periods via `granularity` and `period`. Supports JSON and CSV export. Each response is capped at 50,000 rows. Use `before` with `before_event_id` for stable cursor-based pagination. Requires `account:usage` or `account:keys` when using API keys.
+Returns your request history with per-request details: model used, token counts, cost, and response time. Defaults to the last 30 days, supports up to 90 days via `days`, or exact day/week/month periods via `granularity` and `period`. Supports JSON and CSV export. Each response is capped at 50,000 rows. Use `before` with `before_event_id` for stable cursor-based pagination. API keys require `account:usage`.
 
 ⚙️ **Parameters**
 
@@ -1086,7 +1086,7 @@ curl "https://gen.pollinations.ai/account/usage?format=json&limit=100" \
 
 #### `GET` `/account/usage/daily` — Get Daily Usage
 
-Returns daily aggregated usage for the requested time window, grouped by date and model. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Useful for dashboards and spending analysis. Supports JSON and CSV export. Results are cached for 1 hour. Requires `account:usage` or `account:keys` when using API keys.
+Returns daily aggregated usage for the requested time window, grouped by date and model. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Useful for dashboards and spending analysis. Supports JSON and CSV export. Results are cached for 1 hour. API keys require `account:usage`.
 
 ⚙️ **Parameters**
 
@@ -1125,7 +1125,7 @@ curl "https://gen.pollinations.ai/account/usage/daily?format=json&days=90" \
 
 #### `GET` `/account/earnings` — Get Developer Earnings
 
-Returns developer earnings in one response: per-(date, entity) buckets, per-entity rollups, per-source rollups, and additive money totals across BYOP apps and community models. Source-specific rows include `requests`, `baseline_price`, reward basis `cost_usd`, `reward_rate`, and `unique_users`; the top-level total only includes additive earned-pollen fields. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. Requires `account:usage` or `account:keys` when using API keys.
+Returns developer earnings in one response: per-(date, entity) buckets, per-entity rollups, per-source rollups, and additive money totals across BYOP apps and community models. Source-specific rows include `requests`, `baseline_price`, reward basis `cost_usd`, `reward_rate`, and `unique_users`; the top-level total only includes additive earned-pollen fields. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. API keys require `account:usage`.
 
 ⚙️ **Parameters**
 
@@ -1278,7 +1278,7 @@ curl "https://gen.pollinations.ai/account/key" \
 
 #### `GET` `/account/key/usage` — Get API Key Usage
 
-Returns usage history for the API key used in the request. No scope required — a key can always read its own usage. Use `before` with `before_event_id` for stable cursor-based pagination. For account-wide usage across all keys, use `/account/usage` with `account:usage` or `account:keys`.
+Returns usage history for the API key used in the request. No scope required — a key can always read its own usage. Use `before` with `before_event_id` for stable cursor-based pagination. For account-wide usage across all keys, use `/account/usage` with `account:usage`.
 
 ⚙️ **Parameters**
 

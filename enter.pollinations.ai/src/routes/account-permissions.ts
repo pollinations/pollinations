@@ -11,13 +11,13 @@ export function hasDirectAccountPermission(
     return !!apiKey?.permissions?.account?.includes(permission);
 }
 
+/**
+ * Read APIs have one canonical read permission (`profile` or `usage`).
+ */
 export function hasAccountReadPermission(
     apiKey: AccountPermissionApiKey | undefined,
     permission: Exclude<AccountPermission, "keys">,
 ): boolean {
     if (!apiKey) return true;
-    return (
-        hasDirectAccountPermission(apiKey, permission) ||
-        hasDirectAccountPermission(apiKey, "keys")
-    );
+    return hasDirectAccountPermission(apiKey, permission);
 }

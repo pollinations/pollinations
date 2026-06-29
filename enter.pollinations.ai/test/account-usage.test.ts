@@ -6,7 +6,7 @@ const authHeaders = (sessionToken: string) => ({
     Cookie: `better-auth.session_token=${sessionToken}`,
 });
 
-async function createAdminApiKey(sessionToken: string) {
+async function createUsageApiKey(sessionToken: string) {
     const createResponse = await SELF.fetch(
         "http://localhost:3000/api/account/keys",
         {
@@ -15,7 +15,7 @@ async function createAdminApiKey(sessionToken: string) {
                 "Content-Type": "application/json",
                 ...authHeaders(sessionToken),
             },
-            body: JSON.stringify({ name: "usage-admin-key" }),
+            body: JSON.stringify({ name: "usage-read-key" }),
         },
     );
     expect(createResponse.status).toBe(200);
@@ -33,7 +33,7 @@ async function createAdminApiKey(sessionToken: string) {
                 ...authHeaders(sessionToken),
             },
             body: JSON.stringify({
-                accountPermissions: ["keys"],
+                accountPermissions: ["usage"],
             }),
         },
     );
@@ -229,7 +229,7 @@ test("GET /api/account/usage forwards stable cursor and returns event cursor", a
     expect(usageCalls[0].query.before_event_id).toBe("event-1");
 });
 
-test("GET /api/account/usage accepts account keys admin permission", async ({
+test("GET /api/account/usage accepts account usage permission", async ({
     sessionToken,
     mocks,
 }) => {
@@ -260,12 +260,12 @@ test("GET /api/account/usage accepts account keys admin permission", async ({
         },
     ];
 
-    const adminKey = await createAdminApiKey(sessionToken);
+    const usageKey = await createUsageApiKey(sessionToken);
     const response = await SELF.fetch(
         "http://localhost:3000/api/account/usage?days=30&limit=1",
         {
             headers: {
-                authorization: `Bearer ${adminKey}`,
+                authorization: `Bearer ${usageKey}`,
             },
         },
     );

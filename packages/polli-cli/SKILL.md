@@ -43,7 +43,7 @@ Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video;
 
 ## Setup
 
-One-time: `polli auth login` (device-flow; creates an account-admin key for Polli). To store an existing key, run
+One-time: `polli auth login` (device-flow; creates a key with `profile`, `usage`, and `keys`). To store an existing key, run
 `printf '%s' "$POLLINATIONS_API_KEY" | polli auth login --with-token`. Verify
 with `polli auth status`.
 Override the stored key for a single command with `--key <key>`.
@@ -158,7 +158,7 @@ polli my-models create --name my-model --base-url https://api.example.com/v1 --b
 polli my-models update <id> --description "Updated description"
 polli my-models delete <id>
 ```
-`my-models` manages owned community text models for invite-only accounts. It requires `communityEndpointsAllowed: true` plus a key with `account:keys`, or an authenticated dashboard session through the API. `account:usage` is enough for read-only usage and `polli quests mine`; an `account:keys` key also satisfies those read-only account checks. Quest claiming is dashboard-only; `polli quests` and `polli quests mine` are read-only.
+`my-models` manages owned community text models for invite-only accounts. It requires `communityEndpointsAllowed: true` plus a key with `account:keys`, or an authenticated dashboard session through the API. Use `account:usage` for narrow read-only usage and `polli quests mine`; use both permissions when a client needs both read-only account state and admin operations. Quest claiming is dashboard-only; `polli quests` and `polli quests mine` are read-only.
 
 ### Manage API keys
 ```bash
@@ -168,7 +168,7 @@ polli keys create --name "my-bot" --type secret --budget 1000 --permissions prof
 polli keys create --name "my-app" --type publishable --redirect-uri https://app.example/callback --earnings
 polli keys revoke <id>                                             # id comes from `keys list --json`
 ```
-`--permissions <perms...>` scopes what the new key can do on the account (e.g. `profile usage` lets it call `polli --key <new> usage`). **Without `--permissions`, new scoped keys can generate media but cannot read account state** — `polli --key <new> usage` will 403. `"keys"` is auto-stripped from the list so a scoped key can never mint further keys. Keys that already have `account:keys` are account-admin keys and can also read usage and quests, plus manage my-models where that invite-only feature is enabled. Publishable app keys default developer earnings off; pass `--earnings` to enable them. To inspect a specific key other than the current one, use `polli keys list --json | jq '.[] | select(.id == "<id>")'`. `keys info` is intentionally scoped to the caller's own key.
+`--permissions <perms...>` scopes what the new key can do on the account (e.g. `profile usage` lets it call `polli --key <new> usage`). **Without `--permissions`, new scoped keys can generate media but cannot read account state** — `polli --key <new> usage` will 403. `"keys"` is auto-stripped from the list so a scoped key can never mint further keys. Existing keys with `account:keys` can manage my-models where that invite-only feature is enabled, but still need `account:usage` for read-only account state. Publishable app keys default developer earnings off; pass `--earnings` to enable them. To inspect a specific key other than the current one, use `polli keys list --json | jq '.[] | select(.id == "<id>")'`. `keys info` is intentionally scoped to the caller's own key.
 
 ### Read API docs
 ```bash

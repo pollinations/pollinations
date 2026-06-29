@@ -1,6 +1,6 @@
 import chalk from "chalk";
 import { Command } from "commander";
-import { gen } from "../lib/api.js";
+import { ApiError, gen } from "../lib/api.js";
 import { resolveApiKey } from "../lib/config.js";
 import {
     getOutputMode,
@@ -69,9 +69,27 @@ export const questsCommand = new Command("quests")
     .action(async (opts) => {
         try {
             const key = resolveApiKey();
-            const data = key
-                ? await gen<QuestsResponse>("/account/quests", { apiKey: key })
-                : await gen<QuestsResponse>("/quests/catalog");
+            let hasAccountStatus = false;
+            let data: QuestsResponse;
+            if (!key) {
+                data = await gen<QuestsResponse>("/quests/catalog");
+            } else {
+                try {
+                    data = await gen<QuestsResponse>("/account/quests", {
+                        apiKey: key,
+                    });
+                    hasAccountStatus = true;
+                } catch (err) {
+                    if (
+                        err instanceof ApiError &&
+                        (err.status === 401 || err.status === 403)
+                    ) {
+                        data = await gen<QuestsResponse>("/quests/catalog");
+                    } else {
+                        throw err;
+                    }
+                }
+            }
             const quests = filterQuests(data.quests ?? [], opts);
 
             if (getOutputMode() === "json") {
@@ -87,6 +105,10 @@ export const questsCommand = new Command("quests")
             if (!key) {
                 printInfo(
                     "Showing public quest catalog. Log in for earned/completed account status.",
+                );
+            } else if (!hasAccountStatus) {
+                printInfo(
+                    "Stored key cannot read account quest status. Showing public quest catalog.",
                 );
             }
 

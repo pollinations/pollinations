@@ -985,6 +985,16 @@ fixtureTest(
         });
         const enterApi = await createEnterFrontendApi();
 
+        const legacyResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                },
+            }),
+        );
+        expect(legacyResponse.status).toBe(404);
+
         const deniedResponse = await fetchEnterApi(
             enterApi,
             new Request("http://localhost:3000/api/account/my-models", {

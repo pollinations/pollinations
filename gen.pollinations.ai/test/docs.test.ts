@@ -70,6 +70,16 @@ describe("docs routes", () => {
                             "Returns quest status. API keys require `account:usage` or `account:keys`.",
                     },
                 },
+                "/api/account/my-models": {
+                    get: {
+                        tags: ["👤 Account"],
+                        description:
+                            "List invite-only community text models. API keys require `account:keys`.",
+                    },
+                },
+                "/api/account/my-models/{id}/update": {
+                    post: { tags: ["👤 Account"] },
+                },
                 "/api/quests/catalog": {
                     get: { tags: ["✨ Quests"], security: [] },
                 },
@@ -115,10 +125,13 @@ describe("docs routes", () => {
         expect(schema.paths["/account/key"]).toBeDefined();
         expect(schema.paths["/account/profile"]).toBeDefined();
         expect(schema.paths["/account/quests"]).toBeDefined();
+        expect(schema.paths["/account/my-models"]).toBeDefined();
+        expect(schema.paths["/account/my-models/{id}/update"]).toBeDefined();
         expect(schema.paths["/quests/catalog"]).toBeDefined();
         expect(schema.paths["/api/account/key"]).toBeUndefined();
         expect(schema.paths["/api/account/profile"]).toBeUndefined();
         expect(schema.paths["/api/account/quests"]).toBeUndefined();
+        expect(schema.paths["/api/account/my-models"]).toBeUndefined();
         expect(schema.paths["/api/quests/catalog"]).toBeUndefined();
         expect(schema.paths["/quests/check"]).toBeUndefined();
         expect(schema.paths["/quests/rewards"]).toBeUndefined();
@@ -174,6 +187,11 @@ describe("docs routes", () => {
             schema.paths["/account/quests"] as Record<string, unknown>
         )?.get as Record<string, unknown> | undefined;
         expect(accountQuestsGet?.description).toContain("account:usage");
+
+        const myModelsGet = (
+            schema.paths["/account/my-models"] as Record<string, unknown>
+        )?.get as Record<string, unknown> | undefined;
+        expect(myModelsGet?.description).toContain("account:keys");
 
         // The catalog is unauthenticated → marked public (security: []).
         const questsCatalogGet = (

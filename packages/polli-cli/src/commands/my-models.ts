@@ -108,7 +108,7 @@ function printModels(models: MyModel[]) {
     }
     printTable(
         models.map((model) => ({
-            id: chalk.dim(model.id.slice(0, 8)),
+            id: chalk.dim(model.id),
             model: chalk.hex("#a78bfa").bold(model.modelId),
             upstream: model.upstreamModel,
             base_url: model.baseUrl,

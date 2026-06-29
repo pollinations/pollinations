@@ -103,9 +103,7 @@ export function CommunityEndpointDialog({
     async function handleFetchModels(): Promise<void> {
         setModelListState({ status: "loading", message: "Fetching models…" });
         try {
-            const response = await apiClient[
-                "community-endpoints"
-            ].models.$post({
+            const response = await apiClient.account["my-models"].models.$post({
                 json: {
                     baseUrl: form.baseUrl.trim(),
                     ...tokenForRequest,
@@ -135,7 +133,7 @@ export function CommunityEndpointDialog({
     async function handleTest(): Promise<void> {
         setTestState({ status: "loading", message: "Testing endpoint…" });
         try {
-            const response = await apiClient["community-endpoints"].test.$post({
+            const response = await apiClient.account["my-models"].test.$post({
                 json: {
                     baseUrl: form.baseUrl.trim(),
                     bearerToken: form.bearerToken.trim(),

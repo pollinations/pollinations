@@ -36,13 +36,14 @@ Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video;
 | Filter models by type | `polli models --type image` |
 | Model health + latency | `polli models --stats` (default 60m, `--window <min>`) |
 | Check balance | `polli usage` |
-| List quests | `polli quests` |
+| List public quests | `polli quests` |
+| List your quest rewards/status | `polli quests mine` |
 | Manage invite-only community models | `polli my-models list` |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup
 
-One-time: `polli auth login` (device-flow). To store an existing key, run
+One-time: `polli auth login` (device-flow; creates an account-admin key for Polli). To store an existing key, run
 `printf '%s' "$POLLINATIONS_API_KEY" | polli auth login --with-token`. Verify
 with `polli auth status`.
 Override the stored key for a single command with `--key <key>`.
@@ -143,8 +144,9 @@ Use `--stats` before choosing a model. **Caveat**: the `err%` column counts **5x
 polli usage              # current pollen balance
 polli usage --history    # recent individual requests
 polli usage --daily      # daily cost summary
-polli quests             # quest catalog; account earned/completed status when logged in
-polli quests --completed # completed and earned quests
+polli quests             # public quest catalog
+polli quests mine        # account earned/completed status
+polli quests mine --completed # completed and earned quests
 ```
 **History is eventually consistent** — a request you just made may not appear for 30–60s. When matching costs to freshly-generated media, use `--limit 50` and filter by timestamp, and retry if the expected entry is missing. `polli usage --json` returns `{"pollen": <number>}` — the current balance only; use `--history --json` or `--daily --json` for cost breakdowns.
 
@@ -156,7 +158,7 @@ polli my-models create --name my-model --base-url https://api.example.com/v1 --b
 polli my-models update <id> --description "Updated description"
 polli my-models delete <id>
 ```
-`my-models` manages owned community text models for invite-only accounts. It requires `communityEndpointsAllowed: true` plus a key with `account:keys`, or an authenticated dashboard session through the API. `account:usage` is enough for read-only usage and quest commands; an `account:keys` key also satisfies those read-only account checks. Quest claiming is dashboard-only; `polli quests` is read-only.
+`my-models` manages owned community text models for invite-only accounts. It requires `communityEndpointsAllowed: true` plus a key with `account:keys`, or an authenticated dashboard session through the API. `account:usage` is enough for read-only usage and `polli quests mine`; an `account:keys` key also satisfies those read-only account checks. Quest claiming is dashboard-only; `polli quests` and `polli quests mine` are read-only.
 
 ### Manage API keys
 ```bash

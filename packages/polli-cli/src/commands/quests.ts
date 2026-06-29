@@ -1,7 +1,6 @@
 import chalk from "chalk";
 import { Command } from "commander";
-import { ApiError, gen } from "../lib/api.js";
-import { resolveApiKey } from "../lib/config.js";
+import { gen, requireKey } from "../lib/api.js";
 import {
     getOutputMode,
     printError,
@@ -61,79 +60,93 @@ function filterQuests(quests: QuestEntry[], opts: Record<string, unknown>) {
     return quests.filter((quest) => wanted.has(questStatus(quest)));
 }
 
-export const questsCommand = new Command("quests")
-    .description("List quests and read-only account quest status")
-    .option("--open", "Show only open quests")
-    .option("--completed", "Show only completed/earned quests")
-    .option("--coming-soon", "Show only coming-soon quests")
+function addQuestFilters(command: Command, accountStatus = false): Command {
+    return command
+        .option("--open", "Show only open quests")
+        .option(
+            "--completed",
+            accountStatus
+                ? "Show only completed/earned quests"
+                : "Show only completed catalog quests",
+        )
+        .option("--coming-soon", "Show only coming-soon quests");
+}
+
+function renderQuests(quests: QuestEntry[]): void {
+    if (getOutputMode() === "json") {
+        printResult(
+            quests.map((quest) => ({
+                ...quest,
+                status: questStatus(quest),
+            })),
+        );
+        return;
+    }
+
+    printTable(
+        quests.map((quest) => {
+            const status = questStatus(quest);
+            return {
+                status:
+                    status === "open"
+                        ? chalk.green(status)
+                        : status === "completed"
+                          ? chalk.cyan(status)
+                          : chalk.dim("coming"),
+                category: quest.category,
+                reward: rewardLabel(quest),
+                title: quest.title,
+                url: quest.url ?? "-",
+            };
+        }),
+        ["status", "category", "reward", "title", "url"],
+    );
+}
+
+async function listPublicQuests(opts: Record<string, unknown>): Promise<void> {
+    const data = await gen<QuestsResponse>("/quests/catalog");
+    renderQuests(filterQuests(data.quests ?? [], opts));
+}
+
+async function listAccountQuests(opts: Record<string, unknown>): Promise<void> {
+    const data = await gen<QuestsResponse>("/account/quests", {
+        apiKey: requireKey(),
+    });
+    renderQuests(filterQuests(data.quests ?? [], opts));
+}
+
+export const questsCommand = addQuestFilters(
+    new Command("quests").description("List the public quest catalog"),
+)
     .action(async (opts) => {
         try {
-            const key = resolveApiKey();
-            let hasAccountStatus = false;
-            let data: QuestsResponse;
-            if (!key) {
-                data = await gen<QuestsResponse>("/quests/catalog");
-            } else {
-                try {
-                    data = await gen<QuestsResponse>("/account/quests", {
-                        apiKey: key,
-                    });
-                    hasAccountStatus = true;
-                } catch (err) {
-                    if (
-                        err instanceof ApiError &&
-                        (err.status === 401 || err.status === 403)
-                    ) {
-                        data = await gen<QuestsResponse>("/quests/catalog");
-                    } else {
-                        throw err;
-                    }
-                }
-            }
-            const quests = filterQuests(data.quests ?? [], opts);
-
-            if (getOutputMode() === "json") {
-                printResult(
-                    quests.map((quest) => ({
-                        ...quest,
-                        status: questStatus(quest),
-                    })),
-                );
-                return;
-            }
-
-            if (!key) {
+            if (getOutputMode() !== "json") {
                 printInfo(
-                    "Showing public quest catalog. Log in for earned/completed account status.",
-                );
-            } else if (!hasAccountStatus) {
-                printInfo(
-                    "Stored key cannot read account quest status. Showing public quest catalog.",
+                    "Showing public quest catalog. Use `polli quests mine` for earned/completed account status.",
                 );
             }
-
-            printTable(
-                quests.map((quest) => {
-                    const status = questStatus(quest);
-                    return {
-                        status:
-                            status === "open"
-                                ? chalk.green(status)
-                                : status === "completed"
-                                  ? chalk.cyan(status)
-                                  : chalk.dim("coming"),
-                        category: quest.category,
-                        reward: rewardLabel(quest),
-                        title: quest.title,
-                        url: quest.url ?? "-",
-                    };
-                }),
-                ["status", "category", "reward", "title", "url"],
-            );
+            await listPublicQuests(opts);
         } catch (err) {
             printError(
                 `Failed to fetch quests: ${err instanceof Error ? err.message : "unknown"}`,
             );
             process.exit(1);
         }
-    });
+    })
+    .addCommand(
+        addQuestFilters(
+            new Command("mine").description(
+                "List quests with your earned/completed account status",
+            ),
+            true,
+        ).action(async (opts) => {
+            try {
+                await listAccountQuests(opts);
+            } catch (err) {
+                printError(
+                    `Failed to fetch account quests: ${err instanceof Error ? err.message : "unknown"}`,
+                );
+                process.exit(1);
+            }
+        }),
+    );

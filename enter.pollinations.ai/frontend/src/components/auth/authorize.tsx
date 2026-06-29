@@ -561,7 +561,8 @@ export function Authorize() {
                                             &#x1F511;
                                         </span>
                                         <span>
-                                            Create, list, and revoke API keys.
+                                            Manage API keys, account status, and
+                                            My Models when enabled.
                                         </span>
                                     </li>
                                 )}

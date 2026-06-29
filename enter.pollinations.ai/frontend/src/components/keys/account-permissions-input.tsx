@@ -43,9 +43,9 @@ export const ACCOUNT_PERMISSIONS: readonly AccountPermissionOption[] = [
     },
     {
         id: "keys",
-        label: "Key Management",
-        shortLabel: "Keys",
-        tooltip: "create, list, and revoke API keys",
+        label: "Account Admin",
+        shortLabel: "Admin",
+        tooltip: "keys, quests, usage, and my-models",
     },
 ];
 

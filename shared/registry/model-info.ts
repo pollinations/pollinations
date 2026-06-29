@@ -1,5 +1,7 @@
 import { z } from "zod";
 import {
+    getBasePriceMultiplier,
+    getBillingRules,
     getModelDefinition,
     getPriceDefinition,
     getVisibleAudioModels,
@@ -39,6 +41,36 @@ export const ModelInfoSchema = z.object({
     pricing: z
         .record(z.string(), z.string())
         .and(z.object({ currency: z.literal("pollen") })),
+    billing: z
+        .object({
+            description: z.string().optional(),
+            tiers: z
+                .array(
+                    z.object({
+                        id: z.string(),
+                        description: z.string(),
+                    }),
+                )
+                .optional(),
+            adjustments: z
+                .array(
+                    z.object({
+                        id: z.string(),
+                        description: z.string(),
+                        kind: z.string(),
+                        unit: z.string(),
+                        count: z.enum([
+                            "geminiGroundedPrompt",
+                            "geminiWebSearchQueries",
+                            "perplexityRequest",
+                        ]),
+                        when: z.enum(["grounded", "always"]),
+                        unit_price: z.string(),
+                    }),
+                )
+                .optional(),
+        })
+        .optional(),
     title: z.string(),
     description: z.string().optional(),
     input_modalities: z.array(z.string()).optional(),
@@ -97,6 +129,33 @@ function getModelInfo(modelName: ModelName): ModelInfo {
             pricing[key] = toFixedPoint(value);
         }
     }
+    const billingRules = getBillingRules(service);
+    const basePriceMultiplier = getBasePriceMultiplier(service);
+    const billingDescription =
+        typeof service.priceMultiplier === "number"
+            ? undefined
+            : service.priceMultiplier.description;
+    const billing = billingRules
+        ? {
+              description: billingDescription,
+              tiers: billingRules.tiers?.map((tier) => ({
+                  id: tier.id,
+                  description: tier.description,
+              })),
+              adjustments: billingRules.adjustments?.map((adjustment) => ({
+                  id: adjustment.id,
+                  description: adjustment.description,
+                  kind: adjustment.kind,
+                  unit: adjustment.unit,
+                  count: adjustment.count,
+                  when: adjustment.when ?? "grounded",
+                  unit_price: toFixedPoint(
+                      adjustment.unitCost *
+                          (adjustment.priceMultiplier ?? basePriceMultiplier),
+                  ),
+              })),
+          }
+        : undefined;
 
     return {
         name: modelName as string,
@@ -104,6 +163,7 @@ function getModelInfo(modelName: ModelName): ModelInfo {
         category: service.category,
         brand: service.brand,
         pricing,
+        billing,
         // User-facing metadata from service definition
         title: service.title,
         description: service.description,

@@ -83,6 +83,62 @@ export type VideoCapability =
     | "keyframes"
     | "audio_output";
 
+export type BillingAdjustmentCounter =
+    | "geminiGroundedPrompt"
+    | "geminiWebSearchQueries"
+    | "perplexityRequest";
+
+export type ProviderReportedUnitCostSource = "perplexityUsageCostRequest";
+
+export type BillingTierRule = {
+    id: string;
+    description: string;
+    when: {
+        promptTokensGt: number;
+    };
+    cost: CostDefinition;
+};
+
+export type BillingAdjustmentRule = {
+    id: string;
+    description: string;
+    kind: string;
+    unit: string;
+    count: BillingAdjustmentCounter;
+    unitCost: number;
+    providerReportedUnitCost?: ProviderReportedUnitCostSource;
+    priceMultiplier?: number;
+    when?: "grounded" | "always";
+};
+
+export type BillingRules = {
+    tiers?: BillingTierRule[];
+    adjustments?: BillingAdjustmentRule[];
+};
+
+export type PriceMultiplierContext = {
+    model: ModelName;
+    usage: Usage;
+    output?: unknown;
+    baseCost: CostDefinition;
+};
+
+export type PriceMultiplierEffect = {
+    cost?: CostDefinition;
+    multiplier?: number;
+    costAdjustment?: number;
+    priceAdjustment?: number;
+};
+
+export type PriceMultiplierFunctor = {
+    multiplier: number;
+    description: string;
+    billing?: BillingRules;
+    apply: (context: PriceMultiplierContext) => PriceMultiplierEffect;
+};
+
+export type PriceMultiplier = number | PriceMultiplierFunctor;
+
 export type ModelDefinition<TModelId extends string = ModelId> = {
     aliases: string[];
     modelId: TModelId;
@@ -92,7 +148,12 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     cost: CostDefinition;
     // USD-cost to Pollen-price multiplier. Required on every model — there is
     // no implicit default. Typical values: 1 (sold at cost) or 1.5 (paid markup).
-    priceMultiplier: number;
+    // Dynamic models can provide a functor that adjusts rated cost/price from
+    // usage and provider output while still exposing a base multiplier.
+    priceMultiplier: PriceMultiplier;
+    // Static catalog metadata only. Dynamic runtime behavior belongs in a
+    // priceMultiplier functor; this is kept for compatibility with simple docs.
+    billing?: BillingRules;
     // Date the model was added to the registry (ms epoch). Set once, never updated.
     addedDate: number;
     // User-facing metadata
@@ -153,12 +214,89 @@ function convertUsage(
     return convertedUsage as Usage;
 }
 
+export function getBasePriceMultiplier(svc: ModelDefinition): number {
+    return typeof svc.priceMultiplier === "number"
+        ? svc.priceMultiplier
+        : svc.priceMultiplier.multiplier;
+}
+
 function derivePrice(svc: ModelDefinition): PriceDefinition {
-    const m = svc.priceMultiplier;
+    const m = getBasePriceMultiplier(svc);
     if (m === 1) return svc.cost;
     return Object.fromEntries(
         Object.entries(svc.cost).map(([k, v]) => [k, (v as number) * m]),
     ) as PriceDefinition;
+}
+
+function calculateLinearCost(
+    model: ModelName,
+    usage: Usage,
+    costDefinition: CostDefinition,
+): UsageCost {
+    const usageCost = convertUsage(usage, costDefinition, model);
+    const totalCost = Object.values(usageCost).reduce(
+        (total, cost) => total + cost,
+        0,
+    );
+    return {
+        ...usageCost,
+        totalCost,
+    };
+}
+
+export function getBillingRules(
+    svc: ModelDefinition,
+): BillingRules | undefined {
+    if (typeof svc.priceMultiplier === "number") return svc.billing;
+    if (!svc.billing) return svc.priceMultiplier.billing;
+    return {
+        tiers: [
+            ...(svc.billing.tiers ?? []),
+            ...(svc.priceMultiplier.billing?.tiers ?? []),
+        ],
+        adjustments: [
+            ...(svc.billing.adjustments ?? []),
+            ...(svc.priceMultiplier.billing?.adjustments ?? []),
+        ],
+    };
+}
+
+type EvaluatedPriceMultiplier = {
+    cost: CostDefinition;
+    multiplier: number;
+    costAdjustment: number;
+    priceAdjustment: number;
+};
+
+function evaluatePriceMultiplier(
+    model: ModelName,
+    svc: ModelDefinition,
+    usage: Usage,
+    output?: unknown,
+): EvaluatedPriceMultiplier {
+    if (typeof svc.priceMultiplier === "number") {
+        return {
+            cost: svc.cost,
+            multiplier: svc.priceMultiplier,
+            costAdjustment: 0,
+            priceAdjustment: 0,
+        };
+    }
+
+    const effect = svc.priceMultiplier.apply({
+        model,
+        usage,
+        output,
+        baseCost: svc.cost,
+    });
+    const multiplier = effect.multiplier ?? svc.priceMultiplier.multiplier;
+    const costAdjustment = effect.costAdjustment ?? 0;
+    return {
+        cost: effect.cost ?? svc.cost,
+        multiplier,
+        costAdjustment,
+        priceAdjustment: effect.priceAdjustment ?? costAdjustment * multiplier,
+    };
 }
 
 const MODEL_REGISTRY = {
@@ -261,38 +399,57 @@ export function getPriceDefinition(model: ModelName): PriceDefinition | null {
 /**
  * Calculate cost for a model based on usage
  */
-export function calculateCost(model: ModelName, usage: Usage): UsageCost {
-    const costDefinition = getCostDefinition(model);
-    if (!costDefinition)
+export function calculateCost(
+    model: ModelName,
+    usage: Usage,
+    output?: unknown,
+): UsageCost {
+    const svc = MODEL_REGISTRY[model];
+    if (!svc)
         throw new Error(
             `Failed to get current cost for model: ${model.toString()}`,
         );
-    const usageCost = convertUsage(usage, costDefinition, model);
-    const totalCost = Object.values(usageCost).reduce(
-        (total, cost) => total + cost,
-        0,
-    );
+    const evaluated = evaluatePriceMultiplier(model, svc, usage, output);
+    const usageCost = calculateLinearCost(model, usage, evaluated.cost);
+    const adjustmentCost = evaluated.costAdjustment;
+    if (adjustmentCost === 0) return usageCost;
     return {
         ...usageCost,
-        totalCost,
+        totalCost: usageCost.totalCost + adjustmentCost,
     };
 }
 
 /**
  * Calculate price for a model based on usage
  */
-export function calculatePrice(model: ModelName, usage: Usage): UsagePrice {
-    const priceDefinition = getPriceDefinition(model);
-    if (!priceDefinition)
+export function calculatePrice(
+    model: ModelName,
+    usage: Usage,
+    output?: unknown,
+): UsagePrice {
+    const svc = MODEL_REGISTRY[model];
+    if (!svc)
         throw new Error(
             `Failed to get current price for model: ${model.toString()}`,
         );
-    const usagePrice = convertUsage(usage, priceDefinition, model);
-    const totalPrice = roundPollenLedgerAmount(
-        Object.values(usagePrice).reduce((total, price) => total + price, 0),
+    const evaluated = evaluatePriceMultiplier(model, svc, usage, output);
+    const usageCost = calculateLinearCost(model, usage, evaluated.cost);
+    const usagePrice = Object.fromEntries(
+        Object.entries(usageCost)
+            .filter(([usageType]) => usageType !== "totalCost")
+            .map(([usageType, cost]) => [
+                usageType,
+                (cost as number) * evaluated.multiplier,
+            ]),
+    ) as Usage;
+    const tokenTotalPrice = Object.values(usagePrice).reduce(
+        (total, price) => total + price,
+        0,
     );
     return {
         ...usagePrice,
-        totalPrice,
+        totalPrice: roundPollenLedgerAmount(
+            tokenTotalPrice + evaluated.priceAdjustment,
+        ),
     };
 }

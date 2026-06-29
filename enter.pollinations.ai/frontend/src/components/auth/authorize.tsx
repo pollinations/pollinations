@@ -129,7 +129,10 @@ export function Authorize() {
         parsedRedirectUrl !== null &&
         (!app_key || redirectValidationState === "valid");
 
-    useScrollLock();
+    const isMobile = window.innerWidth < 768;
+    if (!isMobile) {
+        useScrollLock();
+    }
 
     useEffect(() => {
         let cancelled = false;

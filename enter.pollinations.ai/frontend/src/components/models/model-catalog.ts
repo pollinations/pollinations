@@ -275,6 +275,19 @@ function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
         };
     }
 
+    if (price.type === "3d") {
+        // 3D models are always flat per-generation (registry stores the price
+        // under completionImageTokens, the same flat-fee convention image
+        // models use) — never per-token, so skip the per-token branch image
+        // models have.
+        return {
+            ...price,
+            perToken: false,
+            perRequest: true,
+            perImagePrice: formatPrice(completionImageTokens, formatPriceFlat),
+        };
+    }
+
     if (price.type === "audio") {
         // Flat per-generation models (e.g. Stable Audio): one fee per request,
         // independent of length. Show flat "/gen" In/Out audio prices instead of

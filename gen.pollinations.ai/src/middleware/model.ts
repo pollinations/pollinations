@@ -4,6 +4,7 @@ import {
     EMBEDDING_SERVICES,
 } from "@shared/registry/embeddings.ts";
 import { DEFAULT_IMAGE_MODEL, IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { MODEL3D_SERVICES } from "@shared/registry/model3d.ts";
 import {
     DEFAULT_REALTIME_MODEL,
     REALTIME_SERVICES,
@@ -14,9 +15,11 @@ import type { EventType } from "@shared/schemas/generation-event.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 
+// 3D reuses the "generate.image" EventType, same as video — no new EventType
+// needed, which avoids touching Tinybird/EventType consumers keyed on it.
 const SERVICES_BY_EVENT_TYPE = {
     "generate.text": TEXT_SERVICES,
-    "generate.image": IMAGE_SERVICES,
+    "generate.image": { ...IMAGE_SERVICES, ...MODEL3D_SERVICES },
     "generate.audio": AUDIO_SERVICES,
     "generate.embedding": EMBEDDING_SERVICES,
     "generate.realtime": REALTIME_SERVICES,

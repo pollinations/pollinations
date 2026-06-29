@@ -5,6 +5,7 @@ import {
     getVisibleAudioModels,
     getVisibleEmbeddingModels,
     getVisibleImageModels,
+    getVisibleModel3dModels,
     getVisibleRealtimeModels,
     getVisibleTextModels,
     type ModelName,
@@ -32,6 +33,7 @@ export const ModelInfoSchema = z.object({
         "image",
         "audio",
         "video",
+        "3d",
         "embedding",
         "realtime",
     ]),
@@ -158,4 +160,11 @@ export function getEmbeddingModelsInfo(): ModelInfo[] {
  */
 export function getRealtimeModelsInfo(): ModelInfo[] {
     return getVisibleRealtimeModels().map(getModelInfo);
+}
+
+/**
+ * Get all 3D models with enriched information
+ */
+export function getModel3dModelsInfo(): ModelInfo[] {
+    return getVisibleModel3dModels().map(getModelInfo);
 }

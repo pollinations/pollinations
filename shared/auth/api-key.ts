@@ -7,8 +7,6 @@ import { alias } from "drizzle-orm/sqlite-core";
 import * as schema from "../db/better-auth.ts";
 import { parseGithubIdList } from "./github-id-list.ts";
 
-export { parseGithubIdList } from "./github-id-list.ts";
-
 const PUBLISHABLE_KEY_PREFIX = "pk";
 
 export type AuthUser = typeof schema.user.$inferSelect;

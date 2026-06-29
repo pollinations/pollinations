@@ -47,11 +47,6 @@ export type ActionState = {
     billableUsage?: Usage;
 };
 
-export type UsageCountEntry = {
-    label: string;
-    value: number;
-};
-
 const emptyPriceForm = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [field.key, ""]),
 ) as EndpointFormPrices;
@@ -118,7 +113,7 @@ function formPricesToPayload(form: EndpointFormState): CommunityEndpointPrices {
     ) as CommunityEndpointPrices;
 }
 
-export function hasObservedUsagePath(
+function hasObservedUsagePath(
     usage: CommunityEndpointUsage | undefined,
     path: string,
 ): boolean {
@@ -139,22 +134,6 @@ export function hasObservedPriceField(
 ): boolean {
     return field.rawUsagePaths.some((path) =>
         hasObservedUsagePath(usage, path),
-    );
-}
-
-export function billableUsageCountEntries(
-    usage: CommunityEndpointUsage | undefined,
-    billableUsage: Usage | undefined,
-): UsageCountEntry[] {
-    return COMMUNITY_ENDPOINT_PRICE_FIELDS.flatMap((field) =>
-        hasObservedPriceField(usage, field)
-            ? [
-                  {
-                      label: field.label,
-                      value: billableUsage?.[field.usageType] ?? 0,
-                  },
-              ]
-            : [],
     );
 }
 

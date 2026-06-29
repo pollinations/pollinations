@@ -1,0 +1,34 @@
+{
+  "pr_number": 12105,
+  "title": "fix: lower app_listed quest reward to 10 pollen",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12105",
+  "merged_at": "2026-06-29T13:33:10Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Lowers the **App listed on Pollinations** quest reward from 15 → 10 pollen\n- Updates the catalog test assertion to match\n- No catalog version bump needed — `quests:catalog` cache has a 60s TTL, so the new amount propagates within a minute\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Balancing the nectar",
+    "blurb": "We've fine-tuned the pollen rewards for listing your app on Pollinations to keep the ecosystem balanced.",
+    "summary": "The reward for completing the 'App listed on Pollinations' quest has been adjusted from 15 to 10 Pollen.",
+    "impact": "Developers will now receive 10 Pollen when their app is successfully listed in the ecosystem.",
+    "keywords": [
+      "quests",
+      "pollen",
+      "rewards",
+      "app-growth"
+    ],
+    "visual_concept": "The bee mascot (Polly) carefully organizing or balancing small glowing pollen drops on a tiny wooden scale, representing the rebalancing of quest rewards.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot carefully balancing glowing yellow pollen drops on a tiny wooden scale. Soft lime green (#ecf874) and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-29/PR-12105.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot carefully balancing glowing yellow pollen drops on a tiny wooden scale. Soft lime green (#ecf874) and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-29T13:34:25.832548+00:00"
+}

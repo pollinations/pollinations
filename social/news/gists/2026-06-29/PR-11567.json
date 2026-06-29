@@ -1,0 +1,33 @@
+{
+  "pr_number": 11567,
+  "title": "feat: add community text endpoints",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11567",
+  "merged_at": "2026-06-29T14:21:19Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds Enter dashboard/API registration for OpenAI-compatible community text endpoints.\n- Adds the Drizzle/D1 `community_endpoint` table and stores bearer tokens encrypted.\n- Exposes `community/{username}/{model-id}` IDs with description and per-1M-token Pollen pricing.\n- Lists published community models for everyone in `/models`, `/text/models`, `/v1/models`, and the dashboard Models page.\n- Routes community models through normal text call paths: `/v1/chat/completions`, `/text`, and `/text/{prompt}`.\n- Supports community streaming, requests upstream usage, and passes upstream response model names through unchanged.\n- Charges community usage through the normal deduction path using upstream-reported usage and dynamic model pricing.\n- Keeps community runtime lookup in a small gen module; generic handlers only attach the resolved endpoint.\n- Sorts dashboard community model prices from the dynamic model-list data instead of the static registry.\n- Merges latest `origin/main` into the branch.\n\nValidation:\n- `git diff --check`\n- `npx biome check --write enter.pollinations.ai/vite.config.ts`\n- Enter: `npx vitest run test/community-endpoint-openai.test.ts test/pricing-data.test.ts`\n- Enter: `npm run build:frontend`\n- Enter: `npm run typecheck` still fails on broad dashboard/UI declaration required-prop errors unrelated to the merge resolution.\n- Gen: `npx vitest run src/community-endpoints.test.ts test/model-permissions.test.ts`\n- Gen: `npx tsc --noEmit`\n- Local: `http://localhost:8788/v1/models` and `/text/models` list community models with normal text endpoints.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Bring your own brain",
+    "blurb": "The hive is officially open to outside pollen. You can now plug your own OpenAI-compatible endpoints into the network, set your price, and share your models with the world.",
+    "summary": "Added dashboard registration for OpenAI-compatible community text endpoints, routing them through standard API paths as `community/{username}/{model-id}` with custom per-1M-token pricing.",
+    "impact": "Developers can now monetize their own hosted models directly through our infrastructure, while users gain access to a decentralized registry of community-run AI.",
+    "keywords": [
+      "community",
+      "models",
+      "api",
+      "monetization",
+      "openai-compatible"
+    ],
+    "visual_concept": "A cozy community market or farm stand in a digital garden. Polly the bee and the Monitor Robot are setting up shop, displaying glowing orbs (models) that represent community contributions.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor robot running a small wooden farm stand in a digital garden. The stand displays glowing, colorful orbs representing community AI models. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text on a small pixel sign: 'COMMUNITY'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-29/PR-11567.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor robot running a small wooden farm stand in a digital garden. The stand displays glowing, colorful orbs representing community AI models. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text on a small pixel sign: 'COMMUNITY'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-29T14:22:20.764964+00:00"
+}

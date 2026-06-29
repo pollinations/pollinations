@@ -1,0 +1,35 @@
+{
+  "pr_number": 12104,
+  "title": "fix: atomic replace for APPS.md→Tinybird sync (#12099)",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12104",
+  "merged_at": "2026-06-29T13:28:56Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "## Problem\nThe daily APPS.md → Tinybird sync did `deleteAllRows()` then `insertRows()`. But `/v0/datasources/{ds}/delete` is an **async job** that returns 200 before it runs, so the script never waited for it. The delete-all fired *after* the re-insert and wiped the just-inserted rows → prod `app_directory` ended up empty → the **\"App listed on Pollinations\" quest read 0 rows and was unclaimable for everyone** (#12099, #12096, #12098).\n\nProven by live repro: a probe row inserted via the same path persisted fine; a scoped delete sat in `status: waiting` >1min; `delete_data rows` oscillated `0/812/1639` across days (the race landing differently each run).\n\n## Fix\nReplace delete-all + `/v0/events` append with a single atomic **`mode=replace`** upload. One operation, no window of emptiness, no race.\n\n## Verification (staging)\n- `event_type=replace, rows=826, result=ok` — single atomic event\n- Count stable at **826** across polls (no emptying, no `1639` duplication)\n- Previously-failing users present (`goddino`, `asadofc`)\n\n## ⚠️ Deploy note\n`mode=replace` needs a **`DATASOURCES:CREATE`** token. The old path only needed append+delete — confirm the `TINYBIRD_SYNC_TOKEN` GH Actions secret has CREATE scope, or the daily run will 403.\n\nFixes #12099\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "No more vanishing apps",
+    "blurb": "Fixed a sneaky race condition that was causing the App Directory to occasionally vanish into the void. The 'App listed on Pollinations' quest is back online and ready to reward your creations!",
+    "summary": "Switched the daily APPS.md to Tinybird sync to use a single atomic mode=replace upload instead of separate async delete and insert operations.",
+    "impact": "The 'App listed on Pollinations' quest is claimable again, as the app directory will no longer temporarily empty out during the daily sync.",
+    "keywords": [
+      "bug fix",
+      "quests",
+      "tinybird",
+      "app directory",
+      "sync"
+    ],
+    "visual_concept": "The bee mascot restoring a list of apps to a server, while the Nomnom creature looks guilty for eating the previous data. Represents fixing the data wipe bug.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot carefully placing a glowing lime green (#ecf874) folder labeled 'APPS' onto a retro server rack. The round tan Nomnom creature sits nearby looking guilty with a few pixelated code snippets in its mouth. Soft pastel lavender and mint gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-29/PR-12104.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot carefully placing a glowing lime green (#ecf874) folder labeled 'APPS' onto a retro server rack. The round tan Nomnom creature sits nearby looking guilty with a few pixelated code snippets in its mouth. Soft pastel lavender and mint gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-29T13:29:55.585920+00:00"
+}

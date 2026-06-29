@@ -100,6 +100,41 @@ async function getOnlyUser() {
     return user;
 }
 
+async function createAdminApiKey(sessionToken: string, name: string) {
+    const createResponse = await SELF.fetch(
+        "http://localhost:3000/api/account/keys",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({ name }),
+        },
+    );
+    expect(createResponse.status).toBe(200);
+    const created = (await createResponse.json()) as {
+        id: string;
+        key: string;
+    };
+
+    const updateResponse = await SELF.fetch(
+        `http://localhost:3000/api/api-keys/${created.id}/update`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({
+                accountPermissions: ["keys"],
+            }),
+        },
+    );
+    expect(updateResponse.status).toBe(200);
+    return created.key;
+}
+
 test("recordRewards dedups on idempotency key and claimReward credits once", async ({
     sessionToken: _sessionToken,
 }) => {
@@ -401,6 +436,27 @@ test("account quests merge earned rewards into completed status", async ({
         state: "completed",
         status: "completed",
         reward: null,
+    });
+
+    const adminKey = await createAdminApiKey(sessionToken, "quest-admin-key");
+    const adminResponse = await SELF.fetch(
+        "http://localhost:3000/api/account/quests",
+        {
+            headers: {
+                authorization: `Bearer ${adminKey}`,
+            },
+        },
+    );
+    expect(adminResponse.status).toBe(200);
+    const adminPayload = (await adminResponse.json()) as typeof payload;
+    const adminById = new Map(
+        adminPayload.quests.map((quest) => [quest.id, quest]),
+    );
+    expect(adminById.get("first_api_key")).toMatchObject({
+        status: "completed",
+        reward: {
+            id: recorded.rewardIds[0],
+        },
     });
 });
 
@@ -1396,4 +1452,26 @@ test("account quest history requires account usage permission for API keys", asy
     );
 
     expect(response.status).toBe(403);
+});
+
+test("account quest history accepts secret account keys admin permission", async ({
+    sessionToken,
+}) => {
+    const adminKey = await createAdminApiKey(
+        sessionToken,
+        "quest-rewards-admin-key",
+    );
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/quests/rewards",
+        {
+            headers: {
+                authorization: `Bearer ${adminKey}`,
+            },
+        },
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+        rewards: [],
+    });
 });

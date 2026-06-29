@@ -27,6 +27,11 @@ import {
     fetchTinybirdRows,
     requireTinybirdReadToken,
 } from "../services/tinybird.ts";
+import {
+    hasAccountReadPermission,
+    hasDirectAccountPermission,
+    isSecretApiKey,
+} from "./account-permissions.ts";
 import { communityEndpointsRoutes } from "./community-endpoints.ts";
 import { parseMetadata } from "./metadata-utils.ts";
 
@@ -100,13 +105,12 @@ function requireKeysPermission(apiKey?: {
     metadata?: Record<string, unknown>;
 }): void {
     if (!apiKey) return; // session auth — always allowed
-    const keyType = (apiKey.metadata?.keyType as string) || "secret";
-    if (keyType !== "secret") {
+    if (!isSecretApiKey(apiKey)) {
         throw new HTTPException(403, {
             message: "Only secret keys (sk_) can manage API keys",
         });
     }
-    if (!apiKey.permissions?.account?.includes("keys")) {
+    if (!hasDirectAccountPermission(apiKey, "keys")) {
         throw new HTTPException(403, {
             message: "API key does not have 'account:keys' permission",
         });
@@ -115,10 +119,12 @@ function requireKeysPermission(apiKey?: {
 
 function requireUsagePermission(apiKey?: {
     permissions?: Record<string, string[]>;
+    metadata?: Record<string, unknown>;
 }): void {
-    if (apiKey && !apiKey.permissions?.account?.includes("usage")) {
+    if (apiKey && !hasAccountReadPermission(apiKey, "usage")) {
         throw new HTTPException(403, {
-            message: "API key does not have 'account:usage' permission",
+            message:
+                "API key does not have 'account:usage' permission or secret 'account:keys' admin permission",
         });
     }
 }
@@ -887,7 +893,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Profile",
             description:
-                "Returns your account profile. GitHub username, profile image, current tier, and next pollen refill timestamp are always returned. Name and email are returned only when the API key has the `account:profile` permission.",
+                "Returns your account profile. GitHub username, profile image, current tier, and next pollen refill timestamp are always returned. Name and email are returned only when the API key has `account:profile` or secret-key `account:keys` admin permission.",
             responses: {
                 200: {
                     description: "User profile",
@@ -905,7 +911,7 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
             const includeProfilePII =
-                !apiKey || !!apiKey.permissions?.account?.includes("profile");
+                !apiKey || hasAccountReadPermission(apiKey, "profile");
 
             const db = drizzle(c.env.DB);
             const users = await db
@@ -946,7 +952,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Quest Status",
             description:
-                "Returns the quest catalog with the authenticated account's read-only status. Globally completed quests and quests earned by the account are both returned as `completed`. Claiming rewards remains dashboard-only.",
+                "Returns the quest catalog with the authenticated account's read-only status. Globally completed quests and quests earned by the account are both returned as `completed`. API keys require `account:usage` or secret-key `account:keys` admin permission. Claiming rewards remains dashboard-only.",
             responses: {
                 200: {
                     description: "Quest status for the authenticated account",
@@ -959,7 +965,7 @@ export const accountRoutes = new Hono<Env>()
                 401: { description: "Unauthorized" },
                 403: {
                     description:
-                        "Permission denied - API key missing `account:usage` permission",
+                        "Permission denied - API key missing `account:usage` or secret-key `account:keys` permission",
                 },
             },
         }),
@@ -1033,7 +1039,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Balance",
             description:
-                "Returns the pollen balance visible to the caller. API keys with a budget always see their remaining budget (no scope needed). Session auth or API keys with the `account:usage` scope see the full account balance.",
+                "Returns the pollen balance visible to the caller. API keys with a budget always see their remaining budget (no scope needed). Session auth, API keys with `account:usage`, or secret keys with `account:keys` see the full account balance.",
             responses: {
                 200: {
                     description: "Pollen balance",
@@ -1046,7 +1052,7 @@ export const accountRoutes = new Hono<Env>()
                 401: { description: "Unauthorized" },
                 403: {
                     description:
-                        "Permission denied - API key has no budget and is missing the `account:usage` scope",
+                        "Permission denied - API key has no budget and is missing `account:usage` or secret-key `account:keys`",
                 },
             },
         }),
@@ -1060,11 +1066,11 @@ export const accountRoutes = new Hono<Env>()
                 return c.json({ balance: apiKey.pollenBalance });
             }
 
-            // Beyond that, reading account balance requires the `usage` scope.
-            if (apiKey && !apiKey.permissions?.account?.includes("usage")) {
+            // Beyond that, reading account balance requires usage or admin.
+            if (apiKey && !hasAccountReadPermission(apiKey, "usage")) {
                 throw new HTTPException(403, {
                     message:
-                        "API key does not have 'account:usage' scope and no budget of its own. Add `account:usage` to read account balance, or set a budget on the key.",
+                        "API key does not have 'account:usage' or secret 'account:keys' permission and no budget of its own. Add `account:usage` to read account balance, use a secret admin key, or set a budget on the key.",
                 });
             }
 
@@ -1090,7 +1096,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Usage History",
             description:
-                "Returns your request history with per-request details: model used, token counts, cost, and response time. Defaults to the last 30 days, supports up to 90 days via `days`, or exact day/week/month periods via `granularity` and `period`. Supports JSON and CSV export. Each response is capped at 50,000 rows. Use `before` with `before_event_id` for stable cursor-based pagination. Requires `account:usage` permission when using API keys.",
+                "Returns your request history with per-request details: model used, token counts, cost, and response time. Defaults to the last 30 days, supports up to 90 days via `days`, or exact day/week/month periods via `granularity` and `period`. Supports JSON and CSV export. Each response is capped at 50,000 rows. Use `before` with `before_event_id` for stable cursor-based pagination. Requires `account:usage` or secret-key `account:keys` admin permission when using API keys.",
             responses: {
                 200: {
                     description: "Usage records",
@@ -1103,7 +1109,7 @@ export const accountRoutes = new Hono<Env>()
                 401: { description: "Unauthorized" },
                 403: {
                     description:
-                        "Permission denied - API key missing `account:usage` permission",
+                        "Permission denied - API key missing `account:usage` or secret-key `account:keys` permission",
                 },
             },
         }),
@@ -1118,12 +1124,7 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
-            // Check permission for API key access
-            if (apiKey && !apiKey.permissions?.account?.includes("usage")) {
-                throw new HTTPException(403, {
-                    message: "API key does not have 'account:usage' permission",
-                });
-            }
+            requireUsagePermission(apiKey);
 
             const {
                 format,
@@ -1184,7 +1185,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Daily Usage",
             description:
-                "Returns daily aggregated usage for the requested time window, grouped by date and model. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Useful for dashboards and spending analysis. Supports JSON and CSV export. Results are cached for 1 hour. Requires `account:usage` permission when using API keys.",
+                "Returns daily aggregated usage for the requested time window, grouped by date and model. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Useful for dashboards and spending analysis. Supports JSON and CSV export. Results are cached for 1 hour. Requires `account:usage` or secret-key `account:keys` admin permission when using API keys.",
             responses: {
                 200: {
                     description: "Daily usage records aggregated by date/model",
@@ -1197,7 +1198,7 @@ export const accountRoutes = new Hono<Env>()
                 401: { description: "Unauthorized" },
                 403: {
                     description:
-                        "Permission denied - API key missing `account:usage` permission",
+                        "Permission denied - API key missing `account:usage` or secret-key `account:keys` permission",
                 },
             },
         }),
@@ -1212,11 +1213,7 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
-            if (apiKey && !apiKey.permissions?.account?.includes("usage")) {
-                throw new HTTPException(403, {
-                    message: "API key does not have 'account:usage' permission",
-                });
-            }
+            requireUsagePermission(apiKey);
 
             const {
                 format,
@@ -1333,7 +1330,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Developer Earnings",
             description:
-                "Returns developer earnings in one response: per-(date, entity) buckets, per-entity rollups, per-source rollups, and additive money totals across BYOP apps and community models. Source-specific rows include `requests`, `baseline_price`, reward basis `cost_usd`, `reward_rate`, and `unique_users`; the top-level total only includes additive earned-pollen fields. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. Requires `account:usage` permission when using API keys.",
+                "Returns developer earnings in one response: per-(date, entity) buckets, per-entity rollups, per-source rollups, and additive money totals across BYOP apps and community models. Source-specific rows include `requests`, `baseline_price`, reward basis `cost_usd`, `reward_rate`, and `unique_users`; the top-level total only includes additive earned-pollen fields. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. Requires `account:usage` or secret-key `account:keys` admin permission when using API keys.",
             responses: {
                 200: {
                     description:
@@ -1347,7 +1344,7 @@ export const accountRoutes = new Hono<Env>()
                 401: { description: "Unauthorized" },
                 403: {
                     description:
-                        "Permission denied - API key missing `account:usage` permission",
+                        "Permission denied - API key missing `account:usage` or secret-key `account:keys` permission",
                 },
             },
         }),
@@ -1362,11 +1359,7 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
-            if (apiKey && !apiKey.permissions?.account?.includes("usage")) {
-                throw new HTTPException(403, {
-                    message: "API key does not have 'account:usage' permission",
-                });
-            }
+            requireUsagePermission(apiKey);
 
             const {
                 format,
@@ -1822,7 +1815,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get API Key Usage",
             description:
-                "Returns usage history for the API key used in the request. No scope required — a key can always read its own usage. Use `before` with `before_event_id` for stable cursor-based pagination. For account-wide usage across all keys, use `/account/usage` with the `account:usage` scope.",
+                "Returns usage history for the API key used in the request. No scope required — a key can always read its own usage. Use `before` with `before_event_id` for stable cursor-based pagination. For account-wide usage across all keys, use `/account/usage` with `account:usage` or a secret key with `account:keys`.",
             responses: {
                 200: {
                     description: "Usage records for this key",

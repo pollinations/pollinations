@@ -16,6 +16,7 @@ import type {
     QuestCard,
     QuestEvaluationContext,
 } from "../services/quests/types.ts";
+import { hasAccountReadPermission } from "./account-permissions.ts";
 
 // Bumped to v22: app_listed is now available instead of coming_soon.
 const CACHE_KEY = "quests:catalog:v22";
@@ -69,10 +70,12 @@ const claimRewardResponseSchema = z.object({
 
 function requireUsagePermission(apiKey?: {
     permissions?: Record<string, string[]>;
+    metadata?: Record<string, unknown>;
 }): void {
-    if (apiKey && !apiKey.permissions?.account?.includes("usage")) {
+    if (apiKey && !hasAccountReadPermission(apiKey, "usage")) {
         throw new HTTPException(403, {
-            message: "API key does not have 'account:usage' permission",
+            message:
+                "API key does not have 'account:usage' permission or secret 'account:keys' admin permission",
         });
     }
 }
@@ -175,7 +178,7 @@ export const questsRoutes = new Hono<Env>()
             tags: ["✨ Quests"],
             summary: "Get Quest Rewards",
             description:
-                "Returns earned quest rewards for the authenticated account, including claim state. Requires `account:usage` permission when using API keys.",
+                "Returns earned quest rewards for the authenticated account, including claim state. Requires `account:usage` or secret-key `account:keys` admin permission when using API keys.",
             responses: {
                 200: {
                     description: "Quest rewards",
@@ -188,7 +191,7 @@ export const questsRoutes = new Hono<Env>()
                 401: { description: "Unauthorized" },
                 403: {
                     description:
-                        "Permission denied - API key missing `account:usage` permission",
+                        "Permission denied - API key missing `account:usage` or secret-key `account:keys` permission",
                 },
             },
         }),

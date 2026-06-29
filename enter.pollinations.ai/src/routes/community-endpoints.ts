@@ -22,6 +22,10 @@ import {
     listCommunityEndpointModels,
     testCommunityEndpoint,
 } from "../services/community-endpoint-openai.ts";
+import {
+    hasDirectAccountPermission,
+    isSecretApiKey,
+} from "./account-permissions.ts";
 
 const PriceSchema = z.number().finite().min(0);
 const PriceFieldsSchema = Object.fromEntries(
@@ -172,13 +176,12 @@ function requireCommunityEndpointManagePermission(apiKey?: {
     metadata?: Record<string, unknown>;
 }): void {
     if (!apiKey) return;
-    const keyType = (apiKey.metadata?.keyType as string) || "secret";
-    if (keyType !== "secret") {
+    if (!isSecretApiKey(apiKey)) {
         throw new HTTPException(403, {
             message: "Only secret keys (sk_) can manage my models",
         });
     }
-    if (!apiKey.permissions?.account?.includes("keys")) {
+    if (!hasDirectAccountPermission(apiKey, "keys")) {
         throw new HTTPException(403, {
             message: "API key does not have 'account:keys' permission",
         });

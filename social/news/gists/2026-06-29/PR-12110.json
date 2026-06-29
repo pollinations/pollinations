@@ -1,0 +1,34 @@
+{
+  "pr_number": 12110,
+  "title": "fix: correct renamed GitHub usernames in app directory",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12110",
+  "merged_at": "2026-06-29T20:26:55Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "Two app authors renamed their GitHub accounts, leaving stale usernames in the directory. Verified current logins via the GitHub API by immutable user ID.\n\n- Jarvis AI: `@Marco3113` → `@JustScriptzz` (github_id `195966113`)\n- Ai chatbot: `@VriskasYT` → `@Catniti` (github_id `244879637`)\n- Regenerated `GREENHOUSE.md` to match\n\nProd D1 `user` rows were also updated out-of-band in the same pass (data fix, no code change) so the app-submission bot finds the accounts under their current usernames — this is what was blocking the affected submissions.\n\nFixes #12056\nFixes #12101\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "New names, who dis?",
+    "blurb": "Updated the app directory to reflect some recent GitHub username changes. Your apps are back to being properly credited to your shiny new handles!",
+    "summary": "Updated the app directory to reflect GitHub username changes for the authors of Jarvis AI (@JustScriptzz) and Ai chatbot (@Catniti).",
+    "impact": "The app-submission bot will now correctly recognize these authors under their current GitHub handles, unblocking their submissions.",
+    "keywords": [
+      "apps",
+      "community",
+      "github",
+      "directory"
+    ],
+    "visual_concept": "Polly the bee wearing a tiny painter's beret, updating wooden name tags in a cozy greenhouse setting, representing the updated directory and author credits.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, carefully painting new name tags on wooden signs in a lush digital greenhouse. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-29/PR-12110.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, carefully painting new name tags on wooden signs in a lush digital greenhouse. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-29T20:27:56.583790+00:00"
+}

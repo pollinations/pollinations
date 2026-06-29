@@ -7,36 +7,13 @@ import {
     printResult,
     printTable,
 } from "../lib/output.js";
-
-interface UsageRecord {
-    timestamp: string;
-    type: string;
-    model: string;
-    cost_usd: number;
-    meter_source: string;
-}
-
-interface UsageResponse {
-    usage: UsageRecord[];
-    count: number;
-}
-
-interface DailyUsageRecord {
-    date: string;
-    model: string;
-    meter_source: string;
-    requests: number;
-    cost_usd: number;
-}
-
-interface DailyUsageResponse {
-    usage: DailyUsageRecord[];
-    count: number;
-}
-
-interface BalanceResponse {
-    balance: number;
-}
+import { t } from "../lib/i18n.js";
+import { logActivity } from "../lib/logger.js";
+import {
+    UsageResponseSchema,
+    DailyUsageResponseSchema,
+    BalanceResponseSchema,
+} from "../lib/validation.js";
 
 export const usageCommand = new Command("usage")
     .description(
@@ -45,34 +22,49 @@ export const usageCommand = new Command("usage")
     .option("--limit <n>", "Number of records", "20")
     .option("--history", "Show individual request history")
     .option("--daily", "Show daily summary instead of individual requests")
+    .addHelpText("after", `
+Examples:
+  polli usage
+  polli usage --history --limit 50
+  polli usage --daily
+  polli usage --json
+        `)
     .action(async (opts) => {
-        const key = requireKey();
-
+        const key = await requireKey();
         try {
-            // Default: show balance (unless --history or --daily)
             if (!opts.history && !opts.daily) {
-                const data = await gen<BalanceResponse>("/account/balance", {
+                const data = await gen<unknown>("/account/balance", {
                     apiKey: key,
                 });
+                const validated = BalanceResponseSchema.safeParse(data);
+                if (!validated.success) {
+                    printError(`Invalid response: ${validated.error.message}`);
+                    process.exit(1);
+                }
+                const balance = validated.data.balance;
                 if (getOutputMode() !== "human") {
-                    printResult({ pollen: data.balance });
+                    printResult({ pollen: balance });
                     return;
                 }
-                const bal = data.balance;
                 let color = chalk.green;
-                if (bal <= 0) color = chalk.red;
-                else if (bal < 1) color = chalk.yellow;
-                printResult({ pollen: color(String(bal)) });
+                if (balance <= 0) color = chalk.red;
+                else if (balance < 1) color = chalk.yellow;
+                printResult({ pollen: color(String(balance)) });
+                logActivity("usage_balance", { balance });
                 return;
             }
 
             if (opts.daily) {
-                const data = await gen<DailyUsageResponse>(
-                    "/account/usage/daily",
-                    { apiKey: key },
-                );
+                const data = await gen<unknown>("/account/usage/daily", {
+                    apiKey: key,
+                });
+                const validated = DailyUsageResponseSchema.safeParse(data);
+                if (!validated.success) {
+                    printError(`Invalid response: ${validated.error.message}`);
+                    process.exit(1);
+                }
                 printTable(
-                    data.usage.map((r) => ({
+                    validated.data.usage.map((r) => ({
                         date: r.date,
                         model: r.model,
                         requests: r.requests,
@@ -83,6 +75,7 @@ export const usageCommand = new Command("usage")
                         source: r.meter_source,
                     })),
                 );
+                logActivity("usage_daily", { count: validated.data.count });
                 return;
             }
 
@@ -91,12 +84,18 @@ export const usageCommand = new Command("usage")
                 printError("--limit must be a positive integer");
                 process.exit(1);
             }
-            const data = await gen<UsageResponse>(
+
+            const data = await gen<unknown>(
                 `/account/usage?limit=${limit}`,
                 { apiKey: key },
             );
+            const validated = UsageResponseSchema.safeParse(data);
+            if (!validated.success) {
+                printError(`Invalid response: ${validated.error.message}`);
+                process.exit(1);
+            }
             printTable(
-                data.usage.map((r) => ({
+                validated.data.usage.map((r) => ({
                     time: r.timestamp,
                     type: r.type,
                     model: r.model,
@@ -105,6 +104,7 @@ export const usageCommand = new Command("usage")
                     source: r.meter_source,
                 })),
             );
+            logActivity("usage_history", { limit });
         } catch (err) {
             printError(
                 `Failed to fetch usage: ${err instanceof Error ? err.message : "unknown"}`,

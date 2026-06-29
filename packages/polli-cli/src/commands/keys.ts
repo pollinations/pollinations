@@ -9,46 +9,14 @@ import {
     printSuccess,
     printTable,
 } from "../lib/output.js";
-
-interface KeyInfo {
-    id: string;
-    name: string;
-    start: string;
-    prefix: string;
-    createdAt: string;
-    expiresAt: string | null;
-    lastRequest: string | null;
-    permissions: {
-        tier?: string[];
-        models?: string[];
-        account?: string[];
-    } | null;
-    metadata: Record<string, unknown> | null;
-    pollenBalance: number | null;
-    enabled: boolean;
-}
-
-interface CreateKeyResponse {
-    id: string;
-    key: string;
-    name: string;
-    type: string;
-    prefix: string;
-    expiresAt: string | null;
-    permissions: { models?: string[]; account?: string[] } | null;
-    pollenBudget: number | null;
-    metadata?: Record<string, unknown> | null;
-}
-
-interface SingleKeyInfo {
-    valid: boolean;
-    type: string;
-    name: string | null;
-    expiresAt: string | null;
-    permissions: { models?: string[]; account?: string[] } | null;
-    pollenBudget: number | null;
-    rateLimitEnabled: boolean;
-}
+import { t } from "../lib/i18n.js";
+import { logActivity } from "../lib/logger.js";
+import {
+    KeyInfoSchema,
+    KeysListResponseSchema,
+    CreateKeyResponseSchema,
+    SingleKeyInfoSchema,
+} from "../lib/validation.js";
 
 const list = new Command("list")
     .description("List all API keys for your account")
@@ -57,24 +25,28 @@ const list = new Command("list")
         "Show id, created, last_used, enabled columns (use --json for full raw data)",
     )
     .action(async (opts) => {
-        const key = requireKey();
-
+        const key = await requireKey();
         try {
-            const res = await gen<{ data: KeyInfo[] }>("/account/keys", {
+            const res = await gen<{ data: unknown[] }>("/account/keys", {
                 apiKey: key,
             });
-
-            if (!res.data?.length) {
+            const validated = KeysListResponseSchema.safeParse(res);
+            if (!validated.success) {
+                printError(`Invalid response: ${validated.error.message}`);
+                process.exit(1);
+            }
+            const data = validated.data.data;
+            if (!data?.length) {
                 printInfo("No API keys found.");
                 return;
             }
 
-            if (getOutputMode() === "json") {
-                printResult(res.data);
+            if (getOutputMode() !== "human") {
+                printResult(data);
                 return;
             }
 
-            const formatPerms = (p: KeyInfo["permissions"]) => {
+            const formatPerms = (p: KeyInfoSchema["permissions"]) => {
                 if (!p) return "-";
                 const parts: string[] = [];
                 for (const [key, v] of Object.entries(p)) {
@@ -90,7 +62,8 @@ const list = new Command("list")
 
             const check = process.platform === "win32" ? "yes" : "✓";
             const cross = process.platform === "win32" ? "no" : "✗";
-            const rows = res.data.map((k) => ({
+
+            const rows = data.map((k) => ({
                 id: chalk.dim(k.id.slice(0, 8)),
                 name: k.name,
                 prefix: chalk.dim(k.prefix),
@@ -117,6 +90,7 @@ const list = new Command("list")
                   ]
                 : ["name", "prefix", "balance", "expires", "permissions"];
             printTable(rows, cols);
+            logActivity("keys_list", { verbose: opts.verbose });
         } catch (err) {
             printError(
                 `Failed to list keys: ${err instanceof Error ? err.message : "unknown"}`,
@@ -130,25 +104,29 @@ const info = new Command("info")
         "Show details about the currently authenticated key (no args). To inspect another key by id, use `polli keys list --json`.",
     )
     .action(async () => {
-        const key = requireKey();
-
+        const key = await requireKey();
         try {
-            const keyInfo = await gen<SingleKeyInfo>("/account/key", {
+            const keyInfo = await gen<unknown>("/account/key", {
                 apiKey: key,
             });
-
+            const validated = SingleKeyInfoSchema.safeParse(keyInfo);
+            if (!validated.success) {
+                printError(`Invalid response: ${validated.error.message}`);
+                process.exit(1);
+            }
+            const info = validated.data;
             printResult({
-                valid: keyInfo.valid,
-                type: keyInfo.type,
-                name: keyInfo.name ?? "-",
-                expires: keyInfo.expiresAt ?? "never",
-                budget: keyInfo.pollenBudget ?? "unlimited",
-                rate_limited: keyInfo.rateLimitEnabled,
+                valid: info.valid,
+                type: info.type,
+                name: info.name ?? "-",
+                expires: info.expiresAt ?? "never",
+                budget: info.pollenBudget ?? "unlimited",
+                rate_limited: info.rateLimitEnabled,
                 model_restrictions:
-                    keyInfo.permissions?.models?.join(", ") ??
+                    info.permissions?.models?.join(", ") ??
                     "none (all models)",
                 account_permissions:
-                    keyInfo.permissions?.account?.join(", ") ?? "none",
+                    info.permissions?.account?.join(", ") ?? "none",
             });
         } catch (err) {
             printError(
@@ -190,8 +168,7 @@ Examples:
 `,
     )
     .action(async (opts) => {
-        const key = requireKey();
-
+        const key = await requireKey();
         try {
             const body: Record<string, unknown> = {
                 name: opts.name,
@@ -220,30 +197,36 @@ Examples:
             if (opts.redirectUri) body.redirectUris = opts.redirectUri;
             if (opts.earnings === true) body.earningsEnabled = true;
 
-            const created = await gen<CreateKeyResponse>("/account/keys", {
+            const created = await gen<unknown>("/account/keys", {
                 apiKey: key,
                 method: "POST",
                 body,
             });
+            const validated = CreateKeyResponseSchema.safeParse(created);
+            if (!validated.success) {
+                printError(`Invalid response: ${validated.error.message}`);
+                process.exit(1);
+            }
+            const data = validated.data;
 
             if (getOutputMode() === "human") {
-                printSuccess(`Key created: ${created.name}`);
+                printSuccess(`Key created: ${data.name}`);
                 printInfo("Save this key — it won't be shown again:\n");
-                process.stdout.write(`  ${created.key}\n\n`);
+                process.stdout.write(`  ${data.key}\n\n`);
             }
-
             printResult({
-                id: created.id,
-                key: created.key,
-                name: created.name,
-                type: created.type,
-                prefix: created.prefix,
-                expires: created.expiresAt ?? "never",
-                permissions: created.permissions,
-                budget: created.pollenBudget ?? "unlimited",
-                redirectUris: created.metadata?.redirectUris,
-                earnings: created.metadata?.earningsEnabled,
+                id: data.id,
+                key: data.key,
+                name: data.name,
+                type: data.type,
+                prefix: data.prefix,
+                expires: data.expiresAt ?? "never",
+                permissions: data.permissions,
+                budget: data.pollenBudget ?? "unlimited",
+                redirectUris: data.metadata?.redirectUris,
+                earnings: data.metadata?.earningsEnabled,
             });
+            logActivity("key_create", { name: opts.name, type: opts.type });
         } catch (err) {
             printError(
                 `Failed to create key: ${err instanceof Error ? err.message : "unknown"}`,
@@ -256,15 +239,14 @@ const revoke = new Command("revoke")
     .description("Revoke an API key by ID")
     .argument("<id>", "Key ID to revoke")
     .action(async (id) => {
-        const key = requireKey();
-
+        const key = await requireKey();
         try {
             await gen<{ success: boolean }>(`/account/keys/${id}`, {
                 apiKey: key,
                 method: "DELETE",
             });
-
             printSuccess(`Key ${id} revoked.`);
+            logActivity("key_revoke", { id });
         } catch (err) {
             printError(
                 `Failed to revoke key: ${err instanceof Error ? err.message : "unknown"}`,

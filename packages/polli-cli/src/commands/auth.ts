@@ -13,6 +13,16 @@ import {
     printSuccess,
 } from "../lib/output.js";
 import { flavor } from "../lib/quotes.js";
+import { t } from "../lib/i18n.js";
+import { startSpinner, stopSpinner } from "../lib/spinner.js";
+import { validate } from "../lib/validation.js";
+import {
+    ProfileResponseSchema,
+    BalanceResponseSchema,
+    DeviceCodeResponseSchema,
+    DeviceTokenResponseSchema,
+} from "../lib/validation.js";
+import { logActivity } from "../lib/logger.js";
 
 type LoginOptions = {
     browser?: boolean;
@@ -20,40 +30,15 @@ type LoginOptions = {
     withToken?: boolean;
 };
 
-interface ProfileResponse {
-    githubUsername?: string | null;
-    image?: string | null;
-}
-
-interface BalanceResponse {
-    balance?: number;
-}
-
-interface DeviceCodeResponse {
-    device_code: string;
-    user_code: string;
-    verification_uri_complete: string;
-    expires_in: number;
-    interval: number;
-}
-
-interface DeviceTokenResponse {
-    access_token?: string;
-    error?: string;
-    error_description?: string;
-}
-
 async function pollForToken(
     deviceCode: string,
     interval: number,
     expiresIn: number,
-): Promise<DeviceTokenResponse> {
+): Promise<{ access_token?: string; error?: string; error_description?: string }> {
     const deadline = Date.now() + expiresIn * 1000;
     const pollMs = Math.max(interval, 5) * 1000;
-
     while (Date.now() < deadline) {
         await new Promise((r) => setTimeout(r, pollMs));
-
         const res = await fetch(`${ENTER_URL}/api/device/token`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -62,8 +47,7 @@ async function pollForToken(
                 grant_type: "urn:ietf:params:oauth:grant-type:device_code",
             }),
         });
-
-        const body = (await res.json()) as DeviceTokenResponse;
+        const body = DeviceTokenResponseSchema.parse(await res.json());
         if (res.ok && body.access_token) return body;
         if (
             body.error === "authorization_pending" ||
@@ -72,13 +56,12 @@ async function pollForToken(
             continue;
         return body;
     }
-
     return { error: "expired_token", error_description: "Device code expired" };
 }
 
-function storeKey(key: string): void {
+async function storeKey(key: string): Promise<void> {
     const keyType = key.startsWith("sk_") ? "sk" : "pk";
-    saveCredentials({ apiKey: key, keyType });
+    await saveCredentials({ apiKey: key, keyType });
 }
 
 function assertApiKey(key: string): string {
@@ -97,7 +80,6 @@ async function readStdinToken(): Promise<string> {
         );
         process.exit(1);
     }
-
     let text = "";
     for await (const chunk of process.stdin) {
         text += chunk;
@@ -106,9 +88,8 @@ async function readStdinToken(): Promise<string> {
 }
 
 async function authenticateWithKey(key: string): Promise<void> {
-    storeKey(key);
-    printSuccess("Authenticated. Key stored.");
-
+    await storeKey(key);
+    printSuccess(t("auth.login.success"));
     const label = await fetchProfileLabel(key);
     if (label) {
         printSuccess(label);
@@ -116,14 +97,15 @@ async function authenticateWithKey(key: string): Promise<void> {
         printInfo("Key stored but could not verify. It may still be valid.");
     }
     printInfo(flavor.login);
+    logActivity("auth_login", { method: "key" });
 }
 
 async function fetchProfileLabel(key: string): Promise<string | null> {
-    const profile = await gen<ProfileResponse>("/account/profile", {
-        apiKey: key,
-    }).catch(() => null);
+    const profile = await gen("/account/profile", { apiKey: key }).catch(() => null);
     if (!profile) return null;
-    return `Logged in as ${profile.githubUsername ?? "unknown"}`;
+    const validated = ProfileResponseSchema.safeParse(profile);
+    if (!validated.success) return null;
+    return t("auth.status.name", { name: validated.data.githubUsername ?? "unknown" });
 }
 
 const login = new Command("login")
@@ -141,15 +123,13 @@ const login = new Command("login")
             await authenticateWithKey(assertApiKey(opts.token));
             return;
         }
-
         if (opts.withToken) {
             const key = assertApiKey(await readStdinToken());
             await authenticateWithKey(key);
             return;
         }
 
-        printInfo("Requesting device code...");
-
+        printInfo(t("auth.login.device"));
         const res = await fetch(`${ENTER_URL}/api/device/code`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -161,116 +141,107 @@ const login = new Command("login")
             printError(
                 `Failed to start device flow: ${err instanceof Error ? err.message : err}`,
             );
-            printInfo(
-                "Fallback: printf '%s' '<your-key>' | polli auth login --with-token",
-            );
-            printInfo("Get your key at: https://enter.pollinations.ai");
+            printInfo(t("auth.login.fallback"));
+            printInfo(t("auth.login.getkey"));
             process.exit(1);
         });
-
         if (!res.ok) {
             printError(
                 `Failed to start device flow: ${res.status} ${await res.text()}`,
             );
             process.exit(1);
         }
+        const deviceResp = DeviceCodeResponseSchema.parse(await res.json());
 
-        const deviceResp = (await res.json()) as DeviceCodeResponse;
-
-        printInfo(`\nYour code: ${deviceResp.user_code}\n`);
-
+        printInfo(`\n${t("auth.login.code", { code: deviceResp.user_code })}\n`);
         const url = deviceResp.verification_uri_complete;
-        printInfo(`Open this URL in your browser:\n  ${url}`);
-
+        printInfo(`${t("auth.login.open")}\n  ${url}`);
         if (opts.browser !== false) {
             const open = (await import("open")).default;
             await open(url).catch(() =>
                 printInfo("Could not open browser automatically."),
             );
         }
+        printInfo(t("auth.login.waiting"));
+        startSpinner("Waiting for approval...");
 
-        printInfo("Waiting for approval...");
         const tokenResp = await pollForToken(
             deviceResp.device_code,
             deviceResp.interval,
             deviceResp.expires_in,
         );
+        stopSpinner(true);
 
         if (!tokenResp.access_token) {
             let errMsg: string;
             switch (tokenResp.error) {
                 case "access_denied":
-                    errMsg = "Access denied. You declined the authorization.";
+                    errMsg = t("auth.login.denied");
                     break;
                 case "expired_token":
-                    errMsg =
-                        "Code expired. Run `polli auth login` to try again.";
+                    errMsg = t("auth.login.expired");
                     break;
                 default:
-                    errMsg = `Login failed: ${tokenResp.error_description ?? tokenResp.error}`;
+                    errMsg = t("auth.login.failed", {
+                        reason: tokenResp.error_description ?? tokenResp.error,
+                    });
             }
             printError(errMsg);
             process.exit(1);
         }
 
         const key = tokenResp.access_token;
-        storeKey(key);
-        printSuccess("Authenticated!");
-
+        await storeKey(key);
+        printSuccess(t("auth.login.success"));
         const label = await fetchProfileLabel(key);
         if (label) {
             printSuccess(label);
         } else {
-            printInfo(
-                "Key stored. Could not fetch profile, but auth is complete.",
-            );
+            printInfo("Key stored. Could not fetch profile, but auth is complete.");
         }
         printInfo(flavor.login);
+        logActivity("auth_login", { method: "device" });
     });
 
 const logout = new Command("logout")
     .description("Clear stored credentials")
-    .action(() => {
-        clearCredentials();
-        printSuccess("Logged out. Credentials cleared.");
+    .action(async () => {
+        await clearCredentials();
+        printSuccess(t("auth.logout.success"));
         printInfo(flavor.logout);
+        logActivity("auth_logout", {});
     });
 
 export async function showAuthStatus(): Promise<void> {
-    const key = resolveApiKey();
+    const key = await resolveApiKey();
     if (!key) {
         printResult({
             authenticated: false,
-            message: "Not logged in. Run: polli auth login",
+            message: t("auth.status.not"),
         });
         return;
     }
-
     const masked = `${key.slice(0, 5)}...${key.slice(-6)}`;
-
     const [profile, balance] = await Promise.all([
-        gen<ProfileResponse>("/account/profile", { apiKey: key }).catch(
-            () => null,
-        ),
-        gen<BalanceResponse>("/account/balance", { apiKey: key }).catch(
-            () => null,
-        ),
+        gen("/account/profile", { apiKey: key }).catch(() => null),
+        gen("/account/balance", { apiKey: key }).catch(() => null),
     ]);
+    const profileValid = ProfileResponseSchema.safeParse(profile);
+    const balanceValid = BalanceResponseSchema.safeParse(balance);
 
-    if (!profile) {
+    if (!profileValid.success) {
         printResult({
             authenticated: true,
             key: masked,
-            status: "Key stored but could not reach API",
+            status: t("auth.status.key"),
         });
         return;
     }
-
     printResult({
         authenticated: true,
         key: masked,
-        name: profile.githubUsername ?? "unknown",
-        pollen: balance?.balance ?? "unknown",
+        name: profileValid.data.githubUsername ?? "unknown",
+        pollen: balanceValid.success ? balanceValid.data.balance : "unknown",
     });
 }
 

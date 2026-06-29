@@ -627,7 +627,7 @@ fixtureTest(
 );
 
 fixtureTest(
-    "rejects community endpoints owned by users outside the allowlist",
+    "rejects registration outside the allowlist without blocking saved endpoints",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `denied-${crypto.randomUUID().slice(0, 8)}`;
@@ -685,12 +685,52 @@ fixtureTest(
             updatedAt: new Date(),
         });
 
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+
+            if (isPortkeyChatCompletionsRequest(request)) {
+                await expectCommunityPortkeyRequest(input, init, {
+                    customHost: "https://api.example.com/v1",
+                    bearerToken: "sk_saved_token",
+                    upstreamModel: "gpt-4.1-mini",
+                    body: {
+                        messages: [{ role: "user", content: "hello" }],
+                    },
+                });
+
+                return Response.json({
+                    id: "chatcmpl_test",
+                    object: "chat.completion",
+                    model: "gpt-4.1-mini",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "ok" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 2,
+                        completion_tokens: 3,
+                        total_tokens: 5,
+                    },
+                });
+            }
+
+            if (isBillingFetch(request)) {
+                return Response.json({ data: [] });
+            }
+
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
         const modelsResponse = await SELF.fetch(
             "https://gen.pollinations.ai/text/models",
         );
         expect(modelsResponse.status).toBe(200);
         const models = (await modelsResponse.json()) as { name: string }[];
-        expect(models.some((model) => model.name === modelId)).toBe(false);
+        expect(models.some((model) => model.name === modelId)).toBe(true);
 
         const generationResponse = await SELF.fetch(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
@@ -705,7 +745,15 @@ fixtureTest(
                 }),
             }),
         );
-        expect(generationResponse.status).toBe(400);
+        expect(generationResponse.status).toBe(200);
+        await expect(generationResponse.json()).resolves.toMatchObject({
+            model: "gpt-4.1-mini",
+            choices: [
+                {
+                    message: { content: "ok" },
+                },
+            ],
+        });
     },
 );
 

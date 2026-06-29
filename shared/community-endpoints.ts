@@ -76,6 +76,11 @@ export type CommunityEndpointRuntime = {
     bearerTokenCiphertext: string;
 } & CommunityEndpointPrices;
 
+export type CommunityModelDefinitionInput = {
+    modelId: string;
+    description: string | null;
+} & CommunityEndpointPrices;
+
 export type CommunityModelParts = {
     ownerGithubUsername: string;
     modelName: string;
@@ -156,7 +161,7 @@ export function communityPriceDefinition(
 }
 
 export function communityModelDefinition(
-    endpoint: CommunityEndpointRuntime,
+    endpoint: CommunityModelDefinitionInput,
 ): ModelDefinition<string> {
     const parsed = parseCommunityModelId(endpoint.modelId);
     return {

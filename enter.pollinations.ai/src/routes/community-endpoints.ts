@@ -51,7 +51,7 @@ const TestEndpointSchema = z.object({
     bearerToken: z.string().min(1),
     model: z.string().trim().min(1).max(253),
 });
-const ENDPOINT_TEST_THROTTLE_SECONDS = 30;
+const ENDPOINT_PROBE_THROTTLE_SECONDS = 30;
 type Db = ReturnType<typeof drizzle<typeof schema>>;
 type CommunityEndpointRow = typeof schema.communityEndpoint.$inferSelect;
 
@@ -165,26 +165,30 @@ function throwEndpointTestError(error: unknown): never {
     });
 }
 
-async function enforceEndpointTestThrottle(
+type EndpointProbeKind = "models" | "test";
+
+async function enforceEndpointProbeThrottle(
     c: Pick<Context<Env>, "env" | "json">,
     userId: string,
+    kind: EndpointProbeKind,
 ): Promise<Response | undefined> {
-    const throttleKey = `community-endpoint-test:throttle:${userId}`;
+    const throttleKey = `community-endpoint-${kind}:throttle:${userId}`;
     const now = Date.now();
     const throttleUntil = Number(await c.env.KV.get(throttleKey));
     if (Number.isFinite(throttleUntil) && throttleUntil > now) {
         return c.json(
             {
                 error: "rate_limited",
-                message: "Endpoint tests are limited to once every 30 seconds.",
+                message:
+                    "Community endpoint probes are limited to once every 30 seconds.",
             },
             429,
-            { "Retry-After": String(ENDPOINT_TEST_THROTTLE_SECONDS) },
+            { "Retry-After": String(ENDPOINT_PROBE_THROTTLE_SECONDS) },
         );
     }
     await c.env.KV.put(
         throttleKey,
-        String(now + ENDPOINT_TEST_THROTTLE_SECONDS * 1000),
+        String(now + ENDPOINT_PROBE_THROTTLE_SECONDS * 1000),
         {
             expirationTtl: 60,
         },
@@ -246,6 +250,12 @@ export const communityEndpointsRoutes = new Hono<Env>()
         const input = c.req.valid("json");
         const db = drizzle(c.env.DB, { schema });
         await requireCommunityEndpointAccess(db, user.id);
+        const throttled = await enforceEndpointProbeThrottle(
+            c,
+            user.id,
+            "models",
+        );
+        if (throttled) return throttled;
         try {
             const models = await listCommunityEndpointModels(input);
             return c.json({ data: models });
@@ -258,7 +268,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
         const input = c.req.valid("json");
         const db = drizzle(c.env.DB, { schema });
         await requireCommunityEndpointAccess(db, user.id);
-        const throttled = await enforceEndpointTestThrottle(c, user.id);
+        const throttled = await enforceEndpointProbeThrottle(
+            c,
+            user.id,
+            "test",
+        );
         if (throttled) return throttled;
         try {
             const result = await testCommunityEndpoint(input);

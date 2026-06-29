@@ -3,6 +3,7 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { handleError, UpstreamError } from "@shared/error.ts";
+import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { requestId } from "hono/request-id";
@@ -25,6 +26,7 @@ function createTestApp() {
         c.set("model", {
             requested: "openai",
             resolved: "openai",
+            definition: getRegistryModelDefinition("openai"),
         });
         throw new UpstreamError(502, {
             message:

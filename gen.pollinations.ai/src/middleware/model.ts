@@ -1,3 +1,8 @@
+import {
+    type CommunityEndpointRuntime,
+    communityModelDefinition,
+    parseCommunityModelId,
+} from "@shared/community-endpoints.ts";
 import { AUDIO_SERVICES, DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
 import {
     DEFAULT_EMBEDDING_MODEL,
@@ -8,11 +13,17 @@ import {
     DEFAULT_REALTIME_MODEL,
     REALTIME_SERVICES,
 } from "@shared/registry/realtime.ts";
-import { type ModelName, resolveModelName } from "@shared/registry/registry.ts";
+import {
+    getRegistryModelDefinition,
+    type ModelDefinition,
+    type ModelName,
+    resolveModelName,
+} from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL, TEXT_SERVICES } from "@shared/registry/text.ts";
 import type { EventType } from "@shared/schemas/generation-event.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
+import { getCommunityEndpointRuntime } from "../community-models.ts";
 
 const SERVICES_BY_EVENT_TYPE = {
     "generate.text": TEXT_SERVICES,
@@ -35,7 +46,10 @@ export type ModelVariables = {
         /** The model string from the request (before resolution) */
         requested: string;
         /** The resolved canonical model name */
-        resolved: ModelName;
+        resolved: string;
+        /** Static registry definition, or a dynamic definition resolved from D1. */
+        definition: ModelDefinition<string>;
+        communityEndpoint?: CommunityEndpointRuntime;
     };
     formData?: FormData;
 };
@@ -58,6 +72,69 @@ function getValidatedJsonBody<T>(req: {
     }
 }
 
+export async function resolveModelDefinition(
+    model: string,
+    eventType: EventType,
+    env: CloudflareBindings,
+): Promise<ModelVariables["model"]> {
+    const communityModel = parseCommunityModelId(model);
+    if (communityModel) {
+        if (eventType !== "generate.text") {
+            throw new HTTPException(400, {
+                message: "Community endpoints only support text requests",
+            });
+        }
+        const endpoint = await getCommunityEndpointRuntime(env.DB, model);
+        if (!endpoint) {
+            throw new HTTPException(400, {
+                message: `Invalid community endpoint: "${model}"`,
+            });
+        }
+        return {
+            requested: model,
+            resolved: model,
+            definition: communityModelDefinition(endpoint),
+            communityEndpoint: endpoint,
+        };
+    }
+
+    let resolved: ModelName;
+    try {
+        resolved = resolveModelName(model);
+    } catch (error) {
+        throw new HTTPException(400, {
+            message:
+                error instanceof Error
+                    ? error.message
+                    : `Invalid model: ${model}`,
+        });
+    }
+
+    if (!(resolved in SERVICES_BY_EVENT_TYPE[eventType])) {
+        const actualCategory = (
+            [
+                "generate.text",
+                "generate.image",
+                "generate.audio",
+                "generate.embedding",
+                "generate.realtime",
+            ] as const
+        ).find((et) => resolved in SERVICES_BY_EVENT_TYPE[et]);
+        const actualLabel = actualCategory
+            ? ENDPOINT_LABEL[actualCategory]
+            : "unknown";
+        throw new HTTPException(400, {
+            message: `Model "${model}" is a ${actualLabel} model and cannot be used on the ${ENDPOINT_LABEL[eventType]} endpoint. Use the ${actualLabel} endpoint instead.`,
+        });
+    }
+
+    return {
+        requested: model,
+        resolved,
+        definition: getRegistryModelDefinition(resolved),
+    };
+}
+
 /**
  * Middleware that extracts, defaults, and resolves the model from the request.
  * Must run before auth and track middlewares.
@@ -66,7 +143,10 @@ export function resolveModel(
     eventType: EventType,
     options?: ResolveModelOptions,
 ) {
-    return createMiddleware<{ Variables: ModelVariables }>(async (c, next) => {
+    return createMiddleware<{
+        Bindings: CloudflareBindings;
+        Variables: ModelVariables;
+    }>(async (c, next) => {
         // Extract model from request
         let rawModel: string | null = null;
 
@@ -112,48 +192,7 @@ export function resolveModel(
                       ? DEFAULT_REALTIME_MODEL
                       : DEFAULT_IMAGE_MODEL);
         const model = rawModel || defaultModel;
-
-        // Resolve alias to canonical model name
-        // If resolution fails, throw a 400 error with the original error message
-        let resolved: ModelName;
-        try {
-            resolved = resolveModelName(model);
-        } catch (error) {
-            throw new HTTPException(400, {
-                message:
-                    error instanceof Error
-                        ? error.message
-                        : `Invalid model: ${model}`,
-            });
-        }
-
-        // Reject models whose category doesn't match this endpoint
-        // (e.g. an audio model sent to /v1/chat/completions). Without this,
-        // the request would be proxied to the wrong backend and surface
-        // as a 5xx upstream error.
-        if (!(resolved in SERVICES_BY_EVENT_TYPE[eventType])) {
-            const actualCategory = (
-                [
-                    "generate.text",
-                    "generate.image",
-                    "generate.audio",
-                    "generate.embedding",
-                    "generate.realtime",
-                ] as const
-            ).find((et) => resolved in SERVICES_BY_EVENT_TYPE[et]);
-            const actualLabel = actualCategory
-                ? ENDPOINT_LABEL[actualCategory]
-                : "unknown";
-            throw new HTTPException(400, {
-                message: `Model "${model}" is a ${actualLabel} model and cannot be used on the ${ENDPOINT_LABEL[eventType]} endpoint. Use the ${actualLabel} endpoint instead.`,
-            });
-        }
-
-        c.set("model", {
-            requested: model,
-            resolved,
-        });
-
+        c.set("model", await resolveModelDefinition(model, eventType, c.env));
         await next();
     });
 }

@@ -335,7 +335,7 @@ const callGPTImageWithEndpoint = async (
     ]).size;
 
     // Use requested quality - access control runs in this worker's auth/balance middleware
-       const quality = safeParams.quality === "hd" ? "high" : safeParams.quality;
+    const quality = safeParams.quality === "hd" ? "high" : safeParams.quality;
 
     // Set output format to png if model is gptimage, otherwise jpeg
     const outputFormat = "png";

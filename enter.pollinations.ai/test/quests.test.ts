@@ -244,7 +244,7 @@ test("catalog returns quest definitions without ledger stats", async ({
     });
     expectStableCatalogFields("app_listed", {
         state: "available",
-        rewardAmount: 15,
+        rewardAmount: 10,
         balanceBucket: "tier",
     });
 });

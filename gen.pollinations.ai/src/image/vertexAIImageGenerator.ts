@@ -8,8 +8,6 @@ import type { ImageGenerationResult } from "./createAndReturnImages.js";
 import { HttpError } from "./httpError.ts";
 import type { ImageParams } from "./params.js";
 import { base64ToBuffer, downloadUserImage } from "./utils/imageDownload.ts";
-import { generateTransparentImage } from "./utils/transparentImage.ts";
-import type { VertexAIImageData } from "./vertexAIClient.ts";
 import { generateImageWithVertexAI } from "./vertexAIClient.ts";
 import { writeExifMetadata } from "./writeExifMetadata.js";
 
@@ -31,70 +29,6 @@ const NANOBANANA_MODELS: Record<string, { vertex: string; name: string }> = {
         name: "Vertex AI Gemini 2.5 Flash Image",
     },
 };
-
-/**
- * Process nanobanana requests with special logic for height/width parameters
- * @param {string} prompt - Original user prompt
- * @param {ImageParams} safeParams - Parameters for image generation
- * @returns {Promise<{processedPrompt: string, processedParams: ImageParams, transparentImage?: VertexAIImageData}>} - Processed prompt, parameters, and optional transparent image
- */
-async function processNanobananaRequest(
-    prompt: string,
-    safeParams: ImageParams,
-): Promise<{
-    processedPrompt: string;
-    processedParams: ImageParams;
-    transparentImage?: VertexAIImageData;
-}> {
-    // Check if this is a nanobanana model request with height/width parameters
-    const isNanoBananaModel = safeParams.model in NANOBANANA_MODELS;
-    if (!isNanoBananaModel || !safeParams.width || !safeParams.height) {
-        // Return original values for non-nanobanana models or when dimensions are missing
-        return { processedPrompt: prompt, processedParams: safeParams };
-    }
-
-    // Skip transparent image generation for 1:1 aspect ratio (default behavior works fine)
-    const aspectRatio = safeParams.width / safeParams.height;
-    if (Math.abs(aspectRatio - 1.0) < 0.001) {
-        // Use small epsilon for floating point comparison
-        log(
-            `Skipping transparent image generation for 1:1 aspect ratio (${safeParams.width}x${safeParams.height})`,
-        );
-        return { processedPrompt: prompt, processedParams: safeParams };
-    }
-
-    log("Processing nanobanana request with height/width parameters");
-    log(
-        `Dimensions: ${safeParams.width}x${safeParams.height}, aspect ratio: ${aspectRatio.toFixed(3)}`,
-    );
-
-    try {
-        // Generate transparent image for the specified dimensions
-        const transparentImage = await generateTransparentImage(
-            safeParams.width,
-            safeParams.height,
-        );
-        log(
-            `Generated transparent image: ${transparentImage.base64.length} base64 chars`,
-        );
-
-        // Add post-prompt after user prompt
-        const postPrompt =
-            " The last image defines the aspect ratio. Generate the content to match that aspect ratio, completely replacing the last image while keeping its dimensions. Make sure no blank areas are left";
-
-        const processedPrompt = `${prompt}${postPrompt}`;
-
-        return {
-            processedPrompt,
-            processedParams: safeParams,
-            transparentImage,
-        };
-    } catch (error) {
-        errorLog("Error processing nanobanana request:", error);
-        // Return original values on error to maintain backward compatibility
-        return { processedPrompt: prompt, processedParams: safeParams };
-    }
-}
 
 /**
  * Build an informative HttpError when Vertex AI returns no image data.
@@ -156,38 +90,27 @@ export async function callVertexAIGemini(
     try {
         log("Starting Vertex AI Gemini image generation");
 
-        // Process nanobanana request with special logic if needed
-        const {
-            processedPrompt,
-            processedParams,
-            transparentImage: generatedTransparentImage,
-        } = await processNanobananaRequest(prompt, safeParams);
-
-        log("Original prompt:", prompt.substring(0, 100));
-        log("Processed prompt:", processedPrompt.substring(0, 100));
+        log("Prompt:", prompt.substring(0, 100));
         log("Parameters:", {
-            width: processedParams.width,
-            height: processedParams.height,
-            model: processedParams.model,
+            width: safeParams.width,
+            height: safeParams.height,
+            model: safeParams.model,
             hasReferenceImages: !!(
-                processedParams.image && processedParams.image.length > 0
+                safeParams.image && safeParams.image.length > 0
             ),
         });
 
-        // Process all reference images (URLs + transparent image) into base64 format
+        // Process reference image URLs into base64 format
         const processedImages: any[] = [];
 
-        // Process URL-based reference images
-        if (processedParams.image && processedParams.image.length > 0) {
-            log(
-                `Processing ${processedParams.image.length} reference image URLs`,
-            );
+        if (safeParams.image && safeParams.image.length > 0) {
+            log(`Processing ${safeParams.image.length} reference image URLs`);
 
-            for (let i = 0; i < processedParams.image.length; i++) {
-                const imageUrl = processedParams.image[i];
+            for (let i = 0; i < safeParams.image.length; i++) {
+                const imageUrl = safeParams.image[i];
                 try {
                     log(
-                        `Fetching reference image ${i + 1}/${processedParams.image.length}: ${imageUrl}`,
+                        `Fetching reference image ${i + 1}/${safeParams.image.length}: ${imageUrl}`,
                     );
 
                     // Download and detect MIME type from magic bytes
@@ -215,17 +138,6 @@ export async function callVertexAIGemini(
             }
         }
 
-        // Add transparent image if it was generated for nanobanana
-        if (generatedTransparentImage) {
-            processedImages.push({
-                base64: generatedTransparentImage.base64,
-                mimeType: generatedTransparentImage.mimeType,
-            });
-            log(
-                `Added transparent image to processed images. Total images: ${processedImages.length}`,
-            );
-        }
-
         // Determine the Vertex AI model based on the model parameter
         const modelConfig =
             NANOBANANA_MODELS[safeParams.model] ||
@@ -233,15 +145,15 @@ export async function callVertexAIGemini(
         const vertexModel = modelConfig.vertex;
 
         const vertexRequest = {
-            prompt: processedPrompt,
-            width: processedParams.width,
-            height: processedParams.height,
+            prompt,
+            width: safeParams.width,
+            height: safeParams.height,
             referenceImages: processedImages,
             model: vertexModel,
             safe: safeParams.safe as boolean,
             reasoning: safeParams.reasoning,
-            ...(processedParams.seed !== undefined && {
-                seed: processedParams.seed as number,
+            ...(safeParams.seed !== undefined && {
+                seed: safeParams.seed as number,
             }),
         };
 

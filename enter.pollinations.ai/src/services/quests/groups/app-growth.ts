@@ -59,7 +59,7 @@ const appListedQuest: QuestDefinition = {
         "Submit your app for review, get it approved, and have it listed in the [app directory](https://pollinations.ai/apps).",
     category: "grow",
     scope: "perUser",
-    rewardAmount: 15,
+    rewardAmount: 10,
     balanceBucket: "tier",
     url: "https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml",
 };

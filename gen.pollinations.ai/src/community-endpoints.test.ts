@@ -1,4 +1,5 @@
 import { createExecutionContext, env, SELF } from "cloudflare:test";
+import type { Logger } from "@logtape/logtape";
 import {
     type CommunityEndpointRuntime,
     communityChatCompletionsUrl,
@@ -27,11 +28,12 @@ import {
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { Env } from "@/env.ts";
 import { resetGenerationModelRegistryCache } from "./model-registry.ts";
 import { communityEndpointGatewayContext } from "./text/communityEndpoint.ts";
 
 const db = drizzle(env.DB);
-const testLog = { getChild: () => testLog };
+const testLog = { getChild: () => testLog } as unknown as Logger;
 const COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID = 36901823;
 const COMMUNITY_ENDPOINT_DENIED_TEST_GITHUB_ID = 999_999_999;
 
@@ -49,35 +51,38 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
-async function createEnterCommunityApi(): Promise<Hono> {
+async function createEnterCommunityApi(): Promise<Hono<Env>> {
     const routePath =
         "../../enter.pollinations.ai/src/routes/community-endpoints.ts";
     const { communityEndpointsRoutes } = (await import(routePath)) as {
         communityEndpointsRoutes: Hono;
     };
-    return new Hono()
+    return new Hono<Env>()
         .use("*", async (c, next) => {
-            c.set("log" as never, testLog);
+            c.set("log", testLog);
             await next();
         })
         .route("/api/community-endpoints", communityEndpointsRoutes)
         .onError(handleError);
 }
 
-async function createEnterFrontendApi(): Promise<Hono> {
+async function createEnterFrontendApi(): Promise<Hono<Env>> {
     const routePath = "../../enter.pollinations.ai/src/frontend-api.ts";
     const { frontendApi } = (await import(routePath)) as {
         frontendApi: Hono;
     };
-    return new Hono()
+    return new Hono<Env>()
         .use("*", async (c, next) => {
-            c.set("log" as never, testLog);
+            c.set("log", testLog);
             await next();
         })
         .route("/api", frontendApi);
 }
 
-async function fetchEnterApi(app: Hono, request: Request): Promise<Response> {
+async function fetchEnterApi(
+    app: Hono<Env>,
+    request: Request,
+): Promise<Response> {
     const ctx = createExecutionContext();
     return app.fetch(request, env, ctx);
 }

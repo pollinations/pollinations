@@ -741,6 +741,33 @@ export const TEXT_SERVICES = {
         contextLength: 1000000, // Bedrock global Claude Sonnet 4.6 context window.
         isSpecialized: false,
     },
+    "claude-sonnet-5": {
+        aliases: ["sonnet-5"],
+        modelId: "claude-sonnet-5",
+        provider: "bedrock",
+        brand: "Anthropic",
+        category: "text",
+        addedDate: new Date("2026-06-30").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Bedrock anthropic.claude-sonnet-5 standard rates.
+            // Intro $2/$10 through 2026-08-31; use standard $3/$15 to match
+            // siblings and avoid a price bump when the intro period ends.
+            promptTextTokens: perMillion(3),
+            promptCachedTokens: perMillion(0.3),
+            promptCacheWriteTokens: perMillion(3.75),
+            completionTextTokens: perMillion(15),
+        },
+        title: "Claude Sonnet 5",
+        description: "Claude Sonnet 5 - Best balance of speed & intelligence",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 20, // Bedrock Converse image limit.
+        tools: true,
+        contextLength: 1000000, // Bedrock Claude Sonnet 5 context window.
+        isSpecialized: false,
+    },
     "claude-opus-4.6": {
         aliases: ["claude-opus-4.5"],
         modelId: "claude-opus-4-6",

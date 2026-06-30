@@ -111,10 +111,9 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                         )}
                                     </span>
                                     {isSelected && (
-                                        <Chip
-                                            size="sm"
+                                        <span
                                             className={cn(
-                                                "absolute top-full mt-1 whitespace-nowrap",
+                                                "absolute top-full mt-1 inline-flex items-center whitespace-nowrap",
                                                 isFirst
                                                     ? "left-0"
                                                     : isLast
@@ -122,19 +121,21 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                                       : "left-1/2 -translate-x-1/2",
                                             )}
                                         >
-                                            <span
-                                                className={cn(
-                                                    "text-sm",
-                                                    isFirst
-                                                        ? "text-left"
-                                                        : isLast
-                                                          ? "text-right"
-                                                          : "text-center",
-                                                )}
-                                            >
-                                                {selectedBadgeLabel ??
-                                                    `$${pack.amountUsd}`}
-                                            </span>
+                                            <Chip size="sm">
+                                                <span
+                                                    className={cn(
+                                                        "text-sm",
+                                                        isFirst
+                                                            ? "text-left"
+                                                            : isLast
+                                                              ? "text-right"
+                                                              : "text-center",
+                                                    )}
+                                                >
+                                                    {selectedBadgeLabel ??
+                                                        `$${pack.amountUsd}`}
+                                                </span>
+                                            </Chip>
                                             {selectedBadgeTooltip && (
                                                 <InfoTip
                                                     content={
@@ -143,7 +144,7 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                                     label="Price details"
                                                 />
                                             )}
-                                        </Chip>
+                                        </span>
                                     )}
                                 </span>
                             </span>

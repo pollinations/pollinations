@@ -156,7 +156,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period }) => {
                         </div>
                         <div className="flex w-full items-center gap-3">
                             <span className="w-20 shrink-0 text-xs font-medium text-theme-text-soft">
-                                Models
+                                models
                             </span>
                             <div className="min-w-0 flex-1 max-w-60 [&_button]:w-full">
                                 <MultiSelect

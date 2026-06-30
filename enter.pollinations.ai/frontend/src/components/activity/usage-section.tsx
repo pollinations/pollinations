@@ -143,6 +143,28 @@ export const UsageSection: FC<UsageSectionProps> = ({ period }) => {
                     <div className="flex flex-col items-start gap-2">
                         <div className="flex w-full items-center gap-3">
                             <span className="w-20 shrink-0 text-xs font-medium text-theme-text-soft">
+                                Keys
+                            </span>
+                            <div className="min-w-0 flex-1 max-w-60 [&_button]:w-full">
+                                <MultiSelect
+                                    options={keySelectOptions}
+                                    selected={filters.selectedKeyIds}
+                                    onChange={(v) =>
+                                        setFilters((f) => ({
+                                            ...f,
+                                            selectedKeyIds: v,
+                                        }))
+                                    }
+                                    placeholder="All"
+                                    disabled={keySelectOptions.length === 0}
+                                    disabledText="None"
+                                    disabledTooltip="No API key usage in this period"
+                                    align="start"
+                                />
+                            </div>
+                        </div>
+                        <div className="flex w-full items-center gap-3">
+                            <span className="w-20 shrink-0 text-xs font-medium text-theme-text-soft">
                                 Models
                             </span>
                             <div className="min-w-0 flex-1 max-w-60 [&_button]:w-full">
@@ -159,28 +181,6 @@ export const UsageSection: FC<UsageSectionProps> = ({ period }) => {
                                     disabled={modelSelectOptions.length === 0}
                                     disabledText="None"
                                     disabledTooltip="No model usage in this period"
-                                    align="start"
-                                />
-                            </div>
-                        </div>
-                        <div className="flex w-full items-center gap-3">
-                            <span className="w-20 shrink-0 text-xs font-medium text-theme-text-soft">
-                                API Keys
-                            </span>
-                            <div className="min-w-0 flex-1 max-w-60 [&_button]:w-full">
-                                <MultiSelect
-                                    options={keySelectOptions}
-                                    selected={filters.selectedKeyIds}
-                                    onChange={(v) =>
-                                        setFilters((f) => ({
-                                            ...f,
-                                            selectedKeyIds: v,
-                                        }))
-                                    }
-                                    placeholder="All"
-                                    disabled={keySelectOptions.length === 0}
-                                    disabledText="None"
-                                    disabledTooltip="No API key usage in this period"
                                     align="start"
                                 />
                             </div>

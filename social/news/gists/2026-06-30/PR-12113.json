@@ -1,0 +1,35 @@
+{
+  "pr_number": 12113,
+  "title": "Fx inability to scroll on mobile on Authorization page",
+  "author": "aeosntw",
+  "url": "https://github.com/pollinations/pollinations/pull/12113",
+  "merged_at": "2026-06-30T16:23:44Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "Remove `useScrollLock` call for non-mobile devices.\r\nMaintains status quo for desktop and wider screens.\r\n\r\nFixes [#12000](https://github.com/pollinations/pollinations/issues/12000)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Smooth scrolling ahead",
+    "blurb": "Fixed a pesky bug that was freezing the screen on mobile devices during authorization. You can now scroll freely again!",
+    "summary": "Removed an errant useScrollLock call on the Authorization page that was preventing mobile users from scrolling.",
+    "impact": "Mobile users can now scroll normally when authorizing apps, while desktop behavior remains unchanged.",
+    "keywords": [
+      "mobile",
+      "ui",
+      "bug_fix",
+      "authorization",
+      "scrolling"
+    ],
+    "visual_concept": "Polly the bee mascot unrolling a long physical scroll coming out of a giant retro mobile phone held by the Monitor Robot, symbolizing fixing the scrolling issue on mobile.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot unrolling a long, flowing digital scroll coming out of a giant retro mobile phone. A chunky pixel robot with a CRT monitor head holds the phone, its screen showing a happy face. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-30/PR-12113.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot unrolling a long, flowing digital scroll coming out of a giant retro mobile phone. A chunky pixel robot with a CRT monitor head holds the phone, its screen showing a happy face. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-30T16:25:05.272231+00:00"
+}

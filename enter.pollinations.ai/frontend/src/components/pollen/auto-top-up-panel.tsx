@@ -15,7 +15,11 @@ import {
     AUTO_TOP_UP_PACK_MAX_USD,
     AUTO_TOP_UP_PACK_MIN_USD,
 } from "@shared/billing/auto-top-up.ts";
-import { POLLEN_PACKS } from "@shared/pollen-packs.ts";
+import {
+    calculateServiceFeeCents,
+    formatUsdCents,
+    POLLEN_PACKS,
+} from "@shared/pollen-packs.ts";
 import {
     type FC,
     type ReactNode,
@@ -42,7 +46,15 @@ export type BillingState = {
         enabled: boolean;
         thresholdPollen: number;
         packAmountUsd: number;
+        serviceFeeCents: number;
+        requiresTermsConfirmation: boolean;
+        termsVersion: number;
+        acceptedTermsVersion: number | null;
+        termsAcceptedAt: string | null;
         lastIssue: AutoTopUpIssue | null;
+    };
+    pricing: {
+        checkoutPricingUpdateEnabled: boolean;
     };
     paymentMethod: {
         hasDefault: boolean;
@@ -68,7 +80,9 @@ type AutoTopUpPanelProps = {
 
 const DEFAULT_PACK_AMOUNT_USD = 10;
 const AUTO_TOP_UP_DRAFT_STORAGE_KEY = "pollinations:auto-top-up-draft";
-const AUTO_TOP_UP_TOOLTIP_CONTENT = (
+const AutoTopUpTooltipContent: FC<{
+    checkoutPricingUpdateEnabled: boolean;
+}> = ({ checkoutPricingUpdateEnabled }) => (
     <div className="space-y-2 text-theme-text-base">
         <div>
             Keeps your{" "}
@@ -89,7 +103,9 @@ const AUTO_TOP_UP_TOOLTIP_CONTENT = (
                 <span className="font-semibold text-theme-text-strong">
                     default Stripe card
                 </span>{" "}
-                for the selected pack
+                {checkoutPricingUpdateEnabled
+                    ? "for the selected pack, plus applicable tax and service fee after you confirm the updated terms"
+                    : "for the selected pack"}
             </li>
             <li>
                 <span className="inline-flex items-center gap-1 font-semibold text-theme-text-strong">
@@ -134,11 +150,23 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
         (pack) => pack.amountUsd === packAmountUsd,
     );
     const isEnabled = billingState?.autoTopUp.enabled ?? false;
+    const checkoutPricingUpdateEnabled =
+        billingState?.pricing.checkoutPricingUpdateEnabled ?? false;
+    const requiresTermsConfirmation =
+        billingState?.autoTopUp.requiresTermsConfirmation ?? false;
+    const serviceFeeCents =
+        checkoutPricingUpdateEnabled && selectedPack
+            ? calculateServiceFeeCents(selectedPack.amountUsd * 100)
+            : 0;
+    const subtotalBeforeTaxCents =
+        (selectedPack?.amountUsd ?? 0) * 100 + serviceFeeCents;
     const showConfig = isEnabled || enableDraft;
     const hasUnsavedChanges =
         billingState !== null &&
         showConfig &&
-        (!isEnabled || packAmountUsd !== billingState.autoTopUp.packAmountUsd);
+        (!isEnabled ||
+            requiresTermsConfirmation ||
+            packAmountUsd !== billingState.autoTopUp.packAmountUsd);
     const setup: SetupReadiness = {
         paymentMethodReady,
         billingDetailsReady,
@@ -274,6 +302,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
         toggleStatus,
         lastIssue,
         billingReady,
+        requiresTermsConfirmation,
     );
     const switchStatus: SwitchStatus = mapToggleStatusToSwitchStatus(
         toggleStatus,
@@ -300,7 +329,13 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                     <div className="flex min-w-0 items-center text-sm font-bold text-theme-text-soft">
                         Auto top-up
                         <InfoTip
-                            content={AUTO_TOP_UP_TOOLTIP_CONTENT}
+                            content={
+                                <AutoTopUpTooltipContent
+                                    checkoutPricingUpdateEnabled={
+                                        checkoutPricingUpdateEnabled
+                                    }
+                                />
+                            }
                             label="Auto top-up information"
                         />
                     </div>
@@ -329,10 +364,27 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                                     disabled={isSaving}
                                 />
                             </div>
+                            {checkoutPricingUpdateEnabled && selectedPack && (
+                                <AutoTopUpCostSummary
+                                    packAmountUsd={selectedPack.amountUsd}
+                                    serviceFeeCents={serviceFeeCents}
+                                    subtotalBeforeTaxCents={
+                                        subtotalBeforeTaxCents
+                                    }
+                                    requiresTermsConfirmation={
+                                        requiresTermsConfirmation
+                                    }
+                                />
+                            )}
                             <AutoTopUpSaveButton
                                 showConfig={showConfig}
                                 hasUnsavedChanges={hasUnsavedChanges}
                                 setup={setup}
+                                label={
+                                    requiresTermsConfirmation
+                                        ? "Confirm"
+                                        : "Save"
+                                }
                                 onSave={handleSave}
                             />
                         </div>
@@ -360,6 +412,7 @@ function renderStatusMessage(
     status: ToggleStatus,
     issue: AutoTopUpIssue | null,
     billingReady: boolean,
+    requiresTermsConfirmation: boolean,
 ): ReactNode {
     if (status === "off") return "Off";
     if (status === "draft") {
@@ -383,8 +436,50 @@ function renderStatusMessage(
         );
     }
     if (issue?.kind === "failed") return "Last charge failed — update card";
+    if (requiresTermsConfirmation) {
+        return "On under previous terms — re-confirm for updated pricing";
+    }
     return "On";
 }
+
+const AutoTopUpCostSummary: FC<{
+    packAmountUsd: number;
+    serviceFeeCents: number;
+    subtotalBeforeTaxCents: number;
+    requiresTermsConfirmation: boolean;
+}> = ({
+    packAmountUsd,
+    serviceFeeCents,
+    subtotalBeforeTaxCents,
+    requiresTermsConfirmation,
+}) => (
+    <div className="w-full rounded-lg border border-divider bg-surface-opaque px-3 py-2 text-xs leading-relaxed text-theme-text-muted sm:w-48 sm:shrink-0">
+        <div className="flex justify-between gap-3">
+            <span>Pack</span>
+            <span className="font-bold text-theme-text-soft">
+                {formatUsdCents(packAmountUsd * 100)}
+            </span>
+        </div>
+        <div className="flex justify-between gap-3">
+            <span>Service fee</span>
+            <span className="font-bold text-theme-text-soft">
+                {formatUsdCents(serviceFeeCents)}
+            </span>
+        </div>
+        <div className="flex justify-between gap-3 border-t border-divider pt-1">
+            <span>Before tax</span>
+            <span className="font-bold text-theme-text-soft">
+                {formatUsdCents(subtotalBeforeTaxCents)}
+            </span>
+        </div>
+        <div>Tax applies where required</div>
+        {requiresTermsConfirmation && (
+            <div className="mt-1 font-semibold text-theme-text-soft">
+                Previous terms stay active until confirmed.
+            </div>
+        )}
+    </div>
+);
 
 type ManageBillingButtonProps = {
     onClick: () => void;
@@ -422,6 +517,7 @@ type AutoTopUpSaveButtonProps = {
     showConfig: boolean;
     hasUnsavedChanges: boolean;
     setup: SetupReadiness;
+    label: string;
     onSave: () => void;
 };
 
@@ -429,6 +525,7 @@ const AutoTopUpSaveButton: FC<AutoTopUpSaveButtonProps> = ({
     showConfig,
     hasUnsavedChanges,
     setup,
+    label,
     onSave,
 }) => {
     const saveDisabled = !showConfig || !canEnable(setup) || !hasUnsavedChanges;
@@ -451,7 +548,7 @@ const AutoTopUpSaveButton: FC<AutoTopUpSaveButtonProps> = ({
                 className="w-28 min-w-0 gap-1.5 self-start text-center shadow-none sm:self-center"
             >
                 <CheckIcon className="h-4 w-4 shrink-0" />
-                Save
+                {label}
             </Button>
         </DisabledControlTooltip>
     );

@@ -14,6 +14,12 @@ export type PollenPack = {
 const CHECKOUT_IMAGE_URL = `${PUBLIC_URLS.enter.production}/checkout/pollen-pack.png`;
 const POLLEN_TAX_CODE = "txcd_10103001";
 const CHECKOUT_FEEDBACK_URL = "https://discord.gg/z5uMbEYK";
+export const SERVICE_FEE_RATE_BPS = 350;
+export const SERVICE_FEE_FIXED_CENTS = 30;
+export const SERVICE_FEE_NAME = "Service fee";
+export const SERVICE_FEE_LINE_TYPE = "service_fee";
+export const POLLEN_PACK_LINE_TYPE = "pollen_pack";
+export const SERVICE_FEE_TAX_CODE = POLLEN_TAX_CODE;
 
 // USD is the canonical reference: 1 pollen ≈ $1. You get what you buy.
 const BASE_POLLEN_PACKS: ReadonlyArray<{
@@ -68,3 +74,20 @@ export const getPollenPackByAmount = (
 
 export const describePollenPack = (pack: PollenPack): string =>
     `$${pack.amountUsd} -> ${formatPollenPackValue(pack.amountUsd)} pollen`;
+
+export const calculateServiceFeeCents = (packAmountCents: number): number => {
+    if (!Number.isFinite(packAmountCents) || packAmountCents <= 0) {
+        return 0;
+    }
+
+    return Math.ceil(
+        (packAmountCents * SERVICE_FEE_RATE_BPS) / 10_000 +
+            SERVICE_FEE_FIXED_CENTS,
+    );
+};
+
+export const formatUsdCents = (amountCents: number): string =>
+    (amountCents / 100).toLocaleString("en-US", {
+        style: "currency",
+        currency: "USD",
+    });

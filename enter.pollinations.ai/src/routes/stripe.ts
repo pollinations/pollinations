@@ -1,7 +1,10 @@
 import {
+    calculateServiceFeeCents,
     describePollenPack,
     getPollenPackByKey,
     POLLEN_PACKS,
+    SERVICE_FEE_NAME,
+    SERVICE_FEE_TAX_CODE,
 } from "@shared/pollen-packs.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { Context } from "hono";
@@ -9,6 +12,7 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
+import { isCheckoutPricingUpdateEnabled } from "../utils/checkout-pricing.ts";
 import { getCohortFromCountry } from "../utils/currency-router.ts";
 import { createStripeClient } from "../utils/stripe.ts";
 import {
@@ -104,6 +108,12 @@ export const stripeRoutes = new Hono<Env>()
                 cohort,
                 ...stripeNewCardGateMetadata(newCardGate),
             };
+            const checkoutPricingUpdateEnabled = isCheckoutPricingUpdateEnabled(
+                c.env,
+            );
+            const serviceFeeCents = calculateServiceFeeCents(
+                pack.amountUsd * 100,
+            );
 
             const checkoutSession = await stripe.checkout.sessions.create({
                 mode: "payment",
@@ -113,7 +123,9 @@ export const stripeRoutes = new Hono<Env>()
                         price_data: {
                             currency: "usd",
                             unit_amount: pack.amountUsd * 100,
-                            tax_behavior: "inclusive",
+                            tax_behavior: checkoutPricingUpdateEnabled
+                                ? "exclusive"
+                                : "inclusive",
                             product_data: {
                                 name: pack.checkoutName,
                                 description: pack.checkoutDescription,
@@ -123,6 +135,22 @@ export const stripeRoutes = new Hono<Env>()
                         },
                         quantity: 1,
                     },
+                    ...(checkoutPricingUpdateEnabled
+                        ? [
+                              {
+                                  price_data: {
+                                      currency: "usd",
+                                      unit_amount: serviceFeeCents,
+                                      tax_behavior: "exclusive" as const,
+                                      product_data: {
+                                          name: SERVICE_FEE_NAME,
+                                          tax_code: SERVICE_FEE_TAX_CODE,
+                                      },
+                                  },
+                                  quantity: 1,
+                              },
+                          ]
+                        : []),
                 ],
                 adaptive_pricing: { enabled: true },
                 // Enable discount/promotion codes
@@ -146,7 +174,9 @@ export const stripeRoutes = new Hono<Env>()
                     enabled: true,
                     invoice_data: {
                         rendering_options: {
-                            amount_tax_display: "include_inclusive_tax",
+                            amount_tax_display: checkoutPricingUpdateEnabled
+                                ? "exclude_tax"
+                                : "include_inclusive_tax",
                         },
                     },
                 },
@@ -175,12 +205,26 @@ export const stripeRoutes = new Hono<Env>()
      * /checkout/:packKey route) plus the USD amount for display.
      */
     .get("/products", async (c) => {
+        const checkoutPricingUpdateEnabled = isCheckoutPricingUpdateEnabled(
+            c.env,
+        );
         return c.json({
             packs: POLLEN_PACKS.map((pack) => ({
                 packKey: pack.packKey,
                 amount: pack.amountUsd,
+                serviceFeeCents: checkoutPricingUpdateEnabled
+                    ? calculateServiceFeeCents(pack.amountUsd * 100)
+                    : 0,
+                subtotalBeforeTaxCents:
+                    pack.amountUsd * 100 +
+                    (checkoutPricingUpdateEnabled
+                        ? calculateServiceFeeCents(pack.amountUsd * 100)
+                        : 0),
                 description: describePollenPack(pack),
             })),
+            pricing: {
+                checkoutPricingUpdateEnabled,
+            },
         });
     })
 

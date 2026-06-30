@@ -1,0 +1,34 @@
+{
+  "pr_number": 12125,
+  "title": "chore: remove dead github_id backfill fallback",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12125",
+  "merged_at": "2026-06-30T10:53:45Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Removes the unreachable github_id backfill in `onAfterSessionCreate` (auth.ts). GitHub is the only auth provider, so every user row has a `github_id` — verified 0 of 101,653 prod users have NULL `github_id`.\n- The fallback (resolve `github_id` from the `account` table + backfill) was a completed-migration bridge that can never execute.\n- Replaced with a defensive `if (!githubId) return;` guard; dropped now-unused `account`/`and` imports.\n- No behavior change for real users; pure dead-code removal (-31/+6).\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring cleaning the auth hive",
+    "blurb": "Swept away some old, unused GitHub authentication code. Keeping the hive's internal wiring clean and efficient!",
+    "summary": "Removed an obsolete GitHub ID backfill fallback in the authentication flow, as all 101k+ production users now have verified IDs.",
+    "impact": "This internal cleanup removes 31 lines of dead code from the auth flow without changing any user-facing behavior.",
+    "keywords": [
+      "auth",
+      "refactor",
+      "cleanup",
+      "github"
+    ],
+    "visual_concept": "Polly the bee doing some light housekeeping, sweeping up dead leaves (dead code) around a glowing server rack.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny janitor's hat, sweeping up dead brown pixel leaves around a glowing lime green (#ecf874) server rack. Soft pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-30/PR-12125.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny janitor's hat, sweeping up dead brown pixel leaves around a glowing lime green (#ecf874) server rack. Soft pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-06-30T10:54:40.569725+00:00"
+}

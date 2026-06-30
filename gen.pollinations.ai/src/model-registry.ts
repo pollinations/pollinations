@@ -12,15 +12,27 @@ import {
 import type { EventType } from "@shared/schemas/generation-event.ts";
 import {
     type CommunityModelRegistryEntry,
+    communityTextSupportedEndpoints,
     getCommunityModelRegistryEntries,
 } from "./community-models.ts";
 
 const REGISTRY_TTL_MS = 60_000;
+const TEXT_MODEL_ENDPOINTS = [
+    "/v1/chat/completions",
+    "/text",
+    "/text/{prompt}",
+];
+const IMAGE_MODEL_ENDPOINTS = [
+    "/v1/images/generations",
+    "/v1/images/edits",
+    "/image/{prompt}",
+];
 
 export type GenerationModelEntry = {
     id: string;
     aliases: string[];
     eventType: EventType;
+    supportedEndpoints: string[];
     definition: ModelDefinition<string>;
     info: ModelInfo;
     communityEndpoint?: CommunityEndpointRuntime;
@@ -54,12 +66,22 @@ function eventTypeForCategory(category: Category): EventType {
     return "generate.image";
 }
 
+function supportedEndpointsForEventType(eventType: EventType): string[] {
+    if (eventType === "generate.text") return TEXT_MODEL_ENDPOINTS;
+    if (eventType === "generate.audio") return ["/audio/{text}"];
+    if (eventType === "generate.embedding") return ["/v1/embeddings"];
+    if (eventType === "generate.realtime") return ["/v1/realtime"];
+    return IMAGE_MODEL_ENDPOINTS;
+}
+
 const STATIC_ENTRIES: GenerationModelEntry[] = getModels().map((modelName) => {
     const definition = getRegistryModelDefinition(modelName);
+    const eventType = eventTypeForCategory(definition.category);
     return {
         id: modelName,
         aliases: definition.aliases,
-        eventType: eventTypeForCategory(definition.category),
+        eventType,
+        supportedEndpoints: supportedEndpointsForEventType(eventType),
         definition,
         info: modelInfoFromDefinition(modelName, definition),
         visible: definition.hidden !== true,
@@ -73,6 +95,7 @@ function communityEntryToGenerationEntry(
         id: entry.id,
         aliases: entry.aliases,
         eventType: "generate.text",
+        supportedEndpoints: communityTextSupportedEndpoints(),
         definition: entry.definition,
         info: entry.info,
         communityEndpoint: entry.communityEndpoint,

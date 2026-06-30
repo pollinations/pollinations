@@ -59,7 +59,6 @@ import {
     handleTextContentLocal,
 } from "@/text/handler.ts";
 import { generationAccess } from "@/utils/generation-access.ts";
-import { communityTextSupportedEndpoints } from "../community-models.ts";
 import {
     type GenerationModelEntry,
     getGenerationModelRegistry,
@@ -80,12 +79,6 @@ const factory = createFactory<Env>();
 const textBodyLimit = bodyLimit({
     maxSize: 20 * 1024 * 1024,
 });
-const TEXT_MODEL_ENDPOINTS = [
-    "/v1/chat/completions",
-    "/text",
-    "/text/{prompt}",
-];
-
 // Shared handler for image and video generation (used by both /image/ and /video/ routes)
 const imageVideoHandlers = factory.createHandlers(
     resolveModel("generate.image"),
@@ -244,15 +237,6 @@ async function getOrderedVisibleModelEntries(c: Context<Env>) {
     ];
 }
 
-function supportedEndpointsForEntry(entry: GenerationModelEntry): string[] {
-    if (entry.communityEndpoint) return communityTextSupportedEndpoints();
-    if (entry.eventType === "generate.text") return TEXT_MODEL_ENDPOINTS;
-    if (entry.eventType === "generate.audio") return ["/audio/{text}"];
-    if (entry.eventType === "generate.embedding") return ["/v1/embeddings"];
-    if (entry.eventType === "generate.realtime") return ["/v1/realtime"];
-    return ["/v1/images/generations", "/v1/images/edits", "/image/{prompt}"];
-}
-
 export const proxyRoutes = new Hono<Env>()
     // Edge rate limiter: first line of defense (10 req/s per IP)
     .use("*", edgeRateLimit)
@@ -298,7 +282,7 @@ export const proxyRoutes = new Hono<Env>()
                 created: now,
                 input_modalities: entry.info.input_modalities,
                 output_modalities: entry.info.output_modalities,
-                supported_endpoints: supportedEndpointsForEntry(entry),
+                supported_endpoints: entry.supportedEndpoints,
                 ...(entry.info.tools && { tools: entry.info.tools }),
                 ...(entry.info.reasoning && {
                     reasoning: entry.info.reasoning,

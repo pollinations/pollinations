@@ -130,7 +130,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period }) => {
             <div className="flex flex-wrap items-center justify-between gap-3 px-1">
                 <div className="flex items-center gap-2 font-body text-base font-semibold text-theme-text-strong">
                     <AppIcon className="h-4 w-4 shrink-0" />
-                    App earnings
+                    Earnings
                 </div>
                 {downloadAction}
             </div>

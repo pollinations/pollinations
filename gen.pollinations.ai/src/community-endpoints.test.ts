@@ -195,6 +195,22 @@ describe("community endpoint helpers", () => {
         ).toThrow("Endpoint URL cannot target a private host");
     });
 
+    it("uses the community endpoint description as the model title", () => {
+        const modelDefinition = communityModelDefinition({
+            modelId: "community/voodoohop/openai",
+            description: "OpenAI via community endpoint",
+            ...communityEndpointPrices({
+                promptTextPrice: 0.1,
+                completionTextPrice: 0.1,
+            }),
+        });
+
+        expect(modelDefinition.title).toBe("OpenAI via community endpoint");
+        expect(modelDefinition.description).toBe(
+            "OpenAI via community endpoint",
+        );
+    });
+
     it("builds Portkey gateway context with the saved token", async () => {
         const secret = "test-secret";
         const endpoint: CommunityEndpointRuntime = {
@@ -612,6 +628,7 @@ fixtureTest(
                 category: "text",
                 community: true,
                 alpha: true,
+                title: "Public community model",
                 description: "Public community model",
                 pricing: {
                     currency: "pollen",

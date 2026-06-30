@@ -26,24 +26,42 @@ import {
 import { hasDirectAccountPermission } from "./account-permissions.ts";
 
 const PriceSchema = z.number().finite().min(0);
-const PriceFieldsSchema = Object.fromEntries(
+const CreatePriceFieldsSchema = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
         field.key,
         PriceSchema.optional().default(0),
     ]),
 ) as unknown as Record<CommunityEndpointPriceKey, z.ZodType<number>>;
+const UpdatePriceFieldsSchema = Object.fromEntries(
+    COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
+        field.key,
+        PriceSchema.optional(),
+    ]),
+) as unknown as Record<
+    CommunityEndpointPriceKey,
+    z.ZodType<number | undefined>
+>;
 
-const EndpointFieldsSchema = z.object({
+const EndpointFieldsSchema = {
     name: z.string().trim().min(1).max(120),
     description: z.string().trim().max(240).optional(),
     baseUrl: z.string().url(),
     upstreamModel: z.string().trim().min(1).max(253).optional(),
     bearerToken: z.string().min(1),
-    ...PriceFieldsSchema,
-});
+} as const;
 
-const CreateEndpointSchema = EndpointFieldsSchema;
-const UpdateEndpointSchema = EndpointFieldsSchema.partial();
+const CreateEndpointSchema = z.object({
+    ...EndpointFieldsSchema,
+    ...CreatePriceFieldsSchema,
+});
+const UpdateEndpointSchema = z.object({
+    name: EndpointFieldsSchema.name.optional(),
+    description: EndpointFieldsSchema.description,
+    baseUrl: EndpointFieldsSchema.baseUrl.optional(),
+    upstreamModel: EndpointFieldsSchema.upstreamModel,
+    bearerToken: EndpointFieldsSchema.bearerToken.optional(),
+    ...UpdatePriceFieldsSchema,
+});
 const ModelListSchema = z.object({
     baseUrl: z.string().url(),
     bearerToken: z.string().min(1),

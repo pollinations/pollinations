@@ -1117,6 +1117,31 @@ fixtureTest(
         });
         expect(created).not.toHaveProperty("bearerToken");
         expect(created).not.toHaveProperty("bearerTokenCiphertext");
+        expect(typeof created.id).toBe("string");
+        const createdId = created.id as string;
+
+        const updateResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/account/my-models/${createdId}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        description: "Updated description",
+                    }),
+                },
+            ),
+        );
+        expect(updateResponse.status).toBe(200);
+        await expect(updateResponse.json()).resolves.toMatchObject({
+            description: "Updated description",
+            promptTextPrice: 0.1,
+            completionTextPrice: 0.2,
+        });
 
         const secondListResponse = await fetchEnterApi(
             enterApi,

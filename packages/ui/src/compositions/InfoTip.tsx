@@ -1,4 +1,5 @@
 import type { FC, ReactNode } from "react";
+import { EyeIcon } from "../primitives/icons/index.tsx";
 import { Tooltip } from "../primitives/Tooltip.tsx";
 
 type InfoTipProps = {
@@ -8,12 +9,12 @@ type InfoTipProps = {
 };
 
 /**
- * Small "i" badge that opens a tooltip on hover, click, or focus.
+ * Small eye trigger that opens a tooltip on hover, click, or focus.
  *
- * Both the badge and the popup follow the page theme: badge reads
- * `bg-theme-bg-active`; popup uses the universal recipe via `<Tooltip>`
- * (`bg-theme-bg-pale` + `border-theme-border` + normal inherited-safe
- * typography, viewport-clamped). Cursor on the badge is `cursor-help`.
+ * The trigger and popup follow the page theme. The popup uses the universal
+ * recipe via `<Tooltip>` (`bg-theme-bg-pale` + `border-theme-border` +
+ * normal inherited-safe typography, viewport-clamped). Cursor on the trigger
+ * is `cursor-help`.
  */
 export const InfoTip: FC<InfoTipProps> = ({
     text,
@@ -21,8 +22,8 @@ export const InfoTip: FC<InfoTipProps> = ({
     label = "More info",
 }) => (
     <Tooltip content={content ?? text} ariaLabel={label} className="polli:ml-1">
-        <span className="polli:inline-flex polli:h-3.5 polli:w-3.5 polli:items-center polli:justify-center polli:rounded-full polli:border polli:border-theme-border polli:bg-theme-bg-active polli:font-bold polli:text-micro polli:text-theme-text-strong polli:transition-colors">
-            i
+        <span className="polli:inline-flex polli:h-4 polli:w-4 polli:items-center polli:justify-center polli:rounded polli:text-theme-text-soft polli:transition-colors polli:hover:bg-theme-bg-active polli:hover:text-theme-text-strong">
+            <EyeIcon className="polli:h-3.5 polli:w-3.5" />
         </span>
     </Tooltip>
 );

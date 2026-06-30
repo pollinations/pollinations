@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-06-29",
+  "period_start": "2026-06-29",
+  "period_end": "2026-06-29",
+  "generated_at": "2026-06-30T07:14:06.870568+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-29/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-29/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-29/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Three updates from the repo this week.\n\n1) Community text endpoints are live — you can now bring your own models to the party.\n2) nanobanana learned some boundaries and will finally stop clobbering your reference images.\n3) Atomic syncs for APPS.md to Tinybird, meaning data flows smoothly and quest rewards actually land where they should.\n\nOpen source is just fixing things until they work. Code's on GitHub.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #github #retroaesthetic #webdev",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

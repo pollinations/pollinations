@@ -99,29 +99,32 @@ function readUserIdFromMetadata(
     return metadata?.userId || metadata?.pollinations_user_id || "";
 }
 
-async function recordCardFingerprintFromCharge({
+async function recordFailedCardFingerprintFromCharge({
     env,
     event,
     charge,
     snapshot,
+    fallbackUserId = "",
 }: {
     env: CloudflareBindings;
     event: Stripe.Event;
     charge: Stripe.Charge | null | undefined;
     snapshot: ChargeSnapshot;
+    fallbackUserId?: string;
 }): Promise<void> {
     if (!charge || !snapshot.cardFingerprint) return;
+    const userId = readUserIdFromMetadata(charge.metadata) || fallbackUserId;
 
     try {
         await recordStripeCardFingerprintAttempt(env.DB, {
             eventId: event.id,
-            userId: readUserIdFromMetadata(charge.metadata),
+            userId,
             cardFingerprint: snapshot.cardFingerprint,
             createdAt: event.created ? event.created * 1000 : Date.now(),
         });
     } catch (err) {
         console.error(
-            `Failed to record Stripe card fingerprint for event ${event.id}:`,
+            `Failed to record Stripe failed-card fingerprint for event ${event.id}:`,
             err,
         );
     }
@@ -373,11 +376,11 @@ function emitPaymentIntentAnalytics(
     {
         paymentStatus,
         customerEmail,
-        recordCardFingerprint = false,
+        recordFailedCardFingerprint = false,
     }: {
         paymentStatus: string;
         customerEmail: string;
-        recordCardFingerprint?: boolean;
+        recordFailedCardFingerprint?: boolean;
     },
 ): void {
     const methodsOffered = (paymentIntent.payment_method_types ?? []).join(",");
@@ -389,12 +392,13 @@ function emitPaymentIntentAnalytics(
                 paymentIntent.id,
             );
             const snapshot = snapshotFromCharge(charge);
-            if (recordCardFingerprint) {
-                await recordCardFingerprintFromCharge({
+            if (recordFailedCardFingerprint) {
+                await recordFailedCardFingerprintFromCharge({
                     env: c.env,
                     event,
                     charge,
                     snapshot,
+                    fallbackUserId: paymentIntent.metadata?.userId || "",
                 });
             }
             await sendStripeEventToTinybird(c.env, {
@@ -573,16 +577,10 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                 // The Charge IS the event payload, so we can read
                 // payment_method_details + card.country + risk_score directly
                 // without an additional Stripe API call. Pack credit still
-                // happens via checkout.session.completed; this path records
-                // the card fingerprint gate ledger and emits analytics.
+                // happens via checkout.session.completed; successful cards
+                // don't feed the failed-card gate ledger.
                 const charge = event.data.object as Stripe.Charge;
                 const snapshot = snapshotFromCharge(charge);
-                await recordCardFingerprintFromCharge({
-                    env: c.env,
-                    event,
-                    charge,
-                    snapshot,
-                });
                 c.executionCtx.waitUntil(
                     sendStripeEventToTinybird(c.env, {
                         eventType: event.type,
@@ -784,7 +782,7 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                 emitPaymentIntentAnalytics(c, stripe, event, paymentIntent, {
                     paymentStatus: "failed",
                     customerEmail: paymentIntent.receipt_email || "",
-                    recordCardFingerprint: true,
+                    recordFailedCardFingerprint: true,
                 });
                 break;
             }

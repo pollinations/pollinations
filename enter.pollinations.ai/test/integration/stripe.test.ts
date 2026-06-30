@@ -165,44 +165,29 @@ async function getSeededUserId(): Promise<string> {
     return user.id;
 }
 
-function createCardChargeSucceededEvent({
+function createCardPaymentFailedEvent({
     eventId,
-    chargeId,
+    paymentIntentId,
     userId,
-    fingerprint,
-    customer = "cus_test_card_gate",
 }: {
     eventId: string;
-    chargeId: string;
+    paymentIntentId: string;
     userId: string;
-    fingerprint: string;
-    customer?: string;
 }): Record<string, unknown> {
     return {
         id: eventId,
-        type: "charge.succeeded",
+        type: "payment_intent.payment_failed",
         livemode: false,
         data: {
             object: {
-                id: chargeId,
-                object: "charge",
+                id: paymentIntentId,
+                object: "payment_intent",
                 amount: 1000,
                 currency: "usd",
-                status: "succeeded",
-                customer,
-                payment_intent: `pi_${chargeId}`,
+                status: "requires_payment_method",
                 metadata: { userId },
-                billing_details: { email: "buyer@example.com" },
-                payment_method_details: {
-                    type: "card",
-                    card: {
-                        fingerprint,
-                        brand: "visa",
-                        country: "US",
-                        network: "visa",
-                    },
-                },
-                outcome: { risk_level: "normal", risk_score: 12 },
+                payment_method_types: ["card"],
+                receipt_email: "buyer@example.com",
             },
         },
     };
@@ -360,7 +345,7 @@ test("GET /api/stripe/checkout/p10 sets pack identity in session metadata", asyn
     );
 });
 
-test("GET /api/stripe/checkout marks new-card gate locked after four distinct cards in 24h", async ({
+test("GET /api/stripe/checkout marks new-card gate locked after four distinct failed cards in 24h", async ({
     sessionToken,
     mocks,
 }) => {
@@ -373,12 +358,44 @@ test("GET /api/stripe/checkout marks new-card gate locked after four distinct ca
         "fp_gate_3",
         "fp_gate_4",
     ]) {
+        const paymentIntentId = `pi_${fingerprint}`;
+        mocks.stripe.state.paymentIntents.push({
+            id: paymentIntentId,
+            object: "payment_intent",
+            status: "requires_payment_method",
+            amount: 1000,
+            currency: "usd",
+            metadata: { userId },
+            payment_method_types: ["card"],
+            receipt_email: "buyer@example.com",
+            latest_charge: {
+                id: `ch_${fingerprint}`,
+                object: "charge",
+                amount: 1000,
+                currency: "usd",
+                status: "failed",
+                customer: "cus_test_card_gate",
+                payment_intent: paymentIntentId,
+                metadata: { userId },
+                billing_details: { email: "buyer@example.com" },
+                payment_method_details: {
+                    type: "card",
+                    card: {
+                        fingerprint,
+                        brand: "visa",
+                        country: "US",
+                        network: "visa",
+                    },
+                },
+                outcome: { risk_level: "elevated", risk_score: 61 },
+            },
+        });
+
         const response = await postSignedStripeWebhook(
-            createCardChargeSucceededEvent({
+            createCardPaymentFailedEvent({
                 eventId: `evt_${fingerprint}`,
-                chargeId: `ch_${fingerprint}`,
+                paymentIntentId,
                 userId,
-                fingerprint,
             }),
         );
         expect(response.status).toBe(200);
@@ -2913,7 +2930,7 @@ test("POST /api/webhooks/stripe charge.succeeded enriches Tinybird with card iss
     });
 });
 
-test("POST /api/webhooks/stripe charge.succeeded records card fingerprint without crediting checkout", async ({
+test("POST /api/webhooks/stripe charge.succeeded does not record failed-card gate fingerprint or credit checkout", async ({
     sessionToken,
     mocks,
 }) => {
@@ -2966,59 +2983,7 @@ test("POST /api/webhooks/stripe charge.succeeded records card fingerprint withou
     const attemptsAfter = await env.DB.prepare(
         "SELECT COUNT(*) AS count FROM stripe_card_fingerprint_attempt",
     ).first<{ count: number }>();
-    expect(attemptsAfter?.count).toBe((attemptsBefore?.count ?? 0) + 1);
-
-    const [attempt] = await drizzle(env.DB)
-        .select({
-            userId: stripeCardFingerprintAttemptTable.userId,
-            cardFingerprint: stripeCardFingerprintAttemptTable.cardFingerprint,
-            createdAt: stripeCardFingerprintAttemptTable.createdAt,
-        })
-        .from(stripeCardFingerprintAttemptTable)
-        .where(
-            eq(
-                stripeCardFingerprintAttemptTable.eventId,
-                "evt_test_charge_no_d1",
-            ),
-        )
-        .limit(1);
-
-    expect(attempt).toMatchObject({
-        userId,
-        cardFingerprint: "fp_test_charge_no_d1",
-    });
-    expect(attempt?.createdAt).toBeInstanceOf(Date);
-
-    const duplicateResponse = await postSignedStripeWebhook({
-        id: "evt_test_charge_no_d1",
-        type: "charge.succeeded",
-        livemode: false,
-        data: {
-            object: {
-                id: "ch_test_charge_no_d1",
-                object: "charge",
-                amount: 500,
-                currency: "usd",
-                status: "succeeded",
-                metadata: { userId },
-                payment_method_details: {
-                    type: "card",
-                    card: {
-                        fingerprint: "fp_test_charge_no_d1",
-                        brand: "visa",
-                        country: "US",
-                        network: "visa",
-                    },
-                },
-            },
-        },
-    });
-    expect(duplicateResponse.status).toBe(200);
-
-    const attemptsAfterDuplicate = await env.DB.prepare(
-        "SELECT COUNT(*) AS count FROM stripe_card_fingerprint_attempt",
-    ).first<{ count: number }>();
-    expect(attemptsAfterDuplicate?.count).toBe(attemptsAfter?.count);
+    expect(attemptsAfter?.count).toBe(attemptsBefore?.count);
 });
 
 test("POST /api/webhooks/stripe payment_intent.payment_failed records latest charge fingerprint", async ({

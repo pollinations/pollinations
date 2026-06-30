@@ -9,7 +9,7 @@ NODE public_model_stats_node
 SQL >
     %
     SELECT
-        replaceRegexpOne(resolved_model_requested, '^community/', '') as model,
+        resolved_model_requested as model,
         count() as request_count,
         round(avgIf(total_price, response_status >= 200 AND response_status < 300 AND total_price > 0), 6) as avg_cost_usd,
         round(avgIf(response_time, response_status >= 200 AND response_status < 300), 0) as avg_response_ms,

@@ -15,7 +15,7 @@ SQL >
             formatDateTime(toStartOfHour(start_time), '%F %T'),
             formatDateTime(toStartOfDay(start_time), '%F')
         ) as date,
-        replaceRegexpOne(resolved_model_requested, '^community/', '') as model,
+        resolved_model_requested as model,
         splitByChar(':', selected_meter_slug)[-1] as meter_source,
         count() as requests,
         sum(total_price) as cost_usd

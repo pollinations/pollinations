@@ -14,7 +14,7 @@ NODE model_revenue_stats
 SQL >
     %
     SELECT
-        replaceRegexpOne(resolved_model_requested, '^community/', '') as model,
+        resolved_model_requested as model,
         event_type,
         count() as total_requests,
         countIf(response_status >= 200 AND response_status < 300) as status_2xx,

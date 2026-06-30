@@ -10,7 +10,7 @@ NODE model_health_stats
 SQL >
     %
     SELECT
-        replaceRegexpOne(resolved_model_requested, '^community/', '') as model,
+        resolved_model_requested as model,
         event_type,
         topK(1)(model_provider_used)[1] as provider,
         topK(1)(model_used)[1] as model_used,

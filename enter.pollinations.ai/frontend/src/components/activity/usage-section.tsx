@@ -161,77 +161,79 @@ export const UsageSection: FC<UsageSectionProps> = ({ period }) => {
     );
 
     return (
-        <Surface className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-3 px-1">
                 <div className="flex items-center gap-2 font-body text-base font-semibold text-theme-text-strong">
                     <KeyIcon className="h-4 w-4 shrink-0" />
                     API usage
                 </div>
                 {downloadAction}
             </div>
-            <div className="flex flex-col gap-4">
-                <div className="flex flex-col items-start gap-2">
-                    <div className="flex items-center gap-3">
-                        <span className="w-20 shrink-0 text-xs font-medium text-theme-text-soft">
-                            Models
-                        </span>
-                        <div className="[&_button]:w-60">
-                            <MultiSelect
-                                options={modelSelectOptions}
-                                selected={filters.selectedModels}
-                                onChange={(v) =>
-                                    setFilters((f) => ({
-                                        ...f,
-                                        selectedModels: v,
-                                    }))
-                                }
-                                placeholder="All"
-                                disabled={modelSelectOptions.length === 0}
-                                disabledText="None"
-                                align="start"
-                            />
+            <Surface className="flex flex-col gap-4">
+                <div className="flex flex-col gap-4">
+                    <div className="flex flex-col items-start gap-2">
+                        <div className="flex items-center gap-3">
+                            <span className="w-20 shrink-0 text-xs font-medium text-theme-text-soft">
+                                Models
+                            </span>
+                            <div className="[&_button]:w-60">
+                                <MultiSelect
+                                    options={modelSelectOptions}
+                                    selected={filters.selectedModels}
+                                    onChange={(v) =>
+                                        setFilters((f) => ({
+                                            ...f,
+                                            selectedModels: v,
+                                        }))
+                                    }
+                                    placeholder="All"
+                                    disabled={modelSelectOptions.length === 0}
+                                    disabledText="None"
+                                    align="start"
+                                />
+                            </div>
                         </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <span className="w-20 shrink-0 text-xs font-medium text-theme-text-soft">
-                            API Keys
-                        </span>
-                        <div className="[&_button]:w-60">
-                            <MultiSelect
-                                options={keySelectOptions}
-                                selected={filters.selectedKeyIds}
-                                onChange={(v) =>
-                                    setFilters((f) => ({
-                                        ...f,
-                                        selectedKeyIds: v,
-                                    }))
-                                }
-                                placeholder="All"
-                                disabled={keySelectOptions.length === 0}
-                                disabledText="None"
-                                align="start"
-                            />
+                        <div className="flex items-center gap-3">
+                            <span className="w-20 shrink-0 text-xs font-medium text-theme-text-soft">
+                                API Keys
+                            </span>
+                            <div className="[&_button]:w-60">
+                                <MultiSelect
+                                    options={keySelectOptions}
+                                    selected={filters.selectedKeyIds}
+                                    onChange={(v) =>
+                                        setFilters((f) => ({
+                                            ...f,
+                                            selectedKeyIds: v,
+                                        }))
+                                    }
+                                    placeholder="All"
+                                    disabled={keySelectOptions.length === 0}
+                                    disabledText="None"
+                                    align="start"
+                                />
+                            </div>
                         </div>
+                        <MetricTabs
+                            value={filters.metric}
+                            onChange={(metric) =>
+                                setFilters((f) => ({ ...f, metric }))
+                            }
+                        />
                     </div>
-                    <MetricTabs
-                        value={filters.metric}
-                        onChange={(metric) =>
-                            setFilters((f) => ({ ...f, metric }))
-                        }
+
+                    <UsageChartView
+                        loading={loading}
+                        error={error}
+                        fetchUsage={fetchUsage}
+                        chartData={chartData}
+                        metric={filters.metric}
+                        showModelBreakdown={showModelBreakdown}
+                        stats={stats}
                     />
                 </div>
-
-                <UsageChartView
-                    loading={loading}
-                    error={error}
-                    fetchUsage={fetchUsage}
-                    chartData={chartData}
-                    metric={filters.metric}
-                    showModelBreakdown={showModelBreakdown}
-                    stats={stats}
-                />
-            </div>
-        </Surface>
+            </Surface>
+        </div>
     );
 };
 

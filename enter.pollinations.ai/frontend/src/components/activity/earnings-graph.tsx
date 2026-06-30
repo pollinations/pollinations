@@ -136,230 +136,233 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period }) => {
     );
 
     return (
-        <Surface className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-3 px-1">
                 <div className="flex items-center gap-2 font-body text-base font-semibold text-theme-text-strong">
                     <AppIcon className="h-4 w-4 shrink-0" />
                     App earnings
                 </div>
                 {downloadAction}
             </div>
-            <div className="flex flex-col gap-4">
-                <div className="flex flex-col items-start gap-2">
-                    <div className="flex items-center gap-3">
-                        <span className="w-20 shrink-0 text-xs font-medium text-theme-text-soft">
-                            BYOP apps
-                        </span>
-                        <div className="[&_button]:w-60">
-                            <MultiSelect
-                                options={appSelectOptions}
-                                selected={selectedAppKeyIds}
-                                onChange={setSelectedAppKeyIds}
-                                placeholder="All"
-                                disabled={appSelectOptions.length === 0}
-                                disabledText="None"
-                                align="start"
-                            />
-                        </div>
-                    </div>
-                    <MetricTabs value={metric} onChange={setMetric} />
-                </div>
-
-                <div className="min-h-[180px]">
-                    {loading && (
-                        <div className="flex items-center justify-center h-[180px]">
-                            <p className="text-sm text-theme-text-muted animate-[pulse_2s_ease-in-out_infinite]">
-                                Fetching earnings data...
-                            </p>
-                        </div>
-                    )}
-                    {error && !loading && (
-                        <div className="flex items-center justify-center h-[180px]">
-                            <div className="text-center">
-                                <p className="text-sm text-intent-danger-text font-medium">
-                                    {error}
-                                </p>
-                                <button
-                                    type="button"
-                                    onClick={() => fetchEarnings()}
-                                    className="mt-2 text-xs text-intent-danger-text hover:text-intent-danger-text underline"
-                                >
-                                    Try again
-                                </button>
+            <Surface className="flex flex-col gap-4">
+                <div className="flex flex-col gap-4">
+                    <div className="flex flex-col items-start gap-2">
+                        <div className="flex items-center gap-3">
+                            <span className="w-20 shrink-0 text-xs font-medium text-theme-text-soft">
+                                BYOP apps
+                            </span>
+                            <div className="[&_button]:w-60">
+                                <MultiSelect
+                                    options={appSelectOptions}
+                                    selected={selectedAppKeyIds}
+                                    onChange={setSelectedAppKeyIds}
+                                    placeholder="All"
+                                    disabled={appSelectOptions.length === 0}
+                                    disabledText="None"
+                                    align="start"
+                                />
                             </div>
                         </div>
-                    )}
-                    {!loading &&
-                        !error &&
-                        (hasEarnings ? (
-                            <Chart
-                                data={chartData}
-                                metric={metric}
-                                showModelBreakdown={showEarningsBreakdown}
-                            />
-                        ) : (
-                            <EarningsEmptyState />
-                        ))}
-                </div>
+                        <MetricTabs value={metric} onChange={setMetric} />
+                    </div>
 
-                {hasEarnings && (
-                    <div className="grid gap-4 border-t border-divider pt-4 sm:grid-cols-3">
-                        <StatCard
-                            className="min-w-0"
-                            label="Pollen earned"
-                            value={formatActivityPollen(stats.totalPollen)}
-                            detail={
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <PaidChip
-                                        size="lg"
-                                        className="font-semibold"
+                    <div className="min-h-[180px]">
+                        {loading && (
+                            <div className="flex items-center justify-center h-[180px]">
+                                <p className="text-sm text-theme-text-muted animate-[pulse_2s_ease-in-out_infinite]">
+                                    Fetching earnings data...
+                                </p>
+                            </div>
+                        )}
+                        {error && !loading && (
+                            <div className="flex items-center justify-center h-[180px]">
+                                <div className="text-center">
+                                    <p className="text-sm text-intent-danger-text font-medium">
+                                        {error}
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => fetchEarnings()}
+                                        className="mt-2 text-xs text-intent-danger-text hover:text-intent-danger-text underline"
                                     >
-                                        <CardIcon className="h-4 w-4" />
-                                        <span className="tabular-nums">
-                                            {formatActivityPollen(
-                                                stats.totalPaid,
-                                            )}
-                                        </span>
-                                    </PaidChip>
-                                    <TierChip
-                                        size="lg"
-                                        className="font-semibold"
-                                    >
-                                        <SproutIcon className="h-4 w-4" />
-                                        <span className="tabular-nums">
-                                            {formatActivityPollen(
-                                                stats.totalTier,
-                                            )}
-                                        </span>
-                                    </TierChip>
-                                    {stats.appMarkupPollen > 0 && (
-                                        <Chip
-                                            size="lg"
-                                            className="font-semibold"
-                                        >
-                                            <span className="tabular-nums">
-                                                {formatActivityPollen(
-                                                    stats.appMarkupPollen,
-                                                )}
-                                            </span>
-                                            <span className="font-medium opacity-70">
-                                                app markup
-                                            </span>
-                                        </Chip>
-                                    )}
-                                    {stats.modelRewardPollen > 0 && (
-                                        <Chip
-                                            size="lg"
-                                            className="font-semibold"
-                                        >
-                                            <span className="tabular-nums">
-                                                {formatActivityPollen(
-                                                    stats.modelRewardPollen,
-                                                )}
-                                            </span>
-                                            <span className="font-medium opacity-70">
-                                                model rewards
-                                            </span>
-                                        </Chip>
-                                    )}
+                                        Try again
+                                    </button>
                                 </div>
-                            }
-                        />
-                        <StatCard
-                            className="min-w-0"
-                            label="Earning sources"
-                            value={stats.sourceSummaries.length.toLocaleString()}
-                            detail={
-                                <div className="flex flex-wrap items-center gap-2">
-                                    {stats.sourceSummaries.map((source) => (
-                                        <Chip
-                                            key={source.source}
-                                            size="lg"
-                                            className="font-semibold"
-                                        >
-                                            <span>{source.label}</span>
-                                            <span className="tabular-nums">
-                                                {source.requests.toLocaleString()}
-                                            </span>
-                                            <span className="font-medium opacity-70">
-                                                req
-                                            </span>
-                                            {source.uniqueUsers > 0 && (
-                                                <>
-                                                    <span className="tabular-nums">
-                                                        {source.uniqueUsers.toLocaleString()}
-                                                    </span>
-                                                    <span className="font-medium opacity-70">
-                                                        users
-                                                    </span>
-                                                </>
-                                            )}
-                                            <span className="tabular-nums">
-                                                {formatRewardRate(
-                                                    source.rewardRate,
-                                                )}
-                                            </span>
-                                        </Chip>
-                                    ))}
-                                </div>
-                            }
-                        />
-                        <StatCard
-                            className="min-w-0"
-                            label="Top earner"
-                            value={
-                                <span className="text-xl leading-tight">
-                                    {stats.topEntity?.label || "None"}
-                                </span>
-                            }
-                            detail={
-                                stats.topEntity ? (
+                            </div>
+                        )}
+                        {!loading &&
+                            !error &&
+                            (hasEarnings ? (
+                                <Chart
+                                    data={chartData}
+                                    metric={metric}
+                                    showModelBreakdown={showEarningsBreakdown}
+                                />
+                            ) : (
+                                <EarningsEmptyState />
+                            ))}
+                    </div>
+
+                    {hasEarnings && (
+                        <div className="grid gap-4 border-t border-divider pt-4 sm:grid-cols-3">
+                            <StatCard
+                                className="min-w-0"
+                                label="Pollen earned"
+                                value={formatActivityPollen(stats.totalPollen)}
+                                detail={
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <Chip
+                                        <PaidChip
                                             size="lg"
                                             className="font-semibold"
                                         >
-                                            {formatEarningsSourceLabel(
-                                                stats.topEntity.source,
-                                            )}
-                                        </Chip>
-                                        {stats.topEntity.uniqueUsers > 0 && (
+                                            <CardIcon className="h-4 w-4" />
+                                            <span className="tabular-nums">
+                                                {formatActivityPollen(
+                                                    stats.totalPaid,
+                                                )}
+                                            </span>
+                                        </PaidChip>
+                                        <TierChip
+                                            size="lg"
+                                            className="font-semibold"
+                                        >
+                                            <SproutIcon className="h-4 w-4" />
+                                            <span className="tabular-nums">
+                                                {formatActivityPollen(
+                                                    stats.totalTier,
+                                                )}
+                                            </span>
+                                        </TierChip>
+                                        {stats.appMarkupPollen > 0 && (
                                             <Chip
                                                 size="lg"
                                                 className="font-semibold"
                                             >
                                                 <span className="tabular-nums">
-                                                    {stats.topEntity.uniqueUsers.toLocaleString()}
+                                                    {formatActivityPollen(
+                                                        stats.appMarkupPollen,
+                                                    )}
                                                 </span>
                                                 <span className="font-medium opacity-70">
-                                                    {stats.topEntity
-                                                        .uniqueUsers === 1
-                                                        ? "user"
-                                                        : "users"}
+                                                    app markup
                                                 </span>
                                             </Chip>
                                         )}
-                                        <Chip
-                                            size="lg"
-                                            className="font-semibold"
-                                        >
-                                            <span className="tabular-nums">
-                                                {formatActivityPollen(
-                                                    stats.topEntity.pollen,
-                                                )}
-                                            </span>
-                                            <span className="font-medium opacity-70">
-                                                pollen
-                                            </span>
-                                        </Chip>
+                                        {stats.modelRewardPollen > 0 && (
+                                            <Chip
+                                                size="lg"
+                                                className="font-semibold"
+                                            >
+                                                <span className="tabular-nums">
+                                                    {formatActivityPollen(
+                                                        stats.modelRewardPollen,
+                                                    )}
+                                                </span>
+                                                <span className="font-medium opacity-70">
+                                                    model rewards
+                                                </span>
+                                            </Chip>
+                                        )}
                                     </div>
-                                ) : null
-                            }
-                        />
-                    </div>
-                )}
-            </div>
-        </Surface>
+                                }
+                            />
+                            <StatCard
+                                className="min-w-0"
+                                label="Earning sources"
+                                value={stats.sourceSummaries.length.toLocaleString()}
+                                detail={
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        {stats.sourceSummaries.map((source) => (
+                                            <Chip
+                                                key={source.source}
+                                                size="lg"
+                                                className="font-semibold"
+                                            >
+                                                <span>{source.label}</span>
+                                                <span className="tabular-nums">
+                                                    {source.requests.toLocaleString()}
+                                                </span>
+                                                <span className="font-medium opacity-70">
+                                                    req
+                                                </span>
+                                                {source.uniqueUsers > 0 && (
+                                                    <>
+                                                        <span className="tabular-nums">
+                                                            {source.uniqueUsers.toLocaleString()}
+                                                        </span>
+                                                        <span className="font-medium opacity-70">
+                                                            users
+                                                        </span>
+                                                    </>
+                                                )}
+                                                <span className="tabular-nums">
+                                                    {formatRewardRate(
+                                                        source.rewardRate,
+                                                    )}
+                                                </span>
+                                            </Chip>
+                                        ))}
+                                    </div>
+                                }
+                            />
+                            <StatCard
+                                className="min-w-0"
+                                label="Top earner"
+                                value={
+                                    <span className="text-xl leading-tight">
+                                        {stats.topEntity?.label || "None"}
+                                    </span>
+                                }
+                                detail={
+                                    stats.topEntity ? (
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <Chip
+                                                size="lg"
+                                                className="font-semibold"
+                                            >
+                                                {formatEarningsSourceLabel(
+                                                    stats.topEntity.source,
+                                                )}
+                                            </Chip>
+                                            {stats.topEntity.uniqueUsers >
+                                                0 && (
+                                                <Chip
+                                                    size="lg"
+                                                    className="font-semibold"
+                                                >
+                                                    <span className="tabular-nums">
+                                                        {stats.topEntity.uniqueUsers.toLocaleString()}
+                                                    </span>
+                                                    <span className="font-medium opacity-70">
+                                                        {stats.topEntity
+                                                            .uniqueUsers === 1
+                                                            ? "user"
+                                                            : "users"}
+                                                    </span>
+                                                </Chip>
+                                            )}
+                                            <Chip
+                                                size="lg"
+                                                className="font-semibold"
+                                            >
+                                                <span className="tabular-nums">
+                                                    {formatActivityPollen(
+                                                        stats.topEntity.pollen,
+                                                    )}
+                                                </span>
+                                                <span className="font-medium opacity-70">
+                                                    pollen
+                                                </span>
+                                            </Chip>
+                                        </div>
+                                    ) : null
+                                }
+                            />
+                        </div>
+                    )}
+                </div>
+            </Surface>
+        </div>
     );
 };
 

@@ -67,12 +67,6 @@ type EarningsDataResult = {
     };
 };
 
-const emptyTotal: DeveloperEarningsTotal = {
-    pollen_earned: 0,
-    paid_earned: 0,
-    tier_earned: 0,
-};
-
 export function useEarningsData(
     filters: EarningsFilterState,
 ): EarningsDataResult {
@@ -80,9 +74,6 @@ export function useEarningsData(
         [],
     );
     const [perEntity, setPerEntity] = useState<DeveloperEarningsRow[]>([]);
-    const [bySource, setBySource] = useState<DeveloperEarningsRow[]>([]);
-    const [totalSummary, setTotalSummary] =
-        useState<DeveloperEarningsTotal>(emptyTotal);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const inFlightRef = useRef<AbortController | null>(null);
@@ -100,18 +91,11 @@ export function useEarningsData(
         setError(null);
         setDailyEarnings([]);
         setPerEntity([]);
-        setBySource([]);
-        setTotalSummary(emptyTotal);
 
         if (mockEnabled) {
-            const mockData = getMockEarningsData(
-                { granularity, period },
-                selectedAppKeyIdsKey ? selectedAppKeyIdsKey.split(",") : [],
-            );
+            const mockData = getMockEarningsData({ granularity, period }, []);
             setDailyEarnings(mockData.daily);
             setPerEntity(mockData.perEntity);
-            setBySource(mockData.bySource);
-            setTotalSummary(mockData.total);
             setLoading(false);
             return;
         }
@@ -124,9 +108,6 @@ export function useEarningsData(
             granularity,
             period,
         };
-        if (selectedAppKeyIdsKey) {
-            query.entity_ids = selectedAppKeyIdsKey;
-        }
 
         apiClient.account.earnings
             .$get({ query }, { init: { signal: controller.signal } })
@@ -146,8 +127,6 @@ export function useEarningsData(
                 if (controller.signal.aborted) return;
                 setDailyEarnings(data.daily);
                 setPerEntity(data.perEntity);
-                setBySource(data.bySource);
-                setTotalSummary(data.total);
             })
             .catch((err) => {
                 if (controller.signal.aborted) return;
@@ -155,14 +134,12 @@ export function useEarningsData(
                 setError(err.message || "Failed to load earnings data");
                 setDailyEarnings([]);
                 setPerEntity([]);
-                setBySource([]);
-                setTotalSummary(emptyTotal);
             })
             .finally(() => {
                 if (controller.signal.aborted) return;
                 setLoading(false);
             });
-    }, [granularity, mockEnabled, period, selectedAppKeyIdsKey]);
+    }, [granularity, mockEnabled, period]);
 
     useEffect(() => {
         fetchEarnings();
@@ -184,6 +161,20 @@ export function useEarningsData(
             .sort((a, b) => a.label.localeCompare(b.label));
     }, [perEntity]);
 
+    const filteredDailyEarnings = useMemo(() => {
+        if (!selectedAppKeyIdsKey) return dailyEarnings;
+        const selectedAppKeyIds = new Set(selectedAppKeyIdsKey.split(","));
+        return dailyEarnings.filter((row) =>
+            selectedAppKeyIds.has(row.entity_id),
+        );
+    }, [dailyEarnings, selectedAppKeyIdsKey]);
+
+    const filteredPerEntity = useMemo(() => {
+        if (!selectedAppKeyIdsKey) return perEntity;
+        const selectedAppKeyIds = new Set(selectedAppKeyIdsKey.split(","));
+        return perEntity.filter((row) => selectedAppKeyIds.has(row.entity_id));
+    }, [perEntity, selectedAppKeyIdsKey]);
+
     const chartData = useMemo<DataPoint[]>(() => {
         type DayBucket = {
             requests: number;
@@ -199,7 +190,7 @@ export function useEarningsData(
         };
         const buckets = new Map<string, DayBucket>();
 
-        for (const row of dailyEarnings) {
+        for (const row of filteredDailyEarnings) {
             const current = buckets.get(row.date) || {
                 requests: 0,
                 pollen: 0,
@@ -303,22 +294,31 @@ export function useEarningsData(
                 modelBreakdown: entityBreakdown,
             };
         });
-    }, [dailyEarnings, filters.metric, filters.period]);
+    }, [filteredDailyEarnings, filters.metric, filters.period]);
 
     const stats = useMemo(() => {
-        const totalRequests = bySource.reduce(
+        const totalRequests = filteredPerEntity.reduce(
             (sum, row) => sum + row.requests,
             0,
         );
-        const totalPollen = totalSummary.pollen_earned;
-        const totalPaid = totalSummary.paid_earned;
-        const totalTier = totalSummary.tier_earned;
-        const entityCount = perEntity.length;
-        const appCount = perEntity.filter(
+        const totalPollen = filteredPerEntity.reduce(
+            (sum, row) => sum + row.pollen_earned,
+            0,
+        );
+        const totalPaid = filteredPerEntity.reduce(
+            (sum, row) => sum + (row.paid_earned ?? row.pollen_earned),
+            0,
+        );
+        const totalTier = filteredPerEntity.reduce(
+            (sum, row) => sum + (row.tier_earned ?? 0),
+            0,
+        );
+        const entityCount = filteredPerEntity.length;
+        const appCount = filteredPerEntity.filter(
             (row) => row.source === "byop_markup",
         ).length;
 
-        const topEntityRow = [...perEntity].sort((a, b) => {
+        const topEntityRow = [...filteredPerEntity].sort((a, b) => {
             const left =
                 filters.metric === "requests" ? a.requests : a.pollen_earned;
             const right =
@@ -343,7 +343,7 @@ export function useEarningsData(
             appCount,
             topEntity,
         };
-    }, [perEntity, bySource, totalSummary, filters.metric]);
+    }, [filteredPerEntity, filters.metric]);
 
     return {
         loading,

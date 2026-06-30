@@ -178,17 +178,7 @@ export const stripeCardFingerprintAttempt = sqliteTable("stripe_card_fingerprint
   userId: text("user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
-  stripeCustomerId: text("stripe_customer_id"),
-  customerEmail: text("customer_email"),
   cardFingerprint: text("card_fingerprint").notNull(),
-  cardBrand: text("card_brand"),
-  cardCountry: text("card_country"),
-  paymentIntentId: text("payment_intent_id"),
-  chargeId: text("charge_id"),
-  status: text("status").notNull(),
-  livemode: integer("livemode", { mode: "boolean" })
-    .default(false)
-    .notNull(),
   createdAt: integer("created_at", { mode: "timestamp_ms" })
     .defaultNow()
     .notNull(),
@@ -200,10 +190,6 @@ export const stripeCardFingerprintAttempt = sqliteTable("stripe_card_fingerprint
   index("idx_stripe_card_fingerprint_attempt_user_fingerprint").on(
     table.userId,
     table.cardFingerprint,
-  ),
-  index("idx_stripe_card_fingerprint_attempt_customer_created").on(
-    table.stripeCustomerId,
-    table.createdAt,
   ),
 ]);
 

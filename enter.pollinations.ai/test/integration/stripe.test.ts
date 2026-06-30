@@ -2972,8 +2972,7 @@ test("POST /api/webhooks/stripe charge.succeeded records card fingerprint withou
         .select({
             userId: stripeCardFingerprintAttemptTable.userId,
             cardFingerprint: stripeCardFingerprintAttemptTable.cardFingerprint,
-            status: stripeCardFingerprintAttemptTable.status,
-            chargeId: stripeCardFingerprintAttemptTable.chargeId,
+            createdAt: stripeCardFingerprintAttemptTable.createdAt,
         })
         .from(stripeCardFingerprintAttemptTable)
         .where(
@@ -2987,9 +2986,8 @@ test("POST /api/webhooks/stripe charge.succeeded records card fingerprint withou
     expect(attempt).toMatchObject({
         userId,
         cardFingerprint: "fp_test_charge_no_d1",
-        status: "succeeded",
-        chargeId: "ch_test_charge_no_d1",
     });
+    expect(attempt?.createdAt).toBeInstanceOf(Date);
 
     const duplicateResponse = await postSignedStripeWebhook({
         id: "evt_test_charge_no_d1",
@@ -3086,8 +3084,7 @@ test("POST /api/webhooks/stripe payment_intent.payment_failed records latest cha
         .select({
             userId: stripeCardFingerprintAttemptTable.userId,
             cardFingerprint: stripeCardFingerprintAttemptTable.cardFingerprint,
-            status: stripeCardFingerprintAttemptTable.status,
-            chargeId: stripeCardFingerprintAttemptTable.chargeId,
+            createdAt: stripeCardFingerprintAttemptTable.createdAt,
         })
         .from(stripeCardFingerprintAttemptTable)
         .where(
@@ -3101,9 +3098,8 @@ test("POST /api/webhooks/stripe payment_intent.payment_failed records latest cha
     expect(attempt).toMatchObject({
         userId,
         cardFingerprint: "fp_test_failed_card_gate",
-        status: "failed",
-        chargeId: "ch_test_failed_card_gate",
     });
+    expect(attempt?.createdAt).toBeInstanceOf(Date);
 });
 
 test("POST /api/webhooks/stripe emits checkout.session.async_payment_failed to Tinybird", async ({

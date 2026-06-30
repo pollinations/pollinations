@@ -16,15 +16,7 @@ export type StripeNewCardGateStatus = {
 export type StripeCardFingerprintAttemptInput = {
     eventId: string;
     userId: string;
-    stripeCustomerId?: string;
-    customerEmail?: string;
     cardFingerprint: string;
-    cardBrand?: string;
-    cardCountry?: string;
-    paymentIntentId?: string;
-    chargeId?: string;
-    status: string;
-    livemode: boolean;
     createdAt?: number;
 };
 
@@ -86,30 +78,14 @@ export async function recordStripeCardFingerprintAttempt(
             `INSERT OR IGNORE INTO stripe_card_fingerprint_attempt (
                 event_id,
                 user_id,
-                stripe_customer_id,
-                customer_email,
                 card_fingerprint,
-                card_brand,
-                card_country,
-                payment_intent_id,
-                charge_id,
-                status,
-                livemode,
                 created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            ) VALUES (?, ?, ?, ?)`,
         )
         .bind(
             input.eventId,
             input.userId,
-            input.stripeCustomerId ?? null,
-            input.customerEmail ?? null,
             input.cardFingerprint,
-            input.cardBrand ?? null,
-            input.cardCountry ?? null,
-            input.paymentIntentId ?? null,
-            input.chargeId ?? null,
-            input.status,
-            input.livemode ? 1 : 0,
             input.createdAt ?? Date.now(),
         )
         .run();

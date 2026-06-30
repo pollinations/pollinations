@@ -93,14 +93,6 @@ function snapshotFromCharge(
     };
 }
 
-function readStripeId(
-    value: string | { id?: string | null } | null | undefined,
-): string {
-    if (!value) return "";
-    if (typeof value === "string") return value;
-    return value.id ?? "";
-}
-
 function readUserIdFromMetadata(
     metadata: Stripe.Metadata | null | undefined,
 ): string {
@@ -112,13 +104,11 @@ async function recordCardFingerprintFromCharge({
     event,
     charge,
     snapshot,
-    status,
 }: {
     env: CloudflareBindings;
     event: Stripe.Event;
     charge: Stripe.Charge | null | undefined;
     snapshot: ChargeSnapshot;
-    status: string;
 }): Promise<void> {
     if (!charge || !snapshot.cardFingerprint) return;
 
@@ -126,16 +116,7 @@ async function recordCardFingerprintFromCharge({
         await recordStripeCardFingerprintAttempt(env.DB, {
             eventId: event.id,
             userId: readUserIdFromMetadata(charge.metadata),
-            stripeCustomerId: readStripeId(charge.customer),
-            customerEmail:
-                charge.billing_details?.email || charge.receipt_email || "",
             cardFingerprint: snapshot.cardFingerprint,
-            cardBrand: snapshot.cardBrand,
-            cardCountry: snapshot.cardCountry,
-            paymentIntentId: readStripeId(charge.payment_intent),
-            chargeId: charge.id,
-            status,
-            livemode: event.livemode,
             createdAt: event.created ? event.created * 1000 : Date.now(),
         });
     } catch (err) {
@@ -414,7 +395,6 @@ function emitPaymentIntentAnalytics(
                     event,
                     charge,
                     snapshot,
-                    status: paymentStatus,
                 });
             }
             await sendStripeEventToTinybird(c.env, {
@@ -602,7 +582,6 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                     event,
                     charge,
                     snapshot,
-                    status: charge.status || "succeeded",
                 });
                 c.executionCtx.waitUntil(
                     sendStripeEventToTinybird(c.env, {

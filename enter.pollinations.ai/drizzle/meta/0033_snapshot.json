@@ -1417,69 +1417,12 @@
           "notNull": true,
           "autoincrement": false
         },
-        "stripe_customer_id": {
-          "name": "stripe_customer_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "customer_email": {
-          "name": "customer_email",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "card_fingerprint": {
           "name": "card_fingerprint",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
-        },
-        "card_brand": {
-          "name": "card_brand",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "card_country": {
-          "name": "card_country",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "payment_intent_id": {
-          "name": "payment_intent_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "charge_id": {
-          "name": "charge_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "livemode": {
-          "name": "livemode",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": false
         },
         "created_at": {
           "name": "created_at",
@@ -1504,14 +1447,6 @@
           "columns": [
             "user_id",
             "card_fingerprint"
-          ],
-          "isUnique": false
-        },
-        "idx_stripe_card_fingerprint_attempt_customer_created": {
-          "name": "idx_stripe_card_fingerprint_attempt_customer_created",
-          "columns": [
-            "stripe_customer_id",
-            "created_at"
           ],
           "isUnique": false
         }

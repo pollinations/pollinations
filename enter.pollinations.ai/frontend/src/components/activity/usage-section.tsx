@@ -161,7 +161,7 @@ export const UsageSection: FC<UsageSectionProps> = ({ period }) => {
         <Surface className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <h3 className="text-base font-semibold text-theme-text-strong">
-                    Usage
+                    API usage
                 </h3>
                 {downloadAction}
             </div>

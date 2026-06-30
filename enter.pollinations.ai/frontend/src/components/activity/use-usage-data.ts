@@ -1,6 +1,7 @@
 import { getPeriodBucketKeys, periodBucketKeyToDate } from "@pollinations/ui";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiClient } from "../../api.ts";
+import { getMockDailyUsage, isActivityMockEnabled } from "./mock-activity-data";
 import type {
     DailyUsageRecord,
     DataPoint,
@@ -43,10 +44,17 @@ export function useUsageData(filters: FilterState): UsageDataResult {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const { granularity, period } = filters.period;
+    const mockEnabled = isActivityMockEnabled();
 
     const fetchUsage = useCallback(() => {
         setLoading(true);
         setError(null);
+
+        if (mockEnabled) {
+            setDailyUsage(getMockDailyUsage({ granularity, period }));
+            setLoading(false);
+            return;
+        }
 
         const query: {
             granularity: string;
@@ -72,7 +80,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 setDailyUsage([]);
             })
             .finally(() => setLoading(false));
-    }, [granularity, period]);
+    }, [granularity, mockEnabled, period]);
 
     useEffect(() => {
         fetchUsage();

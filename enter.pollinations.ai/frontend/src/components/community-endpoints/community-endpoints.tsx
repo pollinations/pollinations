@@ -31,7 +31,7 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
 
     const loadEndpoints = useCallback(async (): Promise<void> => {
         setError(null);
-        const response = await apiClient["community-endpoints"].$get();
+        const response = await apiClient.account["my-models"].$get();
         if (!response.ok) {
             setError(await readError(response));
             setIsLoading(false);
@@ -50,7 +50,7 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
         payload: EndpointPayload,
         bearerToken: string,
     ): Promise<void> {
-        const response = await apiClient["community-endpoints"].$post({
+        const response = await apiClient.account["my-models"].$post({
             json: { ...payload, bearerToken },
         });
         if (!response.ok) throw new Error(await readError(response));
@@ -63,7 +63,7 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
         bearerToken: string,
     ): Promise<void> {
         if (!editing) return;
-        const response = await apiClient["community-endpoints"][
+        const response = await apiClient.account["my-models"][
             ":id"
         ].update.$post({
             param: { id: editing.id },
@@ -80,7 +80,7 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
         setDeleting(null);
         setError(null);
         try {
-            const response = await apiClient["community-endpoints"][
+            const response = await apiClient.account["my-models"][
                 ":id"
             ].$delete({ param: { id: target.id } });
             if (!response.ok) throw new Error(await readError(response));

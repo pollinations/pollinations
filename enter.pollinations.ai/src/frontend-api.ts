@@ -3,7 +3,6 @@ import type { Env } from "./env.ts";
 import { accountRoutes } from "./routes/account.ts";
 import { apiKeysRoutes } from "./routes/api-keys.ts";
 import { appLookupRoutes } from "./routes/app-lookup.ts";
-import { communityEndpointsRoutes } from "./routes/community-endpoints.ts";
 import { customerRoutes } from "./routes/customer.ts";
 import { deviceRoutes } from "./routes/device.ts";
 import { modelStatsRoutes } from "./routes/model-stats.ts";
@@ -16,7 +15,6 @@ export const frontendApi = new Hono<Env>()
     .route("/stripe", stripeRoutes)
     .route("/tiers", tiersRoutes)
     .route("/api-keys", apiKeysRoutes)
-    .route("/community-endpoints", communityEndpointsRoutes)
     .route("/app-lookup", appLookupRoutes)
     .route("/account", accountRoutes)
     .route("/device", deviceRoutes)

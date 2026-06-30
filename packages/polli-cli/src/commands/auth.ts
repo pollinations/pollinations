@@ -135,7 +135,7 @@ const login = new Command("login")
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 client_id: "pk_VZF38YW4tQX36SEn",
-                scope: "generate keys usage",
+                scope: "generate profile usage keys",
             }),
         }).catch((err) => {
             printError(

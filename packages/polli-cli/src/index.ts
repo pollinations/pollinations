@@ -6,6 +6,8 @@ import { docsCommand } from "./commands/docs.js";
 import { createGenCommand } from "./commands/gen/index.js";
 import { keysCommand } from "./commands/keys.js";
 import { modelsCommand } from "./commands/models.js";
+import { myModelsCommand } from "./commands/my-models.js";
+import { questsCommand } from "./commands/quests.js";
 import { uploadCommand } from "./commands/upload.js";
 import { usageCommand } from "./commands/usage.js";
 import { configCommand } from "./commands/config.js";

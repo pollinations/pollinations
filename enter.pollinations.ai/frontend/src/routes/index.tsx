@@ -267,7 +267,7 @@ function RouteComponent() {
             )}
             {activePage === "activity" && (
                 <div className="flex flex-col gap-6">
-                    <Section title="Usage and earnings" framed>
+                    <Section title="Activity over time" framed>
                         <div className="flex flex-col gap-1">
                             <PeriodPicker
                                 value={activityPeriod}
@@ -281,7 +281,7 @@ function RouteComponent() {
                         <UsageSection period={activityPeriod} />
                         <EarningsGraph period={activityPeriod} />
                     </Section>
-                    <Section title="Last events" framed>
+                    <Section title="Recent activity" framed>
                         <LastEventsPanel apiKeys={apiKeys} />
                     </Section>
                 </div>

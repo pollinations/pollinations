@@ -42,11 +42,11 @@ const PINNED_NEWS: Highlight[] = [
         emoji: "🧪",
         title: "Community models alpha",
         description:
-            "Deploy your own models to Pollinations so the community can use them.",
+            "Community models are now available on Pollinations in alpha.",
         details: [
-            "Model owners earn Pollen when their models are used.",
-            "Access is allowlist-only for now.",
-            "Interested? Contact us in the [Discord community](https://discord.gg/pollinations-ai-885844321461485618).",
+            "Try community-hosted models from the [Models tab](#models), with attractive alpha pricing.",
+            "The catalog is early and will expand as more models are approved.",
+            "Want to deploy your own model? Access is allowlist-only for now; contact us in the [Discord community](https://discord.gg/pollinations-ai-885844321461485618).",
         ],
     },
 ];

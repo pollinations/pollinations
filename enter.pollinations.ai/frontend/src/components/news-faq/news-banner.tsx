@@ -25,27 +25,28 @@ interface Highlight {
  */
 const PINNED_NEWS: Highlight[] = [
     {
-        date: "2026-06-02",
-        dateLabel: "Starting Jun 2",
-        emoji: "🌻",
-        title: "Pollen pricing update",
-        description: "A few changes to how Pollen works, starting today.",
+        date: "2026-06-30",
+        dateLabel: "Now live",
+        emoji: "🎯",
+        title: "Quests are live",
+        description: "Earn Quest Pollen by completing dashboard quests.",
         details: [
-            "Big price drops — many models are now 30–50% cheaper.",
-            "Bonus Pollen on purchases has ended.",
-            "More price cuts coming June 22.",
+            "New quests are available for onboarding, app growth, community, and GitHub contributions.",
+            "Open the [Quests tab](#quests) to see available rewards and claim completed quests.",
+            "Tiers have stopped; previous Tier Pollen is now Quest Pollen and balances stay unchanged.",
         ],
     },
     {
-        date: "2026-06-22",
-        dateLabel: "Starting Jun 22",
-        emoji: "🎯",
-        title: "Tiers are going away",
-        description: "Pollen rewards now come from Quests instead.",
+        date: "2026-06-30",
+        dateLabel: "Alpha",
+        emoji: "🧪",
+        title: "Community models alpha",
+        description:
+            "Deploy your own models to Pollinations so the community can use them.",
         details: [
-            "No more tiers — everyone earns Pollen the same way, through Quests.",
-            "Your balance and access stay the same; what was Tier Pollen is now Quest Pollen.",
-            "Earn more Pollen from the quest dashboard — new ways to earn.",
+            "Model owners earn Pollen when their models are used.",
+            "Access is allowlist-only for now.",
+            "Interested? Contact us in the [Discord community](https://discord.gg/pollinations-ai-885844321461485618).",
         ],
     },
 ];
@@ -57,15 +58,17 @@ function renderWithLinks(text: string): ReactNode[] {
     let lastIndex = 0;
     for (const match of matches) {
         const idx = match.index ?? 0;
+        const href = match[2];
+        const isExternal = /^https?:\/\//.test(href);
         if (idx > lastIndex) {
             parts.push(text.slice(lastIndex, idx));
         }
         parts.push(
             <a
                 key={idx}
-                href={match[2]}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={href}
+                target={isExternal ? "_blank" : undefined}
+                rel={isExternal ? "noopener noreferrer" : undefined}
                 className="text-theme-text-soft hover:text-theme-text-strong hover:underline font-medium"
             >
                 {match[1]}

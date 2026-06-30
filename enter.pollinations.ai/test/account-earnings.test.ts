@@ -42,7 +42,7 @@ test("GET /api/account/earnings returns source rollups and additive money totals
         }),
         earningsRow({
             date: "",
-            entity_id: "community/owner/model",
+            entity_id: "owner/model",
             entity_name: "Community Model",
             source: "community_model",
             requests: 7,

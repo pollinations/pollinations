@@ -31,6 +31,19 @@ type ModelRowProps = {
     model: ModelPrice;
 };
 
+type ModelIdProps = {
+    name: string;
+};
+
+export const ModelId: FC<ModelIdProps> = ({ name }) => (
+    <span
+        className="min-w-0 truncate font-mono text-xs font-medium text-theme-text-muted"
+        title={name}
+    >
+        {name}
+    </span>
+);
+
 export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const modelDisplayName = getModelDisplayName(model);
     const modelDescription = getModelDescriptionWithoutName(model);
@@ -143,6 +156,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             showAlpha={showAlpha}
                         />
                     </div>
+                    <ModelId name={model.name} />
                     {(inputModalities.length > 0 ||
                         capabilities.length > 0) && (
                         <div className="flex min-w-0 flex-wrap items-center gap-2">

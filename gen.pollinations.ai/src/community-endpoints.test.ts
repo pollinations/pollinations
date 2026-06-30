@@ -1,4 +1,5 @@
 import { createExecutionContext, env, SELF } from "cloudflare:test";
+import type { Logger } from "@logtape/logtape";
 import {
     type CommunityEndpointRuntime,
     communityChatCompletionsUrl,
@@ -7,6 +8,7 @@ import {
     communityModelId,
     communityOpenAIBaseUrl,
     isCommunityEndpointOwnerAllowed,
+    legacyCommunityModelId,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
     parseCommunityModelId,
@@ -15,19 +17,23 @@ import {
     communityEndpoint as communityEndpointTable,
     session as sessionTable,
 } from "@shared/db/better-auth.ts";
+import { handleError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import {
+    createTestApiKey,
     createTestUser,
     test as fixtureTest,
 } from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { Env } from "@/env.ts";
+import { resetGenerationModelRegistryCache } from "./model-registry.ts";
 import { communityEndpointGatewayContext } from "./text/communityEndpoint.ts";
 
 const db = drizzle(env.DB);
-const testLog = { getChild: () => testLog };
+const testLog = { getChild: () => testLog } as unknown as Logger;
 const COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID = 36901823;
 const COMMUNITY_ENDPOINT_DENIED_TEST_GITHUB_ID = 999_999_999;
 
@@ -35,26 +41,48 @@ function isPortkeyChatCompletionsRequest(request: Request): boolean {
     return new URL(request.url).pathname === "/v1/chat/completions";
 }
 
+beforeEach(() => {
+    resetGenerationModelRegistryCache();
+});
+
 afterEach(() => {
+    resetGenerationModelRegistryCache();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
 });
 
-async function createEnterCommunityApi(): Promise<Hono> {
+async function createEnterCommunityApi(): Promise<Hono<Env>> {
     const routePath =
         "../../enter.pollinations.ai/src/routes/community-endpoints.ts";
     const { communityEndpointsRoutes } = (await import(routePath)) as {
         communityEndpointsRoutes: Hono;
     };
-    return new Hono()
+    return new Hono<Env>()
         .use("*", async (c, next) => {
-            c.set("log" as never, testLog);
+            c.set("log", testLog);
             await next();
         })
-        .route("/api/community-endpoints", communityEndpointsRoutes);
+        .route("/api/community-endpoints", communityEndpointsRoutes)
+        .onError(handleError);
 }
 
-async function fetchEnterApi(app: Hono, request: Request): Promise<Response> {
+async function createEnterFrontendApi(): Promise<Hono<Env>> {
+    const routePath = "../../enter.pollinations.ai/src/frontend-api.ts";
+    const { frontendApi } = (await import(routePath)) as {
+        frontendApi: Hono;
+    };
+    return new Hono<Env>()
+        .use("*", async (c, next) => {
+            c.set("log", testLog);
+            await next();
+        })
+        .route("/api", frontendApi);
+}
+
+async function fetchEnterApi(
+    app: Hono<Env>,
+    request: Request,
+): Promise<Response> {
     const ctx = createExecutionContext();
     return app.fetch(request, env, ctx);
 }
@@ -147,9 +175,20 @@ describe("community endpoint helpers", () => {
             "voodoohop",
             "provider/path/model-name",
         );
+        const legacyModelId = legacyCommunityModelId(
+            "voodoohop",
+            "provider/path/model-name",
+        );
 
-        expect(modelId).toBe("community/voodoohop/provider/path/model-name");
+        expect(modelId).toBe("voodoohop/provider/path/model-name");
+        expect(legacyModelId).toBe(
+            "community/voodoohop/provider/path/model-name",
+        );
         expect(parseCommunityModelId(modelId)).toEqual({
+            ownerGithubUsername: "voodoohop",
+            modelName: "provider/path/model-name",
+        });
+        expect(parseCommunityModelId(legacyModelId)).toEqual({
             ownerGithubUsername: "voodoohop",
             modelName: "provider/path/model-name",
         });
@@ -181,12 +220,29 @@ describe("community endpoint helpers", () => {
         ).toThrow("Endpoint URL cannot target a private host");
     });
 
+    it("uses the community endpoint description as the model title", () => {
+        const modelDefinition = communityModelDefinition({
+            modelId: "voodoohop/openai",
+            description: "OpenAI via community endpoint",
+            ...communityEndpointPrices({
+                promptTextPrice: 0.1,
+                completionTextPrice: 0.1,
+            }),
+        });
+
+        expect(modelDefinition.title).toBe("OpenAI via community endpoint");
+        expect(modelDefinition.aliases).toEqual(["community/voodoohop/openai"]);
+        expect(modelDefinition.description).toBe(
+            "OpenAI via community endpoint",
+        );
+    });
+
     it("builds Portkey gateway context with the saved token", async () => {
         const secret = "test-secret";
         const endpoint: CommunityEndpointRuntime = {
             id: "community-endpoint-id",
             ownerUserId: "owner-id",
-            modelId: "community/voodoohop/openai",
+            modelId: "voodoohop/openai",
             name: "openai",
             description: null,
             baseUrl: "https://api.example.com/v1",
@@ -330,10 +386,37 @@ fixtureTest(
             },
         });
 
+        const legacyResponse = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: legacyCommunityModelId(
+                        ownerGithubUsername,
+                        modelName,
+                    ),
+                    messages: [{ role: "user", content: "hello" }],
+                    max_tokens: 5,
+                }),
+            }),
+        );
+        expect(legacyResponse.status).toBe(200);
+        await expect(legacyResponse.json()).resolves.toMatchObject({
+            model: "gpt-4.1-mini",
+            choices: [
+                {
+                    message: { content: "ok" },
+                },
+            ],
+        });
+
         const upstreamCalls = fetchMock.mock.calls.filter(([input, init]) =>
             isPortkeyChatCompletionsRequest(new Request(input, init)),
         );
-        expect(upstreamCalls).toHaveLength(1);
+        expect(upstreamCalls).toHaveLength(2);
     },
 );
 
@@ -575,6 +658,7 @@ fixtureTest(
 
         const textModels = (await textResponse.json()) as {
             name: string;
+            aliases?: string[];
             category?: string;
             community?: boolean;
             alpha?: boolean;
@@ -595,9 +679,13 @@ fixtureTest(
             const listed = models.find((model) => model.name === modelId);
             expect(listed).toMatchObject({
                 name: modelId,
+                aliases: [
+                    legacyCommunityModelId(ownerGithubUsername, modelName),
+                ],
                 category: "text",
                 community: true,
                 alpha: true,
+                title: "Public community model",
                 description: "Public community model",
                 pricing: {
                     currency: "pollen",
@@ -950,3 +1038,170 @@ fixtureTest(
         ).toHaveLength(2);
     },
 );
+
+fixtureTest(
+    "manages my-models through account API with a key that has account keys permission",
+    async () => {
+        const ownerGithubUsername = `pk-${crypto.randomUUID().slice(0, 8)}`;
+        const { key } = await createTestApiKey({
+            type: "publishable",
+            accountPermissions: ["keys"],
+            user: {
+                githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+                githubUsername: ownerGithubUsername,
+            },
+        });
+        const denied = await createTestApiKey({
+            user: {
+                githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+                githubUsername: `denied-${crypto.randomUUID().slice(0, 8)}`,
+            },
+        });
+        const enterApi = await createEnterFrontendApi();
+
+        const legacyResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                },
+            }),
+        );
+        expect(legacyResponse.status).toBe(404);
+
+        const deniedResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/account/my-models", {
+                headers: {
+                    Authorization: `Bearer ${denied.key}`,
+                },
+            }),
+        );
+        expect(deniedResponse.status).toBe(403);
+
+        const listResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/account/my-models", {
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                },
+            }),
+        );
+        expect(listResponse.status).toBe(200);
+        await expect(listResponse.json()).resolves.toEqual({ data: [] });
+
+        const createResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/account/my-models", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    name: "my-test-model",
+                    description: "Account API model",
+                    baseUrl: "https://api.example.com/v1",
+                    upstreamModel: "gpt-4.1-mini",
+                    bearerToken: "sk_saved_token",
+                    promptTextPrice: 0.1,
+                    completionTextPrice: 0.2,
+                }),
+            }),
+        );
+        expect(createResponse.status).toBe(200);
+        const created = (await createResponse.json()) as Record<
+            string,
+            unknown
+        >;
+        expect(created).toMatchObject({
+            modelId: `${ownerGithubUsername}/my-test-model`,
+            name: "my-test-model",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "gpt-4.1-mini",
+            promptTextPrice: 0.1,
+            completionTextPrice: 0.2,
+        });
+        expect(created).not.toHaveProperty("bearerToken");
+        expect(created).not.toHaveProperty("bearerTokenCiphertext");
+        expect(typeof created.id).toBe("string");
+        const createdId = created.id as string;
+
+        const updateResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/account/my-models/${createdId}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        description: "Updated description",
+                    }),
+                },
+            ),
+        );
+        expect(updateResponse.status).toBe(200);
+        await expect(updateResponse.json()).resolves.toMatchObject({
+            description: "Updated description",
+            promptTextPrice: 0.1,
+            completionTextPrice: 0.2,
+        });
+
+        const secondListResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/account/my-models", {
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                },
+            }),
+        );
+        expect(secondListResponse.status).toBe(200);
+        const secondList = (await secondListResponse.json()) as {
+            data: Record<string, unknown>[];
+        };
+        expect(secondList.data).toHaveLength(1);
+        expect(secondList.data[0]).not.toHaveProperty("bearerToken");
+        expect(secondList.data[0]).not.toHaveProperty("bearerTokenCiphertext");
+    },
+);
+
+fixtureTest("rejects a community model name containing a slash", async () => {
+    const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+    const ownerUserId = await createTestUser({
+        githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+        githubUsername: ownerGithubUsername,
+    });
+    const sessionToken = `session-${crypto.randomUUID()}`;
+    await db.insert(sessionTable).values({
+        id: `session-${crypto.randomUUID()}`,
+        token: sessionToken,
+        userId: ownerUserId,
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    });
+
+    const enterApi = await createEnterCommunityApi();
+    const response = await fetchEnterApi(
+        enterApi,
+        new Request("http://localhost:3000/api/community-endpoints", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: await signedSessionCookie(sessionToken),
+            },
+            body: JSON.stringify({
+                name: "inferenceport.ai/gpt-oss-20b",
+                description: "name with a slash",
+                baseUrl: "https://api.example.com/v1",
+                upstreamModel: "gpt-oss-20b",
+                bearerToken: "sk_saved_token",
+            }),
+        }),
+    );
+
+    expect(response.status).toBe(400);
+});

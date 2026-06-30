@@ -28,7 +28,6 @@ SQL >
     FROM generation_event
     WHERE community_model_reward_user_id = {{String(dev_user_id, '')}}
       AND community_model_reward_amount > 0
-      AND startsWith(resolved_model_requested, 'community/')
       AND start_time >= now() - INTERVAL 7 DAY
 
 NODE earnings

@@ -18,6 +18,7 @@ import {
 import {
     calculateServiceFeeCents,
     formatUsdCents,
+    formatUsdCentsCompact,
     POLLEN_PACKS,
 } from "@shared/pollen-packs.ts";
 import {
@@ -160,6 +161,10 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
             : 0;
     const subtotalBeforeTaxCents =
         (selectedPack?.amountUsd ?? 0) * 100 + serviceFeeCents;
+    const chargeLabel =
+        checkoutPricingUpdateEnabled && selectedPack
+            ? formatUsdCentsCompact(subtotalBeforeTaxCents)
+            : `$${selectedPack?.amountUsd ?? 0}`;
     const showConfig = isEnabled || enableDraft;
     const hasUnsavedChanges =
         billingState !== null &&
@@ -361,21 +366,33 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                                     value={packAmountUsd}
                                     onChange={setPackAmountUsd}
                                     packs={AUTO_TOP_UP_PACKS}
+                                    selectedBadgeLabel={
+                                        checkoutPricingUpdateEnabled
+                                            ? chargeLabel
+                                            : undefined
+                                    }
+                                    selectedBadgeTooltip={
+                                        checkoutPricingUpdateEnabled &&
+                                        selectedPack ? (
+                                            <AutoTopUpCostTooltip
+                                                packAmountUsd={
+                                                    selectedPack.amountUsd
+                                                }
+                                                serviceFeeCents={
+                                                    serviceFeeCents
+                                                }
+                                                subtotalBeforeTaxCents={
+                                                    subtotalBeforeTaxCents
+                                                }
+                                                requiresTermsConfirmation={
+                                                    requiresTermsConfirmation
+                                                }
+                                            />
+                                        ) : undefined
+                                    }
                                     disabled={isSaving}
                                 />
                             </div>
-                            {checkoutPricingUpdateEnabled && selectedPack && (
-                                <AutoTopUpCostSummary
-                                    packAmountUsd={selectedPack.amountUsd}
-                                    serviceFeeCents={serviceFeeCents}
-                                    subtotalBeforeTaxCents={
-                                        subtotalBeforeTaxCents
-                                    }
-                                    requiresTermsConfirmation={
-                                        requiresTermsConfirmation
-                                    }
-                                />
-                            )}
                             <AutoTopUpSaveButton
                                 showConfig={showConfig}
                                 hasUnsavedChanges={hasUnsavedChanges}
@@ -442,7 +459,7 @@ function renderStatusMessage(
     return "On";
 }
 
-const AutoTopUpCostSummary: FC<{
+const AutoTopUpCostTooltip: FC<{
     packAmountUsd: number;
     serviceFeeCents: number;
     subtotalBeforeTaxCents: number;
@@ -453,32 +470,32 @@ const AutoTopUpCostSummary: FC<{
     subtotalBeforeTaxCents,
     requiresTermsConfirmation,
 }) => (
-    <div className="w-full rounded-lg border border-divider bg-surface-opaque px-3 py-2 text-xs leading-relaxed text-theme-text-muted sm:w-48 sm:shrink-0">
-        <div className="flex justify-between gap-3">
+    <span className="block min-w-36 leading-relaxed text-theme-text-muted">
+        <span className="flex justify-between gap-3">
             <span>Pack</span>
             <span className="font-bold text-theme-text-soft">
                 {formatUsdCents(packAmountUsd * 100)}
             </span>
-        </div>
-        <div className="flex justify-between gap-3">
+        </span>
+        <span className="flex justify-between gap-3">
             <span>Service fee</span>
             <span className="font-bold text-theme-text-soft">
                 {formatUsdCents(serviceFeeCents)}
             </span>
-        </div>
-        <div className="flex justify-between gap-3 border-t border-divider pt-1">
+        </span>
+        <span className="flex justify-between gap-3 border-t border-divider pt-1">
             <span>Before tax</span>
             <span className="font-bold text-theme-text-soft">
                 {formatUsdCents(subtotalBeforeTaxCents)}
             </span>
-        </div>
-        <div>Tax applies where required</div>
+        </span>
+        <span className="block">Tax applies where required</span>
         {requiresTermsConfirmation && (
-            <div className="mt-1 font-semibold text-theme-text-soft">
+            <span className="mt-1 block font-semibold text-theme-text-soft">
                 Previous terms stay active until confirmed.
-            </div>
+            </span>
         )}
-    </div>
+    </span>
 );
 
 type ManageBillingButtonProps = {

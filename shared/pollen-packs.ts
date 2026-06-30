@@ -91,3 +91,11 @@ export const formatUsdCents = (amountCents: number): string =>
         style: "currency",
         currency: "USD",
     });
+
+export const formatUsdCentsCompact = (amountCents: number): string =>
+    (amountCents / 100).toLocaleString("en-US", {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: amountCents % 100 === 0 ? 0 : 2,
+        maximumFractionDigits: 2,
+    });

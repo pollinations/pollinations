@@ -46,21 +46,10 @@ describe("GET /api/account/profile", () => {
     });
 
     test("api key with profile scope also returns name + email", async ({
-        auth,
         sessionToken,
     }) => {
-        const createResult = await auth.apiKey.create({
-            name: "profile-scoped-key",
-            fetchOptions: {
-                headers: {
-                    Cookie: `better-auth.session_token=${sessionToken}`,
-                },
-            },
-        });
-        if (!createResult.data) throw new Error("Failed to create key");
-
-        const updateRes = await SELF.fetch(
-            `http://localhost:3000/api/api-keys/${createResult.data.id}/update`,
+        const createResponse = await SELF.fetch(
+            "http://localhost:3000/api/account/keys",
             {
                 method: "POST",
                 headers: {
@@ -68,21 +57,23 @@ describe("GET /api/account/profile", () => {
                     Cookie: `better-auth.session_token=${sessionToken}`,
                 },
                 body: JSON.stringify({
+                    name: "profile-scoped-key",
                     accountPermissions: ["profile"],
                 }),
             },
         );
-        if (!updateRes.ok) {
+        if (!createResponse.ok) {
             throw new Error(
-                `Failed to set permissions: ${await updateRes.text()}`,
+                `Failed to create key: ${await createResponse.text()}`,
             );
         }
+        const createResult = (await createResponse.json()) as { key: string };
 
         const response = await SELF.fetch(
             "http://localhost:3000/api/account/profile",
             {
                 headers: {
-                    Authorization: `Bearer ${createResult.data.key}`,
+                    Authorization: `Bearer ${createResult.key}`,
                 },
             },
         );

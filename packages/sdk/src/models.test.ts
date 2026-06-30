@@ -44,7 +44,8 @@ beforeEach(() => {
                         max_reference_videos: 10,
                     },
                     {
-                        name: "community/alice/deepseek",
+                        name: "alice/deepseek",
+                        aliases: ["community/alice/deepseek"],
                         title: "DeepSeek by @alice",
                         category: "text",
                         community: true,
@@ -113,7 +114,7 @@ describe("fetchModelCatalog", () => {
         ).toEqual([
             ["still", "image"],
             ["movie", "video"],
-            ["community/alice/deepseek", "text"],
+            ["alice/deepseek", "text"],
             ["speech-from-chat", "audio"],
             ["tts", "audio"],
             ["embedding-small", "embedding"],
@@ -150,11 +151,12 @@ describe("fetchModelCatalog", () => {
             maxReferenceVideos: 10,
         });
         const communityModel = catalog.models.find(
-            (model) => model.id === "community/alice/deepseek",
+            (model) => model.id === "alice/deepseek",
         );
         expect(communityModel).toMatchObject({
             category: "text",
             community: true,
+            aliases: ["community/alice/deepseek"],
             inputModalities: ["text"],
             outputModalities: ["text"],
         });

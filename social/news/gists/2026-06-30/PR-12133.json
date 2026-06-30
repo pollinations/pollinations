@@ -1,0 +1,36 @@
+{
+  "pr_number": 12133,
+  "title": "feat: add claude-sonnet-5 (bedrock)",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12133",
+  "merged_at": "2026-06-30T20:20:30Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Adds Claude Sonnet 5 as a paid text model via AWS Bedrock (launched today).\n\n- Registry entry `claude-sonnet-5` (alias `sonnet-5`), routing to Bedrock `global.anthropic.claude-sonnet-5`\n- 1M context, tools + vision, adaptive thinking (same transform as Sonnet 4.6)\n- Priced at standard $3/$15 per MTok with cache rates ($0.30 read / $3.75 write). Intro $2/$10 runs through 2026-08-31, but using standard to match siblings and avoid a price bump when it ends\n- The `global.*` inference profile works on our Bedrock account (no `us.*` needed, unlike Opus 4.7/4.8)\n\nVerified end-to-end on local gen against live Bedrock: basic + streaming generation, max_tokens edge, tool calls, image input, and billing (Tinybird rows exact, no missing-rate warnings, multiplier 1). Automated suites pass (enter aliases/pricing/snapshot, gen permissions/usage/cache/billing).",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Sonnet 5 joins the hive",
+    "blurb": "Claude Sonnet 5 is now live on the API! Bring 1M context, vision, and adaptive thinking to your next prompt.",
+    "summary": "Added Claude Sonnet 5 (`claude-sonnet-5`) as a paid text model via AWS Bedrock, featuring 1M context, vision, and tool support at standard $3/$15 per MTok pricing.",
+    "impact": "Developers can now access Anthropic's newest model using the `claude-sonnet-5` or `sonnet-5` aliases, complete with caching and adaptive thinking capabilities.",
+    "keywords": [
+      "claude",
+      "sonnet-5",
+      "anthropic",
+      "bedrock",
+      "models",
+      "api"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot examining a glowing stone tablet (Bedrock) with a large '5' on it, symbolizing the new Claude Sonnet 5 model.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot and the chunky monitor robot examining a glowing stone tablet with a large '5' carved into it. Code-plants sprout from lime green (#ecf874) flower pots nearby. Soft pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-30/PR-12133.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot and the chunky monitor robot examining a glowing stone tablet with a large '5' carved into it. Code-plants sprout from lime green (#ecf874) flower pots nearby. Soft pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "generated_at": "2026-06-30T20:21:32.762409+00:00"
+}

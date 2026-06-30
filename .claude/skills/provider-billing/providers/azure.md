@@ -344,25 +344,6 @@ az monitor activity-log list \
 
 Confirmed NOT our mistake: `Kimi K2.5` deploys successfully in seconds on the same resource with the same API version. Issue is Microsoft's Anthropic ISV-org provisioning path for our billing account. **Needs a Microsoft support ticket** to unblock. Correlation ID from first failed attempt: `cc36b8aa-9f39-410e-8531-8c5cdcbb32bb`.
 
-### Update 2026-06-30 — Claude GA, catalog blocker resolved
-
-Claude went **GA in Microsoft Foundry on 2026-06-29**. As of 2026-06-30, Anthropic models now **enumerate as deployable** in our `myceli-prod-swedencentral` catalog (`az cognitiveservices account list-models --name myceli-prod-swedencentral -g rg-myceli-prod --query "[?format=='Anthropic']"`): `claude-opus-4-8` (v1 + v2), `claude-sonnet-4-6`, `claude-haiku-4-5`, `claude-opus-4-7`, `claude-fable-5`, etc., all `GlobalStandard`. None appear under `myceli-prod-eastus`. The April `AnthropicOrganizationCreationFailed` block is gone at the catalog level.
-
-**Live test run 2026-06-30 (with explicit approval):** Deployed `claude-haiku-4-5` version `2` (= "Hosted on Azure") as additive deployment `claude-credit-test`. Findings:
-- Deploy **succeeded in ~45s** on our sponsored sub — NO subscription-eligibility refusal at create OR inference time. One Messages-API call (`POST https://myceli-prod-swedencentral.services.ai.azure.com/anthropic/v1/messages`, x-api-key auth, model=deployment name) returned a normal completion (9 in / 8 out tokens). So Claude **runs fine** on a `Sponsored_*` sub — "works" ≠ "credit-covered."
-- **It DID create a `Microsoft.SaaS` Marketplace resource** (billing record `instanceName` = `.../providers/Microsoft.SaaS/resources/claude-haiku-4--f0d939d0d9d94ec-...`). ⚠️ Correction: the live `GET /subscriptions/{SUB}/providers/Microsoft.SaaS/resources?api-version=2018-03-01-beta` listing returned `[]` (wrong api-version or timing) — do NOT trust that list call to detect Marketplace subs; the SaaS resource is real, proven by the usageDetails `instanceName`.
-- Catalog metadata is NOT a billing discriminator: Claude's assetId is `azureml://registries/azureml-anthropic/...` but Grok's is `azureml://registries/azureml-xai/...` and Grok bills first-party credit-eligible. Registry namespace ≠ eligibility.
-- Cleaned up: deleted `claude-credit-test`; the original 6 prod deployments (FLUX.1-Kontext-pro, gpt-audio-1.5, gpt-audio-mini, gpt-image-2, gpt-5.5, gpt-realtime-2) were untouched throughout.
-
-**✅ DEFINITIVE VERDICT (usageDetails, usage day 2026-06-29, landed ~20min later):** Claude usage on the GA "Hosted on Azure" path bills as:
-```
-product=claude-ccu-azure-hosted-plan  meterCategory=SaaS
-meterSubCategory="Claude in Microsoft Foundry (Azure hosted)"
-publisherName=Anthropic  publisherType=Marketplace
-isAzureCreditEligible=FALSE   ← billing engine's own flag
-```
-Two line items (`chargeType=Purchase` + `chargeType=Refund`), both €0/$0 (Marketplace plan subscribe + the refund on deployment delete) → net **€0 incurred** by the test. **Even the GA "Azure hosted" path is `publisherType=Marketplace` and `isAzureCreditEligible=False`** — so Microsoft for Startups / sponsorship credits do NOT cover Claude. This is now empirically confirmed by Azure's billing engine, not just docs. Retail Prices API still shows 0 Claude meters (Marketplace offers aren't there). **Bottom line: on our sponsored sub, Claude runs but bills to a card, never to credits.**
-
 ## List existing deployments
 
 ```bash
@@ -424,5 +405,5 @@ If a Sweden Central call fails with `misspelled or not recognized`, it's the CLI
 # Known unknowns (open follow-ups)
 
 - **€250k sponsorship credit location**: not visible via any API call on billing account `d6c5b3e7-...`. Jan 2026 invoice showed `creditAmount: 0`, suggesting credits live on a different billing account/tenant. Verify in Azure Portal under Cost Management → Credits, then update the identifiers at the top of this skill if they differ.
-- **Anthropic/Claude credit eligibility**: **NOT credit-eligible on our subscription.** Microsoft's GA-day Learn doc (`use-foundry-models-claude`, updated 2026-06-29) lists "Sponsored subscriptions that only use Azure credits" and "startup credit–based accounts" as unsupported, and notes "If you have an account with a credit card on file, the credit card will be charged instead of Azure Credits." Founders Hub policy: sponsorship credits only apply to models "sold and billed directly by Azure"; Claude is sold via **Azure Marketplace** (billed by Anthropic) → not eligible. Our sub is `Sponsored_2016-01-01`. Retail Prices API still has 0 Claude meters (Marketplace SaaS offers don't appear there). Untested: whether a deploy on our sponsored sub hits the subscription-eligibility gate vs. silently charging a card on file.
+- **Anthropic/Claude credit eligibility**: unconfirmed. Retail Prices API has no Anthropic entries, and we cannot deploy to test the `isAzureCreditEligible` flag until the `AnthropicOrganizationCreationFailed` blocker is resolved. Open a Microsoft support ticket to unblock provisioning AND to get written confirmation of credit eligibility.
 - **`Billing Reader` role**: not granted to `elliot@thomasmyceli.onmicrosoft.com` → `balanceSummary` returns 403. Granting this unlocks credit balance reads.

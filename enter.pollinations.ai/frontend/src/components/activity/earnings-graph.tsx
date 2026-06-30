@@ -5,7 +5,6 @@ import {
     DownloadIcon,
     InlineLink,
     MultiSelect,
-    Section,
     SproutIcon,
     StatCard,
     Surface,
@@ -16,17 +15,12 @@ import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import type { FC } from "react";
 import { useEffect, useState } from "react";
 import { Chart } from "./chart";
-import { EarningsTransactionHistory } from "./earnings-transaction-history";
 import { formatActivityPollen } from "./format-activity-pollen";
 import type { Metric, UsagePeriodSelection } from "./types";
 import {
     formatEarningsSourceLabel,
     useEarningsData,
 } from "./use-earnings-data";
-
-const DETAILED_EARNINGS_DOWNLOAD_LIMIT = 50_000;
-
-type EarningsView = "chart" | "table";
 
 const METRIC_LABELS: Record<Metric, string> = {
     requests: "Requests",
@@ -62,7 +56,6 @@ type EarningsGraphProps = {
 };
 
 export const EarningsGraph: FC<EarningsGraphProps> = ({ period }) => {
-    const [activeView, setActiveView] = useState<EarningsView>("chart");
     const [metric, setMetric] = useState<Metric>("pollen");
     const [selectedAppKeyIds, setSelectedAppKeyIds] = useState<string[]>([]);
 
@@ -103,21 +96,12 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period }) => {
             granularity: period.granularity,
             period: period.period,
         });
-        if (activeView === "table") {
-            params.set("limit", DETAILED_EARNINGS_DOWNLOAD_LIMIT.toString());
-            if (selectedAppKeyIds.length > 0) {
-                params.set("api_key_ids", selectedAppKeyIds.join(","));
-            }
-        } else if (selectedAppKeyIds.length > 0) {
+        if (selectedAppKeyIds.length > 0) {
             params.set("entity_ids", selectedAppKeyIds.join(","));
         }
 
-        const endpoint =
-            activeView === "table"
-                ? "/api/account/earnings/transactions"
-                : "/api/account/earnings";
         const anchor = document.createElement("a");
-        anchor.href = `${endpoint}?${params.toString()}`;
+        anchor.href = `/api/account/earnings?${params.toString()}`;
         anchor.rel = "noopener";
         document.body.appendChild(anchor);
         anchor.click();
@@ -149,20 +133,15 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period }) => {
     );
 
     return (
-        <Section title="Earnings" framed action={downloadAction}>
+        <Surface className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <h3 className="text-base font-semibold text-theme-text-strong">
+                    Earnings
+                </h3>
+                {downloadAction}
+            </div>
             <div className="flex flex-col gap-4">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="flex flex-wrap gap-1.5">
-                        {(["chart", "table"] as EarningsView[]).map((view) => (
-                            <TabButton
-                                key={view}
-                                active={activeView === view}
-                                onClick={() => setActiveView(view)}
-                            >
-                                {view === "chart" ? "Chart" : "Transactions"}
-                            </TabButton>
-                        ))}
-                    </div>
+                <div className="flex flex-wrap items-start justify-end gap-4">
                     <div className="flex flex-col items-stretch gap-2">
                         <div className="[&>div]:justify-between [&_button]:w-60">
                             <MultiSelect
@@ -176,220 +155,205 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period }) => {
                                 label="BYOP apps"
                             />
                         </div>
-                        {activeView === "chart" && (
-                            <MetricTabs value={metric} onChange={setMetric} />
-                        )}
+                        <MetricTabs value={metric} onChange={setMetric} />
                     </div>
                 </div>
 
-                {activeView === "chart" ? (
-                    <Surface>
-                        {loading && (
-                            <div className="flex items-center justify-center h-[180px]">
-                                <p className="text-sm text-theme-text-muted animate-[pulse_2s_ease-in-out_infinite]">
-                                    Fetching earnings data...
+                <div className="min-h-[180px]">
+                    {loading && (
+                        <div className="flex items-center justify-center h-[180px]">
+                            <p className="text-sm text-theme-text-muted animate-[pulse_2s_ease-in-out_infinite]">
+                                Fetching earnings data...
+                            </p>
+                        </div>
+                    )}
+                    {error && !loading && (
+                        <div className="flex items-center justify-center h-[180px]">
+                            <div className="text-center">
+                                <p className="text-sm text-intent-danger-text font-medium">
+                                    {error}
                                 </p>
+                                <button
+                                    type="button"
+                                    onClick={() => fetchEarnings()}
+                                    className="mt-2 text-xs text-intent-danger-text hover:text-intent-danger-text underline"
+                                >
+                                    Try again
+                                </button>
                             </div>
-                        )}
-                        {error && !loading && (
-                            <div className="flex items-center justify-center h-[180px]">
-                                <div className="text-center">
-                                    <p className="text-sm text-intent-danger-text font-medium">
-                                        {error}
-                                    </p>
-                                    <button
-                                        type="button"
-                                        onClick={() => fetchEarnings()}
-                                        className="mt-2 text-xs text-intent-danger-text hover:text-intent-danger-text underline"
-                                    >
-                                        Try again
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                        {!loading &&
-                            !error &&
-                            (hasEarnings ? (
-                                <Chart
-                                    data={chartData}
-                                    metric={metric}
-                                    showModelBreakdown={showEarningsBreakdown}
-                                />
-                            ) : (
-                                <EarningsEmptyState />
-                            ))}
-                    </Surface>
-                ) : (
-                    <Surface>
-                        <EarningsTransactionHistory
-                            period={period}
-                            selectedAppKeyIds={selectedAppKeyIds}
-                        />
-                    </Surface>
-                )}
+                        </div>
+                    )}
+                    {!loading &&
+                        !error &&
+                        (hasEarnings ? (
+                            <Chart
+                                data={chartData}
+                                metric={metric}
+                                showModelBreakdown={showEarningsBreakdown}
+                            />
+                        ) : (
+                            <EarningsEmptyState />
+                        ))}
+                </div>
 
                 {hasEarnings && (
-                    <div className="grid gap-4 sm:grid-cols-3">
-                        <Surface>
-                            <StatCard
-                                label="Pollen earned"
-                                value={formatActivityPollen(stats.totalPollen)}
-                                detail={
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <PaidChip
+                    <div className="grid gap-4 border-t border-divider pt-4 sm:grid-cols-3">
+                        <StatCard
+                            className="min-w-0"
+                            label="Pollen earned"
+                            value={formatActivityPollen(stats.totalPollen)}
+                            detail={
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <PaidChip
+                                        size="lg"
+                                        className="font-semibold"
+                                    >
+                                        <CardIcon className="h-4 w-4" />
+                                        <span className="tabular-nums">
+                                            {formatActivityPollen(
+                                                stats.totalPaid,
+                                            )}
+                                        </span>
+                                    </PaidChip>
+                                    <TierChip
+                                        size="lg"
+                                        className="font-semibold"
+                                    >
+                                        <SproutIcon className="h-4 w-4" />
+                                        <span className="tabular-nums">
+                                            {formatActivityPollen(
+                                                stats.totalTier,
+                                            )}
+                                        </span>
+                                    </TierChip>
+                                    {stats.appMarkupPollen > 0 && (
+                                        <Chip
                                             size="lg"
                                             className="font-semibold"
                                         >
-                                            <CardIcon className="h-4 w-4" />
                                             <span className="tabular-nums">
                                                 {formatActivityPollen(
-                                                    stats.totalPaid,
+                                                    stats.appMarkupPollen,
                                                 )}
                                             </span>
-                                        </PaidChip>
-                                        <TierChip
+                                            <span className="font-medium opacity-70">
+                                                app markup
+                                            </span>
+                                        </Chip>
+                                    )}
+                                    {stats.modelRewardPollen > 0 && (
+                                        <Chip
                                             size="lg"
                                             className="font-semibold"
                                         >
-                                            <SproutIcon className="h-4 w-4" />
                                             <span className="tabular-nums">
                                                 {formatActivityPollen(
-                                                    stats.totalTier,
+                                                    stats.modelRewardPollen,
                                                 )}
                                             </span>
-                                        </TierChip>
-                                        {stats.appMarkupPollen > 0 && (
-                                            <Chip
-                                                size="lg"
-                                                className="font-semibold"
-                                            >
-                                                <span className="tabular-nums">
-                                                    {formatActivityPollen(
-                                                        stats.appMarkupPollen,
-                                                    )}
-                                                </span>
-                                                <span className="font-medium opacity-70">
-                                                    app markup
-                                                </span>
-                                            </Chip>
-                                        )}
-                                        {stats.modelRewardPollen > 0 && (
-                                            <Chip
-                                                size="lg"
-                                                className="font-semibold"
-                                            >
-                                                <span className="tabular-nums">
-                                                    {formatActivityPollen(
-                                                        stats.modelRewardPollen,
-                                                    )}
-                                                </span>
-                                                <span className="font-medium opacity-70">
-                                                    model rewards
-                                                </span>
-                                            </Chip>
-                                        )}
-                                    </div>
-                                }
-                            />
-                        </Surface>
-                        <Surface>
-                            <StatCard
-                                label="Earning sources"
-                                value={stats.sourceSummaries.length.toLocaleString()}
-                                detail={
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        {stats.sourceSummaries.map((source) => (
-                                            <Chip
-                                                key={source.source}
-                                                size="lg"
-                                                className="font-semibold"
-                                            >
-                                                <span>{source.label}</span>
-                                                <span className="tabular-nums">
-                                                    {source.requests.toLocaleString()}
-                                                </span>
-                                                <span className="font-medium opacity-70">
-                                                    req
-                                                </span>
-                                                {source.uniqueUsers > 0 && (
-                                                    <>
-                                                        <span className="tabular-nums">
-                                                            {source.uniqueUsers.toLocaleString()}
-                                                        </span>
-                                                        <span className="font-medium opacity-70">
-                                                            users
-                                                        </span>
-                                                    </>
-                                                )}
-                                                <span className="tabular-nums">
-                                                    {formatRewardRate(
-                                                        source.rewardRate,
-                                                    )}
-                                                </span>
-                                            </Chip>
-                                        ))}
-                                    </div>
-                                }
-                            />
-                        </Surface>
-                        <Surface>
-                            <StatCard
-                                label="Top earner"
-                                value={
-                                    <span className="text-xl leading-tight">
-                                        {stats.topEntity?.label || "None"}
-                                    </span>
-                                }
-                                detail={
-                                    stats.topEntity ? (
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            <Chip
-                                                size="lg"
-                                                className="font-semibold"
-                                            >
-                                                {formatEarningsSourceLabel(
-                                                    stats.topEntity.source,
-                                                )}
-                                            </Chip>
-                                            {stats.topEntity.uniqueUsers >
-                                                0 && (
-                                                <Chip
-                                                    size="lg"
-                                                    className="font-semibold"
-                                                >
+                                            <span className="font-medium opacity-70">
+                                                model rewards
+                                            </span>
+                                        </Chip>
+                                    )}
+                                </div>
+                            }
+                        />
+                        <StatCard
+                            className="min-w-0"
+                            label="Earning sources"
+                            value={stats.sourceSummaries.length.toLocaleString()}
+                            detail={
+                                <div className="flex flex-wrap items-center gap-2">
+                                    {stats.sourceSummaries.map((source) => (
+                                        <Chip
+                                            key={source.source}
+                                            size="lg"
+                                            className="font-semibold"
+                                        >
+                                            <span>{source.label}</span>
+                                            <span className="tabular-nums">
+                                                {source.requests.toLocaleString()}
+                                            </span>
+                                            <span className="font-medium opacity-70">
+                                                req
+                                            </span>
+                                            {source.uniqueUsers > 0 && (
+                                                <>
                                                     <span className="tabular-nums">
-                                                        {stats.topEntity.uniqueUsers.toLocaleString()}
+                                                        {source.uniqueUsers.toLocaleString()}
                                                     </span>
                                                     <span className="font-medium opacity-70">
-                                                        {stats.topEntity
-                                                            .uniqueUsers === 1
-                                                            ? "user"
-                                                            : "users"}
+                                                        users
                                                     </span>
-                                                </Chip>
+                                                </>
                                             )}
+                                            <span className="tabular-nums">
+                                                {formatRewardRate(
+                                                    source.rewardRate,
+                                                )}
+                                            </span>
+                                        </Chip>
+                                    ))}
+                                </div>
+                            }
+                        />
+                        <StatCard
+                            className="min-w-0"
+                            label="Top earner"
+                            value={
+                                <span className="text-xl leading-tight">
+                                    {stats.topEntity?.label || "None"}
+                                </span>
+                            }
+                            detail={
+                                stats.topEntity ? (
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <Chip
+                                            size="lg"
+                                            className="font-semibold"
+                                        >
+                                            {formatEarningsSourceLabel(
+                                                stats.topEntity.source,
+                                            )}
+                                        </Chip>
+                                        {stats.topEntity.uniqueUsers > 0 && (
                                             <Chip
                                                 size="lg"
                                                 className="font-semibold"
                                             >
                                                 <span className="tabular-nums">
-                                                    {formatActivityPollen(
-                                                        stats.topEntity.pollen,
-                                                    )}
+                                                    {stats.topEntity.uniqueUsers.toLocaleString()}
                                                 </span>
                                                 <span className="font-medium opacity-70">
-                                                    pollen
+                                                    {stats.topEntity
+                                                        .uniqueUsers === 1
+                                                        ? "user"
+                                                        : "users"}
                                                 </span>
                                             </Chip>
-                                        </div>
-                                    ) : null
-                                }
-                            />
-                        </Surface>
+                                        )}
+                                        <Chip
+                                            size="lg"
+                                            className="font-semibold"
+                                        >
+                                            <span className="tabular-nums">
+                                                {formatActivityPollen(
+                                                    stats.topEntity.pollen,
+                                                )}
+                                            </span>
+                                            <span className="font-medium opacity-70">
+                                                pollen
+                                            </span>
+                                        </Chip>
+                                    </div>
+                                ) : null
+                            }
+                        />
                     </div>
                 )}
             </div>
-        </Section>
+        </Surface>
     );
 };
 

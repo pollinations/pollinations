@@ -5,7 +5,6 @@ import {
     DownloadIcon,
     InlineLink,
     MultiSelect,
-    Section,
     SproutIcon,
     StatCard,
     Surface,
@@ -17,22 +16,14 @@ import type { FC } from "react";
 import { useEffect, useState } from "react";
 import { Chart } from "./chart";
 import { formatActivityPollen } from "./format-activity-pollen";
-import { TransactionHistory } from "./transaction-history";
 import type { FilterState, Metric, UsagePeriodSelection } from "./types";
 import { useUsageData } from "./use-usage-data";
 
 const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
 
-type UsageView = "chart" | "table";
-
 type UsageSectionProps = {
     period: UsagePeriodSelection;
-    apiKeys: Array<{ id: string; name: string }>;
 };
-
-function usageViewFromHash(hash: string): UsageView {
-    return hash === "#activity-table" ? "table" : "chart";
-}
 
 const METRIC_LABELS: Record<Metric, string> = {
     requests: "Requests",
@@ -63,10 +54,7 @@ const MetricTabs: FC<{
     </div>
 );
 
-export const UsageSection: FC<UsageSectionProps> = ({ period, apiKeys }) => {
-    const [activeView, setActiveView] = useState<UsageView>(() =>
-        usageViewFromHash(window.location.hash),
-    );
+export const UsageSection: FC<UsageSectionProps> = ({ period }) => {
     const [filters, setFilters] = useState<Omit<FilterState, "period">>({
         metric: "pollen",
         selectedKeyIds: [],
@@ -93,15 +81,6 @@ export const UsageSection: FC<UsageSectionProps> = ({ period, apiKeys }) => {
             setFilters((f) => ({ ...f, selectedKeyIds: pruned }));
         }
     }, [usedApiKeys, filters.selectedKeyIds]);
-
-    useEffect(() => {
-        function syncViewFromHash(): void {
-            setActiveView(usageViewFromHash(window.location.hash));
-        }
-
-        window.addEventListener("hashchange", syncViewFromHash);
-        return () => window.removeEventListener("hashchange", syncViewFromHash);
-    }, []);
 
     useEffect(() => {
         const validModels = new Set(usedModels.map((m) => m.id));
@@ -179,20 +158,15 @@ export const UsageSection: FC<UsageSectionProps> = ({ period, apiKeys }) => {
     );
 
     return (
-        <Section title="API usage" framed action={downloadAction}>
+        <Surface className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <h3 className="text-base font-semibold text-theme-text-strong">
+                    Usage
+                </h3>
+                {downloadAction}
+            </div>
             <div className="flex flex-col gap-4">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="flex flex-wrap gap-1.5">
-                        {(["chart", "table"] as UsageView[]).map((view) => (
-                            <TabButton
-                                key={view}
-                                active={activeView === view}
-                                onClick={() => setActiveView(view)}
-                            >
-                                {view === "chart" ? "Chart" : "Table"}
-                            </TabButton>
-                        ))}
-                    </div>
+                <div className="flex flex-wrap items-start justify-end gap-4">
                     <div className="flex flex-col items-stretch gap-2">
                         <div className="[&>div]:justify-between [&_button]:w-60">
                             <MultiSelect
@@ -228,39 +202,26 @@ export const UsageSection: FC<UsageSectionProps> = ({ period, apiKeys }) => {
                                 label="API Keys"
                             />
                         </div>
-                        {activeView === "chart" && (
-                            <MetricTabs
-                                value={filters.metric}
-                                onChange={(metric) =>
-                                    setFilters((f) => ({ ...f, metric }))
-                                }
-                            />
-                        )}
+                        <MetricTabs
+                            value={filters.metric}
+                            onChange={(metric) =>
+                                setFilters((f) => ({ ...f, metric }))
+                            }
+                        />
                     </div>
                 </div>
 
-                {activeView === "chart" ? (
-                    <UsageChartView
-                        loading={loading}
-                        error={error}
-                        fetchUsage={fetchUsage}
-                        chartData={chartData}
-                        metric={filters.metric}
-                        showModelBreakdown={showModelBreakdown}
-                        stats={stats}
-                    />
-                ) : (
-                    <Surface>
-                        <TransactionHistory
-                            apiKeys={apiKeys}
-                            period={period}
-                            selectedKeyIds={filters.selectedKeyIds}
-                            selectedModels={filters.selectedModels}
-                        />
-                    </Surface>
-                )}
+                <UsageChartView
+                    loading={loading}
+                    error={error}
+                    fetchUsage={fetchUsage}
+                    chartData={chartData}
+                    metric={filters.metric}
+                    showModelBreakdown={showModelBreakdown}
+                    stats={stats}
+                />
             </div>
-        </Section>
+        </Surface>
     );
 };
 
@@ -285,7 +246,7 @@ const UsageChartView: FC<UsageChartViewProps> = ({
 
     return (
         <>
-            <Surface>
+            <div className="min-h-[180px]">
                 {loading && (
                     <div className="flex items-center justify-center h-[180px]">
                         <p className="text-sm text-theme-text-muted animate-[pulse_2s_ease-in-out_infinite]">
@@ -317,94 +278,77 @@ const UsageChartView: FC<UsageChartViewProps> = ({
                     />
                 )}
                 {!loading && !error && !hasUsage && <UsageEmptyState />}
-            </Surface>
+            </div>
 
             {!loading && !error && hasUsage && (
-                <div className="grid gap-4 sm:grid-cols-3">
-                    <Surface>
-                        <StatCard
-                            label="Pollen spent"
-                            value={formatActivityPollen(stats.totalPollen)}
-                            detail={
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <PaidChip
-                                        size="lg"
-                                        className="font-semibold"
-                                    >
-                                        <CardIcon className="h-4 w-4" />
-                                        {formatActivityPollen(stats.paidPollen)}
-                                    </PaidChip>
-                                    <TierChip
-                                        size="lg"
-                                        className="font-semibold"
-                                    >
-                                        <SproutIcon className="h-4 w-4" />
-                                        {formatActivityPollen(stats.tierPollen)}
-                                    </TierChip>
-                                </div>
-                            }
-                        />
-                    </Surface>
-                    <Surface>
-                        <StatCard
-                            label="Requests"
-                            value={stats.totalRequests.toLocaleString()}
-                            detail={
-                                stats.activeApiKeyCount === null ? null : (
-                                    <span className="text-theme-text-soft">
-                                        across {stats.activeApiKeyCount} API key
-                                        {stats.activeApiKeyCount === 1
-                                            ? ""
-                                            : "s"}
-                                    </span>
-                                )
-                            }
-                        />
-                    </Surface>
-                    <Surface>
-                        <StatCard
-                            label="Top model"
-                            value={
-                                <span className="text-xl leading-tight">
-                                    {stats.topModel?.label || "None"}
+                <div className="grid gap-4 border-t border-divider pt-4 sm:grid-cols-3">
+                    <StatCard
+                        className="min-w-0"
+                        label="Pollen spent"
+                        value={formatActivityPollen(stats.totalPollen)}
+                        detail={
+                            <div className="flex flex-wrap items-center gap-2">
+                                <PaidChip size="lg" className="font-semibold">
+                                    <CardIcon className="h-4 w-4" />
+                                    {formatActivityPollen(stats.paidPollen)}
+                                </PaidChip>
+                                <TierChip size="lg" className="font-semibold">
+                                    <SproutIcon className="h-4 w-4" />
+                                    {formatActivityPollen(stats.tierPollen)}
+                                </TierChip>
+                            </div>
+                        }
+                    />
+                    <StatCard
+                        className="min-w-0"
+                        label="Requests"
+                        value={stats.totalRequests.toLocaleString()}
+                        detail={
+                            stats.activeApiKeyCount === null ? null : (
+                                <span className="text-theme-text-soft">
+                                    across {stats.activeApiKeyCount} API key
+                                    {stats.activeApiKeyCount === 1 ? "" : "s"}
                                 </span>
-                            }
-                            detail={
-                                stats.topModel ? (
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <Chip
-                                            size="lg"
-                                            className="font-semibold"
-                                        >
-                                            <span className="tabular-nums">
-                                                {stats.topModel.requests.toLocaleString()}
-                                            </span>
-                                            <span className="font-medium opacity-70">
-                                                {stats.topModel.requests === 1
-                                                    ? "req"
-                                                    : "reqs"}
-                                            </span>
-                                        </Chip>
-                                        <Chip
-                                            size="lg"
-                                            className="font-semibold"
-                                        >
-                                            <span className="tabular-nums">
-                                                {formatActivityPollen(
-                                                    stats.topModel.pollen,
-                                                )}
-                                            </span>
-                                            <span className="font-medium opacity-70">
-                                                pollen
-                                            </span>
-                                        </Chip>
-                                    </div>
-                                ) : (
-                                    "No model usage yet"
-                                )
-                            }
-                        />
-                    </Surface>
+                            )
+                        }
+                    />
+                    <StatCard
+                        className="min-w-0"
+                        label="Top model"
+                        value={
+                            <span className="text-xl leading-tight">
+                                {stats.topModel?.label || "None"}
+                            </span>
+                        }
+                        detail={
+                            stats.topModel ? (
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <Chip size="lg" className="font-semibold">
+                                        <span className="tabular-nums">
+                                            {stats.topModel.requests.toLocaleString()}
+                                        </span>
+                                        <span className="font-medium opacity-70">
+                                            {stats.topModel.requests === 1
+                                                ? "req"
+                                                : "reqs"}
+                                        </span>
+                                    </Chip>
+                                    <Chip size="lg" className="font-semibold">
+                                        <span className="tabular-nums">
+                                            {formatActivityPollen(
+                                                stats.topModel.pollen,
+                                            )}
+                                        </span>
+                                        <span className="font-medium opacity-70">
+                                            pollen
+                                        </span>
+                                    </Chip>
+                                </div>
+                            ) : (
+                                "No model usage yet"
+                            )
+                        }
+                    />
                 </div>
             )}
         </>

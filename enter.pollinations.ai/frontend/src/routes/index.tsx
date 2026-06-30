@@ -1,6 +1,6 @@
 import { Section } from "@pollinations/ui";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient, getUserOrRedirect } from "../auth.ts";
 import {
@@ -128,14 +128,6 @@ function RouteComponent() {
     const [activityPeriod, setActivityPeriod] =
         useState<UsagePeriodSelection>(currentUsagePeriod);
     const showCommunityEndpoints = communityEndpointsAllowed;
-
-    const selectableKeys = useMemo(
-        () =>
-            apiKeys
-                .filter((k): k is typeof k & { name: string } => !!k.name)
-                .map((k) => ({ id: k.id, name: k.name })),
-        [apiKeys],
-    );
 
     async function handleSignOut(): Promise<void> {
         if (isSigningOut) return;
@@ -271,28 +263,27 @@ function RouteComponent() {
                     <Section title="Top-up" framed id="buy-pollen">
                         <BuyPollenPanel initialBillingState={billingState} />
                     </Section>
-                    <Section title="Last events" framed>
-                        <LastEventsPanel apiKeys={apiKeys} />
-                    </Section>
                 </div>
             )}
             {activePage === "activity" && (
                 <div className="flex flex-col gap-6">
-                    <div className="flex flex-col gap-1">
-                        <PeriodPicker
-                            value={activityPeriod}
-                            onChange={setActivityPeriod}
-                            minDate={ACTIVITY_MIN_DATE}
-                        />
-                        <p className="text-micro text-theme-text-muted">
-                            Usage refreshes hourly. Times are shown in UTC.
-                        </p>
-                    </div>
-                    <UsageSection
-                        period={activityPeriod}
-                        apiKeys={selectableKeys}
-                    />
-                    <EarningsGraph period={activityPeriod} />
+                    <Section title="Usage and earnings" framed>
+                        <div className="flex flex-col gap-1">
+                            <PeriodPicker
+                                value={activityPeriod}
+                                onChange={setActivityPeriod}
+                                minDate={ACTIVITY_MIN_DATE}
+                            />
+                            <p className="text-micro text-theme-text-muted">
+                                Usage refreshes hourly. Times are shown in UTC.
+                            </p>
+                        </div>
+                        <UsageSection period={activityPeriod} />
+                        <EarningsGraph period={activityPeriod} />
+                    </Section>
+                    <Section title="Last events" framed>
+                        <LastEventsPanel apiKeys={apiKeys} />
+                    </Section>
                 </div>
             )}
             {activePage === "quests" && <QuestOverview />}

@@ -5,7 +5,6 @@ export {
     type PeriodSelection as UsagePeriodSelection,
 } from "@pollinations/ui";
 export { EarningsGraph } from "./earnings-graph";
-export { TransactionHistory } from "./transaction-history.tsx";
 export type {
     DailyUsageRecord,
     DataPoint,

@@ -3,6 +3,7 @@ import {
     Collapsible,
     cn,
     MailIcon,
+    Surface,
     useScrollLock,
 } from "@pollinations/ui";
 import {
@@ -11,6 +12,7 @@ import {
     AuthModalHeader,
     AuthModalLoading,
     ErrorBanner,
+    SocialSignInButtons,
 } from "@pollinations/ui/auth";
 import { ModalityChip } from "@pollinations/ui/gen";
 import { formatPollen } from "@pollinations/ui/wallet";
@@ -24,7 +26,8 @@ import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { authClient, type User } from "../../auth.ts";
 import { config } from "../../config.ts";
-import { useGitHubSignIn } from "../../hooks/use-github-sign-in.ts";
+import { useSocialProviders } from "../../hooks/use-social-providers.ts";
+import { useSocialSignIn } from "../../hooks/use-social-sign-in.ts";
 import { createKeyWithPermissions } from "../../lib/create-api-key.ts";
 import { AccountPermissionsInput } from "../keys/account-permissions-input.tsx";
 import { ExpiryDaysInput } from "../keys/expiry-days-input.tsx";
@@ -81,7 +84,8 @@ export function Authorize() {
     const user = session?.user as User | undefined;
 
     const [isAuthorizing, setIsAuthorizing] = useState(false);
-    const { isSigningIn, error: signInError, signIn } = useGitHubSignIn();
+    const { pendingProvider, error: signInError, signIn } = useSocialSignIn();
+    const socialProviders = useSocialProviders();
     const [error, setError] = useState<string | null>(null);
     const [attribution, setAttribution] = useState<Attribution | null>(null);
     const [redirectValidationState, setRedirectValidationState] = useState<
@@ -398,6 +402,7 @@ export function Authorize() {
             <AuthModal
                 dialog={{ label: "Sign in to authorize" }}
                 tone={displayedError ? "error" : undefined}
+                interior="panel"
             >
                 <AuthModalHeader />
                 <div className="px-6 pb-6 pt-4 space-y-4">
@@ -418,27 +423,15 @@ export function Authorize() {
                         </AuthInfoCard>
                     )}
 
-                    <div className="flex gap-2 justify-end">
-                        <Button
-                            as="button"
-                            onClick={handleDeny}
-                            intent="danger"
-                            disabled={isSigningIn}
-                        >
-                            Deny
-                        </Button>
-                        {!error && (
-                            <Button
-                                as="button"
-                                onClick={signIn}
-                                disabled={isSigningIn}
-                            >
-                                {isSigningIn
-                                    ? "Signing in..."
-                                    : "Continue with GitHub"}
-                            </Button>
-                        )}
-                    </div>
+                    {!error && (
+                        <SocialSignInButtons
+                            providers={socialProviders.providers}
+                            isLoading={socialProviders.isLoading}
+                            error={socialProviders.error}
+                            pendingProvider={pendingProvider}
+                            onSignIn={signIn}
+                        />
+                    )}
                 </div>
             </AuthModal>
         );
@@ -499,7 +492,7 @@ export function Authorize() {
                     <ErrorBanner>{error}</ErrorBanner>
                 ) : (
                     <div>
-                        <div className="-mx-6 px-6 py-4 bg-theme-bg-pale border-y border-theme-border">
+                        <Surface variant="card">
                             <p
                                 id="authorize-dialog-title"
                                 className="font-body text-xs font-semibold text-theme-text-soft tracking-wide mb-2"
@@ -512,7 +505,7 @@ export function Authorize() {
                                 userCode={user_code}
                                 redirectHostname={redirectHostname}
                             />
-                        </div>
+                        </Surface>
 
                         <div className="p-4">
                             <p className="font-body text-xs font-semibold text-theme-text-soft tracking-wide mb-3">
@@ -617,7 +610,7 @@ export function Authorize() {
                             </ul>
                         </div>
 
-                        <div className="-mx-6 px-10 py-4 border-t border-divider">
+                        <div className="-mx-6 px-10 pt-4 pb-2 border-t border-divider">
                             <PollenBudgetInput
                                 value={keyPermissions.permissions.pollenBudget}
                                 onChange={keyPermissions.setPollenBudget}
@@ -625,7 +618,7 @@ export function Authorize() {
                             />
                         </div>
 
-                        <div className="-mx-6 px-10 py-4 border-t border-divider">
+                        <div className="-mx-6 px-10 pt-2 pb-4">
                             <ExpiryDaysInput
                                 value={keyPermissions.permissions.expiryDays}
                                 onChange={keyPermissions.setExpiryDays}

@@ -1,6 +1,9 @@
-import { Button, GitHubIcon } from "@pollinations/ui";
+import logoWordmarkUrl from "@pollinations/ui/assets/logo-wordmark.svg";
+import {
+    type SocialProvider,
+    SocialSignInButtons,
+} from "@pollinations/ui/auth";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useState } from "react";
 import { authClient } from "../auth.ts";
 import {
     type DashboardPage,
@@ -14,6 +17,8 @@ import { usePageFromHash } from "../components/layout/use-page-from-hash.ts";
 import { Models } from "../components/models";
 import { NewsFaq } from "../components/news-faq";
 import { QuestOverview } from "../components/quests";
+import { useSocialProviders } from "../hooks/use-social-providers.ts";
+import { useSocialSignIn } from "../hooks/use-social-sign-in.ts";
 
 const SIGNED_OUT_PAGES: ReadonlySet<DashboardPage> = new Set([
     "news-faq",
@@ -66,27 +71,10 @@ export const Route = createFileRoute("/sign-in")({
     },
 });
 
-function dashboardCallbackUrl(activePage: DashboardPage): string {
-    const url = new URL("/", window.location.href);
-    url.hash = window.location.hash.slice(1) || activePage;
-    return url.href;
-}
-
 function RouteComponent() {
-    const [loading, setLoading] = useState(false);
+    const { pendingProvider, error: signInError, signIn } = useSocialSignIn();
+    const socialProviders = useSocialProviders();
     const [activePage, setActivePage] = usePageFromHash(pageFromHash);
-
-    const handleSignIn = async () => {
-        setLoading(true);
-        const { error } = await authClient.signIn.social({
-            provider: "github",
-            callbackURL: dashboardCallbackUrl(activePage),
-        });
-        if (error) {
-            setLoading(false);
-            throw error;
-        }
-    };
 
     function handlePageChange(page: DashboardPage): void {
         setActivePage(page);
@@ -105,11 +93,20 @@ function RouteComponent() {
             onPageChange={handlePageChange}
             accountArea={
                 <SignedOutAccountArea
-                    loading={loading}
-                    onSignIn={handleSignIn}
+                    socialProviders={socialProviders}
+                    pendingProvider={pendingProvider}
+                    signInError={signInError}
+                    onSignIn={signIn}
                 />
             }
         >
+            <MobileBrandHeader />
+            <MobileSignInPrompt
+                socialProviders={socialProviders}
+                pendingProvider={pendingProvider}
+                signInError={signInError}
+                onSignIn={signIn}
+            />
             {activePage === "news-faq" && <NewsFaq />}
             {activePage === "models" && <Models />}
             {activePage === "quests" && <QuestOverview />}
@@ -117,23 +114,89 @@ function RouteComponent() {
     );
 }
 
-function SignedOutAccountArea({
-    loading,
+/**
+ * The wordmark lives in the rail/drawer, both hidden on mobile. Give the
+ * logged-out mobile view its own brand header at the top of the content.
+ */
+function MobileBrandHeader() {
+    return (
+        <div className="flex justify-center pt-1 md:hidden">
+            <a
+                href="https://pollinations.ai"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Pollinations"
+                className="text-theme-text-strong"
+            >
+                <span className="sr-only">Pollinations</span>
+                <span
+                    aria-hidden="true"
+                    className="block h-7 w-[210px] bg-current"
+                    style={{
+                        WebkitMask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
+                        mask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
+                    }}
+                />
+            </a>
+        </div>
+    );
+}
+
+/**
+ * The rail (and its sign-in buttons) is desktop-only; on mobile it sits behind
+ * the drawer. `/sign-in` exists to sign in, so surface the same buttons at the
+ * top of the main column on small screens where the rail isn't visible.
+ */
+function MobileSignInPrompt({
+    socialProviders,
+    pendingProvider,
+    signInError,
     onSignIn,
 }: {
-    loading: boolean;
-    onSignIn: () => void;
+    socialProviders: ReturnType<typeof useSocialProviders>;
+    pendingProvider: SocialProvider | null;
+    signInError: string | null;
+    onSignIn: (provider: SocialProvider) => void;
 }) {
     return (
-        <Button
-            as="button"
-            data-theme="accent"
-            onClick={onSignIn}
-            disabled={loading}
-            className="w-full justify-center gap-2 text-center"
-        >
-            <GitHubIcon className="h-4 w-4 shrink-0" />
-            {loading ? "Signing in..." : "Sign in with GitHub"}
-        </Button>
+        <section className="rounded-2xl bg-theme-bg-pale p-5 md:hidden">
+            <h2 className="text-lg font-semibold text-theme-text-strong">
+                Sign in
+            </h2>
+            <p className="mt-1 mb-4 text-sm text-theme-text-base">
+                Continue to your Pollinations account.
+            </p>
+            <SocialSignInButtons
+                providers={socialProviders.providers}
+                isLoading={socialProviders.isLoading}
+                error={signInError ?? socialProviders.error}
+                pendingProvider={pendingProvider}
+                onSignIn={onSignIn}
+                className="w-full"
+            />
+        </section>
+    );
+}
+
+function SignedOutAccountArea({
+    socialProviders,
+    pendingProvider,
+    signInError,
+    onSignIn,
+}: {
+    socialProviders: ReturnType<typeof useSocialProviders>;
+    pendingProvider: SocialProvider | null;
+    signInError: string | null;
+    onSignIn: (provider: SocialProvider) => void;
+}) {
+    return (
+        <SocialSignInButtons
+            providers={socialProviders.providers}
+            isLoading={socialProviders.isLoading}
+            error={signInError ?? socialProviders.error}
+            pendingProvider={pendingProvider}
+            onSignIn={onSignIn}
+            className="w-full"
+        />
     );
 }

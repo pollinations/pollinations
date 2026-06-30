@@ -1,9 +1,5 @@
 import { authAdditionalFields } from "@shared/auth/additional-fields.ts";
-import {
-    assertStagingAccess,
-    createApiKeyPlugin,
-    StagingAccessDeniedError,
-} from "@shared/auth/api-key.ts";
+import { createApiKeyPlugin } from "@shared/auth/api-key.ts";
 import * as betterAuthSchema from "@shared/db/better-auth.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
 import { sendTierEventToTinybird } from "@shared/events.ts";
@@ -21,10 +17,34 @@ import { APIError } from "better-auth/api";
 import { admin, openAPI } from "better-auth/plugins";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
+import { getEnabledSocialProviderIds } from "./social-providers.ts";
+
+const LOCAL_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+];
+
+function getTrustedOrigins(env: Cloudflare.Env) {
+    const trustedOrigins = new Set<string>(AUTH_TRUSTED_ORIGINS);
+    trustedOrigins.add(env.BETTER_AUTH_URL);
+
+    if (
+        env.ENVIRONMENT === "local" ||
+        env.ENVIRONMENT === "development" ||
+        env.ENVIRONMENT === "test"
+    ) {
+        for (const origin of LOCAL_TRUSTED_ORIGINS) {
+            trustedOrigins.add(origin);
+        }
+    }
+
+    return Array.from(trustedOrigins);
+}
 
 export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const db = drizzle(env.DB);
     const apiKeyPlugin = createApiKeyPlugin();
+    const enabledSocialProviders = getEnabledSocialProviderIds(env);
 
     const adminPlugin = admin({
         adminUserIds: ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv"],
@@ -66,29 +86,47 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                 : undefined,
         },
 
-        trustedOrigins: [
-            ...AUTH_TRUSTED_ORIGINS,
-            "http://localhost:3000",
-            "http://127.0.0.1:3000",
-        ],
+        trustedOrigins: getTrustedOrigins(env),
         user: {
             additionalFields: authAdditionalFields.user,
         },
-        socialProviders: {
-            github: {
-                clientId: env.GITHUB_CLIENT_ID,
-                clientSecret: env.GITHUB_CLIENT_SECRET,
-                mapProfileToUser: (profile) => ({
-                    githubId: profile.id,
-                    githubUsername: profile.login,
-                }),
+        account: {
+            // Link a social sign-in to an existing account when the provider
+            // returns a verified email that matches an existing user — so a
+            // returning GitHub user can sign in with Google and land in the
+            // same account (preserving pollen balance + tier).
+            encryptOAuthTokens: true,
+            accountLinking: {
+                enabled: true,
             },
+        },
+        socialProviders: {
+            ...(enabledSocialProviders.includes("github")
+                ? {
+                      github: {
+                          clientId: env.GITHUB_CLIENT_ID,
+                          clientSecret: env.GITHUB_CLIENT_SECRET,
+                          mapProfileToUser: (profile) => ({
+                              githubId: profile.id,
+                              githubUsername: profile.login,
+                          }),
+                      },
+                  }
+                : {}),
+            ...(enabledSocialProviders.includes("google")
+                ? {
+                      google: {
+                          clientId: env.GOOGLE_CLIENT_ID,
+                          clientSecret: env.GOOGLE_CLIENT_SECRET,
+                          prompt: "select_account" as const,
+                      },
+                  }
+                : {}),
         },
         plugins: [
             adminPlugin,
             apiKeyPlugin,
             tierPlugin(env, ctx),
-            stagingAccessPlugin(env),
             openAPIPlugin,
         ],
         telemetry: { enabled: false },
@@ -243,51 +281,4 @@ function onAfterUserCreate(
             });
         }
     };
-}
-
-/**
- * Restricts new signups on staging to an allowlist of GitHub user IDs
- * (immutable, unlike usernames). No-op outside staging.
- *
- * This is a thin UX layer only — it rejects disallowed users during OAuth
- * before a `user` row is created, so /error shows "staging is invite-only"
- * instead of a 403 after they think they're logged in. The actual security
- * boundary is {@link assertStagingAccess} called per-request in
- * `shared/auth/api-key.ts` and the per-service auth middleware, which is what
- * blocks spend on the production provider keys held by staging-gen. See #11137.
- */
-function stagingAccessPlugin(env: Cloudflare.Env): BetterAuthPlugin {
-    if (env.ENVIRONMENT !== "staging") {
-        return { id: "staging-access" };
-    }
-    return {
-        id: "staging-access",
-        init: () => ({
-            options: {
-                databaseHooks: {
-                    user: {
-                        create: {
-                            before: async (user: GenericUser) => {
-                                try {
-                                    assertStagingAccess(env, {
-                                        githubId: (
-                                            user as { githubId?: number }
-                                        ).githubId,
-                                    });
-                                } catch (e) {
-                                    if (e instanceof StagingAccessDeniedError) {
-                                        throw new APIError("FORBIDDEN", {
-                                            message: e.message,
-                                        });
-                                    }
-                                    throw e;
-                                }
-                                return { data: user };
-                            },
-                        },
-                    },
-                },
-            } satisfies Partial<BetterAuthOptions>,
-        }),
-    } satisfies BetterAuthPlugin;
 }

@@ -50,8 +50,8 @@ const brandWordmarkMask: CSSProperties = {
 type DashboardShellProps = PropsWithChildren<{
     activePage: DashboardPage;
     navItems?: readonly DashboardNavItem[];
-    githubUsername?: string;
-    githubAvatarUrl?: string;
+    displayName?: string;
+    avatarUrl?: string;
     onPageChange: (page: DashboardPage) => void;
     onSignOut?: () => void;
     accountArea?: ReactNode;
@@ -134,8 +134,8 @@ const accountMenuLinks: readonly AccountMenuLink[] = [
 export const DashboardShell: FC<DashboardShellProps> = ({
     activePage,
     navItems = DASHBOARD_NAV_ITEMS,
-    githubUsername,
-    githubAvatarUrl,
+    displayName,
+    avatarUrl,
     onPageChange,
     onSignOut,
     accountArea,
@@ -234,10 +234,10 @@ export const DashboardShell: FC<DashboardShellProps> = ({
 
     const effectiveAccountArea =
         accountArea ??
-        (githubUsername && onSignOut ? (
+        (displayName && onSignOut ? (
             <AccountMenuButton
-                username={githubUsername}
-                avatarUrl={githubAvatarUrl ?? ""}
+                displayName={displayName}
+                avatarUrl={avatarUrl ?? ""}
                 onSignOut={onSignOut}
                 links={accountMenuLinks}
                 className="w-full justify-start"
@@ -561,7 +561,7 @@ const DashboardFooter: FC<{
 );
 
 type AccountMenuButtonProps = {
-    username: string;
+    displayName: string;
     avatarUrl: string;
     onSignOut?: () => void;
     links?: readonly AccountMenuLink[];
@@ -569,7 +569,7 @@ type AccountMenuButtonProps = {
 };
 
 const AccountMenuButton: FC<AccountMenuButtonProps> = ({
-    username,
+    displayName,
     avatarUrl,
     onSignOut,
     links = [],
@@ -587,13 +587,19 @@ const AccountMenuButton: FC<AccountMenuButtonProps> = ({
                     className,
                 )}
             >
-                <img
-                    src={avatarUrl}
-                    alt={`${username} avatar`}
-                    className="h-8 shrink-0 rounded-full"
-                />
+                {avatarUrl ? (
+                    <img
+                        src={avatarUrl}
+                        alt={`${displayName} avatar`}
+                        className="h-8 w-8 shrink-0 rounded-full object-cover"
+                    />
+                ) : (
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-opaque text-sm font-bold text-theme-text-strong">
+                        {displayName.slice(0, 1).toUpperCase()}
+                    </span>
+                )}
                 <span className="min-w-0 flex-1 truncate text-left font-medium text-theme-text-strong">
-                    {username}
+                    {displayName}
                 </span>
                 <ChevronIcon
                     expanded={open}

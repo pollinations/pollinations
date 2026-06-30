@@ -1,3 +1,4 @@
+import googleLogoUrl from "../../assets/google.svg";
 import type { IconProps } from "./types.ts";
 
 const strokeProps = {
@@ -143,6 +144,24 @@ export function GitHubIcon(props: IconProps) {
                 d="M12 .5A11.5 11.5 0 0 0 8.36 22.9c.58.11.79-.25.79-.56v-2.16c-3.21.7-3.89-1.38-3.89-1.38-.53-1.34-1.29-1.7-1.29-1.7-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.04 1.76 2.71 1.25 3.37.96.11-.75.4-1.25.74-1.54-2.56-.29-5.26-1.28-5.26-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.06 0 0 .97-.31 3.16 1.18a10.88 10.88 0 0 1 5.76 0c2.19-1.49 3.15-1.18 3.15-1.18.63 1.6.23 2.77.11 3.06.74.81 1.19 1.84 1.19 3.1 0 4.43-2.7 5.4-5.27 5.69.41.36.78 1.06.78 2.14v3.19c0 .31.21.68.8.56A11.5 11.5 0 0 0 12 .5Z"
             />
         </svg>
+    );
+}
+
+/**
+ * Multicolor Google "G". Rendered as an <img> of the original brand asset
+ * (not an inline <svg>) so the artwork is byte-identical to what the sign-in
+ * page shipped and its internal gradient/filter IDs can't collide when the
+ * icon renders more than once on a page. Color is fixed brand art, so it does
+ * not inherit currentColor like the monochrome icons.
+ */
+export function GoogleIcon({ className }: IconProps) {
+    return (
+        <img
+            src={googleLogoUrl}
+            alt=""
+            aria-hidden="true"
+            className={className}
+        />
     );
 }
 

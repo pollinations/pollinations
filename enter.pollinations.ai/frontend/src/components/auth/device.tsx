@@ -5,12 +5,14 @@ import {
     AuthModalHeader,
     AuthModalLoading,
     ErrorBanner,
+    SocialSignInButtons,
 } from "@pollinations/ui/auth";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { authClient } from "../../auth.ts";
-import { useGitHubSignIn } from "../../hooks/use-github-sign-in.ts";
+import { useSocialProviders } from "../../hooks/use-social-providers.ts";
+import { useSocialSignIn } from "../../hooks/use-social-sign-in.ts";
 
 type DeviceProps = {
     prefilledCode: string;
@@ -25,7 +27,8 @@ export function Device({ prefilledCode }: DeviceProps) {
     const [userCode, setUserCode] = useState(prefilledCode);
     const [error, setError] = useState<string | null>(null);
     const [checking, setChecking] = useState(false);
-    const { isSigningIn, error: signInError, signIn } = useGitHubSignIn();
+    const { pendingProvider, error: signInError, signIn } = useSocialSignIn();
+    const socialProviders = useSocialProviders();
     const inputRef = useRef<HTMLInputElement>(null);
 
     const verifyAndRedirect = useCallback(
@@ -98,7 +101,10 @@ export function Device({ prefilledCode }: DeviceProps) {
 
     if (!user) {
         return (
-            <AuthModal tone={signInError ? "error" : undefined}>
+            <AuthModal
+                tone={signInError ? "error" : undefined}
+                interior="panel"
+            >
                 <AuthModalHeader />
                 <div className="px-6 pb-6 pt-4 space-y-4">
                     {signInError && <ErrorBanner>{signInError}</ErrorBanner>}
@@ -110,17 +116,13 @@ export function Device({ prefilledCode }: DeviceProps) {
                             Sign in to enter the device code.
                         </p>
                     </AuthInfoCard>
-                    <div className="flex justify-end">
-                        <Button
-                            as="button"
-                            onClick={signIn}
-                            disabled={isSigningIn}
-                        >
-                            {isSigningIn
-                                ? "Signing in..."
-                                : "Continue with GitHub"}
-                        </Button>
-                    </div>
+                    <SocialSignInButtons
+                        providers={socialProviders.providers}
+                        isLoading={socialProviders.isLoading}
+                        error={socialProviders.error}
+                        pendingProvider={pendingProvider}
+                        onSignIn={signIn}
+                    />
                 </div>
             </AuthModal>
         );

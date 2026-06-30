@@ -5,7 +5,6 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { alias } from "drizzle-orm/sqlite-core";
 import * as schema from "../db/better-auth.ts";
-import { parseGithubIdList } from "./github-id-list.ts";
 
 const PUBLISHABLE_KEY_PREFIX = "pk";
 
@@ -32,7 +31,7 @@ export interface ApiKeyAuthResult {
 export interface ApiKeyAuthBindings {
     DB: D1Database;
     ENVIRONMENT?: string;
-    STAGING_ALLOWED_GITHUB_IDS?: string;
+    STAGING_ALLOWED_USER_IDS?: string;
 }
 
 export class BannedAccountError extends Error {
@@ -50,21 +49,41 @@ export class StagingAccessDeniedError extends Error {
 }
 
 /**
- * Throws StagingAccessDeniedError if the env is staging and the user's GitHub
- * ID is not in STAGING_ALLOWED_GITHUB_IDS. No-op outside staging.
- * Fails closed: a missing githubId or empty/missing allowlist denies access.
+ * Parse a comma-separated list of staging allowlist Pollinations user IDs.
+ * Strict enough for config: blank or whitespace-containing entries are ignored.
+ */
+export function parseStagingUserIdList(
+    raw: string | undefined | null,
+): Set<string> {
+    if (!raw) return new Set();
+    const ids = new Set<string>();
+    for (const part of raw.split(",")) {
+        const id = part.trim();
+        if (!id || /\s/.test(id)) continue;
+        ids.add(id);
+    }
+    return ids;
+}
+
+/**
+ * Throws StagingAccessDeniedError if the env is staging and the user's
+ * Pollinations user id is not in STAGING_ALLOWED_USER_IDS. No-op outside staging.
+ * Fails closed: a missing id or empty/missing allowlist denies access.
  *
- * Called at request-time (every API-key or session-cookie request) to defend
- * against pre-existing sessions/keys that predate the lockdown. See #11137.
+ * The user id is provider-agnostic (works for GitHub and Google logins) and is
+ * the only request-time gate: it runs on every API-key or session-cookie request
+ * to defend against pre-existing sessions/keys that predate the lockdown. There
+ * is no signup-time gate — new users can sign in but get denied here until their
+ * id is added to the allowlist. See #11137.
  */
 export function assertStagingAccess(
-    env: { ENVIRONMENT?: string; STAGING_ALLOWED_GITHUB_IDS?: string },
-    user: { githubId?: number | null } | null | undefined,
+    env: { ENVIRONMENT?: string; STAGING_ALLOWED_USER_IDS?: string },
+    user: { id?: string | null } | null | undefined,
 ): void {
     if (env.ENVIRONMENT !== "staging") return;
-    const allowed = parseGithubIdList(env.STAGING_ALLOWED_GITHUB_IDS);
-    const ghId = user?.githubId;
-    if (!ghId || !allowed.has(Number(ghId))) {
+    const allowed = parseStagingUserIdList(env.STAGING_ALLOWED_USER_IDS);
+    const id = user?.id;
+    if (!id || !allowed.has(id)) {
         throw new StagingAccessDeniedError();
     }
 }

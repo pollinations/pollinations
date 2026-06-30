@@ -1,112 +1,85 @@
 import {
     assertStagingAccess,
+    parseStagingUserIdList,
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
-import { parseGithubIdList } from "@shared/auth/github-id-list.ts";
 import { describe, expect, it } from "vitest";
 
-describe("parseGithubIdList", () => {
-    it("parses a comma-separated list of numeric IDs", () => {
-        const ids = parseGithubIdList("36901823,5099901");
-        expect(ids.has(36901823)).toBe(true);
-        expect(ids.has(5099901)).toBe(true);
+describe("parseStagingUserIdList", () => {
+    it("parses a comma-separated list of user ids", () => {
+        const ids = parseStagingUserIdList("abc123,def456");
+        expect(ids.has("abc123")).toBe(true);
+        expect(ids.has("def456")).toBe(true);
         expect(ids.size).toBe(2);
     });
 
-    it("trims whitespace around entries", () => {
-        const ids = parseGithubIdList("  36901823 ,   5099901  ");
-        expect(ids.has(36901823)).toBe(true);
-        expect(ids.has(5099901)).toBe(true);
+    it("trims surrounding whitespace around entries", () => {
+        const ids = parseStagingUserIdList("  abc123 ,   def456  ");
+        expect(ids.has("abc123")).toBe(true);
+        expect(ids.has("def456")).toBe(true);
     });
 
-    it("drops non-numeric, empty, and non-positive entries", () => {
-        const ids = parseGithubIdList("36901823,abc,,-1,0,5099901");
-        expect(Array.from(ids).sort((a, b) => a - b)).toEqual([
-            5099901, 36901823,
-        ]);
-    });
-
-    it("strictly drops mixed entries like '123abc' (not silently truncated)", () => {
-        const ids = parseGithubIdList("123abc,4567");
-        expect(ids.has(123)).toBe(false);
-        expect(ids.has(4567)).toBe(true);
-        expect(ids.size).toBe(1);
+    it("drops blank and whitespace-containing entries", () => {
+        const ids = parseStagingUserIdList("abc123,,bad id,def456");
+        expect(Array.from(ids).sort()).toEqual(["abc123", "def456"]);
     });
 
     it("returns an empty set for empty / null / undefined", () => {
-        expect(parseGithubIdList("").size).toBe(0);
-        expect(parseGithubIdList(null).size).toBe(0);
-        expect(parseGithubIdList(undefined).size).toBe(0);
+        expect(parseStagingUserIdList("").size).toBe(0);
+        expect(parseStagingUserIdList(null).size).toBe(0);
+        expect(parseStagingUserIdList(undefined).size).toBe(0);
     });
 });
 
 describe("assertStagingAccess", () => {
-    const allowlist = "36901823,5099901";
+    const allowlist = "ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh,abc123";
 
     it("is a no-op outside staging, even with no allowlist", () => {
         expect(() =>
-            assertStagingAccess(
-                { ENVIRONMENT: "production" },
-                { githubId: 99 },
-            ),
+            assertStagingAccess({ ENVIRONMENT: "production" }, { id: "nope" }),
         ).not.toThrow();
         expect(() =>
-            assertStagingAccess({ ENVIRONMENT: "local" }, { githubId: null }),
+            assertStagingAccess({ ENVIRONMENT: "local" }, { id: null }),
         ).not.toThrow();
         expect(() =>
             assertStagingAccess({ ENVIRONMENT: "dev" }, null),
         ).not.toThrow();
     });
 
-    it("allows users whose githubId is in the staging allowlist", () => {
+    it("allows users whose id is in the staging allowlist", () => {
         expect(() =>
             assertStagingAccess(
-                {
-                    ENVIRONMENT: "staging",
-                    STAGING_ALLOWED_GITHUB_IDS: allowlist,
-                },
-                { githubId: 36901823 },
+                { ENVIRONMENT: "staging", STAGING_ALLOWED_USER_IDS: allowlist },
+                { id: "ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh" },
             ),
         ).not.toThrow();
     });
 
-    it("denies users whose githubId is not in the allowlist", () => {
+    it("denies users whose id is not in the allowlist", () => {
         expect(() =>
             assertStagingAccess(
-                {
-                    ENVIRONMENT: "staging",
-                    STAGING_ALLOWED_GITHUB_IDS: allowlist,
-                },
-                { githubId: 99999 },
+                { ENVIRONMENT: "staging", STAGING_ALLOWED_USER_IDS: allowlist },
+                { id: "someone-else" },
             ),
         ).toThrow(StagingAccessDeniedError);
     });
 
-    it("denies users with missing or null githubId (fails closed)", () => {
+    it("denies users with missing or null id (fails closed)", () => {
         expect(() =>
             assertStagingAccess(
-                {
-                    ENVIRONMENT: "staging",
-                    STAGING_ALLOWED_GITHUB_IDS: allowlist,
-                },
-                { githubId: null },
+                { ENVIRONMENT: "staging", STAGING_ALLOWED_USER_IDS: allowlist },
+                { id: null },
             ),
         ).toThrow(StagingAccessDeniedError);
         expect(() =>
             assertStagingAccess(
-                {
-                    ENVIRONMENT: "staging",
-                    STAGING_ALLOWED_GITHUB_IDS: allowlist,
-                },
+                { ENVIRONMENT: "staging", STAGING_ALLOWED_USER_IDS: allowlist },
                 {},
             ),
         ).toThrow(StagingAccessDeniedError);
         expect(() =>
             assertStagingAccess(
-                {
-                    ENVIRONMENT: "staging",
-                    STAGING_ALLOWED_GITHUB_IDS: allowlist,
-                },
+                { ENVIRONMENT: "staging", STAGING_ALLOWED_USER_IDS: allowlist },
                 null,
             ),
         ).toThrow(StagingAccessDeniedError);
@@ -115,14 +88,14 @@ describe("assertStagingAccess", () => {
     it("denies everyone when the allowlist is empty or missing on staging", () => {
         expect(() =>
             assertStagingAccess(
-                { ENVIRONMENT: "staging", STAGING_ALLOWED_GITHUB_IDS: "" },
-                { githubId: 36901823 },
+                { ENVIRONMENT: "staging", STAGING_ALLOWED_USER_IDS: "" },
+                { id: "ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh" },
             ),
         ).toThrow(StagingAccessDeniedError);
         expect(() =>
             assertStagingAccess(
                 { ENVIRONMENT: "staging" },
-                { githubId: 36901823 },
+                { id: "ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh" },
             ),
         ).toThrow(StagingAccessDeniedError);
     });

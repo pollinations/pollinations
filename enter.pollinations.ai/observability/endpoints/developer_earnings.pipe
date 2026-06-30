@@ -29,8 +29,8 @@ NODE community_model_labels
 SQL >
     %
     SELECT
-        concat('community/', u.github_username, '/', cm.name) AS entity_id,
-        coalesce(nullIf(cm.name, ''), concat('community/', u.github_username, '/', cm.name)) AS entity_name
+        concat(u.github_username, '/', cm.name) AS entity_id,
+        coalesce(nullIf(cm.name, ''), concat(u.github_username, '/', cm.name)) AS entity_name
     FROM d1_community_model cm
     LEFT JOIN d1_user u ON cm.owner_user_id = u.id
     WHERE cm.synced_at = (SELECT max(synced_at) FROM d1_community_model)
@@ -99,7 +99,6 @@ SQL >
         ON ge.resolved_model_requested = cml.entity_id
     WHERE ge.community_model_reward_user_id = {{String(dev_user_id, '')}}
       AND ge.community_model_reward_amount > 0
-      AND startsWith(ge.resolved_model_requested, 'community/')
     {% if defined(since) %}
     AND ge.start_time >= {{DateTime(since)}}
     {% end %}

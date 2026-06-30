@@ -95,7 +95,7 @@ function createCommunityEndpoint(
     return {
         id: "community-endpoint-test",
         ownerUserId,
-        modelId: "community/test-owner/test-model",
+        modelId: "test-owner/test-model",
         name: "test-model",
         description: null,
         baseUrl: "https://community.example.test/openai",

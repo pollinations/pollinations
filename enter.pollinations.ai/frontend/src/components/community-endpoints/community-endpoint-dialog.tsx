@@ -103,9 +103,7 @@ export function CommunityEndpointDialog({
     async function handleFetchModels(): Promise<void> {
         setModelListState({ status: "loading", message: "Fetching models…" });
         try {
-            const response = await apiClient[
-                "community-endpoints"
-            ].models.$post({
+            const response = await apiClient.account["my-models"].models.$post({
                 json: {
                     baseUrl: form.baseUrl.trim(),
                     ...tokenForRequest,
@@ -135,7 +133,7 @@ export function CommunityEndpointDialog({
     async function handleTest(): Promise<void> {
         setTestState({ status: "loading", message: "Testing endpoint…" });
         try {
-            const response = await apiClient["community-endpoints"].test.$post({
+            const response = await apiClient.account["my-models"].test.$post({
                 json: {
                     baseUrl: form.baseUrl.trim(),
                     bearerToken: form.bearerToken.trim(),
@@ -243,7 +241,7 @@ export function CommunityEndpointDialog({
                 <p className="mt-1 text-sm text-theme-text-muted">
                     Register an OpenAI-compatible endpoint as a{" "}
                     <code>
-                        community/{"{username}"}/{"{model-id}"}
+                        {"{username}"}/{"{model-id}"}
                     </code>{" "}
                     model with your own per-1M-token pricing.
                 </p>
@@ -261,7 +259,7 @@ export function CommunityEndpointDialog({
                     <div className="grid gap-4 sm:grid-cols-2">
                         <FieldStack
                             label="Model ID"
-                            helper="Public id: community/{username}/{model-id}."
+                            helper="Public id: {username}/{model-id}."
                             alignLabelRow
                         >
                             <Input

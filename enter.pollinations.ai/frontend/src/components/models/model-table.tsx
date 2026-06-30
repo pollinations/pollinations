@@ -26,7 +26,7 @@ import {
     isNewModel,
     isPaidOnly,
 } from "./model-info.ts";
-import { ModelRow } from "./model-row.tsx";
+import { ModelId, ModelRow } from "./model-row.tsx";
 import { ModelStatusChips } from "./model-status-chips.tsx";
 import { getModelPriceBadges, PriceBadgeList } from "./price-badge.tsx";
 import type { ModelPrice, PriceDirection } from "./types.ts";
@@ -208,6 +208,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 </span>
                             </CopyButton>
                         </div>
+                        <ModelId name={model.name} />
                         {(inputModalities.length > 0 ||
                             capabilities.length > 0) && (
                             <div className="flex min-w-0 flex-wrap items-center gap-1.5">

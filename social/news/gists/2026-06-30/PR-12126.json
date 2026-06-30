@@ -1,0 +1,35 @@
+{
+  "pr_number": 12126,
+  "title": "fix: add Stripe failed-card gate metadata",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12126",
+  "merged_at": "2026-06-30T14:43:07Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Adds a minimal D1 ledger for failed Stripe card fingerprints: `event_id`, `user_id`, `card_fingerprint`, `created_at`.\n- Records fingerprints only from `payment_intent.payment_failed`; successful `charge.succeeded` events remain analytics-only and do not feed the gate.\n- Adds Checkout and PaymentIntent metadata for the 4-distinct-failed-cards/24h gate so Radar can block only new cards when locked.\n- Keeps Checkout open and leaves 3DS to Stripe/Radar; no app-side forced 3DS.\n- Adds migration/schema updates and Stripe integration coverage.\n\nValidation:\n- `npx biome check --write ...`\n- `npx vitest run test/integration/stripe.test.ts` (65 passed)\n- `npx tsc --noEmit` fails on existing `FieldStackProps.helper` errors in `frontend/src/components/community-endpoints/community-endpoint-dialog.tsx`.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Bouncer at the hive",
+    "blurb": "Added some extra security to our Stripe integration to keep the hive safe from card-testing bots.",
+    "summary": "Implemented a D1 ledger to track failed Stripe card fingerprints and added metadata to enforce a 4-distinct-failed-cards per 24 hours gate via Stripe Radar.",
+    "impact": "This prevents card-testing fraud by automatically blocking new card attempts after multiple failures, without interrupting the checkout flow for legitimate users.",
+    "keywords": [
+      "stripe",
+      "billing",
+      "security",
+      "fraud-prevention",
+      "d1"
+    ],
+    "visual_concept": "Polly the bee acting as a friendly security guard at a gate, holding a clipboard, with a shield or lock symbol nearby to represent fraud prevention.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny security guard hat, holding a clipboard next to a glowing lime green (#ecf874) toll gate. A chunky retro terminal nearby displays a pixelated shield icon. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-30/PR-12126.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny security guard hat, holding a clipboard next to a glowing lime green (#ecf874) toll gate. A chunky retro terminal nearby displays a pixelated shield icon. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-30T14:44:13.291674+00:00"
+}

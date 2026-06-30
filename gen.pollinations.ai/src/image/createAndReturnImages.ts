@@ -606,6 +606,7 @@ const generateImage = async (
 
         case "nanobanana":
         case "nanobanana-2":
+        case "nanobanana-lite":
         case "nanobanana-pro": {
             logError(
                 "Nano Banana authentication check:",

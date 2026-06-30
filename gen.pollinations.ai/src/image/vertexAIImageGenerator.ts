@@ -24,6 +24,10 @@ const NANOBANANA_MODELS: Record<string, { vertex: string; name: string }> = {
         vertex: "gemini-3.1-flash-image-preview",
         name: "Vertex AI Gemini 3.1 Flash Image Preview",
     },
+    "nanobanana-lite": {
+        vertex: "gemini-3.1-flash-lite-image",
+        name: "Vertex AI Gemini 3.1 Flash-Lite Image",
+    },
     "nanobanana": {
         vertex: "gemini-2.5-flash-image",
         name: "Vertex AI Gemini 2.5 Flash Image",

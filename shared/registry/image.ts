@@ -68,6 +68,30 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations cap for Gemini 3.1 Flash Image route.
     },
+    "nanobanana-lite": {
+        aliases: ["nanobanana2-lite", "nanobanana-2-lite"],
+        modelId: "nanobanana-lite",
+        provider: "google",
+        brand: "Google",
+        category: "image",
+        addedDate: new Date("2026-06-30").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Gemini 3.1 Flash-Lite Image via Vertex AI — half of nanobanana-2.
+            // Always emits 1K images at 1120 tokens (no imageSize support).
+            promptTextTokens: perMillion(0.25), // per 1M tokens
+            promptImageTokens: perMillion(0.25), // per 1M tokens
+            completionTextTokens: perMillion(1.5), // text/reasoning output tokens
+            completionImageTokens: perMillion(30), // per 1M tokens, 1120 tokens/image
+        },
+        title: "NanoBanana 2 Lite",
+        description:
+            "NanoBanana 2 Lite - Fastest, lowest-cost Gemini image generation",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 14, // Pollinations cap for Gemini 3.1 Flash image route.
+    },
     "nanobanana-pro": {
         aliases: [],
         modelId: "nanobanana-pro",

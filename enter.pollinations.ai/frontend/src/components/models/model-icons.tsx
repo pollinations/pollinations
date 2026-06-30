@@ -13,6 +13,7 @@ import {
 } from "@pollinations/ui";
 import type { FC } from "react";
 import type { DisplayCapability, InputModality } from "./model-info.ts";
+import type { PriceKind } from "./types.ts";
 
 type Icon = FC<IconProps>;
 
@@ -31,19 +32,12 @@ export const CAPABILITY_ICON: Record<DisplayCapability, Icon> = {
     code_execution: CodeIcon,
 };
 
-/** Price-tier token kinds and their glyphs. */
-export type PriceKind =
-    | "text"
-    | "image"
-    | "cached"
-    | "video"
-    | "audioIn"
-    | "audioOut";
-
 export const PRICE_ICON: Record<PriceKind, Icon> = {
     text: ChatIcon,
     image: ImageIcon,
     cached: DatabaseIcon,
+    cacheWrite: DatabaseIcon,
+    reasoning: ReasoningIcon,
     video: VideoIcon,
     audioIn: MicIcon,
     audioOut: SpeakerIcon,

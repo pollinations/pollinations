@@ -16,12 +16,14 @@ import {
 import { usePageFromHash } from "../components/layout/use-page-from-hash.ts";
 import { Models } from "../components/models";
 import { NewsFaq } from "../components/news-faq";
+import { QuestOverview } from "../components/quests";
 import { useSocialProviders } from "../hooks/use-social-providers.ts";
 import { useSocialSignIn } from "../hooks/use-social-sign-in.ts";
 
 const SIGNED_OUT_PAGES: ReadonlySet<DashboardPage> = new Set([
     "news-faq",
     "models",
+    "quests",
 ]);
 
 const SIGNED_OUT_NAV_ITEMS = DASHBOARD_NAV_ITEMS.filter((item) =>
@@ -61,7 +63,10 @@ export const Route = createFileRoute("/sign-in")({
                     },
                 });
             }
-            throw redirect({ to: "/" });
+            throw redirect({
+                to: "/",
+                hash: window.location.hash.slice(1) || undefined,
+            });
         }
     },
 });
@@ -104,6 +109,7 @@ function RouteComponent() {
             />
             {activePage === "news-faq" && <NewsFaq />}
             {activePage === "models" && <Models />}
+            {activePage === "quests" && <QuestOverview />}
         </DashboardShell>
     );
 }

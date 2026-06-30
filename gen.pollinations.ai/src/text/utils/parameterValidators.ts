@@ -57,32 +57,6 @@ function validateJsonMode(data: Record<string, unknown>): boolean {
 }
 
 /**
- * Resolves thinking_budget from either a direct parameter or
- * Anthropic/OpenAI-style thinking object: { type: "enabled"|"disabled", budget_tokens: N }
- */
-function resolveThinkingBudget(
-    data: Record<string, unknown>,
-): number | undefined {
-    const direct = validateInt(data.thinking_budget);
-    if (direct !== undefined) return direct;
-
-    if (data.thinking && typeof data.thinking === "object") {
-        const thinking = data.thinking as Record<string, unknown>;
-        if (
-            thinking.type === "enabled" &&
-            thinking.budget_tokens !== undefined
-        ) {
-            return validateInt(thinking.budget_tokens);
-        }
-        if (thinking.type === "disabled") {
-            return 0;
-        }
-    }
-
-    return undefined;
-}
-
-/**
  * Validates all common text generation parameters from a data object.
  */
 export function validateTextGenerationParams(
@@ -99,7 +73,6 @@ export function validateTextGenerationParams(
         model: validateString(data.model),
         voice: validateString(data.voice),
         reasoning_effort: validateString(data.reasoning_effort),
-        thinking_budget: resolveThinkingBudget(data),
         max_tokens: validateInt(data.max_tokens),
         max_completion_tokens: validateInt(data.max_completion_tokens),
         jsonMode: validateJsonMode(data),

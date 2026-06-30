@@ -4,7 +4,7 @@ import {
     getCatalogDisplayName,
     getCatalogModelId,
 } from "./model-catalog.ts";
-import type { ModelCategory } from "./types.ts";
+import type { ModelDisplayCategory } from "./types.ts";
 
 export type ModelCategoryLabel =
     | "Text"
@@ -12,43 +12,47 @@ export type ModelCategoryLabel =
     | "Video"
     | "Audio"
     | "Realtime"
-    | "Embedding";
+    | "Embedding"
+    | "Community";
 export type ModelCategoryModel = { id: string; label: string };
 export type ModelCategoryGroup = {
-    category: ModelCategory;
+    category: ModelDisplayCategory;
     label: ModelCategoryLabel;
     modality: "text" | "images" | "video" | "audio" | "realtime" | "embeddings";
     models: ModelCategoryModel[];
 };
 
-const CATEGORY_ORDER: ModelCategory[] = [
+const CATEGORY_ORDER: ModelDisplayCategory[] = [
     "text",
     "image",
     "video",
     "audio",
     "realtime",
     "embedding",
+    "community",
 ];
 
-const CATEGORY_LABELS: Record<ModelCategory, ModelCategoryLabel> = {
+const CATEGORY_LABELS: Record<ModelDisplayCategory, ModelCategoryLabel> = {
     text: "Text",
     image: "Image",
     video: "Video",
     audio: "Audio",
     realtime: "Realtime",
     embedding: "Embedding",
+    community: "Community",
 };
 
 const CATEGORY_MODALITIES: Record<
-    ModelCategoryLabel,
+    ModelDisplayCategory,
     ModelCategoryGroup["modality"]
 > = {
-    Text: "text",
-    Image: "images",
-    Video: "video",
-    Audio: "audio",
-    Realtime: "realtime",
-    Embedding: "embeddings",
+    text: "text",
+    image: "images",
+    video: "video",
+    audio: "audio",
+    realtime: "realtime",
+    embedding: "embeddings",
+    community: "text",
 };
 
 const ALL_MODALITIES: ModelCategoryGroup["modality"][] = [
@@ -66,7 +70,12 @@ export function getModelCategoriesFromCatalog(
     return CATEGORY_ORDER.map((category) => {
         const label = CATEGORY_LABELS[category];
         const categoryModels = models
-            .filter((model) => getCatalogCategory(model) === category)
+            .filter((model) =>
+                category === "community"
+                    ? model.community === true
+                    : getCatalogCategory(model) === category &&
+                      model.community !== true,
+            )
             .map((model) => {
                 const id = getCatalogModelId(model);
                 return {
@@ -80,7 +89,7 @@ export function getModelCategoriesFromCatalog(
         return {
             category,
             label,
-            modality: CATEGORY_MODALITIES[label],
+            modality: CATEGORY_MODALITIES[category],
             models: categoryModels,
         };
     }).filter(({ models }) => models.length > 0);

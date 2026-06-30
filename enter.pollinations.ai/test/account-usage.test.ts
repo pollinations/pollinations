@@ -6,6 +6,41 @@ const authHeaders = (sessionToken: string) => ({
     Cookie: `better-auth.session_token=${sessionToken}`,
 });
 
+async function createUsageApiKey(sessionToken: string) {
+    const createResponse = await SELF.fetch(
+        "http://localhost:3000/api/account/keys",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                ...authHeaders(sessionToken),
+            },
+            body: JSON.stringify({ name: "usage-read-key" }),
+        },
+    );
+    expect(createResponse.status).toBe(200);
+    const created = (await createResponse.json()) as {
+        id: string;
+        key: string;
+    };
+
+    const updateResponse = await SELF.fetch(
+        `http://localhost:3000/api/api-keys/${created.id}/update`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                ...authHeaders(sessionToken),
+            },
+            body: JSON.stringify({
+                accountPermissions: ["usage"],
+            }),
+        },
+    );
+    expect(updateResponse.status).toBe(200);
+    return created.key;
+}
+
 test("GET /api/account/usage/daily forwards api_key_ids filter to the pipe", async ({
     sessionToken,
     mocks,
@@ -194,6 +229,76 @@ test("GET /api/account/usage forwards stable cursor and returns event cursor", a
     expect(usageCalls[0].query.before_event_id).toBe("event-1");
 });
 
+test("GET /api/account/usage accepts account usage permission", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    mocks.tinybird.state.usageResponse = [
+        {
+            cursor_event_id: "event-admin",
+            timestamp: "2026-04-14 12:10:00",
+            type: "generate.text",
+            model: "openai-fast",
+            api_key_id: "key_abc123",
+            api_key: "alpha",
+            api_key_type: "secret",
+            meter_source: "tier",
+            input_text_tokens: 10,
+            input_cached_tokens: 0,
+            input_audio_tokens: 0,
+            input_audio_seconds: 0,
+            input_image_tokens: 0,
+            output_text_tokens: 20,
+            output_reasoning_tokens: 0,
+            output_audio_tokens: 0,
+            output_audio_seconds: 0,
+            output_image_tokens: 0,
+            output_video_seconds: 0,
+            cost_usd: 1,
+            response_time_ms: 123,
+        },
+    ];
+
+    const usageKey = await createUsageApiKey(sessionToken);
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/account/usage?days=30&limit=1",
+        {
+            headers: {
+                authorization: `Bearer ${usageKey}`,
+            },
+        },
+    );
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+        usage: Array<Record<string, unknown>>;
+    };
+    expect(body.usage[0].cursor_event_id).toBe("event-admin");
+});
+
+test("GET /api/account/usage forwards table filters to the pipe", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/account/usage?days=30&limit=15&api_key_ids=key_b,key_a,key_a&models=gpt-b,gpt-a,gpt-a",
+        { headers: authHeaders(sessionToken) },
+    );
+
+    expect(response.status).toBe(200);
+
+    const usageCalls = mocks.tinybird.state.pipeCalls.filter((call) =>
+        call.url.includes("user_usage.json"),
+    );
+    expect(usageCalls).toHaveLength(1);
+    expect(usageCalls[0].query.limit).toBe("15");
+    expect(usageCalls[0].query.api_key_ids).toBe("key_a,key_b");
+    expect(usageCalls[0].query.models).toBe("gpt-a,gpt-b");
+});
+
 test("GET /api/account/usage?format=csv renders rows and sets filename from limit", async ({
     sessionToken,
     mocks,
@@ -249,4 +354,48 @@ test("GET /api/account/usage?format=csv renders rows and sets filename from limi
     );
     expect(usageCalls).toHaveLength(1);
     expect(usageCalls[0].query.limit).toBe("50000");
+});
+
+test("GET /api/account/usage?format=csv neutralizes spreadsheet formulas", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    mocks.tinybird.state.usageResponse = [
+        {
+            cursor_event_id: "event-1",
+            timestamp: "2026-04-14 12:10:00",
+            type: "generate.text",
+            model: "=1+1",
+            api_key_id: "key_abc123",
+            api_key: "+SUM(1,1)",
+            api_key_type: "secret",
+            meter_source: "tier",
+            input_text_tokens: 10,
+            input_cached_tokens: 0,
+            input_audio_tokens: 0,
+            input_audio_seconds: 0,
+            input_image_tokens: 0,
+            output_text_tokens: 20,
+            output_reasoning_tokens: 0,
+            output_audio_tokens: 0,
+            output_audio_seconds: 0,
+            output_image_tokens: 0,
+            output_video_seconds: 0,
+            cost_usd: 1,
+            response_time_ms: 123,
+        },
+    ];
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/account/usage?format=csv&days=30",
+        { headers: authHeaders(sessionToken) },
+    );
+
+    expect(response.status).toBe(200);
+    const csv = await response.text();
+    const lines = csv.trim().split("\n");
+    expect(lines[1]).toContain(",'=1+1,");
+    expect(lines[1]).toContain(`"'+SUM(1,1)"`);
 });

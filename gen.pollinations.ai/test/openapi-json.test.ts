@@ -28,6 +28,23 @@ function mockMediaSchema() {
     );
 }
 
+function collectPropertySets(value: unknown): Record<string, unknown>[] {
+    if (!value || typeof value !== "object") return [];
+
+    const record = value as Record<string, unknown>;
+    const properties =
+        record.properties &&
+        typeof record.properties === "object" &&
+        !Array.isArray(record.properties)
+            ? [record.properties as Record<string, unknown>]
+            : [];
+
+    return [
+        ...properties,
+        ...Object.values(record).flatMap((child) => collectPropertySets(child)),
+    ];
+}
+
 const ENTER_SCHEMA = {
     openapi: "3.1.0",
     info: { title: "Enter", version: "0.0.0" },
@@ -66,6 +83,15 @@ describe("/openapi.json", () => {
         expect(schema.paths["/v1/chat/completions"]).toBeDefined();
         expect(schema.paths["/image/{prompt}"]).toBeDefined();
         expect(schema.paths["/account/key"]).toBeDefined();
+
+        const chatRequestPropertySets = collectPropertySets(schema).filter(
+            (properties) => "reasoning_effort" in properties,
+        );
+        expect(chatRequestPropertySets.length).toBeGreaterThan(0);
+        for (const properties of chatRequestPropertySets) {
+            expect(properties.thinking).toBeUndefined();
+            expect(properties.thinking_budget).toBeUndefined();
+        }
     });
 
     it("returns the same spec as /docs/open-api/generate-schema", async () => {

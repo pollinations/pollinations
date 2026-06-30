@@ -30,7 +30,7 @@ User pays:         1.25 pollen
 You receive:       0.25 pollen
 ```
 
-Credits land in the same balance type the user paid from: tier balance when the request used tier balance, paid balance when it used paid balance.
+Credits land in the same balance type the user paid from: Quest Pollen when the request used Quest Pollen, Paid Pollen when it used Paid Pollen.
 
 Pass `earningsEnabled: true` when creating an App Key via the API, or toggle it later from the dashboard:
 
@@ -62,7 +62,7 @@ https://enter.pollinations.ai/authorize?redirect_uri=https://myapp.com&client_id
 
 | Param | What it does | Example |
 |-------|-------------|---------|
-| `client_id` | Your publishable key — shows app name + author on consent screen, tracks traffic for tier upgrades | `pk_abc123` |
+| `client_id` | Your publishable key — shows app name + author on consent screen, tracks traffic and developer earnings | `pk_abc123` |
 | `redirect_uri` | Where users return after authorizing — receives the temp API key in the URL fragment | `https://myapp.com` |
 | `state` | Opaque value echoed back on the callback for CSRF protection | `any-random-string` |
 | `scope` | Account access (space or comma separated) | `usage keys` |

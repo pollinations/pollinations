@@ -1,5 +1,5 @@
 import { getPeriodBucketKeys, periodBucketKeyToDate } from "@pollinations/ui";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { getMockDailyUsage, isActivityMockEnabled } from "./mock-activity-data";
 import type {
@@ -43,10 +43,15 @@ export function useUsageData(filters: FilterState): UsageDataResult {
     const [dailyUsage, setDailyUsage] = useState<DailyUsageRecord[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const inFlightRef = useRef<AbortController | null>(null);
     const { granularity, period } = filters.period;
     const mockEnabled = isActivityMockEnabled();
 
     const fetchUsage = useCallback(() => {
+        inFlightRef.current?.abort();
+        const controller = new AbortController();
+        inFlightRef.current = controller;
+
         setLoading(true);
         setError(null);
 
@@ -65,25 +70,33 @@ export function useUsageData(filters: FilterState): UsageDataResult {
         };
 
         apiClient.account.usage.daily
-            .$get({ query })
+            .$get({ query }, { init: { signal: controller.signal } })
             .then((r) => {
                 if (!r.ok)
                     throw new Error(`Failed to fetch usage data: ${r.status}`);
                 return r.json() as Promise<{ usage: DailyUsageRecord[] }>;
             })
             .then((data) => {
+                if (controller.signal.aborted) return;
                 setDailyUsage(data?.usage || []);
             })
             .catch((err) => {
+                if (controller.signal.aborted) return;
                 console.error("Usage fetch error:", err);
                 setError(err.message || "Failed to load usage data");
                 setDailyUsage([]);
             })
-            .finally(() => setLoading(false));
+            .finally(() => {
+                if (controller.signal.aborted) return;
+                setLoading(false);
+            });
     }, [granularity, mockEnabled, period]);
 
     useEffect(() => {
         fetchUsage();
+        return () => {
+            inFlightRef.current?.abort();
+        };
     }, [fetchUsage]);
 
     const usedModels = useMemo(() => {

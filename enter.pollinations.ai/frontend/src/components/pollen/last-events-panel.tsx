@@ -41,6 +41,9 @@ type UsageEventRecord = {
 type EarningsEventRecord = {
     timestamp: string;
     cursor_event_id: string;
+    source?: "byop_markup" | "community_model";
+    entity_id?: string;
+    entity_name?: string;
     app_key_id: string;
     app_name: string;
     model: string | null;
@@ -212,9 +215,14 @@ function mergeLastEvents(
         kind: "earnings",
         id:
             row.cursor_event_id ||
-            `earnings-${row.timestamp}-${row.app_key_id}-${row.pollen_earned}`,
+            `earnings-${row.timestamp}-${row.entity_id ?? row.app_key_id}-${row.pollen_earned}`,
         timestamp: row.timestamp,
-        primary: row.app_name || row.app_key_id || "App earnings",
+        primary:
+            row.entity_name ||
+            row.app_name ||
+            row.entity_id ||
+            row.app_key_id ||
+            "Earnings",
         secondary: row.model || "—",
         meterSource: row.meter_source,
         pollen: row.pollen_earned,
@@ -476,7 +484,7 @@ export const LastEventsPanel: FC<{ apiKeys: ApiKey[] }> = ({ apiKeys }) => {
     if (state.rows.length === 0) {
         return (
             <p className="text-sm text-ink-600">
-                No events yet. API usage and app earnings will appear here.
+                No events yet. API usage and earnings will appear here.
             </p>
         );
     }

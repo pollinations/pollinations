@@ -37,11 +37,11 @@ const MetricTabs: FC<{
     value: Metric;
     onChange: (metric: Metric) => void;
 }> = ({ value, onChange }) => (
-    <div className="flex items-center gap-3">
+    <div className="flex w-full items-center gap-3">
         <span className="w-20 shrink-0 text-xs font-medium text-theme-text-soft">
             Metric
         </span>
-        <div className="flex w-60 flex-wrap justify-end gap-1.5">
+        <div className="flex min-w-0 flex-1 max-w-60 flex-wrap justify-end gap-1.5">
             {METRIC_OPTIONS.map((metric) => (
                 <TabButton
                     key={metric}
@@ -172,11 +172,11 @@ export const UsageSection: FC<UsageSectionProps> = ({ period }) => {
             <Surface className="flex flex-col gap-4">
                 <div className="flex flex-col gap-4">
                     <div className="flex flex-col items-start gap-2">
-                        <div className="flex items-center gap-3">
+                        <div className="flex w-full items-center gap-3">
                             <span className="w-20 shrink-0 text-xs font-medium text-theme-text-soft">
                                 Models
                             </span>
-                            <div className="[&_button]:w-60">
+                            <div className="min-w-0 flex-1 max-w-60 [&_button]:w-full">
                                 <MultiSelect
                                     options={modelSelectOptions}
                                     selected={filters.selectedModels}
@@ -193,11 +193,11 @@ export const UsageSection: FC<UsageSectionProps> = ({ period }) => {
                                 />
                             </div>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex w-full items-center gap-3">
                             <span className="w-20 shrink-0 text-xs font-medium text-theme-text-soft">
                                 API Keys
                             </span>
-                            <div className="[&_button]:w-60">
+                            <div className="min-w-0 flex-1 max-w-60 [&_button]:w-full">
                                 <MultiSelect
                                     options={keySelectOptions}
                                     selected={filters.selectedKeyIds}

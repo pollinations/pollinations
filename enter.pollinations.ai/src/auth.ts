@@ -5,10 +5,7 @@ import {
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
 import * as betterAuthSchema from "@shared/db/better-auth.ts";
-import {
-    account as accountTable,
-    user as userTable,
-} from "@shared/db/better-auth.ts";
+import { user as userTable } from "@shared/db/better-auth.ts";
 import { sendTierEventToTinybird } from "@shared/events.ts";
 import { AUTH_TRUSTED_ORIGINS } from "@shared/public-urls.ts";
 import { DEFAULT_TIER, getTierPollen } from "@shared/tier-config.ts";
@@ -22,7 +19,7 @@ import {
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
 import { admin, openAPI } from "better-auth/plugins";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 
 export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
@@ -136,8 +133,8 @@ function tierPlugin(
  * We fetch the current username from GitHub API using the immutable github_id
  * and update D1 if it changed. Non-blocking via waitUntil.
  *
- * When github_id is missing from the user table (legacy rows), we resolve it
- * from the account table and backfill so subsequent logins skip the fallback.
+ * GitHub is the only auth provider, so every user row has a github_id; we skip
+ * the sync defensively if it is ever missing.
  */
 function onAfterSessionCreate(
     env: Cloudflare.Env,
@@ -160,30 +157,8 @@ function onAfterSessionCreate(
                         .where(eq(userTable.id, session.userId))
                         .limit(1);
 
-                    let githubId = user?.githubId;
-
-                    // Fallback: resolve github_id from the account table
-                    if (!githubId) {
-                        const [acct] = await db
-                            .select({ accountId: accountTable.accountId })
-                            .from(accountTable)
-                            .where(
-                                and(
-                                    eq(accountTable.userId, session.userId),
-                                    eq(accountTable.providerId, "github"),
-                                ),
-                            )
-                            .limit(1);
-
-                        if (!acct?.accountId) return;
-                        githubId = Number(acct.accountId);
-
-                        // Backfill so subsequent logins skip this fallback
-                        await db
-                            .update(userTable)
-                            .set({ githubId })
-                            .where(eq(userTable.id, session.userId));
-                    }
+                    const githubId = user?.githubId;
+                    if (!githubId) return;
 
                     const headers: Record<string, string> = {
                         Accept: "application/vnd.github+json",

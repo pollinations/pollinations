@@ -24,7 +24,7 @@ interface CloudflareBindings {
         | "development";
     LOG_LEVEL?: "trace" | "debug";
     LOG_FORMAT?: "text" | "json";
-    STAGING_ALLOWED_EMAILS?: string;
+    STAGING_ALLOWED_USER_IDS?: string;
     TINYBIRD_INGEST_URL: string;
     TINYBIRD_TIER_INGEST_URL?: string;
     IMAGES?: ImagesBinding;

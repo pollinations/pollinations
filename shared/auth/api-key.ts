@@ -31,7 +31,7 @@ export interface ApiKeyAuthResult {
 export interface ApiKeyAuthBindings {
     DB: D1Database;
     ENVIRONMENT?: string;
-    STAGING_ALLOWED_EMAILS?: string;
+    STAGING_ALLOWED_USER_IDS?: string;
 }
 
 export class BannedAccountError extends Error {
@@ -48,47 +48,42 @@ export class StagingAccessDeniedError extends Error {
     }
 }
 
-function normalizeEmail(email: string | undefined | null): string | null {
-    const normalized = email?.trim().toLowerCase();
-    return normalized || null;
-}
-
 /**
- * Parse a comma-separated list of staging allowlist emails.
- * Strict enough for config: malformed or blank entries are ignored, not widened.
+ * Parse a comma-separated list of staging allowlist Pollinations user IDs.
+ * Strict enough for config: blank or whitespace-containing entries are ignored.
  */
-export function parseStagingEmailList(
+export function parseStagingUserIdList(
     raw: string | undefined | null,
 ): Set<string> {
     if (!raw) return new Set();
-    const emails = new Set<string>();
+    const ids = new Set<string>();
     for (const part of raw.split(",")) {
-        const email = normalizeEmail(part);
-        if (!email || /\s/.test(email) || !email.includes("@")) continue;
-        emails.add(email);
+        const id = part.trim();
+        if (!id || /\s/.test(id)) continue;
+        ids.add(id);
     }
-    return emails;
+    return ids;
 }
 
 /**
- * Throws StagingAccessDeniedError if the env is staging and the user's verified
- * email is not in STAGING_ALLOWED_EMAILS. No-op outside staging.
- * Fails closed: missing/unverified email or empty/missing allowlist denies access.
+ * Throws StagingAccessDeniedError if the env is staging and the user's
+ * Pollinations user id is not in STAGING_ALLOWED_USER_IDS. No-op outside staging.
+ * Fails closed: a missing id or empty/missing allowlist denies access.
  *
- * Called at request-time (every API-key or session-cookie request) to defend
- * against pre-existing sessions/keys that predate the lockdown. See #11137.
+ * The user id is provider-agnostic (works for GitHub and Google logins) and is
+ * the only request-time gate: it runs on every API-key or session-cookie request
+ * to defend against pre-existing sessions/keys that predate the lockdown. There
+ * is no signup-time gate — new users can sign in but get denied here until their
+ * id is added to the allowlist. See #11137.
  */
 export function assertStagingAccess(
-    env: { ENVIRONMENT?: string; STAGING_ALLOWED_EMAILS?: string },
-    user:
-        | { email?: string | null; emailVerified?: boolean | null }
-        | null
-        | undefined,
+    env: { ENVIRONMENT?: string; STAGING_ALLOWED_USER_IDS?: string },
+    user: { id?: string | null } | null | undefined,
 ): void {
     if (env.ENVIRONMENT !== "staging") return;
-    const allowed = parseStagingEmailList(env.STAGING_ALLOWED_EMAILS);
-    const email = normalizeEmail(user?.email);
-    if (!email || user?.emailVerified !== true || !allowed.has(email)) {
+    const allowed = parseStagingUserIdList(env.STAGING_ALLOWED_USER_IDS);
+    const id = user?.id;
+    if (!id || !allowed.has(id)) {
         throw new StagingAccessDeniedError();
     }
 }

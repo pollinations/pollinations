@@ -169,9 +169,9 @@ TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?n
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
-# Email allowlist lockdown — must match enter.pollinations.ai staging allowlist.
+# User-id allowlist lockdown — must match enter.pollinations.ai staging allowlist.
 # Request-time gate in shared/auth/api-key.ts fails closed without it. Issue #11137.
-STAGING_ALLOWED_EMAILS = "elliot@myceli.ai,t.haferlach@gmail.com,thomash@myceli.ai,elliot@pollinations.ai,pollen@myceli.ai"
+STAGING_ALLOWED_USER_IDS = "BZ5s6WZrVqCbsFeg5nlZFgKJTdQZB2HS,gFPwvTHRQHNgJlUvpC2e1l0N8w11FBnR"
 
 [env.test]
 

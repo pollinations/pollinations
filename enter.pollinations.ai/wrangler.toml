@@ -140,12 +140,15 @@ BETTER_AUTH_URL = "https://staging.enter.pollinations.ai"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
-# Staging lockdown — only these verified login emails may sign in.
-# Issue #11137. Comma-separated. Applies to GitHub and Google.
-# ElliotEtag=elliot@myceli.ai, voodoohop=t.haferlach@gmail.com,
-# thomashmyceli=thomash@myceli.ai, fouchyelliot-rgb=elliot@pollinations.ai,
-# pollen-router=pollen@myceli.ai
-STAGING_ALLOWED_EMAILS = "elliot@myceli.ai,t.haferlach@gmail.com,thomash@myceli.ai,elliot@pollinations.ai,pollen@myceli.ai"
+# Staging lockdown — only these Pollinations user IDs may use staging.
+# Issue #11137. Comma-separated user.id values from the staging DB; provider-
+# agnostic (works for GitHub and Google). Request-time gate only — fails closed
+# when empty. Add a teammate by having them sign in to staging once, then append
+# their user.id (SELECT id, email FROM user WHERE email = '...').
+#   BZ5s6WZrVqCbsFeg5nlZFgKJTdQZB2HS = ElliotEtag (elliot@myceli.ai)
+#   gFPwvTHRQHNgJlUvpC2e1l0N8w11FBnR = voodoohop (t.haferlach@gmail.com)
+# No staging id yet (sign in once to add): thomashmyceli, fouchyelliot-rgb, pollen-router
+STAGING_ALLOWED_USER_IDS = "BZ5s6WZrVqCbsFeg5nlZFgKJTdQZB2HS,gFPwvTHRQHNgJlUvpC2e1l0N8w11FBnR"
 
 [env.dev]
 

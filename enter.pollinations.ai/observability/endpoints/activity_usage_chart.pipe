@@ -18,12 +18,24 @@ SQL >
         meter_source,
         count() as requests,
         sum(cost_usd) as cost_usd
-    FROM activity_usage_events
-    WHERE
-        user_id = {{ String(user_id, '') }}
-        {% if defined(since) %} AND timestamp >= {{ DateTime(since) }} {% end %}
-        {% if defined(until) %} AND timestamp < {{ DateTime(until) }} {% end %}
-        {% if defined(api_key_ids) %} AND api_key_id IN {{ Array(api_key_ids, 'String') }} {% end %}
+    FROM (
+        SELECT
+            user_id,
+            event_id,
+            max(timestamp) AS timestamp,
+            any(api_key_id) AS api_key_id,
+            any(api_key) AS api_key,
+            any(resolved_model) AS resolved_model,
+            any(meter_source) AS meter_source,
+            any(cost_usd) AS cost_usd
+        FROM activity_usage_events
+        WHERE
+            user_id = {{ String(user_id, '') }}
+            {% if defined(since) %} AND timestamp >= {{ DateTime(since) }} {% end %}
+            {% if defined(until) %} AND timestamp < {{ DateTime(until) }} {% end %}
+            {% if defined(api_key_ids) %} AND api_key_id IN {{ Array(api_key_ids, 'String') }} {% end %}
+        GROUP BY user_id, event_id
+    )
     GROUP BY date, api_key_id, api_key, model, meter_source
     ORDER BY date DESC, requests DESC
 

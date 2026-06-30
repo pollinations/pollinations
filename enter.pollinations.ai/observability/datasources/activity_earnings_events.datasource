@@ -1,5 +1,6 @@
 DESCRIPTION >
     Developer earning events for Activity dashboard earnings charts, transactions, and CSV export.
+    Includes BYOP app markup and community model reward earnings.
 
 TOKEN "tinybird_read" READ
 

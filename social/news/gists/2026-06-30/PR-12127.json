@@ -1,0 +1,35 @@
+{
+  "pr_number": 12127,
+  "title": "[codex] Update dashboard announcements",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12127",
+  "merged_at": "2026-06-30T14:18:56Z",
+  "labels": [
+    "DEV-UI-UX"
+  ],
+  "pr_body_excerpt": "## Summary\n- Removes the pinned Pollen pricing announcement from the dashboard.\n- Replaces the tiers announcement with a Quest launch banner that links to `#quests`.\n- Adds a community models alpha banner with allowlist-only messaging and Discord contact.\n\n## Validation\n- `PATH=/opt/homebrew/bin:$PATH npx biome check --write enter.pollinations.ai/frontend/src/components/news-faq/news-banner.tsx`\n- `PATH=/opt/homebrew/bin:$PATH npm run typecheck --workspace pollinations-enter`",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "New quests on the board",
+    "blurb": "The dashboard notice board got a refresh. We've swapped out the old pricing news for the Quests launch and a sneak peek at community models.",
+    "summary": "Updated the dashboard banners to remove the old pricing announcement, replacing it with a Quests launch banner linking to #quests and a new community models alpha allowlist notice.",
+    "impact": "Users logging into the dashboard will now see direct links to earn Pollen through Quests and instructions for joining the community models alpha via Discord.",
+    "keywords": [
+      "dashboard",
+      "ui",
+      "quests",
+      "community models",
+      "announcements"
+    ],
+    "visual_concept": "Polly the bee acting as a town crier or pinning up flyers on a community notice board. The flyers represent the new Quests and community models.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny newsboy cap, pinning colorful announcement flyers to a glowing digital notice board. One flyer shows a pixelated treasure map for Quests, another shows a tiny robot face. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi Stardew Valley aesthetic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-30/PR-12127.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny newsboy cap, pinning colorful announcement flyers to a glowing digital notice board. One flyer shows a pixelated treasure map for Quests, another shows a tiny robot face. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi Stardew Valley aesthetic."
+  },
+  "generated_at": "2026-06-30T14:20:01.716286+00:00"
+}

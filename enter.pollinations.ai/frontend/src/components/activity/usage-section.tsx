@@ -158,6 +158,7 @@ export const UsageSection: FC<UsageSectionProps> = ({ period }) => {
                                     placeholder="All"
                                     disabled={modelSelectOptions.length === 0}
                                     disabledText="None"
+                                    disabledTooltip="No model usage in this period"
                                     align="start"
                                 />
                             </div>
@@ -179,6 +180,7 @@ export const UsageSection: FC<UsageSectionProps> = ({ period }) => {
                                     placeholder="All"
                                     disabled={keySelectOptions.length === 0}
                                     disabledText="None"
+                                    disabledTooltip="No API key usage in this period"
                                     align="start"
                                 />
                             </div>

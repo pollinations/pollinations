@@ -41,6 +41,7 @@ export type EarningsFilterState = {
     period: UsagePeriodSelection;
     metric: Metric;
     selectedAppKeyIds: string[];
+    selectedModelIds: string[];
 };
 
 type TopEarningEntity = {
@@ -55,6 +56,7 @@ type EarningsDataResult = {
     error: string | null;
     fetchEarnings: () => void;
     usedApps: { id: string; label: string }[];
+    usedModels: { id: string; label: string }[];
     chartData: DataPoint[];
     stats: {
         totalRequests: number;
@@ -62,7 +64,6 @@ type EarningsDataResult = {
         totalPaid: number;
         totalTier: number;
         entityCount: number;
-        appCount: number;
         topEntity: TopEarningEntity | null;
     };
 };
@@ -79,6 +80,7 @@ export function useEarningsData(
     const inFlightRef = useRef<AbortController | null>(null);
 
     const selectedAppKeyIdsKey = filters.selectedAppKeyIds.join(",");
+    const selectedModelIdsKey = filters.selectedModelIds.join(",");
     const { granularity, period } = filters.period;
     const mockEnabled = isActivityMockEnabled();
 
@@ -161,19 +163,44 @@ export function useEarningsData(
             .sort((a, b) => a.label.localeCompare(b.label));
     }, [perEntity]);
 
+    const usedModels = useMemo(() => {
+        const modelLabels = new Map<string, string>();
+        for (const row of perEntity) {
+            if (row.source !== "community_model" || !row.entity_id) continue;
+            if (modelLabels.has(row.entity_id)) continue;
+            modelLabels.set(row.entity_id, row.entity_name || row.entity_id);
+        }
+
+        return Array.from(modelLabels.entries())
+            .map(([id, label]) => ({ id, label }))
+            .sort((a, b) => a.label.localeCompare(b.label));
+    }, [perEntity]);
+
     const filteredDailyEarnings = useMemo(() => {
-        if (!selectedAppKeyIdsKey) return dailyEarnings;
+        if (!selectedAppKeyIdsKey && !selectedModelIdsKey) return dailyEarnings;
         const selectedAppKeyIds = new Set(selectedAppKeyIdsKey.split(","));
-        return dailyEarnings.filter((row) =>
-            selectedAppKeyIds.has(row.entity_id),
+        const selectedModelIds = new Set(selectedModelIdsKey.split(","));
+        return dailyEarnings.filter(
+            (row) =>
+                (row.source === "byop_markup" &&
+                    selectedAppKeyIds.has(row.entity_id)) ||
+                (row.source === "community_model" &&
+                    selectedModelIds.has(row.entity_id)),
         );
-    }, [dailyEarnings, selectedAppKeyIdsKey]);
+    }, [dailyEarnings, selectedAppKeyIdsKey, selectedModelIdsKey]);
 
     const filteredPerEntity = useMemo(() => {
-        if (!selectedAppKeyIdsKey) return perEntity;
+        if (!selectedAppKeyIdsKey && !selectedModelIdsKey) return perEntity;
         const selectedAppKeyIds = new Set(selectedAppKeyIdsKey.split(","));
-        return perEntity.filter((row) => selectedAppKeyIds.has(row.entity_id));
-    }, [perEntity, selectedAppKeyIdsKey]);
+        const selectedModelIds = new Set(selectedModelIdsKey.split(","));
+        return perEntity.filter(
+            (row) =>
+                (row.source === "byop_markup" &&
+                    selectedAppKeyIds.has(row.entity_id)) ||
+                (row.source === "community_model" &&
+                    selectedModelIds.has(row.entity_id)),
+        );
+    }, [perEntity, selectedAppKeyIdsKey, selectedModelIdsKey]);
 
     const chartData = useMemo<DataPoint[]>(() => {
         type DayBucket = {
@@ -314,9 +341,6 @@ export function useEarningsData(
             0,
         );
         const entityCount = filteredPerEntity.length;
-        const appCount = filteredPerEntity.filter(
-            (row) => row.source === "byop_markup",
-        ).length;
 
         const topEntityRow = [...filteredPerEntity].sort((a, b) => {
             const left =
@@ -340,7 +364,6 @@ export function useEarningsData(
             totalPaid,
             totalTier,
             entityCount,
-            appCount,
             topEntity,
         };
     }, [filteredPerEntity, filters.metric]);
@@ -350,6 +373,7 @@ export function useEarningsData(
         error,
         fetchEarnings,
         usedApps,
+        usedModels,
         chartData,
         stats,
     };

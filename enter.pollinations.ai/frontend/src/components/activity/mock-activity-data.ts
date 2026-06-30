@@ -114,6 +114,26 @@ const earningsEntities: MockEarningsEntity[] = [
         rewardRate: 0.19,
         paidShare: 0.62,
     },
+    {
+        id: "mock-vision",
+        name: "mock-vision",
+        source: "community_model",
+        model: "mock-vision",
+        baseRequests: 35,
+        pollenPerRequest: 0.0026,
+        rewardRate: 0.12,
+        paidShare: 0.58,
+    },
+    {
+        id: "creator/portrait-lite",
+        name: "portrait-lite",
+        source: "community_model",
+        model: "creator/portrait-lite",
+        baseRequests: 26,
+        pollenPerRequest: 0.0022,
+        rewardRate: 0.1,
+        paidShare: 0.55,
+    },
 ];
 
 function isTruthyMockValue(value: string | null): boolean {

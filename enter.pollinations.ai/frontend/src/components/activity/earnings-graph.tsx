@@ -27,13 +27,22 @@ type EarningsGraphProps = {
 export const EarningsGraph: FC<EarningsGraphProps> = ({ period }) => {
     const [metric, setMetric] = useState<Metric>("pollen");
     const [selectedAppKeyIds, setSelectedAppKeyIds] = useState<string[]>([]);
+    const [selectedModelIds, setSelectedModelIds] = useState<string[]>([]);
 
-    const { loading, error, fetchEarnings, usedApps, chartData, stats } =
-        useEarningsData({
-            period,
-            metric,
-            selectedAppKeyIds,
-        });
+    const {
+        loading,
+        error,
+        fetchEarnings,
+        usedApps,
+        usedModels,
+        chartData,
+        stats,
+    } = useEarningsData({
+        period,
+        metric,
+        selectedAppKeyIds,
+        selectedModelIds,
+    });
 
     useEffect(() => {
         const validAppIds = new Set(usedApps.map((app) => app.id));
@@ -45,9 +54,23 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period }) => {
         }
     }, [usedApps, selectedAppKeyIds]);
 
+    useEffect(() => {
+        const validModelIds = new Set(usedModels.map((model) => model.id));
+        const validSelectedModelIds = selectedModelIds.filter((id) =>
+            validModelIds.has(id),
+        );
+        if (validSelectedModelIds.length !== selectedModelIds.length) {
+            setSelectedModelIds(validSelectedModelIds);
+        }
+    }, [usedModels, selectedModelIds]);
+
     const appSelectOptions = usedApps.map((app) => ({
         value: app.id,
         label: app.label,
+    }));
+    const modelSelectOptions = usedModels.map((model) => ({
+        value: model.id,
+        label: model.label,
     }));
 
     const showEarningsBreakdown = stats.entityCount > 0;
@@ -65,8 +88,9 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period }) => {
             granularity: period.granularity,
             period: period.period,
         });
-        if (selectedAppKeyIds.length > 0) {
-            params.set("entity_ids", selectedAppKeyIds.join(","));
+        const selectedEntityIds = [...selectedAppKeyIds, ...selectedModelIds];
+        if (selectedEntityIds.length > 0) {
+            params.set("entity_ids", selectedEntityIds.join(","));
         }
 
         const anchor = document.createElement("a");
@@ -125,6 +149,24 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period }) => {
                                     placeholder="All"
                                     disabled={appSelectOptions.length === 0}
                                     disabledText="None"
+                                    disabledTooltip="No app earnings in this period"
+                                    align="start"
+                                />
+                            </div>
+                        </div>
+                        <div className="flex w-full items-center gap-3">
+                            <span className="w-20 shrink-0 text-xs font-medium text-theme-text-soft">
+                                Models
+                            </span>
+                            <div className="min-w-0 flex-1 max-w-60 [&_button]:w-full">
+                                <MultiSelect
+                                    options={modelSelectOptions}
+                                    selected={selectedModelIds}
+                                    onChange={setSelectedModelIds}
+                                    placeholder="All"
+                                    disabled={modelSelectOptions.length === 0}
+                                    disabledText="None"
+                                    disabledTooltip="No model earnings in this period"
                                     align="start"
                                 />
                             </div>
@@ -207,10 +249,10 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period }) => {
                                 label="Requests"
                                 value={stats.totalRequests.toLocaleString()}
                                 detail={
-                                    stats.appCount > 0 ? (
+                                    stats.entityCount > 0 ? (
                                         <span className="text-theme-text-soft">
-                                            across {stats.appCount} app
-                                            {stats.appCount === 1 ? "" : "s"}
+                                            across {stats.entityCount} source
+                                            {stats.entityCount === 1 ? "" : "s"}
                                         </span>
                                     ) : null
                                 }

@@ -33,8 +33,10 @@ const MetricTabs: FC<{
     value: Metric;
     onChange: (metric: Metric) => void;
 }> = ({ value, onChange }) => (
-    <div className="flex flex-col items-stretch gap-1">
-        <span className="text-xs font-medium text-theme-text-soft">Metric</span>
+    <div className="flex items-center gap-3">
+        <span className="w-20 shrink-0 text-xs font-medium text-theme-text-soft">
+            Metric
+        </span>
         <div className="flex w-60 flex-wrap justify-end gap-1.5">
             {METRIC_OPTIONS.map((metric) => (
                 <TabButton
@@ -141,28 +143,24 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period }) => {
                 {downloadAction}
             </div>
             <div className="flex flex-col gap-4">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="flex flex-wrap items-start gap-3">
-                        <div className="flex flex-col gap-1">
-                            <span className="text-xs font-medium text-theme-text-soft">
-                                BYOP apps
-                            </span>
-                            <div className="[&_button]:w-60">
-                                <MultiSelect
-                                    options={appSelectOptions}
-                                    selected={selectedAppKeyIds}
-                                    onChange={setSelectedAppKeyIds}
-                                    placeholder="All"
-                                    disabled={appSelectOptions.length === 0}
-                                    disabledText="None"
-                                    align="start"
-                                />
-                            </div>
+                <div className="flex flex-col items-start gap-2">
+                    <div className="flex items-center gap-3">
+                        <span className="w-20 shrink-0 text-xs font-medium text-theme-text-soft">
+                            BYOP apps
+                        </span>
+                        <div className="[&_button]:w-60">
+                            <MultiSelect
+                                options={appSelectOptions}
+                                selected={selectedAppKeyIds}
+                                onChange={setSelectedAppKeyIds}
+                                placeholder="All"
+                                disabled={appSelectOptions.length === 0}
+                                disabledText="None"
+                                align="start"
+                            />
                         </div>
                     </div>
-                    <div className="ml-auto">
-                        <MetricTabs value={metric} onChange={setMetric} />
-                    </div>
+                    <MetricTabs value={metric} onChange={setMetric} />
                 </div>
 
                 <div className="min-h-[180px]">

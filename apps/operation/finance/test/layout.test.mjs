@@ -34,27 +34,28 @@ test("buildLayout returns cells, formats, columnWidths, freezeRows", () => {
 
 test("buildLayout first row is the title", () => {
     const { cells } = buildLayout(matrix, config, options);
-    assert.equal(cells[0][0], "Pollinations Finance — Runway Tracker");
+    assert.equal(cells[0][0], "Runway 2026");
 });
 
-test("buildLayout includes a KPI summary row with cash, burn, runway", () => {
+test("buildLayout includes a KPI summary row with cash and runway", () => {
     const { cells } = buildLayout(matrix, config, options);
     const kpiRow = cells.find(
         (r) => typeof r[0] === "string" && r[0].startsWith("Cash:"),
     );
     assert.ok(kpiRow, "KPI row missing");
-    assert.ok(kpiRow[0].includes("Cash: €10,000"));
-    assert.ok(kpiRow[0].includes("Burn"));
+    // Cash is the running-cash value at the current month (anchor + net),
+    // not the raw anchor balance: 10000 + net(2025-04) 158 = 10158.
+    assert.ok(kpiRow[0].includes("Cash: €10,158"));
     assert.ok(kpiRow[0].includes("Runway"));
 });
 
-test("buildLayout header row contains Category, Vendor, then each month", () => {
+test("buildLayout header row contains the month columns", () => {
     const { cells } = buildLayout(matrix, config, options);
-    const headerRow = cells.find(
-        (r) => r[0] === "Category" && r[1] === "Vendor",
-    );
+    // Cols 0-1 (category/vendor) are blank in the header; months start at col 2.
+    const headerRow = cells.find((r) => r[2] === "Jan 2025");
     assert.ok(headerRow);
-    assert.equal(headerRow[2], "Jan 2025");
+    assert.equal(headerRow[0], "");
+    assert.equal(headerRow[1], "");
     assert.equal(headerRow[3], "Feb 2025");
     assert.equal(headerRow[4], "Mar 2025");
     assert.equal(headerRow[5], "Apr 2025 (MTD)");

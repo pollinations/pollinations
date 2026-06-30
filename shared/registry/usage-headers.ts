@@ -20,6 +20,36 @@ export const USAGE_TYPE_HEADERS: Record<UsageType, string> = {
     completionVideoTokens: "x-usage-completion-video-tokens",
 };
 
+export const OPENAI_CHAT_USAGE_TYPES = [
+    "promptTextTokens",
+    "promptCachedTokens",
+    "promptCacheWriteTokens",
+    "promptAudioTokens",
+    "promptImageTokens",
+    "completionTextTokens",
+    "completionReasoningTokens",
+    "completionAudioTokens",
+] as const satisfies readonly UsageType[];
+
+export type OpenAIChatUsageType = (typeof OPENAI_CHAT_USAGE_TYPES)[number];
+
+export const OPENAI_CHAT_USAGE_PATHS: Record<
+    OpenAIChatUsageType,
+    readonly string[]
+> = {
+    promptTextTokens: ["prompt_tokens"],
+    promptCachedTokens: [
+        "prompt_tokens_details.cached_tokens",
+        "cache_read_input_tokens",
+    ],
+    promptCacheWriteTokens: ["cache_creation_input_tokens"],
+    promptAudioTokens: ["prompt_tokens_details.audio_tokens"],
+    promptImageTokens: ["prompt_tokens_details.image_tokens"],
+    completionTextTokens: ["completion_tokens"],
+    completionReasoningTokens: ["completion_tokens_details.reasoning_tokens"],
+    completionAudioTokens: ["completion_tokens_details.audio_tokens"],
+};
+
 /**
  * Internal worker header carrying Portkey's served fallback target (e.g.
  * "config.targets[1]"), re-emitted from x-portkey-last-used-option-index so
@@ -52,8 +82,10 @@ export function openaiUsageToUsage(openaiUsage: {
         audio_tokens?: number | null;
         image_tokens?: number | null;
     } | null;
+    cached_input_tokens?: number | null;
     cache_read_input_tokens?: number | null;
     cache_creation_input_tokens?: number | null;
+    reasoning_tokens?: number | null;
     completion_tokens_details?: {
         reasoning_tokens?: number | null;
         audio_tokens?: number | null;
@@ -63,6 +95,7 @@ export function openaiUsageToUsage(openaiUsage: {
 }): Usage {
     const promptCachedTokens =
         openaiUsage.prompt_tokens_details?.cached_tokens ||
+        openaiUsage.cached_input_tokens ||
         openaiUsage.cache_read_input_tokens ||
         0;
     const promptCacheWriteTokens = openaiUsage.cache_creation_input_tokens ?? 0;
@@ -74,7 +107,9 @@ export function openaiUsageToUsage(openaiUsage: {
     ];
 
     const rawCompletionReasoningTokens =
-        openaiUsage.completion_tokens_details?.reasoning_tokens || 0;
+        openaiUsage.completion_tokens_details?.reasoning_tokens ||
+        openaiUsage.reasoning_tokens ||
+        0;
     const completionDetails = [
         openaiUsage.completion_tokens_details?.accepted_prediction_tokens || 0,
         openaiUsage.completion_tokens_details?.rejected_prediction_tokens || 0,

@@ -26,6 +26,9 @@ export type MockTinybirdState = {
     usageResponse: UsageRow[];
     earningsResponse: UsageRow[];
     earningsTransactionsResponse: UsageRow[];
+    appDirectoryResponse: UsageRow[];
+    paidAppSpendResponse: UsageRow[];
+    modelModalitiesResponse: UsageRow[];
     pipeCalls: PipeCall[];
 };
 
@@ -38,6 +41,9 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         usageResponse: [],
         earningsResponse: [],
         earningsTransactionsResponse: [],
+        appDirectoryResponse: [],
+        paidAppSpendResponse: [],
+        modelModalitiesResponse: [],
         pipeCalls: [],
     };
 
@@ -92,6 +98,18 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         .get("/v0/pipes/activity_app_earnings_transactions.json", (c) => {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
             return c.json({ data: state.earningsTransactionsResponse }, 200);
+        })
+        .get("/v0/pipes/app_directory_public.json", (c) => {
+            state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
+            return c.json({ data: state.appDirectoryResponse }, 200);
+        })
+        .get("/v0/pipes/quest_paid_app_spend.json", (c) => {
+            state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
+            return c.json({ data: state.paidAppSpendResponse }, 200);
+        })
+        .get("/v0/pipes/quest_model_modalities.json", (c) => {
+            state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
+            return c.json({ data: state.modelModalitiesResponse }, 200);
         });
 
     const handlerMap = {
@@ -106,6 +124,9 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         state.usageResponse = [];
         state.earningsResponse = [];
         state.earningsTransactionsResponse = [];
+        state.appDirectoryResponse = [];
+        state.paidAppSpendResponse = [];
+        state.modelModalitiesResponse = [];
         state.pipeCalls = [];
     };
 

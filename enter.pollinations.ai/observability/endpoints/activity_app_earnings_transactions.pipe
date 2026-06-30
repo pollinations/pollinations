@@ -30,7 +30,8 @@ SQL >
     FROM activity_app_earnings_events ae
     LEFT JOIN app_labels al ON ae.app_key_id = al.app_key_id
     WHERE
-        ae.dev_user_id = {{ String(dev_user_id, '') }}
+        ae.source = 'byop_markup'
+        AND ae.dev_user_id = {{ String(dev_user_id, '') }}
         {% if defined(api_key_ids) %} AND ae.app_key_id IN {{ Array(api_key_ids, 'String') }} {% end %}
         {% if defined(since) %} AND ae.timestamp >= {{ DateTime(since) }}
         {% else %} AND ae.timestamp >= now() - INTERVAL 30 DAY

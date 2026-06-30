@@ -64,6 +64,8 @@ polli models --stats         # health + perf (last 60m)
 polli docs                   # full API reference in the terminal
 polli docs /image            # one endpoint
 polli docs --open            # open in browser
+polli quests                 # public quest catalog
+polli quests mine            # your completed and earned quest status
 ```
 
 ## Account
@@ -88,7 +90,11 @@ Keys can't be edited — to change a name, budget, or model list, revoke and rec
 polli usage                  # pollen balance
 polli usage --history        # recent requests
 polli usage --daily          # daily spend
+polli quests mine --completed # completed and earned quests
+polli my-models list         # invite-only community text models
 ```
+
+`polli auth login` creates a key with all account permissions Polli needs: `profile`, `usage`, and `keys`. Use `account:usage` for narrow read-only account state like usage and quests. Use `account:keys` to manage keys and, where invite-only My Models access is enabled, my-models. Quest claiming remains in the dashboard.
 
 ## Links
 

@@ -3,6 +3,7 @@ import {
     createAzureModelConfig,
     createBedrockNativeConfig,
     createFireworksModelConfig,
+    createInceptionModelConfig,
     createOpenRouterModelConfig,
     createOVHcloudMistralConfig,
     createOVHcloudModelConfig,
@@ -112,6 +113,12 @@ export const portkeyConfig: PortkeyConfigMap = {
     "google/gemma-4-26b-a4b-it": () =>
         createOpenRouterModelConfig({
             model: "google/gemma-4-26b-a4b-it",
+        }),
+
+    // -- Inception Labs (Mercury) -------------------------------------------
+    "mercury-2": () =>
+        createInceptionModelConfig({
+            model: "mercury-2",
         }),
 
     // -- Fireworks AI (DeepSeek) ---------------------------------------------

@@ -112,28 +112,44 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000174,
     },
   },
-  "elevenflash": {
+  "eleven-multilingual-v2": {
     "cost": {
-      "completionAudioTokens": 0.000083,
+      "completionAudioTokens": 0.0001,
     },
     "price": {
-      "completionAudioTokens": 0.000083,
+      "completionAudioTokens": 0.0001,
+    },
+  },
+  "eleven-sfx": {
+    "cost": {
+      "completionAudioSeconds": 0.004,
+    },
+    "price": {
+      "completionAudioSeconds": 0.004,
+    },
+  },
+  "elevenflash": {
+    "cost": {
+      "completionAudioTokens": 0.00005,
+    },
+    "price": {
+      "completionAudioTokens": 0.00005,
     },
   },
   "elevenlabs": {
     "cost": {
-      "completionAudioTokens": 0.000166,
+      "completionAudioTokens": 0.0001,
     },
     "price": {
-      "completionAudioTokens": 0.000166,
+      "completionAudioTokens": 0.0001,
     },
   },
   "elevenmusic": {
     "cost": {
-      "completionAudioSeconds": 0.005,
+      "completionAudioSeconds": 0.0025,
     },
     "price": {
-      "completionAudioSeconds": 0.005,
+      "completionAudioSeconds": 0.0025,
     },
   },
   "flux": {
@@ -542,6 +558,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "completionVideoSeconds": 0.005,
+    },
+  },
+  "mercury": {
+    "cost": {
+      "completionTextTokens": 0.00000075,
+      "promptCachedTokens": 0.000000025,
+      "promptTextTokens": 0.00000025,
+    },
+    "price": {
+      "completionTextTokens": 0.00000075,
+      "promptCachedTokens": 0.000000025,
+      "promptTextTokens": 0.00000025,
     },
   },
   "midijourney": {
@@ -1006,6 +1034,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "completionImageTokens": 0.035,
+    },
+  },
+  "stable-audio-3-medium": {
+    "cost": {
+      "completionAudioTokens": 0.0001,
+    },
+    "price": {
+      "completionAudioTokens": 0.0001,
     },
   },
   "step-3.5-flash": {

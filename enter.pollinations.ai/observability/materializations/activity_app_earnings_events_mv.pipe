@@ -1,32 +1,77 @@
 DESCRIPTION >
-    Materializes app earning events for Activity dashboard earnings reads.
+    Materializes developer earning events for Activity dashboard earnings reads.
 
-NODE activity_app_earnings_events_mv_node
+NODE byop_earning_events
 SQL >
     SELECT
         api_key_created_for_user_id AS dev_user_id,
         start_time AS timestamp,
         event_id,
         event_type AS type,
+        'byop_markup' AS source,
+        api_key_client_id AS entity_id,
+        coalesce(
+            nullIf(if(api_key_created_for_app = 'undefined', '', api_key_created_for_app), ''),
+            api_key_client_id
+        ) AS entity_name,
         api_key_client_id AS app_key_id,
         if(api_key_created_for_app = 'undefined', '', api_key_created_for_app) AS app_name,
         user_id AS payer_user_id,
         model_used AS model,
         resolved_model_requested AS resolved_model,
-        if(
-            splitByChar(':', selected_meter_slug)[-1] = 'tier',
-            'tier',
-            'pack'
+        multiIf(
+            selected_meter_slug = 'v1:meter:tier', 'tier',
+            selected_meter_slug = 'v1:meter:pack', 'pack',
+            'unknown'
         ) AS meter_source,
         dev_price AS baseline_price,
         total_price AS cost_usd,
         total_price - dev_price AS pollen_earned,
+        markup_rate AS reward_rate,
         markup_rate,
         response_time AS response_time_ms
     FROM generation_event
-    WHERE markup_rate > 0
+    WHERE api_key_created_for_user_id != 'undefined'
+      AND markup_rate > 0
       AND total_price > dev_price
       AND start_time >= toDateTime('2026-01-01 00:00:00')
+
+NODE community_model_earning_events
+SQL >
+    SELECT
+        community_model_reward_user_id AS dev_user_id,
+        start_time AS timestamp,
+        event_id,
+        event_type AS type,
+        'community_model' AS source,
+        resolved_model_requested AS entity_id,
+        resolved_model_requested AS entity_name,
+        '' AS app_key_id,
+        '' AS app_name,
+        user_id AS payer_user_id,
+        model_used AS model,
+        resolved_model_requested AS resolved_model,
+        multiIf(
+            selected_meter_slug = 'v1:meter:tier', 'tier',
+            selected_meter_slug = 'v1:meter:pack', 'pack',
+            'unknown'
+        ) AS meter_source,
+        dev_price AS baseline_price,
+        dev_price AS cost_usd,
+        community_model_reward_amount AS pollen_earned,
+        community_model_reward_rate AS reward_rate,
+        toFloat64(0) AS markup_rate,
+        response_time AS response_time_ms
+    FROM generation_event
+    WHERE community_model_reward_user_id != 'undefined'
+      AND community_model_reward_amount > 0
+      AND start_time >= toDateTime('2026-01-01 00:00:00')
+
+NODE activity_app_earnings_events_mv_node
+SQL >
+    SELECT * FROM byop_earning_events
+    UNION ALL
+    SELECT * FROM community_model_earning_events
 
 TYPE MATERIALIZED
 DATASOURCE activity_app_earnings_events

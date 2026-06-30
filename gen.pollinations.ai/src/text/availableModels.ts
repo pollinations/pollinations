@@ -54,6 +54,11 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gpt-5.5"],
     },
     {
+        name: "mercury",
+        config: portkeyConfig["mercury-2"],
+        transform: stripReasoning,
+    },
+    {
         name: "qwen-coder",
         config: portkeyConfig["qwen3-coder-30b-a3b-instruct"],
         // OVHcloud Qwen3-Coder 400s on reasoning_effort (no reasoning mode).
@@ -75,6 +80,8 @@ const models: ModelDefinition[] = [
     {
         name: "qwen-vision",
         config: portkeyConfig["qwen/qwen3-vl-30b-a3b-instruct"],
+        // Vision model, no reasoning mode.
+        transform: stripReasoning,
     },
     {
         name: "qwen-vision-pro",
@@ -95,7 +102,8 @@ const models: ModelDefinition[] = [
     {
         name: "mistral-small-3.2",
         config: portkeyConfig["mistral-small-2503"],
-        transform: stripCacheControl,
+        // Mistral rejects reasoning_effort with 400; strip it.
+        transform: pipe(stripCacheControl, stripReasoning),
     },
     {
         name: "mistral",
@@ -135,10 +143,13 @@ const models: ModelDefinition[] = [
     {
         name: "openai-audio",
         config: portkeyConfig["gpt-audio-mini-2025-12-15"],
+        // Audio models don't support reasoning_effort.
+        transform: stripReasoning,
     },
     {
         name: "openai-audio-large",
         config: portkeyConfig["gpt-audio-1.5"],
+        transform: stripReasoning,
     },
     {
         name: "claude-fast",
@@ -282,6 +293,8 @@ const models: ModelDefinition[] = [
     {
         name: "nova-fast",
         config: portkeyConfig["nova-micro"],
+        // AWS Nova Micro doesn't support reasoning_effort.
+        transform: stripReasoning,
     },
     {
         name: "nova",
@@ -317,6 +330,8 @@ const models: ModelDefinition[] = [
     {
         name: "llama-scout",
         config: portkeyConfig["Llama-4-Scout-17B-16E-Instruct"],
+        // No reasoning mode.
+        transform: stripReasoning,
     },
     {
         name: "mistral-large",
@@ -331,6 +346,8 @@ const models: ModelDefinition[] = [
     {
         name: "qwen-safety",
         config: portkeyConfig["Qwen3Guard-Gen-8B"],
+        // Safety/guard model, no reasoning mode.
+        transform: stripReasoning,
     },
 ];
 

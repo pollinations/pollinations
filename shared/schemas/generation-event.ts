@@ -95,6 +95,9 @@ export type TinybirdEvent = {
     totalPrice: number;
     devPrice?: number;
     markupRate?: number;
+    communityModelRewardUserId?: string;
+    communityModelRewardRate?: number;
+    communityModelRewardAmount?: number;
 
     // Prompt Moderation
     moderationPromptHateSeverity?: string;

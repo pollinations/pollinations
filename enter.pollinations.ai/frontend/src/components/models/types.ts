@@ -6,15 +6,39 @@ export type ModelCategory =
     | "embedding"
     | "realtime";
 
+export type ModelDisplayCategory = ModelCategory | "community";
+
 export type ModelCapability =
     | "tool_calling"
     | "reasoning"
     | "web_search"
     | "code_execution";
 
+export type PriceKind =
+    | "text"
+    | "image"
+    | "cached"
+    | "cacheWrite"
+    | "reasoning"
+    | "video"
+    | "audioIn"
+    | "audioOut";
+
+export type PriceDirection = "input" | "output";
+
+export type PriceUnit = "token" | "second" | "request";
+
+export type ModelPriceLine = {
+    direction: PriceDirection;
+    kind: PriceKind;
+    price: string;
+    unit: PriceUnit;
+};
+
 export type ModelPrice = {
     name: string;
     type: ModelCategory;
+    community?: boolean;
     displayName?: string;
     description?: string;
     brand?: string;
@@ -26,23 +50,7 @@ export type ModelPrice = {
     addedDate?: number;
     inputSortPrice?: number;
     outputSortPrice?: number;
-    perToken?: boolean;
-    // Text pricing
-    promptTextPrice?: string;
-    promptCachedPrice?: string;
-    promptAudioPrice?: string;
-    completionTextPrice?: string;
-    completionAudioPrice?: string;
-    completionAudioTokens?: string; // For audio calculation
-    // Image pricing
-    promptImagePrice?: string;
-    completionImagePrice?: string;
-    perImagePrice?: string;
-    // Video pricing
-    promptVideoPrice?: string;
-    perSecondPrice?: string;
-    perAudioSecondPrice?: string; // For video models with audio (e.g., wan)
-    perTokenPrice?: string; // For token-based video models like seedance
+    prices: ModelPriceLine[];
     // Real usage data from Tinybird (rolling 7-day average)
     realAvgCost?: number;
 };

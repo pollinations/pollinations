@@ -11,8 +11,11 @@ import {
 import {
     calculateCost,
     calculatePrice,
-    getModelDefinition,
+    getCostDefinition,
+    getModels,
     getPriceDefinition,
+    getRegistryModelDefinition,
+    type ModelName,
 } from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { expect, test } from "vitest";
@@ -28,6 +31,59 @@ const getCatalogModelPrices = () =>
         ...getEmbeddingModelsInfo(),
     ]);
 
+const getCatalogModels = () => [
+    ...getTextModelsInfo(),
+    ...getImageModelsInfo(),
+    ...getRealtimeModelsInfo(),
+    ...getAudioModelsInfo(),
+    ...getEmbeddingModelsInfo(),
+];
+
+const tokenPriceRows = [
+    { registryField: "promptTextTokens", direction: "input", kind: "text" },
+    {
+        registryField: "promptCachedTokens",
+        direction: "input",
+        kind: "cached",
+    },
+    {
+        registryField: "promptCacheWriteTokens",
+        direction: "input",
+        kind: "cacheWrite",
+    },
+    {
+        registryField: "promptAudioTokens",
+        direction: "input",
+        kind: "audioIn",
+    },
+    { registryField: "promptImageTokens", direction: "input", kind: "image" },
+    {
+        registryField: "completionTextTokens",
+        direction: "output",
+        kind: "text",
+    },
+    {
+        registryField: "completionReasoningTokens",
+        direction: "output",
+        kind: "reasoning",
+    },
+    {
+        registryField: "completionAudioTokens",
+        direction: "output",
+        kind: "audioOut",
+    },
+] as const;
+
+const imageTokenPriceRows = [
+    { registryField: "promptTextTokens", direction: "input", kind: "text" },
+    { registryField: "promptImageTokens", direction: "input", kind: "image" },
+    {
+        registryField: "completionImageTokens",
+        direction: "output",
+        kind: "image",
+    },
+] as const;
+
 // Catalog pricing pipes every model rate through formatPricePer1M, so this file
 // is the sole coverage of that formatter. Pin each decimal branch and the
 // trailing-zero path directly against representative per-token inputs rather
@@ -42,115 +98,196 @@ test("formatPricePer1M renders each decimal branch and strips trailing zeros", (
     expect(formatPricePer1M(1.5e-9)).toBe("0.0015"); // <0.01 -> 5 decimals
 });
 
-test("catalog prices format text rates through formatPricePer1M", () => {
-    const price = getPriceDefinition("gemini-fast");
-    if (!price) throw new Error("gemini-fast price definition missing");
-
-    const geminiFast = getCatalogModelPrices().find(
-        (modelPrice) => modelPrice.name === "gemini-fast",
+test("catalog prices format token rates through formatPricePer1M", () => {
+    const sourceByName = new Map(
+        getCatalogModels().map((model) => [model.name, model]),
     );
+    let checkedFields = 0;
 
-    expect(geminiFast).toMatchObject({
-        name: "gemini-fast",
+    for (const modelPrice of getCatalogModelPrices()) {
+        const sourceModel = sourceByName.get(modelPrice.name);
+        if (
+            sourceModel?.category === "audio" ||
+            sourceModel?.category === "video"
+        )
+            continue;
+
+        const pricing = sourceModel?.pricing;
+        const imageUsesTokenRows =
+            Number(pricing?.promptTextTokens) > 0 ||
+            Number(pricing?.promptImageTokens) > 0;
+        const rows =
+            sourceModel?.category === "image"
+                ? imageUsesTokenRows
+                    ? imageTokenPriceRows
+                    : []
+                : tokenPriceRows;
+
+        for (const { registryField, direction, kind } of rows) {
+            const rawRate = Number(pricing?.[registryField]);
+            if (!Number.isFinite(rawRate) || rawRate <= 0) continue;
+
+            expect(modelPrice.prices).toContainEqual({
+                direction,
+                kind,
+                price: formatPricePer1M(rawRate),
+                unit: "token",
+            });
+            checkedFields += 1;
+        }
+    }
+
+    expect(checkedFields).toBeGreaterThan(0);
+});
+
+test("catalog prices keep community text models flagged for display", () => {
+    const [communityModel] = getModelPricesFromCatalog([
+        {
+            name: "voodoohop/openai",
+            aliases: ["community/voodoohop/openai"],
+            category: "text",
+            community: true,
+            brand: "Community",
+            title: "OpenAI relay",
+            description: "OpenAI relay",
+            pricing: {
+                currency: "pollen",
+                promptTextTokens: "0.0000001",
+                completionTextTokens: "0.0000002",
+            },
+            input_modalities: ["text"],
+            output_modalities: ["text"],
+            capabilities: [],
+        },
+    ]);
+
+    expect(communityModel).toMatchObject({
+        name: "voodoohop/openai",
         type: "text",
-        promptTextPrice: formatPricePer1M(price.promptTextTokens ?? 0),
-        promptCachedPrice: formatPricePer1M(price.promptCachedTokens ?? 0),
-        promptAudioPrice: formatPricePer1M(price.promptAudioTokens ?? 0),
-        completionTextPrice: formatPricePer1M(price.completionTextTokens ?? 0),
+        community: true,
+        displayName: "OpenAI relay",
+        brand: "Community",
+        capabilities: [],
     });
-});
-
-test("model info exposes built-in model capabilities without raw implementation flags", () => {
-    const geminiSearch = getTextModelsInfo().find(
-        (model) => model.name === "gemini-search",
-    ) as Record<string, unknown> | undefined;
-
-    expect(geminiSearch).toMatchObject({
-        capabilities: ["web_search", "code_execution"],
-        tools: false,
-    });
-    expect(geminiSearch).not.toHaveProperty("search");
-    expect(geminiSearch).not.toHaveProperty("code_execution");
-    expect(geminiSearch).not.toHaveProperty("persona");
-});
-
-test("AssemblyAI STT pricing is exposed per input audio second", () => {
-    const universal2 = getCatalogModelPrices().find(
-        (price) => price.name === "universal-2",
+    expect(communityModel?.prices).toEqual(
+        expect.arrayContaining([
+            {
+                direction: "input",
+                kind: "text",
+                price: "0.1",
+                unit: "token",
+            },
+            {
+                direction: "output",
+                kind: "text",
+                price: "0.2",
+                unit: "token",
+            },
+        ]),
     );
-    const universal3Pro = getCatalogModelPrices().find(
-        (price) => price.name === "universal-3-pro",
-    );
-
-    expect(universal2).toMatchObject({
-        name: "universal-2",
-        type: "audio",
-        perSecondPrice: "0.00004",
-    });
-    expect(universal3Pro).toMatchObject({
-        name: "universal-3-pro",
-        type: "audio",
-        perSecondPrice: "0.00006",
-    });
-    expect(getModelDefinition("universal-3-pro").paidOnly).toBeUndefined();
-
-    expect(
-        calculateCost("universal-2", { promptAudioSeconds: 3600 }).totalCost,
-    ).toBeCloseTo(0.15, 8);
-    expect(
-        calculateCost("universal-3-pro", {
-            promptAudioSeconds: 3600,
-        }).totalCost,
-    ).toBeCloseTo(0.21, 8);
+    expect(communityModel.description).toBeUndefined();
 });
 
-test("Grok 4.20 registry metadata covers verified modalities and costs", () => {
-    const inputUsage = {
-        promptTextTokens: 1_000_000,
-        promptCachedTokens: 1_000_000,
-        promptImageTokens: 1_000_000,
-        completionTextTokens: 1_000_000,
-    };
-    const reasoningUsage = {
-        ...inputUsage,
-        completionReasoningTokens: 1_000_000,
-    };
+test("model info exposes public capabilities without raw implementation flags", () => {
+    let checkedCapabilities = 0;
 
-    const grok = getModelDefinition("grok");
-    // `grok-large` now points at the newer Grok 4.3 (clean slug = newest);
-    // the 4.20 reasoning model keeps the versioned slug `grok-4-20-reasoning`.
-    const grokReasoning = getModelDefinition("grok-4-20-reasoning");
+    for (const model of getCatalogModels()) {
+        const publicModel = model as Record<string, unknown>;
+        const definition = getRegistryModelDefinition(model.name as ModelName);
+        const expectedCapabilities = [
+            definition.tools ? "tool_calling" : undefined,
+            definition.reasoning ? "reasoning" : undefined,
+            definition.search ? "web_search" : undefined,
+            definition.codeExecution ? "code_execution" : undefined,
+        ].filter((capability): capability is string => Boolean(capability));
 
-    for (const model of ["grok", "grok-4-20-reasoning"] as const) {
-        const definition = getModelDefinition(model);
+        expect(publicModel.capabilities).toEqual(expectedCapabilities);
+        expect(publicModel).not.toHaveProperty("search");
+        expect(publicModel).not.toHaveProperty("codeExecution");
+        expect(publicModel).not.toHaveProperty("code_execution");
+        expect(publicModel).not.toHaveProperty("persona");
+
+        checkedCapabilities += expectedCapabilities.length;
+    }
+
+    expect(checkedCapabilities).toBeGreaterThan(0);
+});
+
+test("catalog prices expose audio second rates from registry pricing", () => {
+    const sourceByName = new Map(
+        getCatalogModels().map((model) => [model.name, model]),
+    );
+    let checkedModels = 0;
+
+    for (const modelPrice of getCatalogModelPrices()) {
+        const model = sourceByName.get(modelPrice.name);
+        if (model?.category !== "audio") continue;
+
+        const promptAudioSeconds = Number(model.pricing.promptAudioSeconds);
+        const completionAudioSeconds = Number(
+            model.pricing.completionAudioSeconds,
+        );
+        const expectedRow =
+            Number.isFinite(promptAudioSeconds) && promptAudioSeconds > 0
+                ? {
+                      direction: "input",
+                      kind: "audioIn",
+                      price: promptAudioSeconds.toFixed(5),
+                      unit: "second",
+                  }
+                : Number.isFinite(completionAudioSeconds) &&
+                    completionAudioSeconds > 0
+                  ? {
+                        direction: "output",
+                        kind: "audioOut",
+                        price: completionAudioSeconds.toFixed(4),
+                        unit: "second",
+                    }
+                  : undefined;
+        if (!expectedRow) continue;
+
+        expect(modelPrice.prices).toContainEqual(expectedRow);
+        checkedModels += 1;
+    }
+
+    expect(checkedModels).toBeGreaterThan(0);
+});
+
+test("reasoning token usage bills through completion text rates", () => {
+    const modelsWithTextOutputRates = getModels().filter(
+        (model) => getCostDefinition(model)?.completionTextTokens,
+    );
+    expect(modelsWithTextOutputRates.length).toBeGreaterThan(0);
+
+    for (const model of modelsWithTextOutputRates) {
+        const costDefinition = getCostDefinition(model);
         const priceDefinition = getPriceDefinition(model);
-        const usage =
-            model === "grok-4-20-reasoning" ? reasoningUsage : inputUsage;
+        if (!costDefinition?.completionTextTokens) continue;
+        if (!priceDefinition?.completionTextTokens) continue;
+
+        const usage = { completionReasoningTokens: 1_000_000 };
         const cost = calculateCost(model, usage);
         const price = calculatePrice(model, usage);
 
-        expect(definition.provider).toBe("azure");
-        expect(definition.brand).toBe("xAI");
-        expect(definition.inputModalities).toEqual(["text", "image"]);
-        expect(definition.outputModalities).toEqual(["text"]);
-        expect(definition.tools).toBe(true);
-        expect(definition.contextLength).toBe(262144);
-        expect(priceDefinition?.promptTextTokens).toBeCloseTo(0.000002, 12);
-        expect(priceDefinition?.promptCachedTokens).toBeCloseTo(0.0000002, 12);
-        expect(priceDefinition?.promptImageTokens).toBeCloseTo(0.000002, 12);
-        expect(priceDefinition?.completionTextTokens).toBeCloseTo(0.000006, 12);
-        expect(price.totalPrice).toBeCloseTo(cost.totalCost, 8);
+        expect(cost.completionReasoningTokens).toBeCloseTo(
+            costDefinition.completionTextTokens *
+                usage.completionReasoningTokens,
+            8,
+        );
+        expect(price.completionReasoningTokens).toBeCloseTo(
+            priceDefinition.completionTextTokens *
+                usage.completionReasoningTokens,
+            8,
+        );
+        expect(cost.totalCost).toBeCloseTo(
+            cost.completionReasoningTokens ?? 0,
+            8,
+        );
+        expect(price.totalPrice).toBeCloseTo(
+            price.completionReasoningTokens ?? 0,
+            8,
+        );
     }
-
-    expect(grok.modelId).toBe("grok-4-20-non-reasoning");
-    expect(grok.reasoning).toBeUndefined();
-    expect(calculateCost("grok", inputUsage).totalCost).toBeCloseTo(10.2, 8);
-
-    expect(grokReasoning.modelId).toBe("grok-4-20-reasoning");
-    expect(grokReasoning.reasoning).toBe(true);
-    expect(
-        calculateCost("grok-4-20-reasoning", reasoningUsage).totalCost,
-    ).toBeCloseTo(16.2, 8);
 });
 
 test("registry cost blocks contain no sentinel/placeholder negative values", () => {

@@ -108,7 +108,7 @@ function formatSignedPollen(event: LastEvent): string {
 function EventKindChip({ kind }: { kind: LastEvent["kind"] }) {
     if (kind === "earnings") {
         return (
-            <Chip intent="success" size="sm">
+            <Chip intent="alpha" size="sm">
                 Earned
             </Chip>
         );
@@ -122,7 +122,12 @@ function EventKindChip({ kind }: { kind: LastEvent["kind"] }) {
 
 function MeterSourceChip({ source }: { source: string | null }) {
     if (source === "tier") return <TierChip>tier</TierChip>;
-    return <PaidChip>paid</PaidChip>;
+    if (source === "pack") return <PaidChip>paid</PaidChip>;
+    return (
+        <Chip intent="neutral" size="sm">
+            unknown
+        </Chip>
+    );
 }
 
 function buildKeyNameLookup(keys: ApiKey[]) {

@@ -1,5 +1,6 @@
 import {
     Button,
+    Chip,
     InlineLink,
     Table,
     TableBody,
@@ -79,7 +80,8 @@ function formatCost(value: number): string {
 
 function MeterSourceChip({ source }: { source: string | null }) {
     if (source === "tier") return <TierChip>tier</TierChip>;
-    return <PaidChip>paid</PaidChip>;
+    if (source === "pack") return <PaidChip>paid</PaidChip>;
+    return <Chip intent="neutral">unknown</Chip>;
 }
 
 function rowKey(row: EarningsTransaction, index: number): string {

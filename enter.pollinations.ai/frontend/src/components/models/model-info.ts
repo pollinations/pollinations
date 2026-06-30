@@ -9,10 +9,12 @@ const BRAND_LOGOS: Record<string, string> = {
     "Black Forest Labs": "black-forest-labs",
     ByteDance: "bytedance",
     Cohere: "cohere",
+    Community: "community",
     DeepSeek: "deepseek",
     ElevenLabs: "elevenlabs",
     Google: "google",
     Ideogram: "ideogram",
+    Inception: "inception",
     Lightricks: "lightricks",
     Meta: "meta",
     MiniMax: "minimax",
@@ -23,6 +25,7 @@ const BRAND_LOGOS: Record<string, string> = {
     Pollinations: "pollinations",
     Pruna: "pruna",
     Qwen: "qwen",
+    "Stability AI": "stability",
     StepFun: "stepfun",
     "Z.ai": "zai",
     xAI: "xai",
@@ -61,6 +64,9 @@ export const getModelDescriptionWithoutName = (
     if (model.description) return model.description;
     const description = getSourceDescription(model);
     if (!description) return undefined;
+    if (model.displayName && description.trim() === model.displayName.trim()) {
+        return undefined;
+    }
     const prefix = model.displayName ? `${model.displayName} - ` : "";
     if (prefix && description.startsWith(prefix)) {
         return description.slice(prefix.length).trim() || undefined;

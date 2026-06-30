@@ -13,10 +13,10 @@ SQL >
         api_key_id,
         api_key_name AS api_key,
         api_key_type,
-        if(
-            splitByChar(':', selected_meter_slug)[-1] = 'tier',
-            'tier',
-            'pack'
+        multiIf(
+            selected_meter_slug = 'v1:meter:tier', 'tier',
+            selected_meter_slug = 'v1:meter:pack', 'pack',
+            'unknown'
         ) AS meter_source,
         token_count_prompt_text AS input_text_tokens,
         token_count_prompt_cached AS input_cached_tokens,

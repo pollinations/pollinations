@@ -1,57 +1,95 @@
 DESCRIPTION >
-    Activity app earnings chart data with per-app and global rollups.
+    Activity developer earnings chart data with daily, per-entity, and
+    per-source rollups from materialized earning events.
+    Use 'since' and 'until' for date range filtering.
+    Use 'grain=hour' to group daily buckets by hour; defaults to daily.
+    Use 'entity_ids' (comma-separated) to filter earning entities.
+    Legacy 'api_key_ids' is still accepted as an alias.
 
 TOKEN "tinybird_read" READ
 
 NODE app_labels
 SQL >
     %
-    SELECT id AS app_key_id, nullIf(nullIf(name, ''), 'undefined') AS app_name
+    SELECT
+        id AS entity_id,
+        coalesce(nullIf(name, ''), id) AS entity_name
     FROM d1_apikey
     WHERE synced_at = (SELECT max(synced_at) FROM d1_apikey)
+
+NODE community_model_labels
+SQL >
+    %
+    SELECT
+        concat(u.github_username, '/', cm.name) AS entity_id,
+        coalesce(nullIf(cm.name, ''), concat(u.github_username, '/', cm.name)) AS entity_name
+    FROM d1_community_model cm
+    LEFT JOIN d1_user u ON cm.owner_user_id = u.id
+    WHERE cm.synced_at = (SELECT max(synced_at) FROM d1_community_model)
+      AND u.synced_at = (SELECT max(synced_at) FROM d1_user)
+      AND u.github_username != ''
 
 NODE earnings_events
 SQL >
     %
     SELECT
-        ae.app_key_id AS app_key_id,
+        ae.source,
+        ae.entity_id,
+        coalesce(
+            nullIf(
+                if(ae.source = 'byop_markup', al.entity_name, cml.entity_name),
+                ''
+            ),
+            nullIf(ae.entity_name, ''),
+            ae.entity_id
+        ) AS entity_name,
         if(
             {{ String(grain, 'day') }} = 'hour',
             formatDateTime(toStartOfHour(ae.timestamp), '%F %T'),
             formatDateTime(toStartOfDay(ae.timestamp), '%F')
         ) AS date,
-        ae.payer_user_id AS payer_user_id,
-        ae.baseline_price AS baseline_price,
-        ae.cost_usd AS cost_usd,
-        ae.pollen_earned AS event_pollen_earned,
-        ae.markup_rate AS markup_rate,
-        ae.meter_source AS meter_source,
-        coalesce(al.app_name, nullIf(nullIf(ae.app_name, ''), 'undefined'), ae.app_key_id) AS app_name
+        ae.payer_user_id,
+        ae.baseline_price,
+        ae.cost_usd,
+        ae.pollen_earned,
+        ae.reward_rate,
+        ae.meter_source
     FROM activity_app_earnings_events ae
-    LEFT JOIN app_labels al ON ae.app_key_id = al.app_key_id
+    LEFT JOIN app_labels al
+        ON ae.source = 'byop_markup'
+       AND ae.entity_id = al.entity_id
+    LEFT JOIN community_model_labels cml
+        ON ae.source = 'community_model'
+       AND ae.entity_id = cml.entity_id
     WHERE
         ae.dev_user_id = {{ String(dev_user_id, '') }}
         {% if defined(since) %} AND ae.timestamp >= {{ DateTime(since) }} {% end %}
         {% if defined(until) %} AND ae.timestamp < {{ DateTime(until) }} {% end %}
-        {% if defined(api_key_ids) %} AND ae.app_key_id IN {{ Array(api_key_ids, 'String') }} {% end %}
+        {% if defined(entity_ids) %} AND ae.entity_id IN {{ Array(entity_ids, 'String') }} {% end %}
+        {% if defined(api_key_ids) %} AND ae.entity_id IN {{ Array(api_key_ids, 'String') }} {% end %}
 
 NODE activity_app_earnings_chart_node
 SQL >
     SELECT
         date,
-        app_key_id,
-        app_name,
+        entity_id,
+        entity_name,
+        source,
         count() AS requests,
         countIf(meter_source = 'pack') AS paid_requests,
         countIf(meter_source = 'tier') AS tier_requests,
         sum(baseline_price) AS baseline_price,
-        sum(event_pollen_earned) AS pollen_earned,
-        sumIf(event_pollen_earned, meter_source = 'pack') AS paid_earned,
-        sumIf(event_pollen_earned, meter_source = 'tier') AS tier_earned,
+        sum(pollen_earned) AS pollen_earned,
+        sumIf(pollen_earned, meter_source = 'pack') AS paid_earned,
+        sumIf(pollen_earned, meter_source = 'tier') AS tier_earned,
         sum(cost_usd) AS cost_usd,
-        if(count() = 0, toFloat64(0), avg(markup_rate)) AS markup_rate,
+        if(count() = 0, toFloat64(0), avg(reward_rate)) AS reward_rate,
         if(GROUPING(date) = 0, toUInt64(0), uniq(payer_user_id)) AS unique_users
     FROM earnings_events
-    GROUP BY GROUPING SETS ((date, app_key_id, app_name), (app_key_id, app_name), ())
+    GROUP BY GROUPING SETS (
+        (date, entity_id, entity_name, source),
+        (entity_id, entity_name, source),
+        (source)
+    )
 
 TYPE endpoint

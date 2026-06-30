@@ -1,0 +1,35 @@
+{
+  "pr_number": 12132,
+  "title": "feat: add nanobanana-2-lite image model",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12132",
+  "merged_at": "2026-06-30T19:22:50Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Adds Nano Banana 2 Lite (Gemini 3.1 Flash-Lite Image, GA on Vertex) as a new paid image model.\n\n- Registry entry `nanobanana-2-lite` (aliases `nanobanana2lite`, `nanobanana-lite`), paid-only, routing to Vertex `gemini-3.1-flash-lite-image`\n- Cost is exactly half of `nanobanana-2`: prompt text/image $0.25/1M, completion text $1.5/1M, completion image $30/1M (1120 tokens/1K image = $0.0336)\n- Wired into the Vertex model map and image dispatch switch\n\nNote: Google's docs list 512/1K/2K/4K output, but Vertex returns `400 INVALID_ARGUMENT` on imageSize 2K/4K for this model — it only outputs 1K. Left it out of the `imageSize` allow-list so large requests default to 1K instead of erroring.\n\nVerified end-to-end on local gen against live Vertex: T2I across sizes/aspect ratios, image editing, output cache MISS→HIT, error paths (400 not 5xx), and billing (0.0336 pollen/image, matching Tinybird rows, no missing-rate warnings). Full automated suites pass (enter aliases/pricing/snapshot, gen usage/permissions/image/billing/cache).",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A lighter shade of banana",
+    "blurb": "We've added Nano Banana 2 Lite to the hive! It's half the cost of its bigger sibling and perfect for quick, beautiful 1K image generations.",
+    "summary": "Added Nano Banana 2 Lite (`nanobanana-2-lite`) as a new paid image model, powered by Gemini 3.1 Flash-Lite Image on Vertex, costing exactly half of the standard Nano Banana 2.",
+    "impact": "Users can now generate 1K images at half the price (0.0336 Pollen per image) using the `nanobanana-2-lite` model alias.",
+    "keywords": [
+      "image-generation",
+      "models",
+      "nanobanana",
+      "gemini",
+      "vertex"
+    ],
+    "visual_concept": "The PR introduces a 'Lite' version of the Nano Banana model. Visually, this translates to a smaller, lightweight, or glowing banana. Polly the bee and the Monitor Robot can be examining or celebrating this new, efficient little fruit.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny scientist goggles, carefully examining a small, glowing yellow pixel-art banana resting on a workbench. The chunky Monitor Robot stands nearby, its screen displaying a beautiful 1K resolution landscape. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-30/PR-12132.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny scientist goggles, carefully examining a small, glowing yellow pixel-art banana resting on a workbench. The chunky Monitor Robot stands nearby, its screen displaying a beautiful 1K resolution landscape. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-06-30T19:23:52.990674+00:00"
+}

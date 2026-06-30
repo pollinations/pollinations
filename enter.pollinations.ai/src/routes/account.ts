@@ -222,7 +222,10 @@ function formatUsageWindow(window: UsageWindowDates): UsageWindow {
 
 function buildUsageWindow(days: number): UsageWindowDates {
     const untilDate = startOfNextUtcDay();
-    const sinceDate = addUtcDays(untilDate, -days);
+    const requestedSinceDate = addUtcDays(untilDate, -days);
+    const minDate = usageMinDate();
+    const sinceDate =
+        requestedSinceDate < minDate ? minDate : requestedSinceDate;
     return { sinceDate, untilDate };
 }
 
@@ -578,6 +581,9 @@ type DeveloperEarningsRow = {
 type DeveloperEarningsTransaction = {
     timestamp: string;
     type: string;
+    source: "byop_markup" | "community_model";
+    entity_id: string;
+    entity_name: string;
     app_key_id: string;
     app_name: string;
     payer_user_id: string;
@@ -688,8 +694,17 @@ const developerEarningsTransactionSchema = z.object({
         .string()
         .describe("Event id used with `before_event_id` for stable pagination"),
     type: z.string().describe("Request type"),
-    app_key_id: z.string().describe("BYOP app key id"),
-    app_name: z.string().describe("App display name"),
+    source: z
+        .enum(["byop_markup", "community_model"])
+        .describe("Earning source"),
+    entity_id: z
+        .string()
+        .describe("Earning entity id: BYOP app key or community model"),
+    entity_name: z.string().describe("Earning entity display name"),
+    app_key_id: z.string().describe("BYOP app key id, empty for model rewards"),
+    app_name: z
+        .string()
+        .describe("BYOP app display name, empty for model rewards"),
     payer_user_id: z.string().describe("Pollinations user id that paid"),
     model: z.string().nullable().describe("Model used for generation"),
     meter_source: z
@@ -717,6 +732,9 @@ const developerEarningsTransactionsResponseSchema = z.object({
         .array(developerEarningsTransactionSchema)
         .describe("Earning transaction records"),
     count: z.number().describe("Number of records returned"),
+    has_more: z
+        .boolean()
+        .describe("Whether more records are available after this page"),
 });
 
 function dailyEarningsRowToCsvRow(row: DeveloperEarningsRow): string {
@@ -737,12 +755,12 @@ function totalDeveloperEarnings(
 }
 
 const EARNINGS_TRANSACTIONS_CSV_HEADER =
-    "timestamp,type,app_key_id,app_name,payer_user_id,model,meter_source,baseline_price,pollen_earned,cost_usd,markup_rate,response_time_ms";
+    "timestamp,type,source,entity_id,entity_name,app_key_id,app_name,payer_user_id,model,meter_source,baseline_price,pollen_earned,cost_usd,markup_rate,response_time_ms";
 
 function earningsTransactionToCsvRow(
     row: DeveloperEarningsTransaction,
 ): string {
-    return `${escapeCSV(row.timestamp)},${escapeCSV(row.type)},${escapeCSV(row.app_key_id)},${escapeCSV(row.app_name)},${escapeCSV(row.payer_user_id)},${escapeCSV(row.model)},${escapeCSV(row.meter_source)},${row.baseline_price},${row.pollen_earned},${row.cost_usd},${row.markup_rate},${escapeCSV(row.response_time_ms)}`;
+    return `${escapeCSV(row.timestamp)},${escapeCSV(row.type)},${escapeCSV(row.source)},${escapeCSV(row.entity_id)},${escapeCSV(row.entity_name)},${escapeCSV(row.app_key_id)},${escapeCSV(row.app_name)},${escapeCSV(row.payer_user_id)},${escapeCSV(row.model)},${escapeCSV(row.meter_source)},${row.baseline_price},${row.pollen_earned},${row.cost_usd},${row.markup_rate},${escapeCSV(row.response_time_ms)}`;
 }
 
 async function fetchDetailedUsagePage(
@@ -804,7 +822,7 @@ async function fetchDetailedEarningsPage(
 ): Promise<DeveloperEarningsTransactionWithCursor[]> {
     return fetchTinybirdRows<DeveloperEarningsTransactionWithCursor>(
         origin,
-        "/v0/pipes/activity_app_earnings_transactions.json",
+        "/v0/pipes/activity_earnings_transactions.json",
         token,
         {
             dev_user_id: params.devUserId,
@@ -848,19 +866,27 @@ async function respondDetailedEarnings(
     const tinybirdToken = requireTinybirdReadToken(c.env);
 
     try {
-        const transactions = await fetchDetailedEarningsPage(
+        const fetchLimit =
+            params.format === "json" ? params.limit + 1 : params.limit;
+        const fetchedTransactions = await fetchDetailedEarningsPage(
             tinybirdOrigin,
             tinybirdToken,
             {
                 devUserId: params.devUserId,
                 apiKeyIds: params.apiKeyIds,
-                limit: params.limit,
+                limit: fetchLimit,
                 since: params.since,
                 until: params.until,
                 before: params.before,
                 beforeEventId: params.beforeEventId,
             },
         );
+        const hasMore =
+            params.format === "json" &&
+            fetchedTransactions.length > params.limit;
+        const transactions = hasMore
+            ? fetchedTransactions.slice(0, params.limit)
+            : fetchedTransactions;
 
         if (params.format === "csv") {
             const rows = transactions
@@ -875,7 +901,11 @@ async function respondDetailedEarnings(
             });
         }
 
-        return c.json({ transactions, count: transactions.length });
+        return c.json({
+            transactions,
+            count: transactions.length,
+            has_more: hasMore,
+        });
     } catch (error) {
         log.error("Error fetching earnings transactions: {error}", { error });
         return c.json({ error: "Failed to fetch earnings transactions" }, 500);
@@ -907,7 +937,9 @@ async function respondDetailedUsage(
     const tinybirdToken = requireTinybirdReadToken(c.env);
 
     try {
-        const usage = await fetchDetailedUsagePage(
+        const fetchLimit =
+            params.format === "json" ? params.limit + 1 : params.limit;
+        const fetchedUsage = await fetchDetailedUsagePage(
             tinybirdOrigin,
             tinybirdToken,
             {
@@ -915,13 +947,18 @@ async function respondDetailedUsage(
                 apiKeyId: params.apiKeyId,
                 apiKeyIds: params.apiKeyIds,
                 models: params.models,
-                limit: params.limit,
+                limit: fetchLimit,
                 since: params.since,
                 until: params.until,
                 before: params.before,
                 beforeEventId: params.beforeEventId,
             },
         );
+        const hasMore =
+            params.format === "json" && fetchedUsage.length > params.limit;
+        const usage = hasMore
+            ? fetchedUsage.slice(0, params.limit)
+            : fetchedUsage;
 
         if (params.format === "csv") {
             const rows = usage.map(stripUsageCursor).map(usageRecordToCsvRow);
@@ -934,7 +971,7 @@ async function respondDetailedUsage(
             });
         }
 
-        return c.json({ usage, count: usage.length });
+        return c.json({ usage, count: usage.length, has_more: hasMore });
     } catch (error) {
         log.error("Error fetching usage: {error}", { error });
         return c.json({ error: "Failed to fetch usage data" }, 500);
@@ -1080,6 +1117,9 @@ const usageRecordSchema = z.object({
 const usageResponseSchema = z.object({
     usage: z.array(usageRecordSchema).describe("Array of usage records"),
     count: z.number().describe("Number of records returned"),
+    has_more: z
+        .boolean()
+        .describe("Whether more records are available after this page"),
 });
 
 /**
@@ -1532,12 +1572,12 @@ export const accountRoutes = new Hono<Env>()
         "/earnings/transactions",
         describeRoute({
             tags: ["👤 Account"],
-            summary: "Get App Earnings Transactions",
+            summary: "Get Earnings Transactions",
             description:
-                "Returns per-request app earnings transactions for table pagination and CSV export. Requires `account:usage` permission when using API keys.",
+                "Returns per-request earnings transactions for table pagination and CSV export. Requires `account:usage` permission when using API keys.",
             responses: {
                 200: {
-                    description: "App earnings transaction records",
+                    description: "Earnings transaction records",
                     content: {
                         "application/json": {
                             schema: resolver(
@@ -1688,7 +1728,12 @@ export const accountRoutes = new Hono<Env>()
                         "json",
                     );
                     if (cachedData) {
-                        payload = cachedData;
+                        payload = {
+                            ...cachedData,
+                            total: totalDeveloperEarnings(
+                                cachedData.perEntity ?? [],
+                            ),
+                        };
                         cached = true;
                     }
                 } catch (err) {
@@ -1698,7 +1743,7 @@ export const accountRoutes = new Hono<Env>()
                 if (!payload) {
                     const rows = await fetchTinybirdRows<DeveloperEarningsRow>(
                         tinybirdOrigin,
-                        "/v0/pipes/activity_app_earnings_chart.json",
+                        "/v0/pipes/activity_earnings_chart.json",
                         tinybirdToken,
                         {
                             dev_user_id: devUserId,
@@ -1723,7 +1768,7 @@ export const accountRoutes = new Hono<Env>()
                         daily,
                         perEntity,
                         bySource,
-                        total: totalDeveloperEarnings(bySource),
+                        total: totalDeveloperEarnings(perEntity),
                     };
 
                     try {

@@ -146,9 +146,53 @@ test("GET /api/account/earnings returns source rollups and additive money totals
     });
 
     const earningsCalls = mocks.tinybird.state.pipeCalls.filter((call) =>
-        call.url.includes("activity_app_earnings_chart.json"),
+        call.url.includes("activity_earnings_chart.json"),
     );
     expect(earningsCalls).toHaveLength(1);
+});
+
+test("GET /api/account/earnings derives totals from entity rollups when source rollups are absent", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    mocks.tinybird.state.earningsResponse = [
+        earningsRow({
+            date: "",
+            entity_id: "key_byop_app_1",
+            entity_name: "BYOP App",
+            source: "byop_markup",
+            pollen_earned: 0.1,
+            paid_earned: 0.08,
+            tier_earned: 0.02,
+        }),
+        earningsRow({
+            date: "",
+            entity_id: "owner/model",
+            entity_name: "Community Model",
+            source: "community_model",
+            pollen_earned: 0.3,
+            paid_earned: 0.12,
+            tier_earned: 0.18,
+        }),
+    ];
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/account/earnings?days=30",
+        { headers: authHeaders(sessionToken) },
+    );
+    expect(response.status).toBe(200);
+
+    const body = (await response.json()) as {
+        bySource: Record<string, unknown>[];
+        total: Record<string, unknown>;
+    };
+
+    expect(body.bySource).toHaveLength(0);
+    expect(Number(body.total.pollen_earned)).toBeCloseTo(0.4);
+    expect(Number(body.total.paid_earned)).toBeCloseTo(0.2);
+    expect(Number(body.total.tier_earned)).toBeCloseTo(0.2);
 });
 
 test("GET /api/account/earnings emits daily earnings CSV", async ({
@@ -199,7 +243,7 @@ test("GET /api/account/earnings emits daily earnings CSV", async ({
     );
 
     const earningsCalls = mocks.tinybird.state.pipeCalls.filter((call) =>
-        call.url.includes("activity_app_earnings_chart.json"),
+        call.url.includes("activity_earnings_chart.json"),
     );
     expect(earningsCalls).toHaveLength(1);
 });
@@ -215,6 +259,9 @@ test("GET /api/account/earnings/transactions emits detailed earnings CSV", async
             cursor_event_id: "event-1",
             timestamp: "2026-04-14 12:10:00",
             type: "generate.text",
+            source: "byop_markup",
+            entity_id: "key_byop_app_1",
+            entity_name: "BYOP App",
             app_key_id: "key_byop_app_1",
             app_name: "BYOP App",
             payer_user_id: "user_1",
@@ -239,17 +286,72 @@ test("GET /api/account/earnings/transactions emits detailed earnings CSV", async
     const [header, ...rows] = csv.split("\n");
 
     expect(header).toBe(
-        "timestamp,type,app_key_id,app_name,payer_user_id,model,meter_source,baseline_price,pollen_earned,cost_usd,markup_rate,response_time_ms",
+        "timestamp,type,source,entity_id,entity_name,app_key_id,app_name,payer_user_id,model,meter_source,baseline_price,pollen_earned,cost_usd,markup_rate,response_time_ms",
     );
     expect(rows[0]).toBe(
-        "2026-04-14 12:10:00,generate.text,key_byop_app_1,BYOP App,user_1,openai-fast,tier,0.4,0.1,0.5,0.25,123",
+        "2026-04-14 12:10:00,generate.text,byop_markup,key_byop_app_1,BYOP App,key_byop_app_1,BYOP App,user_1,openai-fast,tier,0.4,0.1,0.5,0.25,123",
     );
 
     const earningsCalls = mocks.tinybird.state.pipeCalls.filter((call) =>
-        call.url.includes("activity_app_earnings_transactions.json"),
+        call.url.includes("activity_earnings_transactions.json"),
     );
     expect(earningsCalls).toHaveLength(1);
     expect(earningsCalls[0].query.limit).toBe("50000");
+});
+
+test("GET /api/account/earnings/transactions returns community model rewards", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    mocks.tinybird.state.earningsTransactionsResponse = [
+        {
+            cursor_event_id: "event-model-1",
+            timestamp: "2026-04-14 12:10:00",
+            type: "generate.text",
+            source: "community_model",
+            entity_id: "owner/model",
+            entity_name: "Community Model",
+            app_key_id: "",
+            app_name: "",
+            payer_user_id: "user_1",
+            model: "owner/model",
+            meter_source: "pack",
+            baseline_price: 0.4,
+            pollen_earned: 0.1,
+            cost_usd: 0.4,
+            markup_rate: 0,
+            response_time_ms: 123,
+        },
+    ];
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/account/earnings/transactions?days=30&limit=10",
+        { headers: authHeaders(sessionToken) },
+    );
+    expect(response.status).toBe(200);
+
+    const body = (await response.json()) as {
+        transactions: Record<string, unknown>[];
+        has_more: boolean;
+    };
+
+    expect(body.has_more).toBe(false);
+    expect(body.transactions[0]).toMatchObject({
+        source: "community_model",
+        entity_id: "owner/model",
+        entity_name: "Community Model",
+        app_key_id: "",
+        app_name: "",
+        pollen_earned: 0.1,
+    });
+
+    const earningsCalls = mocks.tinybird.state.pipeCalls.filter((call) =>
+        call.url.includes("activity_earnings_transactions.json"),
+    );
+    expect(earningsCalls).toHaveLength(1);
+    expect(earningsCalls[0].query.limit).toBe("11");
 });
 
 test("GET /api/account/earnings?format=csv neutralizes app name formulas", async ({

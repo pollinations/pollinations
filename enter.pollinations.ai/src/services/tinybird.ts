@@ -69,7 +69,20 @@ export async function fetchTinybirdRows<T>(
         throw new Error(message);
     }
 
-    const data = (await response.json()) as { data: T[] };
+    const body = (await response.json()) as { data?: T[] };
+    if (!Array.isArray(body.data)) {
+        // A 200 with a non-standard shape (e.g. a soft error envelope) would
+        // otherwise blow up on `.length` below with an opaque TypeError.
+        // Surface it as a clear Tinybird error instead.
+        log.error("TINYBIRD_BAD_SHAPE: pipe={pipe} body={body}", {
+            pipe: path,
+            body: JSON.stringify(body).slice(0, 500),
+        });
+        throw new Error(
+            `Tinybird returned unexpected shape (no data array) for pipe ${path}`,
+        );
+    }
+    const rows = body.data;
     // Log the row count the PIPE returned (before any caller-side filtering), so
     // "pipe returned N but caller matched 0" is diagnosable from the logs.
     log.debug(
@@ -78,10 +91,10 @@ export async function fetchTinybirdRows<T>(
             pipe: path,
             status: response.status,
             durationMs,
-            rows: data.data.length,
+            rows: rows.length,
         },
     );
-    return data.data;
+    return rows;
 }
 
 export function requireTinybirdReadToken(env: CloudflareBindings): string {

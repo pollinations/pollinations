@@ -91,11 +91,11 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
             return c.json({ data: state.dailyResponse }, 200);
         })
-        .get("/v0/pipes/activity_app_earnings_chart.json", (c) => {
+        .get("/v0/pipes/activity_earnings_chart.json", (c) => {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
             return c.json({ data: state.earningsResponse }, 200);
         })
-        .get("/v0/pipes/activity_app_earnings_transactions.json", (c) => {
+        .get("/v0/pipes/activity_earnings_transactions.json", (c) => {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
             return c.json({ data: state.earningsTransactionsResponse }, 200);
         })

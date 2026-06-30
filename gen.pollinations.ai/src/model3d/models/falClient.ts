@@ -51,8 +51,7 @@ export interface RunFalJobOptions {
 }
 
 // Handle returned by submitFalJob — enough to check status and fetch the
-// result later without resubmitting, used by both the blocking runFalJob
-// loop and the async job API (POST /3d/generations + GET /3d/jobs/{id}).
+// result later without resubmitting.
 export interface FalJobHandle {
     requestId: string;
     statusUrl: string;

@@ -2,10 +2,8 @@ import { env } from "cloudflare:test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { syncModel3dEnvironment } from "../../src/model3d/env.ts";
 import {
-    checkInferenceportJob,
     InferenceportError,
     runInferenceportSync,
-    submitInferenceportJob,
 } from "../../src/model3d/models/inferenceportClient.ts";
 
 beforeEach(() => {
@@ -107,61 +105,5 @@ describe("runInferenceportSync", () => {
                 imageUrls: ["https://example.com/a.jpg"],
             }),
         ).rejects.toMatchObject({ name: "InferenceportError", status: 502 });
-    });
-});
-
-describe("async job API (submitInferenceportJob / checkInferenceportJob)", () => {
-    it("submit returns pending job state with a job_id", async () => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
-            new Response(
-                JSON.stringify({ job_id: "job_123", status: "pending" }),
-                { status: 202 },
-            ),
-        );
-
-        const state = await submitInferenceportJob({
-            model: "trellis2",
-            imageUrls: ["https://example.com/ref.jpg"],
-        });
-
-        expect(state.status).toBe("pending");
-        expect(state.jobId).toBe("job_123");
-    });
-
-    it("checkInferenceportJob returns completed state with GLB from data[0]", async () => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
-            new Response(
-                JSON.stringify({
-                    job_id: "job_123",
-                    status: "completed",
-                    data: [{ model_glb_b64_bytes: "YmFy" }],
-                }),
-                { status: 200 },
-            ),
-        );
-
-        const state = await checkInferenceportJob("job_123");
-
-        expect(state.status).toBe("completed");
-        if (state.status === "completed") {
-            expect(state.glbBase64).toBe("YmFy");
-        }
-    });
-
-    it("throws InferenceportError when job status is failed", async () => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
-            new Response(
-                JSON.stringify({
-                    job_id: "job_fail",
-                    status: "failed",
-                    error: "generation failed",
-                }),
-                { status: 200 },
-            ),
-        );
-
-        await expect(checkInferenceportJob("job_fail")).rejects.toThrowError(
-            InferenceportError,
-        );
     });
 });

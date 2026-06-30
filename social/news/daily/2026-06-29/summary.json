@@ -1,0 +1,23 @@
+{
+  "date": "2026-06-29",
+  "period_start": "2026-06-29",
+  "period_end": "2026-06-29",
+  "title": "Bring your own model: Community text endpoints",
+  "summary": "Community-hosted text models hit the registry, nanobanana stops ignoring reference images, and atomic syncs bring a broken quest back online.\n\nYou can now register your own OpenAI-compatible text endpoints in the dashboard. They get routed through `community/{username}/{model-id}` and you set your own per-1M-token pricing. Devs get to monetize their hosted models, and everyone else gets a decentralized registry of community-run AI.\n\nRipped out a legacy transparent-image hack that was clobbering user-provided reference images at non-square aspect ratios. Vertex AI handles the dimensions natively now, so your reference pixels actually make it to the model.\n\nThe daily sync between APPS.md and Tinybird was using separate async delete and insert operations, which temporarily emptied the app directory mid-flight. Switched to a single atomic replace. The 'App listed on Pollinations' quest is reliably claimable again.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 11567,
+      "date": "2026-06-29"
+    },
+    {
+      "number": 12103,
+      "date": "2026-06-29"
+    },
+    {
+      "number": 12104,
+      "date": "2026-06-29"
+    }
+  ],
+  "generated_at": "2026-06-30T07:14:06.870568+00:00"
+}

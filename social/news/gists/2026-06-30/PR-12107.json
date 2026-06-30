@@ -1,0 +1,35 @@
+{
+  "pr_number": 12107,
+  "title": "feat: add quest status and my-models APIs",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12107",
+  "merged_at": "2026-06-30T11:10:35Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Adds `GET /account/quests` as a read-only account quest status endpoint; `completed` includes catalog-completed quest cards and earned rewards.\n- Adds `/account/my-models` as the single Gen/Enter route family for invite-only community model admin; dashboard UI and API keys use the same account path.\n- Keeps account permissions orthogonal: `account:usage` reads account state and quests, `account:profile` reads private profile fields, and `account:keys` manages keys plus my-models where enabled.\n- Polli device login now asks for all account permissions it needs explicitly: `profile usage keys`; child key creation still strips `keys`.\n- Adds Polli access with explicit commands: `polli quests` for the public catalog, `polli quests mine` for authenticated rewards/status, and `polli my-models`; quest claiming remains dashboard-only.\n- Updates Polli docs, account docs, APIDOCS, and Scalar/OpenAPI source annotations for the scope model and my-models availability.\n\nValidation:\n- `npx biome check --write ...`\n- `npm run build --prefix packages/polli-cli`\n- `node packages/polli-cli/dist/index.js quests --help`\n- `node packages/polli-cli/dist/index.js quests mine --help`\n- `npx tsc --noEmit --skipLibCheck --pretty false` in `enter.pollinations.ai`\n- `npx vitest run test/quests.test.ts --testNamePattern=\"account quests merge earned rewards|account quest history requires account usage|account quest history accepts account usage\"`\n- `npx vitest run test/account-usage.test.ts --testNamePattern=\"GET /api/account/usage accepts account usage permission\"`\n- `npx vitest run test/integration/account-profile.test.ts`\n- `npx vitest run test/integration/api-keys.test.ts --testNamePattern=\"allows unbranded device-flow key creation|allows device-flow key creation\"`\n- `npx vitest run test/device-auth.test.ts --testNamePattern=\"POST /api/device/code issues device and user codes|full flow\"`\n- `npm run docs:validate` in `gen.pollinations.ai`\n- `npx vitest run test/docs.test.ts --reporter=verbos",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Check your quest log",
+    "blurb": "We've added new APIs and CLI commands to track your completed Quests and manage your community models. Time to see those hard-earned Pollen rewards stack up.",
+    "summary": "Added GET /account/quests to track earned rewards and /account/my-models for community model administration, alongside new `polli quests` and `polli my-models` CLI commands.",
+    "impact": "You can now check your completed quests and manage your custom models directly from the API or by running `polli quests mine` in your terminal.",
+    "keywords": [
+      "quests",
+      "api",
+      "cli",
+      "community-models",
+      "pollen"
+    ],
+    "visual_concept": "Polly the bee acting as a quest-giver or adventurer checking a log, interacting with the Monitor Robot who displays a list of models or a checkmark. Represents the new quest tracking and model management APIs.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny adventurer's hat, holding a small clipboard to check off a quest log. Next to her, a chunky pixel robot with a CRT monitor head displays a glowing lime green (#ecf874) checkmark on its screen. They are standing in a cozy retro hackerspace with code-plants sprouting from terracotta pots. Soft pastel lavender and mint gradient background. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-06-30/PR-12107.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny adventurer's hat, holding a small clipboard to check off a quest log. Next to her, a chunky pixel robot with a CRT monitor head displays a glowing lime green (#ecf874) checkmark on its screen. They are standing in a cozy retro hackerspace with code-plants sprouting from terracotta pots. Soft pastel lavender and mint gradient background. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-06-30T11:11:42.129010+00:00"
+}

@@ -143,7 +143,7 @@ export const UsageSection: FC<UsageSectionProps> = ({ period }) => {
             className="flex items-center gap-1.5"
         >
             <DownloadIcon className="h-3.5 w-3.5 shrink-0" />
-            Download CSV
+            CSV
         </Button>
     );
     const downloadAction = downloadDisabled ? (
@@ -162,7 +162,7 @@ export const UsageSection: FC<UsageSectionProps> = ({ period }) => {
     return (
         <Surface className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="font-body text-xs font-bold uppercase tracking-wide text-theme-text-soft">
+                <div className="font-body text-base font-semibold text-theme-text-strong">
                     API usage
                 </div>
                 {downloadAction}

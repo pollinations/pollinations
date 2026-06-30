@@ -28,14 +28,6 @@ import {
     getVideoModelIds,
 } from "@shared/registry/image.ts";
 import {
-    getAudioModelsInfo,
-    getEmbeddingModelsInfo,
-    getImageModelsInfo,
-    getRealtimeModelsInfo,
-    getTextModelsInfo,
-    type ModelInfo,
-} from "@shared/registry/model-info.ts";
-import {
     type CreateChatCompletionRequest,
     CreateChatCompletionRequestSchema,
     type CreateChatCompletionResponse,
@@ -67,10 +59,11 @@ import {
     handleTextContentLocal,
 } from "@/text/handler.ts";
 import { generationAccess } from "@/utils/generation-access.ts";
+import { communityTextSupportedEndpoints } from "../community-models.ts";
 import {
-    communityTextSupportedEndpoints,
-    getCommunityTextModelsInfo,
-} from "../community-models.ts";
+    type GenerationModelEntry,
+    getGenerationModelRegistry,
+} from "../model-registry.ts";
 import { handleSimpleAudio } from "./audio.ts";
 import { handleRealtimeWebSocket } from "./realtime.ts";
 
@@ -179,18 +172,16 @@ function assertStreamContentType(c: Context<Env>, response: Response): void {
     }
 }
 
-// Helper to filter models by API key permissions and paid balance
-function filterModelsByPermissions<
-    T extends { name: string; paid_only?: boolean },
->(
-    models: T[],
+// Helper to filter models by API key permissions and paid balance.
+function filterEntriesByPermissions(
+    entries: GenerationModelEntry[],
     allowedModels: string[] | undefined,
     hasPaidBalance?: boolean,
-): T[] {
-    return models.filter((m) => {
-        if (allowedModels?.length && !allowedModels.includes(m.name))
+): GenerationModelEntry[] {
+    return entries.filter((entry) => {
+        if (allowedModels?.length && !allowedModels.includes(entry.id))
             return false;
-        if (m.paid_only && hasPaidBalance === false) return false;
+        if (entry.info.paid_only && hasPaidBalance === false) return false;
         return true;
     });
 }
@@ -208,18 +199,59 @@ function hasPaidBalance(c: any): boolean | undefined {
 // Factory for model-list endpoints: filters the given models by API key
 // permissions and paid balance, then returns them as JSON.
 const modelsListHandler =
-    (getModels: (c: Context<Env>) => ModelInfo[] | Promise<ModelInfo[]>) =>
+    (
+        getEntries: (
+            c: Context<Env>,
+        ) => GenerationModelEntry[] | Promise<GenerationModelEntry[]>,
+    ) =>
     async (c: Context<Env>) => {
         const allowedModels = c.var.auth?.apiKey?.permissions?.models;
         const paidBalance = hasPaidBalance(c);
         return c.json(
-            filterModelsByPermissions(
-                await getModels(c),
+            filterEntriesByPermissions(
+                await getEntries(c),
                 allowedModels,
                 paidBalance,
-            ),
+            ).map((entry) => entry.info),
         );
     };
+
+async function getVisibleModelEntries(c: Context<Env>) {
+    return (await getGenerationModelRegistry(c.env)).visibleEntries();
+}
+
+async function getVisibleModelEntriesForEventType(
+    c: Context<Env>,
+    eventType: GenerationModelEntry["eventType"],
+) {
+    return (await getGenerationModelRegistry(c.env))
+        .visibleEntries()
+        .filter((entry) => entry.eventType === eventType);
+}
+
+async function getOrderedVisibleModelEntries(c: Context<Env>) {
+    const entries = await getVisibleModelEntries(c);
+    return [
+        ...entries.filter(
+            (entry) =>
+                entry.eventType === "generate.text" && !entry.communityEndpoint,
+        ),
+        ...entries.filter((entry) => entry.communityEndpoint),
+        ...entries.filter((entry) => entry.eventType === "generate.image"),
+        ...entries.filter((entry) => entry.eventType === "generate.realtime"),
+        ...entries.filter((entry) => entry.eventType === "generate.audio"),
+        ...entries.filter((entry) => entry.eventType === "generate.embedding"),
+    ];
+}
+
+function supportedEndpointsForEntry(entry: GenerationModelEntry): string[] {
+    if (entry.communityEndpoint) return communityTextSupportedEndpoints();
+    if (entry.eventType === "generate.text") return TEXT_MODEL_ENDPOINTS;
+    if (entry.eventType === "generate.audio") return ["/audio/{text}"];
+    if (entry.eventType === "generate.embedding") return ["/v1/embeddings"];
+    if (entry.eventType === "generate.realtime") return ["/v1/realtime"];
+    return ["/v1/images/generations", "/v1/images/edits", "/image/{prompt}"];
+}
 
 export const proxyRoutes = new Hono<Env>()
     // Edge rate limiter: first line of defense (10 req/s per IP)
@@ -253,81 +285,32 @@ export const proxyRoutes = new Hono<Env>()
         async (c) => {
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
-            const textModels = filterModelsByPermissions(
-                [
-                    ...getTextModelsInfo(),
-                    ...(await getCommunityTextModelsInfo(c.env.DB)),
-                ],
-                allowedModels,
-                paidBalance,
-            );
-            const imageModels = filterModelsByPermissions(
-                getImageModelsInfo(),
-                allowedModels,
-                paidBalance,
-            );
-            const audioModels = filterModelsByPermissions(
-                getAudioModelsInfo(),
-                allowedModels,
-                paidBalance,
-            );
-            const embeddingModels = filterModelsByPermissions(
-                getEmbeddingModelsInfo(),
-                allowedModels,
-                paidBalance,
-            );
-            const realtimeModels = filterModelsByPermissions(
-                getRealtimeModelsInfo(),
+            const modelEntries = filterEntriesByPermissions(
+                await getOrderedVisibleModelEntries(c),
                 allowedModels,
                 paidBalance,
             );
             const now = Date.now();
 
-            const toModelEntry = (
-                m: ModelInfo,
-                supportedEndpoints: string[],
-            ) => ({
-                id: m.name,
+            const toModelEntry = (entry: GenerationModelEntry) => ({
+                id: entry.info.name,
                 object: "model" as const,
                 created: now,
-                input_modalities: m.input_modalities,
-                output_modalities: m.output_modalities,
-                supported_endpoints: supportedEndpoints,
-                ...(m.tools && { tools: m.tools }),
-                ...(m.reasoning && { reasoning: m.reasoning }),
-                ...(m.context_length && {
-                    context_length: m.context_length,
+                input_modalities: entry.info.input_modalities,
+                output_modalities: entry.info.output_modalities,
+                supported_endpoints: supportedEndpointsForEntry(entry),
+                ...(entry.info.tools && { tools: entry.info.tools }),
+                ...(entry.info.reasoning && {
+                    reasoning: entry.info.reasoning,
+                }),
+                ...(entry.info.context_length && {
+                    context_length: entry.info.context_length,
                 }),
             });
 
             return c.json({
                 object: "list" as const,
-                data: [
-                    ...textModels.map((m) =>
-                        toModelEntry(
-                            m,
-                            m.community
-                                ? communityTextSupportedEndpoints()
-                                : TEXT_MODEL_ENDPOINTS,
-                        ),
-                    ),
-                    ...imageModels.map((m) =>
-                        toModelEntry(m, [
-                            "/v1/images/generations",
-                            "/v1/images/edits",
-                            "/image/{prompt}",
-                        ]),
-                    ),
-                    ...audioModels.map((m) =>
-                        toModelEntry(m, ["/audio/{text}"]),
-                    ),
-                    ...embeddingModels.map((m) =>
-                        toModelEntry(m, ["/v1/embeddings"]),
-                    ),
-                    ...realtimeModels.map((m) =>
-                        toModelEntry(m, ["/v1/realtime"]),
-                    ),
-                ],
+                data: modelEntries.map(toModelEntry),
             });
         },
     )
@@ -355,14 +338,7 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(500),
             },
         }),
-        modelsListHandler(async (c) => [
-            ...getTextModelsInfo(),
-            ...(await getCommunityTextModelsInfo(c.env.DB)),
-            ...getImageModelsInfo(),
-            ...getRealtimeModelsInfo(),
-            ...getAudioModelsInfo(),
-            ...getEmbeddingModelsInfo(),
-        ]),
+        modelsListHandler(getOrderedVisibleModelEntries),
     )
     .get(
         "/image/models",
@@ -388,7 +364,9 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(500),
             },
         }),
-        modelsListHandler(() => getImageModelsInfo()),
+        modelsListHandler((c) =>
+            getVisibleModelEntriesForEventType(c, "generate.image"),
+        ),
     )
     .get(
         "/text/models",
@@ -414,10 +392,9 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(500),
             },
         }),
-        modelsListHandler(async (c) => [
-            ...getTextModelsInfo(),
-            ...(await getCommunityTextModelsInfo(c.env.DB)),
-        ]),
+        modelsListHandler((c) =>
+            getVisibleModelEntriesForEventType(c, "generate.text"),
+        ),
     )
     .get(
         "/audio/models",
@@ -443,7 +420,9 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(500),
             },
         }),
-        modelsListHandler(() => getAudioModelsInfo()),
+        modelsListHandler((c) =>
+            getVisibleModelEntriesForEventType(c, "generate.audio"),
+        ),
     )
     .get(
         "/embeddings/models",
@@ -469,7 +448,9 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(500),
             },
         }),
-        modelsListHandler(() => getEmbeddingModelsInfo()),
+        modelsListHandler((c) =>
+            getVisibleModelEntriesForEventType(c, "generate.embedding"),
+        ),
     )
     .post("/register", handleRegisterServer)
     .get("/register", handleRegisterServer)

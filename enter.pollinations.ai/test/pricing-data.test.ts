@@ -143,7 +143,8 @@ test("catalog prices format token rates through formatPricePer1M", () => {
 test("catalog prices keep community text models flagged for display", () => {
     const [communityModel] = getModelPricesFromCatalog([
         {
-            name: "community/voodoohop/openai",
+            name: "voodoohop/openai",
+            aliases: ["community/voodoohop/openai"],
             category: "text",
             community: true,
             brand: "Community",
@@ -161,7 +162,7 @@ test("catalog prices keep community text models flagged for display", () => {
     ]);
 
     expect(communityModel).toMatchObject({
-        name: "community/voodoohop/openai",
+        name: "voodoohop/openai",
         type: "text",
         community: true,
         displayName: "OpenAI relay",

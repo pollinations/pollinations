@@ -14,7 +14,7 @@ NODE model_revenue_stats
 SQL >
     %
     SELECT
-        resolved_model_requested as model,
+        replaceRegexpOne(resolved_model_requested, '^community/', '') as model,
         event_type,
         count() as total_requests,
         countIf(response_status >= 200 AND response_status < 300) as status_2xx,
@@ -22,7 +22,7 @@ SQL >
         round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier' AND response_status >= 200 AND response_status < 300), 4) as tier_value
     FROM generation_event
     WHERE start_time >= now() - interval {{Int32(minutes, 60)}} minute
-    GROUP BY resolved_model_requested, event_type
+    GROUP BY model, event_type
     ORDER BY paid_revenue DESC
 
 TYPE endpoint

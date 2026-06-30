@@ -10,7 +10,7 @@ NODE model_health_stats
 SQL >
     %
     SELECT
-        resolved_model_requested as model,
+        replaceRegexpOne(resolved_model_requested, '^community/', '') as model,
         event_type,
         topK(1)(model_provider_used)[1] as provider,
         topK(1)(model_used)[1] as model_used,
@@ -25,7 +25,7 @@ SQL >
         max(start_time) as last_request_at
     FROM generation_event
     WHERE start_time >= now() - interval {{Int32(minutes, 60)}} minute
-    GROUP BY resolved_model_requested, event_type
+    GROUP BY model, event_type
     ORDER BY total_requests DESC
 
 TYPE endpoint

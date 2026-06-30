@@ -7,6 +7,7 @@ import {
     communityModelId,
     communityOpenAIBaseUrl,
     isCommunityEndpointOwnerAllowed,
+    legacyCommunityModelId,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
     parseCommunityModelId,
@@ -24,7 +25,8 @@ import {
 } from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { resetGenerationModelRegistryCache } from "./model-registry.ts";
 import { communityEndpointGatewayContext } from "./text/communityEndpoint.ts";
 
 const db = drizzle(env.DB);
@@ -36,7 +38,12 @@ function isPortkeyChatCompletionsRequest(request: Request): boolean {
     return new URL(request.url).pathname === "/v1/chat/completions";
 }
 
+beforeEach(() => {
+    resetGenerationModelRegistryCache();
+});
+
 afterEach(() => {
+    resetGenerationModelRegistryCache();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
 });
@@ -161,9 +168,20 @@ describe("community endpoint helpers", () => {
             "voodoohop",
             "provider/path/model-name",
         );
+        const legacyModelId = legacyCommunityModelId(
+            "voodoohop",
+            "provider/path/model-name",
+        );
 
-        expect(modelId).toBe("community/voodoohop/provider/path/model-name");
+        expect(modelId).toBe("voodoohop/provider/path/model-name");
+        expect(legacyModelId).toBe(
+            "community/voodoohop/provider/path/model-name",
+        );
         expect(parseCommunityModelId(modelId)).toEqual({
+            ownerGithubUsername: "voodoohop",
+            modelName: "provider/path/model-name",
+        });
+        expect(parseCommunityModelId(legacyModelId)).toEqual({
             ownerGithubUsername: "voodoohop",
             modelName: "provider/path/model-name",
         });
@@ -197,7 +215,7 @@ describe("community endpoint helpers", () => {
 
     it("uses the community endpoint description as the model title", () => {
         const modelDefinition = communityModelDefinition({
-            modelId: "community/voodoohop/openai",
+            modelId: "voodoohop/openai",
             description: "OpenAI via community endpoint",
             ...communityEndpointPrices({
                 promptTextPrice: 0.1,
@@ -206,6 +224,7 @@ describe("community endpoint helpers", () => {
         });
 
         expect(modelDefinition.title).toBe("OpenAI via community endpoint");
+        expect(modelDefinition.aliases).toEqual(["community/voodoohop/openai"]);
         expect(modelDefinition.description).toBe(
             "OpenAI via community endpoint",
         );
@@ -216,7 +235,7 @@ describe("community endpoint helpers", () => {
         const endpoint: CommunityEndpointRuntime = {
             id: "community-endpoint-id",
             ownerUserId: "owner-id",
-            modelId: "community/voodoohop/openai",
+            modelId: "voodoohop/openai",
             name: "openai",
             description: null,
             baseUrl: "https://api.example.com/v1",
@@ -360,10 +379,37 @@ fixtureTest(
             },
         });
 
+        const legacyResponse = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: legacyCommunityModelId(
+                        ownerGithubUsername,
+                        modelName,
+                    ),
+                    messages: [{ role: "user", content: "hello" }],
+                    max_tokens: 5,
+                }),
+            }),
+        );
+        expect(legacyResponse.status).toBe(200);
+        await expect(legacyResponse.json()).resolves.toMatchObject({
+            model: "gpt-4.1-mini",
+            choices: [
+                {
+                    message: { content: "ok" },
+                },
+            ],
+        });
+
         const upstreamCalls = fetchMock.mock.calls.filter(([input, init]) =>
             isPortkeyChatCompletionsRequest(new Request(input, init)),
         );
-        expect(upstreamCalls).toHaveLength(1);
+        expect(upstreamCalls).toHaveLength(2);
     },
 );
 
@@ -605,6 +651,7 @@ fixtureTest(
 
         const textModels = (await textResponse.json()) as {
             name: string;
+            aliases?: string[];
             category?: string;
             community?: boolean;
             alpha?: boolean;
@@ -625,6 +672,9 @@ fixtureTest(
             const listed = models.find((model) => model.name === modelId);
             expect(listed).toMatchObject({
                 name: modelId,
+                aliases: [
+                    legacyCommunityModelId(ownerGithubUsername, modelName),
+                ],
                 category: "text",
                 community: true,
                 alpha: true,
@@ -1058,7 +1108,7 @@ fixtureTest(
             unknown
         >;
         expect(created).toMatchObject({
-            modelId: `community/${ownerGithubUsername}/my-test-model`,
+            modelId: `${ownerGithubUsername}/my-test-model`,
             name: "my-test-model",
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",

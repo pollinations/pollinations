@@ -3,14 +3,14 @@ import {
     communityEndpointPrices,
     communityModelDefinition,
     communityModelId,
-    parseCommunityModelId,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import {
     type ModelInfo,
     modelInfoFromDefinition,
 } from "@shared/registry/model-info.ts";
-import { and, eq, isNotNull } from "drizzle-orm";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
+import { eq, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 
 const COMMUNITY_TEXT_ENDPOINTS = [
@@ -19,69 +19,28 @@ const COMMUNITY_TEXT_ENDPOINTS = [
     "/text/{prompt}",
 ];
 
-export async function getCommunityTextModelsInfo(
-    dbBinding: CloudflareBindings["DB"] | undefined,
-): Promise<ModelInfo[]> {
-    if (!dbBinding) return [];
-
-    const db = drizzle(dbBinding, { schema });
-    const rows = await db
-        .select({
-            ownerGithubUsername: schema.user.githubUsername,
-            name: schema.communityEndpoint.name,
-            description: schema.communityEndpoint.description,
-            promptTextPrice: schema.communityEndpoint.promptTextPrice,
-            promptCachedPrice: schema.communityEndpoint.promptCachedPrice,
-            promptCacheWritePrice:
-                schema.communityEndpoint.promptCacheWritePrice,
-            promptAudioPrice: schema.communityEndpoint.promptAudioPrice,
-            promptImagePrice: schema.communityEndpoint.promptImagePrice,
-            completionTextPrice: schema.communityEndpoint.completionTextPrice,
-            completionReasoningPrice:
-                schema.communityEndpoint.completionReasoningPrice,
-            completionAudioPrice: schema.communityEndpoint.completionAudioPrice,
-        })
-        .from(schema.communityEndpoint)
-        .innerJoin(
-            schema.user,
-            eq(schema.communityEndpoint.ownerUserId, schema.user.id),
-        )
-        .where(isNotNull(schema.user.githubUsername));
-
-    return rows.flatMap((row): ModelInfo[] => {
-        if (!row.ownerGithubUsername) return [];
-        const modelId = communityModelId(row.ownerGithubUsername, row.name);
-
-        return [
-            modelInfoFromDefinition(
-                modelId,
-                communityModelDefinition({
-                    modelId,
-                    description: row.description,
-                    ...communityEndpointPrices(row),
-                }),
-                { community: true },
-            ),
-        ];
-    });
-}
-
 export function communityTextSupportedEndpoints(): string[] {
     return COMMUNITY_TEXT_ENDPOINTS;
 }
 
-export async function getCommunityEndpointRuntime(
-    dbBinding: CloudflareBindings["DB"] | undefined,
-    model: string,
-): Promise<CommunityEndpointRuntime | null> {
-    const communityModel = parseCommunityModelId(model);
-    if (!communityModel || !dbBinding) return null;
+export type CommunityModelRegistryEntry = {
+    id: string;
+    aliases: string[];
+    info: ModelInfo;
+    definition: ModelDefinition<string>;
+    communityEndpoint: CommunityEndpointRuntime;
+};
 
+export async function getCommunityModelRegistryEntries(
+    dbBinding: CloudflareBindings["DB"] | undefined,
+): Promise<CommunityModelRegistryEntry[]> {
+    if (!dbBinding) return [];
     const db = drizzle(dbBinding, { schema });
-    const row = await db
+    const rows = await db
         .select({
             id: schema.communityEndpoint.id,
             ownerUserId: schema.communityEndpoint.ownerUserId,
+            ownerGithubUsername: schema.user.githubUsername,
             name: schema.communityEndpoint.name,
             description: schema.communityEndpoint.description,
             baseUrl: schema.communityEndpoint.baseUrl,
@@ -104,28 +63,33 @@ export async function getCommunityEndpointRuntime(
             schema.user,
             eq(schema.communityEndpoint.ownerUserId, schema.user.id),
         )
-        .where(
-            and(
-                eq(
-                    schema.user.githubUsername,
-                    communityModel.ownerGithubUsername,
-                ),
-                eq(schema.communityEndpoint.name, communityModel.modelName),
-            ),
-        )
-        .limit(1);
+        .where(isNotNull(schema.user.githubUsername));
 
-    const endpoint = row[0];
-    if (!endpoint) return null;
-    return {
-        id: endpoint.id,
-        ownerUserId: endpoint.ownerUserId,
-        modelId: model,
-        name: endpoint.name,
-        description: endpoint.description,
-        baseUrl: endpoint.baseUrl,
-        upstreamModel: endpoint.upstreamModel,
-        bearerTokenCiphertext: endpoint.bearerTokenCiphertext,
-        ...communityEndpointPrices(endpoint),
-    };
+    return rows.flatMap((row): CommunityModelRegistryEntry[] => {
+        if (!row.ownerGithubUsername) return [];
+        const modelId = communityModelId(row.ownerGithubUsername, row.name);
+        const communityEndpoint: CommunityEndpointRuntime = {
+            id: row.id,
+            ownerUserId: row.ownerUserId,
+            modelId,
+            name: row.name,
+            description: row.description,
+            baseUrl: row.baseUrl,
+            upstreamModel: row.upstreamModel,
+            bearerTokenCiphertext: row.bearerTokenCiphertext,
+            ...communityEndpointPrices(row),
+        };
+        const definition = communityModelDefinition(communityEndpoint);
+        return [
+            {
+                id: modelId,
+                aliases: definition.aliases,
+                info: modelInfoFromDefinition(modelId, definition, {
+                    community: true,
+                }),
+                definition,
+                communityEndpoint,
+            },
+        ];
+    });
 }

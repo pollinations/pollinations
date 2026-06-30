@@ -6,7 +6,7 @@ import {
     type OpenAIChatUsageType,
 } from "./registry/usage-headers.ts";
 
-export const COMMUNITY_MODEL_PREFIX = "community/";
+export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
 const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
 
@@ -94,7 +94,17 @@ export function communityModelId(
     ownerGithubUsername: string,
     modelName: string,
 ): string {
-    return `${COMMUNITY_MODEL_PREFIX}${ownerGithubUsername}/${modelName}`;
+    return `${ownerGithubUsername}/${modelName}`;
+}
+
+export function legacyCommunityModelId(
+    ownerGithubUsername: string,
+    modelName: string,
+): string {
+    return `${LEGACY_COMMUNITY_MODEL_PREFIX}${communityModelId(
+        ownerGithubUsername,
+        modelName,
+    )}`;
 }
 
 export function normalizeCommunityEndpointBearerToken(value: string): string {
@@ -112,8 +122,9 @@ export function isCommunityEndpointOwnerAllowed(
 export function parseCommunityModelId(
     model: string,
 ): CommunityModelParts | null {
-    if (!model.startsWith(COMMUNITY_MODEL_PREFIX)) return null;
-    const value = model.slice(COMMUNITY_MODEL_PREFIX.length).trim();
+    const value = model.startsWith(LEGACY_COMMUNITY_MODEL_PREFIX)
+        ? model.slice(LEGACY_COMMUNITY_MODEL_PREFIX.length).trim()
+        : model.trim();
     const separator = value.indexOf("/");
     if (separator <= 0) return null;
 
@@ -165,8 +176,13 @@ export function communityModelDefinition(
 ): ModelDefinition<string> {
     const parsed = parseCommunityModelId(endpoint.modelId);
     const description = endpoint.description?.trim();
+    const legacyAlias = parsed
+        ? legacyCommunityModelId(parsed.ownerGithubUsername, parsed.modelName)
+        : null;
+    const aliases =
+        legacyAlias && legacyAlias !== endpoint.modelId ? [legacyAlias] : [];
     return {
-        aliases: [],
+        aliases,
         modelId: endpoint.modelId,
         provider: "community",
         brand: "Community",

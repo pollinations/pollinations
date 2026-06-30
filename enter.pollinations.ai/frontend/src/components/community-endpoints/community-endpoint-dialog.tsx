@@ -241,7 +241,7 @@ export function CommunityEndpointDialog({
                 <p className="mt-1 text-sm text-theme-text-muted">
                     Register an OpenAI-compatible endpoint as a{" "}
                     <code>
-                        community/{"{username}"}/{"{model-id}"}
+                        {"{username}"}/{"{model-id}"}
                     </code>{" "}
                     model with your own per-1M-token pricing.
                 </p>
@@ -259,7 +259,7 @@ export function CommunityEndpointDialog({
                     <div className="grid gap-4 sm:grid-cols-2">
                         <FieldStack
                             label="Model ID"
-                            helper="Public id: community/{username}/{model-id}."
+                            helper="Public id: {username}/{model-id}."
                             alignLabelRow
                         >
                             <Input

@@ -16,6 +16,7 @@ import {
     communityEndpoint as communityEndpointTable,
     session as sessionTable,
 } from "@shared/db/better-auth.ts";
+import { handleError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import {
@@ -59,7 +60,8 @@ async function createEnterCommunityApi(): Promise<Hono> {
             c.set("log" as never, testLog);
             await next();
         })
-        .route("/api/community-endpoints", communityEndpointsRoutes);
+        .route("/api/community-endpoints", communityEndpointsRoutes)
+        .onError(handleError);
 }
 
 async function createEnterFrontendApi(): Promise<Hono> {
@@ -1160,3 +1162,41 @@ fixtureTest(
         expect(secondList.data[0]).not.toHaveProperty("bearerTokenCiphertext");
     },
 );
+
+fixtureTest("rejects a community model name containing a slash", async () => {
+    const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+    const ownerUserId = await createTestUser({
+        githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+        githubUsername: ownerGithubUsername,
+    });
+    const sessionToken = `session-${crypto.randomUUID()}`;
+    await db.insert(sessionTable).values({
+        id: `session-${crypto.randomUUID()}`,
+        token: sessionToken,
+        userId: ownerUserId,
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    });
+
+    const enterApi = await createEnterCommunityApi();
+    const response = await fetchEnterApi(
+        enterApi,
+        new Request("http://localhost:3000/api/community-endpoints", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: await signedSessionCookie(sessionToken),
+            },
+            body: JSON.stringify({
+                name: "inferenceport.ai/gpt-oss-20b",
+                description: "name with a slash",
+                baseUrl: "https://api.example.com/v1",
+                upstreamModel: "gpt-oss-20b",
+                bearerToken: "sk_saved_token",
+            }),
+        }),
+    );
+
+    expect(response.status).toBe(400);
+});

@@ -43,7 +43,14 @@ const UpdatePriceFieldsSchema = Object.fromEntries(
 >;
 
 const EndpointFieldsSchema = {
-    name: z.string().trim().min(1).max(120),
+    // No "/": the public model id is `<owner>/<name>`, so a slash in the name
+    // would inject a second separator and let one model spoof another's id.
+    name: z
+        .string()
+        .trim()
+        .min(1)
+        .max(120)
+        .regex(/^[^/]+$/, "Model name cannot contain '/'"),
     description: z.string().trim().max(240).optional(),
     baseUrl: z.string().url(),
     upstreamModel: z.string().trim().min(1).max(253).optional(),

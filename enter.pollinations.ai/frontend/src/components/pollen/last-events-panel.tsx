@@ -1,7 +1,9 @@
 import {
     Button,
+    CardIcon,
     Chip,
     ClockIcon,
+    SproutIcon,
     Table,
     TableBody,
     TableCell,
@@ -150,8 +152,30 @@ function EventKindChip({ kind }: { kind: LastEvent["kind"] }) {
 }
 
 function MeterSourceChip({ source }: { source: string | null }) {
-    if (source === "tier") return <TierChip>quest</TierChip>;
-    if (source === "pack") return <PaidChip>paid</PaidChip>;
+    if (source === "tier") {
+        return (
+            <TierChip
+                size="sm"
+                aria-label="quest"
+                title="quest"
+                className="justify-center"
+            >
+                <SproutIcon className="h-3.5 w-3.5" aria-hidden="true" />
+            </TierChip>
+        );
+    }
+    if (source === "pack") {
+        return (
+            <PaidChip
+                size="sm"
+                aria-label="paid"
+                title="paid"
+                className="justify-center"
+            >
+                <CardIcon className="h-3.5 w-3.5" aria-hidden="true" />
+            </PaidChip>
+        );
+    }
     return (
         <Chip intent="neutral" size="sm">
             unknown

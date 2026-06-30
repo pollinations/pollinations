@@ -1,6 +1,9 @@
 import { env, SELF } from "cloudflare:test";
 import { createHmac } from "node:crypto";
-import { user as userTable } from "@shared/db/better-auth.ts";
+import {
+    stripeCardFingerprintAttempt as stripeCardFingerprintAttemptTable,
+    user as userTable,
+} from "@shared/db/better-auth.ts";
 import {
     describePollenPack,
     getPollenPackByAmount,
@@ -10,6 +13,7 @@ import {
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
+import { STRIPE_NEW_CARD_GATE_METADATA } from "../../src/utils/stripe-card-gate.ts";
 import { test } from "../fixtures.ts";
 import { mockCardPaymentMethod, mockCustomer } from "../mocks/stripe.ts";
 
@@ -149,6 +153,61 @@ async function postSignedStripeWebhook(
     });
 }
 
+async function getSeededUserId(): Promise<string> {
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .limit(1);
+
+    expect(user).toBeTruthy();
+    if (!user) throw new Error("Expected seeded test user");
+    return user.id;
+}
+
+function createCardChargeSucceededEvent({
+    eventId,
+    chargeId,
+    userId,
+    fingerprint,
+    customer = "cus_test_card_gate",
+}: {
+    eventId: string;
+    chargeId: string;
+    userId: string;
+    fingerprint: string;
+    customer?: string;
+}): Record<string, unknown> {
+    return {
+        id: eventId,
+        type: "charge.succeeded",
+        livemode: false,
+        data: {
+            object: {
+                id: chargeId,
+                object: "charge",
+                amount: 1000,
+                currency: "usd",
+                status: "succeeded",
+                customer,
+                payment_intent: `pi_${chargeId}`,
+                metadata: { userId },
+                billing_details: { email: "buyer@example.com" },
+                payment_method_details: {
+                    type: "card",
+                    card: {
+                        fingerprint,
+                        brand: "visa",
+                        country: "US",
+                        network: "visa",
+                    },
+                },
+                outcome: { risk_level: "normal", risk_score: 12 },
+            },
+        },
+    };
+}
+
 test.for(
     checkoutAmounts,
 )("%s should only be accessible when authenticated via session cookie", async (route, {
@@ -276,11 +335,88 @@ test("GET /api/stripe/checkout/p10 sets pack identity in session metadata", asyn
     // branch was taken.
     expect(body?.["metadata[packKey]"]).toBe(pack?.packKey);
     expect(body?.["metadata[cohort]"]).toBe("USD");
+    expect(body?.[`metadata[${STRIPE_NEW_CARD_GATE_METADATA.gate}]`]).toBe(
+        "ok",
+    );
+    expect(body?.[`metadata[${STRIPE_NEW_CARD_GATE_METADATA.count24h}]`]).toBe(
+        "0",
+    );
+    expect(body?.[`metadata[${STRIPE_NEW_CARD_GATE_METADATA.limit24h}]`]).toBe(
+        "4",
+    );
 
     // payment_intent metadata mirrors session metadata for Stripe dashboard
     // inspection and reconciliation.
     expect(body?.["payment_intent_data[metadata][packKey]"]).toBe(
         pack?.packKey,
+    );
+    expect(
+        body?.[
+            `payment_intent_data[metadata][${STRIPE_NEW_CARD_GATE_METADATA.gate}]`
+        ],
+    ).toBe("ok");
+    expect(body?.["payment_method_options[card][request_three_d_secure]"]).toBe(
+        undefined,
+    );
+});
+
+test("GET /api/stripe/checkout marks new-card gate locked after four distinct cards in 24h", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const userId = await getSeededUserId();
+
+    for (const fingerprint of [
+        "fp_gate_1",
+        "fp_gate_2",
+        "fp_gate_3",
+        "fp_gate_4",
+    ]) {
+        const response = await postSignedStripeWebhook(
+            createCardChargeSucceededEvent({
+                eventId: `evt_${fingerprint}`,
+                chargeId: `ch_${fingerprint}`,
+                userId,
+                fingerprint,
+            }),
+        );
+        expect(response.status).toBe(200);
+    }
+
+    const response = await SELF.fetch(`${base}/checkout/p10`, {
+        method: "GET",
+        headers: { cookie: `better-auth.session_token=${sessionToken}` },
+        redirect: "manual",
+    });
+    expect(response.status).toBe(302);
+
+    const body = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/checkout/sessions",
+    )?.body;
+    expect(body).toBeTruthy();
+
+    expect(body?.[`metadata[${STRIPE_NEW_CARD_GATE_METADATA.gate}]`]).toBe(
+        "locked",
+    );
+    expect(body?.[`metadata[${STRIPE_NEW_CARD_GATE_METADATA.count24h}]`]).toBe(
+        "4",
+    );
+    expect(body?.[`metadata[${STRIPE_NEW_CARD_GATE_METADATA.limit24h}]`]).toBe(
+        "4",
+    );
+    expect(
+        body?.[
+            `payment_intent_data[metadata][${STRIPE_NEW_CARD_GATE_METADATA.gate}]`
+        ],
+    ).toBe("locked");
+    expect(
+        body?.[
+            `payment_intent_data[metadata][${STRIPE_NEW_CARD_GATE_METADATA.count24h}]`
+        ],
+    ).toBe("4");
+    expect(body?.["payment_method_options[card][request_three_d_secure]"]).toBe(
+        undefined,
     );
 });
 
@@ -2745,7 +2881,12 @@ test("POST /api/webhooks/stripe charge.succeeded enriches Tinybird with card iss
                 billing_details: { email: "buyer@example.com" },
                 payment_method_details: {
                     type: "card",
-                    card: { brand: "visa", country: "CZ", network: "visa" },
+                    card: {
+                        fingerprint: "fp_test_charge_succeeded",
+                        brand: "visa",
+                        country: "CZ",
+                        network: "visa",
+                    },
                 },
                 outcome: { risk_level: "normal", risk_score: 21 },
             },
@@ -2772,13 +2913,19 @@ test("POST /api/webhooks/stripe charge.succeeded enriches Tinybird with card iss
     });
 });
 
-test("POST /api/webhooks/stripe charge.succeeded does not write to D1 (Tinybird-only analytics)", async ({
+test("POST /api/webhooks/stripe charge.succeeded records card fingerprint without crediting checkout", async ({
+    sessionToken,
     mocks,
 }) => {
     await mocks.enable("tinybird");
+    expect(sessionToken).toBeTruthy();
+    const userId = await getSeededUserId();
 
-    const before = await env.DB.prepare(
+    const creditsBefore = await env.DB.prepare(
         "SELECT COUNT(*) AS count FROM stripe_checkout_credits",
+    ).first<{ count: number }>();
+    const attemptsBefore = await env.DB.prepare(
+        "SELECT COUNT(*) AS count FROM stripe_card_fingerprint_attempt",
     ).first<{ count: number }>();
 
     const response = await postSignedStripeWebhook({
@@ -2792,9 +2939,18 @@ test("POST /api/webhooks/stripe charge.succeeded does not write to D1 (Tinybird-
                 amount: 500,
                 currency: "usd",
                 status: "succeeded",
+                customer: "cus_test_charge_no_d1",
+                payment_intent: "pi_test_charge_no_d1",
+                metadata: { userId },
+                billing_details: { email: "buyer@example.com" },
                 payment_method_details: {
                     type: "card",
-                    card: { brand: "visa", country: "US", network: "visa" },
+                    card: {
+                        fingerprint: "fp_test_charge_no_d1",
+                        brand: "visa",
+                        country: "US",
+                        network: "visa",
+                    },
                 },
                 outcome: { risk_level: "normal", risk_score: 5 },
             },
@@ -2805,7 +2961,149 @@ test("POST /api/webhooks/stripe charge.succeeded does not write to D1 (Tinybird-
     const after = await env.DB.prepare(
         "SELECT COUNT(*) AS count FROM stripe_checkout_credits",
     ).first<{ count: number }>();
-    expect(after?.count).toBe(before?.count);
+    expect(after?.count).toBe(creditsBefore?.count);
+
+    const attemptsAfter = await env.DB.prepare(
+        "SELECT COUNT(*) AS count FROM stripe_card_fingerprint_attempt",
+    ).first<{ count: number }>();
+    expect(attemptsAfter?.count).toBe((attemptsBefore?.count ?? 0) + 1);
+
+    const [attempt] = await drizzle(env.DB)
+        .select({
+            userId: stripeCardFingerprintAttemptTable.userId,
+            cardFingerprint: stripeCardFingerprintAttemptTable.cardFingerprint,
+            status: stripeCardFingerprintAttemptTable.status,
+            chargeId: stripeCardFingerprintAttemptTable.chargeId,
+        })
+        .from(stripeCardFingerprintAttemptTable)
+        .where(
+            eq(
+                stripeCardFingerprintAttemptTable.eventId,
+                "evt_test_charge_no_d1",
+            ),
+        )
+        .limit(1);
+
+    expect(attempt).toMatchObject({
+        userId,
+        cardFingerprint: "fp_test_charge_no_d1",
+        status: "succeeded",
+        chargeId: "ch_test_charge_no_d1",
+    });
+
+    const duplicateResponse = await postSignedStripeWebhook({
+        id: "evt_test_charge_no_d1",
+        type: "charge.succeeded",
+        livemode: false,
+        data: {
+            object: {
+                id: "ch_test_charge_no_d1",
+                object: "charge",
+                amount: 500,
+                currency: "usd",
+                status: "succeeded",
+                metadata: { userId },
+                payment_method_details: {
+                    type: "card",
+                    card: {
+                        fingerprint: "fp_test_charge_no_d1",
+                        brand: "visa",
+                        country: "US",
+                        network: "visa",
+                    },
+                },
+            },
+        },
+    });
+    expect(duplicateResponse.status).toBe(200);
+
+    const attemptsAfterDuplicate = await env.DB.prepare(
+        "SELECT COUNT(*) AS count FROM stripe_card_fingerprint_attempt",
+    ).first<{ count: number }>();
+    expect(attemptsAfterDuplicate?.count).toBe(attemptsAfter?.count);
+});
+
+test("POST /api/webhooks/stripe payment_intent.payment_failed records latest charge fingerprint", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    expect(sessionToken).toBeTruthy();
+    const userId = await getSeededUserId();
+
+    mocks.stripe.state.paymentIntents.push({
+        id: "pi_test_failed_card_gate",
+        object: "payment_intent",
+        status: "requires_payment_method",
+        amount: 500,
+        currency: "usd",
+        metadata: { userId },
+        payment_method_types: ["card"],
+        receipt_email: "buyer@example.com",
+        latest_charge: {
+            id: "ch_test_failed_card_gate",
+            object: "charge",
+            amount: 500,
+            currency: "usd",
+            status: "failed",
+            customer: "cus_test_failed_card_gate",
+            payment_intent: "pi_test_failed_card_gate",
+            metadata: { userId },
+            billing_details: { email: "buyer@example.com" },
+            payment_method_details: {
+                type: "card",
+                card: {
+                    fingerprint: "fp_test_failed_card_gate",
+                    brand: "visa",
+                    country: "US",
+                    network: "visa",
+                },
+            },
+            outcome: { risk_level: "elevated", risk_score: 61 },
+        },
+    });
+
+    const response = await postSignedStripeWebhook({
+        id: "evt_test_failed_card_gate",
+        type: "payment_intent.payment_failed",
+        livemode: false,
+        data: {
+            object: {
+                id: "pi_test_failed_card_gate",
+                object: "payment_intent",
+                status: "requires_payment_method",
+                amount: 500,
+                currency: "usd",
+                metadata: { userId },
+                payment_method_types: ["card"],
+                receipt_email: "buyer@example.com",
+            },
+        },
+    });
+    expect(response.status).toBe(200);
+
+    const [attempt] = await drizzle(env.DB)
+        .select({
+            userId: stripeCardFingerprintAttemptTable.userId,
+            cardFingerprint: stripeCardFingerprintAttemptTable.cardFingerprint,
+            status: stripeCardFingerprintAttemptTable.status,
+            chargeId: stripeCardFingerprintAttemptTable.chargeId,
+        })
+        .from(stripeCardFingerprintAttemptTable)
+        .where(
+            eq(
+                stripeCardFingerprintAttemptTable.eventId,
+                "evt_test_failed_card_gate",
+            ),
+        )
+        .limit(1);
+
+    expect(attempt).toMatchObject({
+        userId,
+        cardFingerprint: "fp_test_failed_card_gate",
+        status: "failed",
+        chargeId: "ch_test_failed_card_gate",
+    });
 });
 
 test("POST /api/webhooks/stripe emits checkout.session.async_payment_failed to Tinybird", async ({

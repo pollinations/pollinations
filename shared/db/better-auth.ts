@@ -173,6 +173,40 @@ export const stripeAutoTopUpAttempt = sqliteTable("stripe_auto_top_up_attempt", 
   index("idx_stripe_auto_top_up_attempt_status").on(table.status),
 ]);
 
+export const stripeCardFingerprintAttempt = sqliteTable("stripe_card_fingerprint_attempt", {
+  eventId: text("event_id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  stripeCustomerId: text("stripe_customer_id"),
+  customerEmail: text("customer_email"),
+  cardFingerprint: text("card_fingerprint").notNull(),
+  cardBrand: text("card_brand"),
+  cardCountry: text("card_country"),
+  paymentIntentId: text("payment_intent_id"),
+  chargeId: text("charge_id"),
+  status: text("status").notNull(),
+  livemode: integer("livemode", { mode: "boolean" })
+    .default(false)
+    .notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .defaultNow()
+    .notNull(),
+}, (table) => [
+  index("idx_stripe_card_fingerprint_attempt_user_created").on(
+    table.userId,
+    table.createdAt,
+  ),
+  index("idx_stripe_card_fingerprint_attempt_user_fingerprint").on(
+    table.userId,
+    table.cardFingerprint,
+  ),
+  index("idx_stripe_card_fingerprint_attempt_customer_created").on(
+    table.stripeCustomerId,
+    table.createdAt,
+  ),
+]);
+
 export const communityEndpoint = sqliteTable("community_endpoint", {
   id: text("id").primaryKey(),
   ownerUserId: text("owner_user_id")
@@ -212,6 +246,7 @@ export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),
   accounts: many(account),
   stripeAutoTopUpAttempts: many(stripeAutoTopUpAttempt),
+  stripeCardFingerprintAttempts: many(stripeCardFingerprintAttempt),
   communityEndpoints: many(communityEndpoint),
 }));
 
@@ -241,6 +276,16 @@ export const stripeAutoTopUpAttemptRelations = relations(
   ({ one }) => ({
     user: one(user, {
       fields: [stripeAutoTopUpAttempt.userId],
+      references: [user.id],
+    }),
+  }),
+);
+
+export const stripeCardFingerprintAttemptRelations = relations(
+  stripeCardFingerprintAttempt,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [stripeCardFingerprintAttempt.userId],
       references: [user.id],
     }),
   }),

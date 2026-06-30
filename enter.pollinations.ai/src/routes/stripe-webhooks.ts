@@ -10,6 +10,7 @@ import {
     creditAutoTopUpInvoice,
     markAutoTopUpInvoiceFailed,
 } from "../utils/stripe-billing.ts";
+import { recordStripeCardFingerprintAttempt } from "../utils/stripe-card-gate.ts";
 
 interface StripeEventData {
     eventType: string;
@@ -42,6 +43,7 @@ type ChargeSnapshot = {
     cardCountry: string;
     cardBrand: string;
     cardNetwork: string;
+    cardFingerprint: string;
     riskLevel: string;
     riskScore: number;
 };
@@ -53,6 +55,7 @@ const EMPTY_CHARGE_SNAPSHOT: ChargeSnapshot = {
     cardCountry: "",
     cardBrand: "",
     cardNetwork: "",
+    cardFingerprint: "",
     riskLevel: "",
     riskScore: 0,
 };
@@ -84,9 +87,63 @@ function snapshotFromCharge(
         cardCountry: card?.country ?? "",
         cardBrand: card?.brand ?? "",
         cardNetwork: card?.network ?? "",
+        cardFingerprint: card?.fingerprint ?? "",
         riskLevel: outcome?.risk_level ?? "",
         riskScore: outcome?.risk_score ?? 0,
     };
+}
+
+function readStripeId(
+    value: string | { id?: string | null } | null | undefined,
+): string {
+    if (!value) return "";
+    if (typeof value === "string") return value;
+    return value.id ?? "";
+}
+
+function readUserIdFromMetadata(
+    metadata: Stripe.Metadata | null | undefined,
+): string {
+    return metadata?.userId || metadata?.pollinations_user_id || "";
+}
+
+async function recordCardFingerprintFromCharge({
+    env,
+    event,
+    charge,
+    snapshot,
+    status,
+}: {
+    env: CloudflareBindings;
+    event: Stripe.Event;
+    charge: Stripe.Charge | null | undefined;
+    snapshot: ChargeSnapshot;
+    status: string;
+}): Promise<void> {
+    if (!charge || !snapshot.cardFingerprint) return;
+
+    try {
+        await recordStripeCardFingerprintAttempt(env.DB, {
+            eventId: event.id,
+            userId: readUserIdFromMetadata(charge.metadata),
+            stripeCustomerId: readStripeId(charge.customer),
+            customerEmail:
+                charge.billing_details?.email || charge.receipt_email || "",
+            cardFingerprint: snapshot.cardFingerprint,
+            cardBrand: snapshot.cardBrand,
+            cardCountry: snapshot.cardCountry,
+            paymentIntentId: readStripeId(charge.payment_intent),
+            chargeId: charge.id,
+            status,
+            livemode: event.livemode,
+            createdAt: event.created ? event.created * 1000 : Date.now(),
+        });
+    } catch (err) {
+        console.error(
+            `Failed to record Stripe card fingerprint for event ${event.id}:`,
+            err,
+        );
+    }
 }
 
 /**
@@ -335,7 +392,12 @@ function emitPaymentIntentAnalytics(
     {
         paymentStatus,
         customerEmail,
-    }: { paymentStatus: string; customerEmail: string },
+        recordCardFingerprint = false,
+    }: {
+        paymentStatus: string;
+        customerEmail: string;
+        recordCardFingerprint?: boolean;
+    },
 ): void {
     const methodsOffered = (paymentIntent.payment_method_types ?? []).join(",");
 
@@ -346,6 +408,15 @@ function emitPaymentIntentAnalytics(
                 paymentIntent.id,
             );
             const snapshot = snapshotFromCharge(charge);
+            if (recordCardFingerprint) {
+                await recordCardFingerprintFromCharge({
+                    env: c.env,
+                    event,
+                    charge,
+                    snapshot,
+                    status: paymentStatus,
+                });
+            }
             await sendStripeEventToTinybird(c.env, {
                 eventType: event.type,
                 eventId: event.id,
@@ -521,11 +592,18 @@ export const stripeWebhooksRoutes = new Hono<Env>()
             case "charge.succeeded": {
                 // The Charge IS the event payload, so we can read
                 // payment_method_details + card.country + risk_score directly
-                // without an additional Stripe API call. Emitted to Tinybird
-                // for analytics; D1 credit insert happens via the parallel
-                // checkout.session.completed / async_payment_succeeded path.
+                // without an additional Stripe API call. Pack credit still
+                // happens via checkout.session.completed; this path records
+                // the card fingerprint gate ledger and emits analytics.
                 const charge = event.data.object as Stripe.Charge;
                 const snapshot = snapshotFromCharge(charge);
+                await recordCardFingerprintFromCharge({
+                    env: c.env,
+                    event,
+                    charge,
+                    snapshot,
+                    status: charge.status || "succeeded",
+                });
                 c.executionCtx.waitUntil(
                     sendStripeEventToTinybird(c.env, {
                         eventType: event.type,
@@ -727,6 +805,7 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                 emitPaymentIntentAnalytics(c, stripe, event, paymentIntent, {
                     paymentStatus: "failed",
                     customerEmail: paymentIntent.receipt_email || "",
+                    recordCardFingerprint: true,
                 });
                 break;
             }

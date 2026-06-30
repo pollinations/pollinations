@@ -4,6 +4,7 @@ import {
     Chip,
     DownloadIcon,
     InlineLink,
+    KeyIcon,
     MultiSelect,
     SproutIcon,
     StatCard,
@@ -162,7 +163,8 @@ export const UsageSection: FC<UsageSectionProps> = ({ period }) => {
     return (
         <Surface className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="font-body text-base font-semibold text-theme-text-strong">
+                <div className="flex items-center gap-2 font-body text-base font-semibold text-theme-text-strong">
+                    <KeyIcon className="h-4 w-4 shrink-0" />
                     API usage
                 </div>
                 {downloadAction}

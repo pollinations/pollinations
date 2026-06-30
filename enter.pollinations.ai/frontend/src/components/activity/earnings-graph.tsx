@@ -1,4 +1,5 @@
 import {
+    AppIcon,
     Button,
     CardIcon,
     Chip,
@@ -137,7 +138,8 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period }) => {
     return (
         <Surface className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="font-body text-base font-semibold text-theme-text-strong">
+                <div className="flex items-center gap-2 font-body text-base font-semibold text-theme-text-strong">
+                    <AppIcon className="h-4 w-4 shrink-0" />
                     App earnings
                 </div>
                 {downloadAction}

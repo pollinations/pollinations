@@ -135,13 +135,13 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period }) => {
     return (
         <Surface className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
-                <h3 className="text-base font-semibold text-theme-text-strong">
+                <div className="font-body text-xs font-bold uppercase tracking-wide text-theme-text-soft">
                     App earnings
-                </h3>
+                </div>
                 {downloadAction}
             </div>
             <div className="flex flex-col gap-4">
-                <div className="flex flex-wrap items-start justify-end gap-4">
+                <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex flex-col items-stretch gap-2">
                         <div className="[&>div]:justify-between [&_button]:w-60">
                             <MultiSelect
@@ -151,10 +151,12 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period }) => {
                                 placeholder="All"
                                 disabled={appSelectOptions.length === 0}
                                 disabledText="None"
-                                align="end"
+                                align="start"
                                 label="BYOP apps"
                             />
                         </div>
+                    </div>
+                    <div className="ml-auto">
                         <MetricTabs value={metric} onChange={setMetric} />
                     </div>
                 </div>

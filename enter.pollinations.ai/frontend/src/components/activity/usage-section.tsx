@@ -160,14 +160,14 @@ export const UsageSection: FC<UsageSectionProps> = ({ period }) => {
     return (
         <Surface className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
-                <h3 className="text-base font-semibold text-theme-text-strong">
+                <div className="font-body text-xs font-bold uppercase tracking-wide text-theme-text-soft">
                     API usage
-                </h3>
+                </div>
                 {downloadAction}
             </div>
             <div className="flex flex-col gap-4">
-                <div className="flex flex-wrap items-start justify-end gap-4">
-                    <div className="flex flex-col items-stretch gap-2">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-start">
                         <div className="[&>div]:justify-between [&_button]:w-60">
                             <MultiSelect
                                 options={modelSelectOptions}
@@ -181,7 +181,7 @@ export const UsageSection: FC<UsageSectionProps> = ({ period }) => {
                                 placeholder="All"
                                 disabled={modelSelectOptions.length === 0}
                                 disabledText="None"
-                                align="end"
+                                align="start"
                                 label="Models"
                             />
                         </div>
@@ -198,10 +198,12 @@ export const UsageSection: FC<UsageSectionProps> = ({ period }) => {
                                 placeholder="All"
                                 disabled={keySelectOptions.length === 0}
                                 disabledText="None"
-                                align="end"
+                                align="start"
                                 label="API Keys"
                             />
                         </div>
+                    </div>
+                    <div className="ml-auto">
                         <MetricTabs
                             value={filters.metric}
                             onChange={(metric) =>

@@ -150,7 +150,7 @@ function EventKindChip({ kind }: { kind: LastEvent["kind"] }) {
 }
 
 function MeterSourceChip({ source }: { source: string | null }) {
-    if (source === "tier") return <TierChip>tier</TierChip>;
+    if (source === "tier") return <TierChip>quest</TierChip>;
     if (source === "pack") return <PaidChip>paid</PaidChip>;
     return (
         <Chip intent="neutral" size="sm">

@@ -436,26 +436,8 @@ const usageDailyQuerySchema = z.object({
     api_key_ids: commaSeparatedQueryList,
 });
 
-const earningsTransactionsQuerySchema = z.object({
-    format: z.enum(["json", "csv"]).optional().default("json"),
-    limit: z.coerce
-        .number()
-        .min(1)
-        .max(MAX_USAGE_EXPORT_ROWS)
-        .optional()
-        .default(100),
-    before: z.string().optional(),
-    before_event_id: z.string().optional(),
-    days: z.coerce
-        .number()
-        .int()
-        .min(1)
-        .max(MAX_USAGE_DAYS)
-        .optional()
-        .default(DEFAULT_USAGE_DAYS),
-    granularity: z.enum(PERIOD_GRANULARITIES).optional(),
-    period: z.string().optional(),
-    api_key_ids: commaSeparatedQueryList,
+const earningsTransactionsQuerySchema = usageQuerySchema.omit({
+    models: true,
 });
 
 const earningsQuerySchema = usageDailyQuerySchema.extend({
@@ -802,11 +784,6 @@ async function fetchDetailedUsagePage(
     );
 }
 
-function stripUsageCursor(row: UsageRecordWithCursor): UsageRecord {
-    const { cursor_event_id: _, ...usage } = row;
-    return usage;
-}
-
 async function fetchDetailedEarningsPage(
     origin: string,
     token: string,
@@ -837,13 +814,6 @@ async function fetchDetailedEarningsPage(
             before_event_id: params.beforeEventId,
         },
     );
-}
-
-function stripEarningsCursor(
-    row: DeveloperEarningsTransactionWithCursor,
-): DeveloperEarningsTransaction {
-    const { cursor_event_id: _, ...transaction } = row;
-    return transaction;
 }
 
 async function respondDetailedEarnings(
@@ -889,9 +859,10 @@ async function respondDetailedEarnings(
             : fetchedTransactions;
 
         if (params.format === "csv") {
-            const rows = transactions
-                .map(stripEarningsCursor)
-                .map(earningsTransactionToCsvRow);
+            const rows = transactions.map(
+                ({ cursor_event_id: _, ...transaction }) =>
+                    earningsTransactionToCsvRow(transaction),
+            );
             const csv = [EARNINGS_TRANSACTIONS_CSV_HEADER, ...rows].join("\n");
             return new Response(csv, {
                 headers: {
@@ -961,7 +932,9 @@ async function respondDetailedUsage(
             : fetchedUsage;
 
         if (params.format === "csv") {
-            const rows = usage.map(stripUsageCursor).map(usageRecordToCsvRow);
+            const rows = usage.map(({ cursor_event_id: _, ...usage }) =>
+                usageRecordToCsvRow(usage),
+            );
             const csv = [USAGE_CSV_HEADER, ...rows].join("\n");
             return new Response(csv, {
                 headers: {

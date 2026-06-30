@@ -10,7 +10,6 @@ import type {
 } from "./types";
 
 type UsageDataResult = {
-    dailyUsage: DailyUsageRecord[];
     loading: boolean;
     error: string | null;
     fetchUsage: () => void;
@@ -22,8 +21,6 @@ type UsageDataResult = {
         totalPollen: number;
         tierPollen: number;
         paidPollen: number;
-        averagePollenPerRequest: number;
-        activeModelCount: number;
         activeApiKeyCount: number | null;
         topModel: {
             id: string;
@@ -31,12 +28,7 @@ type UsageDataResult = {
             requests: number;
             pollen: number;
         } | null;
-        peakPeriod: {
-            label: string;
-            value: number;
-        } | null;
     };
-    filteredData: DailyUsageRecord[];
 };
 
 export function useUsageData(filters: FilterState): UsageDataResult {
@@ -123,7 +115,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             .sort((a, b) => a.label.localeCompare(b.label));
     }, [dailyUsage]);
 
-    const { chartData, stats, filteredData } = useMemo(() => {
+    const { chartData, stats } = useMemo(() => {
         const filtered = dailyUsage.filter((r: DailyUsageRecord) => {
             if (
                 filters.selectedKeyIds.length > 0 &&
@@ -311,17 +303,6 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                   };
               })()
             : null;
-        const peakPeriod = sorted.reduce<{
-            label: string;
-            value: number;
-        } | null>((best, point) => {
-            if (point.value <= 0) return best;
-            if (!best || point.value > best.value) {
-                return { label: point.label, value: point.value };
-            }
-            return best;
-        }, null);
-
         return {
             chartData: sorted,
             stats: {
@@ -329,15 +310,10 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 totalPollen,
                 tierPollen,
                 paidPollen,
-                averagePollenPerRequest:
-                    totalReq > 0 ? totalPollen / totalReq : 0,
-                activeModelCount: modelTotals.size,
                 activeApiKeyCount:
                     activeApiKeyIds.size > 0 ? activeApiKeyIds.size : null,
                 topModel,
-                peakPeriod,
             },
-            filteredData: filtered,
         };
     }, [
         dailyUsage,
@@ -348,7 +324,6 @@ export function useUsageData(filters: FilterState): UsageDataResult {
     ]);
 
     return {
-        dailyUsage,
         loading,
         error,
         fetchUsage,
@@ -356,6 +331,5 @@ export function useUsageData(filters: FilterState): UsageDataResult {
         usedApiKeys,
         chartData,
         stats,
-        filteredData,
     };
 }

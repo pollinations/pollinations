@@ -9,7 +9,6 @@ import {
     SproutIcon,
     StatCard,
     Surface,
-    TabButton,
     Tooltip,
 } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
@@ -17,6 +16,7 @@ import type { FC } from "react";
 import { useEffect, useState } from "react";
 import { Chart } from "./chart";
 import { formatActivityPollen } from "./format-activity-pollen";
+import { MetricTabs } from "./metric-tabs";
 import type { FilterState, Metric, UsagePeriodSelection } from "./types";
 import { useUsageData } from "./use-usage-data";
 
@@ -25,37 +25,6 @@ const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
 type UsageSectionProps = {
     period: UsagePeriodSelection;
 };
-
-const METRIC_LABELS: Record<Metric, string> = {
-    requests: "Requests",
-    pollen: "Pollen",
-};
-
-const METRIC_OPTIONS: Metric[] = ["pollen", "requests"];
-
-const MetricTabs: FC<{
-    value: Metric;
-    onChange: (metric: Metric) => void;
-}> = ({ value, onChange }) => (
-    <div className="flex w-full items-center gap-3">
-        <span className="w-20 shrink-0 text-xs font-medium text-theme-text-soft">
-            Metric
-        </span>
-        <div className="flex min-w-0 flex-1 max-w-60 flex-wrap justify-end gap-1.5">
-            {METRIC_OPTIONS.map((metric) => (
-                <TabButton
-                    key={metric}
-                    active={value === metric}
-                    onClick={() => onChange(metric)}
-                    size="sm"
-                    className="flex-1"
-                >
-                    {METRIC_LABELS[metric]}
-                </TabButton>
-            ))}
-        </div>
-    </div>
-);
 
 export const UsageSection: FC<UsageSectionProps> = ({ period }) => {
     const [filters, setFilters] = useState<Omit<FilterState, "period">>({

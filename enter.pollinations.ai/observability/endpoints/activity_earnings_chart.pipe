@@ -4,7 +4,6 @@ DESCRIPTION >
     Use 'since' and 'until' for date range filtering.
     Use 'grain=hour' to group daily buckets by hour; defaults to daily.
     Use 'entity_ids' (comma-separated) to filter earning entities.
-    Legacy 'api_key_ids' is still accepted as an alias.
 
 TOKEN "tinybird_read" READ
 
@@ -67,7 +66,6 @@ SQL >
         {% if defined(since) %} AND ae.timestamp >= {{ DateTime(since) }} {% end %}
         {% if defined(until) %} AND ae.timestamp < {{ DateTime(until) }} {% end %}
         {% if defined(entity_ids) %} AND ae.entity_id IN {{ Array(entity_ids, 'String') }} {% end %}
-        {% if defined(api_key_ids) %} AND ae.entity_id IN {{ Array(api_key_ids, 'String') }} {% end %}
 
 NODE activity_earnings_chart_node
 SQL >

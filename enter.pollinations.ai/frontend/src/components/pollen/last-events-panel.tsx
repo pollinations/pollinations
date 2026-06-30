@@ -533,6 +533,7 @@ export const LastEventsPanel: FC<{ apiKeys: ApiKey[] }> = ({ apiKeys }) => {
                                     Time
                                 </TableHeaderCell>
                                 <TableHeaderCell
+                                    align="center"
                                     className={TABLE_HEADER_CELL_CLASS}
                                 >
                                     Type
@@ -543,6 +544,7 @@ export const LastEventsPanel: FC<{ apiKeys: ApiKey[] }> = ({ apiKeys }) => {
                                     Details
                                 </TableHeaderCell>
                                 <TableHeaderCell
+                                    align="center"
                                     className={TABLE_HEADER_CELL_CLASS}
                                 >
                                     Source
@@ -564,7 +566,10 @@ export const LastEventsPanel: FC<{ apiKeys: ApiKey[] }> = ({ apiKeys }) => {
                                     >
                                         {formatTimestamp(event.timestamp)}
                                     </TableCell>
-                                    <TableCell className={TABLE_CELL_CLASS}>
+                                    <TableCell
+                                        align="center"
+                                        className={TABLE_CELL_CLASS}
+                                    >
                                         <EventKindChip kind={event.kind} />
                                     </TableCell>
                                     <TableCell
@@ -579,7 +584,10 @@ export const LastEventsPanel: FC<{ apiKeys: ApiKey[] }> = ({ apiKeys }) => {
                                             </span>
                                         </div>
                                     </TableCell>
-                                    <TableCell className={TABLE_CELL_CLASS}>
+                                    <TableCell
+                                        align="center"
+                                        className={TABLE_CELL_CLASS}
+                                    >
                                         <MeterSourceChip
                                             source={event.meterSource}
                                         />

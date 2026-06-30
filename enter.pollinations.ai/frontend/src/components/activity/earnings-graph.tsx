@@ -18,10 +18,7 @@ import { useEffect, useState } from "react";
 import { Chart } from "./chart";
 import { formatActivityPollen } from "./format-activity-pollen";
 import type { Metric, UsagePeriodSelection } from "./types";
-import {
-    formatEarningsSourceLabel,
-    useEarningsData,
-} from "./use-earnings-data";
+import { useEarningsData } from "./use-earnings-data";
 
 const METRIC_LABELS: Record<Metric, string> = {
     requests: "Requests",
@@ -149,7 +146,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period }) => {
                     <div className="flex flex-col items-start gap-2">
                         <div className="flex items-center gap-3">
                             <span className="w-20 shrink-0 text-xs font-medium text-theme-text-soft">
-                                BYOP apps
+                                Apps
                             </span>
                             <div className="[&_button]:w-60">
                                 <MultiSelect
@@ -233,76 +230,20 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period }) => {
                                                 )}
                                             </span>
                                         </TierChip>
-                                        {stats.appMarkupPollen > 0 && (
-                                            <Chip
-                                                size="lg"
-                                                className="font-semibold"
-                                            >
-                                                <span className="tabular-nums">
-                                                    {formatActivityPollen(
-                                                        stats.appMarkupPollen,
-                                                    )}
-                                                </span>
-                                                <span className="font-medium opacity-70">
-                                                    app markup
-                                                </span>
-                                            </Chip>
-                                        )}
-                                        {stats.modelRewardPollen > 0 && (
-                                            <Chip
-                                                size="lg"
-                                                className="font-semibold"
-                                            >
-                                                <span className="tabular-nums">
-                                                    {formatActivityPollen(
-                                                        stats.modelRewardPollen,
-                                                    )}
-                                                </span>
-                                                <span className="font-medium opacity-70">
-                                                    model rewards
-                                                </span>
-                                            </Chip>
-                                        )}
                                     </div>
                                 }
                             />
                             <StatCard
                                 className="min-w-0"
-                                label="Earning sources"
-                                value={stats.sourceSummaries.length.toLocaleString()}
+                                label="Requests"
+                                value={stats.totalRequests.toLocaleString()}
                                 detail={
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        {stats.sourceSummaries.map((source) => (
-                                            <Chip
-                                                key={source.source}
-                                                size="lg"
-                                                className="font-semibold"
-                                            >
-                                                <span>{source.label}</span>
-                                                <span className="tabular-nums">
-                                                    {source.requests.toLocaleString()}
-                                                </span>
-                                                <span className="font-medium opacity-70">
-                                                    req
-                                                </span>
-                                                {source.uniqueUsers > 0 && (
-                                                    <>
-                                                        <span className="tabular-nums">
-                                                            {source.uniqueUsers.toLocaleString()}
-                                                        </span>
-                                                        <span className="font-medium opacity-70">
-                                                            users
-                                                        </span>
-                                                    </>
-                                                )}
-                                                <span className="tabular-nums">
-                                                    {formatRewardRate(
-                                                        source.rewardRate,
-                                                    )}
-                                                </span>
-                                            </Chip>
-                                        ))}
-                                    </div>
+                                    stats.appCount > 0 ? (
+                                        <span className="text-theme-text-soft">
+                                            across {stats.appCount} app
+                                            {stats.appCount === 1 ? "" : "s"}
+                                        </span>
+                                    ) : null
                                 }
                             />
                             <StatCard
@@ -320,27 +261,16 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period }) => {
                                                 size="lg"
                                                 className="font-semibold"
                                             >
-                                                {formatEarningsSourceLabel(
-                                                    stats.topEntity.source,
-                                                )}
+                                                <span className="tabular-nums">
+                                                    {stats.topEntity.requests.toLocaleString()}
+                                                </span>
+                                                <span className="font-medium opacity-70">
+                                                    {stats.topEntity
+                                                        .requests === 1
+                                                        ? "req"
+                                                        : "reqs"}
+                                                </span>
                                             </Chip>
-                                            {stats.topEntity.uniqueUsers >
-                                                0 && (
-                                                <Chip
-                                                    size="lg"
-                                                    className="font-semibold"
-                                                >
-                                                    <span className="tabular-nums">
-                                                        {stats.topEntity.uniqueUsers.toLocaleString()}
-                                                    </span>
-                                                    <span className="font-medium opacity-70">
-                                                        {stats.topEntity
-                                                            .uniqueUsers === 1
-                                                            ? "user"
-                                                            : "users"}
-                                                    </span>
-                                                </Chip>
-                                            )}
                                             <Chip
                                                 size="lg"
                                                 className="font-semibold"
@@ -376,12 +306,5 @@ const EarningsEmptyState: FC = () => (
         .
     </p>
 );
-
-function formatRewardRate(value: number): string {
-    return new Intl.NumberFormat("en-US", {
-        style: "percent",
-        maximumFractionDigits: 1,
-    }).format(value);
-}
 
 export default EarningsGraph;

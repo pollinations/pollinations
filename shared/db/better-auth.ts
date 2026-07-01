@@ -45,10 +45,6 @@ export const user = sqliteTable("user", {
     .default(sql`0`)
     .notNull(),
   autoTopUpAmountUsd: integer("auto_top_up_amount_usd"),
-  autoTopUpTermsVersion: integer("auto_top_up_terms_version"),
-  autoTopUpTermsAcceptedAt: integer("auto_top_up_terms_accepted_at", {
-    mode: "timestamp_ms",
-  }),
 }, (table) => [
   index("idx_user_email").on(table.email),
   index("idx_user_auto_top_up_enabled").on(table.autoTopUpEnabled),

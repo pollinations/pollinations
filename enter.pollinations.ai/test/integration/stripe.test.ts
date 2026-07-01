@@ -17,10 +17,6 @@ import {
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
-import {
-    CURRENT_AUTO_TOP_UP_TERMS_VERSION,
-    updateAutoTopUpSettings,
-} from "../../src/utils/stripe-billing.ts";
 import { STRIPE_NEW_CARD_GATE_METADATA } from "../../src/utils/stripe-card-gate.ts";
 import { test } from "../fixtures.ts";
 import { mockCardPaymentMethod, mockCustomer } from "../mocks/stripe.ts";
@@ -81,6 +77,13 @@ function createAutoTopUpInvoiceEvent(
     userId: string,
     invoiceOverrides: Record<string, unknown> = {},
 ) {
+    const defaultPackAmountCents = 1000;
+    const defaultServiceFeeCents = calculateServiceFeeCents(
+        defaultPackAmountCents,
+    );
+    const defaultPaidAmountCents =
+        defaultPackAmountCents + defaultServiceFeeCents;
+
     return {
         id: `evt_${type.replaceAll(".", "_")}_${invoiceId}`,
         type,
@@ -91,11 +94,11 @@ function createAutoTopUpInvoiceEvent(
                 object: "invoice",
                 customer: "cus_webhook",
                 status: getInvoiceStatusForEvent(type),
-                amount_due: 1000,
+                amount_due: defaultPaidAmountCents,
                 amount_paid:
                     type === "invoice.paid" ||
                     type === "invoice.payment_succeeded"
-                        ? 1000
+                        ? defaultPaidAmountCents
                         : 0,
                 currency: "usd",
                 metadata: {
@@ -947,65 +950,6 @@ test("GET /api/stripe/billing shows pending auto top-up invoice payment link", a
     ).toBe(true);
 });
 
-test("GET /api/stripe/billing flags existing auto top-up for terms confirmation", async ({
-    sessionToken,
-    mocks,
-}) => {
-    await mocks.enable("stripe", "tinybird");
-
-    const db = drizzle(env.DB);
-    const [user] = await db
-        .select({ id: userTable.id })
-        .from(userTable)
-        .limit(1);
-
-    expect(user).toBeTruthy();
-    if (!user) throw new Error("Expected seeded test user");
-
-    const customer = mockCustomer("cus_stale_auto_top_up_terms");
-    customer.invoice_settings.default_payment_method = "pm_card";
-    mocks.stripe.state.customers.push(customer);
-    mocks.stripe.state.paymentMethods.push(
-        mockCardPaymentMethod("pm_card", customer.id),
-    );
-
-    await db
-        .update(userTable)
-        .set({
-            stripeCustomerId: customer.id,
-            autoTopUpEnabled: true,
-            autoTopUpAmountUsd: 10,
-            autoTopUpTermsVersion: null,
-            autoTopUpTermsAcceptedAt: null,
-        })
-        .where(eq(userTable.id, user.id));
-
-    const response = await SELF.fetch(`${base}/billing`, {
-        method: "GET",
-        headers: {
-            cookie: `better-auth.session_token=${sessionToken}`,
-        },
-    });
-
-    expect(response.status).toBe(200);
-    const data = (await response.json()) as {
-        autoTopUp: {
-            enabled: boolean;
-            serviceFeeCents: number;
-            requiresTermsConfirmation: boolean;
-            acceptedTermsVersion: number | null;
-        };
-        pricing: { checkoutPricingUpdateEnabled: boolean };
-    };
-    expect(data.pricing.checkoutPricingUpdateEnabled).toBe(true);
-    expect(data.autoTopUp.enabled).toBe(true);
-    expect(data.autoTopUp.serviceFeeCents).toBe(
-        calculateServiceFeeCents(10 * 100),
-    );
-    expect(data.autoTopUp.requiresTermsConfirmation).toBe(true);
-    expect(data.autoTopUp.acceptedTermsVersion).toBeNull();
-});
-
 test("PATCH /api/stripe/auto-top-up uses fixed threshold and rejects invalid pack values", async ({
     sessionToken,
     mocks,
@@ -1240,16 +1184,10 @@ test("PATCH /api/stripe/auto-top-up does not charge immediately when balance is 
         autoTopUp: {
             enabled: boolean;
             packAmountUsd: number;
-            requiresTermsConfirmation: boolean;
-            acceptedTermsVersion: number | null;
         };
     };
     expect(data.autoTopUp.enabled).toBe(true);
     expect(data.autoTopUp.packAmountUsd).toBe(100);
-    expect(data.autoTopUp.requiresTermsConfirmation).toBe(false);
-    expect(data.autoTopUp.acceptedTermsVersion).toBe(
-        CURRENT_AUTO_TOP_UP_TERMS_VERSION,
-    );
 
     expect(mocks.stripe.state.invoices).toHaveLength(0);
     expect(
@@ -1262,82 +1200,12 @@ test("PATCH /api/stripe/auto-top-up does not charge immediately when balance is 
         .select({
             packBalance: userTable.packBalance,
             autoTopUpEnabled: userTable.autoTopUpEnabled,
-            autoTopUpTermsVersion: userTable.autoTopUpTermsVersion,
-            autoTopUpTermsAcceptedAt: userTable.autoTopUpTermsAcceptedAt,
         })
         .from(userTable)
         .where(eq(userTable.id, user.id))
         .limit(1);
     expect(updatedUser?.packBalance).toBe(1);
     expect(updatedUser?.autoTopUpEnabled).toBe(true);
-    expect(updatedUser?.autoTopUpTermsVersion).toBe(
-        CURRENT_AUTO_TOP_UP_TERMS_VERSION,
-    );
-    expect(updatedUser?.autoTopUpTermsAcceptedAt).toBeInstanceOf(Date);
-});
-
-test("updateAutoTopUpSettings does not stamp updated terms while live pricing is disabled", async ({
-    sessionToken,
-    mocks,
-}) => {
-    void sessionToken;
-    await mocks.enable("stripe", "tinybird");
-
-    const db = drizzle(env.DB);
-    const [user] = await db
-        .select({ id: userTable.id })
-        .from(userTable)
-        .limit(1);
-
-    expect(user).toBeTruthy();
-    if (!user) throw new Error("Expected seeded test user");
-
-    const customer = mockCustomer("cus_auto_top_up_live_terms_gate");
-    customer.invoice_settings.default_payment_method = "pm_card";
-    mocks.stripe.state.customers.push(customer);
-    mocks.stripe.state.paymentMethods.push(
-        mockCardPaymentMethod("pm_card", customer.id),
-    );
-
-    await db
-        .update(userTable)
-        .set({
-            stripeCustomerId: customer.id,
-            autoTopUpEnabled: false,
-            autoTopUpAmountUsd: 100,
-            autoTopUpTermsVersion: null,
-            autoTopUpTermsAcceptedAt: null,
-        })
-        .where(eq(userTable.id, user.id));
-
-    const result = await updateAutoTopUpSettings(
-        { ...env, STRIPE_MODE: "live" } as CloudflareBindings,
-        user.id,
-        {
-            enabled: true,
-            packAmountUsd: 100,
-        },
-    );
-
-    expect(result.ok).toBe(true);
-    if (!result.ok) throw new Error(result.error);
-    expect(result.overview.pricing.checkoutPricingUpdateEnabled).toBe(false);
-    expect(result.overview.autoTopUp.requiresTermsConfirmation).toBe(false);
-    expect(result.overview.autoTopUp.acceptedTermsVersion).toBeNull();
-
-    const [updatedUser] = await db
-        .select({
-            autoTopUpEnabled: userTable.autoTopUpEnabled,
-            autoTopUpTermsVersion: userTable.autoTopUpTermsVersion,
-            autoTopUpTermsAcceptedAt: userTable.autoTopUpTermsAcceptedAt,
-        })
-        .from(userTable)
-        .where(eq(userTable.id, user.id))
-        .limit(1);
-    expect(updatedUser?.autoTopUpEnabled).toBe(true);
-    expect(updatedUser?.autoTopUpTermsVersion).toBeNull();
-    expect(updatedUser?.autoTopUpTermsAcceptedAt).toBeNull();
-    expect(mocks.stripe.state.invoices).toHaveLength(0);
 });
 
 test("POST /api/stripe/auto-top-up/trigger creates and pays auto top-up invoice", async ({
@@ -1428,79 +1296,9 @@ test("POST /api/stripe/auto-top-up/trigger creates and pays auto top-up invoice"
     expect(invoiceRequest?.body["metadata[pollinations_purpose]"]).toBe(
         "auto_top_up",
     );
-    expect(invoiceRequest?.body["metadata[pricingMode]"]).toBe("legacy");
-    expect(mocks.stripe.state.invoiceItems).toHaveLength(1);
-    expect(mocks.stripe.state.invoiceItems[0]).toMatchObject({
-        amount: pack.amountUsd * 100,
-        amount_excluding_tax: pack.amountUsd * 100,
-        currency: "usd",
-        metadata: {
-            line_type: POLLEN_PACK_LINE_TYPE,
-            packKey: pack.packKey,
-        },
-    });
-    const packItemRequest = mocks.stripe.state.requests.find(
-        (request) => request.path === "/v1/invoiceitems",
+    expect(invoiceRequest?.body["rendering[amount_tax_display]"]).toBe(
+        "exclude_tax",
     );
-    expect(packItemRequest?.body.tax_behavior).toBe("inclusive");
-    expect(packItemRequest?.idempotencyKey).toMatch(
-        /^pollinations:auto-top-up:[0-9a-f-]+:pack-item$/,
-    );
-    expect(payRequest).toBeDefined();
-});
-
-test("POST /api/stripe/auto-top-up/trigger creates updated pack and service-fee invoice lines", async ({
-    sessionToken,
-    mocks,
-}) => {
-    void sessionToken;
-    await mocks.enable("stripe", "tinybird");
-
-    const db = drizzle(env.DB);
-    const [user] = await db
-        .select({ id: userTable.id })
-        .from(userTable)
-        .limit(1);
-
-    expect(user).toBeTruthy();
-    if (!user) throw new Error("Expected seeded test user");
-    const pack = getPollenPackByAmount(10);
-    expect(pack).toBeDefined();
-    if (!pack) throw new Error("Expected $10 pollen pack");
-
-    const customer = mockCustomer("cus_auto_top_up_updated_pricing");
-    customer.invoice_settings.default_payment_method = "pm_card";
-    mocks.stripe.state.customers.push(customer);
-    mocks.stripe.state.paymentMethods.push(
-        mockCardPaymentMethod("pm_card", customer.id),
-    );
-
-    await db
-        .update(userTable)
-        .set({
-            packBalance: 1,
-            stripeCustomerId: customer.id,
-            autoTopUpEnabled: true,
-            autoTopUpAmountUsd: 10,
-            autoTopUpTermsVersion: CURRENT_AUTO_TOP_UP_TERMS_VERSION,
-            autoTopUpTermsAcceptedAt: new Date(),
-        })
-        .where(eq(userTable.id, user.id));
-
-    const response = await SELF.fetch(`${base}/auto-top-up/trigger`, {
-        method: "POST",
-        headers: {
-            "Authorization": `Bearer ${env.PLN_ENTER_TOKEN}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ userId: user.id, environment: env.ENVIRONMENT }),
-    });
-
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toMatchObject({
-        status: "created",
-        invoiceId: "in_mock_1",
-    });
 
     const serviceFeeCents = calculateServiceFeeCents(pack.amountUsd * 100);
     expect(mocks.stripe.state.invoiceItems).toEqual([
@@ -1511,7 +1309,6 @@ test("POST /api/stripe/auto-top-up/trigger creates updated pack and service-fee 
             metadata: expect.objectContaining({
                 line_type: POLLEN_PACK_LINE_TYPE,
                 packKey: pack.packKey,
-                pricingMode: "updated",
             }),
         }),
         expect.objectContaining({
@@ -1522,19 +1319,9 @@ test("POST /api/stripe/auto-top-up/trigger creates updated pack and service-fee 
             metadata: expect.objectContaining({
                 line_type: SERVICE_FEE_LINE_TYPE,
                 serviceFeeCents: String(serviceFeeCents),
-                pricingMode: "updated",
             }),
         }),
     ]);
-
-    const invoiceRequest = mocks.stripe.state.requests.find(
-        (request) => request.path === "/v1/invoices",
-    );
-    expect(invoiceRequest?.body["metadata[pricingMode]"]).toBe("updated");
-    expect(invoiceRequest?.body["rendering[amount_tax_display]"]).toBe(
-        "exclude_tax",
-    );
-
     const invoiceItemRequests = mocks.stripe.state.requests.filter(
         (request) => request.path === "/v1/invoiceitems",
     );
@@ -1547,10 +1334,10 @@ test("POST /api/stripe/auto-top-up/trigger creates updated pack and service-fee 
     );
 
     expect(
-        mocks.stripe.state.invoices.find(
-            (invoice) => invoice.id === "in_mock_1",
-        )?.amount_due,
+        mocks.stripe.state.invoices.find((invoice) => invoice.id === "in_mock_1")
+            ?.amount_due,
     ).toBe(pack.amountUsd * 100 + serviceFeeCents);
+    expect(payRequest).toBeDefined();
 });
 
 test("POST /api/stripe/auto-top-up/trigger followed by webhook credits once", async ({
@@ -2375,7 +2162,7 @@ test("POST /api/webhooks/stripe credits paid auto top-up invoice once", async ({
     expect(attempt?.failureReason).toBeNull();
 });
 
-test("POST /api/webhooks/stripe credits updated auto top-up by pack line only", async ({
+test("POST /api/webhooks/stripe credits auto top-up by pack and service-fee lines", async ({
     sessionToken,
     mocks,
 }) => {
@@ -2401,16 +2188,6 @@ test("POST /api/webhooks/stripe credits updated auto top-up by pack line only", 
 
     const response = await postSignedStripeWebhook(
         createAutoTopUpInvoiceEvent("invoice.paid", invoiceId, user.id, {
-            amount_due: 1200,
-            amount_paid: 1200,
-            metadata: {
-                pollinations_user_id: user.id,
-                pollinations_purpose: "auto_top_up",
-                pricingMode: "updated",
-                autoTopUpTermsVersion: String(
-                    CURRENT_AUTO_TOP_UP_TERMS_VERSION,
-                ),
-            },
             lines: {
                 object: "list",
                 has_more: false,
@@ -2435,75 +2212,6 @@ test("POST /api/webhooks/stripe credits updated auto top-up by pack line only", 
                         metadata: {
                             line_type: SERVICE_FEE_LINE_TYPE,
                             serviceFeeCents: String(serviceFeeCents),
-                        },
-                    },
-                ],
-            },
-        }),
-    );
-
-    expect(response.status).toBe(200);
-
-    const updatedUser = await env.DB.prepare(
-        `SELECT pack_balance AS packBalance
-        FROM user
-        WHERE id = ?`,
-    )
-        .bind(user.id)
-        .first<{ packBalance: number | null }>();
-    const attempt = await env.DB.prepare(
-        `SELECT status, failure_reason AS failureReason
-        FROM stripe_auto_top_up_attempt
-        WHERE stripe_invoice_id = ?`,
-    )
-        .bind(invoiceId)
-        .first<{ status: string; failureReason: string | null }>();
-
-    expect(updatedUser?.packBalance).toBe(11);
-    expect(attempt?.status).toBe("paid");
-    expect(attempt?.failureReason).toBeNull();
-});
-
-test("POST /api/webhooks/stripe credits inclusive-tax legacy auto top-up by line amount", async ({
-    sessionToken,
-    mocks,
-}) => {
-    void sessionToken;
-    await mocks.enable("stripe");
-    const db = drizzle(env.DB);
-    const [user] = await db
-        .select({ id: userTable.id })
-        .from(userTable)
-        .limit(1);
-
-    expect(user).toBeTruthy();
-    if (!user) throw new Error("Expected seeded test user");
-
-    await db
-        .update(userTable)
-        .set({ packBalance: 1, autoTopUpEnabled: true, autoTopUpAmountUsd: 10 })
-        .where(eq(userTable.id, user.id));
-
-    const invoiceId = "in_paid_legacy_inclusive_tax";
-    await insertAutoTopUpAttempt({ userId: user.id, invoiceId });
-
-    const response = await postSignedStripeWebhook(
-        createAutoTopUpInvoiceEvent("invoice.paid", invoiceId, user.id, {
-            amount_due: 1000,
-            amount_paid: 1000,
-            lines: {
-                object: "list",
-                has_more: false,
-                url: `/v1/invoices/${invoiceId}/lines`,
-                data: [
-                    {
-                        id: "il_pack_inclusive_tax",
-                        object: "line_item",
-                        amount: 1000,
-                        amount_excluding_tax: 833,
-                        currency: "usd",
-                        metadata: {
-                            line_type: POLLEN_PACK_LINE_TYPE,
                         },
                     },
                 ],
@@ -2636,7 +2344,7 @@ test.for([
     {
         name: "amount",
         invoiceId: "in_amount_mismatch",
-        overrides: { amount_paid: 2000 },
+        overrides: { amount_paid: 1000 },
         expectedReason: "verification mismatch: amount mismatch",
     },
     {

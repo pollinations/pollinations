@@ -319,18 +319,15 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
         POLLEN_PACKS.findIndex((pack) => pack.amountUsd === selectedPackAmount),
     );
     const selectedPack = POLLEN_PACKS[selectedPackIndex] ?? POLLEN_PACKS[0];
-    const checkoutPricingUpdateEnabled =
-        initialBillingState?.pricing.checkoutPricingUpdateEnabled ?? false;
     const serviceFeeCents =
-        checkoutPricingUpdateEnabled && selectedPack
+        selectedPack
             ? calculateServiceFeeCents(selectedPack.amountUsd * 100)
             : 0;
     const subtotalBeforeTaxCents =
         (selectedPack?.amountUsd ?? 0) * 100 + serviceFeeCents;
-    const chargeLabel =
-        checkoutPricingUpdateEnabled && selectedPack
-            ? formatUsdCentsCompact(subtotalBeforeTaxCents)
-            : `$${selectedPack?.amountUsd ?? 0}`;
+    const chargeLabel = selectedPack
+        ? formatUsdCentsCompact(subtotalBeforeTaxCents)
+        : "$0";
 
     return (
         <>
@@ -341,13 +338,9 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                             <PollenPackSlider
                                 value={selectedPack.amountUsd}
                                 onChange={setSelectedPackAmount}
-                                selectedBadgeLabel={
-                                    checkoutPricingUpdateEnabled
-                                        ? chargeLabel
-                                        : undefined
-                                }
+                                selectedBadgeLabel={chargeLabel}
                                 selectedBadgeTooltip={
-                                    checkoutPricingUpdateEnabled ? (
+                                    selectedPack ? (
                                         <PurchaseCostTooltip
                                             packAmountUsd={
                                                 selectedPack.amountUsd
@@ -372,15 +365,9 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                                     <span className="font-semibold text-theme-text-strong">
                                         {chargeLabel}
                                     </span>
-                                    {checkoutPricingUpdateEnabled ? (
-                                        <span className="mt-1 block text-theme-text-muted">
-                                            Tax calculated at checkout.
-                                        </span>
-                                    ) : (
-                                        <span className="mt-1 block text-theme-text-muted">
-                                            Confirm on the next page.
-                                        </span>
-                                    )}
+                                    <span className="mt-1 block text-theme-text-muted">
+                                        Tax calculated at checkout.
+                                    </span>
                                 </span>
                             }
                             displayContents

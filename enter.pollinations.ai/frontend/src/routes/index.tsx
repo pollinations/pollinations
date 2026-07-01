@@ -99,6 +99,8 @@ export const Route = createFileRoute("/")({
             tierData,
             tierBalance,
             packBalance,
+            communityEndpointsAllowed:
+                profileResult?.communityEndpointsAllowed ?? false,
             billingState,
             paidWeek,
             tierWeek,
@@ -115,6 +117,7 @@ function RouteComponent() {
         tierData,
         tierBalance,
         packBalance,
+        communityEndpointsAllowed,
         billingState,
         paidWeek,
         tierWeek,
@@ -124,6 +127,7 @@ function RouteComponent() {
     const [activePage, setActivePage] = usePageFromHash(pageFromHash);
     const [activityPeriod, setActivityPeriod] =
         useState<UsagePeriodSelection>(currentUsagePeriod);
+    const showCommunityEndpoints = communityEndpointsAllowed;
 
     const selectableKeys = useMemo(
         () =>
@@ -305,7 +309,9 @@ function RouteComponent() {
                     onDelete={handleDeleteApiKey}
                 />
             )}
-            {activePage === "models" && <Models />}
+            {activePage === "models" && (
+                <Models showCommunityEndpoints={showCommunityEndpoints} />
+            )}
         </DashboardShell>
     );
 }

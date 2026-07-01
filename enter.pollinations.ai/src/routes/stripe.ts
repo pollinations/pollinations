@@ -18,6 +18,10 @@ import {
     processAutoTopUpForUser,
     updateAutoTopUpSettings,
 } from "../utils/stripe-billing.ts";
+import {
+    getStripeNewCardGateStatus,
+    stripeNewCardGateMetadata,
+} from "../utils/stripe-card-gate.ts";
 
 /**
  * Stripe pack configuration
@@ -86,6 +90,10 @@ export const stripeRoutes = new Hono<Env>()
                 c.env,
                 userId,
             );
+            const newCardGate = await getStripeNewCardGateStatus(
+                c.env.DB,
+                userId,
+            );
 
             // packKey identifies the pack; the webhook looks up its fixed USD
             // amount to credit, independent of how Adaptive Pricing localized
@@ -94,6 +102,7 @@ export const stripeRoutes = new Hono<Env>()
                 userId,
                 packKey: pack.packKey,
                 cohort,
+                ...stripeNewCardGateMetadata(newCardGate),
             };
 
             const checkoutSession = await stripe.checkout.sessions.create({

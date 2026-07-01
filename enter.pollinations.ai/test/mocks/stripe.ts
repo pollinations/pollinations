@@ -124,6 +124,12 @@ type StripePaymentIntent = {
     id: string;
     object: "payment_intent";
     status: string;
+    amount?: number;
+    currency?: string;
+    metadata?: Record<string, string>;
+    payment_method_types?: string[];
+    receipt_email?: string | null;
+    latest_charge?: unknown;
 };
 
 type StripeRequest = {

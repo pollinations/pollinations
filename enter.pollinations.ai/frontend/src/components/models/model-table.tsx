@@ -26,7 +26,7 @@ import {
     isNewModel,
     isPaidOnly,
 } from "./model-info.ts";
-import { ModelRow } from "./model-row.tsx";
+import { ModelId, ModelRow } from "./model-row.tsx";
 import { ModelStatusChips } from "./model-status-chips.tsx";
 import { getModelPriceBadges, PriceBadgeList } from "./price-badge.tsx";
 import type { ModelPrice, PriceDirection } from "./types.ts";
@@ -37,12 +37,14 @@ export type SectionType =
     | "audio"
     | "realtime"
     | "text"
+    | "community"
     | "embedding";
 
 type UnifiedModelTableProps = {
     imageModels: ModelPrice[];
     videoModels: ModelPrice[];
     textModels: ModelPrice[];
+    communityModels: ModelPrice[];
     audioModels: ModelPrice[];
     realtimeModels: ModelPrice[];
     embeddingModels: ModelPrice[];
@@ -96,6 +98,7 @@ export const sectionLabels: Record<SectionType, string> = {
     audio: "Audio",
     realtime: "Realtime",
     text: "Text",
+    community: "Community",
     embedding: "Embedding",
 };
 
@@ -205,6 +208,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 </span>
                             </CopyButton>
                         </div>
+                        <ModelId name={model.name} />
                         {(inputModalities.length > 0 ||
                             capabilities.length > 0) && (
                             <div className="flex min-w-0 flex-wrap items-center gap-1.5">
@@ -339,6 +343,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     imageModels,
     videoModels,
     textModels,
+    communityModels,
     audioModels,
     realtimeModels,
     embeddingModels,
@@ -350,6 +355,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
         { type: "audio", models: audioModels },
         { type: "realtime", models: realtimeModels },
         { type: "text", models: textModels },
+        { type: "community", models: communityModels },
         { type: "embedding", models: embeddingModels },
     ];
 

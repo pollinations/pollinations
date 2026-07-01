@@ -73,7 +73,7 @@ export const customerRoutes = new Hono<Env>()
         describeRoute({
             tags: ["👤 Account"],
             description:
-                "Today's BYOP markup earnings split by which balance the spending user paid from. UTC calendar day.",
+                "Recent developer earnings split by which balance the spending user paid from.",
             hide: ({ c }) => c?.env.ENVIRONMENT === "production",
         }),
         async (c) => {

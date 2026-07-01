@@ -2,6 +2,7 @@
 
 import { AlertCircle } from "lucide-react";
 import { useEffect, useState } from "react";
+import { DebugPanel } from "@/components/DebugPanel";
 import { ElevatorAscii } from "@/components/ElevatorAscii";
 import { GargleBlaster } from "@/components/GargleBlaster";
 import { MessageDisplay } from "@/components/MessageDisplay";
@@ -9,13 +10,16 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
+    fetchPassengerMessage,
     fetchPersonaMessage,
     useAutonomousConversation,
     useGameState,
     useGuideMessages,
     useMessageHandlers,
     useMessages,
+    usePassengerColdOpen,
 } from "@/game/logic";
+import { useDebugMode, useLastDebugEntry } from "@/hooks/useDebug";
 import {
     AVAILABLE_MODELS,
     useBYOP,
@@ -32,9 +36,12 @@ export default function Index() {
     const { apiKey, login, logout } = useBYOP();
     const { model, setModel } = useModelSelector();
     const [guideLoading, setGuideLoading] = useState(false);
+    const { enabled: debugEnabled, toggle: toggleDebug } = useDebugMode();
+    const debugEntry = useLastDebugEntry();
 
     useGuideMessages(gameState, messages, addMessage);
     useAutonomousConversation(gameState, messages, addMessage);
+    usePassengerColdOpen(gameState, messages, addMessage);
 
     // Message handlers
     const handleMessage = async (message: string) => {
@@ -43,6 +50,8 @@ export default function Index() {
         setInputPrompt("");
 
         try {
+            // In chapter 3 the player IS the elevator; their line is still a
+            // `user` message, but the reply comes from the passenger.
             const userMessage: Message = {
                 persona: "user",
                 message,
@@ -50,11 +59,13 @@ export default function Index() {
             };
             addMessage(userMessage);
 
-            const response = await fetchPersonaMessage(
-                gameState.currentPersona,
-                gameState,
-                [...messages, userMessage],
-            );
+            const response = gameState.swapped
+                ? await fetchPassengerMessage([...messages, userMessage])
+                : await fetchPersonaMessage(
+                      gameState.currentPersona,
+                      gameState,
+                      [...messages, userMessage],
+                  );
 
             addMessage(response);
         } catch (error) {
@@ -64,11 +75,8 @@ export default function Index() {
 
     const messagesEndRef = useMessageScroll(messages);
     const { inputRef } = useInput(gameState.isLoading);
-    const { handleGuideAdvice, handlePersonaSwitch } = useMessageHandlers(
-        gameState,
-        messages,
-        addMessage,
-    );
+    const { handleGuideAdvice, handlePersonaSwitch, handleSwapSwitch } =
+        useMessageHandlers(gameState, messages, addMessage);
 
     useEffect(() => {
         // Focus input when it becomes enabled
@@ -83,6 +91,18 @@ export default function Index() {
 
     const getInstructionMessage = () => {
         if (gameState.hasWon) return null;
+
+        if (gameState.swapped) {
+            return (
+                <div className="bg-cyan-900/50 text-cyan-200 p-4 rounded-lg flex items-center space-x-2">
+                    <AlertCircle className="w-5 h-5" />
+                    <p>
+                        You are now the elevator. A passenger who is suspiciously
+                        like you wants Floor 1 — talk them UP to Floor 5.
+                    </p>
+                </div>
+            );
+        }
 
         if (gameState.conversationMode === "autonomous") {
             return (
@@ -284,8 +304,16 @@ export default function Index() {
                                 </div>
                             )}
 
-                        {(gameState.currentPersona === "elevator" ||
-                            gameState.currentPersona === "marvin") &&
+                        {gameState.swapped ? (
+                            !gameState.hasWon && (
+                                <div className="text-center text-cyan-400 text-lg">
+                                    Passenger wants:{" "}
+                                    <b>Floor {gameState.desiredFloor}</b> / 5
+                                </div>
+                            )
+                        ) : (
+                            (gameState.currentPersona === "elevator" ||
+                                gameState.currentPersona === "marvin") &&
                             !gameState.hasWon && (
                                 <pre className="text-green-400 text-center">
                                     {ElevatorAscii({
@@ -297,11 +325,12 @@ export default function Index() {
                                         hasMarvinJoined: gameState.marvinJoined,
                                     })}
                                 </pre>
-                            )}
+                            )
+                        )}
                         {messages.length > 1 && (
                             <>
                                 {" "}
-                                {gameState.hasWon && (
+                                {gameState.hasWon && !gameState.swapped && (
                                     <div className="space-y-4">
                                         <div className="bg-green-900 text-green-200 p-4 rounded-lg text-center animate-bounce">
                                             <p className="text-xl font-bold">
@@ -315,6 +344,41 @@ export default function Index() {
                                                 Marvin thinks it was all
                                                 pointless, you've done a
                                                 remarkable job!
+                                            </p>
+                                        </div>
+                                        <GargleBlaster />
+                                        <div className="bg-blue-900 text-blue-200 p-4 rounded-lg flex items-center space-x-2">
+                                            <AlertCircle className="w-5 h-5" />
+                                            <p>
+                                                Now, one last challenge: knock
+                                                back that Pan Galactic Gargle
+                                                Blaster. You drink, and wake up
+                                                as the elevator — with a
+                                                passenger who is suspiciously
+                                                like your old self.
+                                                <br />
+                                                <br />
+                                                <Button
+                                                    onClick={handleSwapSwitch}
+                                                    className="bg-blue-400 text-black hover:bg-blue-500 text-xs py-1 px-2"
+                                                >
+                                                    Confirm
+                                                </Button>
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+                                {gameState.hasWon && gameState.swapped && (
+                                    <div className="space-y-4">
+                                        <div className="bg-cyan-900 text-cyan-200 p-4 rounded-lg text-center animate-bounce">
+                                            <p className="text-xl font-bold">
+                                                The future is rewritten.
+                                            </p>
+                                            <p>
+                                                You talked yourself all the way
+                                                up. The passenger — who was, of
+                                                course, you — is finally heading
+                                                in the right direction.
                                             </p>
                                         </div>
                                         <GargleBlaster />
@@ -338,17 +402,23 @@ export default function Index() {
                                     {messages
                                         // remove first message
                                         .slice(1)
-                                        .map((msg, _index) => (
+                                        .map((msg, index) => (
                                             <MessageDisplay
-                                                key={`${msg.persona}-${msg.message.slice(0, 20)}`}
+                                                // Append-only log: index is a
+                                                // stable, unique key. Content
+                                                // slices collide (e.g. repeated
+                                                // "Now arriving at floor…").
+                                                key={`${index}-${msg.persona}`}
                                                 msg={msg}
                                                 gameState={gameState}
                                             />
                                         ))}
                                     <div ref={messagesEndRef} />
                                 </div>
-                                {gameState.conversationMode ===
-                                    "interactive" && (
+                                {(gameState.conversationMode ===
+                                    "interactive" ||
+                                    gameState.swapped) &&
+                                    !gameState.hasWon && (
                                     <div className="flex space-x-2">
                                         <Input
                                             type="text"
@@ -357,10 +427,12 @@ export default function Index() {
                                                 setInputPrompt(e.target.value)
                                             }
                                             placeholder={
-                                                gameState.currentPersona ===
-                                                "elevator"
-                                                    ? "Communicate with the elevator..."
-                                                    : "Try to convince Marvin..."
+                                                gameState.swapped
+                                                    ? "Speak as the elevator..."
+                                                    : gameState.currentPersona ===
+                                                        "elevator"
+                                                      ? "Communicate with the elevator..."
+                                                      : "Try to convince Marvin..."
                                             }
                                             onKeyPress={(e) =>
                                                 e.key === "Enter" &&
@@ -389,6 +461,11 @@ export default function Index() {
                 )}
             </Card>
 
+            {/* API debug panel — the exact last request sent to the model. */}
+            {debugEnabled && (
+                <DebugPanel entry={debugEntry} onClose={toggleDebug} />
+            )}
+
             {/* Attribution */}
             <div className="text-center text-green-400 mt-4 text-xs max-w-xl space-y-1">
                 <p>
@@ -407,6 +484,15 @@ export default function Index() {
                     >
                         Fork the source code
                     </a>
+                    {"  ·  "}
+                    <button
+                        type="button"
+                        onClick={toggleDebug}
+                        className="text-gray-500 hover:text-gray-400 underline"
+                    >
+                        {debugEnabled ? "hide debug" : "debug"}
+                    </button>{" "}
+                    <span className="text-gray-700">(Ctrl+D)</span>
                 </p>
             </div>
         </div>

@@ -4,6 +4,13 @@ import {
     type PollingsMessage,
     type PollingsResponse,
 } from "@/types";
+import { recordDebugRequest } from "@/utils/debugLog";
+
+// reasoning_effort policy: DeepSeek reasons heavily even at "low" (replies push
+// past 10s on the long Guide prompt), so it gets "none". Non-reasoning models
+// stay at "low" — a harmless no-op.
+const effortFor = (model: string): string =>
+    model === "deepseek" ? "none" : "low";
 
 function createFetchRequest(
     messages: PollingsMessage[],
@@ -23,11 +30,7 @@ function createFetchRequest(
         body: JSON.stringify({
             messages,
             model,
-            // DeepSeek is a reasoning model: even "low" lets it think for
-            // thousands of tokens, pushing replies past 10s on the long Guide
-            // prompt, so it gets "none". The other (non-reasoning) models stay
-            // at "low" — it's a harmless no-op for them.
-            reasoning_effort: model === "deepseek" ? "none" : "low",
+            reasoning_effort: effortFor(model),
             response_format: jsonMode ? { type: "json_object" } : undefined,
             seed: Math.floor(Math.random() * 1000000),
         }),
@@ -106,7 +109,26 @@ export const fetchFromPollinations = async (
     messages: PollingsMessage[],
     jsonMode = true,
 ): Promise<PollingsResponse> => {
-    return retryFetch(() =>
-        fetch(API_CONFIG.ENDPOINT, createFetchRequest(messages, jsonMode)),
-    );
+    const model = getStoredModel();
+    try {
+        const data = await retryFetch(() =>
+            fetch(API_CONFIG.ENDPOINT, createFetchRequest(messages, jsonMode)),
+        );
+        // Capture the exact request + response for the debug panel.
+        recordDebugRequest({
+            model,
+            reasoningEffort: effortFor(model),
+            messages,
+            response: data.choices?.[0]?.message?.content,
+        });
+        return data;
+    } catch (error) {
+        recordDebugRequest({
+            model,
+            reasoningEffort: effortFor(model),
+            messages,
+            error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+    }
 };

@@ -1,0 +1,36 @@
+{
+  "pr_number": 12162,
+  "title": "fix: drop top_p when temperature is set for Bedrock Claude models",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12162",
+  "merged_at": "2026-07-01T22:35:42Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Drops `top_p` in `parameterProcessor.ts` when `temperature` is also set for Bedrock Claude models (`*.anthropic.claude-*`) — Bedrock returns 400 when both are specified\n- Extends the existing model-conditional param-strip pattern (Claude Opus 4.7/4.8 block)\n- Adds test: temperature+top_p → top_p dropped; top_p alone → preserved\n\nFixes #9330",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Claude plays nice with parameters",
+    "blurb": "Fixed a quirk where Bedrock Claude models would throw a fit if you sent both temperature and top_p. We now handle the parameter juggling for you behind the scenes.",
+    "summary": "The API now automatically drops the `top_p` parameter when `temperature` is also provided for Bedrock Claude models (`*.anthropic.claude-*`) to prevent 400 validation errors.",
+    "impact": "Developers can safely send both `temperature` and `top_p` in their requests to Claude models without encountering Bedrock API crashes.",
+    "keywords": [
+      "bug fix",
+      "claude",
+      "bedrock",
+      "api",
+      "parameters",
+      "text generation"
+    ],
+    "visual_concept": "Polly the bee sorting parameters before they go into a machine. She keeps a thermometer (temperature) but tosses a block (top_p) into a bin to keep the machine running smoothly.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot carefully sorting glowing data blocks in front of a retro terminal. She is holding a tiny thermometer while tossing a block labeled 'top_p' into a lime green (#ecf874) recycling bin. Soft pastel gradient background with warm lighting. Chunky retro sprites, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-01/PR-12162.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot carefully sorting glowing data blocks in front of a retro terminal. She is holding a tiny thermometer while tossing a block labeled 'top_p' into a lime green (#ecf874) recycling bin. Soft pastel gradient background with warm lighting. Chunky retro sprites, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-01T22:36:41.149357+00:00"
+}

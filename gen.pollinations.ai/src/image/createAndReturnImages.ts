@@ -338,28 +338,27 @@ const callGPTImageWithEndpoint = async (
         const clamp = (v: number) => Math.round(Math.max(16, v) / 16) * 16;
         let w = clamp(safeParams.width);
         let h = clamp(safeParams.height);
+        // Cap aspect ratio before the edge cap so extreme inputs (e.g. 16x8000)
+        // shrink the long edge instead of flooring the short edge to 0.
+        if (w > h * 3) w = Math.floor((h * 3) / 16) * 16;
+        else if (h > w * 3) h = Math.floor((w * 3) / 16) * 16;
         const longEdge = Math.max(w, h);
         if (longEdge > 3840) {
             const scale = 3840 / longEdge;
-            w = Math.round((w * scale) / 16) * 16;
-            h = Math.round((h * scale) / 16) * 16;
-        }
-        const ar = Math.max(w, h) / Math.min(w, h);
-        if (ar > 3) {
-            if (w > h) w = Math.round((h * 3) / 16) * 16;
-            else h = Math.round((w * 3) / 16) * 16;
+            w = Math.floor((w * scale) / 16) * 16;
+            h = Math.floor((h * scale) / 16) * 16;
         }
         let pixels = w * h;
         if (pixels < 655360) {
             const scale = Math.sqrt(655360 / pixels);
-            w = Math.round((w * scale) / 16) * 16;
-            h = Math.round((h * scale) / 16) * 16;
+            w = Math.ceil((w * scale) / 16) * 16;
+            h = Math.ceil((h * scale) / 16) * 16;
             pixels = w * h;
         }
         if (pixels > 8294400) {
             const scale = Math.sqrt(8294400 / pixels);
-            w = Math.round((w * scale) / 16) * 16;
-            h = Math.round((h * scale) / 16) * 16;
+            w = Math.floor((w * scale) / 16) * 16;
+            h = Math.floor((h * scale) / 16) * 16;
         }
         size = `${w}x${h}`;
     } else {
@@ -370,11 +369,8 @@ const callGPTImageWithEndpoint = async (
         ]).size;
     }
 
-    // Pass through quality for GPT Image models (low, medium, high all valid).
-    // HD is DALL-E 3 only; silently downgrade to medium.
-    const quality = ["low", "medium", "high"].includes(safeParams.quality)
-        ? safeParams.quality
-        : "medium";
+    // Use requested quality - access control runs in this worker's auth/balance middleware
+    const quality = safeParams.quality === "hd" ? "high" : safeParams.quality;
 
     // Set output format to png if model is gptimage, otherwise jpeg
     const outputFormat = "png";

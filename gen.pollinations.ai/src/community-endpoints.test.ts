@@ -25,6 +25,7 @@ import {
     createTestUser,
     test as fixtureTest,
 } from "@shared/test/fixtures/index.ts";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -247,6 +248,8 @@ describe("community endpoint helpers", () => {
             description: null,
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
+            disabledAt: null,
+            disabledReason: null,
             bearerTokenCiphertext: await encryptSecret(
                 "sk_saved_token",
                 secret,
@@ -701,6 +704,124 @@ fixtureTest(
 );
 
 fixtureTest(
+    "excludes a deactivated community model from public model catalogs",
+    async () => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `disabled-${crypto.randomUUID().slice(0, 8)}`;
+        const modelId = communityModelId(ownerGithubUsername, modelName);
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        await db.insert(communityEndpointTable).values({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            name: modelName,
+            description: "Deactivated community model",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "gpt-4.1-mini",
+            bearerTokenCiphertext: await encryptSecret(
+                "sk_saved_token",
+                env.BETTER_AUTH_SECRET,
+            ),
+            promptTextPrice: 0.1 / 1_000_000,
+            completionTextPrice: 0.2 / 1_000_000,
+            disabledAt: new Date(),
+            disabledReason: "repeated upstream 500s",
+            disabledBy: "monitor",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const textResponse = await SELF.fetch(
+            "https://gen.pollinations.ai/text/models",
+        );
+        const allResponse = await SELF.fetch(
+            "https://gen.pollinations.ai/models",
+        );
+        const openaiResponse = await SELF.fetch(
+            "https://gen.pollinations.ai/v1/models",
+        );
+
+        const textModels = (await textResponse.json()) as { name: string }[];
+        const allModels = (await allResponse.json()) as typeof textModels;
+        const openaiModels = (await openaiResponse.json()) as {
+            data: { id: string }[];
+        };
+
+        for (const models of [textModels, allModels]) {
+            expect(
+                models.find((model) => model.name === modelId),
+            ).toBeUndefined();
+        }
+        expect(
+            openaiModels.data.find((model) => model.id === modelId),
+        ).toBeUndefined();
+    },
+);
+
+fixtureTest(
+    "rejects a direct chat completion against a deactivated community model",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `disabled-call-${crypto.randomUUID().slice(0, 8)}`;
+        const modelId = communityModelId(ownerGithubUsername, modelName);
+        const legacyModelId = legacyCommunityModelId(
+            ownerGithubUsername,
+            modelName,
+        );
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        await db.insert(communityEndpointTable).values({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            name: modelName,
+            description: "Deactivated community model",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "gpt-4.1-mini",
+            bearerTokenCiphertext: await encryptSecret(
+                "sk_saved_token",
+                env.BETTER_AUTH_SECRET,
+            ),
+            promptTextPrice: 0.1 / 1_000_000,
+            completionTextPrice: 0.2 / 1_000_000,
+            disabledAt: new Date(),
+            disabledReason: "repeated upstream 500s",
+            disabledBy: "monitor",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        for (const requestedModel of [modelId, legacyModelId]) {
+            const response = await SELF.fetch(
+                "https://gen.pollinations.ai/v1/chat/completions",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${apiKey}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: requestedModel,
+                        messages: [{ role: "user", content: "hello" }],
+                        stream: false,
+                    }),
+                },
+            );
+
+            expect(response.status).toBe(400);
+            const body = (await response.json()) as {
+                error?: { message?: string };
+            };
+            expect(body.error?.message).toContain("Invalid model or alias");
+            expect(body.error?.message).not.toContain("repeated upstream 500s");
+        }
+    },
+);
+
+fixtureTest(
     "rejects registration outside the allowlist without blocking saved endpoints",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
@@ -1111,11 +1232,22 @@ fixtureTest(
             upstreamModel: "gpt-4.1-mini",
             promptTextPrice: 0.1,
             completionTextPrice: 0.2,
+            disabled: false,
+            disabledReason: null,
+            disabledAt: null,
         });
         expect(created).not.toHaveProperty("bearerToken");
         expect(created).not.toHaveProperty("bearerTokenCiphertext");
         expect(typeof created.id).toBe("string");
         const createdId = created.id as string;
+        await db
+            .update(communityEndpointTable)
+            .set({
+                disabledAt: new Date(),
+                disabledReason: "was failing",
+                disabledBy: "monitor",
+            })
+            .where(eq(communityEndpointTable.id, createdId));
 
         const updateResponse = await fetchEnterApi(
             enterApi,
@@ -1138,6 +1270,8 @@ fixtureTest(
             description: "Updated description",
             promptTextPrice: 0.1,
             completionTextPrice: 0.2,
+            disabled: true,
+            disabledReason: "was failing",
         });
 
         const secondListResponse = await fetchEnterApi(

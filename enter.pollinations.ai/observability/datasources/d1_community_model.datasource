@@ -17,6 +17,9 @@ SCHEMA >
     `completion_text_price` Float64 `json:$.completion_text_price` DEFAULT 0,
     `completion_reasoning_price` Float64 `json:$.completion_reasoning_price` DEFAULT 0,
     `completion_audio_price` Float64 `json:$.completion_audio_price` DEFAULT 0,
+    `disabled_at` Nullable(Int64) `json:$.disabled_at`,
+    `disabled_reason` Nullable(String) `json:$.disabled_reason`,
+    `disabled_by` Nullable(String) `json:$.disabled_by`,
     `created_at` Int64 `json:$.created_at`,
     `updated_at` Int64 `json:$.updated_at`,
     `synced_at` DateTime `json:$.synced_at`

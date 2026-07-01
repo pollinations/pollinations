@@ -1,4 +1,5 @@
 import {
+    Alert,
     CardIcon,
     CheckIcon,
     ClipboardIcon,
@@ -31,7 +32,11 @@ export function CommunityEndpointCard({
     const priceGroups = communityPriceGroups(endpoint);
 
     return (
-        <Surface className="transition-colors hover:bg-surface-opaque/90">
+        <Surface
+            className={`transition-colors hover:bg-surface-opaque/90 ${
+                endpoint.disabled ? "opacity-60" : ""
+            }`}
+        >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
                     <div className="flex min-w-0 items-center gap-2">
@@ -66,6 +71,21 @@ export function CommunityEndpointCard({
                     </IconButton>
                 </div>
             </div>
+
+            {endpoint.disabled && (
+                <Alert intent="danger" className="mt-3">
+                    <div className="flex flex-col gap-1">
+                        <span className="font-semibold">Model deactivated</span>
+                        <span className="text-sm">
+                            {endpoint.disabledReason ??
+                                "Deactivated due to repeated failures."}
+                        </span>
+                        <span className="text-sm">
+                            Edit, test, then save the model to reactivate it.
+                        </span>
+                    </div>
+                </Alert>
+            )}
 
             <div className="mt-4 grid gap-2">
                 <CommunityDetailRow

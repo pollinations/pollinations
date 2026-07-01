@@ -810,7 +810,7 @@ fixtureTest(
                 },
             );
 
-            expect(response.status).toBe(400);
+            expect(response.status).toBe(500);
             const body = (await response.json()) as {
                 error?: { message?: string };
             };

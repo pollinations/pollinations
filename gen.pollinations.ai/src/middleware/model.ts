@@ -59,7 +59,10 @@ export async function resolveModelDefinition(
     if (!entry) {
         const disabledEntry = registry.resolveIncludingDisabled(model);
         if (disabledEntry?.communityEndpoint?.disabledAt) {
-            throw new HTTPException(400, {
+            // Not a client mistake (unlike the 400s below) — the model name
+            // is valid, its backing endpoint is just down. 500 reflects that
+            // this is the server/operator's problem, not the caller's.
+            throw new HTTPException(500, {
                 message: `Community model "${model}" has been deactivated: ${
                     disabledEntry.communityEndpoint.disabledReason ??
                     "repeated upstream failures"

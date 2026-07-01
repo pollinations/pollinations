@@ -57,6 +57,8 @@ export async function getCommunityModelRegistryEntries(
             completionReasoningPrice:
                 schema.communityEndpoint.completionReasoningPrice,
             completionAudioPrice: schema.communityEndpoint.completionAudioPrice,
+            disabledAt: schema.communityEndpoint.disabledAt,
+            disabledReason: schema.communityEndpoint.disabledReason,
         })
         .from(schema.communityEndpoint)
         .innerJoin(
@@ -77,6 +79,8 @@ export async function getCommunityModelRegistryEntries(
             baseUrl: row.baseUrl,
             upstreamModel: row.upstreamModel,
             bearerTokenCiphertext: row.bearerTokenCiphertext,
+            disabledAt: row.disabledAt ? row.disabledAt.getTime() : null,
+            disabledReason: row.disabledReason,
             ...communityEndpointPrices(row),
         };
         const definition = communityModelDefinition(communityEndpoint);

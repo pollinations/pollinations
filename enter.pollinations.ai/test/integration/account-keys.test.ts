@@ -246,26 +246,33 @@ describe("Account Key Management API", () => {
             expect(response.status).toBe(403);
         });
 
-        test("should reject publishable key even with keys permission", async ({
-            auth,
+        test("should create key via publishable API key with account:keys permission", async ({
             sessionToken,
         }) => {
-            // Create a publishable key
-            const createPub = await auth.apiKey.create({
-                name: "pub-with-keys-perm",
-                prefix: "pk",
-                metadata: { keyType: "publishable" },
-                fetchOptions: {
+            const createPub = await SELF.fetch(
+                "http://localhost:3000/api/account/keys",
+                {
+                    method: "POST",
                     headers: {
+                        "Content-Type": "application/json",
                         Cookie: `better-auth.session_token=${sessionToken}`,
                     },
+                    body: JSON.stringify({
+                        name: "pub-with-keys-perm",
+                        type: "publishable",
+                    }),
                 },
-            });
-            if (!createPub.data) throw new Error("Failed to create pk key");
+            );
+            expect(createPub.status).toBe(200);
+            const createdPub = (await createPub.json()) as {
+                id: string;
+                key: string;
+            };
+            expect(createdPub.key.startsWith("pk_")).toBe(true);
 
             // Set account:keys permission
-            await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${createPub.data.id}/update`,
+            const updateResponse = await SELF.fetch(
+                `http://localhost:3000/api/api-keys/${createdPub.id}/update`,
                 {
                     method: "POST",
                     headers: {
@@ -277,6 +284,7 @@ describe("Account Key Management API", () => {
                     }),
                 },
             );
+            expect(updateResponse.status).toBe(200);
 
             const response = await SELF.fetch(
                 "http://localhost:3000/api/account/keys",
@@ -284,13 +292,17 @@ describe("Account Key Management API", () => {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${createPub.data.key}`,
+                        Authorization: `Bearer ${createdPub.key}`,
                     },
-                    body: JSON.stringify({ name: "should-fail" }),
+                    body: JSON.stringify({ name: "child-from-publishable" }),
                 },
             );
 
-            expect(response.status).toBe(403);
+            expect(response.status).toBe(200);
+            const data = await response.json();
+            expect(data.key.startsWith("sk_")).toBe(true);
+            expect(data.name).toBe("child-from-publishable");
+            expect(data.permissions?.account ?? []).not.toContain("keys");
         });
     });
 

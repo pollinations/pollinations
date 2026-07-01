@@ -117,7 +117,9 @@ export async function generateImageWithVertexAI(
         }
 
         // Determine image size based on pixel count
-        // Both gemini-3-pro-image-preview and gemini-3.1-flash-image-preview support imageSize
+        // Both gemini-3-pro-image-preview and gemini-3.1-flash-image-preview support imageSize.
+        // gemini-3.1-flash-lite-image only outputs 1K (Vertex 400s on imageSize 2K/4K),
+        // so it is intentionally omitted — it defaults to 1K.
         let imageSize: string | undefined;
         if (
             (modelId === "gemini-3-pro-image-preview" ||

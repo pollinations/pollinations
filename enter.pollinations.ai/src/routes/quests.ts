@@ -16,9 +16,10 @@ import type {
     QuestCard,
     QuestEvaluationContext,
 } from "../services/quests/types.ts";
+import { hasAccountReadPermission } from "./account-permissions.ts";
 
-// Bumped to v21: launch-era top-up quests use new ids; legacy top-up cards are completed.
-const CACHE_KEY = "quests:catalog:v21";
+// Bumped to v22: app_listed is now available instead of coming_soon.
+const CACHE_KEY = "quests:catalog:v22";
 const CACHE_TTL = 60;
 const QUEST_CHECK_THROTTLE_SECONDS = 60;
 
@@ -69,8 +70,9 @@ const claimRewardResponseSchema = z.object({
 
 function requireUsagePermission(apiKey?: {
     permissions?: Record<string, string[]>;
+    metadata?: Record<string, unknown>;
 }): void {
-    if (apiKey && !apiKey.permissions?.account?.includes("usage")) {
+    if (apiKey && !hasAccountReadPermission(apiKey, "usage")) {
         throw new HTTPException(403, {
             message: "API key does not have 'account:usage' permission",
         });
@@ -175,7 +177,7 @@ export const questsRoutes = new Hono<Env>()
             tags: ["✨ Quests"],
             summary: "Get Quest Rewards",
             description:
-                "Returns earned quest rewards for the authenticated account, including claim state. Requires `account:usage` permission when using API keys.",
+                "Returns earned quest rewards for the authenticated account, including claim state. API keys require the read-only `account:usage` permission.",
             responses: {
                 200: {
                     description: "Quest rewards",

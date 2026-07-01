@@ -1334,8 +1334,9 @@ test("POST /api/stripe/auto-top-up/trigger creates and pays auto top-up invoice"
     );
 
     expect(
-        mocks.stripe.state.invoices.find((invoice) => invoice.id === "in_mock_1")
-            ?.amount_due,
+        mocks.stripe.state.invoices.find(
+            (invoice) => invoice.id === "in_mock_1",
+        )?.amount_due,
     ).toBe(pack.amountUsd * 100 + serviceFeeCents);
     expect(payRequest).toBeDefined();
 });

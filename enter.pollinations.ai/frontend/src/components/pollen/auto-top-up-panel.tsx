@@ -140,10 +140,9 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
         (pack) => pack.amountUsd === packAmountUsd,
     );
     const isEnabled = billingState?.autoTopUp.enabled ?? false;
-    const serviceFeeCents =
-        selectedPack
-            ? calculateServiceFeeCents(selectedPack.amountUsd * 100)
-            : 0;
+    const serviceFeeCents = selectedPack
+        ? calculateServiceFeeCents(selectedPack.amountUsd * 100)
+        : 0;
     const subtotalBeforeTaxCents =
         (selectedPack?.amountUsd ?? 0) * 100 + serviceFeeCents;
     const chargeLabel = selectedPack

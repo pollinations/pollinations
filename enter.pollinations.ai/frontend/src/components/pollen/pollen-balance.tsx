@@ -319,10 +319,9 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
         POLLEN_PACKS.findIndex((pack) => pack.amountUsd === selectedPackAmount),
     );
     const selectedPack = POLLEN_PACKS[selectedPackIndex] ?? POLLEN_PACKS[0];
-    const serviceFeeCents =
-        selectedPack
-            ? calculateServiceFeeCents(selectedPack.amountUsd * 100)
-            : 0;
+    const serviceFeeCents = selectedPack
+        ? calculateServiceFeeCents(selectedPack.amountUsd * 100)
+        : 0;
     const subtotalBeforeTaxCents =
         (selectedPack?.amountUsd ?? 0) * 100 + serviceFeeCents;
     const chargeLabel = selectedPack

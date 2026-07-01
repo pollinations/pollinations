@@ -1270,9 +1270,8 @@ fixtureTest(
             description: "Updated description",
             promptTextPrice: 0.1,
             completionTextPrice: 0.2,
-            disabled: false,
-            disabledReason: null,
-            disabledAt: null,
+            disabled: true,
+            disabledReason: "was failing",
         });
 
         const secondListResponse = await fetchEnterApi(

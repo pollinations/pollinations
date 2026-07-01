@@ -811,12 +811,12 @@ fixtureTest(
                 },
             );
 
-            expect(response.status).toBe(500);
+            expect(response.status).toBe(400);
             const body = (await response.json()) as {
                 error?: { message?: string };
             };
-            expect(body.error?.message).toContain("deactivated");
-            expect(body.error?.message).toContain("repeated upstream 500s");
+            expect(body.error?.message).toContain("Invalid model or alias");
+            expect(body.error?.message).not.toContain("repeated upstream 500s");
         }
     },
 );

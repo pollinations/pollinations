@@ -9,8 +9,7 @@ import { api } from "./api.ts";
 import type { Env } from "./env.ts";
 import { logger } from "./middleware/logger.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
-import { syncGithubMirror } from "./services/github-mirror.ts";
-import { runTierRefill } from "./services/tier-refill.ts";
+import { runScheduledTasks } from "./services/scheduled-tasks.ts";
 
 function stripTrailingSlash(path: string): string {
     return path.length > 1 ? path.replace(/\/+$/, "") : path;
@@ -94,11 +93,6 @@ export default {
         env: CloudflareBindings,
         ctx: ExecutionContext,
     ) {
-        // Tier refill is the priority path — run it first and to completion.
-        await runTierRefill(env, ctx);
-        // Refresh the GitHub mirror in the background so a slow/hung GitHub API
-        // call never delays (or, on a future change, blocks) the refill. It
-        // also fails soft (logs, never throws).
-        ctx.waitUntil(syncGithubMirror(env));
+        await runScheduledTasks(env, ctx);
     },
 } satisfies ExportedHandler<CloudflareBindings>;

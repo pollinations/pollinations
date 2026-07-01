@@ -3,6 +3,7 @@ import {
     env,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import { getTextModelsInfo } from "@shared/registry/model-info.ts";
 import { test as fixtureTest } from "@shared/test/fixtures/index.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import worker from "../src/index.ts";
@@ -56,12 +57,48 @@ async function optionsWorker(
 }
 
 describe("gen worker routing", () => {
-    it("redirects root to docs", async () => {
+    it("serves root metadata for social previews", async () => {
         const response = await fetchWorker("/");
 
-        expect(response.status).toBe(301);
-        expect(response.headers.get("Location")).toBe(
-            "https://staging.gen.pollinations.ai/docs",
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Content-Type")).toContain("text/html");
+        expect(response.headers.get("X-Robots-Tag")).toBeNull();
+
+        const html = await response.text();
+        expect(html).toContain("<title>Docs | pollinations.ai</title>");
+        expect(html).toContain('http-equiv="refresh" content="0;url=/docs"');
+        expect(html).toContain(
+            'property="og:image" content="https://staging.gen.pollinations.ai/og-image.png"',
+        );
+        expect(html).toContain('rel="manifest" href="/manifest.webmanifest"');
+    });
+
+    it("serves the docs web app manifest", async () => {
+        const response = await fetchWorker("/manifest.webmanifest");
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Content-Type")).toContain(
+            "application/manifest+json",
+        );
+
+        const manifest = (await response.json()) as {
+            name: string;
+            short_name: string;
+            start_url: string;
+            icons: { src: string; purpose?: string }[];
+        };
+        expect(manifest).toMatchObject({
+            name: "Docs | pollinations.ai",
+            short_name: "Docs",
+            start_url: "/docs",
+        });
+        expect(manifest.icons).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    src: "/icon-maskable-512.png",
+                    purpose: "maskable",
+                }),
+            ]),
         );
     });
 
@@ -170,6 +207,35 @@ describe("gen worker routing", () => {
         expect(response.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
     });
 
+    it("proxies only the public quest catalog to enter", async () => {
+        let proxiedUrl: string | undefined;
+        const env = envWithEnter(async (request) => {
+            proxiedUrl = new Request(request).url;
+            return Response.json({ quests: [] });
+        });
+
+        const response = await fetchWorker("/quests/catalog", env);
+
+        expect(response.status).toBe(200);
+        expect(proxiedUrl).toBe(
+            "https://staging.gen.pollinations.ai/api/quests/catalog",
+        );
+        expect(response.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
+    });
+
+    it("does not proxy dashboard quest actions on gen", async () => {
+        let proxied = false;
+        const env = envWithEnter(async () => {
+            proxied = true;
+            return new Response("unexpected");
+        });
+
+        const response = await fetchWorker("/quests/rewards", env);
+
+        expect(response.status).toBe(404);
+        expect(proxied).toBe(false);
+    });
+
     it("routes docs through the generation app without noindex", async () => {
         const response = await fetchWorker("/docs/llm.txt", envWithEnter());
 
@@ -250,13 +316,20 @@ describe("gen worker routing", () => {
             name: string;
             context_length?: number;
         }[];
-        const modelsWithContext = models.filter(
+        const modelsByName = new Map(
+            models.map((model) => [model.name, model]),
+        );
+        const expectedModelsWithContext = getTextModelsInfo().filter(
             (model) => model.context_length != null,
         );
 
-        expect(modelsWithContext.length).toBeGreaterThan(10);
-        for (const model of modelsWithContext) {
+        expect(expectedModelsWithContext.length).toBeGreaterThan(0);
+        for (const model of expectedModelsWithContext) {
+            const servedModel = modelsByName.get(model.name);
+
             expect(model.context_length).toBeGreaterThan(0);
+            expect(servedModel?.context_length).toBeGreaterThan(0);
+            expect(servedModel?.context_length).toBe(model.context_length);
         }
     });
 });

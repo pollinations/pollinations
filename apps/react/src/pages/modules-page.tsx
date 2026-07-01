@@ -137,7 +137,11 @@ function TokenChipList({ values }: { values: readonly string[] }) {
 
 function BooleanCapability({ value }: { value: boolean }) {
     return (
-        <Chip intent={value ? "success" : "neutral"} size="sm">
+        <Chip
+            intent="neutral"
+            size="sm"
+            className={value ? "text-intent-success-text" : undefined}
+        >
             {value ? "Yes" : "No"}
         </Chip>
     );
@@ -383,7 +387,7 @@ export function ModulesPage() {
                                     </CatalogTableRow>
                                     <CatalogTableRow label="App Earnings">
                                         {isLoggedIn ? (
-                                            <Chip intent="success" size="sm">
+                                            <Chip intent="news" size="sm">
                                                 20% of pollen spent in-app
                                             </Chip>
                                         ) : (

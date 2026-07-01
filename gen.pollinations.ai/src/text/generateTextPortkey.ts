@@ -5,7 +5,6 @@ import { generateHeaders } from "./transforms/headerGenerator.js";
 import { imageUrlToBase64Transform } from "./transforms/imageUrlToBase64Transform.js";
 import { sanitizeMessages } from "./transforms/messageSanitizer.js";
 import { processParameters } from "./transforms/parameterProcessor.js";
-import { validateInputModalities } from "./transforms/validateInputModalities.js";
 import type {
     ChatCompletion,
     ChatMessage,
@@ -51,7 +50,6 @@ export async function generateTextPortkey(
 
     if (state.options.model) {
         state = await resolveModelConfig(state.messages, state.options);
-        state = validateInputModalities(state.messages, state.options);
         state = await generateHeaders(state.messages, state.options);
         state = await imageUrlToBase64Transform(state.messages, state.options);
         state = await sanitizeMessages(state.messages, state.options);

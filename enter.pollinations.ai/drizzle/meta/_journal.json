@@ -204,6 +204,41 @@
       "when": 1782231033008,
       "tag": "0028_gh_mirror_assignees_dates",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "6",
+      "when": 1782416176948,
+      "tag": "0029_create_rewards",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "6",
+      "when": 1782416177948,
+      "tag": "0030_fix_reward_timestamp_units",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "6",
+      "when": 1782467647638,
+      "tag": "0031_lucky_alex_power",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "6",
+      "when": 1782557977942,
+      "tag": "0032_parallel_albert_cleary",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "6",
+      "when": 1782823187000,
+      "tag": "0033_stripe_card_fingerprint_attempt",
+      "breakpoints": true
     }
   ]
 }

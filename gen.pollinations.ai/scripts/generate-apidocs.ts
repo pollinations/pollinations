@@ -184,10 +184,6 @@ type Row = {
     extras: string[];
 };
 
-const UNDOCUMENTED_CHAT_COMPAT_FIELDS = new Set([
-    "thinking",
-    "thinking_budget",
-]);
 const JS_MAX_INT = 9007199254740991;
 const JS_MIN_INT = -9007199254740991;
 
@@ -223,14 +219,6 @@ function collectRows(
     const rows: Row[] = [];
 
     for (const [name, raw] of Object.entries(props)) {
-        if (
-            parent === "" &&
-            "reasoning_effort" in props &&
-            UNDOCUMENTED_CHAT_COMPAT_FIELDS.has(name)
-        ) {
-            continue;
-        }
-
         const prop = asObj(raw);
         const path = parent ? `${parent}.${name}` : name;
         const extras = collectExtras(prop);
@@ -761,7 +749,7 @@ curl ${BASE_URL}/v1/models \\
 
 **3. Pick an endpoint** from the [${sectionHeading(SECTIONS.contents)}](#${sectionAnchor(SECTIONS.contents)}) below.
 
-**Integration guides:** [🌸 BYOP](https://gen.pollinations.ai/docs#tag/byop) · [🖥️ CLI](https://gen.pollinations.ai/docs#tag/cli) · [🔌 MCP Server](https://gen.pollinations.ai/docs#tag/mcp-server)`;
+**Integration guides:** [BYOP](https://gen.pollinations.ai/docs#tag/byop) · [CLI](https://gen.pollinations.ai/docs#tag/cli) · [MCP Server](https://gen.pollinations.ai/docs#tag/mcp-server)`;
 }
 
 function renderTableOfContents(
@@ -1008,15 +996,15 @@ const HTTP_METHODS = new Set([
  * silently disappears — they show up at the end until added here.
  */
 const TAG_ORDER = [
-    "✍️ Text",
-    "🖼️ Image",
-    "🎬 Video",
-    "🔊 Audio",
-    "🎙️ Realtime",
-    "🔢 Embeddings",
-    "🤖 Models",
-    "📦 Media Storage",
-    "👤 Account",
+    "Text",
+    "Image",
+    "Video",
+    "Audio",
+    "Realtime",
+    "Embeddings",
+    "Models",
+    "Media Storage",
+    "Account",
 ];
 
 /** Group operations by tag, then re-key the map to follow TAG_ORDER. */

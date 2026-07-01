@@ -6,7 +6,14 @@
 // and re-generating the schema including the indexes.
 
 import { relations, sql } from "drizzle-orm";
-import { sqliteTable, text, integer, real, index } from "drizzle-orm/sqlite-core";
+import {
+  sqliteTable,
+  text,
+  integer,
+  real,
+  index,
+  uniqueIndex,
+} from "drizzle-orm/sqlite-core";
 
 export const user = sqliteTable("user", {
   id: text("id").primaryKey(),
@@ -41,7 +48,7 @@ export const user = sqliteTable("user", {
 }, (table) => [
   index("idx_user_email").on(table.email),
   index("idx_user_auto_top_up_enabled").on(table.autoTopUpEnabled),
-  // GitHub author/assignee joins (gh_pull_requests, gh_issues -> user).
+  // GitHub profile lookup for quest checks and account display.
   index("idx_user_github_id").on(table.githubId),
 ]);
 
@@ -166,12 +173,67 @@ export const stripeAutoTopUpAttempt = sqliteTable("stripe_auto_top_up_attempt", 
   index("idx_stripe_auto_top_up_attempt_status").on(table.status),
 ]);
 
+export const stripeCardFingerprintAttempt = sqliteTable("stripe_card_fingerprint_attempt", {
+  eventId: text("event_id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  cardFingerprint: text("card_fingerprint").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .defaultNow()
+    .notNull(),
+}, (table) => [
+  index("idx_stripe_card_fingerprint_attempt_user_created").on(
+    table.userId,
+    table.createdAt,
+  ),
+  index("idx_stripe_card_fingerprint_attempt_user_fingerprint").on(
+    table.userId,
+    table.cardFingerprint,
+  ),
+]);
+
+export const communityEndpoint = sqliteTable("community_endpoint", {
+  id: text("id").primaryKey(),
+  ownerUserId: text("owner_user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  description: text("description"),
+  baseUrl: text("base_url").notNull(),
+  upstreamModel: text("upstream_model").notNull(),
+  bearerTokenCiphertext: text("bearer_token_ciphertext").notNull(),
+  promptTextPrice: real("prompt_text_price").notNull(),
+  promptCachedPrice: real("prompt_cached_price").default(0).notNull(),
+  promptCacheWritePrice: real("prompt_cache_write_price").default(0).notNull(),
+  promptAudioPrice: real("prompt_audio_price").default(0).notNull(),
+  promptImagePrice: real("prompt_image_price").default(0).notNull(),
+  completionTextPrice: real("completion_text_price").notNull(),
+  completionReasoningPrice: real("completion_reasoning_price").default(0).notNull(),
+  completionAudioPrice: real("completion_audio_price").default(0).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+}, (table) => [
+  index("idx_community_endpoint_owner_user_id").on(table.ownerUserId),
+  uniqueIndex("idx_community_endpoint_owner_name").on(
+    table.ownerUserId,
+    table.name,
+  ),
+]);
+
 // Drizzle relations for query builder joins
 export const userRelations = relations(user, ({ many }) => ({
   apikeys: many(apikey),
   sessions: many(session),
   accounts: many(account),
   stripeAutoTopUpAttempts: many(stripeAutoTopUpAttempt),
+  stripeCardFingerprintAttempts: many(stripeCardFingerprintAttempt),
+  communityEndpoints: many(communityEndpoint),
 }));
 
 export const apikeyRelations = relations(apikey, ({ one }) => ({
@@ -205,6 +267,23 @@ export const stripeAutoTopUpAttemptRelations = relations(
   }),
 );
 
+export const stripeCardFingerprintAttemptRelations = relations(
+  stripeCardFingerprintAttempt,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [stripeCardFingerprintAttempt.userId],
+      references: [user.id],
+    }),
+  }),
+);
+
+export const communityEndpointRelations = relations(communityEndpoint, ({ one }) => ({
+  owner: one(user, {
+    fields: [communityEndpoint.ownerUserId],
+    references: [user.id],
+  }),
+}));
+
 // Device Authorization Grant (RFC 8628) table
 export const deviceCode = sqliteTable("device_code", {
   id: text("id").primaryKey(),
@@ -235,115 +314,57 @@ export const stripeCheckoutCredits = sqliteTable("stripe_checkout_credits", {
   index("idx_stripe_checkout_credits_user_id").on(table.userId),
 ]);
 
-export const questPayoutCredits = sqliteTable("quest_payout_credits", {
-  payoutKey: text("payout_key").primaryKey(),
-  questIssueNumber: integer("quest_issue_number").notNull(),
-  prNumber: integer("pr_number").notNull(),
-  role: text("role").notNull(),
-  githubUsername: text("github_username").notNull(),
+export const polarCheckoutCredits = sqliteTable("polar_checkout_credits", {
+  orderId: text("order_id").primaryKey(),
+  eventId: text("event_id").notNull(),
+  eventType: text("event_type").notNull(),
   userId: text("user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
   pollenCredited: real("pollen_credited").notNull(),
+  polarCreatedAt: integer("polar_created_at").notNull(),
+  amount: integer("amount"),
+  totalAmount: integer("total_amount"),
+  currency: text("currency"),
+  customerId: text("customer_id"),
+  productId: text("product_id"),
+  productName: text("product_name"),
+  productSlug: text("product_slug"),
+  metadataJson: text("metadata_json"),
   createdAt: integer("created_at", { mode: "timestamp" })
     .defaultNow()
     .notNull(),
 }, (table) => [
-  index("idx_quest_payout_credits_user_id").on(table.userId),
-  index("idx_quest_payout_credits_quest_issue").on(table.questIssueNumber),
+  index("idx_polar_checkout_credits_user_id").on(table.userId),
 ]);
 
-// GitHub repo mirror — a thin, full snapshot of pollinations/pollinations PRs,
-// issues, and the PR->issue "closes" edges. Refreshed wholesale by the
-// scheduled syncGithubMirror() (INSERT OR REPLACE every row each run). These
-// tables are deliberately generic: they mirror GitHub state and nothing else
-// (no quest/reward logic) so any consumer can read them. The PR->issue close
-// link is a GraphQL-only relation (closingIssuesReferences) that lives on
-// neither the PR nor the issue payload, so it gets its own edge table.
-
-export const ghPullRequests = sqliteTable("gh_pull_requests", {
-  // GitHub PR number — stable, repo-unique, the natural primary key.
-  number: integer("number").primaryKey(),
-  // Author's GitHub user id (databaseId). Nullable: the author account may be
-  // deleted, in which case GraphQL returns a null author. Join key to
-  // user.github_id.
-  authorGithubId: integer("author_github_id"),
-  authorLogin: text("author_login"),
-  // GitHub PR state: "open" | "closed" | "merged" (GraphQL surfaces MERGED as a
-  // distinct state; we store it lower-cased).
-  state: text("state").notNull(),
-  // The merged signal: NULL = never merged. A closed-but-unmerged PR has a null
-  // mergedAt. Authoritative for "did this PR land".
-  mergedAt: integer("merged_at", { mode: "timestamp" }),
+// Reward ledger: one row == one earned reward. `claimedAt` is null until the
+// user claims it, and only claiming credits the user's balance. Everything that
+// can earn pollen is modelled as a reward, so there is no reward-kind
+// discriminator — `questId` already names what was earned. The old
+// GitHub-shaped quest_payout_credits table is backfilled into here and dropped
+// by the rewards migration.
+export const rewards = sqliteTable("rewards", {
+  id: text("id").primaryKey(),
+  // Idempotency guard. Encodes the quest's completion scope, e.g.
+  // "quest:{issue}" or "quest:{questId}:user:{userId}".
+  idempotencyKey: text("idempotency_key").notNull().unique(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  // Catalog id of the quest that was earned; null for one-off rewards.
+  questId: text("quest_id"),
+  // Quest title snapshotted when earned, so history renders it directly.
   title: text("title").notNull(),
-  url: text("url").notNull(),
-  // GitHub's own created_at / closed_at, so consumers can answer "when was this
-  // opened / closed" without another GitHub round-trip.
-  githubCreatedAt: integer("github_created_at", { mode: "timestamp" }),
-  githubClosedAt: integer("github_closed_at", { mode: "timestamp" }),
-  // GitHub's own updated_at, used for change detection / debugging.
-  githubUpdatedAt: integer("github_updated_at", { mode: "timestamp" }),
-  // When this mirror row was last written.
-  syncedAt: integer("synced_at", { mode: "timestamp" })
+  // Optional quest link snapshotted when earned.
+  url: text("url"),
+  pollenAmount: real("pollen_amount").notNull(),
+  // Which balance bucket will be credited when claimed: "tier" or "pack".
+  balanceBucket: text("balance_bucket").notNull(),
+  earnedAt: integer("earned_at", { mode: "timestamp" })
     .defaultNow()
-    .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
+  claimedAt: integer("claimed_at", { mode: "timestamp" }),
 }, (table) => [
-  index("idx_gh_pull_requests_author_github_id").on(table.authorGithubId),
-  index("idx_gh_pull_requests_merged_at").on(table.mergedAt),
-]);
-
-export const ghIssues = sqliteTable("gh_issues", {
-  // GitHub issue number — primary key. NOTE: GitHub returns PRs in the /issues
-  // feed too; the sync filters those out (only true issues land here).
-  number: integer("number").primaryKey(),
-  authorGithubId: integer("author_github_id"),
-  authorLogin: text("author_login"),
-  // "open" | "closed". An issue's state does NOT say *why* it closed; use the
-  // gh_pr_closing_issues edge to know if a merged PR closed it.
-  state: text("state").notNull(),
-  title: text("title").notNull(),
-  url: text("url").notNull(),
-  // Full issue body, mirrored verbatim so consumers can parse it (e.g. a
-  // "### Reward" amount) in-process without another GitHub round-trip.
-  body: text("body"),
-  // Label names as a JSON array string (e.g. ["POLLEN-QUEST","bug"]). Stored as
-  // text to match this file's convention (no json column mode is used here).
-  labelsJson: text("labels_json"),
-  // First assignee's GitHub user id, if any. Join key to user.github_id — kept
-  // as a dedicated indexed column for the common single-assignee lookup.
-  assigneeGithubId: integer("assignee_github_id"),
-  assigneeLogin: text("assignee_login"),
-  // All assignees as a JSON array of {login, githubId} (GitHub allows up to 10).
-  // assigneeGithubId/assigneeLogin above mirror the first entry for indexing.
-  assigneesJson: text("assignees_json"),
-  // GitHub's own created_at / closed_at, so consumers can answer "when was this
-  // opened / closed" without another GitHub round-trip.
-  githubCreatedAt: integer("github_created_at", { mode: "timestamp" }),
-  githubClosedAt: integer("github_closed_at", { mode: "timestamp" }),
-  githubUpdatedAt: integer("github_updated_at", { mode: "timestamp" }),
-  syncedAt: integer("synced_at", { mode: "timestamp" })
-    .defaultNow()
-    .$onUpdate(() => /* @__PURE__ */ new Date())
-    .notNull(),
-}, (table) => [
-  index("idx_gh_issues_author_github_id").on(table.authorGithubId),
-  index("idx_gh_issues_assignee_github_id").on(table.assigneeGithubId),
-  index("idx_gh_issues_state").on(table.state),
-]);
-
-export const ghPrClosingIssues = sqliteTable("gh_pr_closing_issues", {
-  // Composite identity (pr_number, issue_number) flattened into a single text
-  // key "<pr>:<issue>" so the wholesale re-sync can upsert deterministically
-  // (this file uses only single-column primary keys).
-  edgeKey: text("edge_key").primaryKey(),
-  prNumber: integer("pr_number").notNull(),
-  issueNumber: integer("issue_number").notNull(),
-  syncedAt: integer("synced_at", { mode: "timestamp" })
-    .defaultNow()
-    .$onUpdate(() => /* @__PURE__ */ new Date())
-    .notNull(),
-}, (table) => [
-  index("idx_gh_pr_closing_issues_pr_number").on(table.prNumber),
-  index("idx_gh_pr_closing_issues_issue_number").on(table.issueNumber),
+  index("idx_rewards_user_id").on(table.userId),
 ]);

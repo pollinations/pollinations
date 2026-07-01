@@ -29,8 +29,8 @@ import {
     BuyPollenPanel,
     PollenBalance,
     SidebarWallet,
-    TierPanel,
 } from "../components/pollen";
+import { QuestOverview } from "../components/quests";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 
 const ACTIVITY_MIN_DATE = new Date("2026-01-01T00:00:00.000Z");
@@ -99,6 +99,8 @@ export const Route = createFileRoute("/")({
             tierData,
             tierBalance,
             packBalance,
+            communityEndpointsAllowed:
+                profileResult?.communityEndpointsAllowed ?? false,
             billingState,
             paidWeek,
             tierWeek,
@@ -115,6 +117,7 @@ function RouteComponent() {
         tierData,
         tierBalance,
         packBalance,
+        communityEndpointsAllowed,
         billingState,
         paidWeek,
         tierWeek,
@@ -124,6 +127,7 @@ function RouteComponent() {
     const [activePage, setActivePage] = usePageFromHash(pageFromHash);
     const [activityPeriod, setActivityPeriod] =
         useState<UsagePeriodSelection>(currentUsagePeriod);
+    const showCommunityEndpoints = communityEndpointsAllowed;
 
     const selectableKeys = useMemo(
         () =>
@@ -143,7 +147,7 @@ function RouteComponent() {
         setIsSigningOut(true);
         try {
             await authClient.signOut();
-            window.location.href = "/";
+            window.location.href = "/sign-in#news-faq";
         } catch (error) {
             console.error("Sign out failed:", error);
         } finally {
@@ -272,11 +276,6 @@ function RouteComponent() {
                     <Section title="Top-up" framed id="buy-pollen">
                         <BuyPollenPanel initialBillingState={billingState} />
                     </Section>
-                    {tierData && (
-                        <Section title="Tier" framed>
-                            <TierPanel {...tierData} />
-                        </Section>
-                    )}
                 </div>
             )}
             {activePage === "activity" && (
@@ -301,6 +300,7 @@ function RouteComponent() {
                     />
                 </div>
             )}
+            {activePage === "quests" && <QuestOverview />}
             {activePage === "keys" && (
                 <ApiKeyList
                     apiKeys={apiKeys}
@@ -309,7 +309,9 @@ function RouteComponent() {
                     onDelete={handleDeleteApiKey}
                 />
             )}
-            {activePage === "models" && <Models />}
+            {activePage === "models" && (
+                <Models showCommunityEndpoints={showCommunityEndpoints} />
+            )}
         </DashboardShell>
     );
 }

@@ -1,0 +1,34 @@
+{
+  "pr_number": 12156,
+  "title": "feat: allowlist sixfingerdev for community models",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12156",
+  "merged_at": "2026-07-01T18:03:57Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Adds sixfingerdev (GitHub ID 229514703) to COMMUNITY_MODEL_ALLOWED_GITHUB_IDS",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Welcome to the modelers club",
+    "blurb": "We just handed sixfingerdev the keys to the community models garden. Can't wait to see what they plant!",
+    "summary": "Added GitHub user sixfingerdev to the community models allowlist, enabling them to publish custom models.",
+    "impact": "sixfingerdev can now deploy and share their own AI models directly through the pollinations.ai infrastructure.",
+    "keywords": [
+      "community",
+      "models",
+      "allowlist",
+      "creators"
+    ],
+    "visual_concept": "The bee mascot welcoming a new creator to the garden, handing them a glowing seed representing model publishing rights.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot handing a glowing golden seed to a friendly pixel-art hacker character sitting at a retro terminal. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'WELCOME'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-01/PR-12156.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot handing a glowing golden seed to a friendly pixel-art hacker character sitting at a retro terminal. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'WELCOME'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-01T18:04:56.510813+00:00"
+}

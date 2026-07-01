@@ -270,4 +270,62 @@ describe("Device Authorization Flow", () => {
         expect(body).toHaveProperty("picture");
         expect(body).toHaveProperty("preferred_username");
     }, 30000);
+
+    test("GET /api/device/userinfo rejects API keys without profile scope", async ({
+        apiKey,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "github");
+        const res = await SELF.fetch(`${BASE}/api/device/userinfo`, {
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+            },
+        });
+        expect(res.status).toBe(403);
+    }, 30000);
+
+    test("GET /api/device/userinfo accepts API keys with profile scope", async ({
+        auth,
+        sessionToken,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "github");
+        const created = await auth.apiKey.create({
+            name: "device-userinfo-profile-key",
+            fetchOptions: {
+                headers: {
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+            },
+        });
+        if (!created.data) throw new Error("Failed to create API key");
+
+        const updateRes = await SELF.fetch(
+            `${BASE}/api/api-keys/${created.data.id}/update`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+                body: JSON.stringify({
+                    accountPermissions: ["profile"],
+                }),
+            },
+        );
+        expect(updateRes.status).toBe(200);
+
+        const res = await SELF.fetch(`${BASE}/api/device/userinfo`, {
+            headers: {
+                Authorization: `Bearer ${created.data.key}`,
+            },
+        });
+        const body = (await res.json()) as {
+            sub: string;
+            email: string;
+        };
+        expect(res.status).toBe(200);
+        expect(body.sub).toBeTruthy();
+        expect(body.email).toBeTruthy();
+    }, 30000);
 });

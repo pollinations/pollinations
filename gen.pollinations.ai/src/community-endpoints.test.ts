@@ -332,7 +332,6 @@ fixtureTest(
                 return Response.json({
                     id: "chatcmpl_test",
                     object: "chat.completion",
-                    model: "gpt-4.1-mini",
                     choices: [
                         {
                             index: 0,
@@ -372,18 +371,12 @@ fixtureTest(
         );
 
         expect(response.status).toBe(200);
-        await expect(response.json()).resolves.toMatchObject({
-            model: "gpt-4.1-mini",
-            choices: [
-                {
-                    message: { content: "ok" },
-                },
-            ],
-            usage: {
-                prompt_tokens: 2,
-                completion_tokens: 3,
-                total_tokens: 5,
-            },
+        expect(response.headers.get("x-model-used")).toBe(modelId);
+        const body = await response.json();
+        expect(body).not.toHaveProperty("model");
+        expect(body).toMatchObject({
+            choices: [{ message: { content: "ok" } }],
+            usage: { prompt_tokens: 2, completion_tokens: 3, total_tokens: 5 },
         });
 
         const legacyResponse = await SELF.fetch(
@@ -404,13 +397,10 @@ fixtureTest(
             }),
         );
         expect(legacyResponse.status).toBe(200);
-        await expect(legacyResponse.json()).resolves.toMatchObject({
-            model: "gpt-4.1-mini",
-            choices: [
-                {
-                    message: { content: "ok" },
-                },
-            ],
+        const legacyBody = await legacyResponse.json();
+        expect(legacyBody).not.toHaveProperty("model");
+        expect(legacyBody).toMatchObject({
+            choices: [{ message: { content: "ok" } }],
         });
 
         const upstreamCalls = fetchMock.mock.calls.filter(([input, init]) =>

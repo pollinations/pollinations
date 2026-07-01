@@ -129,7 +129,8 @@ export function Authorize() {
         parsedRedirectUrl !== null &&
         (!app_key || redirectValidationState === "valid");
 
-    useScrollLock();
+    const isMobile = window.innerWidth < 768;
+    useScrollLock(!isMobile);
 
     useEffect(() => {
         let cancelled = false;
@@ -561,7 +562,8 @@ export function Authorize() {
                                             &#x1F511;
                                         </span>
                                         <span>
-                                            Create, list, and revoke API keys.
+                                            Manage API keys and My Models when
+                                            enabled.
                                         </span>
                                     </li>
                                 )}

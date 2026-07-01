@@ -556,11 +556,27 @@ export const InputsDemo: FC = () => {
                     <Textarea placeholder="Disabled" rows={3} disabled />
                 </ControlGroup>
                 <div className="col-span-full">
-                    <FieldStack label="FieldStack" className="max-w-xl">
+                    <FieldStack
+                        label="FieldStack"
+                        helper="Package-owned label stack for common app forms."
+                        action={
+                            <Button type="button" size="sm" intent="info">
+                                Check
+                            </Button>
+                        }
+                        alignLabelRow
+                        className="max-w-xl"
+                    >
                         <Input placeholder="Project name" />
-                        <Text size="xs" tone="soft">
-                            Package-owned label stack for common app forms.
-                        </Text>
+                    </FieldStack>
+                </div>
+                <div className="col-span-full">
+                    <FieldStack
+                        label="FieldStack error"
+                        error="Enter a valid project name."
+                        className="max-w-xl"
+                    >
+                        <Input placeholder="Invalid project" error />
                     </FieldStack>
                 </div>
                 <div className="col-span-full">

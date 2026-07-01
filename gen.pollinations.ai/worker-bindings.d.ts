@@ -22,9 +22,9 @@ interface CloudflareBindings {
         | "dev"
         | "test"
         | "development";
+    STAGING_ALLOWED_GITHUB_IDS?: string;
     LOG_LEVEL?: "trace" | "debug";
     LOG_FORMAT?: "text" | "json";
-    STAGING_ALLOWED_GITHUB_IDS?: string;
     TINYBIRD_INGEST_URL: string;
     TINYBIRD_TIER_INGEST_URL?: string;
     IMAGES?: ImagesBinding;
@@ -39,6 +39,7 @@ interface CloudflareBindings {
     BEDROCK_GUARDRAIL_VERSION?: string;
     AZURE_MYCELI_PROD_API_KEY: string;
     AZURE_MYCELI_PROD_EASTUS2_API_KEY: string;
+    AZURE_MYCELI_PROD_IMG_WESTUS3_API_KEY: string;
     AZURE_MYCELI_PROD_SWEDEN_API_KEY: string;
     AZURE_CONTENT_SAFETY_API_KEY: string;
     AZURE_CONTENT_SAFETY_ENDPOINT: string;

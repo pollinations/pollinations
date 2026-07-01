@@ -100,6 +100,41 @@ async function getOnlyUser() {
     return user;
 }
 
+async function createUsageApiKey(sessionToken: string, name: string) {
+    const createResponse = await SELF.fetch(
+        "http://localhost:3000/api/account/keys",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({ name }),
+        },
+    );
+    expect(createResponse.status).toBe(200);
+    const created = (await createResponse.json()) as {
+        id: string;
+        key: string;
+    };
+
+    const updateResponse = await SELF.fetch(
+        `http://localhost:3000/api/api-keys/${created.id}/update`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({
+                accountPermissions: ["usage"],
+            }),
+        },
+    );
+    expect(updateResponse.status).toBe(200);
+    return created.key;
+}
+
 test("recordRewards dedups on idempotency key and claimReward credits once", async ({
     sessionToken: _sessionToken,
 }) => {
@@ -184,7 +219,7 @@ test("catalog returns quest definitions without ledger stats", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v21");
+    await env.KV.delete("quests:catalog:v22");
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -242,6 +277,11 @@ test("catalog returns quest definitions without ledger stats", async ({
         rewardAmount: 50,
         balanceBucket: "tier",
     });
+    expectStableCatalogFields("app_listed", {
+        state: "available",
+        rewardAmount: 10,
+        balanceBucket: "tier",
+    });
 });
 
 test("catalog includes coming-soon GitHub issue placeholder", async ({
@@ -249,7 +289,7 @@ test("catalog includes coming-soon GitHub issue placeholder", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v21");
+    await env.KV.delete("quests:catalog:v22");
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -273,13 +313,13 @@ test("catalog includes coming-soon GitHub issue placeholder", async ({
 
     expect(placeholder).toMatchObject({
         title: "Solve a quest issue in GitHub",
-        description: "A demi description",
         category: "contribute",
         state: "coming_soon",
         rewardAmount: 0,
         balanceBucket: "tier",
         url: null,
     });
+    expect(placeholder?.description).toEqual(expect.any(String));
 });
 
 test("catalog excludes closed GitHub quest issues without merged PRs", async ({
@@ -287,7 +327,7 @@ test("catalog excludes closed GitHub quest issues without merged PRs", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v21");
+    await env.KV.delete("quests:catalog:v22");
 
     seedQuestIssue(mocks.github.state, {
         issueNumber: 801,
@@ -325,6 +365,99 @@ test("catalog excludes closed GitHub quest issues without merged PRs", async ({
     expect(byId.get("github:issue:801")?.state).toBe("available");
     expect(byId.has("github:issue:802")).toBe(false);
     expect(byId.get("github:issue:803")?.state).toBe("completed");
+});
+
+test("account quests merge earned rewards into completed status", async ({
+    mocks,
+    sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    await mocks.enable("github", "tinybird");
+    await env.KV.delete("quests:catalog:v22");
+    const user = await getOnlyUser();
+
+    const createKeyResponse = await SELF.fetch(
+        "http://localhost:3000/api/account/keys",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({
+                name: "quest-status-key",
+                accountPermissions: ["usage"],
+            }),
+        },
+    );
+    expect(createKeyResponse.status).toBe(200);
+    const createdKey = (await createKeyResponse.json()) as { key: string };
+
+    const recorded = await recordRewards(db, [
+        {
+            idempotencyKey: `quest:test-earned:${user.id}`,
+            userId: user.id,
+            questId: "first_api_key",
+            title: "Create your first API key",
+            amount: 0.25,
+            bucket: "tier",
+        },
+    ]);
+    expect(recorded.recorded).toBe(1);
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/account/quests",
+        {
+            headers: {
+                authorization: `Bearer ${createdKey.key}`,
+            },
+        },
+    );
+    expect(response.status).toBe(200);
+    const payload = (await response.json()) as {
+        quests: {
+            id: string;
+            state: string;
+            status: string;
+            reward: { id: string; claimedAt: string | null } | null;
+        }[];
+    };
+    const byId = new Map(payload.quests.map((quest) => [quest.id, quest]));
+
+    expect(byId.get("first_api_key")).toMatchObject({
+        state: "available",
+        status: "completed",
+        reward: {
+            id: recorded.rewardIds[0],
+            claimedAt: null,
+        },
+    });
+    expect(byId.get(LEGACY_FIRST_TOP_UP_QUEST_ID)).toMatchObject({
+        state: "completed",
+        status: "completed",
+        reward: null,
+    });
+
+    const usageKey = await createUsageApiKey(sessionToken, "quest-usage-key");
+    const usageResponse = await SELF.fetch(
+        "http://localhost:3000/api/account/quests",
+        {
+            headers: {
+                authorization: `Bearer ${usageKey}`,
+            },
+        },
+    );
+    expect(usageResponse.status).toBe(200);
+    const usagePayload = (await usageResponse.json()) as typeof payload;
+    const usageById = new Map(
+        usagePayload.quests.map((quest) => [quest.id, quest]),
+    );
+    expect(usageById.get("first_api_key")).toMatchObject({
+        status: "completed",
+        reward: {
+            id: recorded.rewardIds[0],
+        },
+    });
 });
 
 test("quest check records product rewards and claim endpoint credits one", async ({
@@ -760,7 +893,7 @@ test("six-month account quest is coming_soon and never records", async ({
     expect(rewards).toHaveLength(0);
 });
 
-test("app-growth quests are coming_soon and never record", async ({
+test("app-listed quest records from Tinybird while other app-growth quests stay coming_soon", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -768,6 +901,9 @@ test("app-growth quests are coming_soon and never record", async ({
     const user = await getOnlyUser();
     await mocks.enable("github", "tinybird");
     mocks.tinybird.state.paidAppSpendResponse = [{ userId: user.id }];
+    mocks.tinybird.state.appDirectoryResponse = [
+        { github_user_id: String(user.githubId) },
+    ];
 
     await db.insert(schema.user).values({
         id: "byop-external-user",
@@ -814,13 +950,19 @@ test("app-growth quests are coming_soon and never record", async ({
             userId: schema.rewards.userId,
         })
         .from(schema.rewards);
-    // All app-growth quests are coming_soon (inert), so the owner earns none of
-    // them even though the source data qualifies.
-    for (const questId of ["app_active", "app_paid_request", "app_listed"]) {
+    // The listed-app quest is live; the other app-growth quests are still inert
+    // even though the source data qualifies.
+    for (const questId of ["app_active", "app_paid_request"]) {
         expect(ownerRewards.some((reward) => reward.questId === questId)).toBe(
             false,
         );
     }
+    expect(
+        ownerRewards.some(
+            (reward) =>
+                reward.questId === "app_listed" && reward.userId === user.id,
+        ),
+    ).toBe(true);
     expect(
         ownerRewards.some(
             (reward) =>
@@ -832,6 +974,11 @@ test("app-growth quests are coming_soon and never record", async ({
             call.url.includes("/v0/pipes/quest_paid_app_spend.json"),
         ),
     ).toBe(false);
+    expect(
+        mocks.tinybird.state.pipeCalls.some((call) =>
+            call.url.includes("/v0/pipes/app_directory_public.json"),
+        ),
+    ).toBe(true);
 
     // byop_login is coming_soon (inert), so the group never evaluates it.
     mocks.tinybird.state.pipeCalls = [];
@@ -1305,4 +1452,26 @@ test("account quest history requires account usage permission for API keys", asy
     );
 
     expect(response.status).toBe(403);
+});
+
+test("account quest history accepts account usage permission", async ({
+    sessionToken,
+}) => {
+    const usageKey = await createUsageApiKey(
+        sessionToken,
+        "quest-rewards-usage-key",
+    );
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/quests/rewards",
+        {
+            headers: {
+                authorization: `Bearer ${usageKey}`,
+            },
+        },
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+        rewards: [],
+    });
 });

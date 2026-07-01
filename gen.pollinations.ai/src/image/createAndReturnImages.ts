@@ -280,16 +280,16 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig> = {
     gptimage: {
         provider: "azure",
         baseUrl:
-            "https://myceli-prod-eastus2.cognitiveservices.azure.com/openai/deployments/gpt-image-1-mini",
+            "https://myceli-prod-img-westus3.cognitiveservices.azure.com/openai/deployments/gpt-image-1-mini",
         modelName: "gpt-image-1-mini",
-        apiKeyEnv: "AZURE_MYCELI_PROD_EASTUS2_API_KEY",
+        apiKeyEnv: "AZURE_MYCELI_PROD_IMG_WESTUS3_API_KEY",
     },
     "gptimage-large": {
         provider: "azure",
         baseUrl:
-            "https://myceli-prod-eastus2.cognitiveservices.azure.com/openai/deployments/gpt-image-1.5",
+            "https://myceli-prod-img-westus3.cognitiveservices.azure.com/openai/deployments/gpt-image-1.5",
         modelName: "gpt-image-1.5",
-        apiKeyEnv: "AZURE_MYCELI_PROD_EASTUS2_API_KEY",
+        apiKeyEnv: "AZURE_MYCELI_PROD_IMG_WESTUS3_API_KEY",
     },
     "gpt-image-2": {
         provider: "openai",
@@ -606,6 +606,7 @@ const generateImage = async (
 
         case "nanobanana":
         case "nanobanana-2":
+        case "nanobanana-2-lite":
         case "nanobanana-pro": {
             logError(
                 "Nano Banana authentication check:",

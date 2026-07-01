@@ -80,6 +80,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000005,
     },
   },
+  "claude-sonnet-5": {
+    "cost": {
+      "completionTextTokens": 0.000015,
+      "promptCacheWriteTokens": 0.00000375,
+      "promptCachedTokens": 0.0000003,
+      "promptTextTokens": 0.000003,
+    },
+    "price": {
+      "completionTextTokens": 0.000015,
+      "promptCacheWriteTokens": 0.00000375,
+      "promptCachedTokens": 0.0000003,
+      "promptTextTokens": 0.000003,
+    },
+  },
   "cohere-embed-v4": {
     "cost": {
       "promptTextTokens": 0.00000012,
@@ -682,6 +696,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000005,
     },
   },
+  "nanobanana-2-lite": {
+    "cost": {
+      "completionImageTokens": 0.00003,
+      "completionTextTokens": 0.0000015,
+      "promptImageTokens": 0.00000025,
+      "promptTextTokens": 0.00000025,
+    },
+    "price": {
+      "completionImageTokens": 0.00003,
+      "completionTextTokens": 0.0000015,
+      "promptImageTokens": 0.00000025,
+      "promptTextTokens": 0.00000025,
+    },
+  },
   "nanobanana-pro": {
     "cost": {
       "completionImageTokens": 0.00012,
@@ -1036,12 +1064,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.035,
     },
   },
-  "stable-audio-3-medium": {
+  "stable-audio-3-large": {
     "cost": {
-      "completionAudioTokens": 0.0001,
+      "completionAudioTokens": 0.26,
     },
     "price": {
-      "completionAudioTokens": 0.0001,
+      "completionAudioTokens": 0.26,
+    },
+  },
+  "stable-audio-3-medium": {
+    "cost": {
+      "completionAudioTokens": 0.0376,
+      "promptAudioTokens": 0.0041,
+    },
+    "price": {
+      "completionAudioTokens": 0.0376,
+      "promptAudioTokens": 0.0041,
     },
   },
   "step-3.5-flash": {

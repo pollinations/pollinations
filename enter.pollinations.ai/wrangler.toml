@@ -40,7 +40,6 @@ STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 
-
 [env.local]
 
 [[env.local.d1_databases]]
@@ -70,13 +69,7 @@ STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 
-[env.local.triggers]
-crons = ["*/15 * * * *"]
-
 [env.production]
-
-[env.production.triggers]
-crons = ["*/15 * * * *"]
 
 [env.production.observability]
 enabled = true
@@ -114,11 +107,7 @@ BETTER_AUTH_URL = "https://enter.pollinations.ai"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TVU4T7rcjS3l7trqtBuve71"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrY4O7rcjS3l7trnGXDTuat"
-
 [env.staging]
-
-[env.staging.triggers]
-crons = ["*/15 * * * *"]
 
 [[env.staging.routes]]
 pattern = "staging.enter.myceli.ai"
@@ -153,10 +142,7 @@ STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 # GitHub OAuth lockdown — only these numeric GitHub user IDs may sign in.
 # Issue #11137. Comma-separated. IDs are immutable (usernames are not).
-# ElliotEtag=36901823, voodoohop=5099901,
-# thomashmyceli=235942848, fouchyelliot-rgb=248917639, pollen-router=241978997
 STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997"
-
 [env.dev]
 
 [[env.dev.routes]]
@@ -193,7 +179,6 @@ BETTER_AUTH_URL = "https://dev.enter.pollinations.ai"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
-
 [env.test]
 
 [[env.test.d1_databases]]

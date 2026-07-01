@@ -1,8 +1,8 @@
 import {
     assertStagingAccess,
-    parseGithubIdList,
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
+import { parseGithubIdList } from "@shared/auth/github-id-list.ts";
 import { describe, expect, it } from "vitest";
 
 describe("parseGithubIdList", () => {

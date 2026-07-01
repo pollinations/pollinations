@@ -6,7 +6,14 @@
 // and re-generating the schema including the indexes.
 
 import { relations, sql } from "drizzle-orm";
-import { sqliteTable, text, integer, real, index } from "drizzle-orm/sqlite-core";
+import {
+  sqliteTable,
+  text,
+  integer,
+  real,
+  index,
+  uniqueIndex,
+} from "drizzle-orm/sqlite-core";
 
 export const user = sqliteTable("user", {
   id: text("id").primaryKey(),
@@ -166,12 +173,67 @@ export const stripeAutoTopUpAttempt = sqliteTable("stripe_auto_top_up_attempt", 
   index("idx_stripe_auto_top_up_attempt_status").on(table.status),
 ]);
 
+export const stripeCardFingerprintAttempt = sqliteTable("stripe_card_fingerprint_attempt", {
+  eventId: text("event_id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  cardFingerprint: text("card_fingerprint").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .defaultNow()
+    .notNull(),
+}, (table) => [
+  index("idx_stripe_card_fingerprint_attempt_user_created").on(
+    table.userId,
+    table.createdAt,
+  ),
+  index("idx_stripe_card_fingerprint_attempt_user_fingerprint").on(
+    table.userId,
+    table.cardFingerprint,
+  ),
+]);
+
+export const communityEndpoint = sqliteTable("community_endpoint", {
+  id: text("id").primaryKey(),
+  ownerUserId: text("owner_user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  description: text("description"),
+  baseUrl: text("base_url").notNull(),
+  upstreamModel: text("upstream_model").notNull(),
+  bearerTokenCiphertext: text("bearer_token_ciphertext").notNull(),
+  promptTextPrice: real("prompt_text_price").notNull(),
+  promptCachedPrice: real("prompt_cached_price").default(0).notNull(),
+  promptCacheWritePrice: real("prompt_cache_write_price").default(0).notNull(),
+  promptAudioPrice: real("prompt_audio_price").default(0).notNull(),
+  promptImagePrice: real("prompt_image_price").default(0).notNull(),
+  completionTextPrice: real("completion_text_price").notNull(),
+  completionReasoningPrice: real("completion_reasoning_price").default(0).notNull(),
+  completionAudioPrice: real("completion_audio_price").default(0).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+}, (table) => [
+  index("idx_community_endpoint_owner_user_id").on(table.ownerUserId),
+  uniqueIndex("idx_community_endpoint_owner_name").on(
+    table.ownerUserId,
+    table.name,
+  ),
+]);
+
 // Drizzle relations for query builder joins
 export const userRelations = relations(user, ({ many }) => ({
   apikeys: many(apikey),
   sessions: many(session),
   accounts: many(account),
   stripeAutoTopUpAttempts: many(stripeAutoTopUpAttempt),
+  stripeCardFingerprintAttempts: many(stripeCardFingerprintAttempt),
+  communityEndpoints: many(communityEndpoint),
 }));
 
 export const apikeyRelations = relations(apikey, ({ one }) => ({
@@ -204,6 +266,23 @@ export const stripeAutoTopUpAttemptRelations = relations(
     }),
   }),
 );
+
+export const stripeCardFingerprintAttemptRelations = relations(
+  stripeCardFingerprintAttempt,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [stripeCardFingerprintAttempt.userId],
+      references: [user.id],
+    }),
+  }),
+);
+
+export const communityEndpointRelations = relations(communityEndpoint, ({ one }) => ({
+  owner: one(user, {
+    fields: [communityEndpoint.ownerUserId],
+    references: [user.id],
+  }),
+}));
 
 // Device Authorization Grant (RFC 8628) table
 export const deviceCode = sqliteTable("device_code", {

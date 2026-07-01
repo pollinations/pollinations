@@ -27,6 +27,7 @@ import type { Env } from "@/env.ts";
 import { logger } from "@/middleware/logger.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
+import { modelStatusRoutes } from "./routes/model-status.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { docsLandingHtml, manifestResponse } from "./routes/seo.ts";
 
@@ -149,6 +150,7 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
         const merged = await buildMergedOpenApiSpec(c, app);
         return c.json(merged);
     })
+    .route("/", modelStatusRoutes)
     .route("/", proxyRoutes);
 
 app.notFound(async (c: Context<Env>) => {

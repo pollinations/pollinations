@@ -4,10 +4,10 @@ import { cn } from "../lib/cn.ts";
 type SurfaceVariant = "panel" | "card" | "card-themed";
 
 const variantClasses: Record<SurfaceVariant, string> = {
-    panel: "polli:rounded-2xl polli:bg-theme-bg-pale polli:p-6 polli:shadow-container",
-    card: "polli:rounded-xl polli:bg-surface-opaque polli:p-4 polli:shadow-well",
+    panel: "polli:rounded-2xl polli:bg-theme-bg-pale polli:p-6 polli-surface-border",
+    card: "polli:rounded-xl polli:bg-surface-opaque polli:p-4 polli-surface-border",
     "card-themed":
-        "polli:rounded-xl polli:bg-theme-bg-pale polli:p-4 polli:shadow-well",
+        "polli:rounded-xl polli:bg-theme-bg-pale polli:p-4 polli-surface-border",
 };
 
 type SurfaceOwnProps = {

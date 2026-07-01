@@ -45,13 +45,11 @@
 .polli-wallet-panel-paid {
     background-color: var(--polli-color-paid-pale);
     color: var(--polli-color-paid-deep);
-    box-shadow: var(--polli-shadow-well);
 }
 
 .polli-wallet-panel-tier {
     background-color: var(--polli-color-tier-pale);
     color: var(--polli-color-tier-deep);
-    box-shadow: var(--polli-shadow-well);
 }
 
 .polli-wallet-text-paid {

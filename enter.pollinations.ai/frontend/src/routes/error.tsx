@@ -28,7 +28,7 @@ function ErrorPage() {
         <div className="flex min-h-screen items-center justify-center px-4">
             <Surface
                 variant="card"
-                className="w-full max-w-md p-8 text-center shadow-lg"
+                className="w-full max-w-md p-8 text-center"
             >
                 <h1 className="font-heading text-3xl mb-3">{title}</h1>
 

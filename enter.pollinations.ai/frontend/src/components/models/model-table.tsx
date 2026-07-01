@@ -153,7 +153,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
     const perPollen = calculatePerPollen(model);
 
     return (
-        <div className="rounded-xl mb-1 bg-surface-opaque shadow-well transition-colors hover:bg-surface-opaque/90">
+        <div className="polli-surface-border rounded-xl mb-1 bg-surface-opaque transition-colors hover:bg-surface-opaque/90">
             {/* Clickable header */}
             <div className="relative">
                 <button

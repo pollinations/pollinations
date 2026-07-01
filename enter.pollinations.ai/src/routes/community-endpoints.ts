@@ -533,6 +533,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const update: Partial<
                 typeof schema.communityEndpoint.$inferInsert
             > = {
+                disabledAt: null,
+                disabledReason: null,
+                disabledBy: null,
                 updatedAt: new Date(),
             };
             if (input.name !== undefined) update.name = input.name;
@@ -559,59 +562,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const [row] = await db
                 .update(schema.communityEndpoint)
                 .set(update)
-                .where(
-                    and(
-                        eq(schema.communityEndpoint.id, id),
-                        eq(schema.communityEndpoint.ownerUserId, user.id),
-                    ),
-                )
-                .returning();
-            return c.json(toResponse(row, ownerGithubUsername));
-        },
-    )
-    .post(
-        "/:id/reactivate",
-        describeRoute({
-            tags: ["👤 Account"],
-            summary: "Reactivate My Model",
-            description:
-                "Manually reactivate a community text model that was deactivated (by the monitor or a maintainer) due to repeated upstream failures. Only the owner can do this — there is no automatic reactivation.",
-            responses: {
-                200: {
-                    description: "Reactivated community text model",
-                    content: {
-                        "application/json": {
-                            schema: resolver(CommunityEndpointResponseSchema),
-                        },
-                    },
-                },
-                401: { description: "Unauthorized" },
-                403: { description: "Permission denied" },
-                404: { description: "Community endpoint not found" },
-            },
-        }),
-        async (c) => {
-            const user = c.var.auth.requireUser();
-            const { id } = c.req.param();
-            const db = drizzle(c.env.DB, { schema });
-            await requireCommunityEndpointManageAccess(
-                db,
-                user.id,
-                c.var.auth.apiKey,
-            );
-            const ownerGithubUsername = await requireOwnerGithubUsername(
-                db,
-                user.id,
-            );
-            await requireOwnedEndpoint(db, id, user.id);
-            const [row] = await db
-                .update(schema.communityEndpoint)
-                .set({
-                    disabledAt: null,
-                    disabledReason: null,
-                    disabledBy: null,
-                    updatedAt: new Date(),
-                })
                 .where(
                     and(
                         eq(schema.communityEndpoint.id, id),

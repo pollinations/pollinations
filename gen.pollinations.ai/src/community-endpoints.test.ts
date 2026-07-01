@@ -25,6 +25,7 @@ import {
     createTestUser,
     test as fixtureTest,
 } from "@shared/test/fixtures/index.ts";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -1231,11 +1232,22 @@ fixtureTest(
             upstreamModel: "gpt-4.1-mini",
             promptTextPrice: 0.1,
             completionTextPrice: 0.2,
+            disabled: false,
+            disabledReason: null,
+            disabledAt: null,
         });
         expect(created).not.toHaveProperty("bearerToken");
         expect(created).not.toHaveProperty("bearerTokenCiphertext");
         expect(typeof created.id).toBe("string");
         const createdId = created.id as string;
+        await db
+            .update(communityEndpointTable)
+            .set({
+                disabledAt: new Date(),
+                disabledReason: "was failing",
+                disabledBy: "monitor",
+            })
+            .where(eq(communityEndpointTable.id, createdId));
 
         const updateResponse = await fetchEnterApi(
             enterApi,
@@ -1258,6 +1270,9 @@ fixtureTest(
             description: "Updated description",
             promptTextPrice: 0.1,
             completionTextPrice: 0.2,
+            disabled: false,
+            disabledReason: null,
+            disabledAt: null,
         });
 
         const secondListResponse = await fetchEnterApi(

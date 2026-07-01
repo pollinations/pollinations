@@ -95,26 +95,6 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
         }
     }
 
-    async function handleReactivate(
-        endpoint: CommunityEndpoint,
-    ): Promise<void> {
-        setError(null);
-        try {
-            const response = await apiClient.account["my-models"][
-                ":id"
-            ].reactivate.$post({ param: { id: endpoint.id } });
-            if (!response.ok) throw new Error(await readError(response));
-            await loadEndpoints();
-            await onChange?.();
-        } catch (thrown) {
-            setError(
-                thrown instanceof Error
-                    ? thrown.message
-                    : "Reactivation failed",
-            );
-        }
-    }
-
     return (
         <>
             <Section
@@ -166,9 +146,6 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
                                 endpoint={endpoint}
                                 onEdit={() => setEditing(endpoint)}
                                 onDelete={() => setDeleting(endpoint)}
-                                onReactivate={() =>
-                                    void handleReactivate(endpoint)
-                                }
                             />
                         ))
                     )}

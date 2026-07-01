@@ -3,7 +3,11 @@ import { basename, extname } from "node:path";
 import { Command } from "commander";
 import { requireKey } from "../lib/api.js";
 import { MEDIA_URL } from "../lib/config.js";
-import { getOutputMode, printError, printMeta } from "../lib/output.js";
+import { getOutputMode, printError, printMeta, printInfo } from "../lib/output.js";
+import { t } from "../lib/i18n.js";
+import { startSpinner, stopSpinner } from "../lib/spinner.js";
+import { UploadResponseSchema } from "../lib/validation.js";
+import { logActivity } from "../lib/logger.js";
 
 const MIME_BY_EXT: Record<string, string> = {
     ".jpg": "image/jpeg",
@@ -24,12 +28,33 @@ const MIME_BY_EXT: Record<string, string> = {
     ".mov": "video/quicktime",
 };
 
-interface UploadResponse {
-    id: string;
-    url: string;
-    contentType: string;
-    size: number;
-    duplicate: boolean;
+export async function uploadFile(
+    filePath: string,
+    apiKey: string,
+): Promise<{ id: string; url: string; contentType: string; size: number; duplicate: boolean }> {
+    if (!existsSync(filePath)) {
+        throw new Error(`File not found: ${filePath}`);
+    }
+    const mime =
+        MIME_BY_EXT[extname(filePath).toLowerCase()] ||
+        "application/octet-stream";
+    const form = new FormData();
+    form.append(
+        "file",
+        new Blob([readFileSync(filePath)], { type: mime }),
+        basename(filePath),
+    );
+    const res = await fetch(`${MEDIA_URL}/upload`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}` },
+        body: form,
+    });
+    if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`${res.status} ${res.statusText}: ${text}`);
+    }
+    const data = await res.json();
+    return UploadResponseSchema.parse(data);
 }
 
 export const uploadCommand = new Command("upload")
@@ -38,7 +63,7 @@ export const uploadCommand = new Command("upload")
     )
     .argument("<file>", "Path to the local file to upload")
     .action(async (file: string) => {
-        const key = requireKey();
+        const key = await requireKey();
         const isHuman = getOutputMode() === "human";
 
         if (!existsSync(file)) {
@@ -46,39 +71,29 @@ export const uploadCommand = new Command("upload")
             process.exit(1);
         }
 
-        const mime =
-            MIME_BY_EXT[extname(file).toLowerCase()] ||
-            "application/octet-stream";
-        const form = new FormData();
-        form.append(
-            "file",
-            new Blob([readFileSync(file)], { type: mime }),
-            basename(file),
-        );
+        if (isHuman) startSpinner(t("upload.uploading", { file }));
 
-        const res = await fetch(`${MEDIA_URL}/upload`, {
-            method: "POST",
-            headers: { Authorization: `Bearer ${key}` },
-            body: form,
-        });
-
-        if (!res.ok) {
-            const text = await res.text().catch(() => "");
-            printError(`${res.status} ${res.statusText}: ${text}`);
+        try {
+            const data = await uploadFile(file, key);
+            stopSpinner(true, t("upload.success", { url: data.url }));
+            if (isHuman) {
+                process.stdout.write(`${data.url}\n`);
+                printMeta({
+                    id: data.id,
+                    contentType: data.contentType,
+                    size: data.size,
+                    duplicate: data.duplicate,
+                });
+            } else {
+                const output = JSON.stringify(data, null, 2);
+                process.stdout.write(`${output}\n`);
+            }
+            logActivity("upload", { file, id: data.id, size: data.size, duplicate: data.duplicate });
+        } catch (err) {
+            stopSpinner(false);
+            printError(
+                err instanceof Error ? err.message : "unknown error",
+            );
             process.exit(1);
-        }
-
-        const data = (await res.json()) as UploadResponse;
-
-        if (isHuman) {
-            process.stdout.write(`${data.url}\n`);
-            printMeta({
-                id: data.id,
-                contentType: data.contentType,
-                size: data.size,
-                duplicate: data.duplicate,
-            });
-        } else {
-            process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
         }
     });

@@ -5,8 +5,11 @@ import { Command } from "commander";
 import { requireKey } from "../../lib/api.js";
 import { BASE_URL } from "../../lib/config.js";
 import { budgetHint } from "../../lib/errors.js";
-import { getOutputMode, printError, printResult } from "../../lib/output.js";
+import { getOutputMode, printError, printResult, printInfo } from "../../lib/output.js";
 import { streamSSE } from "../../lib/stream.js";
+import { t } from "../../lib/i18n.js";
+import { logActivity } from "../../lib/logger.js";
+import { getDefaultModel } from "../../lib/config-store.js";
 
 interface Message {
     role: "system" | "user" | "assistant";
@@ -25,30 +28,34 @@ export function createChatCommand() {
         .option(
             "--model <model>",
             "Text model (default: from config or 'openai')",
+            getDefaultModel("text") ?? "openai",
         )
         .option("--system <msg>", "System message")
         .option("--temperature <n>", "Randomness (0-2)")
         .option("--max-tokens <n>", "Maximum output tokens")
         .option("--save <path>", "Save conversation transcript on exit")
+        .addHelpText("after", `
+Slash commands:
+  /exit, /quit  - End session and save (if --save provided)
+  /clear        - Clear conversation history
+  /save <path>  - Save transcript to file
+        `)
         .action(async (opts) => {
-            const key = requireKey();
+            const key = await requireKey();
             const isJson = getOutputMode() !== "human";
 
             const messages: Message[] = [];
             if (opts.system) {
                 messages.push({ role: "system", content: opts.system });
             }
-
             let totalTokens = 0;
 
             if (!isJson) {
                 process.stderr.write(
                     chalk.green(
-                        `\nChat session started (model: ${opts.model})\n`,
+                        t("chat.session", { model: opts.model }),
                     ) +
-                        chalk.dim(
-                            "Type /exit to quit, /clear to reset, /save <path> to save\n\n",
-                        ),
+                        chalk.dim(`\n${t("chat.help")}\n\n`),
                 );
             }
 
@@ -60,7 +67,6 @@ export function createChatCommand() {
 
             const sendMessage = async (userMsg: string) => {
                 messages.push({ role: "user", content: userMsg });
-
                 const body: Record<string, unknown> = {
                     messages,
                     stream: !isJson,
@@ -80,7 +86,6 @@ export function createChatCommand() {
                         },
                         body: JSON.stringify(body),
                     });
-
                     if (!res.ok) {
                         const errText = await res.text().catch(() => "");
                         const hint = await budgetHint(res.status, errText);
@@ -132,12 +137,12 @@ export function createChatCommand() {
                     .join("\n\n");
                 writeFileSync(path, transcript, "utf-8");
                 if (!isJson) {
-                    process.stderr.write(chalk.green(`Saved to ${path}\n`));
+                    process.stderr.write(chalk.green(t("chat.saved", { path })));
                 }
+                logActivity("chat_save", { path, messages: messages.length });
             };
 
             rl.prompt();
-
             rl.on("line", async (line) => {
                 const input = line.trim();
                 if (!input) {
@@ -145,13 +150,12 @@ export function createChatCommand() {
                     return;
                 }
 
-                // Slash commands
                 if (input === "/exit" || input === "/quit") {
                     if (opts.save) saveTranscript(opts.save);
                     if (!isJson) {
                         process.stderr.write(
                             chalk.dim(
-                                `\nSession ended. ${totalTokens} tokens used.\n`,
+                                t("chat.ended", { tokens: totalTokens }),
                             ),
                         );
                     }
@@ -166,9 +170,7 @@ export function createChatCommand() {
                     }
                     totalTokens = 0;
                     if (!isJson) {
-                        process.stderr.write(
-                            chalk.dim("Conversation cleared.\n\n"),
-                        );
+                        process.stderr.write(chalk.dim(t("chat.cleared") + "\n\n"));
                     }
                     rl.prompt();
                     return;

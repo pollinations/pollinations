@@ -6,8 +6,15 @@ import {
     printError,
     printResult,
     printTable,
+    printInfo,
+    printDebug,
 } from "../lib/output.js";
 import { fetchModelStats } from "./stats.js";
+import { t } from "../lib/i18n.js";
+import { startSpinner, stopSpinner } from "../lib/spinner.js";
+import { ModelEntrySchema } from "../lib/validation.js";
+import { getCachedModels, setCachedModels } from "../lib/cache.js";
+import { logActivity } from "../lib/logger.js";
 
 interface ModelEntry {
     name: string;
@@ -20,6 +27,7 @@ interface ModelEntry {
     paid_only?: boolean;
     voices?: string[];
     video_capabilities?: string[];
+    reasoning?: boolean;
 }
 
 function classifyType(m: ModelEntry): string {
@@ -37,14 +45,13 @@ function capabilities(m: ModelEntry): string {
     if (m.input_modalities?.includes("image")) caps.push("vision");
     if (m.video_capabilities?.length) caps.push(...m.video_capabilities);
     if (m.voices?.length) caps.push("voices");
+    if (m.reasoning) caps.push("reasoning");
     if (m.paid_only) caps.push(chalk.dim("paid"));
     return caps.join(",") || "-";
 }
 
 function buildRow(m: ModelEntry, mType: string, verbose: boolean) {
     const name = chalk.level > 0 ? chalk.hex("#a78bfa").bold(m.name) : m.name;
-    // Keep full description intact so pipes and redirects preserve data.
-    // printTable handles TTY-aware truncation of the last column.
     const row: Record<string, unknown> = {
         name,
         type: mType,
@@ -75,7 +82,17 @@ export const modelsCommand = new Command("models")
     .option("--verbose", "Show additional details (context length)")
     .option("--stats", "Show model health stats (err% column counts 5xx only)")
     .option("--window <minutes>", "Stats window in minutes", "60")
+    .option("--no-cache", "Force refresh model cache")
+    .addHelpText("after", `
+Examples:
+  polli models --type image
+  polli models --stats
+  polli models --type text --verbose
+  polli models --stats --window 5
+        `)
     .action(async (opts) => {
+        const isHuman = getOutputMode() === "human";
+
         if (opts.stats) {
             try {
                 const rows = await fetchModelStats(Number(opts.window));
@@ -114,20 +131,44 @@ export const modelsCommand = new Command("models")
                     });
                     printTable(curated);
                 }
+                logActivity("models_stats", { window: opts.window, type: opts.type });
+                return;
             } catch (err) {
                 printError(
                     `Failed to fetch stats: ${err instanceof Error ? err.message : "unknown"}`,
                 );
                 process.exit(1);
             }
-            return;
         }
 
         const type = opts.type as string;
         const verbose = !!opts.verbose;
+        const useCache = opts.cache !== false;
+
+        // Try cache first
+        if (useCache) {
+            const cached = getCachedModels<{ model: ModelEntry; type: string }[]>();
+            if (cached) {
+                printDebug("Using cached models");
+                const filtered = cached.filter(({ type: t }) => type === "all" || t === type);
+                if (getOutputMode() === "json") {
+                    printResult(filtered.map(({ model, type: t }) => ({ ...model, type: t })));
+                } else {
+                    const rows = filtered.map(({ model, type: t }) => buildRow(model, t, verbose));
+                    const cols = verbose
+                        ? ["name", "type", "capabilities", "context", "pricing", "description"]
+                        : ["name", "type", "capabilities", "description"];
+                    printTable(rows, cols);
+                }
+                return;
+            }
+        }
+
+        if (isHuman) startSpinner(t("models.fetching"));
 
         try {
             const raw: { model: ModelEntry; type: string }[] = [];
+
             if (type === "all" || type === "image" || type === "video") {
                 const imageModels = await gen<ModelEntry[]>("/image/models");
                 for (const m of imageModels) {
@@ -136,16 +177,26 @@ export const modelsCommand = new Command("models")
                     raw.push({ model: m, type: mType });
                 }
             }
+
             if (type === "all" || type === "text") {
                 const textModels = await gen<ModelEntry[]>("/text/models");
-                for (const m of textModels)
-                    raw.push({ model: m, type: "text" });
+                for (const m of textModels) {
+                    // validate and enrich
+                    const validated = ModelEntrySchema.safeParse(m);
+                    if (validated.success) {
+                        raw.push({ model: validated.data, type: "text" });
+                    } else {
+                        raw.push({ model: m, type: "text" });
+                    }
+                }
             }
+
             if (type === "all" || type === "audio") {
                 const audioModels = await gen<ModelEntry[]>("/audio/models");
                 for (const m of audioModels)
                     raw.push({ model: m, type: "audio" });
             }
+
             if (type === "all" || type === "embedding") {
                 const embeddingModels =
                     await gen<ModelEntry[]>("/embeddings/models");
@@ -153,28 +204,29 @@ export const modelsCommand = new Command("models")
                     raw.push({ model: m, type: "embedding" });
             }
 
+            // Cache the full list
+            if (useCache && raw.length > 0) {
+                setCachedModels(raw);
+            }
+
+            stopSpinner(true);
+
             if (getOutputMode() === "json") {
                 printResult(
                     raw.map(({ model, type: t }) => ({ ...model, type: t })),
                 );
-                return;
+            } else {
+                const rows = raw.map(({ model, type: t }) =>
+                    buildRow(model, t, verbose),
+                );
+                const cols = verbose
+                    ? ["name", "type", "capabilities", "context", "pricing", "description"]
+                    : ["name", "type", "capabilities", "description"];
+                printTable(rows, cols);
             }
-
-            const rows = raw.map(({ model, type: t }) =>
-                buildRow(model, t, verbose),
-            );
-            const cols = verbose
-                ? [
-                      "name",
-                      "type",
-                      "capabilities",
-                      "context",
-                      "pricing",
-                      "description",
-                  ]
-                : ["name", "type", "capabilities", "description"];
-            printTable(rows, cols);
+            logActivity("models_list", { type, verbose, cached: false });
         } catch (err) {
+            stopSpinner(false);
             printError(
                 `Failed to fetch models: ${err instanceof Error ? err.message : "unknown"}`,
             );

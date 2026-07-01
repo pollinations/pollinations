@@ -1,0 +1,33 @@
+{
+  "pr_number": 12163,
+  "title": "docs: fix typos and grammar in docs and app listings",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12163",
+  "merged_at": "2026-07-01T22:12:45Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "- Re-applies #12119 onto current main with credit to @murderszn (original conflicted because the generated GREENHOUSE.md was hand-edited)\n- Fixes heading in CONTRIBUTING.md, capitalization in SECURITY.md, \"non profite\" → \"non-profit\" in apps/APPS.md\n- GREENHOUSE.md regenerated via `app-update-greenhouse.js`\n\nCloses #12119\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Dotting the i's",
+    "blurb": "Swept through the documentation to fix a few typos and grammar hiccups. Everything is looking a little sharper!",
+    "summary": "Fixed minor typos and grammar issues across CONTRIBUTING.md, SECURITY.md, and the app listings.",
+    "impact": "Documentation and app listings are now cleaner and more professional.",
+    "keywords": [
+      "docs",
+      "typos",
+      "cleanup"
+    ],
+    "visual_concept": "Polly the bee wearing reading glasses, holding a tiny pencil, correcting a large pixelated document. Nomnom creature eating the typos (crumpled paper).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses and holding a pencil, reviewing a large glowing document. The round tan nomnom creature happily eats crumpled paper balls of typos nearby. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-01/PR-12163.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses and holding a pencil, reviewing a large glowing document. The round tan nomnom creature happily eats crumpled paper balls of typos nearby. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-01T22:13:48.997416+00:00"
+}

@@ -1,0 +1,35 @@
+{
+  "pr_number": 12164,
+  "title": "fix: stop /video/models falling through to video generation",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12164",
+  "merged_at": "2026-07-01T22:46:28Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Registers `GET /video/models` on the same describeRoute + handler as `/image/models` (video models are already listed there), so the path no longer falls through to the `/video/:prompt` generation route and burns GPU on an unauthenticated request\n- Adds `/video/models` to the optional-auth middleware block, matching the other models endpoints\n- Extends the existing public-model-path routing test with `/video/models`\n\nFixes #8995\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "No more 'models' movies",
+    "blurb": "Fixed a quirky routing bug where asking for the list of video models accidentally generated a video about 'models'. The /video/models endpoint now correctly returns the JSON list you actually wanted.",
+    "summary": "Fixed a routing issue where GET /video/models fell through to the video generation endpoint, returning a generated video instead of the model list.",
+    "impact": "Developers querying /video/models will now correctly receive the JSON array of available video models instead of triggering an unauthenticated video generation.",
+    "keywords": [
+      "api",
+      "video",
+      "routing",
+      "bug-fix",
+      "models"
+    ],
+    "visual_concept": "The bee mascot acting as a traffic director or fixing a signpost, ensuring requests for 'models' go to a data list rather than a film reel. Nomnom creature looking at a confusing film strip.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny traffic cop hat, fixing a wooden signpost in a digital garden. One sign points to a glowing text document, the other to a film reel. The round tan nomnom creature sits nearby, looking confused at a film strip. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-01/PR-12164.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny traffic cop hat, fixing a wooden signpost in a digital garden. One sign points to a glowing text document, the other to a film reel. The round tan nomnom creature sits nearby, looking confused at a film strip. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-07-01T22:47:33.341679+00:00"
+}

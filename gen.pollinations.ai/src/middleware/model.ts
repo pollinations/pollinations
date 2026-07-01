@@ -57,17 +57,17 @@ export async function resolveModelDefinition(
     const registry = await getGenerationModelRegistry(env);
     const entry = registry.resolve(model);
     if (!entry) {
+        const disabledEntry = registry.resolveIncludingDisabled(model);
+        if (disabledEntry?.communityEndpoint?.disabledAt) {
+            throw new HTTPException(400, {
+                message: `Community model "${model}" has been deactivated: ${
+                    disabledEntry.communityEndpoint.disabledReason ??
+                    "repeated upstream failures"
+                }. Contact the model owner or see your dashboard to reactivate.`,
+            });
+        }
         throw new HTTPException(400, {
             message: `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
-        });
-    }
-
-    if (entry.communityEndpoint?.disabledAt) {
-        throw new HTTPException(400, {
-            message: `Community model "${model}" has been deactivated: ${
-                entry.communityEndpoint.disabledReason ??
-                "repeated upstream failures"
-            }. Contact the model owner or see your dashboard to reactivate.`,
         });
     }
 

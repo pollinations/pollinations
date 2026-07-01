@@ -41,6 +41,9 @@ export type GenerationModelEntry = {
 
 export type GenerationModelRegistry = {
     resolve: (model: string) => GenerationModelEntry | null;
+    /** Like `resolve`, but also returns deactivated community entries — used
+     * only to produce a specific "deactivated: <reason>" error message. */
+    resolveIncludingDisabled: (model: string) => GenerationModelEntry | null;
     visibleEntries: () => GenerationModelEntry[];
 };
 
@@ -120,8 +123,20 @@ function buildRegistry(
         }
     }
 
+    const resolveIncludingDisabled = (model: string) =>
+        byIdOrAlias.get(model) ?? null;
+
     return {
-        resolve: (model) => byIdOrAlias.get(model) ?? null,
+        resolve: (model) => {
+            const entry = resolveIncludingDisabled(model);
+            // Deactivated community models don't exist as far as callers are
+            // concerned — unlike static `hidden` models (intentionally
+            // unlisted but still callable), a disabled community endpoint is
+            // broken and must be unreachable everywhere, not just unlisted.
+            if (entry?.communityEndpoint?.disabledAt) return null;
+            return entry;
+        },
+        resolveIncludingDisabled,
         visibleEntries: () => entries.filter((entry) => entry.visible),
     };
 }

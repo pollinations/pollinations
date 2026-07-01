@@ -455,6 +455,31 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
+    "gemma-large": {
+        aliases: ["gemma-4-31b", "gemma-4-31b-it"],
+        modelId: "google/gemma-4-31b-it",
+        provider: "openrouter",
+        addedDate: new Date("2026-06-26").getTime(),
+        brand: "Google",
+        category: "text",
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter google/gemma-4-31b-it posted rates (2026-06-26):
+            // prompt $0.12/M, completion $0.35/M. No prompt caching upstream.
+            promptTextTokens: perMillion(0.12),
+            completionTextTokens: perMillion(0.35),
+        },
+        title: "Gemma 4 31B",
+        description:
+            "Gemma 4 31B - Open-source dense multimodal model for high-quality reasoning",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10, // OpenRouter image count varies by provider/model; Pollinations cap.
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
     "deepseek-pro": {
         aliases: ["deepseek-v4-pro"],
         modelId: "accounts/fireworks/models/deepseek-v4-pro",

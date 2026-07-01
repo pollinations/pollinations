@@ -191,6 +191,30 @@ function createHeaderApp(extraHeaders: Record<string, string>) {
     return app;
 }
 
+// Builds a real SSE ReadableStream, optionally delaying between chunks so
+// tests can assert on measured elapsed time between the first and last chunk.
+function createSseStream(
+    parts: Array<{ payload: unknown; delayMs?: number }>,
+): ReadableStream<Uint8Array> {
+    const encoder = new TextEncoder();
+    return new ReadableStream({
+        async start(controller) {
+            for (const part of parts) {
+                if (part.delayMs) {
+                    await new Promise((resolve) =>
+                        setTimeout(resolve, part.delayMs),
+                    );
+                }
+                controller.enqueue(
+                    encoder.encode(`data: ${JSON.stringify(part.payload)}\n\n`),
+                );
+            }
+            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+            controller.close();
+        },
+    });
+}
+
 async function captureFallbackEvent(extraHeaders: Record<string, string>) {
     const tinybirdRequests: Request[] = [];
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
@@ -573,6 +597,88 @@ describe("tracking observability", () => {
             isBilledUsage: false,
         });
         expect(consumePollen).toHaveBeenCalledWith(0);
+    });
+
+    it("measures streamDurationMs from first to last SSE chunk, not total response time", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+
+        const model = "gpt-5-nano-2025-08-07";
+        const stream = createSseStream([
+            { payload: { model, choices: [{}] } },
+            { payload: { model, choices: [{}] }, delayMs: 30 },
+            {
+                payload: {
+                    model,
+                    choices: [{}],
+                    usage: {
+                        prompt_tokens: 1000,
+                        completion_tokens: 500,
+                        total_tokens: 1500,
+                    },
+                },
+                delayMs: 30,
+            },
+        ]);
+        const upstream = new Response(stream, {
+            headers: { "content-type": "text/event-stream" },
+        });
+
+        const ctx = createExecutionContext();
+        const response = await createWrongContentTypeApp(
+            consumePollen,
+            "generate.text",
+            upstream,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/upstream", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai",
+                    stream: true,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = (await tinybirdRequests[0].json()) as Record<
+            string,
+            unknown
+        >;
+        expect(event).toMatchObject({
+            eventType: "generate.text",
+            isBilledUsage: true,
+            modelUsed: model,
+            tokenCountCompletionText: 500,
+        });
+        // The route handler returns as soon as headers are available (before
+        // the stream body is read), so responseTime alone would read as
+        // near-instant here — streamDurationMs is what actually reflects the
+        // ~60ms of simulated generation time across the delayed chunks.
+        expect(event.streamDurationMs).toEqual(expect.any(Number));
+        expect(event.streamDurationMs as number).toBeGreaterThan(0);
     });
 
     it("records fallbackUsed=true when Portkey served a non-primary target", async () => {

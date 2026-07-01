@@ -10,14 +10,18 @@ SCHEMA >
 `event_processing_id`  String            `json:$.eventProcessingId` DEFAULT '',
 
 -- Request
-`request_id`      String                 `json:$.requestId`,
-`request_path`    String                 `json:$.requestPath`,
-`start_time`      DateTime               `json:$.startTime`,
-`end_time`        DateTime               `json:$.endTime`,
-`response_time`   Float32                `json:$.responseTime` DEFAULT 0,
-`response_status` UInt32                 `json:$.responseStatus` DEFAULT 0,
-`environment`     LowCardinality(String) `json:$.environment` DEFAULT 'undefined',
-`event_type`      LowCardinality(String) `json:$.eventType`,
+`request_id`         String                 `json:$.requestId`,
+`request_path`       String                 `json:$.requestPath`,
+`start_time`         DateTime               `json:$.startTime`,
+`end_time`           DateTime               `json:$.endTime`,
+`response_time`      Float32                `json:$.responseTime` DEFAULT 0,
+-- Pure generation time (first stream chunk to last), ms. Streamed text
+-- responses only; response_time resolves at first-byte for streams, so it
+-- doesn't cover generation. NULL for non-streamed responses.
+`stream_duration_ms` Nullable(Float32)      `json:$.streamDurationMs`,
+`response_status`    UInt32                 `json:$.responseStatus` DEFAULT 0,
+`environment`        LowCardinality(String) `json:$.environment` DEFAULT 'undefined',
+`event_type`         LowCardinality(String) `json:$.eventType`,
 
 -- User
 `user_id`               String                  `json:$.userId` DEFAULT 'undefined',

@@ -19,6 +19,16 @@ export type TinybirdEvent = {
     startTime: Date;
     endTime?: Date;
     responseTime?: number;
+    /**
+     * Pure generation time in ms (first stream chunk to last stream chunk),
+     * for streamed text responses only. `endTime`/`responseTime` resolve as
+     * soon as the upstream response headers arrive — before the stream body
+     * is read — so they approximate time-to-first-byte for streaming
+     * requests, not total generation time. This field fills that gap.
+     * Undefined for non-streamed responses, where `responseTime` already
+     * reflects the full buffered duration.
+     */
+    streamDurationMs?: number;
     responseStatus?: number;
     environment?: string;
     eventType: EventType;

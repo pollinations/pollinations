@@ -1,0 +1,35 @@
+{
+  "pr_number": 12155,
+  "title": "feat: allowlist Minor-fun + morriszdweck + mikl-shortcuts for community models",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12155",
+  "merged_at": "2026-07-01T17:50:38Z",
+  "labels": [
+    "DEV-FEATURE",
+    "API"
+  ],
+  "pr_body_excerpt": "## Summary\n- Adds 3 GitHub IDs to `COMMUNITY_MODEL_ALLOWED_GITHUB_IDS` per Discord requests in #dev-models\n- `Minor-fun` (45744798), `morriszdweck` (178960782, Discord: Mincofficial), `mikl-shortcuts` (219871313)",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "New bees in the model garden",
+    "blurb": "We've handed the keys to three new community members to host their own AI models on the network. Can't wait to see what Minor-fun, morriszdweck, and mikl-shortcuts bring to the hive!",
+    "summary": "Added GitHub IDs for Minor-fun, morriszdweck, and mikl-shortcuts to the community model allowlist.",
+    "impact": "These three developers can now register and serve their own custom AI models directly through the Pollinations API.",
+    "keywords": [
+      "community",
+      "models",
+      "api",
+      "allowlist"
+    ],
+    "visual_concept": "The bee welcoming three new friends (represented by small, friendly robots) into a glowing garden where code-plants grow. Represents adding new community members to the ecosystem.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot welcoming three small, friendly pixel robots into a glowing digital garden where code-plants sprout from the soil. The robots are holding tiny glowing seeds. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-01/PR-12155.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot welcoming three small, friendly pixel robots into a glowing digital garden where code-plants sprout from the soil. The robots are holding tiny glowing seeds. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-01T17:51:49.857240+00:00"
+}

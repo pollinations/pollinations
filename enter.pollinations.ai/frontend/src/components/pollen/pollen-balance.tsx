@@ -339,17 +339,13 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                                 onChange={setSelectedPackAmount}
                                 selectedBadgeLabel={chargeLabel}
                                 selectedBadgeTooltip={
-                                    selectedPack ? (
-                                        <PurchaseCostTooltip
-                                            packAmountUsd={
-                                                selectedPack.amountUsd
-                                            }
-                                            serviceFeeCents={serviceFeeCents}
-                                            subtotalBeforeTaxCents={
-                                                subtotalBeforeTaxCents
-                                            }
-                                        />
-                                    ) : undefined
+                                    <PurchaseCostTooltip
+                                        packAmountUsd={selectedPack.amountUsd}
+                                        serviceFeeCents={serviceFeeCents}
+                                        subtotalBeforeTaxCents={
+                                            subtotalBeforeTaxCents
+                                        }
+                                    />
                                 }
                             />
                         </div>

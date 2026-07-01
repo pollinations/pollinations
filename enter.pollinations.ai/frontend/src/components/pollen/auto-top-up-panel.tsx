@@ -360,7 +360,6 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                                 />
                             </div>
                             <AutoTopUpSaveButton
-                                showConfig={showConfig}
                                 hasUnsavedChanges={hasUnsavedChanges}
                                 setup={setup}
                                 onSave={handleSave}
@@ -477,21 +476,18 @@ function mapToggleStatusToSwitchStatus(
 }
 
 type AutoTopUpSaveButtonProps = {
-    showConfig: boolean;
     hasUnsavedChanges: boolean;
     setup: SetupReadiness;
     onSave: () => void;
 };
 
 const AutoTopUpSaveButton: FC<AutoTopUpSaveButtonProps> = ({
-    showConfig,
     hasUnsavedChanges,
     setup,
     onSave,
 }) => {
-    const saveDisabled = !showConfig || !canEnable(setup) || !hasUnsavedChanges;
+    const saveDisabled = !canEnable(setup) || !hasUnsavedChanges;
     const disabledReason = getSaveDisabledReason({
-        showConfig,
         hasUnsavedChanges,
         ...setup,
     });
@@ -560,13 +556,11 @@ function getDisabledReason(setup: SetupReadiness): string | null {
 
 function getSaveDisabledReason(
     state: SetupReadiness & {
-        showConfig: boolean;
         hasUnsavedChanges: boolean;
     },
 ): string | null {
     const setupReason = getDisabledReason(state);
     if (setupReason) return setupReason;
-    if (!state.showConfig) return "Use the switch to enable auto top-up first.";
     if (!state.hasUnsavedChanges) return "No changes to save.";
     return null;
 }

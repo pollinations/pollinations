@@ -1,6 +1,6 @@
 {
   "name": "@pollinations/cli",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "The Pollinations CLI — for humans, AI agents, and everything in between",
   "type": "module",
   "bin": {
@@ -11,7 +11,9 @@
     "dev": "tsup --watch",
     "lint": "biome check --write src/",
     "test": "vitest run",
-    "prepublishOnly": "npm run build"
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build && npm run generate-skill",
+    "generate-skill": "tsx scripts/generate-skill.ts"
   },
   "files": [
     "dist",
@@ -57,17 +59,27 @@
     "url": "https://github.com/pollinations/pollinations/issues"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=24.0.0"
   },
   "dependencies": {
     "chalk": "^5.4.1",
     "commander": "^13.1.0",
-    "open": "^11.0.0"
+    "open": "^11.0.0",
+    "zod": "^3.24.1",
+    "ora": "^8.2.0",
+    "yaml": "^2.7.0",
+    "csv-stringify": "^6.5.2",
+    "keytar": "^7.9.0",
+    "i18next": "^24.2.2",
+    "i18next-fs-backend": "^2.3.2",
+    "@modelcontextprotocol/sdk": "^1.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.13.0",
+    "@types/keytar": "^4.0.6",
     "tsup": "^8.4.0",
     "typescript": "^5.7.0",
-    "vitest": "^3.0.0"
+    "vitest": "^3.0.0",
+    "tsx": "^4.19.2"
   }
 }

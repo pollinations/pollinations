@@ -10,9 +10,17 @@ import {
     printInfo,
     printResult,
     printSuccess,
+    printWarn,
+    printDebug,
 } from "../../lib/output.js";
 import { readStdin } from "../../lib/stdin.js";
 import { streamSSE } from "../../lib/stream.js";
+import { t } from "../../lib/i18n.js";
+import { startSpinner, stopSpinner } from "../../lib/spinner.js";
+import { TextGenOptionsSchema } from "../../lib/validation.js";
+import { logActivity } from "../../lib/logger.js";
+import { getDefaultModel } from "../../lib/config-store.js";
+import { getCachedModels } from "../../lib/cache.js";
 
 interface ChatResponse {
     choices: Array<{ message: { content: string } }>;
@@ -26,7 +34,7 @@ export function createTextCommand() {
             "Generate text from a prompt (also reads stdin: echo 'hello' | polli text)",
         )
         .argument("[prompt]", "Text prompt (or pipe via stdin)")
-        .option("--model <model>", "Text model")
+        .option("--model <model>", "Text model", getDefaultModel("text"))
         .option("--system <msg>", "System message")
         .option("--temperature <n>", "Randomness (0-2)")
         .option("--max-tokens <n>", "Maximum output tokens")
@@ -41,60 +49,104 @@ export function createTextCommand() {
         )
         .option(
             "--image <url...>",
-            "Attach image URL(s) for vision models (repeatable)",
+            "Attach image URL(s) for vision models (repeatable); local files auto-uploaded",
         )
         .option("--output <path>", "Save to file instead of stdout")
         .option(
             "--no-stream",
             "Wait for full response instead of streaming tokens",
         )
+        .addHelpText("after", `
+Examples:
+  polli gen text "Explain quantum tunneling in one sentence"
+  cat README.md | polli gen text "what does this project do?"
+  polli gen text "describe this image" --image photo.jpg --model openai
+  polli gen text "summarize" --model gemini --system "be concise" --output summary.txt
+        `)
         .action(async (promptArg, opts) => {
-            const key = requireKey();
+            const key = await requireKey();
             const stdinText = await readStdin();
             const prompt = promptArg || stdinText;
-
             if (!prompt) {
-                printError(
-                    "No prompt provided. Pass as argument or pipe via stdin.",
-                );
+                printError(t("gen.no_input", { type: "text" }));
                 process.exit(1);
             }
 
-            // If both stdin and arg are provided, use arg as prompt and stdin as context
+            // Validate options
+            const validation = TextGenOptionsSchema.safeParse(opts);
+            if (!validation.success) {
+                printError(`Invalid options: ${validation.error.message}`);
+                process.exit(1);
+            }
+            const validOpts = validation.data;
+
+            // Handle context from stdin
             if (promptArg && stdinText) {
-                opts.system = opts.system
-                    ? `${opts.system}\n\nContext:\n${stdinText}`
+                validOpts.system = validOpts.system
+                    ? `${validOpts.system}\n\nContext:\n${stdinText}`
                     : stdinText;
             }
 
+            // Handle --image: auto-upload local files
+            let imageUrls: string[] = [];
+            if (validOpts.image) {
+                for (const url of validOpts.image) {
+                    if (/^https?:\/\//i.test(url)) {
+                        imageUrls.push(url);
+                    } else {
+                        // Local file: upload it
+                        printInfo(`Uploading local file: ${url}`);
+                        try {
+                            const { uploadFile } = await import("../upload.js");
+                            const uploaded = await uploadFile(url, key);
+                            imageUrls.push(uploaded.url);
+                            printInfo(`Uploaded to: ${uploaded.url}`);
+                        } catch (err) {
+                            printError(
+                                `Failed to upload ${url}: ${err instanceof Error ? err.message : err}`,
+                            );
+                            process.exit(1);
+                        }
+                    }
+                }
+            }
+
+            // Validate model supports text and possibly vision
+            const models = getCachedModels<Array<{ name: string; output_modalities?: string[]; input_modalities?: string[] }>>();
+            if (models && validOpts.model) {
+                const found = models.find((m) => m.name === validOpts.model);
+                if (!found) {
+                    printWarn(`Model "${validOpts.model}" not found in cache. It may not exist.`);
+                } else if (!found.output_modalities?.includes("text")) {
+                    printWarn(`Model "${validOpts.model}" may not support text generation.`);
+                }
+                if (imageUrls.length > 0 && found && !found.input_modalities?.includes("image")) {
+                    printWarn(`Model "${validOpts.model}" may not support image input (vision). The images may be ignored.`);
+                }
+            }
+
             const isHuman = getOutputMode() === "human";
-            // Streaming on by default when a human is watching (TTY stdout).
-            // Auto-off when piping/redirecting so SSE chunks don't leak into
-            // the downstream consumer. `--no-stream` forces off; `--stream`
-            // (when explicitly passed) forces on even if piped.
-            const explicitStream = opts.stream === true;
+            const explicitStream = validOpts.stream === true;
             const autoStream = isHuman && !!process.stdout.isTTY;
             const useStream =
-                opts.stream !== false &&
-                !opts.output &&
+                validOpts.stream !== false &&
+                !validOpts.output &&
                 (explicitStream || autoStream);
 
             type ContentPart =
                 | { type: "text"; text: string }
                 | { type: "image_url"; image_url: { url: string } };
+
             const messages: Array<{
                 role: string;
                 content: string | ContentPart[];
             }> = [];
-            if (opts.system)
-                messages.push({ role: "system", content: opts.system });
+            if (validOpts.system)
+                messages.push({ role: "system", content: validOpts.system });
 
-            const images: string[] = Array.isArray(opts.image)
-                ? opts.image
-                : [];
-            if (images.length > 0) {
+            if (imageUrls.length > 0) {
                 const parts: ContentPart[] = [{ type: "text", text: prompt }];
-                for (const url of images) {
+                for (const url of imageUrls) {
                     parts.push({ type: "image_url", image_url: { url } });
                 }
                 messages.push({ role: "user", content: parts });
@@ -103,23 +155,26 @@ export function createTextCommand() {
             }
 
             const body: Record<string, unknown> = { messages };
-            if (opts.model) body.model = opts.model;
-            if (opts.temperature !== undefined)
-                body.temperature = Number(opts.temperature);
-            if (opts.maxTokens !== undefined)
-                body.max_tokens = Number(opts.maxTokens);
-            if (opts.topP !== undefined) body.top_p = Number(opts.topP);
-            if (opts.frequencyPenalty !== undefined)
-                body.frequency_penalty = Number(opts.frequencyPenalty);
-            if (opts.presencePenalty !== undefined)
-                body.presence_penalty = Number(opts.presencePenalty);
-            if (opts.seed !== undefined) body.seed = Number(opts.seed);
-            if (opts.jsonResponse)
+            if (validOpts.model) body.model = validOpts.model;
+            if (validOpts.temperature !== undefined)
+                body.temperature = validOpts.temperature;
+            if (validOpts.maxTokens !== undefined)
+                body.max_tokens = validOpts.maxTokens;
+            if (validOpts.topP !== undefined) body.top_p = validOpts.topP;
+            if (validOpts.frequencyPenalty !== undefined)
+                body.frequency_penalty = validOpts.frequencyPenalty;
+            if (validOpts.presencePenalty !== undefined)
+                body.presence_penalty = validOpts.presencePenalty;
+            if (validOpts.seed !== undefined) body.seed = validOpts.seed;
+            if (validOpts.jsonResponse)
                 body.response_format = { type: "json_object" };
-            if (opts.reasoning) body.reasoning_effort = opts.reasoning;
+            if (validOpts.reasoning) body.reasoning_effort = validOpts.reasoning;
             if (useStream) body.stream = true;
 
-            if (isHuman && !useStream) printInfo("Generating...");
+            if (isHuman && !useStream) {
+                startSpinner(t("gen.generating", { type: "text" }));
+            }
+            printDebug(`Request body: ${JSON.stringify(body, null, 2)}`);
 
             try {
                 const res = await fetch(`${BASE_URL}/v1/chat/completions`, {
@@ -130,11 +185,11 @@ export function createTextCommand() {
                     },
                     body: JSON.stringify(body),
                 });
-
                 if (!res.ok) {
                     const errText = await res.text().catch(() => "");
                     const hint = await budgetHint(res.status, errText);
                     if (hint) {
+                        stopSpinner(false);
                         printError(hint);
                         process.exit(1);
                     }
@@ -144,9 +199,6 @@ export function createTextCommand() {
                 }
 
                 if (useStream) {
-                    // Dim the model's streamed output in TTY mode so it's
-                    // visually distinct from the user's commands. chalk auto-
-                    // disables when stdout is piped, so files/pipes stay clean.
                     const colorize = process.stdout.isTTY
                         ? (s: string) => chalk.dim(s)
                         : (s: string) => s;
@@ -157,30 +209,44 @@ export function createTextCommand() {
                     }
                     if (isHuman) process.stdout.write("\n");
                     if (getOutputMode() === "json") {
-                        printResult({ content, model: opts.model ?? null });
+                        printResult({ content, model: validOpts.model ?? null });
                     }
+                    logActivity("gen_text", {
+                        prompt: prompt.slice(0, 100),
+                        model: validOpts.model,
+                        tokens: content.length,
+                        stream: true,
+                    });
                     return;
                 }
 
                 const data = (await res.json()) as ChatResponse;
                 const content = data.choices[0]?.message?.content ?? "";
-
-                if (opts.output) {
-                    writeFileSync(opts.output, content, "utf-8");
-                    printSuccess(`Saved to ${opts.output}`);
+                if (validOpts.output) {
+                    writeFileSync(validOpts.output, content, "utf-8");
+                    stopSpinner(true, t("gen.saved", { path: validOpts.output }));
                 } else if (getOutputMode() === "json") {
+                    stopSpinner(true);
                     printResult({
                         content,
                         model: data.model,
                         tokens: data.usage?.total_tokens ?? null,
                     });
                 } else {
+                    stopSpinner(true);
                     const out = process.stdout.isTTY
                         ? chalk.dim(content)
                         : content;
                     process.stdout.write(`${out}\n`);
                 }
+                logActivity("gen_text", {
+                    prompt: prompt.slice(0, 100),
+                    model: validOpts.model,
+                    tokens: data.usage?.total_tokens ?? content.length,
+                    output: validOpts.output,
+                });
             } catch (err) {
+                stopSpinner(false);
                 printError(
                     err instanceof Error ? err.message : "unknown error",
                 );

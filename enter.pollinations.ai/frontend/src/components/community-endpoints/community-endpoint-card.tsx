@@ -94,6 +94,10 @@ export function CommunityEndpointCard({
                             {endpoint.disabledReason ??
                                 "Deactivated due to repeated failures."}
                         </span>
+                        <span className="text-sm">
+                            Test the endpoint (Edit → Test) before reactivating
+                            to confirm it's working again.
+                        </span>
                     </div>
                 </Alert>
             )}

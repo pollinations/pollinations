@@ -1,0 +1,12 @@
+name = "catgpt-cf-agents"
+main = "src/worker.ts"
+compatibility_date = "2025-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[durable_objects.bindings]]
+name = "CatGPT"
+class_name = "CatGPT"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["CatGPT"]

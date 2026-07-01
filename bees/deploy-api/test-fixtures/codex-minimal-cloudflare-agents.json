@@ -1,0 +1,18 @@
+{
+  "name": "minimal-cloudflare-agents-bee",
+  "source": {
+    "type": "git",
+    "repository": "https://github.com/pollinations/pollinations.git",
+    "ref": "main",
+    "packagePath": "bees/minimal-cloudflare-agents"
+  },
+  "surfaces": [
+    "web",
+    "a2a"
+  ],
+  "billing": {
+    "mode": "user-pays",
+    "clientId": "pk_replace_me",
+    "dailyPollenLimit": 5
+  }
+}

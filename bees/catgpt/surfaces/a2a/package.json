@@ -1,0 +1,6 @@
+{
+    "name": "@pollinations/catgpt-a2a-surface",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module"
+}

@@ -1,0 +1,20 @@
+{
+    "name": "@pollinations/catgpt-llamaindex",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev:web": "tsx --watch src/web.ts",
+        "dev:discord": "tsx --watch src/discord.ts"
+    },
+    "dependencies": {
+        "@llamaindex/openai": "^0.5.0",
+        "discord.js": "^14.16.3",
+        "dotenv": "^16.4.5",
+        "llamaindex": "^0.10.0"
+    },
+    "devDependencies": {
+        "tsx": "^4.19.2",
+        "typescript": "^5.6.3"
+    }
+}

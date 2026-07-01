@@ -15,11 +15,6 @@ import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import { type FC, useEffect, useMemo, useRef, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { formatActivityPollenThreshold } from "../activity/format-activity-pollen.ts";
-import {
-    getMockEarningsEventRows,
-    getMockUsageEventRows,
-    isActivityMockEnabled,
-} from "../activity/mock-activity-data.ts";
 import type { ApiKey } from "../keys";
 
 const PAGE_SIZE = 10;
@@ -295,10 +290,6 @@ function pageFromRows<T extends UsageEventRecord | EarningsEventRecord>(
 async function fetchUsageEventsPage(
     cursor: EventCursor | null,
 ): Promise<StreamPage<UsageEventRecord>> {
-    if (isActivityMockEnabled()) {
-        return pageFromRows(getMockUsageEventRows(cursor, FETCH_LIMIT));
-    }
-
     const response = await apiClient.account.usage.$get({
         query: eventPageQuery(cursor),
     });
@@ -310,10 +301,6 @@ async function fetchUsageEventsPage(
 async function fetchEarningsEventsPage(
     cursor: EventCursor | null,
 ): Promise<StreamPage<EarningsEventRecord>> {
-    if (isActivityMockEnabled()) {
-        return pageFromRows(getMockEarningsEventRows(cursor, FETCH_LIMIT));
-    }
-
     const response = await apiClient.account.earnings.transactions.$get({
         query: eventPageQuery(cursor),
     });

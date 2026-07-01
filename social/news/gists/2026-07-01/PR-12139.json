@@ -1,0 +1,35 @@
+{
+  "pr_number": 12139,
+  "title": "rotate fireworks api key",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12139",
+  "merged_at": "2026-07-01T08:06:33Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "- Previous Fireworks key's account (`pollinations`) is suspended — Fireworks API returns HTTP 412 `PRECONDITION_FAILED` (billing/spending limit), breaking all Fireworks-routed text + embeddings models.\n- Swaps in a verified working key across `dev`/`staging`/`prod` encrypted vars.\n- New key tested against `api.fireworks.ai`: `/models` and a `deepseek-v4-flash` chat completion both return HTTP 200.\n- Note: takes effect in production only after gen deploys from the `production` branch (auto-deploy pushes the new secret).",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Unblocking the fireworks",
+    "blurb": "We've rotated our Fireworks API keys to get text and embedding models back up and running. The hive's connections are fully restored!",
+    "summary": "Rotated the Fireworks API key across all environments to resolve HTTP 412 errors and restore access to Fireworks-routed text and embedding models.",
+    "impact": "Users will see successful responses again when using Fireworks-backed models like deepseek-v4-flash.",
+    "keywords": [
+      "fireworks",
+      "api-key",
+      "bug-fix",
+      "models",
+      "infrastructure"
+    ],
+    "visual_concept": "The bee mascot fixing a glowing firework rocket, while the Nomnom creature eats an old, broken golden key. Represents restoring the Fireworks API connection.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, fixing a glowing lime green (#ecf874) firework rocket. The round tan nomnom creature happily eats a broken golden key nearby. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-01/PR-12139.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, fixing a glowing lime green (#ecf874) firework rocket. The round tan nomnom creature happily eats a broken golden key nearby. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-07-01T08:09:36.931923+00:00"
+}

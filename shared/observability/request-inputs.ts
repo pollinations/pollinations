@@ -9,7 +9,12 @@ export type RequestInputs = {
 const BODY_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 const CREDENTIAL_QUERY_PARAMS = new Set([
     "access_token",
+    "accesstoken",
     "api_key",
+    "apikey",
+    "authorization",
+    "bearer_token",
+    "bearertoken",
     "key",
     "token",
 ]);
@@ -60,14 +65,14 @@ async function requestBody(c: Context): Promise<unknown> {
 
     try {
         if (contentType.includes("json")) {
-            return await c.req.json();
+            return redactBodyFields(await c.req.json());
         }
 
         if (
             contentType.includes("multipart/form-data") ||
             contentType.includes("application/x-www-form-urlencoded")
         ) {
-            return formDataToObject(await c.req.formData());
+            return redactBodyFields(formDataToObject(await c.req.formData()));
         }
 
         const text = await c.req.text();
@@ -94,6 +99,25 @@ function redactQueryParam(
     value: string | string[],
 ): string | string[] {
     return CREDENTIAL_QUERY_PARAMS.has(key.toLowerCase()) ? REDACTED : value;
+}
+
+function redactBodyFields(value: unknown): unknown {
+    if (Array.isArray(value)) {
+        return value.map(redactBodyFields);
+    }
+
+    if (!value || typeof value !== "object") {
+        return value;
+    }
+
+    return Object.fromEntries(
+        Object.entries(value).map(([key, fieldValue]) => [
+            key,
+            CREDENTIAL_QUERY_PARAMS.has(key.toLowerCase())
+                ? REDACTED
+                : redactBodyFields(fieldValue),
+        ]),
+    );
 }
 
 function formDataToObject(formData: FormData): Record<string, unknown> {

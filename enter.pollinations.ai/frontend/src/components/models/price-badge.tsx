@@ -1,149 +1,111 @@
-import { cn, Tooltip } from "@pollinations/ui";
+import { Chip, Tooltip } from "@pollinations/ui";
 import type { FC } from "react";
+import { PRICE_ICON } from "./model-icons.tsx";
+import type {
+    ModelPrice,
+    ModelPriceLine,
+    PriceDirection,
+    PriceKind,
+} from "./types.ts";
 
-const priceBadgeColors = {
-    gray: "text-ink-700",
-    purple: "text-accent-purple-700",
-    teal: "text-accent-teal-700",
-} as const;
-
-const TOKEN_TYPE_LABELS: Record<string, string> = {
-    "💬": "text",
-    "🖼️": "image",
-    "💾": "cached",
-    "🎬": "video",
-    "🎙️": "audio",
-    "🔊": "audio",
+const TOKEN_TYPE_LABELS: Record<PriceKind, string> = {
+    text: "text",
+    image: "image",
+    cached: "cached",
+    cacheWrite: "cache write",
+    reasoning: "reasoning",
+    video: "video",
+    audioIn: "audio",
+    audioOut: "audio",
 };
 
-const renderAlignedPrice = (price: string) => {
-    const numericParts = price.match(/^(\d+)(?:\.(\d+))?$/);
-    if (!numericParts) {
-        return <span className="tabular-nums">{price}</span>;
-    }
-
-    const [, integerPart, fractionalPart] = numericParts;
-
-    return (
-        <span className="inline-flex items-baseline tabular-nums">
-            <span className="inline-block min-w-[2ch] text-right md:min-w-[3ch]">
-                {integerPart}
-            </span>
-            {fractionalPart !== undefined && (
-                <>
-                    <span>.</span>
-                    <span>{fractionalPart}</span>
-                </>
-            )}
-        </span>
-    );
+const PRICE_UNIT_SUFFIX: Record<ModelPriceLine["unit"], string> = {
+    token: "/M",
+    second: "/sec",
+    request: "/gen",
 };
 
-export type PriceBadgeConfig = {
-    prices: (string | undefined)[];
-    emoji: string;
-    subEmojis: string[];
-    perImage?: boolean;
-    perToken?: boolean;
-    perSecond?: boolean;
-    color?: keyof typeof priceBadgeColors;
-    className?: string;
+export type PriceBadgeConfig = Omit<ModelPriceLine, "direction"> & {
+    subKinds: PriceKind[];
 };
 
-export const groupPriceBadges = (
-    badges: PriceBadgeConfig[],
-): PriceBadgeConfig[] => {
+const groupPriceBadges = (prices: ModelPriceLine[]): PriceBadgeConfig[] => {
     const grouped = new Map<string, PriceBadgeConfig>();
 
-    for (const badge of badges) {
-        const validPrices = badge.prices.filter((p): p is string =>
-            Boolean(p && p !== "—"),
-        );
-        if (validPrices.length === 0) continue;
-
-        const key = [
-            validPrices[0],
-            badge.perImage ? "img" : "",
-            badge.perToken ? "token" : "",
-            badge.perSecond ? "sec" : "",
-            badge.color ?? "",
-            badge.className ?? "",
-        ].join("|");
-
+    for (const price of prices) {
+        const key = [price.price, price.unit].join("|");
         const existing = grouped.get(key);
         if (existing) {
-            const nextSubEmojis = [
-                ...existing.subEmojis,
-                ...badge.subEmojis,
-                badge.emoji,
-            ].filter(Boolean);
-            existing.subEmojis = [...new Set(nextSubEmojis)];
+            existing.subKinds = [
+                ...new Set([...existing.subKinds, price.kind]),
+            ];
             continue;
         }
 
         grouped.set(key, {
-            ...badge,
-            prices: [validPrices[0]],
-            subEmojis: [...new Set([...badge.subEmojis, badge.emoji])],
+            price: price.price,
+            kind: price.kind,
+            unit: price.unit,
+            subKinds: [price.kind],
         });
     }
 
     return [...grouped.values()];
 };
 
-export const PriceBadge: FC<PriceBadgeConfig> = ({
-    prices,
-    emoji,
-    subEmojis,
-    perImage,
-    perToken,
-    perSecond,
-    color = "gray",
-    className,
-}) => {
-    const validPrices = prices.filter((p): p is string =>
-        Boolean(p && p !== "—"),
+export const getModelPriceBadges = (
+    model: ModelPrice,
+    direction: PriceDirection,
+): PriceBadgeConfig[] =>
+    groupPriceBadges(
+        model.prices.filter((price) => price.direction === direction),
     );
-    if (validPrices.length === 0) return null;
+
+const getPriceBadgeKey = (badge: PriceBadgeConfig): string =>
+    [badge.subKinds.join(""), badge.price, badge.unit].join("-");
+
+type PriceBadgeListProps = {
+    badges: PriceBadgeConfig[];
+    className?: string;
+};
+
+export const PriceBadgeList: FC<PriceBadgeListProps> = ({
+    badges,
+    className,
+}) => (
+    <div className={className}>
+        {badges.map((badge) => (
+            <PriceBadge key={getPriceBadgeKey(badge)} {...badge} />
+        ))}
+    </div>
+);
+
+export const PriceBadge: FC<PriceBadgeConfig> = ({ price, unit, subKinds }) => {
     const tokenTypes = [
-        ...new Set(
-            subEmojis.map((item) => TOKEN_TYPE_LABELS[item]).filter(Boolean),
-        ),
+        ...new Set(subKinds.map((item) => TOKEN_TYPE_LABELS[item])),
     ];
     const tokenTypeLabel =
         tokenTypes.length > 1
             ? `Token types: ${tokenTypes.join(", ")}`
-            : tokenTypes.length === 1
-              ? `Token type: ${tokenTypes[0]}`
-              : undefined;
-
-    // Show suffix based on pricing type
-    const suffix = perSecond
-        ? " /sec"
-        : perImage
-          ? " /img"
-          : perToken
-            ? " /M"
-            : "";
+            : `Token type: ${tokenTypes[0]}`;
 
     const badge = (
-        <span
-            className={cn(
-                "inline-flex items-center gap-px px-2 py-0.5 text-xs whitespace-nowrap",
-                priceBadgeColors[color],
-                className,
-            )}
+        <Chip
+            intent="neutral"
+            size="sm"
+            className="whitespace-nowrap tabular-nums"
         >
-            <span className="inline-flex min-w-[1.65rem] items-center justify-end gap-0.5">
-                {(subEmojis.length > 0 ? subEmojis : [emoji]).map((item) => (
-                    <span key={item}>{item}</span>
-                ))}
+            <span className="inline-flex items-center gap-0.5">
+                {subKinds.map((item) => {
+                    const Icon = PRICE_ICON[item];
+                    return <Icon key={item} className="h-3.5 w-3.5" />;
+                })}
             </span>
-            <span className="inline-flex items-baseline">
-                {renderAlignedPrice(validPrices[0])}
-                <span>{suffix}</span>
+            <span>
+                {price}
+                {PRICE_UNIT_SUFFIX[unit]}
             </span>
-        </span>
+        </Chip>
     );
 
     return tokenTypeLabel ? (

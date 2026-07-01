@@ -749,7 +749,7 @@ curl ${BASE_URL}/v1/models \\
 
 **3. Pick an endpoint** from the [${sectionHeading(SECTIONS.contents)}](#${sectionAnchor(SECTIONS.contents)}) below.
 
-**Integration guides:** [🌸 BYOP](https://gen.pollinations.ai/docs#tag/byop) · [🖥️ CLI](https://gen.pollinations.ai/docs#tag/cli) · [🔌 MCP Server](https://gen.pollinations.ai/docs#tag/mcp-server)`;
+**Integration guides:** [BYOP](https://gen.pollinations.ai/docs#tag/byop) · [CLI](https://gen.pollinations.ai/docs#tag/cli) · [MCP Server](https://gen.pollinations.ai/docs#tag/mcp-server)`;
 }
 
 function renderTableOfContents(
@@ -996,15 +996,15 @@ const HTTP_METHODS = new Set([
  * silently disappears — they show up at the end until added here.
  */
 const TAG_ORDER = [
-    "✍️ Text",
-    "🖼️ Image",
-    "🎬 Video",
-    "🔊 Audio",
-    "🎙️ Realtime",
-    "🔢 Embeddings",
-    "🤖 Models",
-    "📦 Media Storage",
-    "👤 Account",
+    "Text",
+    "Image",
+    "Video",
+    "Audio",
+    "Realtime",
+    "Embeddings",
+    "Models",
+    "Media Storage",
+    "Account",
 ];
 
 /** Group operations by tag, then re-key the map to follow TAG_ORDER. */

@@ -1,16 +1,14 @@
 import type { ModelCategory } from "@pollinations/sdk";
-import { cn } from "../../lib/cn.ts";
 import { Button } from "../../primitives/Button.tsx";
 import { ChevronIcon } from "../../primitives/ChevronIcon.tsx";
-import { Chip } from "../../primitives/Chip.tsx";
 import { Dropdown } from "../../primitives/Dropdown.tsx";
+import { CardIcon, SproutIcon } from "../../primitives/icons/index.tsx";
 import { ScrollArea } from "../../primitives/ScrollArea.tsx";
 import { TabButton } from "../../primitives/TabButton.tsx";
-import { modalityTheme } from "./themes.ts";
 
 export type ModelSelectorCategory = ModelCategory;
 
-export type ModelSelectorItem = {
+type ModelSelectorItem = {
     id: string;
     name: string;
     title: string;
@@ -19,7 +17,7 @@ export type ModelSelectorItem = {
     paidOnly?: boolean;
 };
 
-export type ModelSelectorProps = {
+type ModelSelectorProps = {
     models: readonly ModelSelectorItem[];
     category: ModelSelectorCategory;
     value: string;
@@ -27,7 +25,7 @@ export type ModelSelectorProps = {
     onChange: (modelId: string) => void;
 };
 
-export const CATEGORY_LABELS: Record<ModelSelectorCategory, string> = {
+const CATEGORY_LABELS: Record<ModelSelectorCategory, string> = {
     image: "Image",
     video: "Video",
     text: "Text",
@@ -41,10 +39,6 @@ export function categoryLabel(category: ModelSelectorCategory): string {
     return CATEGORY_LABELS[category];
 }
 
-function displayModelName(model: ModelSelectorItem): string {
-    return model.title;
-}
-
 export function ModelSelector({
     models,
     category,
@@ -56,25 +50,30 @@ export function ModelSelector({
         (model) => model.category === category,
     );
     const currentModel = models.find((model) => model.id === value);
-    const theme = modalityTheme(category);
-    const modelLabel = currentModel ? displayModelName(currentModel) : "Select";
+    const modelLabel = currentModel?.title ?? "Select";
     const accessibleLabel = currentModel
         ? `${CATEGORY_LABELS[category]} model: ${modelLabel}`
         : `Select ${CATEGORY_LABELS[category].toLowerCase()} model`;
 
     return (
         <Dropdown
-            theme={theme}
-            align="end"
+            align="start"
             className="polli:w-[min(24rem,calc(100vw-2rem))] polli:p-2"
             trigger={(open) => (
                 <Button
                     type="button"
-                    theme={theme}
                     aria-label={accessibleLabel}
                     className="polli:min-w-64 polli:max-w-full polli:self-start polli:justify-between polli:gap-2"
                 >
-                    <span className="polli:truncate">{modelLabel}</span>
+                    <span className="polli:flex polli:min-w-0 polli:items-center polli:gap-2">
+                        {currentModel &&
+                            (currentModel.paidOnly ? (
+                                <CardIcon className="polli:h-3.5 polli:w-3.5 polli:shrink-0" />
+                            ) : (
+                                <SproutIcon className="polli:h-3.5 polli:w-3.5 polli:shrink-0" />
+                            ))}
+                        <span className="polli:truncate">{modelLabel}</span>
+                    </span>
                     <ChevronIcon expanded={open} />
                 </Button>
             )}
@@ -85,10 +84,7 @@ export function ModelSelector({
                         Loading models...
                     </p>
                 ) : (
-                    <ScrollArea
-                        theme={theme}
-                        className="polli:max-h-64 polli:pr-2"
-                    >
+                    <ScrollArea className="polli:max-h-64 polli:pr-2">
                         <div className="polli:flex polli:flex-col polli:gap-1">
                             {filteredModels.map((model) => {
                                 const isActive = value === model.id;
@@ -96,30 +92,24 @@ export function ModelSelector({
                                     <TabButton
                                         key={model.id}
                                         active={isActive}
-                                        theme={modalityTheme(model.category)}
                                         size="sm"
                                         variant="ghost"
-                                        className="polli:w-full polli:justify-between polli:text-left"
+                                        className="polli:w-full polli:justify-start polli:text-left"
                                         onClick={() => {
                                             onChange(model.id);
                                             close();
                                         }}
                                     >
-                                        <span className="polli:truncate">
-                                            {displayModelName(model)}
+                                        <span className="polli:flex polli:min-w-0 polli:items-center polli:gap-2">
+                                            {model.paidOnly ? (
+                                                <CardIcon className="polli:h-3.5 polli:w-3.5 polli:shrink-0" />
+                                            ) : (
+                                                <SproutIcon className="polli:h-3.5 polli:w-3.5 polli:shrink-0" />
+                                            )}
+                                            <span className="polli:truncate">
+                                                {model.title}
+                                            </span>
                                         </span>
-                                        {model.paidOnly && (
-                                            <Chip
-                                                size="sm"
-                                                className={cn(
-                                                    "polli:shrink-0",
-                                                    isActive &&
-                                                        "polli:bg-surface-white",
-                                                )}
-                                            >
-                                                paid
-                                            </Chip>
-                                        )}
                                     </TabButton>
                                 );
                             })}

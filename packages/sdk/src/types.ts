@@ -256,12 +256,6 @@ export type BuiltInToolType =
     | "computer_use"
     | "file_search";
 
-/** Thinking/reasoning options */
-export interface ThinkingOptions {
-    type: "enabled" | "disabled";
-    budget_tokens?: number;
-}
-
 /** Options for chat completions (POST endpoint) */
 export interface ChatOptions extends RequestOptions {
     /** Text model to use (default: 'openai') */
@@ -298,12 +292,8 @@ export interface ChatOptions extends RequestOptions {
         | { type: "function"; function: { name: string } };
     /** Allow parallel tool calls (default: true) */
     parallelToolCalls?: boolean;
-    /** Enable thinking/reasoning for supported models */
-    thinking?: ThinkingOptions | null;
     /** Reasoning effort for thinking models */
-    reasoningEffort?: "low" | "medium" | "high";
-    /** Thinking budget in tokens */
-    thinkingBudget?: number;
+    reasoningEffort?: "none" | "minimal" | "low" | "medium" | "high" | "xhigh";
     /** Output modalities */
     modalities?: ("text" | "audio")[];
     /** Audio output options */
@@ -775,7 +765,9 @@ export interface CreatedKey {
 
 /** Model tier levels */
 export type ModelTier = "anonymous" | "seed" | "flower" | "nectar";
-/** All model categories, in catalog display order. Single source of truth. */
+/** Known model categories, in catalog display order. The canonical enum lives
+ * in shared/registry (ModelInfoSchema); categories the SDK doesn't know yet
+ * pass through the model catalog unfiltered and sort last. */
 export const MODEL_CATEGORIES = [
     "image",
     "video",

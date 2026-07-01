@@ -1,9 +1,8 @@
 import type { PropsWithChildren } from "react";
 import { cn } from "../lib/cn.ts";
-import type { ThemeName } from "../theme.ts";
 
-/** Button only supports `danger`. Label/status color recipes live on Chip. */
-type ButtonIntent = "danger";
+/** `danger` (red) and `info` (edit/links, blue). Label recipes live on Chip. */
+type ButtonIntent = "danger" | "info";
 
 const sizes = {
     sm: "polli:px-2 polli:pt-0.5 polli:pb-1",
@@ -13,21 +12,22 @@ const sizes = {
 
 // Cascade-driven base — reads [data-theme] vars.
 const themeClasses =
-    "polli:bg-theme-bg-active polli:text-theme-text-base " +
+    "polli:bg-theme-bg-active polli:text-theme-text-strong " +
     "polli:hover:bg-theme-bg-hover polli:transition-colors";
 
-// Single intent: danger. Soft recipe — light tile + deep text, slightly
-// deeper bg on hover. No filled CTAs anywhere.
+// Soft intent recipes — light tile + deep text, slightly deeper bg on hover.
+// No filled CTAs anywhere.
 const intentClasses: Record<ButtonIntent, string> = {
     danger:
         "polli:bg-intent-danger-bg-light polli:text-intent-danger-text " +
         "polli:hover:bg-intent-danger-bg-hover polli:transition-colors",
+    info:
+        "polli:bg-intent-info-bg-light polli:text-intent-info-text " +
+        "polli:hover:bg-intent-info-bg-hover polli:transition-colors",
 };
 
 type BaseButtonProps = {
-    /** Override the cascade theme for this button's subtree. Ignored when `intent` is set. */
-    theme?: ThemeName;
-    /** Only `"danger"` for now. */
+    /** Optional semantic recipe; omit for the ambient theme button. */
     intent?: ButtonIntent;
     size?: keyof typeof sizes;
     className?: string;
@@ -35,7 +35,6 @@ type BaseButtonProps = {
 };
 
 const buttonClasses = ({
-    theme: _theme,
     intent,
     size,
     className,
@@ -61,7 +60,6 @@ export type ButtonProps<T extends React.ElementType = "button"> =
 export function Button<T extends React.ElementType = "button">({
     as,
     children,
-    theme,
     intent,
     size,
     className,
@@ -72,11 +70,8 @@ export function Button<T extends React.ElementType = "button">({
 
     return (
         <Component
-            // Cascade override only applies when `intent` is unset.
-            data-theme={intent ? undefined : theme}
             data-intent={intent}
             className={buttonClasses({
-                theme,
                 intent,
                 size,
                 className,

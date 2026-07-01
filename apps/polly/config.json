@@ -22,7 +22,7 @@
     "port": 55288
   },
   "ai": {
-    "model": "kimi",
+    "model": "kimi-code",
     "fallback_model": "glm"
   },
   "features": {

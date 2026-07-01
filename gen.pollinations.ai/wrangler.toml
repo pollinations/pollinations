@@ -42,15 +42,20 @@ new_classes = ["PollenRateLimiter"]
 ENVIRONMENT = "development"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
-ALLOW_ANONYMOUS_USAGE = false
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
-
 [dev]
 port = 8788
+
+[assets]
+directory = "public"
+# Static assets are only icons/images. Keep dynamic SEO routes Worker-owned:
+# `/manifest.webmanifest` is generated from src/routes/seo.ts, and `/` is the
+# docs SEO landing page. No public/index.html is intentionally shipped.
+run_worker_first = ["/", "/manifest.webmanifest"]
 
 # Production routes
 [env.production]
@@ -103,14 +108,12 @@ new_classes = ["PollenRateLimiter"]
 ENVIRONMENT = "production"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
-ALLOW_ANONYMOUS_USAGE = false
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 POLLEN_REFILL_PER_HOUR = 1
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
-
 # Staging routes
 [env.staging]
 
@@ -161,7 +164,6 @@ new_classes = ["PollenRateLimiter"]
 ENVIRONMENT = "staging"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
-ALLOW_ANONYMOUS_USAGE = false
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 AWS_BEDROCK_REGION = "us-east-1"
@@ -170,7 +172,6 @@ BEDROCK_GUARDRAIL_VERSION = "2"
 # GitHub OAuth lockdown — must match enter.pollinations.ai staging allowlist.
 # Request-time gate in shared/auth/api-key.ts fails closed without it. Issue #11137.
 STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997"
-
 [env.test]
 
 [env.test.images]
@@ -215,7 +216,6 @@ new_classes = ["PollenRateLimiter"]
 ENVIRONMENT = "test"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
-ALLOW_ANONYMOUS_USAGE = false
 BETTER_AUTH_SECRET = "not-a-secret-workers-test-only"
 TINYBIRD_INGEST_TOKEN = "not-a-secret-workers-test-only"
 TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"
@@ -226,11 +226,13 @@ AWS_SECRET_ACCESS_KEY = "not-a-secret-workers-test-only"
 AWS_REGION = "us-east-1"
 AZURE_MYCELI_PROD_API_KEY = "not-a-secret-workers-test-only"
 AZURE_MYCELI_PROD_EASTUS2_API_KEY = "not-a-secret-workers-test-only"
+AZURE_MYCELI_PROD_IMG_WESTUS3_API_KEY = "not-a-secret-workers-test-only"
 AZURE_MYCELI_PROD_SWEDEN_API_KEY = "not-a-secret-workers-test-only"
 AZURE_CONTENT_SAFETY_API_KEY = "not-a-secret-workers-test-only"
 AZURE_CONTENT_SAFETY_ENDPOINT = "https://content-safety.test"
-DEEPINFRA_API_KEY = "not-a-secret-workers-test-only"
 FIREWORKS_API_KEY = "not-a-secret-workers-test-only"
+FAL_KEY = "not-a-secret-workers-test-only"
+STABILITY_API_KEY = "not-a-secret-workers-test-only"
 GOOGLE_CLIENT_EMAIL = "test@example.com"
 GOOGLE_PRIVATE_KEY = "not-a-secret-workers-test-only"
 GOOGLE_PRIVATE_KEY_ID = "not-a-secret-workers-test-only"

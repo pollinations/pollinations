@@ -624,52 +624,23 @@ URL-based identity lookup was removed — identity is derived from `client_id` o
 
 ---
 
-## 🎫 User Tier Management
+## 🎫 Wallet & Balance Lookups
 
 > Claude skill available: `.claude/skills/tier-management/SKILL.md`
 
-### Tier Levels
+Pollen is earned by completing **Quests**. The `tier`, `tier_balance`, and `pack_balance` columns remain in D1 as the active wallet data model — do not treat the `tier` column as a runtime product level or mutate it to "upgrade" a user. The `tier_balance` bucket is shown to users as the **Quest Pollen** balance; `pack_balance` is the **Paid** balance. The old account-level upgrade/downgrade paths (Spore→Seed, app→Flower, admin tier-update) are removed.
 
-| Tier   | Emoji | Pollen   | Cadence | Criteria                 |
-| ------ | ----- | -------- | ------- | ------------------------ |
-| microbe| 🦠    | 0        | none    | Entry tier (auto-upgrades once verified) |
-| spore  | 🍄    | 0.01     | hourly  | Verified accounts        |
-| seed   | 🌱    | 0.15     | hourly  | GitHub engagement        |
-| flower | 🌸    | 0.4      | hourly  | Contributor              |
-| nectar | 🍯    | 0.8      | hourly  | Legacy — still supported for existing users, no longer granted |
-
-### Quick Tier Update
+### Lookups (read-only)
 
 ```bash
+# Look up a user's balance
+.claude/skills/tier-management/scripts/check-user-balance.sh USERNAME_OR_EMAIL
+
+# Or query D1 directly
 cd enter.pollinations.ai
-
-# 1. Find user
 npx wrangler d1 execute DB --remote --env production \
-  --command "SELECT github_username, email, tier FROM user WHERE LOWER(github_username) LIKE '%USERNAME%';"
-
-# 2. Update DB tier
-npx wrangler d1 execute DB --remote --env production \
-  --command "UPDATE user SET tier='flower' WHERE github_username='USERNAME';"
-
+  --command "SELECT github_username, email, tier, tier_balance FROM user WHERE LOWER(github_username) LIKE '%USERNAME%';"
 ```
-
-### Evaluate User for Upgrade
-
-**Flower tier** (any ONE qualifies):
-
-- Has commits: `gh api 'search/commits?q=repo:pollinations/pollinations+author:USERNAME' --jq '.total_count'`
-- Has project: `grep -ri "author.*USERNAME" pollinations.ai/src/config/projects/`
-
-**Seed tier** (any ONE qualifies):
-
-- Issue involvement: `gh api 'search/issues?q=repo:pollinations/pollinations+involves:USERNAME' --jq '.total_count'`
-- Starred repo: `.claude/skills/tier-management/fetch-stargazers.sh USERNAME`
-
-### Notes
-
-- **DB tier** = what user CAN activate
-- **Polar subscription** = what user HAS activated
-- If no Polar subscription, user must click "Activate" at enter.pollinations.ai
 
 ---
 
@@ -715,7 +686,7 @@ OpenAPI 3.x JSON served at /docs/open-api/generate-schema
   2. `filterAliases()` removes model aliases from enums (only primary IDs shown)
   3. Injects `x-codeSamples` (curl, Python, JS examples) from the `CODE_SAMPLES` object
 - **`generateLLMDoc()`** in `docs.ts` — hand-written compact text doc served at `/docs/llm.txt`, separate from OpenAPI
-- **Hidden endpoints** — routes with `hide: true` in `describeRoute()` are excluded from production docs (e.g. `/customer/balance`, `/api-keys`, `/tiers/view`)
+- **Hidden endpoints** — routes with `hide: true` in `describeRoute()` are excluded from production docs (e.g. `/customer/balance`, `/api-keys`)
 
 ### Three Output Surfaces
 

@@ -26,14 +26,15 @@ export const formatPrice = (
     return formatter(price);
 };
 
-export const formatPricePerImage = (price: number): string => {
+// Flat per-request price — one fee per image or audio generation, shown with
+// the "/gen" badge. Keeps 4 decimals below $1 so odd rates like $0.0376 render
+// exactly instead of rounding to $0.038.
+export const formatPriceFlat = (price: number): string => {
     let formatted: string;
     if (price < 0.001) {
         formatted = price.toFixed(6);
-    } else if (price < 0.01) {
-        formatted = price.toFixed(4);
     } else if (price < 1) {
-        formatted = price.toFixed(3);
+        formatted = price.toFixed(4);
     } else {
         formatted = price.toFixed(2);
     }

@@ -1,5 +1,6 @@
 import { getLogger } from "@logtape/logtape";
 import { user as userTable } from "@shared/db/better-auth.ts";
+import { sendTierEventToTinybird } from "@shared/events.ts";
 import {
     getTierPollen,
     isValidTier,
@@ -10,8 +11,8 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "../env.ts";
-import { sendTierEventToTinybird } from "../events.ts";
 import { runD1TinybirdSync } from "../services/d1-tinybird-sync.ts";
+import { runScheduledTasks } from "../services/scheduled-tasks.ts";
 import { runTierRefill } from "../services/tier-refill.ts";
 
 const log = getLogger(["hono", "admin"]);
@@ -120,6 +121,12 @@ export const adminRoutes = new Hono<Env>()
     })
     .post("/trigger-refill", async (c) => {
         const result = await runTierRefill(c.env, c.executionCtx);
+        return c.json(result);
+    })
+    .post("/trigger-scheduled", async (c) => {
+        // Runs the exact same scheduled pipeline as the cron so it can be
+        // kicked off by hand.
+        const result = await runScheduledTasks(c.env, c.executionCtx);
         return c.json(result);
     })
     .post("/trigger-d1-sync", async (c) => {

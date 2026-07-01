@@ -39,12 +39,9 @@ export interface TransformOptions {
     jsonMode?: boolean;
     voice?: string;
     reasoning_effort?: string;
-    thinking_budget?: number;
     modalities?: string[];
     audio?: Record<string, unknown>;
     stream_options?: Record<string, unknown>;
-    isPrivate?: boolean;
-    referrer?: string;
     [key: string]: unknown;
 }
 
@@ -82,6 +79,8 @@ export interface ChatCompletion {
     stream?: boolean;
     responseStream?: ReadableStream | null;
     requestData?: unknown;
+    /** Portkey fallback target that served the call, e.g. "config.targets[1]". */
+    fallbackTarget?: string;
     [key: string]: unknown;
 }
 
@@ -107,8 +106,6 @@ export interface RequestData {
     repetition_penalty?: number;
     seed?: number;
     stream?: boolean;
-    isPrivate?: boolean;
-    referrer?: string;
     voice?: string;
     jsonMode?: boolean;
     tools?: unknown[];
@@ -116,7 +113,6 @@ export interface RequestData {
     modalities?: string[];
     audio?: Record<string, unknown>;
     reasoning_effort?: string;
-    thinking_budget?: number;
     response_format?: { type: string; [key: string]: unknown };
     max_tokens?: number;
     max_completion_tokens?: number;

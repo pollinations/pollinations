@@ -1,3 +1,4 @@
+import { handleError } from "@shared/error.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -6,10 +7,9 @@ import { HTTPException } from "hono/http-exception";
 import { requestId } from "hono/request-id";
 import { api } from "./api.ts";
 import type { Env } from "./env.ts";
-import { handleError } from "./error.ts";
 import { logger } from "./middleware/logger.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
-import { runTierRefill } from "./services/tier-refill.ts";
+import { runScheduledTasks } from "./services/scheduled-tasks.ts";
 
 function stripTrailingSlash(path: string): string {
     return path.length > 1 ? path.replace(/\/+$/, "") : path;
@@ -93,6 +93,6 @@ export default {
         env: CloudflareBindings,
         ctx: ExecutionContext,
     ) {
-        await runTierRefill(env, ctx);
+        await runScheduledTasks(env, ctx);
     },
 } satisfies ExportedHandler<CloudflareBindings>;

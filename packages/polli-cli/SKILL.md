@@ -1,12 +1,12 @@
 ---
 name: polli
-description: Generate images, text, audio, video, and transcribe speech via the Pollinations API using the polli CLI. Use when asked to generate media, call pollinations.ai, check pollen balance, list models, manage API keys, or run polli commands.
+description: Generate images, text, audio, video, and transcribe speech via the Pollinations API using the polli CLI. Use when asked to generate media, call pollinations.ai, check pollen balance, list models, manage API keys, inspect quests, manage my-models, or run polli commands.
 allowed-tools: Bash(polli *)
 ---
 
 # polli — Pollinations CLI
 
-Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video; transcribes speech; manages API keys and usage.
+Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video; transcribes speech; manages API keys, usage, quests, and invite-only my-models.
 
 ## When to use this skill
 
@@ -15,6 +15,7 @@ Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video;
 - User wants to **transcribe speech** or run TTS
 - User asks about their **pollen balance, usage, or API keys**
 - User wants to **browse or filter available models**
+- User wants to inspect **quests** or manage invite-only **my-models**
 
 ## Quick reference
 
@@ -35,11 +36,14 @@ Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video;
 | Filter models by type | `polli models --type image` |
 | Model health + latency | `polli models --stats` (default 60m, `--window <min>`) |
 | Check balance | `polli usage` |
+| List public quests | `polli quests` |
+| List your quest rewards/status | `polli quests mine` |
+| Manage invite-only community models | `polli my-models list` |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup
 
-One-time: `polli auth login` (device-flow). To store an existing key, run
+One-time: `polli auth login` (device-flow; creates a key with `profile`, `usage`, and `keys`). To store an existing key, run
 `printf '%s' "$POLLINATIONS_API_KEY" | polli auth login --with-token`. Verify
 with `polli auth status`.
 Override the stored key for a single command with `--key <key>`.
@@ -96,6 +100,18 @@ Default voice is `sage`. To discover the full live voice list, use the model reg
 polli gen audio "lofi hip-hop beat" --model elevenmusic --duration 30 --instrumental --output track.mp3
 ```
 
+### Generate sound effects (eleven-sfx)
+```bash
+polli gen audio "thunderclap with heavy rain" --model eleven-sfx --duration 5 --output thunder.mp3
+```
+Text-to-sound-effect via ElevenLabs (aliases: `sfx`, `sound-effects`). `--duration` 0.5–30s (omit to let the model pick). Billed per second of output (~$0.004/s, capped at $0.12 for a full 30s).
+
+### Multilingual TTS (eleven-multilingual-v2)
+```bash
+polli gen audio "Bonjour, ceci est un test" --model multilingual-v2 --voice rachel --output fr.mp3
+```
+Stable, lifelike TTS across 29 languages (aliases: `multilingual-v2`, `eleven-v2`) — a non-alpha alternative to the default v3.
+
 ### Generate video
 ```bash
 polli gen video "a spacecraft landing on mars" --model wan-fast --duration 5 --output mars.mp4
@@ -128,8 +144,21 @@ Use `--stats` before choosing a model. **Caveat**: the `err%` column counts **5x
 polli usage              # current pollen balance
 polli usage --history    # recent individual requests
 polli usage --daily      # daily cost summary
+polli quests             # public quest catalog
+polli quests mine        # account earned/completed status
+polli quests mine --completed # completed and earned quests
 ```
 **History is eventually consistent** — a request you just made may not appear for 30–60s. When matching costs to freshly-generated media, use `--limit 50` and filter by timestamp, and retry if the expected entry is missing. `polli usage --json` returns `{"pollen": <number>}` — the current balance only; use `--history --json` or `--daily --json` for cost breakdowns.
+
+### Manage my-models
+```bash
+polli my-models list
+polli my-models models --base-url https://api.example.com/v1 --bearer-token "$UPSTREAM_KEY"
+polli my-models create --name my-model --base-url https://api.example.com/v1 --bearer-token "$UPSTREAM_KEY" --upstream-model gpt-4.1-mini
+polli my-models update <id> --description "Updated description"
+polli my-models delete <id>
+```
+`my-models` manages owned community text models for invite-only accounts. It requires `communityEndpointsAllowed: true` plus a key with `account:keys`, or an authenticated dashboard session through the API. Use `account:usage` for narrow read-only usage and `polli quests mine`; use both permissions when a client needs both read-only account state and admin operations. Quest claiming is dashboard-only; `polli quests` and `polli quests mine` are read-only.
 
 ### Manage API keys
 ```bash
@@ -139,7 +168,7 @@ polli keys create --name "my-bot" --type secret --budget 1000 --permissions prof
 polli keys create --name "my-app" --type publishable --redirect-uri https://app.example/callback --earnings
 polli keys revoke <id>                                             # id comes from `keys list --json`
 ```
-`--permissions <perms...>` scopes what the new key can do on the account (e.g. `profile usage` lets it call `polli --key <new> usage`). **Without `--permissions`, new scoped keys can generate media but cannot read account state** — `polli --key <new> usage` will 403. `"keys"` is auto-stripped from the list so a scoped key can never mint further keys. Publishable app keys default developer earnings off; pass `--earnings` to enable them. To inspect a specific key other than the current one, use `polli keys list --json | jq '.[] | select(.id == "<id>")'`. `keys info` is intentionally scoped to the caller's own key.
+`--permissions <perms...>` scopes what the new key can do on the account (e.g. `profile usage` lets it call `polli --key <new> usage`). **Without `--permissions`, new scoped keys can generate media but cannot read account state** — `polli --key <new> usage` will 403. `"keys"` is auto-stripped from the list so a scoped key can never mint further keys. Existing keys with `account:keys` can manage my-models where that invite-only feature is enabled, but still need `account:usage` for read-only account state. Publishable app keys default developer earnings off; pass `--earnings` to enable them. To inspect a specific key other than the current one, use `polli keys list --json | jq '.[] | select(.id == "<id>")'`. `keys info` is intentionally scoped to the caller's own key.
 
 ### Read API docs
 ```bash

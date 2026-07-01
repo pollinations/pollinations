@@ -1,12 +1,17 @@
 import {
+    Alert,
+    Chip,
     ClockIcon,
     ExternalLinkButton,
-    ImageIcon,
+    GitHubIcon,
     Section,
+    SparklesIcon,
     TabButton,
     TokensIcon,
+    TrendUpIcon,
 } from "@pollinations/ui";
-import { type FC, useEffect, useMemo, useState } from "react";
+import { type FC, useCallback, useEffect, useMemo, useState } from "react";
+import { CommunityEndpoints } from "../community-endpoints";
 import {
     type ApiModelInfo,
     fetchModelCatalog,
@@ -17,14 +22,24 @@ import {
     sectionLabels,
     UnifiedModelTable,
 } from "./model-table.tsx";
+import type { ModelPrice } from "./types.ts";
 import { useModelStats } from "./use-model-stats.ts";
 
 type ModelsProps = {
-    tierBalance?: number;
-    packBalance?: number;
+    showCommunityEndpoints?: boolean;
 };
 
-export const Models: FC<ModelsProps> = ({ tierBalance, packBalance }) => {
+const SECTION_ORDER: SectionType[] = [
+    "image",
+    "video",
+    "audio",
+    "realtime",
+    "text",
+    "community",
+    "embedding",
+];
+
+export const Models: FC<ModelsProps> = ({ showCommunityEndpoints = false }) => {
     const [activeTab, setActiveTab] = useState<SectionType>("image");
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const [catalogError, setCatalogError] = useState<string | null>(null);
@@ -34,65 +49,78 @@ export const Models: FC<ModelsProps> = ({ tierBalance, packBalance }) => {
         [catalogModels, stats],
     );
 
-    useEffect(() => {
-        let cancelled = false;
-
-        fetchModelCatalog()
-            .then((models) => {
-                if (!cancelled) {
+    const loadModelCatalog = useCallback(
+        (options: { refresh?: boolean } = {}) =>
+            fetchModelCatalog(options)
+                .then((models) => {
                     setCatalogModels(models);
                     setCatalogError(null);
-                }
-            })
-            .catch(() => {
-                if (!cancelled) {
+                })
+                .catch(() => {
                     setCatalogModels([]);
                     setCatalogError("Could not load models.");
-                }
-            });
+                }),
+        [],
+    );
 
-        return () => {
-            cancelled = true;
-        };
-    }, []);
+    useEffect(() => {
+        void loadModelCatalog();
+    }, [loadModelCatalog]);
 
     const imageModels = allModels.filter((m) => m.type === "image");
     const videoModels = allModels.filter((m) => m.type === "video");
     const audioModels = allModels.filter((m) => m.type === "audio");
     const realtimeModels = allModels.filter((m) => m.type === "realtime");
-    const textModels = allModels.filter((m) => m.type === "text");
+    const textModels = allModels.filter(
+        (m) => m.type === "text" && !m.community,
+    );
+    const communityModels = allModels.filter((m) => m.community);
     const embeddingModels = allModels.filter((m) => m.type === "embedding");
-    const availableSections: SectionType[] = [
-        "image",
-        "video",
-        ...(audioModels.length > 0 ? (["audio"] as SectionType[]) : []),
-        ...(realtimeModels.length > 0 ? (["realtime"] as SectionType[]) : []),
-        "text",
-        ...(embeddingModels.length > 0 ? (["embedding"] as SectionType[]) : []),
-    ];
+    const sectionModels: Record<SectionType, ModelPrice[]> = {
+        image: imageModels,
+        video: videoModels,
+        audio: audioModels,
+        realtime: realtimeModels,
+        text: textModels,
+        community: communityModels,
+        embedding: embeddingModels,
+    };
+    const availableSections =
+        allModels.length > 0
+            ? SECTION_ORDER.filter((section) => sectionModels[section].length)
+            : SECTION_ORDER;
+
+    useEffect(() => {
+        if (!availableSections.includes(activeTab)) {
+            setActiveTab(availableSections[0] ?? "text");
+        }
+    }, [activeTab, availableSections]);
 
     return (
         <div className="flex flex-col gap-6">
             <Section
                 title="Models"
-                theme="teal"
                 framed
                 actionClassName="w-full sm:ml-auto sm:w-auto"
                 action={
                     <div className="flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
                         <ExternalLinkButton
-                            theme="teal"
                             href="https://model-monitor.pollinations.ai"
                             className="self-start sm:self-center"
                         >
-                            📊 Model Health
+                            <span className="inline-flex items-center gap-1.5">
+                                <TrendUpIcon className="h-4 w-4" />
+                                Model Health
+                            </span>
                         </ExternalLinkButton>
                         <ExternalLinkButton
-                            theme="teal"
                             href="https://github.com/pollinations/pollinations/issues/5321"
                             className="self-start sm:self-center"
                         >
-                            🗳️ Vote for next model
+                            <span className="inline-flex items-center gap-1.5">
+                                <GitHubIcon className="h-4 w-4" />
+                                Vote for next model
+                            </span>
                         </ExternalLinkButton>
                     </div>
                 }
@@ -103,15 +131,27 @@ export const Models: FC<ModelsProps> = ({ tierBalance, packBalance }) => {
                             key={section}
                             active={activeTab === section}
                             onClick={() => setActiveTab(section)}
+                            ariaLabel={
+                                section === "community"
+                                    ? "Community alpha models"
+                                    : undefined
+                            }
                         >
-                            <span className="font-bold">
+                            <span className="inline-flex items-center gap-1.5">
                                 {sectionLabels[section]}
+                                {section === "community" && (
+                                    <Chip intent="alpha" size="sm">
+                                        ALPHA
+                                    </Chip>
+                                )}
                             </span>
                         </TabButton>
                     ))}
                 </div>
                 {catalogError && (
-                    <p className="mb-4 text-sm text-red-600">{catalogError}</p>
+                    <Alert intent="danger" className="mb-4">
+                        {catalogError}
+                    </Alert>
                 )}
                 <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     <UnifiedModelTable
@@ -120,17 +160,17 @@ export const Models: FC<ModelsProps> = ({ tierBalance, packBalance }) => {
                         audioModels={audioModels}
                         realtimeModels={realtimeModels}
                         textModels={textModels}
+                        communityModels={communityModels}
                         embeddingModels={embeddingModels}
                         activeTab={activeTab}
-                        tierBalance={tierBalance}
-                        packBalance={packBalance}
                     />
                 </div>
-                <div className="mt-5 space-y-2 border-t border-ink-200 pt-5 text-[13px] leading-snug text-ink-500">
+                <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                     <p className="flex items-start gap-1.5">
-                        <ImageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <SparklesIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
-                            <strong>/img</strong> — flat rate per image.
+                            <strong>/gen</strong> — flat rate per image or audio
+                            generation.
                         </span>
                     </p>
                     <p className="flex items-start gap-1.5">
@@ -148,6 +188,13 @@ export const Models: FC<ModelsProps> = ({ tierBalance, packBalance }) => {
                     </p>
                 </div>
             </Section>
+            {showCommunityEndpoints && (
+                <CommunityEndpoints
+                    onChange={() => {
+                        void loadModelCatalog({ refresh: true });
+                    }}
+                />
+            )}
         </div>
     );
 };

@@ -1,10 +1,8 @@
 import { createBalanceCheckResult } from "@shared/billing/balance.ts";
 import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
-import { getModelDefinition } from "@shared/registry/registry.ts";
 import { getModelStats } from "@shared/utils/model-stats.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
-import { cached } from "@/cache";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
@@ -28,11 +26,11 @@ export async function checkBalance(
     const { auth, balance, model, log } = vars;
     if (!auth.user?.id) return;
 
-    const serviceDefinition = getModelDefinition(model.resolved);
-    const isPaidOnly = serviceDefinition.paidOnly ?? false;
-
-    const stats = await getModelStats(env.KV, log, cached);
-    const estimatedCost = getEstimatedPrice(stats, model.resolved);
+    const isPaidOnly = model.definition.paidOnly ?? false;
+    const estimatedCost = getEstimatedPrice(
+        await getModelStats(env.KV, log),
+        model.resolved,
+    );
 
     const apiKeyBudget = auth.apiKey?.pollenBalance;
     const requiredBudget = Math.max(0, estimatedCost);

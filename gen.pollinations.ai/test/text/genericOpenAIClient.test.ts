@@ -13,6 +13,9 @@ describe("genericOpenAIClient", () => {
             async (input, init) => {
                 expect(String(input)).toBe("https://portkey.test/chat");
                 expect(init?.signal).toBeUndefined();
+                expect(new Headers(init?.headers).get("authorization")).toBe(
+                    "Bearer secret",
+                );
                 upstreamBody = JSON.parse(String(init?.body));
                 return Response.json({
                     id: "chatcmpl_test",
@@ -45,8 +48,6 @@ describe("genericOpenAIClient", () => {
                 modelDef: { name: "openai-fast" },
                 requestedModel: "openai-fast",
                 userApiKey: "sk_should_not_leak",
-                isPrivate: true,
-                referrer: "https://example.com",
                 portkeyGatewayUrl: "https://portkey.test",
                 additionalHeaders: { Authorization: "Bearer secret" },
                 temperature: 1,
@@ -63,11 +64,9 @@ describe("genericOpenAIClient", () => {
             temperature: 1,
         });
         expect(upstreamBody).not.toHaveProperty("additionalHeaders");
-        expect(upstreamBody).not.toHaveProperty("isPrivate");
         expect(upstreamBody).not.toHaveProperty("modelConfig");
         expect(upstreamBody).not.toHaveProperty("modelDef");
         expect(upstreamBody).not.toHaveProperty("portkeyGatewayUrl");
-        expect(upstreamBody).not.toHaveProperty("referrer");
         expect(upstreamBody).not.toHaveProperty("requestedModel");
         expect(upstreamBody).not.toHaveProperty("userApiKey");
     });
@@ -377,5 +376,103 @@ describe("genericOpenAIClient", () => {
 
         expect(text).toContain('"content":"ok"');
         expect(text).toContain("data: [DONE]\n\n");
+    });
+
+    it("captures the Portkey fallback target header on non-streaming responses", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json(
+                {
+                    id: "chatcmpl_test",
+                    object: "chat.completion",
+                    model: "provider-model",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "ok" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: { prompt_tokens: 1, completion_tokens: 1 },
+                },
+                {
+                    headers: {
+                        "x-portkey-last-used-option-index": "config.targets[1]",
+                    },
+                },
+            ),
+        );
+
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model" },
+            { endpoint: "https://portkey.test/chat" },
+        );
+
+        expect(completion.fallbackTarget).toBe("config.targets[1]");
+        // Internal metadata must stay out of the OpenAI-compatible body: it is
+        // non-enumerable, so JSON.stringify({ ...completion }) never includes it.
+        expect(
+            Object.prototype.propertyIsEnumerable.call(
+                completion,
+                "fallbackTarget",
+            ),
+        ).toBe(false);
+        expect(JSON.stringify({ ...completion })).not.toContain(
+            "fallbackTarget",
+        );
+    });
+
+    it("captures the Portkey fallback target header on streaming responses", async () => {
+        vi.spyOn(globalThis, "fetch").mockImplementationOnce(async () => {
+            const encoder = new TextEncoder();
+            return new Response(
+                new ReadableStream({
+                    start(controller) {
+                        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+                        controller.close();
+                    },
+                }),
+                {
+                    headers: {
+                        "content-type": "text/event-stream; charset=utf-8",
+                        "x-portkey-last-used-option-index": "config.targets[1]",
+                    },
+                },
+            );
+        });
+
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model", stream: true },
+            { endpoint: "https://portkey.test/chat" },
+        );
+
+        expect(completion.fallbackTarget).toBe("config.targets[1]");
+    });
+
+    it("leaves fallbackTarget undefined when the header is absent", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({
+                id: "chatcmpl_test",
+                object: "chat.completion",
+                model: "provider-model",
+                choices: [
+                    {
+                        index: 0,
+                        message: { role: "assistant", content: "ok" },
+                        finish_reason: "stop",
+                    },
+                ],
+                usage: { prompt_tokens: 1, completion_tokens: 1 },
+            }),
+        );
+
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model" },
+            { endpoint: "https://portkey.test/chat" },
+        );
+
+        expect(completion.fallbackTarget).toBeUndefined();
     });
 });

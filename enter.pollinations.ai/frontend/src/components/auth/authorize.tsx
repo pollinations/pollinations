@@ -1,6 +1,5 @@
 import {
     Button,
-    Chip,
     Collapsible,
     cn,
     MailIcon,
@@ -13,7 +12,7 @@ import {
     AuthModalLoading,
     ErrorBanner,
 } from "@pollinations/ui/auth";
-import { getModalityTheme } from "@pollinations/ui/gen";
+import { ModalityChip } from "@pollinations/ui/gen";
 import { formatPollen } from "@pollinations/ui/wallet";
 import {
     CONSENT_PERMISSIONS,
@@ -130,7 +129,8 @@ export function Authorize() {
         parsedRedirectUrl !== null &&
         (!app_key || redirectValidationState === "valid");
 
-    useScrollLock();
+    const isMobile = window.innerWidth < 768;
+    useScrollLock(!isMobile);
 
     useEffect(() => {
         let cancelled = false;
@@ -433,7 +433,6 @@ export function Authorize() {
                                 as="button"
                                 onClick={signIn}
                                 disabled={isSigningIn}
-                                theme="amber"
                             >
                                 {isSigningIn
                                     ? "Signing in..."
@@ -563,7 +562,8 @@ export function Authorize() {
                                             &#x1F511;
                                         </span>
                                         <span>
-                                            Create, list, and revoke API keys.
+                                            Manage API keys and My Models when
+                                            enabled.
                                         </span>
                                     </li>
                                 )}
@@ -586,17 +586,13 @@ export function Authorize() {
                                             <span>Generate</span>
                                             <div className="flex items-center gap-1 flex-nowrap">
                                                 {modalities.map((m) => (
-                                                    <Chip
+                                                    <ModalityChip
                                                         key={m}
+                                                        modality={m}
                                                         size="sm"
-                                                        theme={
-                                                            getModalityTheme(
-                                                                m,
-                                                            ) ?? undefined
-                                                        }
                                                     >
                                                         {m}
-                                                    </Chip>
+                                                    </ModalityChip>
                                                 ))}
                                             </div>
                                         </div>
@@ -622,28 +618,26 @@ export function Authorize() {
                             </ul>
                         </div>
 
-                        <div className="-mx-6 px-10 py-4 border-t border-theme-border">
+                        <div className="-mx-6 px-10 py-4 border-t border-divider">
                             <PollenBudgetInput
                                 value={keyPermissions.permissions.pollenBudget}
                                 onChange={keyPermissions.setPollenBudget}
                                 inline
-                                theme="amber"
                             />
                         </div>
 
-                        <div className="-mx-6 px-10 py-4 border-t border-theme-border">
+                        <div className="-mx-6 px-10 py-4 border-t border-divider">
                             <ExpiryDaysInput
                                 value={keyPermissions.permissions.expiryDays}
                                 onChange={keyPermissions.setExpiryDays}
                                 inline
-                                theme="amber"
                             />
                         </div>
 
                         <Collapsible
                             expanded={permissionsExpanded}
                             onToggle={() => setPermissionsExpanded((v) => !v)}
-                            wrapperClassName="-mx-6 rounded-none border-x-0 border-b-0 border-theme-border bg-transparent"
+                            wrapperClassName="-mx-6 rounded-none border-x-0 border-b-0 border-divider bg-transparent"
                             hoverClassName="hover:bg-theme-bg-pale"
                             panelClassName="px-3 pb-3 pt-1 space-y-6"
                             label={
@@ -665,7 +659,6 @@ export function Authorize() {
                                 }
                                 onModelsChange={keyPermissions.setAllowedModels}
                                 visiblePermissions={visibleOptionalPermissions}
-                                theme="amber"
                                 showApiName={false}
                                 modelsInitiallyExpanded
                             />
@@ -697,7 +690,6 @@ export function Authorize() {
                             as="button"
                             onClick={handleAuthorize}
                             disabled={!canAuthorize || isAuthorizing}
-                            theme="amber"
                         >
                             {isAuthorizing ? "Authorizing..." : "Authorize"}
                         </Button>

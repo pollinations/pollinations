@@ -198,7 +198,7 @@ async def convert_latex_to_png(latex: str) -> tuple[io.BytesIO | str, bool]:
 # =============================================================================
 #
 # Visual spec — calibrated for Discord dark mode at 150 DPI:
-#   font_size=20pt, padding=10px, header_height=48px, min_cell_height=42px
+#   FONT_SIZE=20, PADDING=14, HEADER_HEIGHT=56, MIN_CELL_HEIGHT=44
 #   row banding #313338 / #383a40, border #40444b
 # Inline markdown spans (**bold**, *italic*, `code`) render via per-span
 # drawing — measure each segment's width with its own font, dispatch the
@@ -632,6 +632,8 @@ def format_table_as_markdown(headers: list[str], rows: list[list[str]]) -> str:
 def replace_latex_with_unicode(text: str) -> str:
     def replacer(match):
         expr = match.group(1)
+        if not any(c in expr for c in "\\^_{}"):
+            return match.group(0)
         for latex_cmd, unicode_symbol in LATEX_TO_EMOJI.items():
             expr = expr.replace(latex_cmd, unicode_symbol)
         expr = expr.replace(r"\text", "")
@@ -640,6 +642,19 @@ def replace_latex_with_unicode(text: str) -> str:
 
     inline_pattern = re.compile(r"\$([^$\n]+?)\$")
     return inline_pattern.sub(replacer, text)
+
+
+def truncate_long_decimals(text: str) -> str:
+    def replacer(match):
+        try:
+            short = f"{float(match.group(0)):.4f}".rstrip("0")
+            if short.endswith("."):
+                short += "0"
+            return short + "..."
+        except ValueError:
+            return match.group(0)
+
+    return re.sub(r"\d+\.\d{8,}", replacer, text)
 
 
 # =============================================================================

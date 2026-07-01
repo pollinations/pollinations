@@ -68,6 +68,29 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations cap for Gemini 3.1 Flash Image route.
     },
+    "nanobanana-2-lite": {
+        aliases: ["nanobanana2lite", "nanobanana-lite"],
+        modelId: "nanobanana-2-lite",
+        provider: "google",
+        brand: "Google",
+        category: "image",
+        addedDate: new Date("2026-06-30").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Gemini 3.1 Flash-Lite Image (GA) via Vertex AI — half of nanobanana-2
+            promptTextTokens: perMillion(0.25), // per 1M tokens
+            promptImageTokens: perMillion(0.25), // per 1M tokens
+            completionTextTokens: perMillion(1.5), // text/reasoning output tokens
+            completionImageTokens: perMillion(30), // per 1M tokens, 1120 tokens/1K image = $0.0336
+        },
+        title: "NanoBanana 2 Lite",
+        description:
+            "NanoBanana 2 Lite - Fast, low-cost image generation & editing",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 14, // Pollinations cap for Gemini 3.1 Flash-Lite Image route.
+    },
     "nanobanana-pro": {
         aliases: [],
         modelId: "nanobanana-pro",
@@ -147,6 +170,66 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations route cap from Replicate schema.
+    },
+    // Ideogram 4.0 (turbo/balanced/quality) via Replicate. These are official
+    // Replicate models (is_official=true) → billed a FLAT price per output
+    // image set by the publisher, NOT per-second of GPU time. The price is
+    // therefore independent of the resolution preset the handler picks, and all
+    // v4 presets sit in a single 3.4–4.2 MP band (no 1K/2K/4K tier split). So a
+    // flat per-image cost is correct regardless of aspect ratio / resolution.
+    "ideogram-v4-turbo": {
+        aliases: [],
+        modelId: "ideogram-v4-turbo",
+        provider: "replicate",
+        brand: "Ideogram",
+        category: "image",
+        addedDate: new Date("2026-06-15").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionImageTokens: 0.03, // flat per image — ideogram-ai/ideogram-v4-turbo
+        },
+        title: "Ideogram 4.0 Turbo",
+        description:
+            "Ideogram 4.0 Turbo - Fast text-to-image with accurate typography",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
+    "ideogram-v4-balanced": {
+        aliases: [],
+        modelId: "ideogram-v4-balanced",
+        provider: "replicate",
+        brand: "Ideogram",
+        category: "image",
+        addedDate: new Date("2026-06-15").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionImageTokens: 0.06, // flat per image — ideogram-ai/ideogram-v4-balanced
+        },
+        title: "Ideogram 4.0 Balanced",
+        description:
+            "Ideogram 4.0 Balanced - Text-to-image with accurate typography",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
+    "ideogram-v4-quality": {
+        aliases: [],
+        modelId: "ideogram-v4-quality",
+        provider: "replicate",
+        brand: "Ideogram",
+        category: "image",
+        addedDate: new Date("2026-06-15").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            completionImageTokens: 0.1, // flat per image — ideogram-ai/ideogram-v4-quality
+        },
+        title: "Ideogram 4.0 Quality",
+        description:
+            "Ideogram 4.0 Quality - High-fidelity text-to-image with typography",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
     },
     "gptimage": {
         aliases: ["gpt-image", "gpt-image-1-mini"],
@@ -311,20 +394,20 @@ export const IMAGE_SERVICES = {
     "wan": {
         aliases: ["wan2.6", "wan-i2v"],
         modelId: "wan",
-        provider: "alibaba",
+        provider: "replicate",
         brand: "Alibaba",
         category: "video",
         addedDate: new Date("2026-01-21").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
+        // Replicate wan-2.6, locked to 720p ($0.10/s). Native audio is bundled
+        // into the per-second rate, so there is no separate audio line.
         cost: {
-            // Using I2V+audio rate as base since T2V also generates audio; audio cost split out separately for tracking
-            completionVideoSeconds: 0.05, // per sec
-            completionAudioSeconds: 0.05, // per sec
+            completionVideoSeconds: 0.1, // per sec (720p, includes audio)
         },
         title: "Wan 2.6",
         description:
-            "Wan 2.6 - Alibaba text/image-to-video with audio (2-15s, up to 1080P)",
+            "Wan 2.6 - text/image-to-video with audio (720p, 5/10/15s)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "audio_output"],
@@ -333,18 +416,19 @@ export const IMAGE_SERVICES = {
     "wan-fast": {
         aliases: ["wan2.2", "wan-2.2"],
         modelId: "wan-fast",
-        provider: "alibaba",
+        provider: "replicate",
         brand: "Alibaba",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
+        // Replicate wan-2.2-fast, locked to 480p. Silent, fixed ~5s clip billed
+        // flat ($0.01/s x 5s = $0.05).
         cost: {
-            completionVideoSeconds: 0.01, // per sec
-            completionAudioSeconds: 0.01, // per sec
+            completionVideoSeconds: 0.01, // per sec (480p, silent)
         },
         title: "Wan 2.2",
-        description: "Wan 2.2 - Fast & cheap text/image-to-video (5s, 480P)",
+        description: "Wan 2.2 - Fast & cheap text/image-to-video (5s, 480p)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame"],
@@ -353,38 +437,60 @@ export const IMAGE_SERVICES = {
     "wan-pro": {
         aliases: ["wan2.7", "wan-2.7"],
         modelId: "wan-pro",
-        provider: "alibaba",
+        provider: "replicate",
         brand: "Alibaba",
         category: "video",
         addedDate: new Date("2026-05-26").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // DashScope `wan2.7-i2v` / `wan2.7-t2v` bill bundled video+audio at
-        // $0.10/s (720P) or $0.15/s (1080P). Handler currently locked to 720P
-        // (see prepareVideoParameters); revisit if registry supports tiered
-        // pricing. Audio bundled into the video duration per upstream invoice.
+        // Replicate wan-2.7, locked to 720p ($0.10/s). Audio bundled into the
+        // per-second rate. 1080p would be a separate model (one price each).
         cost: {
-            completionVideoSeconds: 0.1, // per sec (720P, includes audio)
+            completionVideoSeconds: 0.1, // per sec (720p, includes audio)
         },
         title: "Wan 2.7",
         description:
-            "Wan 2.7 - Alibaba text/image-to-video with bundled audio (720P / 1080P)",
+            "Wan 2.7 - text/image-to-video with bundled audio (720p, keyframes)",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
-        videoCapabilities: ["start_frame", "audio_output"],
-        maxReferenceImages: 1, // Video keyframe slots: start only.
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
+    },
+    "wan-pro-1080p": {
+        aliases: ["wan2.7-1080p", "wan-pro-1080"],
+        modelId: "wan-pro-1080p",
+        provider: "replicate",
+        brand: "Alibaba",
+        category: "video",
+        addedDate: new Date("2026-06-13").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // Replicate wan-2.7 locked to 1080p. i2v bills $0.15/s at 1080p and t2v
+        // $0.10/s; we charge the single higher rate so the model has one price
+        // and never under-bills. Audio bundled into the per-second rate.
+        cost: {
+            completionVideoSeconds: 0.15, // per sec (1080p, includes audio)
+        },
+        title: "Wan 2.7 1080p",
+        description:
+            "Wan 2.7 1080p - text/image-to-video with bundled audio (1080p, keyframes)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
     },
     "wan-image": {
         aliases: ["wan2.7-image", "wan-img"],
         modelId: "wan-image",
-        provider: "alibaba",
+        provider: "replicate",
         brand: "Alibaba",
         category: "image",
         addedDate: new Date("2026-04-02").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
+        // Moved off Alibaba DashScope ($0.035) to Replicate wan-2.7-image.
         cost: {
-            completionImageTokens: 0.035, // per image
+            completionImageTokens: 0.03, // per image
         },
         title: "Wan 2.7 Image",
         description:
@@ -396,14 +502,16 @@ export const IMAGE_SERVICES = {
     "wan-image-pro": {
         aliases: ["wan2.7-image-pro", "wan-img-pro"],
         modelId: "wan-image-pro",
-        provider: "alibaba",
+        provider: "replicate",
         brand: "Alibaba",
         category: "image",
         addedDate: new Date("2026-04-02").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
+        // Moved off Alibaba DashScope ($0.075) to Replicate wan-2.7-image-pro,
+        // which prices Pro identically to standard ($0.03/img).
         cost: {
-            completionImageTokens: 0.075, // per image
+            completionImageTokens: 0.03, // per image
         },
         title: "Wan 2.7 Image Pro",
         description:
@@ -420,12 +528,14 @@ export const IMAGE_SERVICES = {
             "qwen-image-edit-plus",
         ],
         modelId: "qwen-image",
-        provider: "alibaba",
+        provider: "replicate",
         brand: "Qwen",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
+        // Moved off Alibaba DashScope to Replicate: qwen/qwen-image (t2i,
+        // $0.025) + qwen/qwen-image-edit-plus (edit, $0.03). Billed at $0.03.
         cost: {
             completionImageTokens: 0.03, // per image
         },
@@ -501,7 +611,6 @@ export const IMAGE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-01-17").getTime(),
         priceMultiplier: 1,
-        alpha: true,
         cost: {
             completionImageTokens: 0.01,
         },

@@ -5,10 +5,7 @@
  * Returns "—" when no data is available - no theoretical estimates.
  */
 
-import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
 import type { ModelPrice } from "./types.ts";
-
-export const TOP_UP_TOOLTIP = "🔒 Top up to use this model";
 
 /** Abbreviate a value >= 1000 as K/M/B with one decimal (locale-stable, "1.5K"). */
 function compact(num: number): string {
@@ -38,27 +35,32 @@ function formatCount(num: number): string {
 /**
  * Calculate "Per Pollen" value for a model.
  * Uses real average cost from Tinybird when available (rolling 7-day average).
- * Returns "—" when no data is available.
+ * Returns undefined when no data is available.
  */
-export function calculatePerPollen(model: ModelPrice): string {
+export function calculatePerPollenValue(model: ModelPrice): number | undefined {
     if (model.realAvgCost && model.realAvgCost > 0) {
-        const unitsPerPollen = 1 / model.realAvgCost;
+        return 1 / model.realAvgCost;
+    }
+
+    return undefined;
+}
+
+export function calculatePerPollen(model: ModelPrice): string {
+    const unitsPerPollen = calculatePerPollenValue(model);
+    if (unitsPerPollen !== undefined) {
         return formatCount(unitsPerPollen);
     }
 
     return "—";
 }
 
-export function canAffordModel(
-    model: ModelPrice,
-    tierBalance: number,
-    packBalance: number,
-    isPaidOnly: boolean,
-): boolean {
-    const cost = model.realAvgCost ?? 0;
-    return canCoverEstimatedCharge(
-        { tierBalance, packBalance },
-        cost,
-        isPaidOnly,
-    );
-}
+/** Coarse unit noun per model type, used in the "1 pollen ≈ …" column. */
+export const unitLabels: Record<string, string> = {
+    text: "responses",
+    image: "images",
+    video: "videos",
+    audio: "responses",
+    realtime: "sessions",
+    community: "responses",
+    embedding: "embeddings",
+};

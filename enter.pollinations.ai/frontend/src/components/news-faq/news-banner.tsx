@@ -25,27 +25,28 @@ interface Highlight {
  */
 const PINNED_NEWS: Highlight[] = [
     {
-        date: "2026-06-02",
-        dateLabel: "Starting Jun 2",
-        emoji: "🌻",
-        title: "Pollen pricing update",
-        description: "A few changes to how Pollen works, starting today.",
+        date: "2026-06-30",
+        dateLabel: "Now live",
+        emoji: "🎯",
+        title: "Quests are live",
+        description: "Earn Quest Pollen by completing dashboard quests.",
         details: [
-            "Big price drops — many models are now 30–50% cheaper.",
-            "Bonus Pollen on purchases has ended.",
-            "More price cuts coming June 22.",
+            "New quests are available for onboarding, app growth, community, and GitHub contributions.",
+            "Open the [Quests tab](#quests) to see available rewards and claim completed quests.",
+            "Tiers have stopped; previous Tier Pollen is now Quest Pollen and balances stay unchanged.",
         ],
     },
     {
-        date: "2026-06-22",
-        dateLabel: "Starting Jun 22",
-        emoji: "🎯",
-        title: "Tiers & quests are changing",
-        description: "Bigger updates to tiers and how you earn Pollen.",
+        date: "2026-06-30",
+        dateLabel: "Alpha",
+        emoji: "🧪",
+        title: "Community models alpha",
+        description:
+            "Community models are now available on Pollinations in alpha.",
         details: [
-            "Spore, Seed, Flower & Nectar: the hourly Pollen refill becomes a one-time Pollen bonus.",
-            "Earn Pollen from quests — new quest dashboard, more ways to earn.",
-            "Another round of price cuts.",
+            "Try community-hosted models from the [Models tab](#models), with attractive pricing.",
+            "The catalog is early and will expand as more models are approved.",
+            "Want to deploy your own model? Access is allowlist-only for now; contact us in the [Discord community](https://discord.gg/pollinations-ai-885844321461485618).",
         ],
     },
 ];
@@ -57,16 +58,18 @@ function renderWithLinks(text: string): ReactNode[] {
     let lastIndex = 0;
     for (const match of matches) {
         const idx = match.index ?? 0;
+        const href = match[2];
+        const isExternal = /^https?:\/\//.test(href);
         if (idx > lastIndex) {
             parts.push(text.slice(lastIndex, idx));
         }
         parts.push(
             <a
                 key={idx}
-                href={match[2]}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-accent-violet-600 hover:text-accent-violet-800 hover:underline font-medium"
+                href={href}
+                target={isExternal ? "_blank" : undefined}
+                rel={isExternal ? "noopener noreferrer" : undefined}
+                className="text-theme-text-soft hover:text-theme-text-strong hover:underline font-medium"
             >
                 {match[1]}
             </a>,
@@ -110,6 +113,18 @@ function formatNewsDate(date: string): string {
     });
 }
 
+/** Hand-curated, pinned announcements — stacked white cards. */
+export const Announcements: FC = () => {
+    if (PINNED_NEWS.length === 0) return null;
+    return (
+        <div className="flex flex-col gap-3">
+            {PINNED_NEWS.map((item) => (
+                <PinnedNews key={item.title} item={item} />
+            ))}
+        </div>
+    );
+};
+
 export const NewsBanner: FC = () => {
     const [highlights, setHighlights] = useState<Highlight[]>([]);
 
@@ -122,39 +137,21 @@ export const NewsBanner: FC = () => {
             .catch((err) => console.error("Failed to fetch highlights:", err));
     }, []);
 
-    if (highlights.length === 0 && PINNED_NEWS.length === 0) return null;
+    if (highlights.length === 0) return null;
 
     return (
-        <div className="flex flex-col gap-3">
-            {PINNED_NEWS.length > 0 && (
-                <Surface
-                    variant="card-themed"
-                    theme="violet"
-                    className="flex flex-col divide-y divide-accent-violet-300/40 leading-relaxed"
-                >
-                    {PINNED_NEWS.map((item) => (
-                        <PinnedNews key={item.title} item={item} />
-                    ))}
-                </Surface>
-            )}
-            {highlights.length > 0 && (
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                    {highlights.map((item) => (
-                        <DynamicNews
-                            key={`${item.date}-${item.title}`}
-                            item={item}
-                        />
-                    ))}
-                </div>
-            )}
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {highlights.map((item) => (
+                <DynamicNews key={`${item.date}-${item.title}`} item={item} />
+            ))}
         </div>
     );
 };
 
 const PinnedNews: FC<{ item: Highlight }> = ({ item }) => (
-    <div className="min-w-0 py-3 first:pt-0 last:pb-0">
+    <Surface variant="card" className="min-w-0 leading-relaxed">
         {(item.dateLabel || item.date) && (
-            <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-accent-violet-700/70">
+            <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
                 {item.dateLabel ??
                     (item.date ? formatNewsDate(item.date) : null)}
             </div>
@@ -173,13 +170,13 @@ const PinnedNews: FC<{ item: Highlight }> = ({ item }) => (
             </p>
         )}
         {item.details && item.details.length > 0 && (
-            <ul className="mt-1.5 list-disc space-y-1 pl-5 text-sm text-ink-700 marker:text-accent-violet-400">
+            <ul className="mt-1.5 list-disc space-y-1 pl-5 text-sm text-ink-700 marker:text-theme-text-soft">
                 {item.details.map((detail) => (
                     <li key={detail}>{renderWithLinks(detail)}</li>
                 ))}
             </ul>
         )}
-    </div>
+    </Surface>
 );
 
 const DynamicNews: FC<{ item: Highlight }> = ({ item }) => (
@@ -192,7 +189,7 @@ const DynamicNews: FC<{ item: Highlight }> = ({ item }) => (
             <div className="min-w-0">
                 <div className="font-semibold text-ink-900">{item.title}</div>
                 {item.date && (
-                    <div className="mt-1 text-xs font-medium text-ink-400">
+                    <div className="mt-1 text-xs font-medium text-theme-text-muted">
                         {formatNewsDate(item.date)}
                     </div>
                 )}

@@ -31,7 +31,8 @@ export const DEFAULT_CONSENT_EXPIRY_DAYS = 7;
  * - `profile`: read account name and email
  * - `usage`: read full account balance + account-wide usage (key's own
  *   balance and usage are free regardless)
- * - `keys`: create, list, and revoke API keys
+ * - `keys`: account admin; create, list, and revoke API keys, plus My Models
+ *   access where enabled.
  */
 export const CONSENT_PERMISSIONS = ["profile", "usage", "keys"] as const;
 

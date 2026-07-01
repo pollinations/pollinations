@@ -1,0 +1,34 @@
+{
+  "pr_number": 12143,
+  "title": "fix: accept chat responses without model",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12143",
+  "merged_at": "2026-07-01T11:21:35Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Allows non-streaming chat completion responses without a `model` field.\n- Falls back to the resolved request model only for usage headers when upstream omits `model`.\n- Adds community endpoint regression coverage.\n- Tests: `npx biome check --write shared/schemas/openai.ts gen.pollinations.ai/src/community-endpoints.test.ts gen.pollinations.ai/src/text/handler.ts`; `npm run test -- src/community-endpoints.test.ts --testNamePattern \"routes chat completions through a registered community endpoint with its saved token\"`; `npm run typecheck`.\n- Fixes #12142",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "No model? No problem.",
+    "blurb": "We've made our chat API a little more forgiving. If an upstream provider forgets to include their model name in the response, we'll just politely fill it in for them instead of throwing an error.",
+    "summary": "The text generation API now accepts non-streaming chat completion responses that omit the `model` field, falling back to the requested model name for usage headers.",
+    "impact": "Developers using community endpoints or upstream providers that don't return a model field will no longer encounter validation errors.",
+    "keywords": [
+      "api",
+      "bug-fix",
+      "chat-completions",
+      "community-endpoints"
+    ],
+    "visual_concept": "The bee (Polly) and Nomnom creature. Nomnom is eating an API response that has a missing piece (an empty box). Polly is happily handing Nomnom the missing piece to complete the data.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot handing a missing 'model' puzzle piece to the round tan Nomnom creature, who is happily eating a stack of API response documents. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-01/PR-12143.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot handing a missing 'model' puzzle piece to the round tan Nomnom creature, who is happily eating a stack of API response documents. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-01T11:22:36.057845+00:00"
+}

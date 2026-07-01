@@ -205,26 +205,12 @@ export const stripeRoutes = new Hono<Env>()
      * /checkout/:packKey route) plus the USD amount for display.
      */
     .get("/products", async (c) => {
-        const checkoutPricingUpdateEnabled = isCheckoutPricingUpdateEnabled(
-            c.env,
-        );
         return c.json({
             packs: POLLEN_PACKS.map((pack) => ({
                 packKey: pack.packKey,
                 amount: pack.amountUsd,
-                serviceFeeCents: checkoutPricingUpdateEnabled
-                    ? calculateServiceFeeCents(pack.amountUsd * 100)
-                    : 0,
-                subtotalBeforeTaxCents:
-                    pack.amountUsd * 100 +
-                    (checkoutPricingUpdateEnabled
-                        ? calculateServiceFeeCents(pack.amountUsd * 100)
-                        : 0),
                 description: describePollenPack(pack),
             })),
-            pricing: {
-                checkoutPricingUpdateEnabled,
-            },
         });
     })
 

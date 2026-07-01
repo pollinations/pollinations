@@ -245,23 +245,13 @@ test("GET /api/stripe/products returns pack list", async () => {
         packs: {
             packKey: string;
             amount: number;
-            serviceFeeCents: number;
-            subtotalBeforeTaxCents: number;
             description: string;
         }[];
-        pricing: {
-            checkoutPricingUpdateEnabled: boolean;
-        };
     };
-    expect(data.pricing.checkoutPricingUpdateEnabled).toBe(true);
     expect(data.packs).toEqual(
         POLLEN_PACKS.map((pack) => ({
             packKey: pack.packKey,
             amount: pack.amountUsd,
-            serviceFeeCents: calculateServiceFeeCents(pack.amountUsd * 100),
-            subtotalBeforeTaxCents:
-                pack.amountUsd * 100 +
-                calculateServiceFeeCents(pack.amountUsd * 100),
             description: describePollenPack(pack),
         })),
     );

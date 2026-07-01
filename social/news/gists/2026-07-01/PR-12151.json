@@ -1,0 +1,36 @@
+{
+  "pr_number": 12151,
+  "title": "fix: deactivated community models return generic 400, not a special 500",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12151",
+  "merged_at": "2026-07-01T17:38:36Z",
+  "labels": [
+    "DEV-BUG",
+    "DEV-FEATURE",
+    "API"
+  ],
+  "pr_body_excerpt": "## Summary\n- Deactivated community models now behave like any unknown model — plain `400 Invalid model or alias`, no reason exposed to API callers\n- Removes `resolveIncludingDisabled` and the special 500 error path added in #12150\n- Owner-facing reason display (My Models dashboard) is unaffected — untouched in `enter.pollinations.ai`\n\n## Test plan\n- [x] `gen.pollinations.ai` full suite: 438/438 passing\n- [x] `community-endpoints.test.ts` updated: deactivated model call → 400, message does not contain the disabled reason\n- [x] typecheck + biome clean",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "400 is the new 500",
+    "blurb": "Calling a deactivated community model now returns a standard 400 error instead of a messy 500. A cleaner, more predictable API experience for your apps.",
+    "summary": "Deactivated community models now return a standard 400 'Invalid model or alias' error instead of a 500 error, hiding the specific deactivation reason from API callers.",
+    "impact": "API consumers will now receive predictable 400 errors when requesting deactivated models, while model owners can still see the specific deactivation reasons in their dashboard.",
+    "keywords": [
+      "api",
+      "error-handling",
+      "community-models",
+      "bug-fix"
+    ],
+    "visual_concept": "The Nomnom creature eating a messy 500 error log while the bee mascot holds up a clean, neat 400 sign, representing the cleanup of API error codes.",
+    "image_prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating a messy red '500' error document, while the cute bee mascot wearing a tiny tool belt holds up a clean, neat '400' sign. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-01/PR-12151.jpg",
+    "prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating a messy red '500' error document, while the cute bee mascot wearing a tiny tool belt holds up a clean, neat '400' sign. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-01T17:39:36.320869+00:00"
+}

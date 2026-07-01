@@ -1071,7 +1071,7 @@ export const TEXT_SERVICES = {
         brand: "Z.ai",
         category: "text",
         addedDate: new Date("2026-01-06").getTime(),
-        priceMultiplier: 0.5,
+        priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(1.4),
             promptCachedTokens: perMillion(0.26),

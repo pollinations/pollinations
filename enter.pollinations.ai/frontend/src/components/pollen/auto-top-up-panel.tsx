@@ -17,7 +17,6 @@ import {
 } from "@shared/billing/auto-top-up.ts";
 import {
     calculateServiceFeeCents,
-    formatUsdCents,
     formatUsdCentsCompact,
     POLLEN_PACKS,
 } from "@shared/pollen-packs.ts";
@@ -143,11 +142,6 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
     const serviceFeeCents = selectedPack
         ? calculateServiceFeeCents(selectedPack.amountUsd * 100)
         : 0;
-    const subtotalBeforeTaxCents =
-        (selectedPack?.amountUsd ?? 0) * 100 + serviceFeeCents;
-    const chargeLabel = selectedPack
-        ? formatUsdCentsCompact(subtotalBeforeTaxCents)
-        : "$0";
     const showConfig = isEnabled || enableDraft;
     const hasUnsavedChanges =
         billingState !== null &&
@@ -340,21 +334,17 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                                     value={packAmountUsd}
                                     onChange={setPackAmountUsd}
                                     packs={AUTO_TOP_UP_PACKS}
-                                    selectedBadgeLabel={chargeLabel}
-                                    selectedBadgeTooltip={
-                                        selectedPack ? (
-                                            <AutoTopUpCostTooltip
-                                                packAmountUsd={
-                                                    selectedPack.amountUsd
-                                                }
-                                                serviceFeeCents={
-                                                    serviceFeeCents
-                                                }
-                                                subtotalBeforeTaxCents={
-                                                    subtotalBeforeTaxCents
-                                                }
-                                            />
-                                        ) : undefined
+                                    selectedBadgeLabel={
+                                        selectedPack
+                                            ? formatUsdCentsCompact(
+                                                  selectedPack.amountUsd * 100,
+                                              )
+                                            : "$0"
+                                    }
+                                    selectedBadgeDetail={
+                                        selectedPack
+                                            ? `+ ${formatUsdCentsCompact(serviceFeeCents)} fee`
+                                            : undefined
                                     }
                                     disabled={isSaving}
                                 />
@@ -414,34 +404,6 @@ function renderStatusMessage(
     if (issue?.kind === "failed") return "Last charge failed — update card";
     return "On";
 }
-
-const AutoTopUpCostTooltip: FC<{
-    packAmountUsd: number;
-    serviceFeeCents: number;
-    subtotalBeforeTaxCents: number;
-}> = ({ packAmountUsd, serviceFeeCents, subtotalBeforeTaxCents }) => (
-    <span className="block min-w-36 leading-relaxed text-theme-text-muted">
-        <span className="flex justify-between gap-3">
-            <span>Pack</span>
-            <span className="font-bold text-theme-text-soft">
-                {formatUsdCents(packAmountUsd * 100)}
-            </span>
-        </span>
-        <span className="flex justify-between gap-3">
-            <span>Service fee</span>
-            <span className="font-bold text-theme-text-soft">
-                {formatUsdCents(serviceFeeCents)}
-            </span>
-        </span>
-        <span className="flex justify-between gap-3 border-t border-divider pt-1">
-            <span>Before tax</span>
-            <span className="font-bold text-theme-text-soft">
-                {formatUsdCents(subtotalBeforeTaxCents)}
-            </span>
-        </span>
-        <span className="block">Tax applies where required</span>
-    </span>
-);
 
 type ManageBillingButtonProps = {
     onClick: () => void;

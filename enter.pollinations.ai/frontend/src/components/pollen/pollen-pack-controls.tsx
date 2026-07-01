@@ -1,10 +1,10 @@
-import { Chip, cn, InfoTip, Slider } from "@pollinations/ui";
+import { Chip, cn, Slider } from "@pollinations/ui";
 import {
     formatPollenPackValue,
     POLLEN_PACKS,
     type PollenPack,
 } from "@shared/pollen-packs.ts";
-import type { CSSProperties, FC, ReactNode } from "react";
+import type { CSSProperties, FC } from "react";
 
 const pollenPackSliderStyle = {
     "--polli-slider-fill": "var(--polli-color-paid-soft)",
@@ -23,7 +23,7 @@ type PollenPackSliderProps = {
     packs?: ReadonlyArray<PollenPack>;
     label?: string;
     selectedBadgeLabel?: string;
-    selectedBadgeTooltip?: ReactNode;
+    selectedBadgeDetail?: string;
     disabled?: boolean;
 };
 
@@ -33,7 +33,7 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
     packs = POLLEN_PACKS,
     label = "Select amount",
     selectedBadgeLabel,
-    selectedBadgeTooltip,
+    selectedBadgeDetail,
     disabled = false,
 }) => {
     const selectedIndex = Math.max(
@@ -124,7 +124,7 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                             <Chip size="sm">
                                                 <span
                                                     className={cn(
-                                                        "text-sm",
+                                                        "inline-flex flex-col leading-tight",
                                                         isFirst
                                                             ? "text-left"
                                                             : isLast
@@ -132,18 +132,19 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                                               : "text-center",
                                                     )}
                                                 >
-                                                    {selectedBadgeLabel ??
-                                                        `$${pack.amountUsd}`}
+                                                    <span className="text-sm">
+                                                        {selectedBadgeLabel ??
+                                                            `$${pack.amountUsd}`}
+                                                    </span>
+                                                    {selectedBadgeDetail && (
+                                                        <span className="text-[10px] font-normal leading-none text-theme-text-muted">
+                                                            {
+                                                                selectedBadgeDetail
+                                                            }
+                                                        </span>
+                                                    )}
                                                 </span>
                                             </Chip>
-                                            {selectedBadgeTooltip && (
-                                                <InfoTip
-                                                    content={
-                                                        selectedBadgeTooltip
-                                                    }
-                                                    label="Price details"
-                                                />
-                                            )}
                                         </span>
                                     )}
                                 </span>

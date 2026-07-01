@@ -18,7 +18,6 @@ import {
 } from "@pollinations/ui/wallet";
 import {
     calculateServiceFeeCents,
-    formatUsdCents,
     formatUsdCentsCompact,
     POLLEN_PACKS,
 } from "@shared/pollen-packs.ts";
@@ -337,16 +336,10 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                             <PollenPackSlider
                                 value={selectedPack.amountUsd}
                                 onChange={setSelectedPackAmount}
-                                selectedBadgeLabel={chargeLabel}
-                                selectedBadgeTooltip={
-                                    <PurchaseCostTooltip
-                                        packAmountUsd={selectedPack.amountUsd}
-                                        serviceFeeCents={serviceFeeCents}
-                                        subtotalBeforeTaxCents={
-                                            subtotalBeforeTaxCents
-                                        }
-                                    />
-                                }
+                                selectedBadgeLabel={formatUsdCentsCompact(
+                                    selectedPack.amountUsd * 100,
+                                )}
+                                selectedBadgeDetail={`+ ${formatUsdCentsCompact(serviceFeeCents)} fee`}
                             />
                         </div>
                         <Tooltip
@@ -415,31 +408,3 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
         </>
     );
 };
-
-const PurchaseCostTooltip: FC<{
-    packAmountUsd: number;
-    serviceFeeCents: number;
-    subtotalBeforeTaxCents: number;
-}> = ({ packAmountUsd, serviceFeeCents, subtotalBeforeTaxCents }) => (
-    <span className="block min-w-36 leading-relaxed text-theme-text-muted">
-        <span className="flex justify-between gap-3">
-            <span>Pack</span>
-            <span className="font-bold text-theme-text-soft">
-                {formatUsdCents(packAmountUsd * 100)}
-            </span>
-        </span>
-        <span className="flex justify-between gap-3">
-            <span>Service fee</span>
-            <span className="font-bold text-theme-text-soft">
-                {formatUsdCents(serviceFeeCents)}
-            </span>
-        </span>
-        <span className="flex justify-between gap-3 border-t border-divider pt-1">
-            <span>Before tax</span>
-            <span className="font-bold text-theme-text-soft">
-                {formatUsdCents(subtotalBeforeTaxCents)}
-            </span>
-        </span>
-        <span className="block">Tax calculated at checkout</span>
-    </span>
-);

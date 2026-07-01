@@ -1,5 +1,9 @@
 import { getLogger } from "@logtape/logtape";
-import { user as userTable } from "@shared/db/better-auth.ts";
+import { communityModelId } from "@shared/community-endpoints.ts";
+import {
+    communityEndpoint as communityEndpointTable,
+    user as userTable,
+} from "@shared/db/better-auth.ts";
 import { sendTierEventToTinybird } from "@shared/events.ts";
 import {
     getTierPollen,
@@ -39,6 +43,18 @@ export const adminRoutes = new Hono<Env>()
             syncToken &&
             providedKey === syncToken &&
             c.req.path.endsWith("/trigger-d1-sync")
+        ) {
+            return await next();
+        }
+
+        // Community monitor token: scoped to the community-model health monitor
+        // loop only (deactivate/reactivate/list) — narrower than PLN_ENTER_TOKEN
+        // since it lives on a standing EC2 box.
+        const monitorToken = c.env.COMMUNITY_MONITOR_TOKEN;
+        if (
+            monitorToken &&
+            providedKey === monitorToken &&
+            c.req.path.includes("/community-endpoints")
         ) {
             return await next();
         }
@@ -144,4 +160,103 @@ export const adminRoutes = new Hono<Env>()
             { success: !hasErrors, tables: results },
             hasErrors ? 207 : 200,
         );
+    })
+    .get("/community-endpoints", async (c) => {
+        const db = drizzle(c.env.DB);
+        const rows = await db
+            .select({
+                id: communityEndpointTable.id,
+                name: communityEndpointTable.name,
+                ownerGithubUsername: userTable.githubUsername,
+                disabledAt: communityEndpointTable.disabledAt,
+                disabledReason: communityEndpointTable.disabledReason,
+            })
+            .from(communityEndpointTable)
+            .innerJoin(
+                userTable,
+                eq(communityEndpointTable.ownerUserId, userTable.id),
+            );
+
+        return c.json({
+            data: rows
+                .filter((row) => row.ownerGithubUsername)
+                .map((row) => ({
+                    id: row.id,
+                    modelId: communityModelId(
+                        row.ownerGithubUsername as string,
+                        row.name,
+                    ),
+                    disabledAt: row.disabledAt,
+                    disabledReason: row.disabledReason,
+                })),
+        });
+    })
+    .post("/community-endpoints/:id/deactivate", async (c) => {
+        const { id } = c.req.param();
+        const body = await c.req.json<{
+            reason?: string;
+            disabledBy?: string;
+        }>();
+        if (!body.reason?.trim()) {
+            throw new HTTPException(400, { message: "reason is required" });
+        }
+
+        const db = drizzle(c.env.DB);
+        const [row] = await db
+            .update(communityEndpointTable)
+            .set({
+                disabledAt: new Date(),
+                disabledReason: body.reason.trim(),
+                disabledBy: body.disabledBy?.trim() || "monitor",
+                updatedAt: new Date(),
+            })
+            .where(eq(communityEndpointTable.id, id))
+            .returning({
+                id: communityEndpointTable.id,
+                disabledAt: communityEndpointTable.disabledAt,
+                disabledReason: communityEndpointTable.disabledReason,
+                disabledBy: communityEndpointTable.disabledBy,
+            });
+
+        if (!row) {
+            throw new HTTPException(404, {
+                message: "Community endpoint not found",
+            });
+        }
+
+        log.info("Community endpoint {id} deactivated: {reason}", {
+            id: row.id,
+            reason: row.disabledReason ?? "",
+        });
+
+        return c.json(row);
+    })
+    .post("/community-endpoints/:id/reactivate", async (c) => {
+        const { id } = c.req.param();
+        const db = drizzle(c.env.DB);
+        const [row] = await db
+            .update(communityEndpointTable)
+            .set({
+                disabledAt: null,
+                disabledReason: null,
+                disabledBy: null,
+                updatedAt: new Date(),
+            })
+            .where(eq(communityEndpointTable.id, id))
+            .returning({
+                id: communityEndpointTable.id,
+                disabledAt: communityEndpointTable.disabledAt,
+            });
+
+        if (!row) {
+            throw new HTTPException(404, {
+                message: "Community endpoint not found",
+            });
+        }
+
+        log.info("Community endpoint {id} reactivated by maintainer", {
+            id: row.id,
+        });
+
+        return c.json(row);
     });

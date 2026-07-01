@@ -1,4 +1,5 @@
 import {
+    Alert,
     CardIcon,
     CheckIcon,
     ClipboardIcon,
@@ -6,6 +7,7 @@ import {
     ExternalLinkIcon,
     IconButton,
     PencilIcon,
+    RocketIcon,
     Surface,
     TerminalIcon,
     TokensIcon,
@@ -21,17 +23,23 @@ type CommunityEndpointCardProps = {
     endpoint: CommunityEndpoint;
     onEdit: () => void;
     onDelete: () => void;
+    onReactivate: () => void;
 };
 
 export function CommunityEndpointCard({
     endpoint,
     onEdit,
     onDelete,
+    onReactivate,
 }: CommunityEndpointCardProps) {
     const priceGroups = communityPriceGroups(endpoint);
 
     return (
-        <Surface className="transition-colors hover:bg-surface-opaque/90">
+        <Surface
+            className={`transition-colors hover:bg-surface-opaque/90 ${
+                endpoint.disabled ? "opacity-60" : ""
+            }`}
+        >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
                     <div className="flex min-w-0 items-center gap-2">
@@ -46,6 +54,17 @@ export function CommunityEndpointCard({
                     )}
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
+                    {endpoint.disabled && (
+                        <IconButton
+                            intent="info"
+                            title="Reactivate model"
+                            tooltip="Reactivate model"
+                            tooltipAlign="center"
+                            onClick={onReactivate}
+                        >
+                            <RocketIcon className="h-4 w-4" />
+                        </IconButton>
+                    )}
                     <IconButton
                         intent="info"
                         title="Edit model"
@@ -66,6 +85,18 @@ export function CommunityEndpointCard({
                     </IconButton>
                 </div>
             </div>
+
+            {endpoint.disabled && (
+                <Alert intent="danger" className="mt-3">
+                    <div className="flex flex-col gap-1">
+                        <span className="font-semibold">Model deactivated</span>
+                        <span className="text-sm">
+                            {endpoint.disabledReason ??
+                                "Deactivated due to repeated failures."}
+                        </span>
+                    </div>
+                </Alert>
+            )}
 
             <div className="mt-4 grid gap-2">
                 <CommunityDetailRow

@@ -62,6 +62,15 @@ export async function resolveModelDefinition(
         });
     }
 
+    if (entry.communityEndpoint?.disabledAt) {
+        throw new HTTPException(400, {
+            message: `Community model "${model}" has been deactivated: ${
+                entry.communityEndpoint.disabledReason ??
+                "repeated upstream failures"
+            }. Contact the model owner or see your dashboard to reactivate.`,
+        });
+    }
+
     if (entry.eventType !== eventType) {
         const actualLabel = ENDPOINT_LABEL[entry.eventType];
         throw new HTTPException(400, {

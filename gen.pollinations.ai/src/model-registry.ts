@@ -99,7 +99,7 @@ function communityEntryToGenerationEntry(
         definition: entry.definition,
         info: entry.info,
         communityEndpoint: entry.communityEndpoint,
-        visible: true,
+        visible: entry.communityEndpoint.disabledAt === null,
     };
 }
 

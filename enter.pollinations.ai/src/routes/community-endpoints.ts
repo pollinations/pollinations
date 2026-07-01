@@ -89,6 +89,9 @@ const CommunityEndpointResponseSchema = z.object({
     baseUrl: z.string(),
     upstreamModel: z.string(),
     ...ResponsePriceFieldsSchema,
+    disabled: z.boolean(),
+    disabledReason: z.string().nullable(),
+    disabledAt: z.string().nullable(),
     createdAt: z.string(),
     updatedAt: z.string(),
 });
@@ -175,6 +178,9 @@ function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
         baseUrl: row.baseUrl,
         upstreamModel: row.upstreamModel,
         ...communityEndpointPrices(row),
+        disabled: row.disabledAt !== null,
+        disabledReason: row.disabledReason,
+        disabledAt: row.disabledAt,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
     };
@@ -553,6 +559,59 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const [row] = await db
                 .update(schema.communityEndpoint)
                 .set(update)
+                .where(
+                    and(
+                        eq(schema.communityEndpoint.id, id),
+                        eq(schema.communityEndpoint.ownerUserId, user.id),
+                    ),
+                )
+                .returning();
+            return c.json(toResponse(row, ownerGithubUsername));
+        },
+    )
+    .post(
+        "/:id/reactivate",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Reactivate My Model",
+            description:
+                "Manually reactivate a community text model that was deactivated (by the monitor or a maintainer) due to repeated upstream failures. Only the owner can do this — there is no automatic reactivation.",
+            responses: {
+                200: {
+                    description: "Reactivated community text model",
+                    content: {
+                        "application/json": {
+                            schema: resolver(CommunityEndpointResponseSchema),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+                403: { description: "Permission denied" },
+                404: { description: "Community endpoint not found" },
+            },
+        }),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const { id } = c.req.param();
+            const db = drizzle(c.env.DB, { schema });
+            await requireCommunityEndpointManageAccess(
+                db,
+                user.id,
+                c.var.auth.apiKey,
+            );
+            const ownerGithubUsername = await requireOwnerGithubUsername(
+                db,
+                user.id,
+            );
+            await requireOwnedEndpoint(db, id, user.id);
+            const [row] = await db
+                .update(schema.communityEndpoint)
+                .set({
+                    disabledAt: null,
+                    disabledReason: null,
+                    disabledBy: null,
+                    updatedAt: new Date(),
+                })
                 .where(
                     and(
                         eq(schema.communityEndpoint.id, id),

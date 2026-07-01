@@ -2,10 +2,16 @@ import * as schema from "@shared/db/better-auth.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
+import type { Context } from "hono";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "../env.ts";
-import { auth } from "../middleware/auth.ts";
+import { type AuthVariables, auth } from "../middleware/auth.ts";
+
+type AuthedContext = Context<{
+    Bindings: Env["Bindings"];
+    Variables: Env["Variables"] & AuthVariables;
+}>;
 
 const KV_TTL = 600; // 10 minutes
 const DEVICE_CODE_LENGTH = 40;
@@ -194,120 +200,139 @@ export const deviceRoutes = new Hono<Env>()
         },
     )
     .post("/token", async (c) => {
-        const body = await c.req.json<{
-            device_code: string;
-            client_id?: string;
-            grant_type?: string;
-        }>();
-
-        if (!body.device_code) {
-            return c.json(
-                {
-                    error: "invalid_request",
-                    error_description: "device_code required",
-                },
-                400,
-            );
-        }
-
-        const db = drizzle(c.env.DB, { schema });
-        const device = await db.query.deviceCode.findFirst({
-            where: eq(schema.deviceCode.deviceCode, body.device_code),
-        });
-
-        if (!device) {
-            return c.json(
-                {
-                    error: "invalid_grant",
-                    error_description: "Unknown device code",
-                },
-                400,
-            );
-        }
-
-        if (isExpired(device)) {
-            return c.json({ error: "expired_token" }, 400);
-        }
-
-        // Validate client_id matches what was used during code issuance (when provided)
-        if (
-            device.clientId &&
-            body.client_id &&
-            body.client_id !== device.clientId
-        ) {
-            return c.json(
-                {
-                    error: "invalid_client",
-                    error_description: "client_id mismatch",
-                },
-                400,
-            );
-        }
-
-        switch (device.status) {
-            case "pending" satisfies DeviceStatus:
-                return c.json({ error: "authorization_pending" }, 400);
-
-            case "denied" satisfies DeviceStatus:
-                return c.json({ error: "access_denied" }, 400);
-
-            case "approved" satisfies DeviceStatus: {
-                const stored = (await c.env.KV.get(
-                    `device-key:${device.deviceCode}`,
-                    "json",
-                )) as { key: string; expiresIn: number | null } | null;
-
-                if (!stored) {
-                    return c.json({ error: "authorization_pending" }, 400);
-                }
-
-                // Delete device code row and KV entry concurrently
-                await Promise.all([
-                    db
-                        .delete(schema.deviceCode)
-                        .where(eq(schema.deviceCode.id, device.id)),
-                    c.env.KV.delete(`device-key:${device.deviceCode}`),
-                ]);
-
-                return c.json({
-                    access_token: stored.key,
-                    token_type: "bearer",
-                    ...(stored.expiresIn != null && {
-                        expires_in: stored.expiresIn,
-                    }),
-                    ...(device.scope && { scope: device.scope }),
-                });
-            }
-
-            default:
-                return c.json({ error: "access_denied" }, 400);
-        }
+        const body = await c.req.json<DeviceTokenRequest>();
+        return await exchangeDeviceCode(c, body);
     })
     .get(
         "/userinfo",
         auth({ allowApiKey: true, allowSessionCookie: true }),
-        async (c) => {
-            const user = c.var.auth.requireUser();
-            const db = drizzle(c.env.DB, { schema });
-            const row = await db.query.user.findFirst({
-                where: eq(schema.user.id, user.id),
-                columns: {
-                    id: true,
-                    name: true,
-                    email: true,
-                    image: true,
-                    githubUsername: true,
-                },
-            });
-            if (!row) {
-                throw new HTTPException(404, { message: "User not found" });
-            }
-            return c.json({
-                sub: row.id,
-                name: row.name,
-                email: row.email,
-                picture: row.image,
-                preferred_username: row.githubUsername,
-            });
-        },
+        (c) => handleUserinfo(c),
     );
+
+export type DeviceTokenRequest = {
+    device_code?: string;
+    client_id?: string;
+    grant_type?: string;
+};
+
+/**
+ * RFC 8628 §3.4-3.5 device_code → access token exchange.
+ * Shared by POST /api/device/token and POST /api/oauth/token
+ * (grant_type=urn:ietf:params:oauth:grant-type:device_code).
+ */
+export async function exchangeDeviceCode(
+    c: Context<Env>,
+    body: DeviceTokenRequest,
+) {
+    if (!body.device_code) {
+        return c.json(
+            {
+                error: "invalid_request",
+                error_description: "device_code required",
+            },
+            400,
+        );
+    }
+
+    const db = drizzle(c.env.DB, { schema });
+    const device = await db.query.deviceCode.findFirst({
+        where: eq(schema.deviceCode.deviceCode, body.device_code),
+    });
+
+    if (!device) {
+        return c.json(
+            {
+                error: "invalid_grant",
+                error_description: "Unknown device code",
+            },
+            400,
+        );
+    }
+
+    if (isExpired(device)) {
+        return c.json({ error: "expired_token" }, 400);
+    }
+
+    // Validate client_id matches what was used during code issuance (when provided)
+    if (
+        device.clientId &&
+        body.client_id &&
+        body.client_id !== device.clientId
+    ) {
+        return c.json(
+            {
+                error: "invalid_client",
+                error_description: "client_id mismatch",
+            },
+            400,
+        );
+    }
+
+    switch (device.status) {
+        case "pending" satisfies DeviceStatus:
+            return c.json({ error: "authorization_pending" }, 400);
+
+        case "denied" satisfies DeviceStatus:
+            return c.json({ error: "access_denied" }, 400);
+
+        case "approved" satisfies DeviceStatus: {
+            const stored = (await c.env.KV.get(
+                `device-key:${device.deviceCode}`,
+                "json",
+            )) as { key: string; expiresIn: number | null } | null;
+
+            if (!stored) {
+                return c.json({ error: "authorization_pending" }, 400);
+            }
+
+            // Delete device code row and KV entry concurrently
+            await Promise.all([
+                db
+                    .delete(schema.deviceCode)
+                    .where(eq(schema.deviceCode.id, device.id)),
+                c.env.KV.delete(`device-key:${device.deviceCode}`),
+            ]);
+
+            return c.json({
+                access_token: stored.key,
+                token_type: "bearer",
+                ...(stored.expiresIn != null && {
+                    expires_in: stored.expiresIn,
+                }),
+                ...(device.scope && { scope: device.scope }),
+            });
+        }
+
+        default:
+            return c.json({ error: "access_denied" }, 400);
+    }
+}
+
+/**
+ * OIDC-shaped userinfo for the current key/session.
+ * Shared by GET /api/device/userinfo and GET /api/oauth/userinfo.
+ */
+export async function handleUserinfo(c: AuthedContext) {
+    const user = c.var.auth.requireUser();
+    const db = drizzle(c.env.DB, { schema });
+    const row = await db.query.user.findFirst({
+        where: eq(schema.user.id, user.id),
+        columns: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+            githubUsername: true,
+        },
+    });
+    if (!row) {
+        throw new HTTPException(404, { message: "User not found" });
+    }
+    return c.json({
+        sub: row.id,
+        name: row.name,
+        email: row.email,
+        picture: row.image,
+        preferred_username: row.githubUsername,
+    });
+}

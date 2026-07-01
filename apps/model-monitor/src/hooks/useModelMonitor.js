@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 // Tinybird config
 // Note: This is a READ-ONLY public token, safe to expose in client code
@@ -51,7 +51,6 @@ function normalizeCatalogModel(model) {
         aliases: model.aliases || [],
         type,
         endpointType: eventTypeForDisplayType(type),
-        catalogStatus: "visible",
     };
 }
 
@@ -125,16 +124,6 @@ export function useModelMonitor(aggregationWindow = "60m") {
 
     const modelStats = healthStats.filter((s) => s.model !== "undefined");
 
-    const catalogModelsByName = useMemo(
-        () =>
-            models.reduce((acc, model) => {
-                if (!acc[model.name]) acc[model.name] = [];
-                acc[model.name].push(model);
-                return acc;
-            }, {}),
-        [models],
-    );
-
     // Merge models with health stats.
     // Use endpointType (original API endpoint) for Tinybird matching since
     // Tinybird reports e.g. generate.image for video models served from /image/models.
@@ -152,61 +141,6 @@ export function useModelMonitor(aggregationWindow = "60m") {
             stats,
         };
     });
-
-    // Add models from health stats that aren't in the visible model list (but not "undefined")
-    const unmatchedStats = modelStats.filter(
-        (s) =>
-            !models.some(
-                (m) =>
-                    m.name === s.model &&
-                    `generate.${m.endpointType || m.type}` === s.event_type,
-            ),
-    );
-    const extraModels = unmatchedStats.map((s) => {
-        const statsType = s.event_type?.replace("generate.", "") || "unknown";
-        const stats = s;
-        const sameNameMatches = catalogModelsByName[s.model] || [];
-
-        let modelMeta;
-        if (endpointStatus.catalog === false) {
-            modelMeta = {
-                name: s.model || "(unknown)",
-                type: statsType,
-                endpointType: statsType,
-                provider: s.provider,
-                description: "Unknown model while live catalog is unavailable",
-                catalogStatus: "catalog-unavailable",
-            };
-        } else if (sameNameMatches.length > 0) {
-            const registeredTypes = [
-                ...new Set(sameNameMatches.map((m) => m.type)),
-            ].sort();
-            modelMeta = {
-                name: s.model || "(unknown)",
-                type: statsType,
-                endpointType: statsType,
-                provider: s.provider,
-                description: `Unexpected ${statsType} traffic; registered as ${registeredTypes.join("/")}`,
-                catalogStatus: "anomaly",
-            };
-        } else {
-            modelMeta = {
-                name: s.model || "(unknown)",
-                type: statsType,
-                endpointType: statsType,
-                provider: s.provider,
-                description: "Unregistered model",
-                catalogStatus: "unregistered",
-            };
-        }
-
-        return {
-            ...modelMeta,
-            stats,
-        };
-    });
-
-    const allModels = [...mergedModels, ...extraModels];
 
     const refresh = useCallback(() => {
         fetchModels();
@@ -239,7 +173,7 @@ export function useModelMonitor(aggregationWindow = "60m") {
     }, [refresh, pollInterval]);
 
     return {
-        models: allModels,
+        models: mergedModels,
         refresh,
         pollInterval,
         lastUpdated,

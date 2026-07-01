@@ -70,9 +70,6 @@ function statusSeverity(model) {
     const health = computeHealthStatus(model.stats);
     if (health === "off") return 6;
     if (health === "degraded") return 5;
-    if (model.catalogStatus === "unregistered") return 4;
-    if (model.catalogStatus === "anomaly") return 3;
-    if (model.catalogStatus === "catalog-unavailable") return 2;
     return 0;
 }
 
@@ -252,27 +249,6 @@ function StatusBadge({ stats }) {
             className={status === "off" ? "animate-pulse" : undefined}
         >
             {status === "off" ? "Off" : "Degraded"}
-        </Chip>
-    );
-}
-
-function CatalogStatusBadge({ status }) {
-    if (!status || status === "visible") {
-        return null;
-    }
-
-    const variants = {
-        anomaly: { label: "anomaly", intent: "warning" },
-        unregistered: { label: "unknown", intent: "warning" },
-        "catalog-unavailable": { label: "unverified", intent: "neutral" },
-    };
-
-    const variant = variants[status];
-    if (!variant) return null;
-
-    return (
-        <Chip intent={variant.intent} size="sm">
-            {variant.label}
         </Chip>
     );
 }
@@ -541,8 +517,8 @@ function App() {
                             intent="warning"
                             title="Model catalog unavailable"
                         >
-                            Showing observed Tinybird traffic only until the
-                            live model catalog responds.
+                            Waiting for the live model catalog before showing
+                            models.
                         </Alert>
                     )}
 
@@ -695,16 +671,9 @@ function App() {
                                                         </div>
                                                     </TableCell>
                                                     <TableCell>
-                                                        <div className="flex flex-wrap items-center gap-1">
-                                                            <StatusBadge
-                                                                stats={stats}
-                                                            />
-                                                            <CatalogStatusBadge
-                                                                status={
-                                                                    model.catalogStatus
-                                                                }
-                                                            />
-                                                        </div>
+                                                        <StatusBadge
+                                                            stats={stats}
+                                                        />
                                                     </TableCell>
                                                     {adminMode && (
                                                         <TableCell muted>

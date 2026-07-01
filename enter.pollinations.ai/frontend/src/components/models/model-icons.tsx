@@ -36,6 +36,8 @@ export const PRICE_ICON: Record<PriceKind, Icon> = {
     text: ChatIcon,
     image: ImageIcon,
     cached: DatabaseIcon,
+    cacheWrite: DatabaseIcon,
+    reasoning: ReasoningIcon,
     video: VideoIcon,
     audioIn: MicIcon,
     audioOut: SpeakerIcon,

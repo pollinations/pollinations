@@ -247,11 +247,37 @@ export function TokensIcon(props: IconProps) {
     );
 }
 
+export function UsageIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <circle cx="5" cy="7" r="2" />
+            <circle cx="19" cy="17" r="2" />
+            <path d="M8 7h9" />
+            <path d="m14 4 3 3-3 3" />
+            <path d="M16 17H7" />
+            <path d="m10 14-3 3 3 3" />
+        </svg>
+    );
+}
+
 export function TrendUpIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
             <polyline points="3 17 9 11 13 15 21 7" />
             <polyline points="15 7 21 7 21 13" />
+        </svg>
+    );
+}
+
+export function EarningsIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <ellipse cx="10" cy="6" rx="6" ry="3" />
+            <path d="M4 6v8c0 1.7 2.7 3 6 3 1.2 0 2.4-.2 3.3-.5" />
+            <path d="M16 6v4" />
+            <path d="M4 10c0 1.7 2.7 3 6 3 1.1 0 2.1-.1 3-.4" />
+            <path d="M18 14v6" />
+            <path d="M15 17h6" />
         </svg>
     );
 }

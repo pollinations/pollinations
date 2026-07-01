@@ -4,12 +4,12 @@ import {
     Chip,
     DownloadIcon,
     InlineLink,
-    KeyIcon,
     MultiSelect,
     SproutIcon,
     StatCard,
     Surface,
     Tooltip,
+    UsageIcon,
 } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import type { FC } from "react";
@@ -133,7 +133,7 @@ export const UsageSection: FC<UsageSectionProps> = ({ period }) => {
         <div className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center justify-between gap-3 px-1">
                 <div className="flex items-center gap-2 font-body text-base font-semibold text-theme-text-strong">
-                    <KeyIcon className="h-4 w-4 shrink-0" />
+                    <UsageIcon className="h-4 w-4 shrink-0" />
                     Usage
                 </div>
                 {downloadAction}

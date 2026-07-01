@@ -48,6 +48,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-06-29** – **🚀 Community Text Endpoints** Bring your own brain. Register and monetize your own OpenAI-compatible models via the [dashboard](https://enter.pollinations.ai), or query the new decentralized registry of community-run AI at `community/{username}/{model-id}`.
 - **2026-06-28** – **🩺 Real-time Model Health** Added `GET /v1/models/status` so you can programmatically check if a model is awake before throwing requests at it. Cached for 60 seconds. Check the [API Docs](https://gen.pollinations.ai/docs).
 - **2026-06-28** – **🪙 Get Paid to Ship** The 'App Listed' quest is live. Build something, get it listed in the public directory, and earn Pollen directly to your wallet.
 - **2026-06-28** – **🧩 Prompt Your Own Puzzles** PolliCross uses our image API to generate playable Picross/Nonogram levels from whatever text prompt you can think of. [Try it](https://zqigolden.github.io/pollicross/) <!-- app -->
@@ -57,7 +58,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-06-26** – **🤖 REKTY AI** The community app directory grows by one. REKTY AI is now live in the [showcase](https://pollinations.ai). [View repo](https://github.com/rekty/Rekty-AI) <!-- app -->
 - **2026-06-25** – **🎯 Side Quests Unlocked** The passive tier system is out. You can now track bounties and claim Pollen credits for things like GitHub contributions or cross-modality model usage directly from the new Quest [dashboard](https://enter.pollinations.ai).
 - **2026-06-23** – **🎵 Stable Audio 3** We've wired up Stable Audio 3 to the [audio API](https://gen.pollinations.ai/audio/{text}). Generate up to 380 seconds of 44.1 kHz stereo, or use the newly added audio-to-audio style transfer.
-- **2026-06-23** – **🤖 Mercury 2** Inception's Mercury 2 model is now live on the [text API](https://gen.pollinations.ai/v1/chat/completions). Full support for cached input and reasoning tokens included.
 ---
 
 ## 🌱 Introduction

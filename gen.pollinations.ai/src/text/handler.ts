@@ -1,9 +1,6 @@
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import {
-    getModelDefinition,
-    type ModelName,
-} from "@shared/registry/registry.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
@@ -12,6 +9,7 @@ import {
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
+import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { type ExpressLikeRequest, getRequestData } from "./requestUtils.js";
 import type { ChatCompletion, RequestData, ServiceError } from "./types.js";
@@ -70,15 +68,12 @@ function createExpressLikeRequest(
     };
 }
 
-function prepareRequestParameters(requestParams: RequestData): RequestData {
-    let isAudioModel = false;
-    try {
-        const serviceDef = getModelDefinition(requestParams.model as ModelName);
-        isAudioModel = serviceDef?.outputModalities?.includes("audio") ?? false;
-    } catch {
-        // Model not in registry.
-    }
-
+function prepareRequestParameters(
+    requestParams: RequestData,
+    modelDefinition: ModelDefinition<string>,
+): RequestData {
+    const isAudioModel =
+        modelDefinition.outputModalities?.includes("audio") ?? false;
     if (!isAudioModel) return requestParams;
 
     const voice = requestParams.voice || requestParams.audio?.voice || "alloy";
@@ -106,16 +101,20 @@ function withGatewayContext(c: TextContext, requestData: RequestData) {
     };
 }
 
-function usageHeaders(completion: ChatCompletion): Headers {
+function usageHeaders(
+    completion: ChatCompletion,
+    fallbackModel?: string,
+): Headers {
     const headers = new Headers();
-    if (completion?.usage && completion?.model) {
+    const modelUsed = completion?.model || fallbackModel;
+    if (completion?.usage && modelUsed) {
         const usage = openaiUsageToUsage(
             completion.usage as unknown as Parameters<
                 typeof openaiUsageToUsage
             >[0],
         );
         for (const [key, value] of Object.entries(
-            buildUsageHeaders(completion.model, usage),
+            buildUsageHeaders(modelUsed, usage),
         )) {
             headers.set(key, String(value));
         }
@@ -126,8 +125,11 @@ function usageHeaders(completion: ChatCompletion): Headers {
     return headers;
 }
 
-function sendOpenAIResponse(completion: ChatCompletion): Response {
-    const headers = usageHeaders(completion);
+function sendOpenAIResponse(
+    completion: ChatCompletion,
+    fallbackModel?: string,
+): Response {
+    const headers = usageHeaders(completion, fallbackModel);
     headers.set("Content-Type", "application/json; charset=utf-8");
 
     return new Response(
@@ -141,8 +143,11 @@ function sendOpenAIResponse(completion: ChatCompletion): Response {
     );
 }
 
-function sendTextContentResponse(completion: ChatCompletion): Response {
-    const headers = usageHeaders(completion);
+function sendTextContentResponse(
+    completion: ChatCompletion,
+    fallbackModel?: string,
+): Response {
+    const headers = usageHeaders(completion, fallbackModel);
     headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
 
     if (!completion.choices?.[0]) {
@@ -262,9 +267,20 @@ async function generateTextResponse(
     syncTextEnvironment(c.env);
 
     try {
+        const communityEndpoint = c.var.model?.communityEndpoint;
+        const gatewayContext = communityEndpoint
+            ? await communityEndpointGatewayContext(
+                  communityEndpoint,
+                  c.var.model.definition,
+                  requestData,
+                  c.env.BETTER_AUTH_SECRET,
+                  c.env.PORTKEY_GATEWAY_URL,
+                  c.var.auth?.apiKey?.rawKey || "",
+              )
+            : withGatewayContext(c, requestData);
         const completion = await generateTextPortkey(
             requestData.messages,
-            withGatewayContext(c, requestData),
+            gatewayContext,
         );
         completion.id = completion.id || generatePollinationsId();
 
@@ -285,8 +301,10 @@ async function generateTextResponse(
         }
 
         if (requestData.stream) return sendTextStreamResponse(completion);
-        if (contentResponse) return sendTextContentResponse(completion);
-        return sendOpenAIResponse(completion);
+        const fallbackModel = c.var.model?.resolved;
+        if (contentResponse)
+            return sendTextContentResponse(completion, fallbackModel);
+        return sendOpenAIResponse(completion, fallbackModel);
     } catch (thrown: unknown) {
         throwTextError(thrown as ServiceError, c);
     }
@@ -306,7 +324,10 @@ export async function handleTextContentLocal(
     body: Record<string, unknown>,
 ): Promise<Response> {
     const req = createExpressLikeRequest(c, body, c.req.path);
-    const requestData = prepareRequestParameters(getRequestData(req));
+    const requestData = prepareRequestParameters(
+        getRequestData(req),
+        c.var.model.definition,
+    );
     return generateTextResponse(c, requestData, true);
 }
 
@@ -320,9 +341,12 @@ export async function handleSimpleTextLocal(
         ...c.req.param(),
         0: prompt,
     });
-    const requestData = prepareRequestParameters({
-        ...getRequestData(req),
-        model,
-    });
+    const requestData = prepareRequestParameters(
+        {
+            ...getRequestData(req),
+            model,
+        },
+        c.var.model.definition,
+    );
     return generateTextResponse(c, requestData, true);
 }

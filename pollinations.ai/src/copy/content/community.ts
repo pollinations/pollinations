@@ -96,10 +96,7 @@ export const COMMUNITY_PAGE = {
     commitLabel: "commit",
     votesLabel: "votes",
 
-    // Section 5 — Build Diary + Supporters
-    buildDiaryTitle: "Build diary",
-    buildDiarySubtitle: "A visual log of what we ship every day.",
-
+    // Supporters
     supportersTitle: "Supporters",
     supportersSubtitle:
         "We're grateful to our supporters for their contributions to the platform.",

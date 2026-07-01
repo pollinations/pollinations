@@ -17,9 +17,6 @@ export const LAYOUT = {
     enterButton: "Enter",
     changeThemeTooltip: "Change theme",
     backToTop: "↑ Top",
-    loadingBuildDiary: "Loading build diary...",
-    loadingEllipsis: "...",
-    weekLabel: "Week",
 
     // Footer
     termsLink: "Terms",

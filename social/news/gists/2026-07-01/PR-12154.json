@@ -1,0 +1,36 @@
+{
+  "pr_number": 12154,
+  "title": "fix: stop community model updates from silently reactivating disabled endpoints",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12154",
+  "merged_at": "2026-07-01T17:41:01Z",
+  "labels": [
+    "DEV-BUG",
+    "DEV-FEATURE",
+    "API"
+  ],
+  "pr_body_excerpt": "## Summary\n- `POST /:id/update` unconditionally cleared `disabledAt`/`disabledReason`/`disabledBy` on every save, even edits unrelated to the broken config\n- Confirmed in prod: MarcosFRG's deactivated models kept reactivating themselves (traced to their dashboard session resaving, clearing the flag as a side effect, not a deliberate reactivate action)\n- Reactivation is now exclusively manual/out-of-band — owner pings to reactivate after fixing the issue; a dedicated reactivate flow is a follow-up\n\n## Test plan\n- [x] `enter.pollinations.ai` targeted tests pass (community-endpoint-openai, admin-auth)\n- [x] typecheck + biome clean",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "No more zombie endpoints",
+    "blurb": "Fixed a sneaky bug where updating a disabled community model would accidentally wake it back up. Now, deactivated endpoints stay peacefully asleep until manually revived.",
+    "summary": "Updating a community model via POST /:id/update no longer automatically clears the disabledAt, disabledReason, and disabledBy flags.",
+    "impact": "Deactivated community models will no longer silently reactivate when their owners edit unrelated configuration settings.",
+    "keywords": [
+      "api",
+      "community models",
+      "bug fix",
+      "endpoints"
+    ],
+    "visual_concept": "A sleeping server or robot representing a deactivated endpoint, with Polly the bee carefully working around it without waking it up.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny nightcap, tiptoeing past a sleeping chunky server robot that is tucked in with a cozy blanket. Soft lime green (#ecf874) and lavender gradient background. Warm dim lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, peaceful vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-01/PR-12154.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny nightcap, tiptoeing past a sleeping chunky server robot that is tucked in with a cozy blanket. Soft lime green (#ecf874) and lavender gradient background. Warm dim lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, peaceful vibes."
+  },
+  "generated_at": "2026-07-01T17:42:01.682176+00:00"
+}

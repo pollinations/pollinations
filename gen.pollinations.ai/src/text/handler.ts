@@ -101,16 +101,20 @@ function withGatewayContext(c: TextContext, requestData: RequestData) {
     };
 }
 
-function usageHeaders(completion: ChatCompletion): Headers {
+function usageHeaders(
+    completion: ChatCompletion,
+    fallbackModel?: string,
+): Headers {
     const headers = new Headers();
-    if (completion?.usage && completion?.model) {
+    const modelUsed = completion?.model || fallbackModel;
+    if (completion?.usage && modelUsed) {
         const usage = openaiUsageToUsage(
             completion.usage as unknown as Parameters<
                 typeof openaiUsageToUsage
             >[0],
         );
         for (const [key, value] of Object.entries(
-            buildUsageHeaders(completion.model, usage),
+            buildUsageHeaders(modelUsed, usage),
         )) {
             headers.set(key, String(value));
         }
@@ -121,8 +125,11 @@ function usageHeaders(completion: ChatCompletion): Headers {
     return headers;
 }
 
-function sendOpenAIResponse(completion: ChatCompletion): Response {
-    const headers = usageHeaders(completion);
+function sendOpenAIResponse(
+    completion: ChatCompletion,
+    fallbackModel?: string,
+): Response {
+    const headers = usageHeaders(completion, fallbackModel);
     headers.set("Content-Type", "application/json; charset=utf-8");
 
     return new Response(
@@ -136,8 +143,11 @@ function sendOpenAIResponse(completion: ChatCompletion): Response {
     );
 }
 
-function sendTextContentResponse(completion: ChatCompletion): Response {
-    const headers = usageHeaders(completion);
+function sendTextContentResponse(
+    completion: ChatCompletion,
+    fallbackModel?: string,
+): Response {
+    const headers = usageHeaders(completion, fallbackModel);
     headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
 
     if (!completion.choices?.[0]) {
@@ -291,8 +301,10 @@ async function generateTextResponse(
         }
 
         if (requestData.stream) return sendTextStreamResponse(completion);
-        if (contentResponse) return sendTextContentResponse(completion);
-        return sendOpenAIResponse(completion);
+        const fallbackModel = c.var.model?.resolved;
+        if (contentResponse)
+            return sendTextContentResponse(completion, fallbackModel);
+        return sendOpenAIResponse(completion, fallbackModel);
     } catch (thrown: unknown) {
         throwTextError(thrown as ServiceError, c);
     }

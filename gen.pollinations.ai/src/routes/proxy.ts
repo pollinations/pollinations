@@ -6,7 +6,11 @@ import type { Env } from "@/env.ts";
 import { handleImagePrompt, handleRegisterServer } from "@/image/handler.ts";
 import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
-import { audioCache, imageCache } from "@/middleware/media-cache.ts";
+import {
+    audioCache,
+    imageCache,
+    model3dCache,
+} from "@/middleware/media-cache.ts";
 import { resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
@@ -28,6 +32,10 @@ import {
     getVideoModelIds,
 } from "@shared/registry/image.ts";
 import {
+    DEFAULT_3D_MODEL,
+    getModel3dModelIds,
+} from "@shared/registry/model3d.ts";
+import {
     type CreateChatCompletionRequest,
     CreateChatCompletionRequestSchema,
     type CreateChatCompletionResponse,
@@ -46,11 +54,13 @@ import {
     applySafetyToTexts,
     withSafetyHeaders,
 } from "@/middleware/safety.ts";
+import { handle3dPrompt } from "@/model3d/handler.ts";
 import {
     CreateEmbeddingRequestSchema,
     CreateEmbeddingResponseSchema,
 } from "@/schemas/embeddings.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
+import { Generate3dRequestQueryParamsSchema } from "@/schemas/model3d.ts";
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import {
@@ -75,6 +85,10 @@ const videoModelNames = getVideoModelIds()
     .map((id) => `\`${id}\``)
     .join(", ");
 
+const model3dModelNames = getModel3dModelIds()
+    .map((id) => `\`${id}\``)
+    .join(", ");
+
 const factory = createFactory<Env>();
 const textBodyLimit = bodyLimit({
     maxSize: 20 * 1024 * 1024,
@@ -93,6 +107,24 @@ const imageVideoHandlers = factory.createHandlers(
             query.safe,
         );
         return withSafetyHeaders(c, await handleImagePrompt(c, prompt));
+    },
+);
+
+// Handler for 3D model generation (reuses the "generate.image" EventType,
+// same as video, to avoid touching Tinybird/EventType consumers).
+const model3dHandlers = factory.createHandlers(
+    resolveModel("generate.image", { defaultModel: DEFAULT_3D_MODEL }),
+    track("generate.image"),
+    model3dCache,
+    generationAccess,
+    async (c) => {
+        const query = c.req.valid("query" as never) as { safe?: SafeValue };
+        const prompt = await applySafety(
+            c,
+            c.req.param("prompt") || "",
+            query.safe,
+        );
+        return withSafetyHeaders(c, await handle3dPrompt(c, prompt));
     },
 );
 
@@ -222,6 +254,21 @@ async function getVisibleModelEntriesForEventType(
         .filter((entry) => entry.eventType === eventType);
 }
 
+// "3d" models share the "generate.image" EventType with image/video models
+// (see model-registry.ts's eventTypeForCategory), so /3d/models and
+// /image/models must additionally split on category.
+async function getVisibleModel3dEntries(c: Context<Env>) {
+    return (
+        await getVisibleModelEntriesForEventType(c, "generate.image")
+    ).filter((entry) => entry.definition.category === "3d");
+}
+
+async function getVisibleImageAndVideoEntries(c: Context<Env>) {
+    return (
+        await getVisibleModelEntriesForEventType(c, "generate.image")
+    ).filter((entry) => entry.definition.category !== "3d");
+}
+
 async function getOrderedVisibleModelEntries(c: Context<Env>) {
     const entries = await getVisibleModelEntries(c);
     return [
@@ -243,6 +290,7 @@ export const proxyRoutes = new Hono<Env>()
     // Optional auth for models endpoints - doesn't require auth but uses it if provided
     .use("/v1/models", auth())
     .use("/image/models", auth())
+    .use("/3d/models", auth())
     .use("/text/models", auth())
     .use("/audio/models", auth())
     .use("/embeddings/models", auth())
@@ -304,7 +352,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models",
             description:
-                "Returns all available text, community text, image, video, realtime, audio, and embedding models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available text, community text, image, video, 3D, realtime, audio, and embedding models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
             responses: {
                 200: {
                     description: "Success",
@@ -323,6 +371,32 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         modelsListHandler(getOrderedVisibleModelEntries),
+    )
+    .get(
+        "/3d/models",
+        describeRoute({
+            tags: ["🤖 Models"],
+            summary: "List 3D Models",
+            description:
+                "Returns all available 3D model generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                z.array(z.any()).meta({
+                                    description:
+                                        "List of models with pricing and metadata",
+                                }),
+                            ),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(500),
+            },
+        }),
+        modelsListHandler(getVisibleModel3dEntries),
     )
     .get(
         "/image/models",
@@ -348,9 +422,7 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(500),
             },
         }),
-        modelsListHandler((c) =>
-            getVisibleModelEntriesForEventType(c, "generate.image"),
-        ),
+        modelsListHandler(getVisibleImageAndVideoEntries),
     )
     .get(
         "/text/models",
@@ -741,6 +813,48 @@ export const proxyRoutes = new Hono<Env>()
         ),
         validator("query", GenerateImageRequestQueryParamsSchema),
         ...imageVideoHandlers,
+    )
+    .get(
+        "/3d/:prompt{[\\s\\S]+}",
+        describeRoute({
+            tags: ["🧊 3D"],
+            summary: "Generate 3D Model",
+            description: [
+                "Generate a 3D model from a text prompt or reference image(s). Returns GLB by default.",
+                "",
+                `**Available models:** ${model3dModelNames}. \`${DEFAULT_3D_MODEL}\` is the default.`,
+                "",
+                "Pass reference image URL(s) via the `image` parameter for image-to-3D models (`trellis-2-*`). Separate multiple URLs with `|` or `,`. `hyper3d-rodin` accepts both images and a text prompt.",
+                "",
+                "Browse all available models and their input requirements at [`/3d/models`](https://gen.pollinations.ai/3d/models).",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Success - Returns the generated 3D model",
+                    content: {
+                        "model/gltf-binary": {
+                            schema: {
+                                type: "string",
+                                format: "binary",
+                            },
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
+            },
+        }),
+        validator(
+            "param",
+            z.object({
+                prompt: z.string().min(1).meta({
+                    description:
+                        "Text description of the 3D model to generate (required for text-to-3D models; ignored by image-only models)",
+                    example: "a low-poly treasure chest",
+                }),
+            }),
+        ),
+        validator("query", Generate3dRequestQueryParamsSchema),
+        ...model3dHandlers,
     )
     .get(
         "/audio/:text",

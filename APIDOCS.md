@@ -40,6 +40,7 @@ curl https://gen.pollinations.ai/v1/models \
   - [✍️ Text](#-text)
   - [🖼️ Image](#-image)
   - [🎬 Video](#-video)
+  - [🧊 3D](#-3d)
   - [🔊 Audio](#-audio)
   - [🎙️ Realtime](#-realtime)
   - [🔢 Embeddings](#-embeddings)
@@ -526,6 +527,40 @@ Browse all available models and their `video_capabilities` at [`/image/models`](
 ```bash
 curl "https://gen.pollinations.ai/video/a%20sunset%20timelapse%20over%20the%20ocean?model=veo&width=1024" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
+### 🧊 3D
+
+#### `GET` `/3d/{prompt}` — Generate 3D Model
+
+Generate a 3D model from a text prompt or reference image(s). Returns GLB by default.
+
+**Available models:** `trellis-2-low`, `trellis-2-medium`, `trellis-2-high`, `hyper3d-rodin`. `trellis-2-low` is the default. All models return GLB.
+
+Pass reference image URL(s) via the `image` parameter for image-to-3D models (`trellis-2-*`). Separate multiple URLs with `|` or `,`. `hyper3d-rodin` accepts both images and a text prompt.
+
+Browse all available models and their input requirements at [`/3d/models`](https://gen.pollinations.ai/3d/models).
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `prompt` * | `path` | `string` | Text description of the 3D model to generate (required for text-to-3D models; ignored by image-only models) |
+| `model` | `query` | `string` | Model to use. See /3d/models for the full list and per-model input requirements. · default: `"trellis-2-low"` |
+| `image` | `query` | `string` | Reference image URL(s) for image-to-3D generation. Separate multiple URLs with `\|` or `,`. Required for `trellis-2-*` models. |
+| `format` | `query` | `string` | Output 3D file format. Not all models support all formats — falls back to glb if unsupported. · default: `"glb"` |
+| `safe` | `query` | `string` \| `boolean` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
+
+<sub>`*` = required parameter</sub>
+
+📤 **Response** · `200` · `model/gltf-binary` — Success - Returns the generated 3D model
+
+💻 **Example**
+
+```bash
+curl "https://gen.pollinations.ai/3d/a%20low-poly%20treasure%20chest?model=trellis-2-low&image=https://example.com/ref.jpg" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  --output model.glb
 ```
 
 ### 🔊 Audio

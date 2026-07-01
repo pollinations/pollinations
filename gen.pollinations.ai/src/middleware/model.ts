@@ -57,6 +57,18 @@ export async function resolveModelDefinition(
     const registry = await getGenerationModelRegistry(env);
     const entry = registry.resolve(model);
     if (!entry) {
+        const disabledEntry = registry.resolveIncludingDisabled(model);
+        if (disabledEntry?.communityEndpoint?.disabledAt) {
+            // Not a client mistake (unlike the 400s below) — the model name
+            // is valid, its backing endpoint is just down. 500 reflects that
+            // this is the server/operator's problem, not the caller's.
+            throw new HTTPException(500, {
+                message: `Community model "${model}" has been deactivated: ${
+                    disabledEntry.communityEndpoint.disabledReason ??
+                    "repeated upstream failures"
+                }. Contact the model owner or see your dashboard to reactivate.`,
+            });
+        }
         throw new HTTPException(400, {
             message: `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
         });

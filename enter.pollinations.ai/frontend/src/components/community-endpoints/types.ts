@@ -14,6 +14,9 @@ export type CommunityEndpoint = {
     description: string | null;
     baseUrl: string;
     upstreamModel: string;
+    disabled: boolean;
+    disabledReason: string | null;
+    disabledAt: string | null;
 } & CommunityEndpointPrices;
 
 export type EndpointFormState = {

@@ -1,0 +1,21 @@
+[Unit]
+Description=Community Model Monitor Loop
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/pollinations/apps/model-monitor
+EnvironmentFile=/home/ubuntu/pollinations/apps/model-monitor/.env
+# Runs one cycle (fresh probe traffic + a headless Claude Code diagnosis
+# pass) inside a detached screen session, so `screen -r community-monitor`
+# gives live interactive access to the running Claude Code transcript at any
+# time, while systemd's Restart=always still recovers a killed/crashed
+# screen session. loop.sh itself exits after one cycle by design — restart
+# handles the next cycle rather than an in-process loop.
+ExecStart=/usr/bin/screen -DmS community-monitor /home/ubuntu/pollinations/apps/model-monitor/loop.sh
+Restart=always
+RestartSec=300
+
+[Install]
+WantedBy=multi-user.target

@@ -1,8 +1,10 @@
 import chalk from "chalk";
+import { formatOutputSync } from "./output-formats.js";
 
-export type OutputMode = "human" | "json";
-
+export type OutputMode = "human" | "json" | "yaml" | "csv";
 let currentMode: OutputMode = "human";
+let quietMode = false;
+let verboseMode = false;
 
 export const setOutputMode = (mode: OutputMode) => {
     currentMode = mode;
@@ -10,42 +12,48 @@ export const setOutputMode = (mode: OutputMode) => {
 
 export const getOutputMode = (): OutputMode => currentMode;
 
-/** Print structured data — adapts to current output mode */
+export const setQuietMode = (quiet: boolean) => {
+    quietMode = quiet;
+};
+
+export const isQuietMode = (): boolean => quietMode;
+
+export const setVerboseMode = (verbose: boolean) => {
+    verboseMode = verbose;
+};
+
+export const isVerboseMode = (): boolean => verboseMode;
+
 export const printResult = (data: Record<string, unknown> | unknown[]) => {
-    if (currentMode === "json") {
-        process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
+    if (currentMode !== "human") {
+        const output = formatOutputSync(data, currentMode);
+        process.stdout.write(`${output}\n`);
         return;
     }
-
     if (Array.isArray(data)) {
         printTable(data as Record<string, unknown>[]);
         return;
     }
-
     for (const [key, value] of Object.entries(data)) {
         if (value === null || value === undefined) continue;
         process.stdout.write(`${chalk.bold(key)}: ${value}\n`);
     }
-    // Trailing blank line in TTY for visual breathing room before the next prompt.
     if (process.stdout.isTTY) process.stdout.write("\n");
 };
 
-/** Print a list of objects as a table */
 export const printTable = (
     rows: Record<string, unknown>[],
     columns?: string[],
 ) => {
-    if (currentMode === "json") {
-        process.stdout.write(`${JSON.stringify(rows, null, 2)}\n`);
+    if (currentMode !== "human") {
+        const output = formatOutputSync(rows, currentMode);
+        process.stdout.write(`${output}\n`);
         return;
     }
-
     if (rows.length === 0) {
         printInfo("No results.");
         return;
     }
-
-    // Space-padded columns. Visible width = string length minus ANSI escapes.
     const cols = columns ?? Object.keys(rows[0]);
     const stringRows = rows.map((row) => cols.map((c) => String(row[c] ?? "")));
     // biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI escape stripping for width calculation
@@ -53,9 +61,6 @@ export const printTable = (
     const widths = cols.map((c, i) =>
         Math.max(c.length, ...stringRows.map((r) => visibleLen(r[i]))),
     );
-
-    // When stdout is a TTY, truncate the last column so each row fits on one
-    // line. Pipes keep full output (no TTY width = no truncation).
     const termWidth = process.stdout.columns ?? 0;
     const sepWidth = 2 * (cols.length - 1);
     const lastIdx = cols.length - 1;
@@ -67,16 +72,12 @@ export const printTable = (
         for (const row of stringRows) {
             const cell = row[lastIdx];
             if (visibleLen(cell) > lastMax) {
-                // Strip ANSI before slicing so we never cut inside an escape
-                // sequence. We lose color on the truncated cell — acceptable
-                // since the full colored string still prints to pipes.
                 // biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI strip for safe slicing
                 const plain = cell.replace(/\u001b\[[0-9;]*m/g, "");
                 row[lastIdx] = `${plain.slice(0, lastMax - 1)}…`;
             }
         }
     }
-
     const pad = (s: string, w: number, i: number) =>
         i === lastIdx ? s : s + " ".repeat(w - visibleLen(s));
     const brand = chalk.hex("#a78bfa").bold;
@@ -86,24 +87,21 @@ export const printTable = (
         const line = vals.map((v, i) => pad(v, widths[i], i)).join("  ");
         process.stdout.write(`${line}\n`);
     }
-    // Trailing blank line in TTY for visual breathing room before the next prompt.
     if (process.stdout.isTTY) process.stdout.write("\n");
 };
 
-/** Info message — only shown in human mode, goes to stderr */
 export const printInfo = (msg: string) => {
-    if (currentMode !== "human") return;
+    if (currentMode !== "human" || quietMode) return;
     process.stderr.write(`${chalk.cyan.italic(msg)}\n`);
 };
 
-/** Metadata for file-sink commands (gen image/audio/video): stdout in json
- * mode so it's machine-parseable, stderr in human mode so it doesn't corrupt
- * downstream pipes. Use printResult instead when the data IS the output. */
 export const printMeta = (data: Record<string, unknown>) => {
-    if (currentMode === "json") {
-        process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
+    if (currentMode !== "human") {
+        const output = formatOutputSync(data, currentMode);
+        process.stdout.write(`${output}\n`);
         return;
     }
+    if (quietMode) return;
     for (const [key, value] of Object.entries(data)) {
         if (value === null || value === undefined) continue;
         process.stderr.write(`${chalk.bold(key)}: ${value}\n`);
@@ -111,20 +109,25 @@ export const printMeta = (data: Record<string, unknown>) => {
     if (process.stderr.isTTY) process.stderr.write("\n");
 };
 
-/** Success message — shown in human mode on stderr */
 export const printSuccess = (msg: string) => {
-    if (currentMode !== "human") return;
+    if (currentMode !== "human" || quietMode) return;
     process.stderr.write(`${chalk.green(msg)}\n`);
 };
 
-/** Error message — always shown, always stderr */
 export const printError = (msg: string) => {
     process.stderr.write(`${chalk.red.bold("error:")} ${chalk.red(msg)}\n`);
 };
 
-/** Warning message — always shown, always stderr */
 export const printWarn = (msg: string) => {
+    if (currentMode !== "human" || quietMode) return;
     process.stderr.write(
         `${chalk.yellow.bold("warn:")} ${chalk.yellow(msg)}\n`,
     );
 };
+
+export const printDebug = (msg: string) => {
+    if (!verboseMode) return;
+    process.stderr.write(`${chalk.gray.dim(msg)}\n`);
+};
+
+export const printVerbose = printDebug;

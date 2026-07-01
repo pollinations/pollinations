@@ -1,0 +1,34 @@
+{
+  "pr_number": 12087,
+  "title": "Update social media and news links in README",
+  "author": "Catniti",
+  "url": "https://github.com/pollinations/pollinations/pull/12087",
+  "merged_at": "2026-07-01T21:56:44Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "Added links to social media and news in the README.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Link in Bio",
+    "blurb": "We've updated the README with fresh links to our social media and news channels. Come say hi and join the hive!",
+    "summary": "Updated the project README to include direct links to Pollinations' social media and news channels.",
+    "impact": "Visitors to the repository can now easily find, follow, and engage with our official community channels.",
+    "keywords": [
+      "readme",
+      "docs",
+      "social",
+      "community"
+    ],
+    "visual_concept": "The bee mascot updating a giant pixelated document or wooden bulletin board with new social media icons, representing the README update.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot pinning tiny pixelated social media icons to a large wooden bulletin board. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-01/PR-12087.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot pinning tiny pixelated social media icons to a large wooden bulletin board. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-01T21:57:42.461173+00:00"
+}

@@ -1,20 +1,21 @@
 import { spawn, spawnSync } from "node:child_process";
 import { platform } from "node:os";
+import { existsSync } from "node:fs";
 
 type Player = { cmd: string; args: (file: string) => string[] };
 
 const PLAYERS: Record<string, Player[]> = {
-    darwin: [{ cmd: "afplay", args: (f) => [f] }],
-    // Linux: mp3-capable players only. paplay/aplay are wav-only; we skip them.
+    darwin: [
+        { cmd: "afplay", args: (f) => [f] },
+        { cmd: "ffplay", args: (f) => ["-nodisp", "-autoexit", "-loglevel", "quiet", f] },
+        { cmd: "mpv", args: (f) => ["--no-video", "--really-quiet", f] },
+    ],
     linux: [
-        {
-            cmd: "ffplay",
-            args: (f) => ["-nodisp", "-autoexit", "-loglevel", "quiet", f],
-        },
+        { cmd: "ffplay", args: (f) => ["-nodisp", "-autoexit", "-loglevel", "quiet", f] },
         { cmd: "mpv", args: (f) => ["--no-video", "--really-quiet", f] },
         { cmd: "mpg123", args: (f) => ["-q", f] },
+        { cmd: "aplay", args: (f) => [f] },
     ],
-    // Windows: MediaPlayer handles mp3 (SoundPlayer is wav-only).
     win32: [
         {
             cmd: "powershell",
@@ -29,6 +30,7 @@ const PLAYERS: Record<string, Player[]> = {
                     `Start-Sleep -Seconds $p.NaturalDuration.TimeSpan.TotalSeconds`,
             ],
         },
+        { cmd: "start", args: (f) => [f] },
     ],
 };
 
@@ -42,31 +44,39 @@ const findPlayer = (): Player | null => {
     return candidates.find((p) => isInstalled(p.cmd)) ?? null;
 };
 
-/**
- * Play an audio file using the best available platform player.
- * Returns true on success, false if no player is found or playback fails.
- */
-export const playAudio = async (filePath: string): Promise<boolean> => {
+export const playAudio = async (
+    filePath: string,
+    background = false,
+): Promise<boolean> => {
+    if (!existsSync(filePath)) return false;
     const player = findPlayer();
     if (!player) return false;
-
     return new Promise((resolve) => {
-        const child = spawn(player.cmd, player.args(filePath), {
-            stdio: "ignore",
-        });
+        const args = player.args(filePath);
+        const opts = background ? { stdio: "ignore", detached: true } : { stdio: "ignore" };
+        const child = spawn(player.cmd, args, opts);
+        if (background) {
+            child.unref();
+            resolve(true);
+            return;
+        }
         child.on("error", () => resolve(false));
         child.on("exit", (code) => resolve(code === 0));
     });
 };
 
-/** Human-readable hint for when no player is found on the host. */
 export const playerMissingHint = (): string => {
     switch (platform()) {
         case "linux":
-            return "No mp3-capable player found. Install one of: ffmpeg (ffplay), mpv, or mpg123.";
+            return "No mp3-capable player found. Install one of: ffmpeg (ffplay), mpv, mpg123, or aplay.";
         case "win32":
             return "No audio player found. PowerShell is required for playback on Windows.";
         default:
             return "No audio player found on this system.";
     }
+};
+
+export const getDefaultPlayer = (): string | null => {
+    const p = findPlayer();
+    return p ? p.cmd : null;
 };

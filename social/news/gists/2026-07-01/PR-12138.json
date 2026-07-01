@@ -1,0 +1,33 @@
+{
+  "pr_number": 12138,
+  "title": "chore: update app metrics 2026-07-01",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12138",
+  "merged_at": "2026-07-01T05:45:12Z",
+  "labels": [],
+  "pr_body_excerpt": "Daily automated update of app metrics, health checks, and greenhouse",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Daily Greenhouse Check",
+    "blurb": "Our automated bots just finished their daily rounds, watering the apps and updating the community metrics.",
+    "summary": "Automated daily update of community app metrics, health checks, and greenhouse status in the APPS.md and GREENHOUSE.md files.",
+    "impact": "Ensures the community app directory reflects the latest health and usage data for all submitted projects.",
+    "keywords": [
+      "metrics",
+      "apps",
+      "greenhouse",
+      "automation",
+      "bot"
+    ],
+    "visual_concept": "A cute robot watering plants in a greenhouse, representing the automated health checks of community apps. Polly the bee is flying around helping with a clipboard.",
+    "image_prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head watering glowing code-plants in a digital greenhouse. The cute bee mascot hovers nearby holding a tiny clipboard. Soft lime green (#ecf874) and pastel mint gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-01/PR-12138.jpg",
+    "prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head watering glowing code-plants in a digital greenhouse. The cute bee mascot hovers nearby holding a tiny clipboard. Soft lime green (#ecf874) and pastel mint gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites."
+  },
+  "generated_at": "2026-07-01T05:48:18.464170+00:00"
+}

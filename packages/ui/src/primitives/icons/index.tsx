@@ -250,12 +250,11 @@ export function TokensIcon(props: IconProps) {
 export function UsageIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
-            <circle cx="5" cy="7" r="2" />
-            <circle cx="19" cy="17" r="2" />
-            <path d="M8 7h9" />
-            <path d="m14 4 3 3-3 3" />
-            <path d="M16 17H7" />
-            <path d="m10 14-3 3 3 3" />
+            <circle cx="5" cy="12" r="2" />
+            <path d="M8 12h9" />
+            <path d="m14 8 4 4-4 4" />
+            <path d="M19 6v.01" />
+            <path d="M19 18v.01" />
         </svg>
     );
 }

@@ -1,0 +1,8 @@
+{
+  "platform": "discord",
+  "scope": "models_weekly",
+  "date": "2026-07-01",
+  "previous_date": "2026-06-24",
+  "generated_at": "2026-07-01T15:09:22.029064+00:00",
+  "text": "<@&1424461167883194418> Model updates — 2026-07-01\n\n### 🆕 New\n- 🎨 **nanobanana-2-lite** (Google) — vision input\n- 🧠 **claude-sonnet-5** (Anthropic) — vision + tool calling\n- 🧠 **Community Text Models** (Community) — voodoohop/anyvm-deepseek-chat, voodoohop/airforce-qwen3-max, voodoohop/airforce-doubao-pro, voodoohop/airforce-grok-4-fast, CloudCompile/gemma-4-e2b, sharktide/inferenceport.ai-gpt-oss-20b, sharktide/inferenceport.ai-gpt-5-chat-latest, Spit-fires/LFM2.5-230M, smplstuff/qwen3-0.6b, tomdacatto/ezra, skullcrushercmd/gemini-3.1-pro-preview, MarcosFRG/gemma-4-31b, MarcosFRG/deepseek-v4-flash, MarcosFRG/deepseek-v3.2, MarcosFRG/gemini-2.5-flash-lite, MarcosFRG/llama-4-scout, Spit-fires/Supra-1.5-50M-instruct, MarcosFRG/cosmosrp-2.1, MarcosFRG/qwen3-coder-30b-a3b, MarcosFRG/grok-4.20-non-reasoning, MarcosFRG/grok-4.20-reasoning, MarcosFRG/grok-4.3, MarcosFRG/step-3.5-flash, MarcosFRG/step-3.7-flash, MarcosFRG/gpt-5-nano, MarcosFRG/deepseek-v4-pro, MarcosFRG/minimax-m3, MarcosFRG/gpt-5.4-nano, MarcosFRG/mistral-large-3, MarcosFRG/mimo-v2.5, MarcosFRG/kimi-k2.6, MarcosFRG/gemma-3-27b, sharktide/inferenceport-ai-command-r-plus, sharktide/inferenceport-ai-mimo-v2.5, sharktide/inferenceport-ai-kimi-k2.6, MarcosFRG/gemini-3-flash-preview\n\n### ⬆️ Price increases (~100% more)\n- 🧠 Text: glm\n\nExplore at https://gen.pollinations.ai/docs"
+}

@@ -1,5 +1,50 @@
 # Pollinations Model Changelog
 
+## 2026-07-01
+
+### Added
+- `claude-sonnet-5` (Anthropic, text) — vision + tool calling.
+- `voodoohop/anyvm-deepseek-chat` (Community, text) — text model.
+- `voodoohop/airforce-qwen3-max` (Community, text) — text model.
+- `voodoohop/airforce-doubao-pro` (Community, text) — text model.
+- `voodoohop/airforce-grok-4-fast` (Community, text) — text model.
+- `CloudCompile/gemma-4-e2b` (Community, text) — text model.
+- `sharktide/inferenceport.ai-gpt-oss-20b` (Community, text) — text model.
+- `sharktide/inferenceport.ai-gpt-5-chat-latest` (Community, text) — text model.
+- `Spit-fires/LFM2.5-230M` (Community, text) — text model.
+- `smplstuff/qwen3-0.6b` (Community, text) — text model.
+- `tomdacatto/ezra` (Community, text) — text model.
+- `skullcrushercmd/gemini-3.1-pro-preview` (Community, text) — text model.
+- `MarcosFRG/gemma-4-31b` (Community, text) — text model.
+- `MarcosFRG/deepseek-v4-flash` (Community, text) — text model.
+- `MarcosFRG/deepseek-v3.2` (Community, text) — text model.
+- `MarcosFRG/gemini-2.5-flash-lite` (Community, text) — text model.
+- `MarcosFRG/llama-4-scout` (Community, text) — text model.
+- `Spit-fires/Supra-1.5-50M-instruct` (Community, text) — text model.
+- `MarcosFRG/cosmosrp-2.1` (Community, text) — text model.
+- `MarcosFRG/qwen3-coder-30b-a3b` (Community, text) — text model.
+- `MarcosFRG/grok-4.20-non-reasoning` (Community, text) — text model.
+- `MarcosFRG/grok-4.20-reasoning` (Community, text) — text model.
+- `MarcosFRG/grok-4.3` (Community, text) — text model.
+- `MarcosFRG/step-3.5-flash` (Community, text) — text model.
+- `MarcosFRG/step-3.7-flash` (Community, text) — text model.
+- `MarcosFRG/gpt-5-nano` (Community, text) — text model.
+- `MarcosFRG/deepseek-v4-pro` (Community, text) — text model.
+- `MarcosFRG/minimax-m3` (Community, text) — text model.
+- `MarcosFRG/gpt-5.4-nano` (Community, text) — text model.
+- `MarcosFRG/mistral-large-3` (Community, text) — text model.
+- `MarcosFRG/mimo-v2.5` (Community, text) — text model.
+- `MarcosFRG/kimi-k2.6` (Community, text) — text model.
+- `MarcosFRG/gemma-3-27b` (Community, text) — text model.
+- `sharktide/inferenceport-ai-command-r-plus` (Community, text) — text model.
+- `sharktide/inferenceport-ai-mimo-v2.5` (Community, text) — text model.
+- `sharktide/inferenceport-ai-kimi-k2.6` (Community, text) — text model.
+- `MarcosFRG/gemini-3-flash-preview` (Community, text) — text model.
+- `nanobanana-2-lite` (Google, image) — vision input.
+
+### Changed
+- `glm` — price +100%.
+
 ## 2026-06-24
 
 ### Added

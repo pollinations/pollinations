@@ -46,6 +46,7 @@ const TABLES: TableConfig[] = [
                        prompt_text_price, prompt_cached_price, prompt_cache_write_price,
                        prompt_audio_price, prompt_image_price, completion_text_price,
                        completion_reasoning_price, completion_audio_price,
+                       disabled_at, disabled_reason, disabled_by,
                        created_at, updated_at
                 FROM community_endpoint`,
     },

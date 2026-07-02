@@ -56,33 +56,6 @@ test("GET /api/account/earnings returns entity rollups and additive money totals
             reward_rate: 0.75,
             unique_users: 4,
         }),
-        earningsRow({
-            date: "",
-            entity_id: "",
-            entity_name: "",
-            source: "byop_markup",
-            requests: 5,
-            baseline_price: 0.4,
-            pollen_earned: 0.1,
-            paid_earned: 0.08,
-            tier_earned: 0.02,
-            cost_usd: 0.5,
-            unique_users: 3,
-        }),
-        earningsRow({
-            date: "",
-            entity_id: "",
-            entity_name: "",
-            source: "community_model",
-            requests: 7,
-            baseline_price: 0.4,
-            pollen_earned: 0.3,
-            paid_earned: 0.12,
-            tier_earned: 0.18,
-            cost_usd: 0.4,
-            reward_rate: 0.75,
-            unique_users: 4,
-        }),
     ];
 
     const response = await SELF.fetch(

@@ -1578,8 +1578,7 @@ export const accountRoutes = new Hono<Env>()
                 "Returns developer earnings in one response: per-(date, entity) buckets, per-entity rollups, and additive money totals across BYOP apps and community models. Source-specific rows include `requests`, `baseline_price`, reward basis `cost_usd`, `reward_rate`, and `unique_users`; the top-level total only includes additive earned-pollen fields. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. API keys require the read-only `account:usage` permission.",
             responses: {
                 200: {
-                    description:
-                        "Earnings buckets and additive totals",
+                    description: "Earnings buckets and additive totals",
                     content: {
                         "application/json": {
                             schema: resolver(developerEarningsResponseSchema),
@@ -1622,10 +1621,10 @@ export const accountRoutes = new Hono<Env>()
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = requireTinybirdReadToken(c.env);
             const kv = c.env.KV;
-            // v8: materialized earnings rows use unified source/entity fields.
+            // v9: payload drops the bySource rollup.
             const cacheKeyPrefix = devUserOverridden
-                ? `earnings:v8:debug:${devUserId}`
-                : `earnings:v8:${devUserId}`;
+                ? `earnings:v9:debug:${devUserId}`
+                : `earnings:v9:${devUserId}`;
             const periodCacheKey =
                 granularity && period ? `${granularity}:${period}` : `${days}d`;
             const cacheKey = `${cacheKeyPrefix}:${periodCacheKey}:grain:${grain}:${selectedEntityIds.length > 0 ? `entities:${selectedEntityIds.join(",")}` : "all"}`;
@@ -1677,9 +1676,8 @@ export const accountRoutes = new Hono<Env>()
                         },
                     );
                     const daily = rows.filter((r) => r.date !== "");
-                    const rollups = rows.filter((r) => r.date === "");
-                    const perEntity = [...rollups]
-                        .filter((r) => r.entity_id !== "")
+                    const perEntity = rows
+                        .filter((r) => r.date === "")
                         .sort((a, b) => b.pollen_earned - a.pollen_earned);
                     payload = {
                         daily,

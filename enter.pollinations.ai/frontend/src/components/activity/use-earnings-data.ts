@@ -84,14 +84,7 @@ export function useEarningsData(
         setDailyEarnings([]);
         setPerEntity([]);
 
-        const query: {
-            granularity: string;
-            period: string;
-            entity_ids?: string;
-        } = {
-            granularity,
-            period,
-        };
+        const query = { granularity, period };
 
         apiClient.account.earnings
             .$get({ query })
@@ -130,7 +123,7 @@ export function useEarningsData(
         for (const row of perEntity) {
             if (row.source !== "byop_markup" || !row.entity_id) continue;
             if (appLabels.has(row.entity_id)) continue;
-            appLabels.set(row.entity_id, row.entity_name || row.entity_id);
+            appLabels.set(row.entity_id, row.entity_name);
         }
 
         return Array.from(appLabels.entries())
@@ -143,7 +136,7 @@ export function useEarningsData(
         for (const row of perEntity) {
             if (row.source !== "community_model" || !row.entity_id) continue;
             if (modelLabels.has(row.entity_id)) continue;
-            modelLabels.set(row.entity_id, row.entity_name || row.entity_id);
+            modelLabels.set(row.entity_id, row.entity_name);
         }
 
         return Array.from(modelLabels.entries())
@@ -211,7 +204,7 @@ export function useEarningsData(
 
             const entityKey = `${row.source}:${row.entity_id}`;
             const entityData = current.byEntity.get(entityKey) || {
-                label: row.entity_name || row.entity_id,
+                label: row.entity_name,
                 requests: 0,
                 pollen: 0,
             };

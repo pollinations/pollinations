@@ -217,14 +217,6 @@ function sortLastEvents(events: LastEvent[]): LastEvent[] {
     });
 }
 
-function dedupeAndSortLastEvents(events: LastEvent[]): LastEvent[] {
-    const byKey = new Map<string, LastEvent>();
-    for (const event of events) {
-        byKey.set(`${event.kind}:${event.id}`, event);
-    }
-    return sortLastEvents(Array.from(byKey.values()));
-}
-
 function eventCursorFromRecord(
     row: UsageEventRecord | EarningsEventRecord,
 ): EventCursor {
@@ -387,7 +379,7 @@ export const LastEventsPanel: FC<{ apiKeys: ApiKey[] }> = ({ apiKeys }) => {
             );
             setState((prev) => ({
                 ...prev,
-                rows: dedupeAndSortLastEvents([...prev.rows, ...newEvents]),
+                rows: sortLastEvents([...prev.rows, ...newEvents]),
                 visibleCount: nextVisibleCount,
                 loadingMore: false,
                 error: null,

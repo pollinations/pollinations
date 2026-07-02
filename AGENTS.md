@@ -77,7 +77,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 **CRITICAL — These rules apply whenever deploying to Tinybird:**
 
 - Two workspaces: `pollinations_enter` (prod) and `pollinations_enter_staging` (staging + dev + local). Pipes and datasources must be deployed to **both** — no CI auto-deploy yet, tracked in #11127.
-- Use the Tinybird **Forward CLI** as `tb`. On this machine it should resolve to `~/.local/bin/tb`; Classic is available only as `tb-classic`. If `tb --cloud` is missing, fix PATH before doing anything.
+- Use the Tinybird **Forward CLI** as `tb` (not Classic).
 - Do not rely on `.tinyb` for workspace selection. Always pass `TB_TOKEN` from `secrets/{staging,prod}.vars.json` and `--host https://api.europe-west2.gcp.tinybird.co`.
 - Always validate and deploy to **staging first**, verify, then prod only when requested.
 - Validate first: `tb --cloud --host "$TB_HOST" deployment create --check --no-allow-destructive-operations`

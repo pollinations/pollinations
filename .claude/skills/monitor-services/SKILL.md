@@ -1,6 +1,6 @@
 ---
 name: monitor-services
-description: "Health check and auto-restart all Pollinations GPU services (Flux/Z-Image on RunPod, LTX-2 on GH200, Klein on RunPod, legacy image on OVH, Sana on Oracle Cloud). Use with /loop for recurring checks."
+description: "Health check and auto-restart all Pollinations GPU services (Flux on Vast.ai, Z-Image on RunPod, LTX-2 on GH200, Klein on RunPod, legacy image on OVH, Sana on Oracle Cloud). Use with /loop for recurring checks."
 ---
 
 # Monitor Services
@@ -172,7 +172,7 @@ Note: the pod uses a generic `runpod/pytorch` image; `handler.py` and `restart.s
 
 ### 5. Z-Image Workers (RunPod, multiple single-GPU pods)
 
-> ⚠️ **Pod IDs, hostnames, SSH ports, and the worker count all change over time — DISCOVER them live, never trust hardcoded values here.** As of 2026-06-16, zimage runs as **3 separate single-GPU pods** (one 4090 + two 3090s), each serving on port 8767. The old `hsl3ksl31lvrcc` 4x-4090 pod is gone. Flux runs on its own worker(s) elsewhere — it is healthy and unrelated to zimage.
+> ⚠️ **Pod IDs, hostnames, SSH ports, and the worker count all change over time — DISCOVER them live, never trust hardcoded values here.** As of 2026-06-16, zimage runs as **3 separate single-GPU pods** (one 4090 + two 3090s), each serving on port 8767. The old `hsl3ksl31lvrcc` 4x-4090 pod is gone. Flux runs on Vast.ai (§8) — unrelated to zimage.
 
 **Step 1 — discover what's actually deployed (the source of truth):**
 ```bash
@@ -291,12 +291,45 @@ ssh -i ~/.ssh/id_rsa_ovh ubuntu@57.130.31.42 "sudo truncate -s 0 /var/log/syslog
 
 ---
 
+### 8. Flux Workers (Vast.ai RTX 5090s)
+
+Flux is self-hosted on Vast.ai 5090s since 2026-07-02 (PR #12171) with automatic
+Fireworks fallback: the worker sheds load with 503 beyond `QUEUE_LIMIT`, and the
+gateway retries those requests on Fireworks. Instance coordinates, provisioning
+one-liner, and host gotchas live in `image.pollinations.ai/GPU_INSTANCES.md`
+(source of truth — instance IDs/IPs/ports change on recreate).
+
+**Check:**
+```bash
+# flux worker(s) registered:
+curl -s https://gen.pollinations.ai/register | grep -o '"type":"flux"[^}]*'
+# tunnel + worker up (expect 200):
+curl -s -o /dev/null -w "%{http_code}\n" https://flux-vast-01.pollinations.ai/docs
+```
+
+**Pool vs Fireworks split** — invisible in Tinybird (`model_provider_used` is
+static registry data); read it from the worker log (SSH coords from
+GPU_INSTANCES.md / `vastai show instances`):
+```bash
+ssh -p <PORT> -i ~/.ssh/pollinations_services_2026 root@<IP> \
+  'grep -c "\" 200" /tmp/flux.log; grep -c "\" 503" /tmp/flux.log'   # served / shed
+```
+
+**Fix:** on the instance, `screen -r flux` and `screen -r cloudflared` run in
+restart loops (logs `/tmp/flux.log`, `/tmp/cloudflared.log`); restart commands in
+GPU_INSTANCES.md. If flux is fully down, all traffic falls back to Fireworks
+automatically — users are unaffected, but it costs ~$70/day, so fix promptly.
+Vast SSH gotcha: long-lived sessions get dropped — use short commands, never
+`sleep` inside a session.
+
+---
+
 ## Procedure
 
 When invoked, run checks in this order:
 
 1. **gen.pollinations.ai registry** - `curl https://gen.pollinations.ai/register` (KV-backed), check worker count and error rates
-2. **Flux/Z-Image RunPod** - verify 4 workers registered with 0% error rate
+2. **Flux (Vast.ai) + Z-Image (RunPod)** - flux worker registered + tunnel healthy (§8); every RUNNING zimage pod registered (§5)
 3. **LTX-2 health** - curl health endpoint
 4. **LTX-2 e2e** - if healthy, test through gen.pollinations.ai (use test token from `.testingtokens`)
 5. **ACE-Step health** - curl health endpoint on port 8189
@@ -314,8 +347,8 @@ For each:
 
 - **Test token**: Read from `enter.pollinations.ai/.testingtokens` (ENTER_API_TOKEN_REMOTE)
 - **SSH keys**: Stored in SOPS (`enter.pollinations.ai/secrets/prod.vars.json`):
-  - `SSH_RUNPOD_FLUX_ZIMAGE` — RunPod Flux+Z-Image pod
   - `SSH_LAMBDA_SANA_LTX2_ACESTEP` — Lambda GH200 (LTX-2, ACE-Step, Sana)
+  - Vast.ai flux workers use the local key `~/.ssh/pollinations_services_2026` (attached per-instance via `vastai attach ssh`; not in SOPS)
   - Klein uses the RunPod relay (`ssh.runpod.io`) with `~/.ssh/id_ed25519` — get the full command from the dashboard "Connect" tab
   - Extract: `sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '.KEY_NAME' > /tmp/key && chmod 600 /tmp/key`
 - **OVH**: `~/.ssh/id_rsa_ovh` (not in SOPS)
@@ -328,10 +361,8 @@ Report a brief status table:
 | Service | Status | Latency | Notes |
 |---------|--------|---------|-------|
 | gen registry | OK | 0.1s | 4 workers, 0% errors |
-| Flux RunPod (gpu0) | OK | 2.9s | hsl3ksl31lvrcc-8765 |
-| Flux RunPod (gpu1) | OK | 2.9s | hsl3ksl31lvrcc-8766 |
-| Z-Image RunPod (gpu2) | OK | 1.5s | hsl3ksl31lvrcc-8767 |
-| Z-Image RunPod (gpu3) | OK | 1.5s | hsl3ksl31lvrcc-8768 |
+| Flux Vast (flux-vast-01) | OK | 2.3s | tunnel 200, 1.2% shed to Fireworks |
+| Z-Image RunPod ×3 | OK | 1.5s | pods discovered via runpodctl |
 | LTX-2 health | OK | 0.2s | |
 | LTX-2 e2e | OK | 11.3s | 682KB |
 | ACE-Step | OK | 0.1s | |

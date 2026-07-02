@@ -1,5 +1,8 @@
 import debug from "debug";
-import { fetchFromWeightedServer } from "./availableServers.ts";
+import {
+    fetchFromWeightedServer,
+    type ServerType,
+} from "./availableServers.ts";
 import { getImageEnv } from "./env.ts";
 import { HttpError } from "./httpError.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
@@ -159,14 +162,16 @@ async function resizeInputImageForGptImage(
 }
 
 /**
- * Calls self-hosted image generation servers (zimage pool).
+ * Calls self-hosted image generation servers (zimage or flux pool).
  * @param {string} prompt - The prompt for image generation.
  * @param {Object} safeParams - The parameters for image generation.
+ * @param {ServerType} poolType - Which registered server pool to use.
  * @returns {Promise<Array>} - The generated images.
  */
 export const callSelfHostedServer = async (
     prompt: string,
     safeParams: ImageParams,
+    poolType: ServerType = "zimage",
 ): Promise<ImageGenerationResult> => {
     try {
         logOps("safeParams", safeParams);
@@ -200,7 +205,7 @@ export const callSelfHostedServer = async (
 
         // Single attempt - no retry logic
         try {
-            response = await fetchFromWeightedServer("zimage", {
+            response = await fetchFromWeightedServer(poolType, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -256,6 +261,25 @@ export const callSelfHostedServer = async (
     } catch (e) {
         logError("Error in callSelfHostedServer:", e);
         throw e;
+    }
+};
+
+/**
+ * Flux routing: prefer the self-hosted GPU pool; fall back to Fireworks when
+ * no worker is registered or the pool request fails.
+ */
+export const callFluxWithFallback = async (
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> => {
+    try {
+        return await callSelfHostedServer(prompt, safeParams, "flux");
+    } catch (error) {
+        logError(
+            "Self-hosted flux failed, falling back to Fireworks:",
+            error.message,
+        );
+        return await callFireworksFluxSchnellAPI(prompt, safeParams);
     }
 };
 
@@ -736,7 +760,7 @@ const generateImage = async (
             return await callQwenImageAPI(prompt, safeParams);
 
         case "flux":
-            return await callFireworksFluxSchnellAPI(prompt, safeParams);
+            return await callFluxWithFallback(prompt, safeParams);
 
         default:
             // zimage is the only model that reaches the default branch

@@ -123,7 +123,10 @@ describe("POST /api/oauth/token (authorization_code + PKCE)", () => {
         expect(body.access_token).toBe("sk_test_access_token");
     });
 
-    test("omitting redirect_uri is allowed (PKCE binds the request)", async () => {
+    test("omitting redirect_uri is rejected (RFC 6749 §4.1.3)", async () => {
+        // The authorization request always carries a redirect_uri, so the
+        // token request must repeat it — deliberately stricter than the
+        // OAuth 2.1 draft's PKCE-only binding.
         const code = crypto.randomUUID();
         await putCode(code);
         const params = validTokenParams(code);
@@ -132,7 +135,9 @@ describe("POST /api/oauth/token (authorization_code + PKCE)", () => {
             `${BASE}/api/oauth/token`,
             formPost(params),
         );
-        expect(res.status).toBe(200);
+        expect(res.status).toBe(400);
+        const body = (await res.json()) as { error: string };
+        expect(body.error).toBe("invalid_request");
     });
 
     test("wrong code_verifier returns invalid_grant and burns the code", async () => {
@@ -394,6 +399,49 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
         expect(codeRes.status).toBe(400);
     }, 30000);
 
+    test("rejects extra query params on a registered redirect_uri (exact match)", async ({
+        sessionToken,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "github");
+
+        const createRes = await SELF.fetch(`${BASE}/api/api-keys`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({ name: "alp-test", type: "publishable" }),
+        });
+        const client = (await createRes.json()) as { id: string; key: string };
+        await SELF.fetch(`${BASE}/api/api-keys/${client.id}/metadata`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({ redirectUris: [REDIRECT_URI] }),
+        });
+
+        // The legacy flow tolerates appended query params; the code flow
+        // must not — the code itself rides the query string.
+        const codeRes = await SELF.fetch(`${BASE}/api/oauth/code`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({
+                apiKey: "sk_minted_by_consent",
+                clientId: client.key,
+                redirectUri: `${REDIRECT_URI}?next=https://evil.example`,
+                codeChallenge: await s256(VERIFIER),
+                codeChallengeMethod: "S256",
+            }),
+        });
+        expect(codeRes.status).toBe(400);
+    }, 30000);
+
     test("rejects a malformed code_challenge", async ({
         sessionToken,
         mocks,
@@ -433,5 +481,48 @@ describe("GET /api/oauth/userinfo", () => {
         expect(body.sub).toBeTruthy();
         expect(body).toHaveProperty("email");
         expect(body).toHaveProperty("preferred_username");
+    }, 30000);
+
+    test("name/email require the profile permission for API keys", async ({
+        sessionToken,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "github");
+        const mint = async (accountPermissions?: string[]) => {
+            const res = await SELF.fetch(`${BASE}/api/api-keys`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+                body: JSON.stringify({
+                    name: "userinfo-scope-test",
+                    ...(accountPermissions && { accountPermissions }),
+                }),
+            });
+            expect(res.status).toBe(200);
+            return ((await res.json()) as { key: string }).key;
+        };
+
+        // No profile scope granted → public identity only, no PII
+        const bareKey = await mint();
+        const bareRes = await SELF.fetch(`${BASE}/api/oauth/userinfo`, {
+            headers: { Authorization: `Bearer ${bareKey}` },
+        });
+        expect(bareRes.status).toBe(200);
+        const bare = (await bareRes.json()) as Record<string, unknown>;
+        expect(bare.sub).toBeTruthy();
+        expect(bare).toHaveProperty("preferred_username");
+        expect(bare).not.toHaveProperty("name");
+        expect(bare).not.toHaveProperty("email");
+
+        // profile scope granted → PII included
+        const profileKey = await mint(["profile"]);
+        const profileRes = await SELF.fetch(`${BASE}/api/oauth/userinfo`, {
+            headers: { Authorization: `Bearer ${profileKey}` },
+        });
+        expect(profileRes.status).toBe(200);
+        const profiled = (await profileRes.json()) as Record<string, unknown>;
+        expect(profiled).toHaveProperty("email");
     }, 30000);
 });

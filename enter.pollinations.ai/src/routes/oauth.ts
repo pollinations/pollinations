@@ -1,5 +1,5 @@
 import { PKCE_S256_CHALLENGE_REGEX } from "@shared/auth/authorize-config.ts";
-import { redirectUriMatchesAllowlist } from "@shared/auth/redirect-uri.ts";
+import { redirectUriMatchesAllowlistExact } from "@shared/auth/redirect-uri.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -100,8 +100,12 @@ export const oauthRoutes = new Hono<Env>()
                     message: "Unknown client_id",
                 });
             }
+            // Exact matching (incl. query) — the code rides the query string,
+            // so the legacy flow's extra-query leniency doesn't apply here.
             const allowlist = getRedirectUris(result.key.metadata ?? {});
-            if (!redirectUriMatchesAllowlist(body.redirectUri, allowlist)) {
+            if (
+                !redirectUriMatchesAllowlistExact(body.redirectUri, allowlist)
+            ) {
                 throw new HTTPException(400, {
                     message:
                         "redirect_uri is not registered for this client_id",
@@ -143,11 +147,20 @@ export const oauthRoutes = new Hono<Env>()
                 "Only authorization_code and device_code are supported.",
             );
         }
-        if (!body.code || !body.client_id || !body.code_verifier) {
+        // redirect_uri is required per RFC 6749 §4.1.3 since the
+        // authorization request always carries one. OAuth 2.1 drafts allow
+        // omitting it (PKCE binds the transaction); we deliberately keep the
+        // stricter rule for maximum client-library compatibility.
+        if (
+            !body.code ||
+            !body.client_id ||
+            !body.code_verifier ||
+            !body.redirect_uri
+        ) {
             return tokenError(
                 c,
                 "invalid_request",
-                "code, client_id, and code_verifier are required.",
+                "code, client_id, redirect_uri, and code_verifier are required.",
             );
         }
 
@@ -174,9 +187,7 @@ export const oauthRoutes = new Hono<Env>()
                 "Code was issued to a different client_id.",
             );
         }
-        // redirect_uri is optional under OAuth 2.1 (PKCE binds the request),
-        // but when present it must match the authorization request exactly.
-        if (body.redirect_uri && body.redirect_uri !== stored.redirectUri) {
+        if (body.redirect_uri !== stored.redirectUri) {
             return tokenError(c, "invalid_grant", "redirect_uri mismatch");
         }
         if (!(await verifyPkceS256(body.code_verifier, stored.codeChallenge))) {

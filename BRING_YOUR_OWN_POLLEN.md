@@ -204,10 +204,11 @@ Once you have the user-authorized `sk_...` key, you can check who it belongs to:
 ```bash
 curl https://enter.pollinations.ai/api/device/userinfo \
   -H 'Authorization: Bearer sk_...'
-# → { "sub": "user-id", "name": "Thomas", "preferred_username": "voodoohop", "email": "...", "picture": "..." }
+# → { "sub": "user-id", "preferred_username": "voodoohop", "picture": "..." }
+# with the `profile` scope, also: "name": "Thomas", "email": "..."
 ```
 
-`/api/oauth/userinfo` returns the same standard OIDC userinfo shape.
+`/api/oauth/userinfo` returns the same standard OIDC userinfo shape. `name` and `email` are included only when the key carries the `profile` scope.
 
 ---
 

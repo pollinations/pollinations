@@ -7,6 +7,7 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "../env.ts";
 import { type AuthVariables, auth } from "../middleware/auth.ts";
+import { hasAccountReadPermission } from "./account-permissions.ts";
 
 type AuthedContext = Context<{
     Bindings: Env["Bindings"];
@@ -325,9 +326,17 @@ export async function exchangeDeviceCode(
 /**
  * OIDC-shaped userinfo for the current key/session.
  * Shared by GET /api/device/userinfo and GET /api/oauth/userinfo.
+ *
+ * name/email are PII gated behind the `profile` scope, same as
+ * GET /api/account/profile: sessions always see them, API keys only when
+ * they carry account:profile. sub/picture/preferred_username (public GitHub
+ * identity) are always returned.
  */
 export async function handleUserinfo(c: AuthedContext) {
     const user = c.var.auth.requireUser();
+    const includeProfilePII =
+        !c.var.auth.apiKey ||
+        hasAccountReadPermission(c.var.auth.apiKey, "profile");
     const db = drizzle(c.env.DB, { schema });
     const row = await db.query.user.findFirst({
         where: eq(schema.user.id, user.id),
@@ -344,8 +353,7 @@ export async function handleUserinfo(c: AuthedContext) {
     }
     return c.json({
         sub: row.id,
-        name: row.name,
-        email: row.email,
+        ...(includeProfilePII && { name: row.name, email: row.email }),
         picture: row.image,
         preferred_username: row.githubUsername,
     });

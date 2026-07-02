@@ -20,6 +20,7 @@ import {
     PKCE_S256_CHALLENGE_REGEX,
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
+import { redirectUriMatchesAllowlistExact } from "@shared/auth/redirect-uri.ts";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
@@ -298,6 +299,21 @@ export function Authorize() {
                         setRedirectValidationState("invalid");
                         setError(
                             "This app key could not be verified. Authorization blocked.",
+                        );
+                    } else if (
+                        isCodeFlow &&
+                        !redirectUriMatchesAllowlistExact(
+                            redirect_url,
+                            attr.redirectUris,
+                        )
+                    ) {
+                        // The code flow needs an exact match (the code rides
+                        // the query string); app-lookup applies the legacy
+                        // flow's lenient rules, so re-check strictly here —
+                        // same check POST /api/oauth/code enforces.
+                        setRedirectValidationState("invalid");
+                        setError(
+                            "This redirect URL is not registered for this app. Authorization blocked.",
                         );
                     } else {
                         setRedirectValidationState("valid");

@@ -316,6 +316,7 @@ export function Authorize() {
         urlScope,
         app_key,
         redirect_url,
+        response_type,
         code_challenge,
         code_challenge_method,
         setAccountPermissions,

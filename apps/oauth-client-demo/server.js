@@ -41,10 +41,11 @@ function discover() {
 
 function escapeHtml(value) {
     return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;");
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
 }
 
 function page(body) {
@@ -99,7 +100,7 @@ async function handleLogin(res) {
     redirect(res, url.toString());
 }
 
-async function handleCallback(req, res, query) {
+async function handleCallback(res, query) {
     const state = query.get("state") || "";
     const login = pending.get(state);
     pending.delete(state);
@@ -252,7 +253,7 @@ const server = createServer(async (req, res) => {
             return await handleLogin(res);
         }
         if (url.pathname === "/callback" && req.method === "GET") {
-            return await handleCallback(req, res, url.searchParams);
+            return await handleCallback(res, url.searchParams);
         }
         if (url.pathname === "/generate" && req.method === "POST") {
             if (!session) return redirect(res, "/");

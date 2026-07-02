@@ -1,6 +1,6 @@
 # Refunds & Cancellations
 
-**Updated: 2026-06-24**
+**Updated: 2026-07-02**
 
 ## Refunds & Cancellations (digital API services & Pollen)
 
@@ -59,4 +59,4 @@ If you provide a valid VAT ID or purchase for business use, consumer withdrawal 
 
 ## 8) How to Request Review
 
-Email billing@myceli.ai with your order ID, account email, and a short description of the issue. We aim to review within 5-10 business days. Approved refunds return to the original payment method subject to payment-network timelines. Business days are calculated in EET/EEST (Tallinn).
+Email billing@pollinations.ai with your order ID, account email, and a short description of the issue. We aim to review within 5-10 business days. Approved refunds return to the original payment method subject to payment-network timelines. A refund of a full purchase includes that purchase's service fee and tax; partial refunds are prorated on the amount paid. Business days are calculated in EET/EEST (Tallinn).

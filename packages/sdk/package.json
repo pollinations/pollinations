@@ -1,6 +1,6 @@
 {
   "name": "@pollinations/sdk",
-  "version": "5.1.0-alpha.1",
+  "version": "5.1.0-alpha.2",
   "description": "Official SDK for pollinations.ai - Generate images, videos, audio, and text with ease",
   "type": "module",
   "main": "./dist/index.cjs",

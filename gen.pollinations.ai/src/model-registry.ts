@@ -99,7 +99,7 @@ function communityEntryToGenerationEntry(
         definition: entry.definition,
         info: entry.info,
         communityEndpoint: entry.communityEndpoint,
-        visible: true,
+        visible: entry.communityEndpoint.disabledAt === null,
     };
 }
 
@@ -121,7 +121,15 @@ function buildRegistry(
     }
 
     return {
-        resolve: (model) => byIdOrAlias.get(model) ?? null,
+        resolve: (model) => {
+            const entry = byIdOrAlias.get(model) ?? null;
+            // Deactivated community models don't exist as far as callers are
+            // concerned — unlike static `hidden` models (intentionally
+            // unlisted but still callable), a disabled community endpoint is
+            // broken and must be unreachable everywhere, not just unlisted.
+            if (entry?.communityEndpoint?.disabledAt) return null;
+            return entry;
+        },
         visibleEntries: () => entries.filter((entry) => entry.visible),
     };
 }

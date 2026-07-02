@@ -81,5 +81,16 @@ export function processParameters(
         }
     }
 
+    // Bedrock Claude models return 400 when both temperature and top_p are
+    // set. Drop top_p when temperature is also present.
+    if (
+        /anthropic\.claude/i.test(model) &&
+        updatedOptions.temperature !== undefined &&
+        updatedOptions.top_p !== undefined
+    ) {
+        log(`Dropping top_p (temperature is set) for ${model}`);
+        delete updatedOptions.top_p;
+    }
+
     return { messages, options: updatedOptions };
 }

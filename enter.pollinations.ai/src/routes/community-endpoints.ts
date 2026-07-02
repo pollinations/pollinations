@@ -89,6 +89,9 @@ const CommunityEndpointResponseSchema = z.object({
     baseUrl: z.string(),
     upstreamModel: z.string(),
     ...ResponsePriceFieldsSchema,
+    disabled: z.boolean(),
+    disabledReason: z.string().nullable(),
+    disabledAt: z.string().nullable(),
     createdAt: z.string(),
     updatedAt: z.string(),
 });
@@ -175,6 +178,9 @@ function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
         baseUrl: row.baseUrl,
         upstreamModel: row.upstreamModel,
         ...communityEndpointPrices(row),
+        disabled: row.disabledAt !== null,
+        disabledReason: row.disabledReason,
+        disabledAt: row.disabledAt,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
     };

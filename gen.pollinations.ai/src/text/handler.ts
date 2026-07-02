@@ -9,6 +9,7 @@ import {
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
+import { fixWavHeader } from "../routes/audio.js";
 import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { type ExpressLikeRequest, getRequestData } from "./requestUtils.js";
@@ -23,7 +24,7 @@ const TEXT_ENV_KEYS = [
     "AZURE_MYCELI_PROD_API_KEY",
     "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
     "DASHSCOPE_API_KEY",
-    "FIREWORKS_API_KEY",
+    "FIREWORKS_NEO_API_KEY",
     "GOOGLE_CLIENT_EMAIL",
     "GOOGLE_PRIVATE_KEY",
     "GOOGLE_PRIVATE_KEY_ID",
@@ -166,8 +167,20 @@ function sendTextContentResponse(
 
     const audio = message.audio as Record<string, unknown> | undefined;
     if (typeof audio?.data === "string") {
-        headers.set("Content-Type", "audio/mpeg");
-        return new Response(base64ToArrayBuffer(audio.data), { headers });
+        const buffer = base64ToArrayBuffer(audio.data);
+        const isWav =
+            buffer.byteLength >= 12 &&
+            new Uint8Array(buffer, 0, 4).reduce(
+                (s, b) => s + String.fromCharCode(b),
+                "",
+            ) === "RIFF";
+        if (isWav) {
+            fixWavHeader(buffer);
+            headers.set("Content-Type", "audio/wav");
+        } else {
+            headers.set("Content-Type", "audio/mpeg");
+        }
+        return new Response(buffer, { headers });
     }
 
     if (message.content !== undefined && message.content !== null) {

@@ -1129,20 +1129,35 @@ async function verifyAutoTopUpInvoicePayment(
     const expectedMinimumPaidCents =
         expectedPackAmountCents + expectedServiceFeeCents;
     const lines = await getInvoiceLinesForVerification(env, invoice);
-    if (lines.length === 0) {
-        if (invoice.amount_paid < expectedMinimumPaidCents) {
-            return { ok: false, reason: "amount mismatch" };
-        }
-        return { ok: true };
-    }
 
     if (lines.some((line) => getInvoiceLineAmountCents(line) < 0)) {
         return { ok: false, reason: "unexpected negative invoice line" };
     }
 
+    if (lines.length === 0) {
+        // Line data unavailable: accept the exact legacy pack-only charge or
+        // anything covering pack + fee under the new pricing.
+        if (
+            invoice.amount_paid !== expectedPackAmountCents &&
+            invoice.amount_paid < expectedMinimumPaidCents
+        ) {
+            return { ok: false, reason: "amount mismatch" };
+        }
+        return { ok: true };
+    }
+
     const packLines = lines.filter(
         (line) => line.metadata?.line_type === POLLEN_PACK_LINE_TYPE,
     );
+    // Invoices created before service-fee pricing have no typed lines and
+    // charged exactly the pack amount. They can still surface here after a
+    // deploy (in-flight webhooks, stale-attempt recovery), so accept them.
+    if (packLines.length === 0) {
+        if (invoice.amount_paid !== expectedPackAmountCents) {
+            return { ok: false, reason: "amount mismatch" };
+        }
+        return { ok: true };
+    }
     if (packLines.length !== 1) {
         return { ok: false, reason: "wrong pollen pack line count" };
     }

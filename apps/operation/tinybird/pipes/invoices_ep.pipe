@@ -1,0 +1,5 @@
+NODE endpoint
+SQL >
+    SELECT * FROM invoices ORDER BY provider, period_month
+
+TYPE endpoint

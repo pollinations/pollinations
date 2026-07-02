@@ -1,0 +1,9 @@
+NODE gaps
+SQL >
+    SELECT month, provider, billing, status, invoice_usd, payment_usd, delta_usd,
+           invoice_refs, payment_refs, note
+    FROM reconciliation
+    WHERE status IN ('missing_invoice', 'amount_mismatch', 'needs_label')
+    ORDER BY month DESC, provider
+
+TYPE endpoint

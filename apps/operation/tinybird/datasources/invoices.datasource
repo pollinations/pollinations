@@ -1,0 +1,19 @@
+SCHEMA >
+    `sha256` String,
+    `msgid` String,
+    `provider` String,
+    `category` String,
+    `kind` String,
+    `period_month` String,
+    `amount` Float64,
+    `currency` String,
+    `amount_usd` Float64,
+    `invoice_number` String,
+    `issued_at` Date,
+    `source` String,
+    `file_ref` String,
+    `status` String,
+    `ingested_at` Date
+
+ENGINE "MergeTree"
+ENGINE_SORTING_KEY "provider, period_month, issued_at"

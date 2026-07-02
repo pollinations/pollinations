@@ -1,0 +1,7 @@
+NODE coverage
+SQL >
+    SELECT month, provider, billing, status, invoice_usd, payment_usd
+    FROM reconciliation
+    ORDER BY provider, month
+
+TYPE endpoint

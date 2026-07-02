@@ -1,0 +1,8 @@
+SCHEMA >
+    `run_at` DateTime,
+    `ok` UInt8,
+    `statuses` String,
+    `notes` String
+
+ENGINE "MergeTree"
+ENGINE_SORTING_KEY "run_at"

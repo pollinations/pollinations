@@ -1,0 +1,15 @@
+SCHEMA >
+    `month` String,
+    `provider` String,
+    `billing` String,
+    `status` String,
+    `invoice_usd` Float64,
+    `payment_usd` Float64,
+    `delta_usd` Float64,
+    `invoice_refs` String,
+    `payment_refs` String,
+    `note` String,
+    `run_at` Date
+
+ENGINE "MergeTree"
+ENGINE_SORTING_KEY "month, provider"

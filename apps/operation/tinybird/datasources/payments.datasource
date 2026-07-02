@@ -1,0 +1,12 @@
+SCHEMA >
+    `paid_at` Date,
+    `month` String,
+    `provider` String,
+    `counterparty` String,
+    `amount_eur` Float64,
+    `amount_usd` Float64,
+    `wise_ref` String,
+    `pulled_at` Date
+
+ENGINE "MergeTree"
+ENGINE_SORTING_KEY "month, provider, paid_at"

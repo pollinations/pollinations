@@ -10,12 +10,13 @@
 # same setup works on RTX 4090 (INT4 model) and RTX 5090 (FP4 model).
 #
 # Usage (on the instance):
-#   HF_TOKEN=... \
 #   PLN_GPU_TOKEN=... \
 #   PUBLIC_PORT=<external port mapped to 8765> \
 #   bash setup-vast.sh
 #
 # Optional env:
+#   HF_TOKEN          not required — FLUX.1-schnell and the nunchaku quant
+#                     repos are public; set it only to avoid anon rate limits
 #   QUANT_MODEL_PATH  default mit-han-lab/svdq-fp4-flux.1-schnell (Blackwell);
 #                     use mit-han-lab/svdq-int4-flux.1-schnell on Ada GPUs
 #   MAX_PIXELS        default 1048576 (1024x1024, matches FP4/5090);
@@ -38,10 +39,10 @@ SUDO=""
 
 log() { echo -e "\033[0;32m[setup-vast]\033[0m $1"; }
 
-for var in HF_TOKEN PLN_GPU_TOKEN PUBLIC_PORT; do
+for var in PLN_GPU_TOKEN PUBLIC_PORT; do
     if [ -z "${!var}" ]; then
         echo "Missing required environment variable: $var" >&2
-        echo "Usage: HF_TOKEN=... PLN_GPU_TOKEN=... PUBLIC_PORT=... bash setup-vast.sh" >&2
+        echo "Usage: PLN_GPU_TOKEN=... PUBLIC_PORT=... bash setup-vast.sh" >&2
         exit 1
     fi
 done
@@ -85,7 +86,7 @@ python -c "import torch; assert torch.cuda.is_available(); print('CUDA OK:', tor
 
 log "Writing run environment to $NUNCHAKU_DIR/.env.flux..."
 cat > "$NUNCHAKU_DIR/.env.flux" <<EOF
-export HF_TOKEN=$HF_TOKEN
+${HF_TOKEN:+export HF_TOKEN=$HF_TOKEN}
 export PLN_GPU_TOKEN=$PLN_GPU_TOKEN
 export PORT=$PORT
 export PUBLIC_PORT=$PUBLIC_PORT

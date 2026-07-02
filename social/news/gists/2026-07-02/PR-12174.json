@@ -1,0 +1,35 @@
+{
+  "pr_number": 12174,
+  "title": "docs: align legal terms with service fee + exclusive-tax pricing",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12174",
+  "merged_at": "2026-07-02T13:05:03Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "- Fixes ToS §6 Taxes: prices were stated as VAT-inclusive; checkout now adds tax on top (shipped in #12129).\n- Discloses the service fee on Pollen purchases and auto top-up in ToS §6.\n- Refunds policy: full-purchase refunds include the service fee and tax; partial refunds prorated.\n- Adds an always-visible wallet footer line: prices exclude tax, VAT/sales tax added at checkout.\n- Drops the trailing period in the Buy tooltip tax note.\n- Bumps Updated dates + ToS changelog line.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Keeping the books tidy",
+    "blurb": "Updated our legal docs and wallet UI to clearly show how taxes and service fees are handled at checkout. Just keeping the hive's paperwork transparent and above board!",
+    "summary": "Updated the Terms of Service, Refund Policy, and wallet UI to reflect that Pollen purchases are now tax-exclusive and include a service fee at checkout.",
+    "impact": "Users will now see a clear note in the wallet footer explaining that VAT or sales tax is added at checkout, aligning the UI with our updated legal terms.",
+    "keywords": [
+      "legal",
+      "tos",
+      "billing",
+      "taxes",
+      "wallet"
+    ],
+    "visual_concept": "Polly the bee wearing tiny reading glasses, reviewing a long paper receipt or document, while the Nomnom creature happily eats the bottom of the receipt.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, reviewing a long paper receipt that the round tan nomnom creature is happily eating. Soft lime green (#ecf874) and warm cream gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-02/PR-12174.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, reviewing a long paper receipt that the round tan nomnom creature is happily eating. Soft lime green (#ecf874) and warm cream gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-02T13:06:11.598306+00:00"
+}

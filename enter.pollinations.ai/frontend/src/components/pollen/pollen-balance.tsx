@@ -377,13 +377,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                 <AutoTopUpPanel initialBillingState={initialBillingState} />
             </Surface>
             <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
-                <p className="flex items-start gap-1.5">
-                    <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>
-                        Prices exclude tax — VAT or sales tax is added at
-                        checkout.
-                    </span>
-                </p>
+                <PaymentTrustBadge className="mt-0 pt-0" />
                 <p className="flex items-start gap-1.5">
                     <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <span>
@@ -392,6 +386,13 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                             Refund Policy
                         </InlineLink>
                         .
+                    </span>
+                </p>
+                <p className="flex items-start gap-1.5">
+                    <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>
+                        Prices exclude tax — VAT or sales tax is added at
+                        checkout.
                     </span>
                 </p>
                 <p className="flex items-start gap-1.5">
@@ -409,7 +410,6 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                         — we reply same day.
                     </span>
                 </p>
-                <PaymentTrustBadge className="mt-0 pt-0" />
             </div>
         </>
     );

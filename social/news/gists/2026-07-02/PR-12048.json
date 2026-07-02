@@ -1,0 +1,35 @@
+{
+  "pr_number": 12048,
+  "title": "feat: add 3D model generation — Trellis 2 (inferenceport) + Rodin 2.5 (fal.ai)",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/12048",
+  "merged_at": "2026-07-02T17:34:58Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "## Summary\r\n\r\n- Adds `GET /3d/{prompt}` blocking endpoint and `POST /3d/generations` + `GET /3d/jobs/{job_id}` async job API for 3D model generation\r\n- Two models: **Trellis 2** (inferenceport, sync API) and **Hyper3D Rodin 2.5** (fal.ai)\r\n- Reuses `generate.image` event type and `completionImageTokens` for billing — no Tinybird schema changes\r\n\r\n## Models\r\n\r\n| Model ID | Provider | Price | Input |\r\n|---|---|---|---|\r\n| `trellis-2-low` (default) | inferenceport | $0.24/gen | image |\r\n| `trellis-2-medium` | inferenceport | $0.29/gen | image |\r\n| `trellis-2-high` | inferenceport | $0.35/gen | image |\r\n| `hyper3d-rodin` | fal-ai/hyper3d/rodin/v2.5/fast | $0.40/gen | image or text |\r\n\r\n## Implementation notes\r\n\r\n- Trellis 2 uses inferenceport's **sync API** (`?sync=true`) on the blocking endpoint — single request, no polling loop\r\n- Async job API (`POST /3d/generations` + `GET /3d/jobs/{id}`) uses inferenceport's async job path for trellis-2 and fal.ai's queue for Rodin\r\n- `model/gltf-binary` content-type support added to `track.ts` billing guard (was silently skipping all 3D billing)\r\n- Live API test confirmed: inferenceport output is nested under `data[0]` (not top-level), model name is `\"trellis2\"` (no hyphen)\r\n- Completed job results stored in R2; re-polls served from cache with `X-Cache: HIT` to prevent double-billing\r\n- Removed the `format` param (obj/usdz/fbx were never actually produced by either provider — both only return GLB); trimmed to what's real per YAGNI\r\n- Added a `seed` param: passed through to Rodin (fal confirms support); accepted but not forwarded for Trellis 2 (inferenceport support unconfirmed) — still forces a fresh generation via the media-cache key even when unused by the provider\r\n- Rodin text-only requests now route to fal's dedicated `text-to-3d/fast` endpoint instead of the image endpoint (which 422s without `image_urls`)\r\n- Rodin output content-type pinned to `model/gltf-binary` regardless of fal's reported `content_type`, matching Trellis",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive goes 3D",
+    "blurb": "We've officially entered the third dimension. You can now spin up fully realized 3D models from text or images using Trellis 2 and Rodin 2.5, right from the API.",
+    "summary": "Added 3D model generation via a new /3d/{prompt} endpoint, powered by Trellis 2 and Hyper3D Rodin 2.5.",
+    "impact": "You can now generate downloadable GLB files directly from text or images using a single API call.",
+    "keywords": [
+      "3d",
+      "api",
+      "models",
+      "trellis",
+      "rodin"
+    ],
+    "visual_concept": "The pollinations bee and the monitor robot marveling at a newly generated 3D object (like a wireframe or a chunky 3D shape) hovering above a retro terminal.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot marveling at a glowing 3D wireframe apple hovering above a retro terminal. The terminal screen glows lime green (#ecf874). Soft pastel gradient background of lavender and mint. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-02/PR-12048.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot marveling at a glowing 3D wireframe apple hovering above a retro terminal. The terminal screen glows lime green (#ecf874). Soft pastel gradient background of lavender and mint. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-02T17:36:04.321527+00:00"
+}

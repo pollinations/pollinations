@@ -1,15 +1,15 @@
 """No plaintext data/secrets tracked; no cross-app references in code. Guards every later task."""
 import json, os, subprocess
 
-APP = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+APP = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))   # .../forager
 REPO = os.path.join(APP, "..", "..", "..")
+REL_FORAGER = "apps/operation/forager"
 REL_TREASURY = "apps/operation/treasury"
 REL_SECRETS = "apps/operation/secrets"
-REL_TINYBIRD = "apps/operation/tinybird"
 
 def _tracked():
     out = subprocess.run(
-        ["git", "ls-files", REL_TREASURY, REL_SECRETS, REL_TINYBIRD],
+        ["git", "ls-files", REL_FORAGER, REL_TREASURY, REL_SECRETS],
         capture_output=True, text=True, cwd=REPO
     )
     return [p for p in out.stdout.splitlines() if p.strip()]
@@ -18,7 +18,7 @@ def test_no_data_files_tracked():
     allowed_json = {
         f"{REL_SECRETS}/env.json",
         f"{REL_SECRETS}/credits.json",
-        f"{REL_TREASURY}/config.json",
+        f"{REL_FORAGER}/config.json",
         f"{REL_TREASURY}/web/package.json",
         f"{REL_TREASURY}/web/package-lock.json",
         f"{REL_TREASURY}/web/tsconfig.json",

@@ -1,4 +1,5 @@
-"""The ONLY env boundary. Treasury reads no other app's secrets — by design."""
+"""The ONLY env boundary. Forager reads the shared apps/operation/secrets/ (ops age key)
+and no other app's secrets — by design."""
 import json, os, subprocess
 
 APP = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

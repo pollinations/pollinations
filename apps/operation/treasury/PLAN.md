@@ -33,7 +33,8 @@ PART 2 — web (frontend with the logic; NO data baked in)
 - **Independence (hard rule):** treasury reads NOTHING from other apps. Forbidden paths (all referenced by the `_local` prototype; none may survive the port): `apps/operation/kpi/secrets/env.json`, `apps/operation/finance/secrets/.env`, `apps/operation/finance/secrets/pool-history.json` (one-time seed in Task 9 only), `gen.pollinations.ai/secrets/prod.vars.json`, `enter.pollinations.ai/secrets/prod.vars.json`.
 - **No data files:** transforms are in-memory; pushes are direct NDJSON (the "daily CSV" of the spec is satisfied without any file touching disk). The only files: PDF archive in `~/Documents/treasury-invoices/` (outside git) and the two SOPS files in `secrets/`.
 - **Secrets:** ONE boundary, OPERATION-WIDE — the SHARED `apps/operation/secrets/{env,credits}.json` (sibling of the apps, like `tinybird/`), SOPS with the **operations age key** (Elliot-only recipient; keychain item `operations-age-key`). Every operation app reads from there; existing kpi/economics secrets stay on the old 3-dev key untouched (migrate opportunistically). Tinybird **admin** token never in SOPS (local `.tinyb` only). Worker holds two secrets: `DASHBOARD_PASSWORD`, `TINYBIRD_OPS_READ_TOKEN` (pipe-read only).
-- **Tinybird:** workspace `operations` (already created), region `https://api.europe-west2.gcp.tinybird.co`. Always `tb --cloud`. Not an enter workspace — enter's staging-first flow doesn't apply; destructive ops still need explicit permission. **Schemas/pipes live in the SHARED `apps/operation/tinybird/` project folder** (sibling of the operation apps) — the platform every operation app reads from; treasury only consumes pipes and never defines datasources itself.
+- **Tinybird:** workspace `operations` (already created), region `https://api.europe-west2.gcp.tinybird.co`. Always `tb --cloud`. Not an enter workspace — enter's staging-first flow doesn't apply; destructive ops still need explicit permission.
+- **LAYOUT (updated 2026-07-02 — the forager split, supersedes older paths in task steps):** the dedicated data app **`apps/operation/forager/`** owns EVERYTHING Tinybird-facing: schemas + pipes (`forager/tinybird/`), all feeders (`forager/ingest/…`), `forager/config.json`, `forager/tests/`. Treasury is a pure frontend (`apps/operation/treasury/web/`) reading pipes with a scoped token — as is every future operation app. Wherever a task step says `ingest/…`, `tests/…`, `config.json`, or `tinybird/…`, read it as under `apps/operation/forager/`.
 - **Cloudflare:** Myceli account `b6ec751c0862027ba269faf7029b2501`, worker `myceli-treasury`, custom domain `treasury.myceli.ai`.
 - **Money semantics (settled, copy verbatim):** FX pinned EUR→USD 1.14 in `config.json`; months start `2026-01`; pollen paid = pack meter, quest = tier meter; `anthropic`/`openai` Wise bills = non-compute subscriptions; `cloudflare` = infra, excluded from compute; "Amazon" counterparty = office hardware, stays unmatched.
 - **Home:** the pollinations monorepo (confirmed) — code public, data in Tinybird, secrets SOPS-scoped.
@@ -98,8 +99,11 @@ apps/operation/treasury/
 - [ ] **Step 1: Generate the treasury age key (operator)**
 
 ```bash
-age-keygen 2>/dev/null | tee /dev/tty | grep -v '^#' >> ~/.config/sops/age/keys.txt
-# note "public key: age1..." → TREASURY_RECIPIENT
+age-keygen 2>/dev/null | tee /dev/tty | grep -v '^#' | tee -a ~/.config/sops/age/keys.txt \
+  >> "$HOME/Library/Application Support/sops/age/keys.txt"
+# ^ BOTH locations: with XDG_CONFIG_HOME unset, macOS sops reads ONLY the Application Support
+#   file — a key appended only to ~/.config silently fails decrypt (hit 2026-07-02).
+# note "public key: age1..." → OPERATIONS_RECIPIENT
 security add-generic-password -s operations-age-key -a etfy -w 'AGE-SECRET-KEY-1...'  # keychain backup
 ```
 

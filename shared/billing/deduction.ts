@@ -22,8 +22,9 @@ export async function atomicDeductUserBalance(
 ): Promise<{ ok: boolean; bucket: Bucket | null; packBalance: number | null }> {
     if (amount <= 0) return { ok: true, bucket: null, packBalance: null };
 
-    // Keep microAmount as a pure BigInt for SQL binding
-    const microAmount = toMicroPollen(amount);
+    // Cloudflare D1 does not support BigInt bindings.
+    // Convert to standard JS numbers, which are safe up to 90 million Pollen at an 8-decimal scale.
+    const microAmount = Number(toMicroPollen(amount));
 
     const row = await db.get<{ bucket: Bucket; packBalance: number | null }>(
         sql`
@@ -78,7 +79,7 @@ export async function atomicDeductApiKeyBalance(
 ): Promise<{ ok: boolean }> {
     if (amount <= 0) return { ok: true };
 
-    const microAmount = toMicroPollen(amount);
+    const microAmount = Number(toMicroPollen(amount));
 
     const result = await db.run(sql`
 			UPDATE ${apiKeyTable}
@@ -104,7 +105,7 @@ export async function atomicCreditUserBalance(
     if (amount <= 0) return { ok: true, newBalance: null };
 
     const column = BUCKET_COLUMNS[bucket];
-    const microAmount = toMicroPollen(amount);
+    const microAmount = Number(toMicroPollen(amount));
 
     const rows = await db
         .update(userTable)

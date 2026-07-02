@@ -5,6 +5,7 @@ import {
     getAudioModelsInfo,
     getEmbeddingModelsInfo,
     getImageModelsInfo,
+    getModel3dModelsInfo,
     getRealtimeModelsInfo,
     getTextModelsInfo,
 } from "@shared/registry/model-info.ts";
@@ -19,13 +20,17 @@ import {
 } from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { expect, test } from "vitest";
-import { formatPricePer1M } from "../frontend/src/components/models/formatters.ts";
+import {
+    formatPriceFlat,
+    formatPricePer1M,
+} from "../frontend/src/components/models/formatters.ts";
 import { getModelPricesFromCatalog } from "../frontend/src/components/models/model-catalog.ts";
 
 const getCatalogModelPrices = () =>
     getModelPricesFromCatalog([
         ...getTextModelsInfo(),
         ...getImageModelsInfo(),
+        ...getModel3dModelsInfo(),
         ...getRealtimeModelsInfo(),
         ...getAudioModelsInfo(),
         ...getEmbeddingModelsInfo(),
@@ -34,6 +39,7 @@ const getCatalogModelPrices = () =>
 const getCatalogModels = () => [
     ...getTextModelsInfo(),
     ...getImageModelsInfo(),
+    ...getModel3dModelsInfo(),
     ...getRealtimeModelsInfo(),
     ...getAudioModelsInfo(),
     ...getEmbeddingModelsInfo(),
@@ -116,8 +122,9 @@ test("catalog prices format token rates through formatPricePer1M", () => {
         const imageUsesTokenRows =
             Number(pricing?.promptTextTokens) > 0 ||
             Number(pricing?.promptImageTokens) > 0;
+        // 3D reuses the flat image branch (no token rows), same as flat images.
         const rows =
-            sourceModel?.category === "image"
+            sourceModel?.category === "image" || sourceModel?.category === "3d"
                 ? imageUsesTokenRows
                     ? imageTokenPriceRows
                     : []
@@ -138,6 +145,34 @@ test("catalog prices format token rates through formatPricePer1M", () => {
     }
 
     expect(checkedFields).toBeGreaterThan(0);
+});
+
+test("catalog prices render 3D models as a flat per-generation rate", () => {
+    const model3d = getModel3dModelsInfo();
+    expect(model3d.length).toBeGreaterThan(0);
+
+    const pricesByName = new Map(
+        getCatalogModelPrices().map((price) => [price.name, price]),
+    );
+
+    for (const source of model3d) {
+        expect(source.category).toBe("3d");
+        const rawRate = Number(source.pricing?.completionImageTokens);
+        expect(Number.isFinite(rawRate) && rawRate > 0).toBe(true);
+
+        const modelPrice = pricesByName.get(source.name);
+        expect(modelPrice?.type).toBe("3d");
+        // Flat charge → single output/image line billed per request ("/gen"),
+        // no token lines.
+        expect(modelPrice?.prices).toEqual([
+            {
+                direction: "output",
+                kind: "image",
+                price: formatPriceFlat(rawRate),
+                unit: "request",
+            },
+        ]);
+    }
 });
 
 test("catalog prices keep community text models flagged for display", () => {

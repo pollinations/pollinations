@@ -258,7 +258,10 @@ function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
         };
     }
 
-    if (price.type === "image") {
+    // 3D generations are flat per-generation charges stored in
+    // completionImageTokens (same convention as image models), so they render
+    // through the image branch: no prompt-token prices → flat "/gen" line.
+    if (price.type === "image" || price.type === "3d") {
         if (promptTextTokens || promptImageTokens) {
             return {
                 ...price,
@@ -293,14 +296,6 @@ function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
                 "request",
             ]),
         };
-    }
-
-    if ((price.type as string) === "3d") {
-        return {
-            ...price,
-            perRequest: true,
-            perImagePrice: formatPrice(completionImageTokens, formatPriceFlat),
-        } as ModelPrice;
     }
 
     if (price.type === "audio") {

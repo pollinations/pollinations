@@ -81,6 +81,33 @@ describe("Device Authorization Flow", () => {
         expect(info.scope).toBe("generate");
     });
 
+    test("POST /api/device/code accepts form encoding (RFC 8628 §3.1)", async () => {
+        // Off-the-shelf clients discovering the endpoint via RFC 8414
+        // metadata send application/x-www-form-urlencoded, not JSON.
+        const res = await SELF.fetch(`${BASE}/api/device/code`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: new URLSearchParams({
+                client_id: "pk_form_client",
+                scope: "profile",
+            }).toString(),
+        });
+        expect(res.status).toBe(200);
+        const body = (await res.json()) as { user_code: string };
+
+        // client_id/scope must not be silently dropped
+        const infoRes = await SELF.fetch(
+            `${BASE}/api/device/info?user_code=${body.user_code}`,
+        );
+        const info = (await infoRes.json()) as {
+            clientId: string | null;
+            scope: string;
+        };
+        expect(info.scope).toBe("profile");
+    });
+
     test("GET /api/device/info with valid code returns pending", async () => {
         const device = await insertDeviceCode();
         const res = await SELF.fetch(

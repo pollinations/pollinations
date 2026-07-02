@@ -171,7 +171,7 @@ BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
 # Staging OAuth lockdown — must match enter.pollinations.ai staging allowlist.
 # Request-time gate in shared/auth/api-key.ts fails closed without it. Issue #11137.
-STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997"
+STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458"
 STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai"
 [env.test]
 
@@ -232,7 +232,9 @@ AZURE_MYCELI_PROD_SWEDEN_API_KEY = "not-a-secret-workers-test-only"
 AZURE_CONTENT_SAFETY_API_KEY = "not-a-secret-workers-test-only"
 AZURE_CONTENT_SAFETY_ENDPOINT = "https://content-safety.test"
 FIREWORKS_API_KEY = "not-a-secret-workers-test-only"
+FIREWORKS_NEO_API_KEY = "not-a-secret-workers-test-only"
 FAL_KEY = "not-a-secret-workers-test-only"
+INFERENCEPORT_API_KEY = "not-a-secret-workers-test-only"
 STABILITY_API_KEY = "not-a-secret-workers-test-only"
 GOOGLE_CLIENT_EMAIL = "test@example.com"
 GOOGLE_PRIVATE_KEY = "not-a-secret-workers-test-only"

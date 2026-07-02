@@ -62,7 +62,11 @@ log "Installing system packages..."
 $SUDO apt-get update -qq
 $SUDO apt-get install -y -qq git screen python3.12-venv python3.12-dev
 
-if [ -d "$WORK_DIR" ]; then
+# Some Vast hosts have unreliable egress to GitHub; SKIP_CLONE=1 uses files
+# already placed in $WORK_DIR (e.g. scp'd from the operator's machine).
+if [ -n "$SKIP_CLONE" ]; then
+    log "SKIP_CLONE set — using existing files in $WORK_DIR"
+elif [ -d "$WORK_DIR" ]; then
     log "Updating existing repo ($GIT_BRANCH)..."
     git -C "$WORK_DIR" fetch --depth 1 origin "$GIT_BRANCH"
     git -C "$WORK_DIR" checkout FETCH_HEAD

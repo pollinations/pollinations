@@ -316,18 +316,15 @@ export async function exchangeDeviceCode(
                 c.env.KV.delete(`device-key:${device.deviceCode}`),
             ]);
 
-            // RFC 6749 §5.1: echo what the user actually granted, which may
-            // be narrower than the scope requested at issuance. Fall back to
-            // the requested scope for KV payloads written before consent
-            // started reporting the granted set.
-            const scope = stored.scope ?? device.scope;
             return c.json({
                 access_token: stored.key,
                 token_type: "bearer",
                 ...(stored.expiresIn != null && {
                     expires_in: stored.expiresIn,
                 }),
-                ...(scope != null && { scope }),
+                // RFC 6749 §5.1: echo what the user actually granted, which
+                // may be narrower than the scope requested at issuance
+                ...(stored.scope != null && { scope: stored.scope }),
             });
         }
 

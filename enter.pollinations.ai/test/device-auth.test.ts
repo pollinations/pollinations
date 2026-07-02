@@ -244,6 +244,7 @@ describe("Device Authorization Flow", () => {
                 userCode: device.userCode,
                 apiKey: key,
                 apiKeyId: keyId,
+                scope: "generate",
             }),
         });
         expect(approveRes.status).toBe(200);

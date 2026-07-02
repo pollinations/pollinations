@@ -15,7 +15,7 @@ Myceli.AI OÜ
 Registry code: 17186693  
 VAT number: EE102877908  
 Registered address: Harju maakond, Tallinn, Kesklinna linnaosa, Tornimäe tn 5, 10145, Estonia  
-Email: hi@myceli.ai
+Email: hello@myceli.ai
 
 ---
 

@@ -1,0 +1,35 @@
+{
+  "pr_number": 12165,
+  "title": "feat: OAuth 2.1 authorization-code grant with PKCE + RFC 8414 discovery",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12165",
+  "merged_at": "2026-07-02T23:23:08Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Adds `POST /api/oauth/token`: form-encoded, `authorization_code` grant with mandatory PKCE S256, single-use KV-backed codes, RFC 6749 error objects; also accepts the `device_code` grant via the shared device-flow exchange\n- Adds `POST /api/oauth/code` (consent-side code creation, re-validates pk_ client_id + redirectUris allowlist) and `GET /api/oauth/userinfo`\n- Adds `GET /.well-known/oauth-authorization-server` (RFC 8414); routes `/.well-known/*` to the worker via `run_worker_first`\n- Consent page: `response_type=code` switches the callback from the legacy `#api_key=` fragment to `?code=...&state=...`; explicit S256 + well-formed challenge required before key minting\n- Legacy fragment flow and `/api/device/*` unchanged; pk_ keys stay the client_id\n- Adds `apps/oauth-client-demo/`: zero-dep reference client (discovery → PKCE → exchange → userinfo → delegated generation), smoke-tested end-to-end\n- 17 new tests; device + authorize-config suites pass\n\nAddresses #8585\nAddresses #11369\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Keys to the garden",
+    "blurb": "We've added full OAuth 2.1 support so your apps can securely request access to the hive. No more passing API keys around like loose pollen!",
+    "summary": "Added OAuth 2.1 authorization-code grant with PKCE and RFC 8414 discovery to enter.pollinations.ai, enabling secure, delegated API access.",
+    "impact": "Developers can now use standard OAuth flows via /api/oauth/token to authenticate users without handling raw API keys, complete with a new zero-dependency reference client.",
+    "keywords": [
+      "oauth",
+      "auth",
+      "api",
+      "security",
+      "pkce"
+    ],
+    "visual_concept": "Polly the bee acting as a friendly gatekeeper, securely handing a glowing digital key to the Monitor Robot. Represents secure authorization and OAuth handshakes.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny security guard hat, handing a glowing golden key to the chunky Monitor Robot. The robot's CRT screen displays a bright green checkmark. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-02/PR-12165.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny security guard hat, handing a glowing golden key to the chunky Monitor Robot. The robot's CRT screen displays a bright green checkmark. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-02T23:24:14.315977+00:00"
+}

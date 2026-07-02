@@ -54,7 +54,7 @@ If you're interested in coding, we enthusiastically welcome contributions in the
 - **Code Optimization:** Refactoring and improving the efficiency, readability, and maintainability of the codebase.
 - **New Functionalities:** Developing innovative features that expand the project's scope.
 
-### A Short Hands on For a Quick Contribution Flow:-
+### A Short Hands-on for a Quick Contribution Flow
 
 1. Submit at least one meaningful pull request that gets merged into the repository.
 2. Ensure the pull request follows the project's contribution guidelines.

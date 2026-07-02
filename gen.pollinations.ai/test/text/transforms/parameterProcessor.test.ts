@@ -95,6 +95,28 @@ describe("processParameters", () => {
         expect(result.options.top_k).toBeUndefined();
     });
 
+    it("drops top_p when temperature is also set for Bedrock Claude models", () => {
+        const both = processParameters(messages, {
+            model: "global.anthropic.claude-sonnet-4-6",
+            temperature: 0.7,
+            top_p: 0.9,
+            modelConfig: { provider: "bedrock" },
+            modelDef,
+        });
+
+        expect(both.options.top_p).toBeUndefined();
+        expect(both.options.temperature).toBe(0.7);
+
+        const topPOnly = processParameters(messages, {
+            model: "global.anthropic.claude-sonnet-4-6",
+            top_p: 0.9,
+            modelConfig: { provider: "bedrock" },
+            modelDef,
+        });
+
+        expect(topPOnly.options.top_p).toBe(0.9);
+    });
+
     it("does not strip temperature for Claude Opus 4.6", () => {
         const result = processParameters(messages, {
             model: "us.anthropic.claude-opus-4-6-v1",

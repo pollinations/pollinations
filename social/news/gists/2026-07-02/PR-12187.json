@@ -1,0 +1,35 @@
+{
+  "pr_number": 12187,
+  "title": "docs: update deployment-location docs and skills for flux on Vast.ai",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12187",
+  "merged_at": "2026-07-02T19:53:43Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "Follow-up to #12171 — updates the deployment-location docs/skills that still said flux runs on RunPod.\n\n- monitor-services skill: adds §8 Flux on Vast.ai (health check, pool-vs-Fireworks split via worker log, restart); fixes description, procedure step, SSH-keys note, example output\n- rotation README + `rotate-infra-gpu-token.sh`: marks the Flux+Z-Image leg STALE (pod `hsl3ksl31lvrcc` terminated) with pointers to current topology — script needs rework before next rotation\n- provider-billing runpod doc: flux no longer on RunPod\n- GPU_INSTANCES.md: removes dead `SSH_RUNPOD_FLUX_ZIMAGE` row, adds Vast key, marks flux-vast-02 as stopped spare\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Mapping the new Vast.ai territory",
+    "blurb": "Updated our internal maps and Claude skills to reflect Flux's new home on Vast.ai.",
+    "summary": "Updated internal documentation, rotation scripts, and Claude skills to reflect that Flux image generation now runs on Vast.ai instead of RunPod.",
+    "impact": "Internal tools and AI agents now have the correct SSH keys, health check procedures, and topology maps for managing the Vast.ai Flux instances.",
+    "keywords": [
+      "docs",
+      "flux",
+      "vast.ai",
+      "infrastructure",
+      "claude-skills"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot updating a map or reading a manual. The map shows a new island or server rack labeled 'Vast.ai', representing the infrastructure migration documentation.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot looking at a glowing digital map. The map shows a new server island labeled 'Vast.ai'. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-02/PR-12187.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot looking at a glowing digital map. The map shows a new server island labeled 'Vast.ai'. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-02T19:54:39.379294+00:00"
+}

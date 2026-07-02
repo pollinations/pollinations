@@ -71,13 +71,13 @@ While we love feedback, these are _not_ considered security vulnerabilities for 
 
 pollinations.ai thrives on kindness, respect, and constructive collaboration. Please always treat others well. If you suspect someone is acting in bad faith or discover an urgent exploit, contact us privately right away.
 
-for general questions, hop into a github discussion—but **never** share sensitive security info in public spaces.
+For general questions, hop into a GitHub discussion—but **never** share sensitive security info in public spaces.
 
 ---
 
 ## 🙏 Thanks
 
-We can’t say this enough: **thank you** for helping make pollinations.ai a safer hub for creative ai. every tip, every report, every patch makes a real difference!
+We can’t say this enough: **thank you** for helping make pollinations.ai a safer hub for creative ai. Every tip, every report, every patch makes a real difference!
 
 — with gratitude,  
 the pollinations.ai maintainers & community team

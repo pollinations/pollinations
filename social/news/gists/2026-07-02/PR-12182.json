@@ -1,0 +1,34 @@
+{
+  "pr_number": 12182,
+  "title": "chore: add wBrowsqq to staging allowlist",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12182",
+  "merged_at": "2026-07-02T23:42:56Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "## Summary\n- Adds GitHub ID 118118458 (wBrowsqq) to STAGING_ALLOWED_GITHUB_IDS\n- Kept in sync across gen.pollinations.ai and enter.pollinations.ai wrangler.toml (existing convention, issue #11137)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Welcome to Staging",
+    "blurb": "Added a new developer to the staging environment allowlist. The hive is growing!",
+    "summary": "Added GitHub ID 118118458 (wBrowsqq) to the STAGING_ALLOWED_GITHUB_IDS in the wrangler configurations for both the gen and enter services.",
+    "impact": "Developer wBrowsqq now has access to the staging environments for testing and development.",
+    "keywords": [
+      "infrastructure",
+      "staging",
+      "allowlist",
+      "wrangler"
+    ],
+    "visual_concept": "A cute pixel art scene of the bee mascot handing a VIP pass or a key to a new friend at a glowing gate or door marked 'STAGING'. Represents granting access to a new developer.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny security guard hat, handing a glowing golden key to a chunky robot companion at a wooden gate marked 'STAGING'. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and welcoming."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-02/PR-12182.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny security guard hat, handing a glowing golden key to a chunky robot companion at a wooden gate marked 'STAGING'. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and welcoming."
+  },
+  "generated_at": "2026-07-02T23:43:53.861347+00:00"
+}

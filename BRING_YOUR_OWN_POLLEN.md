@@ -177,7 +177,7 @@ Same authorize screen, but the user opens a browser separately. Your CLI polls f
 # 1. request a device code (pass your app_key as client_id for attribution)
 curl -X POST https://enter.pollinations.ai/api/device/code \
   -H 'Content-Type: application/json' \
-  -d '{"client_id": "pk_yourkey", "scope": "generate"}'
+  -d '{"client_id": "pk_yourkey"}'
 # → { "device_code": "...", "user_code": "ABCD-1234", "verification_uri": "/device" }
 
 # 2. tell user: "go to enter.pollinations.ai/device and enter ABCD-1234"
@@ -187,7 +187,7 @@ curl -X POST https://enter.pollinations.ai/api/device/token \
   -H 'Content-Type: application/json' \
   -d '{"device_code": "..."}'
 # pending → { "error": "authorization_pending" }
-# done    → { "access_token": "sk_...", "token_type": "bearer", "scope": "generate" }
+# done    → { "access_token": "sk_...", "token_type": "bearer" }
 ```
 
 The same device-code exchange is also available through the standard token endpoint:

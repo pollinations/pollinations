@@ -269,10 +269,10 @@ export const callSelfHostedServer = async (
 /**
  * Flux routing: prefer the self-hosted GPU pool; fall back to Fireworks when
  * no worker is registered or the pool request fails. The timeout guards
- * against wedged-but-connected workers; it is generous enough that normal
- * at-capacity queueing (p95 ~5s) never trips it.
+ * against wedged-but-connected workers; it is generous enough that even deep
+ * queueing never trips it.
  */
-const FLUX_POOL_TIMEOUT_MS = 30_000;
+const FLUX_POOL_TIMEOUT_MS = 120_000;
 
 export const callFluxWithFallback = async (
     prompt: string,

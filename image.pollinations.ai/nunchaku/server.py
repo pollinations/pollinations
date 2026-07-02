@@ -104,13 +104,6 @@ async def lifespan(app: FastAPI):
         logger.critical("PLN_GPU_TOKEN not configured - refusing to start")
         raise RuntimeError("PLN_GPU_TOKEN must be configured")
     try:
-        # Guard against a 5090-tuned MAX_PIXELS on smaller GPUs (e.g. running
-        # setup-vast.sh defaults on an RTX 4090, where >810k pixels hangs CUDA).
-        global MAX_PIXELS
-        vram = torch.cuda.get_device_properties(0).total_memory
-        if vram < 30_000_000_000 and MAX_PIXELS > 810_000:
-            logger.warning(f"GPU has {vram / 1e9:.0f}GB VRAM; capping MAX_PIXELS {MAX_PIXELS} -> 810000")
-            MAX_PIXELS = 810_000
         print("Loading FLUX pipeline...")
         transformer = NunchakuFluxTransformer2dModel.from_pretrained(QUANT_MODEL_PATH)
         pipe = FluxPipeline.from_pretrained(

@@ -121,7 +121,7 @@ describe("callFluxWithFallback", () => {
     it("falls back to Fireworks when the pool request fails", async () => {
         await registerServer("https://gpu1.example", "flux");
         const calls = mockFetch((url) =>
-            url.startsWith("https://gpu1.example")
+            new URL(url).hostname === "gpu1.example"
                 ? new Response("CUDA error", { status: 500 })
                 : new Response(JPEG_BYTES, { status: 200 }),
         );

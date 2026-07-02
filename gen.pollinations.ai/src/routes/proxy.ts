@@ -222,6 +222,14 @@ async function getVisibleModelEntriesForEventType(
         .filter((entry) => entry.eventType === eventType);
 }
 
+// Video models share the "generate.image" event type with image models, so
+// filter by category to return a video-only list for /video/models.
+async function getVisibleVideoModelEntries(c: Context<Env>) {
+    return (
+        await getVisibleModelEntriesForEventType(c, "generate.image")
+    ).filter((entry) => entry.definition.category === "video");
+}
+
 async function getOrderedVisibleModelEntries(c: Context<Env>) {
     const entries = await getVisibleModelEntries(c);
     return [
@@ -325,9 +333,8 @@ export const proxyRoutes = new Hono<Env>()
         }),
         modelsListHandler(getOrderedVisibleModelEntries),
     )
-    .on(
-        "GET",
-        ["/image/models", "/video/models"],
+    .get(
+        "/image/models",
         describeRoute({
             tags: ["🤖 Models"],
             summary: "List Image & Video Models",
@@ -353,6 +360,32 @@ export const proxyRoutes = new Hono<Env>()
         modelsListHandler((c) =>
             getVisibleModelEntriesForEventType(c, "generate.image"),
         ),
+    )
+    .get(
+        "/video/models",
+        describeRoute({
+            tags: ["🤖 Models"],
+            summary: "List Video Models",
+            description:
+                "Returns all available video generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                z.array(z.any()).meta({
+                                    description:
+                                        "List of models with pricing and metadata",
+                                }),
+                            ),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(500),
+            },
+        }),
+        modelsListHandler(getVisibleVideoModelEntries),
     )
     .get(
         "/text/models",

@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { apikey as apiKeyTable, user as userTable } from "../db/better-auth.ts";
 import type { BalanceBucket, UserBalance } from "./bucket-selection.ts";
-import { toMicroPollen } from "./pollenMath.ts"; 
+import { toMicroPollen } from "./pollenMath.ts";
 
 export type Bucket = BalanceBucket;
 
@@ -108,7 +108,9 @@ export async function atomicCreditUserBalance(
 
     const rows = await db
         .update(userTable)
-        .set({ [`${bucket}Balance`]: sql`(ROUND(COALESCE(${column}, 0) * 1000000) + ${microAmount}) / 1000000.0` })
+        .set({
+            [`${bucket}Balance`]: sql`(ROUND(COALESCE(${column}, 0) * 1000000) + ${microAmount}) / 1000000.0`,
+        })
         .where(sql`${userTable.id} = ${userId}`)
         .returning({ newBalance: column });
 

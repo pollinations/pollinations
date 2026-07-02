@@ -1,16 +1,61 @@
 # GPU Instances
 
-Last updated: 2026-06-10
+Last updated: 2026-07-02
 
 ## Capacity Summary
 
 | Model | Workers | GPUs | Provider | Cost/hr | Status |
 |-------|---------|------|----------|---------|--------|
-| Flux (INT4) | 2 | 2x RTX 4090 | RunPod | (shared) | **ACTIVE — production** |
-| Z-Image | 2 | 2x RTX 4090 | RunPod | (shared) | **ACTIVE — production** |
+| Flux (FP4) | 2 | 2x RTX 5090 | Vast.ai | ~$0.43 each | **ACTIVE — production** (Fireworks fallback) |
+| Z-Image | 3 | 4090 + 2x 3090 | RunPod | (see runpodctl) | **ACTIVE — production** |
 | Klein 4B | 1 | 1x RTX A5000 | RunPod | $0.27 | **ACTIVE** |
 | LTX-2 + ACE-Step + Sana | 1 | GH200 | Lambda Labs | — | **ACTIVE** |
-| **Total active** | **~6** | | | **~$1.40/hr RunPod** | |
+
+## Provider: Vast.ai — Flux (RTX 5090, FP4)
+
+Two single-GPU instances on different hosts (host redundancy), each fronted by
+a Cloudflare Tunnel. Flux routes pool-first with automatic Fireworks fallback
+(`gen.pollinations.ai/src/image/createAndReturnImages.ts` → `callFluxWithFallback`).
+
+| Worker | Vast instance | Tunnel hostname | SSH |
+|--------|--------------|-----------------|-----|
+| flux-vast-01 | 43575766 (California) | `flux-vast-01.pollinations.ai` | `ssh -p 21972 -i ~/.ssh/pollinations_services_2026 root@192.220.55.116` |
+| flux-vast-02 | 43594918 (US) | `flux-vast-02.pollinations.ai` | `ssh -p 10576 -i ~/.ssh/pollinations_services_2026 root@137.175.76.24` |
+
+> Instance IDs/IPs/ports change on recreate — check `vastai show instances`.
+> CRITICAL: workers MUST be behind a Cloudflare tunnel; the gen worker cannot
+> fetch() raw-IP/non-standard-port origins (NAT'd `http://IP:PORT` URLs
+> silently fall back to Fireworks).
+
+**Provision a new instance** (see `nunchaku/setup-vast.sh` header for all env):
+```bash
+vastai search offers 'gpu_name=RTX_5090 num_gpus=1 verified=true rentable=true reliability>0.99 duration>=30 inet_down>=500 cpu_cores>=8 disk_space>=60' --order dph_total
+vastai create instance <OFFER> --image "vastai/base-image:cuda-13.0.2-cudnn-devel-ubuntu24.04-py312" --disk 60 --ssh --direct --env '-p 8765:8765'
+vastai attach ssh <INSTANCE> "$(cat ~/.ssh/pollinations_services_2026.pub)"
+# copy the pollinations.ai account cert (e.g. from an existing worker) to ~/.cloudflared/cert.pem, then:
+PLN_GPU_TOKEN=... HF_TOKEN=... TUNNEL_NAME=flux-vast-NN GIT_BRANCH=main bash setup-vast.sh
+```
+Gotchas (all hit in practice): rent hosts with `duration>=30`; verify
+`intended_status=running` after create (GPU can be taken between create/start);
+some hosts have broken direct SSH (use the `ssh_host:ssh_port` proxy); some
+drop bulk CDN downloads mid-transfer (setup-vast.sh passes pip
+`--resume-retries` so downloads resume instead of restarting); hosts with
+driver < 580 hit CUDA Error 804 with the cuda-13 image (GeForce can't use
+forward-compat libs — setup-vast.sh disables them so the host driver is used);
+machine-to-machine rsync between vast instances is NOT reliable (hosts kill
+bulk SSH streams, the vast agent rewrites authorized_keys); racing 2 candidate
+instances and destroying the loser is cheap (~$0.40/hr each).
+
+**Health / restart:**
+```bash
+curl -s https://flux-vast-01.pollinations.ai/docs -o /dev/null -w "%{http_code}\n"   # worker up
+curl -s https://gen.pollinations.ai/register -H "Authorization: Bearer $PLN_GPU_TOKEN"  # registry
+# on the instance: screen -r flux / screen -r cloudflared; logs /tmp/flux.log /tmp/cloudflared.log
+```
+
+**Key behavior:** FP4 nunchaku, 4 steps, full 1024x1024 (`MAX_PIXELS=1048576`);
+~2.3s/image, ~1,900 img/hr sustained per GPU; baseline JPEG output;
+`QUEUE_LIMIT=10` sheds load with 503 → gateway falls back to Fireworks.
 
 ## Provider: RunPod
 
@@ -42,50 +87,18 @@ curl -s https://jmrbmje2fyuy46-8000.proxy.runpod.net/health
 
 **Recovery from RunPod host outage**: see `.claude/skills/monitor-services/SKILL.md` Klein section. Pod volume is destroyed on terminate; `/workspace/handler.py`, `/workspace/venv`, and `/workspace/restart.sh` must be redeployed onto a fresh pod. Prefer cheap A5000/3090 capacity; do not jump to 4090 unless the higher hourly cost is explicitly accepted.
 
-### Pod hsl3ksl31lvrcc — Flux + Z-Image (4x RTX 4090)
+### Z-Image pods
 
-- **GPU**: 4x RTX 4090 (24GB each) | **Cost**: $1.36/hr (community cloud)
-- **SSH**: `ssh -i <SSH_RUNPOD_FLUX_ZIMAGE from SOPS> -p 19489 root@38.65.239.17`
-- **Image**: `runpod/pytorch:1.0.3-cu1281-torch291-ubuntu2404`
-- **Storage**: 100GB container disk + 50GB persistent volume
-- **Repo**: `/opt/pollinations` (symlinked from `/workspace/pollinations`)
-
-| GPU | Screen Session | Port | Proxy URL | Service |
-|-----|---------------|------|-----------|---------|
-| 0 | flux-gpu0 | 8765 | `https://hsl3ksl31lvrcc-8765.proxy.runpod.net` | Flux (INT4, nunchaku) |
-| 1 | flux-gpu1 | 8766 | `https://hsl3ksl31lvrcc-8766.proxy.runpod.net` | Flux (INT4, nunchaku) |
-| 2 | zimage-gpu2 | 8767 | `https://hsl3ksl31lvrcc-8767.proxy.runpod.net` | Z-Image (Turbo + SPAN 2x) |
-| 3 | zimage-gpu3 | 8768 | `https://hsl3ksl31lvrcc-8768.proxy.runpod.net` | Z-Image (Turbo + SPAN 2x) |
-
-**Venvs** (separate per service):
-- Flux: `/opt/pollinations/image.pollinations.ai/nunchaku/venv` (torch 2.9.1+cu128)
-- Z-Image: `/opt/pollinations/image.pollinations.ai/z-image/venv`
-
-**Health check:**
-```bash
-curl -s https://hsl3ksl31lvrcc-8765.proxy.runpod.net/generate -X POST \
-  -H "Content-Type: application/json" \
-  -d '{"prompt":"test","width":512,"height":512}' -o /dev/null -w "HTTP %{http_code}"
-```
+Flux left RunPod on 2026-07-02 (pod hsl3ksl31lvrcc terminated; flux now on
+Vast.ai, see above). Z-Image runs on dedicated pods — check current IDs with
+`runpodctl pod list` (as of 2026-07-02: `icagz5lxdzotdx` zimage-4090-secure,
+`ua39ysr9i86nil`/`owngt7t59jexy8` zimage-3090). Registered URLs use RunPod's
+https proxy (`https://<pod>-<port>.proxy.runpod.net`).
 
 **Registry check (all workers):**
 ```bash
-curl -s https://gen.pollinations.ai/register | python3 -m json.tool
+curl -s https://gen.pollinations.ai/register -H "Authorization: Bearer $PLN_GPU_TOKEN" | python3 -m json.tool
 ```
-
-**Restart a worker:**
-```bash
-ssh -i <SSH_RUNPOD_FLUX_ZIMAGE from SOPS> -p 19489 root@38.65.239.17
-screen -S flux-gpu0 -X quit
-screen -dmS flux-gpu0 bash -c 'source /opt/pollinations/image.pollinations.ai/nunchaku/venv/bin/activate && \
-  CUDA_VISIBLE_DEVICES=0 PORT=8765 PUBLIC_IP=hsl3ksl31lvrcc-8765.proxy.runpod.net PUBLIC_PORT=443 \
-  SERVICE_TYPE=flux python /opt/pollinations/image.pollinations.ai/nunchaku/server.py 2>&1 | tee /tmp/flux-gpu0.log'
-```
-
-**Key notes:**
-- Uses INT4 quantization (not FP4) — RTX 4090 is Ada Lovelace, not Blackwell
-- Heartbeats register with `https://` proxy URLs (patched `server.py` line 63)
-- ~2.9s per Flux image, ~1.5s per Z-Image at 512x512
 
 ## Provider: Lambda Labs
 

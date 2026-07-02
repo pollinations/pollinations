@@ -205,3 +205,24 @@ def test_amount_parses_comma_thousands():
     v, c = wise._amount("1,234.56 EUR")
     assert v == 1234.56
     assert c == "EUR"
+
+
+# ---------------------------------------------------------------------------
+# None-amount handling — pinning strip_html guard behavior
+# ---------------------------------------------------------------------------
+
+def test_outflow_rows_survives_null_amounts(monkeypatch):
+    """Activities with None primaryAmount/secondaryAmount should not raise.
+    primaryAmount=None with outgoing transaction → amount parses to 0.0 → skipped by eur >= 0 rule.
+    secondaryAmount=None with primaryAmount EUR → uses primaryAmount, emits row normally.
+    """
+    monkeypatch.setattr(wise, "_fetch_month", lambda c, m: [
+        {"status": "COMPLETED", "type": "TRANSFER", "title": "RunPod",
+         "primaryAmount": None, "secondaryAmount": "", "createdOn": "2026-07-01", "id": 101},
+        {"status": "COMPLETED", "type": "TRANSFER", "title": "OpenAI",
+         "primaryAmount": "75 EUR", "secondaryAmount": None, "createdOn": "2026-07-02", "id": 102},
+    ])
+    rows = wise.outflow_rows({}, ["2026-07"], fx=1.14, today="2026-07-02")
+    assert len(rows) == 1
+    assert rows[0]["wise_ref"] == "102"
+    assert rows[0]["amount_eur"] == 75.0

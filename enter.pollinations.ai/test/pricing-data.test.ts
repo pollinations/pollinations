@@ -5,6 +5,7 @@ import {
     getAudioModelsInfo,
     getEmbeddingModelsInfo,
     getImageModelsInfo,
+    getModel3dModelsInfo,
     getRealtimeModelsInfo,
     getTextModelsInfo,
 } from "@shared/registry/model-info.ts";
@@ -19,7 +20,10 @@ import {
 } from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { expect, test } from "vitest";
-import { formatPricePer1M } from "../frontend/src/components/models/formatters.ts";
+import {
+    formatPriceFlat,
+    formatPricePer1M,
+} from "../frontend/src/components/models/formatters.ts";
 import { getModelPricesFromCatalog } from "../frontend/src/components/models/model-catalog.ts";
 
 const getCatalogModelPrices = () =>
@@ -29,6 +33,7 @@ const getCatalogModelPrices = () =>
         ...getRealtimeModelsInfo(),
         ...getAudioModelsInfo(),
         ...getEmbeddingModelsInfo(),
+        ...getModel3dModelsInfo(),
     ]);
 
 const getCatalogModels = () => [
@@ -37,6 +42,7 @@ const getCatalogModels = () => [
     ...getRealtimeModelsInfo(),
     ...getAudioModelsInfo(),
     ...getEmbeddingModelsInfo(),
+    ...getModel3dModelsInfo(),
 ];
 
 const tokenPriceRows = [
@@ -186,6 +192,29 @@ test("catalog prices keep community text models flagged for display", () => {
         ]),
     );
     expect(communityModel.description).toBeUndefined();
+});
+
+test("catalog prices expose 3D flat output generation rates", () => {
+    const sourceByName = new Map(
+        getModel3dModelsInfo().map((model) => [model.name, model]),
+    );
+    const model3dPrices = getModelPricesFromCatalog(getModel3dModelsInfo());
+
+    expect(model3dPrices.length).toBeGreaterThan(0);
+
+    for (const modelPrice of model3dPrices) {
+        const rawRate = Number(
+            sourceByName.get(modelPrice.name)?.pricing.completionImageTokens,
+        );
+
+        expect(Number.isFinite(rawRate) && rawRate > 0).toBe(true);
+        expect(modelPrice.prices).toContainEqual({
+            direction: "output",
+            kind: "3d",
+            price: formatPriceFlat(rawRate),
+            unit: "request",
+        });
+    }
 });
 
 test("model info exposes public capabilities without raw implementation flags", () => {

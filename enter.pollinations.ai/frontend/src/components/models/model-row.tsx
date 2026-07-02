@@ -10,7 +10,11 @@ import {
 import { PaidChip, TierChip, WalletKindIcon } from "@pollinations/ui/wallet";
 import type { FC } from "react";
 import { calculatePerPollen, unitLabels } from "./calculations.ts";
-import { CAPABILITY_ICON, MODALITY_ICON } from "./model-icons.tsx";
+import {
+    CAPABILITY_ICON,
+    MODALITY_ICON,
+    MODEL_TYPE_ICON,
+} from "./model-icons.tsx";
 import {
     getModelBrandLogoPath,
     getModelCapabilities,
@@ -48,6 +52,8 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const modelDisplayName = getModelDisplayName(model);
     const modelDescription = getModelDescriptionWithoutName(model);
     const brandLogoPath = getModelBrandLogoPath(model);
+    const ModelTypeIcon = brandLogoPath ? null : MODEL_TYPE_ICON[model.type];
+    const hasModelIcon = Boolean(brandLogoPath || ModelTypeIcon);
     const inputModalities = getModelInputModalities(model);
     const modalityLabel = getModelModalityLabel(model);
     const capabilities = getModelCapabilities(model);
@@ -89,7 +95,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
         <Surface className="flex items-center transition-colors hover:bg-surface-opaque/90">
             {/* Brand logo — fixed width column */}
             <div className="w-10 shrink-0 flex items-center justify-center">
-                {brandLogoPath && (
+                {brandLogoPath ? (
                     <span
                         aria-hidden="true"
                         className="h-8 w-8 bg-current opacity-55 text-ink-900"
@@ -104,12 +110,14 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             WebkitMaskSize: "contain",
                         }}
                     />
-                )}
+                ) : ModelTypeIcon ? (
+                    <ModelTypeIcon className="h-5 w-5 text-ink-900 opacity-55" />
+                ) : null}
             </div>
 
             {/* Hairline separating the brand logo from the model info —
                 spaced clear of the logo square on both sides */}
-            {brandLogoPath && (
+            {hasModelIcon && (
                 <span
                     aria-hidden="true"
                     className="mx-3 h-10 w-px shrink-0 self-center bg-divider"
@@ -120,9 +128,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 start (40px logo + 25px divider footprint = 65px) */}
             <div
                 className={
-                    brandLogoPath
-                        ? "flex-1 min-w-0"
-                        : "flex-1 min-w-0 pl-[25px]"
+                    hasModelIcon ? "flex-1 min-w-0" : "flex-1 min-w-0 pl-[25px]"
                 }
             >
                 <div className="flex min-w-0 flex-col gap-1.5">

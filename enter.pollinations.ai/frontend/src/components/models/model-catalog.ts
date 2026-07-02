@@ -298,9 +298,13 @@ function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
     if ((price.type as string) === "3d") {
         return {
             ...price,
-            perRequest: true,
-            perImagePrice: formatPrice(completionImageTokens, formatPriceFlat),
-        } as ModelPrice;
+            prices: priceLines([
+                "output",
+                "3d",
+                formatPrice(completionImageTokens, formatPriceFlat),
+                "request",
+            ]),
+        };
     }
 
     if (price.type === "audio") {

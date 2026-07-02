@@ -1,0 +1,35 @@
+{
+  "pr_number": 12180,
+  "title": "fix: /video/models returns video-only list",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12180",
+  "merged_at": "2026-07-02T15:58:59Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "`/video/models` was aliased to `/image/models` (#12164), returning the full 37-model image+video list. Now it returns only the 12 `category: \"video\"` models.\n\n- `/video/models` → filters to `category === \"video\"` (mirrors the `/3d/models` pattern)\n- `/image/models` → unchanged (still the full image+video list)\n- Keeps #8995 fixed (still a real route, no fall-through to generation/401)\n- Adds a test asserting the list is video-only\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Strictly video",
+    "blurb": "The `/video/models` endpoint was getting a little overenthusiastic and showing image models too. We've fixed it so it only returns the models actually meant for video generation.",
+    "summary": "The `/video/models` endpoint now correctly filters and returns only the 12 video-specific models, rather than the combined list of 37 image and video models.",
+    "impact": "Developers querying `/video/models` will now receive an accurate, filtered list of video models without having to manually parse out the image models.",
+    "keywords": [
+      "api",
+      "video",
+      "models",
+      "endpoints",
+      "bug-fix"
+    ],
+    "visual_concept": "The bee mascot organizing film reels or video tapes, separating them from still photos. A retro TV or monitor showing moving pictures.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot sorting retro VHS tapes and film reels into a lime green (#ecf874) box, separating them from still polaroid photos. A chunky retro TV monitor in the background displays a moving pixel landscape. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-02/PR-12180.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot sorting retro VHS tapes and film reels into a lime green (#ecf874) box, separating them from still polaroid photos. A chunky retro TV monitor in the background displays a moving pixel landscape. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-07-02T16:00:09.533889+00:00"
+}

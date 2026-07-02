@@ -24,7 +24,6 @@ function params(overrides: Partial<Model3dParams> = {}): Model3dParams {
     return {
         model: "hyper3d-rodin",
         image: [],
-        format: "glb",
         safe: false,
         ...overrides,
     };
@@ -123,5 +122,30 @@ describe("callRodinFalAPI", () => {
         );
 
         expect(result.contentType).toBe("model/gltf-binary");
+    });
+
+    it("passes seed through on the image-to-3D endpoint", async () => {
+        const fetchSpy = mockFalQueue();
+
+        await callWithFakeTimers(
+            "",
+            params({ image: ["https://example.com/ref.jpg"], seed: 42 }),
+        );
+
+        const body = JSON.parse(
+            (fetchSpy.mock.calls[0] as [string, RequestInit])[1].body as string,
+        );
+        expect(body.seed).toBe(42);
+    });
+
+    it("passes seed through on the text-to-3D endpoint", async () => {
+        const fetchSpy = mockFalQueue();
+
+        await callWithFakeTimers("a low-poly fox", params({ seed: 42 }));
+
+        const body = JSON.parse(
+            (fetchSpy.mock.calls[0] as [string, RequestInit])[1].body as string,
+        );
+        expect(body.seed).toBe(42);
     });
 });

@@ -10,8 +10,6 @@ const VALID_3D_MODELS = [
     ...Object.values(MODEL3D_SERVICES).flatMap((service) => service.aliases),
 ] as const;
 
-const FORMATS = ["glb", "obj", "usdz", "fbx"] as const;
-
 export const Generate3dRequestQueryParamsSchema = z.object({
     model: z
         .preprocess(
@@ -50,14 +48,10 @@ export const Generate3dRequestQueryParamsSchema = z.object({
             description:
                 "Reference image URL(s) for image-to-3D generation. Separate multiple URLs with `|` or `,`. Required for image-only models (e.g. `trellis`, `triposr`, `sf3d`).",
         }),
-    format: z
-        .enum(FORMATS as unknown as [string, ...string[]])
-        .optional()
-        .default("glb")
-        .meta({
-            description:
-                "Output 3D file format. Not all models support all formats — falls back to glb if unsupported.",
-        }),
+    seed: z.coerce.number().int().optional().meta({
+        description:
+            "Seed for varied generations. Passed through to models that support it (`hyper3d-rodin`); otherwise only affects the media-cache key, so a new seed forces a fresh generation for the same prompt/image.",
+    }),
     safe: SafeSchema,
 });
 

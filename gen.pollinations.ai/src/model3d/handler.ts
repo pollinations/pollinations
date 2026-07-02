@@ -14,13 +14,6 @@ import { type Model3dParams, Model3dParamsSchema } from "./params.ts";
 
 type Model3dContext = Context<Env>;
 
-export const EXTENSION_BY_CONTENT_TYPE: Record<string, string> = {
-    "model/gltf-binary": "glb",
-    "model/ply": "ply",
-    "model/obj": "obj",
-    "model/vnd.usdz+zip": "usdz",
-};
-
 export async function generate3dResponse(
     c: Model3dContext,
     prompt: string,
@@ -98,7 +91,7 @@ export function assertNonEmptyMedia(result: Model3dGenerationResult): void {
     }
 }
 
-function contentDisposition(prompt: string, extension: string): string {
+function contentDisposition(prompt: string): string {
     const baseFilename = prompt
         .slice(0, 100)
         .replace(/[^a-z0-9\s-]/gi, "")
@@ -106,7 +99,7 @@ function contentDisposition(prompt: string, extension: string): string {
         .replace(/-+/g, "-")
         .replace(/^-|-$/g, "")
         .toLowerCase();
-    return `inline; filename="${baseFilename || "generated-model"}.${extension}"`;
+    return `inline; filename="${baseFilename || "generated-model"}.glb"`;
 }
 
 export function mediaHeaders(
@@ -118,8 +111,7 @@ export function mediaHeaders(
         "Content-Type": result.contentType,
         "Cache-Control": IMMUTABLE_CACHE_CONTROL,
     });
-    const extension = EXTENSION_BY_CONTENT_TYPE[result.contentType] || "glb";
-    headers.set("Content-Disposition", contentDisposition(prompt, extension));
+    headers.set("Content-Disposition", contentDisposition(prompt));
 
     const modelUsed = result.trackingData?.actualModel || safeParams.model;
     const usage = result.trackingData?.usage || { completionImageTokens: 1 };

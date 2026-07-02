@@ -19,7 +19,6 @@ function params(model: string): Model3dParams {
     return {
         model,
         image: ["https://example.com/ref.jpg"],
-        format: "glb",
         safe: false,
     };
 }
@@ -75,9 +74,21 @@ describe("callTrellis2", () => {
             callTrellis2({
                 model: "trellis-2-low",
                 image: [],
-                format: "glb",
                 safe: false,
             }),
         ).rejects.toBeTruthy();
+    });
+
+    it("does not forward seed (inferenceport support unconfirmed)", async () => {
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValue(syncSuccessResponse());
+
+        await callTrellis2({ ...params("trellis-2-low"), seed: 12345 });
+
+        const body = JSON.parse(
+            (fetchSpy.mock.calls[0] as [string, RequestInit])[1].body as string,
+        );
+        expect(body.seed).toBeUndefined();
     });
 });

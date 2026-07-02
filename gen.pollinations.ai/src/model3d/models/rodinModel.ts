@@ -17,6 +17,8 @@ export async function callRodinFalAPI(
     if (!hasImages) requirePrompt(prompt, "hyper3d-rodin");
 
     try {
+        const seedInput =
+            params.seed !== undefined ? { seed: params.seed } : {};
         const result = await runFalJob(
             hasImages
                 ? {
@@ -24,11 +26,12 @@ export async function callRodinFalAPI(
                       input: {
                           image_urls: params.image,
                           ...(prompt.trim() ? { prompt } : {}),
+                          ...seedInput,
                       },
                   }
                 : {
                       endpoint: RODIN_TEXT_ENDPOINT,
-                      input: { prompt },
+                      input: { prompt, ...seedInput },
                   },
         );
         const mesh = extractFalModelMesh(result);

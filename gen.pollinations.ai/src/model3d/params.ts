@@ -16,7 +16,11 @@ export const Model3dParamsSchema = z.object({
             return value.includes("|") ? value.split("|") : value.split(",");
         })
         .catch([]),
-    format: z.enum(["glb", "obj", "usdz", "fbx"]).catch("glb"),
+    // Not passed to either provider unless it natively supports seeds (see
+    // rodinModel.ts/trellis2Model.ts) — still accepted here so it becomes
+    // part of the media-cache key, letting callers force a fresh generation
+    // for the same prompt by varying the seed.
+    seed: z.coerce.number().int().optional().catch(undefined),
     safe: z
         .union([z.string(), z.boolean()])
         .transform((value) => {

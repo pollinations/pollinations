@@ -20,7 +20,6 @@ function baseParams(model: string): Model3dParams {
     return {
         model,
         image: ["https://example.com/ref.jpg"],
-        format: "glb",
         safe: false,
     };
 }

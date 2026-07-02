@@ -1970,13 +1970,14 @@ test("POST /api/stripe/auto-top-up/trigger credits stale paid pending invoices",
         createdAt: staleAt,
         updatedAt: staleAt,
     });
+    const stalePaidCents = 1000 + calculateServiceFeeCents(1000);
     mocks.stripe.state.invoices.push({
         id: invoiceId,
         object: "invoice",
         customer: "cus_webhook",
         status: "paid",
-        amount_due: 1000,
-        amount_paid: 1000,
+        amount_due: stalePaidCents,
+        amount_paid: stalePaidCents,
         currency: "usd",
         metadata: {
             pollinations_user_id: user.id,
@@ -2242,75 +2243,6 @@ test("POST /api/webhooks/stripe credits auto top-up by pack and service-fee line
     expect(attempt?.failureReason).toBeNull();
 });
 
-test("POST /api/webhooks/stripe credits legacy pack-only auto top-up invoice", async ({
-    sessionToken,
-    mocks,
-}) => {
-    void sessionToken;
-    await mocks.enable("stripe");
-    const db = drizzle(env.DB);
-    const [user] = await db
-        .select({ id: userTable.id })
-        .from(userTable)
-        .limit(1);
-
-    expect(user).toBeTruthy();
-    if (!user) throw new Error("Expected seeded test user");
-
-    await db
-        .update(userTable)
-        .set({ packBalance: 1, autoTopUpEnabled: true, autoTopUpAmountUsd: 10 })
-        .where(eq(userTable.id, user.id));
-
-    const invoiceId = "in_paid_legacy_pricing";
-    await insertAutoTopUpAttempt({ userId: user.id, invoiceId });
-
-    // Invoice created before service-fee pricing: one untyped line charging
-    // exactly the pack amount.
-    const response = await postSignedStripeWebhook(
-        createAutoTopUpInvoiceEvent("invoice.paid", invoiceId, user.id, {
-            amount_due: 1000,
-            amount_paid: 1000,
-            lines: {
-                object: "list",
-                has_more: false,
-                url: `/v1/invoices/${invoiceId}/lines`,
-                data: [
-                    {
-                        id: "il_legacy_pack",
-                        object: "line_item",
-                        amount: 1000,
-                        amount_excluding_tax: 1000,
-                        currency: "usd",
-                        metadata: {},
-                    },
-                ],
-            },
-        }),
-    );
-
-    expect(response.status).toBe(200);
-
-    const updatedUser = await env.DB.prepare(
-        `SELECT pack_balance AS packBalance
-        FROM user
-        WHERE id = ?`,
-    )
-        .bind(user.id)
-        .first<{ packBalance: number | null }>();
-    const attempt = await env.DB.prepare(
-        `SELECT status, failure_reason AS failureReason
-        FROM stripe_auto_top_up_attempt
-        WHERE stripe_invoice_id = ?`,
-    )
-        .bind(invoiceId)
-        .first<{ status: string; failureReason: string | null }>();
-
-    expect(updatedUser?.packBalance).toBe(11);
-    expect(attempt?.status).toBe("paid");
-    expect(attempt?.failureReason).toBeNull();
-});
-
 test("POST /api/webhooks/stripe credits payment_succeeded auto top-up invoices", async ({
     sessionToken,
     mocks,
@@ -2414,9 +2346,7 @@ test.for([
     {
         name: "amount",
         invoiceId: "in_amount_mismatch",
-        // Wrong under both pricings: not the legacy pack-only amount and
-        // below pack + service fee.
-        overrides: { amount_paid: 500 },
+        overrides: { amount_paid: 1000 },
         expectedReason: "verification mismatch: amount mismatch",
     },
     {

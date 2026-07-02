@@ -336,10 +336,8 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                             <PollenPackSlider
                                 value={selectedPack.amountUsd}
                                 onChange={setSelectedPackAmount}
-                                selectedBadgeLabel={formatUsdCentsCompact(
-                                    selectedPack.amountUsd * 100,
-                                )}
-                                selectedBadgeDetail={`+ ${formatUsdCentsCompact(serviceFeeCents)} fee`}
+                                selectedBadgeLabel={chargeLabel}
+                                selectedBadgeDetail={`incl. ${formatUsdCentsCompact(serviceFeeCents)} fee`}
                             />
                         </div>
                         <Tooltip

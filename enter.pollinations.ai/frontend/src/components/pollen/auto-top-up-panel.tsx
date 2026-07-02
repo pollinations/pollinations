@@ -337,13 +337,14 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                                     selectedBadgeLabel={
                                         selectedPack
                                             ? formatUsdCentsCompact(
-                                                  selectedPack.amountUsd * 100,
+                                                  selectedPack.amountUsd * 100 +
+                                                      serviceFeeCents,
                                               )
                                             : "$0"
                                     }
                                     selectedBadgeDetail={
                                         selectedPack
-                                            ? `+ ${formatUsdCentsCompact(serviceFeeCents)} fee`
+                                            ? `incl. ${formatUsdCentsCompact(serviceFeeCents)} fee`
                                             : undefined
                                     }
                                     disabled={isSaving}

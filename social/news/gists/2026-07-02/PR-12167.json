@@ -1,0 +1,35 @@
+{
+  "pr_number": 12167,
+  "title": "chore: update app metrics 2026-07-02",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12167",
+  "merged_at": "2026-07-02T05:29:40Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Daily automated update of app metrics, health checks, and greenhouse",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Daily Greenhouse Check",
+    "blurb": "Our automated bots just finished their daily rounds, watering the greenhouse and updating community app metrics.",
+    "summary": "Automated daily update of community app metrics and health checks in the APPS and GREENHOUSE markdown files.",
+    "impact": "Keeps the community app directory up-to-date with the latest health statuses and usage metrics.",
+    "keywords": [
+      "metrics",
+      "apps",
+      "greenhouse",
+      "automated",
+      "chore"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot checking on a digital greenhouse. The robot holds a clipboard with metrics while Polly waters code-plants, representing the automated health checks of the app ecosystem.",
+    "image_prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head holding a tiny clipboard, checking on a digital greenhouse. The cute bee mascot waters glowing code-plants sprouting from lime green (#ecf874) pots. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-02/PR-12167.jpg",
+    "prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head holding a tiny clipboard, checking on a digital greenhouse. The cute bee mascot waters glowing code-plants sprouting from lime green (#ecf874) pots. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-07-02T05:30:36.537391+00:00"
+}

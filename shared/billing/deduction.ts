@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { apikey as apiKeyTable, user as userTable } from "../db/better-auth.ts";
 import type { BalanceBucket, UserBalance } from "./bucket-selection.ts";
-import { toMicroPollen } from "./pollenMath.ts";
+import { toMicroPollen } from "./precision.ts";
 
 export type Bucket = BalanceBucket;
 
@@ -32,9 +32,9 @@ export async function atomicDeductUserBalance(
                 id,
                 CASE
                     WHEN ${isPaidOnly ? 1 : 0} = 1 THEN 'pack'
-                    /* Compare using precise micro-units */
-                    WHEN (ROUND(COALESCE(tier_balance, 0) * 1000000)) >= ${microAmount} THEN 'tier'
-                    WHEN (ROUND(COALESCE(pack_balance, 0) * 1000000)) > 0 THEN 'pack'
+                    /* Compare using precise micro-units (8 decimal scale) */
+                    WHEN (ROUND(COALESCE(tier_balance, 0) * 100000000)) >= ${microAmount} THEN 'tier'
+                    WHEN (ROUND(COALESCE(pack_balance, 0) * 100000000)) > 0 THEN 'pack'
                     ELSE 'tier'
                 END AS bucket
             FROM ${userTable}
@@ -45,13 +45,13 @@ export async function atomicDeductUserBalance(
             tier_balance = CASE
                 WHEN (SELECT bucket FROM decision) = 'tier'
                     /* Convert to micro-units, deduct, convert back safely */
-                    THEN (ROUND(COALESCE(tier_balance, 0) * 1000000) - ${microAmount}) / 1000000.0
+                    THEN (ROUND(COALESCE(tier_balance, 0) * 100000000) - ${microAmount}) / 100000000.0
                 ELSE tier_balance
             END,
             pack_balance = CASE
                 WHEN (SELECT bucket FROM decision) = 'pack'
                     /* Convert to micro-units, deduct, convert back safely */
-                    THEN (ROUND(COALESCE(pack_balance, 0) * 1000000) - ${microAmount}) / 1000000.0
+                    THEN (ROUND(COALESCE(pack_balance, 0) * 100000000) - ${microAmount}) / 100000000.0
                 ELSE pack_balance
             END
         WHERE id = (SELECT id FROM decision)
@@ -82,7 +82,7 @@ export async function atomicDeductApiKeyBalance(
 
     const result = await db.run(sql`
 			UPDATE ${apiKeyTable}
-			SET pollen_balance = (ROUND(pollen_balance * 1000000) - ${microAmount}) / 1000000.0
+			SET pollen_balance = (ROUND(pollen_balance * 100000000) - ${microAmount}) / 100000000.0
 			WHERE id = ${apiKeyId}
 			AND pollen_balance IS NOT NULL
 		`);
@@ -109,7 +109,7 @@ export async function atomicCreditUserBalance(
     const rows = await db
         .update(userTable)
         .set({
-            [`${bucket}Balance`]: sql`(ROUND(COALESCE(${column}, 0) * 1000000) + ${microAmount}) / 1000000.0`,
+            [`${bucket}Balance`]: sql`(ROUND(COALESCE(${column}, 0) * 100000000) + ${microAmount}) / 100000000.0`,
         })
         .where(sql`${userTable.id} = ${userId}`)
         .returning({ newBalance: column });

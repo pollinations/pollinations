@@ -110,7 +110,8 @@ def _reconcile_monthly(provider, month, billing, inv_rows, pay_rows, cfg, today,
         return _verdict_row(provider, month, billing, "accepted", today,
                             inv_sum, pay_sum, refs, shas)
 
-    parsed = [r for r in inv_rows if r.get("status") == "parsed"]
+    parsed = sorted([r for r in inv_rows if r.get("status") == "parsed"],
+                    key=lambda r: (r.get("issued_at", ""), r.get("sha256", "")))
     needs = [r for r in inv_rows if r.get("status") == "needs_label"]
 
     if not parsed and not needs:

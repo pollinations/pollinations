@@ -55,19 +55,19 @@ def import_archive(cfg, ops_ingest, today):
     against TB and an in-run seen set, re-derives (slug, category) from the
     filename prefix, then calls extract_and_push with source="email".
 
-    Returns dict of counts: pushed, dup_sha, skipped_prefix.
+    Returns dict of counts: pushed, dup_sha, unknown_prefix.
     """
     archive_dir = cfg["archive_dir"]
     known_shas = {r["sha256"] for r in ops_ingest.sql("SELECT sha256 FROM invoices")}
     seen_this_run: set = set()
     billing_map = _extract._build_billing_map(creds.load_credits())
 
-    pushed = dup_sha = skipped_prefix = 0
+    pushed = dup_sha = unknown_prefix = 0
 
     try:
         entries = sorted(os.listdir(archive_dir))
     except FileNotFoundError:
-        return {"pushed": 0, "dup_sha": 0, "skipped_prefix": 0}
+        return {"pushed": 0, "dup_sha": 0, "unknown_prefix": 0}
 
     for entry in entries:
         if entry == "inbox" or not _MONTH_RE.match(entry):
@@ -91,7 +91,7 @@ def import_archive(cfg, ops_ingest, today):
             category = harvest._slug_to_category(slug)
             if category == "other" and slug != "other":
                 # Slug not in PROVIDERS — treat as other/unknown
-                skipped_prefix += 1
+                unknown_prefix += 1
             msgid = parts[2] if len(parts) >= 3 else ""
 
             _extract.extract_and_push(
@@ -101,7 +101,7 @@ def import_archive(cfg, ops_ingest, today):
             known_shas.add(file_sha)
             pushed += 1
 
-    return {"pushed": pushed, "dup_sha": dup_sha, "skipped_prefix": skipped_prefix}
+    return {"pushed": pushed, "dup_sha": dup_sha, "unknown_prefix": unknown_prefix}
 
 
 def main():
@@ -110,9 +110,8 @@ def main():
     today = datetime.date.today().isoformat()
     c, cfg = creds.load_creds(), creds.load_config()
 
-    # Two tokens — see MODULE DOCSTRING
+    # One token for ingest — see MODULE DOCSTRING
     ops_ingest = tb.TB(cfg["tb_ops_api"], c["TINYBIRD_OPS_INGEST_TOKEN"])
-    ops_replace = tb.TB(cfg["tb_ops_api"], c["TINYBIRD_OPS_REPLACE_TOKEN"])
 
     # --import-archive: one-off backfill from pre-organized month dirs, then exit
     if import_mode:
@@ -124,6 +123,9 @@ def main():
         }])
         print(f"import-archive: {st}")
         return
+
+    # Replace token needed after import-mode returns — see MODULE DOCSTRING
+    ops_replace = tb.TB(cfg["tb_ops_api"], c["TINYBIRD_OPS_REPLACE_TOKEN"])
 
     st, notes = {}, []
     all_months = months_ytd(cfg["months_start"], today)

@@ -1,6 +1,8 @@
 import {
+    calculateServiceFeeCents,
     describePollenPack,
     formatPollenPackValue,
+    formatUsdCentsCompact,
     getPollenPackByAmount,
     getPollenPackByKey,
     isPollenPackKey,
@@ -20,6 +22,29 @@ test("pollen pack catalog has unique positive USD-denominated pack keys", () => 
         expect(pack.amountUsd).toBeGreaterThan(0);
         expect(pack.packKey).toBe(`p${pack.amountUsd}`);
     }
+});
+
+test("service fee matches the expected pack-size table", () => {
+    expect(
+        Object.fromEntries(
+            POLLEN_PACKS.map((pack) => [
+                pack.amountUsd,
+                calculateServiceFeeCents(pack.amountUsd * 100),
+            ]),
+        ),
+    ).toEqual({
+        2: 37,
+        5: 48,
+        10: 65,
+        20: 100,
+        50: 205,
+        100: 380,
+    });
+});
+
+test("compact USD formatter keeps whole-dollar badges short", () => {
+    expect(formatUsdCentsCompact(2100)).toBe("$21");
+    expect(formatUsdCentsCompact(1065)).toBe("$10.65");
 });
 
 test("pack lookup validates supported USD amounts", () => {

@@ -31,7 +31,12 @@ export default defineConfig([
             "!index.browser.min.js.map",
         ],
         minify: false,
-        external: ["@pollinations/sdk", "@pollinations/sdk/react", "react"],
+        external: [
+            "@pollinations/sdk",
+            "@pollinations/sdk/react",
+            "react",
+            "react-dom",
+        ],
         loader: {
             ".svg": "dataurl",
         },

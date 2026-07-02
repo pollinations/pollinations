@@ -31,7 +31,6 @@ curl https://gen.pollinations.ai/v1/models \
 
 - [🚀 Getting Started](#-getting-started)
 - [🔐 Authentication](#-authentication)
-- [🔓 Sign in with Pollinations (OAuth 2.1)](#-sign-in-with-pollinations-oauth-21)
 - [🧪 Use any OpenAI SDK](#-use-any-openai-sdk)
 - [🌊 Streaming chat completions](#-streaming-chat-completions)
 - [🖼️ Vision: passing images into chat](#-vision-passing-images-into-chat)
@@ -80,18 +79,6 @@ The header is preferred for everything except browser flows that can't set custo
 | Everything else | Bearer key required unless the endpoint documents `?key=` support |
 
 `401 UNAUTHORIZED` always means key missing or invalid. `402 PAYMENT_REQUIRED` means the key authenticated but the account or per-key budget is exhausted — see [Error Responses](#-error-responses).
-
-## 🔓 Sign in with Pollinations (OAuth 2.1)
-
-Third-party apps can obtain an API key on behalf of a Pollinations user — the OAuth 2.1 authorization-code flow with PKCE (S256) for web apps, or the device flow (RFC 8628) for CLIs. Register a **publishable App Key** (`pk_…`) with your redirect URIs at [enter.pollinations.ai](https://enter.pollinations.ai); the `pk_` key is your `client_id` (public client, no secret), and the issued access token is an opaque `sk_` key bound to the budget, expiry, and scopes the user approved.
-
-Endpoints are discoverable via RFC 8414 metadata — resolve them from there rather than hardcoding:
-
-```
-GET https://enter.pollinations.ai/.well-known/oauth-authorization-server
-```
-
-The full integration guide — authorization request, token exchange, device flow, userinfo, scopes, revocation — is [Bring Your Own Pollen (BYOP)](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md).
 
 ## 🧪 Use any OpenAI SDK
 

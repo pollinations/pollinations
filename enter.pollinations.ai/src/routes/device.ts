@@ -158,6 +158,7 @@ export const deviceRoutes = new Hono<Env>()
                 apiKey: string;
                 apiKeyId: string;
                 expiresIn?: number;
+                scope?: string;
             }>();
 
             if (!body.userCode || !body.apiKey || !body.apiKeyId) {
@@ -176,6 +177,9 @@ export const deviceRoutes = new Hono<Env>()
                     JSON.stringify({
                         key: body.apiKey,
                         expiresIn: body.expiresIn ?? null,
+                        // Granted scope — may be narrower than what the row
+                        // stored at issuance ("" = narrowed to zero)
+                        scope: body.scope ?? null,
                     }),
                     { expirationTtl: KV_TTL },
                 ),
@@ -294,7 +298,11 @@ export async function exchangeDeviceCode(
             const stored = (await c.env.KV.get(
                 `device-key:${device.deviceCode}`,
                 "json",
-            )) as { key: string; expiresIn: number | null } | null;
+            )) as {
+                key: string;
+                expiresIn: number | null;
+                scope?: string | null;
+            } | null;
 
             if (!stored) {
                 return c.json({ error: "authorization_pending" }, 400);
@@ -308,13 +316,18 @@ export async function exchangeDeviceCode(
                 c.env.KV.delete(`device-key:${device.deviceCode}`),
             ]);
 
+            // RFC 6749 §5.1: echo what the user actually granted, which may
+            // be narrower than the scope requested at issuance. Fall back to
+            // the requested scope for KV payloads written before consent
+            // started reporting the granted set.
+            const scope = stored.scope ?? device.scope;
             return c.json({
                 access_token: stored.key,
                 token_type: "bearer",
                 ...(stored.expiresIn != null && {
                     expires_in: stored.expiresIn,
                 }),
-                ...(device.scope && { scope: device.scope }),
+                ...(scope != null && { scope }),
             });
         }
 

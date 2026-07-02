@@ -397,6 +397,12 @@ export function Authorize() {
                         apiKey: key,
                         apiKeyId: id,
                         expiresIn,
+                        // Same convention as the code flow below: the token
+                        // response must echo the granted scope when it
+                        // differs from the requested one (RFC 6749 §5.1)
+                        scope: requestedScopes.size
+                            ? grantedAccountPermissions.join(" ")
+                            : undefined,
                     },
                 });
                 if (!res.ok) {

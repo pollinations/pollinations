@@ -275,6 +275,59 @@ describe("Device Authorization Flow", () => {
         expect(replayBody.error).toBe("invalid_grant");
     }, 30000);
 
+    test("approve with narrowed scope echoes the granted scope (RFC 6749 §5.1)", async ({
+        sessionToken,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "github");
+
+        const sessionRes = await SELF.fetch(`${BASE}/api/auth/get-session`, {
+            headers: {
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+        });
+        const session = (await sessionRes.json()) as {
+            user: { id: string };
+        };
+
+        const approveAndExchange = async (
+            requestedScope: string,
+            grantedScope: string,
+        ) => {
+            const device = await insertDeviceCode({ scope: requestedScope });
+            const { key, id: keyId } = await insertApiKey(session.user.id);
+            const approveRes = await SELF.fetch(`${BASE}/api/device/approve`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+                body: JSON.stringify({
+                    userCode: device.userCode,
+                    apiKey: key,
+                    apiKeyId: keyId,
+                    scope: grantedScope,
+                }),
+            });
+            expect(approveRes.status).toBe(200);
+            const tokenRes = await SELF.fetch(`${BASE}/api/device/token`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ device_code: device.deviceCode }),
+            });
+            expect(tokenRes.status).toBe(200);
+            return (await tokenRes.json()) as { scope?: string };
+        };
+
+        // User unchecked "keys" on the consent screen
+        const narrowed = await approveAndExchange("usage keys", "usage");
+        expect(narrowed.scope).toBe("usage");
+
+        // Narrowed to zero: "" must still be echoed, not omitted
+        const zeroed = await approveAndExchange("usage", "");
+        expect(zeroed.scope).toBe("");
+    }, 30000);
+
     test("GET /api/device/userinfo returns OIDC-shaped profile", async ({
         sessionToken,
         mocks,

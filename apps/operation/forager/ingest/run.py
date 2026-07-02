@@ -2,6 +2,7 @@
 
     python3 -m ingest.run              # daily: harvest new invoices + repull last N months
     python3 -m ingest.run --backfill   # everything since config.months_start
+    python3 -m ingest.run --import-archive  # one-off: push pre-organized YYYY-MM/ month dirs
 
 TOKEN MODEL: two TB instances:
   ops_ingest  — TINYBIRD_OPS_INGEST_TOKEN  → .append() and .sql()
@@ -9,12 +10,15 @@ TOKEN MODEL: two TB instances:
 """
 import datetime
 import json
+import os
+import re
 import sys
 
 from . import creds, gaps, tb
 from .connectors import wise
 from .connectors.common import months_ytd
 from .invoices import harvest
+from .invoices import extract as _extract
 
 
 def dedupe_invoices(rows):
@@ -41,14 +45,85 @@ def dedupe_invoices(rows):
     return list(best.values())
 
 
+_MONTH_RE = re.compile(r'^\d{4}-(0[1-9]|1[0-2])$')
+
+
+def import_archive(cfg, ops_ingest, today):
+    """One-off import of pre-organized archive month directories.
+
+    Walks <archive_dir>/YYYY-MM/ dirs (skips inbox/), sha256-dedups each *.pdf
+    against TB and an in-run seen set, re-derives (slug, category) from the
+    filename prefix, then calls extract_and_push with source="email".
+
+    Returns dict of counts: pushed, dup_sha, skipped_prefix.
+    """
+    archive_dir = cfg["archive_dir"]
+    known_shas = {r["sha256"] for r in ops_ingest.sql("SELECT sha256 FROM invoices")}
+    seen_this_run: set = set()
+    billing_map = _extract._build_billing_map(creds.load_credits())
+
+    pushed = dup_sha = skipped_prefix = 0
+
+    try:
+        entries = sorted(os.listdir(archive_dir))
+    except FileNotFoundError:
+        return {"pushed": 0, "dup_sha": 0, "skipped_prefix": 0}
+
+    for entry in entries:
+        if entry == "inbox" or not _MONTH_RE.match(entry):
+            continue
+        month_dir = os.path.join(archive_dir, entry)
+        if not os.path.isdir(month_dir):
+            continue
+        for fname in sorted(os.listdir(month_dir)):
+            if not fname.lower().endswith(".pdf"):
+                continue
+            path = os.path.join(month_dir, fname)
+            file_sha = _extract.sha256(path)
+            if file_sha in known_shas or file_sha in seen_this_run:
+                dup_sha += 1
+                continue
+            seen_this_run.add(file_sha)
+
+            # Re-derive slug+category from filename prefix: <slug>_<date>_<msgid8>_<origname>
+            parts = os.path.splitext(fname)[0].split("_")
+            slug = parts[0].lower() if parts else "other"
+            category = harvest._slug_to_category(slug)
+            if category == "other" and slug != "other":
+                # Slug not in PROVIDERS — treat as other/unknown
+                skipped_prefix += 1
+            msgid = parts[2] if len(parts) >= 3 else ""
+
+            _extract.extract_and_push(
+                ops_ingest, path, slug, category, msgid, "email",
+                cfg, today, billing_map=billing_map,
+            )
+            known_shas.add(file_sha)
+            pushed += 1
+
+    return {"pushed": pushed, "dup_sha": dup_sha, "skipped_prefix": skipped_prefix}
+
+
 def main():
     backfill = "--backfill" in sys.argv
+    import_mode = "--import-archive" in sys.argv
     today = datetime.date.today().isoformat()
     c, cfg = creds.load_creds(), creds.load_config()
 
     # Two tokens — see MODULE DOCSTRING
     ops_ingest = tb.TB(cfg["tb_ops_api"], c["TINYBIRD_OPS_INGEST_TOKEN"])
     ops_replace = tb.TB(cfg["tb_ops_api"], c["TINYBIRD_OPS_REPLACE_TOKEN"])
+
+    # --import-archive: one-off backfill from pre-organized month dirs, then exit
+    if import_mode:
+        st = import_archive(cfg, ops_ingest, today)
+        now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+        ops_ingest.append("ingest_runs", [{
+            "run_at": now, "ok": 1,
+            "statuses": json.dumps(st), "notes": "import-archive",
+        }])
+        print(f"import-archive: {st}")
+        return
 
     st, notes = {}, []
     all_months = months_ytd(cfg["months_start"], today)

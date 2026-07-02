@@ -16,7 +16,11 @@ import {
     WalletBalanceCard,
     WalletKindIcon,
 } from "@pollinations/ui/wallet";
-import { POLLEN_PACKS } from "@shared/pollen-packs.ts";
+import {
+    calculateServiceFeeCents,
+    formatUsdCentsCompact,
+    POLLEN_PACKS,
+} from "@shared/pollen-packs.ts";
 import { type FC, type ReactNode, useState } from "react";
 import { AutoTopUpPanel, type BillingState } from "./auto-top-up-panel.tsx";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
@@ -314,6 +318,14 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
         POLLEN_PACKS.findIndex((pack) => pack.amountUsd === selectedPackAmount),
     );
     const selectedPack = POLLEN_PACKS[selectedPackIndex] ?? POLLEN_PACKS[0];
+    const serviceFeeCents = selectedPack
+        ? calculateServiceFeeCents(selectedPack.amountUsd * 100)
+        : 0;
+    const subtotalBeforeTaxCents =
+        (selectedPack?.amountUsd ?? 0) * 100 + serviceFeeCents;
+    const chargeLabel = selectedPack
+        ? formatUsdCentsCompact(subtotalBeforeTaxCents)
+        : "$0";
 
     return (
         <>
@@ -324,6 +336,8 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                             <PollenPackSlider
                                 value={selectedPack.amountUsd}
                                 onChange={setSelectedPackAmount}
+                                selectedBadgeLabel={chargeLabel}
+                                selectedBadgeDetail={`incl. ${formatUsdCentsCompact(serviceFeeCents)} fee`}
                             />
                         </div>
                         <Tooltip
@@ -335,10 +349,10 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                                     </span>{" "}
                                     for{" "}
                                     <span className="font-semibold text-theme-text-strong">
-                                        ${selectedPack.amountUsd}
+                                        {chargeLabel}
                                     </span>
                                     <span className="mt-1 block text-theme-text-muted">
-                                        Confirm on the next page.
+                                        Tax calculated at checkout.
                                     </span>
                                 </span>
                             }

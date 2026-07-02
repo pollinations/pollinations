@@ -1,0 +1,35 @@
+{
+  "pr_number": 12179,
+  "title": "feat: add INFERENCEPORT_API_KEY to gen secrets",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12179",
+  "merged_at": "2026-07-02T16:56:28Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "Provisions the `INFERENCEPORT_API_KEY` that #12048 (3D model generation) marks required in `push-generation-secrets.mjs`.\n\n- Adds the key to `gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json` via `sops set` (minimal diff)\n- Without it, `decrypt-vars` hard-fails \"Missing required generation secrets\" → blocks `npm run dev` on that branch and staging/prod deploys\n- Verified locally: `trellis-2-low` (inferenceport, sync API) returns a valid 4.2 MB glTF binary; direct backend probe 200 in ~54s cold / ~24s warm\n\nUnblocks the Trellis 2 provider for #12048.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Unlocking the 3rd Dimension",
+    "blurb": "Added the necessary secret keys to power up our upcoming 3D model generation feature. The hive is getting ready to build in 3D!",
+    "summary": "Provisioned the INFERENCEPORT_API_KEY across dev, staging, and prod environments to unblock the Trellis 2 provider for 3D model generation.",
+    "impact": "This resolves local development and deployment blockers, paving the way for the upcoming 3D generation API.",
+    "keywords": [
+      "secrets",
+      "infrastructure",
+      "3d-generation",
+      "trellis-2",
+      "inferenceport"
+    ],
+    "visual_concept": "The bee mascot (Polly) holding a glowing key, unlocking a 3D wireframe cube or a glowing portal. The robot companion could be holding a blueprint, representing the infrastructure work behind the scenes.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding a glowing lime green (#ecf874) key, unlocking a floating 3D wireframe cube. A chunky pixel robot with a monitor head stands nearby holding a blueprint. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-02/PR-12179.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot holding a glowing lime green (#ecf874) key, unlocking a floating 3D wireframe cube. A chunky pixel robot with a monitor head stands nearby holding a blueprint. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-07-02T16:57:32.288879+00:00"
+}

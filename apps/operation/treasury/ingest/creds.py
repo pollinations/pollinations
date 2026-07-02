@@ -16,7 +16,8 @@ def load_creds():
     return c
 
 def load_config():
-    c = json.load(open(os.path.join(APP, "config.json")))
+    with open(os.path.join(APP, "config.json")) as f:
+        c = json.load(f)
     c["archive_dir"] = os.path.expanduser(c["archive_dir"])
     return c
 

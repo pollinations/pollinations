@@ -36,7 +36,14 @@ def test_secrets_are_encrypted():
     for name in ("env.json", "credits.json"):
         p = os.path.join(ops_secrets, name)
         if os.path.exists(p):
-            assert "sops" in json.load(open(p)), f"{name} is NOT sops-encrypted"
+            data = json.load(open(p))
+            assert "sops" in data, f"{name} is NOT sops-encrypted"
+            if name == "env.json":
+                for k, v in data.items():
+                    if k == "sops":
+                        continue
+                    assert v == "" or str(v).startswith("ENC["), \
+                        f"env.json value for {k} looks like PLAINTEXT — re-encrypt before committing"
 
 def test_no_cross_app_paths_in_code():
     # patterns split so this file's own source doesn't self-trigger
@@ -47,7 +54,7 @@ def test_no_cross_app_paths_in_code():
         "enter.pollinations.ai/" + "secrets",
     ]
     for root, _, files in os.walk(APP):
-        if any(s in root for s in ("node_modules", "__pycache__", ".git", "tests")):
+        if any(s in root for s in ("node_modules", "__pycache__", ".git")):
             continue
         for f in files:
             if f.endswith((".py", ".sh", ".ts", ".js")) and f != "PLAN.md":

@@ -17,6 +17,30 @@ from .connectors.common import months_ytd
 from .invoices import harvest
 
 
+def dedupe_invoices(rows):
+    """Deduplicate invoice rows per sha256.
+
+    Prefers status='parsed' over status='needs_label'.
+    Tie-breaks by latest ingested_at, then keeps the last-seen row.
+    """
+    # Status preference: parsed > needs_label (lower = better)
+    _STATUS_RANK = {"parsed": 0, "needs_label": 1}
+    best = {}
+    for row in rows:
+        sha = row["sha256"]
+        if sha not in best:
+            best[sha] = row
+        else:
+            prev = best[sha]
+            prev_rank = _STATUS_RANK.get(prev["status"], 9)
+            curr_rank = _STATUS_RANK.get(row["status"], 9)
+            if curr_rank < prev_rank:
+                best[sha] = row
+            elif curr_rank == prev_rank and row["ingested_at"] > prev["ingested_at"]:
+                best[sha] = row
+    return list(best.values())
+
+
 def main():
     backfill = "--backfill" in sys.argv
     today = datetime.date.today().isoformat()
@@ -50,7 +74,7 @@ def main():
         notes.append(f"wise FAILED, months kept: {e}")
 
     # 3. Gaps / reconciliation — read facts back, run pure engine, write result
-    invoices = ops_ingest.sql("SELECT * FROM invoices")
+    invoices = dedupe_invoices(ops_ingest.sql("SELECT * FROM invoices"))
     payments = ops_ingest.sql("SELECT * FROM payments")
     pools = creds.load_credits().get("pools", [])
 

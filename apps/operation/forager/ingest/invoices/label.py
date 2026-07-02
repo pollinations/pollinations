@@ -28,7 +28,7 @@ def _all_providers(credits_data):
     return sorted(set(providers))
 
 
-def main(argv=None):
+def main(argv=None, tb=None):
     parser = argparse.ArgumentParser(
         description="Relabel a needs_label invoice row."
     )
@@ -78,10 +78,11 @@ def main(argv=None):
         "ingested_at":    ingested_at,
     }
 
-    # Push to Tinybird
-    tb_cfg = _creds.load_creds()
-    t = _tb.TB(config["tb_ops_api"], tb_cfg["TB_OPS_TOKEN"])
-    t.append("invoices", [row])
+    # Push to Tinybird — use injected tb if provided, else build from creds
+    if tb is None:
+        tb_cfg = _creds.load_creds()
+        tb = _tb.TB(config["tb_ops_api"], tb_cfg["TINYBIRD_OPS_INGEST_TOKEN"])
+    tb.append("invoices", [row])
 
     print(json.dumps(row, indent=2))
     return row

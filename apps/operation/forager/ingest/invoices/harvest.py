@@ -26,7 +26,7 @@ from .. import creds as _creds
 PROVIDERS = [
     # ----- compute -----
     ("google-workspace", "saas",    ["google workspace"]),
-    ("google-cloud",     "compute", ["google cloud", "cloud platform", "google llc", "google payments"]),
+    ("google",           "compute", ["google cloud", "cloud platform", "google llc", "google payments"]),
     ("anthropic",        "compute", ["anthropic"]),
     ("openai",           "compute", ["openai"]),
     ("azure",            "compute", ["azure", "microsoft"]),
@@ -42,12 +42,13 @@ PROVIDERS = [
     ("perplexity",       "compute", ["perplexity"]),
     ("runpod",           "compute", ["runpod"]),
     ("lambda",           "compute", ["lambda", "lambdal"]),
-    ("vast",             "compute", ["vast.ai", "vast ai", "vast, inc"]),
+    ("vast.ai",          "compute", ["vast.ai", "vast ai", "vast, inc"]),
     ("assemblyai",       "compute", ["assemblyai", "assembly ai"]),
     ("modal",            "compute", ["modal labs", "modal.com", "modal, inc"]),
-    ("ionet",            "compute", ["io.net", "io net"]),
-    ("byteplus",         "compute", ["byteplus", "bytedance", "volcengine"]),
-    ("ovh",              "compute", ["ovh"]),
+    ("io.net",           "compute", ["io.net", "io net"]),
+    ("bytedance",        "compute", ["byteplus", "bytedance", "volcengine"]),
+    ("ovhcloud",         "compute", ["ovh"]),
+    ("scaleway",         "compute", ["scaleway"]),
     ("stability",        "compute", ["stability ai", "stability"]),
     ("pruna",            "compute", ["pruna"]),
     ("openrouter",       "compute", ["openrouter", "open router"]),
@@ -89,7 +90,7 @@ def _make_queries(start, since=None):
     if since:
         date_filter = f"after:{since}"
     else:
-        date_filter = f"after:{start} newer_than:3d"
+        date_filter = "newer_than:3d"
 
     q1 = (f'{date_filter} has:attachment filename:pdf (invoice OR receipt OR facture OR statement OR '
           f'billing OR "payment received" OR rechnung OR quittung OR "tax invoice")')

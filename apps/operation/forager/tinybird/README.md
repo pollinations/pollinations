@@ -33,6 +33,10 @@ Workspace: `operations` (GCP europe-west2, https://api.europe-west2.gcp.tinybird
 
 `tb.replace()` (mode=replace) requires CREATE scope → always use `treasury_replace`. Appends and `/v0/sql` reads use `treasury_ingest`.
 
+## Provider slug vocabulary
+
+The `provider` column is the join key across all three datasources (`invoices`, `payments`, `reconciliation`). The canonical vocabulary is the set of provider slugs defined in the pools of `apps/operation/secrets/credits.json`; `harvest.PROVIDERS` (email classifier) and `wise.ALIAS` (Wise counterparty matcher) must both emit exactly those slugs so that invoice rows, payment rows, and pool metadata link up correctly at reconciliation time.
+
 ## Rules
 
 - **Apps read pipes only** — never re-pull datasources directly.

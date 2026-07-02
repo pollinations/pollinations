@@ -247,3 +247,51 @@ def test_inbox_sweep_empty_returns_zeros(monkeypatch, tmp_path):
     assert counts["dup_sha"] == 0
 
 
+# ---------------------------------------------------------------------------
+# Finding B — vocabulary consistency test
+# ---------------------------------------------------------------------------
+
+def test_canonical_slugs_present_in_harvest_and_wise():
+    """Canonical slugs must appear in BOTH harvest.PROVIDERS and wise.ALIAS.
+
+    # Canonical source: credits.json pools
+    """
+    from ingest.connectors import wise
+
+    canonical_slugs = {"vast.ai", "io.net", "ovhcloud", "google", "bytedance", "scaleway"}
+    harvest_slugs = {slug for slug, _, _ in harvest.PROVIDERS}
+    wise_slugs = set(wise.ALIAS.keys())
+
+    missing_from_harvest = canonical_slugs - harvest_slugs
+    missing_from_wise = canonical_slugs - wise_slugs
+
+    assert not missing_from_harvest, (
+        f"Canonical slugs missing from harvest.PROVIDERS: {missing_from_harvest}"
+    )
+    assert not missing_from_wise, (
+        f"Canonical slugs missing from wise.ALIAS: {missing_from_wise}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Finding D — daily Gmail query must not include after: clause
+# ---------------------------------------------------------------------------
+
+def test_make_queries_daily_uses_newer_than_only():
+    """Daily path (since=None) produces queries with newer_than:3d, no after: clause."""
+    queries = harvest._make_queries(start="2026/01/01", since=None)
+    assert len(queries) == 2
+    for q in queries:
+        assert "newer_than:3d" in q, f"Expected 'newer_than:3d' in daily query: {q!r}"
+        assert "after:" not in q, f"Daily query must not contain 'after:': {q!r}"
+
+
+def test_make_queries_backfill_uses_after_clause():
+    """Backfill path (since set) produces queries with after: and no newer_than:."""
+    queries = harvest._make_queries(start="2026/01/01", since="2026/06/01")
+    assert len(queries) == 2
+    for q in queries:
+        assert "after:2026/06/01" in q, f"Expected 'after:2026/06/01' in backfill query: {q!r}"
+        assert "newer_than" not in q, f"Backfill query must not contain 'newer_than': {q!r}"
+
+

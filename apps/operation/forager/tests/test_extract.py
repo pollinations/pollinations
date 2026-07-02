@@ -379,6 +379,189 @@ def test_label_unknown_provider_exits_with_known_list(monkeypatch, capsys):
 
 
 # ---------------------------------------------------------------------------
+# label.py: push-path test (Finding A)
+# ---------------------------------------------------------------------------
+
+def test_label_push_path_appends_parsed_row(monkeypatch):
+    """label.main() with injected tb stub appends exactly one 'parsed' row to 'invoices'."""
+    import ingest.creds as creds_mod
+    from ingest.invoices import label
+
+    _fake_credits = {
+        "pools": [
+            {"name": "GPU pool", "billing": "prepaid", "providers": ["runpod", "vast.ai"]},
+            {"name": "Cloud", "billing": "monthly", "providers": ["aws", "google"]},
+        ]
+    }
+    _fake_config = {"fx_eur_usd": 1.14, "tb_ops_api": "https://fake.tinybird.co"}
+
+    monkeypatch.setattr(creds_mod, "_sops_decrypt", lambda p: _fake_credits)
+    monkeypatch.setattr(creds_mod, "load_config", lambda: _fake_config)
+
+    appended = {}
+
+    class StubTB:
+        def append(self, datasource, rows):
+            appended["datasource"] = datasource
+            appended["rows"] = rows
+
+    result = label.main([
+        "deadbeef1234sha256",
+        "--provider", "vast.ai",
+        "--month", "2026-06",
+        "--amount", "500",
+        "--currency", "EUR",
+        "--kind", "prepaid_topup",
+    ], tb=StubTB())
+
+    # One row appended to "invoices"
+    assert appended["datasource"] == "invoices"
+    assert len(appended["rows"]) == 1
+    row = appended["rows"][0]
+
+    assert row["status"] == "parsed"
+    assert row["provider"] == "vast.ai"
+    assert row["source"] == "label"
+    # EUR 500 × 1.14 = 570.0
+    assert abs(row["amount_usd"] - 570.0) < 0.001
+
+
+# ---------------------------------------------------------------------------
+# Finding C — invoice dedupe helper
+# ---------------------------------------------------------------------------
+
+def test_dedupe_invoices_prefers_parsed_over_needs_label():
+    """dedupe_invoices keeps the 'parsed' row when both statuses exist for same sha256."""
+    from ingest import run as run_mod
+
+    rows = [
+        {"sha256": "abc", "status": "needs_label", "ingested_at": "2026-06-01"},
+        {"sha256": "abc", "status": "parsed",      "ingested_at": "2026-06-15"},
+    ]
+    result = run_mod.dedupe_invoices(rows)
+    assert len(result) == 1
+    assert result[0]["status"] == "parsed"
+
+
+def test_dedupe_invoices_tie_break_latest_ingested_at():
+    """When two rows have same status, the later ingested_at wins."""
+    from ingest import run as run_mod
+
+    rows = [
+        {"sha256": "xyz", "status": "parsed", "ingested_at": "2026-06-01"},
+        {"sha256": "xyz", "status": "parsed", "ingested_at": "2026-06-20"},
+    ]
+    result = run_mod.dedupe_invoices(rows)
+    assert len(result) == 1
+    assert result[0]["ingested_at"] == "2026-06-20"
+
+
+def test_dedupe_invoices_no_overlap():
+    """Different sha256s are all preserved."""
+    from ingest import run as run_mod
+
+    rows = [
+        {"sha256": "aaa", "status": "parsed",      "ingested_at": "2026-06-01"},
+        {"sha256": "bbb", "status": "needs_label",  "ingested_at": "2026-06-01"},
+    ]
+    result = run_mod.dedupe_invoices(rows)
+    assert len(result) == 2
+
+
+# ---------------------------------------------------------------------------
+# Finding E — invalid date validation in extract_and_push
+# ---------------------------------------------------------------------------
+
+def test_extract_invalid_issued_at_falls_back_to_period_month():
+    """Parser returning issued_at='2026-13-00' falls back to period_month + '-01'."""
+    import unittest.mock as mock
+    import ingest.creds as creds_mod
+    import tempfile
+
+    bad_parse_result = {
+        "invoice": {
+            "provider": "runpod", "kind": "prepaid_topup", "currency": "USD",
+            "amount": 100.0, "amount_usd": 100.0,
+            "period_month": "2026-05", "invoice_number": "",
+            "issued_at": "2026-13-00",
+            "status": "parsed",
+        },
+        "extras": {},
+        "status": "parsed",
+    }
+
+    appended = []
+
+    class StubTB:
+        def append(self, datasource, rows):
+            appended.extend(rows)
+
+    _fake_credits = {"pools": [{"name": "GPU", "billing": "prepaid", "providers": ["runpod"]}]}
+
+    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+        f.write(b"%PDF")
+        pdf_path = f.name
+
+    try:
+        with mock.patch.object(extract, "pdf_text", return_value=""), \
+             mock.patch.object(extract, "parse", return_value=bad_parse_result), \
+             mock.patch.object(creds_mod, "_sops_decrypt", return_value=_fake_credits):
+            row = extract.extract_and_push(
+                StubTB(), pdf_path, "runpod", "compute", "msg", "email",
+                _stub_config(), "2026-06-01"
+            )
+        # issued_at must be a valid date, falling back to period_month + "-01"
+        assert row["issued_at"] == "2026-05-01", f"Expected '2026-05-01', got {row['issued_at']!r}"
+    finally:
+        os.unlink(pdf_path)
+
+
+def test_extract_invalid_period_month_falls_back_to_sentinel():
+    """Parser returning period_month='2026-13' (invalid month) triggers sentinel '1970-01-01'."""
+    import unittest.mock as mock
+    import ingest.creds as creds_mod
+    import tempfile
+
+    bad_parse_result = {
+        "invoice": {
+            "provider": "runpod", "kind": "prepaid_topup", "currency": "USD",
+            "amount": 100.0, "amount_usd": 100.0,
+            "period_month": "2026-13", "invoice_number": "",
+            "issued_at": "",
+            "status": "parsed",
+        },
+        "extras": {},
+        "status": "parsed",
+    }
+
+    appended = []
+
+    class StubTB:
+        def append(self, datasource, rows):
+            appended.extend(rows)
+
+    _fake_credits = {"pools": []}
+
+    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+        f.write(b"%PDF")
+        pdf_path = f.name
+
+    try:
+        with mock.patch.object(extract, "pdf_text", return_value=""), \
+             mock.patch.object(extract, "parse", return_value=bad_parse_result), \
+             mock.patch.object(creds_mod, "_sops_decrypt", return_value=_fake_credits):
+            row = extract.extract_and_push(
+                StubTB(), pdf_path, "runpod", "compute", "msg", "email",
+                _stub_config(), "2026-06-01"
+            )
+        # Invalid period_month → treated as missing → issued_at sentinel
+        assert row["issued_at"] == "1970-01-01", f"Expected '1970-01-01', got {row['issued_at']!r}"
+        assert row["period_month"] == "", f"Expected empty period_month, got {row['period_month']!r}"
+    finally:
+        os.unlink(pdf_path)
+
+
+# ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 

@@ -3,14 +3,11 @@
 Severed copy: only the helpers needed by the connectors live here.
 Credential loading lives exclusively in ingest/creds.py — never here.
 """
-import json as _json, os as _os, re, urllib.request
+import json as _json
+import re
+import urllib.request
 
 UA = "Mozilla/5.0 (pollinations-finops-connector)"
-
-# FX rate read from config.json at module load — single source of truth.
-FX_EUR_USD = _json.load(open(_os.path.join(
-    _os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))),
-    "config.json")))["fx_eur_usd"]
 
 
 def http_json(url, headers=None, timeout=30):

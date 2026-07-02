@@ -5,8 +5,9 @@ parse() is PURE — no file I/O, no creds reads.
 extract_and_push() handles file I/O, sha256, kind derivation, and TB append.
 """
 import hashlib
+import re
 import subprocess
-from datetime import datetime, timezone
+from datetime import date as _date, datetime, timezone
 
 from .parsers import REGISTRY
 from .. import creds as _creds
@@ -128,14 +129,23 @@ def extract_and_push(tb_ops, path, slug, category, msgid, source, config, today,
 
     ingested_at = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-    # issued_at: use parser value if present; else period_month + "-01"; else sentinel
+    # Validate period_month: must match YYYY-MM with month 01-12
     period_month = inv.get("period_month", "")
+    if period_month and not re.match(r'^\d{4}-(0[1-9]|1[0-2])$', period_month):
+        period_month = ""  # treat invalid period_month as missing
+
+    # issued_at: validate parser value; fall back to period_month + "-01"; else sentinel
     parser_issued_at = inv.get("issued_at", "")
+    issued_at = ""
     if parser_issued_at:
-        issued_at = parser_issued_at
-    elif period_month:
+        try:
+            _date.fromisoformat(parser_issued_at)
+            issued_at = parser_issued_at
+        except ValueError:
+            pass  # fall through to period_month fallback
+    if not issued_at and period_month:
         issued_at = period_month + "-01"
-    else:
+    if not issued_at:
         issued_at = "1970-01-01"
 
     row = {

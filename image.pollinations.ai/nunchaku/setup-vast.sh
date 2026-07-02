@@ -5,6 +5,17 @@
 # into a venv and runs server.py inside a screen session with a restart loop
 # (server.py exits on CUDA errors and expects its supervisor to restart it).
 #
+# IMPORTANT — Cloudflare Tunnel required: the gen worker (Cloudflare Worker)
+# cannot fetch() raw-IP/non-standard-port origins, so a NAT'd http://IP:PORT
+# heartbeat URL is unreachable from routing. Front the worker with a named
+# tunnel on the pollinations.ai account (needs ~/.cloudflared/cert.pem):
+#   cloudflared tunnel create flux-vast-NN
+#   cloudflared tunnel route dns flux-vast-NN flux-vast-NN.pollinations.ai
+#   # config.yml: ingress flux-vast-NN.pollinations.ai -> http://localhost:8765
+#   screen -dmS cloudflared bash -c 'while true; do cloudflared tunnel run flux-vast-NN 2>&1 | tee -a /tmp/cloudflared.log; sleep 5; done'
+# then run this script with PUBLIC_IP=flux-vast-NN.pollinations.ai PUBLIC_PORT=443
+# (server.py advertises https://$PUBLIC_IP when PUBLIC_PORT=443).
+#
 # Tested against vastai/base-image:cuda-13.0.2-cudnn-devel-ubuntu24.04-py312.
 # The prebuilt nunchaku wheel bundles SM 7.5/8.0/8.6/8.9/120 kernels, so the
 # same setup works on RTX 4090 (INT4 model) and RTX 5090 (FP4 model).

@@ -172,7 +172,6 @@ export const callSelfHostedServer = async (
     prompt: string,
     safeParams: ImageParams,
     poolType: ServerType = "zimage",
-    timeoutMs?: number,
 ): Promise<ImageGenerationResult> => {
     try {
         logOps("safeParams", safeParams);
@@ -215,7 +214,6 @@ export const callSelfHostedServer = async (
                     }),
                 },
                 body: JSON.stringify(body),
-                ...(timeoutMs && { signal: AbortSignal.timeout(timeoutMs) }),
             });
         } catch (error) {
             logError(`Fetch failed for ${safeParams.model}:`, error.message);
@@ -268,23 +266,17 @@ export const callSelfHostedServer = async (
 
 /**
  * Flux routing: prefer the self-hosted GPU pool; fall back to Fireworks when
- * no worker is registered or the pool request fails. The timeout guards
- * against wedged-but-connected workers; it is generous enough that even deep
- * queueing never trips it.
+ * no worker is registered or the pool request fails.
+ * NOTE: do NOT add an AbortSignal.timeout to the pool fetch — in production
+ * workerd it broke every pool request (all traffic silently fell back to
+ * Fireworks for ~1.5h on 2026-07-02) while passing in the local test runtime.
  */
-const FLUX_POOL_TIMEOUT_MS = 120_000;
-
 export const callFluxWithFallback = async (
     prompt: string,
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> => {
     try {
-        return await callSelfHostedServer(
-            prompt,
-            safeParams,
-            "flux",
-            FLUX_POOL_TIMEOUT_MS,
-        );
+        return await callSelfHostedServer(prompt, safeParams, "flux");
     } catch (error) {
         // Log the full error (not just message) so unexpected error types
         // (coding bugs vs operational failures) are not silently masked.

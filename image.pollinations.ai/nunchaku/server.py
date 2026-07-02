@@ -32,7 +32,7 @@ QUANT_MODEL_PATH = os.getenv("QUANT_MODEL_PATH", "mit-han-lab/svdq-int4-flux.1-s
 # Cap total pixels to prevent CUDA OOM/hangs with quantized models. The 810k
 # default suits RTX 4090 (INT4); RTX 5090 instances set MAX_PIXELS=1048576 so
 # 1024x1024 requests are served at full resolution instead of downscaled.
-MAX_PIXELS = int(os.getenv("MAX_PIXELS", str(900 * 900)))
+MAX_PIXELS = int(os.getenv("MAX_PIXELS", "810000"))
 
 class ImageRequest(BaseModel):
     prompts: List[str] = ["a photo of an astronaut riding a horse on mars"]
@@ -104,6 +104,13 @@ async def lifespan(app: FastAPI):
         logger.critical("PLN_GPU_TOKEN not configured - refusing to start")
         raise RuntimeError("PLN_GPU_TOKEN must be configured")
     try:
+        # Guard against a 5090-tuned MAX_PIXELS on smaller GPUs (e.g. running
+        # setup-vast.sh defaults on an RTX 4090, where >810k pixels hangs CUDA).
+        global MAX_PIXELS
+        vram = torch.cuda.get_device_properties(0).total_memory
+        if vram < 30_000_000_000 and MAX_PIXELS > 810_000:
+            logger.warning(f"GPU has {vram / 1e9:.0f}GB VRAM; capping MAX_PIXELS {MAX_PIXELS} -> 810000")
+            MAX_PIXELS = 810_000
         print("Loading FLUX pipeline...")
         transformer = NunchakuFluxTransformer2dModel.from_pretrained(QUANT_MODEL_PATH)
         pipe = FluxPipeline.from_pretrained(

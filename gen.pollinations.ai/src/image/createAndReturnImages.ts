@@ -172,6 +172,7 @@ export const callSelfHostedServer = async (
     prompt: string,
     safeParams: ImageParams,
     poolType: ServerType = "zimage",
+    timeoutMs?: number,
 ): Promise<ImageGenerationResult> => {
     try {
         logOps("safeParams", safeParams);
@@ -214,6 +215,7 @@ export const callSelfHostedServer = async (
                     }),
                 },
                 body: JSON.stringify(body),
+                ...(timeoutMs && { signal: AbortSignal.timeout(timeoutMs) }),
             });
         } catch (error) {
             logError(`Fetch failed for ${safeParams.model}:`, error.message);
@@ -266,19 +268,27 @@ export const callSelfHostedServer = async (
 
 /**
  * Flux routing: prefer the self-hosted GPU pool; fall back to Fireworks when
- * no worker is registered or the pool request fails.
+ * no worker is registered or the pool request fails. The timeout guards
+ * against wedged-but-connected workers; it is generous enough that normal
+ * at-capacity queueing (p95 ~5s) never trips it.
  */
+const FLUX_POOL_TIMEOUT_MS = 30_000;
+
 export const callFluxWithFallback = async (
     prompt: string,
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> => {
     try {
-        return await callSelfHostedServer(prompt, safeParams, "flux");
-    } catch (error) {
-        logError(
-            "Self-hosted flux failed, falling back to Fireworks:",
-            error.message,
+        return await callSelfHostedServer(
+            prompt,
+            safeParams,
+            "flux",
+            FLUX_POOL_TIMEOUT_MS,
         );
+    } catch (error) {
+        // Log the full error (not just message) so unexpected error types
+        // (coding bugs vs operational failures) are not silently masked.
+        logError("Self-hosted flux failed, falling back to Fireworks:", error);
         return await callFireworksFluxSchnellAPI(prompt, safeParams);
     }
 };

@@ -37,10 +37,14 @@ PLN_GPU_TOKEN=... HF_TOKEN=... TUNNEL_NAME=flux-vast-NN GIT_BRANCH=main bash set
 ```
 Gotchas (all hit in practice): rent hosts with `duration>=30`; verify
 `intended_status=running` after create (GPU can be taken between create/start);
-some hosts have broken direct SSH (use the `ssh_host:ssh_port` proxy) or broken
-bulk egress (use `SKIP_CLONE=1` + scp, or rsync venv+`~/.cache/huggingface`
-from a healthy worker); racing 2 candidate instances and destroying the loser
-is cheap (~$0.40/hr each).
+some hosts have broken direct SSH (use the `ssh_host:ssh_port` proxy); some
+drop bulk CDN downloads mid-transfer (setup-vast.sh passes pip
+`--resume-retries` so downloads resume instead of restarting); hosts with
+driver < 580 hit CUDA Error 804 with the cuda-13 image (GeForce can't use
+forward-compat libs — setup-vast.sh disables them so the host driver is used);
+machine-to-machine rsync between vast instances is NOT reliable (hosts kill
+bulk SSH streams, the vast agent rewrites authorized_keys); racing 2 candidate
+instances and destroying the loser is cheap (~$0.40/hr each).
 
 **Health / restart:**
 ```bash

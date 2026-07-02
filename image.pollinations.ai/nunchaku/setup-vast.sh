@@ -60,6 +60,16 @@ log "Installing system packages..."
 $SUDO apt-get update -qq
 $SUDO apt-get install -y -qq git screen python3.12-venv python3.12-dev
 
+# CUDA forward-compat libs (shipped in cuda-13 images) fail on GeForce when the
+# host driver is older than the toolkit (CUDA Error 804) — always use the host
+# driver instead.
+if ls /usr/local/cuda*/compat/libcuda.so* >/dev/null 2>&1; then
+    log "Disabling CUDA forward-compat libs (using host driver)..."
+    mkdir -p /root/cuda-compat-disabled
+    mv /usr/local/cuda*/compat/libcuda.so* /root/cuda-compat-disabled/
+    $SUDO ldconfig
+fi
+
 if [ -n "$TUNNEL_NAME" ]; then
     if [ ! -f "$HOME/.cloudflared/cert.pem" ]; then
         echo "TUNNEL_NAME set but $HOME/.cloudflared/cert.pem missing (pollinations.ai account cert)" >&2
@@ -113,14 +123,18 @@ fi
 source venv/bin/activate
 pip install --upgrade -q pip
 
+# Some vast hosts drop bulk CDN connections mid-download; --resume-retries
+# (pip >= 25.1) resumes partial wheel downloads instead of restarting them.
+PIP_FLAGS="--resume-retries 20 --timeout 60 --retries 10"
+
 log "Installing PyTorch 2.9.1 cu128 (matches prebuilt nunchaku wheel)..."
-pip install -q torch==2.9.1 torchvision==0.24.1 --index-url https://download.pytorch.org/whl/cu128
+pip install -q $PIP_FLAGS torch==2.9.1 torchvision==0.24.1 --index-url https://download.pytorch.org/whl/cu128
 
 log "Installing requirements..."
-pip install -q -r requirements.txt
+pip install -q $PIP_FLAGS -r requirements.txt
 
 log "Installing prebuilt nunchaku wheel (SM 7.5/8.0/8.6/8.9/120)..."
-pip install -q --no-cache-dir --no-deps \
+pip install -q $PIP_FLAGS --no-cache-dir --no-deps \
     "https://github.com/nunchaku-ai/nunchaku/releases/download/v1.2.1/nunchaku-1.2.1+cu12.8torch2.9-cp312-cp312-linux_x86_64.whl"
 
 python -c "from nunchaku import NunchakuFluxTransformer2dModel; print('nunchaku OK')"

@@ -74,7 +74,7 @@ https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=https://
 | Param | What it does | Example |
 |-------|-------------|---------|
 | `client_id` | Your publishable key — shows app name + author on consent screen, tracks traffic and developer earnings | `pk_abc123` |
-| `redirect_uri` | Where users return after authorizing — must match a Redirect URI on the App Key | `https://myapp.com/callback` |
+| `redirect_uri` | Where users return after authorizing — must exactly match a Redirect URI on the App Key, query string included (loopback `http://localhost` matches any port) | `https://myapp.com/callback` |
 | `response_type` | Use `code` for the OAuth authorization-code flow | `code` |
 | `state` | Opaque value echoed back on the callback for CSRF protection | `any-random-string` |
 | `code_challenge` | Base64url SHA-256 of your PKCE verifier | `abc...` |
@@ -108,6 +108,8 @@ curl -X POST https://enter.pollinations.ai/api/oauth/token \
 ```
 
 The authorization code is single-use and expires after 10 minutes. Token responses use RFC 6749 error objects such as `invalid_grant`, `invalid_request`, and `unsupported_grant_type`.
+
+Scopes: `profile` (name + email), `usage` (account balance + usage), `keys` (account admin — create/list/revoke keys). The response's `scope` echoes what the user actually granted, which may be narrower than requested. Generation needs no scope — spending is bounded by the budget and expiry the user approved. There are no refresh tokens; re-run the flow when the key expires. Issued keys appear in the user's dashboard like any other API key and can be edited or revoked there at any time — revocation is immediate.
 
 ### 3. Call Pollinations
 

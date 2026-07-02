@@ -1,6 +1,8 @@
 # Terms of Service
 
-**Updated: 2026-06-24**
+**Updated: 2026-07-02**
+
+_2026-07-02 — Pollen purchases now include a service fee shown before payment, and prices are shown exclusive of tax; applicable VAT or similar taxes are added at checkout._
 
 _2026-05-11 — Wallet now expires after 12 months of account inactivity. Effective 2026-06-01; the inactivity clock starts on that date for all existing balances._
 
@@ -13,7 +15,7 @@ Myceli.AI OÜ
 Registry code: 17186693  
 VAT number: EE102877908  
 Registered address: Harju maakond, Tallinn, Kesklinna linnaosa, Tornimäe tn 5, 10145, Estonia  
-Email: hi@myceli.ai
+Email: hello@myceli.ai
 
 ---
 
@@ -54,7 +56,7 @@ Do not violate law; infringe IP/likeness/privacy; attack the Service; evade rate
 
 ## 6) Pollen, Fees, Taxes & Billing
 
-Fees are per plan/order/invoice; currency is by default USD.
+Fees are per plan/order/invoice; currency is by default USD. Pollen purchases, including auto top-up charges, include a service fee shown before payment.
 
 **Pollen.** "Pollen" is an in-service credit used only to pay for Pollinations API usage. Pollen is not legal tender, e-money, cryptocurrency, a deposit, a bank account balance, or stored value outside the Service. Pollen is not transferable, withdrawable, or redeemable for cash except where required by law or expressly approved by us as a refund under these Terms.
 
@@ -73,7 +75,7 @@ Fees are per plan/order/invoice; currency is by default USD.
 
 Developer earnings are credited as Pollen to the developer wallet in the same balance type the user paid from. They are not cash payouts and are not transferable, withdrawable, or redeemable outside the Service. We may review and adjust developer earnings for refunds, chargebacks, fraud, abuse, pricing errors, self-crediting (using your own app to inflate your earnings), or other billing corrections.
 
-**Taxes.** Prices include applicable VAT or similar transaction taxes where required. Estonian standard VAT is 24% where applicable. For eligible EU B2B customers with a valid VAT ID, reverse-charge rules may apply.
+**Taxes.** Prices for Pollen purchases are shown exclusive of tax. Applicable VAT or similar transaction taxes are calculated and added at checkout based on your billing details. Estonian standard VAT is 24% where applicable. For eligible EU B2B customers with a valid VAT ID, reverse-charge rules may apply.
 
 **Payments.** Payments are processed by Stripe Payments Europe, Limited. Stripe sends purchase invoices by email.
 

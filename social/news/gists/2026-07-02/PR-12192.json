@@ -1,0 +1,35 @@
+{
+  "pr_number": 12192,
+  "title": "docs: add Community Models (Alpha) section",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12192",
+  "merged_at": "2026-07-02T23:38:56Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "- Adds a plain-language Community Models overview to the API docs (Models section)\n- Payouts, \"not our infrastructure\" disclaimer, automated deactivation / manual-only reactivation\n- Links owners to model-monitor.pollinations.ai/debug for live health",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Bring your own bees",
+    "blurb": "We've added a new guide for Community Models to the API docs. Learn how to hook up your own infrastructure, earn Pollen, and monitor your model's health.",
+    "summary": "Added a Community Models (Alpha) section to the API documentation detailing payouts, infrastructure disclaimers, automated deactivation rules, and live health monitoring.",
+    "impact": "Model providers can now reference clear guidelines on how community-hosted models operate, including how to check their live status at model-monitor.pollinations.ai/debug.",
+    "keywords": [
+      "docs",
+      "community models",
+      "api",
+      "monitoring",
+      "pollen"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot reading a glowing manual together in a digital garden, representing the new documentation for community-hosted models.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot and a cute chunky monitor robot reading a glowing open book together in a digital garden. Small code-plants sprout from lime green (#ecf874) flower pots around them. Soft pastel lavender and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Text in pixel font: 'DOCS'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-02/PR-12192.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot and a cute chunky monitor robot reading a glowing open book together in a digital garden. Small code-plants sprout from lime green (#ecf874) flower pots around them. Soft pastel lavender and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Text in pixel font: 'DOCS'."
+  },
+  "generated_at": "2026-07-02T23:39:58.587210+00:00"
+}

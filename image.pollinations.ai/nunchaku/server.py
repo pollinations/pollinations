@@ -26,7 +26,13 @@ logger = logging.getLogger(__name__)
 
 MODEL_ID = "black-forest-labs/FLUX.1-schnell"
 MODEL_CACHE = "model-cache"
-QUANT_MODEL_PATH = "mit-han-lab/svdq-int4-flux.1-schnell"
+# INT4 for Ada GPUs (RTX 4090); Blackwell GPUs (RTX 5090) must use
+# QUANT_MODEL_PATH=mit-han-lab/svdq-fp4-flux.1-schnell
+QUANT_MODEL_PATH = os.getenv("QUANT_MODEL_PATH", "mit-han-lab/svdq-int4-flux.1-schnell")
+# Cap total pixels to prevent CUDA OOM/hangs with quantized models. The 810k
+# default suits RTX 4090 (INT4); RTX 5090 instances set MAX_PIXELS=1048576 so
+# 1024x1024 requests are served at full resolution instead of downscaled.
+MAX_PIXELS = int(os.getenv("MAX_PIXELS", str(900 * 900)))
 
 class ImageRequest(BaseModel):
     prompts: List[str] = ["a photo of an astronaut riding a horse on mars"]
@@ -158,8 +164,6 @@ def find_nearest_valid_dimensions(width: float, height: float) -> tuple[int, int
     if width < MIN_DIMENSION or height < MIN_DIMENSION:
         raise ValueError(f"Dimensions too small: {width}x{height}. Minimum allowed is {MIN_DIMENSION}x{MIN_DIMENSION}")
     
-    # Cap total pixels to prevent CUDA OOM with quantized models
-    MAX_PIXELS = 900 * 900  # 810,000 pixels — reduced to prevent CUDA hangs on RTX 4090
     start_w = round(width)
     start_h = round(height)
     

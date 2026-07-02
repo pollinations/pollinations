@@ -42,8 +42,10 @@ def parse(txt, slug, config, today):
     invoice_number = num_m.group(1) if num_m else ""
 
     period_month = ""
+    issued_at = ""
     if date_m:
         period_month = _date_to_month(date_m.group(1))
+        issued_at = _date_to_iso(date_m.group(1))
 
     missing = not amt_m or not period_month
     status = "needs_label" if missing else "parsed"
@@ -56,7 +58,7 @@ def parse(txt, slug, config, today):
         "amount_usd":     amount,
         "period_month":   period_month,
         "invoice_number": invoice_number,
-        "issued_at":      "",
+        "issued_at":      issued_at,
         "status":         status,
     }
 
@@ -65,10 +67,22 @@ def parse(txt, slug, config, today):
 
 def _date_to_month(date_str):
     """'June 1, 2026' -> '2026-06'"""
-    m = re.match(r"([A-Z][a-z]+)\s+\d{1,2},\s+(\d{4})", date_str)
+    m = re.match(r"([A-Z][a-z]+)\s+(\d{1,2}),\s+(\d{4})", date_str)
     if not m:
         return ""
     month_num = _MONTH_MAP.get(m.group(1), "")
     if not month_num:
         return ""
-    return f"{m.group(2)}-{month_num}"
+    return f"{m.group(3)}-{month_num}"
+
+
+def _date_to_iso(date_str):
+    """'June 1, 2026' -> '2026-06-01'"""
+    m = re.match(r"([A-Z][a-z]+)\s+(\d{1,2}),\s+(\d{4})", date_str)
+    if not m:
+        return ""
+    month_num = _MONTH_MAP.get(m.group(1), "")
+    if not month_num:
+        return ""
+    day = m.group(2).zfill(2)
+    return f"{m.group(3)}-{month_num}-{day}"

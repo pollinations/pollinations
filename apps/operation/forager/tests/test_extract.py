@@ -38,6 +38,18 @@ Total  $150.00
 
 NEEDS_LABEL_TEXT = "Thanks for your purchase! We appreciate your business."
 
+GENERIC_WITH_FULL_DATE = """\
+Invoice no. GEN-001
+Date: 2026-05-15
+Total  $99.00
+"""
+
+GENERIC_WITHOUT_FULL_DATE = """\
+Invoice no. GEN-002
+Billing period: May 2026
+Total  $50.00
+"""
+
 
 # ---------------------------------------------------------------------------
 # Automat-IT parser tests
@@ -90,6 +102,20 @@ def test_stripe_receipt_amount_period(monkeypatch, tmp_path):
     assert out["status"] == "parsed"
 
 
+def test_stripe_receipt_issued_at(monkeypatch, tmp_path):
+    """stripe_receipt.py emits issued_at as ISO date when Date paid/due is present."""
+    out = extract.parse(STRIPE_RECEIPT, "anthropic", _stub_config(), "2026-07-02")
+    inv = out["invoice"]
+    assert inv["issued_at"] == "2026-06-01"
+
+
+def test_stripe_invoice_issued_at(monkeypatch, tmp_path):
+    """stripe_receipt.py emits issued_at for Date due too."""
+    out = extract.parse(STRIPE_INVOICE, "elevenlabs", _stub_config(), "2026-07-02")
+    inv = out["invoice"]
+    assert inv["issued_at"] == "2026-05-15"
+
+
 def test_stripe_invoice_amount_period(monkeypatch, tmp_path):
     p = tmp_path / "stripe2.pdf"
     p.write_bytes(b"%PDF")
@@ -102,6 +128,136 @@ def test_stripe_invoice_amount_period(monkeypatch, tmp_path):
     assert inv["currency"] == "USD"
     assert inv["period_month"] == "2026-05"
     assert out["status"] == "parsed"
+
+
+# ---------------------------------------------------------------------------
+# Generic parser issued_at tests
+# ---------------------------------------------------------------------------
+
+def test_generic_issued_at_from_iso_date(monkeypatch, tmp_path):
+    """generic.py emits issued_at when a full ISO date is found."""
+    out = extract.parse(GENERIC_WITH_FULL_DATE, "runpod", _stub_config(), "2026-07-02")
+    inv = out["invoice"]
+    assert inv["issued_at"] == "2026-05-15"
+
+
+def test_generic_no_issued_at_without_full_date(monkeypatch, tmp_path):
+    """generic.py does not emit issued_at when only month/year is found (no full date)."""
+    out = extract.parse(GENERIC_WITHOUT_FULL_DATE, "runpod", _stub_config(), "2026-07-02")
+    inv = out["invoice"]
+    # No full date present → extract.py falls back to period_month + "-01"
+    # period_month comes from "May 2026" which generic can't parse (no day) — needs_label
+    # so issued_at should be "1970-01-01" sentinel
+    assert inv["issued_at"] in ("", "1970-01-01")
+
+
+# ---------------------------------------------------------------------------
+# extract.py issued_at defaulting
+# ---------------------------------------------------------------------------
+
+def test_extract_issued_at_defaults_to_period_month_day01():
+    """When parser omits issued_at but period_month is set, extract.py uses period_month + '-01'."""
+    # AIT parser doesn't emit issued_at, has period_month = "2026-05"
+    out = extract.parse(AIT, "aws", _stub_config(), "2026-07-02")
+    inv = out["invoice"]
+    # AIT sets issued_at="" — extract.parse passes it through; extract_and_push handles defaulting
+    # We test the full extract_and_push path:
+    appended = []
+
+    class StubTB:
+        def append(self, datasource, rows):
+            appended.extend(rows)
+
+    import ingest.creds as creds_mod
+    import pytest
+    _fake_credits = {"pools": [{"name": "AWS Reseller", "billing": "reseller", "providers": ["aws"]}]}
+
+    # We need to test this via extract_and_push to trigger the defaulting logic
+    # Use a scratch approach: call extract_and_push with monkeypatched creds and pdf_text
+    import unittest.mock as mock
+    import tempfile, pathlib
+
+    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+        f.write(b"%PDF")
+        pdf_path = f.name
+
+    try:
+        with mock.patch.object(extract, "pdf_text", return_value=AIT), \
+             mock.patch.object(creds_mod, "_sops_decrypt", return_value=_fake_credits):
+            row = extract.extract_and_push(
+                StubTB(), pdf_path, "aws", "compute", "msg", "email",
+                _stub_config(), "2026-07-02"
+            )
+        assert row["issued_at"] == "2026-05-01"
+    finally:
+        os.unlink(pdf_path)
+
+
+def test_extract_issued_at_sentinel_when_no_period():
+    """When parser omits issued_at and period_month is empty, extract.py uses '1970-01-01'."""
+    appended = []
+
+    class StubTB:
+        def append(self, datasource, rows):
+            appended.extend(rows)
+
+    import ingest.creds as creds_mod
+    import unittest.mock as mock
+    import tempfile
+
+    _fake_credits = {"pools": []}
+
+    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+        f.write(b"%PDF")
+        pdf_path = f.name
+
+    try:
+        with mock.patch.object(extract, "pdf_text", return_value=NEEDS_LABEL_TEXT), \
+             mock.patch.object(creds_mod, "_sops_decrypt", return_value=_fake_credits):
+            row = extract.extract_and_push(
+                StubTB(), pdf_path, "runpod", "compute", "msg", "email",
+                _stub_config(), "2026-07-02"
+            )
+        assert row["issued_at"] == "1970-01-01"
+    finally:
+        os.unlink(pdf_path)
+
+
+# ---------------------------------------------------------------------------
+# ingested_at format test
+# ---------------------------------------------------------------------------
+
+def test_ingested_at_is_date_only():
+    """extract_and_push ingested_at must be YYYY-MM-DD (no time component)."""
+    import re
+    import unittest.mock as mock
+    import ingest.creds as creds_mod
+    import tempfile
+
+    appended = []
+
+    class StubTB:
+        def append(self, datasource, rows):
+            appended.extend(rows)
+
+    _fake_credits = {"pools": []}
+
+    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+        f.write(b"%PDF")
+        pdf_path = f.name
+
+    try:
+        with mock.patch.object(extract, "pdf_text", return_value=NEEDS_LABEL_TEXT), \
+             mock.patch.object(creds_mod, "_sops_decrypt", return_value=_fake_credits):
+            row = extract.extract_and_push(
+                StubTB(), pdf_path, "runpod", "compute", "msg", "email",
+                _stub_config(), "2026-07-02"
+            )
+        # Must match YYYY-MM-DD only, no time part
+        assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", row["ingested_at"]), \
+            f"ingested_at should be YYYY-MM-DD but got: {row['ingested_at']!r}"
+    finally:
+        os.unlink(pdf_path)
 
 
 # ---------------------------------------------------------------------------
@@ -180,6 +336,46 @@ def test_extract_and_push_ait_appends_parsed_row(monkeypatch, tmp_path):
     assert row["status"] == "parsed"
     assert row["kind"] == "reseller"
     assert row["amount"] == 1234.56
+
+
+# ---------------------------------------------------------------------------
+# label.py: unknown provider exits nonzero and lists known providers
+# ---------------------------------------------------------------------------
+
+def test_label_unknown_provider_exits_with_known_list(monkeypatch, capsys):
+    """label.py exits nonzero and prints known provider list for unknown provider."""
+    import ingest.creds as creds_mod
+    import pytest
+
+    _fake_credits = {
+        "pools": [
+            {"name": "GPU pool", "billing": "prepaid", "providers": ["runpod", "vast.ai"]},
+            {"name": "Cloud", "billing": "monthly", "providers": ["aws", "gcp"]},
+        ]
+    }
+    _fake_config = {"fx_eur_usd": 1.14, "tb_ops_api": "https://fake.tinybird.co"}
+
+    monkeypatch.setattr(creds_mod, "_sops_decrypt", lambda p: _fake_credits)
+    monkeypatch.setattr(creds_mod, "load_config", lambda: _fake_config)
+
+    from ingest.invoices import label
+
+    with pytest.raises(SystemExit) as exc_info:
+        label.main([
+            "abc123sha256",
+            "--provider", "unknown-provider-xyz",
+            "--month", "2026-06",
+            "--amount", "100",
+            "--currency", "USD",
+            "--kind", "prepaid_topup",
+        ])
+
+    assert exc_info.value.code != 0
+
+    captured = capsys.readouterr()
+    err_output = captured.err
+    # Must mention at least one known provider from the pool
+    assert "runpod" in err_output or "aws" in err_output or "vast.ai" in err_output or "gcp" in err_output
 
 
 # ---------------------------------------------------------------------------

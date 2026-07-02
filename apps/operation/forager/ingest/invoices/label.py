@@ -58,7 +58,7 @@ def main(argv=None):
     fx = config.get("fx_eur_usd", 1.0)
     amount_usd = round(args.amount * fx, 6) if args.currency == "EUR" else args.amount
 
-    ingested_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    ingested_at = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     row = {
         "sha256":         args.sha256,
@@ -71,7 +71,7 @@ def main(argv=None):
         "currency":       args.currency,
         "amount_usd":     amount_usd,
         "invoice_number": args.number,
-        "issued_at":      "",
+        "issued_at":      args.month + "-01",
         "source":         "label",
         "file_ref":       "",
         "status":         "parsed",

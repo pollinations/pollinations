@@ -60,12 +60,6 @@ def parse(txt, slug, config, today):
                 if not inv.get("amount") and inv.get("amount") != 0.0:
                     inv["amount"] = 0.0
                     out["status"] = "needs_label"
-                # Canonicalise amount=0.0 when needs_label
-                if out["status"] == "needs_label":
-                    if not inv.get("amount"):
-                        inv["amount"] = 0.0
-                    if not inv.get("period_month"):
-                        inv["period_month"] = ""
                 inv["status"] = out["status"]
             return out
 
@@ -132,7 +126,17 @@ def extract_and_push(tb_ops, path, slug, category, msgid, source, config, today,
     fx = config.get("fx_eur_usd", 1.0)
     amount_usd = round(amount * fx, 6) if currency == "EUR" else amount
 
-    ingested_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    ingested_at = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    # issued_at: use parser value if present; else period_month + "-01"; else sentinel
+    period_month = inv.get("period_month", "")
+    parser_issued_at = inv.get("issued_at", "")
+    if parser_issued_at:
+        issued_at = parser_issued_at
+    elif period_month:
+        issued_at = period_month + "-01"
+    else:
+        issued_at = "1970-01-01"
 
     row = {
         # Schema columns (invoices datasource)
@@ -141,12 +145,12 @@ def extract_and_push(tb_ops, path, slug, category, msgid, source, config, today,
         "provider":        slug,
         "category":        category,
         "kind":            kind,
-        "period_month":    inv.get("period_month", ""),
+        "period_month":    period_month,
         "amount":          amount,
         "currency":        currency,
         "amount_usd":      amount_usd,
         "invoice_number":  inv.get("invoice_number", ""),
-        "issued_at":       inv.get("issued_at", ""),
+        "issued_at":       issued_at,
         "source":          source,
         "file_ref":        path,
         "status":          status,

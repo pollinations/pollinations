@@ -48,8 +48,9 @@ def parse(txt, slug, config, today):
     )
     invoice_number = num_m.group(1) if num_m else ""
 
-    # Period: month of the latest parseable date
-    period_month = _latest_month(txt) or ""
+    # Period: month of the latest parseable date; also capture full date if available
+    period_month, issued_at = _latest_month_and_date(txt)
+    period_month = period_month or ""
 
     # amount_usd
     fx = config.get("fx_eur_usd", 1.0)
@@ -66,28 +67,38 @@ def parse(txt, slug, config, today):
         "amount_usd":     amount_usd,
         "period_month":   period_month,
         "invoice_number": invoice_number,
-        "issued_at":      "",
+        "issued_at":      issued_at,
         "status":         status,
     }
 
     return {"invoice": invoice, "extras": {}, "status": status}
 
 
-def _latest_month(txt):
-    """Return 'YYYY-MM' of the latest date found in txt, or ''."""
-    months = []
+def _latest_month_and_date(txt):
+    """Return ('YYYY-MM', 'YYYY-MM-DD') of the latest full date found in txt.
+
+    'YYYY-MM-DD' is only set when the source matched a full date (ISO or English
+    with a day number).  Returns ('', '') if no date found.
+    """
+    # Each entry: (year, month, day_str_or_None)
+    candidates = []
 
     # ISO: 2026-05-01
-    for m in re.finditer(r"\b(\d{4})-(\d{2})-\d{2}\b", txt):
-        months.append((m.group(1), m.group(2)))
+    for m in re.finditer(r"\b(\d{4})-(\d{2})-(\d{2})\b", txt):
+        candidates.append((m.group(1), m.group(2), m.group(3)))
 
     # English: "June 1, 2026" or "Jun 1, 2026"
-    for m in re.finditer(r"\b([A-Za-z]{3,9})\s+\d{1,2},\s+(\d{4})\b", txt):
+    for m in re.finditer(r"\b([A-Za-z]{3,9})\s+(\d{1,2}),\s+(\d{4})\b", txt):
         mo = _MONTH_MAP.get(m.group(1)[:3].lower())
         if mo:
-            months.append((m.group(2), mo))
+            day = m.group(2).zfill(2)
+            candidates.append((m.group(3), mo, day))
 
-    if not months:
-        return ""
-    months.sort(reverse=True)
-    return f"{months[0][0]}-{months[0][1]}"
+    if not candidates:
+        return "", ""
+
+    candidates.sort(reverse=True)
+    year, month, day = candidates[0]
+    period_month = f"{year}-{month}"
+    issued_at = f"{year}-{month}-{day}"
+    return period_month, issued_at

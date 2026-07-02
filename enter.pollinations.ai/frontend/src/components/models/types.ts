@@ -18,6 +18,7 @@ export type ModelCapability =
 export type PriceKind =
     | "text"
     | "image"
+    | "3d"
     | "cached"
     | "cacheWrite"
     | "reasoning"

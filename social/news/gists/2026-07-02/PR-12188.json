@@ -1,0 +1,35 @@
+{
+  "pr_number": 12188,
+  "title": "fix: show 3d model prices and icons",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12188",
+  "merged_at": "2026-07-02T18:39:55Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Fixes 3D catalog conversion so Trellis/Rodin render flat output `/gen` price badges.\n- Adds a shared cube icon for 3D price badges.\n- Adds model-row brand logo SVG assets and mappings for Microsoft and Deemos.\n- Extends pricing-data coverage to include 3D prices and brand-logo URL mappings.\n\nRoot cause: the dashboard mapped 3D pricing into legacy unused fields instead of the rendered `prices[]` rows, and the 3D model brands were missing from the existing `/brand-logos/*.svg` mapping.\n\nChecks:\n- `npm run test -- test/pricing-data.test.ts`\n- `npm run typecheck`\n- `biome check --write <touched files>`\n- `test -f enter.pollinations.ai/frontend/public/brand-logos/microsoft.svg && test -f enter.pollinations.ai/frontend/public/brand-logos/deemos.svg`\n- `git diff --check`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Putting a price on the Z-axis",
+    "blurb": "We fixed a sneaky bug that was hiding the price tags and brand logos for our 3D models. Now Trellis and Rodin proudly display their costs and creator badges in the catalog.",
+    "summary": "Fixed a dashboard bug that prevented 3D model prices and brand logos for Microsoft and Deemos from rendering in the model catalog.",
+    "impact": "Users can now see accurate price badges and creator icons for 3D models like Trellis and Rodin directly in the UI.",
+    "keywords": [
+      "dashboard",
+      "3d-models",
+      "pricing",
+      "ui",
+      "bug-fix"
+    ],
+    "visual_concept": "The bee mascot acting as a shopkeeper, putting price tags on glowing 3D cubes. The monitor robot is checking a catalog or inventory list. Represents fixing the display of prices and icons for 3D models.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny shop apron, sticking small price tags onto glowing 3D cubes. A chunky monitor robot stands nearby holding a clipboard with a catalog list. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-02/PR-12188.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny shop apron, sticking small price tags onto glowing 3D cubes. A chunky monitor robot stands nearby holding a clipboard with a catalog list. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites."
+  },
+  "generated_at": "2026-07-02T18:40:54.867538+00:00"
+}

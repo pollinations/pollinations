@@ -222,10 +222,7 @@ function formatUsageWindow(window: UsageWindowDates): UsageWindow {
 
 function buildUsageWindow(days: number): UsageWindowDates {
     const untilDate = startOfNextUtcDay();
-    const requestedSinceDate = addUtcDays(untilDate, -days);
-    const minDate = usageMinDate();
-    const sinceDate =
-        requestedSinceDate < minDate ? minDate : requestedSinceDate;
+    const sinceDate = addUtcDays(untilDate, -days);
     return { sinceDate, untilDate };
 }
 
@@ -437,6 +434,7 @@ const usageDailyQuerySchema = z.object({
 });
 
 const earningsTransactionsQuerySchema = usageQuerySchema.omit({
+    api_key_ids: true,
     models: true,
 });
 
@@ -446,8 +444,8 @@ const earningsQuerySchema = usageDailyQuerySchema.extend({
 
 type DailyUsageRecord = {
     date: string;
-    api_key_id?: string | null;
-    api_key?: string | null;
+    api_key_id: string;
+    api_key: string | null;
     model: string | null;
     meter_source: string | null;
     requests: number;
@@ -484,15 +482,10 @@ type UsageRecordWithCursor = UsageRecord & {
 // Response schema for daily usage OpenAPI documentation
 const dailyUsageRecordSchema = z.object({
     date: z.string().describe("Date (YYYY-MM-DD format)"),
-    api_key_id: z
-        .string()
-        .nullable()
-        .optional()
-        .describe("API key id used for these requests"),
+    api_key_id: z.string().describe("API key id used for these requests"),
     api_key: z
         .string()
         .nullable()
-        .optional()
         .describe("API key name used for these requests"),
     model: z.string().nullable().describe("Model used"),
     meter_source: z
@@ -528,7 +521,7 @@ function sortDailyUsageRecords(usage: DailyUsageRecord[]): DailyUsageRecord[] {
                 right.meter_source || "",
             );
         }
-        return (left.api_key_id || "").localeCompare(right.api_key_id || "");
+        return left.api_key_id.localeCompare(right.api_key_id);
     });
 }
 
@@ -540,7 +533,7 @@ function usageRecordToCsvRow(row: UsageRecord): string {
 }
 
 function dailyUsageRecordToCsvRow(row: DailyUsageRecord): string {
-    return `${escapeCSV(row.date)},${escapeCSV(row.api_key_id ?? null)},${escapeCSV(row.api_key ?? null)},${escapeCSV(row.model)},${escapeCSV(row.meter_source)},${row.requests},${row.cost_usd}`;
+    return `${escapeCSV(row.date)},${escapeCSV(row.api_key_id)},${escapeCSV(row.api_key)},${escapeCSV(row.model)},${escapeCSV(row.meter_source)},${row.requests},${row.cost_usd}`;
 }
 
 type DeveloperEarningsRow = {
@@ -549,12 +542,12 @@ type DeveloperEarningsRow = {
     entity_name: string;
     source: "byop_markup" | "community_model";
     requests: number;
-    paid_requests?: number;
-    tier_requests?: number;
+    paid_requests: number;
+    tier_requests: number;
     baseline_price: number;
     pollen_earned: number;
-    paid_earned?: number;
-    tier_earned?: number;
+    paid_earned: number;
+    tier_earned: number;
     cost_usd: number;
     reward_rate: number;
     unique_users: number;
@@ -596,9 +589,7 @@ const developerEarningsRowSchema = z.object({
         ),
     entity_id: z
         .string()
-        .describe(
-            "Earning entity id (BYOP app key or community model); empty string on source rollup rows",
-        ),
+        .describe("Earning entity id (BYOP app key or community model)"),
     entity_name: z.string().describe("Earning entity display name"),
     source: z
         .enum(["byop_markup", "community_model"])
@@ -606,11 +597,9 @@ const developerEarningsRowSchema = z.object({
     requests: z.number().describe("Number of billed requests"),
     paid_requests: z
         .number()
-        .optional()
         .describe("Billed requests paid from paid balance"),
     tier_requests: z
         .number()
-        .optional()
         .describe("Billed requests paid from tier balance"),
     baseline_price: z
         .number()
@@ -620,11 +609,9 @@ const developerEarningsRowSchema = z.object({
         .describe("Developer credit earned over the bucket"),
     paid_earned: z
         .number()
-        .optional()
         .describe("Developer credit earned from paid-balance spend"),
     tier_earned: z
         .number()
-        .optional()
         .describe("Developer credit earned from tier-balance spend"),
     cost_usd: z
         .number()
@@ -658,11 +645,6 @@ const developerEarningsResponseSchema = z.object({
     perEntity: z
         .array(developerEarningsRowSchema)
         .describe("Per-earning-entity rollups for the period"),
-    bySource: z
-        .array(developerEarningsRowSchema)
-        .describe(
-            "Per-source rollups for the period. Source-specific request, user, basis, and rate metrics are meaningful here.",
-        ),
     total: developerEarningsTotalSchema.describe(
         "Additive money totals across all earning sources. Non-additive metrics such as requests, users, basis, and rates are intentionally source-specific.",
     ),
@@ -714,13 +696,10 @@ const developerEarningsTransactionsResponseSchema = z.object({
         .array(developerEarningsTransactionSchema)
         .describe("Earning transaction records"),
     count: z.number().describe("Number of records returned"),
-    has_more: z
-        .boolean()
-        .describe("Whether more records are available after this page"),
 });
 
 function dailyEarningsRowToCsvRow(row: DeveloperEarningsRow): string {
-    return `${escapeCSV(row.date)},${escapeCSV(row.source)},${escapeCSV(row.entity_id)},${escapeCSV(row.entity_name)},${row.requests},${row.baseline_price},${row.pollen_earned},${row.paid_earned ?? 0},${row.tier_earned ?? 0},${row.cost_usd},${row.reward_rate}`;
+    return `${escapeCSV(row.date)},${escapeCSV(row.source)},${escapeCSV(row.entity_id)},${escapeCSV(row.entity_name)},${row.requests},${row.baseline_price},${row.pollen_earned},${row.paid_earned},${row.tier_earned},${row.cost_usd},${row.reward_rate}`;
 }
 
 function totalDeveloperEarnings(
@@ -729,8 +708,8 @@ function totalDeveloperEarnings(
     return rows.reduce(
         (total, row) => ({
             pollen_earned: total.pollen_earned + row.pollen_earned,
-            paid_earned: total.paid_earned + (row.paid_earned ?? 0),
-            tier_earned: total.tier_earned + (row.tier_earned ?? 0),
+            paid_earned: total.paid_earned + row.paid_earned,
+            tier_earned: total.tier_earned + row.tier_earned,
         }),
         { pollen_earned: 0, paid_earned: 0, tier_earned: 0 },
     );
@@ -789,7 +768,6 @@ async function fetchDetailedEarningsPage(
     token: string,
     params: {
         devUserId: string;
-        apiKeyIds?: string[];
         limit: number;
         since: string;
         until: string;
@@ -803,10 +781,6 @@ async function fetchDetailedEarningsPage(
         token,
         {
             dev_user_id: params.devUserId,
-            api_key_ids:
-                params.apiKeyIds && params.apiKeyIds.length > 0
-                    ? params.apiKeyIds.join(",")
-                    : undefined,
             limit: params.limit.toString(),
             since: params.since,
             until: params.until,
@@ -821,7 +795,6 @@ async function respondDetailedEarnings(
     log: Logger,
     params: {
         devUserId: string;
-        apiKeyIds?: string[];
         filenamePrefix: string;
         filenamePeriod: string;
         format: "json" | "csv";
@@ -836,27 +809,19 @@ async function respondDetailedEarnings(
     const tinybirdToken = requireTinybirdReadToken(c.env);
 
     try {
-        const fetchLimit =
-            params.format === "json" ? params.limit + 1 : params.limit;
         const fetchedTransactions = await fetchDetailedEarningsPage(
             tinybirdOrigin,
             tinybirdToken,
             {
                 devUserId: params.devUserId,
-                apiKeyIds: params.apiKeyIds,
-                limit: fetchLimit,
+                limit: params.limit,
                 since: params.since,
                 until: params.until,
                 before: params.before,
                 beforeEventId: params.beforeEventId,
             },
         );
-        const hasMore =
-            params.format === "json" &&
-            fetchedTransactions.length > params.limit;
-        const transactions = hasMore
-            ? fetchedTransactions.slice(0, params.limit)
-            : fetchedTransactions;
+        const transactions = fetchedTransactions;
 
         if (params.format === "csv") {
             const rows = transactions.map(
@@ -875,7 +840,6 @@ async function respondDetailedEarnings(
         return c.json({
             transactions,
             count: transactions.length,
-            has_more: hasMore,
         });
     } catch (error) {
         log.error("Error fetching earnings transactions: {error}", { error });
@@ -908,8 +872,6 @@ async function respondDetailedUsage(
     const tinybirdToken = requireTinybirdReadToken(c.env);
 
     try {
-        const fetchLimit =
-            params.format === "json" ? params.limit + 1 : params.limit;
         const fetchedUsage = await fetchDetailedUsagePage(
             tinybirdOrigin,
             tinybirdToken,
@@ -918,18 +880,14 @@ async function respondDetailedUsage(
                 apiKeyId: params.apiKeyId,
                 apiKeyIds: params.apiKeyIds,
                 models: params.models,
-                limit: fetchLimit,
+                limit: params.limit,
                 since: params.since,
                 until: params.until,
                 before: params.before,
                 beforeEventId: params.beforeEventId,
             },
         );
-        const hasMore =
-            params.format === "json" && fetchedUsage.length > params.limit;
-        const usage = hasMore
-            ? fetchedUsage.slice(0, params.limit)
-            : fetchedUsage;
+        const usage = fetchedUsage;
 
         if (params.format === "csv") {
             const rows = usage.map(({ cursor_event_id: _, ...usage }) =>
@@ -944,7 +902,7 @@ async function respondDetailedUsage(
             });
         }
 
-        return c.json({ usage, count: usage.length, has_more: hasMore });
+        return c.json({ usage, count: usage.length });
     } catch (error) {
         log.error("Error fetching usage: {error}", { error });
         return c.json({ error: "Failed to fetch usage data" }, 500);
@@ -1090,9 +1048,6 @@ const usageRecordSchema = z.object({
 const usageResponseSchema = z.object({
     usage: z.array(usageRecordSchema).describe("Array of usage records"),
     count: z.number().describe("Number of records returned"),
-    has_more: z
-        .boolean()
-        .describe("Whether more records are available after this page"),
 });
 
 /**
@@ -1587,7 +1542,6 @@ export const accountRoutes = new Hono<Env>()
                 days,
                 granularity,
                 period,
-                api_key_ids: apiKeyIds,
             } = c.req.valid("query");
             const { userId: devUserId } = resolveUsageTargetUserId(
                 c.env,
@@ -1608,7 +1562,6 @@ export const accountRoutes = new Hono<Env>()
                 filenamePeriod,
                 format,
                 limit,
-                apiKeyIds,
                 since: earningsWindow.since,
                 until: earningsWindow.until,
                 before,
@@ -1622,11 +1575,11 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Developer Earnings",
             description:
-                "Returns developer earnings in one response: per-(date, entity) buckets, per-entity rollups, per-source rollups, and additive money totals across BYOP apps and community models. Source-specific rows include `requests`, `baseline_price`, reward basis `cost_usd`, `reward_rate`, and `unique_users`; the top-level total only includes additive earned-pollen fields. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. API keys require the read-only `account:usage` permission.",
+                "Returns developer earnings in one response: per-(date, entity) buckets, per-entity rollups, and additive money totals across BYOP apps and community models. Source-specific rows include `requests`, `baseline_price`, reward basis `cost_usd`, `reward_rate`, and `unique_users`; the top-level total only includes additive earned-pollen fields. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. API keys require the read-only `account:usage` permission.",
             responses: {
                 200: {
                     description:
-                        "Source-specific earnings buckets and additive totals",
+                        "Earnings buckets and additive totals",
                     content: {
                         "application/json": {
                             schema: resolver(developerEarningsResponseSchema),
@@ -1687,7 +1640,6 @@ export const accountRoutes = new Hono<Env>()
             type EarningsPayload = {
                 daily: DeveloperEarningsRow[];
                 perEntity: DeveloperEarningsRow[];
-                bySource: DeveloperEarningsRow[];
                 total: DeveloperEarningsTotal;
             };
 
@@ -1701,12 +1653,7 @@ export const accountRoutes = new Hono<Env>()
                         "json",
                     );
                     if (cachedData) {
-                        payload = {
-                            ...cachedData,
-                            total: totalDeveloperEarnings(
-                                cachedData.perEntity ?? [],
-                            ),
-                        };
+                        payload = cachedData;
                         cached = true;
                     }
                 } catch (err) {
@@ -1734,13 +1681,9 @@ export const accountRoutes = new Hono<Env>()
                     const perEntity = [...rollups]
                         .filter((r) => r.entity_id !== "")
                         .sort((a, b) => b.pollen_earned - a.pollen_earned);
-                    const bySource = [...rollups]
-                        .filter((r) => r.entity_id === "")
-                        .sort((a, b) => b.pollen_earned - a.pollen_earned);
                     payload = {
                         daily,
                         perEntity,
-                        bySource,
                         total: totalDeveloperEarnings(perEntity),
                     };
 

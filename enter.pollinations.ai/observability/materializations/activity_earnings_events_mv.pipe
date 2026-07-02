@@ -18,7 +18,6 @@ SQL >
         if(api_key_created_for_app = 'undefined', '', api_key_created_for_app) AS app_name,
         user_id AS payer_user_id,
         model_used AS model,
-        resolved_model_requested AS resolved_model,
         multiIf(
             selected_meter_slug = 'v1:meter:tier', 'tier',
             selected_meter_slug = 'v1:meter:pack', 'pack',
@@ -28,7 +27,6 @@ SQL >
         total_price AS cost_usd,
         total_price - dev_price AS pollen_earned,
         markup_rate AS reward_rate,
-        markup_rate,
         response_time AS response_time_ms
     FROM generation_event
     WHERE api_key_created_for_user_id != 'undefined'

@@ -1,6 +1,6 @@
 DESCRIPTION >
-    Activity developer earnings chart data with daily, per-entity, and
-    per-source rollups from materialized earning events.
+    Activity developer earnings chart data with daily and per-entity
+    rollups from materialized earning events.
     Use 'since' and 'until' for date range filtering.
     Use 'grain=hour' to group daily buckets by hour; defaults to daily.
     Use 'entity_ids' (comma-separated) to filter earning entities.
@@ -82,13 +82,12 @@ SQL >
         sumIf(ee.pollen_earned, ee.meter_source = 'pack') AS paid_earned,
         sumIf(ee.pollen_earned, ee.meter_source = 'tier') AS tier_earned,
         sum(ee.cost_usd) AS cost_usd,
-        if(count() = 0, toFloat64(0), avg(ee.reward_rate)) AS reward_rate,
+        avg(ee.reward_rate) AS reward_rate,
         if(GROUPING(ee.date) = 0, toUInt64(0), uniq(ee.payer_user_id)) AS unique_users
     FROM earnings_events AS ee
     GROUP BY GROUPING SETS (
         (ee.date, ee.entity_id, ee.entity_name, ee.source),
-        (ee.entity_id, ee.entity_name, ee.source),
-        (ee.source)
+        (ee.entity_id, ee.entity_name, ee.source)
     )
 
 TYPE endpoint

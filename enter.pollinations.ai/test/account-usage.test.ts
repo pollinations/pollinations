@@ -336,12 +336,9 @@ test("GET /api/account/usage forwards table filters to the pipe", async ({
         call.url.includes("activity_usage_transactions.json"),
     );
     expect(usageCalls).toHaveLength(1);
-    expect(usageCalls[0].query.limit).toBe("16");
+    expect(usageCalls[0].query.limit).toBe("15");
     expect(usageCalls[0].query.api_key_ids).toBe("key_a,key_b");
     expect(usageCalls[0].query.models).toBe("gpt-a,gpt-b");
-
-    const body = (await response.json()) as { has_more: boolean };
-    expect(body.has_more).toBe(false);
 });
 
 test("GET /api/account/usage?format=csv renders rows and sets filename from limit", async ({

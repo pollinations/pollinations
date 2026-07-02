@@ -8,7 +8,6 @@ SQL >
         start_time AS timestamp,
         event_id,
         event_type AS type,
-        model_used AS model,
         resolved_model_requested AS resolved_model,
         api_key_id,
         api_key_name AS api_key,

@@ -12,7 +12,7 @@ import {
     TableRow,
 } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
-import { type FC, useEffect, useMemo, useRef, useState } from "react";
+import { type FC, useEffect, useMemo, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { formatActivityPollenThreshold } from "../activity/format-activity-pollen.ts";
 import type { ApiKey } from "../keys";
@@ -36,9 +36,9 @@ type UsageEventRecord = {
 type EarningsEventRecord = {
     timestamp: string;
     cursor_event_id: string;
-    source?: "byop_markup" | "community_model";
-    entity_id?: string;
-    entity_name?: string;
+    source: "byop_markup" | "community_model";
+    entity_id: string;
+    entity_name: string;
     app_key_id: string;
     app_name: string;
     model: string | null;
@@ -46,25 +46,15 @@ type EarningsEventRecord = {
     pollen_earned: number;
 };
 
-type LastEvent =
-    | {
-          kind: "usage";
-          id: string;
-          timestamp: string;
-          primary: string;
-          secondary: string;
-          meterSource: string | null;
-          pollen: number;
-      }
-    | {
-          kind: "earnings";
-          id: string;
-          timestamp: string;
-          primary: string;
-          secondary: string;
-          meterSource: string | null;
-          pollen: number;
-      };
+type LastEvent = {
+    kind: "usage" | "earnings";
+    id: string;
+    timestamp: string;
+    primary: string;
+    secondary: string;
+    meterSource: string | null;
+    pollen: number;
+};
 
 type EventCursor = {
     timestamp: string;
@@ -199,7 +189,7 @@ function mergeLastEvents(
 ): LastEvent[] {
     const usageEvents: LastEvent[] = usageRows.map((row) => ({
         kind: "usage",
-        id: row.cursor_event_id || `usage-${row.timestamp}-${row.cost_usd}`,
+        id: row.cursor_event_id,
         timestamp: row.timestamp,
         primary: row.model || "API request",
         secondary: lookupKeyName(row.api_key_id, row.api_key),
@@ -208,16 +198,9 @@ function mergeLastEvents(
     }));
     const earningsEvents: LastEvent[] = earningsRows.map((row) => ({
         kind: "earnings",
-        id:
-            row.cursor_event_id ||
-            `earnings-${row.timestamp}-${row.entity_id ?? row.app_key_id}-${row.pollen_earned}`,
+        id: row.cursor_event_id,
         timestamp: row.timestamp,
-        primary:
-            row.entity_name ||
-            row.app_name ||
-            row.entity_id ||
-            row.app_key_id ||
-            "Earnings",
+        primary: row.entity_name,
         secondary: row.model || "—",
         meterSource: row.meter_source,
         pollen: row.pollen_earned,
@@ -274,6 +257,12 @@ type StreamPage<T> = {
     hasMore: boolean;
 };
 
+const EMPTY_STREAM_PAGE: StreamPage<never> = {
+    rows: [],
+    nextCursor: null,
+    hasMore: false,
+};
+
 function pageFromRows<T extends UsageEventRecord | EarningsEventRecord>(
     fetchedRows: T[],
 ): StreamPage<T> {
@@ -295,7 +284,7 @@ async function fetchUsageEventsPage(
     });
     if (!response.ok) throw new Error("Failed to load last events");
     const data = (await response.json()) as { usage: UsageEventRecord[] };
-    return pageFromRows(data.usage ?? []);
+    return pageFromRows(data.usage);
 }
 
 async function fetchEarningsEventsPage(
@@ -308,19 +297,14 @@ async function fetchEarningsEventsPage(
     const data = (await response.json()) as {
         transactions: EarningsEventRecord[];
     };
-    return pageFromRows(data.transactions ?? []);
+    return pageFromRows(data.transactions);
 }
 
 export const LastEventsPanel: FC<{ apiKeys: ApiKey[] }> = ({ apiKeys }) => {
     const [state, setState] = useState<FetchState>(INITIAL_STATE);
     const lookupKeyName = useMemo(() => buildKeyNameLookup(apiKeys), [apiKeys]);
-    const requestSeqRef = useRef(0);
 
     useEffect(() => {
-        const requestId = requestSeqRef.current + 1;
-        requestSeqRef.current = requestId;
-        const isCurrentRequest = () => requestSeqRef.current === requestId;
-
         async function loadEvents(): Promise<void> {
             setState({ ...INITIAL_STATE, loading: true, error: null });
 
@@ -328,8 +312,6 @@ export const LastEventsPanel: FC<{ apiKeys: ApiKey[] }> = ({ apiKeys }) => {
                 fetchUsageEventsPage(null),
                 fetchEarningsEventsPage(null),
             ]);
-
-            if (!isCurrentRequest()) return;
 
             setState({
                 rows: mergeLastEvents(
@@ -353,7 +335,6 @@ export const LastEventsPanel: FC<{ apiKeys: ApiKey[] }> = ({ apiKeys }) => {
         }
 
         loadEvents().catch(() => {
-            if (!isCurrentRequest()) return;
             setState({
                 rows: [],
                 visibleCount: PAGE_SIZE,
@@ -364,10 +345,6 @@ export const LastEventsPanel: FC<{ apiKeys: ApiKey[] }> = ({ apiKeys }) => {
                 earnings: INITIAL_STREAM_STATE,
             });
         });
-
-        return () => {
-            requestSeqRef.current += 1;
-        };
     }, [lookupKeyName]);
 
     async function handleLoadMore(): Promise<void> {
@@ -384,9 +361,6 @@ export const LastEventsPanel: FC<{ apiKeys: ApiKey[] }> = ({ apiKeys }) => {
             return;
         }
 
-        const requestId = requestSeqRef.current + 1;
-        requestSeqRef.current = requestId;
-        const isCurrentRequest = () => requestSeqRef.current === requestId;
         const usageSnapshot = state.usage;
         const earningsSnapshot = state.earnings;
 
@@ -400,21 +374,11 @@ export const LastEventsPanel: FC<{ apiKeys: ApiKey[] }> = ({ apiKeys }) => {
             const [usagePage, earningsPage] = await Promise.all([
                 usageSnapshot.hasMore
                     ? fetchUsageEventsPage(usageSnapshot.nextCursor)
-                    : Promise.resolve({
-                          rows: [],
-                          nextCursor: null,
-                          hasMore: false,
-                      }),
+                    : Promise.resolve(EMPTY_STREAM_PAGE),
                 earningsSnapshot.hasMore
                     ? fetchEarningsEventsPage(earningsSnapshot.nextCursor)
-                    : Promise.resolve({
-                          rows: [],
-                          nextCursor: null,
-                          hasMore: false,
-                      }),
+                    : Promise.resolve(EMPTY_STREAM_PAGE),
             ]);
-
-            if (!isCurrentRequest()) return;
 
             const newEvents = mergeLastEvents(
                 usagePage.rows,
@@ -441,7 +405,6 @@ export const LastEventsPanel: FC<{ apiKeys: ApiKey[] }> = ({ apiKeys }) => {
                     : prev.earnings,
             }));
         } catch {
-            if (!isCurrentRequest()) return;
             setState((prev) => ({
                 ...prev,
                 loadingMore: false,

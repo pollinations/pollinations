@@ -48,7 +48,7 @@ SQL >
         ae.baseline_price AS baseline_price,
         ae.pollen_earned AS pollen_earned,
         ae.cost_usd AS cost_usd,
-        ae.markup_rate AS markup_rate,
+        if(ae.source = 'byop_markup', ae.reward_rate, toFloat64(0)) AS markup_rate,
         ae.response_time_ms AS response_time_ms
     FROM activity_earnings_events ae
     LEFT JOIN app_labels al ON ae.app_key_id = al.app_key_id
@@ -57,7 +57,6 @@ SQL >
        AND ae.entity_id = cml.entity_id
     WHERE
         ae.dev_user_id = {{ String(dev_user_id, '') }}
-        {% if defined(api_key_ids) %} AND ae.app_key_id IN {{ Array(api_key_ids, 'String') }} {% end %}
         {% if defined(since) %} AND ae.timestamp >= {{ DateTime(since) }}
         {% else %} AND ae.timestamp >= now() - INTERVAL 30 DAY
         {% end %}

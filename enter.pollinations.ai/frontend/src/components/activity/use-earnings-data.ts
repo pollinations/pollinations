@@ -1,5 +1,5 @@
 import { getPeriodBucketKeys, periodBucketKeyToDate } from "@pollinations/ui";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiClient } from "../../api.ts";
 import type {
     DataPoint,
@@ -16,12 +16,12 @@ export type DeveloperEarningsRow = {
     entity_name: string;
     source: EarningsSource;
     requests: number;
-    paid_requests?: number;
-    tier_requests?: number;
+    paid_requests: number;
+    tier_requests: number;
     baseline_price: number;
     pollen_earned: number;
-    paid_earned?: number;
-    tier_earned?: number;
+    paid_earned: number;
+    tier_earned: number;
     cost_usd: number;
     reward_rate: number;
     unique_users: number;
@@ -73,17 +73,12 @@ export function useEarningsData(
     const [perEntity, setPerEntity] = useState<DeveloperEarningsRow[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const inFlightRef = useRef<AbortController | null>(null);
 
     const selectedAppKeyIdsKey = filters.selectedAppKeyIds.join(",");
     const selectedModelIdsKey = filters.selectedModelIds.join(",");
     const { granularity, period } = filters.period;
 
     const fetchEarnings = useCallback(() => {
-        inFlightRef.current?.abort();
-        const controller = new AbortController();
-        inFlightRef.current = controller;
-
         setLoading(true);
         setError(null);
         setDailyEarnings([]);
@@ -99,7 +94,7 @@ export function useEarningsData(
         };
 
         apiClient.account.earnings
-            .$get({ query }, { init: { signal: controller.signal } })
+            .$get({ query })
             .then((r) => {
                 if (!r.ok)
                     throw new Error(
@@ -108,33 +103,26 @@ export function useEarningsData(
                 return r.json() as Promise<{
                     daily: DeveloperEarningsRow[];
                     perEntity: DeveloperEarningsRow[];
-                    bySource: DeveloperEarningsRow[];
                     total: DeveloperEarningsTotal;
                 }>;
             })
             .then((data) => {
-                if (controller.signal.aborted) return;
                 setDailyEarnings(data.daily);
                 setPerEntity(data.perEntity);
             })
             .catch((err) => {
-                if (controller.signal.aborted) return;
                 console.error("Earnings fetch error:", err);
                 setError(err.message || "Failed to load earnings data");
                 setDailyEarnings([]);
                 setPerEntity([]);
             })
             .finally(() => {
-                if (controller.signal.aborted) return;
                 setLoading(false);
             });
     }, [granularity, period]);
 
     useEffect(() => {
         fetchEarnings();
-        return () => {
-            inFlightRef.current?.abort();
-        };
     }, [fetchEarnings]);
 
     const usedApps = useMemo(() => {
@@ -216,10 +204,10 @@ export function useEarningsData(
             };
             current.requests += row.requests;
             current.pollen += row.pollen_earned;
-            current.paidRequests += row.paid_requests ?? row.requests;
-            current.tierRequests += row.tier_requests ?? 0;
-            current.paidPollen += row.paid_earned ?? row.pollen_earned;
-            current.tierPollen += row.tier_earned ?? 0;
+            current.paidRequests += row.paid_requests;
+            current.tierRequests += row.tier_requests;
+            current.paidPollen += row.paid_earned;
+            current.tierPollen += row.tier_earned;
 
             const entityKey = `${row.source}:${row.entity_id}`;
             const entityData = current.byEntity.get(entityKey) || {
@@ -320,11 +308,11 @@ export function useEarningsData(
             0,
         );
         const totalPaid = filteredPerEntity.reduce(
-            (sum, row) => sum + (row.paid_earned ?? row.pollen_earned),
+            (sum, row) => sum + row.paid_earned,
             0,
         );
         const totalTier = filteredPerEntity.reduce(
-            (sum, row) => sum + (row.tier_earned ?? 0),
+            (sum, row) => sum + row.tier_earned,
             0,
         );
         const entityCount = filteredPerEntity.length;

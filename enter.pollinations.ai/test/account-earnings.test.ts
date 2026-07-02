@@ -24,7 +24,7 @@ const earningsRow = (overrides: Record<string, unknown> = {}) => ({
     ...overrides,
 });
 
-test("GET /api/account/earnings returns source rollups and additive money totals in JSON", async ({
+test("GET /api/account/earnings returns entity rollups and additive money totals in JSON", async ({
     sessionToken,
     mocks,
 }) => {
@@ -94,7 +94,6 @@ test("GET /api/account/earnings returns source rollups and additive money totals
     const body = (await response.json()) as {
         daily: Record<string, unknown>[];
         perEntity: Record<string, unknown>[];
-        bySource: Record<string, unknown>[];
         total: Record<string, unknown>;
     };
 
@@ -114,23 +113,6 @@ test("GET /api/account/earnings returns source rollups and additive money totals
         source: "community_model",
         pollen_earned: 0.3,
     });
-    expect(body.bySource).toHaveLength(2);
-    expect(body.bySource).toEqual([
-        expect.objectContaining({
-            source: "community_model",
-            requests: 7,
-            pollen_earned: 0.3,
-            reward_rate: 0.75,
-            unique_users: 4,
-        }),
-        expect.objectContaining({
-            source: "byop_markup",
-            requests: 5,
-            pollen_earned: 0.1,
-            reward_rate: 0.25,
-            unique_users: 3,
-        }),
-    ]);
     expect(Number(body.total.pollen_earned)).toBeCloseTo(0.4);
     expect(Number(body.total.paid_earned)).toBeCloseTo(0.2);
     expect(Number(body.total.tier_earned)).toBeCloseTo(0.2);
@@ -138,12 +120,7 @@ test("GET /api/account/earnings returns source rollups and additive money totals
     expect(body.total).not.toHaveProperty("unique_users");
     expect(body.total).not.toHaveProperty("reward_rate");
     expect(body).not.toHaveProperty("global");
-    expect(
-        body.bySource.find((row) => row.source === "byop_markup"),
-    ).toMatchObject({
-        source: "byop_markup",
-        pollen_earned: 0.1,
-    });
+    expect(body).not.toHaveProperty("bySource");
 
     const earningsCalls = mocks.tinybird.state.pipeCalls.filter((call) =>
         call.url.includes("activity_earnings_chart.json"),
@@ -185,11 +162,10 @@ test("GET /api/account/earnings derives totals from entity rollups when source r
     expect(response.status).toBe(200);
 
     const body = (await response.json()) as {
-        bySource: Record<string, unknown>[];
         total: Record<string, unknown>;
     };
 
-    expect(body.bySource).toHaveLength(0);
+    expect(body).not.toHaveProperty("bySource");
     expect(Number(body.total.pollen_earned)).toBeCloseTo(0.4);
     expect(Number(body.total.paid_earned)).toBeCloseTo(0.2);
     expect(Number(body.total.tier_earned)).toBeCloseTo(0.2);
@@ -334,10 +310,9 @@ test("GET /api/account/earnings/transactions returns community model rewards", a
 
     const body = (await response.json()) as {
         transactions: Record<string, unknown>[];
-        has_more: boolean;
     };
 
-    expect(body.has_more).toBe(false);
+    expect(body).not.toHaveProperty("has_more");
     expect(body.transactions[0]).toMatchObject({
         source: "community_model",
         entity_id: "owner/model",
@@ -351,7 +326,7 @@ test("GET /api/account/earnings/transactions returns community model rewards", a
         call.url.includes("activity_earnings_transactions.json"),
     );
     expect(earningsCalls).toHaveLength(1);
-    expect(earningsCalls[0].query.limit).toBe("11");
+    expect(earningsCalls[0].query.limit).toBe("10");
 });
 
 test("GET /api/account/earnings?format=csv neutralizes app name formulas", async ({

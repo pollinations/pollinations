@@ -15,7 +15,6 @@ SQL >
         '' AS app_name,
         user_id AS payer_user_id,
         model_used AS model,
-        resolved_model_requested AS resolved_model,
         multiIf(
             selected_meter_slug = 'v1:meter:tier', 'tier',
             selected_meter_slug = 'v1:meter:pack', 'pack',
@@ -25,7 +24,6 @@ SQL >
         dev_price AS cost_usd,
         community_model_reward_amount AS pollen_earned,
         community_model_reward_rate AS reward_rate,
-        toFloat64(0) AS markup_rate,
         response_time AS response_time_ms
     FROM generation_event
     WHERE community_model_reward_user_id != 'undefined'

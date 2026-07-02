@@ -8,7 +8,6 @@ SCHEMA >
     `timestamp` DateTime,
     `event_id` String,
     `type` LowCardinality(String),
-    `model` LowCardinality(String),
     `resolved_model` LowCardinality(String),
     `api_key_id` String,
     `api_key` String,

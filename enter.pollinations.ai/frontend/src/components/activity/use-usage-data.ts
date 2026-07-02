@@ -1,5 +1,5 @@
 import { getPeriodBucketKeys, periodBucketKeyToDate } from "@pollinations/ui";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiClient } from "../../api.ts";
 import type {
     DailyUsageRecord,
@@ -34,14 +34,9 @@ export function useUsageData(filters: FilterState): UsageDataResult {
     const [dailyUsage, setDailyUsage] = useState<DailyUsageRecord[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const inFlightRef = useRef<AbortController | null>(null);
     const { granularity, period } = filters.period;
 
     const fetchUsage = useCallback(() => {
-        inFlightRef.current?.abort();
-        const controller = new AbortController();
-        inFlightRef.current = controller;
-
         setLoading(true);
         setError(null);
 
@@ -54,33 +49,27 @@ export function useUsageData(filters: FilterState): UsageDataResult {
         };
 
         apiClient.account.usage.daily
-            .$get({ query }, { init: { signal: controller.signal } })
+            .$get({ query })
             .then((r) => {
                 if (!r.ok)
                     throw new Error(`Failed to fetch usage data: ${r.status}`);
                 return r.json() as Promise<{ usage: DailyUsageRecord[] }>;
             })
             .then((data) => {
-                if (controller.signal.aborted) return;
-                setDailyUsage(data?.usage || []);
+                setDailyUsage(data.usage);
             })
             .catch((err) => {
-                if (controller.signal.aborted) return;
                 console.error("Usage fetch error:", err);
                 setError(err.message || "Failed to load usage data");
                 setDailyUsage([]);
             })
             .finally(() => {
-                if (controller.signal.aborted) return;
                 setLoading(false);
             });
     }, [granularity, period]);
 
     useEffect(() => {
         fetchUsage();
-        return () => {
-            inFlightRef.current?.abort();
-        };
     }, [fetchUsage]);
 
     const usedModels = useMemo(() => {
@@ -97,7 +86,6 @@ export function useUsageData(filters: FilterState): UsageDataResult {
     const usedApiKeys = useMemo(() => {
         const apiKeyLabels = new Map<string, string>();
         for (const r of dailyUsage) {
-            if (!r.api_key_id) continue;
             if (apiKeyLabels.has(r.api_key_id)) continue;
             apiKeyLabels.set(r.api_key_id, r.api_key || r.api_key_id);
         }
@@ -111,8 +99,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
         const filtered = dailyUsage.filter((r: DailyUsageRecord) => {
             if (
                 filters.selectedKeyIds.length > 0 &&
-                (!r.api_key_id ||
-                    !filters.selectedKeyIds.includes(r.api_key_id))
+                !filters.selectedKeyIds.includes(r.api_key_id)
             )
                 return false;
             if (

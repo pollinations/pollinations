@@ -14,6 +14,7 @@ import {
     type ImageModelId,
     type ImageModelName,
 } from "./image";
+import { MODEL3D_SERVICES, type Model3dId, type Model3dName } from "./model3d";
 import {
     REALTIME_SERVICES,
     type RealtimeModelId,
@@ -26,6 +27,7 @@ export type Category =
     | "image"
     | "audio"
     | "video"
+    | "3d"
     | "embedding"
     | "realtime";
 
@@ -69,13 +71,15 @@ export type ModelId =
     | TextModelId
     | AudioModelId
     | EmbeddingModelId
-    | RealtimeModelId;
+    | RealtimeModelId
+    | Model3dId;
 export type ModelName =
     | ImageModelName
     | TextModelName
     | AudioModelName
     | EmbeddingServiceId
-    | RealtimeModelName;
+    | RealtimeModelName
+    | Model3dName;
 
 export type VideoCapability =
     | "start_frame"
@@ -87,6 +91,11 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     aliases: string[];
     modelId: TModelId;
     provider: string;
+    // Optional secondary provider for binary-asset models with provider-level
+    // fallback (3D only, as of this field). Purely descriptive metadata for
+    // /models transparency — does not drive fallback logic, which lives in
+    // the handler dispatch code.
+    fallbackProvider?: string;
     brand: string;
     category: Category;
     cost: CostDefinition;
@@ -167,6 +176,7 @@ const MODEL_REGISTRY = {
     ...AUDIO_SERVICES,
     ...EMBEDDING_SERVICES,
     ...REALTIME_SERVICES,
+    ...MODEL3D_SERVICES,
 } as Record<ModelName, ModelDefinition>;
 
 /**
@@ -217,6 +227,13 @@ function getAudioModels(): AudioModelName[] {
     return Object.keys(AUDIO_SERVICES) as AudioModelName[];
 }
 
+/**
+ * Get 3D model names
+ */
+function getModel3dModels(): Model3dName[] {
+    return Object.keys(MODEL3D_SERVICES) as Model3dName[];
+}
+
 function filterVisible<TModelName extends ModelName>(
     ids: TModelName[],
 ): TModelName[] {
@@ -230,6 +247,7 @@ export const getVisibleEmbeddingModels = () =>
     filterVisible(Object.keys(EMBEDDING_SERVICES) as EmbeddingServiceId[]);
 export const getVisibleRealtimeModels = () =>
     filterVisible(Object.keys(REALTIME_SERVICES) as RealtimeModelName[]);
+export const getVisibleModel3dModels = () => filterVisible(getModel3dModels());
 
 /**
  * Get a model definition from the bundled registry.

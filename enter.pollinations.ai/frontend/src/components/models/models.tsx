@@ -32,6 +32,7 @@ type ModelsProps = {
 const SECTION_ORDER: SectionType[] = [
     "image",
     "video",
+    "3d",
     "audio",
     "realtime",
     "text",
@@ -69,6 +70,7 @@ export const Models: FC<ModelsProps> = ({ showCommunityEndpoints = false }) => {
 
     const imageModels = allModels.filter((m) => m.type === "image");
     const videoModels = allModels.filter((m) => m.type === "video");
+    const model3dModels = allModels.filter((m) => m.type === "3d");
     const audioModels = allModels.filter((m) => m.type === "audio");
     const realtimeModels = allModels.filter((m) => m.type === "realtime");
     const textModels = allModels.filter(
@@ -79,6 +81,7 @@ export const Models: FC<ModelsProps> = ({ showCommunityEndpoints = false }) => {
     const sectionModels: Record<SectionType, ModelPrice[]> = {
         image: imageModels,
         video: videoModels,
+        "3d": model3dModels,
         audio: audioModels,
         realtime: realtimeModels,
         text: textModels,
@@ -157,6 +160,7 @@ export const Models: FC<ModelsProps> = ({ showCommunityEndpoints = false }) => {
                     <UnifiedModelTable
                         imageModels={imageModels}
                         videoModels={videoModels}
+                        model3dModels={model3dModels}
                         audioModels={audioModels}
                         realtimeModels={realtimeModels}
                         textModels={textModels}

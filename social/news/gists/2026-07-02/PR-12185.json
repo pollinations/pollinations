@@ -1,0 +1,34 @@
+{
+  "pr_number": 12185,
+  "title": "chore: split Fireworks Neo key",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12185",
+  "merged_at": "2026-07-02T17:53:26Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "- Adds `FIREWORKS_NEO_API_KEY` for Fireworks serverless text and embeddings.\n- Keeps `FIREWORKS_API_KEY` for Flux on the current Fireworks account.\n- Updates encrypted gen secrets for dev, staging, and production with both keys.\n- Validated with Biome, typecheck, focused Vitest, direct Fireworks provider checks, and local gen requests.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Splitting the Fireworks",
+    "blurb": "We've split our Fireworks API keys to keep text and image generation running smoothly on their own dedicated channels.",
+    "summary": "Split the Fireworks API configuration to use a dedicated FIREWORKS_NEO_API_KEY for serverless text and embeddings, while keeping the original key for Flux image generation.",
+    "impact": "This internal infrastructure update ensures better rate limit management and reliability across different Fireworks-powered models.",
+    "keywords": [
+      "infrastructure",
+      "fireworks",
+      "api-keys",
+      "backend"
+    ],
+    "visual_concept": "The bee mascot managing two different glowing keys or fireworks. One key for text (scrolls/books), one for images (pictures).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding two glowing pixelated keys, one emitting soft text symbols and the other tiny pictures. A chunky retro server rack in the background glows with soft lime green (#ecf874) lights. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-02/PR-12185.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot holding two glowing pixelated keys, one emitting soft text symbols and the other tiny pictures. A chunky retro server rack in the background glows with soft lime green (#ecf874) lights. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-07-02T17:54:30.912714+00:00"
+}

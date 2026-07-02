@@ -13,6 +13,7 @@ body:
         ## Requirements
         - Have an account at [enter.pollinations.ai](https://enter.pollinations.ai) (sign up with GitHub)
         - Your app must use the pollinations.ai API
+        - Read the [submission criteria](apps/README.md#what-makes-a-good-app-submission) before submitting
 
         ## Credit pollinations.ai *(optional but appreciated)*
         - Link to [pollinations.ai](https://pollinations.ai) in your frontend/README

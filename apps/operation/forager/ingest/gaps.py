@@ -80,22 +80,27 @@ def _accepted_key(month, provider):
     return f"{month}:{provider}"
 
 
-def _reconcile_monthly(provider, month, billing, inv_rows, pay_rows, cfg, today):
+def _reconcile_monthly(provider, month, billing, inv_rows, pay_rows, cfg, today,
+                       used_wise_refs=None):
     """Reconcile a monthly/reseller/subscription provider for one month.
 
-    Logic:
+    Logic (amended 2026-07-03 — nearest-payment matching):
     - inv_rows: invoices with period_month == month.
-    - pay_rows: payments with month == M OR month == M+1 (arrears window); caller supplies both.
-      Note: a payment in M+1 also appears in M+1's own exact-month slice — this inherent
-      overlap matches the plan's definition; no dedup is applied here.
+    - pay_rows: candidate payments in M..M+1 window; caller supplies both months.
+    - used_wise_refs: run-wide set of wise_refs already consumed by earlier months
+      (mutated in-place so claims propagate across the caller's month loop).
     - accepted check first.
     - If only needs_label invoices → needs_label.
     - If no parsed invoices → missing_invoice.
-    - Parsed invoices present: sum them vs pay_rows.
-      - No payments → missing_payment.
-      - Within tolerance → ok.
-      - Outside → amount_mismatch.
+    - Parsed invoices present: greedy-match each invoice to the nearest-dated UNUSED payment
+      in pay_rows (filtered through used_wise_refs) within tolerance.
+      - no unused payment found within tolerance → nearest available → amount_mismatch;
+        no unused payment at all → missing_payment.
+      - all matched → ok.
     """
+    if used_wise_refs is None:
+        used_wise_refs = set()
+
     accepted = cfg.get("recon_accepted", [])
     if _accepted_key(month, provider) in accepted:
         inv_sum = sum(r.get("amount_usd", 0.0) for r in inv_rows if r.get("status") == "parsed")
@@ -110,39 +115,62 @@ def _reconcile_monthly(provider, month, billing, inv_rows, pay_rows, cfg, today)
 
     if not parsed and not needs:
         # No invoices at all
-        pay_sum = sum(r.get("amount_usd", 0.0) for r in pay_rows)
-        refs = ",".join(r.get("wise_ref", "") for r in pay_rows if r.get("wise_ref"))
+        available = [r for r in pay_rows if r.get("wise_ref") not in used_wise_refs]
+        pay_sum = sum(r.get("amount_usd", 0.0) for r in available)
+        refs = ",".join(r.get("wise_ref", "") for r in available if r.get("wise_ref"))
         return _verdict_row(provider, month, billing, "missing_invoice", today,
                             0.0, pay_sum, refs)
 
     if not parsed and needs:
         # Only needs_label, no parsed invoices
-        pay_sum = sum(r.get("amount_usd", 0.0) for r in pay_rows)
-        refs = ",".join(r.get("wise_ref", "") for r in pay_rows if r.get("wise_ref"))
         shas = ",".join(r.get("sha256", "") for r in needs if r.get("sha256"))
+        available = [r for r in pay_rows if r.get("wise_ref") not in used_wise_refs]
+        pay_sum = sum(r.get("amount_usd", 0.0) for r in available)
+        refs = ",".join(r.get("wise_ref", "") for r in available if r.get("wise_ref"))
         return _verdict_row(provider, month, billing, "needs_label", today,
                             0.0, pay_sum, refs, shas)
 
-    # Parsed invoices present
-    inv_sum = sum(r.get("amount_usd", 0.0) for r in parsed)
-    shas = ",".join(r.get("sha256", "") for r in parsed if r.get("sha256"))
-
-    # pay_rows already includes M and M+1 arrears window (supplied by caller)
-    pay_sum = sum(r.get("amount_usd", 0.0) for r in pay_rows)
-    refs = ",".join(r.get("wise_ref", "") for r in pay_rows if r.get("wise_ref"))
-
-    if pay_sum == 0.0 and not pay_rows:
-        return _verdict_row(provider, month, billing, "missing_payment", today,
-                            inv_sum, 0.0, "", shas)
-
+    # Parsed invoices present — greedy nearest-payment match
     pct = cfg.get("recon_tolerance_pct", 0.02)
     usd = cfg.get("recon_tolerance_usd", 2.0)
-    if _within(inv_sum, pay_sum, pct, usd):
-        return _verdict_row(provider, month, billing, "ok", today,
-                            inv_sum, pay_sum, refs, shas)
 
-    return _verdict_row(provider, month, billing, "amount_mismatch", today,
-                        inv_sum, pay_sum, refs, shas)
+    matched_pays = []   # payments successfully claimed by this invoice set
+    last_verdict = "ok"
+
+    all_shas = ",".join(r.get("sha256", "") for r in parsed if r.get("sha256"))
+
+    for inv in parsed:
+        inv_amt = inv.get("amount_usd", 0.0)
+        issued_at = inv.get("issued_at", "")
+
+        # Candidates: unused payments in the M..M+1 window
+        candidates = [r for r in pay_rows if r.get("wise_ref") not in used_wise_refs]
+
+        if not candidates:
+            last_verdict = "missing_payment"
+            continue
+
+        # Find nearest candidate by |paid_at − issued_at|
+        best = min(candidates, key=lambda r: _days_diff(r.get("paid_at", ""), issued_at))
+        best_ref = best.get("wise_ref", "")
+
+        if _within(inv_amt, best.get("amount_usd", 0.0), pct, usd):
+            # Matched within tolerance → ok
+            used_wise_refs.add(best_ref)
+            matched_pays.append(best)
+        else:
+            # Nearest payment exists but is outside tolerance → amount_mismatch
+            # Still consume it (greedy) so it isn't double-claimed by another invoice
+            used_wise_refs.add(best_ref)
+            matched_pays.append(best)
+            last_verdict = "amount_mismatch"
+
+    inv_sum = sum(r.get("amount_usd", 0.0) for r in parsed)
+    pay_sum = sum(r.get("amount_usd", 0.0) for r in matched_pays)
+    refs = ",".join(r.get("wise_ref", "") for r in matched_pays if r.get("wise_ref"))
+
+    return _verdict_row(provider, month, billing, last_verdict, today,
+                        inv_sum, pay_sum, refs, all_shas)
 
 
 def _reconcile_prepaid(provider, month, billing, inv_rows, pay_rows, cfg, today):
@@ -263,8 +291,14 @@ def run(invoices, payments, pools, months, config, today):
                     "active_until": pool.get("active_until", "9999-99"),
                 }
 
+    # Global set of wise_refs consumed by monthly reconciliation this run.
+    # Keyed per provider so a July payment claimed by Google's June invoice
+    # is unavailable only for Google's July — not for other providers.
+    used_wise_refs_by_prov: dict = {}
+
     results = []
-    for month in months:
+    # Process months in ascending order so that earlier months claim their payments first
+    for month in sorted(months):
         next_m = _next_month(month)
         for prov_key, meta in prov_pool.items():
             # Skip if not active in this month
@@ -286,14 +320,17 @@ def run(invoices, payments, pools, months, config, today):
             # Payments window depends on billing type:
             # - monthly/reseller/subscription: [M, M+1] arrears window (monthly invoices are
             #   often paid in the following month; a payment in M+1 will also appear in M+1's
-            #   own exact-month slice — that overlap is inherent to the plan's definition)
+            #   own exact-month slice — that overlap is inherent to the plan's definition).
+            #   Each payment is consumed at most once across the whole run per provider.
             # - prepaid: exact month M only (top-ups are matched by date ±10d, not arrears)
             if billing in ("monthly", "reseller", "subscription"):
                 pay_rows = [r for r in payments
                             if r.get("provider", "").strip().lower() == prov_key
                             and r.get("month", "") in (month, next_m)]
+                prov_used = used_wise_refs_by_prov.setdefault(prov_key, set())
                 results.append(_reconcile_monthly(
-                    prov_key, month, billing, inv_rows, pay_rows, config, today))
+                    prov_key, month, billing, inv_rows, pay_rows, config, today,
+                    used_wise_refs=prov_used))
             elif billing == "prepaid":
                 pay_rows = [r for r in payments
                             if r.get("provider", "").strip().lower() == prov_key
@@ -305,7 +342,9 @@ def run(invoices, payments, pools, months, config, today):
                 pay_rows = [r for r in payments
                             if r.get("provider", "").strip().lower() == prov_key
                             and r.get("month", "") in (month, next_m)]
+                prov_used = used_wise_refs_by_prov.setdefault(prov_key, set())
                 results.append(_reconcile_monthly(
-                    prov_key, month, billing, inv_rows, pay_rows, config, today))
+                    prov_key, month, billing, inv_rows, pay_rows, config, today,
+                    used_wise_refs=prov_used))
 
     return results

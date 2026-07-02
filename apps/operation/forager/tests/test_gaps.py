@@ -166,3 +166,113 @@ def test_before_active_from_emits_no_rows():
                                "active_from": "2026-06"}], ["2026-05"], CFG, today="2026-07-02")
     late_rows = [x for x in rows if x["provider"] == "late"]
     assert len(late_rows) == 0, f"expected 0 rows, got {late_rows}"
+
+
+# ── Change 1: nearest-payment matching (plan amendment 2026-07-03) ────────────
+
+def test_steady_payer_three_months_all_ok():
+    """Steady payer: 3 monthly invoices (issued ~1st), 3 payments each landing early the FOLLOWING
+    month, all within tolerance → ALL THREE months verdict ok and each payment used exactly once.
+    This is the scenario the old Σ semantics failed (June's invoice consumed July's payment, leaving
+    July with no payment → missing_payment).
+    """
+    steady_pools = [
+        {"pool": "Google", "providers": ["google"], "billing": "monthly", "active_from": "2026-01"},
+    ]
+    invoices = [
+        {"provider": "google", "kind": "monthly_bill", "period_month": "2026-05",
+         "amount_usd": 1000.0, "sha256": "s-may", "status": "parsed", "issued_at": "2026-05-01"},
+        {"provider": "google", "kind": "monthly_bill", "period_month": "2026-06",
+         "amount_usd": 1000.0, "sha256": "s-jun", "status": "parsed", "issued_at": "2026-06-01"},
+        {"provider": "google", "kind": "monthly_bill", "period_month": "2026-07",
+         "amount_usd": 1000.0, "sha256": "s-jul", "status": "parsed", "issued_at": "2026-07-01"},
+    ]
+    # Each payment lands the 5th of the following month
+    payments = [
+        {"provider": "google", "month": "2026-06", "amount_usd": 1000.0,
+         "wise_ref": "w-may-pay", "paid_at": "2026-06-05"},
+        {"provider": "google", "month": "2026-07", "amount_usd": 1000.0,
+         "wise_ref": "w-jun-pay", "paid_at": "2026-07-05"},
+        {"provider": "google", "month": "2026-08", "amount_usd": 1000.0,
+         "wise_ref": "w-jul-pay", "paid_at": "2026-08-05"},
+    ]
+    rows = gaps.run(
+        invoices, payments, steady_pools,
+        ["2026-05", "2026-06", "2026-07"], CFG, today="2026-08-10",
+    )
+    by_month = {r["month"]: r for r in rows if r["provider"] == "google"}
+    for m in ("2026-05", "2026-06", "2026-07"):
+        assert by_month[m]["status"] == "ok", (
+            f"month {m} expected ok, got {by_month[m]['status']}"
+        )
+    # Each payment used exactly once: refs must each appear in exactly one verdict row
+    refs_used = [r["payment_refs"] for r in by_month.values()]
+    assert "w-may-pay" in refs_used[0] or "w-may-pay" in refs_used[1] or "w-may-pay" in refs_used[2]
+    all_refs = ",".join(refs_used)
+    assert all_refs.count("w-may-pay") == 1, "w-may-pay used more than once"
+    assert all_refs.count("w-jun-pay") == 1, "w-jun-pay used more than once"
+    assert all_refs.count("w-jul-pay") == 1, "w-jul-pay used more than once"
+
+
+def test_payment_claimed_by_june_unavailable_for_july():
+    """A payment matched to June's invoice must NOT be reusable by July.
+    If only June's payment exists and both months are reconciled, July must be missing_payment.
+    """
+    steady_pools = [
+        {"pool": "Google", "providers": ["google"], "billing": "monthly", "active_from": "2026-01"},
+    ]
+    invoices = [
+        {"provider": "google", "kind": "monthly_bill", "period_month": "2026-06",
+         "amount_usd": 1000.0, "sha256": "s-jun2", "status": "parsed", "issued_at": "2026-06-01"},
+        {"provider": "google", "kind": "monthly_bill", "period_month": "2026-07",
+         "amount_usd": 1000.0, "sha256": "s-jul2", "status": "parsed", "issued_at": "2026-07-01"},
+    ]
+    # Only one payment in July window — June's invoice would claim it if not globally consumed
+    payments = [
+        {"provider": "google", "month": "2026-07", "amount_usd": 1000.0,
+         "wise_ref": "w-shared", "paid_at": "2026-07-05"},
+    ]
+    rows = gaps.run(
+        invoices, payments, steady_pools,
+        ["2026-06", "2026-07"], CFG, today="2026-08-10",
+    )
+    by_month = {r["month"]: r for r in rows if r["provider"] == "google"}
+    # June should claim w-shared (nearest payment in M..M+1)
+    assert by_month["2026-06"]["status"] == "ok", (
+        f"June expected ok, got {by_month['2026-06']['status']}"
+    )
+    # July has no remaining unused payment → missing_payment
+    assert by_month["2026-07"]["status"] == "missing_payment", (
+        f"July expected missing_payment, got {by_month['2026-07']['status']}"
+    )
+
+
+def test_nearest_payment_selected_over_farther():
+    """When two candidate payments are in the M..M+1 window, the closer-dated one is chosen."""
+    steady_pools = [
+        {"pool": "Google", "providers": ["google"], "billing": "monthly", "active_from": "2026-01"},
+    ]
+    invoices = [
+        {"provider": "google", "kind": "monthly_bill", "period_month": "2026-06",
+         "amount_usd": 1000.0, "sha256": "s-near", "status": "parsed", "issued_at": "2026-06-15"},
+    ]
+    payments = [
+        # close: 5 days from issued_at (June 15 → June 20), within tolerance
+        {"provider": "google", "month": "2026-06", "amount_usd": 1000.0,
+         "wise_ref": "w-close", "paid_at": "2026-06-20"},
+        # far: 30 days from issued_at (June 15 → July 15), within tolerance but farther
+        {"provider": "google", "month": "2026-07", "amount_usd": 1000.0,
+         "wise_ref": "w-far", "paid_at": "2026-07-15"},
+    ]
+    rows = gaps.run(
+        invoices, payments, steady_pools,
+        ["2026-06"], CFG, today="2026-08-10",
+    )
+    r = next(x for x in rows if x["provider"] == "google")
+    assert r["status"] == "ok"
+    assert "w-close" in r["payment_refs"], (
+        f"expected w-close to be selected, payment_refs={r['payment_refs']!r}"
+    )
+    assert "w-far" not in r["payment_refs"], (
+        f"w-far should NOT be selected, payment_refs={r['payment_refs']!r}"
+    )

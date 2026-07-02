@@ -1,7 +1,9 @@
 """Invoice harvest tests. All hermetic — no real gog calls, no network, no SOPS.
 Run: cd apps/operation/forager && python3 -m pytest tests/test_harvest.py -q
 """
-import os, sys
+import json
+import os
+import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from ingest.invoices import harvest
@@ -140,9 +142,81 @@ def test_gmail_sweep_skips_known_sha(monkeypatch, tmp_path):
         def append(self, ds, rows):
             raise AssertionError("append should not be called for known sha")
 
+    downloaded_paths = []
+
+    original_fake_run = fake_run
+
+    def fake_run_tracking(cmd, **kwargs):
+        r = original_fake_run(cmd, **kwargs)
+        if "attachment" in cmd:
+            out_dir = cmd[cmd.index("--out") + 1]
+            name = cmd[cmd.index("--name") + 1]
+            downloaded_paths.append(os.path.join(out_dir, name))
+        return r
+
+    monkeypatch.setattr("subprocess.run", fake_run_tracking)
+
     counts = harvest.gmail_sweep(cfg, FakeTB(), "2026-06-15")
     assert counts.get("pushed", 0) == 0
     assert counts.get("dup_sha", 0) == 1
+    # Duplicate file must be deleted after the sweep
+    assert downloaded_paths, "expected at least one file to be downloaded"
+    for p in downloaded_paths:
+        assert not os.path.exists(p), f"duplicate file was not deleted: {p}"
+
+
+# ---------------------------------------------------------------------------
+# inbox_sweep: single-parse behaviour
+# ---------------------------------------------------------------------------
+
+def test_inbox_sweep_parses_pdf_once_per_file(monkeypatch, tmp_path):
+    """inbox_sweep must call pdf_text exactly once per inbox PDF (no double-parse)."""
+    import hashlib
+    import ingest.invoices.extract as extract_mod
+    import ingest.creds as creds_mod
+
+    inbox = tmp_path / "inbox"
+    inbox.mkdir()
+    fake_pdf_bytes = b"%PDF-1.4 single-parse"
+    pdf_path = inbox / "unknown_invoice.pdf"
+    pdf_path.write_bytes(fake_pdf_bytes)
+
+    cfg = {
+        "gog_account": "test@myceli.ai",
+        "archive_dir": str(tmp_path),
+        "tb_ops_api": "https://fake.tinybird.co",
+        "months_start": "2026/01/01",
+        "fx_eur_usd": 1.14,
+    }
+
+    pdf_text_calls = []
+
+    def counting_pdf_text(path):
+        pdf_text_calls.append(path)
+        return "fake invoice text"
+
+    monkeypatch.setattr(extract_mod, "pdf_text", counting_pdf_text)
+    monkeypatch.setattr(extract_mod, "parse", lambda txt, slug, cfg, today: {
+        "invoice": {"period_month": "2026-06"},
+        "extras": {},
+    })
+    monkeypatch.setattr(extract_mod, "extract_and_push", lambda *a, **kw: None)
+    monkeypatch.setattr(extract_mod, "sha256", lambda p: hashlib.sha256(open(p, "rb").read()).hexdigest())
+    monkeypatch.setattr(extract_mod, "_build_billing_map", lambda credits: {})
+    monkeypatch.setattr(creds_mod, "_sops_decrypt", lambda p: {"pools": []})
+
+    class FakeTB:
+        def sql(self, query):
+            return []
+
+        def append(self, ds, rows):
+            return {"successful_rows": len(rows)}
+
+    harvest.inbox_sweep(cfg, FakeTB(), "2026-06-15")
+
+    assert len(pdf_text_calls) == 1, (
+        f"pdf_text called {len(pdf_text_calls)} times for a single PDF; expected 1"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -173,4 +247,3 @@ def test_inbox_sweep_empty_returns_zeros(monkeypatch, tmp_path):
     assert counts["dup_sha"] == 0
 
 
-import json  # used in test_gmail_sweep_skips_known_sha

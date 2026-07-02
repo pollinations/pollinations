@@ -333,21 +333,20 @@ def inbox_sweep(config, tb_ops, today):
         # Classify: try filename prefix first
         slug, category = _classify_inbox_name(fname)
 
-        # If prefix match failed, try parser hint
+        # Extract text once; reuse for both provider hint and period_month
+        txt = _extract.pdf_text(src)
+        result = _extract.parse(txt, slug, config, today)
+        inv = result.get("invoice") or {}
+
+        # If prefix match failed, try parser hint then re-parse with correct slug
         if slug == "other":
-            txt = _extract.pdf_text(src)
-            result = _extract.parse(txt, "other", config, today)
-            inv = result.get("invoice") or {}
-            # If parser found a provider hint in extras, use it
             hint_slug = (result.get("extras") or {}).get("provider_hint", "")
             if hint_slug:
                 hint_slug_cat = _slug_to_category(hint_slug)
                 slug, category = hint_slug, hint_slug_cat
+                result = _extract.parse(txt, slug, config, today)
+                inv = result.get("invoice") or {}
 
-        # Determine destination month
-        txt = _extract.pdf_text(src)
-        result = _extract.parse(txt, slug, config, today)
-        inv = result.get("invoice") or {}
         period_month = inv.get("period_month", "") or today[:7]
 
         # Build destination filename

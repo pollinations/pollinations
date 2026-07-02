@@ -17,7 +17,7 @@ class TB:
 
     def sql(self, query):
         body = urllib.parse.urlencode({"q": query + " FORMAT JSON"}).encode()
-        return _http(f"{self.api}/v0/sql", data=body, headers=self._auth()).get("data", [])
+        return _http(f"{self.api}/v0/sql", data=body, headers=self._auth(), method="POST").get("data", [])
 
     def append(self, datasource, rows):
         if not rows:

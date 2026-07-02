@@ -18,6 +18,7 @@ def test_sql_posts_query():
     c = cap.calls[0]
     assert c["url"].endswith("/v0/sql")
     assert c["headers"]["Authorization"] == "Bearer tok123"
+    assert c["method"] == "POST"
 
 def test_append_uses_events_ndjson():
     cap = Capture(); t = _client(cap)
@@ -25,6 +26,7 @@ def test_append_uses_events_ndjson():
     c = cap.calls[0]
     assert "/v0/events?name=ingest_runs" in c["url"]
     assert json.loads(c["data"].decode().splitlines()[0])["ok"] == 1
+    assert c["method"] == "POST"
 
 def test_replace_uses_datasources_multipart():
     cap = Capture(); t = _client(cap)

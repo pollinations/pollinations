@@ -243,6 +243,7 @@ export const proxyRoutes = new Hono<Env>()
     // Optional auth for models endpoints - doesn't require auth but uses it if provided
     .use("/v1/models", auth())
     .use("/image/models", auth())
+    .use("/video/models", auth())
     .use("/text/models", auth())
     .use("/audio/models", auth())
     .use("/embeddings/models", auth())
@@ -324,8 +325,9 @@ export const proxyRoutes = new Hono<Env>()
         }),
         modelsListHandler(getOrderedVisibleModelEntries),
     )
-    .get(
-        "/image/models",
+    .on(
+        "GET",
+        ["/image/models", "/video/models"],
         describeRoute({
             tags: ["🤖 Models"],
             summary: "List Image & Video Models",

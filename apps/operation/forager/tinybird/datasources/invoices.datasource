@@ -1,19 +1,22 @@
+TOKEN "treasury_ingest" APPEND
+TOKEN "treasury_ingest" READ
+
 SCHEMA >
-    `sha256` String,
-    `msgid` String,
-    `provider` String,
-    `category` String,
-    `kind` String,
-    `period_month` String,
-    `amount` Float64,
-    `currency` String,
-    `amount_usd` Float64,
-    `invoice_number` String,
-    `issued_at` Date,
-    `source` String,
-    `file_ref` String,
-    `status` String,
-    `ingested_at` Date
+    `sha256` String `json:$.sha256`,
+    `msgid` String `json:$.msgid`,
+    `provider` String `json:$.provider`,
+    `category` String `json:$.category`,
+    `kind` String `json:$.kind`,
+    `period_month` String `json:$.period_month`,
+    `amount` Float64 `json:$.amount`,
+    `currency` String `json:$.currency`,
+    `amount_usd` Float64 `json:$.amount_usd`,
+    `invoice_number` String `json:$.invoice_number`,
+    `issued_at` Date `json:$.issued_at`,
+    `source` String `json:$.source`,
+    `file_ref` String `json:$.file_ref`,
+    `status` String `json:$.status`,
+    `ingested_at` Date `json:$.ingested_at`
 
 ENGINE "MergeTree"
 ENGINE_SORTING_KEY "provider, period_month, issued_at"

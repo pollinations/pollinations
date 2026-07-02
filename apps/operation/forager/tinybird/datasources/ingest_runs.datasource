@@ -1,8 +1,11 @@
+TOKEN "treasury_ingest" APPEND
+TOKEN "treasury_ingest" READ
+
 SCHEMA >
-    `run_at` DateTime,
-    `ok` UInt8,
-    `statuses` String,
-    `notes` String
+    `run_at` DateTime `json:$.run_at`,
+    `ok` UInt8 `json:$.ok`,
+    `statuses` String `json:$.statuses`,
+    `notes` String `json:$.notes`
 
 ENGINE "MergeTree"
 ENGINE_SORTING_KEY "run_at"

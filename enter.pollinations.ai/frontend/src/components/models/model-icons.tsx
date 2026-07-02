@@ -14,7 +14,7 @@ import {
 } from "@pollinations/ui";
 import type { FC } from "react";
 import type { DisplayCapability, InputModality } from "./model-info.ts";
-import type { ModelCategory, PriceKind } from "./types.ts";
+import type { PriceKind } from "./types.ts";
 
 type Icon = FC<IconProps>;
 
@@ -43,8 +43,4 @@ export const PRICE_ICON: Record<PriceKind, Icon> = {
     video: VideoIcon,
     audioIn: MicIcon,
     audioOut: SpeakerIcon,
-};
-
-export const MODEL_TYPE_ICON: Partial<Record<ModelCategory, Icon>> = {
-    "3d": CubeIcon,
 };

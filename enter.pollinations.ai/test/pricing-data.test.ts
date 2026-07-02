@@ -25,6 +25,7 @@ import {
     formatPricePer1M,
 } from "../frontend/src/components/models/formatters.ts";
 import { getModelPricesFromCatalog } from "../frontend/src/components/models/model-catalog.ts";
+import { getModelBrandLogoPath } from "../frontend/src/components/models/model-info.ts";
 
 const getCatalogModelPrices = () =>
     getModelPricesFromCatalog([
@@ -214,6 +215,22 @@ test("catalog prices expose 3D flat output generation rates", () => {
             price: formatPriceFlat(rawRate),
             unit: "request",
         });
+    }
+});
+
+test("catalog models resolve 3D brand logo SVG assets", () => {
+    const model3dPrices = getModelPricesFromCatalog(getModel3dModelsInfo());
+    const expectedLogoByBrand = new Map([
+        ["Microsoft", "/brand-logos/microsoft.svg"],
+        ["Deemos", "/brand-logos/deemos.svg"],
+    ]);
+
+    expect(model3dPrices.length).toBeGreaterThan(0);
+
+    for (const modelPrice of model3dPrices) {
+        expect(getModelBrandLogoPath(modelPrice)).toBe(
+            expectedLogoByBrand.get(modelPrice.brand ?? ""),
+        );
     }
 });
 

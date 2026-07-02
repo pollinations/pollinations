@@ -246,8 +246,8 @@ function onAfterUserCreate(
 }
 
 /**
- * Restricts new signups on staging to an allowlist of GitHub user IDs
- * (immutable, unlike usernames). No-op outside staging.
+ * Restricts new signups on staging to explicit GitHub ID or email allowlists.
+ * GitHub IDs are immutable, unlike usernames. No-op outside staging.
  *
  * This is a thin UX layer only — it rejects disallowed users during OAuth
  * before a `user` row is created, so /error shows "staging is invite-only"
@@ -273,6 +273,7 @@ function stagingAccessPlugin(env: Cloudflare.Env): BetterAuthPlugin {
                                         githubId: (
                                             user as { githubId?: number }
                                         ).githubId,
+                                        email: user.email,
                                     });
                                 } catch (e) {
                                     if (e instanceof StagingAccessDeniedError) {

@@ -426,6 +426,9 @@ const MODALITY_ICON: Record<ModelModality, FC<IconProps>> = {
     text: ChatIcon,
     image: ImageIcon,
     video: VideoIcon,
+    // No dedicated 3D icon in @pollinations/ui yet — reuse ImageIcon as the
+    // closest existing glyph.
+    "3d": ImageIcon,
     audio: AudioIcon,
     embedding: DatabaseIcon,
     realtime: GlobeIcon,

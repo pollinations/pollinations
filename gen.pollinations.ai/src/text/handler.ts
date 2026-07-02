@@ -9,6 +9,7 @@ import {
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
+import { fixWavHeader } from "../routes/audio.js";
 import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { type ExpressLikeRequest, getRequestData } from "./requestUtils.js";
@@ -101,16 +102,20 @@ function withGatewayContext(c: TextContext, requestData: RequestData) {
     };
 }
 
-function usageHeaders(completion: ChatCompletion): Headers {
+function usageHeaders(
+    completion: ChatCompletion,
+    fallbackModel?: string,
+): Headers {
     const headers = new Headers();
-    if (completion?.usage && completion?.model) {
+    const modelUsed = completion?.model || fallbackModel;
+    if (completion?.usage && modelUsed) {
         const usage = openaiUsageToUsage(
             completion.usage as unknown as Parameters<
                 typeof openaiUsageToUsage
             >[0],
         );
         for (const [key, value] of Object.entries(
-            buildUsageHeaders(completion.model, usage),
+            buildUsageHeaders(modelUsed, usage),
         )) {
             headers.set(key, String(value));
         }
@@ -121,8 +126,11 @@ function usageHeaders(completion: ChatCompletion): Headers {
     return headers;
 }
 
-function sendOpenAIResponse(completion: ChatCompletion): Response {
-    const headers = usageHeaders(completion);
+function sendOpenAIResponse(
+    completion: ChatCompletion,
+    fallbackModel?: string,
+): Response {
+    const headers = usageHeaders(completion, fallbackModel);
     headers.set("Content-Type", "application/json; charset=utf-8");
 
     return new Response(
@@ -136,8 +144,11 @@ function sendOpenAIResponse(completion: ChatCompletion): Response {
     );
 }
 
-function sendTextContentResponse(completion: ChatCompletion): Response {
-    const headers = usageHeaders(completion);
+function sendTextContentResponse(
+    completion: ChatCompletion,
+    fallbackModel?: string,
+): Response {
+    const headers = usageHeaders(completion, fallbackModel);
     headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
 
     if (!completion.choices?.[0]) {
@@ -156,8 +167,20 @@ function sendTextContentResponse(completion: ChatCompletion): Response {
 
     const audio = message.audio as Record<string, unknown> | undefined;
     if (typeof audio?.data === "string") {
-        headers.set("Content-Type", "audio/mpeg");
-        return new Response(base64ToArrayBuffer(audio.data), { headers });
+        const buffer = base64ToArrayBuffer(audio.data);
+        const isWav =
+            buffer.byteLength >= 12 &&
+            new Uint8Array(buffer, 0, 4).reduce(
+                (s, b) => s + String.fromCharCode(b),
+                "",
+            ) === "RIFF";
+        if (isWav) {
+            fixWavHeader(buffer);
+            headers.set("Content-Type", "audio/wav");
+        } else {
+            headers.set("Content-Type", "audio/mpeg");
+        }
+        return new Response(buffer, { headers });
     }
 
     if (message.content !== undefined && message.content !== null) {
@@ -291,8 +314,10 @@ async function generateTextResponse(
         }
 
         if (requestData.stream) return sendTextStreamResponse(completion);
-        if (contentResponse) return sendTextContentResponse(completion);
-        return sendOpenAIResponse(completion);
+        const fallbackModel = c.var.model?.resolved;
+        if (contentResponse)
+            return sendTextContentResponse(completion, fallbackModel);
+        return sendOpenAIResponse(completion, fallbackModel);
     } catch (thrown: unknown) {
         throwTextError(thrown as ServiceError, c);
     }

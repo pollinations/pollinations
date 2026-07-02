@@ -291,6 +291,7 @@ export const proxyRoutes = new Hono<Env>()
     .use("/v1/models", auth())
     .use("/image/models", auth())
     .use("/3d/models", auth())
+    .use("/video/models", auth())
     .use("/text/models", auth())
     .use("/audio/models", auth())
     .use("/embeddings/models", auth())
@@ -398,8 +399,9 @@ export const proxyRoutes = new Hono<Env>()
         }),
         modelsListHandler(getVisibleModel3dEntries),
     )
-    .get(
-        "/image/models",
+    .on(
+        "GET",
+        ["/image/models", "/video/models"],
         describeRoute({
             tags: ["🤖 Models"],
             summary: "List Image & Video Models",

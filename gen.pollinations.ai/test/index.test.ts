@@ -247,6 +247,7 @@ describe("gen worker routing", () => {
         "/models",
         "/text/models",
         "/image/models",
+        "/video/models",
         "/audio/models",
         "/embeddings/models",
     ] as const)("routes public model path %s through gen", async (path) => {

@@ -143,11 +143,15 @@ function mapAzureGPTImageUsage(
  * Large images can result in very high token costs (e.g., 4K = ~11,000 tokens)
  *
  * @param buffer - The input image buffer
+ * @param maxDimension - Max width/height for resize (1536 for gpt-image-1, 3840 for gpt-image-2)
  * @returns Resized buffer (PNG format) if image exceeds max pixels, otherwise original
  */
-async function resizeInputImageForGptImage(buffer: Buffer): Promise<Buffer> {
+async function resizeInputImageForGptImage(
+    buffer: Buffer,
+    maxDimension = 1536,
+): Promise<Buffer> {
     try {
-        return await resizeForGptImage(buffer);
+        return await resizeForGptImage(buffer, maxDimension);
     } catch (error) {
         logError("Failed to resize input image, using original:", error);
         return buffer;
@@ -323,19 +327,50 @@ const callGPTImageWithEndpoint = async (
         `Using ${config.provider} ${config.modelName} in ${isEditMode ? "edit" : "generation"} mode`,
     );
 
-    // Map safeParams to Azure API parameters
-    // GPT Image 1.5 only supports: 1024x1024 (1:1), 1024x1536 (2:3), 1536x1024 (3:2)
-    // Select the size with the closest aspect ratio to the input.
-    // Table order preserves the historical tie behavior (e.g. a 5:4 input,
-    // equidistant from 1:1 and 3:2, picks 1536x1024).
-    const size = closestByRatio(safeParams.width, safeParams.height, [
-        { size: "1536x1024", ratio: 1.5 },
-        { size: "1024x1536", ratio: 1 / 1.5 },
-        { size: "1024x1024", ratio: 1 },
-    ]).size;
+    // Map safeParams to API size parameter.
+    // gpt-image-2 supports arbitrary resolutions with constraints.
+    // Older gpt-image-1 models (via Azure) only support 3 fixed sizes; snap via closest ratio.
+    let size: string;
+    if (config.modelName === "gpt-image-2") {
+        // gpt-image-2 constraints:
+        //   Both edges multiples of 16px, long edge ≤ 3840px (4K)
+        //   Aspect ratio ≤ 3:1, pixel count 655,360–8,294,400
+        const clamp = (v: number) => Math.round(Math.max(16, v) / 16) * 16;
+        let w = clamp(safeParams.width);
+        let h = clamp(safeParams.height);
+        // Cap aspect ratio before the edge cap so extreme inputs (e.g. 16x8000)
+        // shrink the long edge instead of flooring the short edge to 0.
+        if (w > h * 3) w = Math.floor((h * 3) / 16) * 16;
+        else if (h > w * 3) h = Math.floor((w * 3) / 16) * 16;
+        const longEdge = Math.max(w, h);
+        if (longEdge > 3840) {
+            const scale = 3840 / longEdge;
+            w = Math.floor((w * scale) / 16) * 16;
+            h = Math.floor((h * scale) / 16) * 16;
+        }
+        let pixels = w * h;
+        if (pixels < 655360) {
+            const scale = Math.sqrt(655360 / pixels);
+            w = Math.ceil((w * scale) / 16) * 16;
+            h = Math.ceil((h * scale) / 16) * 16;
+            pixels = w * h;
+        }
+        if (pixels > 8294400) {
+            const scale = Math.sqrt(8294400 / pixels);
+            w = Math.floor((w * scale) / 16) * 16;
+            h = Math.floor((h * scale) / 16) * 16;
+        }
+        size = `${w}x${h}`;
+    } else {
+        size = closestByRatio(safeParams.width, safeParams.height, [
+            { size: "1536x1024", ratio: 1.5 },
+            { size: "1024x1536", ratio: 1 / 1.5 },
+            { size: "1024x1024", ratio: 1 },
+        ]).size;
+    }
 
     // Use requested quality - access control runs in this worker's auth/balance middleware
-    const quality = safeParams.quality === "high" ? "high" : "medium";
+    const quality = safeParams.quality === "hd" ? "high" : safeParams.quality;
 
     // Set output format to png if model is gptimage, otherwise jpeg
     const outputFormat = "png";
@@ -406,8 +441,13 @@ const callGPTImageWithEndpoint = async (
 
                     // Resize large input images to reduce token costs
                     // GPT Image 1.5 calculates input tokens as: (width × height) / 750
-                    const buffer =
-                        await resizeInputImageForGptImage(originalBuffer);
+                    // gpt-image-2 supports larger inputs up to 3840px
+                    const inputMaxDimension =
+                        config.modelName === "gpt-image-2" ? 3840 : 1536;
+                    const buffer = await resizeInputImageForGptImage(
+                        originalBuffer,
+                        inputMaxDimension,
+                    );
 
                     // Only check safety after we've successfully fetched the image
                     logCloudflare(
@@ -606,6 +646,7 @@ const generateImage = async (
 
         case "nanobanana":
         case "nanobanana-2":
+        case "nanobanana-2-lite":
         case "nanobanana-pro": {
             logError(
                 "Nano Banana authentication check:",

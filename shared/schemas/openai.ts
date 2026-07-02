@@ -498,7 +498,7 @@ export const CreateChatCompletionResponseSchema = z.object({
     choices: z.array(CompletionChoiceSchema),
     prompt_filter_results: PromptFilterResultSchema.nullish(),
     created: z.number().int(),
-    model: z.string(),
+    model: z.string().optional(),
     system_fingerprint: z.string().nullish(),
     object: z.literal("chat.completion"),
     usage: CompletionUsageSchema.optional(),

@@ -74,6 +74,8 @@ export type CommunityEndpointRuntime = {
     baseUrl: string;
     upstreamModel: string;
     bearerTokenCiphertext: string;
+    disabledAt: number | null;
+    disabledReason: string | null;
 } & CommunityEndpointPrices;
 
 export type CommunityModelDefinitionInput = {

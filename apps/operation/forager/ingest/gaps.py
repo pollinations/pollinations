@@ -34,18 +34,38 @@ def _days_diff(d1, d2):
         return 9999
 
 
-def _verdict_row(provider, month, pool_name, billing, status,
-                 invoice_usd=0.0, payment_usd=0.0, payment_refs="", sha256s=""):
+def _next_month(month):
+    """Return the YYYY-MM string for the month following the given one.
+
+    Uses only stdlib datetime — no dateutil dependency.
+    December wraps correctly: "2025-12" → "2026-01".
+    """
+    y, m = int(month[:4]), int(month[5:7])
+    if m == 12:
+        return f"{y + 1:04d}-01"
+    return f"{y:04d}-{m + 1:02d}"
+
+
+def _verdict_row(provider, month, billing, status, today,
+                 invoice_usd=0.0, payment_usd=0.0, payment_refs="", invoice_refs="",
+                 note=""):
+    """Return a dict matching the Tinybird `reconciliation` datasource schema exactly.
+
+    Columns: month, provider, billing, status, invoice_usd, payment_usd,
+             delta_usd, invoice_refs, payment_refs, note, run_at
+    """
     return {
-        "provider": provider,
         "month": month,
-        "pool": pool_name,
+        "provider": provider,
         "billing": billing,
         "status": status,
         "invoice_usd": round(invoice_usd, 2),
         "payment_usd": round(payment_usd, 2),
+        "delta_usd": round(invoice_usd - payment_usd, 2),
+        "invoice_refs": invoice_refs,
         "payment_refs": payment_refs,
-        "sha256s": sha256s,
+        "note": note,
+        "run_at": today,
     }
 
 
@@ -60,15 +80,18 @@ def _accepted_key(month, provider):
     return f"{month}:{provider}"
 
 
-def _reconcile_monthly(provider, month, pool_name, billing, inv_rows, pay_rows, cfg):
+def _reconcile_monthly(provider, month, billing, inv_rows, pay_rows, cfg, today):
     """Reconcile a monthly/reseller/subscription provider for one month.
 
     Logic:
-    - Filter invoices to period_month == month; filter payments to month.
+    - inv_rows: invoices with period_month == month.
+    - pay_rows: payments with month == M OR month == M+1 (arrears window); caller supplies both.
+      Note: a payment in M+1 also appears in M+1's own exact-month slice — this inherent
+      overlap matches the plan's definition; no dedup is applied here.
     - accepted check first.
     - If only needs_label invoices → needs_label.
     - If no parsed invoices → missing_invoice.
-    - Parsed invoices present: sum them vs payments in [M, M+1] arrears window.
+    - Parsed invoices present: sum them vs pay_rows.
       - No payments → missing_payment.
       - Within tolerance → ok.
       - Outside → amount_mismatch.
@@ -79,7 +102,7 @@ def _reconcile_monthly(provider, month, pool_name, billing, inv_rows, pay_rows, 
         pay_sum = sum(r.get("amount_usd", 0.0) for r in pay_rows)
         refs = ",".join(r.get("wise_ref", "") for r in pay_rows if r.get("wise_ref"))
         shas = ",".join(r.get("sha256", "") for r in inv_rows if r.get("sha256"))
-        return _verdict_row(provider, month, pool_name, billing, "accepted",
+        return _verdict_row(provider, month, billing, "accepted", today,
                             inv_sum, pay_sum, refs, shas)
 
     parsed = [r for r in inv_rows if r.get("status") == "parsed"]
@@ -89,7 +112,7 @@ def _reconcile_monthly(provider, month, pool_name, billing, inv_rows, pay_rows, 
         # No invoices at all
         pay_sum = sum(r.get("amount_usd", 0.0) for r in pay_rows)
         refs = ",".join(r.get("wise_ref", "") for r in pay_rows if r.get("wise_ref"))
-        return _verdict_row(provider, month, pool_name, billing, "missing_invoice",
+        return _verdict_row(provider, month, billing, "missing_invoice", today,
                             0.0, pay_sum, refs)
 
     if not parsed and needs:
@@ -97,33 +120,32 @@ def _reconcile_monthly(provider, month, pool_name, billing, inv_rows, pay_rows, 
         pay_sum = sum(r.get("amount_usd", 0.0) for r in pay_rows)
         refs = ",".join(r.get("wise_ref", "") for r in pay_rows if r.get("wise_ref"))
         shas = ",".join(r.get("sha256", "") for r in needs if r.get("sha256"))
-        return _verdict_row(provider, month, pool_name, billing, "needs_label",
+        return _verdict_row(provider, month, billing, "needs_label", today,
                             0.0, pay_sum, refs, shas)
 
     # Parsed invoices present
     inv_sum = sum(r.get("amount_usd", 0.0) for r in parsed)
     shas = ",".join(r.get("sha256", "") for r in parsed if r.get("sha256"))
 
-    # Payments window: paid_at in month M or M+1 (arrears)
-    # pay_rows already filtered to month M by caller, but also accept M+1 paid_at
+    # pay_rows already includes M and M+1 arrears window (supplied by caller)
     pay_sum = sum(r.get("amount_usd", 0.0) for r in pay_rows)
     refs = ",".join(r.get("wise_ref", "") for r in pay_rows if r.get("wise_ref"))
 
     if pay_sum == 0.0 and not pay_rows:
-        return _verdict_row(provider, month, pool_name, billing, "missing_payment",
+        return _verdict_row(provider, month, billing, "missing_payment", today,
                             inv_sum, 0.0, "", shas)
 
     pct = cfg.get("recon_tolerance_pct", 0.02)
     usd = cfg.get("recon_tolerance_usd", 2.0)
     if _within(inv_sum, pay_sum, pct, usd):
-        return _verdict_row(provider, month, pool_name, billing, "ok",
+        return _verdict_row(provider, month, billing, "ok", today,
                             inv_sum, pay_sum, refs, shas)
 
-    return _verdict_row(provider, month, pool_name, billing, "amount_mismatch",
+    return _verdict_row(provider, month, billing, "amount_mismatch", today,
                         inv_sum, pay_sum, refs, shas)
 
 
-def _reconcile_prepaid(provider, month, pool_name, billing, inv_rows, pay_rows, cfg):
+def _reconcile_prepaid(provider, month, billing, inv_rows, pay_rows, cfg, today):
     """Greedy-match each payment to an unused parsed invoice (±tolerance, ±10d date).
 
     Unmatched payment → missing_invoice (payment_refs = wise_refs of unmatched payments).
@@ -137,7 +159,7 @@ def _reconcile_prepaid(provider, month, pool_name, billing, inv_rows, pay_rows, 
         pay_sum = sum(r.get("amount_usd", 0.0) for r in pay_rows)
         refs = ",".join(r.get("wise_ref", "") for r in pay_rows if r.get("wise_ref"))
         shas = ",".join(r.get("sha256", "") for r in inv_rows if r.get("sha256"))
-        return _verdict_row(provider, month, pool_name, billing, "accepted",
+        return _verdict_row(provider, month, billing, "accepted", today,
                             inv_sum, pay_sum, refs, shas)
 
     parsed = [r for r in inv_rows if r.get("status") == "parsed"]
@@ -145,7 +167,7 @@ def _reconcile_prepaid(provider, month, pool_name, billing, inv_rows, pay_rows, 
 
     # No activity at all → ok
     if not parsed and not needs and not pay_rows:
-        return _verdict_row(provider, month, pool_name, billing, "ok")
+        return _verdict_row(provider, month, billing, "ok", today)
 
     pct = cfg.get("recon_tolerance_pct", 0.02)
     usd = cfg.get("recon_tolerance_usd", 2.0)
@@ -183,7 +205,7 @@ def _reconcile_prepaid(provider, month, pool_name, billing, inv_rows, pay_rows, 
         shas = ",".join(r.get("sha256", "") for r in needs if r.get("sha256"))
         pay_sum = sum(r.get("amount_usd", 0.0) for r in pay_rows)
         refs = ",".join(r.get("wise_ref", "") for r in pay_rows if r.get("wise_ref"))
-        return _verdict_row(provider, month, pool_name, billing, "needs_label",
+        return _verdict_row(provider, month, billing, "needs_label", today,
                             0.0, pay_sum, refs, shas)
 
     if unmatched_pay:
@@ -192,13 +214,13 @@ def _reconcile_prepaid(provider, month, pool_name, billing, inv_rows, pay_rows, 
         refs = ",".join(r.get("wise_ref", "") for r in unmatched_pay if r.get("wise_ref"))
         inv_sum = sum(r.get("amount_usd", 0.0) for r in [p for p in pay_rows if p not in unmatched_pay])
         shas = ",".join(r.get("sha256", "") for r in [unused_inv[i] for i in matched_inv_idxs] if r.get("sha256"))
-        return _verdict_row(provider, month, pool_name, billing, "missing_invoice",
+        return _verdict_row(provider, month, billing, "missing_invoice", today,
                             inv_sum, pay_sum, refs, shas)
 
     if unmatched_inv:
         inv_sum = sum(r.get("amount_usd", 0.0) for r in unmatched_inv)
         shas = ",".join(r.get("sha256", "") for r in unmatched_inv if r.get("sha256"))
-        return _verdict_row(provider, month, pool_name, billing, "missing_payment",
+        return _verdict_row(provider, month, billing, "missing_payment", today,
                             inv_sum, 0.0, "", shas)
 
     # All payments matched
@@ -206,7 +228,7 @@ def _reconcile_prepaid(provider, month, pool_name, billing, inv_rows, pay_rows, 
     pay_sum = sum(r.get("amount_usd", 0.0) for r in pay_rows)
     refs = ",".join(r.get("wise_ref", "") for r in pay_rows if r.get("wise_ref"))
     shas = ",".join(r.get("sha256", "") for r in parsed if r.get("sha256"))
-    return _verdict_row(provider, month, pool_name, billing, "ok",
+    return _verdict_row(provider, month, billing, "ok", today,
                         inv_sum, pay_sum, refs, shas)
 
 
@@ -221,7 +243,7 @@ def run(invoices, payments, pools, months, config, today):
         pools:     list of pool dicts (pool, providers, billing, active_from[, active_until])
         months:    list of "YYYY-MM" strings to evaluate
         config:    dict with recon_tolerance_pct, recon_tolerance_usd, recon_accepted
-        today:     ISO date string "YYYY-MM-DD" (used for active window checks)
+        today:     ISO date string "YYYY-MM-DD" (used for active window checks and run_at)
 
     Returns:
         list of verdict dicts (one per active provider×month combination in scope)
@@ -243,17 +265,17 @@ def run(invoices, payments, pools, months, config, today):
 
     results = []
     for month in months:
+        next_m = _next_month(month)
         for prov_key, meta in prov_pool.items():
             # Skip if not active in this month
             if not (meta["active_from"] <= month <= meta["active_until"]):
                 continue
 
             billing = meta["billing"]
-            pool_name = meta["pool"]
 
             # sponsored → ok_credit immediately, no invoice/payment needed
             if billing == "sponsored":
-                results.append(_verdict_row(prov_key, month, pool_name, billing, "ok_credit"))
+                results.append(_verdict_row(prov_key, month, billing, "ok_credit", today))
                 continue
 
             # Filter relevant rows for this provider×month
@@ -261,24 +283,29 @@ def run(invoices, payments, pools, months, config, today):
                         if r.get("provider", "").strip().lower() == prov_key
                         and r.get("period_month", "") == month]
 
-            # Payments: month == M for all billing types
-            # For monthly arrears, also include paid_at in month M+1
-            pay_rows_exact = [r for r in payments
-                              if r.get("provider", "").strip().lower() == prov_key
-                              and r.get("month", "") == month]
-
+            # Payments window depends on billing type:
+            # - monthly/reseller/subscription: [M, M+1] arrears window (monthly invoices are
+            #   often paid in the following month; a payment in M+1 will also appear in M+1's
+            #   own exact-month slice — that overlap is inherent to the plan's definition)
+            # - prepaid: exact month M only (top-ups are matched by date ±10d, not arrears)
             if billing in ("monthly", "reseller", "subscription"):
+                pay_rows = [r for r in payments
+                            if r.get("provider", "").strip().lower() == prov_key
+                            and r.get("month", "") in (month, next_m)]
                 results.append(_reconcile_monthly(
-                    prov_key, month, pool_name, billing,
-                    inv_rows, pay_rows_exact, config))
+                    prov_key, month, billing, inv_rows, pay_rows, config, today))
             elif billing == "prepaid":
+                pay_rows = [r for r in payments
+                            if r.get("provider", "").strip().lower() == prov_key
+                            and r.get("month", "") == month]
                 results.append(_reconcile_prepaid(
-                    prov_key, month, pool_name, billing,
-                    inv_rows, pay_rows_exact, config))
+                    prov_key, month, billing, inv_rows, pay_rows, config, today))
             else:
-                # Unknown billing type — treat as monthly
+                # Unknown billing type — treat as monthly (include M+1 arrears)
+                pay_rows = [r for r in payments
+                            if r.get("provider", "").strip().lower() == prov_key
+                            and r.get("month", "") in (month, next_m)]
                 results.append(_reconcile_monthly(
-                    prov_key, month, pool_name, billing,
-                    inv_rows, pay_rows_exact, config))
+                    prov_key, month, billing, inv_rows, pay_rows, config, today))
 
     return results

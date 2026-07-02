@@ -42,3 +42,127 @@ def test_needs_label_is_amber_not_ok():
 
 def test_sponsored_is_ok_credit():
     assert next(x for x in _run() if x["provider"] == "azure")["status"] == "ok_credit"
+
+
+# ── Finding 1: cross-month arrears window ─────────────────────────────────────
+
+def test_monthly_arrears_m_plus_1_is_ok():
+    """A monthly invoice for M with its only payment in M+1 (within tolerance) must be ok."""
+    r = next(x for x in gaps.run(
+        [{"provider": "google", "kind": "monthly_bill", "period_month": "2026-06",
+          "amount_usd": 1000.0, "sha256": "sha-m1", "status": "parsed", "issued_at": "2026-06-01"}],
+        [{"provider": "google", "month": "2026-07", "amount_usd": 1000.0,
+          "wise_ref": "w-m1", "paid_at": "2026-07-05"}],
+        POOLS, ["2026-06"], CFG, today="2026-07-02",
+    ) if x["provider"] == "google")
+    assert r["status"] == "ok", f"expected ok, got {r['status']}"
+
+
+def test_monthly_exact_month_payment_still_ok():
+    """Sanity: a monthly invoice paid in same month M is still ok (regression guard)."""
+    r = next(x for x in gaps.run(
+        [{"provider": "google", "kind": "monthly_bill", "period_month": "2026-06",
+          "amount_usd": 800.0, "sha256": "sha-m2", "status": "parsed", "issued_at": "2026-06-01"}],
+        [{"provider": "google", "month": "2026-06", "amount_usd": 800.0,
+          "wise_ref": "w-m2", "paid_at": "2026-06-28"}],
+        POOLS, ["2026-06"], CFG, today="2026-07-02",
+    ) if x["provider"] == "google")
+    assert r["status"] == "ok", f"expected ok, got {r['status']}"
+
+
+def test_monthly_arrears_december_wraps_to_january():
+    """December (2025-12) invoice paid in January 2026 (M+1 = 2026-01) must be ok."""
+    dec_pool = [{"pool": "GCP", "providers": ["gcp"], "billing": "monthly",
+                 "active_from": "2025-01"}]
+    r = next(x for x in gaps.run(
+        [{"provider": "gcp", "kind": "monthly_bill", "period_month": "2025-12",
+          "amount_usd": 500.0, "sha256": "sha-dec", "status": "parsed", "issued_at": "2025-12-01"}],
+        [{"provider": "gcp", "month": "2026-01", "amount_usd": 500.0,
+          "wise_ref": "w-jan", "paid_at": "2026-01-10"}],
+        dec_pool, ["2025-12"], CFG, today="2026-07-02",
+    ) if x["provider"] == "gcp")
+    assert r["status"] == "ok", f"expected ok for Dec→Jan arrears, got {r['status']}"
+
+
+def test_monthly_m_plus_2_payment_is_missing_payment():
+    """Payment in M+2 is outside the arrears window — should be missing_payment for M."""
+    r = next(x for x in gaps.run(
+        [{"provider": "google", "kind": "monthly_bill", "period_month": "2026-06",
+          "amount_usd": 1000.0, "sha256": "sha-m3", "status": "parsed", "issued_at": "2026-06-01"}],
+        [{"provider": "google", "month": "2026-08", "amount_usd": 1000.0,
+          "wise_ref": "w-aug", "paid_at": "2026-08-05"}],
+        POOLS, ["2026-06"], CFG, today="2026-07-02",
+    ) if x["provider"] == "google")
+    assert r["status"] == "missing_payment", f"expected missing_payment, got {r['status']}"
+
+
+# ── Finding 2: reconciliation datasource schema alignment ─────────────────────
+
+def test_verdict_row_has_required_schema_keys():
+    """Every verdict row must match the Tinybird reconciliation datasource schema exactly."""
+    required = {"month", "provider", "billing", "status", "invoice_usd", "payment_usd",
+                "delta_usd", "invoice_refs", "payment_refs", "note", "run_at"}
+    forbidden = {"pool", "sha256s"}
+    rows = gaps.run(
+        [{"provider": "google", "kind": "monthly_bill", "period_month": "2026-06",
+          "amount_usd": 200.0, "sha256": "sha-s1", "status": "parsed", "issued_at": "2026-06-01"}],
+        [{"provider": "google", "month": "2026-06", "amount_usd": 200.0,
+          "wise_ref": "w-s1", "paid_at": "2026-06-28"}],
+        POOLS, ["2026-06"], CFG, today="2026-07-02",
+    )
+    r = next(x for x in rows if x["provider"] == "google")
+    missing_keys = required - set(r.keys())
+    extra_keys = forbidden & set(r.keys())
+    assert not missing_keys, f"missing schema keys: {missing_keys}"
+    assert not extra_keys, f"forbidden keys present: {extra_keys}"
+
+
+def test_verdict_row_delta_usd_correct():
+    """delta_usd must equal invoice_usd - payment_usd rounded to 2dp."""
+    rows = gaps.run(
+        [{"provider": "google", "kind": "monthly_bill", "period_month": "2026-06",
+          "amount_usd": 300.0, "sha256": "sha-d1", "status": "parsed", "issued_at": "2026-06-01"}],
+        [{"provider": "google", "month": "2026-06", "amount_usd": 295.0,
+          "wise_ref": "w-d1", "paid_at": "2026-06-28"}],
+        POOLS, ["2026-06"], CFG, today="2026-07-02",
+    )
+    r = next(x for x in rows if x["provider"] == "google")
+    assert r["delta_usd"] == round(300.0 - 295.0, 2), f"wrong delta_usd: {r['delta_usd']}"
+
+
+def test_verdict_row_invoice_refs_is_string():
+    """invoice_refs must be a string (comma-joined sha256s), not a list."""
+    rows = gaps.run(
+        [{"provider": "google", "kind": "monthly_bill", "period_month": "2026-06",
+          "amount_usd": 100.0, "sha256": "abc123", "status": "parsed", "issued_at": "2026-06-01"}],
+        [{"provider": "google", "month": "2026-06", "amount_usd": 100.0,
+          "wise_ref": "w-r1", "paid_at": "2026-06-10"}],
+        POOLS, ["2026-06"], CFG, today="2026-07-02",
+    )
+    r = next(x for x in rows if x["provider"] == "google")
+    assert isinstance(r["invoice_refs"], str), f"invoice_refs should be str, got {type(r['invoice_refs'])}"
+    assert "abc123" in r["invoice_refs"]
+
+
+def test_verdict_row_run_at_matches_today():
+    """run_at must equal the today argument passed to gaps.run."""
+    rows = gaps.run([], [], POOLS, ["2026-06"], CFG, today="2026-07-02")
+    r = next(x for x in rows if x["provider"] == "azure")  # sponsored → simplest row
+    assert r["run_at"] == "2026-07-02", f"run_at mismatch: {r['run_at']}"
+
+
+def test_verdict_row_note_is_string():
+    """note must be a string (empty string is fine)."""
+    rows = gaps.run([], [], POOLS, ["2026-06"], CFG, today="2026-07-02")
+    r = next(x for x in rows if x["provider"] == "azure")
+    assert isinstance(r["note"], str), f"note should be str, got {type(r['note'])}"
+
+
+# ── Finding 3: inactive window emits no rows at all ──────────────────────────
+
+def test_before_active_from_emits_no_rows():
+    """An inactive provider in a month before active_from must produce ZERO rows."""
+    rows = gaps.run([], [], [{"pool": "Late", "providers": ["late"], "billing": "monthly",
+                               "active_from": "2026-06"}], ["2026-05"], CFG, today="2026-07-02")
+    late_rows = [x for x in rows if x["provider"] == "late"]
+    assert len(late_rows) == 0, f"expected 0 rows, got {late_rows}"

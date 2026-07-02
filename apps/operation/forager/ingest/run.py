@@ -45,6 +45,8 @@ def main():
                 notes.append(f"wise:{ym}: 0 rows — payments table unchanged")
             st[f"wise:{ym}"] = len(rows)
     except Exception as e:
+        # Tradeoff: reconciliation still runs against whatever payments are already in the table;
+        # verdicts may be stale for failed months but will self-heal on the next successful run.
         notes.append(f"wise FAILED, months kept: {e}")
 
     # 3. Gaps / reconciliation — read facts back, run pure engine, write result

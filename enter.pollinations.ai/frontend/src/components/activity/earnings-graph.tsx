@@ -88,10 +88,6 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period }) => {
             granularity: period.granularity,
             period: period.period,
         });
-        const selectedEntityIds = [...selectedAppKeyIds, ...selectedModelIds];
-        if (selectedEntityIds.length > 0) {
-            params.set("entity_ids", selectedEntityIds.join(","));
-        }
 
         const anchor = document.createElement("a");
         anchor.href = `/api/account/earnings?${params.toString()}`;

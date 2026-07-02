@@ -438,10 +438,6 @@ const earningsTransactionsQuerySchema = usageQuerySchema.omit({
     models: true,
 });
 
-const earningsQuerySchema = usageDailyQuerySchema.extend({
-    entity_ids: commaSeparatedQueryList,
-});
-
 type DailyUsageRecord = {
     date: string;
     api_key_id: string;
@@ -1592,7 +1588,7 @@ export const accountRoutes = new Hono<Env>()
                 },
             },
         }),
-        validator("query", earningsQuerySchema),
+        validator("query", usageDailyQuerySchema),
         async (c) => {
             const log = c.get("log").getChild("earnings");
 
@@ -1605,17 +1601,8 @@ export const accountRoutes = new Hono<Env>()
 
             requireUsagePermission(apiKey);
 
-            const {
-                format,
-                days,
-                granularity,
-                period,
-                api_key_ids: apiKeyIds,
-                entity_ids: entityIds,
-            } = c.req.valid("query");
+            const { format, days, granularity, period } = c.req.valid("query");
             const grain = granularity === "day" ? "hour" : "day";
-            const selectedEntityIds =
-                entityIds.length > 0 ? entityIds : apiKeyIds;
             const { userId: devUserId, overridden: devUserOverridden } =
                 resolveUsageTargetUserId(c.env, user.id, apiKey);
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
@@ -1627,7 +1614,7 @@ export const accountRoutes = new Hono<Env>()
                 : `earnings:v9:${devUserId}`;
             const periodCacheKey =
                 granularity && period ? `${granularity}:${period}` : `${days}d`;
-            const cacheKey = `${cacheKeyPrefix}:${periodCacheKey}:grain:${grain}:${selectedEntityIds.length > 0 ? `entities:${selectedEntityIds.join(",")}` : "all"}`;
+            const cacheKey = `${cacheKeyPrefix}:${periodCacheKey}:grain:${grain}`;
             const filenamePeriod = usageWindowFilenamePart(days, {
                 granularity,
                 period,
@@ -1669,10 +1656,6 @@ export const accountRoutes = new Hono<Env>()
                             since: window.since,
                             until: window.until,
                             grain,
-                            entity_ids:
-                                selectedEntityIds.length > 0
-                                    ? selectedEntityIds.join(",")
-                                    : undefined,
                         },
                     );
                     const daily = rows.filter((r) => r.date !== "");

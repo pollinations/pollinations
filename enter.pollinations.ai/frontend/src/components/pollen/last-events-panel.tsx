@@ -18,7 +18,6 @@ import { formatActivityPollenThreshold } from "../activity/format-activity-polle
 import type { ApiKey } from "../keys";
 
 const PAGE_SIZE = 10;
-const FETCH_LIMIT = PAGE_SIZE + 1;
 const RECENT_WINDOW_DAYS = 90;
 const TABLE_HEADER_CELL_CLASS = "px-2 py-1.5";
 const TABLE_CELL_CLASS = "px-2 py-1.5 text-xs";
@@ -56,39 +55,11 @@ type LastEvent = {
     pollen: number;
 };
 
-type EventCursor = {
-    timestamp: string;
-    eventId: string;
-};
-
-type EventStreamState = {
-    nextCursor: EventCursor | null;
-    hasMore: boolean;
-};
-
 type FetchState = {
     rows: LastEvent[];
-    visibleCount: number;
+    hasMore: boolean;
     loading: boolean;
-    loadingMore: boolean;
     error: string | null;
-    usage: EventStreamState;
-    earnings: EventStreamState;
-};
-
-const INITIAL_STREAM_STATE: EventStreamState = {
-    nextCursor: null,
-    hasMore: true,
-};
-
-const INITIAL_STATE: FetchState = {
-    rows: [],
-    visibleCount: PAGE_SIZE,
-    loading: true,
-    loadingMore: false,
-    error: null,
-    usage: INITIAL_STREAM_STATE,
-    earnings: INITIAL_STREAM_STATE,
 };
 
 function parseTimestamp(value: string): Date {
@@ -217,199 +188,61 @@ function sortLastEvents(events: LastEvent[]): LastEvent[] {
     });
 }
 
-function eventCursorFromRecord(
-    row: UsageEventRecord | EarningsEventRecord,
-): EventCursor {
-    return {
-        timestamp: row.timestamp,
-        eventId: row.cursor_event_id,
-    };
-}
-
-function eventPageQuery(cursor: EventCursor | null) {
-    const query: {
-        limit: string;
-        days: string;
-        before?: string;
-        before_event_id?: string;
-    } = {
-        limit: FETCH_LIMIT.toString(),
+async function fetchLastEvents(
+    limit: number,
+    lookupKeyName: (id: string | null, fallbackName?: string | null) => string,
+): Promise<{ rows: LastEvent[]; hasMore: boolean }> {
+    const query = {
+        limit: (limit + 1).toString(),
         days: RECENT_WINDOW_DAYS.toString(),
     };
-    if (cursor) {
-        query.before = cursor.timestamp;
-        query.before_event_id = cursor.eventId;
+    const [usageResponse, earningsResponse] = await Promise.all([
+        apiClient.account.usage.$get({ query }),
+        apiClient.account.earnings.transactions.$get({ query }),
+    ]);
+    if (!usageResponse.ok || !earningsResponse.ok) {
+        throw new Error("Failed to load last events");
     }
-    return query;
-}
-
-type StreamPage<T> = {
-    rows: T[];
-    nextCursor: EventCursor | null;
-    hasMore: boolean;
-};
-
-const EMPTY_STREAM_PAGE: StreamPage<never> = {
-    rows: [],
-    nextCursor: null,
-    hasMore: false,
-};
-
-function pageFromRows<T extends UsageEventRecord | EarningsEventRecord>(
-    fetchedRows: T[],
-): StreamPage<T> {
-    const rows = fetchedRows.slice(0, PAGE_SIZE);
-    const hasMore = fetchedRows.length > PAGE_SIZE;
-    const last = rows[rows.length - 1];
-    return {
-        rows,
-        hasMore,
-        nextCursor: hasMore && last ? eventCursorFromRecord(last) : null,
+    const usageData = (await usageResponse.json()) as {
+        usage: UsageEventRecord[];
     };
-}
-
-async function fetchUsageEventsPage(
-    cursor: EventCursor | null,
-): Promise<StreamPage<UsageEventRecord>> {
-    const response = await apiClient.account.usage.$get({
-        query: eventPageQuery(cursor),
-    });
-    if (!response.ok) throw new Error("Failed to load last events");
-    const data = (await response.json()) as { usage: UsageEventRecord[] };
-    return pageFromRows(data.usage);
-}
-
-async function fetchEarningsEventsPage(
-    cursor: EventCursor | null,
-): Promise<StreamPage<EarningsEventRecord>> {
-    const response = await apiClient.account.earnings.transactions.$get({
-        query: eventPageQuery(cursor),
-    });
-    if (!response.ok) throw new Error("Failed to load last events");
-    const data = (await response.json()) as {
+    const earningsData = (await earningsResponse.json()) as {
         transactions: EarningsEventRecord[];
     };
-    return pageFromRows(data.transactions);
+    const merged = mergeLastEvents(
+        usageData.usage,
+        earningsData.transactions,
+        lookupKeyName,
+    );
+    return { rows: merged.slice(0, limit), hasMore: merged.length > limit };
 }
 
 export const LastEventsPanel: FC<{ apiKeys: ApiKey[] }> = ({ apiKeys }) => {
-    const [state, setState] = useState<FetchState>(INITIAL_STATE);
     const lookupKeyName = useMemo(() => buildKeyNameLookup(apiKeys), [apiKeys]);
+    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+    const [state, setState] = useState<FetchState>({
+        rows: [],
+        hasMore: false,
+        loading: true,
+        error: null,
+    });
 
     useEffect(() => {
-        async function loadEvents(): Promise<void> {
-            setState({ ...INITIAL_STATE, loading: true, error: null });
-
-            const [usagePage, earningsPage] = await Promise.all([
-                fetchUsageEventsPage(null),
-                fetchEarningsEventsPage(null),
-            ]);
-
-            setState({
-                rows: mergeLastEvents(
-                    usagePage.rows,
-                    earningsPage.rows,
-                    lookupKeyName,
-                ),
-                visibleCount: PAGE_SIZE,
-                loading: false,
-                loadingMore: false,
-                error: null,
-                usage: {
-                    nextCursor: usagePage.nextCursor,
-                    hasMore: usagePage.hasMore,
-                },
-                earnings: {
-                    nextCursor: earningsPage.nextCursor,
-                    hasMore: earningsPage.hasMore,
-                },
-            });
-        }
-
-        loadEvents().catch(() => {
-            setState({
-                rows: [],
-                visibleCount: PAGE_SIZE,
-                loading: false,
-                loadingMore: false,
-                error: "Failed to load last events",
-                usage: INITIAL_STREAM_STATE,
-                earnings: INITIAL_STREAM_STATE,
-            });
-        });
-    }, [lookupKeyName]);
-
-    async function handleLoadMore(): Promise<void> {
-        if (state.loading || state.loadingMore) return;
-
-        const nextVisibleCount = state.visibleCount + PAGE_SIZE;
-        const hasStreamMore = state.usage.hasMore || state.earnings.hasMore;
-
-        if (!hasStreamMore) {
-            setState((prev) => ({
-                ...prev,
-                visibleCount: nextVisibleCount,
-            }));
-            return;
-        }
-
-        const usageSnapshot = state.usage;
-        const earningsSnapshot = state.earnings;
-
-        setState((prev) => ({
-            ...prev,
-            loadingMore: true,
-            error: null,
-        }));
-
-        try {
-            const [usagePage, earningsPage] = await Promise.all([
-                usageSnapshot.hasMore
-                    ? fetchUsageEventsPage(usageSnapshot.nextCursor)
-                    : Promise.resolve(EMPTY_STREAM_PAGE),
-                earningsSnapshot.hasMore
-                    ? fetchEarningsEventsPage(earningsSnapshot.nextCursor)
-                    : Promise.resolve(EMPTY_STREAM_PAGE),
-            ]);
-
-            const newEvents = mergeLastEvents(
-                usagePage.rows,
-                earningsPage.rows,
-                lookupKeyName,
+        setState((prev) => ({ ...prev, loading: true, error: null }));
+        fetchLastEvents(visibleCount, lookupKeyName)
+            .then(({ rows, hasMore }) =>
+                setState({ rows, hasMore, loading: false, error: null }),
+            )
+            .catch(() =>
+                setState((prev) => ({
+                    ...prev,
+                    loading: false,
+                    error: "Failed to load last events",
+                })),
             );
-            setState((prev) => ({
-                ...prev,
-                rows: sortLastEvents([...prev.rows, ...newEvents]),
-                visibleCount: nextVisibleCount,
-                loadingMore: false,
-                error: null,
-                usage: usageSnapshot.hasMore
-                    ? {
-                          nextCursor: usagePage.nextCursor,
-                          hasMore: usagePage.hasMore,
-                      }
-                    : prev.usage,
-                earnings: earningsSnapshot.hasMore
-                    ? {
-                          nextCursor: earningsPage.nextCursor,
-                          hasMore: earningsPage.hasMore,
-                      }
-                    : prev.earnings,
-            }));
-        } catch {
-            setState((prev) => ({
-                ...prev,
-                loadingMore: false,
-                error: "Failed to load last events",
-            }));
-        }
-    }
+    }, [visibleCount, lookupKeyName]);
 
-    const visibleRows = state.rows.slice(0, state.visibleCount);
-    const canLoadMore =
-        state.rows.length > visibleRows.length ||
-        state.usage.hasMore ||
-        state.earnings.hasMore;
+    const loadingMore = state.loading && state.rows.length > 0;
 
     if (state.loading && state.rows.length === 0) {
         return (
@@ -438,7 +271,7 @@ export const LastEventsPanel: FC<{ apiKeys: ApiKey[] }> = ({ apiKeys }) => {
             )}
             <div className="flex flex-col gap-3">
                 <ul className="flex flex-col gap-2 sm:hidden">
-                    {visibleRows.map((event) => (
+                    {state.rows.map((event) => (
                         <li
                             key={`${event.kind}-${event.id}`}
                             className="flex flex-col gap-1.5 rounded-lg bg-surface-opaque p-3"
@@ -508,7 +341,7 @@ export const LastEventsPanel: FC<{ apiKeys: ApiKey[] }> = ({ apiKeys }) => {
                             </TableRow>
                         </TableHead>
                         <TableBody className="divide-divider/70">
-                            {visibleRows.map((event) => (
+                            {state.rows.map((event) => (
                                 <TableRow key={`${event.kind}-${event.id}`}>
                                     <TableCell
                                         numeric
@@ -563,18 +396,20 @@ export const LastEventsPanel: FC<{ apiKeys: ApiKey[] }> = ({ apiKeys }) => {
                     <p className="flex items-start gap-1.5">
                         <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
-                            Showing {visibleRows.length} recent event
-                            {visibleRows.length === 1 ? "" : "s"}.
+                            Showing {state.rows.length} recent event
+                            {state.rows.length === 1 ? "" : "s"}.
                         </span>
                     </p>
-                    {canLoadMore && (
+                    {state.hasMore && (
                         <Button
                             as="button"
-                            onClick={handleLoadMore}
-                            disabled={state.loadingMore}
+                            onClick={() =>
+                                setVisibleCount((count) => count + PAGE_SIZE)
+                            }
+                            disabled={state.loading}
                             className="self-start sm:self-auto"
                         >
-                            {state.loadingMore ? "Loading…" : "Load more"}
+                            {loadingMore ? "Loading…" : "Load more"}
                         </Button>
                     )}
                 </div>

@@ -4,80 +4,12 @@ DESCRIPTION >
 
 TOKEN "tinybird_read" READ
 
-NODE app_labels
-SQL >
-    %
-    SELECT id AS app_key_id, nullIf(nullIf(name, ''), 'undefined') AS app_name
-    FROM d1_apikey
-    WHERE synced_at = (SELECT max(synced_at) FROM d1_apikey)
-
-NODE community_model_labels
-SQL >
-    %
-    SELECT
-        concat(u.github_username, '/', cm.name) AS entity_id,
-        coalesce(nullIf(cm.name, ''), concat(u.github_username, '/', cm.name)) AS entity_name
-    FROM d1_community_model cm
-    LEFT JOIN d1_user u ON cm.owner_user_id = u.id
-    WHERE cm.synced_at = (SELECT max(synced_at) FROM d1_community_model)
-      AND u.synced_at = (SELECT max(synced_at) FROM d1_user)
-      AND u.github_username != ''
-
-NODE earnings_events
-SQL >
-    %
-    SELECT
-        ae.timestamp AS timestamp,
-        ae.event_id as cursor_event_id,
-        ae.type AS type,
-        ae.source AS source,
-        ae.entity_id AS entity_id,
-        coalesce(
-            nullIf(
-                if(ae.source = 'byop_markup', al.app_name, cml.entity_name),
-                ''
-            ),
-            nullIf(nullIf(ae.entity_name, ''), 'undefined'),
-            ae.entity_id
-        ) AS entity_name,
-        ae.app_key_id AS app_key_id,
-        coalesce(al.app_name, nullIf(nullIf(ae.app_name, ''), 'undefined'), ae.app_key_id) AS app_name,
-        ae.payer_user_id AS payer_user_id,
-        ae.model AS model,
-        ae.meter_source AS meter_source,
-        ae.baseline_price AS baseline_price,
-        ae.pollen_earned AS pollen_earned,
-        ae.cost_usd AS cost_usd,
-        if(ae.source = 'byop_markup', ae.reward_rate, toFloat64(0)) AS markup_rate,
-        ae.response_time_ms AS response_time_ms
-    FROM activity_earnings_events ae
-    LEFT JOIN app_labels al ON ae.app_key_id = al.app_key_id
-    LEFT JOIN community_model_labels cml
-        ON ae.source = 'community_model'
-       AND ae.entity_id = cml.entity_id
-    WHERE
-        ae.dev_user_id = {{ String(dev_user_id, '') }}
-        {% if defined(since) %} AND ae.timestamp >= {{ DateTime(since) }}
-        {% else %} AND ae.timestamp >= now() - INTERVAL 30 DAY
-        {% end %}
-        {% if defined(until) %} AND ae.timestamp < {{ DateTime(until) }} {% end %}
-        {% if defined(before) and defined(before_event_id) %}
-            AND (
-                ae.timestamp < {{ DateTime(before) }}
-                OR (
-                    ae.timestamp = {{ DateTime(before) }}
-                    AND ae.event_id < {{ String(before_event_id) }}
-                )
-            )
-        {% elif defined(before) %} AND ae.timestamp < {{ DateTime(before) }}
-        {% end %}
-
 NODE activity_earnings_transactions_node
 SQL >
     %
     SELECT
         timestamp,
-        cursor_event_id,
+        event_id as cursor_event_id,
         type,
         source,
         entity_id,
@@ -90,9 +22,25 @@ SQL >
         baseline_price,
         pollen_earned,
         cost_usd,
-        markup_rate,
+        if(source = 'byop_markup', reward_rate, toFloat64(0)) AS markup_rate,
         response_time_ms
-    FROM earnings_events
+    FROM activity_earnings_events
+    WHERE
+        dev_user_id = {{ String(dev_user_id, '') }}
+        {% if defined(since) %} AND timestamp >= {{ DateTime(since) }}
+        {% else %} AND timestamp >= now() - INTERVAL 30 DAY
+        {% end %}
+        {% if defined(until) %} AND timestamp < {{ DateTime(until) }} {% end %}
+        {% if defined(before) and defined(before_event_id) %}
+            AND (
+                timestamp < {{ DateTime(before) }}
+                OR (
+                    timestamp = {{ DateTime(before) }}
+                    AND event_id < {{ String(before_event_id) }}
+                )
+            )
+        {% elif defined(before) %} AND timestamp < {{ DateTime(before) }}
+        {% end %}
     ORDER BY timestamp DESC, cursor_event_id DESC
     LIMIT {{ Int32(limit, 100) }}
 

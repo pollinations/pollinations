@@ -31,6 +31,7 @@ curl https://gen.pollinations.ai/v1/models \
 
 - [🚀 Getting Started](#-getting-started)
 - [🔐 Authentication](#-authentication)
+- [🔓 Sign in with Pollinations (OAuth 2.1)](#-sign-in-with-pollinations-oauth-21)
 - [🧪 Use any OpenAI SDK](#-use-any-openai-sdk)
 - [🌊 Streaming chat completions](#-streaming-chat-completions)
 - [🖼️ Vision: passing images into chat](#-vision-passing-images-into-chat)
@@ -79,6 +80,38 @@ The header is preferred for everything except browser flows that can't set custo
 | Everything else | Bearer key required unless the endpoint documents `?key=` support |
 
 `401 UNAUTHORIZED` always means key missing or invalid. `402 PAYMENT_REQUIRED` means the key authenticated but the account or per-key budget is exhausted — see [Error Responses](#-error-responses).
+
+## 🔓 Sign in with Pollinations (OAuth 2.1)
+
+Third-party apps can obtain an API key on behalf of a Pollinations user via the OAuth 2.1 authorization-code flow with PKCE (S256), or the device flow (RFC 8628) for CLIs. All endpoints are discoverable via RFC 8414 metadata — resolve them from there rather than hardcoding:
+
+```
+GET https://enter.pollinations.ai/.well-known/oauth-authorization-server
+```
+
+**Register a client:** create a **publishable App Key** (`pk_…`) at [enter.pollinations.ai](https://enter.pollinations.ai) and add your callback URL to its **redirect URIs**. The `pk_` key is your `client_id`. Clients are public (`token_endpoint_auth_methods_supported: ["none"]`) — no client secret.
+
+**Authorization request** (endpoints from discovery):
+
+```
+GET /authorize?response_type=code&client_id=pk_…&redirect_uri=…&scope=profile&state=…&code_challenge=…&code_challenge_method=S256
+```
+
+The user signs in, reviews the requested scopes plus a budget and expiry for the key, and approves. The callback receives `?code=…&state=…` (or `?error=access_denied`). Requirements: `redirect_uri` must exactly match a registered URI (loopback `http://localhost` matches any port), and only `code_challenge_method=S256` is accepted.
+
+**Token exchange** (single-use code, expires after 10 minutes):
+
+```bash
+curl -X POST https://enter.pollinations.ai/api/oauth/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=authorization_code&code=…&client_id=pk_…&code_verifier=…"
+```
+
+The response's `access_token` is an opaque `sk_` API key bound to the budget, expiry, and scopes the user approved — use it as a normal bearer key against `gen.pollinations.ai`. `scope` echoes what the user actually granted (it may be narrower than requested). There are no refresh tokens; re-run the flow when the key expires.
+
+**Scopes** (`scopes_supported`): `profile` (name + email), `usage` (account balance + usage), `keys` (account admin — create/list/revoke keys). Generation needs no scope; it is bounded by the user-approved budget. `GET /api/oauth/userinfo` returns an OIDC-shaped profile for the bearer key.
+
+**Revocation:** issued keys appear in the user's dashboard like any other API key and can be edited or revoked there at any time; revocation is immediate. There is no RFC 7009 endpoint yet — a client that wants to "log out" should discard the key.
 
 ## 🧪 Use any OpenAI SDK
 

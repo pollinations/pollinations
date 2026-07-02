@@ -159,7 +159,10 @@ describe("POST /api/oauth/token (authorization_code + PKCE)", () => {
         expect(retryBody.error).toBe("invalid_grant");
     });
 
-    test("client_id mismatch returns invalid_client", async () => {
+    test("client_id mismatch returns invalid_grant", async () => {
+        // Public clients don't authenticate at the token endpoint, so a code
+        // issued to another client is a grant error (RFC 6749 §5.2), not
+        // invalid_client.
         const code = crypto.randomUUID();
         await putCode(code);
         const res = await SELF.fetch(
@@ -169,9 +172,9 @@ describe("POST /api/oauth/token (authorization_code + PKCE)", () => {
                 client_id: "pk_other_client",
             }),
         );
-        expect(res.status).toBe(401);
+        expect(res.status).toBe(400);
         const body = (await res.json()) as { error: string };
-        expect(body.error).toBe("invalid_client");
+        expect(body.error).toBe("invalid_grant");
     });
 
     test("redirect_uri mismatch returns invalid_grant", async () => {

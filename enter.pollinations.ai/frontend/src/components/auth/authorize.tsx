@@ -223,6 +223,16 @@ export function Authorize() {
                 return;
             }
 
+            // The legacy fragment flow is keyed on the *absence* of
+            // response_type; an explicit unknown value must not silently
+            // alias it (RFC 6749 §4.1.2.1 unsupported_response_type).
+            if (response_type && response_type !== "code") {
+                setError(
+                    'Unsupported response_type — only "code" is supported.',
+                );
+                return;
+            }
+
             // Code-flow front door (OAuth 2.1): PKCE and a registered client
             // are mandatory. Errors render locally — error params are never
             // redirected to a redirect_uri that hasn't been validated.
@@ -390,24 +400,30 @@ export function Authorize() {
                             "Missing client_id or PKCE code_challenge",
                         );
                     }
-                    const res = await apiClient.oauth.code.$post({
-                        json: {
-                            apiKey: key,
-                            clientId: app_key,
-                            redirectUri: redirect_url,
-                            // "" (requested but narrowed to zero) is distinct
-                            // from undefined (nothing requested) — RFC 6749
-                            // §5.1 needs the token response to echo the former
-                            scope: requestedScopes.size
-                                ? grantedAccountPermissions.join(" ")
-                                : undefined,
-                            codeChallenge: code_challenge,
-                            codeChallengeMethod: "S256",
-                            expiresIn,
-                        },
-                    });
-                    if (!res.ok) {
-                        const data = (await res.json().catch(() => null)) as {
+                    const res = await apiClient.oauth.code
+                        .$post({
+                            json: {
+                                apiKey: key,
+                                clientId: app_key,
+                                redirectUri: redirect_url,
+                                // "" (requested but narrowed to zero) is
+                                // distinct from undefined (nothing requested)
+                                // — RFC 6749 §5.1 needs the token response to
+                                // echo the former
+                                scope: requestedScopes.size
+                                    ? grantedAccountPermissions.join(" ")
+                                    : undefined,
+                                codeChallenge: code_challenge,
+                                codeChallengeMethod: "S256",
+                                expiresIn,
+                            },
+                        })
+                        .catch(() => null);
+                    if (!res || !res.ok) {
+                        // The key was minted but can't be delivered — don't
+                        // leave an active orphan in the account.
+                        authClient.apiKey.delete({ keyId: id }).catch(() => {});
+                        const data = (await res?.json().catch(() => null)) as {
                             message?: string;
                             error?: { message?: string };
                         } | null;

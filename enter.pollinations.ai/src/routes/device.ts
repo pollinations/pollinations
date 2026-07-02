@@ -59,6 +59,25 @@ function generateUserCode(length: number): string {
 }
 
 /**
+ * OAuth-style requests are form-encoded on the wire (RFC 6749 §3.2,
+ * RFC 8628 §3.1); JSON is accepted for the pre-discovery clients that have
+ * always sent it — including without a content-type header.
+ */
+export async function parseFormOrJsonBody(
+    c: Context<Env>,
+): Promise<Record<string, string>> {
+    const contentType = c.req.header("content-type") ?? "";
+    const body = contentType.includes("form")
+        ? await c.req.parseBody().catch(() => ({}))
+        : await c.req.json<Record<string, unknown>>().catch(() => ({}));
+    return Object.fromEntries(
+        Object.entries(body).filter(
+            (entry): entry is [string, string] => typeof entry[1] === "string",
+        ),
+    );
+}
+
+/**
  * Device Authorization Grant (RFC 8628).
  * All endpoints live under /api/device/*.
  *
@@ -70,12 +89,7 @@ function generateUserCode(length: number): string {
  */
 export const deviceRoutes = new Hono<Env>()
     .post("/code", async (c) => {
-        const body = await c.req
-            .json<{
-                client_id?: string;
-                scope?: string;
-            }>()
-            .catch(() => ({}) as { client_id?: string; scope?: string });
+        const body = await parseFormOrJsonBody(c);
 
         const deviceCode = generateCode(DEVICE_CODE_LENGTH);
         const userCode = generateUserCode(USER_CODE_LENGTH);

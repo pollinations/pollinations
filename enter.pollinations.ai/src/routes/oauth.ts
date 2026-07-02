@@ -14,6 +14,7 @@ import {
     type DeviceTokenRequest,
     exchangeDeviceCode,
     handleUserinfo,
+    parseFormOrJsonBody,
 } from "./device.ts";
 import { getRedirectUris, parseMetadata } from "./metadata-utils.ts";
 
@@ -56,33 +57,6 @@ async function verifyPkceS256(
         .replace(/\//g, "_")
         .replace(/=+$/, "");
     return computed === challenge;
-}
-
-/**
- * Token requests are form-encoded per RFC 6749 §3.2; JSON is accepted as a
- * convenience (the device flow has always been JSON-only).
- */
-async function parseTokenRequest(
-    c: Context<Env>,
-): Promise<Record<string, string>> {
-    const contentType = c.req.header("content-type") ?? "";
-    if (contentType.includes("application/json")) {
-        const body = await c.req
-            .json<Record<string, unknown>>()
-            .catch(() => ({}));
-        return Object.fromEntries(
-            Object.entries(body).filter(
-                (entry): entry is [string, string] =>
-                    typeof entry[1] === "string",
-            ),
-        );
-    }
-    const body = await c.req.parseBody().catch(() => ({}));
-    return Object.fromEntries(
-        Object.entries(body).filter(
-            (entry): entry is [string, string] => typeof entry[1] === "string",
-        ),
-    );
 }
 
 function tokenError(
@@ -179,7 +153,7 @@ export const oauthRoutes = new Hono<Env>()
         // including the device grant delegated below (its own legacy
         // /api/device/token endpoint is left byte-identical).
         c.header("Cache-Control", "no-store");
-        const body = await parseTokenRequest(c);
+        const body = await parseFormOrJsonBody(c);
 
         if (body.grant_type === DEVICE_CODE_GRANT) {
             return await exchangeDeviceCode(c, body as DeviceTokenRequest);
@@ -213,7 +187,14 @@ export const oauthRoutes = new Hono<Env>()
         await c.env.KV.delete(kvKey);
 
         if (body.client_id !== stored.clientId) {
-            return tokenError(c, "invalid_client", "client_id mismatch", 401);
+            // Public clients never authenticate here (token auth "none"), so
+            // a code issued to another client is a grant error, not a
+            // client-authentication failure (RFC 6749 §5.2).
+            return tokenError(
+                c,
+                "invalid_grant",
+                "Code was issued to a different client_id.",
+            );
         }
         // redirect_uri is optional under OAuth 2.1 (PKCE binds the request),
         // but when present it must match the authorization request exactly.

@@ -1,184 +1,188 @@
 # Agent Guidelines for pollinations.ai
 
-**pollinations.ai** — plataforma open-source de IA generativa (Berlín) que provee APIs unificadas de texto, imagen, video, audio y voz en tiempo real. Sirve ~2.2M req/día a 40K+ usuarios y 500+ proyectos comunitarios. Procesa ~280M req/mes, con ~1,340 RPM en texto y ~441 img/min en imagen/video.
+**pollinations.ai** — Open-source generative AI platform (Berlin) providing unified APIs for text, image, video, audio, and real-time voice. Serves ~2.2M requests/day to 40K+ users and 500+ community projects. Processes ~280M requests/month, with ~1,340 RPM for text and ~441 images/min for image/video.
 
 ---
 
-## 🏗️ Estructura del Monorepo
+## 🏗️ Monorepo Structure
 
 ```
-pollinations/                          # npm workspaces (raíz)
-├── enter.pollinations.ai/             # API Gateway — auth, billing, D1 SQLite, TinyBird
-│   ├── src/                           # Hono + Cloudflare Worker + Vite SPA
-│   ├── frontend/                      # React SPA (Vite, TanStack Router)
-│   ├── secrets/                       # Cifrado SOPS+AGE (dev/staging/prod)
-│   └── observability/                 # Pipes TinyBird (ClickHouse)
-├── gen.pollinations.ai/               # Edge Router — texto, imagen, video, audio
-│   ├── src/
-│   │   ├── image/                     # Handlers + dispatch a GPUs (Vast/io.net/Modal)
-│   │   ├── text/                      # Portkey multi-provider (25+ modelos)
-│   │   │   └── configs/
-│   │   │       ├── modelConfigs.ts    # Config de modelos de texto
-│   │   │       └── providerConfigs.ts # Config de providers
-│   │   └── audio/                     # TTS (ElevenLabs) y música (Suno)
-│   └── scripts/                       # Push secrets, seed, generación de API docs
-├── pollinations.ai/                   # Frontend principal (React 18 + Vite + Tailwind 3)
+pollinations/ # npm workspaces (root)
+├── enter.pollinations.ai/ # API Gateway — auth, billing, D1 SQLite, TinyBird
+│ ├── src/ # Hono + Cloudflare Worker + Vite SPA
+│ ├── frontend/ # React SPA (Vite, TanStack Router)
+│ ├── secrets/ # Encrypted SOPS+AGE (dev/staging/prod)
+│ └── observability/ # TinyBird Pipes (ClickHouse)
+├── gen.pollinations.ai/ # Edge Router — text, image, video, audio
+│ ├── src/
+│ │ ├── image/ # Handlers + dispatch to GPUs (Vast/io.net/Modal)
+│ │ ├── text/ # Portkey multi-provider (25+ models)
+│ │ │ └── configs/
+│ │ │ ├── modelConfigs.ts # Text model configurations
+│ │ │ └── providerConfigs.ts # Provider configurations
+│ │ └── audio/ # TTS (ElevenLabs) and music (Suno)
+│ └── scripts/ # Push secrets, seed, API docs generation
+├── pollinations.ai/ # Main frontend (React 18 + Vite + Tailwind 3)
 ├── packages/
-│   ├── sdk/                           # @pollinations/sdk — cliente JS + React hooks
-│   ├── ui/                            # @pollinations/ui — componentes compartidos
-│   ├── mcp/                           # @pollinations/mcp — servidor MCP stdio
-│   └── polli-cli/                     # @pollinations/cli — CLI (Commander + chalk + keytar)
-├── shared/                            # Código compartido entre servicios
-│   ├── registry/                      # Registros de modelos (text, image, audio, embeddings, realtime)
-│   │   ├── model-info.ts              # Metadatos de modelos
-│   │   ├── price-helpers.ts           # Helper de precios
-│   │   ├── usage-headers.ts           # Headers de uso
-│   │   └── registry.ts                # Registro central
-│   ├── db/                            # Esquemas Drizzle ORM + better-auth
-│   ├── auth/                          # Lógica de autenticación
-│   └── ip-queue/                      # Rate-limiting por IP (Durable Objects)
-├── apps/                              # Apps comunitarias + APPS.md (source of truth)
-├── social/                            # Automatización Discord/Reddit/GitHub
-├── tools/                             # Utilidades (icons, scripts SOPS, rotación)
-├── assets/                            # Assets estáticos (logos, imágenes)
-├── docs/                              # Documentación adicional
-├── scripts/                           # Scripts CI/extra
-├── media.pollinations.ai/             # Almacenamiento multimedia (SHA-256, 10 MB)
-├── pollinations-myceli-proxy/         # Proxy myceli (experimental)
-├── APIDOCS.md                         # Documentación OpenAPI 3.1 (1496 líneas)
-├── DEVELOP.md                         # Guía de desarrollo + diagramas arquitectura
-├── CONTRIBUTING.md                    # Guía de contribución
-└── biome.jsonc                        # Config Biome (indent 4, comillas dobles)
+│ ├── sdk/ # @pollinations/sdk — JS client + React hooks
+│ ├── ui/ # @pollinations/ui — Shared components
+│ ├── mcp/ # @pollinations/mcp — MCP stdio server
+│ └── polli-cli/ # @pollinations/cli — CLI (Commander + chalk + keytar)
+├── shared/ # Shared code across services
+│ ├── registry/ # Model registries (text, image, audio, embeddings, realtime)
+│ │ ├── model-info.ts # Model metadata
+│ │ ├── price-helpers.ts # Price helpers
+│ │ ├── usage-headers.ts # Usage headers
+│ │ └── registry.ts # Central registry
+│ ├── db/ # Drizzle ORM schemas + better-auth
+│ ├── auth/ # Authentication logic
+│ └── ip-queue/ # Rate-limiting by IP (Durable Objects)
+├── apps/ # Community apps + APPS.md (source of truth)
+├── social/ # Discord/Reddit/GitHub automation
+├── tools/ # Utilities (icons, SOPS scripts, rotation)
+├── assets/ # Static assets (logos, images)
+├── docs/ # Additional documentation
+├── scripts/ # CI/extra scripts
+├── media.pollinations.ai/ # Media storage (SHA-256, 10 MB max)
+├── pollinations-myceli-proxy/ # Myceli proxy (experimental)
+├── APIDOCS.md # OpenAPI 3.1 documentation (1496 lines)
+├── DEVELOP.md # Development guide + architecture diagrams
+├── CONTRIBUTING.md # Contribution guide
+└── biome.jsonc # Biome config (indent 4, double quotes)
 ```
 
-### Servicios Cloudflare Workers
+### Cloudflare Workers Services
 
-| Servicio | Paquete | Puerto | Propósito |
+| Service | Package | Port | Purpose |
 |---|---|---|---|
 | **enter** | `pollinations-enter` | 3000 | Gateway auth + billing + D1 + TinyBird |
-| **gen** | `pollinations-gen` | 8788 | Router edge texto/imagen/video/audio |
-| **media** | `pollinations-media` | - | Upload SHA-256 (10 MB máx) |
+| **gen** | `pollinations-gen` | 8788 | Edge router for text/image/video/audio |
+| **media** | `pollinations-media` | - | SHA-256 upload (10 MB max) |
 | **frontend** | `pollinations.ai` | - | React SPA (Vite + Cloudflare) |
-| **portkey** | `portkey-gateway` | - | Proxy de texto vía Portkey |
+| **portkey** | `portkey-gateway` | - | Text proxy via Portkey |
 
-### Infraestructura
+### Infrastructure
 
-| Recurso | Detalle |
+| Resource | Detail |
 |---|---|
-| **Cloudflare Workers** | CDN, WAF, DDoS — ~280M req/mes |
-| **D1 (SQLite)** | 40K usuarios, auth, keys, balances |
-| **KV** | Stats, deduplicación |
+| **Cloudflare Workers** | CDN, WAF, DDoS — ~280M req/month |
+| **D1 (SQLite)** | 40K users, auth, keys, balances |
+| **KV** | Stats, deduplication |
 | **R2** | 48 TB, 4 buckets (images, text, media, cache) |
-| **Durable Objects** | `PollenRateLimiter` — 10K req/10s por IP |
-| **TinyBird (ClickHouse)** | 10 tablas, 18 pipes API |
-| **Pagos** | Stripe (packs), Polar (suscripciones), NOWPay (crypto) |
-| **Secrets** | SOPS + AGE — 28 secretos en `**/secrets/*.json` |
-| **CI/CD** | 29 workflows GitHub Actions (5 deploys, 7 crons) |
+| **Durable Objects** | `PollenRateLimiter` — 10K req/10s per IP |
+| **TinyBird (ClickHouse)** | 10 tables, 18 API pipes |
+| **Payments** | Stripe (packs), Polar (subscriptions), NOWPay (crypto) |
+| **Secrets** | SOPS + AGE — 28 secrets in `**/secrets/*.json` |
+| **CI/CD** | 29 GitHub Actions workflows (5 deploys, 7 crons) |
 
 ### GPU Self-Hosted
 
-| Proveedor | Hardware | Modelos |
+| Provider | Hardware | Models |
 |---|---|---|
-| **Vast.ai** | ~11× RTX 5090, 4 instancias | Flux Schnell, Z-Image, Sana 0.6B |
-| **io.net** | 8 workers, 5 VMs, 2 GPUs c/u | 4× Flux, 4× Z-Image |
+| **Vast.ai** | ~11× RTX 5090, 4 instances | Flux Schnell, Z-Image, Sana 0.6B |
+| **io.net** | 8 workers, 5 VMs, 2 GPUs each | 4× Flux, 4× Z-Image |
 | **Modal** | H200 serverless | Klein (Flux 4B), LTX-2 Video |
 
 ---
 
 ## 🔐 API Gateway
 
-**Endpoint principal**: `https://gen.pollinations.ai` → deriva a `enter.pollinations.ai` para auth/billing.
+**Primary endpoint**: `https://gen.pollinations.ai` → routes to `enter.pollinations.ai` for auth/billing.
 
-### Tipos de Key
+### Key Types
 
-| Key | Prefijo | Uso | Rate Limits | Estado |
+| Key | Prefix | Usage | Rate Limits | Status |
 |---|---|---|---|---|
-| Publishable | `pk_` | Client-side, demos, prototipos | 1 pollen/IP/hora | ⚠️ Beta |
-| Secret | `sk_` | Server-side | Sin rate limits | Stable |
+| Publishable | `pk_` | Client-side, demos, prototypes | 1 pollen/IP/hour | ⚠️ Beta |
+| Secret | `sk_` | Server-side | No rate limits | Stable |
 
-### Endpoints Rápidos
+### Quick Endpoints
 
 ```bash
-# Imagen
+# Image
 curl "https://gen.pollinations.ai/image/prompt" -H "Authorization: Bearer $KEY"
 
-# Texto (OpenAI-compat)
+# Text (OpenAI-compatible)
 curl -X POST "https://gen.pollinations.ai/v1/chat/completions" \
   -H "Authorization: Bearer $KEY" \
   -d '{"model":"openai","messages":[{"role":"user","content":"Hello"}]}'
 
-# Texto simple (GET)
+# Simple text (GET)
 curl "https://gen.pollinations.ai/text/Hello?key=$KEY"
 
 # Audio TTS
-curl "https://gen.pollinations.ai/audio/Hola?voice=nova&key=$KEY" -o speech.mp3
+curl "https://gen.pollinations.ai/audio/Hello?voice=nova&key=$KEY" -o speech.mp3
 
-# Modelos (sin auth)
+# Models (no auth)
 curl "https://gen.pollinations.ai/v1/models"
 curl "https://gen.pollinations.ai/image/models"
-curl "https://gen.pollinations.ai/v1/models/status"   # Health check (cached 60s)
+curl "https://gen.pollinations.ai/v1/models/status"
+
+# Health check (cached 60s)
 ```
 
-Documentación completa: `APIDOCS.md` (~1500 líneas, OpenAPI 3.1).
+Full documentation: `APIDOCS.md` (~1500 lines, OpenAPI 3.1).
 
-### Autenticación
+### Authentication
 
 - Header: `Authorization: Bearer <key>`
 - Query param (GET): `?key=<key>`
-- Endpoints públicos: `GET /{hash}`, `GET /v1/models`, `GET /image/models`
-- `401` = key missing/invalid · `402` = budget exhausted
+- Public endpoints: `GET /{hash}`, `GET /v1/models`, `GET /image/models`
+- `401` = key missing/invalid
+- `402` = budget exhausted
 
 ---
 
-## 🚀 Desarrollo Local
+## 🚀 Local Development
 
-### Prerrequisitos
+### Prerequisites
 
 - Node.js >= 20
 - [SOPS](https://github.com/getsops/sops) + [age](https://github.com/FiloSottile/age)
 - Wrangler (`npx wrangler`)
-- `SOPS_AGE_KEY_FILE` apuntando a `$HOME/.config/sops/age/keys.txt`
+- `SOPS_AGE_KEY_FILE` pointing to `$HOME/.config/sops/age/keys.txt`
 
-### Comandos
+### Commands
 
 ```bash
-# Instalar todo
+# Install all
 npm run install:all
 
-# Descifrar vars de entorno
+# Decrypt env vars
 cd enter.pollinations.ai && sops --output-type dotenv decrypt secrets/dev.vars.json > .dev.vars
 cd gen.pollinations.ai && sops --output-type dotenv decrypt secrets/env.json > .env
 
-# Desarrollo concurrente (enter:3000 + gen:8788)
+# Concurrent development (enter:3000 + gen:8788)
 npm run dev
 
-# Servicios individuales
-npm run dev:enter     # → localhost:3000 (API en /api/*)
-npm run dev:gen       # → localhost:8788
+# Individual services
+npm run dev:enter  # → localhost:3000 (API at /api/*)
+npm run dev:gen    # → localhost:8788
 
-# Construir SDK + UI (necesario antes del dev)
+# Build SDK + UI (required before dev)
 npm run build:sdk
 
 # Testing
-npm run test          # en cada workspace
-npx vitest run --testNamePattern="nombre"
-npx vitest run test/archivo.test.ts
+npm run test
+# In each workspace
+npx vitest run --testNamePattern="name"
+npx vitest run test/file.test.ts
 
-# Linting/Formato
-npx biome check --write <archivo>
-npm run format:changed   # solo archivos modificados vs origin/main
+# Linting/Format
+npx biome check --write <file>
+npm run format:changed  # Only modified files vs origin/main
 ```
 
-### API Test Local
+### Local API Tests
 
 ```bash
 curl "http://localhost:8788/image/test?model=flux" -H "Authorization: Bearer $TOKEN"
-curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKEN" ...
+curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKEN"
 ```
 
-### Testing por Servicio
+### Testing by Service
 
-| Servicio | Comando | Toolstack |
+| Service | Command | Toolstack |
 |---|---|---|
 | `enter.pollinations.ai` | `npm run test` | Vitest + CF Workers pool + VCR snapshots |
 | `gen.pollinations.ai` | `npm run test` | Vitest + CF Workers pool |
@@ -186,62 +190,62 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 | `packages/sdk` | `npm run test` | Vitest |
 | `packages/polli-cli` | `npm run test` | Vitest |
 
-**Reglas de testing:**
-- **Snapshots (enter)**: VCR-style, modo `replay-or-record` por defecto. Usar `TEST_VCR_MODE=record` para grabar nuevos.
-- **Sin mocks**: Testear código real con imports directos. No crear infraestructura mock.
-- **API keys de test**: `enter.pollinations.ai/.testingtokens`
-- **Producción**: Tests contra `gen.pollinations.ai` real.
-- Ejecutar `npm run decrypt-vars` antes de tests en `enter.pollinations.ai`.
+**Testing Rules:**
+- **Snapshots (enter)**: VCR-style, default `replay-or-record` mode. Use `TEST_VCR_MODE=record` to record new ones.
+- **No mocks**: Test real code with direct imports. Do not create mock infrastructure.
+- **Test API keys**: `enter.pollinations.ai/.testingtokens`
+- **Production**: Tests against real `gen.pollinations.ai`.
+- Run `npm run decrypt-vars` before tests in `enter.pollinations.ai`.
 
 ---
 
-## 📦 Paquetes Publicados (npm)
+## 📦 Published Packages (npm)
 
-| Paquete | Versión | Descripción | Instalación |
+| Package | Version | Description | Installation |
 |---|---|---|---|
-| `@pollinations/sdk` | 5.1.0-alpha.1 | SDK JS/TS + React hooks | `npm i @pollinations/sdk` |
-| `@pollinations/mcp` | 2.3.0 | Servidor MCP (stdio) | `npx @pollinations/mcp` |
+| `@pollinations/sdk` | 5.1.0-alpha.1 | JS/TS SDK + React hooks | `npm i @pollinations/sdk` |
+| `@pollinations/mcp` | 2.3.0 | MCP server (stdio) | `npx @pollinations/mcp` |
 | `@pollinations/cli` | 0.1.6 | CLI (`polli`) | `npx @pollinations/cli` |
 
 ---
 
-## 🧠 Registro de Modelos (`shared/registry/`)
+## 🧠 Model Registry (`shared/registry/`)
 
-| Archivo | Propósito |
+| File | Purpose |
 |---|---|
-| `text.ts` | Modelos de texto (OpenAI, Claude, Gemini, DeepSeek, etc.) |
-| `image.ts` | Modelos de imagen (Flux, GPT Image, Seedream, Kontext, etc.) |
-| `audio.ts` | Modelos de audio (ElevenLabs v3, Suno v4) |
-| `embeddings.ts` | Modelos de embeddings |
-| `realtime.ts` | Modelos de voz en tiempo real |
-| `model-info.ts` | Metadatos compartidos |
-| `price-helpers.ts` | Helper de precios |
-| `usage-headers.ts` | Headers HTTP de uso |
+| `text.ts` | Text models (OpenAI, Claude, Gemini, DeepSeek, etc.) |
+| `image.ts` | Image models (Flux, GPT Image, Seedream, Kontext, etc.) |
+| `audio.ts` | Audio models (ElevenLabs v3, Suno v4) |
+| `embeddings.ts` | Embedding models |
+| `realtime.ts` | Real-time voice models |
+| `model-info.ts` | Shared metadata |
+| `price-helpers.ts` | Price helpers |
+| `usage-headers.ts` | HTTP usage headers |
 
-### Añadir Modelo de Texto
+### Adding a Text Model
 
-1. Config en `gen.pollinations.ai/src/text/configs/modelConfigs.ts`
-2. Entry en `gen.pollinations.ai/src/text/availableModels.ts`
-3. Provider config en `gen.pollinations.ai/src/text/configs/providerConfigs.ts`
+1. Config in `gen.pollinations.ai/src/text/configs/modelConfigs.ts`
+2. Entry in `gen.pollinations.ai/src/text/availableModels.ts`
+3. Provider config in `gen.pollinations.ai/src/text/configs/providerConfigs.ts`
 
-### Añadir Modelo de Imagen
+### Adding an Image Model
 
-1. Handler en `gen.pollinations.ai/src/image/`
-2. Registrar en `shared/registry/image.ts`
+1. Handler in `gen.pollinations.ai/src/image/`
+2. Register in `shared/registry/image.ts`
 
-Siempre actualizar `APIDOCS.md` + registros al agregar modelos.
+Always update `APIDOCS.md` + registries when adding models.
 
 ---
 
-## 🎨 Convenciones de Código
+## 🎨 Code Conventions
 
-### Estilo
+### Style
 
-- **JS/TS moderno**: ES modules (todos los `.js` son ESM)
-- **TypeScript**: Strict mode, tipos significativos, evitar `any`
-- **Formatter**: Biome (indentación 4 espacios, comillas dobles, `quoteProperties: preserve`)
-- **Ejecutar** `npx biome check --write <archivo>` antes de commits
-- **CI**: Biome verifica automáticamente en `biome-check.yml`
+- **Modern JS/TS**: ES modules (all `.js` files are ESM)
+- **TypeScript**: Strict mode, meaningful types, avoid `any`
+- **Formatter**: Biome (4-space indentation, double quotes, `quoteProperties: preserve`)
+- **Run** `npx biome check --write <file>` after edits and before commits
+- **CI**: Biome automatically checks in `biome-check.yml`
 
 ### Commits
 
@@ -254,95 +258,96 @@ docs: update API endpoint references
 refactor: extract auth middleware
 ```
 
-### ⚠️ YAGNI — Crítico
+### ⚠️ YAGNI — Critical
 
-- Solo implementar lo necesario. Eliminar funciones no usadas.
-- Sin abstracciones especulativas, helpers "por si acaso", wrappers preemptivos.
-- Sin fallbacks de backward-compat — mejor romper limpio que inflar.
-- Al cambiar tokens/headers/APIs, actualizar **todos** los consumidores simultáneamente.
-- "Keep it simple" = una función, un precio, una config.
+**Follow YAGNI religiously:**
+- Only implement what is needed now. Remove unused functions.
+- No speculative abstractions, "just in case" helpers, preemptive test utils/wrappers.
+- No backward-compat fallbacks — clean breaks beat bloat.
+- When changing tokens/headers/APIs, update **all** consumers simultaneously.
+- "Keep it simple" = one function, one price, one config. Simplest thing that works.
 
-### Errores Comunes a Evitar
+### Common Mistakes to Avoid
 
-- ❌ No usar `cd` en bash → usar `cwd` parameter
-- ❌ No ejecutar `pytest` → usar `npm run test` o `npx vitest run`
-- ❌ No crear `.md` docs a menos que se solicite
-- ❌ No modificar tests para que pasen → arreglar el código
-- ❌ No exponer `sk_` keys en cliente, repos o URLs públicas
-- ❌ No force-push sin lease
-- ❌ No crear labels ad-hoc en GitHub; verificar labels existentes primero
-- ✅ Siempre usar rutas absolutas
-- ✅ Confirmar branch con `git branch --show-current`
-- ✅ Ejecutar `npm run decrypt-vars` antes de tests en enter
-- ✅ Request PR reviews incluyendo `polly` en un comentario
+- ❌ Don't use `cd` in bash → use `cwd` parameter
+- ❌ Don't run `pytest` → use `npm run test` or `npx vitest run`
+- ❌ Don't create `.md` docs unless requested
+- ❌ Don't modify tests to make them pass → fix the code
+- ❌ Don't expose `sk_` keys in client, repos, or public URLs
+- ❌ Don't force-push without lease
+- ❌ Don't create ad-hoc labels in GitHub; verify existing labels first
+- ✅ Always use absolute paths
+- ✅ Confirm branch with `git branch --show-current`
+- ✅ Run `npm run decrypt-vars` before tests in enter
+- ✅ Request PR reviews by including `polly` in a comment
 
-### Comunicación
+### Communication
 
-- PRs/Issues: bullets, <200 palabras, sin relleno.
-- PRs: `- Adds X`, `- Fix Y`; títulos `fix:`/`feat:`/`Add`; sin marketing.
-- Code reviews: señalar qué mejorar, enlazar líneas específicas.
-- PR descriptions: incluir `Fixes #issue` cuando corresponda.
+- PRs/Issues: bullets, <200 words, no fluff.
+- PRs: `- Adds X`, `- Fix Y`; titles `fix:`/`feat:`/`Add`; no marketing.
+- Code reviews: point out what needs improving; link specific lines.
+- PR descriptions: include `Fixes #issue` when applicable.
 
 ---
 
-## 🔄 Flujo de Trabajo Git
+## 🔄 Git Workflow
 
 ```bash
-# Verificar estado
+# Check status
 git branch --show-current
 git status && git diff HEAD && git log -n 3
 
 # Pre-commit
-npx biome check --write <archivos>
+npx biome check --write <files>
 
-# Commits con atribución
-git add -A && git commit -m "feat: descripción
+# Commits with attribution
+git add -A && git commit -m "feat: description
 
 Co-authored-by: username <user_id+username@users.noreply.github.com>
 Fixes #issue"
 ```
 
 - **"send to git"** = status → diff → branch → commit all → push → PR description
-- Evitar force pushes (`--force`, `--force-with-lease`) — preferir follow-up commits
-- Si PR ya merged, abrir nueva rama/PR para follow-ups
+- Avoid force pushes (`--force`, `--force-with-lease`) — prefer follow-up commits
+- If PR already merged, open a new branch/PR for follow-ups
 
 ---
 
-## 🐦 Tinybird — Despliegue Seguro
+## 🐦 Tinybird — Safe Deployment
 
-**CRÍTICO** — Siempre que se despliegue a Tinybird:
+**CRITICAL — These rules apply whenever deploying to Tinybird:**
 
-1. **Dos workspaces**: `pollinations_enter` (prod) y `pollinations_enter_staging` (staging/dev)
-2. **Staging primero**: desplegar, verificar, luego prod
-3. `tb --cloud deploy --wait` (default = prod; override con `TB_TOKEN=<staging_admin_token>`)
-4. Validar con `tb --cloud deploy --check --wait` primero
-5. **Nunca** `--allow-destructive-operations` sin permiso explícito
-6. **Nunca** `tb push` (deprecated) — usar `tb --cloud deploy --wait`
-7. Ejecutar desde `enter.pollinations.ai/observability`
-8. Verificar consumidores dentro del mismo workspace antes de modificar un pipe
-9. Para rangos grandes: usar `start_date` semana por semana
+1. **Two workspaces**: `pollinations_enter` (prod) and `pollinations_enter_staging` (staging/dev/local). Pipes and datasources must be deployed to **both** — no CI auto-deploy yet, tracked in #11127.
+2. **Staging first**: deploy, verify, then prod.
+3. `tb --cloud deploy --wait` (default = prod; override with `TB_TOKEN=<staging_admin_token>` for staging).
+4. Validate first: `tb --cloud deploy --check --wait` (against both workspaces if either schema is in doubt).
+5. **Never** `--allow-destructive-operations` without explicit permission.
+6. **Never** `tb push` (deprecated) — use `tb --cloud deploy --wait`.
+7. Run from `enter.pollinations.ai/observability`.
+8. Verify all consumers within a workspace before modifying a pipe (pipes are NOT cross-workspace; each workspace has its own copy).
+9. For large time ranges: use `start_date` parameter week-by-week.
 
 ---
 
-## 🎯 Submisión de Apps (TIER-APP)
+## 🎯 App Submission (TIER-APP)
 
-**Flujo**: issue con `TIER-APP` → workflow valida + AI genera preview → bot postea `APP_REVIEW_DATA` JSON + label `TIER-APP-REVIEW` → maintainer agrega `TIER-APP-APPROVED` → workflow añade fila a `apps/APPS.md`, abre PR con auto-merge, cierra issue con `Fixes #NNN`.
+**Flow**: issue with `TIER-APP` → workflow validates + AI generates preview → bot posts `APP_REVIEW_DATA` JSON + labels `TIER-APP-REVIEW` → maintainer adds `TIER-APP-APPROVED` → workflow prepends row to `apps/APPS.md`, opens PR with auto-merge, closes issue via `Fixes #NNN`.
 
 **Labels**: `TIER-APP` → `TIER-APP-REVIEW` → `TIER-APP-APPROVED` | `TIER-APP-REJECTED` | `TIER-APP-INCOMPLETE`
 
-**Source of truth**: `apps/APPS.md`. Ediciones manuales → editar `apps/APPS.md`, ejecutar `node .github/scripts/app-update-greenhouse.js`.
+**Source of truth**: `apps/APPS.md`. Manual edits: edit `apps/APPS.md`, run `node .github/scripts/app-update-greenhouse.js`.
 
-**Columnas**: `Emoji | Name | Web_URL | Description (~80 chars) | Language (ISO code) | Category | Platform | GitHub (@user) | GitHub_ID | Repo | Stars (⭐N) | Discord | Other | Submitted_Date | Issue_URL (#N) | Approved_Date`
+**Columns**: `Emoji | Name | Web_URL | Description (~80 chars) | Language (ISO code, no flags) | Category | Platform | GitHub (@user) | GitHub_ID | Repo | Stars (⭐N) | Discord | Other | Submitted_Date (issue created) | Issue_URL (#N) | Approved_Date (PR merged)`.
 
-**Plataformas** (auto-detectadas): `web`, `android`, `ios`, `windows`, `macos`, `desktop`, `cli`, `discord`, `telegram`, `whatsapp`, `library`, `browser-ext`, `roblox`, `wordpress`, `api`
+**Platforms** (auto-detected; comma-separated for multi): `web` (default w/ URL), `android`, `ios` (App Store or routinehub.co), `windows`, `macos`, `desktop` (cross-platform), `cli`, `discord`, `telegram`, `whatsapp`, `library` (npm/PyPI/SDK), `browser-ext`, `roblox`, `wordpress`, `api` (default w/o URL).
 
-**Categorías**: `image`, `video_audio`, `writing`, `chat`, `games`, `learn`, `bots`, `build`, `business`
+**Categories**: `image`, `video_audio`, `writing`, `chat`, `games`, `learn`, `bots`, `build`, `business`.
 
 ---
 
-## 📋 GitHub Actions — Workflows Clave
+## 📋 GitHub Actions — Key Workflows
 
-| Workflow | Propósito |
+| Workflow | Purpose |
 |---|---|
 | `deploy-enter-cloudflare.yml` | Deploy enter.pollinations.ai |
 | `deploy-gen-cloudflare.yml` | Deploy gen.pollinations.ai |
@@ -350,15 +355,15 @@ Fixes #issue"
 | `deploy-pollinations-ai-cloudflare.yml` | Deploy frontend pollinations.ai |
 | `deploy-portkey-gateway.yml` | Deploy portkey gateway |
 | `deploy-polly-bot.yml` | Deploy Polly bot |
-| `publish-packages.yml` | Publicar paquetes npm |
-| `app-review-submission.yml` | Review de apps comunitarias |
+| `publish-packages.yml` | Publish npm packages |
+| `app-review-submission.yml` | Community apps review |
 | `biome-check.yml` | Linting/format checking |
 | `codeql.yml` | CodeQL security analysis |
-| `d1-tinybird-sync.yml` | Sincronizar D1 → TinyBird |
-| `docs-regenerate-apidocs.yml` | Regenerar APIDOCS.md |
-| `readme-daily-update.yml` | Actualizar README diario |
-| `issue-polly-auto-fix.yml` | Auto-fix de issues con Polly |
-| `tier-progression-spore-to-seed.yml` | Progresión de tiers |
+| `d1-tinybird-sync.yml` | Sync D1 → TinyBird |
+| `docs-regenerate-apidocs.yml` | Regenerate APIDOCS.md |
+| `readme-daily-update.yml` | Daily README update |
+| `issue-polly-auto-fix.yml` | Auto-fix issues with Polly |
+| `tier-progression-spore-to-seed.yml` | Tier progression |
 
 ---
 
@@ -370,20 +375,19 @@ Guild ID: `885844321461485618` — https://discord.gg/pollinations-ai-8858443214
 
 ## 💾 Compact Instructions
 
-Preservar durante compactación:
-- Archivos modificados + números de línea
-- Todos los diffs/detalles de implementación
-- Output de tests + errores + resultados de comandos
-- Plan completo + progreso + pendientes
-- Preferencias/correcciones del usuario esta sesión
-- Decisiones arquitectónicas + rationale
+Preserve during compaction:
+- Modified files + line numbers
+- All diffs/implementation details
+- Test output + errors + command results
+- Full plan + progress + pending
+- User preferences/corrections this session
+- Architectural decisions + rationale
 
 ---
 
-## 📜 Licencia
+## 📜 License
 
-MIT — Ver `LICENSE`.
+MIT — See `LICENSE`.
 
 ---
-
-*Última actualización: 2026-06-29 | Próxima revisión: 2026-07-29*
+*Last updated: 2026-07-02 | Next review: 2026-08-02*

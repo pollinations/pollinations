@@ -1,0 +1,34 @@
+{
+  "pr_number": 12177,
+  "title": "feat: allowlist Catniti + Bakhshi7889 for community models",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12177",
+  "merged_at": "2026-07-02T14:25:26Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Adds Catniti and Bakhshi7889 to COMMUNITY_MODEL_ALLOWED_GITHUB_IDS\n- Both requested access in the community-models Discord thread",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Keys to the model garden",
+    "blurb": "Catniti and Bakhshi7889 just got access to the community models allowlist. Time to see what new AI flavors they plant in the hive.",
+    "summary": "Added GitHub users Catniti and Bakhshi7889 to the community models allowlist.",
+    "impact": "These two creators can now deploy and share their custom models with the rest of the community via the API.",
+    "keywords": [
+      "community",
+      "models",
+      "allowlist",
+      "creators"
+    ],
+    "visual_concept": "Polly the bee welcoming two new friends into a digital garden, handing them glowing seeds to plant their own models.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny gardener's hat, handing glowing digital seeds to two friendly pixel avatars in a digital garden. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel lavender gradient background. Polly and the avatars are rendered with chunky retro sprites, surrounded by code-plants sprouting from the soil. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-02/PR-12177.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny gardener's hat, handing glowing digital seeds to two friendly pixel avatars in a digital garden. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel lavender gradient background. Polly and the avatars are rendered with chunky retro sprites, surrounded by code-plants sprouting from the soil. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-02T14:26:41.959703+00:00"
+}

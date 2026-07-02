@@ -70,7 +70,7 @@ RESEND_API_KEY=your-resend-api-key-here
 
 # Email Templates
 EMAIL_FROM_NAME=Pollinations AI
-EMAIL_FROM_ADDRESS=noreply@pollinations.ai
+EMAIL_FROM_ADDRESS=your-sender-email@yourdomain.com
 ```
 
 ### 3. Running the Service
@@ -315,7 +315,7 @@ Templates support variable substitution using `{{variableName}}` syntax.
 
 #### Optional
 - `EMAIL_FROM_NAME`: Default sender name (default: "Pollinations AI")
-- `EMAIL_FROM_ADDRESS`: Default sender email (default: "noreply@pollinations.ai")
+- `EMAIL_FROM_ADDRESS`: Default sender email (default: "sender@example.com")
 
 ### API Response Format
 
@@ -415,4 +415,3 @@ export default async function handler(req, res) {
 - **Node.js**: 18.0.0 or higher
 - **npm**: 8.0.0 or higher
 - **Docker**: 20.0.0 or higher (optional)
-

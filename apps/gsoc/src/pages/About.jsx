@@ -689,48 +689,6 @@ const AboutPage = () => {
                     </Stack>
                 </Box>
 
-                {/* Contact */}
-                <Box sx={{ mb: 8, display: "flex", justifyContent: "center" }}>
-                    <Card
-                        elevation={0}
-                        sx={{
-                            background:
-                                "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
-                            border: `1px solid ${colors.border.light}`,
-                            borderRadius: "16px",
-                            p: 4,
-                            textAlign: "center",
-                            width: "fit-content",
-                        }}
-                    >
-                        <Typography
-                            variant="h6"
-                            sx={{ fontWeight: 600, color: "#fff", mb: 2 }}
-                        >
-                            Get in Touch
-                        </Typography>
-                        <Typography
-                            variant="body1"
-                            sx={{ color: "rgba(255,255,255,0.8)", mb: 1 }}
-                        >
-                            <strong>Elliot</strong> — Organization Admin
-                        </Typography>
-                        <Typography
-                            component="a"
-                            href="mailto:elliot@pollinations.ai"
-                            sx={{
-                                color: colors.lime.main,
-                                fontFamily: "monospace",
-                                fontSize: "1.1rem",
-                                textDecoration: "none",
-                                "&:hover": { color: colors.lime.light },
-                            }}
-                        >
-                            elliot@pollinations.ai
-                        </Typography>
-                    </Card>
-                </Box>
-
                 {/* Final CTA */}
                 <Box sx={{ textAlign: "center" }}>
                     <motion.div

@@ -52,7 +52,7 @@ enforcement action.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the **Core Team** members responsible for enforcement at gsoc@pollinations.ai.
+reported privately to the **Core Team** members responsible for enforcement.
 All complaints will be reviewed and investigated promptly and fairly.
 
 All **Core Team** members are obligated to respect the privacy and security of the

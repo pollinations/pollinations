@@ -30,8 +30,8 @@ Before you start, please refer to the main [`README.md`](../../../../README.md) 
 - We expect nearly 4-6 hours of engagement per week during the coding period based on the project complexity.
 - Your work will be evaluated based on the milestones set in the project objectives. 
 - Sync calls and weekly reports will be made for ease of understanding.
-- Communication will be available through discord channel and email throughout.
-- Feel free to communicate with your mentor for any help or guidance or contact at gsoc@pollinations.ai.
+- Communication will be available through the Discord channel and mentor check-ins throughout.
+- Feel free to communicate with your mentor for help or guidance.
 
 For the time being, you will be onboarded as an external contributor to the repository. With that being set, you shall be working on a specific feature branch created for your project. You can set a tracking issue within the repository to track your progress and link your pull requests to the issue.
 
@@ -62,4 +62,3 @@ Write Clear Commit Messages: When saving your changes (committing), write messag
 Document Your Changes Well: Add comments to your code where needed to explain how it works. If you are updating or adding documentation, make sure it is clear and accurate.
 
 Test Your Work: If you can, write and run tests to check that your changes work correctly and do not break anything else.
-

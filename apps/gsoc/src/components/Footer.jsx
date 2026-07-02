@@ -1,5 +1,4 @@
 import {
-    Email,
     GitHub,
     Instagram,
     LinkedIn,
@@ -7,30 +6,20 @@ import {
     Twitter,
 } from "@mui/icons-material";
 import {
-    Alert,
     Box,
     Chip,
     Divider,
     Grid,
     IconButton,
     Link,
-    Snackbar,
-    Tooltip,
     Typography,
 } from "@mui/material";
-import { useState } from "react";
 import "../index.css";
 import { Link as RouterLink } from "react-router-dom";
 import { colors, gradients } from "../theme";
 
 export default function Footer() {
     const currentYear = new Date().getFullYear();
-    const [emailCopied, setEmailCopied] = useState(false);
-
-    const handleCopyEmail = async () => {
-        await navigator.clipboard.writeText("gsoc@pollinations.ai");
-        setEmailCopied(true);
-    };
 
     const resourceLinks = [
         { name: "Timeline", path: "/timeline" },
@@ -193,7 +182,7 @@ export default function Footer() {
                                 together through Google Summer of Code 2026.
                             </Typography>
 
-                            {/* Social Icons + Email */}
+                            {/* Social Icons */}
                             <Box
                                 sx={{
                                     display: "flex",
@@ -201,38 +190,6 @@ export default function Footer() {
                                     flexWrap: "wrap",
                                 }}
                             >
-                                {/* Email Copy Button */}
-                                <Tooltip title="Copy email" placement="top">
-                                    <IconButton
-                                        onClick={handleCopyEmail}
-                                        sx={{
-                                            color: colors.text.muted,
-                                            border: `1px solid ${colors.border.light}`,
-                                            borderRadius: "8px",
-                                            px: 1.5,
-                                            py: 1,
-                                            gap: 1,
-                                            transition: "all 0.3s ease",
-                                            "&:hover": {
-                                                color: colors.lime.main,
-                                                borderColor: colors.lime.border,
-                                                backgroundColor:
-                                                    colors.lime.dim,
-                                                transform: "translateY(-2px)",
-                                            },
-                                        }}
-                                    >
-                                        <Email sx={{ fontSize: "20px" }} />
-                                        <Typography
-                                            sx={{
-                                                fontSize: "0.8rem",
-                                                fontFamily: "monospace",
-                                            }}
-                                        >
-                                            gsoc@pollinations.ai
-                                        </Typography>
-                                    </IconButton>
-                                </Tooltip>
                                 {communityLinks.map((social) => (
                                     <IconButton
                                         key={social.name}
@@ -393,22 +350,6 @@ export default function Footer() {
                     </Typography>
                 </Box>
             </Box>
-
-            {/* Email Copied Snackbar */}
-            <Snackbar
-                open={emailCopied}
-                autoHideDuration={3000}
-                onClose={() => setEmailCopied(false)}
-                anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-            >
-                <Alert
-                    onClose={() => setEmailCopied(false)}
-                    severity="success"
-                    sx={{ width: "100%" }}
-                >
-                    Email copied to clipboard!
-                </Alert>
-            </Snackbar>
         </Box>
     );
 }

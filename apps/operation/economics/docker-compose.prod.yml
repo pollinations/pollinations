@@ -6,7 +6,7 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=${GF_ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GF_ADMIN_PASSWORD}
-      - GF_SECURITY_ADMIN_EMAIL=${GF_ADMIN_EMAIL:-hi@myceli.ai}
+      - GF_SECURITY_ADMIN_EMAIL=${GF_ADMIN_EMAIL:-hello@myceli.ai}
       - GF_SERVER_ROOT_URL=https://economics.myceli.ai
       - GF_SERVER_DOMAIN=economics.myceli.ai
       - GF_USERS_ALLOW_SIGN_UP=false

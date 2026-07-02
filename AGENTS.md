@@ -77,13 +77,20 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 **CRITICAL — These rules apply whenever deploying to Tinybird:**
 
 - Two workspaces: `pollinations_enter` (prod) and `pollinations_enter_staging` (staging + dev + local). Pipes and datasources must be deployed to **both** — no CI auto-deploy yet, tracked in #11127.
-- Always deploy to **staging first**, verify, then prod. `tb --cloud deploy --wait` defaults to whichever workspace `.tinyb` points to (prod by default); override with `TB_TOKEN=<staging_admin_token>` for staging.
-- Validate first: `tb --cloud deploy --check --wait` (against both workspaces if either schema is in doubt)
+- Use the Tinybird **Forward CLI** as `tb` (not Classic).
+- Do not rely on `.tinyb` for workspace selection. Always pass `TB_TOKEN` from `secrets/{staging,prod}.vars.json` and `--host https://api.europe-west2.gcp.tinybird.co`.
+- Always validate and deploy to **staging first**, verify, then prod only when requested.
+- Validate first: `tb --cloud --host "$TB_HOST" deployment create --check --no-allow-destructive-operations`
+- Deploy staging: `tb --cloud --host "$TB_HOST" deployment create --wait --no-allow-destructive-operations`
+- Verify staging: `tb --staging --cloud --host "$TB_HOST" endpoint ls` and `tb --cloud --host "$TB_HOST" deployment ls`
 - Never `--allow-destructive-operations` without explicit permission
-- Never `tb push` (deprecated); use `tb --cloud deploy --wait`
+- Never `tb push` (deprecated). Avoid `tb deploy`; use explicit `deployment create` commands so promotion is never accidental.
+- Never use `--auto` or `deployment promote` without explicit permission.
 - Always `--cloud` (otherwise CLI hits Tinybird Local/Docker)
 - Run from `enter.pollinations.ai/observability`
 - Verify all consumers within a workspace before modifying a pipe (pipes are NOT cross-workspace; each workspace has its own copy)
+- If validation reports datasource or pipe deletion, stop. Restore the missing definition or ask before deleting; do not override with destructive flags.
+- Forward materialized views cannot use `UNION`; split sources into separate materialized pipes writing to the same datasource.
 - Timeouts: use `uniq()` not `uniqExact()`; avoid CTE+JOIN; single-pass queries; for large time ranges use `start_date` parameter week-by-week
 - Full procedure: `.claude/skills/tinybird-deploy/SKILL.md`
 

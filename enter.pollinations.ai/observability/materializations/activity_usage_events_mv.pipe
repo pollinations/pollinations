@@ -1,0 +1,38 @@
+DESCRIPTION >
+    Materializes billed request events for Activity dashboard usage reads.
+
+NODE activity_usage_events_mv_node
+SQL >
+    SELECT
+        user_id,
+        start_time AS timestamp,
+        event_id,
+        event_type AS type,
+        resolved_model_requested AS resolved_model,
+        api_key_id,
+        api_key_name AS api_key,
+        api_key_type,
+        multiIf(
+            selected_meter_slug = 'v1:meter:tier', 'tier',
+            selected_meter_slug = 'v1:meter:pack', 'pack',
+            'unknown'
+        ) AS meter_source,
+        token_count_prompt_text AS input_text_tokens,
+        token_count_prompt_cached AS input_cached_tokens,
+        token_count_prompt_audio AS input_audio_tokens,
+        token_count_prompt_audio_seconds AS input_audio_seconds,
+        token_count_prompt_image AS input_image_tokens,
+        token_count_completion_text AS output_text_tokens,
+        token_count_completion_reasoning AS output_reasoning_tokens,
+        token_count_completion_audio AS output_audio_tokens,
+        token_count_completion_audio_seconds AS output_audio_seconds,
+        token_count_completion_image AS output_image_tokens,
+        token_count_completion_video_seconds AS output_video_seconds,
+        total_price AS cost_usd,
+        response_time AS response_time_ms
+    FROM generation_event
+    WHERE total_price > 0
+      AND start_time >= toDateTime('2026-01-01 00:00:00')
+
+TYPE MATERIALIZED
+DATASOURCE activity_usage_events

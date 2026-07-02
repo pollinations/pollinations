@@ -4,22 +4,28 @@ import { test } from "./fixtures.ts";
 
 describe("GET /api/account/key/usage", () => {
     test("forwards the calling key's id to the usage pipe (no scope needed)", async ({
-        auth,
         sessionToken,
         mocks,
     }) => {
         await mocks.enable("tinybird");
 
-        const created = await auth.apiKey.create({
-            name: "my-key",
-            fetchOptions: {
+        const createResponse = await SELF.fetch(
+            "http://localhost:3000/api/account/keys",
+            {
+                method: "POST",
                 headers: {
+                    "Content-Type": "application/json",
                     Cookie: `better-auth.session_token=${sessionToken}`,
                 },
+                body: JSON.stringify({ name: "my-key" }),
             },
-        });
-        if (!created.data) throw new Error("Failed to create key");
-        const myKeyId = created.data.id;
+        );
+        expect(createResponse.status).toBe(200);
+        const created = (await createResponse.json()) as {
+            id: string;
+            key: string;
+        };
+        const myKeyId = created.id;
 
         mocks.tinybird.state.usageResponse = [
             {
@@ -49,7 +55,7 @@ describe("GET /api/account/key/usage", () => {
 
         const res = await SELF.fetch(
             "http://localhost:3000/api/account/key/usage",
-            { headers: { Authorization: `Bearer ${created.data.key}` } },
+            { headers: { Authorization: `Bearer ${created.key}` } },
         );
         expect(res.status).toBe(200);
         const data = (await res.json()) as {
@@ -59,7 +65,7 @@ describe("GET /api/account/key/usage", () => {
         expect(data.count).toBe(1);
 
         const calls = mocks.tinybird.state.pipeCalls.filter((call) =>
-            call.url.includes("user_usage.json"),
+            call.url.includes("activity_usage_transactions.json"),
         );
         expect(calls).toHaveLength(1);
         expect(calls[0].query.api_key_id).toBe(myKeyId);

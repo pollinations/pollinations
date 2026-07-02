@@ -69,7 +69,8 @@ export async function fetchTinybirdRows<T>(
         throw new Error(message);
     }
 
-    const data = (await response.json()) as { data: T[] };
+    const body = (await response.json()) as { data: T[] };
+    const rows = body.data;
     // Log the row count the PIPE returned (before any caller-side filtering), so
     // "pipe returned N but caller matched 0" is diagnosable from the logs.
     log.debug(
@@ -78,10 +79,10 @@ export async function fetchTinybirdRows<T>(
             pipe: path,
             status: response.status,
             durationMs,
-            rows: data.data.length,
+            rows: rows.length,
         },
     );
-    return data.data;
+    return rows;
 }
 
 export function requireTinybirdReadToken(env: CloudflareBindings): string {

@@ -433,12 +433,19 @@ const usageDailyQuerySchema = z.object({
     api_key_ids: commaSeparatedQueryList,
 });
 
+const earningsTransactionsQuerySchema = usageQuerySchema.omit({
+    api_key_ids: true,
+    models: true,
+});
+
 const earningsQuerySchema = usageDailyQuerySchema.extend({
     entity_ids: commaSeparatedQueryList,
 });
 
 type DailyUsageRecord = {
     date: string;
+    api_key_id: string;
+    api_key: string | null;
     model: string | null;
     meter_source: string | null;
     requests: number;
@@ -475,6 +482,11 @@ type UsageRecordWithCursor = UsageRecord & {
 // Response schema for daily usage OpenAPI documentation
 const dailyUsageRecordSchema = z.object({
     date: z.string().describe("Date (YYYY-MM-DD format)"),
+    api_key_id: z.string().describe("API key id used for these requests"),
+    api_key: z
+        .string()
+        .nullable()
+        .describe("API key name used for these requests"),
     model: z.string().nullable().describe("Model used"),
     meter_source: z
         .string()
@@ -504,9 +516,12 @@ function sortDailyUsageRecords(usage: DailyUsageRecord[]): DailyUsageRecord[] {
         if ((left.model || "") !== (right.model || "")) {
             return (left.model || "").localeCompare(right.model || "");
         }
-        return (left.meter_source || "").localeCompare(
-            right.meter_source || "",
-        );
+        if ((left.meter_source || "") !== (right.meter_source || "")) {
+            return (left.meter_source || "").localeCompare(
+                right.meter_source || "",
+            );
+        }
+        return left.api_key_id.localeCompare(right.api_key_id);
     });
 }
 
@@ -518,7 +533,7 @@ function usageRecordToCsvRow(row: UsageRecord): string {
 }
 
 function dailyUsageRecordToCsvRow(row: DailyUsageRecord): string {
-    return `${escapeCSV(row.date)},${escapeCSV(row.model)},${escapeCSV(row.meter_source)},${row.requests},${row.cost_usd}`;
+    return `${escapeCSV(row.date)},${escapeCSV(row.api_key_id)},${escapeCSV(row.api_key)},${escapeCSV(row.model)},${escapeCSV(row.meter_source)},${row.requests},${row.cost_usd}`;
 }
 
 type DeveloperEarningsRow = {
@@ -527,6 +542,8 @@ type DeveloperEarningsRow = {
     entity_name: string;
     source: "byop_markup" | "community_model";
     requests: number;
+    paid_requests: number;
+    tier_requests: number;
     baseline_price: number;
     pollen_earned: number;
     paid_earned: number;
@@ -534,6 +551,28 @@ type DeveloperEarningsRow = {
     cost_usd: number;
     reward_rate: number;
     unique_users: number;
+};
+
+type DeveloperEarningsTransaction = {
+    timestamp: string;
+    type: string;
+    source: "byop_markup" | "community_model";
+    entity_id: string;
+    entity_name: string;
+    app_key_id: string;
+    app_name: string;
+    payer_user_id: string;
+    model: string | null;
+    meter_source: string | null;
+    baseline_price: number;
+    pollen_earned: number;
+    cost_usd: number;
+    markup_rate: number;
+    response_time_ms: number | null;
+};
+
+type DeveloperEarningsTransactionWithCursor = DeveloperEarningsTransaction & {
+    cursor_event_id: string;
 };
 
 type DeveloperEarningsTotal = {
@@ -550,14 +589,18 @@ const developerEarningsRowSchema = z.object({
         ),
     entity_id: z
         .string()
-        .describe(
-            "Earning entity id (BYOP app key or community model); empty string on source rollup rows",
-        ),
+        .describe("Earning entity id (BYOP app key or community model)"),
     entity_name: z.string().describe("Earning entity display name"),
     source: z
         .enum(["byop_markup", "community_model"])
         .describe("Reward source, such as byop_markup or community_model"),
     requests: z.number().describe("Number of billed requests"),
+    paid_requests: z
+        .number()
+        .describe("Billed requests paid from paid balance"),
+    tier_requests: z
+        .number()
+        .describe("Billed requests paid from tier balance"),
     baseline_price: z
         .number()
         .describe("Model cost before markup (sum over the bucket)"),
@@ -602,14 +645,57 @@ const developerEarningsResponseSchema = z.object({
     perEntity: z
         .array(developerEarningsRowSchema)
         .describe("Per-earning-entity rollups for the period"),
-    bySource: z
-        .array(developerEarningsRowSchema)
-        .describe(
-            "Per-source rollups for the period. Source-specific request, user, basis, and rate metrics are meaningful here.",
-        ),
     total: developerEarningsTotalSchema.describe(
         "Additive money totals across all earning sources. Non-additive metrics such as requests, users, basis, and rates are intentionally source-specific.",
     ),
+});
+
+const developerEarningsTransactionSchema = z.object({
+    timestamp: z
+        .string()
+        .describe("Request timestamp (YYYY-MM-DD HH:mm:ss format)"),
+    cursor_event_id: z
+        .string()
+        .describe("Event id used with `before_event_id` for stable pagination"),
+    type: z.string().describe("Request type"),
+    source: z
+        .enum(["byop_markup", "community_model"])
+        .describe("Earning source"),
+    entity_id: z
+        .string()
+        .describe("Earning entity id: BYOP app key or community model"),
+    entity_name: z.string().describe("Earning entity display name"),
+    app_key_id: z.string().describe("BYOP app key id, empty for model rewards"),
+    app_name: z
+        .string()
+        .describe("BYOP app display name, empty for model rewards"),
+    payer_user_id: z.string().describe("Pollinations user id that paid"),
+    model: z.string().nullable().describe("Model used for generation"),
+    meter_source: z
+        .string()
+        .nullable()
+        .describe(
+            "Billing source: 'tier' = tier balance, 'pack' = paid balance",
+        ),
+    baseline_price: z.number().describe("Model cost before markup"),
+    pollen_earned: z
+        .number()
+        .describe("Developer credit — markup take (cost_usd − baseline_price)"),
+    cost_usd: z
+        .number()
+        .describe("Markup-inclusive total charged to the payer"),
+    markup_rate: z.number().describe("Markup rate applied"),
+    response_time_ms: z
+        .number()
+        .nullable()
+        .describe("Response time in milliseconds"),
+});
+
+const developerEarningsTransactionsResponseSchema = z.object({
+    transactions: z
+        .array(developerEarningsTransactionSchema)
+        .describe("Earning transaction records"),
+    count: z.number().describe("Number of records returned"),
 });
 
 function dailyEarningsRowToCsvRow(row: DeveloperEarningsRow): string {
@@ -629,6 +715,15 @@ function totalDeveloperEarnings(
     );
 }
 
+const EARNINGS_TRANSACTIONS_CSV_HEADER =
+    "timestamp,type,source,entity_id,entity_name,app_key_id,app_name,payer_user_id,model,meter_source,baseline_price,pollen_earned,cost_usd,markup_rate,response_time_ms";
+
+function earningsTransactionToCsvRow(
+    row: DeveloperEarningsTransaction,
+): string {
+    return `${escapeCSV(row.timestamp)},${escapeCSV(row.type)},${escapeCSV(row.source)},${escapeCSV(row.entity_id)},${escapeCSV(row.entity_name)},${escapeCSV(row.app_key_id)},${escapeCSV(row.app_name)},${escapeCSV(row.payer_user_id)},${escapeCSV(row.model)},${escapeCSV(row.meter_source)},${row.baseline_price},${row.pollen_earned},${row.cost_usd},${row.markup_rate},${escapeCSV(row.response_time_ms)}`;
+}
+
 async function fetchDetailedUsagePage(
     origin: string,
     token: string,
@@ -646,7 +741,7 @@ async function fetchDetailedUsagePage(
 ): Promise<UsageRecordWithCursor[]> {
     return fetchTinybirdRows<UsageRecordWithCursor>(
         origin,
-        "/v0/pipes/user_usage.json",
+        "/v0/pipes/activity_usage_transactions.json",
         token,
         {
             user_id: params.userId,
@@ -668,14 +763,93 @@ async function fetchDetailedUsagePage(
     );
 }
 
-function stripUsageCursor(row: UsageRecordWithCursor): UsageRecord {
-    const { cursor_event_id: _, ...usage } = row;
-    return usage;
+async function fetchDetailedEarningsPage(
+    origin: string,
+    token: string,
+    params: {
+        devUserId: string;
+        limit: number;
+        since: string;
+        until: string;
+        before?: string;
+        beforeEventId?: string;
+    },
+): Promise<DeveloperEarningsTransactionWithCursor[]> {
+    return fetchTinybirdRows<DeveloperEarningsTransactionWithCursor>(
+        origin,
+        "/v0/pipes/activity_earnings_transactions.json",
+        token,
+        {
+            dev_user_id: params.devUserId,
+            limit: params.limit.toString(),
+            since: params.since,
+            until: params.until,
+            before: params.before,
+            before_event_id: params.beforeEventId,
+        },
+    );
+}
+
+async function respondDetailedEarnings(
+    c: Pick<Context<Env>, "env" | "json">,
+    log: Logger,
+    params: {
+        devUserId: string;
+        filenamePrefix: string;
+        filenamePeriod: string;
+        format: "json" | "csv";
+        limit: number;
+        since: string;
+        until: string;
+        before?: string;
+        beforeEventId?: string;
+    },
+): Promise<Response> {
+    const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
+    const tinybirdToken = requireTinybirdReadToken(c.env);
+
+    try {
+        const fetchedTransactions = await fetchDetailedEarningsPage(
+            tinybirdOrigin,
+            tinybirdToken,
+            {
+                devUserId: params.devUserId,
+                limit: params.limit,
+                since: params.since,
+                until: params.until,
+                before: params.before,
+                beforeEventId: params.beforeEventId,
+            },
+        );
+        const transactions = fetchedTransactions;
+
+        if (params.format === "csv") {
+            const rows = transactions.map(
+                ({ cursor_event_id: _, ...transaction }) =>
+                    earningsTransactionToCsvRow(transaction),
+            );
+            const csv = [EARNINGS_TRANSACTIONS_CSV_HEADER, ...rows].join("\n");
+            return new Response(csv, {
+                headers: {
+                    "Content-Type": "text/csv",
+                    "Content-Disposition": `attachment; filename="${params.filenamePrefix}-${transactions.length}-rows-${params.filenamePeriod}-${new Date().toISOString().split("T")[0]}.csv"`,
+                },
+            });
+        }
+
+        return c.json({
+            transactions,
+            count: transactions.length,
+        });
+    } catch (error) {
+        log.error("Error fetching earnings transactions: {error}", { error });
+        return c.json({ error: "Failed to fetch earnings transactions" }, 500);
+    }
 }
 
 // Shared tail for the detailed-usage endpoints (/usage, /key/usage):
-// fetch a page from the user_usage pipe, return the cursor for JSON pagination,
-// but keep CSV output on its established public columns.
+// fetch a page from the activity usage transactions pipe, return the cursor for
+// JSON pagination, but keep CSV output on its established public columns.
 async function respondDetailedUsage(
     c: Pick<Context<Env>, "env" | "json">,
     log: Logger,
@@ -698,7 +872,7 @@ async function respondDetailedUsage(
     const tinybirdToken = requireTinybirdReadToken(c.env);
 
     try {
-        const usage = await fetchDetailedUsagePage(
+        const fetchedUsage = await fetchDetailedUsagePage(
             tinybirdOrigin,
             tinybirdToken,
             {
@@ -713,9 +887,12 @@ async function respondDetailedUsage(
                 beforeEventId: params.beforeEventId,
             },
         );
+        const usage = fetchedUsage;
 
         if (params.format === "csv") {
-            const rows = usage.map(stripUsageCursor).map(usageRecordToCsvRow);
+            const rows = usage.map(({ cursor_event_id: _, ...usage }) =>
+                usageRecordToCsvRow(usage),
+            );
             const csv = [USAGE_CSV_HEADER, ...rows].join("\n");
             return new Response(csv, {
                 headers: {
@@ -1178,10 +1355,11 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Daily Usage",
             description:
-                "Returns daily aggregated usage for the requested time window, grouped by date and model. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Useful for dashboards and spending analysis. Supports JSON and CSV export. Results are cached for 1 hour. API keys require the read-only `account:usage` permission.",
+                "Returns aggregated usage for the requested time window, grouped by date, API key, model, and billing source. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Useful for dashboards and spending analysis. Supports JSON and CSV export. Results are cached for 1 hour. Requires `account:usage` permission when using API keys.",
             responses: {
                 200: {
-                    description: "Daily usage records aggregated by date/model",
+                    description:
+                        "Usage records aggregated by date/API key/model/source",
                     content: {
                         "application/json": {
                             schema: resolver(dailyUsageResponseSchema),
@@ -1222,8 +1400,8 @@ export const accountRoutes = new Hono<Env>()
             const tinybirdToken = requireTinybirdReadToken(c.env);
             const kv = c.env.KV;
             const cacheKeyPrefix = usageUserOverridden
-                ? `usage:daily:debug:${usageUserId}`
-                : `usage:daily:${usageUserId}`;
+                ? `usage:daily:v6:debug:${usageUserId}`
+                : `usage:daily:v6:${usageUserId}`;
             const periodCacheKey =
                 granularity && period ? `${granularity}:${period}` : `${days}d`;
             const filenamePeriod = usageWindowFilenamePart(days, {
@@ -1255,7 +1433,7 @@ export const accountRoutes = new Hono<Env>()
                         windows.map((window) =>
                             fetchTinybirdRows<DailyUsageRecord>(
                                 tinybirdOrigin,
-                                "/v0/pipes/user_usage_daily_filtered.json",
+                                "/v0/pipes/activity_usage_chart.json",
                                 tinybirdToken,
                                 {
                                     user_id: usageUserId,
@@ -1295,7 +1473,8 @@ export const accountRoutes = new Hono<Env>()
                 );
 
                 if (format === "csv") {
-                    const header = "date,model,meter_source,requests,cost_usd";
+                    const header =
+                        "date,api_key_id,api_key,model,meter_source,requests,cost_usd";
                     const rows = usage.map(dailyUsageRecordToCsvRow);
                     const csv = [header, ...rows].join("\n");
 
@@ -1318,16 +1497,88 @@ export const accountRoutes = new Hono<Env>()
         },
     )
     .get(
+        "/earnings/transactions",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Get Earnings Transactions",
+            description:
+                "Returns per-request earnings transactions for table pagination and CSV export. Requires `account:usage` permission when using API keys.",
+            responses: {
+                200: {
+                    description: "Earnings transaction records",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                developerEarningsTransactionsResponseSchema,
+                            ),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+                403: {
+                    description:
+                        "Permission denied - API key missing `account:usage` permission",
+                },
+            },
+        }),
+        validator("query", earningsTransactionsQuerySchema),
+        async (c) => {
+            const log = c.get("log").getChild("earnings-transactions");
+
+            await c.var.auth.requireAuthorization({
+                message: "Authentication required to view earnings",
+            });
+
+            const user = c.var.auth.requireUser();
+            const apiKey = c.var.auth.apiKey;
+
+            requireUsagePermission(apiKey);
+
+            const {
+                format,
+                limit,
+                before,
+                before_event_id: beforeEventId,
+                days,
+                granularity,
+                period,
+            } = c.req.valid("query");
+            const { userId: devUserId } = resolveUsageTargetUserId(
+                c.env,
+                user.id,
+                apiKey,
+            );
+            const earningsWindow = formatUsageWindow(
+                resolveUsageWindow(days, { granularity, period }),
+            );
+            const filenamePeriod = usageWindowFilenamePart(days, {
+                granularity,
+                period,
+            });
+
+            return respondDetailedEarnings(c, log, {
+                devUserId,
+                filenamePrefix: "pollinations-earnings-latest",
+                filenamePeriod,
+                format,
+                limit,
+                since: earningsWindow.since,
+                until: earningsWindow.until,
+                before,
+                beforeEventId,
+            });
+        },
+    )
+    .get(
         "/earnings",
         describeRoute({
             tags: ["👤 Account"],
             summary: "Get Developer Earnings",
             description:
-                "Returns developer earnings in one response: per-(date, entity) buckets, per-entity rollups, per-source rollups, and additive money totals across BYOP apps and community models. Source-specific rows include `requests`, `baseline_price`, reward basis `cost_usd`, `reward_rate`, and `unique_users`; the top-level total only includes additive earned-pollen fields. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. API keys require the read-only `account:usage` permission.",
+                "Returns developer earnings in one response: per-(date, entity) buckets, per-entity rollups, and additive money totals across BYOP apps and community models. Source-specific rows include `requests`, `baseline_price`, reward basis `cost_usd`, `reward_rate`, and `unique_users`; the top-level total only includes additive earned-pollen fields. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. API keys require the read-only `account:usage` permission.",
             responses: {
                 200: {
-                    description:
-                        "Source-specific earnings buckets and additive totals",
+                    description: "Earnings buckets and additive totals",
                     content: {
                         "application/json": {
                             schema: resolver(developerEarningsResponseSchema),
@@ -1370,10 +1621,10 @@ export const accountRoutes = new Hono<Env>()
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = requireTinybirdReadToken(c.env);
             const kv = c.env.KV;
-            // v5: no blended global row; total contains additive money fields only.
+            // v9: payload drops the bySource rollup.
             const cacheKeyPrefix = devUserOverridden
-                ? `earnings:v5:debug:${devUserId}`
-                : `earnings:v5:${devUserId}`;
+                ? `earnings:v9:debug:${devUserId}`
+                : `earnings:v9:${devUserId}`;
             const periodCacheKey =
                 granularity && period ? `${granularity}:${period}` : `${days}d`;
             const cacheKey = `${cacheKeyPrefix}:${periodCacheKey}:grain:${grain}:${selectedEntityIds.length > 0 ? `entities:${selectedEntityIds.join(",")}` : "all"}`;
@@ -1388,7 +1639,6 @@ export const accountRoutes = new Hono<Env>()
             type EarningsPayload = {
                 daily: DeveloperEarningsRow[];
                 perEntity: DeveloperEarningsRow[];
-                bySource: DeveloperEarningsRow[];
                 total: DeveloperEarningsTotal;
             };
 
@@ -1412,7 +1662,7 @@ export const accountRoutes = new Hono<Env>()
                 if (!payload) {
                     const rows = await fetchTinybirdRows<DeveloperEarningsRow>(
                         tinybirdOrigin,
-                        "/v0/pipes/developer_earnings.json",
+                        "/v0/pipes/activity_earnings_chart.json",
                         tinybirdToken,
                         {
                             dev_user_id: devUserId,
@@ -1426,18 +1676,13 @@ export const accountRoutes = new Hono<Env>()
                         },
                     );
                     const daily = rows.filter((r) => r.date !== "");
-                    const rollups = rows.filter((r) => r.date === "");
-                    const perEntity = [...rollups]
-                        .filter((r) => r.entity_id !== "")
-                        .sort((a, b) => b.pollen_earned - a.pollen_earned);
-                    const bySource = [...rollups]
-                        .filter((r) => r.entity_id === "")
+                    const perEntity = rows
+                        .filter((r) => r.date === "")
                         .sort((a, b) => b.pollen_earned - a.pollen_earned);
                     payload = {
                         daily,
                         perEntity,
-                        bySource,
-                        total: totalDeveloperEarnings(bySource),
+                        total: totalDeveloperEarnings(perEntity),
                     };
 
                     try {

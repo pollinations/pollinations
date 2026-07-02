@@ -1,112 +1,58 @@
 import {
-    AudioIcon,
     Button,
     CardIcon,
-    ChatIcon,
     Chip,
-    DatabaseIcon,
     DownloadIcon,
-    GlobeIcon,
-    type IconProps,
-    ImageIcon,
     InlineLink,
     MultiSelect,
-    Section,
     SproutIcon,
     StatCard,
     Surface,
-    TabButton,
     Tooltip,
-    VideoIcon,
+    UsageIcon,
 } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import type { FC } from "react";
 import { useEffect, useState } from "react";
 import { Chart } from "./chart";
-import {
-    MODALITY_META,
-    MODEL_MODALITIES,
-    type ModelModality,
-} from "./constants";
 import { formatActivityPollen } from "./format-activity-pollen";
-import { TransactionHistory } from "./transaction-history";
+import { MetricTabs } from "./metric-tabs";
 import type { FilterState, Metric, UsagePeriodSelection } from "./types";
 import { useUsageData } from "./use-usage-data";
 
 const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
 
-type UsageView = "chart" | "table";
-
 type UsageSectionProps = {
     period: UsagePeriodSelection;
-    apiKeys: Array<{ id: string; name: string }>;
 };
 
-function usageViewFromHash(hash: string): UsageView {
-    return hash === "#activity-table" ? "table" : "chart";
-}
-
-const METRIC_LABELS: Record<Metric, string> = {
-    requests: "Requests",
-    pollen: "Pollen",
-};
-
-const METRIC_OPTIONS: Metric[] = ["pollen", "requests"];
-
-const MetricTabs: FC<{
-    value: Metric;
-    onChange: (metric: Metric) => void;
-}> = ({ value, onChange }) => (
-    <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-medium text-theme-text-soft">Metric</span>
-        <div className="flex w-60 flex-wrap justify-end gap-1.5">
-            {METRIC_OPTIONS.map((metric) => (
-                <TabButton
-                    key={metric}
-                    active={value === metric}
-                    onClick={() => onChange(metric)}
-                    size="sm"
-                    className="flex-1"
-                >
-                    {METRIC_LABELS[metric]}
-                </TabButton>
-            ))}
-        </div>
-    </div>
-);
-
-export const UsageSection: FC<UsageSectionProps> = ({ period, apiKeys }) => {
-    const [activeView, setActiveView] = useState<UsageView>(() =>
-        usageViewFromHash(window.location.hash),
-    );
+export const UsageSection: FC<UsageSectionProps> = ({ period }) => {
     const [filters, setFilters] = useState<Omit<FilterState, "period">>({
         metric: "pollen",
         selectedKeyIds: [],
         selectedModels: [],
     });
 
+    const {
+        loading,
+        error,
+        fetchUsage,
+        usedModels,
+        usedApiKeys,
+        chartData,
+        stats,
+    } = useUsageData({
+        ...filters,
+        period,
+    });
+
     useEffect(() => {
-        const validIds = new Set(apiKeys.map((k) => k.id));
+        const validIds = new Set(usedApiKeys.map((k) => k.id));
         const pruned = filters.selectedKeyIds.filter((id) => validIds.has(id));
         if (pruned.length !== filters.selectedKeyIds.length) {
             setFilters((f) => ({ ...f, selectedKeyIds: pruned }));
         }
-    }, [apiKeys, filters.selectedKeyIds]);
-
-    useEffect(() => {
-        function syncViewFromHash(): void {
-            setActiveView(usageViewFromHash(window.location.hash));
-        }
-
-        window.addEventListener("hashchange", syncViewFromHash);
-        return () => window.removeEventListener("hashchange", syncViewFromHash);
-    }, []);
-
-    const { loading, error, fetchUsage, usedModels, chartData, stats } =
-        useUsageData({
-            ...filters,
-            period,
-        });
+    }, [usedApiKeys, filters.selectedKeyIds]);
 
     useEffect(() => {
         const validModels = new Set(usedModels.map((m) => m.id));
@@ -118,9 +64,9 @@ export const UsageSection: FC<UsageSectionProps> = ({ period, apiKeys }) => {
         }
     }, [usedModels, filters.selectedModels]);
 
-    const keySelectOptions = apiKeys.map((k) => ({
+    const keySelectOptions = usedApiKeys.map((k) => ({
         value: k.id,
-        label: k.name,
+        label: k.label,
     }));
     const modelSelectOptions = usedModels.map((m) => ({
         value: m.id,
@@ -167,7 +113,7 @@ export const UsageSection: FC<UsageSectionProps> = ({ period, apiKeys }) => {
             className="flex items-center gap-1.5"
         >
             <DownloadIcon className="h-3.5 w-3.5 shrink-0" />
-            Download CSV
+            CSV
         </Button>
     );
     const downloadAction = downloadDisabled ? (
@@ -184,67 +130,69 @@ export const UsageSection: FC<UsageSectionProps> = ({ period, apiKeys }) => {
     );
 
     return (
-        <Section title="API usage" framed action={downloadAction}>
-            <div className="flex flex-col gap-4">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="flex flex-wrap gap-1.5">
-                        {(["chart", "table"] as UsageView[]).map((view) => (
-                            <TabButton
-                                key={view}
-                                active={activeView === view}
-                                onClick={() => setActiveView(view)}
-                            >
-                                {view === "chart" ? "Chart" : "Table"}
-                            </TabButton>
-                        ))}
-                    </div>
-                    <div className="flex flex-col items-stretch gap-2">
-                        <div className="[&>div]:justify-between [&_button]:w-60">
-                            <MultiSelect
-                                options={modelSelectOptions}
-                                selected={filters.selectedModels}
-                                onChange={(v) =>
-                                    setFilters((f) => ({
-                                        ...f,
-                                        selectedModels: v,
-                                    }))
-                                }
-                                placeholder="All"
-                                disabled={modelSelectOptions.length === 0}
-                                disabledText="None"
-                                align="end"
-                                label="Models"
-                            />
-                        </div>
-                        <div className="[&>div]:justify-between [&_button]:w-60">
-                            <MultiSelect
-                                options={keySelectOptions}
-                                selected={filters.selectedKeyIds}
-                                onChange={(v) =>
-                                    setFilters((f) => ({
-                                        ...f,
-                                        selectedKeyIds: v,
-                                    }))
-                                }
-                                placeholder="All"
-                                disabled={keySelectOptions.length === 0}
-                                disabledText="None"
-                                align="end"
-                                label="API Keys"
-                            />
-                        </div>
-                        {activeView === "chart" && (
-                            <MetricTabs
-                                value={filters.metric}
-                                onChange={(metric) =>
-                                    setFilters((f) => ({ ...f, metric }))
-                                }
-                            />
-                        )}
-                    </div>
+        <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+                <div className="flex items-center gap-2 font-body text-base font-semibold text-theme-text-strong">
+                    <UsageIcon className="h-4 w-4 shrink-0" />
+                    Usage
                 </div>
+                {downloadAction}
+            </div>
+            <Surface className="flex flex-col gap-4">
+                <div className="flex flex-col gap-4">
+                    <div className="flex flex-col items-start gap-2">
+                        <div className="flex w-full items-center gap-3">
+                            <span className="w-20 shrink-0 text-xs font-medium text-theme-text-soft">
+                                Keys
+                            </span>
+                            <div className="min-w-0 flex-1 max-w-60 [&_button]:w-full">
+                                <MultiSelect
+                                    options={keySelectOptions}
+                                    selected={filters.selectedKeyIds}
+                                    onChange={(v) =>
+                                        setFilters((f) => ({
+                                            ...f,
+                                            selectedKeyIds: v,
+                                        }))
+                                    }
+                                    placeholder="All"
+                                    disabled={keySelectOptions.length === 0}
+                                    disabledText="None"
+                                    disabledTooltip="No API key usage in this period"
+                                    align="start"
+                                />
+                            </div>
+                        </div>
+                        <div className="flex w-full items-center gap-3">
+                            <span className="w-20 shrink-0 text-xs font-medium text-theme-text-soft">
+                                Models
+                            </span>
+                            <div className="min-w-0 flex-1 max-w-60 [&_button]:w-full">
+                                <MultiSelect
+                                    options={modelSelectOptions}
+                                    selected={filters.selectedModels}
+                                    onChange={(v) =>
+                                        setFilters((f) => ({
+                                            ...f,
+                                            selectedModels: v,
+                                        }))
+                                    }
+                                    placeholder="All"
+                                    disabled={modelSelectOptions.length === 0}
+                                    disabledText="None"
+                                    disabledTooltip="No model usage in this period"
+                                    align="start"
+                                />
+                            </div>
+                        </div>
+                        <MetricTabs
+                            value={filters.metric}
+                            onChange={(metric) =>
+                                setFilters((f) => ({ ...f, metric }))
+                            }
+                        />
+                    </div>
 
-                {activeView === "chart" ? (
                     <UsageChartView
                         loading={loading}
                         error={error}
@@ -254,18 +202,9 @@ export const UsageSection: FC<UsageSectionProps> = ({ period, apiKeys }) => {
                         showModelBreakdown={showModelBreakdown}
                         stats={stats}
                     />
-                ) : (
-                    <Surface>
-                        <TransactionHistory
-                            apiKeys={apiKeys}
-                            period={period}
-                            selectedKeyIds={filters.selectedKeyIds}
-                            selectedModels={filters.selectedModels}
-                        />
-                    </Surface>
-                )}
-            </div>
-        </Section>
+                </div>
+            </Surface>
+        </div>
     );
 };
 
@@ -290,7 +229,7 @@ const UsageChartView: FC<UsageChartViewProps> = ({
 
     return (
         <>
-            <Surface>
+            <div className="min-h-[180px]">
                 {loading && (
                     <div className="flex items-center justify-center h-[180px]">
                         <p className="text-sm text-theme-text-muted animate-[pulse_2s_ease-in-out_infinite]">
@@ -322,89 +261,77 @@ const UsageChartView: FC<UsageChartViewProps> = ({
                     />
                 )}
                 {!loading && !error && !hasUsage && <UsageEmptyState />}
-            </Surface>
+            </div>
 
             {!loading && !error && hasUsage && (
-                <div className="grid gap-4 sm:grid-cols-3">
-                    <Surface>
-                        <StatCard
-                            label="Pollen spent"
-                            value={formatActivityPollen(stats.totalPollen)}
-                            detail={
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <PaidChip
-                                        size="lg"
-                                        className="font-semibold"
-                                    >
-                                        <CardIcon className="h-4 w-4" />
-                                        {formatActivityPollen(stats.paidPollen)}
-                                    </PaidChip>
-                                    <TierChip
-                                        size="lg"
-                                        className="font-semibold"
-                                    >
-                                        <SproutIcon className="h-4 w-4" />
-                                        {formatActivityPollen(stats.tierPollen)}
-                                    </TierChip>
-                                </div>
-                            }
-                        />
-                    </Surface>
-                    <Surface>
-                        <StatCard
-                            label="Requests"
-                            value={stats.totalRequests.toLocaleString()}
-                            detail={
-                                <ModalityPills
-                                    breakdown={stats.requestsByModality}
-                                />
-                            }
-                        />
-                    </Surface>
-                    <Surface>
-                        <StatCard
-                            label="Top model"
-                            value={
-                                <span className="text-xl leading-tight">
-                                    {stats.topModel?.label || "None"}
+                <div className="grid gap-4 border-t border-divider pt-4 sm:grid-cols-3">
+                    <StatCard
+                        className="min-w-0"
+                        label="Pollen spent"
+                        value={formatActivityPollen(stats.totalPollen)}
+                        detail={
+                            <div className="flex flex-wrap items-center gap-2">
+                                <PaidChip size="lg" className="font-semibold">
+                                    <CardIcon className="h-4 w-4" />
+                                    {formatActivityPollen(stats.paidPollen)}
+                                </PaidChip>
+                                <TierChip size="lg" className="font-semibold">
+                                    <SproutIcon className="h-4 w-4" />
+                                    {formatActivityPollen(stats.tierPollen)}
+                                </TierChip>
+                            </div>
+                        }
+                    />
+                    <StatCard
+                        className="min-w-0"
+                        label="Requests"
+                        value={stats.totalRequests.toLocaleString()}
+                        detail={
+                            stats.activeApiKeyCount === null ? null : (
+                                <span className="text-theme-text-soft">
+                                    across {stats.activeApiKeyCount} API key
+                                    {stats.activeApiKeyCount === 1 ? "" : "s"}
                                 </span>
-                            }
-                            detail={
-                                stats.topModel ? (
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <Chip
-                                            size="lg"
-                                            className="font-semibold"
-                                        >
-                                            <span className="tabular-nums">
-                                                {stats.topModel.requests.toLocaleString()}
-                                            </span>
-                                            <span className="font-medium opacity-70">
-                                                {stats.topModel.requests === 1
-                                                    ? "req"
-                                                    : "reqs"}
-                                            </span>
-                                        </Chip>
-                                        <Chip
-                                            size="lg"
-                                            className="font-semibold"
-                                        >
-                                            <span className="tabular-nums">
-                                                {formatActivityPollen(
-                                                    stats.topModel.pollen,
-                                                )}
-                                            </span>
-                                            <span className="font-medium opacity-70">
-                                                pollen
-                                            </span>
-                                        </Chip>
-                                    </div>
-                                ) : (
-                                    "No model usage yet"
-                                )
-                            }
-                        />
-                    </Surface>
+                            )
+                        }
+                    />
+                    <StatCard
+                        className="min-w-0"
+                        label="Top model"
+                        value={
+                            <span className="text-xl leading-tight">
+                                {stats.topModel?.label || "None"}
+                            </span>
+                        }
+                        detail={
+                            stats.topModel ? (
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <Chip size="lg" className="font-semibold">
+                                        <span className="tabular-nums">
+                                            {stats.topModel.requests.toLocaleString()}
+                                        </span>
+                                        <span className="font-medium opacity-70">
+                                            {stats.topModel.requests === 1
+                                                ? "req"
+                                                : "reqs"}
+                                        </span>
+                                    </Chip>
+                                    <Chip size="lg" className="font-semibold">
+                                        <span className="tabular-nums">
+                                            {formatActivityPollen(
+                                                stats.topModel.pollen,
+                                            )}
+                                        </span>
+                                        <span className="font-medium opacity-70">
+                                            pollen
+                                        </span>
+                                    </Chip>
+                                </div>
+                            ) : (
+                                "No model usage yet"
+                            )
+                        }
+                    />
                 </div>
             )}
         </>
@@ -421,47 +348,3 @@ const UsageEmptyState: FC = () => (
         .
     </p>
 );
-
-const MODALITY_ICON: Record<ModelModality, FC<IconProps>> = {
-    text: ChatIcon,
-    image: ImageIcon,
-    video: VideoIcon,
-    audio: AudioIcon,
-    embedding: DatabaseIcon,
-    realtime: GlobeIcon,
-};
-
-const ModalityPills: FC<{
-    breakdown: Record<ModelModality, number>;
-}> = ({ breakdown }) => {
-    const entries = MODEL_MODALITIES.map((modality) => ({
-        modality,
-        count: breakdown[modality],
-    })).filter(({ count }) => count > 0);
-    if (entries.length === 0) return null;
-    return (
-        <div className="flex flex-wrap items-center gap-2">
-            {entries.map(({ modality, count }) => {
-                const { label } = MODALITY_META[modality];
-                const Icon = MODALITY_ICON[modality];
-                return (
-                    <Tooltip
-                        key={modality}
-                        content={`${count.toLocaleString()} ${label} request${count === 1 ? "" : "s"}`}
-                        displayContents
-                    >
-                        <Chip
-                            size="lg"
-                            className="font-semibold text-theme-text-base"
-                        >
-                            <Icon className="h-4 w-4" />
-                            <span className="tabular-nums">
-                                {count.toLocaleString()}
-                            </span>
-                        </Chip>
-                    </Tooltip>
-                );
-            })}
-        </div>
-    );
-};

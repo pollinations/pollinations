@@ -1,0 +1,93 @@
+DESCRIPTION >
+    Activity developer earnings chart data with daily and per-entity
+    rollups from materialized earning events.
+    Use 'since' and 'until' for date range filtering.
+    Use 'grain=hour' to group daily buckets by hour; defaults to daily.
+    Use 'entity_ids' (comma-separated) to filter earning entities.
+
+TOKEN "tinybird_read" READ
+
+NODE app_labels
+SQL >
+    %
+    SELECT
+        id AS entity_id,
+        coalesce(nullIf(name, ''), id) AS entity_name
+    FROM d1_apikey
+    WHERE synced_at = (SELECT max(synced_at) FROM d1_apikey)
+
+NODE community_model_labels
+SQL >
+    %
+    SELECT
+        concat(u.github_username, '/', cm.name) AS entity_id,
+        coalesce(nullIf(cm.name, ''), concat(u.github_username, '/', cm.name)) AS entity_name
+    FROM d1_community_model cm
+    LEFT JOIN d1_user u ON cm.owner_user_id = u.id
+    WHERE cm.synced_at = (SELECT max(synced_at) FROM d1_community_model)
+      AND u.synced_at = (SELECT max(synced_at) FROM d1_user)
+      AND u.github_username != ''
+
+NODE earnings_events
+SQL >
+    %
+    SELECT
+        ae.source AS source,
+        ae.entity_id AS entity_id,
+        coalesce(
+            nullIf(
+                if(ae.source = 'byop_markup', al.entity_name, cml.entity_name),
+                ''
+            ),
+            nullIf(ae.entity_name, ''),
+            ae.entity_id
+        ) AS entity_name,
+        if(
+            {{ String(grain, 'day') }} = 'hour',
+            formatDateTime(toStartOfHour(ae.timestamp), '%F %T'),
+            formatDateTime(toStartOfDay(ae.timestamp), '%F')
+        ) AS date,
+        ae.event_id AS event_id,
+        ae.payer_user_id AS payer_user_id,
+        ae.baseline_price AS baseline_price,
+        ae.cost_usd AS cost_usd,
+        ae.pollen_earned AS pollen_earned,
+        ae.reward_rate AS reward_rate,
+        ae.meter_source AS meter_source
+    FROM activity_earnings_events ae
+    LEFT JOIN app_labels al
+        ON ae.source = 'byop_markup'
+       AND ae.entity_id = al.entity_id
+    LEFT JOIN community_model_labels cml
+        ON ae.source = 'community_model'
+       AND ae.entity_id = cml.entity_id
+    WHERE
+        ae.dev_user_id = {{ String(dev_user_id, '') }}
+        {% if defined(since) %} AND ae.timestamp >= {{ DateTime(since) }} {% end %}
+        {% if defined(until) %} AND ae.timestamp < {{ DateTime(until) }} {% end %}
+        {% if defined(entity_ids) %} AND ae.entity_id IN {{ Array(entity_ids, 'String') }} {% end %}
+
+NODE activity_earnings_chart_node
+SQL >
+    SELECT
+        ee.date AS date,
+        ee.entity_id AS entity_id,
+        ee.entity_name AS entity_name,
+        ee.source AS source,
+        count() AS requests,
+        countIf(ee.meter_source = 'pack') AS paid_requests,
+        countIf(ee.meter_source = 'tier') AS tier_requests,
+        sum(ee.baseline_price) AS baseline_price,
+        sum(ee.pollen_earned) AS pollen_earned,
+        sumIf(ee.pollen_earned, ee.meter_source = 'pack') AS paid_earned,
+        sumIf(ee.pollen_earned, ee.meter_source = 'tier') AS tier_earned,
+        sum(ee.cost_usd) AS cost_usd,
+        avg(ee.reward_rate) AS reward_rate,
+        if(GROUPING(ee.date) = 0, toUInt64(0), uniq(ee.payer_user_id)) AS unique_users
+    FROM earnings_events AS ee
+    GROUP BY GROUPING SETS (
+        (ee.date, ee.entity_id, ee.entity_name, ee.source),
+        (ee.entity_id, ee.entity_name, ee.source)
+    )
+
+TYPE endpoint

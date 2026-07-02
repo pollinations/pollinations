@@ -25,18 +25,12 @@ const pending = new Map();
 /** sid cookie -> { accessToken, tokenResponse, profile } */
 const sessions = new Map();
 
-let metadataPromise;
-function discover() {
-    metadataPromise ??= fetch(
+async function discover() {
+    const res = await fetch(
         new URL("/.well-known/oauth-authorization-server", ISSUER),
-    ).then((res) => {
-        if (!res.ok) {
-            metadataPromise = undefined;
-            throw new Error(`Discovery failed: HTTP ${res.status}`);
-        }
-        return res.json();
-    });
-    return metadataPromise;
+    );
+    if (!res.ok) throw new Error(`Discovery failed: HTTP ${res.status}`);
+    return res.json();
 }
 
 function escapeHtml(value) {
@@ -84,6 +78,12 @@ function getSession(req) {
 
 async function handleLogin(res) {
     const meta = await discover();
+    // Drop abandoned logins so the map can't grow unbounded.
+    for (const [state, login] of pending) {
+        if (Date.now() - login.createdAt > 10 * 60 * 1000) {
+            pending.delete(state);
+        }
+    }
     const verifier = randomBytes(32).toString("base64url");
     const challenge = createHash("sha256").update(verifier).digest("base64url");
     const state = randomBytes(24).toString("base64url");

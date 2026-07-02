@@ -13,6 +13,8 @@ export const wellKnownRoutes = new Hono<Env>().get(
     "/oauth-authorization-server",
     (c) => {
         const origin = getPublicOrigin(c);
+        // Static per origin — let the CDN/browser absorb repeat fetches.
+        c.header("Cache-Control", "public, max-age=3600");
         return c.json({
             issuer: origin,
             authorization_endpoint: `${origin}/authorize`,

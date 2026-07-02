@@ -1,22 +1,20 @@
+import { PKCE_S256_CHALLENGE_REGEX } from "@shared/auth/authorize-config.ts";
 import { redirectUriMatchesAllowlist } from "@shared/auth/redirect-uri.ts";
-import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
-import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import {
     type DeviceTokenRequest,
     exchangeDeviceCode,
+    generateCode,
     handleUserinfo,
     parseFormOrJsonBody,
 } from "./device.ts";
-import { getRedirectUris, parseMetadata } from "./metadata-utils.ts";
+import { getRedirectUris } from "./metadata-utils.ts";
 
 const KV_TTL = 600; // 10 minutes — codes are single-use and short-lived
 const CODE_LENGTH = 40;
@@ -31,13 +29,6 @@ type StoredCode = {
     codeChallenge: string;
     expiresIn: number | null;
 };
-
-function generateCode(length: number): string {
-    const chars =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    const bytes = crypto.getRandomValues(new Uint8Array(length));
-    return Array.from(bytes, (b) => chars[b % chars.length]).join("");
-}
 
 /**
  * PKCE S256 check (RFC 7636 §4.6): BASE64URL(SHA256(verifier)) == challenge.
@@ -59,16 +50,10 @@ async function verifyPkceS256(
     return computed === challenge;
 }
 
-function tokenError(
-    c: Context<Env>,
-    error: string,
-    description?: string,
-    status: 400 | 401 = 400,
-) {
-    c.header("Cache-Control", "no-store");
+function tokenError(c: Context<Env>, error: string, description?: string) {
     return c.json(
         { error, ...(description && { error_description: description }) },
-        status,
+        400,
     );
 }
 
@@ -77,8 +62,7 @@ const CreateCodeSchema = z.object({
     clientId: z.string().startsWith("pk_"),
     redirectUri: z.string().min(1),
     scope: z.string().optional(),
-    // S256 challenge is exactly 43 base64url chars (SHA-256, unpadded)
-    codeChallenge: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
+    codeChallenge: z.string().regex(PKCE_S256_CHALLENGE_REGEX),
     codeChallengeMethod: z.literal("S256"),
     expiresIn: z.number().int().positive().nullish(),
 });
@@ -106,9 +90,9 @@ export const oauthRoutes = new Hono<Env>()
             // Re-validate the client/redirect binding server-side; the same
             // check runs at sk_ minting, but the code is the artifact that
             // leaves our origin, so it must never bind an unregistered
-            // redirect (RFC 6749 §3.1.2).
-            const authInstance = createAuth(c.env);
-            const result = await authInstance.api.verifyApiKey({
+            // redirect (RFC 6749 §3.1.2). verifyApiKey returns the key row
+            // with metadata already parsed.
+            const result = await c.var.auth.client.api.verifyApiKey({
                 body: { key: body.clientId },
             });
             if (!result.valid || !result.key) {
@@ -116,13 +100,7 @@ export const oauthRoutes = new Hono<Env>()
                     message: "Unknown client_id",
                 });
             }
-            const db = drizzle(c.env.DB, { schema });
-            const keyRow = await db.query.apikey.findFirst({
-                where: eq(schema.apikey.id, result.key.id),
-            });
-            const allowlist = keyRow
-                ? getRedirectUris(parseMetadata(keyRow.metadata))
-                : [];
+            const allowlist = getRedirectUris(result.key.metadata ?? {});
             if (!redirectUriMatchesAllowlist(body.redirectUri, allowlist)) {
                 throw new HTTPException(400, {
                     message:

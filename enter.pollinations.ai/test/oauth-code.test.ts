@@ -26,7 +26,7 @@ async function s256(verifier: string): Promise<string> {
 async function putCode(
     code: string,
     overrides: Record<string, unknown> = {},
-): Promise<Record<string, unknown>> {
+): Promise<void> {
     const stored = {
         key: "sk_test_access_token",
         clientId: "pk_test_client",
@@ -39,7 +39,6 @@ async function putCode(
     await env.KV.put(`oauth-code:${code}`, JSON.stringify(stored), {
         expirationTtl: 600,
     });
-    return stored;
 }
 
 function formPost(params: Record<string, string>): RequestInit {

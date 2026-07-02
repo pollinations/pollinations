@@ -17,6 +17,7 @@ import { formatPollen } from "@pollinations/ui/wallet";
 import {
     CONSENT_PERMISSIONS,
     getAuthorizeInitialPermissions,
+    PKCE_S256_CHALLENGE_REGEX,
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
 import { useNavigate, useSearch } from "@tanstack/react-router";
@@ -258,9 +259,9 @@ export function Authorize() {
                     );
                     return;
                 }
-                // Mirror the server's CreateCodeSchema so malformed challenges
-                // also fail before a key is minted.
-                if (!/^[A-Za-z0-9_-]{43}$/.test(code_challenge)) {
+                // Same check as the server's CreateCodeSchema, so malformed
+                // challenges fail before a key is minted.
+                if (!PKCE_S256_CHALLENGE_REGEX.test(code_challenge)) {
                     setError(
                         "code_challenge must be a 43-character base64url S256 challenge",
                     );

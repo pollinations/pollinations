@@ -44,7 +44,7 @@ async function requirePendingDevice(
 }
 
 /** Generate a cryptographically random alphanumeric string. */
-function generateCode(length: number): string {
+export function generateCode(length: number): string {
     const chars =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     const bytes = crypto.getRandomValues(new Uint8Array(length));

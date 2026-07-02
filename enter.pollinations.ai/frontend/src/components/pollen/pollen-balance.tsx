@@ -3,6 +3,7 @@ import {
     ClockIcon,
     CopyButton,
     ExternalLinkButton,
+    GlobeIcon,
     InfoTip,
     InlineLink,
     MailIcon,
@@ -352,7 +353,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                                         {chargeLabel}
                                     </span>
                                     <span className="mt-1 block text-theme-text-muted">
-                                        Tax calculated at checkout.
+                                        Tax calculated at checkout
                                     </span>
                                 </span>
                             }
@@ -376,6 +377,13 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                 <AutoTopUpPanel initialBillingState={initialBillingState} />
             </Surface>
             <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                <p className="flex items-start gap-1.5">
+                    <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>
+                        Prices exclude tax — VAT or sales tax is added at
+                        checkout.
+                    </span>
+                </p>
                 <p className="flex items-start gap-1.5">
                     <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <span>

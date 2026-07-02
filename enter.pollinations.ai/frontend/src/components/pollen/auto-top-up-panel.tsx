@@ -15,7 +15,11 @@ import {
     AUTO_TOP_UP_PACK_MAX_USD,
     AUTO_TOP_UP_PACK_MIN_USD,
 } from "@shared/billing/auto-top-up.ts";
-import { POLLEN_PACKS } from "@shared/pollen-packs.ts";
+import {
+    calculateServiceFeeCents,
+    formatUsdCentsCompact,
+    POLLEN_PACKS,
+} from "@shared/pollen-packs.ts";
 import {
     type FC,
     type ReactNode,
@@ -42,6 +46,7 @@ export type BillingState = {
         enabled: boolean;
         thresholdPollen: number;
         packAmountUsd: number;
+        serviceFeeCents: number;
         lastIssue: AutoTopUpIssue | null;
     };
     paymentMethod: {
@@ -68,7 +73,7 @@ type AutoTopUpPanelProps = {
 
 const DEFAULT_PACK_AMOUNT_USD = 10;
 const AUTO_TOP_UP_DRAFT_STORAGE_KEY = "pollinations:auto-top-up-draft";
-const AUTO_TOP_UP_TOOLTIP_CONTENT = (
+const AutoTopUpTooltipContent: FC = () => (
     <div className="space-y-2 text-theme-text-base">
         <div>
             Keeps your{" "}
@@ -89,7 +94,7 @@ const AUTO_TOP_UP_TOOLTIP_CONTENT = (
                 <span className="font-semibold text-theme-text-strong">
                     default Stripe card
                 </span>{" "}
-                for the selected pack
+                for the selected pack, plus applicable tax and service fee
             </li>
             <li>
                 <span className="inline-flex items-center gap-1 font-semibold text-theme-text-strong">
@@ -134,6 +139,9 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
         (pack) => pack.amountUsd === packAmountUsd,
     );
     const isEnabled = billingState?.autoTopUp.enabled ?? false;
+    const serviceFeeCents = selectedPack
+        ? calculateServiceFeeCents(selectedPack.amountUsd * 100)
+        : 0;
     const showConfig = isEnabled || enableDraft;
     const hasUnsavedChanges =
         billingState !== null &&
@@ -300,7 +308,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                     <div className="flex min-w-0 items-center text-sm font-bold text-theme-text-soft">
                         Auto top-up
                         <InfoTip
-                            content={AUTO_TOP_UP_TOOLTIP_CONTENT}
+                            content={<AutoTopUpTooltipContent />}
                             label="Auto top-up information"
                         />
                     </div>
@@ -326,11 +334,23 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                                     value={packAmountUsd}
                                     onChange={setPackAmountUsd}
                                     packs={AUTO_TOP_UP_PACKS}
+                                    selectedBadgeLabel={
+                                        selectedPack
+                                            ? formatUsdCentsCompact(
+                                                  selectedPack.amountUsd * 100 +
+                                                      serviceFeeCents,
+                                              )
+                                            : "$0"
+                                    }
+                                    selectedBadgeDetail={
+                                        selectedPack
+                                            ? `incl. ${formatUsdCentsCompact(serviceFeeCents)} fee`
+                                            : undefined
+                                    }
                                     disabled={isSaving}
                                 />
                             </div>
                             <AutoTopUpSaveButton
-                                showConfig={showConfig}
                                 hasUnsavedChanges={hasUnsavedChanges}
                                 setup={setup}
                                 onSave={handleSave}
@@ -419,21 +439,18 @@ function mapToggleStatusToSwitchStatus(
 }
 
 type AutoTopUpSaveButtonProps = {
-    showConfig: boolean;
     hasUnsavedChanges: boolean;
     setup: SetupReadiness;
     onSave: () => void;
 };
 
 const AutoTopUpSaveButton: FC<AutoTopUpSaveButtonProps> = ({
-    showConfig,
     hasUnsavedChanges,
     setup,
     onSave,
 }) => {
-    const saveDisabled = !showConfig || !canEnable(setup) || !hasUnsavedChanges;
+    const saveDisabled = !canEnable(setup) || !hasUnsavedChanges;
     const disabledReason = getSaveDisabledReason({
-        showConfig,
         hasUnsavedChanges,
         ...setup,
     });
@@ -502,13 +519,11 @@ function getDisabledReason(setup: SetupReadiness): string | null {
 
 function getSaveDisabledReason(
     state: SetupReadiness & {
-        showConfig: boolean;
         hasUnsavedChanges: boolean;
     },
 ): string | null {
     const setupReason = getDisabledReason(state);
     if (setupReason) return setupReason;
-    if (!state.showConfig) return "Use the switch to enable auto top-up first.";
     if (!state.hasUnsavedChanges) return "No changes to save.";
     return null;
 }

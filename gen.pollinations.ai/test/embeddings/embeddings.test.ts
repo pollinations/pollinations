@@ -65,7 +65,7 @@ function createEmbeddingMocks() {
     env.GOOGLE_PROJECT_ID = "test-project";
     env.OPENAI_API_KEY = "test-openai-api-key";
     env.AZURE_MYCELI_PROD_API_KEY = "test-azure-api-key";
-    env.FIREWORKS_API_KEY = "test-fireworks-api-key";
+    env.FIREWORKS_NEO_API_KEY = "test-fireworks-neo-api-key";
     process.env.GOOGLE_PROJECT_ID = env.GOOGLE_PROJECT_ID;
 
     return createFetchMock({

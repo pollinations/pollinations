@@ -68,7 +68,7 @@ describe("GET /api/account/key/usage", () => {
             call.url.includes("activity_usage_transactions.json"),
         );
         expect(calls).toHaveLength(1);
-        expect(calls[0].query.api_key_id).toBe(myKeyId);
+        expect(calls[0].query.api_key_ids).toBe(myKeyId);
     });
 
     test("returns 401 without an API key", async ({ sessionToken }) => {

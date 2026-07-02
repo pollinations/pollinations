@@ -20,11 +20,10 @@ const earningsRow = (overrides: Record<string, unknown> = {}) => ({
     tier_earned: 0.02,
     cost_usd: 0.5,
     reward_rate: 0.25,
-    unique_users: 0,
     ...overrides,
 });
 
-test("GET /api/account/earnings returns entity rollups and additive money totals in JSON", async ({
+test("GET /api/account/earnings returns daily buckets and derived entity rollups", async ({
     sessionToken,
     mocks,
 }) => {
@@ -33,17 +32,16 @@ test("GET /api/account/earnings returns entity rollups and additive money totals
     mocks.tinybird.state.earningsResponse = [
         earningsRow(),
         earningsRow({
-            date: "",
-            requests: 5,
-            baseline_price: 0.4,
-            pollen_earned: 0.1,
-            paid_earned: 0.08,
-            tier_earned: 0.02,
-            cost_usd: 0.5,
-            unique_users: 3,
+            date: "2026-04-15",
+            requests: 15,
+            baseline_price: 0.8,
+            pollen_earned: 0.3,
+            paid_earned: 0.24,
+            tier_earned: 0.06,
+            cost_usd: 1.1,
+            reward_rate: 0.45,
         }),
         earningsRow({
-            date: "",
             entity_id: "owner/model",
             entity_name: "Community Model",
             source: "community_model",
@@ -54,7 +52,6 @@ test("GET /api/account/earnings returns entity rollups and additive money totals
             tier_earned: 0.18,
             cost_usd: 0.4,
             reward_rate: 0.75,
-            unique_users: 4,
         }),
     ];
 
@@ -67,10 +64,9 @@ test("GET /api/account/earnings returns entity rollups and additive money totals
     const body = (await response.json()) as {
         daily: Record<string, unknown>[];
         perEntity: Record<string, unknown>[];
-        total: Record<string, unknown>;
     };
 
-    expect(body.daily).toHaveLength(1);
+    expect(body.daily).toHaveLength(3);
     expect(body.daily[0]).toMatchObject({
         paid_requests: 3,
         tier_requests: 2,
@@ -81,67 +77,39 @@ test("GET /api/account/earnings returns entity rollups and additive money totals
         cost_usd: 0.5,
         reward_rate: 0.25,
     });
+    // perEntity is derived in the worker from the daily buckets, sorted by
+    // pollen_earned descending.
     expect(body.perEntity).toHaveLength(2);
     expect(body.perEntity[0]).toMatchObject({
-        source: "community_model",
-        pollen_earned: 0.3,
+        date: "",
+        source: "byop_markup",
+        entity_id: "key_byop_app_1",
+        entity_name: "BYOP App",
+        requests: 20,
+        paid_requests: 6,
+        tier_requests: 4,
     });
-    expect(Number(body.total.pollen_earned)).toBeCloseTo(0.4);
-    expect(Number(body.total.paid_earned)).toBeCloseTo(0.2);
-    expect(Number(body.total.tier_earned)).toBeCloseTo(0.2);
-    expect(body.total).not.toHaveProperty("requests");
-    expect(body.total).not.toHaveProperty("unique_users");
-    expect(body.total).not.toHaveProperty("reward_rate");
-    expect(body).not.toHaveProperty("global");
+    expect(Number(body.perEntity[0].pollen_earned)).toBeCloseTo(0.4);
+    expect(Number(body.perEntity[0].paid_earned)).toBeCloseTo(0.32);
+    expect(Number(body.perEntity[0].tier_earned)).toBeCloseTo(0.08);
+    expect(Number(body.perEntity[0].baseline_price)).toBeCloseTo(1.2);
+    expect(Number(body.perEntity[0].cost_usd)).toBeCloseTo(1.6);
+    // Request-weighted average: (0.25*5 + 0.45*15) / 20
+    expect(Number(body.perEntity[0].reward_rate)).toBeCloseTo(0.4);
+    expect(body.perEntity[1]).toMatchObject({
+        source: "community_model",
+        entity_id: "owner/model",
+        pollen_earned: 0.3,
+        reward_rate: 0.75,
+    });
+    expect(body).not.toHaveProperty("total");
     expect(body).not.toHaveProperty("bySource");
+    expect(body.perEntity[0]).not.toHaveProperty("unique_users");
 
     const earningsCalls = mocks.tinybird.state.pipeCalls.filter((call) =>
         call.url.includes("activity_earnings_chart.json"),
     );
     expect(earningsCalls).toHaveLength(1);
-});
-
-test("GET /api/account/earnings derives totals from entity rollups when source rollups are absent", async ({
-    sessionToken,
-    mocks,
-}) => {
-    await mocks.enable("tinybird");
-
-    mocks.tinybird.state.earningsResponse = [
-        earningsRow({
-            date: "",
-            entity_id: "key_byop_app_1",
-            entity_name: "BYOP App",
-            source: "byop_markup",
-            pollen_earned: 0.1,
-            paid_earned: 0.08,
-            tier_earned: 0.02,
-        }),
-        earningsRow({
-            date: "",
-            entity_id: "owner/model",
-            entity_name: "Community Model",
-            source: "community_model",
-            pollen_earned: 0.3,
-            paid_earned: 0.12,
-            tier_earned: 0.18,
-        }),
-    ];
-
-    const response = await SELF.fetch(
-        "http://localhost:3000/api/account/earnings?days=30",
-        { headers: authHeaders(sessionToken) },
-    );
-    expect(response.status).toBe(200);
-
-    const body = (await response.json()) as {
-        total: Record<string, unknown>;
-    };
-
-    expect(body).not.toHaveProperty("bySource");
-    expect(Number(body.total.pollen_earned)).toBeCloseTo(0.4);
-    expect(Number(body.total.paid_earned)).toBeCloseTo(0.2);
-    expect(Number(body.total.tier_earned)).toBeCloseTo(0.2);
 });
 
 test("GET /api/account/earnings emits daily earnings CSV", async ({
@@ -197,7 +165,7 @@ test("GET /api/account/earnings emits daily earnings CSV", async ({
     expect(earningsCalls).toHaveLength(1);
 });
 
-test("GET /api/account/earnings/transactions emits detailed earnings CSV", async ({
+test("GET /api/account/earnings/transactions returns trimmed feed rows", async ({
     sessionToken,
     mocks,
 }) => {
@@ -207,45 +175,41 @@ test("GET /api/account/earnings/transactions emits detailed earnings CSV", async
         {
             cursor_event_id: "event-1",
             timestamp: "2026-04-14 12:10:00",
-            type: "generate.text",
-            source: "byop_markup",
-            entity_id: "key_byop_app_1",
             entity_name: "BYOP App",
-            app_key_id: "key_byop_app_1",
-            app_name: "BYOP App",
-            payer_user_id: "user_1",
             model: "openai-fast",
             meter_source: "tier",
-            baseline_price: 0.4,
             pollen_earned: 0.1,
-            cost_usd: 0.5,
-            markup_rate: 0.25,
-            response_time_ms: 123,
         },
     ];
 
     const response = await SELF.fetch(
-        "http://localhost:3000/api/account/earnings/transactions?days=30&format=csv&limit=50000",
+        "http://localhost:3000/api/account/earnings/transactions?days=30&limit=50",
         { headers: authHeaders(sessionToken) },
     );
     expect(response.status).toBe(200);
-    expect(response.headers.get("Content-Type")).toBe("text/csv");
 
-    const csv = await response.text();
-    const [header, ...rows] = csv.split("\n");
+    const body = (await response.json()) as {
+        transactions: Record<string, unknown>[];
+        count: number;
+    };
 
-    expect(header).toBe(
-        "timestamp,type,source,entity_id,entity_name,app_key_id,app_name,payer_user_id,model,meter_source,baseline_price,pollen_earned,cost_usd,markup_rate,response_time_ms",
-    );
-    expect(rows[0]).toBe(
-        "2026-04-14 12:10:00,generate.text,byop_markup,key_byop_app_1,BYOP App,key_byop_app_1,BYOP App,user_1,openai-fast,tier,0.4,0.1,0.5,0.25,123",
-    );
+    expect(body.count).toBe(1);
+    expect(body.transactions[0]).toEqual({
+        cursor_event_id: "event-1",
+        timestamp: "2026-04-14 12:10:00",
+        entity_name: "BYOP App",
+        model: "openai-fast",
+        meter_source: "tier",
+        pollen_earned: 0.1,
+    });
 
     const earningsCalls = mocks.tinybird.state.pipeCalls.filter((call) =>
         call.url.includes("activity_earnings_transactions.json"),
     );
     expect(earningsCalls).toHaveLength(1);
-    expect(earningsCalls[0].query.limit).toBe("50000");
+    expect(earningsCalls[0].query.limit).toBe("50");
+    expect(earningsCalls[0].query.before).toBeUndefined();
+    expect(earningsCalls[0].query.before_event_id).toBeUndefined();
 });
 
 test("GET /api/account/earnings/transactions returns community model rewards", async ({
@@ -258,20 +222,10 @@ test("GET /api/account/earnings/transactions returns community model rewards", a
         {
             cursor_event_id: "event-model-1",
             timestamp: "2026-04-14 12:10:00",
-            type: "generate.text",
-            source: "community_model",
-            entity_id: "owner/model",
             entity_name: "Community Model",
-            app_key_id: "",
-            app_name: "",
-            payer_user_id: "user_1",
             model: "owner/model",
             meter_source: "pack",
-            baseline_price: 0.4,
             pollen_earned: 0.1,
-            cost_usd: 0.4,
-            markup_rate: 0,
-            response_time_ms: 123,
         },
     ];
 
@@ -287,11 +241,9 @@ test("GET /api/account/earnings/transactions returns community model rewards", a
 
     expect(body).not.toHaveProperty("has_more");
     expect(body.transactions[0]).toMatchObject({
-        source: "community_model",
-        entity_id: "owner/model",
         entity_name: "Community Model",
-        app_key_id: "",
-        app_name: "",
+        model: "owner/model",
+        meter_source: "pack",
         pollen_earned: 0.1,
     });
 

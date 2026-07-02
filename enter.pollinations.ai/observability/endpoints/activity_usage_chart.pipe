@@ -25,6 +25,6 @@ SQL >
         {% if defined(until) %} AND timestamp < {{ DateTime(until) }} {% end %}
         {% if defined(api_key_ids) %} AND api_key_id IN {{ Array(api_key_ids, 'String') }} {% end %}
     GROUP BY date, api_key_id, api_key, model, meter_source
-    ORDER BY date DESC, requests DESC
+    ORDER BY date DESC, requests DESC, model, meter_source, api_key_id
 
 TYPE endpoint

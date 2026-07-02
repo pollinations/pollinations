@@ -31,7 +31,6 @@ SQL >
     FROM activity_usage_events
     WHERE
         user_id = {{ String(user_id, '') }}
-        {% if defined(api_key_id) %} AND api_key_id = {{ String(api_key_id) }} {% end %}
         {% if defined(api_key_ids) %} AND api_key_id IN {{ Array(api_key_ids, 'String') }} {% end %}
         {% if defined(models) %} AND resolved_model IN {{ Array(models, 'String') }} {% end %}
         {% if defined(since) %} AND timestamp >= {{ DateTime(since) }}

@@ -13,7 +13,7 @@ import {
 } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import type { FC } from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Chart } from "./chart";
 import { formatActivityPollen } from "./format-activity-pollen";
 import { MetricTabs } from "./metric-tabs";
@@ -43,26 +43,6 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period }) => {
         selectedAppKeyIds,
         selectedModelIds,
     });
-
-    useEffect(() => {
-        const validAppIds = new Set(usedApps.map((app) => app.id));
-        const validSelectedAppKeyIds = selectedAppKeyIds.filter((id) =>
-            validAppIds.has(id),
-        );
-        if (validSelectedAppKeyIds.length !== selectedAppKeyIds.length) {
-            setSelectedAppKeyIds(validSelectedAppKeyIds);
-        }
-    }, [usedApps, selectedAppKeyIds]);
-
-    useEffect(() => {
-        const validModelIds = new Set(usedModels.map((model) => model.id));
-        const validSelectedModelIds = selectedModelIds.filter((id) =>
-            validModelIds.has(id),
-        );
-        if (validSelectedModelIds.length !== selectedModelIds.length) {
-            setSelectedModelIds(validSelectedModelIds);
-        }
-    }, [usedModels, selectedModelIds]);
 
     const appSelectOptions = usedApps.map((app) => ({
         value: app.id,

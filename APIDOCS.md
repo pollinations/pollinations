@@ -1086,7 +1086,7 @@ curl "https://gen.pollinations.ai/account/usage?format=json&limit=100" \
 
 #### `GET` `/account/usage/daily` — Get Daily Usage
 
-Returns daily aggregated usage for the requested time window, grouped by date and model. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Useful for dashboards and spending analysis. Supports JSON and CSV export. Results are cached for 1 hour. API keys require `account:usage`.
+Returns aggregated usage for the requested time window, grouped by date, API key, model, and billing source. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Useful for dashboards and spending analysis. Supports JSON and CSV export. API keys require `account:usage`.
 
 ⚙️ **Parameters**
 
@@ -1106,6 +1106,8 @@ Returns daily aggregated usage for the requested time window, grouped by date an
 |---|---|---|
 | `usage` * | `object`[] | Array of daily usage records |
 | `usage[].date` * | `string` | Date (YYYY-MM-DD format) |
+| `usage[].api_key_id` * | `string` | API key id used for these requests |
+| `usage[].api_key` * | `string` \| `null` | API key name used for these requests |
 | `usage[].model` * | `string` \| `null` | Model used |
 | `usage[].meter_source` * | `string` \| `null` | Billing source: 'tier' = tier balance, 'pack' = paid balance |
 | `usage[].requests` * | `number` | Number of requests |
@@ -1125,7 +1127,7 @@ curl "https://gen.pollinations.ai/account/usage/daily?format=json&days=90" \
 
 #### `GET` `/account/earnings` — Get Developer Earnings
 
-Returns developer earnings in one response: per-(date, entity) buckets, per-entity rollups, per-source rollups, and additive money totals across BYOP apps and community models. Source-specific rows include `requests`, `baseline_price`, reward basis `cost_usd`, `reward_rate`, and `unique_users`; the top-level total only includes additive earned-pollen fields. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. API keys require `account:usage`.
+Returns developer earnings in one response: per-(date, entity) buckets and per-entity rollups across BYOP apps and community models. Rows include `requests`, `baseline_price`, reward basis `cost_usd`, and `reward_rate`. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. API keys require `account:usage`.
 
 ⚙️ **Parameters**
 
@@ -1135,35 +1137,28 @@ Returns developer earnings in one response: per-(date, entity) buckets, per-enti
 | `days` | `query` | `integer` | default: `90` · range: `1…90` |
 | `granularity` | `query` | `"day"` \| `"week"` \| `"month"` | — |
 | `period` | `query` | `string` | — |
-| `api_key_ids` | `query` | `string` | — |
 
 <sub>`*` = required parameter</sub>
 
-📤 **Response** · `200` · `application/json` — Combined earnings buckets and rollups
+📤 **Response** · `200` · `application/json` — Earnings buckets and rollups
 
 | Field | Type | Description |
 |---|---|---|
-| `daily` * | `object`[] | Per-(date, app) buckets for the period |
+| `daily` * | `object`[] | Per-(date, earning entity) buckets for the period |
 | `daily[].date` * | `string` | Date bucket (YYYY-MM-DD or hourly); empty string on rollup rows |
-| `daily[].app_key_id` * | `string` | BYOP app key id; empty string on the global rollup row |
-| `daily[].app_name` * | `string` | App display name |
+| `daily[].entity_id` * | `string` | Earning entity id (BYOP app key or community model) |
+| `daily[].entity_name` * | `string` | Earning entity display name |
+| `daily[].source` * | `"byop_markup"` \| `"community_model"` | Reward source |
 | `daily[].requests` * | `number` | Number of billed requests |
+| `daily[].paid_requests` * | `number` | Billed requests paid from paid balance |
+| `daily[].tier_requests` * | `number` | Billed requests paid from tier balance |
 | `daily[].baseline_price` * | `number` | Model cost before markup (sum over the bucket) |
-| `daily[].pollen_earned` * | `number` | Developer credit — markup take (cost_usd − baseline_price) |
-| `daily[].cost_usd` * | `number` | Markup-inclusive total charged to payers (sum over the bucket) |
-| `daily[].markup_rate` * | `number` | Average markup rate applied |
-| `daily[].unique_users` * | `number` | Distinct end-users who paid. Always 0 on daily/hourly bucket rows by design — meaningful only on rollup rows (where date=''). |
-| `perApp` * | `object`[] | Per-app rollups for the period |
-| `perApp[].date` * | `string` | Date bucket (YYYY-MM-DD or hourly); empty string on rollup rows |
-| `perApp[].app_key_id` * | `string` | BYOP app key id; empty string on the global rollup row |
-| `perApp[].app_name` * | `string` | App display name |
-| `perApp[].requests` * | `number` | Number of billed requests |
-| `perApp[].baseline_price` * | `number` | Model cost before markup (sum over the bucket) |
-| `perApp[].pollen_earned` * | `number` | Developer credit — markup take (cost_usd − baseline_price) |
-| `perApp[].cost_usd` * | `number` | Markup-inclusive total charged to payers (sum over the bucket) |
-| `perApp[].markup_rate` * | `number` | Average markup rate applied |
-| `perApp[].unique_users` * | `number` | Distinct end-users who paid. Always 0 on daily/hourly bucket rows by design — meaningful only on rollup rows (where date=''). |
-| `global` * | `object` \| `null` | Global rollup across all apps for the period |
+| `daily[].pollen_earned` * | `number` | Developer credit earned over the bucket |
+| `daily[].paid_earned` * | `number` | Developer credit earned from paid-balance spend |
+| `daily[].tier_earned` * | `number` | Developer credit earned from tier-balance spend |
+| `daily[].cost_usd` * | `number` | Reward basis total for the bucket; BYOP rows use payer charge, community model rows use model price |
+| `daily[].reward_rate` * | `number` | Average reward or markup rate applied |
+| `perEntity` * | `object`[] | Per-entity rollups for the period. Same fields as `daily` with `date` empty and `reward_rate` request-weighted. |
 
 <sub>`*` = required field</sub>
 

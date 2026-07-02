@@ -45,12 +45,9 @@ function getNextRefillAt(tier?: string | null): string | null {
     return next.toISOString();
 }
 
-// Cache TTL in seconds
-const CACHE_TTL = 60 * 60; // 1 hour
 const DEFAULT_USAGE_DAYS = 30;
 const DEFAULT_DAILY_USAGE_DAYS = 90;
 const MAX_USAGE_DAYS = 90;
-const USAGE_CHUNK_DAYS = 30;
 const MAX_USAGE_EXPORT_ROWS = 50_000;
 
 const SECONDS_PER_DAY = 86400;
@@ -173,6 +170,7 @@ const CreateKeySchema = z.object({
 // CSV escape helper
 const escapeCSV = (val: string | number | boolean | null) => {
     if (val === null || val === undefined) return "";
+    if (typeof val === "number") return String(val);
     const raw = String(val);
     const str = /^[\t\r\n]|^\s*[=+\-@]/.test(raw) ? `'${raw}` : raw;
     if (str.includes(",") || str.includes('"') || str.includes("\n")) {
@@ -181,15 +179,17 @@ const escapeCSV = (val: string | number | boolean | null) => {
     return str;
 };
 
-function formatTinybirdDateTime(date: Date): string {
-    return date.toISOString().slice(0, 19).replace("T", " ");
-}
-
-function startOfNextUtcDay(now = new Date()): Date {
-    const next = new Date(now);
-    next.setUTCHours(0, 0, 0, 0);
-    next.setUTCDate(next.getUTCDate() + 1);
-    return next;
+function toCsv<T>(columns: readonly (keyof T & string)[], rows: T[]): string {
+    return [
+        columns.join(","),
+        ...rows.map((row) =>
+            columns
+                .map((col) =>
+                    escapeCSV(row[col] as string | number | boolean | null),
+                )
+                .join(","),
+        ),
+    ].join("\n");
 }
 
 function addUtcDays(date: Date, days: number): Date {
@@ -201,6 +201,7 @@ function addUtcDays(date: Date, days: number): Date {
 type UsageWindow = {
     since: string;
     until: string;
+    filenamePart: string;
 };
 
 type UsageWindowDates = {
@@ -213,25 +214,8 @@ type UsagePeriod = {
     period?: string;
 };
 
-function formatUsageWindow(window: UsageWindowDates): UsageWindow {
-    return {
-        since: formatTinybirdDateTime(window.sinceDate),
-        until: formatTinybirdDateTime(window.untilDate),
-    };
-}
-
-function buildUsageWindow(days: number): UsageWindowDates {
-    const untilDate = startOfNextUtcDay();
-    const sinceDate = addUtcDays(untilDate, -days);
-    return { sinceDate, untilDate };
-}
-
 function startOfUtcDay(year: number, monthIndex: number, day: number): Date {
     return new Date(Date.UTC(year, monthIndex, day, 0, 0, 0, 0));
-}
-
-function usageMinDate(): Date {
-    return new Date(`${USAGE_MIN_DATE}T00:00:00.000Z`);
 }
 
 function parseUtcDayPeriod(period: string): UsageWindowDates | null {
@@ -317,64 +301,49 @@ function buildUsageWindowFromPeriod({
     return null;
 }
 
-function resolveUsageWindow(
-    days: number,
-    period: UsagePeriod,
-): UsageWindowDates {
+function resolveUsageWindow(days: number, period: UsagePeriod): UsageWindow {
     const hasPeriodParam = period.granularity || period.period;
-    const usageWindow = buildUsageWindowFromPeriod(period);
-    if (hasPeriodParam && !usageWindow) {
+    const periodWindow = buildUsageWindowFromPeriod(period);
+    if (hasPeriodParam && !periodWindow) {
         throw new HTTPException(400, {
             message:
                 "Invalid usage period. Use granularity=day&period=YYYY-MM-DD, granularity=week&period=YYYY-WNN, or granularity=month&period=YYYY-MM.",
         });
     }
-    if (usageWindow) {
-        const now = new Date();
-        const today = startOfUtcDay(
-            now.getUTCFullYear(),
-            now.getUTCMonth(),
-            now.getUTCDate(),
-        );
+
+    const now = new Date();
+    const today = startOfUtcDay(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate(),
+    );
+    if (periodWindow) {
+        const minDate = new Date(`${USAGE_MIN_DATE}T00:00:00.000Z`);
         if (
-            usageWindow.untilDate <= usageMinDate() ||
-            usageWindow.sinceDate > today
+            periodWindow.untilDate <= minDate ||
+            periodWindow.sinceDate > today
         ) {
             throw new HTTPException(400, {
                 message: `Usage period must overlap ${USAGE_MIN_DATE} through today.`,
             });
         }
     }
-    return usageWindow || buildUsageWindow(days);
-}
 
-function usageWindowFilenamePart(days: number, period: UsagePeriod): string {
-    return period.granularity && period.period
-        ? `${period.granularity}-${period.period}`
-        : `${days}d`;
-}
+    const { sinceDate, untilDate } = periodWindow ?? {
+        sinceDate: addUtcDays(today, 1 - days),
+        untilDate: addUtcDays(today, 1),
+    };
+    const toTinybirdDateTime = (date: Date) =>
+        date.toISOString().slice(0, 19).replace("T", " ");
 
-function buildUsageWindows(
-    days: number,
-    period: UsagePeriod = {},
-    chunkDays = USAGE_CHUNK_DAYS,
-    newestFirst = false,
-): UsageWindow[] {
-    const overallWindow = resolveUsageWindow(days, period);
-    const windows: UsageWindow[] = [];
-    let cursor = overallWindow.sinceDate;
-    const end = overallWindow.untilDate;
-
-    while (cursor < end) {
-        const next = addUtcDays(cursor, chunkDays);
-        const boundedNext = next < end ? next : end;
-        windows.push(
-            formatUsageWindow({ sinceDate: cursor, untilDate: boundedNext }),
-        );
-        cursor = boundedNext;
-    }
-
-    return newestFirst ? windows.reverse() : windows;
+    return {
+        since: toTinybirdDateTime(sinceDate),
+        until: toTinybirdDateTime(untilDate),
+        filenamePart:
+            period.granularity && period.period
+                ? `${period.granularity}-${period.period}`
+                : `${days}d`,
+    };
 }
 
 function parseCommaSeparatedQueryList(value?: string): string[] {
@@ -433,47 +402,14 @@ const usageDailyQuerySchema = z.object({
     api_key_ids: commaSeparatedQueryList,
 });
 
-const earningsTransactionsQuerySchema = usageQuerySchema.omit({
-    api_key_ids: true,
-    models: true,
+const earningsQuerySchema = usageDailyQuerySchema.omit({ api_key_ids: true });
+
+const earningsTransactionsQuerySchema = usageQuerySchema.pick({
+    limit: true,
+    days: true,
+    granularity: true,
+    period: true,
 });
-
-type DailyUsageRecord = {
-    date: string;
-    api_key_id: string;
-    api_key: string | null;
-    model: string | null;
-    meter_source: string | null;
-    requests: number;
-    cost_usd: number;
-};
-
-type UsageRecord = {
-    timestamp: string;
-    type: string;
-    model: string | null;
-    api_key_id: string | null;
-    api_key: string | null;
-    api_key_type: string | null;
-    meter_source: string | null;
-    input_text_tokens: number;
-    input_cached_tokens: number;
-    input_audio_tokens: number;
-    input_audio_seconds: number;
-    input_image_tokens: number;
-    output_text_tokens: number;
-    output_reasoning_tokens: number;
-    output_audio_tokens: number;
-    output_audio_seconds: number;
-    output_image_tokens: number;
-    output_video_seconds: number;
-    cost_usd: number;
-    response_time_ms: number | null;
-};
-
-type UsageRecordWithCursor = UsageRecord & {
-    cursor_event_id: string;
-};
 
 // Response schema for daily usage OpenAPI documentation
 const dailyUsageRecordSchema = z.object({
@@ -494,6 +430,8 @@ const dailyUsageRecordSchema = z.object({
     cost_usd: z.number().describe("Total cost in USD"),
 });
 
+type DailyUsageRecord = z.infer<typeof dailyUsageRecordSchema>;
+
 const dailyUsageResponseSchema = z.object({
     usage: z
         .array(dailyUsageRecordSchema)
@@ -501,81 +439,51 @@ const dailyUsageResponseSchema = z.object({
     count: z.number().describe("Number of records returned"),
 });
 
-function sortDailyUsageRecords(usage: DailyUsageRecord[]): DailyUsageRecord[] {
-    return usage.toSorted((left, right) => {
-        if (left.date !== right.date) {
-            return right.date.localeCompare(left.date);
-        }
-        if (right.requests !== left.requests) {
-            return right.requests - left.requests;
-        }
-        if ((left.model || "") !== (right.model || "")) {
-            return (left.model || "").localeCompare(right.model || "");
-        }
-        if ((left.meter_source || "") !== (right.meter_source || "")) {
-            return (left.meter_source || "").localeCompare(
-                right.meter_source || "",
-            );
-        }
-        return left.api_key_id.localeCompare(right.api_key_id);
-    });
-}
+const USAGE_CSV_COLUMNS = [
+    "timestamp",
+    "type",
+    "model",
+    "api_key",
+    "api_key_type",
+    "meter_source",
+    "input_text_tokens",
+    "input_cached_tokens",
+    "input_audio_tokens",
+    "input_audio_seconds",
+    "input_image_tokens",
+    "output_text_tokens",
+    "output_reasoning_tokens",
+    "output_audio_tokens",
+    "output_audio_seconds",
+    "output_image_tokens",
+    "output_video_seconds",
+    "cost_usd",
+    "response_time_ms",
+] as const;
 
-const USAGE_CSV_HEADER =
-    "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_audio_seconds,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_audio_seconds,output_image_tokens,output_video_seconds,cost_usd,response_time_ms";
+const DAILY_USAGE_CSV_COLUMNS = [
+    "date",
+    "api_key_id",
+    "api_key",
+    "model",
+    "meter_source",
+    "requests",
+    "cost_usd",
+] as const;
 
-function usageRecordToCsvRow(row: UsageRecord): string {
-    return `${escapeCSV(row.timestamp)},${escapeCSV(row.type)},${escapeCSV(row.model)},${escapeCSV(row.api_key)},${escapeCSV(row.api_key_type)},${escapeCSV(row.meter_source)},${row.input_text_tokens},${row.input_cached_tokens},${row.input_audio_tokens},${row.input_audio_seconds},${row.input_image_tokens},${row.output_text_tokens},${row.output_reasoning_tokens},${row.output_audio_tokens},${row.output_audio_seconds},${row.output_image_tokens},${row.output_video_seconds},${row.cost_usd},${escapeCSV(row.response_time_ms)}`;
-}
-
-function dailyUsageRecordToCsvRow(row: DailyUsageRecord): string {
-    return `${escapeCSV(row.date)},${escapeCSV(row.api_key_id)},${escapeCSV(row.api_key)},${escapeCSV(row.model)},${escapeCSV(row.meter_source)},${row.requests},${row.cost_usd}`;
-}
-
-type DeveloperEarningsRow = {
-    date: string;
-    entity_id: string;
-    entity_name: string;
-    source: "byop_markup" | "community_model";
-    requests: number;
-    paid_requests: number;
-    tier_requests: number;
-    baseline_price: number;
-    pollen_earned: number;
-    paid_earned: number;
-    tier_earned: number;
-    cost_usd: number;
-    reward_rate: number;
-    unique_users: number;
-};
-
-type DeveloperEarningsTransaction = {
-    timestamp: string;
-    type: string;
-    source: "byop_markup" | "community_model";
-    entity_id: string;
-    entity_name: string;
-    app_key_id: string;
-    app_name: string;
-    payer_user_id: string;
-    model: string | null;
-    meter_source: string | null;
-    baseline_price: number;
-    pollen_earned: number;
-    cost_usd: number;
-    markup_rate: number;
-    response_time_ms: number | null;
-};
-
-type DeveloperEarningsTransactionWithCursor = DeveloperEarningsTransaction & {
-    cursor_event_id: string;
-};
-
-type DeveloperEarningsTotal = {
-    pollen_earned: number;
-    paid_earned: number;
-    tier_earned: number;
-};
+const EARNINGS_CSV_COLUMNS = [
+    "date",
+    "source",
+    "entity_id",
+    "entity_name",
+    "requests",
+    "baseline_price",
+    "pollen_earned",
+    "paid_earned",
+    "tier_earned",
+    "cost_usd",
+    "reward_rate",
+] as const;
 
 const developerEarningsRowSchema = z.object({
     date: z
@@ -615,24 +523,9 @@ const developerEarningsRowSchema = z.object({
             "Reward basis total for the bucket; BYOP rows use payer charge, community model rows use model price",
         ),
     reward_rate: z.number().describe("Average reward or markup rate applied"),
-    unique_users: z
-        .number()
-        .describe(
-            "Distinct end-users who paid. Always 0 on daily/hourly bucket rows by design — meaningful only on rollup rows (where date='').",
-        ),
 });
 
-const developerEarningsTotalSchema = z.object({
-    pollen_earned: z
-        .number()
-        .describe("Total developer credit earned across earning sources"),
-    paid_earned: z
-        .number()
-        .describe("Total developer credit earned from paid-balance spend"),
-    tier_earned: z
-        .number()
-        .describe("Total developer credit earned from tier-balance spend"),
-});
+type DeveloperEarningsRow = z.infer<typeof developerEarningsRowSchema>;
 
 const developerEarningsResponseSchema = z.object({
     daily: z
@@ -641,31 +534,14 @@ const developerEarningsResponseSchema = z.object({
     perEntity: z
         .array(developerEarningsRowSchema)
         .describe("Per-earning-entity rollups for the period"),
-    total: developerEarningsTotalSchema.describe(
-        "Additive money totals across all earning sources. Non-additive metrics such as requests, users, basis, and rates are intentionally source-specific.",
-    ),
 });
 
 const developerEarningsTransactionSchema = z.object({
     timestamp: z
         .string()
         .describe("Request timestamp (YYYY-MM-DD HH:mm:ss format)"),
-    cursor_event_id: z
-        .string()
-        .describe("Event id used with `before_event_id` for stable pagination"),
-    type: z.string().describe("Request type"),
-    source: z
-        .enum(["byop_markup", "community_model"])
-        .describe("Earning source"),
-    entity_id: z
-        .string()
-        .describe("Earning entity id: BYOP app key or community model"),
+    cursor_event_id: z.string().describe("Stable event id"),
     entity_name: z.string().describe("Earning entity display name"),
-    app_key_id: z.string().describe("BYOP app key id, empty for model rewards"),
-    app_name: z
-        .string()
-        .describe("BYOP app display name, empty for model rewards"),
-    payer_user_id: z.string().describe("Pollinations user id that paid"),
     model: z.string().nullable().describe("Model used for generation"),
     meter_source: z
         .string()
@@ -673,19 +549,12 @@ const developerEarningsTransactionSchema = z.object({
         .describe(
             "Billing source: 'tier' = tier balance, 'pack' = paid balance",
         ),
-    baseline_price: z.number().describe("Model cost before markup"),
-    pollen_earned: z
-        .number()
-        .describe("Developer credit — markup take (cost_usd − baseline_price)"),
-    cost_usd: z
-        .number()
-        .describe("Markup-inclusive total charged to the payer"),
-    markup_rate: z.number().describe("Markup rate applied"),
-    response_time_ms: z
-        .number()
-        .nullable()
-        .describe("Response time in milliseconds"),
+    pollen_earned: z.number().describe("Developer credit earned"),
 });
+
+type DeveloperEarningsTransaction = z.infer<
+    typeof developerEarningsTransactionSchema
+>;
 
 const developerEarningsTransactionsResponseSchema = z.object({
     transactions: z
@@ -694,153 +563,42 @@ const developerEarningsTransactionsResponseSchema = z.object({
     count: z.number().describe("Number of records returned"),
 });
 
-function dailyEarningsRowToCsvRow(row: DeveloperEarningsRow): string {
-    return `${escapeCSV(row.date)},${escapeCSV(row.source)},${escapeCSV(row.entity_id)},${escapeCSV(row.entity_name)},${row.requests},${row.baseline_price},${row.pollen_earned},${row.paid_earned},${row.tier_earned},${row.cost_usd},${row.reward_rate}`;
-}
-
-function totalDeveloperEarnings(
-    rows: DeveloperEarningsRow[],
-): DeveloperEarningsTotal {
-    return rows.reduce(
-        (total, row) => ({
-            pollen_earned: total.pollen_earned + row.pollen_earned,
-            paid_earned: total.paid_earned + row.paid_earned,
-            tier_earned: total.tier_earned + row.tier_earned,
-        }),
-        { pollen_earned: 0, paid_earned: 0, tier_earned: 0 },
-    );
-}
-
-const EARNINGS_TRANSACTIONS_CSV_HEADER =
-    "timestamp,type,source,entity_id,entity_name,app_key_id,app_name,payer_user_id,model,meter_source,baseline_price,pollen_earned,cost_usd,markup_rate,response_time_ms";
-
-function earningsTransactionToCsvRow(
-    row: DeveloperEarningsTransaction,
-): string {
-    return `${escapeCSV(row.timestamp)},${escapeCSV(row.type)},${escapeCSV(row.source)},${escapeCSV(row.entity_id)},${escapeCSV(row.entity_name)},${escapeCSV(row.app_key_id)},${escapeCSV(row.app_name)},${escapeCSV(row.payer_user_id)},${escapeCSV(row.model)},${escapeCSV(row.meter_source)},${row.baseline_price},${row.pollen_earned},${row.cost_usd},${row.markup_rate},${escapeCSV(row.response_time_ms)}`;
-}
-
-async function fetchDetailedUsagePage(
-    origin: string,
-    token: string,
-    params: {
-        userId: string;
-        apiKeyId?: string;
-        apiKeyIds?: string[];
-        models?: string[];
-        limit: number;
-        since: string;
-        until: string;
-        before?: string;
-        beforeEventId?: string;
-    },
-): Promise<UsageRecordWithCursor[]> {
-    return fetchTinybirdRows<UsageRecordWithCursor>(
-        origin,
-        "/v0/pipes/activity_usage_transactions.json",
-        token,
-        {
-            user_id: params.userId,
-            api_key_id: params.apiKeyId,
-            api_key_ids:
-                params.apiKeyIds && params.apiKeyIds.length > 0
-                    ? params.apiKeyIds.join(",")
-                    : undefined,
-            models:
-                params.models && params.models.length > 0
-                    ? params.models.join(",")
-                    : undefined,
-            limit: params.limit.toString(),
-            since: params.since,
-            until: params.until,
-            before: params.before,
-            before_event_id: params.beforeEventId,
-        },
-    );
-}
-
-async function fetchDetailedEarningsPage(
-    origin: string,
-    token: string,
-    params: {
-        devUserId: string;
-        limit: number;
-        since: string;
-        until: string;
-        before?: string;
-        beforeEventId?: string;
-    },
-): Promise<DeveloperEarningsTransactionWithCursor[]> {
-    return fetchTinybirdRows<DeveloperEarningsTransactionWithCursor>(
-        origin,
-        "/v0/pipes/activity_earnings_transactions.json",
-        token,
-        {
-            dev_user_id: params.devUserId,
-            limit: params.limit.toString(),
-            since: params.since,
-            until: params.until,
-            before: params.before,
-            before_event_id: params.beforeEventId,
-        },
-    );
-}
-
-async function respondDetailedEarnings(
-    c: Pick<Context<Env>, "env" | "json">,
-    log: Logger,
-    params: {
-        devUserId: string;
-        filenamePrefix: string;
-        filenamePeriod: string;
-        format: "json" | "csv";
-        limit: number;
-        since: string;
-        until: string;
-        before?: string;
-        beforeEventId?: string;
-    },
-): Promise<Response> {
-    const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
-    const tinybirdToken = requireTinybirdReadToken(c.env);
-
-    try {
-        const fetchedTransactions = await fetchDetailedEarningsPage(
-            tinybirdOrigin,
-            tinybirdToken,
-            {
-                devUserId: params.devUserId,
-                limit: params.limit,
-                since: params.since,
-                until: params.until,
-                before: params.before,
-                beforeEventId: params.beforeEventId,
-            },
-        );
-        const transactions = fetchedTransactions;
-
-        if (params.format === "csv") {
-            const rows = transactions.map(
-                ({ cursor_event_id: _, ...transaction }) =>
-                    earningsTransactionToCsvRow(transaction),
-            );
-            const csv = [EARNINGS_TRANSACTIONS_CSV_HEADER, ...rows].join("\n");
-            return new Response(csv, {
-                headers: {
-                    "Content-Type": "text/csv",
-                    "Content-Disposition": `attachment; filename="${params.filenamePrefix}-${transactions.length}-rows-${params.filenamePeriod}-${new Date().toISOString().split("T")[0]}.csv"`,
-                },
+// Per-entity rollups derived from the daily buckets; reward_rate is the
+// request-weighted average.
+function rollupEarningsByEntity(
+    daily: DeveloperEarningsRow[],
+): DeveloperEarningsRow[] {
+    const byEntity = new Map<
+        string,
+        DeveloperEarningsRow & { weightedRate: number }
+    >();
+    for (const row of daily) {
+        const key = `${row.source}:${row.entity_id}`;
+        const entry = byEntity.get(key);
+        if (!entry) {
+            byEntity.set(key, {
+                ...row,
+                date: "",
+                weightedRate: row.reward_rate * row.requests,
             });
+            continue;
         }
-
-        return c.json({
-            transactions,
-            count: transactions.length,
-        });
-    } catch (error) {
-        log.error("Error fetching earnings transactions: {error}", { error });
-        return c.json({ error: "Failed to fetch earnings transactions" }, 500);
+        entry.requests += row.requests;
+        entry.paid_requests += row.paid_requests;
+        entry.tier_requests += row.tier_requests;
+        entry.baseline_price += row.baseline_price;
+        entry.pollen_earned += row.pollen_earned;
+        entry.paid_earned += row.paid_earned;
+        entry.tier_earned += row.tier_earned;
+        entry.cost_usd += row.cost_usd;
+        entry.weightedRate += row.reward_rate * row.requests;
     }
+    return Array.from(byEntity.values())
+        .map(({ weightedRate, ...row }) => ({
+            ...row,
+            reward_rate: row.requests > 0 ? weightedRate / row.requests : 0,
+        }))
+        .sort((left, right) => right.pollen_earned - left.pollen_earned);
 }
 
 // Shared tail for the detailed-usage endpoints (/usage, /key/usage):
@@ -851,7 +609,6 @@ async function respondDetailedUsage(
     log: Logger,
     params: {
         userId: string;
-        apiKeyId?: string;
         apiKeyIds?: string[];
         models?: string[];
         filenamePrefix: string;
@@ -868,28 +625,30 @@ async function respondDetailedUsage(
     const tinybirdToken = requireTinybirdReadToken(c.env);
 
     try {
-        const fetchedUsage = await fetchDetailedUsagePage(
+        const usage = await fetchTinybirdRows<UsageRecordWithCursor>(
             tinybirdOrigin,
+            "/v0/pipes/activity_usage_transactions.json",
             tinybirdToken,
             {
-                userId: params.userId,
-                apiKeyId: params.apiKeyId,
-                apiKeyIds: params.apiKeyIds,
-                models: params.models,
-                limit: params.limit,
+                user_id: params.userId,
+                api_key_ids:
+                    params.apiKeyIds && params.apiKeyIds.length > 0
+                        ? params.apiKeyIds.join(",")
+                        : undefined,
+                models:
+                    params.models && params.models.length > 0
+                        ? params.models.join(",")
+                        : undefined,
+                limit: params.limit.toString(),
                 since: params.since,
                 until: params.until,
                 before: params.before,
-                beforeEventId: params.beforeEventId,
+                before_event_id: params.beforeEventId,
             },
         );
-        const usage = fetchedUsage;
 
         if (params.format === "csv") {
-            const rows = usage.map(({ cursor_event_id: _, ...usage }) =>
-                usageRecordToCsvRow(usage),
-            );
-            const csv = [USAGE_CSV_HEADER, ...rows].join("\n");
+            const csv = toCsv(USAGE_CSV_COLUMNS, usage);
             return new Response(csv, {
                 headers: {
                     "Content-Type": "text/csv",
@@ -1040,6 +799,8 @@ const usageRecordSchema = z.object({
         .nullable()
         .describe("Response time in milliseconds"),
 });
+
+type UsageRecordWithCursor = z.infer<typeof usageRecordSchema>;
 
 const usageResponseSchema = z.object({
     usage: z.array(usageRecordSchema).describe("Array of usage records"),
@@ -1305,13 +1066,7 @@ export const accountRoutes = new Hono<Env>()
             } = c.req.valid("query");
             const { userId: usageUserId, overridden: usageUserOverridden } =
                 resolveUsageTargetUserId(c.env, user.id, apiKey);
-            const usageWindow = formatUsageWindow(
-                resolveUsageWindow(days, {
-                    granularity,
-                    period,
-                }),
-            );
-            const filenamePeriod = usageWindowFilenamePart(days, {
+            const usageWindow = resolveUsageWindow(days, {
                 granularity,
                 period,
             });
@@ -1333,7 +1088,7 @@ export const accountRoutes = new Hono<Env>()
             return respondDetailedUsage(c, log, {
                 userId: usageUserId,
                 filenamePrefix: "pollinations-usage-latest",
-                filenamePeriod,
+                filenamePeriod: usageWindow.filenamePart,
                 format,
                 limit,
                 apiKeyIds,
@@ -1351,7 +1106,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Daily Usage",
             description:
-                "Returns aggregated usage for the requested time window, grouped by date, API key, model, and billing source. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Useful for dashboards and spending analysis. Supports JSON and CSV export. Results are cached for 1 hour. Requires `account:usage` permission when using API keys.",
+                "Returns aggregated usage for the requested time window, grouped by date, API key, model, and billing source. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Useful for dashboards and spending analysis. Supports JSON and CSV export. Requires `account:usage` permission when using API keys.",
             responses: {
                 200: {
                     description:
@@ -1394,69 +1149,27 @@ export const accountRoutes = new Hono<Env>()
                 resolveUsageTargetUserId(c.env, user.id, apiKey);
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = requireTinybirdReadToken(c.env);
-            const kv = c.env.KV;
-            const cacheKeyPrefix = usageUserOverridden
-                ? `usage:daily:v6:debug:${usageUserId}`
-                : `usage:daily:v6:${usageUserId}`;
-            const periodCacheKey =
-                granularity && period ? `${granularity}:${period}` : `${days}d`;
-            const filenamePeriod = usageWindowFilenamePart(days, {
-                granularity,
-                period,
-            });
-            const cacheKey = `${cacheKeyPrefix}:${periodCacheKey}:grain:${grain}:${apiKeyIds.length > 0 ? `keys:${apiKeyIds.join(",")}` : "all"}`;
-            const windows = buildUsageWindows(days, { granularity, period });
+            const window = resolveUsageWindow(days, { granularity, period });
 
             try {
-                let usage: DailyUsageRecord[] | null = null;
-                let cached = false;
-
-                try {
-                    const cachedData = await kv.get<DailyUsageRecord[]>(
-                        cacheKey,
-                        "json",
-                    );
-                    if (cachedData) {
-                        usage = cachedData;
-                        cached = true;
-                    }
-                } catch (err) {
-                    log.trace("KV get error: {err}", { err });
-                }
-
-                if (!usage) {
-                    const chunkResults = await Promise.all(
-                        windows.map((window) =>
-                            fetchTinybirdRows<DailyUsageRecord>(
-                                tinybirdOrigin,
-                                "/v0/pipes/activity_usage_chart.json",
-                                tinybirdToken,
-                                {
-                                    user_id: usageUserId,
-                                    since: window.since,
-                                    until: window.until,
-                                    grain,
-                                    api_key_ids:
-                                        apiKeyIds.length > 0
-                                            ? apiKeyIds.join(",")
-                                            : undefined,
-                                },
-                            ),
-                        ),
-                    );
-                    usage = sortDailyUsageRecords(chunkResults.flat());
-
-                    try {
-                        await kv.put(cacheKey, JSON.stringify(usage), {
-                            expirationTtl: CACHE_TTL,
-                        });
-                    } catch (err) {
-                        log.trace("KV put error: {err}", { err });
-                    }
-                }
+                const usage = await fetchTinybirdRows<DailyUsageRecord>(
+                    tinybirdOrigin,
+                    "/v0/pipes/activity_usage_chart.json",
+                    tinybirdToken,
+                    {
+                        user_id: usageUserId,
+                        since: window.since,
+                        until: window.until,
+                        grain,
+                        api_key_ids:
+                            apiKeyIds.length > 0
+                                ? apiKeyIds.join(",")
+                                : undefined,
+                    },
+                );
 
                 log.debug(
-                    "Fetched daily usage: requesterUserId={requesterUserId} targetUserId={targetUserId} override={override} days={days} apiKeyIds={apiKeyIds} count={count} cached={cached}",
+                    "Fetched daily usage: requesterUserId={requesterUserId} targetUserId={targetUserId} override={override} days={days} apiKeyIds={apiKeyIds} count={count}",
                     {
                         requesterUserId: user.id,
                         targetUserId: usageUserId,
@@ -1464,20 +1177,16 @@ export const accountRoutes = new Hono<Env>()
                         days,
                         apiKeyIds,
                         count: usage.length,
-                        cached,
                     },
                 );
 
                 if (format === "csv") {
-                    const header =
-                        "date,api_key_id,api_key,model,meter_source,requests,cost_usd";
-                    const rows = usage.map(dailyUsageRecordToCsvRow);
-                    const csv = [header, ...rows].join("\n");
+                    const csv = toCsv(DAILY_USAGE_CSV_COLUMNS, usage);
 
                     return new Response(csv, {
                         headers: {
                             "Content-Type": "text/csv",
-                            "Content-Disposition": `attachment; filename="pollinations-usage-daily-${filenamePeriod}-${new Date().toISOString().split("T")[0]}.csv"`,
+                            "Content-Disposition": `attachment; filename="pollinations-usage-daily-${window.filenamePart}-${new Date().toISOString().split("T")[0]}.csv"`,
                         },
                     });
                 }
@@ -1498,7 +1207,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Earnings Transactions",
             description:
-                "Returns per-request earnings transactions for table pagination and CSV export. Requires `account:usage` permission when using API keys.",
+                "Returns recent per-request earnings transactions, newest first. Requires `account:usage` permission when using API keys.",
             responses: {
                 200: {
                     description: "Earnings transaction records",
@@ -1530,39 +1239,40 @@ export const accountRoutes = new Hono<Env>()
 
             requireUsagePermission(apiKey);
 
-            const {
-                format,
-                limit,
-                before,
-                before_event_id: beforeEventId,
-                days,
-                granularity,
-                period,
-            } = c.req.valid("query");
+            const { limit, days, granularity, period } = c.req.valid("query");
             const { userId: devUserId } = resolveUsageTargetUserId(
                 c.env,
                 user.id,
                 apiKey,
             );
-            const earningsWindow = formatUsageWindow(
-                resolveUsageWindow(days, { granularity, period }),
-            );
-            const filenamePeriod = usageWindowFilenamePart(days, {
-                granularity,
-                period,
-            });
+            const window = resolveUsageWindow(days, { granularity, period });
+            const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
+            const tinybirdToken = requireTinybirdReadToken(c.env);
 
-            return respondDetailedEarnings(c, log, {
-                devUserId,
-                filenamePrefix: "pollinations-earnings-latest",
-                filenamePeriod,
-                format,
-                limit,
-                since: earningsWindow.since,
-                until: earningsWindow.until,
-                before,
-                beforeEventId,
-            });
+            try {
+                const transactions =
+                    await fetchTinybirdRows<DeveloperEarningsTransaction>(
+                        tinybirdOrigin,
+                        "/v0/pipes/activity_earnings_transactions.json",
+                        tinybirdToken,
+                        {
+                            dev_user_id: devUserId,
+                            limit: limit.toString(),
+                            since: window.since,
+                            until: window.until,
+                        },
+                    );
+
+                return c.json({ transactions, count: transactions.length });
+            } catch (error) {
+                log.error("Error fetching earnings transactions: {error}", {
+                    error,
+                });
+                return c.json(
+                    { error: "Failed to fetch earnings transactions" },
+                    500,
+                );
+            }
         },
     )
     .get(
@@ -1571,7 +1281,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Developer Earnings",
             description:
-                "Returns developer earnings in one response: per-(date, entity) buckets, per-entity rollups, and additive money totals across BYOP apps and community models. Source-specific rows include `requests`, `baseline_price`, reward basis `cost_usd`, `reward_rate`, and `unique_users`; the top-level total only includes additive earned-pollen fields. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. API keys require the read-only `account:usage` permission.",
+                "Returns developer earnings in one response: per-(date, entity) buckets and per-entity rollups across BYOP apps and community models. Rows include `requests`, `baseline_price`, reward basis `cost_usd`, and `reward_rate`. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. API keys require the read-only `account:usage` permission.",
             responses: {
                 200: {
                     description: "Earnings buckets and additive totals",
@@ -1588,7 +1298,7 @@ export const accountRoutes = new Hono<Env>()
                 },
             },
         }),
-        validator("query", usageDailyQuerySchema),
+        validator("query", earningsQuerySchema),
         async (c) => {
             const log = c.get("log").getChild("earnings");
 
@@ -1607,104 +1317,46 @@ export const accountRoutes = new Hono<Env>()
                 resolveUsageTargetUserId(c.env, user.id, apiKey);
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = requireTinybirdReadToken(c.env);
-            const kv = c.env.KV;
-            // v9: payload drops the bySource rollup.
-            const cacheKeyPrefix = devUserOverridden
-                ? `earnings:v9:debug:${devUserId}`
-                : `earnings:v9:${devUserId}`;
-            const periodCacheKey =
-                granularity && period ? `${granularity}:${period}` : `${days}d`;
-            const cacheKey = `${cacheKeyPrefix}:${periodCacheKey}:grain:${grain}`;
-            const filenamePeriod = usageWindowFilenamePart(days, {
-                granularity,
-                period,
-            });
-            const window = formatUsageWindow(
-                resolveUsageWindow(days, { granularity, period }),
-            );
-
-            type EarningsPayload = {
-                daily: DeveloperEarningsRow[];
-                perEntity: DeveloperEarningsRow[];
-                total: DeveloperEarningsTotal;
-            };
+            const window = resolveUsageWindow(days, { granularity, period });
 
             try {
-                let payload: EarningsPayload | null = null;
-                let cached = false;
-
-                try {
-                    const cachedData = await kv.get<EarningsPayload>(
-                        cacheKey,
-                        "json",
-                    );
-                    if (cachedData) {
-                        payload = cachedData;
-                        cached = true;
-                    }
-                } catch (err) {
-                    log.trace("KV get error: {err}", { err });
-                }
-
-                if (!payload) {
-                    const rows = await fetchTinybirdRows<DeveloperEarningsRow>(
-                        tinybirdOrigin,
-                        "/v0/pipes/activity_earnings_chart.json",
-                        tinybirdToken,
-                        {
-                            dev_user_id: devUserId,
-                            since: window.since,
-                            until: window.until,
-                            grain,
-                        },
-                    );
-                    const daily = rows.filter((r) => r.date !== "");
-                    const perEntity = rows
-                        .filter((r) => r.date === "")
-                        .sort((a, b) => b.pollen_earned - a.pollen_earned);
-                    payload = {
-                        daily,
-                        perEntity,
-                        total: totalDeveloperEarnings(perEntity),
-                    };
-
-                    try {
-                        await kv.put(cacheKey, JSON.stringify(payload), {
-                            expirationTtl: CACHE_TTL,
-                        });
-                    } catch (err) {
-                        log.trace("KV put error: {err}", { err });
-                    }
-                }
+                const daily = await fetchTinybirdRows<DeveloperEarningsRow>(
+                    tinybirdOrigin,
+                    "/v0/pipes/activity_earnings_chart.json",
+                    tinybirdToken,
+                    {
+                        dev_user_id: devUserId,
+                        since: window.since,
+                        until: window.until,
+                        grain,
+                    },
+                );
+                const perEntity = rollupEarningsByEntity(daily);
 
                 log.debug(
-                    "Fetched earnings: requesterUserId={requesterUserId} devUserId={devUserId} override={override} days={days} dailyCount={dailyCount} entityCount={entityCount} cached={cached}",
+                    "Fetched earnings: requesterUserId={requesterUserId} devUserId={devUserId} override={override} days={days} dailyCount={dailyCount} entityCount={entityCount}",
                     {
                         requesterUserId: user.id,
                         devUserId,
                         override: devUserOverridden,
                         days,
-                        dailyCount: payload.daily.length,
-                        entityCount: payload.perEntity.length,
-                        cached,
+                        dailyCount: daily.length,
+                        entityCount: perEntity.length,
                     },
                 );
 
                 if (format === "csv") {
-                    const header =
-                        "date,source,entity_id,entity_name,requests,baseline_price,pollen_earned,paid_earned,tier_earned,cost_usd,reward_rate";
-                    const rows = payload.daily.map(dailyEarningsRowToCsvRow);
-                    const csv = [header, ...rows].join("\n");
+                    const csv = toCsv(EARNINGS_CSV_COLUMNS, daily);
 
                     return new Response(csv, {
                         headers: {
                             "Content-Type": "text/csv",
-                            "Content-Disposition": `attachment; filename="pollinations-earnings-${filenamePeriod}-${new Date().toISOString().split("T")[0]}.csv"`,
+                            "Content-Disposition": `attachment; filename="pollinations-earnings-${window.filenamePart}-${new Date().toISOString().split("T")[0]}.csv"`,
                         },
                     });
                 }
 
-                return c.json(payload);
+                return c.json({ daily, perEntity });
             } catch (error) {
                 log.error("Error fetching earnings: {error}", { error });
                 return c.json({ error: "Failed to fetch earnings data" }, 500);
@@ -2074,13 +1726,7 @@ export const accountRoutes = new Hono<Env>()
                 period,
                 models,
             } = c.req.valid("query");
-            const usageWindow = formatUsageWindow(
-                resolveUsageWindow(days, {
-                    granularity,
-                    period,
-                }),
-            );
-            const filenamePeriod = usageWindowFilenamePart(days, {
+            const usageWindow = resolveUsageWindow(days, {
                 granularity,
                 period,
             });
@@ -2092,9 +1738,9 @@ export const accountRoutes = new Hono<Env>()
 
             return respondDetailedUsage(c, log, {
                 userId: user.id,
-                apiKeyId: apiKey.id,
+                apiKeyIds: [apiKey.id],
                 filenamePrefix: "pollinations-key-usage",
-                filenamePeriod,
+                filenamePeriod: usageWindow.filenamePart,
                 format,
                 limit,
                 models,

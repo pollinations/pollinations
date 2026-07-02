@@ -282,7 +282,7 @@ function RouteComponent() {
                         <EarningsGraph period={activityPeriod} />
                     </Section>
                     <Section title="Last events" framed>
-                        <LastEventsPanel apiKeys={apiKeys} />
+                        <LastEventsPanel />
                     </Section>
                 </div>
             )}

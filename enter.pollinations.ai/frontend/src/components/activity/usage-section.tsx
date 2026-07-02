@@ -13,7 +13,7 @@ import {
 } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import type { FC } from "react";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { Chart } from "./chart";
 import { formatActivityPollen } from "./format-activity-pollen";
 import { MetricTabs } from "./metric-tabs";
@@ -46,22 +46,14 @@ export const UsageSection: FC<UsageSectionProps> = ({ period }) => {
         period,
     });
 
-    useEffect(() => {
-        const validIds = new Set(usedApiKeys.map((k) => k.id));
-        const pruned = filters.selectedKeyIds.filter((id) => validIds.has(id));
-        if (pruned.length !== filters.selectedKeyIds.length) {
-            setFilters((f) => ({ ...f, selectedKeyIds: pruned }));
-        }
+    const effectiveKeyIds = useMemo(() => {
+        const valid = new Set(usedApiKeys.map((k) => k.id));
+        return filters.selectedKeyIds.filter((id) => valid.has(id));
     }, [usedApiKeys, filters.selectedKeyIds]);
 
-    useEffect(() => {
-        const validModels = new Set(usedModels.map((m) => m.id));
-        const pruned = filters.selectedModels.filter((id) =>
-            validModels.has(id),
-        );
-        if (pruned.length !== filters.selectedModels.length) {
-            setFilters((f) => ({ ...f, selectedModels: pruned }));
-        }
+    const effectiveModels = useMemo(() => {
+        const valid = new Set(usedModels.map((m) => m.id));
+        return filters.selectedModels.filter((id) => valid.has(id));
     }, [usedModels, filters.selectedModels]);
 
     const keySelectOptions = usedApiKeys.map((k) => ({
@@ -73,8 +65,7 @@ export const UsageSection: FC<UsageSectionProps> = ({ period }) => {
         label: m.label,
     }));
     const showModelBreakdown =
-        filters.selectedModels.length === 0 ||
-        filters.selectedModels.length > 1;
+        effectiveModels.length === 0 || effectiveModels.length > 1;
     const hasUsageData = stats.totalRequests > 0;
     const downloadDisabled = loading || !hasUsageData;
     const downloadDisabledReason = loading
@@ -90,11 +81,11 @@ export const UsageSection: FC<UsageSectionProps> = ({ period }) => {
             period: period.period,
             limit: DETAILED_USAGE_DOWNLOAD_LIMIT.toString(),
         });
-        if (filters.selectedKeyIds.length > 0) {
-            params.set("api_key_ids", filters.selectedKeyIds.join(","));
+        if (effectiveKeyIds.length > 0) {
+            params.set("api_key_ids", effectiveKeyIds.join(","));
         }
-        if (filters.selectedModels.length > 0) {
-            params.set("models", filters.selectedModels.join(","));
+        if (effectiveModels.length > 0) {
+            params.set("models", effectiveModels.join(","));
         }
 
         const anchor = document.createElement("a");

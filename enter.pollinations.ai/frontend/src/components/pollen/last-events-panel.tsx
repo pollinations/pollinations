@@ -12,10 +12,9 @@ import {
     TableRow,
 } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
-import { type FC, useEffect, useMemo, useState } from "react";
+import { type FC, useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { formatActivityPollenThreshold } from "../activity/format-activity-pollen.ts";
-import type { ApiKey } from "../keys";
 
 const PAGE_SIZE = 10;
 const RECENT_WINDOW_DAYS = 90;
@@ -35,11 +34,7 @@ type UsageEventRecord = {
 type EarningsEventRecord = {
     timestamp: string;
     cursor_event_id: string;
-    source: "byop_markup" | "community_model";
-    entity_id: string;
     entity_name: string;
-    app_key_id: string;
-    app_name: string;
     model: string | null;
     meter_source: string | null;
     pollen_earned: number;
@@ -63,24 +58,15 @@ type FetchState = {
 };
 
 function parseTimestamp(value: string): Date {
-    const normalizedUtcTimestamp = value.match(
-        /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/,
-    )
-        ? `${value.replace(" ", "T")}Z`
-        : value;
-    return new Date(normalizedUtcTimestamp);
+    return new Date(`${value.replace(" ", "T")}Z`);
 }
 
 function timestampMs(value: string): number {
-    const date = parseTimestamp(value);
-    const ms = date.getTime();
-    return Number.isNaN(ms) ? 0 : ms;
+    return parseTimestamp(value).getTime();
 }
 
 function formatTimestamp(value: string): string {
-    const date = parseTimestamp(value);
-    if (Number.isNaN(date.getTime())) return value;
-    return date.toLocaleString(undefined, {
+    return parseTimestamp(value).toLocaleString(undefined, {
         timeZone: "UTC",
         year: "numeric",
         month: "short",
@@ -142,28 +128,18 @@ function MeterSourceChip({ source }: { source: string | null }) {
     );
 }
 
-function buildKeyNameLookup(keys: ApiKey[]) {
-    const map = new Map<string, string>();
-    for (const key of keys) {
-        if (key.name) map.set(key.id, key.name);
-    }
-    return (id: string | null, fallbackName?: string | null) => {
-        if (!id) return fallbackName ?? "—";
-        return map.get(id) ?? fallbackName ?? `${id.slice(0, 8)}…`;
-    };
-}
-
 function mergeLastEvents(
     usageRows: UsageEventRecord[],
     earningsRows: EarningsEventRecord[],
-    lookupKeyName: (id: string | null, fallbackName?: string | null) => string,
 ): LastEvent[] {
     const usageEvents: LastEvent[] = usageRows.map((row) => ({
         kind: "usage",
         id: row.cursor_event_id,
         timestamp: row.timestamp,
         primary: row.model || "API request",
-        secondary: lookupKeyName(row.api_key_id, row.api_key),
+        secondary:
+            row.api_key ||
+            (row.api_key_id ? `${row.api_key_id.slice(0, 8)}…` : "—"),
         meterSource: row.meter_source,
         pollen: row.cost_usd,
     }));
@@ -190,7 +166,6 @@ function sortLastEvents(events: LastEvent[]): LastEvent[] {
 
 async function fetchLastEvents(
     limit: number,
-    lookupKeyName: (id: string | null, fallbackName?: string | null) => string,
 ): Promise<{ rows: LastEvent[]; hasMore: boolean }> {
     const query = {
         limit: (limit + 1).toString(),
@@ -209,16 +184,11 @@ async function fetchLastEvents(
     const earningsData = (await earningsResponse.json()) as {
         transactions: EarningsEventRecord[];
     };
-    const merged = mergeLastEvents(
-        usageData.usage,
-        earningsData.transactions,
-        lookupKeyName,
-    );
+    const merged = mergeLastEvents(usageData.usage, earningsData.transactions);
     return { rows: merged.slice(0, limit), hasMore: merged.length > limit };
 }
 
-export const LastEventsPanel: FC<{ apiKeys: ApiKey[] }> = ({ apiKeys }) => {
-    const lookupKeyName = useMemo(() => buildKeyNameLookup(apiKeys), [apiKeys]);
+export const LastEventsPanel: FC = () => {
     const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
     const [state, setState] = useState<FetchState>({
         rows: [],
@@ -229,7 +199,7 @@ export const LastEventsPanel: FC<{ apiKeys: ApiKey[] }> = ({ apiKeys }) => {
 
     useEffect(() => {
         setState((prev) => ({ ...prev, loading: true, error: null }));
-        fetchLastEvents(visibleCount, lookupKeyName)
+        fetchLastEvents(visibleCount)
             .then(({ rows, hasMore }) =>
                 setState({ rows, hasMore, loading: false, error: null }),
             )
@@ -240,7 +210,7 @@ export const LastEventsPanel: FC<{ apiKeys: ApiKey[] }> = ({ apiKeys }) => {
                     error: "Failed to load last events",
                 })),
             );
-    }, [visibleCount, lookupKeyName]);
+    }, [visibleCount]);
 
     const loadingMore = state.loading && state.rows.length > 0;
 

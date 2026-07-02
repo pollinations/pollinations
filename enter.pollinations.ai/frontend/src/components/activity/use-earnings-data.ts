@@ -24,13 +24,6 @@ export type DeveloperEarningsRow = {
     tier_earned: number;
     cost_usd: number;
     reward_rate: number;
-    unique_users: number;
-};
-
-export type DeveloperEarningsTotal = {
-    pollen_earned: number;
-    paid_earned: number;
-    tier_earned: number;
 };
 
 export type EarningsFilterState = {
@@ -46,6 +39,21 @@ type TopEarningEntity = {
     requests: number;
     pollen: number;
 };
+
+function filterRowsBySelection(
+    rows: DeveloperEarningsRow[],
+    appKeyIds: string[],
+    modelIds: string[],
+): DeveloperEarningsRow[] {
+    if (appKeyIds.length === 0 && modelIds.length === 0) return rows;
+    const appKeyIdSet = new Set(appKeyIds);
+    const modelIdSet = new Set(modelIds);
+    return rows.filter(
+        (row) =>
+            (row.source === "byop_markup" && appKeyIdSet.has(row.entity_id)) ||
+            (row.source === "community_model" && modelIdSet.has(row.entity_id)),
+    );
+}
 
 type EarningsDataResult = {
     loading: boolean;
@@ -74,8 +82,6 @@ export function useEarningsData(
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const selectedAppKeyIdsKey = filters.selectedAppKeyIds.join(",");
-    const selectedModelIdsKey = filters.selectedModelIds.join(",");
     const { granularity, period } = filters.period;
 
     const fetchEarnings = useCallback(() => {
@@ -96,7 +102,6 @@ export function useEarningsData(
                 return r.json() as Promise<{
                     daily: DeveloperEarningsRow[];
                     perEntity: DeveloperEarningsRow[];
-                    total: DeveloperEarningsTotal;
                 }>;
             })
             .then((data) => {
@@ -144,31 +149,35 @@ export function useEarningsData(
             .sort((a, b) => a.label.localeCompare(b.label));
     }, [perEntity]);
 
-    const filteredDailyEarnings = useMemo(() => {
-        if (!selectedAppKeyIdsKey && !selectedModelIdsKey) return dailyEarnings;
-        const selectedAppKeyIds = new Set(selectedAppKeyIdsKey.split(","));
-        const selectedModelIds = new Set(selectedModelIdsKey.split(","));
-        return dailyEarnings.filter(
-            (row) =>
-                (row.source === "byop_markup" &&
-                    selectedAppKeyIds.has(row.entity_id)) ||
-                (row.source === "community_model" &&
-                    selectedModelIds.has(row.entity_id)),
-        );
-    }, [dailyEarnings, selectedAppKeyIdsKey, selectedModelIdsKey]);
+    const effectiveAppKeyIds = useMemo(() => {
+        const valid = new Set(usedApps.map((app) => app.id));
+        return filters.selectedAppKeyIds.filter((id) => valid.has(id));
+    }, [usedApps, filters.selectedAppKeyIds]);
 
-    const filteredPerEntity = useMemo(() => {
-        if (!selectedAppKeyIdsKey && !selectedModelIdsKey) return perEntity;
-        const selectedAppKeyIds = new Set(selectedAppKeyIdsKey.split(","));
-        const selectedModelIds = new Set(selectedModelIdsKey.split(","));
-        return perEntity.filter(
-            (row) =>
-                (row.source === "byop_markup" &&
-                    selectedAppKeyIds.has(row.entity_id)) ||
-                (row.source === "community_model" &&
-                    selectedModelIds.has(row.entity_id)),
-        );
-    }, [perEntity, selectedAppKeyIdsKey, selectedModelIdsKey]);
+    const effectiveModelIds = useMemo(() => {
+        const valid = new Set(usedModels.map((model) => model.id));
+        return filters.selectedModelIds.filter((id) => valid.has(id));
+    }, [usedModels, filters.selectedModelIds]);
+
+    const filteredDailyEarnings = useMemo(
+        () =>
+            filterRowsBySelection(
+                dailyEarnings,
+                effectiveAppKeyIds,
+                effectiveModelIds,
+            ),
+        [dailyEarnings, effectiveAppKeyIds, effectiveModelIds],
+    );
+
+    const filteredPerEntity = useMemo(
+        () =>
+            filterRowsBySelection(
+                perEntity,
+                effectiveAppKeyIds,
+                effectiveModelIds,
+            ),
+        [perEntity, effectiveAppKeyIds, effectiveModelIds],
+    );
 
     const chartData = useMemo<DataPoint[]>(() => {
         type DayBucket = {

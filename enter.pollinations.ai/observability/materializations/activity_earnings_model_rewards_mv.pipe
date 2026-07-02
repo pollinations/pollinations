@@ -7,13 +7,9 @@ SQL >
         community_model_reward_user_id AS dev_user_id,
         start_time AS timestamp,
         event_id,
-        event_type AS type,
         'community_model' AS source,
         resolved_model_requested AS entity_id,
         resolved_model_requested AS entity_name,
-        '' AS app_key_id,
-        '' AS app_name,
-        user_id AS payer_user_id,
         model_used AS model,
         multiIf(
             selected_meter_slug = 'v1:meter:tier', 'tier',
@@ -23,8 +19,7 @@ SQL >
         dev_price AS baseline_price,
         dev_price AS cost_usd,
         community_model_reward_amount AS pollen_earned,
-        community_model_reward_rate AS reward_rate,
-        response_time AS response_time_ms
+        community_model_reward_rate AS reward_rate
     FROM generation_event
     WHERE community_model_reward_user_id != 'undefined'
       AND community_model_reward_amount > 0

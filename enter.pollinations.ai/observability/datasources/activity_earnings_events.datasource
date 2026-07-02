@@ -8,20 +8,15 @@ SCHEMA >
     `dev_user_id` String,
     `timestamp` DateTime,
     `event_id` String,
-    `type` LowCardinality(String),
     `source` LowCardinality(String),
     `entity_id` String,
     `entity_name` String,
-    `app_key_id` String,
-    `app_name` String,
-    `payer_user_id` String,
     `model` LowCardinality(String),
     `meter_source` LowCardinality(String),
     `baseline_price` Float64,
     `cost_usd` Float64,
     `pollen_earned` Float64,
-    `reward_rate` Float64,
-    `response_time_ms` Float32
+    `reward_rate` Float64
 
 ENGINE MergeTree
 ENGINE_PARTITION_KEY toYYYYMM(timestamp)

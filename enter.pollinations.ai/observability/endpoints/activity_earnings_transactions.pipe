@@ -1,5 +1,5 @@
 DESCRIPTION >
-    Activity earnings transactions for table pagination and detailed CSV export.
+    Recent earnings transactions for the last-events feed.
     Includes BYOP app markup and community model reward earnings.
 
 TOKEN "tinybird_read" READ
@@ -10,20 +10,10 @@ SQL >
     SELECT
         timestamp,
         event_id as cursor_event_id,
-        type,
-        source,
-        entity_id,
         entity_name,
-        app_key_id,
-        app_name,
-        payer_user_id,
         model,
         meter_source,
-        baseline_price,
-        pollen_earned,
-        cost_usd,
-        if(source = 'byop_markup', reward_rate, toFloat64(0)) AS markup_rate,
-        response_time_ms
+        pollen_earned
     FROM activity_earnings_events
     WHERE
         dev_user_id = {{ String(dev_user_id, '') }}
@@ -31,16 +21,6 @@ SQL >
         {% else %} AND timestamp >= now() - INTERVAL 30 DAY
         {% end %}
         {% if defined(until) %} AND timestamp < {{ DateTime(until) }} {% end %}
-        {% if defined(before) and defined(before_event_id) %}
-            AND (
-                timestamp < {{ DateTime(before) }}
-                OR (
-                    timestamp = {{ DateTime(before) }}
-                    AND event_id < {{ String(before_event_id) }}
-                )
-            )
-        {% elif defined(before) %} AND timestamp < {{ DateTime(before) }}
-        {% end %}
     ORDER BY timestamp DESC, cursor_event_id DESC
     LIMIT {{ Int32(limit, 100) }}
 

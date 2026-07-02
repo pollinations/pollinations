@@ -96,16 +96,28 @@ export function useUsageData(filters: FilterState): UsageDataResult {
     }, [dailyUsage]);
 
     const { chartData, stats } = useMemo(() => {
+        // Selections may reference ids absent from the current period; ignore
+        // stale ids so an all-stale selection falls back to "All".
+        const validKeyIds = new Set(dailyUsage.map((r) => r.api_key_id));
+        const selectedKeyIds = filters.selectedKeyIds.filter((id) =>
+            validKeyIds.has(id),
+        );
+        const validModels = new Set(
+            dailyUsage.map((r) => r.model).filter(Boolean),
+        );
+        const selectedModels = filters.selectedModels.filter((model) =>
+            validModels.has(model),
+        );
         const filtered = dailyUsage.filter((r: DailyUsageRecord) => {
             if (
-                filters.selectedKeyIds.length > 0 &&
-                !filters.selectedKeyIds.includes(r.api_key_id)
+                selectedKeyIds.length > 0 &&
+                !selectedKeyIds.includes(r.api_key_id)
             )
                 return false;
             if (
-                filters.selectedModels.length > 0 &&
+                selectedModels.length > 0 &&
                 r.model &&
-                !filters.selectedModels.includes(r.model)
+                !selectedModels.includes(r.model)
             )
                 return false;
             return true;

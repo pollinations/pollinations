@@ -6,7 +6,7 @@ Last updated: 2026-07-02
 
 | Model | Workers | GPUs | Provider | Cost/hr | Status |
 |-------|---------|------|----------|---------|--------|
-| Flux (FP4) | 2 | 2x RTX 5090 | Vast.ai | ~$0.43 each | **ACTIVE — production** (Fireworks fallback) |
+| Flux (FP4) | 1 (+1 stopped spare) | RTX 5090 | Vast.ai | ~$0.43/hr | **ACTIVE — production** (Fireworks fallback) |
 | Z-Image | 3 | 4090 + 2x 3090 | RunPod | (see runpodctl) | **ACTIVE — production** |
 | Klein 4B | 1 | 1x RTX A5000 | RunPod | $0.27 | **ACTIVE** |
 | LTX-2 + ACE-Step + Sana | 1 | GH200 | Lambda Labs | — | **ACTIVE** |
@@ -20,7 +20,7 @@ a Cloudflare Tunnel. Flux routes pool-first with automatic Fireworks fallback
 | Worker | Vast instance | Tunnel hostname | SSH |
 |--------|--------------|-----------------|-----|
 | flux-vast-01 | 43575766 (California) | `flux-vast-01.pollinations.ai` | `ssh -p 21972 -i ~/.ssh/pollinations_services_2026 root@192.220.55.116` |
-| flux-vast-02 | 43594918 (US) | `flux-vast-02.pollinations.ai` | `ssh -p 10576 -i ~/.ssh/pollinations_services_2026 root@137.175.76.24` |
+| flux-vast-02 | 43594918 (US) — **STOPPED spare** (2026-07-02; disk-only cost; provisioned + models cached; `vastai start instance` then start the `flux` screen — GPU may be taken while stopped, then re-provision) | `flux-vast-02.pollinations.ai` | `ssh -p 10576 -i ~/.ssh/pollinations_services_2026 root@137.175.76.24` (port changes on restart) |
 
 > Instance IDs/IPs/ports change on recreate — check `vastai show instances`.
 > CRITICAL: workers MUST be behind a Cloudflare tunnel; the gen worker cannot
@@ -133,15 +133,15 @@ Extract for use: `sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '
 
 | SOPS key | Provider | Instances |
 |----------|----------|-----------|
-| `SSH_RUNPOD_FLUX_ZIMAGE` | RunPod | Flux+Z-Image pod (`hsl3ksl31lvrcc`) |
-| `SSH_RUNPOD_KLEIN` | RunPod | Klein pod (`jmrbmje2fyuy46`) |
+| `SSH_RUNPOD_KLEIN` | RunPod | Klein pod (`jmrbmje2fyuy46`) + Z-Image pods |
 | `SSH_LAMBDA_SANA_LTX2_ACESTEP` | Lambda Labs | GH200 (LTX-2, ACE-Step, Sana) |
 
-Klein uses `SSH_RUNPOD_KLEIN` from SOPS. Get the current public SSH host/port from RunPod runtime ports; the port changes when the pod is recreated or restarted.
+Klein uses `SSH_RUNPOD_KLEIN` from SOPS. Get the current public SSH host/port from RunPod runtime ports; the port changes when the pod is recreated or restarted. (`SSH_RUNPOD_FLUX_ZIMAGE` belonged to the terminated `hsl3ksl31lvrcc` pod and does not auth against the current pods.)
 
-EC2 keys (not in SOPS):
+Non-SOPS keys:
 
 | Key | Provider | Location |
 |-----|----------|----------|
+| `~/.ssh/pollinations_services_2026` | Vast.ai | Flux 5090 workers (attach via `vastai attach ssh`) |
 | `~/.ssh/enter-services-shared` | EC2 prod | enter services |
 | `~/.ssh/enter-services-staging` | EC2 staging | enter services |

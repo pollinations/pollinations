@@ -45,6 +45,10 @@ class ImageRequest(BaseModel):
 pipe = None
 gpu_semaphore = asyncio.Semaphore(1)  # Serialize GPU inference to prevent CUDA hangs
 BACKEND_TOKEN = os.getenv("PLN_GPU_TOKEN")
+# Shed load instead of building unbounded backlog: beyond this many in-flight
+# requests, reply 503 so the gateway falls back to its secondary provider.
+QUEUE_LIMIT = int(os.getenv("QUEUE_LIMIT", "10"))
+pending_requests = 0
 
 # Function to get public IP address
 def get_public_ip():
@@ -214,10 +218,21 @@ def verify_backend_token(
 
 @app.post("/generate")
 async def generate(request: ImageRequest, _auth: bool = Depends(verify_backend_token)):
+    global pending_requests
     print(f"Request: {request}")
     if pipe is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
-        
+    if pending_requests >= QUEUE_LIMIT:
+        raise HTTPException(status_code=503, detail="Queue full")
+    pending_requests += 1
+    try:
+        return await _generate(request)
+    finally:
+        pending_requests -= 1
+
+
+async def _generate(request: ImageRequest):
+
     seed = request.seed if request.seed is not None else int.from_bytes(os.urandom(2), "big")
     print(f"Using seed: {seed}")
 

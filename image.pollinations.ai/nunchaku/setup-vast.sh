@@ -7,14 +7,10 @@
 #
 # IMPORTANT — Cloudflare Tunnel required: the gen worker (Cloudflare Worker)
 # cannot fetch() raw-IP/non-standard-port origins, so a NAT'd http://IP:PORT
-# heartbeat URL is unreachable from routing. Front the worker with a named
-# tunnel on the pollinations.ai account (needs ~/.cloudflared/cert.pem):
-#   cloudflared tunnel create flux-vast-NN
-#   cloudflared tunnel route dns flux-vast-NN flux-vast-NN.pollinations.ai
-#   # config.yml: ingress flux-vast-NN.pollinations.ai -> http://localhost:8765
-#   screen -dmS cloudflared bash -c 'while true; do cloudflared tunnel run flux-vast-NN 2>&1 | tee -a /tmp/cloudflared.log; sleep 5; done'
-# then run this script with PUBLIC_IP=flux-vast-NN.pollinations.ai PUBLIC_PORT=443
-# (server.py advertises https://$PUBLIC_IP when PUBLIC_PORT=443).
+# heartbeat URL is unreachable from routing. Set TUNNEL_NAME and place the
+# pollinations.ai account cert at ~/.cloudflared/cert.pem — this script then
+# creates/routes/runs the tunnel and the worker advertises
+# https://$TUNNEL_NAME.pollinations.ai.
 #
 # Tested against vastai/base-image:cuda-13.0.2-cudnn-devel-ubuntu24.04-py312.
 # The prebuilt nunchaku wheel bundles SM 7.5/8.0/8.6/8.9/120 kernels, so the
@@ -22,19 +18,24 @@
 #
 # Usage (on the instance):
 #   PLN_GPU_TOKEN=... \
-#   PUBLIC_PORT=<external port mapped to 8765> \
+#   HF_TOKEN=... \
+#   TUNNEL_NAME=flux-vast-NN \
 #   bash setup-vast.sh
 #
 # Optional env:
-#   HF_TOKEN          not required — FLUX.1-schnell and the nunchaku quant
-#                     repos are public; set it only to avoid anon rate limits
+#   HF_TOKEN          REQUIRED in practice: black-forest-labs/FLUX.1-schnell is
+#                     gated (accept-terms); token must belong to an account
+#                     that accepted. Lives in enter.pollinations.ai/.testingtokens
 #   QUANT_MODEL_PATH  default mit-han-lab/svdq-fp4-flux.1-schnell (Blackwell);
 #                     use mit-han-lab/svdq-int4-flux.1-schnell on Ada GPUs
 #   MAX_PIXELS        default 1048576 (1024x1024, matches FP4/5090);
 #                     use 810000 on RTX 4090
-#   PUBLIC_IP         default: auto-detected by server.py
+#   QUEUE_LIMIT       default 10 (server.py sheds load with 503 beyond this;
+#                     gateway then falls back to Fireworks)
+#   PUBLIC_IP/PUBLIC_PORT  only for tunnel-less setups (no TUNNEL_NAME)
 #   SERVICE_TYPE      default flux
 #   GIT_BRANCH        default main
+#   SKIP_CLONE        use files already in $WORK_DIR (hosts w/ broken GitHub egress)
 #   WORK_DIR          default /workspace/pollinations
 
 set -e
@@ -50,17 +51,43 @@ SUDO=""
 
 log() { echo -e "\033[0;32m[setup-vast]\033[0m $1"; }
 
-for var in PLN_GPU_TOKEN PUBLIC_PORT; do
-    if [ -z "${!var}" ]; then
-        echo "Missing required environment variable: $var" >&2
-        echo "Usage: PLN_GPU_TOKEN=... PUBLIC_PORT=... bash setup-vast.sh" >&2
-        exit 1
-    fi
-done
+if [ -z "$PLN_GPU_TOKEN" ] || { [ -z "$TUNNEL_NAME" ] && [ -z "$PUBLIC_PORT" ]; }; then
+    echo "Usage: PLN_GPU_TOKEN=... TUNNEL_NAME=flux-vast-NN bash setup-vast.sh" >&2
+    exit 1
+fi
 
 log "Installing system packages..."
 $SUDO apt-get update -qq
 $SUDO apt-get install -y -qq git screen python3.12-venv python3.12-dev
+
+if [ -n "$TUNNEL_NAME" ]; then
+    if [ ! -f "$HOME/.cloudflared/cert.pem" ]; then
+        echo "TUNNEL_NAME set but $HOME/.cloudflared/cert.pem missing (pollinations.ai account cert)" >&2
+        exit 1
+    fi
+    if ! command -v cloudflared >/dev/null; then
+        log "Installing cloudflared..."
+        curl -sL --retry 5 -o /tmp/cloudflared.deb \
+            https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+        $SUDO dpkg -i /tmp/cloudflared.deb >/dev/null
+    fi
+    log "Creating tunnel $TUNNEL_NAME → $TUNNEL_NAME.pollinations.ai..."
+    cloudflared tunnel create "$TUNNEL_NAME" 2>&1 | tail -1 || true
+    cloudflared tunnel route dns --overwrite-dns "$TUNNEL_NAME" "$TUNNEL_NAME.pollinations.ai" 2>&1 | tail -1
+    TID=$(cloudflared tunnel list -o json | python3 -c "import json,sys; print([t['id'] for t in json.load(sys.stdin) if t['name']=='$TUNNEL_NAME'][0])")
+    cat > "$HOME/.cloudflared/config.yml" <<CFG
+tunnel: $TID
+credentials-file: $HOME/.cloudflared/$TID.json
+ingress:
+  - hostname: $TUNNEL_NAME.pollinations.ai
+    service: http://localhost:$PORT
+  - service: http_status:404
+CFG
+    screen -S cloudflared -X quit 2>/dev/null || true
+    screen -dmS cloudflared bash -c "while true; do cloudflared tunnel run $TUNNEL_NAME 2>&1 | tee -a /tmp/cloudflared.log; sleep 5; done"
+    PUBLIC_IP="$TUNNEL_NAME.pollinations.ai"
+    PUBLIC_PORT=443
+fi
 
 # Some Vast hosts have unreliable egress to GitHub; SKIP_CLONE=1 uses files
 # already placed in $WORK_DIR (e.g. scp'd from the operator's machine).
@@ -108,6 +135,7 @@ export PUBLIC_PORT=$PUBLIC_PORT
 export SERVICE_TYPE=$SERVICE_TYPE
 export QUANT_MODEL_PATH=$QUANT_MODEL_PATH
 export MAX_PIXELS=$MAX_PIXELS
+export QUEUE_LIMIT=${QUEUE_LIMIT:-10}
 export CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-0}
 ${PUBLIC_IP:+export PUBLIC_IP=$PUBLIC_IP}
 EOF

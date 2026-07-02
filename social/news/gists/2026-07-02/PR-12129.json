@@ -1,0 +1,35 @@
+{
+  "pr_number": 12129,
+  "title": "feat: checkout service fee + exclusive-tax pricing",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12129",
+  "merged_at": "2026-07-02T11:46:08Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Adds exclusive-tax checkout pricing with a per-pack service fee (3.5% + $0.30) to checkout and auto top-up.\n- No environment gate and no grace period: the new pricing applies to everyone from the production deploy (buyers pay VAT + fee on top of the pack price).\n- Verifies auto top-up invoices line-by-line (pack + service fee); pre-deploy pack-only invoices fail verification by design (attempt marked failed with reason, credit manually if one lands in the deploy window).\n- Shows the service fee on the pack slider and auto top-up panel; tax calculated at checkout.\n- Adds STAGING_ALLOWED_EMAILS so staging access can be granted by email.\n\nTests:\n- `npm run typecheck`\n- `npx vitest run test/pollen-packs.test.ts test/staging-access.test.ts test/integration/stripe.test.ts`",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "major",
+    "headline": "Updated Pollen checkout",
+    "blurb": "We've updated the checkout flow to clearly separate service fees and taxes from your Pollen pack purchases.",
+    "summary": "Updated the checkout and auto top-up flows to apply a 3.5% + $0.30 service fee and exclusive tax on top of Pollen pack prices.",
+    "impact": "Users will now see service fees and calculated taxes itemized separately during checkout and on the auto top-up panel.",
+    "keywords": [
+      "billing",
+      "checkout",
+      "stripe",
+      "pollen",
+      "taxes"
+    ],
+    "visual_concept": "The bee (Polly) and the Nomnom creature interacting with a glowing digital receipt or retro cash register, representing checkout and itemized billing.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and the round tan Nomnom creature looking at a long, glowing digital receipt printing from a retro terminal. The Nomnom creature is happily eating the end of the receipt. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-02/PR-12129.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and the round tan Nomnom creature looking at a long, glowing digital receipt printing from a retro terminal. The Nomnom creature is happily eating the end of the receipt. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-02T11:47:23.620850+00:00"
+}

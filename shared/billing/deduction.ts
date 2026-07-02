@@ -2,7 +2,6 @@ import { sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { apikey as apiKeyTable, user as userTable } from "../db/better-auth.ts";
 import type { BalanceBucket, UserBalance } from "./bucket-selection.ts";
-// Import our new precision math utility!
 import { toMicroPollen } from "./pollenMath.ts"; 
 
 export type Bucket = BalanceBucket;
@@ -23,8 +22,8 @@ export async function atomicDeductUserBalance(
 ): Promise<{ ok: boolean; bucket: Bucket | null; packBalance: number | null }> {
     if (amount <= 0) return { ok: true, bucket: null, packBalance: null };
 
-    // Convert amount to exact micro-pollen (integer) for precise SQL arithmetic
-    const microAmount = Number(toMicroPollen(amount));
+    // Keep microAmount as a pure BigInt for SQL binding
+    const microAmount = toMicroPollen(amount);
 
     const row = await db.get<{ bucket: Bucket; packBalance: number | null }>(
         sql`
@@ -79,7 +78,7 @@ export async function atomicDeductApiKeyBalance(
 ): Promise<{ ok: boolean }> {
     if (amount <= 0) return { ok: true };
 
-    const microAmount = Number(toMicroPollen(amount));
+    const microAmount = toMicroPollen(amount);
 
     const result = await db.run(sql`
 			UPDATE ${apiKeyTable}
@@ -105,7 +104,7 @@ export async function atomicCreditUserBalance(
     if (amount <= 0) return { ok: true, newBalance: null };
 
     const column = BUCKET_COLUMNS[bucket];
-    const microAmount = Number(toMicroPollen(amount));
+    const microAmount = toMicroPollen(amount);
 
     const rows = await db
         .update(userTable)

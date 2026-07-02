@@ -137,7 +137,7 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                                             `$${pack.amountUsd}`}
                                                     </span>
                                                     {selectedBadgeDetail && (
-                                                        <span className="text-[10px] font-normal leading-none text-theme-text-muted">
+                                                        <span className="text-xs font-normal leading-none text-theme-text-muted">
                                                             {
                                                                 selectedBadgeDetail
                                                             }

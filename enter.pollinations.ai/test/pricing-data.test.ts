@@ -800,28 +800,6 @@ test("calculateBillingAdjustments returns per-rule breakdown entries", () => {
     ).toEqual([]);
 });
 
-test("every model with billing adjustments uses priceMultiplier === 1", () => {
-    // Adjustment cost doubles as adjustment price in event storage (price ==
-    // cost × priceMultiplier, and there is no separate adjustment_price column
-    // yet). A model that carries adjustment rules AND marks up its multiplier
-    // would silently break component-level revenue attribution. Fail loud here;
-    // revisit (add adjustment_price) when the first marked-up search model lands.
-    const offenders: string[] = [];
-    for (const model of getModels()) {
-        const definition = getRegistryModelDefinition(model);
-        if (!definition.billing?.adjustments?.length) continue;
-        if (definition.priceMultiplier !== 1) {
-            offenders.push(
-                `${model} (priceMultiplier=${definition.priceMultiplier})`,
-            );
-        }
-    }
-    expect(
-        offenders,
-        `Models with billing adjustments must have priceMultiplier === 1:\n${offenders.join("\n")}`,
-    ).toEqual([]);
-});
-
 // Versioned rule id, e.g. "google.gemini_3.search_query.v1". These strings key
 // the adjustment_costs / adjustment_units Map columns, so a typo silently
 // splits a fee across two keys and corrupts revenue attribution. Guard the

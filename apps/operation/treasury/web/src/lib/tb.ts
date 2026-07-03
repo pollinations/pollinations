@@ -1,7 +1,6 @@
 import { FIXTURES } from "../fixtures";
 import type {
     BalanceRow,
-    CashMonthlyRow,
     CoverageRow,
     Data,
     GapRow,
@@ -41,7 +40,6 @@ export async function loadAll(): Promise<Data> {
         coverage,
         gaps,
         invoices,
-        cashMonthly,
         paymentsTx,
         meterMonthly,
         grants,
@@ -52,7 +50,6 @@ export async function loadAll(): Promise<Data> {
         fetchPipe<CoverageRow>("coverage_ep"),
         fetchPipe<GapRow>("gaps_ep"),
         fetchPipe<InvoiceRow>("invoices_ep"),
-        fetchPipe<CashMonthlyRow>("payments_monthly_ep"),
         fetchPipe<PaymentTxRow>("payments_ep"),
         fetchPipe<MeterMonthlyRow>("meter_monthly_ep"),
         fetchPipe<GrantRow>("grants_ep"),
@@ -65,7 +62,6 @@ export async function loadAll(): Promise<Data> {
         coverage,
         gaps,
         invoices,
-        cashMonthly,
         paymentsTx,
         meterMonthly,
         grants,

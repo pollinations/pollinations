@@ -1,6 +1,5 @@
 import type {
     BalanceRow,
-    CashMonthlyRow,
     CoverageRow,
     GapRow,
     GrantRow,
@@ -280,37 +279,6 @@ const grants: GrantRow[] = [
     },
 ];
 
-const cashMonthly: CashMonthlyRow[] = [
-    {
-        month: "2026-01",
-        provider: "vast.ai",
-        category: "compute",
-        paid_usd: 480.19,
-        paid_eur: 442.16,
-    },
-    {
-        month: "2026-01",
-        provider: "openai",
-        category: "compute",
-        paid_usd: 226.4,
-        paid_eur: 208.37,
-    },
-    {
-        month: "2026-03",
-        provider: "scaleway",
-        category: "compute",
-        paid_usd: 0,
-        paid_eur: 0,
-    },
-    {
-        month: "2026-03",
-        provider: "(unmatched)",
-        category: "other",
-        paid_usd: 81.18,
-        paid_eur: 71.21,
-    },
-];
-
 const usageMonthly: UsageMonthlyRow[] = [
     {
         month: "2026-06",
@@ -472,7 +440,6 @@ export const FIXTURES: Record<string, unknown[]> = {
     coverage_ep: coverage,
     gaps_ep: gaps,
     invoices_ep: invoices,
-    payments_monthly_ep: cashMonthly,
     payments_ep: paymentsTx,
     meter_monthly_ep: meterMonthly,
     grants_ep: grants,

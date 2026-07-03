@@ -11,6 +11,7 @@ import {
 } from "@pollinations/ui";
 import { useEffect, useMemo, useState } from "react";
 import { CommitTray } from "./components/CommitTray";
+import { type ProvenanceCode, SourceMark } from "./components/Provenance";
 import { SourceLegend } from "./components/SourceLegend";
 import { STALE_AFTER_HOURS } from "./config";
 import { hoursSince } from "./lib/format";
@@ -30,29 +31,26 @@ import { MeterTab } from "./views/MeterTab";
 import { PaymentsTab } from "./views/PaymentsTab";
 import { ReconTab } from "./views/ReconTab";
 import { RunsTab } from "./views/RunsTab";
-import { TransactionsTab } from "./views/TransactionsTab";
 
 type Tab =
     | "recon"
     | "invoices"
     | "payments"
-    | "transactions"
     | "burn"
     | "meter"
     | "credits"
     | "balances"
     | "runs";
 
-const TABS: { id: Tab; label: string }[] = [
-    { id: "recon", label: "Recon" },
-    { id: "invoices", label: "Invoices" },
-    { id: "payments", label: "Payments" },
-    { id: "transactions", label: "Transactions" },
-    { id: "burn", label: "Burn" },
-    { id: "meter", label: "Meter" },
-    { id: "credits", label: "Credits" },
-    { id: "balances", label: "Balances" },
-    { id: "runs", label: "Runs" },
+const TABS: { id: Tab; label: string; codes: ProvenanceCode[] }[] = [
+    { id: "recon", label: "Reconciliation", codes: ["IV", "WS"] },
+    { id: "invoices", label: "Invoices", codes: ["IV", "HC"] },
+    { id: "payments", label: "Payments", codes: ["WS", "HC"] },
+    { id: "burn", label: "Our Usage", codes: ["TB"] },
+    { id: "meter", label: "Provider Usage", codes: ["API", "HC"] },
+    { id: "credits", label: "Provider Grants", codes: ["API", "HC"] },
+    { id: "balances", label: "Provider Balance", codes: ["API", "HC"] },
+    { id: "runs", label: "Ingest Log", codes: ["TB"] },
 ];
 
 const INGEST_COMMAND = "python3 -m ingest.run";
@@ -380,7 +378,15 @@ export default function App() {
                                     active={tab === item.id}
                                     onClick={() => setTab(item.id)}
                                 >
-                                    {item.label}
+                                    <span className="inline-flex items-center gap-1.5">
+                                        {item.label}
+                                        {item.codes.map((code) => (
+                                            <SourceMark
+                                                key={code}
+                                                code={code}
+                                            />
+                                        ))}
+                                    </span>
                                 </TabButton>
                             ))}
                         </nav>
@@ -408,13 +414,7 @@ export default function App() {
                             <InvoicesTab data={data} queuedKeys={queuedKeys} />
                         )}
                         {data && tab === "payments" && (
-                            <PaymentsTab data={data} />
-                        )}
-                        {data && tab === "transactions" && (
-                            <TransactionsTab
-                                data={data}
-                                queuedKeys={queuedKeys}
-                            />
+                            <PaymentsTab data={data} queuedKeys={queuedKeys} />
                         )}
                         {data && tab === "burn" && <BurnTab data={data} />}
                         {data && tab === "meter" && (

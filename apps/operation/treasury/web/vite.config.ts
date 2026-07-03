@@ -15,7 +15,6 @@ const READ_PIPES = new Set([
     "coverage_ep",
     "gaps_ep",
     "invoices_ep",
-    "payments_monthly_ep",
     "payments_ep",
     "meter_monthly_ep",
     "grants_ep",

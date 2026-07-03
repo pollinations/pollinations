@@ -19,7 +19,7 @@ import { type StageInput, useStaging } from "../lib/staging";
 import type { Data, GrantRow } from "../types";
 
 // Credits = grant pools only. payg pools have nothing granted to track and
-// prepaid balances live on the Balances tab.
+// prepaid balances live on the Provider Balance tab.
 const GRANT_KINDS = new Set(["credit", "grant"]);
 
 function sortedGrants(rows: GrantRow[]) {
@@ -224,7 +224,8 @@ export function CreditsTab({
                     Grant pools funding the burn: granted/left from provider
                     APIs <SourceMark code="API" />, manual values{" "}
                     <SourceMark code="HC" /> filling the holes. payg pools have
-                    nothing granted; prepaid balances live on the Balances tab.
+                    nothing granted; prepaid balances live on the Provider
+                    Balance tab.
                 </DataNote>
                 <label className="inline-flex w-fit items-center gap-2 text-sm text-theme-text-soft">
                     provider

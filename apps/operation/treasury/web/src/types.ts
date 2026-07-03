@@ -49,14 +49,6 @@ export type GrantRow = {
     run_at: string;
 };
 
-export type CashMonthlyRow = {
-    month: string;
-    provider: string;
-    category: string;
-    paid_usd: number;
-    paid_eur: number;
-};
-
 export type PaymentTxRow = {
     paid_at: string;
     provider: string;
@@ -111,7 +103,6 @@ export type Data = {
     coverage: CoverageRow[];
     gaps: GapRow[];
     invoices: InvoiceRow[];
-    cashMonthly: CashMonthlyRow[];
     paymentsTx: PaymentTxRow[];
     meterMonthly: MeterMonthlyRow[];
     grants: GrantRow[];

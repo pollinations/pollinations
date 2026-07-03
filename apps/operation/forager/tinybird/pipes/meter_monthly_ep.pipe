@@ -1,0 +1,9 @@
+TOKEN "treasury_web" READ
+
+NODE endpoint
+SQL >
+    SELECT month, provider, cost_usd, funding, source, retrieved_at, note
+    FROM meter_monthly
+    ORDER BY provider, month, retrieved_at
+
+TYPE endpoint

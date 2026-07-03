@@ -81,7 +81,9 @@ export function CommunityEndpointCard({
                                 "Deactivated due to repeated failures."}
                         </span>
                         <span className="text-sm">
-                            Edit, test, then save the model to reactivate it.
+                            Fix the issue, then ping a maintainer on Discord to
+                            reactivate it — there's no self-serve reactivate
+                            yet.
                         </span>
                     </div>
                 </Alert>

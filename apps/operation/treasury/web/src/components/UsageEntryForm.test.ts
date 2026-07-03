@@ -24,6 +24,7 @@ describe("UsageEntryForm row builders", () => {
                 funding: "credit",
                 source: "manual",
                 retrieved_at: "2026-07-03",
+                note: "entered in treasury app",
             },
             summary: "meter assemblyai 2026-03 credit -> 242.5",
         });

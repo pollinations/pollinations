@@ -410,7 +410,7 @@ export const FIXTURES: Record<string, unknown[]> = {
     coverage_ep: coverage,
     gaps_ep: gaps,
     invoices_ep: invoices,
-    cash_monthly_ep: cashMonthly,
+    payments_monthly_ep: cashMonthly,
     grants_ep: grants,
     balances_ep: balances,
     usage_ep: usageMonthly,

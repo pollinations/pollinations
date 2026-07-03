@@ -35,6 +35,7 @@ export function buildManualMeterChange({
             funding,
             source: "manual",
             retrieved_at: retrievedAt,
+            note: "entered in treasury app",
         },
         summary: `meter ${provider} ${month} ${funding} -> ${amount}`,
     };

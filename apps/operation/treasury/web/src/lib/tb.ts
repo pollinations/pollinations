@@ -48,7 +48,7 @@ export async function loadAll(): Promise<Data> {
         fetchPipe<CoverageRow>("coverage_ep"),
         fetchPipe<GapRow>("gaps_ep"),
         fetchPipe<InvoiceRow>("invoices_ep"),
-        fetchPipe<CashMonthlyRow>("cash_monthly_ep"),
+        fetchPipe<CashMonthlyRow>("payments_monthly_ep"),
         fetchPipe<GrantRow>("grants_ep"),
         fetchPipe<BalanceRow>("balances_ep"),
         fetchPipe<UsageMonthlyRow>("usage_ep"),

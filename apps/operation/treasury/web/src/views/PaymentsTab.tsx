@@ -43,7 +43,7 @@ export function PaymentsTab({ data }: { data: Data }) {
 
     return (
         <div className="flex flex-col gap-4">
-            <DataNote pipe="cash_monthly_ep" rows={rows.length}>
+            <DataNote pipe="payments_monthly_ep" rows={rows.length}>
                 Real bank outflows from Wise <SourceMark code="WS" /> grouped by
                 month, provider and category — the cash side of every Recon
                 verdict.

@@ -114,9 +114,9 @@ export type BillingRules = {
 };
 
 // Per-rule billing breakdown, returned in parallel to the numeric usage maps.
-// Adjustment cost doubles as adjustment price today (priceMultiplier === 1 is
-// enforced for every model carrying adjustments), so `cost` and `price` are
-// tracked separately here to stay correct when a marked-up search model lands.
+// The model's single priceMultiplier applies uniformly to tokens and
+// adjustments alike (there is no per-rule multiplier), so adjustment prices
+// are always derivable from costs: price = cost × svc.priceMultiplier.
 export type BillingAdjustment = {
     ruleId: string;
     kind: string;
@@ -418,24 +418,55 @@ export function calculateBillingAdjustments(
     return adjustments;
 }
 
-function calculateBillingAdjustmentCost(
-    svc: ModelDefinition,
-    output: unknown,
-): number {
-    return calculateBillingAdjustments(svc, output).reduce(
-        (total, adjustment) => total + adjustment.cost,
-        0,
-    );
-}
+// Full billing for one generation, computed in a single pass: the adjustment
+// rules are walked exactly once (so clamp/absence warnings log once per
+// request) and cost, price, and the per-rule breakdown all derive from it.
+export type UsageBilling = {
+    cost: UsageCost;
+    price: UsagePrice;
+    adjustments: BillingAdjustment[];
+};
 
-function calculateBillingAdjustmentPrice(
-    svc: ModelDefinition,
-    output: unknown,
-): number {
-    return calculateBillingAdjustments(svc, output).reduce(
-        (total, adjustment) => total + adjustment.price,
+export function calculateUsageBilling(
+    model: string,
+    usage: Usage,
+    svc: ModelDefinition<string>,
+    output?: unknown,
+): UsageBilling {
+    const adjustments = calculateBillingAdjustments(svc, output);
+    const adjustmentCost = adjustments.reduce((total, a) => total + a.cost, 0);
+    const adjustmentPrice = adjustments.reduce(
+        (total, a) => total + a.price,
         0,
     );
+
+    const usageCost = calculateLinearCost(model, usage, svc.cost);
+    const cost =
+        adjustmentCost === 0
+            ? usageCost
+            : {
+                  ...usageCost,
+                  totalCost: usageCost.totalCost + adjustmentCost,
+              };
+
+    const usagePrice = Object.fromEntries(
+        Object.entries(usageCost)
+            .filter(([usageType]) => usageType !== "totalCost")
+            .map(([usageType, usageTypeCost]) => [
+                usageType,
+                (usageTypeCost as number) * svc.priceMultiplier,
+            ]),
+    ) as Usage;
+    const tokenTotalPrice = Object.values(usagePrice).reduce(
+        (total, price) => total + price,
+        0,
+    );
+    const price = {
+        ...usagePrice,
+        totalPrice: roundPollenLedgerAmount(tokenTotalPrice + adjustmentPrice),
+    };
+
+    return { cost, price, adjustments };
 }
 
 const MODEL_REGISTRY = {
@@ -576,13 +607,7 @@ export function calculateCostForModelDefinition(
     svc: ModelDefinition<string>,
     output?: unknown,
 ): UsageCost {
-    const usageCost = calculateLinearCost(model, usage, svc.cost);
-    const adjustmentCost = calculateBillingAdjustmentCost(svc, output);
-    if (adjustmentCost === 0) return usageCost;
-    return {
-        ...usageCost,
-        totalCost: usageCost.totalCost + adjustmentCost,
-    };
+    return calculateUsageBilling(model, usage, svc, output).cost;
 }
 
 /**
@@ -618,24 +643,7 @@ export function calculatePriceForModelDefinition(
     svc: ModelDefinition<string>,
     output?: unknown,
 ): UsagePrice {
-    const usageCost = calculateLinearCost(model, usage, svc.cost);
-    const usagePrice = Object.fromEntries(
-        Object.entries(usageCost)
-            .filter(([usageType]) => usageType !== "totalCost")
-            .map(([usageType, cost]) => [
-                usageType,
-                (cost as number) * svc.priceMultiplier,
-            ]),
-    ) as Usage;
-    const tokenTotalPrice = Object.values(usagePrice).reduce(
-        (total, price) => total + price,
-        0,
-    );
-    const adjustmentPrice = calculateBillingAdjustmentPrice(svc, output);
-    return {
-        ...usagePrice,
-        totalPrice: roundPollenLedgerAmount(tokenTotalPrice + adjustmentPrice),
-    };
+    return calculateUsageBilling(model, usage, svc, output).price;
 }
 
 /**

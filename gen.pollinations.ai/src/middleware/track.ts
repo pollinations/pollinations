@@ -29,9 +29,7 @@ import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import {
     type BillingAdjustment,
     type CostDefinition,
-    calculateBillingAdjustments,
-    calculateCostForModelDefinition,
-    calculatePriceForModelDefinition,
+    calculateUsageBilling,
     getPriceDefinitionForModel,
     type ModelDefinition,
     type PriceDefinition,
@@ -496,21 +494,12 @@ async function trackResponse(
         });
         return notBilled({ contentFilterResults });
     }
-    const cost = calculateCostForModelDefinition(
+    // Single pass: cost, price, and the per-rule fee breakdown all derive from
+    // one walk over the billing rules, so the event's adjustment maps always
+    // match the billed totals and clamp warnings log once per request.
+    const { cost, price, adjustments } = calculateUsageBilling(
         resolvedModelRequested,
         modelUsage.usage,
-        requestTracking.modelDefinition,
-        modelUsage.output,
-    );
-    const price = calculatePriceForModelDefinition(
-        resolvedModelRequested,
-        modelUsage.usage,
-        requestTracking.modelDefinition,
-        modelUsage.output,
-    );
-    // Itemize search/tool fees once (same source object as cost/price) so the
-    // event can carry a per-rule breakdown alongside the aggregate totals.
-    const adjustments = calculateBillingAdjustments(
         requestTracking.modelDefinition,
         modelUsage.output,
     );

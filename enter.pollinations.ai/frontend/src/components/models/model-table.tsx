@@ -221,15 +221,17 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 />
                             </div>
                         )}
-                        {(showNew || showAlpha) && (
-                            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-                                <ModelStatusChips
-                                    showNew={showNew}
-                                    showAlpha={showAlpha}
-                                    alphaTooltip={false}
-                                />
-                            </div>
-                        )}
+                        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                            <ModelStatusChips
+                                showNew={showNew}
+                                showAlpha={showAlpha}
+                                balanceAccess={
+                                    showPaidOnly ? "paid-only" : "quest-paid"
+                                }
+                                alphaTooltip={false}
+                                balanceTooltip={false}
+                            />
+                        </div>
                     </div>
                     {showPaidOnly ? (
                         <PaidChip className="shrink-0">

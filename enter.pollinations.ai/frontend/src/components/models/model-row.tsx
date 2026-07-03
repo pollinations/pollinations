@@ -154,6 +154,9 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         <ModelStatusChips
                             showNew={showNew}
                             showAlpha={showAlpha}
+                            balanceAccess={
+                                showPaidOnly ? "paid-only" : "quest-paid"
+                            }
                         />
                     </div>
                     <ModelId name={model.name} />
@@ -202,8 +205,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 </div>
             </div>
 
-            {/* Per pollen — fixed width; gold + card for paid-only models, green
-                + sprout for tier-eligible models (replaces the old PAID badge) */}
+            {/* Per pollen — fixed width; color and icon mirror the balance source. */}
             <div className="w-[90px] text-center shrink-0">
                 <Tooltip content={perPollenTooltip} displayContents>
                     {showPaidOnly ? (

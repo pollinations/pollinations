@@ -16,14 +16,6 @@ import { STALE_AFTER_HOURS } from "./config";
 import { hoursSince } from "./lib/format";
 import { StagingProvider } from "./lib/staging";
 import { fixturesMode, loadAll, TbError } from "./lib/tb";
-import {
-    clearAppendToken,
-    clearToken,
-    getAppendToken,
-    getToken,
-    setAppendToken,
-    setToken,
-} from "./lib/token";
 import type { Data } from "./types";
 import { BurnTab } from "./views/BurnTab";
 import { CreditsTab } from "./views/CreditsTab";
@@ -43,46 +35,59 @@ const TABS: { id: Tab; label: string }[] = [
     { id: "runs", label: "Runs" },
 ];
 
-function TokenGate({
+async function checkSession() {
+    const res = await fetch("/api/auth/session");
+    if (!res.ok) return false;
+    const body = (await res.json()) as { authenticated?: boolean };
+    return body.authenticated === true;
+}
+
+async function login(password: string) {
+    const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+    });
+    if (!res.ok) {
+        throw new Error(res.status === 401 ? "Wrong password" : "Login failed");
+    }
+}
+
+async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+}
+
+function PasswordGate({
     error,
     onSubmit,
 }: {
     error: string | null;
-    onSubmit: (token: string, appendToken: string) => void;
+    onSubmit: (password: string) => void;
 }) {
     const [value, setValue] = useState("");
-    const [appendValue, setAppendValue] = useState("");
 
     return (
         <div className="mx-auto mt-24 flex max-w-md flex-col gap-4 px-4">
             <Heading as="h1">Treasury</Heading>
             <Text tone="soft">
-                Paste the treasury_web read token. Add treasury_append only when
-                you need editing. Tokens are stored only in this browser.
+                Enter the treasury password. Tinybird tokens stay on the server.
             </Text>
             {error && <Alert intent="warning">{error}</Alert>}
             <form
                 className="flex gap-2"
                 onSubmit={(event) => {
                     event.preventDefault();
-                    if (value.trim()) onSubmit(value, appendValue);
+                    if (value) onSubmit(value);
                 }}
             >
-                <div className="flex flex-1 flex-col gap-2">
-                    <Input
-                        type="password"
-                        autoFocus
-                        placeholder="treasury_web read token"
-                        value={value}
-                        onChange={(event) => setValue(event.target.value)}
-                    />
-                    <Input
-                        type="password"
-                        placeholder="append token (for editing)"
-                        value={appendValue}
-                        onChange={(event) => setAppendValue(event.target.value)}
-                    />
-                </div>
+                <Input
+                    type="password"
+                    autoFocus
+                    placeholder="Password"
+                    value={value}
+                    onChange={(event) => setValue(event.target.value)}
+                    className="flex-1"
+                />
                 <Button type="submit" className="self-start">
                     Connect
                 </Button>
@@ -93,15 +98,38 @@ function TokenGate({
 
 export default function App() {
     const fixtures = fixturesMode();
-    const [token, setTokenState] = useState(getToken());
-    const [appendToken, setAppendTokenState] = useState(getAppendToken());
+    const [authenticated, setAuthenticated] = useState(fixtures);
+    const [sessionChecked, setSessionChecked] = useState(fixtures);
     const [authError, setAuthError] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [data, setData] = useState<Data | null>(null);
     const [tab, setTab] = useState<Tab>("recon");
     const [attempt, setAttempt] = useState(0);
     const [committedAwaitingIngest, setCommittedAwaitingIngest] = useState(0);
-    const ready = fixtures || token !== "";
+    const ready = fixtures || (sessionChecked && authenticated);
+
+    useEffect(() => {
+        if (fixtures) return;
+
+        let cancelled = false;
+        checkSession()
+            .then((ok) => {
+                if (!cancelled) {
+                    setAuthenticated(ok);
+                    setSessionChecked(true);
+                }
+            })
+            .catch(() => {
+                if (!cancelled) {
+                    setAuthenticated(false);
+                    setSessionChecked(true);
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [fixtures]);
 
     useEffect(() => {
         if (!ready) return;
@@ -110,7 +138,7 @@ export default function App() {
         let cancelled = false;
         setError(null);
         setData(null);
-        loadAll(token)
+        loadAll()
             .then((loaded) => {
                 if (!cancelled && retryKey === attempt) setData(loaded);
             })
@@ -121,12 +149,10 @@ export default function App() {
                     caught instanceof TbError &&
                     (caught.status === 401 || caught.status === 403)
                 ) {
-                    clearToken();
-                    clearAppendToken();
-                    setTokenState("");
-                    setAppendTokenState("");
+                    setAuthenticated(false);
+                    setSessionChecked(true);
                     setAuthError(
-                        `Token rejected (${caught.message}) - paste a valid one.`,
+                        `Session rejected (${caught.message}) - enter the password again.`,
                     );
                 } else {
                     setError(
@@ -140,27 +166,46 @@ export default function App() {
         return () => {
             cancelled = true;
         };
-    }, [ready, token, attempt]);
+    }, [ready, attempt]);
 
     const staleHours = useMemo(() => {
         const latest = data?.runs[0]?.run_at;
         return latest ? hoursSince(latest) : null;
     }, [data]);
 
+    if (!sessionChecked) {
+        return (
+            <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-app-bg text-theme-text-strong">
+                <ScrollArea axis="y" className="min-h-0 flex-1">
+                    <div className="mx-auto mt-24 max-w-md px-4">
+                        <Text tone="soft">Checking session...</Text>
+                    </div>
+                </ScrollArea>
+            </div>
+        );
+    }
+
     if (!ready) {
         return (
             <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-app-bg text-theme-text-strong">
                 <ScrollArea axis="y" className="min-h-0 flex-1">
-                    <TokenGate
+                    <PasswordGate
                         error={authError}
-                        onSubmit={(newToken, newAppendToken) => {
-                            setToken(newToken);
-                            if (newAppendToken.trim()) {
-                                setAppendToken(newAppendToken);
-                                setAppendTokenState(newAppendToken.trim());
-                            }
-                            setAuthError(null);
-                            setTokenState(newToken.trim());
+                        onSubmit={(password) => {
+                            login(password)
+                                .then(() => {
+                                    setAuthError(null);
+                                    setAuthenticated(true);
+                                    setSessionChecked(true);
+                                    setAttempt((current) => current + 1);
+                                })
+                                .catch((caught: unknown) => {
+                                    setAuthError(
+                                        caught instanceof Error
+                                            ? caught.message
+                                            : String(caught),
+                                    );
+                                });
                         }}
                     />
                 </ScrollArea>
@@ -170,7 +215,6 @@ export default function App() {
 
     return (
         <StagingProvider
-            appendToken={appendToken}
             fixtures={fixtures}
             onCommitted={(count) => {
                 setCommittedAwaitingIngest((current) => current + count);
@@ -218,14 +262,13 @@ export default function App() {
                                     <Button
                                         size="sm"
                                         onClick={() => {
-                                            clearToken();
-                                            clearAppendToken();
-                                            setTokenState("");
-                                            setAppendTokenState("");
-                                            setData(null);
+                                            logout().finally(() => {
+                                                setAuthenticated(false);
+                                                setData(null);
+                                            });
                                         }}
                                     >
-                                        Reset tokens
+                                        Log out
                                     </Button>
                                 )}
                                 <ColorModeToggle />

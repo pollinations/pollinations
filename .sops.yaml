@@ -1,5 +1,7 @@
 creation_rules:
-    - path_regex: apps/operation/secrets/.*
+    - path_regex: apps/operation/forager/secrets/.*
+      age: age1djc5mjmpvfaqzw5pgujfeqglrrqw05fmjmnnu4zcv2h7xkn2av2q67c7rt
+    - path_regex: apps/operation/treasury/secrets/.*
       age: age1djc5mjmpvfaqzw5pgujfeqglrrqw05fmjmnnu4zcv2h7xkn2av2q67c7rt
     - path_regex: (\.env$|\.encrypted\.env$|\.vars.json$|env\.json$)
       age: >-

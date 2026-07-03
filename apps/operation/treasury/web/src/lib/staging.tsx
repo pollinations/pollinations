@@ -90,12 +90,10 @@ function newId() {
 }
 
 export function StagingProvider({
-    appendToken,
     children,
     fixtures,
     onCommitted,
 }: {
-    appendToken: string;
     children: ReactNode;
     fixtures: boolean;
     onCommitted: (count: number) => void;
@@ -122,17 +120,9 @@ export function StagingProvider({
             if (fixtures) {
                 console.info("treasury fixtures commit", state.changes);
             } else {
-                const trimmedToken = appendToken.trim();
-                if (!trimmedToken) {
-                    throw new Error(
-                        "Missing treasury_append token. Reset tokens and paste an append token to commit edits.",
-                    );
-                }
-
                 await Promise.all(
                     [...rowsByDatasource(state.changes)].map(
-                        ([datasource, rows]) =>
-                            appendRows(datasource, rows, trimmedToken),
+                        ([datasource, rows]) => appendRows(datasource, rows),
                     ),
                 );
             }
@@ -146,7 +136,7 @@ export function StagingProvider({
                     caught instanceof Error ? caught.message : String(caught),
             });
         }
-    }, [appendToken, fixtures, onCommitted, state.changes, state.committing]);
+    }, [fixtures, onCommitted, state.changes, state.committing]);
 
     const value = useMemo(
         () => ({

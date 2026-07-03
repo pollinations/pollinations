@@ -12,13 +12,14 @@ npm run dev
 
 The dev server is pinned to `http://127.0.0.1:4180`.
 
-Auth uses the paste-once token gate. Paste a `treasury_web` read token in the
-browser; add `treasury_append` only when editing. Tokens are stored only in
-localStorage and are never bundled.
+Auth uses a password gate backed by the Vite server. Tinybird read/write tokens
+are decrypted from `../secrets/web.json` on the server and are never bundled or
+stored in the browser. The read token is pipe-scoped; write calls go through the
+server allowlist for the current editor datasources.
 
 ## Fixtures Mode
 
-`http://127.0.0.1:4180/?fixtures=1` renders bundled sample data with no token
+`http://127.0.0.1:4180/?fixtures=1` renders bundled sample data with no password
 and no network calls.
 
 ## Data Contract

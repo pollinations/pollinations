@@ -1,18 +1,25 @@
 """No plaintext data/secrets tracked; no cross-app references in code. Guards every later task."""
-import json, os, subprocess
 
-APP = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))   # .../forager
+import json
+import os
+import subprocess
+
+APP = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))  # .../forager
 REPO = os.path.join(APP, "..", "..", "..")
 REL_FORAGER = "apps/operation/forager"
 REL_TREASURY = "apps/operation/treasury"
-REL_SECRETS = "apps/operation/secrets"
+REL_SECRETS = f"{REL_FORAGER}/secrets"
+
 
 def _tracked():
     out = subprocess.run(
         ["git", "ls-files", REL_FORAGER, REL_TREASURY, REL_SECRETS],
-        capture_output=True, text=True, cwd=REPO
+        capture_output=True,
+        text=True,
+        cwd=REPO,
     )
     return [p for p in out.stdout.splitlines() if p.strip()]
+
 
 def test_no_data_files_tracked():
     allowed_json = {
@@ -31,8 +38,9 @@ def test_no_data_files_tracked():
         if "/fixtures/" in p:
             assert p.endswith("_synthetic.json"), f"fixture not marked synthetic: {p}"
 
+
 def test_secrets_are_encrypted():
-    ops_secrets = os.path.join(APP, "..", "secrets")
+    ops_secrets = os.path.join(APP, "secrets")
     for name in ("env.json", "credits.json"):
         p = os.path.join(ops_secrets, name)
         if os.path.exists(p):
@@ -42,8 +50,10 @@ def test_secrets_are_encrypted():
                 for k, v in data.items():
                     if k == "sops":
                         continue
-                    assert v == "" or str(v).startswith("ENC["), \
+                    assert v == "" or str(v).startswith("ENC["), (
                         f"env.json value for {k} looks like PLAINTEXT — re-encrypt before committing"
+                    )
+
 
 def test_no_cross_app_paths_in_code():
     # patterns split so this file's own source doesn't self-trigger

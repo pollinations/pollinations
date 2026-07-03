@@ -1,4 +1,3 @@
-import { TB_HOST } from "../config";
 import { FIXTURES } from "../fixtures";
 import type {
     BalanceRow,
@@ -25,19 +24,17 @@ export class TbError extends Error {
     }
 }
 
-export async function fetchPipe<T>(pipe: string, token: string): Promise<T[]> {
+export async function fetchPipe<T>(pipe: string): Promise<T[]> {
     if (fixturesMode()) return (FIXTURES[pipe] ?? []) as T[];
 
-    const res = await fetch(`${TB_HOST}/v0/pipes/${pipe}.json`, {
-        headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await fetch(`/api/pipes/${encodeURIComponent(pipe)}`);
     if (!res.ok) throw new TbError(pipe, res.status);
 
     const body = (await res.json()) as { data: T[] };
     return body.data;
 }
 
-export async function loadAll(token: string): Promise<Data> {
+export async function loadAll(): Promise<Data> {
     const [
         coverage,
         gaps,
@@ -48,14 +45,14 @@ export async function loadAll(token: string): Promise<Data> {
         providerMonths,
         runs,
     ] = await Promise.all([
-        fetchPipe<CoverageRow>("coverage_ep", token),
-        fetchPipe<GapRow>("gaps_ep", token),
-        fetchPipe<InvoiceRow>("invoices_ep", token),
-        fetchPipe<CashMonthlyRow>("cash_monthly_ep", token),
-        fetchPipe<GrantRow>("grants_ep", token),
-        fetchPipe<BalanceRow>("balances_ep", token),
-        fetchPipe<ProviderMonthRow>("provider_month_ep", token),
-        fetchPipe<RunRow>("runs_ep", token),
+        fetchPipe<CoverageRow>("coverage_ep"),
+        fetchPipe<GapRow>("gaps_ep"),
+        fetchPipe<InvoiceRow>("invoices_ep"),
+        fetchPipe<CashMonthlyRow>("cash_monthly_ep"),
+        fetchPipe<GrantRow>("grants_ep"),
+        fetchPipe<BalanceRow>("balances_ep"),
+        fetchPipe<ProviderMonthRow>("provider_month_ep"),
+        fetchPipe<RunRow>("runs_ep"),
     ]);
 
     return {

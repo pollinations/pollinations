@@ -1,5 +1,3 @@
-import { TB_HOST } from "../config";
-
 type EventsResponse = {
     successful_rows?: number;
     quarantined_rows?: number;
@@ -12,16 +10,14 @@ export function buildNdjson(rows: object[]): string {
 export async function appendRows(
     datasource: string,
     rows: object[],
-    token: string,
 ): Promise<void> {
     if (rows.length === 0) return;
 
     const res = await fetch(
-        `${TB_HOST}/v0/events?name=${encodeURIComponent(datasource)}`,
+        `/api/events?name=${encodeURIComponent(datasource)}`,
         {
             method: "POST",
             headers: {
-                Authorization: `Bearer ${token}`,
                 "Content-Type": "application/x-ndjson",
             },
             body: buildNdjson(rows),

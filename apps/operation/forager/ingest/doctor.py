@@ -80,6 +80,37 @@ def checks():
     except Exception as e:
         out.append(("freshness", False, False, str(e)[:120]))
 
+    # SOFT: CLI tools required by connectors
+    _clis = ["vastai", "firectl", "aws", "bq"]
+    missing = [cli for cli in _clis if not shutil.which(cli)]
+    out.append(("clis", False, not missing,
+                "all present" if not missing else f"missing: {', '.join(missing)}"))
+
+    # SOFT: Tinybird prod read token (generation_event today count)
+    try:
+        tb_prod = tb.TB(cfg["tb_ops_api"], c["TINYBIRD_PROD_READ_TOKEN"])
+        rows = tb_prod.sql(
+            "SELECT count() AS n FROM generation_event "
+            "WHERE start_time >= toStartOfDay(now())"
+        )
+        n = rows[0]["n"] if rows else 0
+        out.append(("tb-prod", False, True, f"today={n} events"))
+    except Exception as e:
+        out.append(("tb-prod", False, False, str(e)[:120]))
+
+    # SOFT: balances table freshness (max run_at < 26h; ok-with-note when empty)
+    try:
+        brows = ops.sql("SELECT max(run_at) AS t FROM balances")
+        last_bal = brows[0]["t"] if brows else None
+        if not last_bal:
+            # Fresh install / no balances yet — soft ok with note
+            out.append(("balances-fresh", False, True, "no rows yet (fresh install)"))
+        else:
+            age_h = (datetime.datetime.utcnow() - datetime.datetime.fromisoformat(last_bal)).total_seconds() / 3600
+            out.append(("balances-fresh", False, age_h < 26, f"last balance {age_h:.1f}h ago"))
+    except Exception as e:
+        out.append(("balances-fresh", False, False, str(e)[:120]))
+
     return out
 
 

@@ -4,10 +4,13 @@ import { buildAcceptChange, canResolveGapStatus } from "./GapActions";
 describe("GapActions", () => {
     it("knows which reconciliation statuses can be resolved", () => {
         expect(canResolveGapStatus("missing_invoice")).toBe(true);
+        expect(canResolveGapStatus("missing_payment")).toBe(true);
         expect(canResolveGapStatus("amount_mismatch")).toBe(true);
         expect(canResolveGapStatus("needs_review")).toBe(true);
+        expect(canResolveGapStatus("needs_label")).toBe(true);
         expect(canResolveGapStatus("needs_data")).toBe(true);
         expect(canResolveGapStatus("ok")).toBe(false);
+        expect(canResolveGapStatus("quiet")).toBe(false);
     });
 
     it("builds a reconciliation accept override", () => {

@@ -8,8 +8,10 @@ const INBOX_PATH = "~/Documents/treasury-invoices/inbox/";
 const INGEST_COMMAND = "python3 -m ingest.run";
 const RESOLVABLE_STATUSES = new Set([
     "missing_invoice",
+    "missing_payment",
     "amount_mismatch",
     "needs_review",
+    "needs_label",
     "needs_data",
 ]);
 
@@ -47,6 +49,8 @@ export function buildAcceptChange({
     };
 }
 
+type Mode = "invoice" | "amount" | "accept";
+
 export function GapActions({
     onClose,
     row,
@@ -55,51 +59,73 @@ export function GapActions({
     row: Pick<CoverageRow, "month" | "provider" | "status">;
 }) {
     const { stage } = useStaging();
+    const [mode, setMode] = useState<Mode>(
+        row.status === "needs_data" ? "amount" : "invoice",
+    );
     const [note, setNote] = useState("");
 
     return (
-        <section className="rounded border border-theme-border/70 bg-theme-bg/45 p-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                    <Text weight="bold">
-                        Resolve {row.provider} · {row.month}
-                    </Text>
-                    <Text size="sm" tone="soft">
-                        Pick the evidence that exists. The row updates after the
-                        next forager run.
-                    </Text>
-                </div>
-                <Button size="sm" onClick={onClose}>
-                    Close
-                </Button>
+        <div className="flex flex-col gap-2 rounded border border-theme-border/70 bg-theme-bg/45 p-3">
+            <div className="flex flex-wrap items-center gap-2">
+                <Text as="span" size="sm" tone="soft">
+                    what do you have for this month?
+                </Text>
+                <ModeButton
+                    active={mode === "invoice"}
+                    onClick={() => setMode("invoice")}
+                >
+                    the invoice
+                </ModeButton>
+                <ModeButton
+                    active={mode === "amount"}
+                    onClick={() => setMode("amount")}
+                >
+                    just a number
+                </ModeButton>
+                <ModeButton
+                    active={mode === "accept"}
+                    onClick={() => setMode("accept")}
+                >
+                    nothing
+                </ModeButton>
+                <button
+                    type="button"
+                    onClick={onClose}
+                    className="ml-auto font-medium text-theme-link hover:underline"
+                >
+                    close
+                </button>
             </div>
 
-            <div className="mt-4 grid gap-3 xl:grid-cols-[1fr_1.5fr_1fr]">
-                <div className="rounded border border-theme-border/70 bg-theme-bg/50 p-3">
-                    <Text weight="bold">Ingest invoice</Text>
-                    <Text size="sm" tone="soft" className="mt-1">
-                        Put the PDF in the inbox, then run the forager ingest.
-                    </Text>
-                    <CopyLine label="path" value={INBOX_PATH} />
-                    <CopyLine label="command" value={INGEST_COMMAND} />
-                </div>
-
-                <div className="rounded border border-theme-border/70 bg-theme-bg/50 p-3">
-                    <Text weight="bold">Enter monthly usage</Text>
-                    <Text size="sm" tone="soft" className="mt-1">
-                        Use this when there is no invoice but the month's usage
-                        or remaining grant value is known.
-                    </Text>
-                    <div className="mt-3">
-                        <UsageEntryForm
-                            month={row.month}
-                            provider={row.provider}
-                        />
+            {mode === "invoice" && (
+                <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                        <Text as="span" size="sm" tone="soft">
+                            Drop the PDF in
+                        </Text>
+                        <CopyChip value={INBOX_PATH} />
+                        <Text as="span" size="sm" tone="soft">
+                            then run
+                        </Text>
+                        <CopyChip value={INGEST_COMMAND} />
                     </div>
+                    <Text size="sm" tone="soft">
+                        This row clears on the next run.
+                    </Text>
                 </div>
+            )}
 
+            {mode === "amount" && (
+                <UsageEntryForm
+                    month={row.month}
+                    provider={row.provider}
+                    onStaged={onClose}
+                />
+            )}
+
+            {mode === "accept" && (
                 <form
-                    className="rounded border border-theme-border/70 bg-theme-bg/50 p-3"
+                    className="flex flex-col gap-1.5"
                     onSubmit={(event) => {
                         event.preventDefault();
                         stage(
@@ -113,48 +139,66 @@ export function GapActions({
                         onClose();
                     }}
                 >
-                    <Text weight="bold">Accept</Text>
-                    <Text size="sm" tone="soft" className="mt-1">
-                        Use only when there is nothing meaningful to record for
-                        this month.
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Input
+                            value={note}
+                            onChange={(event) => setNote(event.target.value)}
+                            placeholder="optional note"
+                            className="w-64"
+                        />
+                        <Button type="submit" size="sm">
+                            Stage accept
+                        </Button>
+                    </div>
+                    <Text size="sm" tone="soft">
+                        Marks the month as accepted — nothing to chase.
                     </Text>
-                    <Input
-                        value={note}
-                        onChange={(event) => setNote(event.target.value)}
-                        placeholder="optional note"
-                        className="mt-3"
-                    />
-                    <Button type="submit" size="sm" className="mt-2">
-                        Stage accept
-                    </Button>
                 </form>
-            </div>
-        </section>
+            )}
+        </div>
     );
 }
 
-function CopyLine({ label, value }: { label: string; value: string }) {
+function ModeButton({
+    active,
+    children,
+    onClick,
+}: {
+    active: boolean;
+    children: string;
+    onClick: () => void;
+}) {
     return (
-        <div className="mt-3 flex items-center gap-2">
-            <Text
-                as="span"
-                size="micro"
-                tone="soft"
-                weight="bold"
-                className="w-16 uppercase"
-            >
-                {label}
-            </Text>
-            <code className="min-w-0 flex-1 truncate rounded bg-theme-bg px-2 py-1 text-xs">
-                {value}
-            </code>
-            <Button
-                type="button"
-                size="sm"
-                onClick={() => void navigator.clipboard?.writeText(value)}
-            >
-                Copy
-            </Button>
-        </div>
+        <button
+            type="button"
+            onClick={onClick}
+            className={[
+                "rounded-full border px-3 py-1 text-sm transition-colors",
+                active
+                    ? "border-theme-link bg-theme-bg-hover font-medium text-theme-link"
+                    : "border-theme-border/70 text-theme-text-soft hover:text-theme-text-strong",
+            ].join(" ")}
+        >
+            {children}
+        </button>
+    );
+}
+
+function CopyChip({ value }: { value: string }) {
+    const [copied, setCopied] = useState(false);
+
+    return (
+        <button
+            type="button"
+            title="Copy"
+            onClick={() => {
+                void navigator.clipboard?.writeText(value);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1500);
+            }}
+            className="rounded border border-theme-border/70 bg-theme-bg px-2 py-0.5 font-mono text-xs text-theme-text-strong hover:bg-theme-bg-hover"
+        >
+            {copied ? "copied" : value}
+        </button>
     );
 }

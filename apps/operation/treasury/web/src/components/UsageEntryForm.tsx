@@ -1,5 +1,4 @@
 import { Alert, Button, Input, Text } from "@pollinations/ui";
-import type { ReactNode } from "react";
 import { useState } from "react";
 import { type StageInput, useStaging } from "../lib/staging";
 
@@ -89,7 +88,7 @@ export function UsageEntryForm({
 
     return (
         <form
-            className="flex flex-col gap-3"
+            className="flex flex-col gap-1.5"
             onSubmit={(event) => {
                 event.preventDefault();
                 const parsed = validateManualAmount(amount);
@@ -117,93 +116,51 @@ export function UsageEntryForm({
             }}
         >
             {error && <Alert intent="warning">{error}</Alert>}
-            <div className="flex flex-wrap gap-2">
-                <ModeOption
-                    checked={mode === "used"}
-                    label="used this month"
-                    onChange={() => setMode("used")}
+            <div className="flex flex-wrap items-center gap-2">
+                <select
+                    value={mode}
+                    onChange={(event) =>
+                        setMode(event.target.value as "used" | "left")
+                    }
+                    aria-label="entry kind"
+                    className="rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong"
                 >
-                    Drives this month's burn and P&L.
-                </ModeOption>
-                <ModeOption
-                    checked={mode === "left"}
-                    label="left on grant now"
-                    onChange={() => setMode("left")}
-                >
-                    Updates balance display only; it does not create monthly
-                    burn.
-                </ModeOption>
-            </div>
-            <div className="flex flex-wrap items-end gap-2">
-                <Field label="amount_usd">
-                    <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={amount}
-                        onChange={(event) => setAmount(event.target.value)}
-                        className="w-32"
-                    />
-                </Field>
+                    <option value="used">used this month</option>
+                    <option value="left">left on grant now</option>
+                </select>
+                <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={amount}
+                    onChange={(event) => setAmount(event.target.value)}
+                    placeholder="amount USD"
+                    aria-label="amount_usd"
+                    className="w-32"
+                />
                 {mode === "used" && (
-                    <Field label="funding">
-                        <select
-                            value={funding}
-                            onChange={(event) => setFunding(event.target.value)}
-                            className="rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong"
-                        >
-                            {FUNDING_OPTIONS.map((option) => (
-                                <option key={option} value={option}>
-                                    {option}
-                                </option>
-                            ))}
-                        </select>
-                    </Field>
+                    <select
+                        value={funding}
+                        onChange={(event) => setFunding(event.target.value)}
+                        aria-label="funding"
+                        className="rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong"
+                    >
+                        {FUNDING_OPTIONS.map((option) => (
+                            <option key={option} value={option}>
+                                {option}
+                            </option>
+                        ))}
+                    </select>
                 )}
                 <Button type="submit" size="sm">
                     Stage
                 </Button>
             </div>
+            <Text size="sm" tone="soft">
+                {mode === "used"
+                    ? "Counts as this month's burn."
+                    : "Updates the pool balance display only — no monthly burn."}
+            </Text>
         </form>
-    );
-}
-
-function ModeOption({
-    checked,
-    children,
-    label,
-    onChange,
-}: {
-    checked: boolean;
-    children: ReactNode;
-    label: string;
-    onChange: () => void;
-}) {
-    return (
-        <label className="flex min-w-60 flex-1 gap-2 rounded border border-theme-border/70 bg-theme-bg/50 p-3 text-sm">
-            <input
-                type="radio"
-                checked={checked}
-                onChange={onChange}
-                className="mt-1"
-            />
-            <span>
-                <Text as="span" weight="bold" className="block">
-                    {label}
-                </Text>
-                <Text as="span" tone="soft" className="block">
-                    {children}
-                </Text>
-            </span>
-        </label>
-    );
-}
-
-function Field({ children, label }: { children: ReactNode; label: string }) {
-    return (
-        <div className="flex flex-col gap-1 text-xs font-bold uppercase text-theme-text-soft">
-            <span>{label}</span>
-            {children}
-        </div>
     );
 }

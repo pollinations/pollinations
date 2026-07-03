@@ -8,11 +8,11 @@ import {
     TableRow,
     Text,
 } from "@pollinations/ui";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { DataNote } from "../components/DataNote";
 import { DataTable, TableScroller } from "../components/DataTable";
 import { canResolveGapStatus, GapActions } from "../components/GapActions";
-import { SourceMark, ValueWithSources } from "../components/Provenance";
+import { HeaderWithSources, SourceMark } from "../components/Provenance";
 import { fmtUsd2 } from "../lib/format";
 import {
     queuedBalanceKey,
@@ -45,7 +45,7 @@ export function ReconTab({
     queuedKeys?: ReadonlySet<string>;
 }) {
     const [problemsOnly, setProblemsOnly] = useState(false);
-    const [resolveRow, setResolveRow] = useState<CoverageRow | null>(null);
+    const [resolveKey, setResolveKey] = useState<string | null>(null);
     const gapsByKey = useMemo(() => {
         const byKey = new Map<string, GapRow>();
         const byProviderMonth = new Map<string, GapRow>();
@@ -81,22 +81,32 @@ export function ReconTab({
                 />
                 problems only
             </div>
-            {resolveRow && (
-                <GapActions
-                    row={resolveRow}
-                    onClose={() => setResolveRow(null)}
-                />
-            )}
             <TableScroller>
                 <DataTable>
                     <TableHead>
                         <TableRow>
                             <TableHeaderCell>month</TableHeaderCell>
                             <TableHeaderCell>provider</TableHeaderCell>
-                            <TableHeaderCell>billing</TableHeaderCell>
-                            <TableHeaderCell>status</TableHeaderCell>
-                            <TableHeaderCell>invoice_usd</TableHeaderCell>
-                            <TableHeaderCell>payment_usd</TableHeaderCell>
+                            <TableHeaderCell>
+                                <HeaderWithSources codes={["TB"]}>
+                                    billing
+                                </HeaderWithSources>
+                            </TableHeaderCell>
+                            <TableHeaderCell>
+                                <HeaderWithSources codes={["TB"]}>
+                                    status
+                                </HeaderWithSources>
+                            </TableHeaderCell>
+                            <TableHeaderCell>
+                                <HeaderWithSources codes={["IV"]}>
+                                    invoice_usd
+                                </HeaderWithSources>
+                            </TableHeaderCell>
+                            <TableHeaderCell>
+                                <HeaderWithSources codes={["WS"]}>
+                                    payment_usd
+                                </HeaderWithSources>
+                            </TableHeaderCell>
                             {problemsOnly && (
                                 <>
                                     <TableHeaderCell>delta_usd</TableHeaderCell>
@@ -128,83 +138,99 @@ export function ReconTab({
                                 gapsByKey.byProviderMonth.get(
                                     `${row.month}|${row.provider}`,
                                 );
+                            const rowKey = `${row.provider}|${row.month}`;
                             return (
-                                <TableRow key={`${row.provider}|${row.month}`}>
-                                    <TableCell>{row.month}</TableCell>
-                                    <TableCell>{row.provider}</TableCell>
-                                    <TableCell>
-                                        <ValueWithSources codes={["TB"]}>
+                                <Fragment key={rowKey}>
+                                    <TableRow>
+                                        <TableCell>{row.month}</TableCell>
+                                        <TableCell>{row.provider}</TableCell>
+                                        <TableCell>
                                             {row.billing || "-"}
-                                        </ValueWithSources>
-                                    </TableCell>
-                                    <TableCell>
-                                        <ValueWithSources codes={["TB"]}>
-                                            <Chip
-                                                size="sm"
-                                                intent={
-                                                    meta.intent ?? undefined
-                                                }
-                                            >
-                                                {row.status}
-                                            </Chip>
-                                            {queued && (
+                                        </TableCell>
+                                        <TableCell>
+                                            <span className="inline-flex items-center gap-1.5">
                                                 <Chip
                                                     size="sm"
-                                                    intent="warning"
+                                                    intent={
+                                                        meta.intent ?? undefined
+                                                    }
                                                 >
-                                                    queued
+                                                    {row.status}
                                                 </Chip>
-                                            )}
-                                        </ValueWithSources>
-                                    </TableCell>
-                                    <TableCell>
-                                        <ValueWithSources codes={["IV"]}>
+                                                {queued && (
+                                                    <Chip
+                                                        size="sm"
+                                                        intent="warning"
+                                                    >
+                                                        queued
+                                                    </Chip>
+                                                )}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell>
                                             {fmtUsd2(row.invoice_usd)}
-                                        </ValueWithSources>
-                                    </TableCell>
-                                    <TableCell>
-                                        <ValueWithSources codes={["WS"]}>
+                                        </TableCell>
+                                        <TableCell>
                                             {fmtUsd2(row.payment_usd)}
-                                        </ValueWithSources>
-                                    </TableCell>
-                                    {problemsOnly && (
-                                        <>
-                                            <TableCell>
-                                                {fmtUsd2(gap?.delta_usd)}
-                                            </TableCell>
-                                            <TableCell
-                                                title={gap?.invoice_refs}
-                                            >
-                                                {gap?.invoice_refs || "-"}
-                                            </TableCell>
-                                            <TableCell
-                                                title={gap?.payment_refs}
-                                            >
-                                                {gap?.payment_refs || "-"}
-                                            </TableCell>
-                                            <TableCell title={gap?.note}>
-                                                <Text as="span" tone="soft">
-                                                    {gap?.note || "-"}
-                                                </Text>
-                                            </TableCell>
-                                        </>
-                                    )}
-                                    <TableCell>
-                                        {canResolveGapStatus(row.status) ? (
-                                            <button
-                                                type="button"
-                                                className="font-medium text-theme-link hover:underline"
-                                                onClick={() =>
-                                                    setResolveRow(row)
-                                                }
-                                            >
-                                                resolve
-                                            </button>
-                                        ) : (
-                                            "-"
+                                        </TableCell>
+                                        {problemsOnly && (
+                                            <>
+                                                <TableCell>
+                                                    {fmtUsd2(gap?.delta_usd)}
+                                                </TableCell>
+                                                <TableCell
+                                                    title={gap?.invoice_refs}
+                                                >
+                                                    {gap?.invoice_refs || "-"}
+                                                </TableCell>
+                                                <TableCell
+                                                    title={gap?.payment_refs}
+                                                >
+                                                    {gap?.payment_refs || "-"}
+                                                </TableCell>
+                                                <TableCell title={gap?.note}>
+                                                    <Text as="span" tone="soft">
+                                                        {gap?.note || "-"}
+                                                    </Text>
+                                                </TableCell>
+                                            </>
                                         )}
-                                    </TableCell>
-                                </TableRow>
+                                        <TableCell>
+                                            {canResolveGapStatus(row.status) ? (
+                                                <button
+                                                    type="button"
+                                                    className="font-medium text-theme-link hover:underline"
+                                                    onClick={() =>
+                                                        setResolveKey(
+                                                            resolveKey ===
+                                                                rowKey
+                                                                ? null
+                                                                : rowKey,
+                                                        )
+                                                    }
+                                                >
+                                                    resolve
+                                                </button>
+                                            ) : (
+                                                "-"
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                    {resolveKey === rowKey && (
+                                        <TableRow>
+                                            <TableCell
+                                                colSpan={problemsOnly ? 11 : 7}
+                                            >
+                                                <GapActions
+                                                    row={row}
+                                                    onClose={() =>
+                                                        setResolveKey(null)
+                                                    }
+                                                />
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </Fragment>
                             );
                         })}
                     </TableBody>

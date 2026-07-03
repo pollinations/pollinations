@@ -1,0 +1,7 @@
+TOKEN "treasury_web" READ
+
+NODE provider_month_latest
+SQL >
+    SELECT * FROM provider_month ORDER BY month, provider
+
+TYPE endpoint

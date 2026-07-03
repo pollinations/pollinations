@@ -1,0 +1,7 @@
+TOKEN "treasury_web" READ
+
+NODE revenue
+SQL >
+    SELECT * FROM revenue_monthly ORDER BY month
+
+TYPE endpoint

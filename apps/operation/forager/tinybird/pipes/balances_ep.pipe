@@ -1,0 +1,15 @@
+TOKEN "treasury_web" READ
+
+NODE balances_latest
+SQL >
+    SELECT provider,
+           argMax(granted_usd, run_at)      AS granted_usd,
+           argMax(spent_usd, run_at)        AS spent_usd,
+           argMax(left_usd, run_at)         AS left_usd,
+           argMax(prepaid_left_usd, run_at) AS prepaid_left_usd,
+           argMax(source, run_at)           AS source,
+           argMax(note, run_at)             AS note,
+           max(run_at)                      AS last_run_at
+    FROM balances GROUP BY provider ORDER BY provider
+
+TYPE endpoint

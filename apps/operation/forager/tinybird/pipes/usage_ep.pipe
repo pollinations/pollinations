@@ -1,0 +1,7 @@
+TOKEN "treasury_web" READ
+
+NODE usage
+SQL >
+    SELECT * FROM usage_monthly ORDER BY month, provider, model
+
+TYPE endpoint

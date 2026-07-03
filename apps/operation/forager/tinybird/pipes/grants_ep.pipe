@@ -1,0 +1,7 @@
+TOKEN "treasury_web" READ
+
+NODE grants_latest
+SQL >
+    SELECT * FROM grants ORDER BY pool
+
+TYPE endpoint

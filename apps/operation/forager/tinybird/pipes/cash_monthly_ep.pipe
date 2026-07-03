@@ -1,0 +1,11 @@
+TOKEN "treasury_web" READ
+
+NODE cash_monthly
+SQL >
+    SELECT month, provider,
+           round(sum(amount_usd), 2) AS paid_usd,
+           round(sum(amount_eur), 2) AS paid_eur
+    FROM payments WHERE provider != ''
+    GROUP BY month, provider ORDER BY month, provider
+
+TYPE endpoint

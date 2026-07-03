@@ -9,10 +9,11 @@ import {
     TableRow,
     Text,
 } from "@pollinations/ui";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { DataNote } from "../components/DataNote";
 import { DataTable, TableScroller } from "../components/DataTable";
 import { SourceMark, ValueWithSource } from "../components/Provenance";
+import { buildManualBalanceChange } from "../components/UsageEntryForm";
 import { fmtUsd, fmtUsd2 } from "../lib/format";
 import { queuedBalanceKey, queuedGrantKey } from "../lib/queued";
 import { type StageInput, useStaging } from "../lib/staging";
@@ -35,6 +36,13 @@ function sortedGrants(rows: GrantRow[]) {
 
 function sortedBalances(rows: BalanceRow[]) {
     return [...rows].sort((a, b) => a.provider.localeCompare(b.provider));
+}
+
+function grantProviders(row: GrantRow) {
+    return row.providers
+        .split(",")
+        .map((provider) => provider.trim())
+        .filter(Boolean);
 }
 
 type GrantAmountField = "granted_usd" | "left_usd" | "prepaid_left_usd";
@@ -97,90 +105,170 @@ export function buildFxOverrideChange({
     };
 }
 
-function EditableGrantAmount({
-    field,
-    pool,
-    source,
-    value,
-}: {
-    field: GrantAmountField;
-    pool: string;
-    source: string;
-    value: number | null;
-}) {
+const GRANT_FIELDS: { field: GrantAmountField; label: string }[] = [
+    { field: "granted_usd", label: "granted_usd" },
+    { field: "left_usd", label: "left_usd" },
+    { field: "prepaid_left_usd", label: "prepaid_left_usd" },
+];
+
+function grantFieldSource(row: GrantRow, field: GrantAmountField) {
+    if (field === "granted_usd") return row.granted_src;
+    if (field === "left_usd") return row.left_src;
+    return row.prepaid_left_src;
+}
+
+function GrantEditor({ onClose, row }: { onClose: () => void; row: GrantRow }) {
     const { stage } = useStaging();
-    const [editing, setEditing] = useState(false);
-    const [nextValue, setNextValue] = useState(value?.toString() ?? "");
+    const [values, setValues] = useState<Record<GrantAmountField, string>>({
+        granted_usd: row.granted_usd?.toString() ?? "",
+        left_usd: row.left_usd?.toString() ?? "",
+        prepaid_left_usd: row.prepaid_left_usd?.toString() ?? "",
+    });
     const [note, setNote] = useState("");
     const [error, setError] = useState("");
-    const editable = canEditGrantSource(source);
-    const formatted = field === "granted_usd" ? fmtUsd(value) : fmtUsd2(value);
-
-    if (!editable) {
-        return <ValueWithSource source={source}>{formatted}</ValueWithSource>;
-    }
-
-    if (!editing) {
-        return (
-            <button
-                type="button"
-                className="text-left"
-                onClick={() => {
-                    setNextValue(value?.toString() ?? "");
-                    setNote("");
-                    setError("");
-                    setEditing(true);
-                }}
-            >
-                <ValueWithSource source={source}>{formatted}</ValueWithSource>
-            </button>
-        );
-    }
 
     return (
         <form
-            className="flex items-center gap-2"
+            className="flex flex-col gap-1.5"
             onSubmit={(event) => {
                 event.preventDefault();
-                const parsed = Number(nextValue);
-                if (!Number.isFinite(parsed) || parsed < 0) {
+                let staged = 0;
+                for (const { field } of GRANT_FIELDS) {
+                    if (!canEditGrantSource(grantFieldSource(row, field))) {
+                        continue;
+                    }
+                    const raw = values[field].trim();
+                    if (raw === "") continue;
+                    const parsed = Number(raw);
+                    if (!Number.isFinite(parsed) || parsed < 0) {
+                        setError(`${field}: number >= 0`);
+                        return;
+                    }
+                    if (parsed === (row[field] ?? null)) continue;
+                    stage(
+                        buildGrantOverrideChange({
+                            field,
+                            note: note.trim(),
+                            pool: row.pool,
+                            value: parsed,
+                        }),
+                    );
+                    staged += 1;
+                }
+                if (staged === 0) {
+                    setError("nothing changed");
+                    return;
+                }
+                onClose();
+            }}
+        >
+            <div className="flex flex-wrap items-end gap-2">
+                {GRANT_FIELDS.map(({ field, label }) => {
+                    const editable = canEditGrantSource(
+                        grantFieldSource(row, field),
+                    );
+                    return (
+                        <div
+                            key={field}
+                            className="flex flex-col gap-1 text-xs font-bold uppercase text-theme-text-soft"
+                        >
+                            <span>{label}</span>
+                            <Input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={values[field]}
+                                onChange={(event) =>
+                                    setValues((prev) => ({
+                                        ...prev,
+                                        [field]: event.target.value,
+                                    }))
+                                }
+                                disabled={!editable}
+                                aria-label={field}
+                                title={
+                                    editable
+                                        ? undefined
+                                        : "live API value — read-only"
+                                }
+                                className="w-32"
+                            />
+                        </div>
+                    );
+                })}
+                <Input
+                    value={note}
+                    onChange={(event) => setNote(event.target.value)}
+                    placeholder="optional note"
+                    className="w-48"
+                    aria-label="note"
+                />
+                <Button type="submit" size="sm">
+                    Stage
+                </Button>
+                <Button type="button" size="sm" onClick={onClose}>
+                    Cancel
+                </Button>
+            </div>
+            <Text size="sm" tone="soft">
+                {error ||
+                    "Greyed fields come from the live API and cannot be overridden."}
+            </Text>
+        </form>
+    );
+}
+
+function BalanceEditor({
+    onClose,
+    provider,
+}: {
+    onClose: () => void;
+    provider: string;
+}) {
+    const { stage } = useStaging();
+    const [amount, setAmount] = useState("");
+    const [error, setError] = useState("");
+
+    return (
+        <form
+            className="flex flex-col gap-1.5"
+            onSubmit={(event) => {
+                event.preventDefault();
+                const parsed = Number(amount);
+                if (
+                    amount.trim() === "" ||
+                    !Number.isFinite(parsed) ||
+                    parsed < 0
+                ) {
                     setError("number >= 0");
                     return;
                 }
-                stage(
-                    buildGrantOverrideChange({
-                        field,
-                        note: note.trim(),
-                        pool,
-                        value: parsed,
-                    }),
-                );
-                setEditing(false);
+                stage(buildManualBalanceChange({ amount: parsed, provider }));
+                onClose();
             }}
         >
-            <Input
-                type="number"
-                min="0"
-                step="0.01"
-                value={nextValue}
-                onChange={(event) => setNextValue(event.target.value)}
-                className="w-28"
-                aria-label={`${field} value`}
-            />
-            <Input
-                value={note}
-                onChange={(event) => setNote(event.target.value)}
-                placeholder="note"
-                className="w-32"
-                aria-label={`${field} note`}
-            />
-            <Button type="submit" size="sm">
-                Stage
-            </Button>
-            <Button type="button" size="sm" onClick={() => setEditing(false)}>
-                Cancel
-            </Button>
-            {error && <Text className="text-intent-danger-text">{error}</Text>}
+            <div className="flex flex-wrap items-center gap-2">
+                <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={amount}
+                    onChange={(event) => setAmount(event.target.value)}
+                    placeholder="left_usd now"
+                    aria-label="left_usd"
+                    className="w-36"
+                />
+                <Button type="submit" size="sm">
+                    Stage
+                </Button>
+                <Button type="button" size="sm" onClick={onClose}>
+                    Cancel
+                </Button>
+            </div>
+            <Text size="sm" tone="soft">
+                {error ||
+                    "Manual snapshot of what is left — updates the display and pool balance, no monthly burn."}
+            </Text>
         </form>
     );
 }
@@ -234,16 +322,40 @@ export function CreditsTab({
     queuedKeys?: ReadonlySet<string>;
 }) {
     const [category, setCategory] = useState("all");
+    const [provider, setProvider] = useState("all");
+    const [editPool, setEditPool] = useState<string | null>(null);
+    const [editBalance, setEditBalance] = useState<string | null>(null);
+    const providerOptions = useMemo(() => {
+        const options = new Set<string>();
+        for (const row of data.grants) {
+            for (const grantProvider of grantProviders(row)) {
+                options.add(grantProvider);
+            }
+        }
+        for (const row of data.balances) {
+            options.add(row.provider || "");
+        }
+        return ["all", ...[...options].sort((a, b) => a.localeCompare(b))];
+    }, [data.grants, data.balances]);
     const grants = useMemo(
         () =>
-            sortedGrants(data.grants).filter(
-                (row) => category === "all" || row.category === category,
-            ),
-        [data.grants, category],
+            sortedGrants(data.grants).filter((row) => {
+                if (
+                    provider !== "all" &&
+                    !grantProviders(row).includes(provider)
+                ) {
+                    return false;
+                }
+                return category === "all" || row.category === category;
+            }),
+        [data.grants, category, provider],
     );
     const balances = useMemo(
-        () => sortedBalances(data.balances),
-        [data.balances],
+        () =>
+            sortedBalances(data.balances).filter(
+                (row) => provider === "all" || row.provider === provider,
+            ),
+        [data.balances, provider],
     );
 
     return (
@@ -254,24 +366,45 @@ export function CreditsTab({
                     provider APIs <SourceMark code="API" />, manual values{" "}
                     <SourceMark code="HC" /> filling the holes.
                 </DataNote>
-                <label className="inline-flex w-fit items-center gap-2 text-sm text-theme-text-soft">
-                    category
-                    <select
-                        value={category}
-                        onChange={(event) => setCategory(event.target.value)}
-                        className="rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong"
-                    >
-                        {CATEGORY_OPTIONS.map((option) => (
-                            <option key={option} value={option}>
-                                {option}
-                            </option>
-                        ))}
-                    </select>
-                </label>
+                <div className="flex flex-wrap items-center gap-3">
+                    <label className="inline-flex w-fit items-center gap-2 text-sm text-theme-text-soft">
+                        provider
+                        <select
+                            value={provider}
+                            onChange={(event) =>
+                                setProvider(event.target.value)
+                            }
+                            className="max-w-56 rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong"
+                        >
+                            {providerOptions.map((option) => (
+                                <option key={option} value={option}>
+                                    {option || "(blank)"}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+                    <label className="inline-flex w-fit items-center gap-2 text-sm text-theme-text-soft">
+                        category
+                        <select
+                            value={category}
+                            onChange={(event) =>
+                                setCategory(event.target.value)
+                            }
+                            className="rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong"
+                        >
+                            {CATEGORY_OPTIONS.map((option) => (
+                                <option key={option} value={option}>
+                                    {option}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+                </div>
                 <TableScroller>
                     <DataTable>
                         <TableHead>
                             <TableRow>
+                                <TableHeaderCell>actions</TableHeaderCell>
                                 <TableHeaderCell>pool</TableHeaderCell>
                                 <TableHeaderCell>providers</TableHeaderCell>
                                 <TableHeaderCell>kind</TableHeaderCell>
@@ -289,60 +422,94 @@ export function CreditsTab({
                         </TableHead>
                         <TableBody>
                             {grants.map((row) => (
-                                <TableRow key={row.pool}>
-                                    <TableCell>
-                                        <span className="inline-flex items-center gap-1.5">
-                                            {row.pool}
-                                            {queuedKeys.has(
-                                                queuedGrantKey(row.pool),
-                                            ) && (
-                                                <Chip
-                                                    size="sm"
-                                                    intent="warning"
-                                                >
-                                                    queued
-                                                </Chip>
-                                            )}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell>
-                                        {row.providers || "-"}
-                                    </TableCell>
-                                    <TableCell>{row.kind || "-"}</TableCell>
-                                    <TableCell>{row.category || "-"}</TableCell>
-                                    <TableCell>{row.currency || "-"}</TableCell>
-                                    <TableCell>
-                                        <EditableGrantAmount
-                                            field="granted_usd"
-                                            pool={row.pool}
-                                            source={row.granted_src}
-                                            value={row.granted_usd}
-                                        />
-                                    </TableCell>
-                                    <TableCell>
-                                        <EditableGrantAmount
-                                            field="left_usd"
-                                            pool={row.pool}
-                                            source={row.left_src}
-                                            value={row.left_usd}
-                                        />
-                                    </TableCell>
-                                    <TableCell>
-                                        <EditableGrantAmount
-                                            field="prepaid_left_usd"
-                                            pool={row.pool}
-                                            source={row.prepaid_left_src}
-                                            value={row.prepaid_left_usd}
-                                        />
-                                    </TableCell>
-                                    <TableCell>{row.expires || "-"}</TableCell>
-                                    <TableCell title={row.note}>
-                                        <Text as="span" tone="soft">
-                                            {row.note || "-"}
-                                        </Text>
-                                    </TableCell>
-                                    <TableCell>{row.run_at || "-"}</TableCell>
-                                </TableRow>
+                                <Fragment key={row.pool}>
+                                    <TableRow>
+                                        <TableCell>
+                                            <button
+                                                type="button"
+                                                className="font-medium text-theme-link hover:underline"
+                                                onClick={() =>
+                                                    setEditPool(
+                                                        editPool === row.pool
+                                                            ? null
+                                                            : row.pool,
+                                                    )
+                                                }
+                                            >
+                                                edit
+                                            </button>
+                                        </TableCell>
+                                        <TableCell>
+                                            <span className="inline-flex items-center gap-1.5">
+                                                {row.pool}
+                                                {queuedKeys.has(
+                                                    queuedGrantKey(row.pool),
+                                                ) && (
+                                                    <Chip
+                                                        size="sm"
+                                                        intent="warning"
+                                                    >
+                                                        queued
+                                                    </Chip>
+                                                )}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell>
+                                            {row.providers || "-"}
+                                        </TableCell>
+                                        <TableCell>{row.kind || "-"}</TableCell>
+                                        <TableCell>
+                                            {row.category || "-"}
+                                        </TableCell>
+                                        <TableCell>
+                                            {row.currency || "-"}
+                                        </TableCell>
+                                        <TableCell>
+                                            <ValueWithSource
+                                                source={row.granted_src}
+                                            >
+                                                {fmtUsd(row.granted_usd)}
+                                            </ValueWithSource>
+                                        </TableCell>
+                                        <TableCell>
+                                            <ValueWithSource
+                                                source={row.left_src}
+                                            >
+                                                {fmtUsd2(row.left_usd)}
+                                            </ValueWithSource>
+                                        </TableCell>
+                                        <TableCell>
+                                            <ValueWithSource
+                                                source={row.prepaid_left_src}
+                                            >
+                                                {fmtUsd2(row.prepaid_left_usd)}
+                                            </ValueWithSource>
+                                        </TableCell>
+                                        <TableCell>
+                                            {row.expires || "-"}
+                                        </TableCell>
+                                        <TableCell title={row.note}>
+                                            <Text as="span" tone="soft">
+                                                {row.note || "-"}
+                                            </Text>
+                                        </TableCell>
+                                        <TableCell>
+                                            {row.run_at || "-"}
+                                        </TableCell>
+                                    </TableRow>
+                                    {editPool === row.pool && (
+                                        <TableRow>
+                                            <TableCell colSpan={12}>
+                                                <GrantEditor
+                                                    row={row}
+                                                    onClose={() =>
+                                                        setEditPool(null)
+                                                    }
+                                                />
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </Fragment>
                             ))}
                         </TableBody>
                     </DataTable>
@@ -361,6 +528,7 @@ export function CreditsTab({
                     <DataTable>
                         <TableHead>
                             <TableRow>
+                                <TableHeaderCell>actions</TableHeaderCell>
                                 <TableHeaderCell>provider</TableHeaderCell>
                                 <TableHeaderCell>granted_usd</TableHeaderCell>
                                 <TableHeaderCell>spent_usd</TableHeaderCell>
@@ -374,51 +542,91 @@ export function CreditsTab({
                         </TableHead>
                         <TableBody>
                             {balances.map((row) => (
-                                <TableRow key={row.provider}>
-                                    <TableCell>
-                                        <span className="inline-flex items-center gap-1.5">
-                                            {row.provider}
-                                            {queuedKeys.has(
-                                                queuedBalanceKey(row.provider),
-                                            ) && (
-                                                <Chip
-                                                    size="sm"
-                                                    intent="warning"
-                                                >
-                                                    queued
-                                                </Chip>
-                                            )}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell>
-                                        <ValueWithSource source={row.source}>
-                                            {fmtUsd(row.granted_usd)}
-                                        </ValueWithSource>
-                                    </TableCell>
-                                    <TableCell>
-                                        <ValueWithSource source={row.source}>
-                                            {fmtUsd(row.spent_usd)}
-                                        </ValueWithSource>
-                                    </TableCell>
-                                    <TableCell>
-                                        <ValueWithSource source={row.source}>
-                                            {fmtUsd2(row.left_usd)}
-                                        </ValueWithSource>
-                                    </TableCell>
-                                    <TableCell>
-                                        <ValueWithSource source={row.source}>
-                                            {fmtUsd2(row.prepaid_left_usd)}
-                                        </ValueWithSource>
-                                    </TableCell>
-                                    <TableCell title={row.note}>
-                                        <Text as="span" tone="soft">
-                                            {row.note || "-"}
-                                        </Text>
-                                    </TableCell>
-                                    <TableCell>
-                                        {row.last_run_at || "-"}
-                                    </TableCell>
-                                </TableRow>
+                                <Fragment key={row.provider}>
+                                    <TableRow>
+                                        <TableCell>
+                                            <button
+                                                type="button"
+                                                className="font-medium text-theme-link hover:underline"
+                                                onClick={() =>
+                                                    setEditBalance(
+                                                        editBalance ===
+                                                            row.provider
+                                                            ? null
+                                                            : row.provider,
+                                                    )
+                                                }
+                                            >
+                                                edit
+                                            </button>
+                                        </TableCell>
+                                        <TableCell>
+                                            <span className="inline-flex items-center gap-1.5">
+                                                {row.provider}
+                                                {queuedKeys.has(
+                                                    queuedBalanceKey(
+                                                        row.provider,
+                                                    ),
+                                                ) && (
+                                                    <Chip
+                                                        size="sm"
+                                                        intent="warning"
+                                                    >
+                                                        queued
+                                                    </Chip>
+                                                )}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell>
+                                            <ValueWithSource
+                                                source={row.source}
+                                            >
+                                                {fmtUsd(row.granted_usd)}
+                                            </ValueWithSource>
+                                        </TableCell>
+                                        <TableCell>
+                                            <ValueWithSource
+                                                source={row.source}
+                                            >
+                                                {fmtUsd(row.spent_usd)}
+                                            </ValueWithSource>
+                                        </TableCell>
+                                        <TableCell>
+                                            <ValueWithSource
+                                                source={row.source}
+                                            >
+                                                {fmtUsd2(row.left_usd)}
+                                            </ValueWithSource>
+                                        </TableCell>
+                                        <TableCell>
+                                            <ValueWithSource
+                                                source={row.source}
+                                            >
+                                                {fmtUsd2(row.prepaid_left_usd)}
+                                            </ValueWithSource>
+                                        </TableCell>
+                                        <TableCell title={row.note}>
+                                            <Text as="span" tone="soft">
+                                                {row.note || "-"}
+                                            </Text>
+                                        </TableCell>
+                                        <TableCell>
+                                            {row.last_run_at || "-"}
+                                        </TableCell>
+                                    </TableRow>
+                                    {editBalance === row.provider && (
+                                        <TableRow>
+                                            <TableCell colSpan={8}>
+                                                <BalanceEditor
+                                                    provider={row.provider}
+                                                    onClose={() =>
+                                                        setEditBalance(null)
+                                                    }
+                                                />
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </Fragment>
                             ))}
                         </TableBody>
                     </DataTable>

@@ -85,6 +85,7 @@ export function ReconTab({
                 <DataTable>
                     <TableHead>
                         <TableRow>
+                            <TableHeaderCell>actions</TableHeaderCell>
                             <TableHeaderCell>month</TableHeaderCell>
                             <TableHeaderCell>provider</TableHeaderCell>
                             <TableHeaderCell>
@@ -119,7 +120,6 @@ export function ReconTab({
                                     <TableHeaderCell>note</TableHeaderCell>
                                 </>
                             )}
-                            <TableHeaderCell>actions</TableHeaderCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -142,6 +142,26 @@ export function ReconTab({
                             return (
                                 <Fragment key={rowKey}>
                                     <TableRow>
+                                        <TableCell>
+                                            {canResolveGapStatus(row.status) ? (
+                                                <button
+                                                    type="button"
+                                                    className="font-medium text-theme-link hover:underline"
+                                                    onClick={() =>
+                                                        setResolveKey(
+                                                            resolveKey ===
+                                                                rowKey
+                                                                ? null
+                                                                : rowKey,
+                                                        )
+                                                    }
+                                                >
+                                                    resolve
+                                                </button>
+                                            ) : (
+                                                "-"
+                                            )}
+                                        </TableCell>
                                         <TableCell>{row.month}</TableCell>
                                         <TableCell>{row.provider}</TableCell>
                                         <TableCell>
@@ -195,26 +215,6 @@ export function ReconTab({
                                                 </TableCell>
                                             </>
                                         )}
-                                        <TableCell>
-                                            {canResolveGapStatus(row.status) ? (
-                                                <button
-                                                    type="button"
-                                                    className="font-medium text-theme-link hover:underline"
-                                                    onClick={() =>
-                                                        setResolveKey(
-                                                            resolveKey ===
-                                                                rowKey
-                                                                ? null
-                                                                : rowKey,
-                                                        )
-                                                    }
-                                                >
-                                                    resolve
-                                                </button>
-                                            ) : (
-                                                "-"
-                                            )}
-                                        </TableCell>
                                     </TableRow>
                                     {resolveKey === rowKey && (
                                         <TableRow>

@@ -86,13 +86,24 @@ export function InvoicesTab({
     queuedKeys?: ReadonlySet<string>;
 }) {
     const [category, setCategory] = useState("all");
+    const [provider, setProvider] = useState("all");
     const [editingSha, setEditingSha] = useState<string | null>(null);
+    const providerOptions = useMemo(() => {
+        const options = new Set<string>();
+        for (const row of data.invoices) {
+            options.add(row.provider || "");
+        }
+        return ["all", ...[...options].sort((a, b) => a.localeCompare(b))];
+    }, [data.invoices]);
     const rows = useMemo(
         () =>
-            sortedInvoices(data.invoices).filter(
-                (row) => category === "all" || row.category === category,
-            ),
-        [data.invoices, category],
+            sortedInvoices(data.invoices).filter((row) => {
+                if (provider !== "all" && row.provider !== provider) {
+                    return false;
+                }
+                return category === "all" || row.category === category;
+            }),
+        [data.invoices, category, provider],
     );
 
     return (
@@ -102,24 +113,41 @@ export function InvoicesTab({
                 operator label corrections <SourceMark code="HC" /> — the
                 document side of every Recon verdict.
             </DataNote>
-            <label className="inline-flex w-fit items-center gap-2 text-sm text-theme-text-soft">
-                category
-                <select
-                    value={category}
-                    onChange={(event) => setCategory(event.target.value)}
-                    className="rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong"
-                >
-                    {CATEGORY_OPTIONS.map((option) => (
-                        <option key={option} value={option}>
-                            {option}
-                        </option>
-                    ))}
-                </select>
-            </label>
+            <div className="flex flex-wrap items-center gap-3">
+                <label className="inline-flex w-fit items-center gap-2 text-sm text-theme-text-soft">
+                    provider
+                    <select
+                        value={provider}
+                        onChange={(event) => setProvider(event.target.value)}
+                        className="max-w-56 rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong"
+                    >
+                        {providerOptions.map((option) => (
+                            <option key={option} value={option}>
+                                {option || "(blank)"}
+                            </option>
+                        ))}
+                    </select>
+                </label>
+                <label className="inline-flex w-fit items-center gap-2 text-sm text-theme-text-soft">
+                    category
+                    <select
+                        value={category}
+                        onChange={(event) => setCategory(event.target.value)}
+                        className="rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong"
+                    >
+                        {CATEGORY_OPTIONS.map((option) => (
+                            <option key={option} value={option}>
+                                {option}
+                            </option>
+                        ))}
+                    </select>
+                </label>
+            </div>
             <TableScroller>
                 <DataTable>
                     <TableHead>
                         <TableRow>
+                            <TableHeaderCell>action</TableHeaderCell>
                             <TableHeaderCell>provider</TableHeaderCell>
                             <TableHeaderCell>category</TableHeaderCell>
                             <TableHeaderCell>kind</TableHeaderCell>
@@ -133,7 +161,6 @@ export function InvoicesTab({
                             <TableHeaderCell>file</TableHeaderCell>
                             <TableHeaderCell>status</TableHeaderCell>
                             <TableHeaderCell>ingested_at</TableHeaderCell>
-                            <TableHeaderCell>action</TableHeaderCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -142,6 +169,20 @@ export function InvoicesTab({
                                 <TableRow
                                     key={`${row.sha256}|${row.source}|${row.ingested_at}`}
                                 >
+                                    <TableCell>
+                                        <Button
+                                            size="sm"
+                                            onClick={() =>
+                                                setEditingSha((current) =>
+                                                    current === row.sha256
+                                                        ? null
+                                                        : row.sha256,
+                                                )
+                                            }
+                                        >
+                                            Edit
+                                        </Button>
+                                    </TableCell>
                                     <TableCell>{row.provider || "-"}</TableCell>
                                     <TableCell>{row.category || "-"}</TableCell>
                                     <TableCell>{row.kind || "-"}</TableCell>
@@ -188,20 +229,6 @@ export function InvoicesTab({
                                     </TableCell>
                                     <TableCell>
                                         {row.ingested_at || "-"}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Button
-                                            size="sm"
-                                            onClick={() =>
-                                                setEditingSha((current) =>
-                                                    current === row.sha256
-                                                        ? null
-                                                        : row.sha256,
-                                                )
-                                            }
-                                        >
-                                            Edit
-                                        </Button>
                                     </TableCell>
                                 </TableRow>
                                 {editingSha === row.sha256 && (

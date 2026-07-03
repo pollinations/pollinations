@@ -1,4 +1,6 @@
 import {
+    Button,
+    Input,
     TableBody,
     TableCell,
     TableHead,
@@ -11,6 +13,7 @@ import { DataNote } from "../components/DataNote";
 import { DataTable, TableScroller } from "../components/DataTable";
 import { ValueWithSource } from "../components/Provenance";
 import { fmtUsd, fmtUsd2 } from "../lib/format";
+import { type StageInput, useStaging } from "../lib/staging";
 import type { BalanceRow, Data, GrantRow } from "../types";
 
 const CATEGORY_OPTIONS = [
@@ -28,6 +31,195 @@ function sortedGrants(rows: GrantRow[]) {
 
 function sortedBalances(rows: BalanceRow[]) {
     return [...rows].sort((a, b) => a.provider.localeCompare(b.provider));
+}
+
+type GrantAmountField = "granted_usd" | "left_usd" | "prepaid_left_usd";
+
+export function canEditGrantSource(source: string) {
+    return ["", "hc", "manual"].includes(source.toLowerCase());
+}
+
+function nowDateTime() {
+    return new Date().toISOString().replace("T", " ").slice(0, 19);
+}
+
+export function buildGrantOverrideChange({
+    enteredAt = nowDateTime(),
+    field,
+    note = "",
+    pool,
+    value,
+}: {
+    enteredAt?: string;
+    field: GrantAmountField;
+    note?: string;
+    pool: string;
+    value: number;
+}): StageInput {
+    return {
+        datasource: "overrides",
+        row: {
+            entered_at: enteredAt,
+            scope: "grants",
+            key: pool,
+            field,
+            value_num: value,
+            value_str: "",
+            note,
+        },
+        summary: `grants ${pool} ${field} -> ${value}`,
+    };
+}
+
+export function buildFxOverrideChange({
+    enteredAt = nowDateTime(),
+    value,
+}: {
+    enteredAt?: string;
+    value: number;
+}): StageInput {
+    return {
+        datasource: "overrides",
+        row: {
+            entered_at: enteredAt,
+            scope: "config",
+            key: "fx_eur_usd",
+            field: "value",
+            value_num: value,
+            value_str: "",
+            note: "",
+        },
+        summary: `config fx_eur_usd -> ${value}`,
+    };
+}
+
+function EditableGrantAmount({
+    field,
+    pool,
+    source,
+    value,
+}: {
+    field: GrantAmountField;
+    pool: string;
+    source: string;
+    value: number | null;
+}) {
+    const { stage } = useStaging();
+    const [editing, setEditing] = useState(false);
+    const [nextValue, setNextValue] = useState(value?.toString() ?? "");
+    const [note, setNote] = useState("");
+    const [error, setError] = useState("");
+    const editable = canEditGrantSource(source);
+    const formatted = field === "granted_usd" ? fmtUsd(value) : fmtUsd2(value);
+
+    if (!editable) {
+        return <ValueWithSource source={source}>{formatted}</ValueWithSource>;
+    }
+
+    if (!editing) {
+        return (
+            <button
+                type="button"
+                className="text-left"
+                onClick={() => {
+                    setNextValue(value?.toString() ?? "");
+                    setNote("");
+                    setError("");
+                    setEditing(true);
+                }}
+            >
+                <ValueWithSource source={source}>{formatted}</ValueWithSource>
+            </button>
+        );
+    }
+
+    return (
+        <form
+            className="flex items-center gap-2"
+            onSubmit={(event) => {
+                event.preventDefault();
+                const parsed = Number(nextValue);
+                if (!Number.isFinite(parsed) || parsed < 0) {
+                    setError("number >= 0");
+                    return;
+                }
+                stage(
+                    buildGrantOverrideChange({
+                        field,
+                        note: note.trim(),
+                        pool,
+                        value: parsed,
+                    }),
+                );
+                setEditing(false);
+            }}
+        >
+            <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={nextValue}
+                onChange={(event) => setNextValue(event.target.value)}
+                className="w-28"
+                aria-label={`${field} value`}
+            />
+            <Input
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+                placeholder="note"
+                className="w-32"
+                aria-label={`${field} note`}
+            />
+            <Button type="submit" size="sm">
+                Stage
+            </Button>
+            <Button type="button" size="sm" onClick={() => setEditing(false)}>
+                Cancel
+            </Button>
+            {error && <Text className="text-intent-danger-text">{error}</Text>}
+        </form>
+    );
+}
+
+function FxOverrideForm() {
+    const { stage } = useStaging();
+    const [value, setValue] = useState("");
+    const [error, setError] = useState("");
+
+    return (
+        <form
+            className="flex flex-wrap items-center gap-2 border-theme-border/70 border-t pt-4"
+            onSubmit={(event) => {
+                event.preventDefault();
+                const parsed = Number(value);
+                if (!Number.isFinite(parsed) || parsed <= 0) {
+                    setError("number > 0");
+                    return;
+                }
+                stage(buildFxOverrideChange({ value: parsed }));
+                setValue("");
+                setError("");
+            }}
+        >
+            <Text as="span" weight="bold">
+                fx_eur_usd
+            </Text>
+            <Input
+                type="number"
+                min="0"
+                step="0.0001"
+                value={value}
+                onChange={(event) => setValue(event.target.value)}
+                placeholder="1.14"
+                className="w-32"
+                aria-label="fx_eur_usd"
+            />
+            <Button type="submit" size="sm">
+                Stage FX
+            </Button>
+            {error && <Text className="text-intent-danger-text">{error}</Text>}
+        </form>
+    );
 }
 
 export function CreditsTab({ data }: { data: Data }) {
@@ -98,23 +290,28 @@ export function CreditsTab({ data }: { data: Data }) {
                                     <TableCell>{row.category || "-"}</TableCell>
                                     <TableCell>{row.currency || "-"}</TableCell>
                                     <TableCell>
-                                        <ValueWithSource
+                                        <EditableGrantAmount
+                                            field="granted_usd"
+                                            pool={row.pool}
                                             source={row.granted_src}
-                                        >
-                                            {fmtUsd(row.granted_usd)}
-                                        </ValueWithSource>
+                                            value={row.granted_usd}
+                                        />
                                     </TableCell>
                                     <TableCell>
-                                        <ValueWithSource source={row.left_src}>
-                                            {fmtUsd2(row.left_usd)}
-                                        </ValueWithSource>
+                                        <EditableGrantAmount
+                                            field="left_usd"
+                                            pool={row.pool}
+                                            source={row.left_src}
+                                            value={row.left_usd}
+                                        />
                                     </TableCell>
                                     <TableCell>
-                                        <ValueWithSource
+                                        <EditableGrantAmount
+                                            field="prepaid_left_usd"
+                                            pool={row.pool}
                                             source={row.prepaid_left_src}
-                                        >
-                                            {fmtUsd2(row.prepaid_left_usd)}
-                                        </ValueWithSource>
+                                            value={row.prepaid_left_usd}
+                                        />
                                     </TableCell>
                                     <TableCell>{row.expires || "-"}</TableCell>
                                     <TableCell title={row.note}>
@@ -128,6 +325,7 @@ export function CreditsTab({ data }: { data: Data }) {
                         </TableBody>
                     </DataTable>
                 </TableScroller>
+                <FxOverrideForm />
             </section>
 
             <section className="flex flex-col gap-4">

@@ -260,6 +260,22 @@ const grants: GrantRow[] = [
         note: "Claude on Foundry bills outside credits",
         run_at: "2026-07-03",
     },
+    {
+        pool: "lambda-credit",
+        providers: "lambda",
+        kind: "credit",
+        category: "compute",
+        currency: "USD",
+        granted_usd: 5000,
+        granted_src: "hc",
+        left_usd: 1200,
+        left_src: "hc",
+        prepaid_left_usd: null,
+        prepaid_left_src: "",
+        expires: "2026-12",
+        note: "fixture editable grant",
+        run_at: "2026-07-03",
+    },
 ];
 
 const cashMonthly: CashMonthlyRow[] = [

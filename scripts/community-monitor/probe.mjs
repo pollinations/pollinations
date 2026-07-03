@@ -130,6 +130,29 @@ function planRequestCounts(models, budget) {
     return { counts, estimatedSpend: spent };
 }
 
+// Basic billing-integrity sanity checks on a single probe response. These are
+// NOT health/deactivation signals (CYCLE.md's 5xx/timeout rules own that) --
+// they flag "the numbers we're about to pay this owner on look implausible
+// for a fixed, known prompt", for a human to investigate. Thresholds are
+// deliberately loose (calibrated against real tokenizer variance seen across
+// the catalog: a 7-word prompt legitimately tokenizes anywhere from ~7 to
+// ~35 tokens depending on the model's tokenizer) -- the goal is to catch
+// clear anomalies (0, or 10x+ too many), not to nitpick normal variance.
+function billingSanityFlags(usage, content) {
+    const flags = [];
+    if (!usage) {
+        flags.push("no usage object returned");
+        return flags;
+    }
+    const { prompt_tokens: p, completion_tokens: c } = usage;
+    if (p === 0) flags.push("prompt_tokens=0 for a non-empty prompt");
+    else if (p != null && p > 100)
+        flags.push(`prompt_tokens=${p}, implausible for a 7-word prompt`);
+    if (c === 0) flags.push("completion_tokens=0 despite a successful reply");
+    if (!content?.trim()) flags.push("empty completion content");
+    return flags;
+}
+
 async function probe(model) {
     const started = Date.now();
     try {
@@ -151,14 +174,17 @@ async function probe(model) {
         clearTimeout(t);
         const body = await res.text();
         let usage;
+        let content;
         if (res.ok) {
             try {
-                usage = JSON.parse(body).usage;
+                const parsed = JSON.parse(body);
+                usage = parsed.usage;
+                content = parsed.choices?.[0]?.message?.content;
             } catch {
-                // leave usage undefined -- reconciliation just skips this request
+                // leave usage/content undefined -- reconciliation/checks just skip this request
             }
         }
-        return {
+        const result = {
             model,
             ok: res.ok,
             status: res.status,
@@ -166,6 +192,8 @@ async function probe(model) {
             usage,
             detail: res.ok ? undefined : body.slice(0, 300),
         };
+        if (res.ok) result.billingFlags = billingSanityFlags(usage, content);
+        return result;
     } catch (err) {
         return {
             model,
@@ -246,7 +274,24 @@ const nextState = {
 };
 fs.writeFileSync(STATE_PATH, JSON.stringify(nextState, null, 2));
 
-const out = { ts: new Date().toISOString(), budget, actualSpend, results };
+// Aggregate billing-sanity flags per model (union across its probes this
+// cycle) -- surfaced separately from health status since a model can be
+// perfectly healthy (200s, fast) while still reporting implausible usage.
+const billingFlagsByModel = {};
+for (const r of results) {
+    if (!r.billingFlags?.length) continue;
+    const set = new Set(billingFlagsByModel[r.model] ?? []);
+    for (const f of r.billingFlags) set.add(f);
+    billingFlagsByModel[r.model] = [...set];
+}
+
+const out = {
+    ts: new Date().toISOString(),
+    budget,
+    actualSpend,
+    results,
+    billingFlagsByModel,
+};
 fs.writeFileSync(
     "/home/ubuntu/monitor/probe-results.json",
     JSON.stringify(out, null, 2),
@@ -275,3 +320,10 @@ console.log(
 console.log(
     `budget ${budget.toFixed(4)} pollen -> estimated ${estimatedSpend.toFixed(4)}, actual ${actualSpend.toFixed(4)}`,
 );
+const flaggedModels = Object.keys(billingFlagsByModel);
+if (flaggedModels.length) {
+    console.log(`\nbilling sanity flags (${flaggedModels.length} models):`);
+    for (const model of flaggedModels) {
+        console.log(`  ${model}: ${billingFlagsByModel[model].join("; ")}`);
+    }
+}

@@ -94,7 +94,7 @@ def meter(creds, months, today, fx=1.14, run_cmd=subprocess.run):
             capture_output=True, text=True, env=env, timeout=45,
         )
         if auth.returncode != 0:
-            return []
+            raise RuntimeError("gcloud auth activate-service-account failed")
 
         # Run BQ query
         q = run_cmd(
@@ -107,12 +107,9 @@ def meter(creds, months, today, fx=1.14, run_cmd=subprocess.run):
             capture_output=True, text=True, env=env, timeout=90,
         )
         if q.returncode != 0:
-            return []
+            raise RuntimeError("bq query failed")
 
-        try:
-            bq_rows = json.loads(q.stdout or "[]")
-        except (ValueError, TypeError):
-            return []
+        bq_rows = json.loads(q.stdout or "[]")
 
         rows = []
         for r in bq_rows:
@@ -144,9 +141,6 @@ def meter(creds, months, today, fx=1.14, run_cmd=subprocess.run):
                     today=today,
                 ))
         return rows
-
-    except Exception:
-        return []
 
     finally:
         if key_path is not None:

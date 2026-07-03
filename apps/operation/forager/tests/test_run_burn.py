@@ -911,3 +911,112 @@ def test_burn_run_empty_skips_provider_month_replace(monkeypatch):
     assert any("provider_month" in n.lower() for n in notes), (
         f"No note recorded for skipped provider_month replace: {notes}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Fix C1: Steps 3+4 guarded — usage/revenue raising does not abort the run
+# ---------------------------------------------------------------------------
+
+def test_usage_pull_raises_statuses_err_revenue_and_burn_still_ran(monkeypatch):
+    """Step 3 (usage pull) raising → statuses['usage'] is 'err:...';
+    step 4 (revenue) and step 5 (burn) still execute and record their own statuses.
+    Function must return (not propagate the exception).
+    """
+    ops_ingest = TBStub("ingest")
+    ops_replace = TBStub("replace")
+    tb_prod_stub = TBStub("prod")
+
+    import ingest.connectors.registry as _reg
+    orig_balance = _reg.BALANCE
+    orig_meter = _reg.METER
+    try:
+        _reg.BALANCE = []
+        _reg.METER = []
+
+        # Step 3 raises
+        monkeypatch.setattr("ingest.connectors.usage.monthly_rows",
+                            lambda tb, months, today: (_ for _ in ()).throw(
+                                ConnectionError("TB prod timeout")))
+        # Step 4 and 5 succeed
+        monkeypatch.setattr("ingest.connectors.providers.stripe.revenue_rows",
+                            lambda creds, months, today: [])
+        monkeypatch.setattr("ingest.burn.run", lambda *a, **kw: [])
+        monkeypatch.setattr("ingest.burn.grants", lambda *a, **kw: [])
+
+        statuses = {}
+        notes = []
+        # Must return normally (no propagation)
+        _run._run_burn_stage(
+            ops_ingest=ops_ingest,
+            ops_replace=ops_replace,
+            tb_prod=tb_prod_stub,
+            creds=_CREDS,
+            cfg=_CFG,
+            pools=_POOLS,
+            today=TODAY,
+            statuses=statuses,
+            notes=notes,
+        )
+    finally:
+        _reg.BALANCE = orig_balance
+        _reg.METER = orig_meter
+
+    assert "usage" in statuses, f"'usage' key missing from statuses: {statuses}"
+    assert isinstance(statuses["usage"], str) and statuses["usage"].startswith("err:"), (
+        f"Expected 'err:...' for usage status, got: {statuses['usage']!r}"
+    )
+    # Revenue still ran (step 4) — either ok or 0 (but not missing)
+    assert "revenue" in statuses, f"'revenue' key missing: step 4 did not run"
+    # Burn still ran (step 5) — burn_rows or burn key present
+    burn_ran = "burn_rows" in statuses or "burn" in statuses
+    assert burn_ran, f"step 5 (burn) did not run after usage error: {statuses}"
+
+
+def test_revenue_pull_raises_statuses_err_burn_still_ran(monkeypatch):
+    """Step 4 (revenue pull) raising → statuses['revenue'] is 'err:...';
+    step 5 (burn) still executes. Function must return normally.
+    """
+    ops_ingest = TBStub("ingest")
+    ops_replace = TBStub("replace")
+    tb_prod_stub = TBStub("prod")
+
+    import ingest.connectors.registry as _reg
+    orig_balance = _reg.BALANCE
+    orig_meter = _reg.METER
+    try:
+        _reg.BALANCE = []
+        _reg.METER = []
+
+        monkeypatch.setattr("ingest.connectors.usage.monthly_rows",
+                            lambda tb, months, today: [])
+        # Step 4 raises
+        monkeypatch.setattr("ingest.connectors.providers.stripe.revenue_rows",
+                            lambda creds, months, today: (_ for _ in ()).throw(
+                                RuntimeError("Stripe 5xx")))
+        monkeypatch.setattr("ingest.burn.run", lambda *a, **kw: [])
+        monkeypatch.setattr("ingest.burn.grants", lambda *a, **kw: [])
+
+        statuses = {}
+        notes = []
+        _run._run_burn_stage(
+            ops_ingest=ops_ingest,
+            ops_replace=ops_replace,
+            tb_prod=tb_prod_stub,
+            creds=_CREDS,
+            cfg=_CFG,
+            pools=_POOLS,
+            today=TODAY,
+            statuses=statuses,
+            notes=notes,
+        )
+    finally:
+        _reg.BALANCE = orig_balance
+        _reg.METER = orig_meter
+
+    assert "revenue" in statuses, f"'revenue' key missing from statuses: {statuses}"
+    assert isinstance(statuses["revenue"], str) and statuses["revenue"].startswith("err:"), (
+        f"Expected 'err:...' for revenue status, got: {statuses['revenue']!r}"
+    )
+    # Burn still ran
+    burn_ran = "burn_rows" in statuses or "burn" in statuses
+    assert burn_ran, f"step 5 (burn) did not run after revenue error: {statuses}"

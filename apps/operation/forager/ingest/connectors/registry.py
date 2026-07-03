@@ -32,7 +32,19 @@ _manual_forever = {
     "nebius",  # no public billing API; not in ALIAS
 }
 
-CANONICAL: frozenset = frozenset(_harvest_slugs | _alias_slugs | _manual_forever)
+# credits.json pool slugs not yet present in _harvest_slugs or _alias_slugs.
+# Alias slugs (azure-2, aws-bedrock, bedrock (native)) are intentionally excluded —
+# they canonicalize away in burn.py via CANON before reaching ingest.record.
+_credits_json_pool_slugs = {
+    "airforce",
+    "bpai",
+    "community",
+    "self-hosted",
+    "seraphyn",
+    "aws-new",
+}
+
+CANONICAL: frozenset = frozenset(_harvest_slugs | _alias_slugs | _manual_forever | _credits_json_pool_slugs)
 
 # B3: REST balance connectors
 from .providers import openrouter as _openrouter

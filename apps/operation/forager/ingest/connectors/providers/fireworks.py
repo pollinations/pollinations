@@ -82,14 +82,13 @@ def meter(creds, months, today, run_cmd=subprocess.run):
     if not key:
         return []
 
-    try:
-        r = run_cmd(
-            ["firectl", "billing", "list-invoices", "--api-key", key],
-            capture_output=True, text=True, timeout=60,
-        )
-        txt = r.stdout
-    except Exception:
-        return []
+    r = run_cmd(
+        ["firectl", "billing", "list-invoices", "--api-key", key],
+        capture_output=True, text=True, timeout=60,
+    )
+    if r.returncode != 0:
+        raise RuntimeError("firectl billing list-invoices failed")
+    txt = r.stdout
 
     month_set = set(months)
     totals: dict = {}

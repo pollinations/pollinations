@@ -22,6 +22,7 @@ Public API:
 CANON: dict[str, str] = {
     "aws-bedrock": "aws",
     "bedrock": "aws",
+    "bedrock (native)": "aws",
     "vastai": "vast.ai",
     "azure-2": "azure",
 }
@@ -310,10 +311,12 @@ def run(invoices: list[dict], payments: list[dict], meter: list[dict],
         list of provider_month row dicts (full-replace datasource)
     """
     # ---- 1. Build provider → pool metadata index (first pool wins) ----
+    # Alias slugs (azure-2, aws-bedrock, bedrock (native)) canonicalize so they
+    # collapse into the same entry as the canonical slug (azure/aws).
     prov_pool: dict[str, dict] = {}
     for pool in pools:
         for prov in pool.get("providers", []):
-            p = prov.strip().lower()
+            p = _canon(prov.strip().lower())
             if p and p not in prov_pool:
                 prov_pool[p] = pool
 
@@ -497,10 +500,13 @@ def grants(pools: list[dict], balances: list[dict], today: str) -> list[dict]:
         hc_left = _num(pool.get("left"))
         hc_prepaid_left = _num(pool.get("cash_left"))
 
-        # Find the latest balance snapshot across all pool providers
+        # Find the latest balance snapshot across all pool providers.
+        # Canonicalize each provider slug so alias slugs (azure-2, bedrock (native))
+        # resolve to the same canonical key used when indexing balances.
         best_bal: dict | None = None
         for prov in provs:
-            for r in bal_by_prov.get(prov, []):
+            canon_prov = _canon(prov)
+            for r in bal_by_prov.get(canon_prov, []):
                 if best_bal is None or r.get("run_at", "") > best_bal.get("run_at", ""):
                     best_bal = r
 

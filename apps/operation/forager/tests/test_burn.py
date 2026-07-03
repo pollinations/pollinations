@@ -834,3 +834,71 @@ def test_grants_comma_number_granted_parses():
     assert g["granted_src"] == "hc"
     assert g["left_usd"] == 28000.0
     assert g["left_src"] == "hc"
+
+
+# ---------------------------------------------------------------------------
+# Fix I1: pool-slug canonicalization in burn.run and burn.grants
+# ---------------------------------------------------------------------------
+
+def test_canon_bedrock_native_maps_to_aws():
+    """CANON must map 'bedrock (native)' → 'aws'."""
+    assert burn.CANON.get("bedrock (native)") == "aws"
+
+
+def test_pool_with_alias_slug_no_duplicate_rows():
+    """Pool providers=[azure, azure-2] → only ONE azure row per month (no azure-2 phantom)."""
+    pool_alias = {
+        "pool": "Azure",
+        "providers": ["azure", "azure-2"],
+        "billing": "sponsored",
+        "kind": "grant",
+        "granted": 250000.0,
+        "left": 244600.0,
+        "cash_left": None,
+        "expires": "",
+        "note": "",
+    }
+    rows = burn.run([], [], [], [], [], [pool_alias], MONTHS, CFG, TODAY)
+    azure_rows = [r for r in rows if r["provider"] == "azure"]
+    alias_rows = [r for r in rows if r["provider"] == "azure-2"]
+    assert len(azure_rows) == 1, f"expected 1 azure row, got {len(azure_rows)}"
+    assert alias_rows == [], f"phantom azure-2 row must not appear: {alias_rows}"
+
+
+def test_pool_alias_usage_under_canonical_slug():
+    """Usage under 'azure' with pool having alias 'azure-2' → usage lands on azure row."""
+    pool_alias = {
+        "pool": "Azure",
+        "providers": ["azure", "azure-2"],
+        "billing": "sponsored",
+        "kind": "grant",
+        "granted": 250000.0,
+        "left": 244600.0,
+        "cash_left": None,
+        "expires": "",
+        "note": "",
+    }
+    meter = [
+        {"month": "2026-06", "provider": "azure", "cost_usd": 300.0,
+         "funding": "credit", "source": "api", "method": "azure", "retrieved_at": TODAY},
+    ]
+    rows = burn.run([], [], meter, [], [], [pool_alias], MONTHS, CFG, TODAY)
+    azure_rows = [r for r in rows if r["provider"] == "azure"]
+    alias_rows = [r for r in rows if r["provider"] == "azure-2"]
+    assert len(azure_rows) == 1
+    assert alias_rows == []
+    assert azure_rows[0]["credit_burn_usd"] == 300.0
+
+
+def test_registry_six_new_pool_slugs_in_canonical():
+    """Six new credits.json pool slugs must be in registry.CANONICAL."""
+    from ingest.connectors import registry
+    for slug in ("airforce", "bpai", "community", "self-hosted", "seraphyn", "aws-new"):
+        assert slug in registry.CANONICAL, f"CANONICAL missing credits.json pool slug: {slug}"
+
+
+def test_registry_alias_slugs_not_in_canonical():
+    """Alias slugs that canonicalize away must NOT be in CANONICAL."""
+    from ingest.connectors import registry
+    for slug in ("azure-2", "aws-bedrock", "bedrock (native)"):
+        assert slug not in registry.CANONICAL, f"CANONICAL wrongly contains alias slug: {slug}"

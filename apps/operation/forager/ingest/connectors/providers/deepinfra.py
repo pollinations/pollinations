@@ -58,23 +58,20 @@ def meter(creds, months, today):
             int(datetime.datetime(ny, nm, 1, tzinfo=datetime.timezone.utc).timestamp()),
             int(time.time()),
         )
-        try:
-            d = http_json(
-                f"https://api.deepinfra.com/payment/usage?from={frm}&to={to}",
-                {"Authorization": f"Bearer {key}"},
-            )
-            cents = sum(float(mo.get("total_cost") or 0) for mo in d.get("months", []))
-            if cents:
-                rows.append(_mrow(
-                    month=month,
-                    provider="deepinfra",
-                    cost_usd=round(cents / 100.0, 2),
-                    funding="prepaid",
-                    source="api",
-                    method="deepinfra /payment/usage",
-                    today=today,
-                ))
-        except Exception:
-            pass
+        d = http_json(
+            f"https://api.deepinfra.com/payment/usage?from={frm}&to={to}",
+            {"Authorization": f"Bearer {key}"},
+        )
+        cents = sum(float(mo.get("total_cost") or 0) for mo in d.get("months", []))
+        if cents:
+            rows.append(_mrow(
+                month=month,
+                provider="deepinfra",
+                cost_usd=round(cents / 100.0, 2),
+                funding="prepaid",
+                source="api",
+                method="deepinfra /payment/usage",
+                today=today,
+            ))
 
     return rows

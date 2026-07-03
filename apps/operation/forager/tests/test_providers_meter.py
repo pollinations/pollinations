@@ -664,11 +664,10 @@ def test_gcp_meter_tempfile_deleted_on_success():
 
 
 def test_gcp_meter_tempfile_deleted_even_on_raise():
-    """Key tempfile must be deleted even when bq command raises."""
+    """Key tempfile must be deleted even when bq command raises (finally-unlink)."""
     import tempfile as _tf
     import os
 
-    deleted = []
     real_ntf = _tf.NamedTemporaryFile
 
     class CapturingNTF:
@@ -717,17 +716,17 @@ def test_gcp_meter_tempfile_deleted_even_on_raise():
     _gcp_mod._NamedTemporaryFile = fake_ntf
     _gcp_mod._os_unlink = fake_unlink
     try:
-        rows = _gcp_mod.meter(_GCP_CREDS, ["2026-04"], TODAY, run_cmd=_gcp_run_bq_fail)
-        # Should return [] on failure, not raise
-        assert isinstance(rows, list)
+        # gcp.meter now raises on bq failure (contract: raise — run.py catches)
+        with pytest.raises(RuntimeError):
+            _gcp_mod.meter(_GCP_CREDS, ["2026-04"], TODAY, run_cmd=_gcp_run_bq_fail)
     finally:
         _gcp_mod._NamedTemporaryFile = orig_ntf
         _gcp_mod._os_unlink = orig_unlink
 
-    # Key file should have been unlinked
-    if captured_path:
-        assert captured_path[0] in unlinked or not os.path.exists(captured_path[0]), \
-            "GCP SA key tempfile was NOT deleted after bq failure"
+    # Key file must still have been unlinked (finally block)
+    assert captured_path, "NamedTemporaryFile was never called"
+    assert captured_path[0] in unlinked or not os.path.exists(captured_path[0]), \
+        "GCP SA key tempfile was NOT deleted after bq failure"
 
 
 def test_gcp_meter_missing_key_returns_empty():
@@ -875,3 +874,43 @@ def test_meter_callables():
     for slug, fn in registry.METER:
         assert isinstance(slug, str)
         assert callable(fn)
+
+
+# ===========================================================================
+# Fix I2: meter connectors raise on auth/CLI breakage (contract: raise, run.py catches)
+# ===========================================================================
+
+def test_fireworks_meter_nonzero_rc_raises():
+    """fireworks.meter: returncode != 0 → raises RuntimeError (not swallowed)."""
+    fake_run = lambda cmd, **kw: _fake_result(stdout="", stderr="auth error", returncode=1)
+    with pytest.raises(RuntimeError):
+        _fw.meter(_FW_CREDS, ["2026-06"], TODAY, run_cmd=fake_run)
+
+
+def test_deepinfra_meter_http_error_propagates(monkeypatch):
+    """deepinfra.meter: http_json raising propagates — not swallowed."""
+    def raising_http(*a, **kw):
+        raise OSError("connection refused")
+    monkeypatch.setattr(_di, "http_json", raising_http)
+    with pytest.raises(OSError):
+        _di.meter(_DI_CREDS, ["2026-06"], TODAY)
+
+
+def test_gcp_meter_auth_fail_raises():
+    """gcp.meter: gcloud auth returncode != 0 → raises RuntimeError."""
+    def auth_fail_run(cmd, **kw):
+        if "gcloud" in cmd:
+            return _fake_result(returncode=1)
+        return _fake_result(returncode=0)
+    with pytest.raises(RuntimeError):
+        _gcp.meter(_GCP_CREDS, ["2026-04"], TODAY, run_cmd=auth_fail_run)
+
+
+def test_gcp_meter_bq_fail_raises():
+    """gcp.meter: bq returncode != 0 → raises RuntimeError."""
+    def bq_fail_run(cmd, **kw):
+        if "gcloud" in cmd:
+            return _fake_result(returncode=0)
+        return _fake_result(returncode=1)
+    with pytest.raises(RuntimeError):
+        _gcp.meter(_GCP_CREDS, ["2026-04"], TODAY, run_cmd=bq_fail_run)

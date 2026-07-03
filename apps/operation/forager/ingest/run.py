@@ -174,22 +174,30 @@ def _run_burn_stage(ops_ingest, ops_replace, tb_prod, creds, cfg, pools,
             statuses[f"meter:{slug}"] = "err:" + _sanitize_err(e, creds)
 
     # ---- Step 3: usage_monthly (full replace) ----
-    usage_rows = _usage.monthly_rows(tb_prod, months_ytd_list, today)
-    if usage_rows:
-        ops_replace.replace("usage_monthly", usage_rows)
-        statuses["usage"] = len(usage_rows)
-    else:
-        notes.append("usage: 0 rows — usage_monthly table unchanged (last good kept)")
-        statuses["usage"] = 0
+    try:
+        usage_rows = _usage.monthly_rows(tb_prod, months_ytd_list, today)
+        if usage_rows:
+            ops_replace.replace("usage_monthly", usage_rows)
+            statuses["usage"] = len(usage_rows)
+        else:
+            notes.append("usage: 0 rows — usage_monthly table unchanged (last good kept)")
+            statuses["usage"] = 0
+    except Exception as e:
+        statuses["usage"] = "err:" + _sanitize_err(e, creds)
+        notes.append(f"usage pull failed: {statuses['usage']}")
 
     # ---- Step 4: revenue_monthly (full replace) ----
-    revenue_rows = _stripe.revenue_rows(creds, months_ytd_list, today)
-    if revenue_rows:
-        ops_replace.replace("revenue_monthly", revenue_rows)
-        statuses["revenue"] = len(revenue_rows)
-    else:
-        notes.append("revenue: 0 rows — revenue_monthly table unchanged (last good kept)")
-        statuses["revenue"] = 0
+    try:
+        revenue_rows = _stripe.revenue_rows(creds, months_ytd_list, today)
+        if revenue_rows:
+            ops_replace.replace("revenue_monthly", revenue_rows)
+            statuses["revenue"] = len(revenue_rows)
+        else:
+            notes.append("revenue: 0 rows — revenue_monthly table unchanged (last good kept)")
+            statuses["revenue"] = 0
+    except Exception as e:
+        statuses["revenue"] = "err:" + _sanitize_err(e, creds)
+        notes.append(f"revenue pull failed: {statuses['revenue']}")
 
     # ---- Step 5: burn engine → provider_month + grants ----
     # Wrapped in try/except so any TB network error, ValueError on 0-row replace,
@@ -316,7 +324,7 @@ def main():
     st["recon"] = len(rrows)
 
     # 4. Burn stage — balances, meters, usage, revenue, provider_month, grants
-    tb_prod = tb.TB(cfg["tb_ops_api"], c["TINYBIRD_PROD_READ_TOKEN"])
+    tb_prod = tb.TB(cfg["tb_prod_api"], c["TINYBIRD_PROD_READ_TOKEN"])
     _run_burn_stage(
         ops_ingest=ops_ingest,
         ops_replace=ops_replace,

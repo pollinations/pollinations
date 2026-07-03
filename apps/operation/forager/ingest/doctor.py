@@ -88,7 +88,7 @@ def checks():
 
     # SOFT: Tinybird prod read token (generation_event today count)
     try:
-        tb_prod = tb.TB(cfg["tb_ops_api"], c["TINYBIRD_PROD_READ_TOKEN"])
+        tb_prod = tb.TB(cfg["tb_prod_api"], c["TINYBIRD_PROD_READ_TOKEN"])
         rows = tb_prod.sql(
             "SELECT count() AS n FROM generation_event "
             "WHERE start_time >= toStartOfDay(now())"

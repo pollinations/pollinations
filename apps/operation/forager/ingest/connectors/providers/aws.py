@@ -1,7 +1,10 @@
 """AWS Cost Explorer meter connector.
 
 Two passes per run:
-  1. Net-of-credits cost (filter excludes Credit+Refund RECORD_TYPEs) → funding=cash
+  1. Gross usage before credits (filter excludes Credit+Refund RECORD_TYPEs) → funding=cash
+     Note: this is gross usage BEFORE credits are applied, not net-of-credits.
+     Consumers must derive net cash = max(meter_cash − credit_burn, 0).
+     A parsed invoice always wins over the meter (phantom-cash incident in PoC cutover).
   2. Credit amounts only (filter RECORD_TYPE=Credit, absolute value) → funding=credit
      (quantifies the AWS grant burn)
 
@@ -43,7 +46,7 @@ def meter(creds, months, today, run_cmd=subprocess.run):
     month_set = set(months)
     rows = []
 
-    # --- Pass 1: cash (net-of-credits, excludes Credit+Refund) ---
+    # --- Pass 1: gross usage before credits (excludes Credit+Refund RECORD_TYPEs) ---
     cash_filter = json.dumps({
         "Not": {"Dimensions": {"Key": "RECORD_TYPE", "Values": ["Credit", "Refund"]}}
     })
@@ -69,7 +72,7 @@ def meter(creds, months, today, run_cmd=subprocess.run):
                 cost_usd=amt,
                 funding="cash",
                 source="cli",
-                method="aws ce get-cost-and-usage (net-of-credits)",
+                method="aws ce get-cost-and-usage (gross usage before credits)",
                 today=today,
             ))
 

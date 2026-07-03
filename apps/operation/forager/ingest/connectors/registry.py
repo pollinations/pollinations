@@ -14,8 +14,13 @@ BALANCE / METER: lists of (slug, connector_fn) pairs.
 from ..invoices.harvest import PROVIDERS as _PROVIDERS
 from .wise import ALIAS as _ALIAS
 
-# Slugs from invoice classifier
-_harvest_slugs = {slug for slug, _cat, _keys in _PROVIDERS}
+# Only "compute" and "infra" categories represent billing providers.
+# "saas", "payroll", and "other" are invoice-sender slugs (office/tools/payroll/self)
+# that must NOT be accepted as valid meter/balance targets.
+_BILLING_CATEGORIES = {"compute", "infra"}
+
+# Slugs from invoice classifier — billing categories only
+_harvest_slugs = {slug for slug, cat, _keys in _PROVIDERS if cat in _BILLING_CATEGORIES}
 
 # Slugs from Wise payment matcher
 _alias_slugs = set(_ALIAS.keys())
@@ -24,8 +29,7 @@ _alias_slugs = set(_ALIAS.keys())
 # These appear in credits.json pools but have no connector and may not appear in
 # PROVIDERS/ALIAS (they're listed here explicitly to make CANONICAL complete).
 _manual_forever = {
-    "nebius",     # no public billing API
-    "bytedance",  # already in ALIAS as "bytedance"; listed here for clarity
+    "nebius",  # no public billing API; not in ALIAS
 }
 
 CANONICAL: frozenset = frozenset(_harvest_slugs | _alias_slugs | _manual_forever)

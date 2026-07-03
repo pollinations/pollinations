@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from ingest.connectors import wise
 from ingest.connectors import common
+from ingest.connectors import registry
 
 
 # ---------------------------------------------------------------------------
@@ -81,6 +82,24 @@ def test_http_json_ua_always_set(monkeypatch):
     common.http_json("https://example.com/b", data={"x": 1})
     assert _reqs[0].get_header("User-agent") == common.UA
     assert _reqs[1].get_header("User-agent") == common.UA
+
+
+# ---------------------------------------------------------------------------
+# registry.CANONICAL excludes non-billing slugs
+# ---------------------------------------------------------------------------
+
+def test_canonical_contains_compute_slugs():
+    """Compute and infra slugs must be in CANONICAL."""
+    must_have = ["google", "aws", "openai", "vast.ai", "ovhcloud", "runpod", "scaleway"]
+    for slug in must_have:
+        assert slug in registry.CANONICAL, f"CANONICAL missing compute slug: {slug}"
+
+
+def test_canonical_excludes_non_billing_slugs():
+    """Saas/payroll/other slugs must NOT be in CANONICAL."""
+    must_not_have = ["deel", "google-workspace", "slack", "wise", "self-issued"]
+    for slug in must_not_have:
+        assert slug not in registry.CANONICAL, f"CANONICAL wrongly contains: {slug}"
 
 
 # ---------------------------------------------------------------------------

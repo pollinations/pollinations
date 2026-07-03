@@ -8,7 +8,7 @@ import {
 import { useMemo, useState } from "react";
 import { DataNote } from "../components/DataNote";
 import { DataTable, TableScroller } from "../components/DataTable";
-import { SourceMark, ValueWithSources } from "../components/Provenance";
+import { SourceMark } from "../components/Provenance";
 import { fmtUsd2 } from "../lib/format";
 import type { CashMonthlyRow, Data } from "../types";
 
@@ -85,15 +85,9 @@ export function PaymentsTab({ data }: { data: Data }) {
                                     {row.provider || "(unmatched)"}
                                 </TableCell>
                                 <TableCell>{row.category || "-"}</TableCell>
+                                <TableCell>{fmtUsd2(row.paid_usd)}</TableCell>
                                 <TableCell>
-                                    <ValueWithSources codes={["WS"]}>
-                                        {fmtUsd2(row.paid_usd)}
-                                    </ValueWithSources>
-                                </TableCell>
-                                <TableCell>
-                                    <ValueWithSources codes={["WS"]}>
-                                        €{row.paid_eur.toFixed(2)}
-                                    </ValueWithSources>
+                                    €{row.paid_eur.toFixed(2)}
                                 </TableCell>
                             </TableRow>
                         ))}

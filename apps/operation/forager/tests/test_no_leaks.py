@@ -29,6 +29,7 @@ def test_no_data_files_tracked():
         f"{REL_TREASURY}/web/package.json",
         f"{REL_TREASURY}/web/package-lock.json",
         f"{REL_TREASURY}/web/tsconfig.json",
+        f"{REL_TREASURY}/secrets/web.json",
     }
     for p in _tracked():
         assert not p.endswith(".csv"), f"CSV tracked: {p}"
@@ -53,6 +54,17 @@ def test_secrets_are_encrypted():
                     assert v == "" or str(v).startswith("ENC["), (
                         f"env.json value for {k} looks like PLAINTEXT — re-encrypt before committing"
                     )
+
+    treasury_web = os.path.join(APP, "..", "treasury", "secrets", "web.json")
+    if os.path.exists(treasury_web):
+        data = json.load(open(treasury_web))
+        assert "sops" in data, "treasury web secrets are NOT sops-encrypted"
+        for k, v in data.items():
+            if k == "sops":
+                continue
+            assert str(v).startswith("ENC["), (
+                f"treasury web secret value for {k} looks like PLAINTEXT"
+            )
 
 
 def test_no_cross_app_paths_in_code():

@@ -17,6 +17,26 @@ export function fmtUsd2(v: number | null | undefined): string {
     });
 }
 
+export function fmtMoney(
+    v: number | null | undefined,
+    currency: string | null | undefined,
+): string {
+    if (v == null) return "-";
+    const code = (currency || "").toUpperCase();
+    if (code === "USD" || code === "EUR") {
+        return v.toLocaleString("en-US", {
+            style: "currency",
+            currency: code,
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        });
+    }
+    return `${v.toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    })}${code ? ` ${code}` : ""}`;
+}
+
 export const sha8 = (sha: string): string => sha.slice(0, 8);
 
 export const baseName = (path: string): string => path.split("/").pop() ?? path;

@@ -15,7 +15,7 @@ import { DataNote } from "../components/DataNote";
 import { DataTable, TableScroller } from "../components/DataTable";
 import { InvoiceEditor } from "../components/InvoiceEditor";
 import { SourceBadge, SourceMark } from "../components/Provenance";
-import { fmtUsd2 } from "../lib/format";
+import { fmtMoney, fmtUsd2 } from "../lib/format";
 import { queuedInvoiceKey } from "../lib/queued";
 import { statusMeta } from "../lib/recon";
 import type { Data, InvoiceRow } from "../types";
@@ -125,8 +125,7 @@ export function InvoicesTab({
                             <TableHeaderCell>kind</TableHeaderCell>
                             <TableHeaderCell>period_month</TableHeaderCell>
                             <TableHeaderCell>amount</TableHeaderCell>
-                            <TableHeaderCell>currency</TableHeaderCell>
-                            <TableHeaderCell>amount_usd</TableHeaderCell>
+                            <TableHeaderCell>amount_usd (fx)</TableHeaderCell>
                             <TableHeaderCell>credit_usd</TableHeaderCell>
                             <TableHeaderCell>invoice_number</TableHeaderCell>
                             <TableHeaderCell>issued_at</TableHeaderCell>
@@ -149,8 +148,9 @@ export function InvoicesTab({
                                     <TableCell>
                                         {row.period_month || "-"}
                                     </TableCell>
-                                    <TableCell>{row.amount}</TableCell>
-                                    <TableCell>{row.currency || "-"}</TableCell>
+                                    <TableCell>
+                                        {fmtMoney(row.amount, row.currency)}
+                                    </TableCell>
                                     <TableCell>
                                         {fmtUsd2(row.amount_usd)}
                                     </TableCell>
@@ -206,7 +206,7 @@ export function InvoicesTab({
                                 </TableRow>
                                 {editingSha === row.sha256 && (
                                     <TableRow key={`${row.sha256}|editor`}>
-                                        <TableCell colSpan={15}>
+                                        <TableCell colSpan={14}>
                                             <InvoiceEditor
                                                 row={row}
                                                 onClose={() =>

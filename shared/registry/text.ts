@@ -1,7 +1,6 @@
 import {
     GEMINI_3_SEARCH_BILLING,
     GEMINI_25_GROUNDING_BILLING,
-    GEMINI_31_PRO_BILLING,
 } from "./gemini-billing";
 import {
     PERPLEXITY_DEEP_BILLING,
@@ -1026,7 +1025,7 @@ export const TEXT_SERVICES = {
             promptVideoTokens: perMillion(2.0),
             completionTextTokens: perMillion(12.0),
         },
-        billing: GEMINI_31_PRO_BILLING,
+        billing: GEMINI_3_SEARCH_BILLING,
         title: "Gemini 3.1 Pro",
         description:
             "Gemini 3.1 Pro - Most Intelligent Model with 1M Context (Preview)",

@@ -78,14 +78,8 @@ export const TEXT_SERVICES = {
         contextLength: 400000,
         isSpecialized: false,
     },
-    "openai-large": {
-        aliases: [
-            "gpt-5.4",
-            "gpt-5.4-reasoning",
-            "gpt-5.2",
-            "openai-reasoning",
-            "gpt-5.2-reasoning",
-        ],
+    "gpt-5.4": {
+        aliases: ["gpt-5.4-reasoning", "gpt-5.2", "gpt-5.2-reasoning"],
         modelId: "gpt-5.4",
         provider: "azure",
         brand: "OpenAI",
@@ -129,8 +123,8 @@ export const TEXT_SERVICES = {
         contextLength: 400000,
         isSpecialized: false,
     },
-    "gpt-5.5": {
-        aliases: ["gpt-5.5-reasoning"],
+    "openai-large": {
+        aliases: ["gpt-5.5", "gpt-5.5-reasoning", "openai-reasoning"],
         modelId: "gpt-5.5",
         provider: "azure",
         brand: "OpenAI",
@@ -150,6 +144,28 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 1050000,
+        isSpecialized: false,
+    },
+    "mercury": {
+        aliases: ["mercury-2", "inception", "inception-mercury"],
+        modelId: "mercury-2",
+        provider: "inception",
+        brand: "Inception",
+        category: "text",
+        addedDate: new Date("2026-06-23").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.25),
+            promptCachedTokens: perMillion(0.025),
+            completionTextTokens: perMillion(0.75),
+        },
+        title: "Mercury 2",
+        description: "Mercury 2 - Fast diffusion LLM for real-time agents",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        contextLength: 128000,
         isSpecialized: false,
     },
     "qwen-coder": {
@@ -172,12 +188,10 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "mistral": {
+    "mistral-small-3.2": {
         aliases: [
-            "mistral-small",
             "mistral-small-3.1",
             "mistral-small-2503",
-            "mistral-small-3.2",
             "mistral-small-3.2-24b-instruct-2506",
         ],
         modelId: "mistral-small-2503",
@@ -201,8 +215,13 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "mistral-4": {
-        aliases: ["mistral-small-4", "mistral-small-2603"],
+    "mistral": {
+        aliases: [
+            "mistral-4",
+            "mistral-small",
+            "mistral-small-4",
+            "mistral-small-2603",
+        ],
         modelId: "mistral-small-2603",
         provider: "openrouter",
         brand: "Mistral",
@@ -275,8 +294,8 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "gemini": {
-        aliases: ["gemini-3-flash", "gemini-3-flash-preview"],
+    "gemini-3-flash": {
+        aliases: ["gemini-3-flash-preview"],
         modelId: "gemini-3-flash-preview",
         provider: "google",
         brand: "Google",
@@ -303,7 +322,7 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "gemini-3.5-flash": {
+    "gemini": {
         aliases: ["gemini-3.5-flash"],
         modelId: "gemini-3.5-flash",
         provider: "google",
@@ -505,13 +524,8 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "grok-large": {
-        aliases: [
-            "grok-4-20",
-            "grok-4-20-reasoning",
-            "grok-reasoning",
-            "grok-4-1-fast-reasoning",
-        ],
+    "grok-4-20-reasoning": {
+        aliases: ["grok-4-20", "grok-4-1-fast-reasoning"],
         modelId: "grok-4-20-reasoning",
         provider: "azure",
         brand: "xAI",
@@ -535,8 +549,8 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "grok-4.3": {
-        aliases: ["grok-4-3"],
+    "grok-large": {
+        aliases: ["grok-4.3", "grok-4-3", "grok-reasoning"],
         modelId: "grok-4.3",
         provider: "azure",
         brand: "xAI",
@@ -745,8 +759,35 @@ export const TEXT_SERVICES = {
         contextLength: 1000000, // Bedrock global Claude Sonnet 4.6 context window.
         isSpecialized: false,
     },
-    "claude-large": {
-        aliases: ["claude-opus-4.6", "claude-opus", "claude-opus-4.5"],
+    "claude-sonnet-5": {
+        aliases: ["sonnet-5"],
+        modelId: "claude-sonnet-5",
+        provider: "bedrock",
+        brand: "Anthropic",
+        category: "text",
+        addedDate: new Date("2026-06-30").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Bedrock anthropic.claude-sonnet-5 standard rates.
+            // Intro $2/$10 through 2026-08-31; use standard $3/$15 to match
+            // siblings and avoid a price bump when the intro period ends.
+            promptTextTokens: perMillion(3),
+            promptCachedTokens: perMillion(0.3),
+            promptCacheWriteTokens: perMillion(3.75),
+            completionTextTokens: perMillion(15),
+        },
+        title: "Claude Sonnet 5",
+        description: "Claude Sonnet 5 - Best balance of speed & intelligence",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 20, // Bedrock Converse image limit.
+        tools: true,
+        contextLength: 1000000, // Bedrock Claude Sonnet 5 context window.
+        isSpecialized: false,
+    },
+    "claude-opus-4.6": {
+        aliases: ["claude-opus-4.5"],
         modelId: "claude-opus-4-6",
         provider: "bedrock",
         brand: "Anthropic",
@@ -795,8 +836,8 @@ export const TEXT_SERVICES = {
         contextLength: 1000000, // Bedrock global Claude Opus 4.7 context window.
         isSpecialized: false,
     },
-    "claude-opus-4.8": {
-        aliases: [],
+    "claude-large": {
+        aliases: ["claude-opus-4.8", "claude-opus"],
         modelId: "claude-opus-4-8",
         provider: "bedrock",
         brand: "Anthropic",
@@ -914,37 +955,12 @@ export const TEXT_SERVICES = {
     },
     "kimi": {
         aliases: [
-            "kimi-k2.5",
-            "kimi-k2p5",
+            "kimi-k2.6",
+            "kimi-k2p6",
             "kimi-reasoning",
             "kimi-large",
-            "kimi-k2-thinking",
             "kimi-thinking",
         ],
-        modelId: "accounts/fireworks/models/kimi-k2p5",
-        provider: "fireworks",
-        brand: "Moonshot AI",
-        category: "text",
-        addedDate: new Date("2026-01-10").getTime(),
-        priceMultiplier: 1,
-        cost: {
-            promptTextTokens: perMillion(0.6),
-            promptCachedTokens: perMillion(0.1),
-            completionTextTokens: perMillion(3.0),
-        },
-        title: "Moonshot Kimi K2.5",
-        description:
-            "Moonshot Kimi K2.5 - Flagship Agentic Model with CoT Reasoning",
-        inputModalities: ["text", "image"],
-        outputModalities: ["text"],
-        maxReferenceImages: 30, // Fireworks vision hard limit.
-        tools: true,
-        reasoning: true,
-        contextLength: 262000,
-        isSpecialized: false,
-    },
-    "kimi-k2.6": {
-        aliases: ["kimi-k2p6"],
         modelId: "accounts/fireworks/models/kimi-k2p6",
         provider: "fireworks",
         brand: "Moonshot AI",
@@ -965,6 +981,32 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 262000,
+        isSpecialized: false,
+    },
+    "kimi-code": {
+        aliases: ["kimi-k2.7-code", "kimi-k2.7", "kimi-k2p7"],
+        modelId: "accounts/fireworks/models/kimi-k2p7-code",
+        provider: "fireworks",
+        brand: "Moonshot AI",
+        category: "text",
+        addedDate: new Date("2026-06-12").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            // Fireworks accounts/fireworks/models/kimi-k2p7-code rates (2026-06-14):
+            // prompt $0.95/M, completion $4.00/M, cache read $0.19/M.
+            promptTextTokens: perMillion(0.95),
+            promptCachedTokens: perMillion(0.19),
+            completionTextTokens: perMillion(4.0),
+        },
+        title: "Moonshot Kimi K2.7 Code",
+        description:
+            "Moonshot Kimi K2.7 Code - Agentic coding model with CoT reasoning",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 30, // Fireworks vision hard limit.
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
         isSpecialized: false,
     },
     "gemini-large": {
@@ -1042,26 +1084,26 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "glm": {
-        aliases: ["glm-5", "glm-5.1", "glm-5p1", "glm-4.7", "glm-4p7"],
-        modelId: "accounts/fireworks/models/glm-5p1",
+        aliases: ["glm-5.2", "glm-5p2"],
+        modelId: "accounts/fireworks/models/glm-5p2",
         provider: "fireworks",
         brand: "Z.ai",
         category: "text",
         addedDate: new Date("2026-01-06").getTime(),
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(1.0),
-            promptCachedTokens: perMillion(0.2),
-            completionTextTokens: perMillion(3.2),
+            promptTextTokens: perMillion(1.4),
+            promptCachedTokens: perMillion(0.26),
+            completionTextTokens: perMillion(4.4),
         },
-        title: "Z.ai GLM-5.1",
+        title: "Z.ai GLM-5.2",
         description:
-            "Z.ai GLM-5.1 - 744B MoE, Long Context Reasoning & Agentic Workflows",
+            "Z.ai GLM-5.2 - 743B MoE, Long Context Reasoning & Agentic Workflows",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
-        contextLength: 198000,
+        contextLength: 1048576,
         isSpecialized: false,
     },
     "llama": {
@@ -1139,13 +1181,8 @@ export const TEXT_SERVICES = {
         contextLength: 327680,
         isSpecialized: false,
     },
-    "minimax": {
-        aliases: [
-            "minimax-m2.7",
-            "minimax-m2p7",
-            "minimax-m2.5",
-            "minimax-m2p5",
-        ],
+    "minimax-m2.7": {
+        aliases: ["minimax-m2p7", "minimax-m2.5", "minimax-m2p5"],
         modelId: "accounts/fireworks/models/minimax-m2p7",
         provider: "fireworks",
         brand: "MiniMax",
@@ -1166,31 +1203,29 @@ export const TEXT_SERVICES = {
         contextLength: 200000,
         isSpecialized: false,
     },
-    "minimax-m3": {
-        aliases: ["minimax3", "minimax-3"],
-        modelId: "minimax/minimax-m3",
-        provider: "openrouter",
+    "minimax": {
+        aliases: ["minimax-m3", "minimax3", "minimax-3"],
+        modelId: "accounts/fireworks/models/minimax-m3",
+        provider: "fireworks",
         brand: "MiniMax",
         category: "text",
         addedDate: new Date("2026-06-02").getTime(),
         priceMultiplier: 1,
         cost: {
-            // OpenRouter minimax/minimax-m3 effective rates (2026-06-02):
-            // currently a temporary 50% promo — prompt $0.30/M, completion
-            // $1.20/M, cache read $0.06/M. Base (post-promo) is double:
-            // $0.60/M, $2.40/M, $0.12/M — revisit when the promo ends.
+            // Fireworks accounts/fireworks/models/minimax-m3 rates (2026-06-14):
+            // prompt $0.30/M, completion $1.20/M, cache read $0.06/M.
             promptTextTokens: perMillion(0.3),
             promptCachedTokens: perMillion(0.06),
             completionTextTokens: perMillion(1.2),
         },
         title: "MiniMax M3",
-        description: "MiniMax M3 - Coding, agentic & 1M-context reasoning",
+        description: "MiniMax M3 - Coding, agentic & 512K-context reasoning",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 10, // OpenRouter image count varies by provider/model; Pollinations cap.
+        maxReferenceImages: 30, // Fireworks vision hard limit.
         tools: true,
         reasoning: true,
-        contextLength: 1048576,
+        contextLength: 524288,
         isSpecialized: false,
     },
     "mistral-large": {
@@ -1239,20 +1274,21 @@ export const TEXT_SERVICES = {
         codeExecution: true,
         search: true,
         isSpecialized: false,
-        alpha: true,
     },
     "qwen-coder-large": {
         aliases: ["qwen3-coder-next"],
-        modelId: "qwen3-coder-next",
-        provider: "alibaba",
+        modelId: "qwen/qwen3-coder-next",
+        provider: "openrouter",
         brand: "Qwen",
         category: "text",
         addedDate: new Date("2026-03-22").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
+        // Moved off Alibaba DashScope ($0.30/$1.50) to OpenRouter — same SKU,
+        // ~2.5x cheaper. OpenRouter routes to the cheapest live endpoint.
         cost: {
-            promptTextTokens: perMillion(0.3), // per 1M tokens
-            completionTextTokens: perMillion(1.5), // per 1M tokens
+            promptTextTokens: perMillion(0.11), // per 1M tokens
+            completionTextTokens: perMillion(0.8), // per 1M tokens
         },
         title: "Qwen3 Coder Next",
         description: "Qwen3 Coder Next - Advanced Code Generation",
@@ -1263,27 +1299,33 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "qwen-large": {
-        aliases: ["qwen3.6", "qwen3.6-plus", "qwen3p6-plus"],
-        modelId: "accounts/fireworks/models/qwen3p6-plus",
+        aliases: [
+            "qwen3.7",
+            "qwen3.7-plus",
+            "qwen3p7-plus",
+            "qwen3.6",
+            "qwen3.6-plus",
+            "qwen3p6-plus",
+        ],
+        modelId: "accounts/fireworks/models/qwen3p7-plus",
         provider: "fireworks",
         brand: "Qwen",
         category: "text",
-        addedDate: new Date("2026-03-22").getTime(),
+        addedDate: new Date("2026-06-12").getTime(),
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.5),
-            promptCachedTokens: perMillion(0.1),
-            completionTextTokens: perMillion(3.0),
+            promptTextTokens: perMillion(0.4),
+            promptCachedTokens: perMillion(0.08),
+            completionTextTokens: perMillion(1.6),
         },
-        title: "Qwen3.6 Plus",
-        description:
-            "Qwen3.6 Plus - 396B MoE Flagship with Reasoning (Fireworks)",
+        title: "Qwen3.7 Plus",
+        description: "Qwen3.7 Plus - Multimodal agent intelligence (Fireworks)",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 30, // Fireworks vision hard limit.
         tools: true,
         reasoning: true,
-        contextLength: 1048576,
+        contextLength: 262000,
         isSpecialized: false,
     },
     "qwen-vision": {

@@ -81,7 +81,7 @@ All requests go through: https://gen.pollinations.ai
 - Video generation: use listImageModels for live videoCapabilities, including start/end-frame and audio support
 - Web search: Use webSearch with perplexity-fast, perplexity-reasoning, or gemini-search
 - Audio transcription: Use transcribeAudio with gemini-large
-- Reasoning: Use kimi-k2-thinking, perplexity-reasoning, openai-large, gemini-large`;
+- Reasoning: Use kimi, perplexity-reasoning, openai-large, gemini-large`;
 
 /**
  * Start the MCP server with STDIO transport

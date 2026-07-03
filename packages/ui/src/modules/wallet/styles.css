@@ -1,12 +1,26 @@
 /** biome-ignore-all lint/suspicious/noUnknownAtRules: tailwind handles it */
 
 :root {
-    --polli-color-paid-pale: oklch(0.93 0.09 95.746);
-    --polli-color-paid-soft: oklch(0.85 0.16 95.746);
-    --polli-color-paid-deep: #78350f;
-    --polli-color-tier-pale: oklch(0.93 0.06 55);
-    --polli-color-tier-soft: oklch(0.83 0.13 55);
-    --polli-color-tier-deep: #7c3f1e;
+    /* Opaque, slightly lightened from the old 60%-transparent mix so the
+       wells read as crisp gold/bronze chips on the pale-amber panel. */
+    --polli-color-paid-pale: oklch(0.955 0.062 92);
+    --polli-color-paid-soft: oklch(0.82 0.165 92);
+    --polli-color-paid-deep: oklch(0.43 0.105 82);
+    --polli-color-tier-pale: oklch(0.95 0.05 152);
+    --polli-color-tier-soft: oklch(0.74 0.135 152);
+    --polli-color-tier-deep: oklch(0.42 0.11 152);
+}
+
+/* Dark twin: deep gold/bronze chip, light gold/bronze text — keeps the
+   paid/tier identity while staying legible (the :root values are tuned for
+   light surfaces only). */
+.dark {
+    --polli-color-paid-pale: oklch(0.33 0.055 92);
+    --polli-color-paid-soft: oklch(0.82 0.135 92);
+    --polli-color-paid-deep: oklch(0.88 0.085 92);
+    --polli-color-tier-pale: oklch(0.31 0.045 152);
+    --polli-color-tier-soft: oklch(0.75 0.13 152);
+    --polli-color-tier-deep: oklch(0.87 0.10 152);
 }
 
 @theme inline {
@@ -29,29 +43,15 @@
 }
 
 .polli-wallet-panel-paid {
-    background-color: color-mix(
-        in oklab,
-        var(--polli-color-paid-pale) 60%,
-        transparent
-    );
+    background-color: var(--polli-color-paid-pale);
     color: var(--polli-color-paid-deep);
+    box-shadow: var(--polli-shadow-well);
 }
 
 .polli-wallet-panel-tier {
-    background-color: color-mix(
-        in oklab,
-        var(--polli-color-tier-pale) 60%,
-        transparent
-    );
+    background-color: var(--polli-color-tier-pale);
     color: var(--polli-color-tier-deep);
-}
-
-.polli-wallet-dot-paid {
-    background-color: var(--polli-color-paid-soft);
-}
-
-.polli-wallet-dot-tier {
-    background-color: var(--polli-color-tier-soft);
+    box-shadow: var(--polli-shadow-well);
 }
 
 .polli-wallet-text-paid {

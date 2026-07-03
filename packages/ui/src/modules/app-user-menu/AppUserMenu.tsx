@@ -2,6 +2,7 @@ import { useAuthActions } from "@pollinations/sdk/react";
 import { ChevronIcon } from "../../primitives/ChevronIcon.tsx";
 import { Dropdown } from "../../primitives/Dropdown.tsx";
 import { DropdownItem } from "../../primitives/DropdownItem.tsx";
+import { LockIcon } from "../../primitives/icons/index.tsx";
 import {
     LoginButton,
     UserAvatar,
@@ -21,36 +22,19 @@ export type AppUserMenuLabels = {
 export type AppUserMenuProps = {
     dashboardHref: string;
     labels?: Partial<AppUserMenuLabels>;
-    hiddenWhenEmbedded?: boolean;
-    embedQueryParam?: string;
 };
 
 const defaultLabels: AppUserMenuLabels = {
-    authorize: "Authorize app",
+    authorize: "Connect",
     appUserMenu: "App user menu",
     topUpAccount: "Top up account",
     logout: "Log out from this app",
 };
 
-export function isEmbeddedContext(embedQueryParam = "embed"): boolean {
-    if (typeof window === "undefined") return false;
-    const search = new URLSearchParams(window.location.search);
-    if (search.get(embedQueryParam) === "1") return true;
-    try {
-        return window.self !== window.top;
-    } catch {
-        return true;
-    }
-}
-
 export function AppUserMenu({
     dashboardHref,
     labels: labelOverrides,
-    hiddenWhenEmbedded = false,
-    embedQueryParam = "embed",
 }: AppUserMenuProps) {
-    if (hiddenWhenEmbedded && isEmbeddedContext(embedQueryParam)) return null;
-
     return (
         <AppUserMenuContent
             dashboardHref={dashboardHref}
@@ -67,20 +51,27 @@ function AppUserMenuContent({
     const { logout } = useAuthActions();
 
     return (
-        <div data-theme="amber" className="polli:flex polli:justify-end">
+        // shrink-0 so the account control never gets squeezed (and its label
+        // never wraps) when it sits next to flexible content in a header row.
+        <div
+            data-theme="accent"
+            className="polli:flex polli:shrink-0 polli:justify-end"
+        >
             <WhenLoggedOut>
-                <LoginButton theme="amber">{labels.authorize}</LoginButton>
+                <LoginButton className="polli:gap-1.5 polli:whitespace-nowrap">
+                    <LockIcon className="polli:h-4 polli:w-4 polli:shrink-0" />
+                    {labels.authorize}
+                </LoginButton>
             </WhenLoggedOut>
 
             <WhenLoggedIn>
                 <Dropdown
-                    theme="amber"
                     align="end"
                     className="polli:w-64 polli:p-1"
                     trigger={(open) => (
                         <button
                             type="button"
-                            data-theme="amber"
+                            data-theme="accent"
                             aria-label={labels.appUserMenu}
                             className="polli-control polli:flex polli:min-w-0 polli:items-center polli:gap-2 polli:rounded-full polli:bg-theme-bg-active polli:py-1 polli:pl-1 polli:pr-3 polli:text-theme-text-base polli:shadow-sm polli:transition-colors polli:hover:bg-theme-bg-hover"
                         >
@@ -101,7 +92,7 @@ function AppUserMenuContent({
                 >
                     {(close) => (
                         <div
-                            data-theme="amber"
+                            data-theme="accent"
                             className="polli:flex polli:flex-col"
                         >
                             <DropdownItem

@@ -3,13 +3,14 @@
 /**
  * Prepend a new app entry to apps/APPS.md
  *
- * Usage: node apps_prepend_entry.js
+ * Usage: node .github/scripts/app-prepend-row.js
  *
  * Environment variables:
  *   NEW_ROW - The markdown table row to prepend
  */
 
 const fs = require("fs");
+const { APPS_FILE, parseApps } = require("./lib/parse-apps.js");
 
 const newRow = process.env.NEW_ROW;
 
@@ -18,21 +19,10 @@ if (!newRow) {
     process.exit(1);
 }
 
-const appsFile = "apps/APPS.md";
-let content = fs.readFileSync(appsFile, "utf8");
-const lines = content.split("\n");
+const { lines, headerIdx } = parseApps();
 
-// Find the header row (starts with | Emoji)
-const headerIdx = lines.findIndex((l) => l.startsWith("| Emoji"));
-if (headerIdx === -1) {
-    console.error("Error: Could not find header row in APPS.md");
-    process.exit(1);
-}
-
-const separatorIdx = headerIdx + 1;
-
-// Insert new row after separator
-lines.splice(separatorIdx + 1, 0, newRow);
-fs.writeFileSync(appsFile, lines.join("\n"));
+// Insert new row right after the header separator
+lines.splice(headerIdx + 2, 0, newRow);
+fs.writeFileSync(APPS_FILE, lines.join("\n"));
 
 console.log("✅ Prepended new entry to apps/APPS.md");

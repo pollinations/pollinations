@@ -1,3 +1,4 @@
+import { pollinationsErrorFromResponse } from "./error-response.js";
 import type {
     AccountBalance,
     AccountKey,
@@ -25,7 +26,6 @@ import type {
     Message,
     ModelInfo,
     PollinationsConfig,
-    PollinationsErrorDetails,
     RequestOptions,
     TextGenerateOptions,
     TranscribeOptions,
@@ -54,12 +54,6 @@ const DEFAULT_VIDEO_TIMEOUT = 600_000; // 10min for videos
 
 // HTTP status codes that should NOT be retried
 const NON_RETRIABLE_CODES = [400, 401, 402, 403, 404, 422];
-
-// Default Retry-After delay when header is missing (seconds)
-const DEFAULT_RETRY_AFTER = 60;
-// Cap honored Retry-After so a malicious or misconfigured upstream
-// cannot force the client into an indefinite sleep.
-const MAX_RETRY_AFTER_SECONDS = 300;
 
 // Helper to get env var (works in Node.js, Deno, Bun, and edge runtimes)
 function getEnvVar(name: string): string | undefined {
@@ -107,30 +101,6 @@ function getRetryDelay(attempt: number, retryAfterSeconds?: number): number {
         return retryAfterSeconds * 1000;
     }
     return 2 ** attempt * 1000;
-}
-
-// Parse Retry-After header (can be seconds or HTTP date)
-function parseRetryAfter(response: Response): number | undefined {
-    const retryAfter = response.headers.get("Retry-After");
-    if (!retryAfter) return undefined;
-
-    // Try parsing as number of seconds.
-    // Use Number() (not parseInt) so malformed values like "5abc" or "5e2x"
-    // are rejected instead of being silently truncated into an aggressive
-    // retry delay.
-    const seconds = Number(retryAfter);
-    if (Number.isFinite(seconds) && seconds >= 0) {
-        return Math.min(seconds, MAX_RETRY_AFTER_SECONDS);
-    }
-
-    // Try parsing as HTTP date
-    const date = Date.parse(retryAfter);
-    if (!Number.isNaN(date)) {
-        const delayMs = date - Date.now();
-        return delayMs > 0 ? Math.ceil(delayMs / 1000) : undefined;
-    }
-
-    return undefined;
 }
 
 // Check if an error should be retried
@@ -300,33 +270,7 @@ export class Pollinations {
     }
 
     private async handleErrorResponse(response: Response): Promise<never> {
-        let errorData: PollinationsErrorDetails | null = null;
-        try {
-            const json = (await response.json()) as {
-                error?: PollinationsErrorDetails;
-            };
-            if (json.error) {
-                errorData = json.error;
-            }
-        } catch {
-            // Response wasn't JSON
-        }
-
-        // Parse Retry-After header for rate limit errors
-        const retryAfter =
-            response.status === 429
-                ? (parseRetryAfter(response) ?? DEFAULT_RETRY_AFTER)
-                : undefined;
-
-        throw new PollinationsError(
-            errorData?.message ||
-                `Request failed with status ${response.status}`,
-            errorData?.code || "UNKNOWN_ERROR",
-            response.status,
-            errorData?.details,
-            errorData?.requestId,
-            retryAfter,
-        );
+        throw await pollinationsErrorFromResponse(response);
     }
 
     private buildQueryParams(
@@ -416,11 +360,6 @@ export class Pollinations {
             width: options.width,
             height: options.height,
             seed: seed !== undefined ? seed : resolveSeed(options.seed),
-            enhance: options.enhance,
-            negative_prompt: options.negativePrompt,
-            private: options.private,
-            nologo: options.nologo,
-            nofeed: options.nofeed,
             safe: options.safe,
             quality: options.quality,
             image: options.referenceImage,
@@ -624,8 +563,6 @@ export class Pollinations {
         if (options.reasoning !== undefined) body.reasoning = options.reasoning;
         if (options.seed !== undefined) body.seed = resolveSeed(options.seed);
         if (options.quality) body.quality = options.quality;
-        if (options.negativePrompt)
-            body.negative_prompt = options.negativePrompt;
 
         const response = await fetchWithTimeout(
             `${this.baseUrl}/v1/images/generations`,
@@ -736,8 +673,6 @@ export class Pollinations {
             seed: seed !== undefined ? seed : resolveSeed(options.seed),
             audio: options.audio,
             image: options.referenceImage,
-            private: options.private,
-            nologo: options.nologo,
             safe: options.safe,
         };
 
@@ -1017,9 +952,7 @@ export class Pollinations {
             tools: options.tools,
             tool_choice: options.toolChoice,
             parallel_tool_calls: options.parallelToolCalls,
-            thinking: options.thinking,
             reasoning_effort: options.reasoningEffort,
-            thinking_budget: options.thinkingBudget,
             modalities: options.modalities,
             audio: options.audio,
             user: options.user,
@@ -1558,8 +1491,11 @@ export class Pollinations {
 
         const response = await fetch(`${AUTH_BASE_URL}/api/device/code`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ client_id: clientId, scope }),
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+                client_id: clientId,
+                scope,
+            }).toString(),
             signal: options.signal,
         });
 
@@ -1574,7 +1510,7 @@ export class Pollinations {
 
         const code = (await response.json()) as DeviceCodeResponse;
         const expiresAt = new Date(Date.now() + code.expires_in * 1000);
-        const pollMs = Math.max(code.interval, 5) * 1000;
+        let pollMs = Math.max(code.interval, 5) * 1000;
 
         const poll = async (): Promise<string> => {
             while (Date.now() < expiresAt.getTime()) {
@@ -1588,15 +1524,18 @@ export class Pollinations {
                 }
 
                 const tokenRes = await fetch(
-                    `${AUTH_BASE_URL}/api/device/token`,
+                    `${AUTH_BASE_URL}/api/oauth/token`,
                     {
                         method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            device_code: code.device_code,
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded",
+                        },
+                        body: new URLSearchParams({
                             grant_type:
                                 "urn:ietf:params:oauth:grant-type:device_code",
-                        }),
+                            device_code: code.device_code,
+                            client_id: clientId,
+                        }).toString(),
                     },
                 );
 
@@ -1607,10 +1546,12 @@ export class Pollinations {
                 if (tokenRes.ok && body.access_token) {
                     return body.access_token;
                 }
-                if (
-                    body.error === "authorization_pending" ||
-                    body.error === "slow_down"
-                ) {
+                if (body.error === "authorization_pending") {
+                    continue;
+                }
+                if (body.error === "slow_down") {
+                    // RFC 8628 §3.5: back off by 5s on slow_down
+                    pollMs += 5000;
                     continue;
                 }
                 throw new PollinationsError(

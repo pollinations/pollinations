@@ -2,6 +2,7 @@ import { env, SELF } from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
 import { getLogger } from "@logtape/logtape";
 import { user as userTable } from "@shared/db/better-auth.ts";
+import { ensureConfigured } from "@shared/logger.ts";
 import {
     createFetchMock,
     teardownFetchMock,
@@ -11,7 +12,6 @@ import { createAuthClient } from "better-auth/client";
 import { adminClient, apiKeyClient } from "better-auth/client/plugins";
 import { drizzle } from "drizzle-orm/d1";
 import { test as base, expect } from "vitest";
-import { ensureConfigured } from "@/logger.ts";
 import { createMockGithub } from "./mocks/github.ts";
 import { createMockStripe } from "./mocks/stripe.ts";
 
@@ -130,18 +130,22 @@ export const test = base.extend<Fixtures>({
         mocks.clear();
         await use(sessionToken);
     },
-    apiKey: async ({ auth, sessionToken }, use) => {
-        const createApiKeyResponse = await auth.apiKey.create({
-            name: "test-api-key",
-            fetchOptions: {
+    apiKey: async ({ sessionToken }, use) => {
+        const createApiKeyResponse = await SELF.fetch(
+            "http://localhost:3000/api/account/keys",
+            {
+                method: "POST",
                 headers: {
-                    "Cookie": `better-auth.session_token=${sessionToken}`,
+                    "Content-Type": "application/json",
+                    Cookie: `better-auth.session_token=${sessionToken}`,
                 },
+                body: JSON.stringify({ name: "test-api-key" }),
             },
-        });
-        if (!createApiKeyResponse.data)
+        );
+        if (!createApiKeyResponse.ok)
             throw new Error("Failed to create secret API key");
-        const apiKey = createApiKeyResponse.data.key;
+        const created = (await createApiKeyResponse.json()) as { key: string };
+        const apiKey = created.key;
         // expect(apiKey.startsWith("sk_")).toBe(true);
         await use(apiKey);
     },

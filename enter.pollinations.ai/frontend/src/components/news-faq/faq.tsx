@@ -1,12 +1,8 @@
+import { Markdown, Surface } from "@pollinations/ui";
 import type { FC } from "react";
 import { useEffect, useState } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import faqMarkdown from "../../../../POLLEN_FAQ.md?raw";
 import { PollenExamples } from "../models/pollen-examples.tsx";
-
-export const FAQ_GITHUB_URL =
-    "https://github.com/pollinations/pollinations/blob/master/enter.pollinations.ai/POLLEN_FAQ.md";
 
 type FAQItem = {
     question: string;
@@ -124,7 +120,7 @@ export const FAQ: FC<FAQProps> = ({ showTitle = true }) => {
     return (
         <>
             {showTitle && (
-                <h2 className="px-1 text-left text-lg font-semibold text-accent-violet-950 sm:text-xl">
+                <h2 className="px-1 text-left text-lg font-semibold text-theme-text-strong sm:text-xl">
                     FAQ
                 </h2>
             )}
@@ -140,24 +136,23 @@ export const FAQ: FC<FAQProps> = ({ showTitle = true }) => {
                             <button
                                 type="button"
                                 onClick={() => toggleQuestion(index)}
-                                className="w-full text-left flex justify-between items-start gap-4 text-accent-violet-950 hover:text-accent-violet-800 transition-colors"
+                                className="w-full text-left flex justify-between items-start gap-4 text-theme-text-soft hover:text-theme-text-strong transition-colors"
                             >
-                                <span className="flex-1 font-bold text-accent-violet-700">
-                                    {item.question}
-                                </span>
+                                <span className="flex-1">{item.question}</span>
                                 <span className="text-2xl flex-shrink-0 font-normal">
                                     {openIndices.has(index) ? "−" : "+"}
                                 </span>
                             </button>
                             {openIndices.has(index) && (
-                                <div className="mt-3 max-w-none text-ink-600 leading-relaxed [&_a]:font-medium [&_a]:text-accent-purple-600 [&_a]:underline [&_a:hover]:text-accent-purple-800 [&_li]:text-ink-600 [&_p]:mb-3 [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-6">
-                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                        {item.answer}
-                                    </ReactMarkdown>
+                                <Surface
+                                    variant="card"
+                                    className="mt-3 flex flex-col gap-3 text-theme-text-base"
+                                >
+                                    <Markdown>{item.answer}</Markdown>
                                     {item.question.includes(
                                         "What can I create with Pollen",
                                     ) && <PollenExamples />}
-                                </div>
+                                </Surface>
                             )}
                         </div>
                     );

@@ -77,7 +77,7 @@ Provide Discord-compatible summary:
 | ----------------- | -------------------------------------------------- |
 | `TRACKING`        | Meta/planning issues that track multiple sub-tasks |
 | `NEWS`            | Community announcements and updates                |
-| `ext-issue`       | External user requests (tier upgrades, etc.)       |
+| `ext-issue`       | External user requests and support follow-ups      |
 | `app:review`      | New project submission (under review)              |
 | `app:info-needed` | Submission awaiting user response                  |
 | `app:approved`    | Project approved and merged                        |
@@ -114,10 +114,10 @@ Brief description
 -   #issue2
 ```
 
-### Tier Upgrade Request
+### Account Support Request
 
 ```markdown
--   Upgrade @USERNAME to TIER tier
+-   Account support for @USERNAME
 -   Qualification: [reason]
 -   Related: #original_request_issue
 ```

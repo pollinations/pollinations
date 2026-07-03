@@ -68,18 +68,6 @@ export function validateAndNormalizeMessages(messages: unknown): ChatMessage[] {
     });
 }
 
-const TRUTHY_STRINGS = new Set(["true", "1", "yes"]);
-const FALSY_STRINGS = new Set(["false", "0", "no"]);
-
-function parseStreamOption(value: unknown): boolean {
-    if (value === undefined) return false;
-    if (typeof value === "string") {
-        if (TRUTHY_STRINGS.has(value)) return true;
-        if (FALSY_STRINGS.has(value)) return false;
-    }
-    return Boolean(value);
-}
-
 function clamp(value: number, min: number, max: number): number {
     return Math.max(min, Math.min(max, value));
 }
@@ -91,7 +79,9 @@ export function normalizeOptions(
     const normalized = { ...defaults, ...options } as TransformOptions &
         Record<string, unknown>;
 
-    normalized.stream = parseStreamOption(normalized.stream);
+    // Stream is already validated to boolean|undefined at the request boundary
+    // (validateBoolean in parameterValidators.ts); coerce undefined to false.
+    normalized.stream = Boolean(normalized.stream);
     log("Normalized stream option to %s", normalized.stream);
 
     if (
@@ -122,11 +112,6 @@ export function normalizeOptions(
 
     if (typeof normalized.seed === "number") {
         normalized.seed = Math.floor(normalized.seed);
-    }
-
-    if (normalized.maxTokens !== undefined) {
-        normalized.max_tokens = normalized.maxTokens as number;
-        delete normalized.maxTokens;
     }
 
     if (normalized.jsonMode) {

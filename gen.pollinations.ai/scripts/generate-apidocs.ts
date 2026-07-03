@@ -749,7 +749,7 @@ curl ${BASE_URL}/v1/models \\
 
 **3. Pick an endpoint** from the [${sectionHeading(SECTIONS.contents)}](#${sectionAnchor(SECTIONS.contents)}) below.
 
-**Integration guides:** [🌸 BYOP](https://gen.pollinations.ai/docs#tag/byop) · [🖥️ CLI](https://gen.pollinations.ai/docs#tag/cli) · [🔌 MCP Server](https://gen.pollinations.ai/docs#tag/mcp-server)`;
+**Integration guides:** [BYOP](https://gen.pollinations.ai/docs#tag/byop) · [CLI](https://gen.pollinations.ai/docs#tag/cli) · [MCP Server](https://gen.pollinations.ai/docs#tag/mcp-server)`;
 }
 
 function renderTableOfContents(
@@ -875,9 +875,10 @@ All endpoints return errors in this envelope:
 | \`405\` | \`METHOD_NOT_ALLOWED\` | HTTP method not supported on this route. |
 | \`409\` | \`CONFLICT\` | Request conflicts with current resource state (e.g. duplicate key name). |
 | \`422\` | \`UNPROCESSABLE_ENTITY\` | Request was well-formed but semantically invalid — typically a model rejection or unsupported parameter combination. |
+| \`422\` | \`content_policy_violation\` | Prompt, input, or generated content was blocked by content moderation. Adjust the input and retry. |
 | \`429\` | \`RATE_LIMITED\` | Too many requests. Slow down. |
 | \`500\` | \`INTERNAL_ERROR\` | Server error. We're on it. |
-| \`502\` | \`BAD_GATEWAY\` | Upstream provider returned an unexpected error (auth, billing, content policy). |
+| \`502\` | \`BAD_GATEWAY\` | Upstream provider returned an unexpected error (auth, billing). |
 | \`503\` | \`SERVICE_UNAVAILABLE\` | Temporarily unavailable — usually the safety/balance check service is degraded. Retry with backoff. |`;
 }
 
@@ -950,7 +951,7 @@ const PATH_PARAM_OVERRIDES: Record<string, string> = {
  */
 const PATH_PARAM_BLOCKLIST: Record<string, Set<string>> = {
     "/image/{prompt}": new Set(["duration", "aspectRatio", "audio"]),
-    "/video/{prompt}": new Set(["negative_prompt", "quality", "transparent"]),
+    "/video/{prompt}": new Set(["quality", "transparent"]),
 };
 
 function visibleParams(path: string, params: Schema[]): Schema[] {
@@ -995,15 +996,15 @@ const HTTP_METHODS = new Set([
  * silently disappears — they show up at the end until added here.
  */
 const TAG_ORDER = [
-    "✍️ Text",
-    "🖼️ Image",
-    "🎬 Video",
-    "🔊 Audio",
-    "🎙️ Realtime",
-    "🔢 Embeddings",
-    "🤖 Models",
-    "📦 Media Storage",
-    "👤 Account",
+    "Text",
+    "Image",
+    "Video",
+    "Audio",
+    "Realtime",
+    "Embeddings",
+    "Models",
+    "Media Storage",
+    "Account",
 ];
 
 /** Group operations by tag, then re-key the map to follow TAG_ORDER. */

@@ -1,4 +1,4 @@
-import { Button } from "@pollinations/ui";
+import { Button, GitHubIcon } from "@pollinations/ui";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { authClient } from "../auth.ts";
@@ -13,10 +13,12 @@ import {
 import { usePageFromHash } from "../components/layout/use-page-from-hash.ts";
 import { Models } from "../components/models";
 import { NewsFaq } from "../components/news-faq";
+import { QuestOverview } from "../components/quests";
 
 const SIGNED_OUT_PAGES: ReadonlySet<DashboardPage> = new Set([
     "news-faq",
     "models",
+    "quests",
 ]);
 
 const SIGNED_OUT_NAV_ITEMS = DASHBOARD_NAV_ITEMS.filter((item) =>
@@ -38,10 +40,9 @@ export const Route = createFileRoute("/sign-in")({
         const result = await authClient.getSession();
         if (result.data?.user) {
             // Check for pending redirect URL from authorize flow
-            const pendingRedirectUrl =
-                typeof window !== "undefined"
-                    ? localStorage.getItem("pending_redirect_url")
-                    : null;
+            const pendingRedirectUrl = localStorage.getItem(
+                "pending_redirect_url",
+            );
 
             if (pendingRedirectUrl) {
                 // Clear the stored URL and redirect to authorize
@@ -57,10 +58,19 @@ export const Route = createFileRoute("/sign-in")({
                     },
                 });
             }
-            throw redirect({ to: "/" });
+            throw redirect({
+                to: "/",
+                hash: window.location.hash.slice(1) || undefined,
+            });
         }
     },
 });
+
+function dashboardCallbackUrl(activePage: DashboardPage): string {
+    const url = new URL("/", window.location.href);
+    url.hash = window.location.hash.slice(1) || activePage;
+    return url.href;
+}
 
 function RouteComponent() {
     const [loading, setLoading] = useState(false);
@@ -70,6 +80,7 @@ function RouteComponent() {
         setLoading(true);
         const { error } = await authClient.signIn.social({
             provider: "github",
+            callbackURL: dashboardCallbackUrl(activePage),
         });
         if (error) {
             setLoading(false);
@@ -101,6 +112,7 @@ function RouteComponent() {
         >
             {activePage === "news-faq" && <NewsFaq />}
             {activePage === "models" && <Models />}
+            {activePage === "quests" && <QuestOverview />}
         </DashboardShell>
     );
 }
@@ -115,11 +127,12 @@ function SignedOutAccountArea({
     return (
         <Button
             as="button"
+            data-theme="accent"
             onClick={onSignIn}
             disabled={loading}
-            theme="amber"
-            className="w-full justify-center text-center"
+            className="w-full justify-center gap-2 text-center"
         >
+            <GitHubIcon className="h-4 w-4 shrink-0" />
             {loading ? "Signing in..." : "Sign in with GitHub"}
         </Button>
     );

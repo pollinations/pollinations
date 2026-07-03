@@ -14,6 +14,7 @@ import {
     type ImageModelId,
     type ImageModelName,
 } from "./image";
+import { MODEL3D_SERVICES, type Model3dId, type Model3dName } from "./model3d";
 import {
     REALTIME_SERVICES,
     type RealtimeModelId,
@@ -26,6 +27,7 @@ export type Category =
     | "image"
     | "audio"
     | "video"
+    | "3d"
     | "embedding"
     | "realtime";
 
@@ -69,13 +71,15 @@ export type ModelId =
     | TextModelId
     | AudioModelId
     | EmbeddingModelId
-    | RealtimeModelId;
+    | RealtimeModelId
+    | Model3dId;
 export type ModelName =
     | ImageModelName
     | TextModelName
     | AudioModelName
     | EmbeddingServiceId
-    | RealtimeModelName;
+    | RealtimeModelName
+    | Model3dName;
 
 export type VideoCapability =
     | "start_frame"
@@ -110,6 +114,11 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     aliases: string[];
     modelId: TModelId;
     provider: string;
+    // Optional secondary provider for binary-asset models with provider-level
+    // fallback (3D only, as of this field). Purely descriptive metadata for
+    // /models transparency — does not drive fallback logic, which lives in
+    // the handler dispatch code.
+    fallbackProvider?: string;
     brand: string;
     category: Category;
     cost: CostDefinition;
@@ -135,6 +144,11 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     isSpecialized?: boolean;
     paidOnly?: boolean; // Models that require paid balance only
     alpha?: boolean; // Experimental models with potential instability
+    // Flat per-generation pricing (one fee per request, independent of output
+    // size/length). Lets the pricing UI show a "/gen" badge instead of guessing
+    // a per-second rate from a per-token cost. Used to disambiguate flat-fee
+    // audio (e.g. Stable Audio) from per-character TTS, which share cost fields.
+    flatRate?: boolean;
     hidden?: boolean; // Hidden from /models endpoints and dashboard, but still usable via API
     videoCapabilities?: VideoCapability[]; // Video-only: which frame controls the provider supports
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
@@ -149,7 +163,7 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
 function convertUsage(
     usage: Usage,
     rateDefinition: CostDefinition,
-    model: ModelName,
+    model: string,
 ): Usage {
     const convertedUsage = Object.fromEntries(
         Object.entries(usage).map(([usageType, amount]) => {
@@ -181,7 +195,7 @@ function derivePrice(svc: ModelDefinition): PriceDefinition {
 }
 
 function calculateLinearCost(
-    model: ModelName,
+    model: string,
     usage: Usage,
     costDefinition: CostDefinition,
 ): UsageCost {
@@ -208,6 +222,7 @@ const MODEL_REGISTRY = {
     ...AUDIO_SERVICES,
     ...EMBEDDING_SERVICES,
     ...REALTIME_SERVICES,
+    ...MODEL3D_SERVICES,
 } as Record<ModelName, ModelDefinition>;
 
 /**
@@ -258,6 +273,13 @@ function getAudioModels(): AudioModelName[] {
     return Object.keys(AUDIO_SERVICES) as AudioModelName[];
 }
 
+/**
+ * Get 3D model names
+ */
+function getModel3dModels(): Model3dName[] {
+    return Object.keys(MODEL3D_SERVICES) as Model3dName[];
+}
+
 function filterVisible<TModelName extends ModelName>(
     ids: TModelName[],
 ): TModelName[] {
@@ -271,16 +293,27 @@ export const getVisibleEmbeddingModels = () =>
     filterVisible(Object.keys(EMBEDDING_SERVICES) as EmbeddingServiceId[]);
 export const getVisibleRealtimeModels = () =>
     filterVisible(Object.keys(REALTIME_SERVICES) as RealtimeModelName[]);
+export const getVisibleModel3dModels = () => filterVisible(getModel3dModels());
 
 /**
- * Get a model definition by public model name
+ * Get a model definition from the bundled registry.
+ *
+ * This only covers built-in Pollinations models. Runtime models, such as
+ * community endpoints, should be resolved at the request boundary and then
+ * passed around as a `ModelDefinition`.
  */
-export function getModelDefinition(model: ModelName): ModelDefinition {
+export function getRegistryModelDefinition(model: ModelName): ModelDefinition {
     const definition = MODEL_REGISTRY[model];
     if (!definition) {
         throw new Error(`Invalid model: "${model}"`);
     }
     return definition;
+}
+
+export function getPriceDefinitionForModel(
+    svc: ModelDefinition<string>,
+): PriceDefinition {
+    return derivePrice(svc);
 }
 
 /**
@@ -296,7 +329,7 @@ export function getCostDefinition(model: ModelName): CostDefinition | null {
 export function getPriceDefinition(model: ModelName): PriceDefinition | null {
     const svc = MODEL_REGISTRY[model];
     if (!svc) return null;
-    return derivePrice(svc);
+    return getPriceDefinitionForModel(svc);
 }
 
 /**
@@ -312,6 +345,15 @@ export function calculateCost(
         throw new Error(
             `Failed to get current cost for model: ${model.toString()}`,
         );
+    return calculateCostForModelDefinition(model, usage, svc, output);
+}
+
+export function calculateCostForModelDefinition(
+    model: string,
+    usage: Usage,
+    svc: ModelDefinition<string>,
+    output?: unknown,
+): UsageCost {
     const linearCost = (costDefinition = svc.cost) =>
         calculateLinearCost(model, usage, costDefinition);
 
@@ -334,6 +376,17 @@ export function calculateCost(
 }
 
 /**
+ * Calculate cost from an explicit cost definition.
+ */
+export function calculateCostWithDefinition(
+    model: string,
+    usage: Usage,
+    costDefinition: CostDefinition,
+): UsageCost {
+    return calculateLinearCost(model, usage, costDefinition);
+}
+
+/**
  * Calculate price for a model based on usage
  */
 export function calculatePrice(
@@ -346,7 +399,21 @@ export function calculatePrice(
         throw new Error(
             `Failed to get current price for model: ${model.toString()}`,
         );
-    const usageCost = calculateCost(model, usage, output);
+    return calculatePriceForModelDefinition(model, usage, svc, output);
+}
+
+export function calculatePriceForModelDefinition(
+    model: string,
+    usage: Usage,
+    svc: ModelDefinition<string>,
+    output?: unknown,
+): UsagePrice {
+    const usageCost = calculateCostForModelDefinition(
+        model,
+        usage,
+        svc,
+        output,
+    );
     const usagePrice = Object.fromEntries(
         Object.entries(usageCost)
             .filter(([usageType]) => usageType !== "totalCost")
@@ -357,6 +424,25 @@ export function calculatePrice(
     ) as Usage;
     const totalPrice = roundPollenLedgerAmount(
         usageCost.totalCost * svc.priceMultiplier,
+    );
+    return {
+        ...usagePrice,
+        totalPrice,
+    };
+}
+
+/**
+ * Calculate price from an explicit price definition.
+ */
+export function calculatePriceWithDefinition(
+    model: string,
+    usage: Usage,
+    priceDefinition: PriceDefinition,
+): UsagePrice {
+    const usagePrice = convertUsage(usage, priceDefinition, model);
+    const totalPrice = Object.values(usagePrice).reduce(
+        (total, price) => total + price,
+        0,
     );
     return {
         ...usagePrice,

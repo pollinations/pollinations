@@ -1,8 +1,8 @@
+import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
-import { remapUpstreamStatus, UpstreamError } from "@/error.ts";
 import {
     getRegisteredServers,
     isValidType,
@@ -23,10 +23,14 @@ import {
 } from "./createAndReturnVideos.ts";
 import { getImageEnv, syncImageEnv } from "./env.ts";
 import { HttpError } from "./httpError.ts";
-import { normalizeAndTranslatePrompt } from "./normalizeAndTranslatePrompt.ts";
 import { type ImageParams, ImageParamsSchema } from "./params.ts";
-import { createProgressTracker } from "./progressBar.ts";
-import { sleep } from "./util.ts";
+import { sanitizeString, sleep } from "./util.ts";
+import {
+    CONTENT_POLICY_ERROR_CODE,
+    CONTENT_POLICY_STATUS,
+    contentPolicyMessage,
+    firstContentPolicyMessage,
+} from "./utils/contentModeration.ts";
 import { bufferToUint8Array, detectMimeType } from "./utils/imageDownload.ts";
 import { setImagesBinding } from "./utils/imageTransform.ts";
 import { buildTrackingHeaders } from "./utils/trackingHeaders.ts";
@@ -40,6 +44,7 @@ const IMAGE_ENV_KEYS = [
     "AZURE_CONTENT_SAFETY_API_KEY",
     "AZURE_CONTENT_SAFETY_ENDPOINT",
     "AZURE_MYCELI_PROD_EASTUS2_API_KEY",
+    "AZURE_MYCELI_PROD_IMG_WESTUS3_API_KEY",
     "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
     "DASHSCOPE_API_KEY",
     "FIREWORKS_API_KEY",
@@ -52,7 +57,6 @@ const IMAGE_ENV_KEYS = [
     "NOVA_REEL_S3_BUCKET",
     "OPENAI_API_KEY",
     "PLN_GPU_TOKEN",
-    "PRUNA_API_KEY",
     "REPLICATE_API_TOKEN",
     "XAI_API_KEY",
 ] as const satisfies readonly (keyof CloudflareBindings)[];
@@ -66,14 +70,9 @@ export function syncImageEnvironment(env: CloudflareBindings): void {
 
 function createAuthResult(c: ImageContext): AuthResult {
     return {
-        authenticated: true,
         tokenAuth: Boolean(c.var.auth?.apiKey),
-        referrerAuth: false,
-        bypass: false,
-        reason: "GEN_GATEWAY",
         userId: c.var.auth?.user?.id || null,
         username: c.var.auth?.user?.githubUsername || null,
-        debugInfo: {},
     };
 }
 
@@ -167,6 +166,35 @@ function safeUpstreamUrl(value: string | undefined): URL | undefined {
 
 function throwImageError(error: unknown): never {
     if (error instanceof UpstreamError) throw error;
+
+    // Content-policy rejections from any provider (DashScope green-net, Replicate
+    // moderation, Vertex safety, Azure content safety) are client errors, not
+    // backend failures. Catch them here — the single funnel for image/video
+    // errors — so they surface as 422 with a stable, detectable code instead of
+    // a 500 that pollutes model-health stats.
+    const candidateMessages =
+        error instanceof HttpError
+            ? [parseUpstreamErrorBody(error).text, error.message]
+            : [error instanceof Error ? error.message : String(error)];
+    const moderationMessage = firstContentPolicyMessage(candidateMessages);
+    if (moderationMessage) {
+        throw new UpstreamError(CONTENT_POLICY_STATUS, {
+            message: contentPolicyMessage(moderationMessage),
+            errorCode: CONTENT_POLICY_ERROR_CODE,
+            requestUrl:
+                error instanceof HttpError
+                    ? safeUpstreamUrl(error.upstreamUrl)
+                    : undefined,
+            upstreamStatus:
+                error instanceof HttpError ? error.status : undefined,
+            responseBody:
+                error instanceof HttpError
+                    ? imageResponseBody(error)
+                    : undefined,
+            cause: error,
+        });
+    }
+
     if (error instanceof HttpError) {
         const { status, message } = classifyImageHttpError(error);
         throw new UpstreamError(status, {
@@ -325,33 +353,19 @@ async function generateImageResult(
     originalPrompt: string,
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
-    const requestId = c.get("requestId");
-    const progress = createProgressTracker().startRequest(requestId);
-
-    progress.updateBar(requestId, 20, "Prompt", "Normalizing...");
-    const { prompt } = await normalizeAndTranslatePrompt(
-        originalPrompt,
-        safeParams,
-    );
-    progress.updateBar(requestId, 30, "Prompt", "Normalized");
-    progress.setProcessing(requestId);
+    const prompt = sanitizeString(String(originalPrompt));
 
     const result = await createAndReturnImageCached(
         prompt,
         safeParams,
         originalPrompt,
-        progress,
-        requestId,
         createAuthResult(c),
     );
 
     if (result.isChild && result.isMature) {
-        progress.updateBar(requestId, 85, "Safety", "Additional review...");
         await sleep(5000);
     }
 
-    progress.completeBar(requestId, "Image generation complete");
-    progress.stop();
     return result;
 }
 
@@ -360,18 +374,7 @@ async function generateVideoResult(
     originalPrompt: string,
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> {
-    const requestId = c.get("requestId");
-    const progress = createProgressTracker().startRequest(requestId);
-    progress.setProcessing(requestId);
-    const result = await createAndReturnVideo(
-        originalPrompt,
-        safeParams,
-        progress,
-        requestId,
-    );
-    progress.completeBar(requestId, "Video generation complete");
-    progress.stop();
-    return result;
+    return createAndReturnVideo(originalPrompt, safeParams, c.get("requestId"));
 }
 
 export async function generateImageOrVideoResponse(

@@ -13,12 +13,10 @@ import {
 import { ChevronIcon } from "../primitives/ChevronIcon.tsx";
 import { Dropdown } from "../primitives/Dropdown.tsx";
 import { TabButton } from "../primitives/TabButton.tsx";
-import type { ThemeName } from "../theme.ts";
 
 export type PeriodPickerProps = {
     value: PeriodSelection;
     onChange: (value: PeriodSelection) => void;
-    theme: ThemeName;
     minDate?: Date;
     maxDate?: Date;
 };
@@ -128,7 +126,6 @@ function viewBounds(
 export const PeriodPicker: FC<PeriodPickerProps> = ({
     value,
     onChange,
-    theme,
     minDate = new Date(0),
     maxDate,
 }) => {
@@ -188,10 +185,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
             : formatMonthYear(viewDate, "long");
 
     return (
-        <div
-            data-theme={theme}
-            className="polli:flex polli:flex-wrap polli:items-center polli:gap-2"
-        >
+        <div className="polli:flex polli:w-full polli:flex-wrap polli:items-center polli:gap-2">
             <div className="polli:flex polli:flex-wrap polli:gap-1.5">
                 {(["day", "week", "month"] as PeriodGranularity[]).map(
                     (granularity) => (
@@ -207,7 +201,6 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                 )}
             </div>
             <Dropdown
-                theme={theme}
                 open={open}
                 onOpenChange={setOpen}
                 className="polli:w-[320px] polli:rounded-xl polli:p-3.5"
@@ -216,11 +209,11 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                         type="button"
                         aria-label={`Select period, current ${summaryLabel}`}
                         className={cn(
-                            "polli-control polli:inline-flex polli:w-[19rem] polli:max-w-full polli:items-center polli:justify-between polli:gap-2 polli:rounded-full polli:border polli:px-5 polli:pt-2 polli:pb-2.5 polli:text-left polli:text-base polli:font-medium polli:leading-normal",
-                            "polli:border-theme-border polli:bg-theme-bg-subtle polli:text-theme-text-base",
-                            "polli:transition-all polli:duration-200 polli:ease-out polli:hover:bg-theme-bg-pale",
+                            "polli-control polli:inline-flex polli:w-[320px] polli:max-w-full polli:items-center polli:justify-between polli:gap-2 polli:rounded-full polli:px-4 polli:py-1.5 polli:text-left polli:text-base polli:font-medium polli:leading-normal",
+                            "polli:bg-theme-bg-active polli:text-theme-text-base",
+                            "polli:transition-all polli:duration-200 polli:ease-out polli:hover:bg-theme-bg-hover",
                             isOpen &&
-                                "polli:bg-theme-bg-active polli:text-theme-text-strong polli:shadow-sm",
+                                "polli:bg-theme-bg-hover polli:text-theme-text-strong",
                         )}
                     >
                         <span className="polli:truncate">{summaryLabel}</span>
@@ -298,7 +291,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                                             ? "polli:bg-theme-bg-active polli:text-theme-text-strong"
                                             : "polli:text-ink-700 polli:hover:bg-theme-bg-subtle",
                                         !selectable &&
-                                            "polli:cursor-not-allowed polli:text-ink-300 polli:hover:bg-transparent",
+                                            "polli:cursor-not-allowed polli:text-theme-text-muted polli:hover:bg-transparent",
                                     )}
                                 >
                                     {label}
@@ -308,7 +301,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                     </div>
                 ) : (
                     <>
-                        <div className="polli:mb-1 polli:grid polli:grid-cols-7 polli:gap-1 polli:text-center polli:text-xs polli:font-bold polli:uppercase polli:text-ink-400">
+                        <div className="polli:mb-1 polli:grid polli:grid-cols-7 polli:gap-1 polli:text-center polli:text-xs polli:font-bold polli:uppercase polli:text-theme-text-muted">
                             {WEEKDAY_LABELS.map((label) => (
                                 <div key={label}>{label}</div>
                             ))}
@@ -351,14 +344,14 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                                         className={cn(
                                             "polli-control polli:aspect-square polli:rounded-lg polli:text-sm polli:font-medium polli:transition-colors polli:duration-150",
                                             !inCurrentMonth &&
-                                                "polli:text-ink-300",
+                                                "polli:text-theme-text-muted",
                                             sameUtcDay(date, today) &&
                                                 "polli:ring-1 polli:ring-theme-border",
                                             selected
                                                 ? "polli:bg-theme-bg-active polli:text-theme-text-strong"
                                                 : "polli:text-ink-700 polli:hover:bg-theme-bg-subtle",
                                             !selectable &&
-                                                "polli:cursor-not-allowed polli:text-ink-300 polli:hover:bg-transparent",
+                                                "polli:cursor-not-allowed polli:text-theme-text-muted polli:hover:bg-transparent",
                                         )}
                                     >
                                         {date.getUTCDate()}

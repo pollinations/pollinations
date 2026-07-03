@@ -6,6 +6,21 @@
 import debug from "debug";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { getImageEnv } from "./env.ts";
+import { closestByRatio } from "./utils/aspectRatio.ts";
+
+// Standard aspect ratios supported by Vertex AI Gemini image generation.
+const VERTEX_ASPECT_RATIOS: Array<{ ratio: number; label: string }> = [
+    { ratio: 1, label: "1:1" },
+    { ratio: 16 / 9, label: "16:9" },
+    { ratio: 9 / 16, label: "9:16" },
+    { ratio: 4 / 3, label: "4:3" },
+    { ratio: 3 / 4, label: "3:4" },
+    { ratio: 3 / 2, label: "3:2" },
+    { ratio: 2 / 3, label: "2:3" },
+    { ratio: 21 / 9, label: "21:9" },
+    { ratio: 4 / 5, label: "4:5" },
+    { ratio: 5 / 4, label: "5:4" },
+];
 
 const log = debug("pollinations:vertex-ai");
 const errorLog = debug("pollinations:vertex-ai:error");
@@ -91,39 +106,20 @@ export async function generateImageWithVertexAI(
         // Calculate aspect ratio from width/height if provided
         let aspectRatio: string | undefined;
         if (request.width && request.height) {
-            // Find the closest standard aspect ratio
-            const ratio = request.width / request.height;
-            const standardRatios: { [key: string]: number } = {
-                "1:1": 1,
-                "16:9": 16 / 9,
-                "9:16": 9 / 16,
-                "4:3": 4 / 3,
-                "3:4": 3 / 4,
-                "3:2": 3 / 2,
-                "2:3": 2 / 3,
-                "21:9": 21 / 9,
-                "4:5": 4 / 5,
-                "5:4": 5 / 4,
-            };
-
-            let closestRatio = "1:1";
-            let minDiff = Math.abs(ratio - 1);
-
-            for (const [name, value] of Object.entries(standardRatios)) {
-                const diff = Math.abs(ratio - value);
-                if (diff < minDiff) {
-                    minDiff = diff;
-                    closestRatio = name;
-                }
-            }
-            aspectRatio = closestRatio;
+            aspectRatio = closestByRatio(
+                request.width,
+                request.height,
+                VERTEX_ASPECT_RATIOS,
+            ).label;
             log(
                 `Calculated aspect ratio: ${aspectRatio} from ${request.width}x${request.height}`,
             );
         }
 
         // Determine image size based on pixel count
-        // Both gemini-3-pro-image-preview and gemini-3.1-flash-image-preview support imageSize
+        // Both gemini-3-pro-image-preview and gemini-3.1-flash-image-preview support imageSize.
+        // gemini-3.1-flash-lite-image only outputs 1K (Vertex 400s on imageSize 2K/4K),
+        // so it is intentionally omitted — it defaults to 1K.
         let imageSize: string | undefined;
         if (
             (modelId === "gemini-3-pro-image-preview" ||

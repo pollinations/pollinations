@@ -48,6 +48,7 @@ SCHEMA >
 `resolved_model_requested`  LowCardinality(String) `json:$.resolvedModelRequested` DEFAULT 'undefined',
 `model_used`                LowCardinality(String) `json:$.modelUsed` DEFAULT 'undefined',
 `model_provider_used`       LowCardinality(String) `json:$.modelProviderUsed` DEFAULT 'undefined',
+`fallback_used`             Bool                   `json:$.fallbackUsed` DEFAULT false,
 `is_billed_usage`           Bool                   `json:$.isBilledUsage`,
 
 -- Pricing
@@ -85,6 +86,9 @@ SCHEMA >
 `total_price`   Float64 `json:$.totalPrice` DEFAULT 0,
 `dev_price`     Float64 `json:$.devPrice` DEFAULT 0,
 `markup_rate` Float64 `json:$.markupRate` DEFAULT 0,
+`community_model_reward_user_id` String `json:$.communityModelRewardUserId` DEFAULT 'undefined',
+`community_model_reward_rate` Float64 `json:$.communityModelRewardRate` DEFAULT 0,
+`community_model_reward_amount` Float64 `json:$.communityModelRewardAmount` DEFAULT 0,
 
 -- Prompt Moderation
 `moderation_prompt_hate_severity`       LowCardinality(String) `json:$.moderationPromptHateSeverity` DEFAULT 'undefined',

@@ -25,7 +25,7 @@ describe("docs routes", () => {
         vi.restoreAllMocks();
     });
 
-    it("serves a gen-owned OpenAPI schema and merges public account paths only", async () => {
+    it("serves a gen-owned OpenAPI schema and merges public Enter paths only", async () => {
         const ctx = createExecutionContext();
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(
@@ -50,7 +50,11 @@ describe("docs routes", () => {
         const enterSchema = {
             openapi: "3.1.0",
             info: { title: "Enter", version: "0.0.0" },
-            tags: [{ name: "👤 Account" }, { name: "Customer" }],
+            tags: [
+                { name: "👤 Account" },
+                { name: "✨ Quests" },
+                { name: "Customer" },
+            ],
             components: {
                 schemas: {
                     EnterOnly: { type: "object" },
@@ -59,6 +63,35 @@ describe("docs routes", () => {
             paths: {
                 "/account/key": { get: { tags: ["Account"] } },
                 "/api/account/profile": { get: { tags: ["👤 Account"] } },
+                "/api/account/quests": {
+                    get: {
+                        tags: ["👤 Account"],
+                        description:
+                            "Returns quest status. API keys require `account:usage`.",
+                    },
+                },
+                "/api/account/my-models": {
+                    get: {
+                        tags: ["👤 Account"],
+                        description:
+                            "List invite-only community text models. API keys require `account:keys`.",
+                    },
+                },
+                "/api/account/my-models/{id}/update": {
+                    post: { tags: ["👤 Account"] },
+                },
+                "/api/quests/catalog": {
+                    get: { tags: ["✨ Quests"], security: [] },
+                },
+                "/api/quests/check": {
+                    post: { tags: ["✨ Quests"], security: [{ session: [] }] },
+                },
+                "/api/quests/rewards": {
+                    get: { tags: ["✨ Quests"], security: [{ session: [] }] },
+                },
+                "/api/quests/rewards/{rewardId}/claim": {
+                    post: { tags: ["✨ Quests"], security: [{ session: [] }] },
+                },
                 "/api/customer/portal": { get: { tags: ["Customer"] } },
                 "/api-keys": { get: { tags: ["Customer"] } },
                 "/generate/text/{prompt}": { get: { tags: ["Old"] } },
@@ -91,19 +124,40 @@ describe("docs routes", () => {
         expect(schema.paths["/image/{prompt}"]).toBeDefined();
         expect(schema.paths["/account/key"]).toBeDefined();
         expect(schema.paths["/account/profile"]).toBeDefined();
+        expect(schema.paths["/account/quests"]).toBeDefined();
+        expect(schema.paths["/account/my-models"]).toBeDefined();
+        expect(schema.paths["/account/my-models/{id}/update"]).toBeDefined();
+        expect(schema.paths["/quests/catalog"]).toBeDefined();
         expect(schema.paths["/api/account/key"]).toBeUndefined();
         expect(schema.paths["/api/account/profile"]).toBeUndefined();
+        expect(schema.paths["/api/account/quests"]).toBeUndefined();
+        expect(schema.paths["/api/account/my-models"]).toBeUndefined();
+        expect(schema.paths["/api/quests/catalog"]).toBeUndefined();
+        expect(schema.paths["/quests/check"]).toBeUndefined();
+        expect(schema.paths["/quests/rewards"]).toBeUndefined();
+        expect(
+            schema.paths["/quests/rewards/{rewardId}/claim"],
+        ).toBeUndefined();
+        expect(schema.paths["/api/quests/check"]).toBeUndefined();
+        expect(schema.paths["/api/quests/rewards"]).toBeUndefined();
+        expect(
+            schema.paths["/api/quests/rewards/{rewardId}/claim"],
+        ).toBeUndefined();
         expect(schema.paths["/api/customer/portal"]).toBeUndefined();
         expect(schema.paths["/api-keys"]).toBeUndefined();
         expect(schema.paths["/generate/text/{prompt}"]).toBeUndefined();
         expect(schema.paths["/{hash}"]).toBeDefined();
-        // BYOP, CLI, MCP are surfaced as tags in the Integrations group.
-        expect(schema.tags.map((tag) => tag.name)).toContain("🌸 BYOP");
-        expect(schema.tags.map((tag) => tag.name)).toContain("🖥 CLI");
-        expect(schema.tags.map((tag) => tag.name)).toContain("🔌 MCP Server");
-        expect(schema.tags.map((tag) => tag.name)).toContain(
-            "📦 Media Storage",
-        );
+        // BYOP, CLI, MCP are surfaced as plain tags in the Integrations group;
+        // the drawer icons are presentation, not part of the OpenAPI names.
+        expect(schema.tags.map((tag) => tag.name)).toContain("BYOP");
+        expect(schema.tags.map((tag) => tag.name)).toContain("CLI");
+        expect(schema.tags.map((tag) => tag.name)).toContain("MCP Server");
+        expect(schema.tags.map((tag) => tag.name)).toContain("Quests");
+        expect(schema.tags.map((tag) => tag.name)).toContain("Media Storage");
+        expect(schema.tags.map((tag) => tag.name)).toContain("Account");
+        expect(schema.tags.map((tag) => tag.name)).not.toContain("🌸 BYOP");
+        expect(schema.tags.map((tag) => tag.name)).not.toContain("👤 Account");
+        expect(schema.tags.map((tag) => tag.name)).not.toContain("✨ Quests");
         expect(schema.tags.map((tag) => tag.name)).not.toContain("Customer");
         expect(schema.components.schemas.EnterOnly).toBeDefined();
         expect(schema.components.schemas.MediaOnly).toBeDefined();
@@ -128,6 +182,22 @@ describe("docs routes", () => {
             schema.paths["/account/key"] as Record<string, unknown>
         )?.get as Record<string, unknown> | undefined;
         expect(accountKeyGet?.["x-codeSamples"]).toBeDefined();
+
+        const accountQuestsGet = (
+            schema.paths["/account/quests"] as Record<string, unknown>
+        )?.get as Record<string, unknown> | undefined;
+        expect(accountQuestsGet?.description).toContain("account:usage");
+
+        const myModelsGet = (
+            schema.paths["/account/my-models"] as Record<string, unknown>
+        )?.get as Record<string, unknown> | undefined;
+        expect(myModelsGet?.description).toContain("account:keys");
+
+        // The catalog is unauthenticated → marked public (security: []).
+        const questsCatalogGet = (
+            schema.paths["/quests/catalog"] as Record<string, unknown>
+        )?.get as Record<string, unknown> | undefined;
+        expect(questsCatalogGet?.security).toEqual([]);
     });
 
     it("does not add noindex to docs responses at the worker boundary", async () => {
@@ -159,6 +229,13 @@ describe("docs routes", () => {
         const html = await response.text();
         expect(html).toContain(".scalar-app .markdown table");
         expect(html).toContain("overflow-x: auto");
+        expect(html).toContain(
+            'property="og:title" content="Docs | pollinations.ai"',
+        );
+        expect(html).toContain(
+            'property="og:image" content="https://gen.pollinations.ai/og-image.png"',
+        );
+        expect(html).toContain('rel="manifest" href="/manifest.webmanifest"');
     });
 
     it("serves the OpenAPI schema as YAML when ?format=yaml", async () => {
@@ -191,7 +268,6 @@ describe("docs routes", () => {
         );
         expect(indexRes.status).toBe(200);
         const indexHtml = await indexRes.text();
-        expect(indexHtml).toContain("guide-card");
         expect(indexHtml).toContain("/docs/guides/byop");
         expect(indexHtml).toContain("/docs/guides/cli");
         expect(indexHtml).toContain("/docs/guides/mcp");

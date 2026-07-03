@@ -44,6 +44,15 @@ beforeEach(() => {
                         max_reference_videos: 10,
                     },
                     {
+                        name: "alice/deepseek",
+                        aliases: ["community/alice/deepseek"],
+                        title: "DeepSeek by @alice",
+                        category: "text",
+                        community: true,
+                        input_modalities: ["text"],
+                        output_modalities: ["text"],
+                    },
+                    {
                         name: "embedding-small",
                         title: "Embedding Small",
                         category: "embedding",
@@ -105,6 +114,7 @@ describe("fetchModelCatalog", () => {
         ).toEqual([
             ["still", "image"],
             ["movie", "video"],
+            ["alice/deepseek", "text"],
             ["speech-from-chat", "audio"],
             ["tts", "audio"],
             ["embedding-small", "embedding"],
@@ -140,6 +150,16 @@ describe("fetchModelCatalog", () => {
             maxReferenceImages: 2,
             maxReferenceVideos: 10,
         });
+        const communityModel = catalog.models.find(
+            (model) => model.id === "alice/deepseek",
+        );
+        expect(communityModel).toMatchObject({
+            category: "text",
+            community: true,
+            aliases: ["community/alice/deepseek"],
+            inputModalities: ["text"],
+            outputModalities: ["text"],
+        });
         // Curated catalog item — raw ModelInfo wire fields don't leak through.
         expect(stillModel).not.toHaveProperty("input_modalities");
         expect(stillModel).not.toHaveProperty("output_modalities");
@@ -152,14 +172,18 @@ describe("fetchModelCatalog", () => {
         expect(stillModel).not.toHaveProperty("source");
     });
 
-    it("drops models with a missing title or category", async () => {
+    it("drops models missing a title or category but keeps unknown categories", async () => {
         fetchMock.mockImplementation((url: string) => {
             if (url.endsWith("/models")) {
                 return Promise.resolve(
                     jsonResponse([
                         { name: "no-category", output_modalities: ["video"] },
-                        { name: "bad-category", category: "hologram" },
                         { name: "no-title", category: "text" },
+                        {
+                            name: "new-category",
+                            title: "New",
+                            category: "hologram",
+                        },
                         { name: "good", title: "Good", category: "text" },
                     ]),
                 );
@@ -171,7 +195,11 @@ describe("fetchModelCatalog", () => {
             baseUrl: "https://example.test",
         });
 
-        expect(catalog.models.map((model) => model.id)).toEqual(["good"]);
+        // Unknown categories pass through and sort after the known ones.
+        expect(catalog.models.map((model) => model.id)).toEqual([
+            "good",
+            "new-category",
+        ]);
     });
 
     it("fetches allowed models from the rich catalog endpoint only", async () => {

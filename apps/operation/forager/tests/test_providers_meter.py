@@ -139,6 +139,31 @@ def test_deepinfra_meter_retrieved_at(monkeypatch):
     assert rows[0]["retrieved_at"] == TODAY
 
 
+def test_deepinfra_meter_to_capped_at_now(monkeypatch):
+    """to= epoch must never exceed time.time() (cap for current-month window)."""
+    import time as _time_mod
+
+    fixed_now = 1_780_272_000  # 2026-06-01 00:00:00 UTC — mid-future relative to 2026-06
+
+    monkeypatch.setattr(_di, "time", type(_time_mod)("_fake_time"))
+    # Inject a fake time module with a fixed time() into the deepinfra module
+    import types
+    fake_time_mod = types.ModuleType("time")
+    fake_time_mod.time = lambda: fixed_now
+    monkeypatch.setattr(_di, "time", fake_time_mod)
+
+    cap = Capture([{"months": [{"total_cost": 100}]}])
+    monkeypatch.setattr(_di, "http_json", cap)
+    # Query 2026-06 — whose month-end would be 2026-07-01 00:00:00 UTC (1_782_950_400)
+    # But time.time() is fixed at 2026-06-01 00:00:00, so to must be ≤ fixed_now
+    _di.meter(_DI_CREDS, ["2026-06"], TODAY)
+    url = cap.calls[0]["url"]
+    import urllib.parse
+    qs = urllib.parse.parse_qs(urllib.parse.urlparse(url).query)
+    to_val = int(qs["to"][0])
+    assert to_val <= fixed_now, f"to= {to_val} exceeds fixed now={fixed_now}"
+
+
 # ===========================================================================
 # ovh.meter
 # ===========================================================================
@@ -319,11 +344,19 @@ def test_vast_meter_empty_returns_empty():
 
 _FW_CREDS = {"FIREWORKS_API_KEY": "fw-key"}
 
-# POSTPAID invoice cut 2026-07-01 covers usage month 2026-06
+# Real firectl billing list-invoices layout:
+#   ID  AMOUNT  CURRENCY  TYPE  INVOICE_URL  STATE  TARGET_DATE  TARGET_TIME  PAID_DATE  PAID_TIME
+# TARGET_DATE + TARGET_TIME are two separate whitespace tokens.
+# POSTPAID invoice cut 2026-07-01 covers usage month 2026-06.
+# PREPAID_CREDITS rows have stripe URLs and are excluded by type.
+# 0.00-amount POSTPAID rows exist and are excluded by amount.
 _FW_INVOICE_OUTPUT = """\
-inv-001   10.00 USD   POSTPAID_BILLING   PAID   2026-07-01
-inv-002    5.50 USD   POSTPAID_BILLING   PAID   2026-06-01
-inv-003   99.00 USD   PREPAID_CREDITS    PAID   2026-07-01
+ID  AMOUNT  TYPE  INVOICE URL  STATE  TARGET TIME  PAID TIME
+VCbMHvhn5FwFgYHY  10.00  USD  POSTPAID_BILLING  https://invoices.withorb.com/view?token=FAKE001  PAID  2026-07-01  02:00:00  2026-07-02  07:24:50
+AbCdEfGh12345678   5.50  USD  POSTPAID_BILLING  https://invoices.withorb.com/view?token=FAKE002  PAID  2026-06-01  02:00:00  2026-06-02  07:24:50
+StRiPeInVoIcEurl  99.00  USD  PREPAID_CREDITS   https://pay.stripe.com/invoice/FAKE003          PAID  2026-07-01  02:00:00  2026-07-02  07:24:50
+ZeRoAmOuNtInVoId   0.00  USD  POSTPAID_BILLING  https://invoices.withorb.com/view?token=FAKE004  PAID  2026-07-01  02:00:00  2026-07-02  07:24:50
+DrAfTiNvOiCeIddd   8.00  USD  POSTPAID_BILLING  https://invoices.withorb.com/view?token=FAKE005  DRAFT 2026-08-01  02:00:00
 """
 
 
@@ -347,7 +380,11 @@ def test_fireworks_meter_prepaid_credits_ignored():
 
 def test_fireworks_meter_postpaid_paid_only():
     """Only POSTPAID_BILLING + PAID rows count; UNPAID skipped."""
-    output = "inv-x  20.00 USD  POSTPAID_BILLING  UNPAID  2026-07-01\n"
+    output = (
+        "InVoIcExXxUnPaId  20.00  USD  POSTPAID_BILLING"
+        "  https://invoices.withorb.com/view?token=FAKEUNPAID"
+        "  UNPAID  2026-07-01  02:00:00  \n"
+    )
     fake_run = lambda cmd, **kw: _fake_result(stdout=output)
     rows = _fw.meter(_FW_CREDS, ["2026-06"], TODAY, run_cmd=fake_run)
     assert rows == []
@@ -377,7 +414,11 @@ def test_fireworks_meter_missing_key_returns_empty():
 
 def test_fireworks_meter_zero_amount_excluded():
     """$0.00 POSTPAID+PAID invoice must not produce a row."""
-    output = "inv-z  0.00 USD  POSTPAID_BILLING  PAID  2026-07-01\n"
+    output = (
+        "ZeRoAmOuNtInVoId   0.00  USD  POSTPAID_BILLING"
+        "  https://invoices.withorb.com/view?token=FAKEZ"
+        "  PAID  2026-07-01  02:00:00  2026-07-02  07:24:50\n"
+    )
     fake_run = lambda cmd, **kw: _fake_result(stdout=output)
     rows = _fw.meter(_FW_CREDS, ["2026-06"], TODAY, run_cmd=fake_run)
     assert rows == []
@@ -385,7 +426,11 @@ def test_fireworks_meter_zero_amount_excluded():
 
 def test_fireworks_meter_january_shift():
     """Invoice cut 2026-01-01 → usage month 2025-12."""
-    output = "inv-jan  10.00 USD  POSTPAID_BILLING  PAID  2026-01-01\n"
+    output = (
+        "JaNiNvOiCeJanWrp  10.00  USD  POSTPAID_BILLING"
+        "  https://invoices.withorb.com/view?token=FAKEJAN"
+        "  PAID  2026-01-01  02:00:00  2026-01-02  07:24:50\n"
+    )
     fake_run = lambda cmd, **kw: _fake_result(stdout=output)
     rows = _fw.meter(_FW_CREDS, ["2025-12", "2026-01"], TODAY, run_cmd=fake_run)
     months = {r["month"] for r in rows}
@@ -487,11 +532,20 @@ def test_aws_meter_provider_slug():
         assert r["provider"] == "aws"
 
 
-def test_aws_meter_failure_returns_empty():
-    """CLI failure → returns empty list (graceful)."""
-    fake_run = lambda cmd, **kw: _fake_result(stdout="NOT JSON", returncode=1)
-    rows = _aws.meter(_AWS_CREDS, ["2026-04"], TODAY, run_cmd=fake_run)
-    assert rows == []
+def test_aws_meter_run_cmd_error_propagates():
+    """run_cmd raising (e.g. JSON parse error) must propagate — not be swallowed."""
+    def raising_run(cmd, **kw):
+        raise RuntimeError("aws CE connection refused")
+
+    with pytest.raises(RuntimeError, match="aws CE connection refused"):
+        _aws.meter(_AWS_CREDS, ["2026-04"], TODAY, run_cmd=raising_run)
+
+
+def test_aws_meter_bad_json_propagates():
+    """Non-JSON stdout raises JSONDecodeError — not silently returns []."""
+    fake_run = lambda cmd, **kw: _fake_result(stdout="NOT JSON", returncode=0)
+    with pytest.raises(Exception):
+        _aws.meter(_AWS_CREDS, ["2026-04"], TODAY, run_cmd=fake_run)
 
 
 # ===========================================================================
@@ -546,55 +600,67 @@ def test_gcp_meter_credit_rows():
 
 
 def test_gcp_meter_tempfile_deleted_on_success():
-    """Key tempfile must be deleted after successful run."""
-    deleted_files = []
-    created_files = []
-
-    import builtins
-    orig_open = builtins.open
-
-    # Track file creation via NamedTemporaryFile
+    """Key tempfile must be deleted after a SUCCESSFUL run (not just on failure)."""
     import tempfile as _tf
-    orig_ntf = _tf.NamedTemporaryFile
+    import os
 
-    class TrackingNTF:
+    import ingest.connectors.providers.gcp as _gcp_mod
+
+    real_ntf = _tf.NamedTemporaryFile
+    orig_unlink = os.unlink
+
+    captured_path = []
+    unlinked = []
+
+    class CapturingNTF:
+        """Wraps NamedTemporaryFile with delete=False so we can track the path."""
         def __init__(self, *a, **kw):
-            self._ntf = orig_ntf(*a, **kw)
-            created_files.append(self._ntf.name)
-
-        def __enter__(self):
-            return self._ntf.__enter__()
-
-        def __exit__(self, *a):
-            return self._ntf.__exit__(*a)
+            kw["delete"] = False
+            self._f = real_ntf(*a, **kw)
 
         @property
         def name(self):
-            return self._ntf.name
+            return self._f.name
 
-    import os
-    orig_os_unlink = os.unlink
+        def write(self, data):
+            return self._f.write(data)
 
-    def tracking_unlink(path):
-        deleted_files.append(path)
-        # Don't actually delete (file may already be gone in delete=True NTF)
+        def flush(self):
+            return self._f.flush()
+
+        def __enter__(self):
+            self._f.__enter__()
+            return self
+
+        def __exit__(self, *a):
+            return self._f.__exit__(*a)
+
+    def fake_ntf(*a, **kw):
+        ntf = CapturingNTF(*a, **kw)
+        captured_path.append(ntf.name)
+        return ntf
+
+    def fake_unlink(path):
+        unlinked.append(path)
         try:
-            orig_os_unlink(path)
+            orig_unlink(path)
         except FileNotFoundError:
             pass
 
-    import ingest.connectors.providers.gcp as _gcp_mod
-    monkeypatch_unlink = None
+    _gcp_mod._NamedTemporaryFile = fake_ntf
+    _gcp_mod._os_unlink = fake_unlink
+    try:
+        rows = _gcp_mod.meter(_GCP_CREDS, ["2026-04", "2026-05"], TODAY, run_cmd=_gcp_run_success)
+        assert isinstance(rows, list)
+        assert len(rows) >= 1, "expected meter rows from successful bq run"
+    finally:
+        _gcp_mod._NamedTemporaryFile = real_ntf
+        _gcp_mod._os_unlink = orig_unlink
 
-    # Simpler approach: just verify the tempfile is cleaned up by checking
-    # that after meter() returns, the key JSON is not lingering.
-    # We test by running meter with a real temp file check.
-
-    # Instead, let's just test that gcp.meter raises/returns on bq failure
-    # and still cleans up — we do this by checking the finally block indirectly.
-    rows = _gcp.meter(_GCP_CREDS, ["2026-04", "2026-05"], TODAY, run_cmd=_gcp_run_success)
-    # If we get here without error, the finally ran. Structural test.
-    assert isinstance(rows, list)
+    assert captured_path, "NamedTemporaryFile was never called"
+    assert captured_path[0] in unlinked, (
+        f"GCP SA key tempfile {captured_path[0]} was NOT deleted after successful run"
+    )
 
 
 def test_gcp_meter_tempfile_deleted_even_on_raise():

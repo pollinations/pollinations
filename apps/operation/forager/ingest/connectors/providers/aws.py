@@ -47,66 +47,60 @@ def meter(creds, months, today, run_cmd=subprocess.run):
     cash_filter = json.dumps({
         "Not": {"Dimensions": {"Key": "RECORD_TYPE", "Values": ["Credit", "Refund"]}}
     })
-    try:
-        r = run_cmd(
-            ["aws", "ce", "get-cost-and-usage",
-             "--time-period", f"Start={start},End={end}",
-             "--granularity", "MONTHLY",
-             "--metrics", "UnblendedCost",
-             "--filter", cash_filter,
-             "--output", "json"],
-            capture_output=True, text=True, timeout=60,
-        )
-        d = json.loads(r.stdout)
-        for row in d.get("ResultsByTime", []):
-            month = row["TimePeriod"]["Start"][:7]
-            if month not in month_set:
-                continue
-            amt = round(float(row["Total"]["UnblendedCost"]["Amount"]), 2)
-            if amt:
-                rows.append(_mrow(
-                    month=month,
-                    provider="aws",
-                    cost_usd=amt,
-                    funding="cash",
-                    source="cli",
-                    method="aws ce get-cost-and-usage (net-of-credits)",
-                    today=today,
-                ))
-    except Exception:
-        return []
+    r = run_cmd(
+        ["aws", "ce", "get-cost-and-usage",
+         "--time-period", f"Start={start},End={end}",
+         "--granularity", "MONTHLY",
+         "--metrics", "UnblendedCost",
+         "--filter", cash_filter,
+         "--output", "json"],
+        capture_output=True, text=True, timeout=60,
+    )
+    d = json.loads(r.stdout)
+    for row in d.get("ResultsByTime", []):
+        month = row["TimePeriod"]["Start"][:7]
+        if month not in month_set:
+            continue
+        amt = round(float(row["Total"]["UnblendedCost"]["Amount"]), 2)
+        if amt:
+            rows.append(_mrow(
+                month=month,
+                provider="aws",
+                cost_usd=amt,
+                funding="cash",
+                source="cli",
+                method="aws ce get-cost-and-usage (net-of-credits)",
+                today=today,
+            ))
 
     # --- Pass 2: credit (RECORD_TYPE=Credit, absolute value = grant burn) ---
     credit_filter = json.dumps({
         "Dimensions": {"Key": "RECORD_TYPE", "Values": ["Credit"]}
     })
-    try:
-        r2 = run_cmd(
-            ["aws", "ce", "get-cost-and-usage",
-             "--time-period", f"Start={start},End={end}",
-             "--granularity", "MONTHLY",
-             "--metrics", "UnblendedCost",
-             "--filter", credit_filter,
-             "--output", "json"],
-            capture_output=True, text=True, timeout=60,
-        )
-        d2 = json.loads(r2.stdout)
-        for row in d2.get("ResultsByTime", []):
-            month = row["TimePeriod"]["Start"][:7]
-            if month not in month_set:
-                continue
-            amt = round(abs(float(row["Total"]["UnblendedCost"]["Amount"])), 2)
-            if amt:
-                rows.append(_mrow(
-                    month=month,
-                    provider="aws",
-                    cost_usd=amt,
-                    funding="credit",
-                    source="cli",
-                    method="aws ce get-cost-and-usage (RECORD_TYPE=Credit)",
-                    today=today,
-                ))
-    except Exception:
-        pass
+    r2 = run_cmd(
+        ["aws", "ce", "get-cost-and-usage",
+         "--time-period", f"Start={start},End={end}",
+         "--granularity", "MONTHLY",
+         "--metrics", "UnblendedCost",
+         "--filter", credit_filter,
+         "--output", "json"],
+        capture_output=True, text=True, timeout=60,
+    )
+    d2 = json.loads(r2.stdout)
+    for row in d2.get("ResultsByTime", []):
+        month = row["TimePeriod"]["Start"][:7]
+        if month not in month_set:
+            continue
+        amt = round(abs(float(row["Total"]["UnblendedCost"]["Amount"])), 2)
+        if amt:
+            rows.append(_mrow(
+                month=month,
+                provider="aws",
+                cost_usd=amt,
+                funding="credit",
+                source="cli",
+                method="aws ce get-cost-and-usage (RECORD_TYPE=Credit)",
+                today=today,
+            ))
 
     return rows

@@ -102,10 +102,10 @@ def meter(creds, months, today, run_cmd=subprocess.run):
             amt = float(t[i - 2].replace(",", ""))
         except (ValueError, IndexError):
             continue
-        if len(t) <= i + 2:
+        if len(t) <= i + 3:
             continue
-        state = t[i + 1]
-        target = t[i + 2]  # invoice date, e.g. "2026-07-01"
+        state = t[i + 2]
+        target = t[i + 3]  # invoice date, e.g. "2026-07-01"
         if state != "PAID" or amt <= 0:
             continue
         ty, tm = int(target[:4]), int(target[5:7])

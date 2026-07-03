@@ -9,8 +9,11 @@ Balance:
 Meter:
   GET https://api.deepinfra.com/payment/usage?from={epoch}&to={epoch}
   Epoch-second windows only; total_cost is in CENTS — divide by 100.
+  The `to` epoch is capped at time.time() so the current-month window
+  never extends into the future.
 """
 import datetime
+import time
 
 from ..common import http_json
 from . import _brow, _mrow
@@ -51,7 +54,10 @@ def meter(creds, months, today):
         y, m = int(month[:4]), int(month[5:7])
         ny, nm = (y + 1, 1) if m == 12 else (y, m + 1)
         frm = int(datetime.datetime(y, m, 1, tzinfo=datetime.timezone.utc).timestamp())
-        to = int(datetime.datetime(ny, nm, 1, tzinfo=datetime.timezone.utc).timestamp())
+        to = min(
+            int(datetime.datetime(ny, nm, 1, tzinfo=datetime.timezone.utc).timestamp()),
+            int(time.time()),
+        )
         try:
             d = http_json(
                 f"https://api.deepinfra.com/payment/usage?from={frm}&to={to}",

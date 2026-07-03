@@ -1,0 +1,14 @@
+TOKEN "treasury_web" READ
+
+NODE endpoint
+SQL >
+    SELECT paid_at, provider, category, counterparty, amount_eur,
+           round(amount_eur * (
+               SELECT coalesce(argMax(value_num, entered_at), 1.14)
+               FROM overrides WHERE scope = 'config' AND key = 'fx_eur_usd'
+           ), 2) AS amount_usd,
+           wise_ref
+    FROM payments
+    ORDER BY paid_at DESC, counterparty
+
+TYPE endpoint

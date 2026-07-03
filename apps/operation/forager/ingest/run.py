@@ -10,6 +10,7 @@ TOKEN MODEL: three TB instances:
   tb_prod     — TINYBIRD_PROD_READ_TOKEN   → SQL read-only from pollinations_enter prod
 """
 import datetime
+import concurrent.futures
 import inspect
 import json
 import os
@@ -39,6 +40,27 @@ def load_overrides(ops_ingest):
     return {(r["scope"], r["key"], r["field"]):
             (r["value_num"] if r.get("value_num") is not None else r.get("value_str", ""))
             for r in rows}
+
+
+def apply_payment_rules(rows, overrides, slug_cat):
+    """Re-stamp payment rows via operator counterparty rules.
+
+    An overrides row (scope='payments', key=<counterparty>, field='provider')
+    maps every payment from that counterparty to a provider slug; category
+    follows the slug's default. Mutates rows in place, returns changed count.
+    """
+    rules = {key: str(val) for (scope, key, field), val in overrides.items()
+             if scope == "payments" and field == "provider" and val}
+    if not rules:
+        return 0
+    changed = 0
+    for row in rows:
+        target = rules.get(row.get("counterparty", ""))
+        if target and row.get("provider") != target:
+            row["provider"] = target
+            row["category"] = slug_cat.get(target, "compute")
+            changed += 1
+    return changed
 
 
 def dedupe_invoices(rows):
@@ -164,8 +186,8 @@ def rebuild_archive_invoices(cfg, today):
     billing_map = _extract._build_billing_map(creds.load_credits())
     agent_creds = creds.load_creds()
     items = list(_archive_pdfs(cfg))
-    rows = []
     seen = set()
+    tasks = []
     stats = {
         "scanned": 0,
         "rebuilt": 0,
@@ -185,26 +207,71 @@ def rebuild_archive_invoices(cfg, today):
             sys.stderr.flush()
             continue
         seen.add(file_sha)
+        tasks.append((idx, path, slug, category, msgid, file_sha))
 
-        row = _extract.build_row(
+    parallelism = max(1, int(cfg.get("invoice_ai_parallelism", 10)))
+    sys.stderr.write(
+        f"  rebuilding invoices: {len(tasks)} unique PDFs, "
+        f"{stats['dup_sha']} dup_sha, parallelism={parallelism}\n"
+    )
+    sys.stderr.flush()
+
+    rows_by_idx = {}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=parallelism) as executor:
+        futures = {
+            executor.submit(
+                _build_archive_invoice_row,
+                task, cfg, today, billing_map, agent_creds,
+            ): task
+            for task in tasks
+        }
+        for future in concurrent.futures.as_completed(futures):
+            idx, path, _slug, _category, _msgid, _file_sha = futures[future]
+            row = future.result()
+            rows_by_idx[idx] = row
+
+            stats["rebuilt"] += 1
+            status = row.get("status", "")
+            if status in stats:
+                stats[status] += 1
+            sys.stderr.write(
+                f"  invoice {idx}/{total} {status or 'unknown':12} "
+                f"{row.get('provider', ''):14} {row.get('period_month', ''):7} "
+                f"{os.path.basename(path)} ({stats['rebuilt']}/{len(tasks)} done)\n"
+            )
+            sys.stderr.flush()
+
+    rows = [
+        rows_by_idx[idx]
+        for idx, _path, _slug, _category, _msgid, _file_sha in tasks
+    ]
+    return rows, stats
+
+
+def _build_archive_invoice_row(task, cfg, today, billing_map, agent_creds):
+    idx, path, slug, category, msgid, file_sha = task
+    try:
+        return _extract.build_row(
             path, slug, category, msgid, "agent",
             cfg, today, billing_map=billing_map,
             file_hash=file_sha, creds=agent_creds,
         )
-        rows.append(row)
-
-        stats["rebuilt"] += 1
-        status = row.get("status", "")
-        if status in stats:
-            stats[status] += 1
-        sys.stderr.write(
-            f"  invoice {idx}/{total} {status or 'unknown':12} "
-            f"{row.get('provider', ''):14} {row.get('period_month', ''):7} "
-            f"{os.path.basename(path)}\n"
-        )
-        sys.stderr.flush()
-
-    return rows, stats
+    except RuntimeError as e:
+        if "pdftoppm failed" not in str(e):
+            raise
+        result = {
+            "provider": slug or "other",
+            "category": category or "other",
+            "kind": "",
+            "period_month": "",
+            "amount": 0,
+            "currency": "USD",
+            "invoice_number": "unreadable_pdf",
+            "issued_at": today,
+            "status": "needs_review",
+            "credit_usd": 0,
+        }
+        return _extract.build_row_from_result(path, file_sha, result, "agent", today)
 
 
 def reparse_invoices(cfg, ops_ingest, today, dry_run=True):
@@ -483,6 +550,19 @@ def main():
         key for (scope, key, field) in overrides
         if scope == "reconciliation" and field == "accepted"
     ]
+
+    # 3.5 Operator counterparty rules → re-stamp the whole payments table
+    # (history included, so one rule drains the (unmatched) bucket everywhere).
+    try:
+        if any(s == "payments" and f == "provider" for (s, _k, f) in overrides):
+            slug_cat = {slug: cat for slug, cat, _ in harvest.PROVIDERS}
+            pay_rows = ops_ingest.sql("SELECT * FROM payments")
+            n = apply_payment_rules(pay_rows, overrides, slug_cat)
+            if n:
+                ops_replace.replace("payments", pay_rows)
+            st["payment_rules"] = n
+    except Exception as e:
+        notes.append(f"payment rules failed: {_sanitize_err(e, c)}")
 
     # 4. Burn stage first — provider_month folds every credit-burn evidence source.
     tb_prod = tb.TB(cfg["tb_prod_api"], c["TINYBIRD_PROD_READ_TOKEN"])

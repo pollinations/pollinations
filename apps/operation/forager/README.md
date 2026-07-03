@@ -167,8 +167,9 @@ python3 -m ingest.run --backfill
 ```
 
 Backfill refreshes the local PDF archive, runs the invoice agent over every archived
-PDF, replaces the `invoices` datasource with one row per unique file, then rebuilds
-payments, burn/provider-month, grants, reconciliation, and the chase list.
+PDF in parallel (`config.json` `invoice_ai_parallelism`), replaces the `invoices`
+datasource with one row per unique file, then rebuilds payments, burn/provider-month,
+grants, reconciliation, and the chase list.
 
 ---
 

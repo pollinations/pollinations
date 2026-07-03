@@ -6,6 +6,7 @@
     "archive_dir": "~/Documents/treasury-invoices",
     "invoice_ai_model": "qwen-vision-pro",
     "invoice_ai_reasoning_effort": "high",
+    "invoice_ai_parallelism": 10,
     "gog_account": "elliot@myceli.ai",
     "aws_profile": "myceli-management",
     "repull_months": 2,

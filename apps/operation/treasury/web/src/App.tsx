@@ -10,11 +10,20 @@ import {
     Text,
 } from "@pollinations/ui";
 import { useEffect, useMemo, useState } from "react";
+import { CommitTray } from "./components/CommitTray";
 import { SourceLegend } from "./components/SourceLegend";
 import { STALE_AFTER_HOURS } from "./config";
 import { hoursSince } from "./lib/format";
+import { StagingProvider } from "./lib/staging";
 import { fixturesMode, loadAll, TbError } from "./lib/tb";
-import { clearToken, getToken, setToken } from "./lib/token";
+import {
+    clearAppendToken,
+    clearToken,
+    getAppendToken,
+    getToken,
+    setAppendToken,
+    setToken,
+} from "./lib/token";
 import type { Data } from "./types";
 import { BurnTab } from "./views/BurnTab";
 import { CreditsTab } from "./views/CreditsTab";
@@ -39,34 +48,44 @@ function TokenGate({
     onSubmit,
 }: {
     error: string | null;
-    onSubmit: (token: string) => void;
+    onSubmit: (token: string, appendToken: string) => void;
 }) {
     const [value, setValue] = useState("");
+    const [appendValue, setAppendValue] = useState("");
 
     return (
         <div className="mx-auto mt-24 flex max-w-md flex-col gap-4 px-4">
             <Heading as="h1">Treasury</Heading>
             <Text tone="soft">
-                Paste the treasury_web read token. It is stored only in this
-                browser.
+                Paste the treasury_web read token. Add treasury_append only when
+                you need editing. Tokens are stored only in this browser.
             </Text>
             {error && <Alert intent="warning">{error}</Alert>}
             <form
                 className="flex gap-2"
                 onSubmit={(event) => {
                     event.preventDefault();
-                    if (value.trim()) onSubmit(value);
+                    if (value.trim()) onSubmit(value, appendValue);
                 }}
             >
-                <Input
-                    type="password"
-                    autoFocus
-                    placeholder="p.eyJ..."
-                    value={value}
-                    onChange={(event) => setValue(event.target.value)}
-                    className="flex-1"
-                />
-                <Button type="submit">Connect</Button>
+                <div className="flex flex-1 flex-col gap-2">
+                    <Input
+                        type="password"
+                        autoFocus
+                        placeholder="treasury_web read token"
+                        value={value}
+                        onChange={(event) => setValue(event.target.value)}
+                    />
+                    <Input
+                        type="password"
+                        placeholder="append token (for editing)"
+                        value={appendValue}
+                        onChange={(event) => setAppendValue(event.target.value)}
+                    />
+                </div>
+                <Button type="submit" className="self-start">
+                    Connect
+                </Button>
             </form>
         </div>
     );
@@ -75,11 +94,13 @@ function TokenGate({
 export default function App() {
     const fixtures = fixturesMode();
     const [token, setTokenState] = useState(getToken());
+    const [appendToken, setAppendTokenState] = useState(getAppendToken());
     const [authError, setAuthError] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [data, setData] = useState<Data | null>(null);
     const [tab, setTab] = useState<Tab>("recon");
     const [attempt, setAttempt] = useState(0);
+    const [committedAwaitingIngest, setCommittedAwaitingIngest] = useState(0);
     const ready = fixtures || token !== "";
 
     useEffect(() => {
@@ -101,7 +122,9 @@ export default function App() {
                     (caught.status === 401 || caught.status === 403)
                 ) {
                     clearToken();
+                    clearAppendToken();
                     setTokenState("");
+                    setAppendTokenState("");
                     setAuthError(
                         `Token rejected (${caught.message}) - paste a valid one.`,
                     );
@@ -130,8 +153,12 @@ export default function App() {
                 <ScrollArea axis="y" className="min-h-0 flex-1">
                     <TokenGate
                         error={authError}
-                        onSubmit={(newToken) => {
+                        onSubmit={(newToken, newAppendToken) => {
                             setToken(newToken);
+                            if (newAppendToken.trim()) {
+                                setAppendToken(newAppendToken);
+                                setAppendTokenState(newAppendToken.trim());
+                            }
                             setAuthError(null);
                             setTokenState(newToken.trim());
                         }}
@@ -142,100 +169,123 @@ export default function App() {
     }
 
     return (
-        <div
-            data-theme="amber"
-            className="flex h-dvh min-h-0 flex-col overflow-hidden bg-app-bg text-theme-text-strong"
+        <StagingProvider
+            appendToken={appendToken}
+            fixtures={fixtures}
+            onCommitted={(count) => {
+                setCommittedAwaitingIngest((current) => current + count);
+                setAttempt((current) => current + 1);
+            }}
         >
-            <ScrollArea axis="y" className="min-h-0 flex-1">
-                <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10">
-                    <header className="flex flex-col gap-4 border-b border-theme-border/70 pb-5 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="min-w-0">
-                            <Text
-                                size="micro"
-                                tone="soft"
-                                weight="bold"
-                                className="mb-2 uppercase tracking-wide"
-                            >
-                                Operations
-                            </Text>
-                            <Heading as="h1" size="title">
-                                Treasury
-                            </Heading>
-                            <Text tone="soft" className="mt-2 max-w-3xl">
-                                Raw Tinybird tables for operator review. Edits
-                                append facts; forager folds them in on the next
-                                run.
-                            </Text>
-                            <SourceLegend />
-                        </div>
-                        <div className="flex shrink-0 flex-wrap items-center gap-2">
-                            {fixtures && <Chip intent="alpha">fixtures</Chip>}
-                            {staleHours !== null &&
-                                staleHours <= STALE_AFTER_HOURS && (
-                                    <Chip size="sm">
-                                        data {Math.round(staleHours)}h old
-                                    </Chip>
-                                )}
-                            {!fixtures && (
-                                <Button
-                                    size="sm"
-                                    onClick={() => {
-                                        clearToken();
-                                        setTokenState("");
-                                        setData(null);
-                                    }}
+            <div
+                data-theme="amber"
+                data-committed-awaiting-ingest={committedAwaitingIngest}
+                className="flex h-dvh min-h-0 flex-col overflow-hidden bg-app-bg text-theme-text-strong"
+            >
+                <ScrollArea axis="y" className="min-h-0 flex-1">
+                    <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 pb-32 sm:px-6 sm:py-10 sm:pb-32">
+                        <header className="flex flex-col gap-4 border-b border-theme-border/70 pb-5 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="min-w-0">
+                                <Text
+                                    size="micro"
+                                    tone="soft"
+                                    weight="bold"
+                                    className="mb-2 uppercase tracking-wide"
                                 >
-                                    Reset token
-                                </Button>
-                            )}
-                            <ColorModeToggle />
-                        </div>
-                    </header>
-
-                    {staleHours !== null && staleHours > STALE_AFTER_HOURS && (
-                        <Alert intent="warning" title="Stale data">
-                            Last forager run was {Math.round(staleHours)}h ago.
-                            Run <code>python3 -m ingest.run</code> for fresh
-                            numbers.
-                        </Alert>
-                    )}
-
-                    <nav className="flex flex-wrap gap-2">
-                        {TABS.map((item) => (
-                            <TabButton
-                                key={item.id}
-                                active={tab === item.id}
-                                onClick={() => setTab(item.id)}
-                            >
-                                {item.label}
-                            </TabButton>
-                        ))}
-                    </nav>
-
-                    {error && (
-                        <Alert intent="warning" title="Load failed">
-                            <div className="flex flex-wrap items-center gap-2">
-                                <span>{error}</span>
-                                <Button
-                                    size="sm"
-                                    onClick={() => setAttempt((n) => n + 1)}
-                                >
-                                    Retry
-                                </Button>
+                                    Operations
+                                </Text>
+                                <Heading as="h1" size="title">
+                                    Treasury
+                                </Heading>
+                                <Text tone="soft" className="mt-2 max-w-3xl">
+                                    Raw Tinybird tables for operator review.
+                                    Edits append facts; forager folds them in on
+                                    the next run.
+                                </Text>
+                                <SourceLegend />
                             </div>
-                        </Alert>
-                    )}
-                    {!error && !data && (
-                        <Text tone="soft">Loading pipes...</Text>
-                    )}
-                    {data && tab === "recon" && <ReconTab data={data} />}
-                    {data && tab === "invoices" && <InvoicesTab data={data} />}
-                    {data && tab === "payments" && <PaymentsTab data={data} />}
-                    {data && tab === "burn" && <BurnTab data={data} />}
-                    {data && tab === "credits" && <CreditsTab data={data} />}
-                    {data && tab === "runs" && <RunsTab data={data} />}
-                </main>
-            </ScrollArea>
-        </div>
+                            <div className="flex shrink-0 flex-wrap items-center gap-2">
+                                {fixtures && (
+                                    <Chip intent="alpha">fixtures</Chip>
+                                )}
+                                {staleHours !== null &&
+                                    staleHours <= STALE_AFTER_HOURS && (
+                                        <Chip size="sm">
+                                            data {Math.round(staleHours)}h old
+                                        </Chip>
+                                    )}
+                                {!fixtures && (
+                                    <Button
+                                        size="sm"
+                                        onClick={() => {
+                                            clearToken();
+                                            clearAppendToken();
+                                            setTokenState("");
+                                            setAppendTokenState("");
+                                            setData(null);
+                                        }}
+                                    >
+                                        Reset tokens
+                                    </Button>
+                                )}
+                                <ColorModeToggle />
+                            </div>
+                        </header>
+
+                        {staleHours !== null &&
+                            staleHours > STALE_AFTER_HOURS && (
+                                <Alert intent="warning" title="Stale data">
+                                    Last forager run was{" "}
+                                    {Math.round(staleHours)}h ago. Run{" "}
+                                    <code>python3 -m ingest.run</code> for fresh
+                                    numbers.
+                                </Alert>
+                            )}
+
+                        <nav className="flex flex-wrap gap-2">
+                            {TABS.map((item) => (
+                                <TabButton
+                                    key={item.id}
+                                    active={tab === item.id}
+                                    onClick={() => setTab(item.id)}
+                                >
+                                    {item.label}
+                                </TabButton>
+                            ))}
+                        </nav>
+
+                        {error && (
+                            <Alert intent="warning" title="Load failed">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span>{error}</span>
+                                    <Button
+                                        size="sm"
+                                        onClick={() => setAttempt((n) => n + 1)}
+                                    >
+                                        Retry
+                                    </Button>
+                                </div>
+                            </Alert>
+                        )}
+                        {!error && !data && (
+                            <Text tone="soft">Loading pipes...</Text>
+                        )}
+                        {data && tab === "recon" && <ReconTab data={data} />}
+                        {data && tab === "invoices" && (
+                            <InvoicesTab data={data} />
+                        )}
+                        {data && tab === "payments" && (
+                            <PaymentsTab data={data} />
+                        )}
+                        {data && tab === "burn" && <BurnTab data={data} />}
+                        {data && tab === "credits" && (
+                            <CreditsTab data={data} />
+                        )}
+                        {data && tab === "runs" && <RunsTab data={data} />}
+                    </main>
+                </ScrollArea>
+                <CommitTray />
+            </div>
+        </StagingProvider>
     );
 }

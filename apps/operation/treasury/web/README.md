@@ -13,7 +13,8 @@ npm run dev
 The dev server is pinned to `http://127.0.0.1:4180`.
 
 Auth uses the paste-once token gate. Paste a `treasury_web` read token in the
-browser; it is stored only in localStorage and is never bundled.
+browser; add `treasury_append` only when editing. Tokens are stored only in
+localStorage and are never bundled.
 
 ## Fixtures Mode
 

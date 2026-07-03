@@ -301,6 +301,32 @@ curl -X POST "https://gen.pollinations.ai/v1/chat/completions" \
   -d '{"model":"openai","messages":[{"role":"user","content":"Hello!"}]}'
 ```
 
+##### Prompt caching
+
+On Gemini models, a large static prompt prefix can be cached so repeat requests bill it at ~10% of the input rate. Mark the end of the static prefix with `cache_control` on a content block (not on the message); everything before the marker must be byte-identical across requests, everything dynamic goes after.
+
+```json
+{
+  "model": "gemini-fast",
+  "messages": [
+    {
+      "role": "system",
+      "content": [
+        {
+          "type": "text",
+          "text": "<large static prompt>",
+          "cache_control": { "type": "ephemeral" }
+        }
+      ]
+    },
+    { "role": "user", "content": "<dynamic message>" }
+  ]
+}
+```
+
+- The static prefix must be at least ~2048 tokens. Requests with tools are not cached.
+- The first request creates the cache — `usage` reports `cache_creation_input_tokens`, billed at the standard input rate plus an hourly storage fee. Requests within the 1-hour TTL report `prompt_tokens_details.cached_tokens` at the discounted rate.
+
 ---
 
 #### `POST` `/text` — Text Generation With Messages
@@ -1427,6 +1453,8 @@ All endpoints return errors in this envelope:
 Reusable request/response objects referenced from the endpoints above.
 
 ### `CacheControl`
+
+Marks the end of a static prompt prefix to cache (Gemini models). Place on the final content block of the prefix; repeat requests bill the cached prefix at ~10% of the input rate. See the **Prompt caching** section under Chat Completions.
 
 | Field | Type | Description |
 |---|---|---|

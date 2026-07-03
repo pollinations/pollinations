@@ -8,18 +8,16 @@ import {
 } from "@pollinations/ui";
 import { DataNote } from "../components/DataNote";
 import { DataTable, TableScroller } from "../components/DataTable";
+import { SourceMark } from "../components/Provenance";
 import type { Data } from "../types";
 
 export function RunsTab({ data }: { data: Data }) {
     return (
         <div className="flex flex-col gap-4">
-            <DataNote
-                pipe="runs_ep"
-                rows={data.runs.length}
-                source="Forager execution log"
-                transform="Forager run recorder"
-                purpose="verify freshness before trusting tables"
-            />
+            <DataNote pipe="runs_ep" rows={data.runs.length}>
+                Forager ingest run log <SourceMark code="TB" /> — check
+                freshness here before trusting any other tab.
+            </DataNote>
             <TableScroller>
                 <DataTable>
                     <TableHead>

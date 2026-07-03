@@ -11,7 +11,8 @@ import {
 import { useMemo, useState } from "react";
 import { DataNote } from "../components/DataNote";
 import { DataTable, TableScroller } from "../components/DataTable";
-import { ValueWithSources } from "../components/Provenance";
+import { canResolveGapStatus, GapActions } from "../components/GapActions";
+import { SourceMark, ValueWithSources } from "../components/Provenance";
 import { fmtUsd2 } from "../lib/format";
 import { statusMeta } from "../lib/recon";
 import type { CoverageRow, Data, GapRow } from "../types";
@@ -33,6 +34,7 @@ function gapKey(row: Pick<GapRow, "month" | "provider" | "status">) {
 
 export function ReconTab({ data }: { data: Data }) {
     const [problemsOnly, setProblemsOnly] = useState(false);
+    const [resolveRow, setResolveRow] = useState<CoverageRow | null>(null);
     const gapsByKey = useMemo(() => {
         const byKey = new Map<string, GapRow>();
         const byProviderMonth = new Map<string, GapRow>();
@@ -54,13 +56,12 @@ export function ReconTab({ data }: { data: Data }) {
 
     return (
         <div className="flex flex-col gap-4">
-            <DataNote
-                pipe="coverage_ep"
-                rows={coverage.length}
-                source="IV invoices + WS payments"
-                transform="Forager monthly reconciliation"
-                purpose="check whether each month has both sides of evidence"
-            />
+            <DataNote pipe="coverage_ep" rows={coverage.length}>
+                One verdict per provider and month: invoices{" "}
+                <SourceMark code="IV" /> matched against Wise payments{" "}
+                <SourceMark code="WS" /> — missing or mismatched money surfaces
+                here first.
+            </DataNote>
             <div className="inline-flex w-fit items-center gap-2 text-sm text-theme-text-soft">
                 <Switch
                     checked={problemsOnly}
@@ -69,6 +70,12 @@ export function ReconTab({ data }: { data: Data }) {
                 />
                 problems only
             </div>
+            {resolveRow && (
+                <GapActions
+                    row={resolveRow}
+                    onClose={() => setResolveRow(null)}
+                />
+            )}
             <TableScroller>
                 <DataTable>
                     <TableHead>
@@ -91,6 +98,7 @@ export function ReconTab({ data }: { data: Data }) {
                                     <TableHeaderCell>note</TableHeaderCell>
                                 </>
                             )}
+                            <TableHeaderCell>actions</TableHeaderCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -154,6 +162,21 @@ export function ReconTab({ data }: { data: Data }) {
                                             </TableCell>
                                         </>
                                     )}
+                                    <TableCell>
+                                        {canResolveGapStatus(row.status) ? (
+                                            <button
+                                                type="button"
+                                                className="font-medium text-theme-link hover:underline"
+                                                onClick={() =>
+                                                    setResolveRow(row)
+                                                }
+                                            >
+                                                resolve
+                                            </button>
+                                        ) : (
+                                            "-"
+                                        )}
+                                    </TableCell>
                                 </TableRow>
                             );
                         })}

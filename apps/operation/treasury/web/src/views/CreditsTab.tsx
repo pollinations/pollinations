@@ -11,7 +11,7 @@ import {
 import { useMemo, useState } from "react";
 import { DataNote } from "../components/DataNote";
 import { DataTable, TableScroller } from "../components/DataTable";
-import { ValueWithSource } from "../components/Provenance";
+import { SourceMark, ValueWithSource } from "../components/Provenance";
 import { fmtUsd, fmtUsd2 } from "../lib/format";
 import { type StageInput, useStaging } from "../lib/staging";
 import type { BalanceRow, Data, GrantRow } from "../types";
@@ -21,6 +21,8 @@ const CATEGORY_OPTIONS = [
     "compute",
     "infra",
     "saas",
+    "admin",
+    "office",
     "payroll",
     "other",
 ];
@@ -239,13 +241,11 @@ export function CreditsTab({ data }: { data: Data }) {
     return (
         <div className="flex flex-col gap-6">
             <section className="flex flex-col gap-4">
-                <DataNote
-                    pipe="grants_ep"
-                    rows={grants.length}
-                    source="HC + provider API"
-                    transform="Forager grant pool rows"
-                    purpose="raw credit and prepaid pool inputs before burn"
-                />
+                <DataNote pipe="grants_ep" rows={grants.length}>
+                    Credit and prepaid pools funding the burn: granted/left from
+                    provider APIs <SourceMark code="API" />, manual values{" "}
+                    <SourceMark code="HC" /> filling the holes.
+                </DataNote>
                 <label className="inline-flex w-fit items-center gap-2 text-sm text-theme-text-soft">
                     category
                     <select
@@ -329,13 +329,12 @@ export function CreditsTab({ data }: { data: Data }) {
             </section>
 
             <section className="flex flex-col gap-4">
-                <DataNote
-                    pipe="balances_ep"
-                    rows={balances.length}
-                    source="provider API/CLI/BQ + HC"
-                    transform="Forager latest balance snapshot"
-                    purpose="raw latest credit and prepaid balances by provider"
-                />
+                <DataNote pipe="balances_ep" rows={balances.length}>
+                    Latest what-is-left snapshot per provider, read live{" "}
+                    <SourceMark code="API" /> or entered by hand{" "}
+                    <SourceMark code="HC" /> — the reality check for the pools
+                    above.
+                </DataNote>
                 <TableScroller>
                     <DataTable>
                         <TableHead>

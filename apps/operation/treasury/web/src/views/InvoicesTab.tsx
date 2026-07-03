@@ -14,7 +14,7 @@ import { Fragment, useMemo, useState } from "react";
 import { DataNote } from "../components/DataNote";
 import { DataTable, TableScroller } from "../components/DataTable";
 import { InvoiceEditor } from "../components/InvoiceEditor";
-import { SourceBadge } from "../components/Provenance";
+import { SourceBadge, SourceMark } from "../components/Provenance";
 import { fmtUsd2 } from "../lib/format";
 import { statusMeta } from "../lib/recon";
 import type { Data, InvoiceRow } from "../types";
@@ -24,6 +24,8 @@ const CATEGORY_OPTIONS = [
     "compute",
     "infra",
     "saas",
+    "admin",
+    "office",
     "payroll",
     "other",
 ];
@@ -88,13 +90,11 @@ export function InvoicesTab({ data }: { data: Data }) {
 
     return (
         <div className="flex flex-col gap-4">
-            <DataNote
-                pipe="invoices_ep"
-                rows={rows.length}
-                source="IV + HC"
-                transform="Forager parser + operator corrections"
-                purpose="verify invoice evidence before matching"
-            />
+            <DataNote pipe="invoices_ep" rows={rows.length}>
+                Every harvested invoice PDF <SourceMark code="IV" /> plus
+                operator label corrections <SourceMark code="HC" /> — the
+                document side of every Recon verdict.
+            </DataNote>
             <label className="inline-flex w-fit items-center gap-2 text-sm text-theme-text-soft">
                 category
                 <select

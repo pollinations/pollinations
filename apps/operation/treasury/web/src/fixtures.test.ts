@@ -18,7 +18,7 @@ const ALL_STATUSES = [
     "ok_credit",
     "accepted",
     "needs_data",
-    "needs_label",
+    "needs_review",
     "amount_mismatch",
     "missing_invoice",
     "missing_payment",

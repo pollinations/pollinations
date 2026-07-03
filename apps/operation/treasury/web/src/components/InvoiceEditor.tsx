@@ -4,19 +4,14 @@ import { useState } from "react";
 import { type StageInput, useStaging } from "../lib/staging";
 import type { InvoiceRow } from "../types";
 
-export const INVOICE_KINDS = [
-    "prepaid_topup",
-    "subscription",
-    "monthly_bill",
-    "payg",
-    "reseller",
-    "not_invoice",
-];
+export const INVOICE_KINDS = ["monthly_bill", "prepaid_topup", "subscription"];
 
 export const INVOICE_CATEGORIES = [
     "compute",
     "infra",
     "saas",
+    "admin",
+    "office",
     "payroll",
     "other",
 ];
@@ -114,7 +109,7 @@ export function buildInvoiceLabelChange({
     };
 }
 
-export function buildInvoiceIgnoreChange({
+export function buildInvoiceNotInvoiceChange({
     ingestedAt = nowDateTime(),
     reason,
     row,
@@ -129,7 +124,7 @@ export function buildInvoiceIgnoreChange({
             sha256: row.sha256,
             provider: row.provider || "other",
             category: row.category || "other",
-            kind: "not_invoice",
+            kind: "",
             period_month: "",
             amount: 0,
             currency: row.currency || "USD",
@@ -137,11 +132,11 @@ export function buildInvoiceIgnoreChange({
             issued_at: row.issued_at || "1970-01-01",
             source: "label",
             file_ref: row.file_ref,
-            status: "ignored",
+            status: "not_invoice",
             ingested_at: ingestedAt,
             credit_usd: 0,
         },
-        summary: `invoice ${row.provider || "other"} ignored`,
+        summary: `invoice ${row.provider || "other"} not invoice`,
     };
 }
 
@@ -289,7 +284,7 @@ export function InvoiceEditor({
                 onSubmit={(event) => {
                     event.preventDefault();
                     stage(
-                        buildInvoiceIgnoreChange({
+                        buildInvoiceNotInvoiceChange({
                             reason: ignoreReason.trim(),
                             row,
                         }),
@@ -297,7 +292,7 @@ export function InvoiceEditor({
                     onClose();
                 }}
             >
-                <Field label="ignore reason">
+                <Field label="not-invoice reason">
                     <Input
                         value={ignoreReason}
                         onChange={(event) =>
@@ -308,7 +303,7 @@ export function InvoiceEditor({
                     />
                 </Field>
                 <Button type="submit" size="sm">
-                    Ignore
+                    Not invoice
                 </Button>
             </form>
         </div>

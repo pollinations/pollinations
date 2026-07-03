@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { InvoiceRow } from "../types";
 import {
-    buildInvoiceIgnoreChange,
     buildInvoiceLabelChange,
+    buildInvoiceNotInvoiceChange,
     initialInvoiceValues,
     validateInvoiceEdit,
 } from "./InvoiceEditor";
@@ -88,10 +88,10 @@ describe("buildInvoiceLabelChange", () => {
     });
 });
 
-describe("buildInvoiceIgnoreChange", () => {
-    it("builds an ignored label row for non-invoices", () => {
+describe("buildInvoiceNotInvoiceChange", () => {
+    it("builds a not-invoice label row for non-invoices", () => {
         expect(
-            buildInvoiceIgnoreChange({
+            buildInvoiceNotInvoiceChange({
                 ingestedAt: "2026-07-03 12:00:00",
                 reason: "duplicate receipt",
                 row,
@@ -102,7 +102,7 @@ describe("buildInvoiceIgnoreChange", () => {
                 sha256: "abc123",
                 provider: "lambda",
                 category: "compute",
-                kind: "not_invoice",
+                kind: "",
                 period_month: "",
                 amount: 0,
                 currency: "USD",
@@ -110,11 +110,11 @@ describe("buildInvoiceIgnoreChange", () => {
                 issued_at: "2026-07-01",
                 source: "label",
                 file_ref: "2026-06/lambda.pdf",
-                status: "ignored",
+                status: "not_invoice",
                 ingested_at: "2026-07-03 12:00:00",
                 credit_usd: 0,
             },
-            summary: "invoice lambda ignored",
+            summary: "invoice lambda not invoice",
         });
     });
 });

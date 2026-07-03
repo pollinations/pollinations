@@ -9,7 +9,8 @@ import {
 import { useMemo, useState } from "react";
 import { DataNote } from "../components/DataNote";
 import { DataTable, TableScroller } from "../components/DataTable";
-import { SourceBadge } from "../components/Provenance";
+import { SourceBadge, SourceMark } from "../components/Provenance";
+import { UsageEntryForm } from "../components/UsageEntryForm";
 import { fmtUsd2 } from "../lib/format";
 import { statusMeta } from "../lib/recon";
 import type { Data, ProviderMonthRow } from "../types";
@@ -19,6 +20,8 @@ const CATEGORY_OPTIONS = [
     "compute",
     "infra",
     "saas",
+    "admin",
+    "office",
     "payroll",
     "other",
 ];
@@ -50,6 +53,7 @@ function SourcePair({
 
 export function BurnTab({ data }: { data: Data }) {
     const [category, setCategory] = useState("all");
+    const [resolveRow, setResolveRow] = useState<ProviderMonthRow | null>(null);
     const rows = useMemo(
         () =>
             sortedProviderMonths(data.providerMonths).filter(
@@ -60,13 +64,13 @@ export function BurnTab({ data }: { data: Data }) {
 
     return (
         <div className="flex flex-col gap-4">
-            <DataNote
-                pipe="provider_month_ep"
-                rows={rows.length}
-                source="IV + provider meters + balances"
-                transform="Forager burn rows"
-                purpose="raw monthly burn evidence by provider and category"
-            />
+            <DataNote pipe="provider_month_ep" rows={rows.length}>
+                Monthly spend per provider and category, folded from invoices{" "}
+                <SourceMark code="IV" />, provider meters and balances{" "}
+                <SourceMark code="API" /> and usage estimates{" "}
+                <SourceMark code="TB" /> — where credit burn becomes real
+                monthly cost.
+            </DataNote>
             <label className="inline-flex w-fit items-center gap-2 text-sm text-theme-text-soft">
                 category
                 <select
@@ -81,6 +85,35 @@ export function BurnTab({ data }: { data: Data }) {
                     ))}
                 </select>
             </label>
+            {resolveRow && (
+                <section className="rounded border border-theme-border/70 bg-theme-bg/45 p-4">
+                    <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                            <span className="font-bold">
+                                Resolve {resolveRow.provider} ·{" "}
+                                {resolveRow.month}
+                            </span>
+                            <p className="mt-1 text-sm text-theme-text-soft">
+                                Enter the missing monthly usage evidence or a
+                                current grant balance. Derived burn changes
+                                after the next forager run.
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            className="font-medium text-theme-link hover:underline"
+                            onClick={() => setResolveRow(null)}
+                        >
+                            close
+                        </button>
+                    </div>
+                    <UsageEntryForm
+                        month={resolveRow.month}
+                        provider={resolveRow.provider}
+                        onStaged={() => setResolveRow(null)}
+                    />
+                </section>
+            )}
             <TableScroller>
                 <DataTable>
                     <TableHead>
@@ -95,6 +128,7 @@ export function BurnTab({ data }: { data: Data }) {
                             <TableHeaderCell>credit_burn_usd</TableHeaderCell>
                             <TableHeaderCell>srcs</TableHeaderCell>
                             <TableHeaderCell>status</TableHeaderCell>
+                            <TableHeaderCell>actions</TableHeaderCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -135,6 +169,21 @@ export function BurnTab({ data }: { data: Data }) {
                                         >
                                             {row.status || "-"}
                                         </Chip>
+                                    </TableCell>
+                                    <TableCell>
+                                        {row.status === "needs_data" ? (
+                                            <button
+                                                type="button"
+                                                className="font-medium text-theme-link hover:underline"
+                                                onClick={() =>
+                                                    setResolveRow(row)
+                                                }
+                                            >
+                                                resolve
+                                            </button>
+                                        ) : (
+                                            "-"
+                                        )}
                                     </TableCell>
                                 </TableRow>
                             );

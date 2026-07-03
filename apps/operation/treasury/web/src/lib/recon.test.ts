@@ -7,7 +7,7 @@ describe("recon status metadata", () => {
         expect(statusMeta("ok_credit").intent).toBe("news");
         expect(statusMeta("accepted").severity).toBe(0);
         expect(statusMeta("needs_data").label).toBe("no data");
-        expect(statusMeta("needs_label").intent).toBe("alpha");
+        expect(statusMeta("needs_review").intent).toBe("alpha");
         expect(statusMeta("amount_mismatch").intent).toBe("warning");
         expect(statusMeta("missing_payment").intent).toBe("danger");
         expect(statusMeta("missing_invoice").intent).toBe("danger");

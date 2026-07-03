@@ -55,8 +55,8 @@ The manual-entry form must present both options with exactly this explanation.
 - Tinybird host `https://api.europe-west2.gcp.tinybird.co` is public and committable. Tokens are not.
 - Write rows must match the datasource schemas EXACTLY (schemas in `apps/operation/forager/tinybird/datasources/*.datasource`). Timestamps: `entered_at`/`run_at`/`ingested_at` = UTC `"YYYY-MM-DD HH:MM:SS"`; `retrieved_at`/`issued_at` = `"YYYY-MM-DD"`.
 - Events API: `POST {TB_HOST}/v0/events?name=<datasource>` with NDJSON body (one JSON object per line), header `Authorization: Bearer <treasury_append>`. Response `{"successful_rows":N,"quarantined_rows":0}` — treat `quarantined_rows > 0` as an error shown to the user.
-- Kind/category vocabularies (mirror `forager/ingest/invoices/label.py`): kinds `prepaid_topup | subscription | monthly_bill | payg | reseller | not_invoice`; categories `compute | infra | saas | payroll | other`.
-- Reconciliation statuses (exhaustive after Task F): `ok, ok_credit, accepted, needs_data, needs_label, amount_mismatch, missing_invoice, missing_payment, quiet`. Unknown strings must render, never crash.
+- Kind/category vocabularies (mirror `forager/ingest/invoices/label.py`): kinds `monthly_bill | prepaid_topup | subscription`; categories `compute | infra | saas | admin | office | payroll | other`.
+- Reconciliation statuses (exhaustive after Task F): `ok, ok_credit, accepted, needs_data, needs_review, amount_mismatch, missing_invoice, missing_payment, quiet`. Unknown strings must render, never crash.
 - `invoices_ep` is ALREADY deduped server-side — the app must NOT dedupe client-side (delete any leftover dedupe logic).
 - Do NOT modify `packages/ui`. Do NOT modify anything under `apps/operation/forager/` outside Tasks E and F (the only FORAGER tasks) or where a step explicitly says CONTROLLER.
 - Dev server stays pinned to `127.0.0.1:4180` (strictPort). Format with `npx biome check --write <files>` from repo root before each commit. `npm run test` + `npm run typecheck` must pass at the end of every task (typecheck currently fails on RunsTab — fixed in Task 2).
@@ -147,7 +147,7 @@ Together with Task E, the only tasks allowed to touch `apps/operation/forager/`.
 - [ ] Step 1: **Recon** = coverage table + a `problems only` toggle (filters to status ∉ {ok, ok_credit, accepted}); when on, also show the gap detail columns (`delta_usd`, `invoice_refs`, `payment_refs`, `note`) from `gaps_ep`. Delete GapsTab.
 - [ ] Step 2: **Credits** = grants table (top, now incl. `category` column) + balances table (below). Delete BalancesTab.
 - [ ] Step 3: **Burn** (new) = `provider_month_ep` raw table: month, provider, category, invoice_usd, meter_cash_usd, meter_prepaid_usd, usage_cost_usd, credit_burn_usd, srcs, status (chip). Add `ProviderMonthRow` to types + fixtures. Default sort: month desc, provider.
-- [ ] Step 4: surface new columns everywhere: `category` on Invoices + Payments (+ the `(unmatched)` cash bucket renders as its own provider); `credit_usd` on Invoices (from Task E; render 0 as `—`); category filter = plain `<select>` per tab (all/compute/infra/saas/payroll/other/unmatched where applicable).
+- [ ] Step 4: surface new columns everywhere: `category` on Invoices + Payments (+ the `(unmatched)` cash bucket renders as its own provider); `credit_usd` on Invoices (from Task E; render 0 as `—`); category filter = plain `<select>` per tab (all/compute/infra/saas/admin/office/payroll/other/unmatched where applicable).
 - [ ] Step 5: fix the pre-existing `RunsTab.tsx` type errors (`"RUN"` is not a `ProvenanceCode` — either add `RUN` to the code union in `types.ts`/`Provenance` component or use an existing code).
 - [ ] Step 6: `npm run test` + `npm run typecheck` green (typecheck green for the FIRST time — keep it green from here on). Verify all 6 tabs render in `?fixtures=1`.
 - [ ] Step 7: biome + commit
@@ -189,7 +189,7 @@ Together with Task E, the only tasks allowed to touch `apps/operation/forager/`.
 
 - [ ] Step 1: each row gets an edit affordance opening an inline editor: dropdowns `kind`, `category` (vocabularies above), inputs `amount` (labeled "amount due"), `credit_usd` (labeled "credits applied", ≥ 0), `currency (USD|EUR)`, `period_month (YYYY-MM)`, `issued_at (date)`, `invoice_number`; prefilled from the row
 - [ ] Step 2: save stages a FULL label row to `invoices`: carry `sha256` + `file_ref` from the row verbatim, `source:"label"`, `status:"parsed"`, fresh `ingested_at` DateTime. (Mirrors `forager/ingest/invoices/label.py` semantics — the pipe's dedupe makes it win.)
-- [ ] Step 3: an `ignore` action (for non-invoices): stages the same row with `status:"ignored"`, `kind:"not_invoice"`, `period_month:""`, `amount:0`, `credit_usd:0`, reason into `invoice_number`
+- [ ] Step 3: a not-invoice action: stages the same row with `status:"not_invoice"`, `kind:""`, `period_month:""`, `amount:0`, `credit_usd:0`, reason into `invoice_number`
 - [ ] Step 4: validation mirrors label.py: month regex `^\d{4}-(0[1-9]|1[0-2])$`, amount ≥ 0, currency in {USD, EUR}; invalid → inline error, nothing staged
 - [ ] Step 5: fixtures-mode verify + tests for row building/validation + biome + commit
 
@@ -199,7 +199,7 @@ Together with Task E, the only tasks allowed to touch `apps/operation/forager/`.
 
 **Files:** modify `web/src/views/ReconTab.tsx`, `web/src/views/BurnTab.tsx`; create `web/src/components/GapActions.tsx`, `web/src/components/UsageEntryForm.tsx`
 
-- [ ] Step 1: **GapActions** — on Recon rows with status `missing_invoice` / `amount_mismatch` / `needs_label` / `needs_data`, a `resolve` button opens a panel with the three resolution paths (table at the top of this plan):
+- [ ] Step 1: **GapActions** — on Recon rows with status `missing_invoice` / `amount_mismatch` / `needs_review` / `needs_data`, a `resolve` button opens a panel with the three resolution paths (table at the top of this plan):
   1. *Ingest invoice*: static panel — inbox path + `python3 -m ingest.run`, copy buttons, note "row clears after the next ingest run"
   2. *Enter monthly usage*: embeds `UsageEntryForm` (Step 3) — for credit-riding months this alone turns the row `ok_credit` on the next run
   3. *Accept*: optional note input → stages `{datasource:"overrides", row:{entered_at, scope:"reconciliation", key:"<month>:<provider>", field:"accepted", value_str:"1", value_num:null, note}}`

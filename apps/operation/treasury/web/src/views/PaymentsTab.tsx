@@ -8,7 +8,7 @@ import {
 import { useMemo, useState } from "react";
 import { DataNote } from "../components/DataNote";
 import { DataTable, TableScroller } from "../components/DataTable";
-import { ValueWithSources } from "../components/Provenance";
+import { SourceMark, ValueWithSources } from "../components/Provenance";
 import { fmtUsd2 } from "../lib/format";
 import type { CashMonthlyRow, Data } from "../types";
 
@@ -17,6 +17,8 @@ const CATEGORY_OPTIONS = [
     "compute",
     "infra",
     "saas",
+    "admin",
+    "office",
     "payroll",
     "other",
     "unmatched",
@@ -45,13 +47,11 @@ export function PaymentsTab({ data }: { data: Data }) {
 
     return (
         <div className="flex flex-col gap-4">
-            <DataNote
-                pipe="cash_monthly_ep"
-                rows={rows.length}
-                source="WS activities"
-                transform="Forager counterparty grouping"
-                purpose="verify bank cash before invoice matching"
-            />
+            <DataNote pipe="cash_monthly_ep" rows={rows.length}>
+                Real bank outflows from Wise <SourceMark code="WS" /> grouped by
+                month, provider and category — the cash side of every Recon
+                verdict.
+            </DataNote>
             <label className="inline-flex w-fit items-center gap-2 text-sm text-theme-text-soft">
                 category
                 <select

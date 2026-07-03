@@ -21,7 +21,12 @@ const READ_PIPES = new Set([
     "provider_month_ep",
     "runs_ep",
 ]);
-const WRITE_DATASOURCES = new Set(["overrides", "invoices"]);
+const WRITE_DATASOURCES = new Set([
+    "overrides",
+    "invoices",
+    "meter_monthly",
+    "balances",
+]);
 
 type TreasurySecrets = {
     TREASURY_PASSWORD: string;

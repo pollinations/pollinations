@@ -13,6 +13,16 @@ Committed (source of truth — edit here, then deploy):
   (see "Probe spend" below).
 - `watchdog.sh` — cron job (every 5 min) that revives the `screen` session if
   it died. **This is the actual deploy path currently running on the box.**
+- `nudge.sh` — cron job (every 5 min) that handles a different failure mode:
+  the session is alive but stuck idle with unsubmitted input in the prompt
+  box. This recurs after the agent's own periodic `/compact` (CYCLE.md duty
+  0) — the follow-up "continue the cycle" text gets typed but never receives
+  its Enter keypress, so the agent silently stalls for hours until someone
+  notices. Detects via `screen -X hardcopy`: no busy indicator (spinner/
+  timer/background-shell text) AND the prompt-box line has real text after
+  the glyph — an actually-idle prompt with nothing queued is empty. If
+  detected, sends a bare carriage return to submit the pending text. Logs to
+  `nudge.log`.
 - `loop.sh` + `community-monitor.service` — an alternative systemd-supervised
   design (fresh `claude -p` process per cycle instead of one long-lived
   `--remote-control` session). Not currently active — kept as the intended

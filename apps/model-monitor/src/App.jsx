@@ -94,6 +94,11 @@ function get2xxColor(ok2xx, total) {
     return "text-intent-danger-text font-semibold";
 }
 
+function formatMs(ms) {
+    if (ms == null) return "-";
+    return ms < 1000 ? `${Math.round(ms)}ms` : `${(ms / 1000).toFixed(1)}s`;
+}
+
 function getLatencyColor(latencySec) {
     if (latencySec < 2) return "text-theme-text-soft font-semibold";
     if (latencySec < 5) return "text-intent-success-text";
@@ -460,6 +465,14 @@ function App() {
                 if (bTps == null) return -1;
                 return dir * (aTps - bTps);
             }
+            case "ttft": {
+                const aTtft = a.stats?.ttft_p50_ms;
+                const bTtft = b.stats?.ttft_p50_ms;
+                if (aTtft == null && bTtft == null) return 0;
+                if (aTtft == null) return 1;
+                if (bTtft == null) return -1;
+                return dir * (aTtft - bTtft);
+            }
             case "user4xx": {
                 const aTotal = a.stats?.total_requests || 1;
                 const bTotal = b.stats?.total_requests || 1;
@@ -638,6 +651,20 @@ function App() {
                                             label={
                                                 <Tooltip
                                                     triggerAs="span"
+                                                    content="Median time to first token, streaming text requests only. Excludes cache hits and non-streaming requests."
+                                                >
+                                                    TTFT
+                                                </Tooltip>
+                                            }
+                                            sortKey="ttft"
+                                            currentSort={sort}
+                                            onSort={handleSort}
+                                            align="right"
+                                        />
+                                        <SortableTh
+                                            label={
+                                                <Tooltip
+                                                    triggerAs="span"
                                                     content="Completion tokens per second of generation time (first token to last). Cache hits are excluded."
                                                 >
                                                     Speed
@@ -654,7 +681,7 @@ function App() {
                                     {filteredModels.length === 0 ? (
                                         <TableRow>
                                             <TableCell
-                                                colSpan={adminMode ? 11 : 10}
+                                                colSpan={adminMode ? 12 : 11}
                                                 align="center"
                                                 className="py-8 text-theme-text-muted"
                                             >
@@ -826,6 +853,25 @@ function App() {
                                                         {p95Sec
                                                             ? `${p95Sec.toFixed(1)}s`
                                                             : "-"}
+                                                    </TableCell>
+                                                    <TableCell
+                                                        align="right"
+                                                        numeric
+                                                        muted
+                                                    >
+                                                        {stats?.ttft_p50_ms !=
+                                                        null ? (
+                                                            <Tooltip
+                                                                triggerAs="span"
+                                                                content={`P95: ${formatMs(stats.ttft_p95_ms)}`}
+                                                            >
+                                                                {formatMs(
+                                                                    stats.ttft_p50_ms,
+                                                                )}
+                                                            </Tooltip>
+                                                        ) : (
+                                                            "-"
+                                                        )}
                                                     </TableCell>
                                                     <TableCell
                                                         align="right"

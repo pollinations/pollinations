@@ -34,6 +34,26 @@ SQL >
         round(quantileIf(0.95)(response_time, response_status >= 200 AND response_status < 300), 0) as latency_p95_ms,
         round(avgIf(response_time, response_status >= 200 AND response_status < 300), 0) as avg_latency_ms,
         max(start_time) as last_request_at,
+        -- Time to first token: response_time for streamed text requests only
+        -- (response_time resolves at first-byte for streams, which is a good
+        -- TTFT proxy; for non-streamed requests it's full round-trip latency,
+        -- so those are excluded rather than mixed in). stream_duration_ms
+        -- IS NOT NULL identifies the streaming-text cohort. Cache hits are
+        -- excluded since they return near-instantly and aren't real TTFT.
+        round(
+            quantileIf(0.5)(
+                response_time,
+                response_status >= 200 AND response_status < 300
+                AND cache_hit = false AND stream_duration_ms IS NOT NULL
+            ), 0
+        ) as ttft_p50_ms,
+        round(
+            quantileIf(0.95)(
+                response_time,
+                response_status >= 200 AND response_status < 300
+                AND cache_hit = false AND stream_duration_ms IS NOT NULL
+            ), 0
+        ) as ttft_p95_ms,
         -- Completion tokens per second of pure generation time (see
         -- generation_time_ms above), excluding time-to-first-token. The same
         -- condition is used for both sums so numerator and denominator cover

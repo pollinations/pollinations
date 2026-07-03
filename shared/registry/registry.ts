@@ -233,9 +233,6 @@ type GroundingMetadata = {
     // the source is a Google-Search web result (billable grounding evidence);
     // Vertex-AI-Search chunks are a different, separately-priced product.
     groundingChunks?: { web?: { uri?: string } }[];
-    // Non-empty when Google attached grounding-support spans to the answer —
-    // present whenever web grounding evidence backs the response.
-    groundingSupports?: unknown[];
 };
 
 type GroundedOutput = {
@@ -268,15 +265,15 @@ function getGeminiGroundingWebSearchQueryCount(output: unknown): number {
     return queries.size;
 }
 
-// Gemini 2.5: Google bills one grounded prompt whenever web grounding evidence
-// is returned — search queries fired, OR web grounding chunks, OR grounding
-// supports. `retrievalQueries` (Vertex-AI-Search) is a different product and is
-// intentionally NOT counted here.
+// Gemini 2.5: Google bills one grounded prompt when Google-Search web evidence
+// is returned — search queries fired OR web grounding chunks cited. Bare
+// groundingSupports is deliberately NOT evidence: Vertex-AI-Search grounding
+// (retrievalQueries/retrievedContext, a separately priced product) also emits
+// supports and must not trigger the Google-Search fee.
 function isGeminiGroundedPrompt(output: unknown): boolean {
     for (const metadata of eachGroundingMetadata(output)) {
         if (metadata.webSearchQueries?.some((q) => q?.trim())) return true;
         if (metadata.groundingChunks?.some((chunk) => chunk?.web)) return true;
-        if ((metadata.groundingSupports?.length ?? 0) > 0) return true;
     }
     return false;
 }

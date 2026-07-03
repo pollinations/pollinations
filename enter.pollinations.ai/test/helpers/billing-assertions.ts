@@ -1,8 +1,8 @@
 import {
     calculateCost,
     calculatePrice,
-    getModelDefinition,
     getPriceDefinition,
+    getRegistryModelDefinition,
     type ModelName,
     type Usage,
 } from "@shared/registry/registry.ts";
@@ -58,7 +58,7 @@ export function assertTrackedBillingEvent(
     event: BillingEvent,
     modelName: ModelName,
 ): void {
-    const modelDefinition = getModelDefinition(modelName);
+    const modelDefinition = getRegistryModelDefinition(modelName);
     const priceDefinition = getPriceDefinition(modelName);
     const usage = usageFromEvent(event);
     const expectedCost = calculateCost(modelName, usage);

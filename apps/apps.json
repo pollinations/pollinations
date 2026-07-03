@@ -13,6 +13,14 @@
         "title": "Playground | pollinations.ai",
         "description": "Generate images, text, audio and video with Pollinations AI"
     },
+    "websim": {
+        "subdomain": "websim",
+        "deployTarget": "worker",
+        "buildCommand": "npm run build",
+        "workerEntrypoint": "worker.js",
+        "title": "Websim | pollinations.ai",
+        "description": "Generate shareable single-file web pages with Pollinations"
+    },
     "catgpt": {
         "subdomain": "catgpt",
         "buildCommand": null,

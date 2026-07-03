@@ -318,45 +318,43 @@ async function processMessageContent(
  * Creates a transform that converts HTTP image URLs to base64 data URLs
  * for providers/models that require inline image data.
  */
-export function createImageUrlToBase64Transform(): TransformFn {
-    return async (messages, options) => {
-        const config = options?.modelConfig as
-            | Record<string, unknown>
-            | undefined;
-        const provider = config?.provider as string | undefined;
-        const requiresBase64ImageUrls =
-            config?.requiresBase64ImageUrls === true;
+export const imageUrlToBase64Transform: TransformFn = async (
+    messages,
+    options,
+) => {
+    const config = options?.modelConfig as Record<string, unknown> | undefined;
+    const provider = config?.provider as string | undefined;
+    const requiresBase64ImageUrls = config?.requiresBase64ImageUrls === true;
 
-        if (
-            provider !== "vertex-ai" &&
-            provider !== "bedrock" &&
-            !requiresBase64ImageUrls
-        ) {
-            return { messages, options };
-        }
+    if (
+        provider !== "vertex-ai" &&
+        provider !== "bedrock" &&
+        !requiresBase64ImageUrls
+    ) {
+        return { messages, options };
+    }
 
-        const providerInfo = provider ?? "base64-required";
-        log(`Processing messages for ${providerInfo} image URL conversion`);
+    const providerInfo = provider ?? "base64-required";
+    log(`Processing messages for ${providerInfo} image URL conversion`);
 
-        const context: ImageConversionContext = {
-            imageCount: 0,
-            totalBytes: 0,
-        };
-        const processedMessages = [];
-        for (const message of messages) {
-            if (!message.content || typeof message.content === "string") {
-                processedMessages.push(message);
-                continue;
-            }
-
-            const processedContent = await processMessageContent(
-                message.content as ContentPart[],
-                context,
-            );
-            processedMessages.push({ ...message, content: processedContent });
-        }
-
-        log("Image URL conversion complete");
-        return { messages: processedMessages, options };
+    const context: ImageConversionContext = {
+        imageCount: 0,
+        totalBytes: 0,
     };
-}
+    const processedMessages = [];
+    for (const message of messages) {
+        if (!message.content || typeof message.content === "string") {
+            processedMessages.push(message);
+            continue;
+        }
+
+        const processedContent = await processMessageContent(
+            message.content as ContentPart[],
+            context,
+        );
+        processedMessages.push({ ...message, content: processedContent });
+    }
+
+    log("Image URL conversion complete");
+    return { messages: processedMessages, options };
+};

@@ -1,17 +1,19 @@
+import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import {
-    getModelDefinition,
-    type ModelName,
+    type ModelDefinition,
     readProviderRequestCost,
 } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
+    FALLBACK_TARGET_HEADER,
     openaiUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
-import { remapUpstreamStatus, UpstreamError } from "@/error.ts";
+import { fixWavHeader } from "../routes/audio.js";
+import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { type ExpressLikeRequest, getRequestData } from "./requestUtils.js";
 import type { ChatCompletion, RequestData, ServiceError } from "./types.js";
@@ -25,12 +27,12 @@ const TEXT_ENV_KEYS = [
     "AZURE_MYCELI_PROD_API_KEY",
     "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
     "DASHSCOPE_API_KEY",
-    "DEEPINFRA_API_KEY",
-    "FIREWORKS_API_KEY",
+    "FIREWORKS_NEO_API_KEY",
     "GOOGLE_CLIENT_EMAIL",
     "GOOGLE_PRIVATE_KEY",
     "GOOGLE_PRIVATE_KEY_ID",
     "GOOGLE_PROJECT_ID",
+    "INCEPTION_API_KEY",
     "OPENROUTER_API_KEY",
     "OVHCLOUD_API_KEY",
     "PERPLEXITY_API_KEY",
@@ -70,18 +72,15 @@ function createExpressLikeRequest(
     };
 }
 
-function prepareRequestParameters(requestParams: RequestData): RequestData {
-    let isAudioModel = false;
-    try {
-        const serviceDef = getModelDefinition(requestParams.model as ModelName);
-        isAudioModel = serviceDef?.outputModalities?.includes("audio") ?? false;
-    } catch {
-        // Model not in registry.
-    }
-
+function prepareRequestParameters(
+    requestParams: RequestData,
+    modelDefinition: ModelDefinition<string>,
+): RequestData {
+    const isAudioModel =
+        modelDefinition.outputModalities?.includes("audio") ?? false;
     if (!isAudioModel) return requestParams;
 
-    const voice = requestParams.voice || requestParams.audio?.voice || "amuch";
+    const voice = requestParams.voice || requestParams.audio?.voice || "alloy";
     const audioFormat = requestParams.stream ? "pcm16" : "mp3";
 
     return {
@@ -106,19 +105,26 @@ function withGatewayContext(c: TextContext, requestData: RequestData) {
     };
 }
 
-function usageHeaders(completion: ChatCompletion): Headers {
+function usageHeaders(
+    completion: ChatCompletion,
+    fallbackModel?: string,
+): Headers {
     const headers = new Headers();
-    if (completion?.usage && completion?.model) {
+    const modelUsed = completion?.model || fallbackModel;
+    if (completion?.usage && modelUsed) {
         const usage = openaiUsageToUsage(
             completion.usage as unknown as Parameters<
                 typeof openaiUsageToUsage
             >[0],
         );
         for (const [key, value] of Object.entries(
-            buildUsageHeaders(completion.model, usage),
+            buildUsageHeaders(modelUsed, usage),
         )) {
             headers.set(key, String(value));
         }
+    }
+    if (completion?.fallbackTarget) {
+        headers.set(FALLBACK_TARGET_HEADER, completion.fallbackTarget);
     }
     return headers;
 }
@@ -155,8 +161,11 @@ function publicChatCompletion(completion: ChatCompletion): ChatCompletion {
     };
 }
 
-function sendOpenAIResponse(completion: ChatCompletion): Response {
-    const headers = usageHeaders(completion);
+function sendOpenAIResponse(
+    completion: ChatCompletion,
+    fallbackModel?: string,
+): Response {
+    const headers = usageHeaders(completion, fallbackModel);
     headers.set("Content-Type", "application/json; charset=utf-8");
 
     return new Response(
@@ -170,8 +179,11 @@ function sendOpenAIResponse(completion: ChatCompletion): Response {
     );
 }
 
-function sendTextContentResponse(completion: ChatCompletion): Response {
-    const headers = usageHeaders(completion);
+function sendTextContentResponse(
+    completion: ChatCompletion,
+    fallbackModel?: string,
+): Response {
+    const headers = usageHeaders(completion, fallbackModel);
     headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
 
     if (!completion.choices?.[0]) {
@@ -190,8 +202,20 @@ function sendTextContentResponse(completion: ChatCompletion): Response {
 
     const audio = message.audio as Record<string, unknown> | undefined;
     if (typeof audio?.data === "string") {
-        headers.set("Content-Type", "audio/mpeg");
-        return new Response(base64ToArrayBuffer(audio.data), { headers });
+        const buffer = base64ToArrayBuffer(audio.data);
+        const isWav =
+            buffer.byteLength >= 12 &&
+            new Uint8Array(buffer, 0, 4).reduce(
+                (s, b) => s + String.fromCharCode(b),
+                "",
+            ) === "RIFF";
+        if (isWav) {
+            fixWavHeader(buffer);
+            headers.set("Content-Type", "audio/wav");
+        } else {
+            headers.set("Content-Type", "audio/mpeg");
+        }
+        return new Response(buffer, { headers });
     }
 
     if (message.content !== undefined && message.content !== null) {
@@ -222,6 +246,11 @@ function sendTextStreamResponse(completion: ChatCompletion): Response {
         "Cache-Control": "no-cache",
         Connection: "keep-alive",
     });
+    // sendTextStreamResponse bypasses usageHeaders(), so set the fallback
+    // header here too — tracking reads it off the worker response for streams.
+    if (completion.fallbackTarget) {
+        headers.set(FALLBACK_TARGET_HEADER, completion.fallbackTarget);
+    }
 
     if (completion.responseStream instanceof ReadableStream) {
         return new Response(completion.responseStream, { headers });
@@ -286,9 +315,20 @@ async function generateTextResponse(
     syncTextEnvironment(c.env);
 
     try {
+        const communityEndpoint = c.var.model?.communityEndpoint;
+        const gatewayContext = communityEndpoint
+            ? await communityEndpointGatewayContext(
+                  communityEndpoint,
+                  c.var.model.definition,
+                  requestData,
+                  c.env.BETTER_AUTH_SECRET,
+                  c.env.PORTKEY_GATEWAY_URL,
+                  c.var.auth?.apiKey?.rawKey || "",
+              )
+            : withGatewayContext(c, requestData);
         const completion = await generateTextPortkey(
             requestData.messages,
-            withGatewayContext(c, requestData),
+            gatewayContext,
         );
         completion.id = completion.id || generatePollinationsId();
 
@@ -309,6 +349,7 @@ async function generateTextResponse(
         }
 
         if (requestData.stream) return sendTextStreamResponse(completion);
+        const fallbackModel = c.var.model?.resolved;
         try {
             // Billing reads provider-reported cost from this completion later
             // (post-response, in track) — malformed cost data must fail the
@@ -321,14 +362,14 @@ async function generateTextResponse(
             error.status = 502;
             throw error;
         }
-        const trackingResponse = sendOpenAIResponse(completion);
+        const trackingResponse = sendOpenAIResponse(completion, fallbackModel);
         const publicCompletion = publicChatCompletion(completion);
         if (contentResponse) {
             c.var.track?.overrideResponseTracking(trackingResponse.clone());
-            return sendTextContentResponse(publicCompletion);
+            return sendTextContentResponse(publicCompletion, fallbackModel);
         }
         c.var.track?.overrideResponseTracking(trackingResponse.clone());
-        return sendOpenAIResponse(publicCompletion);
+        return sendOpenAIResponse(publicCompletion, fallbackModel);
     } catch (thrown: unknown) {
         throwTextError(thrown as ServiceError, c);
     }
@@ -348,7 +389,10 @@ export async function handleTextContentLocal(
     body: Record<string, unknown>,
 ): Promise<Response> {
     const req = createExpressLikeRequest(c, body, c.req.path);
-    const requestData = prepareRequestParameters(getRequestData(req));
+    const requestData = prepareRequestParameters(
+        getRequestData(req),
+        c.var.model.definition,
+    );
     return generateTextResponse(c, requestData, true);
 }
 
@@ -362,9 +406,12 @@ export async function handleSimpleTextLocal(
         ...c.req.param(),
         0: prompt,
     });
-    const requestData = prepareRequestParameters({
-        ...getRequestData(req),
-        model,
-    });
+    const requestData = prepareRequestParameters(
+        {
+            ...getRequestData(req),
+            model,
+        },
+        c.var.model.definition,
+    );
     return generateTextResponse(c, requestData, true);
 }

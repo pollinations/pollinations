@@ -1,13 +1,16 @@
 import { z } from "zod";
 import {
-    getModelDefinition,
-    getPriceDefinition,
+    getPriceDefinitionForModel,
+    getRegistryModelDefinition,
     getVisibleAudioModels,
     getVisibleEmbeddingModels,
     getVisibleImageModels,
+    getVisibleModel3dModels,
     getVisibleRealtimeModels,
     getVisibleTextModels,
+    type ModelDefinition,
     type ModelName,
+    type PriceDefinition,
 } from "./registry";
 
 export const ModelCapabilitySchema = z.enum([
@@ -32,10 +35,12 @@ export const ModelInfoSchema = z.object({
         "image",
         "audio",
         "video",
+        "3d",
         "embedding",
         "realtime",
     ]),
     brand: z.string(),
+    community: z.boolean().optional(),
     pricing: z
         .record(z.string(), z.string())
         .and(z.object({ currency: z.literal("pollen") })),
@@ -83,6 +88,7 @@ export const ModelInfoSchema = z.object({
     is_specialized: z.boolean().optional(),
     paid_only: z.boolean().optional(),
     alpha: z.boolean().optional(),
+    flat_rate: z.boolean().optional(),
     added_date: z.number().optional(),
 });
 
@@ -96,9 +102,7 @@ function toFixedPoint(n: number): string {
     return n.toFixed(12).replace(/\.?0+$/, "");
 }
 
-function getCapabilities(
-    service: ReturnType<typeof getModelDefinition>,
-): ModelCapability[] {
+function getCapabilities(service: ModelDefinition<string>): ModelCapability[] {
     const capabilities: ModelCapability[] = [];
     if (service.tools) capabilities.push("tool_calling");
     if (service.reasoning) capabilities.push("reasoning");
@@ -107,16 +111,13 @@ function getCapabilities(
     return capabilities;
 }
 
-/**
- * Get enriched model information for a service
- * Combines pricing from price definitions with metadata from service definition
- */
-function getModelInfo(modelName: ModelName): ModelInfo {
-    const service = getModelDefinition(modelName);
-    const priceDefinition = getPriceDefinition(modelName);
-    if (!priceDefinition) {
-        throw new Error(`No price definition found for model: ${modelName}`);
-    }
+type ModelInfoOptions = {
+    community?: boolean;
+};
+
+function pricingInfoFromDefinition(
+    priceDefinition: PriceDefinition,
+): Record<string, string> & { currency: "pollen" } {
     const pricing: Record<string, string> & { currency: "pollen" } = {
         currency: "pollen",
     };
@@ -125,6 +126,10 @@ function getModelInfo(modelName: ModelName): ModelInfo {
             pricing[key] = toFixedPoint(value);
         }
     }
+    return pricing;
+}
+
+function billingInfoFromDefinition(service: ModelDefinition<string>) {
     const billing = service.billing
         ? {
               tiers: service.billing.tiers?.map((tier) => ({
@@ -146,14 +151,22 @@ function getModelInfo(modelName: ModelName): ModelInfo {
               })),
           }
         : undefined;
+    return billing;
+}
 
+export function modelInfoFromDefinition(
+    name: string,
+    service: ModelDefinition<string>,
+    options: ModelInfoOptions = {},
+): ModelInfo {
     return {
-        name: modelName as string,
+        name,
         aliases: service.aliases,
         category: service.category,
         brand: service.brand,
-        pricing,
-        billing,
+        community: options.community || undefined,
+        pricing: pricingInfoFromDefinition(getPriceDefinitionForModel(service)),
+        billing: billingInfoFromDefinition(service),
         // User-facing metadata from service definition
         title: service.title,
         description: service.description,
@@ -170,8 +183,18 @@ function getModelInfo(modelName: ModelName): ModelInfo {
         is_specialized: service.isSpecialized,
         paid_only: service.paidOnly,
         alpha: service.alpha,
+        flat_rate: service.flatRate,
         added_date: service.addedDate,
     };
+}
+
+/**
+ * Get enriched model information for a service
+ * Combines pricing from price definitions with metadata from service definition
+ */
+function getModelInfo(modelName: ModelName): ModelInfo {
+    const service = getRegistryModelDefinition(modelName);
+    return modelInfoFromDefinition(modelName, service);
 }
 
 /**
@@ -207,4 +230,11 @@ export function getEmbeddingModelsInfo(): ModelInfo[] {
  */
 export function getRealtimeModelsInfo(): ModelInfo[] {
     return getVisibleRealtimeModels().map(getModelInfo);
+}
+
+/**
+ * Get all 3D models with enriched information
+ */
+export function getModel3dModelsInfo(): ModelInfo[] {
+    return getVisibleModel3dModels().map(getModelInfo);
 }

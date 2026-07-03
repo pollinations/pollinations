@@ -1,11 +1,13 @@
 import {
     Alert,
     AppHeader,
+    AppIcon,
     Button,
     Chip,
+    ColorModeToggle,
     cn,
     DiscordIcon,
-    ExternalLinkIcon,
+    ExternalLinkButton,
     GitHubIcon,
     Heading,
     ScrollArea,
@@ -18,11 +20,9 @@ import {
     TableHeaderCell,
     TableRow,
 } from "@pollinations/ui";
-import { getModalityTheme } from "@pollinations/ui/gen";
+import { ModalityChip } from "@pollinations/ui/gen";
 import { useRef, useState } from "react";
 import { useModelMonitor } from "./hooks/useModelMonitor";
-
-const APP_THEME = "violet";
 
 const WINDOW_OPTIONS = [
     { key: "7d", label: "7d" },
@@ -33,19 +33,19 @@ const WINDOW_OPTIONS = [
 ];
 
 const MODEL_TYPES = [
-    { key: "text", title: "Text" },
     { key: "image", title: "Image" },
     { key: "video", title: "Video" },
     { key: "audio", title: "Audio" },
     { key: "realtime", title: "Realtime" },
+    { key: "text", title: "Text" },
     { key: "embedding", title: "Embedding" },
 ];
 
 const EXTERNAL_LINKS = [
     {
         href: "https://enter.pollinations.ai",
-        label: "Log In",
-        icon: <ExternalLinkIcon className="h-4 w-4" />,
+        label: "Dashboard",
+        icon: <AppIcon className="h-4 w-4 shrink-0" />,
         showLabel: true,
     },
     {
@@ -104,8 +104,11 @@ function computeHealthStatus(stats) {
     if (!stats || !stats.total_requests) return "on";
     const success = stats.status_2xx || 0;
     const total5xx = stats.errors_5xx || 0;
+    // 4xx are client errors and don't count. Judge purely on the 5xx share of
+    // real (2xx+5xx) traffic — even a single 5xx-only request is off. Low
+    // volume is not a reason to call a failing model healthy.
     const modelRequests = success + total5xx;
-    if (modelRequests < 3) return "on";
+    if (modelRequests === 0) return "on";
     const pct5xx = (total5xx / modelRequests) * 100;
     if (pct5xx >= 50) return "off";
     if (pct5xx >= 10) return "degraded";
@@ -124,120 +127,116 @@ function rowIntent(status) {
     return "default";
 }
 
-function GlobalHealthSummary({ models, typeFilter, onTypeFilter }) {
-    if (models.length === 0) return null;
+function calcGroupStats(group) {
+    let total2xx = 0;
+    let total5xx = 0;
+    let countOn = 0;
+    let countDegraded = 0;
+    let countOff = 0;
 
-    const calcGroupStats = (group) => {
-        let total2xx = 0;
-        let total5xx = 0;
-        let countOn = 0;
-        let countDegraded = 0;
-        let countOff = 0;
+    for (const model of group) {
+        const stats = model.stats;
+        if (!stats) continue;
+        total2xx += stats.status_2xx || 0;
+        total5xx += stats.errors_5xx || 0;
+        const status = computeHealthStatus(stats);
+        if (status === "on") countOn++;
+        else if (status === "degraded") countDegraded++;
+        else countOff++;
+    }
 
-        for (const model of group) {
-            const stats = model.stats;
-            if (!stats) continue;
-            total2xx += stats.status_2xx || 0;
-            total5xx += stats.errors_5xx || 0;
-            const status = computeHealthStatus(stats);
-            if (status === "on") countOn++;
-            else if (status === "degraded") countDegraded++;
-            else countOff++;
-        }
+    const modelRequests = total2xx + total5xx;
+    const successRate =
+        modelRequests > 0 ? (total2xx / modelRequests) * 100 : 100;
 
-        const modelRequests = total2xx + total5xx;
-        const successRate =
-            modelRequests > 0 ? (total2xx / modelRequests) * 100 : 100;
-
-        let status = "healthy";
-        if (successRate < 75) status = "critical";
-        else if (successRate < 95) status = "degraded";
-
-        return {
-            successRate,
-            status,
-            countOn,
-            countDegraded,
-            countOff,
-            totalModels: group.length,
-        };
+    return {
+        successRate,
+        countOn,
+        countDegraded,
+        countOff,
+        totalModels: group.length,
     };
+}
+
+// A count badge for a tab: red = off, orange = degraded. Just the number;
+// the native title carries the detail on hover.
+function CountBadge({ intent, count, label }) {
+    return (
+        <Chip
+            intent={intent}
+            size="sm"
+            className="tabular-nums"
+            title={`${count} ${label}`}
+        >
+            {count}
+        </Chip>
+    );
+}
+
+// A tab's contents: category name + success rate, plus up to two count badges
+// (off, then degraded). Healthy categories show name + % only.
+function CategoryTab({ title, stats, showBadges = true }) {
+    return (
+        <span className="inline-flex items-center gap-1.5">
+            <span>{title}</span>
+            <span className="text-xs tabular-nums opacity-70">
+                {stats.successRate.toFixed(1)}%
+            </span>
+            {showBadges && stats.countOff > 0 && (
+                <CountBadge
+                    intent="danger"
+                    count={stats.countOff}
+                    label="off"
+                />
+            )}
+            {showBadges && stats.countDegraded > 0 && (
+                <CountBadge
+                    intent="warning"
+                    count={stats.countDegraded}
+                    label="degraded"
+                />
+            )}
+        </span>
+    );
+}
+
+// Category filter — the shared soft TabButton, same selector as the Window
+// picker. "All" clears the filter and shows the aggregate rate; only
+// categories with models are shown, each carrying its own rate + badges.
+function CategoryTabs({ models, value, onChange }) {
+    const available = MODEL_TYPES.filter(({ key }) =>
+        models.some((model) => model.type === key),
+    );
+    if (available.length === 0) return null;
 
     return (
-        <div className="grid grid-cols-1 items-stretch gap-3 sm:grid-cols-2 md:grid-cols-3">
-            {MODEL_TYPES.map(({ key, title }) => {
-                const group = models.filter((model) => model.type === key);
-                if (group.length === 0) return null;
-
-                const stats = calcGroupStats(group);
-                const isActive = typeFilter === key;
-                const isDimmed = typeFilter !== null && !isActive;
-                const hasIssues = stats.countOff > 0 || stats.countDegraded > 0;
-                const theme = getModalityTheme(key);
-
-                return (
-                    <button
-                        key={key}
-                        type="button"
-                        onClick={() => onTypeFilter(isActive ? null : key)}
-                        className={cn(
-                            "group min-w-0 h-full w-full rounded-xl text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-bg-active",
-                            isDimmed && "opacity-40",
+        <div className="flex flex-wrap gap-1.5">
+            <TabButton
+                active={value === null}
+                onClick={() => onChange(null)}
+                size="sm"
+            >
+                <CategoryTab
+                    title="All"
+                    stats={calcGroupStats(models)}
+                    showBadges={false}
+                />
+            </TabButton>
+            {available.map(({ key, title }) => (
+                <TabButton
+                    key={key}
+                    active={value === key}
+                    onClick={() => onChange(key)}
+                    size="sm"
+                >
+                    <CategoryTab
+                        title={title}
+                        stats={calcGroupStats(
+                            models.filter((model) => model.type === key),
                         )}
-                        aria-pressed={isActive}
-                    >
-                        <Surface
-                            theme={theme ?? undefined}
-                            variant="card-themed"
-                            className={cn(
-                                "flex h-full min-h-28 flex-col gap-3 transition-colors group-hover:bg-theme-bg-hover sm:min-h-32",
-                                isActive && "ring-2 ring-theme-bg-active",
-                            )}
-                        >
-                            <div className="flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-2">
-                                <h2 className="shrink-0 whitespace-nowrap font-serif text-2xl font-black leading-none text-theme-text-strong">
-                                    {title}
-                                </h2>
-                                <Chip
-                                    intent="neutral"
-                                    size="sm"
-                                    className="shrink-0"
-                                >
-                                    {stats.totalModels} models
-                                </Chip>
-                                <div className="flex min-w-max shrink-0 items-baseline gap-1.5 text-theme-text-strong">
-                                    <span className="text-3xl font-bold leading-none tabular-nums">
-                                        {stats.successRate.toFixed(1)}%
-                                    </span>
-                                    <span className="text-xs font-bold tracking-wide">
-                                        success
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className="mt-auto flex min-h-8 flex-wrap items-center gap-1 border-t border-theme-border pt-2">
-                                <div className="flex flex-wrap gap-1">
-                                    {stats.countOff > 0 && (
-                                        <Chip intent="danger" size="sm">
-                                            {stats.countOff} off
-                                        </Chip>
-                                    )}
-                                    {stats.countDegraded > 0 && (
-                                        <Chip intent="warning" size="sm">
-                                            {stats.countDegraded} degraded
-                                        </Chip>
-                                    )}
-                                    {!hasIssues && (
-                                        <Chip intent="success" size="sm">
-                                            healthy
-                                        </Chip>
-                                    )}
-                                </div>
-                            </div>
-                        </Surface>
-                    </button>
-                );
-            })}
+                    />
+                </TabButton>
+            ))}
         </div>
     );
 }
@@ -296,6 +295,17 @@ function SortableTh({ label, sortKey, currentSort, onSort, align = "left" }) {
 }
 
 function HeaderLink({ href, label, icon, showLabel = false }) {
+    if (showLabel) {
+        return (
+            <ExternalLinkButton href={href} size="sm" className="h-9 px-3 py-0">
+                <span className="inline-flex items-center gap-1.5">
+                    {icon}
+                    {label}
+                </span>
+            </ExternalLinkButton>
+        );
+    }
+
     return (
         <Button
             as="a"
@@ -304,14 +314,10 @@ function HeaderLink({ href, label, icon, showLabel = false }) {
             rel="noopener noreferrer"
             title={label}
             size="sm"
-            className={cn(
-                "h-9 gap-2 py-0",
-                showLabel ? "w-auto px-3" : "w-9 px-0",
-            )}
+            className="h-9 w-9 gap-2 px-0 py-0"
             aria-label={label}
         >
             {icon}
-            {showLabel && <span>{label}</span>}
         </Button>
     );
 }
@@ -466,10 +472,7 @@ function App() {
         : sortedModels;
 
     return (
-        <div
-            className="h-dvh bg-theme-bg-subtle text-theme-text-base"
-            data-theme={APP_THEME}
-        >
+        <div className="h-dvh bg-app-bg text-theme-text-base">
             <ScrollArea ref={scrollAreaRef} axis="y" className="h-full">
                 <AppHeader
                     navLabel="Model Monitor links"
@@ -480,6 +483,7 @@ function App() {
                     {EXTERNAL_LINKS.map((link) => (
                         <HeaderLink key={link.href} {...link} />
                     ))}
+                    <ColorModeToggle />
                 </AppHeader>
                 <main
                     className={cn(
@@ -492,11 +496,11 @@ function App() {
                             <Heading
                                 as="h1"
                                 size="title"
-                                className="polli-model-monitor-title polli:m-0 polli:text-ink-950"
+                                className="polli-model-monitor-title polli:m-0 polli:text-theme-text-strong"
                             >
                                 Model Monitor
                             </Heading>
-                            <p className="m-0 max-w-3xl text-base leading-relaxed text-ink-700">
+                            <p className="m-0 max-w-3xl text-base leading-relaxed text-theme-text-base">
                                 Real-time health monitoring for Pollinations AI
                                 models.
                             </p>
@@ -542,10 +546,10 @@ function App() {
                         </Alert>
                     )}
 
-                    <GlobalHealthSummary
+                    <CategoryTabs
                         models={models}
-                        typeFilter={typeFilter}
-                        onTypeFilter={setTypeFilter}
+                        value={typeFilter}
+                        onChange={setTypeFilter}
                     />
 
                     <Surface variant="card" className="overflow-hidden p-0">
@@ -659,8 +663,6 @@ function App() {
                                                 : null;
                                             const health =
                                                 computeHealthStatus(stats);
-                                            const modalityTheme =
-                                                getModalityTheme(model.type);
 
                                             return (
                                                 <TableRow
@@ -668,16 +670,15 @@ function App() {
                                                     intent={rowIntent(health)}
                                                 >
                                                     <TableCell>
-                                                        <Chip
-                                                            theme={
-                                                                modalityTheme ??
-                                                                undefined
+                                                        <ModalityChip
+                                                            modality={
+                                                                model.type
                                                             }
                                                             size="sm"
                                                             className="text-micro font-bold uppercase tracking-wide"
                                                         >
                                                             {model.type}
-                                                        </Chip>
+                                                        </ModalityChip>
                                                     </TableCell>
                                                     <TableCell>
                                                         <div className="flex items-center gap-2">

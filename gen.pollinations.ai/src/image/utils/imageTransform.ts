@@ -82,11 +82,14 @@ export async function convertToJpeg(
     });
 }
 
-export async function resizeForGptImage(inputBuffer: Buffer): Promise<Buffer> {
+export async function resizeForGptImage(
+    inputBuffer: Buffer,
+    maxDimension = 1536,
+): Promise<Buffer> {
     return transformImage(inputBuffer, {
         format: "image/jpeg",
         quality: 90,
-        maxWidth: 1536,
-        maxHeight: 1536,
+        maxWidth: maxDimension,
+        maxHeight: maxDimension,
     });
 }

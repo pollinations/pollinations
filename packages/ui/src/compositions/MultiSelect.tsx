@@ -3,7 +3,7 @@ import { cn } from "../lib/cn.ts";
 import { ChevronIcon } from "../primitives/ChevronIcon.tsx";
 import { Dropdown } from "../primitives/Dropdown.tsx";
 import { ScrollArea } from "../primitives/ScrollArea.tsx";
-import type { ThemeName } from "../theme.ts";
+import { Tooltip } from "../primitives/Tooltip.tsx";
 
 export type MultiSelectOption = {
     value: string;
@@ -19,11 +19,10 @@ export type MultiSelectProps = {
     disabledText?: string;
     align?: "start" | "end";
     label?: string;
-    theme: ThemeName;
 };
 
 const TRIGGER_BASE =
-    "polli-control polli:inline-flex polli:min-h-8 polli:min-w-[140px] polli:items-center polli:gap-2 polli:rounded-full polli:border polli:px-3 polli:py-1.5 polli:text-xs polli:font-medium polli:transition-all polli:duration-200";
+    "polli-control polli:inline-flex polli:min-h-8 polli:min-w-[140px] polli:items-center polli:gap-2 polli:rounded-full polli:px-3 polli:py-1.5 polli:text-xs polli:font-medium polli:transition-all polli:duration-200";
 
 const ROW_BASE =
     "polli-control polli:flex polli:w-full polli:items-center polli:gap-3 polli:px-3 polli:py-2 polli:text-left polli:text-xs polli:transition-colors";
@@ -40,7 +39,6 @@ export const MultiSelect: FC<MultiSelectProps> = ({
     disabledText,
     align = "start",
     label,
-    theme,
 }) => {
     const isAllSelected = selected.length === 0;
 
@@ -68,42 +66,39 @@ export const MultiSelect: FC<MultiSelectProps> = ({
 
     if (disabled) {
         return (
-            <div
-                data-theme={theme}
-                className="polli:group polli:relative polli:flex polli:items-center polli:gap-2"
-            >
+            <div className="polli:flex polli:items-center polli:gap-2">
                 {labelNode}
-                <button
-                    type="button"
-                    disabled
-                    className={cn(
-                        TRIGGER_BASE,
-                        "polli:cursor-not-allowed polli:border-theme-border polli:bg-theme-bg-subtle polli:opacity-60",
-                    )}
+                <Tooltip
+                    triggerAs="span"
+                    content="No items available"
+                    align="center"
+                    className="polli:inline-flex"
                 >
-                    <span className="polli:flex-1 polli:truncate polli:text-left polli:text-theme-text-soft/60">
-                        {displayText}
-                    </span>
-                    <ChevronIcon
-                        expanded={false}
-                        className="polli:h-3 polli:w-3 polli:text-theme-text-soft"
-                    />
-                </button>
-                <span className="polli:pointer-events-none polli:absolute polli:-top-8 polli:left-1/2 polli:z-[100] polli:-translate-x-1/2 polli:whitespace-nowrap polli:rounded-md polli:border polli:border-theme-border polli:bg-theme-bg-pale polli:px-2 polli:py-1 polli:text-xs polli:text-theme-text-strong polli:opacity-0 polli:shadow-sm polli:transition-opacity polli:group-hover:opacity-100">
-                    No items available
-                </span>
+                    <button
+                        type="button"
+                        disabled
+                        className={cn(
+                            TRIGGER_BASE,
+                            "polli:cursor-not-allowed polli:bg-theme-bg-active polli:opacity-50",
+                        )}
+                    >
+                        <span className="polli:flex-1 polli:truncate polli:text-left polli:text-theme-text-strong">
+                            {displayText}
+                        </span>
+                        <ChevronIcon
+                            expanded={false}
+                            className="polli:h-3 polli:w-3 polli:text-theme-text-soft"
+                        />
+                    </button>
+                </Tooltip>
             </div>
         );
     }
 
     return (
-        <div
-            data-theme={theme}
-            className="polli:flex polli:items-center polli:gap-2"
-        >
+        <div className="polli:flex polli:items-center polli:gap-2">
             {labelNode}
             <Dropdown
-                theme={theme}
                 align={align}
                 className="polli:min-w-[320px]"
                 trigger={(open) => (
@@ -112,8 +107,8 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                         className={cn(
                             TRIGGER_BASE,
                             open
-                                ? "polli:border-theme-border polli:bg-theme-bg-active"
-                                : "polli:border-theme-border polli:bg-theme-bg-subtle polli:hover:bg-theme-bg-pale",
+                                ? "polli:bg-theme-bg-hover"
+                                : "polli:bg-theme-bg-active polli:hover:bg-theme-bg-hover",
                         )}
                     >
                         <span
@@ -138,7 +133,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                     </button>
                 )}
             >
-                <ScrollArea theme={theme} className="polli:max-h-64">
+                <ScrollArea className="polli:max-h-64">
                     <button
                         type="button"
                         onClick={selectAll}

@@ -1,11 +1,8 @@
 import type { PropsWithChildren } from "react";
 import { cn } from "../lib/cn.ts";
-import type { ThemeName } from "../theme.ts";
 import { ExternalLinkIcon } from "./icons/index.tsx";
 
 type BaseInlineLinkProps = {
-    /** Override the cascade theme for this link's subtree. */
-    theme?: ThemeName;
     /** Set explicitly for non-http external links, or false for custom routing components. */
     external?: boolean;
     showIcon?: boolean;
@@ -26,7 +23,6 @@ function isExternalHref(href: unknown): boolean {
 
 export function InlineLink<T extends React.ElementType = "a">({
     as,
-    theme,
     external,
     showIcon = true,
     className,
@@ -39,13 +35,12 @@ export function InlineLink<T extends React.ElementType = "a">({
 
     return (
         <Component
-            data-theme={theme}
             target={isExternal ? "_blank" : undefined}
             rel={isExternal ? "noopener noreferrer" : undefined}
             className={cn(
-                "polli-control polli:inline-flex polli:items-center polli:gap-1 polli:rounded-sm polli:font-semibold polli:text-theme-text-strong",
-                "polli:underline polli:decoration-theme-border polli:decoration-2 polli:underline-offset-3",
-                "polli:transition-colors polli:hover:text-theme-text-soft polli:hover:decoration-theme-text-soft",
+                "polli-control polli:inline-flex polli:items-center polli:gap-1 polli:rounded-sm polli:font-medium polli:text-theme-text-soft",
+                "polli:underline polli:underline-offset-2",
+                "polli:transition-colors polli:hover:text-theme-text-strong",
                 className,
             )}
             {...linkProps}

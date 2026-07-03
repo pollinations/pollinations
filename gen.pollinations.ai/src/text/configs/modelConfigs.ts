@@ -2,8 +2,8 @@ import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
     createAzureModelConfig,
     createBedrockNativeConfig,
-    createDashScopeModelConfig,
     createFireworksModelConfig,
+    createInceptionModelConfig,
     createOpenRouterModelConfig,
     createOVHcloudMistralConfig,
     createOVHcloudModelConfig,
@@ -115,6 +115,12 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "google/gemma-4-26b-a4b-it",
         }),
 
+    // -- Inception Labs (Mercury) -------------------------------------------
+    "mercury-2": () =>
+        createInceptionModelConfig({
+            model: "mercury-2",
+        }),
+
     // -- Fireworks AI (DeepSeek) ---------------------------------------------
     "accounts/fireworks/models/deepseek-v4-flash": () =>
         createFireworksModelConfig({
@@ -126,13 +132,13 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // -- Fireworks AI (Kimi, GLM, Qwen) --------------------------------------
-    "accounts/fireworks/models/kimi-k2p5": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/kimi-k2p5",
-        }),
     "accounts/fireworks/models/kimi-k2p6": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/kimi-k2p6",
+        }),
+    "accounts/fireworks/models/kimi-k2p7-code": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/kimi-k2p7-code",
         }),
 
     // -- OpenRouter (Mistral Small 3.2, Mistral Small 4) ---------------------
@@ -162,19 +168,26 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "global.anthropic.claude-sonnet-4-6",
             defaultOptions: { max_tokens: 64000 },
         }),
+    "claude-sonnet-5": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-sonnet-5",
+            defaultOptions: { max_tokens: 64000 },
+        }),
     "claude-opus-4-6": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-opus-4-6-v1",
             defaultOptions: { max_tokens: 128000 },
         }),
+    // global.* inference profiles for Opus 4.7/4.8 return Bedrock-side
+    // Internal/ServiceUnavailable errors; the us.* profiles are healthy.
     "claude-opus-4-7": () =>
         createBedrockNativeConfig({
-            model: "global.anthropic.claude-opus-4-7",
+            model: "us.anthropic.claude-opus-4-7",
             defaultOptions: { max_tokens: 128000 },
         }),
     "claude-opus-4-8": () =>
         createBedrockNativeConfig({
-            model: "global.anthropic.claude-opus-4-8",
+            model: "us.anthropic.claude-opus-4-8",
             defaultOptions: { max_tokens: 128000 },
         }),
     "claude-haiku-4-5": () =>
@@ -215,25 +228,21 @@ export const portkeyConfig: PortkeyConfigMap = {
         createPerplexityModelConfig({ model: "sonar-reasoning-pro" }),
 
     // -- Fireworks AI (Qwen) -----------------------------------------------------
-    "accounts/fireworks/models/qwen3p6-plus": () =>
+    "accounts/fireworks/models/qwen3p7-plus": () =>
         createFireworksModelConfig({
-            model: "accounts/fireworks/models/qwen3p6-plus",
+            model: "accounts/fireworks/models/qwen3p7-plus",
         }),
-    "accounts/fireworks/models/glm-5p1": () =>
+    "accounts/fireworks/models/glm-5p2": () =>
         createFireworksModelConfig({
-            model: "accounts/fireworks/models/glm-5p1",
+            model: "accounts/fireworks/models/glm-5p2",
         }),
     "accounts/fireworks/models/minimax-m2p7": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/minimax-m2p7",
         }),
-
-    // -- OpenRouter (MiniMax M3) ---------------------------------------------
-    // M3 is not on Fireworks/Bedrock yet (Bedrock tops out at M2.5); OpenRouter
-    // is the only route and also exposes image input.
-    "minimax/minimax-m3": () =>
-        createOpenRouterModelConfig({
-            model: "minimax/minimax-m3",
+    "accounts/fireworks/models/minimax-m3": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/minimax-m3",
         }),
 
     // -- Azure (Myceli Prod — eastus, Meta Llama) ----------------------------
@@ -257,11 +266,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "meta-llama/llama-4-scout",
         }),
 
-    // -- Alibaba DashScope (Qwen) ---------------------------------------------
-    "qwen3-coder-next": () =>
-        createDashScopeModelConfig({ model: "qwen3-coder-next" }),
-
-    // -- OpenRouter (Qwen VL) -------------------------------------------------
+    // -- OpenRouter (Qwen Coder, Qwen VL) -------------------------------------
+    // Moved off Alibaba DashScope: OpenRouter serves the same SKU far cheaper
+    // ($0.11/$0.80 vs DashScope's $0.30/$1.50 per 1M tokens).
+    "qwen/qwen3-coder-next": () =>
+        createOpenRouterModelConfig({ model: "qwen/qwen3-coder-next" }),
     "qwen/qwen3-vl-30b-a3b-instruct": () =>
         createOpenRouterModelConfig({
             model: "qwen/qwen3-vl-30b-a3b-instruct",

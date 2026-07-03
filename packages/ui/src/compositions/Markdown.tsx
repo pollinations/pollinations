@@ -35,14 +35,21 @@ const components: Components = {
             {...props}
         />
     ),
-    a: ({ node, ...props }) => (
-        <a
-            target="_blank"
-            rel="noopener noreferrer"
-            className="polli-control polli:rounded-sm polli:font-semibold polli:text-theme-text-strong polli:underline polli:underline-offset-2"
-            {...props}
-        />
-    ),
+    a: ({ node, href, ...props }) => {
+        const external =
+            typeof href === "string" &&
+            !href.startsWith("#") &&
+            !href.startsWith("/");
+        return (
+            <a
+                href={href}
+                target={external ? "_blank" : undefined}
+                rel={external ? "noopener noreferrer" : undefined}
+                className="polli-control polli:rounded-sm polli:font-medium polli:text-theme-text-strong polli:underline polli:underline-offset-2"
+                {...props}
+            />
+        );
+    },
 };
 
 /** Compact markdown for cards and snippets. Use Prose for document-style content. */

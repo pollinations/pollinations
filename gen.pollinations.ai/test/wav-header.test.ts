@@ -50,4 +50,12 @@ describe("fixWavHeader", () => {
         const buf = new ArrayBuffer(10);
         expect(fixWavHeader(buf)).toBe(buf);
     });
+
+    it("rewrites 0xFFFFFFFF placeholder (unknown size) to real byte counts", () => {
+        const dataBytes = 2000;
+        const fixed = fixWavHeader(makeWav(dataBytes, 0xffffffff));
+        const view = new DataView(fixed);
+        expect(view.getUint32(40, true)).toBe(dataBytes);
+        expect(view.getUint32(4, true)).toBe(44 + dataBytes - 8);
+    });
 });

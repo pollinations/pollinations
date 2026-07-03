@@ -221,7 +221,7 @@ def main():
     if publish_mode in ("direct", "all"):
         print("\n[Direct] Publishing direct channels...")
 
-        # Reddit (VPS/Devvit deployment)
+        # Reddit (VPS deployment)
         vps_host = get_env("REDDIT_VPS_HOST", required=False)
         vps_user = get_env("REDDIT_VPS_USER", required=False)
         vps_ssh_key_raw = get_env("REDDIT_VPS_SSH_KEY", required=False)

@@ -343,7 +343,7 @@ def _run_burn_stage(ops_ingest, ops_replace, tb_prod, creds, cfg, pools,
     except Exception as e:
         statuses["burn"] = "err:" + _sanitize_err(e, creds)
         notes.append(f"burn stage failed: {statuses['burn']}")
-        return
+        return pm_rows
 
     # ---- Step 6: print runway alarms and needs_data notices ----
     try:
@@ -374,6 +374,8 @@ def _run_burn_stage(ops_ingest, ops_replace, tb_prod, creds, cfg, pools,
                   f"python3 -m ingest.record meter <provider> {current_month} <usd> --funding credit")
     except Exception:
         pass
+
+    return pm_rows
 
 
 def main():
@@ -434,10 +436,7 @@ def main():
         # verdicts may be stale for failed months but will self-heal on the next successful run.
         notes.append(f"wise FAILED, months kept: {e}")
 
-    # 3. Gaps / reconciliation — read facts back, run pure engine, write result
-    fx = cfg["fx_eur_usd"]
-    invoices = dedupe_invoices(ops_ingest.sql(_INV_SQL.format(fx=fx)))
-    payments = ops_ingest.sql(_PAY_SQL.format(fx=fx))
+    # 3. Shared operator truth
     pools = creds.load_credits().get("pools", [])
 
     try:
@@ -452,16 +451,9 @@ def main():
         if scope == "reconciliation" and field == "accepted"
     ]
 
-    rrows = gaps.run(invoices, payments, pools, all_months, gaps_cfg, today)
-    if rrows:
-        ops_replace.replace("reconciliation", rrows)
-    else:
-        notes.append("gaps: 0 verdict rows — reconciliation table unchanged")
-    st["recon"] = len(rrows)
-
-    # 4. Burn stage — balances, meters, usage, revenue, provider_month, grants
+    # 4. Burn stage first — provider_month folds every credit-burn evidence source.
     tb_prod = tb.TB(cfg["tb_prod_api"], c["TINYBIRD_PROD_READ_TOKEN"])
-    _run_burn_stage(
+    pm_rows = _run_burn_stage(
         ops_ingest=ops_ingest,
         ops_replace=ops_replace,
         tb_prod=tb_prod,
@@ -474,7 +466,20 @@ def main():
         overrides=overrides,
     )
 
-    # 5. Ingest run log
+    # 5. Gaps / reconciliation — read facts back, run pure engine, write result
+    fx = cfg["fx_eur_usd"]
+    invoices = dedupe_invoices(ops_ingest.sql(_INV_SQL.format(fx=fx)))
+    payments = ops_ingest.sql(_PAY_SQL.format(fx=fx))
+
+    rrows = gaps.run(invoices, payments, pools, all_months, gaps_cfg, today,
+                     provider_month=pm_rows)
+    if rrows:
+        ops_replace.replace("reconciliation", rrows)
+    else:
+        notes.append("gaps: 0 verdict rows — reconciliation table unchanged")
+    st["recon"] = len(rrows)
+
+    # 6. Ingest run log
     now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     ops_ingest.append("ingest_runs", [{
         "run_at": now,
@@ -485,8 +490,9 @@ def main():
 
     print(f"ingested: {st}" + (f"  NOTES: {notes}" if notes else ""))
 
-    # 6. Chase list — print providers that need attention
-    chase = [r for r in rrows if r["status"] in ("missing_invoice", "amount_mismatch", "needs_label")]
+    # 7. Chase list — print providers that need attention
+    chase = [r for r in rrows
+             if r["status"] in ("missing_invoice", "amount_mismatch", "needs_label", "needs_data")]
     if chase:
         print("CHASE LIST:")
         for r in chase:

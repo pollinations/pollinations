@@ -70,6 +70,7 @@ _POOLS = [
 
 _CFG = {
     "tb_ops_api": "https://fake.tb.io",
+    "tb_prod_api": "https://fake-prod.tb.io",
     "fx_eur_usd": 1.14,
     "months_start": "2026-01",
     "repull_months": 2,
@@ -100,6 +101,55 @@ MONTHS = ["2026-06"]
 def _make_tb_stubs():
     """Return (ops_ingest_stub, ops_replace_stub, tb_prod_stub)."""
     return TBStub("ingest"), TBStub("replace"), TBStub("prod")
+
+
+def test_main_runs_burn_before_gaps_and_passes_provider_month(monkeypatch):
+    ops_ingest, ops_replace, tb_prod_stub = _make_tb_stubs()
+    events = []
+    pm_rows = [{"month": "2026-06", "provider": "assemblyai",
+                "credit_burn_usd": 242.45, "usage_cost_usd": 242.45,
+                "status": "grant_burn"}]
+
+    monkeypatch.setattr(sys, "argv", ["ingest.run"])
+    monkeypatch.setattr("ingest.creds.load_creds", lambda: _CREDS)
+    monkeypatch.setattr("ingest.creds.load_config", lambda: _CFG)
+    monkeypatch.setattr("ingest.creds.load_credits", lambda: {"pools": _POOLS})
+    monkeypatch.setattr("ingest.invoices.harvest.gmail_sweep", lambda *a, **kw: 0)
+    monkeypatch.setattr("ingest.invoices.harvest.inbox_sweep", lambda *a, **kw: 0)
+    monkeypatch.setattr("ingest.connectors.wise.outflow_rows", lambda *a, **kw: [])
+    monkeypatch.setattr(_run, "load_overrides", lambda ops: {})
+
+    def fake_tb(api, token):
+        if token == _CREDS["TINYBIRD_OPS_INGEST_TOKEN"]:
+            return ops_ingest
+        if token == _CREDS["TINYBIRD_OPS_REPLACE_TOKEN"]:
+            return ops_replace
+        if token == _CREDS["TINYBIRD_PROD_READ_TOKEN"]:
+            return tb_prod_stub
+        raise AssertionError(f"unexpected token {token}")
+
+    def fake_burn_stage(**kwargs):
+        events.append("burn")
+        return pm_rows
+
+    def fake_gaps_run(invoices, payments, pools, months, config, today,
+                      provider_month=None):
+        events.append("gaps")
+        assert provider_month is pm_rows
+        return [{
+            "month": "2026-06", "provider": "assemblyai", "billing": "monthly",
+            "status": "ok_credit", "invoice_usd": 0.0, "payment_usd": 0.0,
+            "invoice_refs": "", "payment_refs": "", "note": "",
+        }]
+
+    monkeypatch.setattr("ingest.tb.TB", fake_tb)
+    monkeypatch.setattr(_run, "_run_burn_stage", fake_burn_stage)
+    monkeypatch.setattr("ingest.gaps.run", fake_gaps_run)
+
+    _run.main()
+
+    assert events == ["burn", "gaps"]
+    assert any(call[0] == "reconciliation" for call in ops_replace.replaces)
 
 
 # ---------------------------------------------------------------------------
@@ -188,8 +238,7 @@ def test_raising_meter_connector_both_statuses(monkeypatch):
 
     def _meter_ok(creds, months, today):
         from ingest.connectors.providers import _mrow
-        return [_mrow("2026-06", "deepinfra", 8.77, "prepaid", "api",
-                       "deepinfra /usage", today)]
+        return [_mrow("2026-06", "deepinfra", 8.77, "prepaid", "api", today)]
 
     import ingest.connectors.registry as _reg
     orig_balance = _reg.BALANCE
@@ -246,13 +295,12 @@ def test_replace_on_replace_stub_append_on_ingest_stub(monkeypatch):
 
     def _meter_ok(creds, months, today):
         from ingest.connectors.providers import _mrow
-        return [_mrow("2026-06", "deepinfra", 5.0, "prepaid", "api", "method", today)]
+        return [_mrow("2026-06", "deepinfra", 5.0, "prepaid", "api", today)]
 
     fake_usage_rows = [
         {"month": "2026-06", "provider": "azure-openai", "model": "gpt-4o",
          "event_type": "generate.text", "requests": 100, "pollen_paid": 1.0,
-         "pollen_quest": 0.5, "cost_paid": 0.8, "cost_quest": 0.2,
-         "retrieved_at": TODAY}
+         "pollen_quest": 0.5, "cost_paid": 0.8, "cost_quest": 0.2}
     ]
 
     import ingest.connectors.registry as _reg
@@ -267,14 +315,12 @@ def test_replace_on_replace_stub_append_on_ingest_stub(monkeypatch):
         monkeypatch.setattr("ingest.connectors.providers.stripe.revenue_rows",
                             lambda creds, months, today: [{"month": "2026-06",
                                 "gross_eur": 100.0, "fees_eur": 5.0,
-                                "refunds_eur": 0.0, "net_eur": 95.0,
-                                "retrieved_at": TODAY}])
+                                "refunds_eur": 0.0}])
         monkeypatch.setattr("ingest.burn.run", lambda *a, **kw: [{"month": "2026-06",
-            "provider": "runpod", "billing": "prepaid", "invoice_usd": 0.0,
-            "cash_usd": 0.0, "meter_cash_usd": 0.0, "meter_prepaid_usd": 0.0,
+            "provider": "runpod", "invoice_usd": 0.0,
+            "meter_cash_usd": 0.0, "meter_prepaid_usd": 0.0,
             "meter_src": "", "usage_cost_usd": 0.0, "credit_burn_usd": 0.0,
-            "credit_src": "", "grant_left_usd": 0.0, "grant_src": "",
-            "status": "quiet", "note": "", "run_at": TODAY}])
+            "credit_src": "", "status": "quiet"}])
         monkeypatch.setattr("ingest.burn.grants", lambda *a, **kw: [])
 
         statuses = {}
@@ -379,7 +425,7 @@ def test_zero_row_revenue_skips_replace(monkeypatch):
                             lambda tb, months, today: [{"month": "2026-06",
                                 "provider": "azure", "model": "m", "event_type": "e",
                                 "requests": 1, "pollen_paid": 0.0, "pollen_quest": 0.0,
-                                "cost_paid": 0.0, "cost_quest": 0.0, "retrieved_at": TODAY}])
+                                "cost_paid": 0.0, "cost_quest": 0.0}])
         monkeypatch.setattr("ingest.connectors.providers.stripe.revenue_rows",
                             lambda creds, months, today: [])
         monkeypatch.setattr("ingest.burn.run", lambda *a, **kw: [])
@@ -547,7 +593,6 @@ def test_runway_alarm_fires_below_14_days(monkeypatch, capsys):
             "spent_usd": None,
             "left_usd": None,
             "prepaid_left_usd": 100.0,
-            "currency": "USD",
             "source": "api",
             "note": "spend_per_hr=1.0",
         }

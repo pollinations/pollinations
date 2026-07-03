@@ -7,12 +7,29 @@ POOLS = [
     {"pool": "Azure spons", "providers": ["azure"], "billing": "sponsored", "active_from": "2026-01"},
 ]
 
-def _run(inv=[], pay=[], months=["2026-06"]):
-    return gaps.run(inv, pay, POOLS, months, CFG, today="2026-07-02")
+def _pm(provider, month="2026-06", credit=0.0, usage=0.0):
+    return {
+        "month": month,
+        "provider": provider,
+        "category": "compute",
+        "invoice_usd": 0.0,
+        "meter_cash_usd": 0.0,
+        "meter_prepaid_usd": 0.0,
+        "meter_src": "",
+        "usage_cost_usd": usage,
+        "credit_burn_usd": credit,
+        "credit_src": "manual" if credit else "",
+        "status": "ok",
+    }
 
-def test_monthly_active_window_expects_invoice():
+
+def _run(inv=[], pay=[], months=["2026-06"], pm=[]):
+    return gaps.run(inv, pay, POOLS, months, CFG, today="2026-07-02",
+                    provider_month=pm)
+
+def test_monthly_active_window_without_evidence_is_quiet():
     r = next(x for x in _run() if x["provider"] == "google")     # active, no invoice, no payment
-    assert r["status"] == "missing_invoice"
+    assert r["status"] == "quiet"
 
 def test_before_active_from_expects_nothing():
     rows = gaps.run([], [], [{"pool": "Late", "providers": ["late"], "billing": "monthly",
@@ -40,8 +57,49 @@ def test_needs_label_is_amber_not_ok():
              if x["provider"] == "google")
     assert r["status"] == "needs_label"
 
-def test_sponsored_is_ok_credit():
-    assert next(x for x in _run() if x["provider"] == "azure")["status"] == "ok_credit"
+def test_sponsored_without_evidence_is_quiet():
+    assert next(x for x in _run() if x["provider"] == "azure")["status"] == "quiet"
+
+
+def test_zero_invoice_is_ok_credit():
+    r = next(x for x in _run(inv=[{"provider": "google", "kind": "monthly_bill",
+                                   "period_month": "2026-06", "amount_usd": 0.0,
+                                   "sha256": "zero", "status": "parsed",
+                                   "issued_at": "2026-06-01"}])
+             if x["provider"] == "google")
+    assert r["status"] == "ok_credit"
+    assert r["invoice_refs"] == "zero"
+
+
+def test_credit_burn_evidence_is_ok_credit():
+    r = next(x for x in _run(pm=[_pm("azure", credit=242.45)])
+             if x["provider"] == "azure")
+    assert r["status"] == "ok_credit"
+
+
+def test_usage_only_is_needs_data():
+    r = next(x for x in _run(pm=[_pm("azure", usage=242.45)])
+             if x["provider"] == "azure")
+    assert r["status"] == "needs_data"
+
+
+def test_mixed_zero_and_payable_invoice_matches_payment():
+    rows = _run(
+        inv=[
+            {"provider": "google", "kind": "monthly_bill", "period_month": "2026-06",
+             "amount_usd": 0.0, "sha256": "zero", "status": "parsed",
+             "issued_at": "2026-06-01"},
+            {"provider": "google", "kind": "monthly_bill", "period_month": "2026-06",
+             "amount_usd": 500.0, "sha256": "payable", "status": "parsed",
+             "issued_at": "2026-06-02"},
+        ],
+        pay=[{"provider": "google", "month": "2026-07", "amount_usd": 500.0,
+              "wise_ref": "w-payable", "paid_at": "2026-07-05"}],
+    )
+    r = next(x for x in rows if x["provider"] == "google")
+    assert r["status"] == "ok"
+    assert r["invoice_usd"] == 500.0
+    assert r["payment_refs"] == "w-payable"
 
 
 # ── Finding 1: cross-month arrears window ─────────────────────────────────────
@@ -99,10 +157,11 @@ def test_monthly_m_plus_2_payment_is_missing_payment():
 # ── Finding 2: reconciliation datasource schema alignment ─────────────────────
 
 def test_verdict_row_has_required_schema_keys():
-    """Every verdict row must match the Tinybird reconciliation datasource schema exactly."""
+    """Every verdict row must match the Tinybird reconciliation datasource schema exactly.
+    delta_usd is computed in the gaps_ep pipe; run freshness lives in ingest_runs."""
     required = {"month", "provider", "billing", "status", "invoice_usd", "payment_usd",
-                "delta_usd", "invoice_refs", "payment_refs", "note", "run_at"}
-    forbidden = {"pool", "sha256s"}
+                "invoice_refs", "payment_refs", "note"}
+    forbidden = {"pool", "sha256s", "delta_usd", "run_at"}
     rows = gaps.run(
         [{"provider": "google", "kind": "monthly_bill", "period_month": "2026-06",
           "amount_usd": 200.0, "sha256": "sha-s1", "status": "parsed", "issued_at": "2026-06-01"}],
@@ -117,8 +176,9 @@ def test_verdict_row_has_required_schema_keys():
     assert not extra_keys, f"forbidden keys present: {extra_keys}"
 
 
-def test_verdict_row_delta_usd_correct():
-    """delta_usd must equal invoice_usd - payment_usd rounded to 2dp."""
+def test_verdict_row_amounts_correct():
+    """invoice_usd/payment_usd must carry the matched sums (delta_usd = invoice - payment
+    is derived from these two in the gaps_ep pipe)."""
     rows = gaps.run(
         [{"provider": "google", "kind": "monthly_bill", "period_month": "2026-06",
           "amount_usd": 300.0, "sha256": "sha-d1", "status": "parsed", "issued_at": "2026-06-01"}],
@@ -127,7 +187,8 @@ def test_verdict_row_delta_usd_correct():
         POOLS, ["2026-06"], CFG, today="2026-07-02",
     )
     r = next(x for x in rows if x["provider"] == "google")
-    assert r["delta_usd"] == round(300.0 - 295.0, 2), f"wrong delta_usd: {r['delta_usd']}"
+    assert r["invoice_usd"] == 300.0
+    assert r["payment_usd"] == 295.0
 
 
 def test_verdict_row_invoice_refs_is_string():
@@ -142,13 +203,6 @@ def test_verdict_row_invoice_refs_is_string():
     r = next(x for x in rows if x["provider"] == "google")
     assert isinstance(r["invoice_refs"], str), f"invoice_refs should be str, got {type(r['invoice_refs'])}"
     assert "abc123" in r["invoice_refs"]
-
-
-def test_verdict_row_run_at_matches_today():
-    """run_at must equal the today argument passed to gaps.run."""
-    rows = gaps.run([], [], POOLS, ["2026-06"], CFG, today="2026-07-02")
-    r = next(x for x in rows if x["provider"] == "azure")  # sponsored → simplest row
-    assert r["run_at"] == "2026-07-02", f"run_at mismatch: {r['run_at']}"
 
 
 def test_verdict_row_note_is_string():

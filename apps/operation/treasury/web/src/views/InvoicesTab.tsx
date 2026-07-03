@@ -16,6 +16,7 @@ import { DataTable, TableScroller } from "../components/DataTable";
 import { InvoiceEditor } from "../components/InvoiceEditor";
 import { SourceBadge, SourceMark } from "../components/Provenance";
 import { fmtUsd2 } from "../lib/format";
+import { queuedInvoiceKey } from "../lib/queued";
 import { statusMeta } from "../lib/recon";
 import type { Data, InvoiceRow } from "../types";
 
@@ -77,7 +78,13 @@ function FileRefAction({ fileRef }: { fileRef: string }) {
     );
 }
 
-export function InvoicesTab({ data }: { data: Data }) {
+export function InvoicesTab({
+    data,
+    queuedKeys = new Set<string>(),
+}: {
+    data: Data;
+    queuedKeys?: ReadonlySet<string>;
+}) {
     const [category, setCategory] = useState("all");
     const [editingSha, setEditingSha] = useState<string | null>(null);
     const rows = useMemo(
@@ -165,7 +172,19 @@ export function InvoicesTab({ data }: { data: Data }) {
                                         <FileRefAction fileRef={row.file_ref} />
                                     </TableCell>
                                     <TableCell>
-                                        <StatusChip status={row.status} />
+                                        <span className="inline-flex items-center gap-1.5">
+                                            <StatusChip status={row.status} />
+                                            {queuedKeys.has(
+                                                queuedInvoiceKey(row.sha256),
+                                            ) && (
+                                                <Chip
+                                                    size="sm"
+                                                    intent="warning"
+                                                >
+                                                    queued
+                                                </Chip>
+                                            )}
+                                        </span>
                                     </TableCell>
                                     <TableCell>
                                         {row.ingested_at || "-"}

@@ -35,6 +35,10 @@ export function CommitTray() {
                     </li>
                 ))}
             </ul>
+            <Text size="sm" tone="soft">
+                Commits append raw rows now; derived flags update after the next
+                forager ingest.
+            </Text>
             {error && <Alert intent="warning">{error}</Alert>}
         </section>
     );

@@ -96,7 +96,7 @@ export function StagingProvider({
 }: {
     children: ReactNode;
     fixtures: boolean;
-    onCommitted: (count: number) => void;
+    onCommitted: (changes: StagedChange[]) => void;
 }) {
     const [state, dispatch] = useReducer(stagingReducer, initialStagingState);
 
@@ -113,6 +113,7 @@ export function StagingProvider({
     const commitAll = useCallback(async () => {
         const count = state.changes.length;
         if (count === 0 || state.committing) return;
+        const committedChanges = state.changes;
 
         dispatch({ type: "commitStart" });
 
@@ -128,7 +129,7 @@ export function StagingProvider({
             }
 
             dispatch({ type: "commitSuccess" });
-            onCommitted(count);
+            onCommitted(committedChanges);
         } catch (caught) {
             dispatch({
                 type: "commitError",

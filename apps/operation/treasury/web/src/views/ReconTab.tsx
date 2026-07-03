@@ -14,6 +14,11 @@ import { DataTable, TableScroller } from "../components/DataTable";
 import { canResolveGapStatus, GapActions } from "../components/GapActions";
 import { SourceMark, ValueWithSources } from "../components/Provenance";
 import { fmtUsd2 } from "../lib/format";
+import {
+    queuedBalanceKey,
+    queuedMeterKey,
+    queuedReconKey,
+} from "../lib/queued";
 import { statusMeta } from "../lib/recon";
 import type { CoverageRow, Data, GapRow } from "../types";
 
@@ -32,7 +37,13 @@ function gapKey(row: Pick<GapRow, "month" | "provider" | "status">) {
     return `${row.month}|${row.provider}|${row.status}`;
 }
 
-export function ReconTab({ data }: { data: Data }) {
+export function ReconTab({
+    data,
+    queuedKeys = new Set<string>(),
+}: {
+    data: Data;
+    queuedKeys?: ReadonlySet<string>;
+}) {
     const [problemsOnly, setProblemsOnly] = useState(false);
     const [resolveRow, setResolveRow] = useState<CoverageRow | null>(null);
     const gapsByKey = useMemo(() => {
@@ -104,6 +115,14 @@ export function ReconTab({ data }: { data: Data }) {
                     <TableBody>
                         {coverage.map((row) => {
                             const meta = statusMeta(row.status);
+                            const queued =
+                                queuedKeys.has(
+                                    queuedReconKey(row.month, row.provider),
+                                ) ||
+                                queuedKeys.has(
+                                    queuedMeterKey(row.month, row.provider),
+                                ) ||
+                                queuedKeys.has(queuedBalanceKey(row.provider));
                             const gap =
                                 gapsByKey.byKey.get(gapKey(row)) ??
                                 gapsByKey.byProviderMonth.get(
@@ -128,6 +147,14 @@ export function ReconTab({ data }: { data: Data }) {
                                             >
                                                 {row.status}
                                             </Chip>
+                                            {queued && (
+                                                <Chip
+                                                    size="sm"
+                                                    intent="warning"
+                                                >
+                                                    queued
+                                                </Chip>
+                                            )}
                                         </ValueWithSources>
                                     </TableCell>
                                     <TableCell>

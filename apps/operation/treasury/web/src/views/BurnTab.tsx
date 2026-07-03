@@ -12,6 +12,11 @@ import { DataTable, TableScroller } from "../components/DataTable";
 import { SourceBadge, SourceMark } from "../components/Provenance";
 import { UsageEntryForm } from "../components/UsageEntryForm";
 import { fmtUsd2 } from "../lib/format";
+import {
+    queuedBalanceKey,
+    queuedMeterKey,
+    queuedReconKey,
+} from "../lib/queued";
 import { statusMeta } from "../lib/recon";
 import type { Data, ProviderMonthRow } from "../types";
 
@@ -51,7 +56,13 @@ function SourcePair({
     );
 }
 
-export function BurnTab({ data }: { data: Data }) {
+export function BurnTab({
+    data,
+    queuedKeys = new Set<string>(),
+}: {
+    data: Data;
+    queuedKeys?: ReadonlySet<string>;
+}) {
     const [category, setCategory] = useState("all");
     const [resolveRow, setResolveRow] = useState<ProviderMonthRow | null>(null);
     const rows = useMemo(
@@ -134,6 +145,14 @@ export function BurnTab({ data }: { data: Data }) {
                     <TableBody>
                         {rows.map((row) => {
                             const meta = statusMeta(row.status);
+                            const queued =
+                                queuedKeys.has(
+                                    queuedMeterKey(row.month, row.provider),
+                                ) ||
+                                queuedKeys.has(
+                                    queuedReconKey(row.month, row.provider),
+                                ) ||
+                                queuedKeys.has(queuedBalanceKey(row.provider));
                             return (
                                 <TableRow
                                     key={`${row.month}|${row.provider}|${row.category}`}
@@ -163,12 +182,24 @@ export function BurnTab({ data }: { data: Data }) {
                                         />
                                     </TableCell>
                                     <TableCell>
-                                        <Chip
-                                            size="sm"
-                                            intent={meta.intent ?? undefined}
-                                        >
-                                            {row.status || "-"}
-                                        </Chip>
+                                        <span className="inline-flex items-center gap-1.5">
+                                            <Chip
+                                                size="sm"
+                                                intent={
+                                                    meta.intent ?? undefined
+                                                }
+                                            >
+                                                {row.status || "-"}
+                                            </Chip>
+                                            {queued && (
+                                                <Chip
+                                                    size="sm"
+                                                    intent="warning"
+                                                >
+                                                    queued
+                                                </Chip>
+                                            )}
+                                        </span>
                                     </TableCell>
                                     <TableCell>
                                         {row.status === "needs_data" ? (

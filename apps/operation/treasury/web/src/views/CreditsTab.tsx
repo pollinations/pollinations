@@ -1,5 +1,6 @@
 import {
     Button,
+    Chip,
     Input,
     TableBody,
     TableCell,
@@ -13,6 +14,7 @@ import { DataNote } from "../components/DataNote";
 import { DataTable, TableScroller } from "../components/DataTable";
 import { SourceMark, ValueWithSource } from "../components/Provenance";
 import { fmtUsd, fmtUsd2 } from "../lib/format";
+import { queuedBalanceKey, queuedGrantKey } from "../lib/queued";
 import { type StageInput, useStaging } from "../lib/staging";
 import type { BalanceRow, Data, GrantRow } from "../types";
 
@@ -224,7 +226,13 @@ function FxOverrideForm() {
     );
 }
 
-export function CreditsTab({ data }: { data: Data }) {
+export function CreditsTab({
+    data,
+    queuedKeys = new Set<string>(),
+}: {
+    data: Data;
+    queuedKeys?: ReadonlySet<string>;
+}) {
     const [category, setCategory] = useState("all");
     const grants = useMemo(
         () =>
@@ -282,7 +290,21 @@ export function CreditsTab({ data }: { data: Data }) {
                         <TableBody>
                             {grants.map((row) => (
                                 <TableRow key={row.pool}>
-                                    <TableCell>{row.pool}</TableCell>
+                                    <TableCell>
+                                        <span className="inline-flex items-center gap-1.5">
+                                            {row.pool}
+                                            {queuedKeys.has(
+                                                queuedGrantKey(row.pool),
+                                            ) && (
+                                                <Chip
+                                                    size="sm"
+                                                    intent="warning"
+                                                >
+                                                    queued
+                                                </Chip>
+                                            )}
+                                        </span>
+                                    </TableCell>
                                     <TableCell>
                                         {row.providers || "-"}
                                     </TableCell>
@@ -353,7 +375,21 @@ export function CreditsTab({ data }: { data: Data }) {
                         <TableBody>
                             {balances.map((row) => (
                                 <TableRow key={row.provider}>
-                                    <TableCell>{row.provider}</TableCell>
+                                    <TableCell>
+                                        <span className="inline-flex items-center gap-1.5">
+                                            {row.provider}
+                                            {queuedKeys.has(
+                                                queuedBalanceKey(row.provider),
+                                            ) && (
+                                                <Chip
+                                                    size="sm"
+                                                    intent="warning"
+                                                >
+                                                    queued
+                                                </Chip>
+                                            )}
+                                        </span>
+                                    </TableCell>
                                     <TableCell>
                                         <ValueWithSource source={row.source}>
                                             {fmtUsd(row.granted_usd)}

@@ -14,6 +14,11 @@ import { CommitTray } from "./components/CommitTray";
 import { SourceLegend } from "./components/SourceLegend";
 import { STALE_AFTER_HOURS } from "./config";
 import { hoursSince } from "./lib/format";
+import {
+    queuedKeysForChange,
+    queuedMeterKey,
+    queuedReconKey,
+} from "./lib/queued";
 import { StagingProvider } from "./lib/staging";
 import { fixturesMode, loadAll, TbError } from "./lib/tb";
 import type { Data } from "./types";
@@ -34,6 +39,9 @@ const TABS: { id: Tab; label: string }[] = [
     { id: "credits", label: "Credits" },
     { id: "runs", label: "Runs" },
 ];
+
+const INGEST_COMMAND = "python3 -m ingest.run";
+const FINAL_STATUSES = new Set(["ok", "ok_credit", "accepted"]);
 
 async function checkSession() {
     const res = await fetch("/api/auth/session");
@@ -106,6 +114,10 @@ export default function App() {
     const [tab, setTab] = useState<Tab>("recon");
     const [attempt, setAttempt] = useState(0);
     const [committedAwaitingIngest, setCommittedAwaitingIngest] = useState(0);
+    const [showCommittedBanner, setShowCommittedBanner] = useState(false);
+    const [queuedKeys, setQueuedKeys] = useState<ReadonlySet<string>>(
+        () => new Set(),
+    );
     const ready = fixtures || (sessionChecked && authenticated);
 
     useEffect(() => {
@@ -173,6 +185,21 @@ export default function App() {
         return latest ? hoursSince(latest) : null;
     }, [data]);
 
+    useEffect(() => {
+        if (!data) return;
+
+        setQueuedKeys((current) => {
+            const next = new Set(current);
+            for (const row of data.coverage) {
+                if (FINAL_STATUSES.has(row.status)) {
+                    next.delete(queuedReconKey(row.month, row.provider));
+                    next.delete(queuedMeterKey(row.month, row.provider));
+                }
+            }
+            return next.size === current.size ? current : next;
+        });
+    }, [data]);
+
     if (!sessionChecked) {
         return (
             <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-app-bg text-theme-text-strong">
@@ -216,8 +243,20 @@ export default function App() {
     return (
         <StagingProvider
             fixtures={fixtures}
-            onCommitted={(count) => {
-                setCommittedAwaitingIngest((current) => current + count);
+            onCommitted={(changes) => {
+                setCommittedAwaitingIngest(
+                    (current) => current + changes.length,
+                );
+                setShowCommittedBanner(true);
+                setQueuedKeys((current) => {
+                    const next = new Set(current);
+                    for (const change of changes) {
+                        for (const key of queuedKeysForChange(change)) {
+                            next.add(key);
+                        }
+                    }
+                    return next;
+                });
                 setAttempt((current) => current + 1);
             }}
         >
@@ -285,6 +324,40 @@ export default function App() {
                                 </Alert>
                             )}
 
+                        {showCommittedBanner && committedAwaitingIngest > 0 && (
+                            <Alert
+                                intent="warning"
+                                title="Committed, waiting for ingest"
+                            >
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span>
+                                        {committedAwaitingIngest} changes
+                                        committed. Flagged rows update after the
+                                        next ingest run (
+                                        <code>{INGEST_COMMAND}</code>).
+                                    </span>
+                                    <Button
+                                        size="sm"
+                                        onClick={() =>
+                                            void navigator.clipboard?.writeText(
+                                                INGEST_COMMAND,
+                                            )
+                                        }
+                                    >
+                                        Copy command
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        onClick={() =>
+                                            setShowCommittedBanner(false)
+                                        }
+                                    >
+                                        Dismiss
+                                    </Button>
+                                </div>
+                            </Alert>
+                        )}
+
                         <nav className="flex flex-wrap gap-2">
                             {TABS.map((item) => (
                                 <TabButton
@@ -313,16 +386,20 @@ export default function App() {
                         {!error && !data && (
                             <Text tone="soft">Loading pipes...</Text>
                         )}
-                        {data && tab === "recon" && <ReconTab data={data} />}
+                        {data && tab === "recon" && (
+                            <ReconTab data={data} queuedKeys={queuedKeys} />
+                        )}
                         {data && tab === "invoices" && (
-                            <InvoicesTab data={data} />
+                            <InvoicesTab data={data} queuedKeys={queuedKeys} />
                         )}
                         {data && tab === "payments" && (
                             <PaymentsTab data={data} />
                         )}
-                        {data && tab === "burn" && <BurnTab data={data} />}
+                        {data && tab === "burn" && (
+                            <BurnTab data={data} queuedKeys={queuedKeys} />
+                        )}
                         {data && tab === "credits" && (
-                            <CreditsTab data={data} />
+                            <CreditsTab data={data} queuedKeys={queuedKeys} />
                         )}
                         {data && tab === "runs" && <RunsTab data={data} />}
                     </main>

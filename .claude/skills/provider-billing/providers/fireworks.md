@@ -1,6 +1,6 @@
 # Fireworks AI billing via firectl CLI
 
-Validated: 2026-04-12. Re-validate if a command returns unexpected results.
+Validated: 2026-07-03. Re-validate if a command returns unexpected results.
 
 ## Requirements
 - CLI: `firectl` installed via `brew tap fw-ai/firectl && brew install firectl`
@@ -11,12 +11,15 @@ Validated: 2026-04-12. Re-validate if a command returns unexpected results.
 
 | Field | Value |
 |---|---|
-| Account ID | `pollinations` |
-| Display Name | Pollinations.AI |
-| Email | elliot@pollinations.ai |
-| Seed balance | ~$10,000 (credits, as of 2026-04-12) |
+Three current accounts are wired in spend-audit:
 
-**Second account (deprecated):** `elliot-l6mb8f24ewds` (Myceli AI, elliot@myceli.ai) — depleted ($2.36). Was used in production until `f358af4c9` switched to the Pollinations account.
+| Account | Treatment |
+|---|---|
+| `pollinations` | Original account; shown as prepaid/top-up balance because Fireworks exposes top-ups and grants through the same `Balance` field. |
+| Neo Glyph account | Grant balance. |
+| Pixelmarket account | Grant balance. |
+
+The connector discovers account IDs from each configured API key with `firectl account list/get --api-key`.
 
 ## Querying spend and usage
 
@@ -81,11 +84,11 @@ firectl account list --api-key "$FIREWORKS_API_KEY"
 
 ## Credit / discount handling
 
-Fireworks uses a **prepaid credit pool** model. Credits are loaded into the account balance and consumed per-request. The `Balance` field in `account get` reflects remaining credits after consumption.
+Fireworks exposes a **Balance** field for both grant accounts and prepaid/top-up accounts. In spend-audit we split by account: the original `pollinations` account is prepaid/top-up balance; the two newer org accounts are grant balance.
 
-- All usage deducts from the credit balance
-- Invoices show $0.00 while credits remain (POSTPAID_BILLING type, billed only for overage)
-- No separate "credit" vs "cash" split — everything comes from the pool
+- All usage deducts from the relevant account balance.
+- `POSTPAID_BILLING` invoices show $0.00 while credits remain, then become real cash once a pool dies.
+- `PREPAID_CREDITS` invoice rows are funding/top-ups, not compute cost.
 
 ## Deployment operations
 
@@ -96,12 +99,18 @@ Not applicable — Fireworks is a serverless inference provider. No instances to
 - **No REST billing endpoint**: The only way to get balance is `firectl account get` (CLI). No documented `/v1/accounts/{id}/billing` REST endpoint exists.
 - **Export CSV has no cost column**: Token counts are reported but not dollar amounts. Must compute cost from pricing tiers × token counts. For balance tracking, just use `account get` balance diff instead.
 - **`--filename` is CWD-relative**: The export command writes relative to the current directory, not to an absolute path. `cd` to target dir first.
-- **Two accounts exist**: The `elliot-l6mb8f24ewds` (Myceli) account is depleted and no longer used. Always use `pollinations` account ID.
+- **Multiple accounts exist**: do not hardcode only `pollinations`; use `firectl account list/get` for each configured API key.
 - **Account created 2026-03-18**: No historical data before that date.
+- **Invoice semantics (2026-07-02)**: the monthly `POSTPAID_BILLING` invoice is cut on the 1st and
+  covers the **previous** month's usage beyond credits — $0.00 while a credit pool absorbs everything,
+  real cash once it dies (first non-zero: 2026-07-01 cut, $2,432.84 = June overflow). `PREPAID_CREDITS`
+  rows are top-ups (pool funding, NOT cost) — don't book them as compute spend. `list-invoices` is
+  therefore the correct accrual source for cash cost by usage month; a bank-payment shift overstates
+  whenever top-ups and invoice payments land together.
 
 ## Integration with the finance runway app
 
-The finance app (`apps/operation/finance/lib/providers/fireworks.mjs`) uses `firectl account get` to fetch the live balance, then computes MTD as month_open_balance - current_balance (same stateful tracking as Runpod).
+The spend-audit connector uses `firectl account list/get` to fetch all configured account balances and `firectl billing list-invoices` to book postpaid cash cost by usage month.
 
 - Pool type: credit pool (not payg)
 - `live_balance: true` — orchestrator trusts the wrapper's balance value
@@ -112,7 +121,7 @@ The finance app (`apps/operation/finance/lib/providers/fireworks.mjs`) uses `fir
 
 | Question | Command |
 |---|---|
-| What's our current Fireworks credit balance? | `firectl account get --api-key $FIREWORKS_API_KEY --account-id pollinations` |
+| What's our current Fireworks credit balance? | `firectl account list/get --api-key $FIREWORKS_API_KEY_*` for every configured key |
 | How much did we spend this month? | seed_balance - Balance from above |
 | What models are we using? | `firectl billing export-metrics --start-time YYYY-MM-01 --end-time YYYY-MM-DD` → group by `base_model_name` |
 | Invoice history | `firectl billing list-invoices --api-key $FIREWORKS_API_KEY --account-id pollinations` |
@@ -120,6 +129,6 @@ The finance app (`apps/operation/finance/lib/providers/fireworks.mjs`) uses `fir
 
 ## Known unknowns
 
-- No REST API for billing — if firectl is unavailable, there's no fallback
+- No REST API for billing is documented — if firectl is unavailable, there's no supported fallback
 - Export CSV cost computation is approximate (pricing tier boundaries may shift)
 - No per-model cost breakdown via balance alone — need export CSV + pricing math for that

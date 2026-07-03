@@ -107,6 +107,14 @@ Even `GET /models` — the most basic OpenAI-compatible introspection endpoint �
 
 **Confirmed**: the `pplx-` key is a **POST-only credential** for exactly one endpoint. Every question about balance, usage, or models must go to the web dashboard.
 
+### Re-validated 2026-07-02 (doc research, no live probe)
+
+Still no billing/usage/credits API for the Sonar credit pool — docs route billing to console.perplexity.ai. Three additions since April:
+
+- **Per-request cost is now embedded in chat responses**: `usage.cost = {input_tokens_cost, output_tokens_cost, request_cost, total_cost}` (USD). Best shadow-cost source — sum `usage.cost.total_cost` instead of maintaining our own Sonar price table (https://docs.perplexity.ai/docs/sonar/models/sonar).
+- Programmatic **key management** exists (`POST /generate_auth_token`, `POST /revoke_auth_token`) — no billing attached (https://docs.perplexity.ai/docs/admin/api-key-management).
+- `GET /v1/analytics/computer/usage` exists but is for the **"Perplexity Computer" Enterprise product only** — NOT the Sonar API pool. Don't mistake it for a usage API for us.
+
 ### OpenAI's `/v1/usage?date=...` pattern
 
 OpenAI exposes a `GET /v1/usage?date=YYYY-MM-DD` that returns per-day token counts. **Perplexity does not implement this** — both `/v1/usage` and `/usage` return 404 regardless of query params. Don't waste time on it.

@@ -199,9 +199,36 @@ amountDue:               €0.00  (paid)
 ```
 Zero credit application in January despite the `Sponsored_*` quotaId — meaning the sponsorship credit is either not yet attached, attached to a different subscription/billing profile, or discounted at a layer invisible to this API.
 
-## 4. Balance / credit pool queries — PERMISSION-GATED
+## 4. Credit balance — SOLVED 2026-07-02 ✅
 
-These endpoints return `AuthorizationFailed` unless the caller has `Billing Reader` role at the billing account scope:
+**The remaining credit balance IS fetchable via `az rest`.** The working endpoint is `Microsoft.Consumption/credits/balanceSummary` (scoped under the billing profile) — NOT `Microsoft.Billing/.../balanceSummary` (that one 404s for MCA-Individual regardless of role; see the dead-end note below).
+
+```bash
+BA="d6c5b3e7-63ac-515a-8674-de5afbaec90d:d9f4ee4f-6add-42d1-ad32-b0cf92f726f4_2019-05-31"
+BP="7E4U-QBXO-BG7-PGB"
+# Remaining credit balance:
+az rest --method get --url "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/${BA}/billingProfiles/${BP}/providers/Microsoft.Consumption/credits/balanceSummary?api-version=2023-11-01"
+# Per-grant "lots" (original amount, closed balance, start/expiry, source):
+az rest --method get --url "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/${BA}/billingProfiles/${BP}/providers/Microsoft.Consumption/lots?api-version=2023-11-01"
+```
+
+**Verified values (2026-07-02):**
+- `credits/balanceSummary` → `currentBalance` **$244,594.18 USD** (≈ €210,589), `estimatedBalance` $239,965.88 (after `pendingEligibleCharges` −$4,628.30). `creditCurrency: USD`, `billingCurrency: EUR`.
+- `lots` → **two** "Azure startup sponsorship credit" lots: (1) $100,000, started 2025-09-19, **expired 2025-12-15 with $0 drawn**; (2) **$250,036**, started 2026-04-06, **expires 2028-04-06**, closed balance $244,594.18. Only ~$10k of the current lot consumed.
+
+**Roles needed (VERIFIED via a headless service principal, 2026-07-02):**
+- Balance — `Microsoft.Consumption/credits/*` + `/lots` (billing-profile scope): **Billing profile reader is sufficient.** Owner NOT required (the old `Microsoft.Billing/.../balanceSummary` action was owner-only, but that endpoint 404s for MCA-Individual anyway — ignore it).
+- Per-model burn — `Microsoft.Consumption/usageDetails` (SUBSCRIPTION scope): needs a subscription RBAC role. **Cost Management Reader** (read-only) is the least-privilege fit; billing-profile roles do NOT cover it (403 `usageDetails/read`).
+
+**Programmatic setup — WIRED INTO THE FINANCE APP (2026-07-02):** service principal `pollinations-finance-billing-reader` (appId `ff4ffb05-edd1-49ea-8c81-2f039b59366e`, SP objId `d8f86e41-8cb9-4e7f-b6e9-8806854b202a`) holds **Billing profile reader** + **Cost Management Reader** (both read-only). Creds in `apps/operation/finance/secrets/.env` (`AZURE_CLIENT_ID` / `AZURE_CLIENT_SECRET` / `AZURE_TENANT_ID`). `lib/providers/azure.mjs` now authenticates via client-credentials (no `az` CLI login) and returns MTD burn + live `current_balance_usd` / `total_credits_usd` / `credit_expires`. To assign a billing role to an SP, POST `createBillingRoleAssignment` with `principalId` = the SP **object id** and OMIT `principalType` (it's read-only/inferred; sending it → 400).
+
+Subscription-scope variants (`/subscriptions/{sub}/providers/Microsoft.Consumption/credits|lots`) return 404 — credits are billing-profile-scoped only.
+
+---
+
+### Dead end (kept for the record): `Microsoft.Billing/.../balanceSummary`
+
+`Microsoft.Billing/.../balanceSummary` returns `AuthorizationFailed` for non-owners and **404 Not Found** even as owner (it does not exist for MCA-Individual). Use the `Microsoft.Consumption/credits` endpoint above instead.
 
 ```bash
 # Both of these return 403 for our current user:
@@ -211,16 +238,30 @@ az rest --method get --url "https://management.azure.com/providers/Microsoft.Bil
 # → 400 Bad Request (endpoint exists but doesn't apply to MCA-Individual)
 ```
 
-**To unlock**: user needs `Billing Reader` role assignment, granted by the Billing Account Owner:
+**To unlock — VERIFIED 2026-07-02 (the old "Billing Reader" advice was WRONG):**
+
+`balanceSummary` requires the **Billing profile OWNER** role (`40000000-aaaa-bbbb-cccc-100000000000`) at the billing PROFILE scope. Tested empirically on our account, ruling out propagation (8 retries):
+
+- Billing **account** owner (elliot `9e1a1163-…` holds it) does NOT inherit `billingProfiles/balanceSummary/read`.
+- Billing **profile reader** (`…100000000002`) → invoices/transactions/charges read OK, but balanceSummary still 403.
+- Billing **profile contributor** (`…100000000001`) → still 403.
+- Only the **profile owner** carries the action (principal `6b9989e8-…` holds it and can read it).
+
+**There is no read-only role that exposes `balanceSummary` — it is owner-only.**
+
+MCA billing roles are NOT `az role assignment create` (that's ARM RBAC and is a no-op for billing). Use the POST action:
 
 ```bash
-az role assignment create \
-  --assignee <user-object-id-or-email> \
-  --role "Billing Reader" \
-  --scope "/providers/Microsoft.Billing/billingAccounts/${BA}"
+az rest --method post \
+  --url "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/${BA}/billingProfiles/${BP}/createBillingRoleAssignment?api-version=2024-04-01" \
+  --headers "Content-Type=application/json" \
+  --body '{"principalId":"<obj-id>","principalTenantId":"f542dd61-ecf3-4524-8905-30f2e2a2e967","roleDefinitionId":"/providers/Microsoft.Billing/billingAccounts/'"${BA}"'/billingProfiles/'"${BP}"'/billingRoleDefinitions/40000000-aaaa-bbbb-cccc-100000000000"}'
+# remove: az rest --method delete --url ".../billingRoleAssignments/{roleDefGuid}_{principalId}?api-version=2024-04-01"
 ```
 
-Until this role is granted, **balance must be checked in the Azure Portal** → Cost Management + Billing → Credits. The CLI cannot read it.
+**Caveat — balanceSummary probably won't show the €250k anyway:** invoices show `creditAmount:0`, only one billing account is visible, and Azure Sponsorship / Founders-Hub credits live in a SEPARATE system (`microsoftazuresponsorships.com`), not the MCA billing profile. For the sponsorship balance use the Sponsorships portal, or Azure Portal → Cost Management + Billing → Credits.
+
+**Credit BURN needs no special role.** `usageDetails` (section 1) returns per-meter `costInUSD` + `isAzureCreditEligible` for the *current billing period* with no billing-profile role at all. Every Foundry meter is `isAzureCreditEligible:true`. Verified July 2026 MTD: €184.65 / ~$210 (matches Portal subscription overview). Historical months via `usageDetails` need a working OData date filter (URL-encode it; unfiltered returns only the current period) or the `invoices`/`transactions` endpoints — and Azure invoices already match Wise EUR-for-EUR, so history is covered there.
 
 ## 5. Public pricing — Retail Prices API (no auth)
 
@@ -406,4 +447,4 @@ If a Sweden Central call fails with `misspelled or not recognized`, it's the CLI
 
 - **€250k sponsorship credit location**: not visible via any API call on billing account `d6c5b3e7-...`. Jan 2026 invoice showed `creditAmount: 0`, suggesting credits live on a different billing account/tenant. Verify in Azure Portal under Cost Management → Credits, then update the identifiers at the top of this skill if they differ.
 - **Anthropic/Claude credit eligibility**: unconfirmed. Retail Prices API has no Anthropic entries, and we cannot deploy to test the `isAzureCreditEligible` flag until the `AnthropicOrganizationCreationFailed` blocker is resolved. Open a Microsoft support ticket to unblock provisioning AND to get written confirmation of credit eligibility.
-- **`Billing Reader` role**: not granted to `elliot@thomasmyceli.onmicrosoft.com` → `balanceSummary` returns 403. Granting this unlocks credit balance reads.
+- **`balanceSummary` access (RESOLVED 2026-07-02):** it is **Billing profile OWNER-only** — reader and contributor both 403 (verified, not propagation). elliot now holds Billing profile *reader* (invoices/transactions/charges OK; balance still gated). No read-only path to the balance exists; use owner or the Portal. Credit *burn* is already available role-free via `usageDetails`. See section 4.

@@ -227,6 +227,19 @@ NetAmortizedCost:   $1,608.75   ← amortized after credits
 
 **If you only request one metric**: use `UnblendedCost` for intuition ("what did we use"), `NetUnblendedCost` for accounting ("what we actually owe after credits").
 
+#### Credits consumed per month — `RECORD_TYPE=Credit` filter (validated 2026-07-02)
+
+Cost Explorer CAN list credit application directly as negative line items, on accounts where credits are attached (works on the Myceli-direct account `301235909293`, default profile):
+
+```bash
+aws ce get-cost-and-usage \
+  --time-period Start=2026-01-01,End=2026-07-01 \
+  --granularity MONTHLY --metrics UnblendedCost \
+  --filter '{"Dimensions":{"Key":"RECORD_TYPE","Values":["Credit"]}}'
+```
+
+2026 output (Myceli-direct): Jan **−$45,767.52**, Feb **−$9,374.37**, Mar **−$2,136.10**, Apr **−$16.81**, May/Jun **$0**. So `credits left = granted − Σ|credit line items|` is derivable live per account — no manual seed needed where the grant sits on an account we can query. The May/Jun zeros mean the grant currently burning ("granted 2026-04-01, used $5.3k" per finance) is NOT on this account — it's presumably on the new Control Tower org (Context C), where per-member visibility depends on Automat-IT. **Check from the management account** (`--profile myceli-management`) — untested 2026-07-02 because SSO tokens were expired (`aws sso login --profile myceli-management` needed, interactive).
+
 #### Group-by combinations
 
 You can stack two `--group-by` parameters max:

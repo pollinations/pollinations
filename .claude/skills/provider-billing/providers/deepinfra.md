@@ -47,7 +47,17 @@ Note: the Pro description says 1M context, but the live API metadata reports `65
 ### 1. Account usage by month
 
 ```bash
-curl -sS "https://api.deepinfra.com/payment/usage?from=2026.04" \
+FROM=$(python3 - <<'PY'
+import datetime
+print(int(datetime.datetime(2026, 4, 1, tzinfo=datetime.timezone.utc).timestamp()))
+PY
+)
+TO=$(python3 - <<'PY'
+import datetime
+print(int(datetime.datetime(2026, 5, 1, tzinfo=datetime.timezone.utc).timestamp()))
+PY
+)
+curl -sS "https://api.deepinfra.com/payment/usage?from=$FROM&to=$TO" \
   -H "Authorization: Bearer $DEEPINFRA_API_KEY" |
   jq '.months[] | {period, total_cost, invoice_id, items}'
 ```
@@ -60,6 +70,8 @@ Fields from the OpenAPI schema:
 - `items[].rate`: cents per second or cents per token.
 - `items[].cost`: item cost in cents.
 - `items[].pricing_type`: pricing bucket, such as token/cache buckets.
+
+Gotcha validated 2026-07-02: `/payment/usage` wants epoch-second windows. A string like `from=2026.04` can silently return no usable month data. `total_cost` is cents, not dollars.
 
 ### 2. Token usage summary
 
@@ -124,7 +136,13 @@ Not applicable for public DeepInfra models. Private model deployment exists unde
 
 - `/v1/models` reports `deepseek-ai/DeepSeek-V4-Flash`, not `Lite`. Treat `deepseek-lite` as a Pollinations alias only.
 - `DeepSeek-V4-Pro` live metadata currently reports `65536` context even though the description says 1M.
-- Billing endpoints return cents, not dollars.
+- Billing endpoints return cents, not dollars. This bit us for real (2026-07-02): the finance
+  connector recorded cents as USD → DeepInfra "burn" 81× inflated ($4,045 vs the true $49.85).
+- `/payment/usage?from=YYYY.MM` string form silently returns `months: []`. Use **epoch-seconds**
+  `from`/`to` and query month-by-month (the API rejects long/old ranges). The `period` label in the
+  response is unreliable (off-by-one vs the query window) — trust the window you asked for.
+- `checklist.stripe_balance` on `/v1/me?checklist=true` IS the credit balance, in dollars, Stripe
+  semantics: negative = credit we hold (−400.34 → we hold $400.34).
 - Key rotation should be rolling: create a new token, deploy it, health-check production, then delete the old token.
 
 ## Question → query cheat sheet

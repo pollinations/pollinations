@@ -1,6 +1,8 @@
 # Umbrella Cost (Automat-IT reseller dashboard) via REST API
 
-Validated: **2026-04-11** — sign-in endpoint and JWT flow verified with real credentials. **Downstream API calls currently blocked by "API access not enabled" tenant gate** — see "Session 1 validation results" at the bottom of this file for exact findings and the remediation path.
+Validated: **2026-04-11**, re-tested **2026-07-02** — sign-in + JWT still work (creds live in `apps/operation/finance/secrets/.env` as `UMBRELLA_USERNAME/PASSWORD`), data plane STILL tenant-gated (authenticated GETs time out). The unblock request to Automat-IT has not been made — ask Tiago Falcao (sales rep on our invoices) or the FinOps analyst to enable API access for elliot@myceli.ai.
+
+**Glass (2026-07-02):** Automat-IT's second portal `glass.automat-it.com/myceliai-aws/dashboard` is a React SPA with an undocumented REST API at `https://api-v2.glass.automat-it.com/glass` (paths seen in the bundle: `/invoices`, `/open-invoices`, `/my-data`, `/cost-optimization*`, `/users/me`). Auth = Cognito (client `3bpb7klouo66kj48ut7gh16if3`) via browser flows (`/_auth/login` email+password UI, Google/Microsoft/SAML redirects through `<backend>/cognito/login/...`). No public docs; headless access would need the Cognito pool id + USER_PASSWORD_AUTH enabled, or a captured session token. Meanwhile the monthly Automat-IT invoice PDFs (emailed ~day 10, harvested into `_local/2026-07-01-spend-audit/invoices/`) are parsed programmatically — cash owed, credits eaten, and the remaining-credits footer.
 
 Automat-IT, our AWS reseller, uses **Umbrella Cost** (formerly Anodot Cost / Pileus — same product, two rebrands) as the customer-facing cost and billing dashboard. Our real AWS invoice with Automat-IT-specific discounts flows through Umbrella, NOT through `aws ce`. This playbook is the Umbrella equivalent of [aws.md](aws.md).
 

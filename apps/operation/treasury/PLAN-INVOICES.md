@@ -297,7 +297,7 @@ def test_sponsored_is_ok_credit():
 
 - [ ] **Step 3: Implement `gaps.py`** — per (provider, month) within `[active_from, active_until or now]`:
   - `sponsored` → `ok_credit`.
-  - `monthly`/`reseller`/`subscription`: invoices with `period_month == M`; parsed → compare Σinvoice vs Σpayments in M..M+1 (arrears) when payments exist (tolerance `max(pct·inv, usd)`) → ok/amount_mismatch/missing_payment; only `needs_label` rows → `needs_label`; none → `missing_invoice`.
+  - `monthly`/`reseller`/`subscription` (AMENDED 2026-07-03 — was "compare Σinvoice vs Σpayments in M..M+1", which double-counted steady monthly payers; the invoice's own `period_month` governs, and every payment pays exactly ONE invoice): invoices with `period_month == M`; parsed → greedy-match each invoice to the nearest-dated UNUSED payment in the M..M+1 window (nearest by |`paid_at` − `issued_at`|; each payment consumed at most once across the whole run, so July's transfer claimed by June's invoice is gone when July reconciles) — match within tolerance `max(pct·inv, usd)` → `ok`; nearest available payment outside tolerance → `amount_mismatch`; no unused payment in window → `missing_payment`; only `needs_label` rows → `needs_label`; none → `missing_invoice`.
   - `prepaid`: greedy-match each payment to an unused parsed invoice (±tolerance, ±10 days on `issued_at` vs `paid_at`); unmatched payment → `missing_invoice` (refs = wise_refs); unmatched invoice → `missing_payment`; needs_label invoices present → `needs_label`; no activity → `ok`.
   - `config["recon_accepted"]` (`"YYYY-MM:provider"`) → `accepted`.
   - Providers seen in invoices/payments but in NO pool (saas/payroll/other) get NO verdict rows — compute/infra scope comes from the pools list.

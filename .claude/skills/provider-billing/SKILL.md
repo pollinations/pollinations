@@ -24,7 +24,7 @@ The goal is simple: **never re-derive a billing API shape twice.** Every time we
 | Azure | [providers/azure.md](providers/azure.md) | ✅ Production | 2026-04-11 |
 | AWS | [providers/aws.md](providers/aws.md) | ✅ Production (list prices, no credits visible) | 2026-04-11 |
 | Umbrella Cost (Automat-IT reseller) | [providers/umbrella-cost.md](providers/umbrella-cost.md) | ⚠️ Auth validated, data plane blocked (API access gated at tenant). **Shows real invoiced AWS cost after reseller discount — supersedes `aws.md` for runway math once unblocked.** | 2026-04-11 |
-| GCP / Vertex AI | [providers/gcp.md](providers/gcp.md) | ✅ Production — auth + inventory validated live. BigQuery billing export needs one-time Console enable before SKU-level queries work. | 2026-04-11 |
+| GCP / Vertex AI | [providers/gcp.md](providers/gcp.md) | ✅ Production — BigQuery billing export wired via finance service account; SKU cost + export `credits` field live. | 2026-07-03 |
 | Stripe (revenue + fees) | [providers/stripe.md](providers/stripe.md) | ✅ Production — balance, balance_transactions, fees. March 2026: €7,303 gross / €6,627 net. | 2026-04-11 |
 | Polar.sh (subscriptions + MRR) | [providers/polar.md](providers/polar.md) | ✅ Production — `/metrics` endpoint, products, churn. ⚠️ `/metrics.revenue = 0` since Feb 2026 while Stripe shows €7k/mo — cross-check always. | 2026-04-11 |
 | Wise (cash position) | [providers/wise.md](providers/wise.md) | ✅ Production — profiles + balances live. €58,594 in business EUR balance captured. ⚠️ Statement/transaction endpoints require SCA keypair (one-time openssl setup). | 2026-04-11 |
@@ -33,7 +33,7 @@ The goal is simple: **never re-derive a billing API shape twice.** Every time we
 | Alibaba Cloud (Model Studio / DashScope) | [providers/alibaba.md](providers/alibaba.md) | ✅ Production — full BSS query flow. March net $224 (after $1k coupon), April MTD $704 (coupon depleted), run rate ~$2,745/mo. Per-model breakdown via InstanceID parsing. | 2026-04-11 |
 | BytePlus (Seedance + Seedream) | [providers/byteplus.md](providers/byteplus.md) | ✅ Production — Model Ark `/api/v3/models` works, ❌ zero billing endpoints on the international tenant. Shadow cost via Tinybird `generation_event`; credit pool balance Console-only. | 2026-04-12 |
 | Perplexity (Sonar web-search) | [providers/perplexity.md](providers/perplexity.md) | ✅ Production — `POST /chat/completions` is the only endpoint that exists. Every billing/usage/models path returns 404. Shadow cost via Tinybird; credit pool balance dashboard-only. | 2026-04-12 |
-| Fireworks AI | [providers/fireworks.md](providers/fireworks.md) | ✅ Production — `firectl account get` for live balance, `billing export-metrics` for per-model CSV. $10k credit pool on `pollinations` account. | 2026-04-12 |
+| Fireworks AI | [providers/fireworks.md](providers/fireworks.md) | ✅ Production — `firectl` wired across 3 accounts; grant accounts split from original prepaid/top-up balance; postpaid invoices parsed for cash cost. | 2026-07-03 |
 | DeepInfra | [providers/deepinfra.md](providers/deepinfra.md) | ✅ Production — OpenAI-compatible runtime + REST token management. Billing usage endpoints expose cents by month/token. | 2026-04-24 |
 | OpenRouter | [providers/openrouter.md](providers/openrouter.md) | ✅ Production candidate — `/credits` exposes total credits/usage; key management API supports rolling rotation. | 2026-05-06 |
 | Replicate | [providers/replicate.md](providers/replicate.md) | ✅ Production candidate — single token, no public credit/balance API, no token CRUD API (UI-only). Pay-as-you-go via Wise. Per-second video pricing tiered by resolution + audio. | 2026-05-07 |
@@ -41,8 +41,16 @@ The goal is simple: **never re-derive a billing API shape twice.** Every time we
 | Cloudflare | `providers/cloudflare.md` | ⏳ TODO | — |
 | Tinybird | `providers/tinybird.md` | ⏳ TODO — two workspaces now (`pollinations_enter` prod + `pollinations_enter_staging`); billing playbook should cover per-workspace cost. See also `tinybird-deploy` skill for deploys. | — |
 | Vercel | `providers/vercel.md` | ⏳ TODO | — |
-| Vast.ai | `providers/vast.md` | ⏳ TODO | — |
-| OVH | `providers/ovh.md` | ⏳ TODO | — |
+| Vast.ai | [providers/vast.md](providers/vast.md) | ✅ Production — `vastai show user` → `.credit` live; invoice/charge ledger also readable. | 2026-07-03 |
+| OVH | [providers/ovh.md](providers/ovh.md) | ✅ Production — `STARTUP_PROGRAM` voucher live via `/me/credit/balance` + movement ledger; project credit endpoint only has expired free trial. | 2026-07-03 |
+| Scaleway | [providers/scaleway.md](providers/scaleway.md) | ✅ Production — `/billing/v2beta1/discounts` wired; current account has 3 discounts, all used/expired, left $0. | 2026-07-03 |
+| Modal | [providers/modal.md](providers/modal.md) | ⚠️ Doc-verified — credits are dashboard-only; spend via `modal billing report --json` (Team+ plan), `left ≈ granted − Σspend`. | 2026-07-02 |
+| Nebius | [providers/nebius.md](providers/nebius.md) | ⚠️ Doc-verified — grants console-only; usage via `nebius billing one-time-export` (FOCUS 1.2 CSV, per billing contract). | 2026-07-02 |
+| io.net | [providers/ionet.md](providers/ionet.md) | ❌ Dashboard-only — internal balance endpoints exist but need a WorkOS session JWT (no API-key path). Keep manual. | 2026-07-02 |
+| Daytona | [providers/daytona.md](providers/daytona.md) | ⚠️ API key sanity wired — `dtn_` key validates through `/api/api-keys/current`; org discovery and billing wallet still blocked. | 2026-07-03 |
+| DigitalOcean | [providers/digitalocean.md](providers/digitalocean.md) | ✅ Production sanity — `/v2/customers/my/balance` and `billing_history` readable; current account exposes no active credit rows/balance. | 2026-07-03 |
+| OpenAI | [providers/openai.md](providers/openai.md) | ✅ Production — `/v1/organization/costs` wired; credit grant left derived from known grant total minus paginated costs. | 2026-07-03 |
+| ElevenLabs | [providers/elevenlabs.md](providers/elevenlabs.md) | ⚠️ Doc-verified — fiat spend via `POST /v1/workspace/analytics/query/usage-by-product-over-time`; subscription quota via `GET /v1/user/subscription`. Grant balance NOT exposed. | 2026-07-02 |
 
 ## What each playbook must contain
 

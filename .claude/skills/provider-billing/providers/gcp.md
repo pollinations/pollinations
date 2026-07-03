@@ -1,6 +1,6 @@
 # GCP billing via `gcloud` CLI and BigQuery billing export
 
-Validated: **2026-04-11** — all commands below were executed live against `elliot@myceli.ai`. Real output samples and real identifiers captured inline. One item is confirmed missing: BigQuery billing export is not yet enabled — see "BigQuery export setup" section.
+Validated: **2026-07-03** — BigQuery billing export is enabled and wired into the spend-audit dashboard through the finance service account.
 
 Captures the exact CLI and BigQuery calls needed to answer GCP questions like:
 
@@ -15,12 +15,12 @@ Captures the exact CLI and BigQuery calls needed to answer GCP questions like:
 ## Requirements
 
 - `gcloud` CLI installed: `gcloud version` → we have 553.0.0 as of 2026-04-11
-- Authenticated: `gcloud auth login` (interactive, opens browser — cannot be done non-interactively)
-- Application Default Credentials for API calls: `gcloud auth application-default login`
+- Authenticated: either `gcloud auth login` interactively, or the finance service account key below for headless runs.
 - `bq` CLI (comes with gcloud) for BigQuery billing-export queries
 - `python3` for JSON wrangling
 - **The `Billing Account Viewer` IAM role** on the billing account (to list accounts and read spend via Cloud Billing API)
 - **The `BigQuery Data Viewer` role** on the billing export dataset (to query line items)
+- Spend-audit service account key: `apps/operation/finance/secrets/gcp-sa-key.json`
 
 ## Known identifiers (our account)
 
@@ -46,6 +46,15 @@ Total projects accessible (2026-04-11): 7
 Default service account: 17343081062-compute@developer.gserviceaccount.com (on stellar-verve)
 Env vars used in-code:
   GOOGLE_PROJECT_ID=stellar-verve-465920-b7   (text.pollinations.ai/.env, image.pollinations.ai/.env)
+```
+
+Spend-audit billing export:
+
+```
+Service account: finance-billing-reader@stellar-verve-465920-b7.iam.gserviceaccount.com
+Billing account: 0180E5-574541-B8F8FD
+BigQuery table:  stellar-verve-465920-b7.billing_export.gcp_billing_export_resource_v1_0180E5_574541_B8F8FD
+Current status:  live from 2026-03 onward; July export fresh through 2026-07-02 when checked 2026-07-03.
 ```
 
 The project ID `stellar-verve-465920-b7` is confirmed as the production Vertex AI project for both text.pollinations.ai and image.pollinations.ai. Reference: [text.pollinations.ai/configs/modelConfigs.ts:159-178](../../../text.pollinations.ai/configs/modelConfigs.ts#L159-L178). Billing confirmed **enabled** via `gcloud billing projects describe stellar-verve-465920-b7` → `billingEnabled: True`, linked to `0180E5-574541-B8F8FD`.
@@ -118,7 +127,7 @@ GCP has **three** primary ways to get cost data, each with different latency and
 | **Cloud Billing API** (`gcloud billing`) | ~24h | Rollup per account/project | Free |
 | **Cloud Console → Reports** (web UI) | ~24h | Same as API | Free |
 
-**BigQuery export is the only programmatic source of SKU-level detail.** It must be enabled on the billing account first (one-time setup in the Cloud Console — there's no CLI for it).
+**BigQuery export is the only programmatic source of SKU-level detail.** It is enabled for the primary billing account above.
 
 ### 1. Cloud Billing API — quick rollups
 
@@ -164,15 +173,15 @@ The `gcloud billing` surface does NOT expose a cost-and-usage query — there's 
 
 ### 2. BigQuery billing export — SKU-level detail
 
-**Status as of 2026-04-12: ⚠️ STALE.** Table exists:
+**Status as of 2026-07-03: live.** Table exists:
 
 ```
 stellar-verve-465920-b7.billing_export.gcp_billing_export_resource_v1_0180E5_574541_B8F8FD
 ```
 
-But the latest `usage_start_time` in the table is **2026-03-04** — the pipeline silently stopped writing ~38 days ago. Total rows: 9,496 spanning 2026-02-01 to 2026-03-04. No April data at all.
+The spend-audit connector queries from 2026-03 onward and normalizes native EUR to USD with the dashboard FX constant. February 2026 is intentionally excluded from the API source because export coverage was incomplete, so the dashboard falls back to Wise invoice shifting for Jan/Feb.
 
-**How this was detected**: Query `MAX(DATE(usage_start_time))` to check freshness. If it's older than the current month, the export is broken.
+**Freshness check**: Query `MAX(DATE(usage_start_time))`. If it is older than the current month, the export is stale.
 
 ```sql
 SELECT
@@ -181,6 +190,28 @@ SELECT
   COUNT(*) AS rows
 FROM `stellar-verve-465920-b7.billing_export.gcp_billing_export_resource_v1_0180E5_574541_B8F8FD`
 ```
+
+### Spend-audit query shape
+
+```sql
+SELECT
+  FORMAT_DATE('%Y-%m', DATE(usage_start_time)) AS month,
+  ROUND(SUM(cost), 2) AS gross_eur,
+  ROUND(SUM(IFNULL((SELECT SUM(c.amount) FROM UNNEST(credits) c), 0)), 2) AS credits_eur,
+  ROUND(SUM(cost) + SUM(IFNULL((SELECT SUM(c.amount) FROM UNNEST(credits) c), 0)), 2) AS net_eur,
+  COUNT(*) AS row_count,
+  MAX(DATE(usage_start_time)) AS latest_usage
+FROM `stellar-verve-465920-b7.billing_export.gcp_billing_export_resource_v1_0180E5_574541_B8F8FD`
+WHERE DATE(usage_start_time) >= '2026-03-01'
+GROUP BY month
+ORDER BY month
+```
+
+Current interpretation:
+
+- `net_eur` becomes Google cash cost in `provider_costs.csv`.
+- `credits_eur` is emitted separately as a credit/discount row.
+- As of 2026-07-03, no active Google free-credit grant balance is visible. The only export credits are ordinary billing discounts: Mar EUR103.77 and Apr EUR2.47 (`SUSTAINED_USAGE_DISCOUNT` / `DISCOUNT`), zero from May onward.
 
 **Common causes of silent export failure**:
 - Billing account was relinked/unlinked on the host project

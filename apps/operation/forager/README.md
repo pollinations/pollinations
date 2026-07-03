@@ -116,3 +116,20 @@ Or read it from the run output — every `python3 -m ingest.run` prints the CHAS
 - [ ] Chase list either shrinking or entries consciously added to `config.json` `recon_accepted`
 - [ ] **[blocked: frontend deferred]** `treasury.myceli.ai/missing` live behind password
 - [ ] **[blocked: frontend deferred]** Red cells match known dashboard-only providers
+
+---
+
+## Secrets provenance — refresh map
+
+All keys live in SOPS `apps/operation/secrets/env.json` (operations age key, Elliot-only). They are **independent copies**: when a key rotates at its source, re-copy it here (the leak-guard forbids forager *code* from reading other apps' secret paths — refreshing is an operator/agent action, not a runtime one).
+
+| Keys | Source of truth | Refresh by |
+|---|---|---|
+| `TINYBIRD_OPS_*` (3) | minted in `operations` workspace (datafile tokens + API) | redeploy `tinybird/` / tokens API |
+| `TINYBIRD_PROD_READ_TOKEN` | `enter.pollinations.ai/secrets/prod.vars.json` | sops-copy |
+| `WISE_*` (3), `RUNPOD_API_KEY`, `LAMBDA_LABS_API_KEY`, `ALIBABA_CLOUD_*` (3), `AZURE_*` (6, billing-reader SP), `UMBRELLA_*` (3), `STRIPE_API_KEY`, `OPENROUTER_MANAGEMENT_API_KEY` | env A `apps/operation/finance/secrets/.env` | sops-copy |
+| `OPENROUTER_API_KEY`, `DEEPINFRA_API_KEY`, `FIREWORKS_API_KEY`, `ELEVENLABS_API_KEY`, `REPLICATE_API_TOKEN`, `FAL_KEY`, `PERPLEXITY_API_KEY` | `gen.pollinations.ai/secrets/prod.vars.json` | sops-copy |
+| `CLOUDFLARE_*` (4), `DAYTONA_API_KEY`, `SCW_*` (4), `OPENAI_ADMIN_KEY`, `DIGITALOCEAN_TOKEN`, `OVH_*` (4) | `_local/2026-07-01-spend-audit/secrets.local.json` (minted for forager) | sops-copy |
+| `VAST_API_KEY` | `~/.config/vastai/vast_api_key` (vastai CLI) | sops-copy |
+
+Known-stale (2026-07-03): `RUNPOD_API_KEY` rotated upstream (403) — mint a fresh read-only key. Empty: `STRIPE_API_KEY` (restricted key pending), `FIREWORKS_API_KEY_NEW` (purpose unclear — candidate for deletion).

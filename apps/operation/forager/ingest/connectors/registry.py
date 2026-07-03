@@ -49,6 +49,10 @@ from .providers import fireworks as _fw
 from .providers import openai_ as _openai
 from .providers import azure as _az
 
+# B5: meter connectors
+from .providers import aws as _aws
+from .providers import gcp as _gcp
+
 BALANCE: list = [
     ("openrouter", _openrouter.balance),
     ("deepinfra", _deepinfra.balance),
@@ -64,4 +68,12 @@ BALANCE: list = [
     ("azure", _az.balance),
 ]
 
-METER: list = []
+METER: list = [
+    ("deepinfra", _deepinfra.meter),
+    ("vast.ai", _vast.meter),
+    ("ovhcloud", _ovh.meter),
+    ("fireworks", _fw.meter),
+    ("aws", _aws.meter),
+    ("google", _gcp.meter),
+    ("openai", _openai.meter),
+]

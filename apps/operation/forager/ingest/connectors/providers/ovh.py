@@ -19,7 +19,7 @@ import json
 import urllib.request
 
 from ..common import http_json
-from . import _brow
+from . import _brow, _mrow
 
 BASE = "https://eu.api.ovh.com/1.0"
 _BALANCE_NAME = "STARTUP_PROGRAM"
@@ -78,6 +78,58 @@ def _get(creds, path, timestamp):
 def _amount(row):
     """Extract float value from OVH amount object {"value": "123.45", ...}."""
     return float((row or {}).get("amount", {}).get("value") or 0)
+
+
+def meter(creds, months, today, fx=1.14):
+    """Fetch OVHcloud credit burn per month from the movements ledger.
+
+    GETs /me/credit/balance/STARTUP_PROGRAM/movement (list of IDs), then
+    fetches each movement detail. Only type=USE movements are counted; VOUCHER
+    and other types are ignored. Amounts are EUR; multiplied by fx → USD.
+
+    Args:
+        creds:  dict with OVH_APPLICATION_KEY/SECRET and OVH_CONSUMER_KEY
+        months: list of "YYYY-MM" strings (filter for output; all movements fetched)
+        today:  retrieved_at date string "YYYY-MM-DD"
+        fx:     EUR→USD conversion rate (default 1.14)
+
+    Returns:
+        list of _mrow dicts, one per month with nonzero USE burn
+    """
+    import collections
+    import urllib.parse as _up
+
+    ts = _time()
+    movement_ids = _get(creds, f"/me/credit/balance/{_BALANCE_NAME}/movement", ts)
+    if not movement_ids:
+        return []
+
+    month_set = set(months)
+    totals = collections.defaultdict(float)
+    for mid in movement_ids:
+        path = f"/me/credit/balance/{_BALANCE_NAME}/movement/{_up.quote(str(mid), safe='')}"
+        mov = _get(creds, path, ts)
+        if (mov or {}).get("type") != "USE":
+            continue
+        month = (mov.get("creationDate") or "")[:7]
+        if month not in month_set:
+            continue
+        totals[month] += -_amount(mov)  # USE amounts are negative; negate to get positive burn
+
+    rows = []
+    for month, eur in sorted(totals.items()):
+        usd = round(eur * fx, 2)
+        if usd > 0:
+            rows.append(_mrow(
+                month=month,
+                provider="ovhcloud",
+                cost_usd=usd,
+                funding="credit",
+                source="api",
+                method="ovh /me/credit/balance/STARTUP_PROGRAM/movement",
+                today=today,
+            ))
+    return rows
 
 
 def balance(creds, now, fx=1.14):

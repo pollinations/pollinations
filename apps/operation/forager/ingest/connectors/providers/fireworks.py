@@ -1,4 +1,4 @@
-"""Fireworks balance connector via firectl CLI.
+"""Fireworks balance + meter connector via firectl CLI.
 
 Lists accounts with `firectl account list --api-key … --output json`, then
 fetches each account's balance with `firectl account get --api-key … --account-id …`.
@@ -18,7 +18,7 @@ import json
 import re
 import subprocess
 
-from . import _brow
+from . import _brow, _mrow
 
 _BALANCE_RE = re.compile(r"Balance:\s*USD\s*([\d.]+)")
 
@@ -59,6 +59,80 @@ def _account_balance(key, account_id, run_cmd):
     if not m:
         raise RuntimeError(f"no Balance line in firectl account get for {account_id}")
     return round(float(m.group(1)), 2)
+
+
+def meter(creds, months, today, run_cmd=subprocess.run):
+    """Fetch Fireworks cash cost by usage month from the invoice ledger.
+
+    Calls `firectl billing list-invoices --api-key …`. Only POSTPAID_BILLING+PAID
+    rows count. The monthly invoice is cut on the 1st and covers the PREVIOUS month
+    (invoice date 2026-07-01 → usage month 2026-06). PREPAID_CREDITS top-ups are
+    ignored.  Zero-amount invoices are excluded.
+
+    Args:
+        creds:   dict with FIREWORKS_API_KEY
+        months:  list of "YYYY-MM" strings to include in output
+        today:   retrieved_at date string "YYYY-MM-DD"
+        run_cmd: injectable subprocess.run replacement (for testing)
+
+    Returns:
+        list of _mrow dicts with funding=cash for nonzero usage months
+    """
+    key = creds.get("FIREWORKS_API_KEY")
+    if not key:
+        return []
+
+    try:
+        r = run_cmd(
+            ["firectl", "billing", "list-invoices", "--api-key", key],
+            capture_output=True, text=True, timeout=60,
+        )
+        txt = r.stdout
+    except Exception:
+        return []
+
+    month_set = set(months)
+    totals: dict = {}
+    for line in txt.splitlines():
+        t = line.split()
+        if "POSTPAID_BILLING" not in t:
+            continue
+        i = t.index("POSTPAID_BILLING")
+        try:
+            amt = float(t[i - 2].replace(",", ""))
+        except (ValueError, IndexError):
+            continue
+        if len(t) <= i + 2:
+            continue
+        state = t[i + 1]
+        target = t[i + 2]  # invoice date, e.g. "2026-07-01"
+        if state != "PAID" or amt <= 0:
+            continue
+        ty, tm = int(target[:4]), int(target[5:7])
+        # Invoice cut on the 1st covers the previous calendar month
+        if tm == 1:
+            usage_m = f"{ty - 1}-12"
+        else:
+            usage_m = f"{ty:04d}-{tm - 1:02d}"
+        if usage_m not in month_set:
+            continue
+        d = totals.setdefault(usage_m, 0.0)
+        totals[usage_m] = round(d + amt, 2)
+
+    rows = []
+    for month in sorted(totals):
+        cost = totals[month]
+        if cost:
+            rows.append(_mrow(
+                month=month,
+                provider="fireworks",
+                cost_usd=cost,
+                funding="cash",
+                source="cli",
+                method="firectl billing list-invoices",
+                today=today,
+            ))
+    return rows
 
 
 def balance(creds, now, run_cmd=subprocess.run):

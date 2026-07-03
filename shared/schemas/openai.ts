@@ -132,7 +132,7 @@ export type MessageContentPart = z.infer<
     typeof ChatCompletionRequestMessageContentPartSchema
 >;
 
-// Thinking (provider-specific; requires strict_openai_compliance=false)
+// Provider response content blocks. These are not request-level controls.
 const ChatCompletionMessageContentPartThinkingSchema = z.object({
     type: z.literal("thinking"),
     thinking: z.string(),
@@ -264,14 +264,6 @@ const ChatCompletionStreamOptionsSchema = z
     .nullable()
     .optional();
 
-const ThinkingSchema = z
-    .object({
-        type: z.enum(["enabled", "disabled"]).default("disabled"),
-        budget_tokens: z.number().int().min(1).optional(),
-    })
-    .nullable()
-    .optional();
-
 export const CreateChatCompletionRequestSchema = z
     .object({
         messages: z.array(ChatCompletionRequestMessageSchema),
@@ -323,11 +315,12 @@ export const CreateChatCompletionRequestSchema = z
         stream: z.boolean().nullable().optional().default(false),
         stream_options: ChatCompletionStreamOptionsSchema,
         safe: SafeSchema,
-        thinking: ThinkingSchema,
         reasoning_effort: z
             .enum(["none", "minimal", "low", "medium", "high", "xhigh"])
+            .describe(
+                'Requests reasoning depth for models that support adjustable reasoning. "none" requests no reasoning.',
+            )
             .optional(),
-        thinking_budget: z.number().int().min(0).optional(),
         temperature: z.number().min(0).max(2).nullable().optional(),
         top_p: z.number().min(0).max(1).nullable().optional(),
         tools: z.array(ChatCompletionToolSchema).optional(),
@@ -407,6 +400,7 @@ const ChatCompletionChoiceLogprobsSchema = z
 
 export const CompletionUsageSchema = z
     .object({
+        cached_input_tokens: z.number().int().nonnegative().nullish(),
         cache_creation_input_tokens: z.number().int().nonnegative().nullish(),
         cache_read_input_tokens: z.number().int().nonnegative().nullish(),
         completion_tokens: z.number().int().nonnegative(),
@@ -434,6 +428,7 @@ export const CompletionUsageSchema = z
                 image_tokens: z.number().int().nonnegative().nullish(),
             })
             .nullish(),
+        reasoning_tokens: z.number().int().nonnegative().nullish(),
         total_tokens: z.number().int().nonnegative(),
     })
     .meta({ $id: "CompletionUsage" });
@@ -489,9 +484,6 @@ export const PromptFilterResultSchema = z.array(
     }),
 );
 
-const UserTierSchema = z.literal(["anonymous", "seed", "flower", "nectar"]);
-export type UserTier = z.infer<typeof UserTierSchema>;
-
 const CompletionChoiceSchema = z.object({
     // Accept any string - backends may return various values (stop, length, error, max_tokens, etc.)
     finish_reason: z.string().nullable().optional(),
@@ -506,11 +498,10 @@ export const CreateChatCompletionResponseSchema = z.object({
     choices: z.array(CompletionChoiceSchema),
     prompt_filter_results: PromptFilterResultSchema.nullish(),
     created: z.number().int(),
-    model: z.string(),
+    model: z.string().optional(),
     system_fingerprint: z.string().nullish(),
     object: z.literal("chat.completion"),
     usage: CompletionUsageSchema.optional(),
-    user_tier: UserTierSchema.optional(),
     citations: z.array(z.string()).optional(), // Perplexity citations
 });
 
@@ -598,7 +589,7 @@ export const CreateImageRequestSchema = z
             }),
         safe: SafeSchema,
     })
-    .passthrough() // Allow Pollinations extensions: seed, nologo, enhance, safe, etc.
+    .passthrough() // Allow Pollinations extensions: seed, safe, etc.
     .meta({ $id: "CreateImageRequest" });
 
 export type CreateImageRequest = z.infer<typeof CreateImageRequestSchema>;

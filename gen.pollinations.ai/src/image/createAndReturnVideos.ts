@@ -3,10 +3,14 @@
  * Separate from image logic - no logo processing, no JPEG conversion, no EXIF metadata
  */
 
+import { getVideoModelIds } from "@shared/registry/image.ts";
 import debug from "debug";
 import { callLtx2API } from "./models/ltx2VideoModel.ts";
 import { callNovaReelAPI } from "./models/novaReelModel.ts";
-import { callPrunaVideoAPI } from "./models/prunaModel.ts";
+import {
+    callPrunaVideo720API,
+    callPrunaVideo1080API,
+} from "./models/prunaModel.ts";
 import { callSeedanceProAPI } from "./models/seedanceReplicateVideoModel.ts";
 import { callSeedanceV2API } from "./models/seedanceV2VideoModel.ts";
 import {
@@ -16,99 +20,61 @@ import {
 import {
     callWanAPI,
     callWanFastAPI,
+    callWanPro1080pAPI,
     callWanProAPI,
 } from "./models/wanVideoModel.ts";
 import { callXaiVideoAPI } from "./models/xaiVideoModel.ts";
 import type { ImageParams } from "./params.ts";
-import type { ProgressManager } from "./progressBar.ts";
 
 export type { VideoGenerationResult };
 
-import type { ImageModelName } from "@shared/registry/image.ts";
-import { IMAGE_CONFIG } from "./models.ts";
-
 const logOps = debug("pollinations:video:ops");
+const VIDEO_MODEL_IDS = new Set(getVideoModelIds());
 
 export async function createAndReturnVideo(
     prompt: string,
     safeParams: ImageParams,
-    progress: ProgressManager,
     requestId: string,
 ): Promise<VideoGenerationResult> {
     logOps("Starting video generation:", { prompt, model: safeParams.model });
-    progress.updateBar(
-        requestId,
-        20,
-        "Processing",
-        "Starting video generation...",
-    );
 
     let result: VideoGenerationResult;
     switch (safeParams.model) {
         case "veo":
-            result = await callVeoAPI(prompt, safeParams, progress, requestId);
+            result = await callVeoAPI(prompt, safeParams);
             break;
         case "seedance-pro":
-            result = await callSeedanceProAPI(
-                prompt,
-                safeParams,
-                progress,
-                requestId,
-            );
+            result = await callSeedanceProAPI(prompt, safeParams);
             break;
         case "seedance-2.0":
-            result = await callSeedanceV2API(
-                prompt,
-                safeParams,
-                progress,
-                requestId,
-            );
+            result = await callSeedanceV2API(prompt, safeParams);
             break;
         case "wan":
-            result = await callWanAPI(prompt, safeParams, progress, requestId);
+            result = await callWanAPI(prompt, safeParams);
             break;
         case "wan-fast":
-            result = await callWanFastAPI(
-                prompt,
-                safeParams,
-                progress,
-                requestId,
-            );
+            result = await callWanFastAPI(prompt, safeParams);
             break;
         case "wan-pro":
-            result = await callWanProAPI(
-                prompt,
-                safeParams,
-                progress,
-                requestId,
-            );
+            result = await callWanProAPI(prompt, safeParams);
+            break;
+        case "wan-pro-1080p":
+            result = await callWanPro1080pAPI(prompt, safeParams);
             break;
         case "ltx-2":
-            result = await callLtx2API(prompt, safeParams, progress, requestId);
+            result = await callLtx2API(prompt, safeParams);
             break;
-        case "p-video":
-            result = await callPrunaVideoAPI(
-                prompt,
-                safeParams,
-                progress,
-                requestId,
-            );
+        case "p-video-720p":
+            result = await callPrunaVideo720API(prompt, safeParams);
+            break;
+        case "p-video-1080p":
+            result = await callPrunaVideo1080API(prompt, safeParams);
             break;
         case "nova-reel":
-            result = await callNovaReelAPI(
-                prompt,
-                safeParams,
-                progress,
-                requestId,
-            );
+            result = await callNovaReelAPI(prompt, safeParams, requestId);
             break;
         case "grok-video-pro":
-            result = await callXaiVideoAPI(
-                prompt,
-                safeParams,
-                progress,
-                requestId,
-            );
+            result = await callXaiVideoAPI(prompt, safeParams);
             break;
         default:
             throw new Error(
@@ -124,11 +90,8 @@ export async function createAndReturnVideo(
 }
 
 /**
- * Check if a model is a video model by looking at the IMAGE_CONFIG
+ * Check if a model is a video model by looking at the shared registry.
  */
 export function isVideoModel(model: string): boolean {
-    const config = IMAGE_CONFIG[model as ImageModelName] as {
-        isVideo?: boolean;
-    };
-    return config?.isVideo === true;
+    return VIDEO_MODEL_IDS.has(model);
 }

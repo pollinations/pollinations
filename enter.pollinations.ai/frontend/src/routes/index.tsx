@@ -1,4 +1,4 @@
-import { Button, DownloadIcon, Section } from "@pollinations/ui";
+import { Section } from "@pollinations/ui";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { apiClient } from "../api.ts";
@@ -8,8 +8,8 @@ import {
     EarningsGraph,
     getEarningsEnabledApps,
     PeriodPicker,
-    UsageGraph,
     type UsagePeriodSelection,
+    UsageSection,
 } from "../components/activity";
 import {
     type ApiKey,
@@ -21,11 +21,7 @@ import {
     type DashboardPage,
     DashboardShell,
 } from "../components/layout/dashboard-shell.tsx";
-import {
-    dashboardThemeByPage,
-    isDashboardPage,
-    type ThemeName,
-} from "../components/layout/dashboard-theme.ts";
+import { isDashboardPage } from "../components/layout/dashboard-theme.ts";
 import { usePageFromHash } from "../components/layout/use-page-from-hash.ts";
 import { Models } from "../components/models";
 import { NewsFaq } from "../components/news-faq";
@@ -33,32 +29,11 @@ import {
     BuyPollenPanel,
     PollenBalance,
     SidebarWallet,
-    TierPanel,
 } from "../components/pollen";
+import { QuestOverview } from "../components/quests";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 
-const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
 const ACTIVITY_MIN_DATE = new Date("2026-01-01T00:00:00.000Z");
-
-function DownloadCsvButton({
-    theme,
-    onClick,
-}: {
-    theme: ThemeName;
-    onClick: () => void;
-}) {
-    return (
-        <Button
-            as="button"
-            theme={theme}
-            onClick={onClick}
-            className="flex items-center gap-1.5"
-        >
-            <DownloadIcon className="h-3.5 w-3.5 shrink-0" />
-            Download CSV
-        </Button>
-    );
-}
 
 function pageFromHash(hash: string): DashboardPage {
     const page = hash.replace(/^#/, "");
@@ -67,7 +42,8 @@ function pageFromHash(hash: string): DashboardPage {
         return "news-faq";
     if (page === "buy-pollen") return "pollen";
     if (page === "pricing") return "models";
-    if (page === "earnings" || page === "usage") return "activity";
+    if (page === "earnings" || page === "usage" || page === "activity-table")
+        return "activity";
     // Kebab-case slugs are FAQ anchors — route to news-faq and let the
     // FAQ component scroll/expand the matching question.
     if (page && /^[a-z0-9]+(-[a-z0-9]+)+$/.test(page)) return "news-faq";
@@ -123,6 +99,8 @@ export const Route = createFileRoute("/")({
             tierData,
             tierBalance,
             packBalance,
+            communityEndpointsAllowed:
+                profileResult?.communityEndpointsAllowed ?? false,
             billingState,
             paidWeek,
             tierWeek,
@@ -139,6 +117,7 @@ function RouteComponent() {
         tierData,
         tierBalance,
         packBalance,
+        communityEndpointsAllowed,
         billingState,
         paidWeek,
         tierWeek,
@@ -148,6 +127,7 @@ function RouteComponent() {
     const [activePage, setActivePage] = usePageFromHash(pageFromHash);
     const [activityPeriod, setActivityPeriod] =
         useState<UsagePeriodSelection>(currentUsagePeriod);
+    const showCommunityEndpoints = communityEndpointsAllowed;
 
     const selectableKeys = useMemo(
         () =>
@@ -167,7 +147,7 @@ function RouteComponent() {
         setIsSigningOut(true);
         try {
             await authClient.signOut();
-            window.location.href = "/";
+            window.location.href = "/sign-in#news-faq";
         } catch (error) {
             console.error("Sign out failed:", error);
         } finally {
@@ -250,25 +230,14 @@ function RouteComponent() {
         router.invalidate();
     }
 
-    function downloadDetailedUsage(): void {
-        const params = new URLSearchParams({
-            format: "csv",
-            granularity: activityPeriod.granularity,
-            period: activityPeriod.period,
-            limit: DETAILED_USAGE_DOWNLOAD_LIMIT.toString(),
-        });
-        const anchor = document.createElement("a");
-        anchor.href = `/api/account/usage?${params.toString()}`;
-        anchor.rel = "noopener";
-        document.body.appendChild(anchor);
-        anchor.click();
-        anchor.remove();
-    }
-
     function handlePageChange(page: DashboardPage): void {
         setActivePage(page);
         try {
-            history.replaceState(null, "", `#${page}`);
+            history.replaceState(
+                null,
+                "",
+                `${window.location.pathname}${window.location.search}#${page}`,
+            );
         } catch {
             // Hash updates are cosmetic; navigation still works without them.
         }
@@ -295,7 +264,7 @@ function RouteComponent() {
             {activePage === "news-faq" && <NewsFaq />}
             {activePage === "pollen" && (
                 <div className="flex flex-col gap-6">
-                    <Section title="Wallet" theme="amber" framed>
+                    <Section title="Wallet" framed>
                         <PollenBalance
                             tierBalance={tierBalance}
                             packBalance={packBalance}
@@ -304,19 +273,9 @@ function RouteComponent() {
                             tierWeek={tierWeek}
                         />
                     </Section>
-                    <Section
-                        title="Top-up"
-                        theme="amber"
-                        framed
-                        id="buy-pollen"
-                    >
+                    <Section title="Top-up" framed id="buy-pollen">
                         <BuyPollenPanel initialBillingState={billingState} />
                     </Section>
-                    {tierData && (
-                        <Section title="Tier" theme="amber" framed>
-                            <TierPanel {...tierData} />
-                        </Section>
-                    )}
                 </div>
             )}
             {activePage === "activity" && (
@@ -325,33 +284,23 @@ function RouteComponent() {
                         <PeriodPicker
                             value={activityPeriod}
                             onChange={setActivityPeriod}
-                            theme={dashboardThemeByPage.activity}
                             minDate={ACTIVITY_MIN_DATE}
                         />
-                        <p className="text-micro text-ink-400">
-                            Data refreshes every hour. Times shown in UTC.
+                        <p className="text-micro text-theme-text-muted">
+                            Usage refreshes hourly. Times are shown in UTC.
                         </p>
                     </div>
-                    <UsageGraph
+                    <UsageSection
                         period={activityPeriod}
                         apiKeys={selectableKeys}
-                        theme={dashboardThemeByPage.activity}
-                        action={
-                            <DownloadCsvButton
-                                theme={dashboardThemeByPage.activity}
-                                onClick={downloadDetailedUsage}
-                            />
-                        }
                     />
-                    {earningsEnabledApps.length > 0 && (
-                        <EarningsGraph
-                            period={activityPeriod}
-                            apps={earningsEnabledApps}
-                            theme={dashboardThemeByPage.activity}
-                        />
-                    )}
+                    <EarningsGraph
+                        period={activityPeriod}
+                        apps={earningsEnabledApps}
+                    />
                 </div>
             )}
+            {activePage === "quests" && <QuestOverview />}
             {activePage === "keys" && (
                 <ApiKeyList
                     apiKeys={apiKeys}
@@ -361,7 +310,7 @@ function RouteComponent() {
                 />
             )}
             {activePage === "models" && (
-                <Models tierBalance={tierBalance} packBalance={packBalance} />
+                <Models showCommunityEndpoints={showCommunityEndpoints} />
             )}
         </DashboardShell>
     );

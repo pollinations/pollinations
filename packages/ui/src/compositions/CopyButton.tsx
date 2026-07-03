@@ -19,6 +19,8 @@ export type CopyButtonProps = Omit<
     children: ReactNode | ((copied: boolean) => ReactNode);
     copiedTimeoutMs?: number;
     tooltip?: ReactNode;
+    tooltipAlign?: "start" | "center";
+    tooltipClampToViewport?: boolean;
     copiedTooltip?: ReactNode;
     tooltipClassName?: string;
     className?: string | ((copied: boolean) => string);
@@ -30,8 +32,10 @@ export function CopyButton({
     value,
     children,
     copiedTimeoutMs = 2000,
-    tooltip = "Click to copy",
-    copiedTooltip = "Copied!",
+    tooltip = "📋 Click to copy",
+    tooltipAlign,
+    tooltipClampToViewport,
+    copiedTooltip = "✅ Copied!",
     tooltipClassName,
     className,
     onCopied,
@@ -79,10 +83,18 @@ export function CopyButton({
         </button>
     );
 
+    // A copy button with its own visible label doesn't need a hover tooltip —
+    // pass tooltip={null} to opt out of the wrapper entirely.
+    if (tooltip === null) {
+        return button;
+    }
+
     return (
         <Tooltip
             triggerAs="span"
             content={copied ? copiedTooltip : tooltip}
+            align={tooltipAlign}
+            clampToViewport={tooltipClampToViewport}
             className={tooltipClassName}
         >
             {button}

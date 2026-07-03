@@ -4,7 +4,7 @@ import {
     type ModelCatalogItem,
     type ModelCategory,
     Pollinations,
-} from "@pollinations/sdk/client";
+} from "@pollinations/sdk";
 import { useAuthState } from "@pollinations/sdk/react";
 import {
     Alert,
@@ -12,7 +12,7 @@ import {
     Button,
     ButtonGroup,
     cn,
-    Field,
+    FieldStack,
     FileUpload,
     Heading,
     ImageIcon,
@@ -22,12 +22,12 @@ import {
     TabButton,
     Text,
     Textarea,
-    type ThemeName,
 } from "@pollinations/ui";
 import {
     categoryLabel,
+    ModalityDot,
+    ModalityTab,
     ModelSelector,
-    modalityTheme,
 } from "@pollinations/ui/gen";
 import { useEffect, useMemo, useState } from "react";
 
@@ -65,7 +65,7 @@ type PlaygroundResult =
 export type PlaygroundProps = {
     title?: string;
     subtitle?: string;
-    theme?: ThemeName;
+    showTitle?: boolean;
     className?: string;
 };
 
@@ -171,15 +171,14 @@ function ModalityTabs({
     return (
         <ButtonGroup aria-label="Modality">
             {CATEGORY_ORDER.map((category) => (
-                <TabButton
+                <ModalityTab
                     key={category}
                     active={activeCategory === category}
-                    theme={modalityTheme(category)}
                     size="sm"
                     onClick={() => onCategoryChange(category)}
                 >
                     {categoryLabel(category)}
-                </TabButton>
+                </ModalityTab>
             ))}
         </ButtonGroup>
     );
@@ -196,10 +195,8 @@ function ResultPanel({
     activeCategory: ModelCategory;
     className?: string;
 }) {
-    const theme = modalityTheme(activeCategory);
     return (
         <Surface
-            theme={theme}
             variant="panel"
             className={cn(
                 "polli:flex polli:min-h-[360px] polli:flex-col polli:gap-4 polli:p-4",
@@ -207,9 +204,12 @@ function ResultPanel({
             )}
         >
             <div className="polli:flex polli:items-center polli:justify-between polli:gap-3">
-                <Text as="h2" size="sm" tone="strong" weight="semibold">
-                    Output
-                </Text>
+                <span className="polli:inline-flex polli:items-center polli:gap-1.5">
+                    <ModalityDot modality={activeCategory} />
+                    <Text as="h2" size="sm" tone="strong" weight="semibold">
+                        Output
+                    </Text>
+                </span>
                 {result && result.type !== "text" && (
                     <Button
                         as="a"
@@ -217,7 +217,6 @@ function ResultPanel({
                         download={`pollinations-playground.${getResultExtension(
                             result,
                         )}`}
-                        theme={theme}
                         size="sm"
                     >
                         Save
@@ -227,14 +226,12 @@ function ResultPanel({
 
             {isLoading ? (
                 <MediaPlaceholder
-                    theme={theme}
                     label="Generating..."
                     detail="Hang tight while your result is created."
                     className="polli:flex-1"
                 />
             ) : !result ? (
                 <MediaPlaceholder
-                    theme={theme}
                     icon={<ImageIcon className="polli:h-5 polli:w-5" />}
                     label="Output preview"
                     detail="Generated results appear here."
@@ -307,7 +304,7 @@ async function uploadReferenceImages(
 export function Playground({
     title = "Playground",
     subtitle = "Create and refine images, text, audio, and video from one focused workspace.",
-    theme = "violet",
+    showTitle = true,
     className,
 }: PlaygroundProps) {
     const { apiKey, isLoggedIn, isHydrated } = useAuthState();
@@ -386,9 +383,6 @@ export function Playground({
         !!currentModel &&
         isLoggedIn &&
         catalog.allowedModelIds.has(currentModel.id);
-    const activeTheme = currentModel
-        ? modalityTheme(currentModel.category)
-        : modalityTheme(activeCategory);
 
     useEffect(() => {
         setReferenceImages((current) => {
@@ -545,24 +539,22 @@ export function Playground({
 
     return (
         <div
-            data-theme={theme}
             className={cn(
                 "polli:flex polli:w-full polli:flex-col polli:gap-5 polli:text-theme-text-base",
                 className,
             )}
         >
             <section className="polli:flex polli:flex-col polli:gap-1">
-                {/* Neutral black, not theme-tinted: the package has no neutral
-                    text token yet, so we use raw gray utilities here. Replace with
-                    the shared neutral "ink" scale in the follow-up PR. */}
-                <Heading
-                    as="h1"
-                    size="title"
-                    className="polli-playground-title polli:m-0 polli:text-ink-950"
-                >
-                    {title}
-                </Heading>
-                <p className="polli:m-0 polli:max-w-3xl polli:text-base polli:leading-relaxed polli:text-ink-700">
+                {showTitle && (
+                    <Heading
+                        as="h1"
+                        size="title"
+                        className="polli-playground-title polli:m-0 polli:text-theme-text-strong"
+                    >
+                        {title}
+                    </Heading>
+                )}
+                <p className="polli:m-0 polli:max-w-3xl polli:text-base polli:leading-relaxed polli:text-theme-text-base">
                     {subtitle}
                 </p>
             </section>
@@ -576,7 +568,6 @@ export function Playground({
             <div className="polli-playground-main-grid">
                 <div className="polli:flex polli:flex-col polli:gap-4">
                     <Surface
-                        theme={activeTheme}
                         variant="panel"
                         className="polli:flex polli:flex-col polli:gap-4 polli:p-4"
                     >
@@ -596,14 +587,10 @@ export function Playground({
                     </Surface>
 
                     <Surface
-                        theme={activeTheme}
                         variant="panel"
                         className="polli:flex polli:flex-col polli:gap-4 polli:p-4"
                     >
-                        <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                            <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
-                                Prompt
-                            </Field.Label>
+                        <FieldStack label="Prompt">
                             <Textarea
                                 value={prompt}
                                 rows={7}
@@ -616,13 +603,10 @@ export function Playground({
                                 )}
                                 className="polli-playground-textarea polli:min-h-44"
                             />
-                        </Field.Root>
+                        </FieldStack>
 
                         {isAudioTranscription && (
-                            <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                                <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
-                                    Audio file
-                                </Field.Label>
+                            <FieldStack label="Audio file">
                                 <FileUpload
                                     value={audioFiles}
                                     onChange={setAudioFiles}
@@ -643,7 +627,6 @@ export function Playground({
                                             </span>
                                         </>
                                     }
-                                    theme={activeTheme}
                                     onReject={(rejected) => {
                                         const reason = rejected[0]?.reason;
                                         if (reason === "size") {
@@ -659,15 +642,18 @@ export function Playground({
                                         }
                                     }}
                                 />
-                            </Field.Root>
+                            </FieldStack>
                         )}
 
                         {isReferenceImageListMode && (
-                            <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                                <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
-                                    Reference images (up to{" "}
-                                    {pluralizeImages(maxReferenceImages)})
-                                </Field.Label>
+                            <FieldStack
+                                label={
+                                    <>
+                                        Reference images (up to{" "}
+                                        {pluralizeImages(maxReferenceImages)})
+                                    </>
+                                }
+                            >
                                 <FileUpload
                                     value={referenceImages}
                                     onChange={setReferenceImages}
@@ -685,7 +671,6 @@ export function Playground({
                                             </span>
                                         </>
                                     }
-                                    theme={activeTheme}
                                     onReject={(rejected) => {
                                         const reason = rejected[0]?.reason;
                                         if (reason === "size") {
@@ -705,15 +690,12 @@ export function Playground({
                                         }
                                     }}
                                 />
-                            </Field.Root>
+                            </FieldStack>
                         )}
 
                         {isVideoReferenceMode && (
                             <div className="polli-playground-frame-grid">
-                                <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                                    <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
-                                        First frame
-                                    </Field.Label>
+                                <FieldStack label="First frame">
                                     <FileUpload
                                         value={firstFrameFiles}
                                         onChange={(files) =>
@@ -729,7 +711,6 @@ export function Playground({
                                                 </span>
                                             </>
                                         }
-                                        theme={activeTheme}
                                         onReject={(rejected) => {
                                             const reason = rejected[0]?.reason;
                                             if (reason === "size") {
@@ -747,13 +728,10 @@ export function Playground({
                                             }
                                         }}
                                     />
-                                </Field.Root>
+                                </FieldStack>
 
                                 {supportsLastFrame && (
-                                    <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                                        <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
-                                            Last frame
-                                        </Field.Label>
+                                    <FieldStack label="Last frame">
                                         <FileUpload
                                             value={lastFrameFiles}
                                             onChange={(files) =>
@@ -776,7 +754,6 @@ export function Playground({
                                                     </>
                                                 )
                                             }
-                                            theme={activeTheme}
                                             onReject={(rejected) => {
                                                 const reason =
                                                     rejected[0]?.reason;
@@ -795,7 +772,7 @@ export function Playground({
                                                 }
                                             }}
                                         />
-                                    </Field.Root>
+                                    </FieldStack>
                                 )}
                             </div>
                         )}
@@ -803,10 +780,7 @@ export function Playground({
                         {(currentModel?.category === "image" ||
                             currentModel?.category === "video") && (
                             <div className="polli-playground-settings-grid">
-                                <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                                    <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
-                                        Width
-                                    </Field.Label>
+                                <FieldStack label="Width">
                                     <Input
                                         type="number"
                                         min={256}
@@ -818,11 +792,8 @@ export function Playground({
                                         }
                                         hideNumberSteppers
                                     />
-                                </Field.Root>
-                                <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                                    <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
-                                        Height
-                                    </Field.Label>
+                                </FieldStack>
+                                <FieldStack label="Height">
                                     <Input
                                         type="number"
                                         min={256}
@@ -836,11 +807,8 @@ export function Playground({
                                         }
                                         hideNumberSteppers
                                     />
-                                </Field.Root>
-                                <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                                    <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
-                                        Seed
-                                    </Field.Label>
+                                </FieldStack>
+                                <FieldStack label="Seed">
                                     <Input
                                         type="number"
                                         value={seed}
@@ -849,21 +817,25 @@ export function Playground({
                                         }
                                         hideNumberSteppers
                                     />
-                                </Field.Root>
+                                </FieldStack>
                             </div>
                         )}
 
                         {currentModel && currentModel.voices.length > 0 && (
-                            <Field.Root className="polli:flex polli:flex-col polli:gap-2">
-                                <Field.Label className="polli:text-sm polli:font-semibold polli:text-theme-text-strong">
-                                    Voice
-                                </Field.Label>
+                            <FieldStack
+                                label={
+                                    <>
+                                        <ModalityDot modality="audio" />
+                                        Voice
+                                    </>
+                                }
+                                labelClassName="polli:flex polli:items-center polli:gap-1.5"
+                            >
                                 <ButtonGroup aria-label="Voice">
                                     {currentModel.voices.map((voice) => (
                                         <TabButton
                                             key={voice}
                                             active={selectedVoice === voice}
-                                            theme={modalityTheme("audio")}
                                             size="sm"
                                             onClick={() =>
                                                 setSelectedVoice(voice)
@@ -873,14 +845,13 @@ export function Playground({
                                         </TabButton>
                                     ))}
                                 </ButtonGroup>
-                            </Field.Root>
+                            </FieldStack>
                         )}
 
                         {error && <Alert intent="danger">{error}</Alert>}
 
                         <Button
                             type="button"
-                            theme={activeTheme}
                             size="lg"
                             disabled={
                                 isGenerating ||

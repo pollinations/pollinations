@@ -18,8 +18,8 @@
 
 const fs = require("fs");
 const https = require("https");
+const { APPS_FILE, parseApps, setCell } = require("./lib/parse-apps.js");
 
-const APPS_FILE = "apps/APPS.md";
 const GITHUB_API = "api.github.com";
 const TINYBIRD_HOST = "api.europe-west2.gcp.tinybird.co";
 
@@ -45,82 +45,32 @@ function extractHostname(url) {
 }
 
 function parseAppsMarkdown() {
-    const content = fs.readFileSync(APPS_FILE, "utf8");
-    const lines = content.split("\n");
+    const { lines, headerIdx, apps: rows } = parseApps();
 
-    const headerIdx = lines.findIndex((l) => l.startsWith("| Emoji"));
-    if (headerIdx === -1) {
-        console.error("Error: Could not find header row in APPS.md");
-        process.exit(1);
-    }
-
-    const headers = lines[headerIdx].split("|").map((h) => h.trim());
-
-    // Dynamic column lookup
-    const REPO_URL_COL = headers.findIndex((h) =>
-        h.toLowerCase().includes("repository_url"),
-    );
-    const STARS_COL = headers.findIndex((h) =>
-        h.toLowerCase().includes("repository_stars"),
-    );
-    const WEB_URL_COL = headers.findIndex((h) => h.toLowerCase() === "web_url");
-    const GITHUB_USER_COL = headers.findIndex(
-        (h) => h.toLowerCase() === "github_username",
-    );
-    const BYOP_COL = headers.findIndex((h) => h.toLowerCase() === "byop");
-    const REQUESTS_COL = headers.findIndex(
-        (h) => h.toLowerCase() === "requests_24h",
-    );
-
-    if (REPO_URL_COL === -1 || STARS_COL === -1) {
-        console.error("Error: Could not find repository URL or stars columns");
-        process.exit(1);
-    }
-
-    const apps = [];
-    const dataStartIdx = headerIdx + 2;
-
-    for (let i = dataStartIdx; i < lines.length; i++) {
-        const line = lines[i];
-        if (!line.startsWith("|")) continue;
-
-        const cols = line.split("|").map((c) => c.trim());
-        if (cols.length <= Math.max(REPO_URL_COL, STARS_COL)) continue;
-
-        const repoUrl = cols[REPO_URL_COL] || "";
-        const webUrl = cols[WEB_URL_COL] || "";
-        const githubUsername =
-            GITHUB_USER_COL !== -1
-                ? (cols[GITHUB_USER_COL] || "").replace(/^@/, "")
-                : "";
-
+    const apps = rows.map((row) => {
         // GitHub info is optional — some apps don't have repos
         let owner = null;
         let repo = null;
-        const match = repoUrl.match(/github\.com\/([^/]+)\/([^/\s]+)/);
+        const match = row.repoUrl.match(/github\.com\/([^/]+)\/([^/\s]+)/);
         if (match) {
             owner = match[1];
             repo = match[2].replace(/\.git$/, "");
         }
 
-        apps.push({
-            lineIdx: i,
+        return {
+            lineIdx: row.lineIndex,
             owner,
             repo,
-            repoUrl,
-            currentStars: cols[STARS_COL] || "",
-            webUrlHostname: extractHostname(webUrl),
-            githubUsername,
-            currentBYOP: BYOP_COL !== -1 ? cols[BYOP_COL] || "" : "",
-            currentRequests:
-                REQUESTS_COL !== -1 ? cols[REQUESTS_COL] || "" : "",
-            starsColIdx: STARS_COL,
-            byopColIdx: BYOP_COL,
-            requestsColIdx: REQUESTS_COL,
-        });
-    }
+            repoUrl: row.repoUrl,
+            currentStars: row.stars,
+            webUrlHostname: extractHostname(row.webUrl),
+            githubUsername: row.githubUsername.replace(/^@/, ""),
+            currentBYOP: row.byop,
+            currentRequests: row.requests24h,
+        };
+    });
 
-    return { lines, apps, headerIdx, dataStartIdx };
+    return { lines, headerIdx, apps };
 }
 
 function fetchRepoStars(owner, repo) {
@@ -317,7 +267,7 @@ async function main() {
         );
     }
 
-    const { lines, apps } = parseAppsMarkdown();
+    const { lines, headerIdx, apps } = parseAppsMarkdown();
 
     console.log(`Found ${apps.length} apps\n`);
 
@@ -412,7 +362,7 @@ async function main() {
         }
 
         // --- BYOP (match hostname against Tinybird secret key names) ---
-        if (hasTinybird && app.byopColIdx !== -1 && app.webUrlHostname) {
+        if (hasTinybird && app.webUrlHostname) {
             const isBYOP = byopHostnames.has(app.webUrlHostname);
             const newBYOP = isBYOP ? "true" : "";
             if (newBYOP !== app.currentBYOP) {
@@ -429,7 +379,7 @@ async function main() {
         // --- Requests ---
         // BYOP apps: count ALL requests through the app's API key (by hostname)
         // Non-BYOP apps: count requests by the developer's GitHub username
-        if (hasTinybird && app.requestsColIdx !== -1) {
+        if (hasTinybird) {
             const isBYOP = byopHostnames.has(app.webUrlHostname);
             let count = 0;
             let label = "";
@@ -461,17 +411,13 @@ async function main() {
 
     // Apply changes to lines
     if (!dryRun && changes.length > 0) {
-        for (const change of changes) {
-            const { app, field, newValue } = change;
-            const cols = lines[app.lineIdx].split("|");
-            if (field === "stars") {
-                cols[app.starsColIdx] = ` ${newValue} `;
-            } else if (field === "byop") {
-                cols[app.byopColIdx] = ` ${newValue} `;
-            } else if (field === "requests") {
-                cols[app.requestsColIdx] = ` ${newValue} `;
-            }
-            lines[app.lineIdx] = cols.join("|");
+        const cellField = {
+            stars: "stars",
+            byop: "byop",
+            requests: "requests24h",
+        };
+        for (const { app, field, newValue } of changes) {
+            setCell(lines, headerIdx, app.lineIdx, cellField[field], newValue);
         }
 
         fs.writeFileSync(APPS_FILE, lines.join("\n"));

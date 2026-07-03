@@ -1,11 +1,11 @@
+import { IMAGE_SERVICES, type ImageModelName } from "@shared/registry/image.ts";
 import { z } from "zod";
-import { IMAGE_CONFIG } from "./models.js";
+import { getDefaultSideLength } from "./models.js";
 
-type ModelName = keyof typeof IMAGE_CONFIG;
-
-const allowedModels = Object.keys(IMAGE_CONFIG) as Array<
-    keyof typeof IMAGE_CONFIG
->;
+const allowedModels = Object.keys(IMAGE_SERVICES) as [
+    ImageModelName,
+    ...ImageModelName[],
+];
 const validQualities = ["low", "medium", "high", "hd"] as const;
 // Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
 const MAX_RANDOM_SEED = 2147483647; // INT32_MAX (2^31 - 1)
@@ -31,13 +31,11 @@ const sanitizedSideLength = z.preprocess((v) => {
 }, z.int().optional());
 
 function adjustImageSizeForModel(
-    model: ModelName,
+    model: ImageModelName,
     width?: number,
     height?: number,
 ): { width: number; height: number } {
-    const defaultSideLength =
-        (IMAGE_CONFIG[model] as { defaultSideLength?: number })
-            .defaultSideLength ?? 1024;
+    const defaultSideLength = getDefaultSideLength(model);
 
     // Use provided dimensions or default - no scaling/limiting
     const sanitizedWidth =
@@ -58,11 +56,7 @@ export const ImageParamsSchema = z
         height: sanitizedSideLength,
         seed: sanitizedSeed,
         model: z.enum(allowedModels),
-        enhance: sanitizedBoolean.catch(false),
-        negative_prompt: z.coerce.string().catch("worst quality, blurry"),
-        nofeed: sanitizedBoolean.catch(false),
         safe: sanitizedBoolean.catch(false),
-        private: sanitizedBoolean.catch(false).optional(),
         quality: z.literal(validQualities).catch("medium"),
         image: z
             .union([z.array(z.string()), z.string(), z.null(), z.undefined()])
@@ -117,10 +111,8 @@ export const ImageParamsSchema = z
             data.width,
             data.height,
         );
-        const nofeed = data.nofeed || data.private || false;
-        delete data.private;
 
-        return { ...data, nofeed, width, height, dimensionsExplicit };
+        return { ...data, width, height, dimensionsExplicit };
     });
 
 export type ImageParams = z.infer<typeof ImageParamsSchema>;

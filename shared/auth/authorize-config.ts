@@ -23,6 +23,13 @@ export const DEFAULT_CONSENT_BUDGET = 5;
 export const DEFAULT_CONSENT_EXPIRY_DAYS = 7;
 
 /**
+ * An S256 PKCE code_challenge is exactly 43 base64url chars (unpadded
+ * SHA-256, RFC 7636 §4.2). Single source of truth for the consent page's
+ * front-door check and the server's CreateCodeSchema.
+ */
+export const PKCE_S256_CHALLENGE_REGEX = /^[A-Za-z0-9_-]{43}$/;
+
+/**
  * Account permissions the user can grant at the consent screen. Every scope is
  * opt-in — nothing is implicit. A caller's own key metadata (`/account/key`),
  * its budget, its usage (`/account/key/usage`), and the user's github username +
@@ -31,7 +38,8 @@ export const DEFAULT_CONSENT_EXPIRY_DAYS = 7;
  * - `profile`: read account name and email
  * - `usage`: read full account balance + account-wide usage (key's own
  *   balance and usage are free regardless)
- * - `keys`: create, list, and revoke API keys
+ * - `keys`: account admin; create, list, and revoke API keys, plus My Models
+ *   access where enabled.
  */
 export const CONSENT_PERMISSIONS = ["profile", "usage", "keys"] as const;
 

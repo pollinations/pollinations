@@ -27,7 +27,6 @@ async function generateText(params) {
         frequency_penalty,
         presence_penalty,
         json: jsonMode,
-        private: isPrivate,
     } = params;
 
     if (!prompt || typeof prompt !== "string") {
@@ -93,9 +92,7 @@ async function chatCompletion(params) {
         response_format,
         stream = false,
         stream_options,
-        thinking,
         reasoning_effort,
-        thinking_budget,
         tools,
         tool_choice,
         parallel_tool_calls,
@@ -135,9 +132,7 @@ async function chatCompletion(params) {
         response_format,
         stream,
         stream_options,
-        thinking,
         reasoning_effort,
-        thinking_budget,
         tools,
         tool_choice,
         parallel_tool_calls,
@@ -232,7 +227,6 @@ async function chatCompletion(params) {
                     model: result.model,
                     finish_reason: choice?.finish_reason,
                     usage: result.usage,
-                    user_tier: result.user_tier,
                 },
                 true,
             ),
@@ -312,7 +306,7 @@ async function listTextModels(_params) {
                 advanced:
                     "Use chatCompletion for multi-turn conversations, tool calling, audio output",
                 reasoning:
-                    "True reasoning models: kimi-k2-thinking, perplexity-reasoning, openai-large, gemini-large. Use reasoning_effort or thinking params",
+                    "True reasoning models: kimi, perplexity-reasoning, openai-large, gemini-large. Use reasoning_effort",
                 audio: "Use openai-audio with modalities=['text','audio'] for voice output",
             },
         };
@@ -566,22 +560,10 @@ const toolSchema = z.object({
 
 const audioOptionsSchema = z.object({
     voice: z
-        .enum([
-            "alloy",
-            "echo",
-            "fable",
-            "onyx",
-            "nova",
-            "shimmer",
-            "coral",
-            "verse",
-            "ballad",
-            "ash",
-            "sage",
-            "amuch",
-            "dan",
-        ])
-        .describe("Voice for audio output"),
+        .string()
+        .describe(
+            "Voice for audio output. The canonical list lives in the registry — use listAudioVoices to discover valid values; the server rejects unknown voices.",
+        ),
     format: z
         .enum(["wav", "mp3", "flac", "opus", "pcm16"])
         .describe("Audio format"),
@@ -602,18 +584,6 @@ const responseFormatSchema = z.object({
         .describe(
             "JSON schema for structured output (when type='json_schema')",
         ),
-});
-
-const thinkingSchema = z.object({
-    type: z
-        .enum(["enabled", "disabled"])
-        .describe("Enable/disable thinking mode"),
-    budget_tokens: z
-        .number()
-        .int()
-        .min(1)
-        .optional()
-        .describe("Token budget for thinking"),
 });
 
 const chatParamsSchema = {
@@ -683,23 +653,12 @@ const chatParamsSchema = {
         .describe(
             "Response format. Use 'json_object' for JSON output, 'json_schema' for structured data",
         ),
-    thinking: thinkingSchema
-        .optional()
-        .describe(
-            "Thinking mode for reasoning models. Use with kimi-k2-thinking, perplexity-reasoning, openai-large, gemini-large",
-        ),
     reasoning_effort: z
-        .enum(["low", "medium", "high"])
+        .enum(["none", "minimal", "low", "medium", "high", "xhigh"])
         .optional()
         .describe(
-            "Reasoning effort level. Works with reasoning models like kimi-k2-thinking, openai-large",
+            "Reasoning effort level. Use 'none' to request no reasoning on supported models",
         ),
-    thinking_budget: z
-        .number()
-        .int()
-        .min(0)
-        .optional()
-        .describe("Token budget for model thinking/reasoning"),
     tools: z
         .array(toolSchema)
         .optional()
@@ -783,7 +742,7 @@ export const textTools = [
     ],
     [
         "chatCompletion",
-        "OpenAI-compatible chat completions with ALL parameters. Supports:\n- Multi-turn conversations with message history\n- Function/tool calling for AI agents\n- Audio input/output (openai-audio model)\n- Reasoning mode (kimi-k2-thinking, perplexity-reasoning, openai-large, gemini-large)\n- JSON/structured output\n- Built-in Gemini tools (google_search, code_execution, etc.)\n- Perplexity web search with citations",
+        "OpenAI-compatible chat completions with ALL parameters. Supports:\n- Multi-turn conversations with message history\n- Function/tool calling for AI agents\n- Audio input/output (openai-audio model)\n- Reasoning mode (kimi, perplexity-reasoning, openai-large, gemini-large)\n- JSON/structured output\n- Built-in Gemini tools (google_search, code_execution, etc.)\n- Perplexity web search with citations",
         chatParamsSchema,
         chatCompletion,
     ],

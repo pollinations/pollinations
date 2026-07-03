@@ -1,11 +1,18 @@
 import {
     AppIcon,
     Chip,
+    GlobeIcon,
     IconButton,
+    InlineLink,
+    KeyIcon,
+    LockIcon,
+    PencilIcon,
     Section,
     Surface,
     TerminalIcon,
+    TokensIcon,
     Tooltip,
+    XIcon,
 } from "@pollinations/ui";
 import { formatDistanceToNowStrict } from "date-fns";
 import type { FC } from "react";
@@ -83,11 +90,22 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
             >
                 <div className="flex items-center gap-2 mb-2">
                     <Chip size="sm">
-                        {isApp
-                            ? "🖥️ App"
-                            : isPublishable
-                              ? "🌐 Publishable"
-                              : "🔒 Secret"}
+                        {isApp ? (
+                            <>
+                                <AppIcon className="h-3.5 w-3.5" />
+                                App
+                            </>
+                        ) : isPublishable ? (
+                            <>
+                                <GlobeIcon className="h-3.5 w-3.5" />
+                                Publishable
+                            </>
+                        ) : (
+                            <>
+                                <LockIcon className="h-3.5 w-3.5" />
+                                Secret
+                            </>
+                        )}
                     </Chip>
                     <span className="text-sm font-medium truncate">
                         {apiKey.name}
@@ -99,31 +117,37 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             start={apiKey.start ?? ""}
                         />
                     ) : (
-                        <span className="font-mono text-xs text-ink-500 shrink-0">
+                        <span className="font-mono text-xs text-theme-text-muted shrink-0">
                             {apiKey.start}...
                         </span>
                     )}
                     <div className="flex gap-1 shrink-0 ml-2 items-center">
                         <IconButton
+                            intent="info"
                             title="Edit key"
+                            tooltip="Edit key"
+                            tooltipAlign="center"
+                            tooltipClampToViewport={false}
                             onClick={() => setEditingKey(apiKey)}
                         >
-                            ✎
+                            <PencilIcon className="h-4 w-4" />
                         </IconButton>
                         <IconButton
                             intent="danger"
                             title="Delete key"
+                            tooltip="Delete key"
+                            tooltipAlign="center"
+                            tooltipClampToViewport={false}
                             onClick={() => setDeleteId(apiKey.id)}
-                            className="text-lg"
                         >
-                            ×
+                            <XIcon className="h-4 w-4" />
                         </IconButton>
                     </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-4 text-xs">
                     <span>
-                        <span className="text-ink-400">Created: </span>
-                        <span className="text-ink-500">
+                        <span className="text-theme-text-muted">Created: </span>
+                        <span className="text-theme-text-muted">
                             {formatDistanceToNowStrict(apiKey.createdAt, {
                                 addSuffix: false,
                                 locale: shortLocale,
@@ -131,8 +155,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         </span>
                     </span>
                     <span>
-                        <span className="text-ink-400">Used: </span>
-                        <span className="text-ink-500">
+                        <span className="text-theme-text-muted">Used: </span>
+                        <span className="text-theme-text-muted">
                             {apiKey.lastRequest
                                 ? formatDistanceToNowStrict(
                                       new Date(apiKey.lastRequest),
@@ -146,26 +170,37 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     </span>
                     {isPublishable && primaryRedirectUri && (
                         <span className="inline-flex min-w-0 items-center gap-1">
-                            <span className="text-ink-400">Redirect: </span>
+                            <span className="text-theme-text-muted">
+                                Redirect:{" "}
+                            </span>
                             <a
                                 href={primaryRedirectUri}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="hover:underline truncate max-w-[200px] inline-block align-bottom text-accent-blue-600"
+                                className="hover:underline truncate max-w-[200px] inline-block align-bottom text-theme-text-soft hover:text-theme-text-strong"
                             >
                                 {primaryRedirectUri.replace(/^https?:\/\//, "")}
                             </a>
                             {extraRedirectUriCount > 0 && (
                                 <Tooltip
-                                    content={redirectUrisMeta
-                                        .slice(1)
-                                        .map((uri) =>
-                                            uri.replace(/^https?:\/\//, ""),
-                                        )
-                                        .join("\n")}
+                                    content={
+                                        <span className="block whitespace-pre-line">
+                                            Additional redirects
+                                            {"\n"}
+                                            {redirectUrisMeta
+                                                .slice(1)
+                                                .map((uri) =>
+                                                    uri.replace(
+                                                        /^https?:\/\//,
+                                                        "",
+                                                    ),
+                                                )
+                                                .join("\n")}
+                                        </span>
+                                    }
                                     displayContents
                                 >
-                                    <Chip theme="blue" size="sm">
+                                    <Chip size="sm">
                                         +{extraRedirectUriCount}
                                     </Chip>
                                 </Tooltip>
@@ -174,14 +209,13 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     )}
                     {isApp && (
                         <Chip
-                            intent={earningsEnabled ? "success" : undefined}
+                            intent="neutral"
                             size="sm"
                             className={
                                 earningsEnabled
-                                    ? undefined
-                                    : "bg-ink-100 text-ink-500"
+                                    ? "text-intent-success-text"
+                                    : "bg-ink-100 text-theme-text-muted"
                             }
-                            title="Developer earnings"
                         >
                             Earnings {earningsEnabled ? "on" : "off"}
                         </Chip>
@@ -197,7 +231,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 pollenBudget={apiKey.pollenBalance}
                             />
                             <span className="flex items-center gap-1">
-                                <span className="text-ink-400">
+                                <span className="text-theme-text-muted">
                                     Permissions:
                                 </span>
                                 <ModelsBadge permissions={apiKey.permissions} />
@@ -214,24 +248,28 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
             <div className="flex flex-col gap-6">
                 <Section
                     title="API"
-                    theme="blue"
                     framed
                     action={
                         <ApiKeyDialog
                             onSubmit={onCreate}
                             onComplete={() => {}}
-                            triggerLabel="🔑 + API Key"
+                            triggerLabel={
+                                <span className="inline-flex items-center gap-1.5">
+                                    <KeyIcon className="h-4 w-4" />
+                                    Add Key
+                                </span>
+                            }
                         />
                     }
                 >
                     <div className="flex flex-col gap-3">
                         {!sortedApiKeys.length && (
                             <Surface className="p-6 text-center">
-                                <p className="text-2xl mb-2">🔑</p>
+                                <KeyIcon className="mx-auto mb-2 h-8 w-8 text-theme-text-muted" />
                                 <p className="font-semibold text-ink-900 text-lg mb-2">
                                     Create your first API key
                                 </p>
-                                <p className="text-sm text-ink-600">
+                                <p className="text-sm text-theme-text-muted">
                                     Use API keys for your own private
                                     server-side integrations.
                                 </p>
@@ -239,7 +277,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         )}
                         {sortedApiKeys.map(renderKeyCard)}
                     </div>
-                    <p className="mt-5 flex items-start gap-1.5 border-t border-ink-200 pt-5 text-[13px] leading-snug text-ink-500">
+                    <p className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                         <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
                             For your own backend, scripts, and CLIs — billed to
@@ -249,51 +287,29 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 </Section>
                 <Section
                     title="App"
-                    theme="blue"
                     framed
                     action={
                         <ApiKeyDialog
                             onSubmit={onCreate}
                             onComplete={() => {}}
-                            triggerLabel="🖥️ + Add App"
+                            triggerLabel={
+                                <span className="inline-flex items-center gap-1.5">
+                                    <AppIcon className="h-4 w-4" />
+                                    Add App
+                                </span>
+                            }
                             simplified
                         />
                     }
                 >
                     <div className="flex flex-col gap-3">
-                        <Surface
-                            variant="card-themed"
-                            className="w-fit text-theme-text-strong"
-                        >
-                            <span className="font-body text-xs font-bold uppercase tracking-wide text-intent-danger-600 mr-1.5">
-                                New!
-                            </span>
-                            Turn on earnings to receive a share of pollen users
-                            spend in your app.{" "}
-                            <a
-                                href={genDocsUrl("#tag/bring-your-own-pollen")}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="font-medium text-accent-blue-700 hover:text-accent-blue-900"
-                            >
-                                <span className="underline underline-offset-2">
-                                    Read the guide
-                                </span>
-                                <span
-                                    aria-hidden="true"
-                                    className="no-underline ml-0.5"
-                                >
-                                    ↗
-                                </span>
-                            </a>
-                        </Surface>
                         {!sortedAppKeys.length && (
                             <Surface className="p-6 text-center">
-                                <p className="text-2xl mb-2">🖥️</p>
+                                <AppIcon className="mx-auto mb-2 h-8 w-8 text-theme-text-muted" />
                                 <p className="font-semibold text-ink-900 text-lg mb-2">
                                     Create your first app key
                                 </p>
-                                <p className="text-sm text-ink-600">
+                                <p className="text-sm text-theme-text-muted">
                                     Use app keys when your users bring their own
                                     Pollinations account.
                                 </p>
@@ -301,13 +317,29 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         )}
                         {sortedAppKeys.map(renderKeyCard)}
                     </div>
-                    <p className="mt-5 flex items-start gap-1.5 border-t border-ink-200 pt-5 text-[13px] leading-snug text-ink-500">
-                        <AppIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            For apps where users sign in with their own
-                            Pollinations account and spend their own Pollen.
-                        </span>
-                    </p>
+                    <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                        <p className="flex items-start gap-1.5">
+                            <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                For apps where users sign in with their own
+                                Pollinations account and spend their own Pollen.
+                            </span>
+                        </p>
+                        <p className="flex items-start gap-1.5">
+                            <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                Turn on earnings to receive a share of pollen
+                                users spend in your app.{" "}
+                                <InlineLink
+                                    href={genDocsUrl(
+                                        "#tag/bring-your-own-pollen",
+                                    )}
+                                >
+                                    Read the guide
+                                </InlineLink>
+                            </span>
+                        </p>
+                    </div>
                 </Section>
             </div>
             <DeleteConfirmation

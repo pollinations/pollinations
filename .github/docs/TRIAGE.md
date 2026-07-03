@@ -141,7 +141,6 @@ flowchart TD
 | Script                 | Purpose        | AI Model                  | Trigger               |
 | ---------------------- | -------------- | ------------------------- | --------------------- |
 | `project-manager.py`   | Auto-kanban    | openai (via pollinations) | Issue/PR opened       |
-| `pr_comment_review.py` | AI code review | claude-large              | Comment `Review=True` |
 
 **project-manager.py details:**
 
@@ -149,11 +148,6 @@ flowchart TD
 - Timeout: 5 minutes for AI, 30s for GraphQL
 - Routing: PRs → Dev (always). Issues: internal author → Dev, external author → Support
 - Fallback: AI failure → skip (no project assignment)
-
-**pr_comment_review.py details:**
-
-- Context: 900k tokens, Max output: 65k tokens
-- Skips: lock files, minified, assets, source maps
 
 ---
 
@@ -206,10 +200,10 @@ Any `TIER-*` labeled issue routes to the Apps project (#23). The state machine:
 | `VIDEO`   | Video generation      | `project-manager.py` |
 | `API`     | API/SDK general       | `project-manager.py` |
 | `WEB`     | Website/dashboard     | `project-manager.py` |
-| `CREDITS` | Pollen balance issues | `project-manager.py` |
+| `CREDITS` | Pollen balance and usage quota issues | `project-manager.py` |
 | `BILLING` | Payment/credit card   | `project-manager.py` |
 | `ACCOUNT` | Account/login/auth    | `project-manager.py` |
-| `TIER`    | User tier questions (spore/seed/flower/nectar/upgrade) | `project-manager.py` |
+| `TIER`    | Account-level Pollen wallet balance and usage-limit questions | `project-manager.py` |
 
 (`TIER` is unrelated to the `TIER-APP-*` family used for app submissions.)
 

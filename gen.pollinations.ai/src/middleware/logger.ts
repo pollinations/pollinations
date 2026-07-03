@@ -1,8 +1,8 @@
 import { getLogger, type Logger, withContext } from "@logtape/logtape";
 import { getRealClientIp } from "@shared/client-ip.ts";
+import { ensureConfigured } from "@shared/logger.ts";
 import { getPublicUrl } from "@shared/public-origin.ts";
 import { createMiddleware } from "hono/factory";
-import { ensureConfigured } from "@/logger";
 
 export type LoggerVariables = {
     log: Logger;

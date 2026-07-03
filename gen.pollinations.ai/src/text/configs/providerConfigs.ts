@@ -90,17 +90,7 @@ export function createFireworksModelConfig(
 ): ProviderConfig {
     return createOpenAICompatibleConfig(
         "https://api.fireworks.ai/inference/v1",
-        process.env.FIREWORKS_API_KEY,
-        overrides,
-    );
-}
-
-export function createDeepInfraModelConfig(
-    overrides: ModelOverride = {},
-): ProviderConfig {
-    return createOpenAICompatibleConfig(
-        "https://api.deepinfra.com/v1/openai",
-        process.env.DEEPINFRA_API_KEY,
+        process.env.FIREWORKS_NEO_API_KEY,
         overrides,
     );
 }
@@ -115,6 +105,16 @@ export function createOpenRouterModelConfig(
     );
 }
 
+export function createInceptionModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://api.inceptionlabs.ai/v1",
+        process.env.INCEPTION_API_KEY,
+        overrides,
+    );
+}
+
 export function createPerplexityModelConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {
@@ -123,16 +123,6 @@ export function createPerplexityModelConfig(
         authKey: process.env.PERPLEXITY_API_KEY,
         ...overrides,
     };
-}
-
-export function createDashScopeModelConfig(
-    overrides: ModelOverride = {},
-): ProviderConfig {
-    return createOpenAICompatibleConfig(
-        "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
-        process.env.DASHSCOPE_API_KEY,
-        overrides,
-    );
 }
 
 export function createOVHcloudModelConfig(

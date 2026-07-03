@@ -248,6 +248,31 @@ def test_digitalocean_missing_key_raises():
         _do.balance({}, NOW)
 
 
+def test_digitalocean_missing_month_to_date_usage_raises(monkeypatch):
+    """Absent month_to_date_usage must raise, not silently return 0."""
+    cap = Capture([{"account_balance": "-50.0"}])
+    monkeypatch.setattr(_do, "http_json", cap)
+    with pytest.raises((KeyError, RuntimeError)):
+        _do.balance({"DIGITALOCEAN_TOKEN": "do-token"}, NOW)
+
+
+def test_digitalocean_missing_account_balance_raises(monkeypatch):
+    """Absent account_balance must raise, not silently return 0."""
+    cap = Capture([{"month_to_date_usage": "10.0"}])
+    monkeypatch.setattr(_do, "http_json", cap)
+    with pytest.raises((KeyError, RuntimeError)):
+        _do.balance({"DIGITALOCEAN_TOKEN": "do-token"}, NOW)
+
+
+def test_digitalocean_zero_spent_is_valid(monkeypatch):
+    """Present-but-zero month_to_date_usage must NOT raise (spent 0.0 is legal)."""
+    cap = Capture([{"month_to_date_usage": "0", "account_balance": "0"}])
+    monkeypatch.setattr(_do, "http_json", cap)
+    row = _do.balance({"DIGITALOCEAN_TOKEN": "do-token"}, NOW)
+    assert row["spent_usd"] == 0.0
+    assert row["left_usd"] is None
+
+
 # ---------------------------------------------------------------------------
 # daytona
 # ---------------------------------------------------------------------------
@@ -302,6 +327,25 @@ def test_daytona_auth_header(monkeypatch):
 def test_daytona_missing_key_raises():
     with pytest.raises((RuntimeError, KeyError)):
         _dtn.balance({}, NOW)
+
+
+def test_daytona_missing_org_id_raises_before_wallet(monkeypatch):
+    """Missing DAYTONA_ORGANIZATION_ID must raise with the manual-record message
+    BEFORE any wallet HTTP call is made."""
+    call_count = [0]
+
+    def fake_http_json(url, headers=None, timeout=30, data=None, method=None):
+        call_count[0] += 1
+        if "api-keys/current" in url:
+            return {"name": "my-key"}
+        # wallet should never be reached
+        raise AssertionError(f"unexpected call to {url}")
+
+    monkeypatch.setattr(_dtn, "http_json", fake_http_json)
+    with pytest.raises(RuntimeError, match="DAYTONA_ORGANIZATION_ID"):
+        _dtn.balance({"DAYTONA_API_KEY": "dtn-key"}, NOW)
+    # only the key-validity call was made; no wallet call
+    assert call_count[0] == 1
 
 
 # ---------------------------------------------------------------------------

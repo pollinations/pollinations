@@ -17,7 +17,7 @@ def balance(creds, now):
         "https://api.digitalocean.com/v2/customers/my/balance",
         {"Authorization": f"Bearer {tok}"},
     )
-    spent = float(d.get("month_to_date_usage") or 0)
-    acct = float(d.get("account_balance") or 0)
+    spent = float(d["month_to_date_usage"])
+    acct = float(d["account_balance"])
     left = -acct if acct < 0 else None
     return _brow(now, "digitalocean", spent=spent, left=left)

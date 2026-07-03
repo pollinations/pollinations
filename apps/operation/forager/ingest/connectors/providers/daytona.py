@@ -7,8 +7,6 @@ Mapping: wallet.balanceCents / 100 → prepaid_left_usd
          If wallet probe fails (OIDC-gated), raise RuntimeError — record manually.
 Creds: DAYTONA_API_KEY (required), DAYTONA_ORGANIZATION_ID (required for wallet)
 """
-import urllib.error
-
 from ..common import http_json
 from . import _brow
 
@@ -20,12 +18,14 @@ def balance(creds, now):
         {"Authorization": f"Bearer {key}"},
     )
     org = creds.get("DAYTONA_ORGANIZATION_ID")
+    if not org:
+        raise RuntimeError("wallet needs DAYTONA_ORGANIZATION_ID — record manually")
     try:
         wallet = http_json(
             f"https://billing.app.daytona.io/v2/organization/{org}/wallet",
             {"Authorization": f"Bearer {key}"},
         )
-    except (urllib.error.HTTPError, urllib.error.URLError, Exception) as exc:
+    except Exception as exc:
         raise RuntimeError(f"wallet OIDC-gated — record manually ({type(exc).__name__})") from exc
     cents = wallet.get("balanceCents")
     if cents is None:

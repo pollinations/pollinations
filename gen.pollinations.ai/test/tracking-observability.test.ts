@@ -11,7 +11,10 @@ import {
     communityModelDefinition,
 } from "@shared/community-endpoints.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
-import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
+import {
+    type BillingAdjustment,
+    getRegistryModelDefinition,
+} from "@shared/registry/registry.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
@@ -20,7 +23,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
 import { logger } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
-import { track } from "@/middleware/track.ts";
+import { collapseBillingAdjustments, track } from "@/middleware/track.ts";
 
 afterEach(() => {
     vi.restoreAllMocks();
@@ -646,5 +649,56 @@ describe("tracking observability", () => {
     it("records fallbackUsed=false when no fallback header is present", async () => {
         const event = await captureFallbackEvent({});
         expect(event.fallbackUsed).toBe(false);
+    });
+});
+
+describe("collapseBillingAdjustments", () => {
+    const adjustment = (
+        ruleId: string,
+        units: number,
+        cost: number,
+    ): BillingAdjustment => ({
+        ruleId,
+        kind: "search_request",
+        unit: "request",
+        units,
+        unitCost: cost / units,
+        cost,
+        price: cost,
+    });
+
+    it("returns no fields for zero adjustments", () => {
+        expect(collapseBillingAdjustments(undefined)).toEqual({});
+        expect(collapseBillingAdjustments([])).toEqual({});
+    });
+
+    it("maps the single entry straight through", () => {
+        const result = collapseBillingAdjustments([
+            adjustment("perplexity.sonar_low.search_request.v1", 1, 0.006),
+        ]);
+        expect(result).toEqual({
+            adjustmentKind: "perplexity.sonar_low.search_request.v1",
+            adjustmentUnits: 1,
+            adjustmentCost: 0.006,
+        });
+    });
+
+    it("collapses >1 entries: sums units/cost, kind of the largest cost", () => {
+        const errorSpy = vi
+            .spyOn(console, "error")
+            .mockImplementation(() => {});
+        const result = collapseBillingAdjustments([
+            adjustment("kind.small.v1", 2, 0.004),
+            adjustment("kind.large.v1", 3, 0.009),
+        ]);
+        expect(result).toEqual({
+            adjustmentKind: "kind.large.v1",
+            adjustmentUnits: 5,
+            adjustmentCost: 0.013,
+        });
+        expect(errorSpy).toHaveBeenCalledWith(
+            "[billing] multiple adjustment kinds collapsed into scalar event columns",
+            expect.anything(),
+        );
     });
 });

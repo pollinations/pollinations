@@ -441,6 +441,13 @@ test("chat completions use local text generation with VCR-backed Portkey", async
         tokenCountCompletionText: 3,
         isBilledUsage: true,
     });
+    // A model without adjustment rules carries no adjustment columns —
+    // removeUnset strips them so ClickHouse defaults read "no adjustment".
+    expect(mocks.tinybird.state.events[0]).not.toHaveProperty("adjustmentKind");
+    expect(mocks.tinybird.state.events[0]).not.toHaveProperty(
+        "adjustmentUnits",
+    );
+    expect(mocks.tinybird.state.events[0]).not.toHaveProperty("adjustmentCost");
 });
 
 test("chat completions bill provider-reported Perplexity request cost without exposing it", async ({
@@ -483,7 +490,11 @@ test("chat completions bill provider-reported Perplexity request cost without ex
         tokenCountPromptText: 10,
         tokenCountCompletionText: 5,
         isBilledUsage: true,
+        // Search fee itemized into the scalar adjustment columns.
+        adjustmentKind: "perplexity.sonar_low.search_request.v1",
+        adjustmentUnits: 1,
     });
+    expect(mocks.tinybird.state.events[0].adjustmentCost).toBeCloseTo(0.006, 8);
     expect(mocks.tinybird.state.events[0].totalCost).toBeCloseTo(0.006015, 8);
 });
 

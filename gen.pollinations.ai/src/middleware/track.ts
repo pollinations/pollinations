@@ -27,7 +27,9 @@ import {
 import { sendToTinybird } from "@shared/events.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import {
+    type BillingAdjustment,
     type CostDefinition,
+    calculateBillingAdjustments,
     calculateCostForModelDefinition,
     calculatePriceForModelDefinition,
     getPriceDefinitionForModel,
@@ -110,6 +112,10 @@ type ResponseTrackingData = {
     usage?: Usage;
     cost?: UsageCost;
     price?: UsagePrice;
+    // Per-rule search/tool-fee breakdown for this response (empty for models
+    // without adjustment rules). Collapsed into scalar event columns at event
+    // creation.
+    adjustments?: BillingAdjustment[];
     contentFilterResults?: GenerationEventContentFilterParams;
 };
 
@@ -503,6 +509,13 @@ async function trackResponse(
         requestTracking.modelDefinition,
         modelUsage.output,
     );
+    // Same rule loop that feeds cost/price above (all at cost while
+    // priceMultiplier is 1×) — computed once here and threaded to the event so
+    // the scalar adjustment columns stay consistent with the billed totals.
+    const adjustments = calculateBillingAdjustments(
+        requestTracking.modelDefinition,
+        modelUsage.output,
+    );
     return {
         responseOk: response.ok,
         responseStatus: response.status,
@@ -511,6 +524,7 @@ async function trackResponse(
         fallbackUsed,
         cost,
         price,
+        adjustments,
         modelUsed: modelUsage.model,
         usage: modelUsage.usage,
         contentFilterResults,
@@ -639,6 +653,41 @@ type TrackingEventInput = {
     errorTracking?: ErrorData;
 };
 
+// Scalar event columns hold one adjustment kind per row. Exactly one entry is
+// the only possible case today (fee kinds are per-model). The >1 branch is
+// defensive: it sums units/cost across kinds and reports the largest-cost kind,
+// logging a greppable error — the documented cliff of the scalar variant. Flip
+// to the Map variant if a model ever carries two co-occurring fee kinds.
+export function collapseBillingAdjustments(
+    adjustments: BillingAdjustment[] | undefined,
+): {
+    adjustmentKind?: string;
+    adjustmentUnits?: number;
+    adjustmentCost?: number;
+} {
+    if (!adjustments || adjustments.length === 0) return {};
+    if (adjustments.length === 1) {
+        const [only] = adjustments;
+        return {
+            adjustmentKind: only.ruleId,
+            adjustmentUnits: only.units,
+            adjustmentCost: only.cost,
+        };
+    }
+    console.error(
+        "[billing] multiple adjustment kinds collapsed into scalar event columns",
+        { ruleIds: adjustments.map((a) => a.ruleId) },
+    );
+    const largest = adjustments.reduce((max, a) =>
+        a.cost > max.cost ? a : max,
+    );
+    return {
+        adjustmentKind: largest.ruleId,
+        adjustmentUnits: adjustments.reduce((sum, a) => sum + a.units, 0),
+        adjustmentCost: adjustments.reduce((sum, a) => sum + a.cost, 0),
+    };
+}
+
 function createTrackingEvent({
     id,
     requestId,
@@ -695,6 +744,7 @@ function createTrackingEvent({
         communityModelRewardUserId: communityModelReward?.userId,
         communityModelRewardRate: communityModelReward?.rewardRate ?? 0,
         communityModelRewardAmount: communityModelReward?.credit ?? 0,
+        ...collapseBillingAdjustments(responseTracking.adjustments),
 
         ...responseTracking.contentFilterResults,
         ...errorTracking,

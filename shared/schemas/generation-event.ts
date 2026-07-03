@@ -98,6 +98,12 @@ export type TinybirdEvent = {
     communityModelRewardUserId?: string;
     communityModelRewardRate?: number;
     communityModelRewardAmount?: number;
+    // Search/tool-fee billing adjustment collapsed into scalar columns (one kind
+    // per row). Left undefined when a request incurs no adjustment; ClickHouse
+    // defaults ('', 0) then read the row as "no adjustment".
+    adjustmentKind?: string; // versioned rule id, e.g. "google.gemini_3.search_query.v1"
+    adjustmentUnits?: number; // units charged (Float64 — fractional kinds possible, e.g. session-seconds)
+    adjustmentCost?: number; // USD provider cost (equals price while priceMultiplier is 1×)
 
     // Prompt Moderation
     moderationPromptHateSeverity?: string;

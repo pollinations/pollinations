@@ -12,30 +12,30 @@ import {
 import { Fragment, useMemo, useState } from "react";
 import { DataNote } from "../components/DataNote";
 import { DataTable, TableScroller } from "../components/DataTable";
-import { SourceMark, ValueWithSource } from "../components/Provenance";
-import { buildManualBalanceChange } from "../components/UsageEntryForm";
+import {
+    SourceBadge,
+    SourcedAmount,
+    SourceMark,
+} from "../components/Provenance";
 import { fmtUsd, fmtUsd2 } from "../lib/format";
-import { queuedBalanceKey, queuedGrantKey } from "../lib/queued";
+import { queuedGrantKey } from "../lib/queued";
 import { type StageInput, useStaging } from "../lib/staging";
-import type { BalanceRow, Data, GrantRow } from "../types";
+import type { CreditMonthlyRow, Data, GrantRow } from "../types";
 
-const CATEGORY_OPTIONS = [
-    "all",
-    "compute",
-    "infra",
-    "saas",
-    "admin",
-    "office",
-    "payroll",
-    "other",
-];
+// Credits = grant pools only. payg pools have nothing granted to track and
+// prepaid balances live on the Balances tab.
+const GRANT_KINDS = new Set(["credit", "grant"]);
 
 function sortedGrants(rows: GrantRow[]) {
     return [...rows].sort((a, b) => a.pool.localeCompare(b.pool));
 }
 
-function sortedBalances(rows: BalanceRow[]) {
-    return [...rows].sort((a, b) => a.provider.localeCompare(b.provider));
+function sortedCreditsMonthly(rows: CreditMonthlyRow[]) {
+    return [...rows].sort(
+        (a, b) =>
+            b.month.localeCompare(a.month) ||
+            a.provider.localeCompare(b.provider),
+    );
 }
 
 function grantProviders(row: GrantRow) {
@@ -80,28 +80,6 @@ export function buildGrantOverrideChange({
             note,
         },
         summary: `grants ${pool} ${field} -> ${value}`,
-    };
-}
-
-export function buildFxOverrideChange({
-    enteredAt = nowDateTime(),
-    value,
-}: {
-    enteredAt?: string;
-    value: number;
-}): StageInput {
-    return {
-        datasource: "overrides",
-        row: {
-            entered_at: enteredAt,
-            scope: "config",
-            key: "fx_eur_usd",
-            field: "value",
-            value_num: value,
-            value_str: "",
-            note: "",
-        },
-        summary: `config fx_eur_usd -> ${value}`,
     };
 }
 
@@ -218,102 +196,6 @@ function GrantEditor({ onClose, row }: { onClose: () => void; row: GrantRow }) {
     );
 }
 
-function BalanceEditor({
-    onClose,
-    provider,
-}: {
-    onClose: () => void;
-    provider: string;
-}) {
-    const { stage } = useStaging();
-    const [amount, setAmount] = useState("");
-    const [error, setError] = useState("");
-
-    return (
-        <form
-            className="flex flex-col gap-1.5"
-            onSubmit={(event) => {
-                event.preventDefault();
-                const parsed = Number(amount);
-                if (
-                    amount.trim() === "" ||
-                    !Number.isFinite(parsed) ||
-                    parsed < 0
-                ) {
-                    setError("number >= 0");
-                    return;
-                }
-                stage(buildManualBalanceChange({ amount: parsed, provider }));
-                onClose();
-            }}
-        >
-            <div className="flex flex-wrap items-center gap-2">
-                <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={amount}
-                    onChange={(event) => setAmount(event.target.value)}
-                    placeholder="left_usd now"
-                    aria-label="left_usd"
-                    className="w-36"
-                />
-                <Button type="submit" size="sm">
-                    Stage
-                </Button>
-                <Button type="button" size="sm" onClick={onClose}>
-                    Cancel
-                </Button>
-            </div>
-            <Text size="sm" tone="soft">
-                {error ||
-                    "Manual snapshot of what is left — updates the display and pool balance, no monthly burn."}
-            </Text>
-        </form>
-    );
-}
-
-function FxOverrideForm() {
-    const { stage } = useStaging();
-    const [value, setValue] = useState("");
-    const [error, setError] = useState("");
-
-    return (
-        <form
-            className="flex flex-wrap items-center gap-2 border-theme-border/70 border-t pt-4"
-            onSubmit={(event) => {
-                event.preventDefault();
-                const parsed = Number(value);
-                if (!Number.isFinite(parsed) || parsed <= 0) {
-                    setError("number > 0");
-                    return;
-                }
-                stage(buildFxOverrideChange({ value: parsed }));
-                setValue("");
-                setError("");
-            }}
-        >
-            <Text as="span" weight="bold">
-                fx_eur_usd
-            </Text>
-            <Input
-                type="number"
-                min="0"
-                step="0.0001"
-                value={value}
-                onChange={(event) => setValue(event.target.value)}
-                placeholder="1.14"
-                className="w-32"
-                aria-label="fx_eur_usd"
-            />
-            <Button type="submit" size="sm">
-                Stage FX
-            </Button>
-            {error && <Text className="text-intent-danger-text">{error}</Text>}
-        </form>
-    );
-}
-
 export function CreditsTab({
     data,
     queuedKeys = new Set<string>(),
@@ -321,85 +203,65 @@ export function CreditsTab({
     data: Data;
     queuedKeys?: ReadonlySet<string>;
 }) {
-    const [category, setCategory] = useState("all");
     const [provider, setProvider] = useState("all");
     const [editPool, setEditPool] = useState<string | null>(null);
-    const [editBalance, setEditBalance] = useState<string | null>(null);
+    const grantPools = useMemo(
+        () =>
+            sortedGrants(data.grants).filter((row) =>
+                GRANT_KINDS.has(row.kind.toLowerCase()),
+            ),
+        [data.grants],
+    );
     const providerOptions = useMemo(() => {
         const options = new Set<string>();
-        for (const row of data.grants) {
-            for (const grantProvider of grantProviders(row)) {
-                options.add(grantProvider);
-            }
+        for (const row of grantPools) {
+            for (const slug of grantProviders(row)) options.add(slug);
         }
-        for (const row of data.balances) {
-            options.add(row.provider || "");
+        for (const row of data.creditsMonthly) {
+            options.add(row.provider);
         }
         return ["all", ...[...options].sort((a, b) => a.localeCompare(b))];
-    }, [data.grants, data.balances]);
+    }, [grantPools, data.creditsMonthly]);
     const grants = useMemo(
         () =>
-            sortedGrants(data.grants).filter((row) => {
-                if (
-                    provider !== "all" &&
-                    !grantProviders(row).includes(provider)
-                ) {
-                    return false;
-                }
-                return category === "all" || row.category === category;
-            }),
-        [data.grants, category, provider],
+            grantPools.filter(
+                (row) =>
+                    provider === "all" ||
+                    grantProviders(row).includes(provider),
+            ),
+        [grantPools, provider],
     );
-    const balances = useMemo(
+    const creditsMonthly = useMemo(
         () =>
-            sortedBalances(data.balances).filter(
+            sortedCreditsMonthly(data.creditsMonthly).filter(
                 (row) => provider === "all" || row.provider === provider,
             ),
-        [data.balances, provider],
+        [data.creditsMonthly, provider],
     );
 
     return (
         <div className="flex flex-col gap-6">
             <section className="flex flex-col gap-4">
                 <DataNote pipe="grants_ep" rows={grants.length}>
-                    Credit and prepaid pools funding the burn: granted/left from
-                    provider APIs <SourceMark code="API" />, manual values{" "}
-                    <SourceMark code="HC" /> filling the holes.
+                    Grant pools funding the burn: granted/left from provider
+                    APIs <SourceMark code="API" />, manual values{" "}
+                    <SourceMark code="HC" /> filling the holes. payg pools have
+                    nothing granted; prepaid balances live on the Balances tab.
                 </DataNote>
-                <div className="flex flex-wrap items-center gap-3">
-                    <label className="inline-flex w-fit items-center gap-2 text-sm text-theme-text-soft">
-                        provider
-                        <select
-                            value={provider}
-                            onChange={(event) =>
-                                setProvider(event.target.value)
-                            }
-                            className="max-w-56 rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong"
-                        >
-                            {providerOptions.map((option) => (
-                                <option key={option} value={option}>
-                                    {option || "(blank)"}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                    <label className="inline-flex w-fit items-center gap-2 text-sm text-theme-text-soft">
-                        category
-                        <select
-                            value={category}
-                            onChange={(event) =>
-                                setCategory(event.target.value)
-                            }
-                            className="rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong"
-                        >
-                            {CATEGORY_OPTIONS.map((option) => (
-                                <option key={option} value={option}>
-                                    {option}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                </div>
+                <label className="inline-flex w-fit items-center gap-2 text-sm text-theme-text-soft">
+                    provider
+                    <select
+                        value={provider}
+                        onChange={(event) => setProvider(event.target.value)}
+                        className="max-w-56 rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong"
+                    >
+                        {providerOptions.map((option) => (
+                            <option key={option} value={option}>
+                                {option || "(blank)"}
+                            </option>
+                        ))}
+                    </select>
+                </label>
                 <TableScroller>
                     <DataTable>
                         <TableHead>
@@ -407,7 +269,6 @@ export function CreditsTab({
                                 <TableHeaderCell>actions</TableHeaderCell>
                                 <TableHeaderCell>pool</TableHeaderCell>
                                 <TableHeaderCell>providers</TableHeaderCell>
-                                <TableHeaderCell>kind</TableHeaderCell>
                                 <TableHeaderCell>category</TableHeaderCell>
                                 <TableHeaderCell>currency</TableHeaderCell>
                                 <TableHeaderCell>granted_usd</TableHeaderCell>
@@ -425,9 +286,8 @@ export function CreditsTab({
                                 <Fragment key={row.pool}>
                                     <TableRow>
                                         <TableCell>
-                                            <button
-                                                type="button"
-                                                className="font-medium text-theme-link hover:underline"
+                                            <Button
+                                                size="sm"
                                                 onClick={() =>
                                                     setEditPool(
                                                         editPool === row.pool
@@ -436,8 +296,8 @@ export function CreditsTab({
                                                     )
                                                 }
                                             >
-                                                edit
-                                            </button>
+                                                Edit
+                                            </Button>
                                         </TableCell>
                                         <TableCell>
                                             <span className="inline-flex items-center gap-1.5">
@@ -457,7 +317,6 @@ export function CreditsTab({
                                         <TableCell>
                                             {row.providers || "-"}
                                         </TableCell>
-                                        <TableCell>{row.kind || "-"}</TableCell>
                                         <TableCell>
                                             {row.category || "-"}
                                         </TableCell>
@@ -465,25 +324,25 @@ export function CreditsTab({
                                             {row.currency || "-"}
                                         </TableCell>
                                         <TableCell>
-                                            <ValueWithSource
+                                            <SourcedAmount
+                                                value={row.granted_usd}
                                                 source={row.granted_src}
-                                            >
-                                                {fmtUsd(row.granted_usd)}
-                                            </ValueWithSource>
+                                                format={fmtUsd}
+                                            />
                                         </TableCell>
                                         <TableCell>
-                                            <ValueWithSource
+                                            <SourcedAmount
+                                                value={row.left_usd}
                                                 source={row.left_src}
-                                            >
-                                                {fmtUsd2(row.left_usd)}
-                                            </ValueWithSource>
+                                                format={fmtUsd2}
+                                            />
                                         </TableCell>
                                         <TableCell>
-                                            <ValueWithSource
+                                            <SourcedAmount
+                                                value={row.prepaid_left_usd}
                                                 source={row.prepaid_left_src}
-                                            >
-                                                {fmtUsd2(row.prepaid_left_usd)}
-                                            </ValueWithSource>
+                                                format={fmtUsd2}
+                                            />
                                         </TableCell>
                                         <TableCell>
                                             {row.expires || "-"}
@@ -499,7 +358,7 @@ export function CreditsTab({
                                     </TableRow>
                                     {editPool === row.pool && (
                                         <TableRow>
-                                            <TableCell colSpan={12}>
+                                            <TableCell colSpan={11}>
                                                 <GrantEditor
                                                     row={row}
                                                     onClose={() =>
@@ -514,119 +373,51 @@ export function CreditsTab({
                         </TableBody>
                     </DataTable>
                 </TableScroller>
-                <FxOverrideForm />
             </section>
 
             <section className="flex flex-col gap-4">
-                <DataNote pipe="balances_ep" rows={balances.length}>
-                    Latest what-is-left snapshot per provider, read live{" "}
-                    <SourceMark code="API" /> or entered by hand{" "}
-                    <SourceMark code="HC" /> — the reality check for the pools
-                    above.
+                <DataNote
+                    pipe="credits_monthly_ep"
+                    rows={creditsMonthly.length}
+                >
+                    Month by month: credits burned (from invoices{" "}
+                    <SourceMark code="IV" />, provider meters{" "}
+                    <SourceMark code="API" /> or manual entries{" "}
+                    <SourceMark code="HC" />) and what was left at month end
+                    (latest balance snapshot of the month).
                 </DataNote>
                 <TableScroller>
                     <DataTable>
                         <TableHead>
                             <TableRow>
-                                <TableHeaderCell>actions</TableHeaderCell>
+                                <TableHeaderCell>month</TableHeaderCell>
                                 <TableHeaderCell>provider</TableHeaderCell>
-                                <TableHeaderCell>granted_usd</TableHeaderCell>
-                                <TableHeaderCell>spent_usd</TableHeaderCell>
-                                <TableHeaderCell>left_usd</TableHeaderCell>
                                 <TableHeaderCell>
-                                    prepaid_left_usd
+                                    credit_burn_usd
                                 </TableHeaderCell>
-                                <TableHeaderCell>note</TableHeaderCell>
-                                <TableHeaderCell>last_run_at</TableHeaderCell>
+                                <TableHeaderCell>credit_src</TableHeaderCell>
+                                <TableHeaderCell>
+                                    left_end_of_month
+                                </TableHeaderCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {balances.map((row) => (
-                                <Fragment key={row.provider}>
-                                    <TableRow>
-                                        <TableCell>
-                                            <button
-                                                type="button"
-                                                className="font-medium text-theme-link hover:underline"
-                                                onClick={() =>
-                                                    setEditBalance(
-                                                        editBalance ===
-                                                            row.provider
-                                                            ? null
-                                                            : row.provider,
-                                                    )
-                                                }
-                                            >
-                                                edit
-                                            </button>
-                                        </TableCell>
-                                        <TableCell>
-                                            <span className="inline-flex items-center gap-1.5">
-                                                {row.provider}
-                                                {queuedKeys.has(
-                                                    queuedBalanceKey(
-                                                        row.provider,
-                                                    ),
-                                                ) && (
-                                                    <Chip
-                                                        size="sm"
-                                                        intent="warning"
-                                                    >
-                                                        queued
-                                                    </Chip>
-                                                )}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell>
-                                            <ValueWithSource
-                                                source={row.source}
-                                            >
-                                                {fmtUsd(row.granted_usd)}
-                                            </ValueWithSource>
-                                        </TableCell>
-                                        <TableCell>
-                                            <ValueWithSource
-                                                source={row.source}
-                                            >
-                                                {fmtUsd(row.spent_usd)}
-                                            </ValueWithSource>
-                                        </TableCell>
-                                        <TableCell>
-                                            <ValueWithSource
-                                                source={row.source}
-                                            >
-                                                {fmtUsd2(row.left_usd)}
-                                            </ValueWithSource>
-                                        </TableCell>
-                                        <TableCell>
-                                            <ValueWithSource
-                                                source={row.source}
-                                            >
-                                                {fmtUsd2(row.prepaid_left_usd)}
-                                            </ValueWithSource>
-                                        </TableCell>
-                                        <TableCell title={row.note}>
-                                            <Text as="span" tone="soft">
-                                                {row.note || "-"}
-                                            </Text>
-                                        </TableCell>
-                                        <TableCell>
-                                            {row.last_run_at || "-"}
-                                        </TableCell>
-                                    </TableRow>
-                                    {editBalance === row.provider && (
-                                        <TableRow>
-                                            <TableCell colSpan={8}>
-                                                <BalanceEditor
-                                                    provider={row.provider}
-                                                    onClose={() =>
-                                                        setEditBalance(null)
-                                                    }
-                                                />
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </Fragment>
+                            {creditsMonthly.map((row) => (
+                                <TableRow key={`${row.month}|${row.provider}`}>
+                                    <TableCell>{row.month}</TableCell>
+                                    <TableCell>{row.provider}</TableCell>
+                                    <TableCell>
+                                        {row.credit_burn_usd > 0
+                                            ? fmtUsd2(row.credit_burn_usd)
+                                            : "-"}
+                                    </TableCell>
+                                    <TableCell>
+                                        <SourceBadge source={row.credit_src} />
+                                    </TableCell>
+                                    <TableCell>
+                                        {fmtUsd2(row.left_end_usd)}
+                                    </TableCell>
+                                </TableRow>
                             ))}
                         </TableBody>
                     </DataTable>

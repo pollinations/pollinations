@@ -22,6 +22,7 @@ import {
 import { StagingProvider } from "./lib/staging";
 import { fixturesMode, loadAll, TbError } from "./lib/tb";
 import type { Data } from "./types";
+import { BalancesTab } from "./views/BalancesTab";
 import { BurnTab } from "./views/BurnTab";
 import { CreditsTab } from "./views/CreditsTab";
 import { InvoicesTab } from "./views/InvoicesTab";
@@ -29,7 +30,14 @@ import { PaymentsTab } from "./views/PaymentsTab";
 import { ReconTab } from "./views/ReconTab";
 import { RunsTab } from "./views/RunsTab";
 
-type Tab = "recon" | "invoices" | "payments" | "burn" | "credits" | "runs";
+type Tab =
+    | "recon"
+    | "invoices"
+    | "payments"
+    | "burn"
+    | "credits"
+    | "balances"
+    | "runs";
 
 const TABS: { id: Tab; label: string }[] = [
     { id: "recon", label: "Recon" },
@@ -37,6 +45,7 @@ const TABS: { id: Tab; label: string }[] = [
     { id: "payments", label: "Payments" },
     { id: "burn", label: "Burn" },
     { id: "credits", label: "Credits" },
+    { id: "balances", label: "Balances" },
     { id: "runs", label: "Runs" },
 ];
 
@@ -393,11 +402,14 @@ export default function App() {
                             <InvoicesTab data={data} queuedKeys={queuedKeys} />
                         )}
                         {data && tab === "payments" && (
-                            <PaymentsTab data={data} />
+                            <PaymentsTab data={data} queuedKeys={queuedKeys} />
                         )}
                         {data && tab === "burn" && <BurnTab data={data} />}
                         {data && tab === "credits" && (
                             <CreditsTab data={data} queuedKeys={queuedKeys} />
+                        )}
+                        {data && tab === "balances" && (
+                            <BalancesTab data={data} queuedKeys={queuedKeys} />
                         )}
                         {data && tab === "runs" && <RunsTab data={data} />}
                     </main>

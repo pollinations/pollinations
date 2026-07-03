@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-    buildFxOverrideChange,
-    buildGrantOverrideChange,
-    canEditGrantSource,
-} from "./CreditsTab";
+import { buildFxOverrideChange } from "../components/FxOverrideForm";
+import { buildGrantOverrideChange, canEditGrantSource } from "./CreditsTab";
 
 describe("canEditGrantSource", () => {
     it("allows manual and hardcoded grant values only", () => {

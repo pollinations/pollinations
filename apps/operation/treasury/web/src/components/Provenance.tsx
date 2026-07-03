@@ -194,6 +194,19 @@ export function ValueWithSource({
     );
 }
 
+export function SourcedAmount({
+    format,
+    source,
+    value,
+}: {
+    format: (value: number | null) => string;
+    source: string;
+    value: number | null;
+}) {
+    if (value == null) return <span>-</span>;
+    return <ValueWithSource source={source}>{format(value)}</ValueWithSource>;
+}
+
 export function ValueWithSources({
     children,
     codes,

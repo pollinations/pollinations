@@ -57,6 +57,24 @@ export type CashMonthlyRow = {
     paid_eur: number;
 };
 
+export type PaymentTxRow = {
+    paid_at: string;
+    provider: string;
+    category: string;
+    counterparty: string;
+    amount_eur: number;
+    amount_usd: number;
+    wise_ref: string;
+};
+
+export type CreditMonthlyRow = {
+    month: string;
+    provider: string;
+    credit_burn_usd: number;
+    credit_src: string;
+    left_end_usd: number | null;
+};
+
 export type UsageMonthlyRow = {
     month: string;
     provider: string;
@@ -92,6 +110,8 @@ export type Data = {
     gaps: GapRow[];
     invoices: InvoiceRow[];
     cashMonthly: CashMonthlyRow[];
+    paymentsTx: PaymentTxRow[];
+    creditsMonthly: CreditMonthlyRow[];
     grants: GrantRow[];
     balances: BalanceRow[];
     usageMonthly: UsageMonthlyRow[];

@@ -12,6 +12,9 @@ export const queuedGrantKey = (pool: string) => `grants:${pool}`;
 
 export const queuedInvoiceKey = (sha256: string) => `invoices:${sha256}`;
 
+export const queuedPaymentRuleKey = (counterparty: string) =>
+    `payments:${counterparty}`;
+
 function stringValue(value: unknown) {
     return typeof value === "string" ? value : "";
 }
@@ -27,6 +30,9 @@ export function queuedKeysForChange(change: StagedChange): string[] {
             return month && provider ? [queuedReconKey(month, provider)] : [];
         }
         if (scope === "grants") return key ? [queuedGrantKey(key)] : [];
+        if (scope === "payments") {
+            return key ? [queuedPaymentRuleKey(key)] : [];
+        }
         return [];
     }
 

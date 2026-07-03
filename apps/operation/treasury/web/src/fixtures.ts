@@ -2,9 +2,11 @@ import type {
     BalanceRow,
     CashMonthlyRow,
     CoverageRow,
+    CreditMonthlyRow,
     GapRow,
     GrantRow,
     InvoiceRow,
+    PaymentTxRow,
     RunRow,
     UsageMonthlyRow,
 } from "./types";
@@ -356,6 +358,67 @@ const usageMonthly: UsageMonthlyRow[] = [
     },
 ];
 
+const paymentsTx: PaymentTxRow[] = [
+    {
+        paid_at: "2026-06-14",
+        provider: "",
+        category: "unmatched",
+        counterparty: "NVIDIA CORP",
+        amount_eur: 4400.5,
+        amount_usd: 5016.57,
+        wise_ref: "wise-tx-9931",
+    },
+    {
+        paid_at: "2026-06-02",
+        provider: "vast.ai",
+        category: "compute",
+        counterparty: "VAST AI LABS",
+        amount_eur: 442.16,
+        amount_usd: 504.06,
+        wise_ref: "wise-tx-9940",
+    },
+    {
+        paid_at: "2026-05-21",
+        provider: "openai",
+        category: "compute",
+        counterparty: "OPENAI LLC",
+        amount_eur: 208.37,
+        amount_usd: 237.54,
+        wise_ref: "wise-tx-7719",
+    },
+];
+
+const creditsMonthly: CreditMonthlyRow[] = [
+    {
+        month: "2026-06",
+        provider: "lambda",
+        credit_burn_usd: 1922.35,
+        credit_src: "invoice",
+        left_end_usd: null,
+    },
+    {
+        month: "2026-06",
+        provider: "openai",
+        credit_burn_usd: 531.25,
+        credit_src: "meter",
+        left_end_usd: 482.14,
+    },
+    {
+        month: "2026-05",
+        provider: "azure",
+        credit_burn_usd: 1650.4,
+        credit_src: "delta",
+        left_end_usd: 244600,
+    },
+    {
+        month: "2026-05",
+        provider: "assemblyai",
+        credit_burn_usd: 242.45,
+        credit_src: "manual",
+        left_end_usd: 107.55,
+    },
+];
+
 const balances: BalanceRow[] = [
     {
         provider: "vast.ai",
@@ -411,6 +474,8 @@ export const FIXTURES: Record<string, unknown[]> = {
     gaps_ep: gaps,
     invoices_ep: invoices,
     payments_monthly_ep: cashMonthly,
+    payments_ep: paymentsTx,
+    credits_monthly_ep: creditsMonthly,
     grants_ep: grants,
     balances_ep: balances,
     usage_ep: usageMonthly,

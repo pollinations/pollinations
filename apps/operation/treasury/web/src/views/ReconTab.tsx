@@ -1,4 +1,5 @@
 import {
+    Button,
     Chip,
     Switch,
     TableBody,
@@ -144,9 +145,8 @@ export function ReconTab({
                                     <TableRow>
                                         <TableCell>
                                             {canResolveGapStatus(row.status) ? (
-                                                <button
-                                                    type="button"
-                                                    className="font-medium text-theme-link hover:underline"
+                                                <Button
+                                                    size="sm"
                                                     onClick={() =>
                                                         setResolveKey(
                                                             resolveKey ===
@@ -156,8 +156,8 @@ export function ReconTab({
                                                         )
                                                     }
                                                 >
-                                                    resolve
-                                                </button>
+                                                    Resolve
+                                                </Button>
                                             ) : (
                                                 "-"
                                             )}

@@ -9,36 +9,64 @@ Schemas are **sparse by design** (2026-07 diet): derived numbers (`amount_usd`,
 queries, not stored. The EUR→USD rate lives in `overrides`
 (scope=`config`, key=`fx_eur_usd`) — append a newer row to change it.
 
-**Datasources** (read-only grain for apps):
+## Source Vocabulary
 
-| Datasource | Grain | Purpose |
+Everything below describes provider consumption observed from different places.
+Keep these planes separate: reconciliation compares them, but source tables do
+not mix them.
+
+| Plane | Datasource | Pipe | Meaning |
+|---|---|---|---|
+| `usage` | `usage_monthly` | `usage_ep` | What **our platform** metered while serving requests: Tinybird generation events, Pollen-denominated. This is our own estimate, not money moved. |
+| `meter` | `meter_monthly` | `meter_monthly_ep` | What the **provider** reports we consumed: dashboard/API/CLI/BigQuery. `source='manual'` means a human copied the provider dashboard. This is their measurement, still not money moved. |
+| `invoice` | `invoices` | `invoices_ep` | What the provider formally billed. `amount` is the money claim; `credit_usd` is credits applied or consumed. This is document truth. |
+| `payment` | `payments` | `payments_monthly_ep` | What actually left Wise. This is cash-out truth. |
+
+Usage printed on an invoice belongs to the invoice plane, usually as
+`invoices.credit_usd`, not `meter_monthly`. One real-world fact can appear on
+multiple planes; comparison belongs in reconciliation or later calculation
+layers.
+
+## Other Tables
+
+| Class | Datasource | Pipe | Meaning |
+|---|---|---|---|
+| Stock | `balances` | `balances_ep` | Append-only provider balance snapshots. The pipe shows the latest snapshot per provider. This is not monthly burn unless a later calculation chooses to derive a delta. |
+| Derived stock view | `grants` | `grants_ep` | Pool-level view rewritten each run from `credits.json`, `overrides`, and live balances. Keep, but treat as derived. |
+| Money-in | `revenue_monthly` | `revenue_ep` | Stripe revenue per month. `net_eur` is computed in the pipe. |
+| Derived verdicts | `reconciliation` | `coverage_ep`, `gaps_ep` | Invoice/payment coverage and chase status. |
+| Deprecated derived P&L | `provider_month` | `provider_month_ep` | Mixed burn-engine output. Keep only until the legacy spend-audit PoC is retired and no readers remain. |
+| Corrections | `overrides` | none | Append-only operator truth. Latest row per `(scope,key,field)` wins. Scopes include `config`, `grants`, and `reconciliation`. |
+| Ops | `ingest_runs` | `runs_ep` | Harvest job execution log. |
+
+## Naming Laws
+
+1. Pipes are never renamed in place. Add the new pipe, migrate consumers, then
+   delete the old pipe with fresh approval. `cash_monthly_ep` ->
+   `payments_monthly_ep` is the live example.
+2. Manual facts live inside the fact table via `source='manual'`; do not create
+   separate manual tables. Monthly manual credit burn is a `meter_monthly` row
+   with `funding='credit'`. Manual remaining balance is a `balances` row. Grant
+   corrections live in `overrides`.
+3. `payments_ep` is reserved for a future transaction-grain Wise pipe using
+   `wise_ref`. Do not build it until a consumer needs transaction grain.
+
+## Pipes
+
+| Pipe | Source | Status |
 |---|---|---|
-| `invoices` | provider, period_month, issued_at | Harvested invoices with `category` (compute/infra/saas/admin/office/payroll/other) + `kind`; append-only, corrections are `source='label'` rows; `ingested_at` is a DateTime so dedupe is deterministic |
-| `payments` | provider, paid_at | Wise outflows per transaction (EUR); `category` stamped from the harvest classifier, `unmatched` when no provider matched |
-| `reconciliation` | month, provider | Invoice vs. payment verdicts per provider × month (full-replace) |
-| `ingest_runs` | run_at | Harvest job execution log; ok/statuses/notes |
-| `balances` | provider, run_at | Append-only live balance snapshots per provider (granted/spent/left/prepaid); latest-wins on read via balances_ep |
-| `meter_monthly` | provider, month, retrieved_at | Append-only provider meter reads (cost, funding, source); diagnostic only, not P&L |
-| `usage_monthly` | month, provider, model | Full-replace usage by model and month; paid/quest Pollen requests, cost, and billable value split at ingest; provider slugs canonicalized at ingest (bedrock→aws, azure-2→azure, vastai→vast.ai) |
-| `revenue_monthly` | month | Full-replace Stripe revenue per month (gross/fees/refunds EUR; net computed in pipe) |
-| `provider_month` | provider, month, **category** | Full-replace burn-engine output. Invoice sums keyed by invoice category; burn signals (meter/usage/credit/status) sit on the provider's default-category row. `WHERE category='compute'` = the compute P&L |
-| `grants` | pool | Pool-level grant view with `category` (from the pool's providers); rewritten each run |
-| `overrides` | scope, key, field, entered_at | **Append-only operator truth.** Latest row per (scope,key,field) wins. Scopes: `config` (fx_eur_usd), `grants` (granted_usd/left_usd/prepaid_left_usd per pool, beats credits.json hc, beaten by live API), `reconciliation` (field=`accepted` per `YYYY-MM:provider`) |
-
-**Pipes** (read-only endpoints for UI):
-
-| Pipe | Query | Audience |
-|---|---|---|
-| `invoices_ep` | **Deduped** invoices (best row per sha256: label > final decision > latest) with computed `amount_usd` | Dashboard, audit |
-| `gaps_ep` | Reconciliation rows with status in (missing_invoice, amount_mismatch, needs_review); `delta_usd` computed | Chase list |
-| `coverage_ep` | All reconciliation rows | Grid view |
-| `balances_ep` | Latest balance snapshot per provider (argMax over run_at) | Balances tab |
-| `grants_ep` | All grant pool rows ordered by pool | Grants tab |
-| `usage_ep` | All usage_monthly rows | Treasury Burn tab |
-| `cash_monthly_ep` | Wise payments by month × provider × category (`(unmatched)` bucket included); `paid_usd` computed via fx override | Cash tab |
-| `revenue_ep` | Revenue per month; `net_eur` computed | Revenue tab |
-| `provider_month_ep` | Joined provider × month × category table | Compute P&L (filter `category='compute'`) |
-| `runs_ep` | Latest 50 ingest runs | Run log |
+| `invoices_ep` | Deduped `invoices` with computed `amount_usd` | Keep |
+| `usage_ep` | Raw `usage_monthly` rows | Keep |
+| `meter_monthly_ep` | Raw `meter_monthly` rows | Add |
+| `payments_monthly_ep` | Monthly aggregate over `payments`, same rows as `cash_monthly_ep` | Add |
+| `cash_monthly_ep` | Monthly aggregate over `payments` | Deprecated; replace with `payments_monthly_ep`, delete after all readers migrate |
+| `balances_ep` | Latest `balances` snapshot per provider | Keep |
+| `grants_ep` | All `grants` rows ordered by pool | Keep |
+| `revenue_ep` | `revenue_monthly` with computed `net_eur` | Keep |
+| `coverage_ep` | All `reconciliation` rows | Keep |
+| `gaps_ep` | Reconciliation chase list | Keep |
+| `provider_month_ep` | Mixed `provider_month` rows | Deprecated; delete after spend-audit PoC is retired and no readers remain |
+| `runs_ep` | Latest ingest runs | Keep |
 
 ## Tokens
 
@@ -46,8 +74,8 @@ queries, not stored. The EUR→USD rate lives in `overrides`
 
 | Token | Managed by | Scopes | SOPS key (`apps/operation/forager/secrets/env.json`) |
 |---|---|---|---|
-| `treasury_ingest` | datafiles | APPEND+READ on all 11 datasources | `TINYBIRD_OPS_INGEST_TOKEN` |
-| `treasury_web` | datafiles | PIPES:READ on the 10 endpoint pipes | `TINYBIRD_OPS_READ_TOKEN` |
+| `treasury_ingest` | datafiles | APPEND+READ on operations datasources | `TINYBIRD_OPS_INGEST_TOKEN` |
+| `treasury_web` | datafiles | PIPES:READ on endpoint pipes declared here | `TINYBIRD_OPS_READ_TOKEN` |
 | `treasury_replace` | API (static) | `DATASOURCES:CREATE` only | `TINYBIRD_OPS_REPLACE_TOKEN` |
 | `treasury_append` | API (static, **not yet minted**) | APPEND on `overrides` + `invoices` only — the future UI write path | — |
 
@@ -55,7 +83,12 @@ queries, not stored. The EUR→USD rate lives in `overrides`
 
 ## Provider slug vocabulary
 
-The `provider` column is the join key across `invoices`, `payments`, `reconciliation`, `provider_month`. The canonical vocabulary is the set of provider slugs defined in the pools of `apps/operation/forager/secrets/credits.json`; `harvest.PROVIDERS` (email classifier, also the slug→category map) and `wise.ALIAS` (Wise counterparty matcher) must both emit exactly those slugs.
+The `provider` column is the join key across `usage_monthly`, `meter_monthly`,
+`invoices`, `payments`, `balances`, and derived tables. The canonical vocabulary
+is the set of provider slugs defined in the pools of
+`apps/operation/forager/secrets/credits.json`; `harvest.PROVIDERS` (email
+classifier, also the slug→category map) and `wise.ALIAS` (Wise counterparty
+matcher) must both emit exactly those slugs.
 
 ## Rules
 

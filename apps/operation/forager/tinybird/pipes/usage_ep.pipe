@@ -2,6 +2,17 @@ TOKEN "treasury_web" READ
 
 NODE usage
 SQL >
-    SELECT * FROM usage_monthly ORDER BY month, provider, model
+    SELECT
+        month,
+        provider,
+        model,
+        billable_requests_paid_pollen,
+        billable_requests_quest_pollen,
+        cost_paid_pollen,
+        cost_quest_pollen,
+        billable_paid_pollen,
+        billable_quest_pollen
+    FROM usage_monthly
+    ORDER BY month, provider, model
 
 TYPE endpoint

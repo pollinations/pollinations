@@ -57,18 +57,16 @@ export type CashMonthlyRow = {
     paid_eur: number;
 };
 
-export type ProviderMonthRow = {
+export type UsageMonthlyRow = {
     month: string;
     provider: string;
-    category: string;
-    invoice_usd: number;
-    meter_cash_usd: number;
-    meter_prepaid_usd: number;
-    meter_src: string;
-    usage_cost_usd: number;
-    credit_burn_usd: number;
-    credit_src: string;
-    status: string;
+    model: string;
+    billable_requests_paid_pollen: number;
+    billable_requests_quest_pollen: number;
+    cost_paid_pollen: number;
+    cost_quest_pollen: number;
+    billable_paid_pollen: number;
+    billable_quest_pollen: number;
 };
 
 export type BalanceRow = {
@@ -96,6 +94,6 @@ export type Data = {
     cashMonthly: CashMonthlyRow[];
     grants: GrantRow[];
     balances: BalanceRow[];
-    providerMonths: ProviderMonthRow[];
+    usageMonthly: UsageMonthlyRow[];
     runs: RunRow[];
 };

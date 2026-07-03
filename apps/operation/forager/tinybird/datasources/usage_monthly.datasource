@@ -5,13 +5,12 @@ SCHEMA >
     `month` String `json:$.month`,
     `provider` String `json:$.provider`,
     `model` String `json:$.model`,
-    `event_type` String `json:$.event_type`,
-    `requests` UInt64 `json:$.requests`,
-    `pollen_paid` Float64 `json:$.pollen_paid`,
-    `pollen_quest` Float64 `json:$.pollen_quest`,
-    `cost_paid` Float64 `json:$.cost_paid`,
-    `cost_quest` Float64 `json:$.cost_quest`,
-    `retrieved_at` Date `json:$.retrieved_at`
+    `billable_requests_paid_pollen` UInt64 `json:$.billable_requests_paid_pollen`,
+    `billable_requests_quest_pollen` UInt64 `json:$.billable_requests_quest_pollen`,
+    `cost_paid_pollen` Float64 `json:$.cost_paid_pollen`,
+    `cost_quest_pollen` Float64 `json:$.cost_quest_pollen`,
+    `billable_paid_pollen` Float64 `json:$.billable_paid_pollen`,
+    `billable_quest_pollen` Float64 `json:$.billable_quest_pollen`
 
 ENGINE "MergeTree"
 ENGINE_SORTING_KEY "month, provider, model"

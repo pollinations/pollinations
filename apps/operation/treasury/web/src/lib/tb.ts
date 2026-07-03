@@ -7,8 +7,8 @@ import type {
     GapRow,
     GrantRow,
     InvoiceRow,
-    ProviderMonthRow,
     RunRow,
+    UsageMonthlyRow,
 } from "../types";
 
 export const fixturesMode = (): boolean =>
@@ -42,7 +42,7 @@ export async function loadAll(): Promise<Data> {
         cashMonthly,
         grants,
         balances,
-        providerMonths,
+        usageMonthly,
         runs,
     ] = await Promise.all([
         fetchPipe<CoverageRow>("coverage_ep"),
@@ -51,7 +51,7 @@ export async function loadAll(): Promise<Data> {
         fetchPipe<CashMonthlyRow>("cash_monthly_ep"),
         fetchPipe<GrantRow>("grants_ep"),
         fetchPipe<BalanceRow>("balances_ep"),
-        fetchPipe<ProviderMonthRow>("provider_month_ep"),
+        fetchPipe<UsageMonthlyRow>("usage_ep"),
         fetchPipe<RunRow>("runs_ep"),
     ]);
 
@@ -62,7 +62,7 @@ export async function loadAll(): Promise<Data> {
         cashMonthly,
         grants,
         balances,
-        providerMonths,
+        usageMonthly,
         runs,
     };
 }

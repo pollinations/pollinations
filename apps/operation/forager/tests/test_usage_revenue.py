@@ -5,9 +5,9 @@ No network, no SOPS, no real credentials.
 
 Run: cd apps/operation/forager && python3 -m pytest tests/test_usage_revenue.py -q
 """
+
 import os
 import sys
-import datetime
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -24,6 +24,7 @@ MONTHS = ["2026-04", "2026-05", "2026-06"]
 # TB stub for usage tests
 # ---------------------------------------------------------------------------
 
+
 class TBStub:
     """Minimal TB stub that records sql() calls and returns canned data."""
 
@@ -39,6 +40,7 @@ class TBStub:
 # ---------------------------------------------------------------------------
 # usage.monthly_rows tests
 # ---------------------------------------------------------------------------
+
 
 def test_usage_one_query_per_month():
     """monthly_rows must issue exactly one SQL query per month (timeout safety)."""
@@ -89,33 +91,66 @@ def test_usage_environment_production_in_query():
 def test_usage_rows_carry_month():
     """Each returned row must carry the 'month' field matching the queried month."""
     canned = [
-        {"provider": "azure-openai", "model": "gpt-4o", "event_type": "generate.text",
-         "requests": 100, "pollen_paid": 1.0, "pollen_quest": 0.5,
-         "cost_paid": 0.8, "cost_quest": 0.2}
+        {
+            "provider": "azure-openai",
+            "model": "gpt-4o",
+            "billable_requests_paid_pollen": 100,
+            "billable_requests_quest_pollen": 0,
+            "billable_paid_pollen": 1.0,
+            "billable_quest_pollen": 0.5,
+            "cost_paid_pollen": 0.8,
+            "cost_quest_pollen": 0.2,
+        }
     ]
     tb = TBStub(canned_rows=canned)
     rows = _usage.monthly_rows(tb, ["2026-05"], TODAY)
     assert any(r["month"] == "2026-05" for r in rows)
 
 
-def test_usage_rows_carry_retrieved_at():
-    """Each returned row must carry retrieved_at = today."""
+def test_usage_provider_canonicalized_at_ingest():
+    """provider is canonicalized via burn.CANON at ingest (bedrock → aws,
+    vastai → vast.ai); retrieved_at was dropped from the usage_monthly schema."""
     canned = [
-        {"provider": "azure-openai", "model": "gpt-4o", "event_type": "generate.text",
-         "requests": 10, "pollen_paid": 0.1, "pollen_quest": 0.0,
-         "cost_paid": 0.05, "cost_quest": 0.0}
+        {
+            "provider": "bedrock",
+            "model": "claude",
+            "billable_requests_paid_pollen": 10,
+            "billable_requests_quest_pollen": 0,
+            "billable_paid_pollen": 0.1,
+            "billable_quest_pollen": 0.0,
+            "cost_paid_pollen": 0.05,
+            "cost_quest_pollen": 0.0,
+        },
+        {
+            "provider": "vastai",
+            "model": "flux",
+            "billable_requests_paid_pollen": 5,
+            "billable_requests_quest_pollen": 0,
+            "billable_paid_pollen": 0.1,
+            "billable_quest_pollen": 0.0,
+            "cost_paid_pollen": 0.02,
+            "cost_quest_pollen": 0.0,
+        },
     ]
     tb = TBStub(canned_rows=canned)
     rows = _usage.monthly_rows(tb, ["2026-06"], TODAY)
-    assert all(r["retrieved_at"] == TODAY for r in rows)
+    assert {r["provider"] for r in rows} == {"aws", "vast.ai"}
+    assert all("retrieved_at" not in r for r in rows)
 
 
 def test_usage_multiple_months_correct_month_tags():
     """Each month's rows get the correct month tag (not the same month for all)."""
     canned = [
-        {"provider": "azure-openai", "model": "gpt-4o", "event_type": "generate.text",
-         "requests": 5, "pollen_paid": 0.5, "pollen_quest": 0.0,
-         "cost_paid": 0.3, "cost_quest": 0.0}
+        {
+            "provider": "azure-openai",
+            "model": "gpt-4o",
+            "billable_requests_paid_pollen": 5,
+            "billable_requests_quest_pollen": 0,
+            "billable_paid_pollen": 0.5,
+            "billable_quest_pollen": 0.0,
+            "cost_paid_pollen": 0.3,
+            "cost_quest_pollen": 0.0,
+        }
     ]
     tb = TBStub(canned_rows=canned)
     rows = _usage.monthly_rows(tb, ["2026-04", "2026-05"], TODAY)
@@ -134,9 +169,16 @@ def test_usage_empty_result_from_tb():
 def test_usage_none_provider_kept_as_is():
     """None/missing provider field → kept verbatim (empty string or None, no placeholder)."""
     canned = [
-        {"provider": None, "model": "gpt-4o", "event_type": "generate.text",
-         "requests": 1, "pollen_paid": 0.0, "pollen_quest": 0.0,
-         "cost_paid": 0.0, "cost_quest": 0.0}
+        {
+            "provider": None,
+            "model": "gpt-4o",
+            "billable_requests_paid_pollen": 1,
+            "billable_requests_quest_pollen": 0,
+            "billable_paid_pollen": 0.0,
+            "billable_quest_pollen": 0.0,
+            "cost_paid_pollen": 0.0,
+            "cost_quest_pollen": 0.0,
+        }
     ]
     tb = TBStub(canned_rows=canned)
     rows = _usage.monthly_rows(tb, ["2026-06"], TODAY)
@@ -149,9 +191,16 @@ def test_usage_none_provider_kept_as_is():
 def test_usage_month_field_is_string():
     """month field must be a YYYY-MM string."""
     canned = [
-        {"provider": "azure-openai", "model": "gpt-4o", "event_type": "generate.text",
-         "requests": 1, "pollen_paid": 0.1, "pollen_quest": 0.0,
-         "cost_paid": 0.05, "cost_quest": 0.0}
+        {
+            "provider": "azure-openai",
+            "model": "gpt-4o",
+            "billable_requests_paid_pollen": 1,
+            "billable_requests_quest_pollen": 0,
+            "billable_paid_pollen": 0.1,
+            "billable_quest_pollen": 0.0,
+            "cost_paid_pollen": 0.05,
+            "cost_quest_pollen": 0.0,
+        }
     ]
     tb = TBStub(canned_rows=canned)
     rows = _usage.monthly_rows(tb, ["2026-06"], TODAY)
@@ -161,6 +210,7 @@ def test_usage_month_field_is_string():
 # ---------------------------------------------------------------------------
 # Stripe Capture helper
 # ---------------------------------------------------------------------------
+
 
 class StripeCapture:
     """Monkeypatch-friendly http_json replacement for Stripe API calls."""
@@ -195,13 +245,37 @@ _JUN_EPOCH2 = 1782259200  # 2026-06-20
 _STRIPE_PAGE1 = {
     "data": [
         # charge: +1000 cents, net=938 cents
-        {"id": "txn_001", "type": "charge", "amount": 1000, "net": 938, "created": _JUN_EPOCH1},
+        {
+            "id": "txn_001",
+            "type": "charge",
+            "amount": 1000,
+            "net": 938,
+            "created": _JUN_EPOCH1,
+        },
         # another charge: +500 cents, net=462 cents
-        {"id": "txn_002", "type": "charge", "amount": 500, "net": 462, "created": _JUN_EPOCH1},
+        {
+            "id": "txn_002",
+            "type": "charge",
+            "amount": 500,
+            "net": 462,
+            "created": _JUN_EPOCH1,
+        },
         # refund: -200 cents, net=-200 cents (type=payment_refund)
-        {"id": "txn_003", "type": "payment_refund", "amount": -200, "net": -200, "created": _JUN_EPOCH2},
+        {
+            "id": "txn_003",
+            "type": "payment_refund",
+            "amount": -200,
+            "net": -200,
+            "created": _JUN_EPOCH2,
+        },
         # payout: must be skipped
-        {"id": "txn_004", "type": "payout", "amount": -1000, "net": -1000, "created": _JUN_EPOCH2},
+        {
+            "id": "txn_004",
+            "type": "payout",
+            "amount": -1000,
+            "net": -1000,
+            "created": _JUN_EPOCH2,
+        },
     ],
     "has_more": True,
 }
@@ -209,9 +283,21 @@ _STRIPE_PAGE1 = {
 _STRIPE_PAGE2 = {
     "data": [
         # charge: +300 cents, net=283 cents
-        {"id": "txn_005", "type": "charge", "amount": 300, "net": 283, "created": _JUN_EPOCH2},
+        {
+            "id": "txn_005",
+            "type": "charge",
+            "amount": 300,
+            "net": 283,
+            "created": _JUN_EPOCH2,
+        },
         # refund (charge_refund type): -100 cents, net=-100 cents
-        {"id": "txn_006", "type": "charge_refund", "amount": -100, "net": -100, "created": _JUN_EPOCH2},
+        {
+            "id": "txn_006",
+            "type": "charge_refund",
+            "amount": -100,
+            "net": -100,
+            "created": _JUN_EPOCH2,
+        },
     ],
     "has_more": False,
 }
@@ -228,6 +314,7 @@ _STRIPE_CREDS = {"STRIPE_API_KEY": "rk_test_fakekeyvalue"}
 # ---------------------------------------------------------------------------
 # stripe.revenue_rows tests
 # ---------------------------------------------------------------------------
+
 
 def test_stripe_pagination_starting_after(monkeypatch):
     """Second page request must include starting_after=<last id of page 1>.
@@ -262,7 +349,13 @@ def test_stripe_cents_to_eur(monkeypatch):
     """Amounts must be divided by 100 (cents → EUR)."""
     page = {
         "data": [
-            {"id": "txn_A", "type": "charge", "amount": 10000, "net": 9725, "created": _JUN_EPOCH1},
+            {
+                "id": "txn_A",
+                "type": "charge",
+                "amount": 10000,
+                "net": 9725,
+                "created": _JUN_EPOCH1,
+            },
         ],
         "has_more": False,
     }
@@ -270,7 +363,8 @@ def test_stripe_cents_to_eur(monkeypatch):
     monkeypatch.setattr(_stripe, "http_json", cap)
     rows = _stripe.revenue_rows(_STRIPE_CREDS, ["2026-06"], TODAY)
     assert rows[0]["gross_eur"] == pytest.approx(100.00, abs=0.001)
-    assert rows[0]["net_eur"] == pytest.approx(97.25, abs=0.001)
+    # fees = (10000 - 0 - 9725) / 100 = 2.75 — net contributes in cents
+    assert rows[0]["fees_eur"] == pytest.approx(2.75, abs=0.001)
 
 
 def test_stripe_gross_sum(monkeypatch):
@@ -292,24 +386,27 @@ def test_stripe_refunds_sum(monkeypatch):
 
 
 def test_stripe_net_sum(monkeypatch):
-    """net_eur = sum(net) for all non-payout txns / 100."""
+    """net is summed for all non-payout txns (in cents) and surfaces via fees.
+    net_eur was dropped from the schema, so the accumulation is observable only
+    through fees = gross - refunds - net. If the payout's net (-1000 cents) leaked
+    into the sum, fees would come out at 11.17 instead."""
     cap = StripeCapture([_STRIPE_PAGE1, _STRIPE_PAGE2])
     monkeypatch.setattr(_stripe, "http_json", cap)
     rows = _stripe.revenue_rows(_STRIPE_CREDS, ["2026-06"], TODAY)
     row = next(r for r in rows if r["month"] == "2026-06")
-    # net = (938 + 462 + (-200) + 283 + (-100)) / 100 = 1383/100 = 13.83
-    assert row["net_eur"] == 13.83
+    # net = (938 + 462 + (-200) + 283 + (-100)) / 100 = 13.83 → fees = 18 - 3 - 13.83
+    assert row["fees_eur"] == 1.17
 
 
 def test_stripe_fees_formula(monkeypatch):
-    """fees_eur = gross - refunds - net."""
+    """fees_eur = gross - refunds - net (computed in raw cents, then /100)."""
     cap = StripeCapture([_STRIPE_PAGE1, _STRIPE_PAGE2])
     monkeypatch.setattr(_stripe, "http_json", cap)
     rows = _stripe.revenue_rows(_STRIPE_CREDS, ["2026-06"], TODAY)
     row = next(r for r in rows if r["month"] == "2026-06")
-    expected_fees = row["gross_eur"] - row["refunds_eur"] - row["net_eur"]
-    # Exact identity check: fees computed in raw cents must equal fees derived from rounded EUR
-    assert row["fees_eur"] == expected_fees
+    net_eur = 13.83  # Σnet from the fixture (net_eur itself is no longer emitted)
+    expected_fees = row["gross_eur"] - row["refunds_eur"] - net_eur
+    assert row["fees_eur"] == pytest.approx(expected_fees, abs=1e-9)
     # Concrete check: 18.00 - 3.00 - 13.83 = 1.17
     assert row["fees_eur"] == 1.17
 
@@ -323,8 +420,20 @@ def test_stripe_fees_rounding_regression(monkeypatch):
     """
     page = {
         "data": [
-            {"id": "txn_1", "type": "charge", "amount": 1999, "net": 1870, "created": _JUN_EPOCH1},
-            {"id": "txn_2", "type": "refund", "amount": -100, "net": -100, "created": _JUN_EPOCH1},
+            {
+                "id": "txn_1",
+                "type": "charge",
+                "amount": 1999,
+                "net": 1870,
+                "created": _JUN_EPOCH1,
+            },
+            {
+                "id": "txn_2",
+                "type": "refund",
+                "amount": -100,
+                "net": -100,
+                "created": _JUN_EPOCH1,
+            },
         ],
         "has_more": False,
     }
@@ -335,10 +444,10 @@ def test_stripe_fees_rounding_regression(monkeypatch):
     # Exact values (no rounding tolerance)
     assert row["gross_eur"] == 19.99
     assert row["refunds_eur"] == 1.00
-    assert row["net_eur"] == 17.70
     # The identity must hold (within floating-point precision):
-    # fees == (gross - refunds - net), and round() of raw cents == rounded values subtracted
-    expected_fees = row["gross_eur"] - row["refunds_eur"] - row["net_eur"]
+    # fees == (gross - refunds - net) computed in raw cents, then /100
+    net_eur = (1870 - 100) / 100  # Σnet from the fixture = 17.70
+    expected_fees = row["gross_eur"] - row["refunds_eur"] - net_eur
     assert row["fees_eur"] == pytest.approx(expected_fees, abs=1e-9)
     # Verify it equals 1.29 when properly rounded
     assert row["fees_eur"] == 1.29
@@ -354,29 +463,22 @@ def test_stripe_only_requested_months_emitted(monkeypatch):
     assert rows == []
 
 
-def test_stripe_retrieved_at(monkeypatch):
-    """retrieved_at must equal today."""
-    cap = StripeCapture([_STRIPE_PAGE1, _STRIPE_PAGE2])
-    monkeypatch.setattr(_stripe, "http_json", cap)
-    rows = _stripe.revenue_rows(_STRIPE_CREDS, ["2026-06"], TODAY)
-    for r in rows:
-        assert r["retrieved_at"] == TODAY
-
-
 def test_stripe_hard_cap_pages(monkeypatch):
     """Pagination must stop at _max_pages even if has_more is always True."""
-    # Build an infinite-has_more page factory
-    single_txn_page = {
-        "data": [{"id": "txn_inf", "type": "charge", "amount": 100, "net": 97, "created": _JUN_EPOCH1}],
-        "has_more": True,
-    }
-
     call_count = [0]
 
     def infinite_http(url, headers=None, timeout=30, data=None, method=None):
         call_count[0] += 1
         return {
-            "data": [{"id": f"txn_{call_count[0]}", "type": "charge", "amount": 100, "net": 97, "created": _JUN_EPOCH1}],
+            "data": [
+                {
+                    "id": f"txn_{call_count[0]}",
+                    "type": "charge",
+                    "amount": 100,
+                    "net": 97,
+                    "created": _JUN_EPOCH1,
+                }
+            ],
             "has_more": True,
         }
 
@@ -405,19 +507,43 @@ def test_stripe_row_shape(monkeypatch):
     monkeypatch.setattr(_stripe, "http_json", cap)
     rows = _stripe.revenue_rows(_STRIPE_CREDS, ["2026-06"], TODAY)
     assert rows
-    required = {"month", "gross_eur", "fees_eur", "refunds_eur", "net_eur", "retrieved_at"}
+    required = {"month", "gross_eur", "fees_eur", "refunds_eur"}
     for r in rows:
-        assert required <= set(r.keys()), f"missing fields in row: {r}"
+        assert set(r.keys()) == required, f"row fields mismatch: {r}"
 
 
 def test_stripe_refund_type_identification(monkeypatch):
     """refund, payment_refund, charge_refund types are all treated as refunds."""
     page = {
         "data": [
-            {"id": "t1", "type": "charge", "amount": 1000, "net": 970, "created": _JUN_EPOCH1},
-            {"id": "t2", "type": "refund", "amount": -100, "net": -100, "created": _JUN_EPOCH1},
-            {"id": "t3", "type": "payment_refund", "amount": -50, "net": -50, "created": _JUN_EPOCH1},
-            {"id": "t4", "type": "charge_refund", "amount": -25, "net": -25, "created": _JUN_EPOCH1},
+            {
+                "id": "t1",
+                "type": "charge",
+                "amount": 1000,
+                "net": 970,
+                "created": _JUN_EPOCH1,
+            },
+            {
+                "id": "t2",
+                "type": "refund",
+                "amount": -100,
+                "net": -100,
+                "created": _JUN_EPOCH1,
+            },
+            {
+                "id": "t3",
+                "type": "payment_refund",
+                "amount": -50,
+                "net": -50,
+                "created": _JUN_EPOCH1,
+            },
+            {
+                "id": "t4",
+                "type": "charge_refund",
+                "amount": -25,
+                "net": -25,
+                "created": _JUN_EPOCH1,
+            },
         ],
         "has_more": False,
     }

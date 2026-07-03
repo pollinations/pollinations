@@ -93,6 +93,7 @@ def _src_rank(s: str) -> int:
 # _pick_meter — rule 3
 # ---------------------------------------------------------------------------
 
+
 def _pick_meter(meter_rows: list[dict]) -> tuple[float, float, float, str, str]:
     """Return (cash_usd, prepaid_usd, credit_usd, meter_src, credit_meter_src).
 
@@ -113,7 +114,9 @@ def _pick_meter(meter_rows: list[dict]) -> tuple[float, float, float, str, str]:
         source = row.get("source", "manual")
         key = (funding, source)
         existing = best.get(key)
-        if existing is None or (row.get("retrieved_at", "") > existing.get("retrieved_at", "")):
+        if existing is None or (
+            row.get("retrieved_at", "") > existing.get("retrieved_at", "")
+        ):
             best[key] = row
 
     # For each funding class, pick best source (manual only fills holes)
@@ -143,10 +146,15 @@ def _pick_meter(meter_rows: list[dict]) -> tuple[float, float, float, str, str]:
 # _credit_burn — rule 4
 # ---------------------------------------------------------------------------
 
-def _credit_burn(provider: str, month: str,
-                 credit_meter_usd: float, credit_meter_src: str,
-                 invoice_credit_usd: float,
-                 balances_by_prov: dict[str, list[dict]]) -> tuple[float, str]:
+
+def _credit_burn(
+    provider: str,
+    month: str,
+    credit_meter_usd: float,
+    credit_meter_src: str,
+    invoice_credit_usd: float,
+    balances_by_prov: dict[str, list[dict]],
+) -> tuple[float, str]:
     """Return (burn_usd, src).
 
     Priority:
@@ -166,18 +174,24 @@ def _credit_burn(provider: str, month: str,
 
     # Rule 4-3: balance delta
     rows = balances_by_prov.get(provider, [])
-    api_rows = [r for r in rows
-                if r.get("source") in ("api", "cli") and r.get("left_usd") is not None]
+    api_rows = [
+        r
+        for r in rows
+        if r.get("source") in ("api", "cli") and r.get("left_usd") is not None
+    ]
 
-    month_start = _month_start(month)   # e.g. "2026-06-01 00:00:00"
-    month_end = _month_end(month)       # e.g. "2026-07-01 00:00:00"
+    month_start = _month_start(month)  # e.g. "2026-06-01 00:00:00"
+    month_end = _month_end(month)  # e.g. "2026-07-01 00:00:00"
 
     # Latest snapshot at-or-before month start (run_at <= month_start)
     before = [r for r in api_rows if r.get("run_at", "") <= month_start]
     # Latest snapshot WITHIN or at month end: run_at > month_start AND run_at < month_end
     # This ensures we have an actual end-of-month reading, not just the same pre-month snapshot.
-    during = [r for r in api_rows
-              if r.get("run_at", "") > month_start and r.get("run_at", "") < month_end]
+    during = [
+        r
+        for r in api_rows
+        if r.get("run_at", "") > month_start and r.get("run_at", "") < month_end
+    ]
     # Also accept a snapshot exactly at month end (first instant of next month)
     at_end_exact = [r for r in api_rows if r.get("run_at", "") == month_end]
     in_or_after = during + at_end_exact
@@ -202,6 +216,7 @@ def _credit_burn(provider: str, month: str,
 # _is_grant_pool — determines which providers get credit_burn logic
 # ---------------------------------------------------------------------------
 
+
 def _is_grant_pool(pool: dict) -> bool:
     """True when the pool's cost vehicle is credit/grant (not cash invoices).
 
@@ -215,19 +230,34 @@ def _is_grant_pool(pool: dict) -> bool:
 # _status — rule 7 (first match wins)
 # ---------------------------------------------------------------------------
 
-def _status(provider: str, billing: str, is_grant: bool,
-            invoice_usd: float, cash_usd: float,
-            meter_cash_usd: float, meter_prepaid_usd: float,
-            credit_burn_usd: float, credit_src: str,
-            usage_cost_usd: float, in_pool: bool) -> str:
+
+def _status(
+    provider: str,
+    billing: str,
+    is_grant: bool,
+    invoice_usd: float,
+    cash_usd: float,
+    meter_cash_usd: float,
+    meter_prepaid_usd: float,
+    credit_burn_usd: float,
+    credit_src: str,
+    usage_cost_usd: float,
+    in_pool: bool,
+) -> str:
     """Return status string following rule 7 precedence."""
     # needs_data: sponsored/grant pool with no credit signal
     if is_grant and credit_src == "":
         return "needs_data"
 
     # needs_data: usage_cost > 1 with no invoice/cash/meter and not in any pool
-    if usage_cost_usd > 1.0 and invoice_usd == 0.0 and cash_usd == 0.0 \
-            and meter_cash_usd == 0.0 and meter_prepaid_usd == 0.0 and not in_pool:
+    if (
+        usage_cost_usd > 1.0
+        and invoice_usd == 0.0
+        and cash_usd == 0.0
+        and meter_cash_usd == 0.0
+        and meter_prepaid_usd == 0.0
+        and not in_pool
+    ):
         return "needs_data"
 
     # grant_burn: sponsored/grant AND (usage_cost > 1 OR credit_burn > 0)
@@ -239,9 +269,14 @@ def _status(provider: str, billing: str, is_grant: bool,
         return "usage_no_invoice"
 
     # quiet: all signals ≈ 0
-    if (invoice_usd < 1.0 and cash_usd < 1.0 and meter_cash_usd < 1.0
-            and meter_prepaid_usd < 1.0 and credit_burn_usd < 1.0
-            and usage_cost_usd < 1.0):
+    if (
+        invoice_usd < 1.0
+        and cash_usd < 1.0
+        and meter_cash_usd < 1.0
+        and meter_prepaid_usd < 1.0
+        and credit_burn_usd < 1.0
+        and usage_cost_usd < 1.0
+    ):
         return "quiet"
 
     return "ok"
@@ -251,10 +286,19 @@ def _status(provider: str, billing: str, is_grant: bool,
 # run — main engine
 # ---------------------------------------------------------------------------
 
-def run(invoices: list[dict], payments: list[dict], meter: list[dict],
-        usage: list[dict], balances: list[dict], pools: list[dict],
-        months: list[str], config: dict, today: str,
-        cat_map: dict | None = None) -> list[dict]:
+
+def run(
+    invoices: list[dict],
+    payments: list[dict],
+    meter: list[dict],
+    usage: list[dict],
+    balances: list[dict],
+    pools: list[dict],
+    months: list[str],
+    config: dict,
+    today: str,
+    cat_map: dict | None = None,
+) -> list[dict]:
     """Compute provider_month rows — one row per (month, provider, category).
 
     Invoice sums are keyed by each invoice's own category (fallback: the
@@ -269,7 +313,7 @@ def run(invoices: list[dict], payments: list[dict], meter: list[dict],
         invoices:  invoice rows from TB (status, period_month, provider, amount_usd, ...)
         payments:  payment rows from TB (month, provider, amount_usd, ...)
         meter:     meter_monthly rows from TB (month, provider, cost_usd, funding, source, ...)
-        usage:     usage_monthly rows from TB (month, provider RAW, cost_paid, cost_quest, ...)
+        usage:     usage_monthly rows from TB (month, provider RAW, cost_paid_pollen, cost_quest_pollen, ...)
         balances:  balances rows from TB (run_at, provider canonical, left_usd, source, ...)
         pools:     list of pool dicts from load_credits() (same structure as gaps.py)
         months:    list of "YYYY-MM" strings to evaluate
@@ -323,7 +367,7 @@ def run(invoices: list[dict], payments: list[dict], meter: list[dict],
         if p and m:
             meter_idx.setdefault((p, m), []).append(r)
 
-    # usage index: (canonical_provider, month) -> sum of cost_paid + cost_quest
+    # usage index: (canonical_provider, month) -> sum of paid + quest cost
     usage_idx: dict[tuple[str, str], float] = {}
     for r in usage:
         raw_p = r.get("provider") or ""
@@ -331,7 +375,9 @@ def run(invoices: list[dict], payments: list[dict], meter: list[dict],
         m = r.get("month", "")
         if not m:
             continue
-        cost = float(r.get("cost_paid") or 0.0) + float(r.get("cost_quest") or 0.0)
+        cost = float(r.get("cost_paid_pollen") or 0.0) + float(
+            r.get("cost_quest_pollen") or 0.0
+        )
         usage_idx[(p, m)] = usage_idx.get((p, m), 0.0) + cost
 
     # balances index: provider -> list of balance rows
@@ -350,19 +396,19 @@ def run(invoices: list[dict], payments: list[dict], meter: list[dict],
             universe.add((prov, m, _default_cat(prov)))
 
     # Every month with data in any input
-    for (p, m, cat) in inv_idx:
+    for p, m, cat in inv_idx:
         universe.add((p, m, cat))
-    for (p, m) in pay_idx:
+    for p, m in pay_idx:
         universe.add((p, m, _default_cat(p)))
-    for (p, m) in meter_idx:
+    for p, m in meter_idx:
         universe.add((p, m, _default_cat(p)))
-    for (p, m) in usage_idx:
+    for p, m in usage_idx:
         universe.add((p, m, _default_cat(p)))
 
     # ---- 4. Compute one row per (provider, month) ----
     results: list[dict] = []
 
-    for (provider, month, category) in sorted(universe):
+    for provider, month, category in sorted(universe):
         pool = prov_pool.get(provider)
         billing = pool.get("billing", "") if pool else ""
         is_grant = _is_grant_pool(pool) if pool else False
@@ -372,13 +418,19 @@ def run(invoices: list[dict], payments: list[dict], meter: list[dict],
         # Rule 2: invoice_usd (per this row's category)
         inv_rows = inv_idx.get((provider, month, category), [])
         invoice_usd = sum(
-            (float(r.get("amount_usd") or 0.0)
-             for r in inv_rows if r.get("status") == "parsed"),
+            (
+                float(r.get("amount_usd") or 0.0)
+                for r in inv_rows
+                if r.get("status") == "parsed"
+            ),
             0.0,
         )
         invoice_credit_usd = sum(
-            (float(r.get("credit_usd") or 0.0)
-             for r in inv_rows if r.get("status") == "parsed"),
+            (
+                float(r.get("credit_usd") or 0.0)
+                for r in inv_rows
+                if r.get("status") == "parsed"
+            ),
             0.0,
         )
 
@@ -389,7 +441,13 @@ def run(invoices: list[dict], payments: list[dict], meter: list[dict],
 
             # Rule 3: meter split
             m_rows = meter_idx.get((provider, month), [])
-            meter_cash_usd, meter_prepaid_usd, credit_meter_usd, meter_src, credit_meter_src = _pick_meter(m_rows)
+            (
+                meter_cash_usd,
+                meter_prepaid_usd,
+                credit_meter_usd,
+                meter_src,
+                credit_meter_src,
+            ) = _pick_meter(m_rows)
 
             # Rule 5: usage_cost_usd
             usage_cost_usd = usage_idx.get((provider, month), 0.0)
@@ -399,35 +457,47 @@ def run(invoices: list[dict], payments: list[dict], meter: list[dict],
             credit_src = ""
             if is_grant:
                 credit_burn_usd, credit_src = _credit_burn(
-                    provider, month, credit_meter_usd, credit_meter_src,
-                    invoice_credit_usd, bal_by_prov
+                    provider,
+                    month,
+                    credit_meter_usd,
+                    credit_meter_src,
+                    invoice_credit_usd,
+                    bal_by_prov,
                 )
 
             # Rule 7: status
             status = _status(
-                provider, billing, is_grant,
-                invoice_usd, cash_usd,
-                meter_cash_usd, meter_prepaid_usd,
-                credit_burn_usd, credit_src,
-                usage_cost_usd, in_pool,
+                provider,
+                billing,
+                is_grant,
+                invoice_usd,
+                cash_usd,
+                meter_cash_usd,
+                meter_prepaid_usd,
+                credit_burn_usd,
+                credit_src,
+                usage_cost_usd,
+                in_pool,
             )
         else:
             meter_cash_usd = meter_prepaid_usd = usage_cost_usd = credit_burn_usd = 0.0
             meter_src = credit_src = status = ""
 
-        results.append({
-            "month": month,
-            "provider": provider,
-            "category": category,
-            "invoice_usd": round(invoice_usd, 2),
-            "meter_cash_usd": round(meter_cash_usd, 2),
-            "meter_prepaid_usd": round(meter_prepaid_usd, 2),
-            "meter_src": meter_src,
-            "usage_cost_usd": round(usage_cost_usd, 2),
-            "credit_burn_usd": round(credit_burn_usd, 2),
-            "credit_src": credit_src,
-            "status": status,
-        })
+        results.append(
+            {
+                "month": month,
+                "provider": provider,
+                "category": category,
+                "invoice_usd": round(invoice_usd, 2),
+                "meter_cash_usd": round(meter_cash_usd, 2),
+                "meter_prepaid_usd": round(meter_prepaid_usd, 2),
+                "meter_src": meter_src,
+                "usage_cost_usd": round(usage_cost_usd, 2),
+                "credit_burn_usd": round(credit_burn_usd, 2),
+                "credit_src": credit_src,
+                "status": status,
+            }
+        )
 
     return results
 
@@ -436,9 +506,14 @@ def run(invoices: list[dict], payments: list[dict], meter: list[dict],
 # grants — pool-level merged view
 # ---------------------------------------------------------------------------
 
-def grants(pools: list[dict], balances: list[dict], today: str,
-           overrides: dict | None = None,
-           cat_map: dict | None = None) -> list[dict]:
+
+def grants(
+    pools: list[dict],
+    balances: list[dict],
+    today: str,
+    overrides: dict | None = None,
+    cat_map: dict | None = None,
+) -> list[dict]:
     """Compute grants rows (pool-level view: credits.json base + latest live overlay).
 
     Base values come from credits.json (src 'hc'), superseded by operator
@@ -534,21 +609,23 @@ def grants(pools: list[dict], balances: list[dict], today: str,
 
         category = next((cat_map[p] for p in provs if p in cat_map), "compute")
 
-        rows.append({
-            "pool": pool_name,
-            "providers": ",".join(provs),
-            "kind": kind,
-            "category": category,
-            "currency": pool.get("currency", "USD"),
-            "granted_usd": granted_usd,
-            "granted_src": granted_src,
-            "left_usd": left_usd,
-            "left_src": left_src,
-            "prepaid_left_usd": prepaid_left_usd,
-            "prepaid_left_src": prepaid_left_src,
-            "expires": pool.get("expires", ""),
-            "note": pool.get("note", ""),
-            "run_at": today,
-        })
+        rows.append(
+            {
+                "pool": pool_name,
+                "providers": ",".join(provs),
+                "kind": kind,
+                "category": category,
+                "currency": pool.get("currency", "USD"),
+                "granted_usd": granted_usd,
+                "granted_src": granted_src,
+                "left_usd": left_usd,
+                "left_src": left_src,
+                "prepaid_left_usd": prepaid_left_usd,
+                "prepaid_left_src": prepaid_left_src,
+                "expires": pool.get("expires", ""),
+                "note": pool.get("note", ""),
+                "run_at": today,
+            }
+        )
 
     return rows

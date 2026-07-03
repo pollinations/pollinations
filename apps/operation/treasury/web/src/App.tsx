@@ -395,9 +395,7 @@ export default function App() {
                         {data && tab === "payments" && (
                             <PaymentsTab data={data} />
                         )}
-                        {data && tab === "burn" && (
-                            <BurnTab data={data} queuedKeys={queuedKeys} />
-                        )}
+                        {data && tab === "burn" && <BurnTab data={data} />}
                         {data && tab === "credits" && (
                             <CreditsTab data={data} queuedKeys={queuedKeys} />
                         )}

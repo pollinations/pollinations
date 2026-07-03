@@ -24,11 +24,12 @@ def _next_month(month: str) -> str:
 
 _SQL = """\
 SELECT '{month}' AS month, model_provider_used AS provider, model_used AS model,
-  any(event_type) AS event_type, count() AS requests,
-  round(sumIf(total_price, selected_meter_slug LIKE '%pack%'), 4) AS pollen_paid,
-  round(sumIf(total_price, selected_meter_slug LIKE '%tier%'), 4) AS pollen_quest,
-  round(sumIf(total_cost,  selected_meter_slug LIKE '%pack%'), 4) AS cost_paid,
-  round(sumIf(total_cost,  selected_meter_slug LIKE '%tier%'), 4) AS cost_quest
+  countIf(selected_meter_slug LIKE '%pack%') AS billable_requests_paid_pollen,
+  countIf(selected_meter_slug LIKE '%tier%') AS billable_requests_quest_pollen,
+  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 4) AS cost_paid_pollen,
+  round(sumIf(total_cost, selected_meter_slug LIKE '%tier%'), 4) AS cost_quest_pollen,
+  round(sumIf(total_price, selected_meter_slug LIKE '%pack%'), 4) AS billable_paid_pollen,
+  round(sumIf(total_price, selected_meter_slug LIKE '%tier%'), 4) AS billable_quest_pollen
 FROM generation_event
 WHERE environment = 'production'
   AND start_time >= '{month}-01 00:00:00' AND start_time < '{next_month}-01 00:00:00'
@@ -47,8 +48,11 @@ def monthly_rows(tb_prod, months, today):
 
     Returns:
         list of usage_monthly row dicts, one per (month, provider, model) tuple
-        with nonzero data. provider/model may be None or "" — kept verbatim.
+        with nonzero data. provider is canonicalized via burn.CANON
+        (bedrock/aws-bedrock → aws, azure-2 → azure, vastai → vast.ai).
     """
+    from ..burn import CANON
+
     rows = []
     for month in months:
         next_m = _next_month(month)
@@ -58,15 +62,20 @@ def monthly_rows(tb_prod, months, today):
             # Guard against None/missing fields — keep verbatim, no fabricated placeholders
             row = {
                 "month": month,
-                "provider": raw.get("provider"),
+                "provider": CANON.get(
+                    (raw.get("provider") or "").strip().lower(), raw.get("provider")
+                ),
                 "model": raw.get("model"),
-                "event_type": raw.get("event_type"),
-                "requests": raw.get("requests"),
-                "pollen_paid": raw.get("pollen_paid"),
-                "pollen_quest": raw.get("pollen_quest"),
-                "cost_paid": raw.get("cost_paid"),
-                "cost_quest": raw.get("cost_quest"),
-                "retrieved_at": today,
+                "billable_requests_paid_pollen": raw.get(
+                    "billable_requests_paid_pollen"
+                ),
+                "billable_requests_quest_pollen": raw.get(
+                    "billable_requests_quest_pollen"
+                ),
+                "cost_paid_pollen": raw.get("cost_paid_pollen"),
+                "cost_quest_pollen": raw.get("cost_quest_pollen"),
+                "billable_paid_pollen": raw.get("billable_paid_pollen"),
+                "billable_quest_pollen": raw.get("billable_quest_pollen"),
             }
             rows.append(row)
     return rows

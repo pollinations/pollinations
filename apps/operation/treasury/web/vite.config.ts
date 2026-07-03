@@ -18,7 +18,7 @@ const READ_PIPES = new Set([
     "cash_monthly_ep",
     "grants_ep",
     "balances_ep",
-    "provider_month_ep",
+    "usage_ep",
     "runs_ep",
 ]);
 const WRITE_DATASOURCES = new Set([

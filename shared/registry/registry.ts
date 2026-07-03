@@ -273,7 +273,8 @@ function getGeminiGroundingWebSearchQueryCount(output: unknown): number {
 function isGeminiGroundedPrompt(output: unknown): boolean {
     for (const metadata of eachGroundingMetadata(output)) {
         if (metadata.webSearchQueries?.some((q) => q?.trim())) return true;
-        if (metadata.groundingChunks?.some((chunk) => chunk?.web)) return true;
+        if (metadata.groundingChunks?.some((chunk) => chunk?.web?.uri))
+            return true;
     }
     return false;
 }

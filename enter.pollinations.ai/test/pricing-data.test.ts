@@ -649,10 +649,17 @@ test("Gemini 2.5 retrievalQueries-only response is not billed as grounded", () =
             },
         ],
     };
+    // A web chunk without a source URI is malformed metadata, not evidence.
+    const malformedWebChunk = {
+        choices: [{ groundingMetadata: { groundingChunks: [{ web: {} }] } }],
+    };
     const noGrounding = { choices: [{ groundingMetadata: {} }] };
 
     expect(
         calculateCost("gemini-search", usage, retrievalOnly).totalCost,
+    ).toBeCloseTo(0.5, 8);
+    expect(
+        calculateCost("gemini-search", usage, malformedWebChunk).totalCost,
     ).toBeCloseTo(0.5, 8);
     expect(
         calculateCost("gemini-search", usage, noGrounding).totalCost,

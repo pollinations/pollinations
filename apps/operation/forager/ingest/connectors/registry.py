@@ -42,6 +42,13 @@ from .providers import scaleway as _scaleway
 from .providers import digitalocean as _digitalocean
 from .providers import daytona as _daytona
 
+# B4: signed/CLI/derived balance connectors
+from .providers import ovh as _ovh
+from .providers import vast as _vast
+from .providers import fireworks as _fw
+from .providers import openai_ as _openai
+from .providers import azure as _az
+
 BALANCE: list = [
     ("openrouter", _openrouter.balance),
     ("deepinfra", _deepinfra.balance),
@@ -49,6 +56,12 @@ BALANCE: list = [
     ("scaleway", _scaleway.balance),
     ("digitalocean", _digitalocean.balance),
     ("daytona", _daytona.balance),
+    # B4
+    ("ovhcloud", _ovh.balance),
+    ("vast.ai", _vast.balance),
+    ("fireworks", _fw.balance),
+    ("openai", _openai.balance),
+    ("azure", _az.balance),
 ]
 
 METER: list = []

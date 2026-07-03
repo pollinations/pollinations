@@ -67,12 +67,14 @@ export type PaymentTxRow = {
     wise_ref: string;
 };
 
-export type CreditMonthlyRow = {
+export type MeterMonthlyRow = {
     month: string;
     provider: string;
-    credit_burn_usd: number;
-    credit_src: string;
-    left_end_usd: number | null;
+    cost_usd: number;
+    funding: string;
+    source: string;
+    retrieved_at: string;
+    note: string;
 };
 
 export type UsageMonthlyRow = {
@@ -111,7 +113,7 @@ export type Data = {
     invoices: InvoiceRow[];
     cashMonthly: CashMonthlyRow[];
     paymentsTx: PaymentTxRow[];
-    creditsMonthly: CreditMonthlyRow[];
+    meterMonthly: MeterMonthlyRow[];
     grants: GrantRow[];
     balances: BalanceRow[];
     usageMonthly: UsageMonthlyRow[];

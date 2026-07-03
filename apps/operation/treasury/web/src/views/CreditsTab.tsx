@@ -12,15 +12,11 @@ import {
 import { Fragment, useMemo, useState } from "react";
 import { DataNote } from "../components/DataNote";
 import { DataTable, TableScroller } from "../components/DataTable";
-import {
-    SourceBadge,
-    SourcedAmount,
-    SourceMark,
-} from "../components/Provenance";
+import { SourcedAmount, SourceMark } from "../components/Provenance";
 import { fmtUsd, fmtUsd2 } from "../lib/format";
 import { queuedGrantKey } from "../lib/queued";
 import { type StageInput, useStaging } from "../lib/staging";
-import type { CreditMonthlyRow, Data, GrantRow } from "../types";
+import type { Data, GrantRow } from "../types";
 
 // Credits = grant pools only. payg pools have nothing granted to track and
 // prepaid balances live on the Balances tab.
@@ -28,14 +24,6 @@ const GRANT_KINDS = new Set(["credit", "grant"]);
 
 function sortedGrants(rows: GrantRow[]) {
     return [...rows].sort((a, b) => a.pool.localeCompare(b.pool));
-}
-
-function sortedCreditsMonthly(rows: CreditMonthlyRow[]) {
-    return [...rows].sort(
-        (a, b) =>
-            b.month.localeCompare(a.month) ||
-            a.provider.localeCompare(b.provider),
-    );
 }
 
 function grantProviders(row: GrantRow) {
@@ -217,11 +205,8 @@ export function CreditsTab({
         for (const row of grantPools) {
             for (const slug of grantProviders(row)) options.add(slug);
         }
-        for (const row of data.creditsMonthly) {
-            options.add(row.provider);
-        }
         return ["all", ...[...options].sort((a, b) => a.localeCompare(b))];
-    }, [grantPools, data.creditsMonthly]);
+    }, [grantPools]);
     const grants = useMemo(
         () =>
             grantPools.filter(
@@ -230,13 +215,6 @@ export function CreditsTab({
                     grantProviders(row).includes(provider),
             ),
         [grantPools, provider],
-    );
-    const creditsMonthly = useMemo(
-        () =>
-            sortedCreditsMonthly(data.creditsMonthly).filter(
-                (row) => provider === "all" || row.provider === provider,
-            ),
-        [data.creditsMonthly, provider],
     );
 
     return (
@@ -369,55 +347,6 @@ export function CreditsTab({
                                         </TableRow>
                                     )}
                                 </Fragment>
-                            ))}
-                        </TableBody>
-                    </DataTable>
-                </TableScroller>
-            </section>
-
-            <section className="flex flex-col gap-4">
-                <DataNote
-                    pipe="credits_monthly_ep"
-                    rows={creditsMonthly.length}
-                >
-                    Month by month: credits burned (from invoices{" "}
-                    <SourceMark code="IV" />, provider meters{" "}
-                    <SourceMark code="API" /> or manual entries{" "}
-                    <SourceMark code="HC" />) and what was left at month end
-                    (latest balance snapshot of the month).
-                </DataNote>
-                <TableScroller>
-                    <DataTable>
-                        <TableHead>
-                            <TableRow>
-                                <TableHeaderCell>month</TableHeaderCell>
-                                <TableHeaderCell>provider</TableHeaderCell>
-                                <TableHeaderCell>
-                                    credit_burn_usd
-                                </TableHeaderCell>
-                                <TableHeaderCell>credit_src</TableHeaderCell>
-                                <TableHeaderCell>
-                                    left_end_of_month
-                                </TableHeaderCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {creditsMonthly.map((row) => (
-                                <TableRow key={`${row.month}|${row.provider}`}>
-                                    <TableCell>{row.month}</TableCell>
-                                    <TableCell>{row.provider}</TableCell>
-                                    <TableCell>
-                                        {row.credit_burn_usd > 0
-                                            ? fmtUsd2(row.credit_burn_usd)
-                                            : "-"}
-                                    </TableCell>
-                                    <TableCell>
-                                        <SourceBadge source={row.credit_src} />
-                                    </TableCell>
-                                    <TableCell>
-                                        {fmtUsd2(row.left_end_usd)}
-                                    </TableCell>
-                                </TableRow>
                             ))}
                         </TableBody>
                     </DataTable>

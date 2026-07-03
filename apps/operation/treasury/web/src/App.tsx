@@ -26,15 +26,19 @@ import { BalancesTab } from "./views/BalancesTab";
 import { BurnTab } from "./views/BurnTab";
 import { CreditsTab } from "./views/CreditsTab";
 import { InvoicesTab } from "./views/InvoicesTab";
+import { MeterTab } from "./views/MeterTab";
 import { PaymentsTab } from "./views/PaymentsTab";
 import { ReconTab } from "./views/ReconTab";
 import { RunsTab } from "./views/RunsTab";
+import { TransactionsTab } from "./views/TransactionsTab";
 
 type Tab =
     | "recon"
     | "invoices"
     | "payments"
+    | "transactions"
     | "burn"
+    | "meter"
     | "credits"
     | "balances"
     | "runs";
@@ -43,7 +47,9 @@ const TABS: { id: Tab; label: string }[] = [
     { id: "recon", label: "Recon" },
     { id: "invoices", label: "Invoices" },
     { id: "payments", label: "Payments" },
+    { id: "transactions", label: "Transactions" },
     { id: "burn", label: "Burn" },
+    { id: "meter", label: "Meter" },
     { id: "credits", label: "Credits" },
     { id: "balances", label: "Balances" },
     { id: "runs", label: "Runs" },
@@ -402,9 +408,18 @@ export default function App() {
                             <InvoicesTab data={data} queuedKeys={queuedKeys} />
                         )}
                         {data && tab === "payments" && (
-                            <PaymentsTab data={data} queuedKeys={queuedKeys} />
+                            <PaymentsTab data={data} />
+                        )}
+                        {data && tab === "transactions" && (
+                            <TransactionsTab
+                                data={data}
+                                queuedKeys={queuedKeys}
+                            />
                         )}
                         {data && tab === "burn" && <BurnTab data={data} />}
+                        {data && tab === "meter" && (
+                            <MeterTab data={data} queuedKeys={queuedKeys} />
+                        )}
                         {data && tab === "credits" && (
                             <CreditsTab data={data} queuedKeys={queuedKeys} />
                         )}

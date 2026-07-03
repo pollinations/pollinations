@@ -16,12 +16,14 @@ export function buildManualMeterChange({
     amount,
     funding,
     month,
+    note = "entered in treasury app",
     provider,
     retrievedAt = todayDate(),
 }: {
     amount: number;
     funding: string;
     month: string;
+    note?: string;
     provider: string;
     retrievedAt?: string;
 }): StageInput {
@@ -34,7 +36,7 @@ export function buildManualMeterChange({
             funding,
             source: "manual",
             retrieved_at: retrievedAt,
-            note: "entered in treasury app",
+            note,
         },
         summary: `meter ${provider} ${month} ${funding} -> ${amount}`,
     };

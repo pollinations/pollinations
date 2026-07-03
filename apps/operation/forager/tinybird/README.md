@@ -48,8 +48,11 @@ layers.
    separate manual tables. Monthly manual credit burn is a `meter_monthly` row
    with `funding='credit'`. Manual remaining balance is a `balances` row. Grant
    corrections live in `overrides`.
-3. `payments_ep` is reserved for a future transaction-grain Wise pipe using
-   `wise_ref`. Do not build it until a consumer needs transaction grain.
+3. Pipes are single-table reads (per-table transforms like dedupe, fx or
+   month bucketing are fine). Crossing tables happens in the consuming
+   frontend, not in pipes; promote a crossed view to a pipe only when it is
+   stable AND shared by multiple consumers. (`credits_monthly_ep` was built
+   crossed, then deleted for this reason, 2026-07-03.)
 
 ## Pipes
 
@@ -59,6 +62,7 @@ layers.
 | `usage_ep` | Raw `usage_monthly` rows | Keep |
 | `meter_monthly_ep` | Raw `meter_monthly` rows | Keep (live since deployment #9) |
 | `payments_monthly_ep` | Monthly aggregate over `payments` (ex `cash_monthly_ep`) | Keep (live since deployment #9) |
+| `payments_ep` | Raw `payments` transactions (`wise_ref` grain) with computed `amount_usd` — home of counterparty rule edits | Keep (live since deployment #11) |
 | `balances_ep` | Latest `balances` snapshot per provider | Keep |
 | `grants_ep` | All `grants` rows ordered by pool | Keep |
 | `revenue_ep` | `revenue_monthly` with computed `net_eur` | Keep |

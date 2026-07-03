@@ -14,11 +14,27 @@ each run  (manual — cron deferred)
              inbox/ drop folder sweep           ├─► archive ~/Documents/treasury-invoices/YYYY-MM/…  (sha256-dedup vs TB)
   2 READ     pdftotext -layout → parser registry → {provider, period, amount, currency, number}
   3 PUSH     invoices rows (append) · payments rows (Wise, replace by month)
-  4 FLAG     credits.json active windows × payments × invoices
+  4 BALANCE  11 REST/CLI balance connectors → balances (append)
+  5 METER    7 meter connectors → meter_monthly (append)
+  6 BURN     burn engine (burn.py) → provider_month (full replace) · grants (full replace)
+  7 FLAG     credits.json active windows × payments × invoices
              → reconciliation verdicts (full replace) → gaps_ep pipe
 frontend     treasury.myceli.ai/missing — provider × month grid; red cell → portal URL
              (DEFERRED — query chase list via gaps_ep in the meantime)
 ```
+
+**Outputs written per run:**
+
+| Datasource | Mode | Written by |
+|---|---|---|
+| `invoices` | append (sha256-dedup) | invoice catcher |
+| `payments` | replace by month | Wise connector |
+| `balances` | append | balance connectors (B3/B4) |
+| `meter_monthly` | append | meter connectors (B5) |
+| `grants` | full replace | burn engine |
+| `provider_month` | full replace | burn engine |
+| `reconciliation` | full replace | reconcile engine |
+| `ingest_runs` | append | orchestrator |
 
 ---
 
@@ -104,6 +120,40 @@ curl "https://api.europe-west2.gcp.tinybird.co/v0/pipes/gaps_ep.json" \
 ```
 
 Or read it from the run output — every `python3 -m ingest.run` prints the CHASE LIST at the end.
+
+---
+
+## Monthly manual routine
+
+Eight providers have no programmatic API surface — their billing figures must be read from the provider console and entered manually once per month. See [`CONNECTORS.md`](CONNECTORS.md) for the full checklist with exact commands.
+
+Quick reference — run from `apps/operation/forager/`:
+
+```bash
+# Meter reading (most common form)
+python3 -m ingest.record meter <provider> <YYYY-MM> <cost_usd> --funding credit
+
+# Balance snapshot (use when you have a grant balance to record)
+python3 -m ingest.record balance <provider> --left <usd> [--granted <usd>] [--note TEXT]
+```
+
+Providers requiring monthly manual entry: `io.net`, `perplexity`, `nebius`, `lambda`, `bytedance`, `modal`, `elevenlabs`, `daytona` (fallback when wallet OIDC-gated).
+
+Provider slug must be in `registry.CANONICAL`; month must match `YYYY-MM`. Each command appends one row with `source="manual"` to `balances` or `meter_monthly`.
+
+---
+
+## Doctor soft checks
+
+`python3 -m ingest.doctor` runs three soft checks in addition to the five hard checks (sops, tinybird-ops, wise, gog, pdftotext). Soft checks print a warning but do not block the run:
+
+| Soft check | What it verifies |
+|---|---|
+| `clis` | `vastai`, `firectl`, `aws`, `bq` all on PATH (needed by CLI-based connectors) |
+| `tb-prod` | `TINYBIRD_PROD_READ_TOKEN` can query `generation_event` today (usage pull working) |
+| `balances-fresh` | Latest `balances` row is < 26 h old (balance connectors ran recently); "no rows yet" is soft-ok on fresh install |
+
+The existing soft checks `archive` (writable) and `freshness` (last ingest_run < 26 h) remain unchanged.
 
 ---
 

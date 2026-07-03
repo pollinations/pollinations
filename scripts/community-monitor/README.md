@@ -9,7 +9,8 @@ deactivates ones with sustained failures. Runs on a standalone EC2 box
 
 Committed (source of truth — edit here, then deploy):
 - `CYCLE.md` — the agent's full rulebook, re-read fresh every cycle.
-- `probe.mjs` — one probe sweep across all community models.
+- `probe.mjs` — one probe sweep across all community models, cost-weighted
+  (see "Probe spend" below).
 - `watchdog.sh` — cron job (every 5 min) that revives the `screen` session if
   it died. **This is the actual deploy path currently running on the box.**
 - `loop.sh` + `community-monitor.service` — an alternative systemd-supervised
@@ -53,6 +54,30 @@ re-arm the loop by attaching (`screen -r community-monitor`) and sending:
 ```
 /loop 15m read CYCLE.md fresh each cycle and follow it exactly, then schedule your own wakeup 15 minutes out and repeat forever
 ```
+
+## Probe spend
+
+`probe.mjs` fetches live per-token pricing from the public, unauthenticated
+`GET https://gen.pollinations.ai/models` catalog (no D1/wrangler access
+needed on the box) and allocates probe requests per model:
+
+- Every model gets a rank-based baseline by price quartile (cheapest: 5
+  requests, priciest: 1), then extra requests top up toward a ~0.5-pollen
+  spend ceiling — added to the *most expensive* payable models first, since
+  those move total spend the most per request.
+- **Every model is hard-capped at 5 requests/cycle regardless of price** —
+  this is a health probe, not a load test, and a free/near-free model must
+  never get hammered just because the budget "allows" more. In practice this
+  cap is almost always the binding constraint (most community models cost a
+  small fraction of a cent per request), so actual spend usually lands well
+  under 0.5 pollen — treat 0.5 as a ceiling to stay under, not a target to
+  chase exactly.
+- Actual spend is reconciled from each response's real `usage` tokens (not
+  the pre-flight estimate) and written to `state.json`'s `spend` key. Next
+  cycle's budget mean-reverts off last cycle's actual spend (overspend ->
+  aim lower next time, underspend -> aim higher), clamped to [0.2, 0.8]
+  pollen — though again, the per-model cap is what actually governs in
+  practice, not this budget number.
 
 ## Model/effort
 

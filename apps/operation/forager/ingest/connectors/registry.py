@@ -7,7 +7,7 @@ CANONICAL: full set of canonical provider slugs accepted by ingest.record and th
            Their union is the canonical vocabulary, matching credits.json pool slugs.
 
 BALANCE / METER: lists of (slug, connector_fn) pairs.
-           Populated by Tasks B3–B5 — empty here.
+           Populated by Tasks B3–B5.
 """
 
 # Derive from the two already-canonical vocabularies (test-enforced against credits.json)
@@ -34,6 +34,21 @@ _manual_forever = {
 
 CANONICAL: frozenset = frozenset(_harvest_slugs | _alias_slugs | _manual_forever)
 
-# Populated by Tasks B3–B5.  See brief for final state.
-BALANCE: list = []
+# B3: REST balance connectors
+from .providers import openrouter as _openrouter
+from .providers import deepinfra as _deepinfra
+from .providers import runpod as _runpod
+from .providers import scaleway as _scaleway
+from .providers import digitalocean as _digitalocean
+from .providers import daytona as _daytona
+
+BALANCE: list = [
+    ("openrouter", _openrouter.balance),
+    ("deepinfra", _deepinfra.balance),
+    ("runpod", _runpod.balance),
+    ("scaleway", _scaleway.balance),
+    ("digitalocean", _digitalocean.balance),
+    ("daytona", _daytona.balance),
+]
+
 METER: list = []

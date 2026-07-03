@@ -118,11 +118,16 @@ def test_canonical_no_duplicates():
 
 
 # ---------------------------------------------------------------------------
-# registry.BALANCE / METER are empty lists (populated by B3-B5)
+# registry.BALANCE / METER — populated by B3; METER still empty (B4-B5)
 # ---------------------------------------------------------------------------
 
-def test_balance_and_meter_are_empty():
-    assert registry.BALANCE == []
+def test_balance_and_meter_are_lists():
+    assert isinstance(registry.BALANCE, list)
+    assert isinstance(registry.METER, list)
+
+
+def test_meter_is_empty():
+    # METER is populated in B4-B5; must still be empty after B3.
     assert registry.METER == []
 
 

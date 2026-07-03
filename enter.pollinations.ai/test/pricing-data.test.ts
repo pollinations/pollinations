@@ -610,7 +610,9 @@ test("Gemini 2.5 grounded prompt is billed on web chunks even without queries", 
         calculateCost("gemini-search", usage, chunksOnly).totalCost,
     ).toBeCloseTo(0.535, 8);
 
-    // groundingSupports present (no queries, no chunks) → still 1 prompt.
+    // groundingSupports alone (no queries, no web chunks) is NOT billable
+    // evidence — Vertex-AI-Search grounding also emits supports, and only
+    // Google-Search web evidence carries the grounded-prompt fee.
     const supportsOnly = {
         choices: [
             {
@@ -622,7 +624,7 @@ test("Gemini 2.5 grounded prompt is billed on web chunks even without queries", 
     };
     expect(
         calculateCost("gemini-search", usage, supportsOnly).totalCost,
-    ).toBeCloseTo(0.535, 8);
+    ).toBeCloseTo(0.5, 8);
 });
 
 test("Gemini 2.5 retrievalQueries-only response is not billed as grounded", () => {
@@ -632,6 +634,8 @@ test("Gemini 2.5 retrievalQueries-only response is not billed as grounded", () =
     };
     // Vertex-AI-Search (retrievalQueries) is a different product — no
     // Google-Search grounded-prompt fee. Empty web chunks must also not count.
+    // Includes groundingSupports: a real Vertex-AI-Search response annotates
+    // answer spans too, and that must not trigger the Google-Search fee.
     const retrievalOnly = {
         choices: [
             {
@@ -640,6 +644,7 @@ test("Gemini 2.5 retrievalQueries-only response is not billed as grounded", () =
                     groundingChunks: [
                         { retrievedContext: { uri: "gs://corpus/doc" } },
                     ],
+                    groundingSupports: [{ segment: { startIndex: 0 } }],
                 },
             },
         ],

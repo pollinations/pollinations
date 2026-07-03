@@ -735,3 +735,102 @@ def test_full_scenario_2months_3providers():
             v = r[col]
             assert isinstance(v, float), f"{col} is {type(v)} not float in {r['provider']}/{r['month']}"
             assert round(v, 2) == v, f"{col}={v} not rounded to 2dp in {r['provider']}/{r['month']}"
+
+
+# ---------------------------------------------------------------------------
+# _num helper and non-numeric credits.json value tolerance (live-data bug fix)
+# ---------------------------------------------------------------------------
+
+def test_num_returns_none_for_na_strings():
+    """'n/a', 'NA', '' and None all become None."""
+    assert burn._num("n/a") is None
+    assert burn._num("N/A") is None
+    assert burn._num("NA") is None
+    assert burn._num("na") is None
+    assert burn._num("") is None
+    assert burn._num(None) is None
+
+
+def test_num_parses_plain_float():
+    assert burn._num(1234.56) == 1234.56
+    assert burn._num("99.5") == 99.5
+    assert burn._num(0) == 0.0
+
+
+def test_num_parses_comma_number():
+    """Strings like "31,212.50" must parse to 31212.50."""
+    assert burn._num("31,212.50") == 31212.50
+    assert burn._num("1,000") == 1000.0
+
+
+def test_num_returns_none_for_unparseable_string():
+    """Strings that are not numbers and not n/a variants → None."""
+    assert burn._num("pending") is None
+    assert burn._num("TBD") is None
+
+
+def test_grants_non_numeric_hc_values_become_none():
+    """Pool with granted='n/a', left='NA', cash_left='' → grants() emits all three as None
+    with '' srcs (same as if the fields were absent)."""
+    pool = {
+        "pool": "AWS-old",
+        "providers": ["aws"],
+        "billing": "monthly",
+        "kind": "grant",
+        "granted": "n/a",
+        "left": "NA",
+        "cash_left": "",
+        "expires": "",
+        "note": "",
+    }
+    rows = burn.grants([pool], [], TODAY)
+    assert len(rows) == 1
+    g = rows[0]
+    assert g["granted_usd"] is None
+    assert g["granted_src"] == ""
+    assert g["left_usd"] is None
+    assert g["left_src"] == ""
+    assert g["prepaid_left_usd"] is None
+    assert g["prepaid_left_src"] == ""
+
+
+def test_run_non_numeric_pool_does_not_raise():
+    """run() with a pool carrying 'n/a' string values must not raise ValueError
+    and must produce grant_src='' and grant_left_usd=0.0."""
+    pool = {
+        "pool": "AWS-old",
+        "providers": ["aws"],
+        "billing": "monthly",
+        "kind": "grant",
+        "granted": "n/a",
+        "left": "NA",
+        "cash_left": "",
+        "expires": "",
+        "note": "",
+    }
+    rows = burn.run([], [], [], [], [], [pool], MONTHS, CFG, TODAY)
+    assert len(rows) == 1
+    r = rows[0]
+    assert r["grant_left_usd"] == 0.0
+    assert r["grant_src"] == ""
+
+
+def test_grants_comma_number_granted_parses():
+    """granted='31,212.50' in credits.json must parse to 31212.50."""
+    pool = {
+        "pool": "AWS",
+        "providers": ["aws"],
+        "billing": "monthly",
+        "kind": "grant",
+        "granted": "31,212.50",
+        "left": "28,000",
+        "cash_left": None,
+        "expires": "",
+        "note": "",
+    }
+    rows = burn.grants([pool], [], TODAY)
+    g = rows[0]
+    assert g["granted_usd"] == 31212.50
+    assert g["granted_src"] == "hc"
+    assert g["left_usd"] == 28000.0
+    assert g["left_src"] == "hc"

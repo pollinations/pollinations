@@ -54,6 +54,33 @@ NOTES: dict[str, str] = {
 # Helpers
 # ---------------------------------------------------------------------------
 
+_NA_STRINGS = {"n/a", "na", ""}
+
+
+def _num(v) -> float | None:
+    """Coerce a pool-sourced value to float, or None if absent/non-numeric.
+
+    Accepts:
+    - None / '' / 'n/a' / 'NA' / 'na' (case-insensitive, stripped) → None
+    - numeric types (int, float) → float
+    - numeric strings, including comma-formatted e.g. "31,212.50" → float
+    - any other string or unparseable value → None
+    """
+    if v is None:
+        return None
+    if isinstance(v, (int, float)):
+        return float(v)
+    s = str(v).strip()
+    if s.lower() in _NA_STRINGS:
+        return None
+    # Strip commas (thousands separator) before parsing
+    s = s.replace(",", "")
+    try:
+        return float(s)
+    except (ValueError, TypeError):
+        return None
+
+
 def _next_month(month: str) -> str:
     """Return the YYYY-MM string for the month following `month`."""
     y, m = int(month[:4]), int(month[5:7])
@@ -149,9 +176,9 @@ def _pick_grant_left(provider: str, balances_by_prov: dict[str, list[dict]],
 
     # HC fallback
     if pool is not None:
-        left = pool.get("left")
+        left = _num(pool.get("left"))
         if left is not None:
-            return float(left), "hc"
+            return left, "hc"
 
     return 0.0, ""
 
@@ -465,10 +492,10 @@ def grants(pools: list[dict], balances: list[dict], today: str) -> list[dict]:
         provs = [p.strip().lower() for p in pool.get("providers", []) if p]
         kind = pool.get("kind", "")
 
-        # Base from credits.json (hc)
-        hc_granted = pool.get("granted")
-        hc_left = pool.get("left")
-        hc_prepaid_left = pool.get("cash_left")
+        # Base from credits.json (hc) — coerce through _num to tolerate "n/a", "NA", "", etc.
+        hc_granted = _num(pool.get("granted"))
+        hc_left = _num(pool.get("left"))
+        hc_prepaid_left = _num(pool.get("cash_left"))
 
         # Find the latest balance snapshot across all pool providers
         best_bal: dict | None = None

@@ -150,7 +150,6 @@ def test_one_raising_one_ok_both_statuses_recorded(monkeypatch):
             creds=_CREDS,
             cfg=_CFG,
             pools=_POOLS,
-            months=MONTHS,
             today=TODAY,
             statuses=statuses,
             notes=notes,
@@ -173,10 +172,9 @@ def test_one_raising_one_ok_both_statuses_recorded(monkeypatch):
         f"expected 'ok' for openrouter, got: {statuses['balance:openrouter']}"
     )
 
-    # Later stages ran: ops_replace.replaces should include provider_month and grants
-    replace_names = [r[0] for r in ops_replace.replaces]
-    assert "provider_month" in replace_names, "burn stage did not write provider_month"
-    assert "grants" in replace_names, "burn stage did not write grants"
+    # Later stages ran: burn_rows key in statuses proves Step 5 executed
+    assert "burn_rows" in statuses, f"burn stage did not record burn_rows in statuses: {statuses}"
+    assert "grant_rows" in statuses, f"burn stage did not record grant_rows in statuses: {statuses}"
 
 
 def test_raising_meter_connector_both_statuses(monkeypatch):
@@ -216,7 +214,6 @@ def test_raising_meter_connector_both_statuses(monkeypatch):
             creds=_CREDS,
             cfg=_CFG,
             pools=_POOLS,
-            months=MONTHS,
             today=TODAY,
             statuses=statuses,
             notes=notes,
@@ -289,7 +286,6 @@ def test_replace_on_replace_stub_append_on_ingest_stub(monkeypatch):
             creds=_CREDS,
             cfg=_CFG,
             pools=_POOLS,
-            months=MONTHS,
             today=TODAY,
             statuses=statuses,
             notes=notes,
@@ -348,7 +344,6 @@ def test_zero_row_usage_skips_replace(monkeypatch):
             creds=_CREDS,
             cfg=_CFG,
             pools=_POOLS,
-            months=MONTHS,
             today=TODAY,
             statuses=statuses,
             notes=notes,
@@ -399,7 +394,6 @@ def test_zero_row_revenue_skips_replace(monkeypatch):
             creds=_CREDS,
             cfg=_CFG,
             pools=_POOLS,
-            months=MONTHS,
             today=TODAY,
             statuses=statuses,
             notes=notes,
@@ -456,7 +450,6 @@ def test_sanitized_error_no_creds_value(monkeypatch):
             creds=_CREDS,
             cfg=_CFG,
             pools=_POOLS,
-            months=MONTHS,
             today=TODAY,
             statuses=statuses,
             notes=notes,
@@ -505,7 +498,6 @@ def test_sanitized_error_under_200_chars(monkeypatch):
             creds=_CREDS,
             cfg=_CFG,
             pools=_POOLS,
-            months=MONTHS,
             today=TODAY,
             statuses=statuses,
             notes=[],
@@ -580,7 +572,6 @@ def test_runway_alarm_fires_below_14_days(monkeypatch, capsys):
             creds=_CREDS,
             cfg=_CFG,
             pools=_POOLS,
-            months=MONTHS,
             today=TODAY,
             statuses=statuses,
             notes=notes,
@@ -642,7 +633,6 @@ def test_runway_alarm_silent_above_14_days(monkeypatch, capsys):
             creds=_CREDS,
             cfg=_CFG,
             pools=_POOLS,
-            months=MONTHS,
             today=TODAY,
             statuses=statuses,
             notes=[],
@@ -690,7 +680,6 @@ def test_runway_no_runpod_row_is_silent(monkeypatch, capsys):
             creds=_CREDS,
             cfg=_CFG,
             pools=_POOLS,
-            months=MONTHS,
             today=TODAY,
             statuses=statuses,
             notes=[],
@@ -731,3 +720,194 @@ def test_doctor_soft_checks_are_not_hard():
     for name in ("clis", "tb-prod", "balances-fresh"):
         # Should appear as a string literal in an append call with False
         assert name in src, f"'{name}' not found in doctor.checks source"
+
+
+# ---------------------------------------------------------------------------
+# Fix 1: Step 5 exception safety — burn.run raising must not escape
+# ---------------------------------------------------------------------------
+
+def _make_burn_stage_kwargs(ops_ingest, ops_replace, tb_prod_stub, monkeypatch,
+                            *, balance=None, meter=None):
+    """Helper: patch registry + usage/revenue to empty, return common kwargs dict."""
+    import ingest.connectors.registry as _reg
+    _reg_orig_balance = _reg.BALANCE
+    _reg_orig_meter = _reg.METER
+    _reg.BALANCE = balance if balance is not None else []
+    _reg.METER = meter if meter is not None else []
+    monkeypatch.setattr("ingest.connectors.usage.monthly_rows",
+                        lambda tb, months, today: [])
+    monkeypatch.setattr("ingest.connectors.providers.stripe.revenue_rows",
+                        lambda creds, months, today: [])
+    return {
+        "ops_ingest": ops_ingest,
+        "ops_replace": ops_replace,
+        "tb_prod": tb_prod_stub,
+        "creds": _CREDS,
+        "cfg": _CFG,
+        "pools": _POOLS,
+        "today": TODAY,
+    }, _reg, _reg_orig_balance, _reg_orig_meter
+
+
+def test_burn_run_raises_does_not_propagate(monkeypatch):
+    """If burn.run raises (e.g. TB network error on a read-back), _run_burn_stage
+    returns normally so the caller can still append the ingest_runs log.
+    statuses must contain 'burn' key starting with 'err:'.
+    """
+    ops_ingest = TBStub("ingest")
+    ops_replace = TBStub("replace")
+    tb_prod_stub = TBStub("prod")
+
+    import ingest.connectors.registry as _reg
+    orig_balance = _reg.BALANCE
+    orig_meter = _reg.METER
+    try:
+        _reg.BALANCE = []
+        _reg.METER = []
+
+        monkeypatch.setattr("ingest.connectors.usage.monthly_rows",
+                            lambda tb, months, today: [])
+        monkeypatch.setattr("ingest.connectors.providers.stripe.revenue_rows",
+                            lambda creds, months, today: [])
+        # burn.run raises to simulate a TB network error or burn bug
+        monkeypatch.setattr("ingest.burn.run",
+                            lambda *a, **kw: (_ for _ in ()).throw(
+                                ConnectionError("TB timeout during burn")))
+        monkeypatch.setattr("ingest.burn.grants", lambda *a, **kw: [])
+
+        statuses = {}
+        notes = []
+
+        # Must NOT raise — must return normally
+        _run._run_burn_stage(
+            ops_ingest=ops_ingest,
+            ops_replace=ops_replace,
+            tb_prod=tb_prod_stub,
+            creds=_CREDS,
+            cfg=_CFG,
+            pools=_POOLS,
+            today=TODAY,
+            statuses=statuses,
+            notes=notes,
+        )
+    finally:
+        _reg.BALANCE = orig_balance
+        _reg.METER = orig_meter
+
+    # Caller can now do ops_ingest.append("ingest_runs", ...) — function returned
+    # statuses must record the burn failure
+    assert "burn" in statuses, f"'burn' key missing from statuses after error: {statuses}"
+    assert statuses["burn"].startswith("err:"), (
+        f"Expected 'err:...' for burn status, got: {statuses['burn']!r}"
+    )
+    # Secret values must not appear in the burn error
+    for val in _CREDS.values():
+        if val and isinstance(val, str) and len(val) > 3:
+            assert val not in statuses["burn"], (
+                f"Creds value leaked into burn error status: {statuses['burn']!r}"
+            )
+
+
+def test_sql_readback_raises_does_not_propagate(monkeypatch):
+    """If ops_ingest.sql raises (TB read-back in Step 5), _run_burn_stage
+    returns normally; statuses['burn'] starts with 'err:'.
+    """
+    ops_ingest = TBStub("ingest")
+    ops_replace = TBStub("replace")
+    tb_prod_stub = TBStub("prod")
+
+    def sql_that_raises_on_invoices(query):
+        # Raise on the Step 5 invoices read-back to simulate a TB network error
+        if "from invoices" in query.strip().lower():
+            raise OSError("network reset by peer")
+        return []
+
+    ops_ingest.sql = sql_that_raises_on_invoices
+
+    import ingest.connectors.registry as _reg
+    orig_balance = _reg.BALANCE
+    orig_meter = _reg.METER
+    try:
+        _reg.BALANCE = []
+        _reg.METER = []
+
+        monkeypatch.setattr("ingest.connectors.usage.monthly_rows",
+                            lambda tb, months, today: [])
+        monkeypatch.setattr("ingest.connectors.providers.stripe.revenue_rows",
+                            lambda creds, months, today: [])
+        monkeypatch.setattr("ingest.burn.run", lambda *a, **kw: [])
+        monkeypatch.setattr("ingest.burn.grants", lambda *a, **kw: [])
+
+        statuses = {}
+        notes = []
+        _run._run_burn_stage(
+            ops_ingest=ops_ingest,
+            ops_replace=ops_replace,
+            tb_prod=tb_prod_stub,
+            creds=_CREDS,
+            cfg=_CFG,
+            pools=_POOLS,
+            today=TODAY,
+            statuses=statuses,
+            notes=notes,
+        )
+    finally:
+        _reg.BALANCE = orig_balance
+        _reg.METER = orig_meter
+
+    # Must have returned normally (no exception propagated)
+    # statuses must record the burn failure
+    assert "burn" in statuses, f"'burn' key missing from statuses: {statuses}"
+    assert statuses["burn"].startswith("err:"), (
+        f"Expected 'err:...' for burn status after sql raises, got: {statuses['burn']!r}"
+    )
+
+
+def test_burn_run_empty_skips_provider_month_replace(monkeypatch):
+    """burn.run returning [] must NOT call replace('provider_month', []).
+    A note must be recorded; no exception raised.
+    """
+    ops_ingest = TBStub("ingest")
+    ops_replace = TBStub("replace")
+    tb_prod_stub = TBStub("prod")
+
+    import ingest.connectors.registry as _reg
+    orig_balance = _reg.BALANCE
+    orig_meter = _reg.METER
+    try:
+        _reg.BALANCE = []
+        _reg.METER = []
+
+        monkeypatch.setattr("ingest.connectors.usage.monthly_rows",
+                            lambda tb, months, today: [])
+        monkeypatch.setattr("ingest.connectors.providers.stripe.revenue_rows",
+                            lambda creds, months, today: [])
+        monkeypatch.setattr("ingest.burn.run", lambda *a, **kw: [])
+        monkeypatch.setattr("ingest.burn.grants", lambda *a, **kw: [])
+
+        statuses = {}
+        notes = []
+        _run._run_burn_stage(
+            ops_ingest=ops_ingest,
+            ops_replace=ops_replace,
+            tb_prod=tb_prod_stub,
+            creds=_CREDS,
+            cfg=_CFG,
+            pools=_POOLS,
+            today=TODAY,
+            statuses=statuses,
+            notes=notes,
+        )
+    finally:
+        _reg.BALANCE = orig_balance
+        _reg.METER = orig_meter
+
+    # provider_month replace must NOT have been called with 0 rows
+    pm_replaces = [r for r in ops_replace.replaces if r[0] == "provider_month"]
+    assert not pm_replaces, (
+        f"provider_month was replaced despite 0 rows from burn.run: {pm_replaces}"
+    )
+    # A note must be recorded about the skip
+    assert any("provider_month" in n.lower() for n in notes), (
+        f"No note recorded for skipped provider_month replace: {notes}"
+    )

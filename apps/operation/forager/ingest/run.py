@@ -10,6 +10,7 @@ TOKEN MODEL: three TB instances:
   tb_prod     — TINYBIRD_PROD_READ_TOKEN   → SQL read-only from pollinations_enter prod
 """
 import datetime
+import inspect
 import json
 import os
 import re
@@ -121,7 +122,7 @@ def _sanitize_err(e, creds_dict):
 
 
 def _run_burn_stage(ops_ingest, ops_replace, tb_prod, creds, cfg, pools,
-                    months, today, statuses, notes):
+                    today, statuses, notes):
     """Run the full burn stage (steps 1–6 of the burn phase).
 
     Mutates `statuses` dict and `notes` list in place (same objects written to
@@ -133,7 +134,8 @@ def _run_burn_stage(ops_ingest, ops_replace, tb_prod, creds, cfg, pools,
       3. usage.monthly_rows → replace usage_monthly (skip on 0 rows)
       4. stripe.revenue_rows → replace revenue_monthly (skip on 0 rows)
       5. Read back from TB, run burn engine → replace provider_month + grants
-      6. Print runway alarms and needs_data notices
+         (guarded: any exception records statuses["burn"]="err:..." and returns)
+      6. Print runway alarms and needs_data notices (guarded: parse errors are silent)
     """
     now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     fx = cfg.get("fx_eur_usd", 1.14)
@@ -142,7 +144,6 @@ def _run_burn_stage(ops_ingest, ops_replace, tb_prod, creds, cfg, pools,
     for slug, fn in registry.BALANCE:
         try:
             # ovhcloud balance takes fx= kwarg; pass it via inspect to avoid coupling
-            import inspect
             sig = inspect.signature(fn)
             if "fx" in sig.parameters:
                 rows = fn(creds, now, fx=fx)
@@ -161,7 +162,6 @@ def _run_burn_stage(ops_ingest, ops_replace, tb_prod, creds, cfg, pools,
     months_ytd_list = months_ytd(cfg["months_start"], today)
     for slug, fn in registry.METER:
         try:
-            import inspect
             sig = inspect.signature(fn)
             if "fx" in sig.parameters:
                 rows = fn(creds, months_ytd_list, today, fx=fx)
@@ -192,50 +192,69 @@ def _run_burn_stage(ops_ingest, ops_replace, tb_prod, creds, cfg, pools,
         statuses["revenue"] = 0
 
     # ---- Step 5: burn engine → provider_month + grants ----
-    invoices = dedupe_invoices(ops_ingest.sql("SELECT * FROM invoices"))
-    payments = ops_ingest.sql("SELECT * FROM payments")
-    meter_rows = ops_ingest.sql("SELECT * FROM meter_monthly")
-    usage_read = ops_ingest.sql("SELECT * FROM usage_monthly")
-    balances = ops_ingest.sql("SELECT * FROM balances")
+    # Wrapped in try/except so any TB network error, ValueError on 0-row replace,
+    # or bug in burn.run never escapes and kills the ingest_runs log append.
+    pm_rows = []
+    balances = []
+    try:
+        invoices = dedupe_invoices(ops_ingest.sql("SELECT * FROM invoices"))
+        payments = ops_ingest.sql("SELECT * FROM payments")
+        meter_rows = ops_ingest.sql("SELECT * FROM meter_monthly")
+        usage_read = ops_ingest.sql("SELECT * FROM usage_monthly")
+        balances = ops_ingest.sql("SELECT * FROM balances")
 
-    pm_rows = burn.run(invoices, payments, meter_rows, usage_read, balances,
-                       pools, months_ytd_list, cfg, today)
-    # Always replace, even when empty — full-replace datasource; empty universe is valid
-    ops_replace.replace("provider_month", pm_rows)
+        pm_rows = burn.run(invoices, payments, meter_rows, usage_read, balances,
+                           pools, months_ytd_list, cfg, today)
+        # Skip replace on 0 rows — keep last good; replace only when burn produced output
+        if pm_rows:
+            ops_replace.replace("provider_month", pm_rows)
+            statuses["burn_rows"] = len(pm_rows)
+        else:
+            notes.append("burn: 0 rows from burn.run — provider_month unchanged (last good kept)")
+            statuses["burn_rows"] = 0
 
-    grant_rows = burn.grants(pools, balances, today)
-    ops_replace.replace("grants", grant_rows)
+        grant_rows = burn.grants(pools, balances, today)
+        if grant_rows:
+            ops_replace.replace("grants", grant_rows)
+            statuses["grant_rows"] = len(grant_rows)
+        else:
+            notes.append("burn: 0 grant rows — grants table unchanged (last good kept)")
+            statuses["grant_rows"] = 0
 
-    statuses["burn_rows"] = len(pm_rows)
-    statuses["grant_rows"] = len(grant_rows)
+    except Exception as e:
+        statuses["burn"] = "err:" + _sanitize_err(e, creds)
+        notes.append(f"burn stage failed: {statuses['burn']}")
+        return
 
     # ---- Step 6: print runway alarms and needs_data notices ----
+    try:
+        # Runway alarm: find freshest runpod balance row
+        runpod_rows = [r for r in balances if (r.get("provider") or "").lower() == "runpod"]
+        if runpod_rows:
+            latest = max(runpod_rows, key=lambda r: r.get("run_at", ""))
+            note_str = latest.get("note", "") or ""
+            prepaid = latest.get("prepaid_left_usd")
+            # Parse spend_per_hr=<float> from note
+            m = re.search(r"spend_per_hr=([\d.]+)", note_str)
+            if m and prepaid is not None:
+                try:
+                    spend_hr = float(m.group(1))
+                    if spend_hr > 0:
+                        days = float(prepaid) / (spend_hr * 24)
+                        if days < 14:
+                            print(f"⚠ runpod ${prepaid:.2f} ≈ {days:.1f}d at ${spend_hr}/hr")
+                except (ValueError, ZeroDivisionError):
+                    pass
 
-    # Runway alarm: find freshest runpod balance row
-    runpod_rows = [r for r in balances if (r.get("provider") or "").lower() == "runpod"]
-    if runpod_rows:
-        latest = max(runpod_rows, key=lambda r: r.get("run_at", ""))
-        note_str = latest.get("note", "") or ""
-        prepaid = latest.get("prepaid_left_usd")
-        # Parse spend_per_hr=<float> from note
-        m = re.search(r"spend_per_hr=([\d.]+)", note_str)
-        if m and prepaid is not None:
-            try:
-                spend_hr = float(m.group(1))
-                if spend_hr > 0:
-                    days = float(prepaid) / (spend_hr * 24)
-                    if days < 14:
-                        print(f"⚠ runpod ${prepaid:.2f} ≈ {days:.1f}d at ${spend_hr}/hr")
-            except (ValueError, ZeroDivisionError):
-                pass
-
-    # needs_data notices for current month
-    current_month = today[:7]
-    for row in pm_rows:
-        if row.get("status") == "needs_data" and row.get("month") == current_month:
-            nd_note = row.get("note", "")
-            if nd_note:
-                print(f"  needs_data [{row['provider']}]: {nd_note}")
+        # needs_data notices for current month
+        current_month = today[:7]
+        for row in pm_rows:
+            if row.get("status") == "needs_data" and row.get("month") == current_month:
+                nd_note = row.get("note", "")
+                if nd_note:
+                    print(f"  needs_data [{row['provider']}]: {nd_note}")
+    except Exception:
+        pass
 
 
 def main():
@@ -305,7 +324,6 @@ def main():
         creds=c,
         cfg=cfg,
         pools=pools,
-        months=all_months,
         today=today,
         statuses=st,
         notes=notes,

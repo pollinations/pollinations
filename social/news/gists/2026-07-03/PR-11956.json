@@ -1,0 +1,35 @@
+{
+  "pr_number": 11956,
+  "title": "fix: warn user when localStorage quota is exceeded",
+  "author": "stormdede515-eng",
+  "url": "https://github.com/pollinations/pollinations/pull/11956",
+  "merged_at": "2026-07-03T12:38:11Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "Silent failure when image attachments overflow the quota causes data loss on reload with no indication to the user.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "No more silent drops",
+    "blurb": "We added a friendly heads-up when your browser's local storage gets too full from image attachments. Now you'll know exactly when it's time to clear some space.",
+    "summary": "Added a toast notification to warn users when image attachments exceed the browser's localStorage quota.",
+    "impact": "Users will now see a clear warning instead of experiencing silent data loss on reload when their local storage is full.",
+    "keywords": [
+      "chat",
+      "storage",
+      "bug-fix",
+      "ui",
+      "toast"
+    ],
+    "visual_concept": "The Nomnom creature looking completely stuffed and full after eating too many image files, while Polly the bee holds up a small glowing warning sign or a piece of toast.",
+    "image_prompt": "Cozy pixel art scene of the round tan Nomnom creature looking completely stuffed and full after eating too many image files, while the cute bee mascot holds up a small glowing warning sign. Soft lime green (#ecf874) and peach gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-03/PR-11956.jpg",
+    "prompt": "Cozy pixel art scene of the round tan Nomnom creature looking completely stuffed and full after eating too many image files, while the cute bee mascot holds up a small glowing warning sign. Soft lime green (#ecf874) and peach gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-03T12:41:14.254658+00:00"
+}

@@ -1,6 +1,9 @@
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import type { ModelDefinition } from "@shared/registry/registry.ts";
+import {
+    type ModelDefinition,
+    readProviderRequestCost,
+} from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
@@ -124,6 +127,38 @@ function usageHeaders(
         headers.set(FALLBACK_TARGET_HEADER, completion.fallbackTarget);
     }
     return headers;
+}
+
+const PUBLIC_USAGE_FIELDS = new Set([
+    "cache_creation_input_tokens",
+    "cache_read_input_tokens",
+    "completion_tokens",
+    "completion_tokens_details",
+    "prompt_tokens",
+    "prompt_tokens_details",
+    "total_tokens",
+]);
+
+function publicCompletionUsage(
+    usage: ChatCompletion["usage"],
+): ChatCompletion["usage"] {
+    if (!usage || (!("cost" in usage) && !("search_context_size" in usage))) {
+        return usage;
+    }
+
+    return Object.fromEntries(
+        Object.entries(usage).filter(([key]) => PUBLIC_USAGE_FIELDS.has(key)),
+    );
+}
+
+function publicChatCompletion(completion: ChatCompletion): ChatCompletion {
+    const usage = publicCompletionUsage(completion.usage);
+    if (usage === completion.usage) return completion;
+
+    return {
+        ...completion,
+        usage,
+    };
 }
 
 function sendOpenAIResponse(
@@ -315,9 +350,26 @@ async function generateTextResponse(
 
         if (requestData.stream) return sendTextStreamResponse(completion);
         const fallbackModel = c.var.model?.resolved;
-        if (contentResponse)
-            return sendTextContentResponse(completion, fallbackModel);
-        return sendOpenAIResponse(completion, fallbackModel);
+        try {
+            // Billing reads provider-reported cost from this completion later
+            // (post-response, in track) — malformed cost data must fail the
+            // request now, while a 5xx can still reach the client.
+            readProviderRequestCost(completion);
+        } catch (billingError) {
+            const error = new Error(
+                (billingError as Error).message,
+            ) as ServiceError;
+            error.status = 502;
+            throw error;
+        }
+        const trackingResponse = sendOpenAIResponse(completion, fallbackModel);
+        const publicCompletion = publicChatCompletion(completion);
+        if (contentResponse) {
+            c.var.track?.overrideResponseTracking(trackingResponse.clone());
+            return sendTextContentResponse(publicCompletion, fallbackModel);
+        }
+        c.var.track?.overrideResponseTracking(trackingResponse.clone());
+        return sendOpenAIResponse(publicCompletion, fallbackModel);
     } catch (thrown: unknown) {
         throwTextError(thrown as ServiceError, c);
     }

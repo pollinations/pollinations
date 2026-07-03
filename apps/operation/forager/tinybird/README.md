@@ -35,7 +35,7 @@ layers.
 | Derived stock view | `grants` | `grants_ep` | Pool-level view rewritten each run from `credits.json`, `overrides`, and live balances. Keep, but treat as derived. |
 | Money-in | `revenue_monthly` | `revenue_ep` | Stripe revenue per month. `net_eur` is computed in the pipe. |
 | Derived verdicts | `reconciliation` | `coverage_ep`, `gaps_ep` | Invoice/payment coverage and chase status. |
-| Deprecated derived P&L | `provider_month` | `provider_month_ep` | Mixed burn-engine output. Keep only until the legacy spend-audit PoC is retired and no readers remain. |
+| Derived P&L | `provider_month` | `provider_month_ep` | Mixed burn-engine output. The spend-audit PoC consumes it (by design — PoC stays a pure pipe consumer). Deletable only if the PoC is ever re-derived from the raw pipes. |
 | Corrections | `overrides` | none | Append-only operator truth. Latest row per `(scope,key,field)` wins. Scopes include `config`, `grants`, and `reconciliation`. |
 | Ops | `ingest_runs` | `runs_ep` | Harvest job execution log. |
 
@@ -57,15 +57,14 @@ layers.
 |---|---|---|
 | `invoices_ep` | Deduped `invoices` with computed `amount_usd` | Keep |
 | `usage_ep` | Raw `usage_monthly` rows | Keep |
-| `meter_monthly_ep` | Raw `meter_monthly` rows | Add |
-| `payments_monthly_ep` | Monthly aggregate over `payments`, same rows as `cash_monthly_ep` | Add |
-| `cash_monthly_ep` | Monthly aggregate over `payments` | Deprecated; replace with `payments_monthly_ep`, delete after all readers migrate |
+| `meter_monthly_ep` | Raw `meter_monthly` rows | Keep (live since deployment #9) |
+| `payments_monthly_ep` | Monthly aggregate over `payments` (ex `cash_monthly_ep`) | Keep (live since deployment #9) |
 | `balances_ep` | Latest `balances` snapshot per provider | Keep |
 | `grants_ep` | All `grants` rows ordered by pool | Keep |
 | `revenue_ep` | `revenue_monthly` with computed `net_eur` | Keep |
 | `coverage_ep` | All `reconciliation` rows | Keep |
 | `gaps_ep` | Reconciliation chase list | Keep |
-| `provider_month_ep` | Mixed `provider_month` rows | Deprecated; delete after spend-audit PoC is retired and no readers remain |
+| `provider_month_ep` | Mixed `provider_month` rows | Keep while the spend-audit PoC consumes it; deletable only if the PoC is re-derived from raw pipes |
 | `runs_ep` | Latest ingest runs | Keep |
 
 ## Tokens

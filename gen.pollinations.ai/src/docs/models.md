@@ -22,7 +22,7 @@ Community models are user-owned, OpenAI-compatible text endpoints proxied throug
 
 **Alpha stage**
 - Inclusion is fairly permissive for now; expect that to tighten before official launch.
-- Text models only for now — image, audio, and other modalities are planned next.
+- Text and image generation models are supported now; audio and other modalities are planned next.
 
 **Payouts**
 - Owners currently earn 75% of the pollen spent on their model.

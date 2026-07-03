@@ -9,7 +9,11 @@ import {
     TableHeaderCell,
     TableRow,
 } from "@pollinations/ui";
-import { COMMUNITY_ENDPOINT_PRICE_FIELDS } from "@shared/community-endpoints.ts";
+import {
+    COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    type CommunityEndpointModality,
+    communityEndpointPriceFieldsForModality,
+} from "@shared/community-endpoints.ts";
 import { PRICE_ICON } from "../models/model-icons.tsx";
 import type { PriceKind } from "../models/types.ts";
 import {
@@ -41,11 +45,13 @@ type PriceCellState = {
 
 export function PriceGroups({
     form,
+    modality,
     testState,
     visiblePriceKeys,
     onChange,
 }: {
     form: EndpointFormState;
+    modality: CommunityEndpointModality;
     testState: ActionState;
     visiblePriceKeys: Set<PriceFieldKey>;
     onChange: (key: keyof EndpointFormState, value: string) => void;
@@ -73,7 +79,9 @@ export function PriceGroups({
                                 align="right"
                                 className="normal-case tracking-normal"
                             >
-                                Output / 1M
+                                {modality === "image"
+                                    ? "Output / image"
+                                    : "Output / 1M"}
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>
@@ -196,7 +204,7 @@ function PriceInputCell({
                     value={value}
                     placeholder="0"
                     autoComplete="off"
-                    aria-label={`${field.label} price per 1M tokens`}
+                    aria-label={`${field.label} price ${priceUnitLabel(field)}`}
                     error={hasError}
                     className="h-9 w-32 max-w-full font-mono tabular-nums text-right"
                     onChange={(event) =>
@@ -287,14 +295,20 @@ function shortPriceLabel(label: string): string {
     return label.replace(/^Prompt /, "").replace(/^Completion /, "");
 }
 
+function priceUnitLabel(field: PriceField): string {
+    return field.usageType === "completionImageTokens"
+        ? "per generated image"
+        : "per 1M tokens";
+}
+
 export function savedEndpointPriceKeys(
     endpoint: CommunityEndpoint | undefined,
 ): Set<PriceFieldKey> {
     return new Set(
         endpoint
-            ? COMMUNITY_ENDPOINT_PRICE_FIELDS.filter(
-                  (field) => endpoint[field.key] > 0,
-              ).map((field) => field.key)
+            ? communityEndpointPriceFieldsForModality(endpoint.modality)
+                  .filter((field) => endpoint[field.key] > 0)
+                  .map((field) => field.key)
             : [],
     );
 }
@@ -321,8 +335,13 @@ export function formWithVisiblePrices(
     visiblePriceKeys: Set<PriceFieldKey>,
 ): EndpointFormState {
     const next = { ...form };
+    const allowed = new Set(
+        communityEndpointPriceFieldsForModality(form.modality).map(
+            (field) => field.key,
+        ),
+    );
     for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
-        if (!visiblePriceKeys.has(field.key)) {
+        if (!visiblePriceKeys.has(field.key) || !allowed.has(field.key)) {
             next[field.key] = "";
         }
     }

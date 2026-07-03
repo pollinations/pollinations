@@ -42,10 +42,11 @@ const TABLES: TableConfig[] = [
     },
     {
         datasource: "d1_community_model",
-        query: `SELECT id, owner_user_id, name, description, upstream_model,
+        query: `SELECT id, owner_user_id, name, description, modality, upstream_model,
                        prompt_text_price, prompt_cached_price, prompt_cache_write_price,
                        prompt_audio_price, prompt_image_price, completion_text_price,
                        completion_reasoning_price, completion_audio_price,
+                       completion_image_price,
                        disabled_at, disabled_reason, disabled_by,
                        created_at, updated_at
                 FROM community_endpoint`,

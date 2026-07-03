@@ -1,5 +1,6 @@
 import {
     communityChatCompletionsUrl,
+    communityImageGenerationsUrl,
     communityOpenAIBaseUrl,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
@@ -151,5 +152,46 @@ export async function testCommunityEndpoint({
         billableUsage: openaiUsageToUsage(
             usage as Parameters<typeof openaiUsageToUsage>[0],
         ),
+    };
+}
+
+export async function testCommunityImageEndpoint({
+    baseUrl,
+    bearerToken,
+    model,
+}: EndpointTestInput): Promise<CommunityEndpointTestResult> {
+    const body = await fetchJson(communityImageGenerationsUrl(baseUrl), {
+        method: "POST",
+        headers: {
+            ...authorizationHeaders(bearerToken),
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            model,
+            prompt: "A simple green sprout icon on a white background.",
+            n: 1,
+            size: "1024x1024",
+        }),
+    });
+
+    if (
+        !body ||
+        typeof body !== "object" ||
+        !("data" in body) ||
+        !Array.isArray(body.data) ||
+        !body.data.some(
+            (image) =>
+                image &&
+                typeof image === "object" &&
+                (("b64_json" in image && typeof image.b64_json === "string") ||
+                    ("url" in image && typeof image.url === "string")),
+        )
+    ) {
+        throw new Error("Endpoint did not return OpenAI image data");
+    }
+
+    return {
+        usage: { images: 1 },
+        billableUsage: { completionImageTokens: 1 },
     };
 }

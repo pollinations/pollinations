@@ -284,7 +284,10 @@ async function getOrderedVisibleModelEntries(c: Context<Env>) {
             (entry) =>
                 entry.eventType === "generate.text" && !entry.communityEndpoint,
         ),
-        ...entries.filter((entry) => entry.communityEndpoint),
+        ...entries.filter(
+            (entry) =>
+                entry.eventType === "generate.text" && entry.communityEndpoint,
+        ),
         ...entries.filter((entry) => entry.eventType === "generate.image"),
         ...entries.filter((entry) => entry.eventType === "generate.realtime"),
         ...entries.filter((entry) => entry.eventType === "generate.audio"),
@@ -310,7 +313,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models (OpenAI-compatible)",
             description:
-                'Returns available models (text, community text, image, realtime, audio, embeddings) in the OpenAI-compatible format (`{object: "list", data: [...]}`). Use this endpoint if you\'re using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.',
+                'Returns available models (text, community text/image, image, realtime, audio, embeddings) in the OpenAI-compatible format (`{object: "list", data: [...]}`). Use this endpoint if you\'re using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.',
             responses: {
                 200: {
                     description: "Success",
@@ -361,7 +364,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models",
             description:
-                "Returns all available text, community text, image, video, 3D, realtime, audio, and embedding models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available text, community text/image, image, video, 3D, realtime, audio, and embedding models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
             responses: {
                 200: {
                     description: "Success",

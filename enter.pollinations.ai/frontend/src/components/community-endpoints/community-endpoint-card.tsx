@@ -16,7 +16,7 @@ import { COMMUNITY_ENDPOINT_PRICE_FIELDS } from "@shared/community-endpoints.ts"
 import type { ReactNode } from "react";
 import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
 import type { PriceKind } from "../models/types.ts";
-import { type CommunityEndpoint, pricePerTokenToPerMillion } from "./types.ts";
+import { type CommunityEndpoint, storedPriceToFormValue } from "./types.ts";
 
 type CommunityEndpointCardProps = {
     endpoint: CommunityEndpoint;
@@ -99,6 +99,11 @@ export function CommunityEndpointCard({
                     label="Endpoint"
                     value={endpoint.baseUrl}
                     copyLabel="Copy endpoint"
+                />
+                <CommunityDetailRow
+                    icon={<TerminalIcon className="h-3.5 w-3.5" />}
+                    label="Modality"
+                    value={endpoint.modality}
                 />
                 <CommunityDetailRow
                     icon={<TerminalIcon className="h-3.5 w-3.5" />}
@@ -207,10 +212,13 @@ function communityPriceGroups(
         const kind = communityPriceKind(field.usageType);
         groups[groupKey].push({
             badge: {
-                price: pricePerTokenToPerMillion(price),
+                price: storedPriceToFormValue(field.key, price),
                 kind,
                 subKinds: [kind],
-                unit: "token",
+                unit:
+                    field.usageType === "completionImageTokens"
+                        ? "request"
+                        : "token",
             },
         });
     }

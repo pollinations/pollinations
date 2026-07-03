@@ -1,7 +1,10 @@
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    COMMUNITY_ENDPOINT_PRICE_FIELDS_BY_KEY,
+    type CommunityEndpointModality,
     type CommunityEndpointPriceKey,
     type CommunityEndpointPrices,
+    communityEndpointPriceFieldsForModality,
 } from "@shared/community-endpoints.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 
@@ -12,6 +15,7 @@ export type CommunityEndpoint = {
     modelId: string;
     name: string;
     description: string | null;
+    modality: CommunityEndpointModality;
     baseUrl: string;
     upstreamModel: string;
     disabled: boolean;
@@ -20,6 +24,7 @@ export type CommunityEndpoint = {
 } & CommunityEndpointPrices;
 
 export type EndpointFormState = {
+    modality: CommunityEndpointModality;
     name: string;
     description: string;
     baseUrl: string;
@@ -28,6 +33,7 @@ export type EndpointFormState = {
 } & EndpointFormPrices;
 
 export type EndpointPayload = {
+    modality: CommunityEndpointModality;
     name: string;
     description: string;
     baseUrl: string;
@@ -55,6 +61,7 @@ const emptyPriceForm = Object.fromEntries(
 ) as EndpointFormPrices;
 
 export const emptyForm: EndpointFormState = {
+    modality: "text",
     name: "",
     description: "",
     baseUrl: "",
@@ -72,11 +79,35 @@ export function pricePerTokenToPerMillion(value: number): string {
     return String(Number((value * TOKENS_PER_MILLION).toPrecision(15)));
 }
 
-export function pricePerMillionToPerToken(value: string): number {
+function pricePerMillionToPerToken(value: string): number {
     const trimmed = value.trim();
     if (!trimmed) return 0;
     if (!isValidPriceInput(trimmed)) return Number.NaN;
     return Number(trimmed) / TOKENS_PER_MILLION;
+}
+
+export function storedPriceToFormValue(
+    key: CommunityEndpointPriceKey,
+    value: number,
+): string {
+    if (value <= 0) return "";
+    const field = COMMUNITY_ENDPOINT_PRICE_FIELDS_BY_KEY[key];
+    return field.usageType === "completionImageTokens"
+        ? String(Number(value.toPrecision(15)))
+        : pricePerTokenToPerMillion(value);
+}
+
+export function formPriceToStoredPrice(
+    key: CommunityEndpointPriceKey,
+    value: string,
+): number {
+    const trimmed = value.trim();
+    if (!trimmed) return 0;
+    if (!isValidPriceInput(trimmed)) return Number.NaN;
+    const field = COMMUNITY_ENDPOINT_PRICE_FIELDS_BY_KEY[key];
+    return field.usageType === "completionImageTokens"
+        ? Number(trimmed)
+        : pricePerMillionToPerToken(trimmed);
 }
 
 export function isValidPriceInput(value: string): boolean {
@@ -89,6 +120,7 @@ export function isValidPriceInput(value: string): boolean {
 
 export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
     return {
+        modality: endpoint.modality,
         name: endpoint.name,
         description: endpoint.description ?? "",
         baseUrl: endpoint.baseUrl,
@@ -97,21 +129,31 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
         ...(Object.fromEntries(
             COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
                 field.key,
-                endpoint[field.key] > 0
-                    ? pricePerTokenToPerMillion(endpoint[field.key])
-                    : "",
+                storedPriceToFormValue(field.key, endpoint[field.key]),
             ]),
         ) as EndpointFormPrices),
     };
 }
 
-function formPricesToPayload(form: EndpointFormState): CommunityEndpointPrices {
+function formPricesToPayload(
+    form: EndpointFormState,
+    modality: CommunityEndpointModality,
+): CommunityEndpointPrices {
+    const allowed = new Set(
+        communityEndpointPriceFieldsForModality(modality).map(
+            (field) => field.key,
+        ),
+    );
     return Object.fromEntries(
         COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
+            if (!allowed.has(field.key)) return [field.key, 0];
             if (!isValidPriceInput(form[field.key])) {
                 throw new Error("Prices must use dot decimals, e.g. 0.1");
             }
-            return [field.key, pricePerMillionToPerToken(form[field.key])];
+            return [
+                field.key,
+                formPriceToStoredPrice(field.key, form[field.key]),
+            ];
         }),
     ) as CommunityEndpointPrices;
 }
@@ -153,11 +195,12 @@ export function observedUsageValue(
 export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
     const modelName = form.name.trim();
     return {
+        modality: form.modality,
         name: modelName,
         description: form.description.trim(),
         baseUrl: form.baseUrl.trim(),
         upstreamModel: form.upstreamModel.trim() || modelName,
-        ...formPricesToPayload(form),
+        ...formPricesToPayload(form, form.modality),
     };
 }
 
@@ -167,6 +210,12 @@ export function nextFormState(
     key: keyof EndpointFormState,
     value: string,
 ): EndpointFormState {
+    if (key === "modality") {
+        return {
+            ...current,
+            modality: value === "image" ? "image" : "text",
+        };
+    }
     const next = { ...current, [key]: value };
     if (
         key === "upstreamModel" &&

@@ -1,5 +1,6 @@
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
@@ -11,6 +12,7 @@ import {
     setServerRegistryBinding,
     VALID_TYPES,
 } from "./availableServers.ts";
+import { callCommunityImageEndpoint } from "./communityEndpoint.ts";
 import {
     type AuthResult,
     createAndReturnImageCached,
@@ -36,6 +38,7 @@ import { setImagesBinding } from "./utils/imageTransform.ts";
 import { buildTrackingHeaders } from "./utils/trackingHeaders.ts";
 
 type ImageContext = Context<Env>;
+type RuntimeImageParams = Omit<ImageParams, "model"> & { model: string };
 
 const IMAGE_ENV_KEYS = [
     "AWS_ACCESS_KEY_ID",
@@ -98,12 +101,15 @@ function decodePrompt(rawPrompt: string): string {
 function parseImageParams(
     c: ImageContext,
     body: Record<string, unknown>,
-): ImageParams {
+): RuntimeImageParams {
     const queryParams = Object.fromEntries(new URL(c.req.url).searchParams);
+    const resolvedModel = c.var.model.resolved;
     const mergedParams = {
         ...queryParams,
         ...body,
-        model: c.var.model.resolved,
+        model: c.var.model.communityEndpoint
+            ? DEFAULT_IMAGE_MODEL
+            : resolvedModel,
     };
     delete (mergedParams as Record<string, unknown>).prompt;
     delete (mergedParams as Record<string, unknown>).key;
@@ -115,7 +121,10 @@ function parseImageParams(
             cause: parseResult.error.issues,
         });
     }
-    return parseResult.data;
+    return {
+        ...parseResult.data,
+        model: resolvedModel,
+    };
 }
 
 function contentDisposition(prompt: string, extension: string): string {
@@ -131,7 +140,7 @@ function contentDisposition(prompt: string, extension: string): string {
 
 function mediaHeaders(
     prompt: string,
-    safeParams: ImageParams,
+    safeParams: RuntimeImageParams,
     result: ImageGenerationResult | VideoGenerationResult,
     contentType: string,
 ): Headers {
@@ -351,13 +360,13 @@ function assertNonEmptyMedia(buffer: Buffer, label: string): void {
 async function generateImageResult(
     c: ImageContext,
     originalPrompt: string,
-    safeParams: ImageParams,
+    safeParams: RuntimeImageParams,
 ): Promise<ImageGenerationResult> {
     const prompt = sanitizeString(String(originalPrompt));
 
     const result = await createAndReturnImageCached(
         prompt,
-        safeParams,
+        safeParams as ImageParams,
         originalPrompt,
         createAuthResult(c),
     );
@@ -372,9 +381,13 @@ async function generateImageResult(
 async function generateVideoResult(
     c: ImageContext,
     originalPrompt: string,
-    safeParams: ImageParams,
+    safeParams: RuntimeImageParams,
 ): Promise<VideoGenerationResult> {
-    return createAndReturnVideo(originalPrompt, safeParams, c.get("requestId"));
+    return createAndReturnVideo(
+        originalPrompt,
+        safeParams as ImageParams,
+        c.get("requestId"),
+    );
 }
 
 export async function generateImageOrVideoResponse(
@@ -387,6 +400,25 @@ export async function generateImageOrVideoResponse(
     const safeParams = parseImageParams(c, body);
 
     try {
+        const communityEndpoint = c.var.model.communityEndpoint;
+        if (communityEndpoint) {
+            const result = await callCommunityImageEndpoint(
+                communityEndpoint,
+                originalPrompt,
+                safeParams,
+                c.env.BETTER_AUTH_SECRET,
+            );
+            assertNonEmptyMedia(result.buffer, "Community image endpoint");
+            return new Response(bufferToUint8Array(result.buffer), {
+                headers: mediaHeaders(
+                    originalPrompt,
+                    safeParams,
+                    result,
+                    detectMimeType(result.buffer),
+                ),
+            });
+        }
+
         if (isVideoModel(safeParams.model)) {
             const result = await generateVideoResult(
                 c,

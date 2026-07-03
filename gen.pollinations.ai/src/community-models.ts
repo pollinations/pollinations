@@ -3,6 +3,7 @@ import {
     communityEndpointPrices,
     communityModelDefinition,
     communityModelId,
+    normalizeCommunityEndpointModality,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import {
@@ -18,9 +19,14 @@ const COMMUNITY_TEXT_ENDPOINTS = [
     "/text",
     "/text/{prompt}",
 ];
+const COMMUNITY_IMAGE_ENDPOINTS = ["/v1/images/generations", "/image/{prompt}"];
 
 export function communityTextSupportedEndpoints(): string[] {
     return COMMUNITY_TEXT_ENDPOINTS;
+}
+
+export function communityImageSupportedEndpoints(): string[] {
+    return COMMUNITY_IMAGE_ENDPOINTS;
 }
 
 export type CommunityModelRegistryEntry = {
@@ -43,6 +49,7 @@ export async function getCommunityModelRegistryEntries(
             ownerGithubUsername: schema.user.githubUsername,
             name: schema.communityEndpoint.name,
             description: schema.communityEndpoint.description,
+            modality: schema.communityEndpoint.modality,
             baseUrl: schema.communityEndpoint.baseUrl,
             upstreamModel: schema.communityEndpoint.upstreamModel,
             bearerTokenCiphertext:
@@ -57,6 +64,7 @@ export async function getCommunityModelRegistryEntries(
             completionReasoningPrice:
                 schema.communityEndpoint.completionReasoningPrice,
             completionAudioPrice: schema.communityEndpoint.completionAudioPrice,
+            completionImagePrice: schema.communityEndpoint.completionImagePrice,
             disabledAt: schema.communityEndpoint.disabledAt,
             disabledReason: schema.communityEndpoint.disabledReason,
         })
@@ -76,6 +84,7 @@ export async function getCommunityModelRegistryEntries(
             modelId,
             name: row.name,
             description: row.description,
+            modality: normalizeCommunityEndpointModality(row.modality),
             baseUrl: row.baseUrl,
             upstreamModel: row.upstreamModel,
             bearerTokenCiphertext: row.bearerTokenCiphertext,

@@ -1,11 +1,15 @@
 import {
+    COMMUNITY_ENDPOINT_MODALITIES,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointPriceKey,
+    communityEndpointPriceFieldsForModality,
     communityEndpointPrices,
+    communityEndpointPricesForModality,
     communityModelId,
     isCommunityEndpointOwnerAllowed,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
+    normalizeCommunityEndpointModality,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
@@ -22,10 +26,12 @@ import { auth } from "../middleware/auth.ts";
 import {
     listCommunityEndpointModels,
     testCommunityEndpoint,
+    testCommunityImageEndpoint,
 } from "../services/community-endpoint-openai.ts";
 import { hasDirectAccountPermission } from "./account-permissions.ts";
 
 const PriceSchema = z.number().finite().min(0);
+const ModalitySchema = z.enum(COMMUNITY_ENDPOINT_MODALITIES);
 const CreatePriceFieldsSchema = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
         field.key,
@@ -59,6 +65,7 @@ const EndpointFieldsSchema = {
 
 const CreateEndpointSchema = z.object({
     ...EndpointFieldsSchema,
+    modality: ModalitySchema.optional().default("text"),
     ...CreatePriceFieldsSchema,
 });
 const UpdateEndpointSchema = z.object({
@@ -77,6 +84,7 @@ const TestEndpointSchema = z.object({
     baseUrl: z.string().url(),
     bearerToken: z.string().min(1),
     model: z.string().trim().min(1).max(253),
+    modality: ModalitySchema.optional().default("text"),
 });
 const ResponsePriceFieldsSchema = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [field.key, z.number()]),
@@ -86,6 +94,7 @@ const CommunityEndpointResponseSchema = z.object({
     modelId: z.string(),
     name: z.string(),
     description: z.string().nullable(),
+    modality: ModalitySchema,
     baseUrl: z.string(),
     upstreamModel: z.string(),
     ...ResponsePriceFieldsSchema,
@@ -170,11 +179,13 @@ async function requireOwnerGithubUsername(
 }
 
 function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
+    const modality = normalizeCommunityEndpointModality(row.modality);
     return {
         id: row.id,
         modelId: communityModelId(ownerGithubUsername, row.name),
         name: row.name,
         description: row.description,
+        modality,
         baseUrl: row.baseUrl,
         upstreamModel: row.upstreamModel,
         ...communityEndpointPrices(row),
@@ -290,10 +301,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "List My Models",
             description:
-                "List invite-only community text models owned by the authenticated account. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`; dashboard sessions can manage models directly when enabled.",
+                "List invite-only community models owned by the authenticated account. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`; dashboard sessions can manage models directly when enabled.",
             responses: {
                 200: {
-                    description: "Registered community text models",
+                    description: "Registered community models",
                     content: {
                         "application/json": {
                             schema: resolver(
@@ -333,10 +344,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Create My Model",
             description:
-                "Register an invite-only community text model. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`. The upstream bearer token is encrypted and never returned.",
+                "Register an invite-only community model. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`. The upstream bearer token is encrypted and never returned.",
             responses: {
                 200: {
-                    description: "Created community text model",
+                    description: "Created community model",
                     content: {
                         "application/json": {
                             schema: resolver(CommunityEndpointResponseSchema),
@@ -371,13 +382,17 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     ownerUserId: user.id,
                     name: input.name,
                     description: input.description || null,
+                    modality: input.modality,
                     baseUrl: normalizeInputBaseUrl(input.baseUrl),
                     upstreamModel: input.upstreamModel ?? input.name,
                     bearerTokenCiphertext: await encryptSecret(
                         normalizeInputBearerToken(input.bearerToken),
                         c.env.BETTER_AUTH_SECRET,
                     ),
-                    ...communityEndpointPrices(input),
+                    ...communityEndpointPricesForModality(
+                        input,
+                        input.modality,
+                    ),
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })
@@ -474,10 +489,16 @@ export const communityEndpointsRoutes = new Hono<Env>()
             );
             if (throttled) return throttled;
             try {
-                const result = await testCommunityEndpoint(input);
+                const result =
+                    input.modality === "image"
+                        ? await testCommunityImageEndpoint(input)
+                        : await testCommunityEndpoint(input);
                 return c.json({
                     ok: true,
-                    message: "Endpoint responded with usage",
+                    message:
+                        input.modality === "image"
+                            ? "Endpoint responded with image data"
+                            : "Endpoint responded with usage",
                     ...result,
                 });
             } catch (error) {
@@ -491,10 +512,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Update My Model",
             description:
-                "Update an invite-only community text model owned by the authenticated account. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`.",
+                "Update an invite-only community model owned by the authenticated account. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`.",
             responses: {
                 200: {
-                    description: "Updated community text model",
+                    description: "Updated community model",
                     content: {
                         "application/json": {
                             schema: resolver(CommunityEndpointResponseSchema),
@@ -523,6 +544,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 user.id,
             );
             const endpoint = await requireOwnedEndpoint(db, id, user.id);
+            const modality = normalizeCommunityEndpointModality(
+                endpoint.modality,
+            );
             await ensureModelNameAvailable(
                 db,
                 user.id,
@@ -551,7 +575,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     c.env.BETTER_AUTH_SECRET,
                 );
             }
-            for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
+            for (const field of communityEndpointPriceFieldsForModality(
+                modality,
+            )) {
                 if (input[field.key] !== undefined) {
                     update[field.key] = input[field.key];
                 }
@@ -575,10 +601,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Delete My Model",
             description:
-                "Delete an invite-only community text model owned by the authenticated account. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`.",
+                "Delete an invite-only community model owned by the authenticated account. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`.",
             responses: {
                 200: {
-                    description: "Deleted community text model",
+                    description: "Deleted community model",
                     content: {
                         "application/json": {
                             schema: resolver(

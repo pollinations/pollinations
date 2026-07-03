@@ -83,6 +83,7 @@ export function CommunityEndpointDialog({
     function updateForm(key: keyof EndpointFormState, value: string): void {
         setForm((current) => nextFormState(current, key, value));
         if (
+            key === "modality" ||
             key === "name" ||
             key === "upstreamModel" ||
             key === "baseUrl" ||
@@ -90,7 +91,7 @@ export function CommunityEndpointDialog({
         ) {
             setTestState(idleAction);
         }
-        if (key === "baseUrl" || key === "bearerToken") {
+        if (key === "modality" || key === "baseUrl" || key === "bearerToken") {
             setModelOptions([]);
             setModelListState(idleAction);
             setProviderModelMenuOpen(false);
@@ -137,6 +138,7 @@ export function CommunityEndpointDialog({
                 json: {
                     baseUrl: form.baseUrl.trim(),
                     bearerToken: form.bearerToken.trim(),
+                    modality: form.modality,
                     model: form.upstreamModel.trim() || form.name.trim(),
                 },
             });
@@ -243,7 +245,7 @@ export function CommunityEndpointDialog({
                     <code>
                         {"{username}"}/{"{model-id}"}
                     </code>{" "}
-                    model with your own per-1M-token pricing.
+                    model with your own pricing.
                 </p>
             </div>
 
@@ -255,6 +257,41 @@ export function CommunityEndpointDialog({
             >
                 <ScrollArea className="min-h-0 flex-1 space-y-4 overscroll-contain px-6 pb-2">
                     {error && <Alert intent="danger">{error}</Alert>}
+
+                    <FieldStack
+                        label="Modality"
+                        helper={
+                            isEdit
+                                ? "Existing models keep their registered modality."
+                                : "Choose the public API family this endpoint serves."
+                        }
+                        alignLabelRow
+                    >
+                        <div className="grid grid-cols-2 gap-2">
+                            {(["text", "image"] as const).map((modality) => {
+                                const selected = form.modality === modality;
+                                return (
+                                    <button
+                                        key={modality}
+                                        type="button"
+                                        disabled={isEdit}
+                                        className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                                            selected
+                                                ? "border-theme-border-active bg-theme-bg-active text-theme-text-strong"
+                                                : "border-divider bg-surface text-theme-text-muted hover:bg-surface-opaque"
+                                        }`}
+                                        onClick={() =>
+                                            updateForm("modality", modality)
+                                        }
+                                    >
+                                        {modality === "image"
+                                            ? "Image"
+                                            : "Text"}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </FieldStack>
 
                     <div className="grid gap-4 sm:grid-cols-2">
                         <FieldStack
@@ -296,7 +333,7 @@ export function CommunityEndpointDialog({
                     <div className="grid gap-4 sm:grid-cols-2">
                         <FieldStack
                             label="Endpoint URL"
-                            helper="OpenAI-compatible /v1 base URL or full chat completions URL."
+                            helper="OpenAI-compatible /v1 base URL, or full chat/image generation URL."
                             alignLabelRow
                         >
                             <Input
@@ -351,7 +388,11 @@ export function CommunityEndpointDialog({
                                             <Input
                                                 name="community-upstream-id"
                                                 value={form.upstreamModel}
-                                                placeholder="gpt-4o-mini"
+                                                placeholder={
+                                                    form.modality === "image"
+                                                        ? "gpt-image-2"
+                                                        : "gpt-4o-mini"
+                                                }
                                                 className="w-full pr-10"
                                                 autoComplete="off"
                                                 autoCapitalize="none"
@@ -414,7 +455,11 @@ export function CommunityEndpointDialog({
                                 <Input
                                     name="community-upstream-id"
                                     value={form.upstreamModel}
-                                    placeholder="gpt-4o-mini"
+                                    placeholder={
+                                        form.modality === "image"
+                                            ? "gpt-image-2"
+                                            : "gpt-4o-mini"
+                                    }
                                     autoComplete="off"
                                     autoCapitalize="none"
                                     spellCheck={false}
@@ -487,6 +532,7 @@ export function CommunityEndpointDialog({
 
                     <PriceGroups
                         form={form}
+                        modality={form.modality}
                         testState={testState}
                         visiblePriceKeys={visiblePriceKeys}
                         onChange={updateForm}

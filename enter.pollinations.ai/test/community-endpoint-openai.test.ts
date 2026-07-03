@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
     listCommunityEndpointModels,
     testCommunityEndpoint,
+    testCommunityImageEndpoint,
 } from "../src/services/community-endpoint-openai.ts";
 
 afterEach(() => {
@@ -85,6 +86,41 @@ describe("community endpoint OpenAI service", () => {
                 completionAudioTokens: 0,
                 completionReasoningTokens: 0,
             },
+        });
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("tests OpenAI-compatible image generation endpoints", async () => {
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            expect(request.url).toBe(
+                "https://api.example.com/v1/images/generations",
+            );
+            expect(request.headers.get("authorization")).toBe(
+                "Bearer sk_saved_token",
+            );
+            await expect(request.json()).resolves.toMatchObject({
+                model: "gpt-image-1",
+                prompt: "A simple green sprout icon on a white background.",
+                n: 1,
+                size: "1024x1024",
+            });
+            return Response.json({
+                data: [{ b64_json: "iVBORw0KGgo=" }],
+            });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(
+            testCommunityImageEndpoint({
+                baseUrl: "https://api.example.com/v1/images/generations",
+                bearerToken: "Bearer sk_saved_token",
+                model: "gpt-image-1",
+            }),
+        ).resolves.toEqual({
+            usage: { images: 1 },
+            billableUsage: { completionImageTokens: 1 },
         });
 
         expect(fetchMock).toHaveBeenCalledTimes(1);

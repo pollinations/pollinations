@@ -40,4 +40,4 @@ Returns the current API key's validity, type, and permissions.
 
 ### /account/my-models
 
-Invite-only community text model management: list, create, update, delete, inspect upstream models, and test an upstream model. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`; dashboard sessions can manage models directly when enabled.
+Invite-only community text and image model management: list, create, update, delete, inspect upstream models, and test an upstream model. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`; dashboard sessions can manage models directly when enabled.

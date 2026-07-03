@@ -2,11 +2,8 @@
  * Utility for building tracking headers for the enter service
  */
 
-import type { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import { buildUsageHeaders } from "@shared/registry/usage-headers.ts";
-
-type ValidServiceName = keyof typeof IMAGE_SERVICES;
 
 export interface TrackingData {
     actualModel?: string;
@@ -18,7 +15,7 @@ export interface TrackingData {
  * Passes usage directly to buildUsageHeaders - defaults to 1 image token if empty.
  */
 export function buildTrackingHeaders(
-    model: ValidServiceName,
+    model: string,
     trackingData?: TrackingData,
 ): Record<string, string> {
     const modelUsed = trackingData?.actualModel || model;

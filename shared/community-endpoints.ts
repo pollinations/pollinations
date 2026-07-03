@@ -8,7 +8,11 @@ import {
 
 export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
+export const COMMUNITY_ENDPOINT_MODALITIES = ["text", "image"] as const;
 const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
+
+export type CommunityEndpointModality =
+    (typeof COMMUNITY_ENDPOINT_MODALITIES)[number];
 
 const COMMUNITY_PRICE_FIELD_BY_USAGE_TYPE = {
     promptTextTokens: { key: "promptTextPrice", label: "Prompt text" },
@@ -36,7 +40,7 @@ const COMMUNITY_PRICE_FIELD_BY_USAGE_TYPE = {
     { key: string; label: string }
 >;
 
-export const COMMUNITY_ENDPOINT_PRICE_FIELDS = OPENAI_CHAT_USAGE_TYPES.map(
+const COMMUNITY_TEXT_PRICE_FIELDS = OPENAI_CHAT_USAGE_TYPES.map(
     (usageType) => ({
         usageType,
         rawUsagePaths: OPENAI_CHAT_USAGE_PATHS[usageType],
@@ -49,8 +53,49 @@ export const COMMUNITY_ENDPOINT_PRICE_FIELDS = OPENAI_CHAT_USAGE_TYPES.map(
     rawUsagePaths: readonly string[];
 }[];
 
-export type CommunityEndpointPriceKey =
-    (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number]["key"];
+const COMMUNITY_IMAGE_PRICE_FIELD = {
+    key: "completionImagePrice",
+    usageType: "completionImageTokens",
+    label: "Generated image",
+    rawUsagePaths: ["images"],
+} as const;
+
+export const COMMUNITY_ENDPOINT_PRICE_FIELDS = [
+    ...COMMUNITY_TEXT_PRICE_FIELDS,
+    COMMUNITY_IMAGE_PRICE_FIELD,
+] as const;
+
+export const COMMUNITY_TEXT_ENDPOINT_PRICE_FIELDS =
+    COMMUNITY_ENDPOINT_PRICE_FIELDS.filter(
+        (field) => field.usageType !== "completionImageTokens",
+    );
+
+export const COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS =
+    COMMUNITY_ENDPOINT_PRICE_FIELDS.filter(
+        (field) => field.usageType === "completionImageTokens",
+    );
+
+export function communityEndpointPriceFieldsForModality(
+    modality: CommunityEndpointModality,
+) {
+    return modality === "image"
+        ? COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS
+        : COMMUNITY_TEXT_ENDPOINT_PRICE_FIELDS;
+}
+
+export const COMMUNITY_ENDPOINT_PRICE_FIELDS_BY_KEY = Object.fromEntries(
+    COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [field.key, field]),
+) as {
+    [K in CommunityEndpointPriceKey]: Extract<
+        (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number],
+        { key: K }
+    >;
+};
+
+export type CommunityEndpointPriceField =
+    (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number];
+
+export type CommunityEndpointPriceKey = CommunityEndpointPriceField["key"];
 
 export type CommunityEndpointPrices = Record<CommunityEndpointPriceKey, number>;
 
@@ -65,12 +110,36 @@ export function communityEndpointPrices(
     ) as CommunityEndpointPrices;
 }
 
+export function communityEndpointPricesForModality(
+    source: Partial<CommunityEndpointPrices>,
+    modality: CommunityEndpointModality,
+): CommunityEndpointPrices {
+    const allowed = new Set(
+        communityEndpointPriceFieldsForModality(modality).map(
+            (field) => field.key,
+        ),
+    );
+    return Object.fromEntries(
+        COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
+            field.key,
+            allowed.has(field.key) ? (source[field.key] ?? 0) : 0,
+        ]),
+    ) as CommunityEndpointPrices;
+}
+
+export function normalizeCommunityEndpointModality(
+    value: string | null | undefined,
+): CommunityEndpointModality {
+    return value === "image" ? "image" : "text";
+}
+
 export type CommunityEndpointRuntime = {
     id: string;
     ownerUserId: string;
     modelId: string;
     name: string;
     description: string | null;
+    modality: CommunityEndpointModality;
     baseUrl: string;
     upstreamModel: string;
     bearerTokenCiphertext: string;
@@ -81,6 +150,7 @@ export type CommunityEndpointRuntime = {
 export type CommunityModelDefinitionInput = {
     modelId: string;
     description: string | null;
+    modality?: CommunityEndpointModality;
 } & CommunityEndpointPrices;
 
 export type CommunityModelParts = {
@@ -153,11 +223,22 @@ export function communityChatCompletionsUrl(baseUrl: string): string {
     return `${communityOpenAIBaseUrl(baseUrl)}/chat/completions`;
 }
 
+export function communityImageGenerationsUrl(baseUrl: string): string {
+    return `${communityOpenAIBaseUrl(baseUrl)}/images/generations`;
+}
+
 export function communityOpenAIBaseUrl(baseUrl: string): string {
     const normalized = normalizeCommunityEndpointBaseUrl(baseUrl);
-    return normalized.endsWith("/chat/completions")
-        ? normalized.slice(0, -"/chat/completions".length)
-        : normalized;
+    for (const suffix of [
+        "/chat/completions",
+        "/images/generations",
+        "/images/edits",
+    ]) {
+        if (normalized.endsWith(suffix)) {
+            return normalized.slice(0, -suffix.length);
+        }
+    }
+    return normalized;
 }
 
 export function communityPriceDefinition(
@@ -183,21 +264,24 @@ export function communityModelDefinition(
         : null;
     const aliases =
         legacyAlias && legacyAlias !== endpoint.modelId ? [legacyAlias] : [];
+    const modality = normalizeCommunityEndpointModality(endpoint.modality);
+    const isImage = modality === "image";
     return {
         aliases,
         modelId: endpoint.modelId,
         provider: "community",
         brand: "Community",
-        category: "text",
+        category: isImage ? "image" : "text",
         cost: communityPriceDefinition(endpoint),
         priceMultiplier: 1,
         addedDate: 0,
         title: description || parsed?.modelName || endpoint.modelId,
         description: description || undefined,
         inputModalities: ["text"],
-        outputModalities: ["text"],
+        outputModalities: isImage ? ["image"] : ["text"],
         paidOnly: false,
         alpha: true,
+        ...(isImage ? { flatRate: true } : {}),
     };
 }
 

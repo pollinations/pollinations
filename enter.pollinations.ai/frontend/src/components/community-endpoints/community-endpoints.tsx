@@ -135,7 +135,7 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
                             </p>
                             <p className="text-sm text-theme-text-muted">
                                 Expose an OpenAI-compatible endpoint as a
-                                community model with your own per-1M-token
+                                community text or image model with your own
                                 pricing.
                             </p>
                         </Surface>
@@ -155,7 +155,7 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
                     <span>
                         Published community models appear in{" "}
                         <strong>/models</strong> and are billed to callers at
-                        your per-1M-token pricing.
+                        your configured pricing.
                     </span>
                 </p>
             </Section>

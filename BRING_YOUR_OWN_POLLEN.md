@@ -18,7 +18,7 @@ When a user lands on the consent screen signed-out, they're prompted to continue
 
 Once signed in, they review the requested access and confirm:
 
-<p align="left"><img src="https://media.pollinations.ai/a7e4a1e9c5f48b8d" alt="Authorize — signed in" width="420"></p>
+<p align="left"><img src="https://media.pollinations.ai/7550122579710ea7" alt="Authorize — signed in" width="420"></p>
 
 ## Developer Earnings
 

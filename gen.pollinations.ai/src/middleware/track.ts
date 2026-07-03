@@ -27,7 +27,9 @@ import {
 import { sendToTinybird } from "@shared/events.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import {
+    type BillingAdjustment,
     type CostDefinition,
+    calculateBillingAdjustments,
     calculateCostForModelDefinition,
     calculatePriceForModelDefinition,
     getPriceDefinitionForModel,
@@ -110,6 +112,9 @@ type ResponseTrackingData = {
     usage?: Usage;
     cost?: UsageCost;
     price?: UsagePrice;
+    // Per-rule billing adjustment breakdown for the billed generation. Absent on
+    // cache hits / not-billed paths, which return before cost calculation.
+    adjustments?: BillingAdjustment[];
     contentFilterResults?: GenerationEventContentFilterParams;
 };
 
@@ -503,6 +508,12 @@ async function trackResponse(
         requestTracking.modelDefinition,
         modelUsage.output,
     );
+    // Itemize search/tool fees once (same source object as cost/price) so the
+    // event can carry a per-rule breakdown alongside the aggregate totals.
+    const adjustments = calculateBillingAdjustments(
+        requestTracking.modelDefinition,
+        modelUsage.output,
+    );
     return {
         responseOk: response.ok,
         responseStatus: response.status,
@@ -511,6 +522,7 @@ async function trackResponse(
         fallbackUsed,
         cost,
         price,
+        adjustments,
         modelUsed: modelUsage.model,
         usage: modelUsage.usage,
         contentFilterResults,
@@ -639,6 +651,27 @@ type TrackingEventInput = {
     errorTracking?: ErrorData;
 };
 
+// Reduce the per-rule adjustment breakdown into the two Map columns the event
+// carries (keyed by versioned rule id). Returns undefined for both fields when
+// there are no adjustments so removeUnset drops them and ClickHouse's
+// DEFAULT map() fills them — a literal {} would serialize on every event.
+export function reduceAdjustmentsToEventFields(
+    adjustments: BillingAdjustment[] | undefined,
+): {
+    adjustmentCosts?: Record<string, number>;
+    adjustmentUnits?: Record<string, number>;
+} {
+    if (!adjustments || adjustments.length === 0) return {};
+    const adjustmentCosts: Record<string, number> = {};
+    const adjustmentUnits: Record<string, number> = {};
+    for (const { ruleId, cost, units } of adjustments) {
+        // Defensive: sum on the off chance the same rule id appears twice.
+        adjustmentCosts[ruleId] = (adjustmentCosts[ruleId] ?? 0) + cost;
+        adjustmentUnits[ruleId] = (adjustmentUnits[ruleId] ?? 0) + units;
+    }
+    return { adjustmentCosts, adjustmentUnits };
+}
+
 function createTrackingEvent({
     id,
     requestId,
@@ -684,6 +717,7 @@ function createTrackingEvent({
         isBilledUsage: responseTracking.isBilledUsage,
 
         ...balanceTracking,
+        ...reduceAdjustmentsToEventFields(responseTracking.adjustments),
 
         ...priceToEventParams(requestTracking.modelPriceDefinition),
         ...usageToEventParams(responseTracking.usage),

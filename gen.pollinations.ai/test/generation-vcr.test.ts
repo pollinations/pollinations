@@ -441,6 +441,14 @@ test("chat completions use local text generation with VCR-backed Portkey", async
         tokenCountCompletionText: 3,
         isBilledUsage: true,
     });
+    // Non-adjustment model → the Map columns must be absent from the payload so
+    // ClickHouse's DEFAULT map() fills them (removeUnset dropped the undefineds).
+    expect(mocks.tinybird.state.events[0]).not.toHaveProperty(
+        "adjustmentCosts",
+    );
+    expect(mocks.tinybird.state.events[0]).not.toHaveProperty(
+        "adjustmentUnits",
+    );
 });
 
 test("chat completions bill provider-reported Perplexity request cost without exposing it", async ({
@@ -485,6 +493,13 @@ test("chat completions bill provider-reported Perplexity request cost without ex
         isBilledUsage: true,
     });
     expect(mocks.tinybird.state.events[0].totalCost).toBeCloseTo(0.006015, 8);
+    // Itemized search fee rides along in the Map columns, keyed by rule id.
+    expect(mocks.tinybird.state.events[0].adjustmentCosts).toEqual({
+        "perplexity.sonar_low.search_request.v1": 0.006,
+    });
+    expect(mocks.tinybird.state.events[0].adjustmentUnits).toEqual({
+        "perplexity.sonar_low.search_request.v1": 1,
+    });
 });
 
 test("streaming chat completions bill provider-reported Perplexity request cost", async ({

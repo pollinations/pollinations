@@ -810,6 +810,44 @@ test("every model with billing adjustments uses priceMultiplier === 1", () => {
     ).toEqual([]);
 });
 
+// Versioned rule id, e.g. "google.gemini_3.search_query.v1". These strings key
+// the adjustment_costs / adjustment_units Map columns, so a typo silently
+// splits a fee across two keys and corrupts revenue attribution. Guard the
+// shape at the registry boundary.
+const VERSIONED_RULE_ID = /^[a-z0-9_]+(\.[a-z0-9_]+)+\.v\d+$/;
+
+test("every billing adjustment rule id matches the versioned pattern", () => {
+    const offenders: string[] = [];
+    for (const model of getModels()) {
+        const rules =
+            getRegistryModelDefinition(model as ModelName).billing
+                ?.adjustments ?? [];
+        for (const rule of rules) {
+            if (!VERSIONED_RULE_ID.test(rule.id)) {
+                offenders.push(`${model}: "${rule.id}"`);
+            }
+        }
+    }
+    expect(
+        offenders,
+        `Billing adjustment rule ids must match ${VERSIONED_RULE_ID}:\n${offenders.join("\n")}`,
+    ).toEqual([]);
+});
+
+test("calculateBillingAdjustments only emits keys present in the breakdown", () => {
+    // The event-storage reduce keys the Map columns off the breakdown's ruleIds;
+    // assert every emitted breakdown entry carries a versioned rule id so the
+    // drift guard above fully covers the keys that ever reach the datasource.
+    const breakdown = calculateBillingAdjustments(
+        getRegistryModelDefinition("gemini-3-flash"),
+        { choices: [{ groundingMetadata: { webSearchQueries: ["a", "b"] } }] },
+    );
+    expect(breakdown.length).toBeGreaterThan(0);
+    for (const entry of breakdown) {
+        expect(entry.ruleId).toMatch(VERSIONED_RULE_ID);
+    }
+});
+
 test("registry cost blocks contain no sentinel/placeholder negative values", () => {
     const registries = [
         ["text", TEXT_SERVICES],

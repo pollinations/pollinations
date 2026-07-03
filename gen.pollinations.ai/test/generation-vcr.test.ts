@@ -522,7 +522,7 @@ test("streaming chat completions bill provider-reported Perplexity request cost"
     expect(mocks.tinybird.state.events[0].totalCost).toBeCloseTo(0.00701, 8);
 });
 
-test("malformed provider-reported cost fails the request with a 5xx", async ({
+test("malformed provider-reported cost bills the static fee, not a 5xx", async ({
     paidApiKey,
     mocks,
 }) => {
@@ -542,14 +542,27 @@ test("malformed provider-reported cost fails the request with a 5xx", async ({
         }),
     });
 
-    expect(response.status).toBe(502);
+    // Clamp-and-alert: a malformed provider cost on an otherwise-good
+    // generation no longer fails the request. The response succeeds and the
+    // request is billed at the static registry fee.
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+        usage?: Record<string, unknown>;
+    };
+    expect(body.usage).not.toHaveProperty("cost");
     await wait();
 
-    // The anomaly is never billed.
-    const billed = mocks.tinybird.state.events.filter(
-        (event) => event.isBilledUsage,
-    );
-    expect(billed).toHaveLength(0);
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.text",
+        modelRequested: "perplexity-fast",
+        tokenCountPromptText: 10,
+        tokenCountCompletionText: 5,
+        isBilledUsage: true,
+    });
+    // 0.005 static request fee + 0.000015 token cost (10 prompt + 5 completion
+    // @ $1/1M). Provider request_cost was malformed → static fee substituted.
+    expect(mocks.tinybird.state.events[0].totalCost).toBeCloseTo(0.005015, 8);
 });
 
 test("non-stream chat completions keep moderation telemetry in generation events", async ({

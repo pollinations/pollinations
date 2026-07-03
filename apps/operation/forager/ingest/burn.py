@@ -17,16 +17,13 @@ Public API:
 # ---------------------------------------------------------------------------
 # CANON — ported verbatim from PoC build/csv_build.py `_ALIAS` (line 286)
 # and build/build_dashboard.py `PROVIDER_ALIAS` (line 33).
-# Extra pairs (azure-openai, vertex-ai) come from the gen.pollinations.ai
-# model config provider strings that appear in Tinybird model_provider_used.
+# Only the four aliases that actually appear in Tinybird model_provider_used.
 # ---------------------------------------------------------------------------
 CANON: dict[str, str] = {
     "aws-bedrock": "aws",
     "bedrock": "aws",
     "vastai": "vast.ai",
     "azure-2": "azure",
-    "azure-openai": "azure",
-    "vertex-ai": "google",
 }
 
 
@@ -220,12 +217,10 @@ def _credit_burn(provider: str, month: str,
 def _is_grant_pool(pool: dict) -> bool:
     """True when the pool's cost vehicle is credit/grant (not cash invoices).
 
-    Sponsored billing is the primary indicator — credit burns are the expected
-    payment vehicle and no invoice/payment is expected. A monthly pool can have
-    kind=='grant' (meaning grants exist) while still expecting cash invoices;
-    those are handled by gaps.py, not by the credit_burn / needs_data logic here.
+    Either sponsored billing (azure) or kind==grant (aws-style monthly grant pools)
+    activates the credit_burn / needs_data logic.
     """
-    return pool.get("billing") == "sponsored"
+    return pool.get("billing") == "sponsored" or pool.get("kind") == "grant"
 
 
 # ---------------------------------------------------------------------------
@@ -427,7 +422,7 @@ def run(invoices: list[dict], payments: list[dict], meter: list[dict],
             "usage_cost_usd": round(usage_cost_usd, 2),
             "credit_burn_usd": round(credit_burn_usd, 2),
             "credit_src": credit_src,
-            "grant_left_usd": round(float(grant_left_usd), 2) if grant_left_usd is not None else None,
+            "grant_left_usd": round(float(grant_left_usd), 2),
             "grant_src": grant_src,
             "status": status,
             "note": note,
@@ -473,7 +468,7 @@ def grants(pools: list[dict], balances: list[dict], today: str) -> list[dict]:
         # Base from credits.json (hc)
         hc_granted = pool.get("granted")
         hc_left = pool.get("left")
-        hc_prepaid_left = pool.get("prepaid_left")
+        hc_prepaid_left = pool.get("cash_left")
 
         # Find the latest balance snapshot across all pool providers
         best_bal: dict | None = None

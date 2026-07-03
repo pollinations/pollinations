@@ -35,15 +35,29 @@ POOL_MONTHLY = {
     "pool": "Google",
     "providers": ["google"],
     "billing": "monthly",
-    "kind": "grant",
-    "granted": 350000.0,
-    "left": 300000.0,
+    "kind": "payg",
+    "granted": None,
+    "left": None,
     "prepaid_left": None,
     "expires": "",
     "note": "",
 }
 
+# AWS-style: billing=monthly, kind=grant (grant pool that expects invoices too)
+POOL_MONTHLY_GRANT = {
+    "pool": "AWS",
+    "providers": ["aws"],
+    "billing": "monthly",
+    "kind": "grant",
+    "granted": 30000.0,
+    "left": 28000.0,
+    "cash_left": None,
+    "expires": "",
+    "note": "",
+}
+
 POOLS = [POOL_SPONSORED, POOL_PREPAID, POOL_MONTHLY]
+POOLS_WITH_MONTHLY_GRANT = [POOL_SPONSORED, POOL_PREPAID, POOL_MONTHLY, POOL_MONTHLY_GRANT]
 MONTHS = ["2026-06"]
 CFG = {}
 
@@ -79,12 +93,24 @@ def test_canon_azure_2_maps_to_azure():
     assert burn.CANON.get("azure-2") == "azure"
 
 
-def test_canon_azure_openai_maps_to_azure():
-    assert burn.CANON.get("azure-openai") == "azure"
+def test_canon_aws_bedrock_maps_to_aws():
+    # Verbatim: both aliases → aws
+    assert burn.CANON.get("aws-bedrock") == "aws"
 
 
-def test_canon_vertex_ai_maps_to_google():
-    assert burn.CANON.get("vertex-ai") == "google"
+def test_canon_vastai_dot_ai():
+    # Verbatim: vastai → vast.ai (with dot)
+    assert burn.CANON.get("vastai") == "vast.ai"
+
+
+def test_canon_azure_openai_not_in_canon():
+    # azure-openai is NOT in the verbatim CANON; it pass-throughs as-is
+    assert "azure-openai" not in burn.CANON
+
+
+def test_canon_vertex_ai_not_in_canon():
+    # vertex-ai is NOT in the verbatim CANON; it pass-throughs as-is
+    assert "vertex-ai" not in burn.CANON
 
 
 def test_canon_unknown_passthrough():
@@ -319,16 +345,15 @@ def test_rule4_non_grant_pool_has_no_credit_burn():
 
 def test_rule5_usage_cost_sums_paid_and_quest():
     usage = [
-        {"month": "2026-06", "provider": "vertex-ai", "model": "gemini-2",
+        {"month": "2026-06", "provider": "google", "model": "gemini-2",
          "event_type": "generate.text", "requests": 100,
          "pollen_paid": 5.0, "pollen_quest": 1.0,
          "cost_paid": 3.0, "cost_quest": 1.5, "retrieved_at": TODAY},
-        {"month": "2026-06", "provider": "vertex-ai", "model": "imagen-4",
+        {"month": "2026-06", "provider": "google", "model": "imagen-4",
          "event_type": "generate.image", "requests": 50,
          "pollen_paid": 2.0, "pollen_quest": 0.0,
          "cost_paid": 1.0, "cost_quest": 0.0, "retrieved_at": TODAY},
     ]
-    # vertex-ai canonicalizes to google
     r = _row(_run(usage=usage), "google")
     assert r["usage_cost_usd"] == round(3.0 + 1.5 + 1.0 + 0.0, 2)
 
@@ -435,6 +460,7 @@ def test_rule7_status_quiet_when_all_zeros():
 
 
 def test_rule7_status_ok_when_invoice_and_cash():
+    # google pool is billing=monthly, kind=payg — genuine payg pool, not grant
     invoices = [
         {"sha256": "s1", "provider": "google", "period_month": "2026-06",
          "amount_usd": 500.0, "status": "parsed", "issued_at": "2026-06-01",
@@ -447,6 +473,28 @@ def test_rule7_status_ok_when_invoice_and_cash():
     ]
     r = _row(_run(invoices=invoices, payments=payments, pools=[POOL_MONTHLY]), "google")
     assert r["status"] == "ok"
+
+
+def test_rule4_monthly_grant_pool_credit_meter_gives_credit_burn():
+    # AWS-style: billing=monthly, kind=grant — credit_burn should fire via grant gate
+    meter = [
+        {"month": "2026-06", "provider": "aws", "cost_usd": 250.0,
+         "funding": "credit", "source": "api", "method": "aws cost-explorer",
+         "retrieved_at": TODAY},
+    ]
+    r = _row(_run(meter=meter, pools=[POOL_MONTHLY_GRANT]), "aws")
+    assert r["credit_burn_usd"] == 250.0
+    assert r["credit_src"] == "meter"
+    assert r["status"] == "grant_burn"
+
+
+def test_rule7_monthly_grant_pool_no_credit_signal_gives_needs_data():
+    # AWS-style: billing=monthly, kind=grant — no credit signal → needs_data
+    r = _row(_run(pools=[POOL_MONTHLY_GRANT]), "aws")
+    assert r["status"] == "needs_data"
+    # note should contain the generic instruction since aws is not in NOTES
+    assert "aws" in r["note"]
+    assert "ingest.record" in r["note"]
 
 
 # ---------------------------------------------------------------------------
@@ -525,16 +573,32 @@ def test_grants_api_overlay_beats_hc():
 
 
 def test_grants_none_preserved():
+    # pool uses cash_left field (the real credits.json field name)
     pool = {
         "pool": "RunPod", "providers": ["runpod"], "billing": "prepaid",
-        "kind": "prepaid", "granted": None, "left": None, "prepaid_left": 255.66,
+        "kind": "prepaid", "granted": None, "left": None, "cash_left": 255.66,
         "expires": "", "note": "",
     }
     rows = burn.grants([pool], [], TODAY)
     g = rows[0]
     assert g["granted_usd"] is None
     assert g["left_usd"] is None
+    # cash_left from credits.json should appear as prepaid_left_usd in the output
     assert g["prepaid_left_usd"] == 255.66
+    assert g["prepaid_left_src"] == "hc"
+
+
+def test_grants_cash_left_field_name():
+    # grants() reads pool.cash_left (not pool.prepaid_left) per credits.json schema
+    pool = {
+        "pool": "Lambda", "providers": ["lambda"], "billing": "prepaid",
+        "kind": "prepaid", "granted": None, "left": None, "cash_left": 140.58,
+        "expires": "", "note": "",
+    }
+    rows = burn.grants([pool], [], TODAY)
+    g = rows[0]
+    assert g["prepaid_left_usd"] == 140.58
+    assert g["prepaid_left_src"] == "hc"
 
 
 def test_grants_multi_provider_pool_uses_latest_balance():
@@ -584,7 +648,7 @@ def test_full_scenario_2months_3providers():
          "kind": "prepaid", "granted": None, "left": 800.0, "prepaid_left": None,
          "expires": "", "note": ""},
         {"pool": "Google", "providers": ["google"], "billing": "monthly",
-         "kind": "grant", "granted": 350000.0, "left": 300000.0, "prepaid_left": None,
+         "kind": "payg", "granted": None, "left": None, "cash_left": None,
          "expires": "", "note": ""},
     ]
     months_scen = ["2026-05", "2026-06"]
@@ -610,7 +674,7 @@ def test_full_scenario_2months_3providers():
          "funding": "prepaid", "source": "api", "method": "runpod api", "retrieved_at": TODAY},
     ]
     usage = [
-        {"month": "2026-05", "provider": "azure-openai", "model": "gpt-4",
+        {"month": "2026-05", "provider": "azure", "model": "gpt-4",
          "event_type": "generate.text", "requests": 1000,
          "pollen_paid": 10.0, "pollen_quest": 2.0,
          "cost_paid": 5.0, "cost_quest": 1.0, "retrieved_at": TODAY},
@@ -640,12 +704,12 @@ def test_full_scenario_2months_3providers():
     assert az05["status"] == "grant_burn"
     assert az05["run_at"] == TODAY
 
-    # azure-2026-06: credit meter + usage (azure-openai canonicalized to azure)
+    # azure-2026-06: credit meter
     az06 = next(r for r in rows if r["provider"] == "azure" and r["month"] == "2026-06")
     assert az06["credit_burn_usd"] == 400.0
     assert az06["status"] == "grant_burn"
 
-    # usage from "azure-openai" should land on azure 2026-05
+    # usage from "azure" provider lands on azure 2026-05
     assert az05["usage_cost_usd"] == round(5.0 + 1.0, 2)
 
     # runpod-2026-05: cash payment, no invoice, no meter

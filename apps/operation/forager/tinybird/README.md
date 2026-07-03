@@ -17,7 +17,7 @@ Workspace: `operations` (GCP europe-west2, https://api.europe-west2.gcp.tinybird
 | `usage_monthly` | month, provider, model | Full-replace Tinybird registry-imputed usage cost per model/event; diagnostic |
 | `revenue_monthly` | month | Full-replace Stripe revenue summary per month (gross/fees/refunds/net, EUR) |
 | `provider_month` | provider, month | Full-replace burn-engine output: joined P&L + credit + meter + usage per provider × month |
-| `grants` | pool | Full-replace pool-level grant view: credits.json base merged with latest live balance overlay |
+| `grants` | pool | Pool-level grant view (rewritten each run via replace, using the treasury_replace token; datafile declares APPEND+READ like all datasources) |
 
 **Pipes** (read-only endpoints for UI):
 
@@ -39,8 +39,8 @@ Workspace: `operations` (GCP europe-west2, https://api.europe-west2.gcp.tinybird
 
 | Token | Managed by | Scopes | SOPS key (`apps/operation/secrets/env.json`) |
 |---|---|---|---|
-| `treasury_ingest` | datafiles | APPEND+READ on all 4 datasources | `TINYBIRD_OPS_INGEST_TOKEN` |
-| `treasury_web` | datafiles | PIPES:READ on the 3 endpoint pipes | `TINYBIRD_OPS_READ_TOKEN` |
+| `treasury_ingest` | datafiles | APPEND+READ on all 10 datasources | `TINYBIRD_OPS_INGEST_TOKEN` |
+| `treasury_web` | datafiles | PIPES:READ on the 9 endpoint pipes | `TINYBIRD_OPS_READ_TOKEN` |
 | `treasury_replace` | API (static) | `DATASOURCES:CREATE` only | `TINYBIRD_OPS_REPLACE_TOKEN` |
 
 `tb.replace()` (mode=replace) requires CREATE scope → always use `treasury_replace`. Appends and `/v0/sql` reads use `treasury_ingest`.

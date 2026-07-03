@@ -1,0 +1,47 @@
+{
+  "date": "2026-07-02",
+  "period_start": "2026-07-02",
+  "period_end": "2026-07-02",
+  "title": "We do 3D now: Trellis 2 and Rodin 2.5",
+  "summary": "A massive day for the API: new 3D model generation, sub-3-second Flux images via a custom 5090 pool, and proper OAuth 2.1 support.\n\nYou can now generate 3D models via a single API call. Hit the new `/3d/{prompt}` endpoint to get a downloadable GLB file back, powered by Trellis 2 and Hyper3D Rodin 2.5. We also updated the dashboard to properly render the new model metadata and creator icons.\n\nFlux image generation is now stupidly fast. We're routing requests to a self-hosted Vast.ai RTX 5090 pool first, hitting a 2.25s median for 1024x1024 images. If the queue backs up past 10 requests, it gracefully falls back to Fireworks. Fast and resilient.\n\nStop passing raw API keys around. We added an OAuth 2.1 authorization-code grant with PKCE to enter.pollinations.ai. It includes RFC 8414 discovery and a zero-dependency reference client so you can build secure, delegated access without a headache.",
+  "pr_count": 9,
+  "prs": [
+    {
+      "number": 12048,
+      "date": "2026-07-02"
+    },
+    {
+      "number": 12159,
+      "date": "2026-07-02"
+    },
+    {
+      "number": 12165,
+      "date": "2026-07-02"
+    },
+    {
+      "number": 12171,
+      "date": "2026-07-02"
+    },
+    {
+      "number": 12177,
+      "date": "2026-07-02"
+    },
+    {
+      "number": 12178,
+      "date": "2026-07-02"
+    },
+    {
+      "number": 12180,
+      "date": "2026-07-02"
+    },
+    {
+      "number": 12188,
+      "date": "2026-07-02"
+    },
+    {
+      "number": 12192,
+      "date": "2026-07-02"
+    }
+  ],
+  "generated_at": "2026-07-03T07:02:57.060504+00:00"
+}

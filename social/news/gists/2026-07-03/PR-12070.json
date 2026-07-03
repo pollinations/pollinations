@@ -1,0 +1,35 @@
+{
+  "pr_number": 12070,
+  "title": "Add Flow Linnom to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12070",
+  "merged_at": "2026-07-03T12:35:09Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Flow Linnom](https://flow.linnom.com) to chat\n- Flow Linnom provides a chat interface to access multiple AI language models.\n\nFixes #11965",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Flow Linnom joins the garden",
+    "blurb": "Flow Linnom just landed in our community apps! It's a sleek new chat interface for accessing multiple AI language models.",
+    "summary": "Added Flow Linnom, a multi-model chat interface, to the community apps directory and Greenhouse.",
+    "impact": "Users can now discover and explore Flow Linnom directly from our community apps list.",
+    "keywords": [
+      "community",
+      "apps",
+      "chat",
+      "interface",
+      "models"
+    ],
+    "visual_concept": "The PR adds a chat interface app called 'Flow Linnom' to the community Greenhouse. Visuals should include the pollinations bee (Polly) in a greenhouse or garden setting, looking at a chat interface or a flowing stream of chat bubbles. 'Flow' suggests water or smooth movement.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot in a lush digital greenhouse, watering a glowing chat-bubble plant next to a gentle stream of water. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-03/PR-12070.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot in a lush digital greenhouse, watering a glowing chat-bubble plant next to a gentle stream of water. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-03T12:36:11.361665+00:00",
+  "app_name": "Flow Linnom",
+  "app_url": "https://flow.linnom.com"
+}

@@ -1,13 +1,21 @@
 """Relabel a needs_label invoice row.
 
-Rows are append-only: emits a corrected duplicate with status='parsed'.
-The frontend/dedup always takes the latest row per sha256.
+Rows are append-only: emits a corrected duplicate with status='parsed'
+(or status='ignored' for non-invoice documents).
+The frontend/dedup always takes the latest row per sha256, preferring
+source='label' rows, so a label wins over the original machine row.
+
+file_ref and (unless overridden) category are carried over from the
+best existing row for the sha256 so the label never erases the PDF pointer.
 
 Usage:
     python3 -m ingest.invoices.label <sha256> \\
         --provider vast.ai --month 2026-06 \\
         --amount 500 --currency USD --kind prepaid_topup \\
-        [--number INV-123]
+        [--category compute] [--number INV-123] [--date 2026-06-14]
+
+    # Non-invoice document (SOW, memo, receipt duplicate, ticket...):
+    python3 -m ingest.invoices.label <sha256> --ignore [--note "why"]
 """
 import argparse
 import json
@@ -19,13 +27,29 @@ from datetime import datetime, timezone
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 from ingest import creds as _creds, tb as _tb
 
+KINDS = ["prepaid_topup", "subscription", "monthly_bill", "payg", "reseller",
+         "not_invoice"]
+CATEGORIES = ["compute", "infra", "saas", "payroll", "other"]
+
 
 def _all_providers(credits_data):
-    """Return sorted list of all known provider slugs from credits.json pools."""
-    providers = []
+    """Known provider slugs: credits.json pools + harvest classifier + 'other'."""
+    providers = set()
     for pool in credits_data.get("pools", []):
-        providers.extend(pool.get("providers", []))
-    return sorted(set(providers))
+        providers.update(pool.get("providers", []))
+    from ingest.invoices import harvest as _harvest
+    providers.update(slug for slug, _cat, _needles in _harvest.PROVIDERS)
+    providers.add("other")
+    return sorted(providers)
+
+
+def _existing_row(tb, sha256):
+    """Best existing row for sha256 (label > parsed > latest), or {}."""
+    from ingest.run import dedupe_invoices
+    rows = tb.sql(f"SELECT * FROM invoices WHERE sha256 = '{sha256}'")
+    if not rows:
+        return {}
+    return dedupe_invoices(rows)[0]
 
 
 def main(argv=None, tb=None):
@@ -33,55 +57,114 @@ def main(argv=None, tb=None):
         description="Relabel a needs_label invoice row."
     )
     parser.add_argument("sha256", help="SHA-256 of the invoice PDF")
-    parser.add_argument("--provider", required=True, help="Provider slug (e.g. vast.ai)")
-    parser.add_argument("--month", required=True, help="Billing period YYYY-MM")
-    parser.add_argument("--amount", required=True, type=float, help="Invoice amount")
-    parser.add_argument("--currency", required=True, choices=["USD", "EUR"],
+    parser.add_argument("--ignore", action="store_true",
+                        help="Mark as not-an-invoice (status='ignored'); "
+                             "other fields optional")
+    parser.add_argument("--provider", help="Provider slug (e.g. vast.ai)")
+    parser.add_argument("--month", help="Billing period YYYY-MM")
+    parser.add_argument("--amount", type=float, help="Invoice amount")
+    parser.add_argument("--credit", type=float,
+                        help="Credits applied in USD (optional, default carried over or 0)")
+    parser.add_argument("--currency", choices=["USD", "EUR"],
                         help="Invoice currency")
-    parser.add_argument("--kind", required=True,
-                        help="Billing kind (e.g. prepaid_topup, monthly_bill)")
+    parser.add_argument("--kind", choices=KINDS,
+                        help="Billing kind (prepaid_topup, subscription, "
+                             "monthly_bill, payg, reseller)")
+    parser.add_argument("--category", choices=CATEGORIES,
+                        help="Category (default: carried over from existing row)")
     parser.add_argument("--number", default="", help="Invoice number (optional)")
+    parser.add_argument("--note", default="",
+                        help="Reason (stored in invoice_number field for "
+                             "--ignore rows)")
+    parser.add_argument("--date", default="",
+                        help="Invoice issue date YYYY-MM-DD (optional; defaults to "
+                             "<month>-01 — prepaid top-up matching is date-based ±10d, "
+                             "so pass the real charge date for mid-month top-ups)")
     args = parser.parse_args(argv)
+
+    if not args.ignore:
+        missing = [f for f in ("provider", "month", "amount", "currency", "kind")
+                   if getattr(args, f) is None]
+        if missing:
+            print(f"ERROR: missing required options: "
+                  f"{', '.join('--' + m for m in missing)}", file=sys.stderr)
+            sys.exit(1)
+
+    if args.date:
+        try:
+            datetime.strptime(args.date, "%Y-%m-%d")
+        except ValueError:
+            print(f"ERROR: --date must be YYYY-MM-DD, got '{args.date}'", file=sys.stderr)
+            sys.exit(1)
+
+    if args.amount is not None and args.amount < 0:
+        print("ERROR: --amount must be >= 0", file=sys.stderr)
+        sys.exit(1)
+
+    if args.credit is not None and args.credit < 0:
+        print("ERROR: --credit must be >= 0", file=sys.stderr)
+        sys.exit(1)
 
     # Load config and credits
     config = _creds.load_config()
     credits_data = _creds.load_credits()
 
     # Validate provider
-    known = _all_providers(credits_data)
-    if args.provider not in known:
-        print(f"ERROR: unknown provider '{args.provider}'", file=sys.stderr)
-        print(f"Known providers: {', '.join(known)}", file=sys.stderr)
-        sys.exit(1)
+    if args.provider:
+        known = _all_providers(credits_data)
+        if args.provider not in known:
+            print(f"ERROR: unknown provider '{args.provider}'", file=sys.stderr)
+            print(f"Known providers: {', '.join(known)}", file=sys.stderr)
+            sys.exit(1)
 
-    # Compute amount_usd
-    fx = config.get("fx_eur_usd", 1.0)
-    amount_usd = round(args.amount * fx, 6) if args.currency == "EUR" else args.amount
-
-    ingested_at = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-
-    row = {
-        "sha256":         args.sha256,
-        "msgid":          "",
-        "provider":       args.provider,
-        "category":       "",
-        "kind":           args.kind,
-        "period_month":   args.month,
-        "amount":         args.amount,
-        "currency":       args.currency,
-        "amount_usd":     amount_usd,
-        "invoice_number": args.number,
-        "issued_at":      args.month + "-01",
-        "source":         "label",
-        "file_ref":       "",
-        "status":         "parsed",
-        "ingested_at":    ingested_at,
-    }
-
-    # Push to Tinybird — use injected tb if provided, else build from creds
+    # Build TB client early — needed to carry over the existing row
     if tb is None:
         tb_cfg = _creds.load_creds()
         tb = _tb.TB(config["tb_ops_api"], tb_cfg["TINYBIRD_OPS_INGEST_TOKEN"])
+
+    prev = _existing_row(tb, args.sha256)
+
+    amount = args.amount if args.amount is not None else 0.0
+    currency = args.currency or prev.get("currency", "USD")
+    credit_usd = args.credit if args.credit is not None else float(prev.get("credit_usd") or 0.0)
+
+    ingested_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+
+    if args.ignore:
+        row = {
+            "sha256":         args.sha256,
+            "provider":       args.provider or prev.get("provider", "other"),
+            "category":       args.category or prev.get("category", "") or "other",
+            "kind":           "not_invoice",
+            "period_month":   "",
+            "amount":         0.0,
+            "currency":       currency,
+            "invoice_number": args.note or args.number,
+            "issued_at":      args.date or prev.get("issued_at", "") or "1970-01-01",
+            "source":         "label",
+            "file_ref":       prev.get("file_ref", ""),
+            "status":         "ignored",
+            "ingested_at":    ingested_at,
+            "credit_usd":     0.0,
+        }
+    else:
+        row = {
+            "sha256":         args.sha256,
+            "provider":       args.provider,
+            "category":       args.category or prev.get("category", "") or "other",
+            "kind":           args.kind,
+            "period_month":   args.month,
+            "amount":         amount,
+            "currency":       currency,
+            "invoice_number": args.number,
+            "issued_at":      args.date or (args.month + "-01"),
+            "source":         "label",
+            "file_ref":       prev.get("file_ref", ""),
+            "status":         "parsed",
+            "ingested_at":    ingested_at,
+            "credit_usd":     credit_usd,
+        }
+
     tb.append("invoices", [row])
 
     print(json.dumps(row, indent=2))

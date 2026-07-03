@@ -24,22 +24,8 @@ def parse(txt, slug, config, today):
             "status": "parsed" | "needs_label"
         }
     """
-    # Total: "total", "amount due", "amount paid", "grand total" followed by amount
-    tot_m = re.search(
-        r"(?:total|amount due|amount paid|grand total)\D{0,20}([\d,]+\.\d{2})",
-        txt, re.IGNORECASE
-    )
-
-    amount = 0.0
-    currency = "USD"
-    if tot_m:
-        amount = float(tot_m.group(1).replace(",", ""))
-        # Look for currency near the match
-        vicinity = txt[max(0, tot_m.start() - 30): tot_m.end() + 10]
-        cur_m = re.search(r"(USD|EUR|\$|€)", vicinity)
-        if cur_m:
-            raw = cur_m.group(1)
-            currency = "EUR" if raw in ("EUR", "€") else "USD"
+    amount, currency, found_amount = _find_payable_amount(txt)
+    credit_usd = _find_credit_usd(txt, config)
 
     # Invoice/receipt number
     num_m = re.search(
@@ -56,7 +42,7 @@ def parse(txt, slug, config, today):
     fx = config.get("fx_eur_usd", 1.0)
     amount_usd = round(amount * fx, 6) if currency == "EUR" else amount
 
-    missing = not tot_m or not period_month
+    missing = not found_amount or not period_month
     status = "needs_label" if missing else "parsed"
 
     invoice = {
@@ -65,6 +51,7 @@ def parse(txt, slug, config, today):
         "currency":       currency,
         "amount":         amount,
         "amount_usd":     amount_usd,
+        "credit_usd":     credit_usd,
         "period_month":   period_month,
         "invoice_number": invoice_number,
         "issued_at":      issued_at,
@@ -72,6 +59,97 @@ def parse(txt, slug, config, today):
     }
 
     return {"invoice": invoice, "extras": {}, "status": status}
+
+
+_MONEY_RE = re.compile(
+    r"(?P<cur>USD|EUR|\$|€)?\s*(?P<neg>-|\()?[\s$€]*"
+    r"(?P<num>(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{2}))\s*(?P<close>\))?",
+    re.IGNORECASE,
+)
+
+
+def _money_matches(text):
+    for match in _MONEY_RE.finditer(text):
+        raw_cur = match.group("cur") or ""
+        yield {
+            "amount": float(match.group("num").replace(",", "")),
+            "currency": "EUR" if raw_cur.upper() == "EUR" or raw_cur == "€" else "USD",
+            "negative": match.group("neg") == "-" or (
+                match.group("neg") == "(" and match.group("close") == ")"
+            ),
+        }
+
+
+def _find_payable_amount(txt):
+    """Return (amount, currency, found) using amount-due semantics.
+
+    Precedence is intentionally ordered so "Amount Due $0" beats earlier
+    "Sub Total $384.47" lines on credit-covered invoices.
+    """
+    label_groups = [
+        (re.compile(r"\bamount\s+due\b", re.IGNORECASE), False),
+        (re.compile(r"\binvoice\s+amount\b", re.IGNORECASE), False),
+        (re.compile(r"\b(?:grand\s+total|amount\s+paid|total)\b", re.IGNORECASE), True),
+        (re.compile(r"\bsub\s*total\b", re.IGNORECASE), False),
+    ]
+    lines = txt.splitlines()
+    for pattern, skip_subtotal in label_groups:
+        for i, line in enumerate(lines):
+            if not pattern.search(line):
+                continue
+            low = line.lower()
+            if skip_subtotal and re.search(r"\bsub\s*total\b", low):
+                continue
+            segment = line
+            if i + 1 < len(lines):
+                segment += " " + lines[i + 1]
+            matches = list(_money_matches(segment))
+            if matches:
+                money = matches[0]
+                return money["amount"], money["currency"], True
+    return 0.0, "USD", False
+
+
+def _find_credit_usd(txt, config):
+    """Sum applied-credit lines as a positive USD number."""
+    lines = txt.splitlines()
+    detail_start = next(
+        (i + 1 for i, line in enumerate(lines)
+         if "discounts/credits applied" in line.lower()),
+        None,
+    )
+    if detail_start is not None:
+        total = _sum_credit_lines(lines[detail_start:], config)
+        if total > 0:
+            return total
+        return _sum_credit_lines(lines[:detail_start], config)
+    return _sum_credit_lines(lines, config)
+
+
+def _sum_credit_lines(lines, config):
+    total = 0.0
+    for line in lines:
+        low = line.lower()
+        if "credit" not in low:
+            continue
+        if any(word in low for word in ("remaining", "available", "balance", "left")):
+            continue
+        matches = list(_money_matches(line))
+        if not matches:
+            continue
+        signed = [m for m in matches if m["negative"]]
+        if signed:
+            selected = signed
+        elif len(matches) == 1 and any(word in low for word in ("applied", "promotional")):
+            selected = matches
+        else:
+            selected = []
+        for money in selected:
+            amount = money["amount"]
+            if money["currency"] == "EUR":
+                amount *= config.get("fx_eur_usd", 1.0)
+            total += amount
+    return round(total, 6)
 
 
 def _latest_month_and_date(txt):

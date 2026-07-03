@@ -24,28 +24,48 @@ from .connectors.providers import stripe as _stripe
 from .invoices import harvest
 from .invoices import extract as _extract
 
+# Derived fields (amount_usd, month) were dropped from the tables — engines
+# still consume them, so the read queries reconstruct them with config fx.
+_INV_SQL = "SELECT *, round(if(currency='EUR', amount * {fx}, amount), 6) AS amount_usd FROM invoices"
+_PAY_SQL = ("SELECT *, substring(toString(paid_at), 1, 7) AS month, "
+            "round(amount_eur * {fx}, 2) AS amount_usd FROM payments")
+
+
+def load_overrides(ops_ingest):
+    """Latest operator override per (scope, key, field) from the overrides datasource."""
+    rows = ops_ingest.sql(
+        "SELECT scope, key, field, argMax(value_num, entered_at) AS value_num, "
+        "argMax(value_str, entered_at) AS value_str FROM overrides GROUP BY scope, key, field"
+    )
+    return {(r["scope"], r["key"], r["field"]):
+            (r["value_num"] if r.get("value_num") is not None else r.get("value_str", ""))
+            for r in rows}
+
 
 def dedupe_invoices(rows):
     """Deduplicate invoice rows per sha256.
 
-    Prefers status='parsed' over status='needs_label'.
-    Tie-breaks by latest ingested_at, then keeps the last-seen row.
+    Prefers source='label' (operator correction) over machine rows, then
+    status='parsed' over status='needs_label'. Tie-breaks by latest
+    ingested_at (DateTime since 2026-07), then keeps the last-seen row.
     """
-    # Status preference: parsed > needs_label (lower = better)
-    _STATUS_RANK = {"parsed": 0, "needs_label": 1}
+    # Status preference: parsed/ignored > needs_label (lower = better).
+    # 'ignored' only ever appears on source='label' rows, so ranking it with
+    # 'parsed' just means the latest operator decision wins between labels.
+    _STATUS_RANK = {"parsed": 0, "ignored": 0, "needs_label": 1}
+
+    def _rank(row):
+        return (0 if row.get("source") == "label" else 1,
+                _STATUS_RANK.get(row["status"], 9))
+
     best = {}
     for row in rows:
         sha = row["sha256"]
-        if sha not in best:
+        prev = best.get(sha)
+        if (prev is None or _rank(row) < _rank(prev)
+                or (_rank(row) == _rank(prev)
+                    and row["ingested_at"] >= prev["ingested_at"])):
             best[sha] = row
-        else:
-            prev = best[sha]
-            prev_rank = _STATUS_RANK.get(prev["status"], 9)
-            curr_rank = _STATUS_RANK.get(row["status"], 9)
-            if curr_rank < prev_rank:
-                best[sha] = row
-            elif curr_rank == prev_rank and row["ingested_at"] > prev["ingested_at"]:
-                best[sha] = row
     return list(best.values())
 
 
@@ -108,6 +128,96 @@ def import_archive(cfg, ops_ingest, today):
     return {"pushed": pushed, "dup_sha": dup_sha, "unknown_prefix": unknown_prefix}
 
 
+def _archive_pdfs(cfg):
+    """Yield archived invoice PDFs as (path, slug, category, msgid)."""
+    archive_dir = cfg["archive_dir"]
+    try:
+        entries = sorted(os.listdir(archive_dir))
+    except FileNotFoundError:
+        return
+
+    for entry in entries:
+        if entry == "inbox" or not _MONTH_RE.match(entry):
+            continue
+        month_dir = os.path.join(archive_dir, entry)
+        if not os.path.isdir(month_dir):
+            continue
+        for fname in sorted(os.listdir(month_dir)):
+            if not fname.lower().endswith(".pdf"):
+                continue
+            path = os.path.join(month_dir, fname)
+            parts = os.path.splitext(fname)[0].split("_")
+            slug = parts[0].lower() if parts else "other"
+            category = harvest._slug_to_category(slug)
+            msgid = parts[2] if len(parts) >= 3 else ""
+            yield path, slug, category, msgid
+
+
+def reparse_invoices(cfg, ops_ingest, today, dry_run=True):
+    """Re-extract archived PDFs and optionally append fresh parsed invoice rows.
+
+    Dry-run prints old/new amount and credit values per changed sha and writes
+    nothing. Real mode appends only parsed rows; append-only dedupe keeps labels
+    ahead of machine reparses.
+    """
+    fx = cfg.get("fx_eur_usd", 1.14)
+    existing = {
+        r["sha256"]: r
+        for r in dedupe_invoices(ops_ingest.sql(_INV_SQL.format(fx=fx)))
+    }
+    billing_map = _extract._build_billing_map(creds.load_credits())
+    ingested_at = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+
+    scanned = changed = parsed = needs_label = 0
+    to_append = []
+
+    for path, slug, category, msgid in _archive_pdfs(cfg):
+        scanned += 1
+        row = _extract.build_row(
+            path, slug, category, msgid, "email",
+            cfg, today, billing_map=billing_map, ingested_at=ingested_at,
+        )
+
+        if row["status"] == "parsed":
+            parsed += 1
+        else:
+            needs_label += 1
+
+        old = existing.get(row["sha256"], {})
+        old_amount = float(old.get("amount") or 0.0)
+        old_credit = float(old.get("credit_usd") or 0.0)
+        old_status = old.get("status", "missing")
+        new_amount = float(row.get("amount") or 0.0)
+        new_credit = float(row.get("credit_usd") or 0.0)
+        differs = (
+            round(old_amount, 6) != round(new_amount, 6)
+            or round(old_credit, 6) != round(new_credit, 6)
+            or old_status != row["status"]
+        )
+        if differs:
+            changed += 1
+            print(
+                f"{row['sha256']} {slug} {row.get('period_month', '')} "
+                f"{old_status} {old_amount:.2f}/{old_credit:.2f} -> "
+                f"{row['status']} {new_amount:.2f}/{new_credit:.2f} {path}"
+            )
+
+        if not dry_run and row["status"] == "parsed":
+            to_append.append(row)
+
+    if not dry_run and to_append:
+        ops_ingest.append("invoices", to_append)
+
+    return {
+        "dry_run": dry_run,
+        "scanned": scanned,
+        "changed": changed,
+        "parsed": parsed,
+        "needs_label": needs_label,
+        "appended": 0 if dry_run else len(to_append),
+    }
+
+
 def _sanitize_err(e, creds_dict):
     """Produce a safe error string: type + message, no creds values, max 200 chars.
 
@@ -122,7 +232,7 @@ def _sanitize_err(e, creds_dict):
 
 
 def _run_burn_stage(ops_ingest, ops_replace, tb_prod, creds, cfg, pools,
-                    today, statuses, notes):
+                    today, statuses, notes, overrides=None):
     """Run the full burn stage (steps 1–6 of the burn phase).
 
     Mutates `statuses` dict and `notes` list in place (same objects written to
@@ -205,14 +315,15 @@ def _run_burn_stage(ops_ingest, ops_replace, tb_prod, creds, cfg, pools,
     pm_rows = []
     balances = []
     try:
-        invoices = dedupe_invoices(ops_ingest.sql("SELECT * FROM invoices"))
-        payments = ops_ingest.sql("SELECT * FROM payments")
+        invoices = dedupe_invoices(ops_ingest.sql(_INV_SQL.format(fx=fx)))
+        payments = ops_ingest.sql(_PAY_SQL.format(fx=fx))
         meter_rows = ops_ingest.sql("SELECT * FROM meter_monthly")
         usage_read = ops_ingest.sql("SELECT * FROM usage_monthly")
         balances = ops_ingest.sql("SELECT * FROM balances")
 
+        cat_map = {slug: cat for slug, cat, _ in harvest.PROVIDERS}
         pm_rows = burn.run(invoices, payments, meter_rows, usage_read, balances,
-                           pools, months_ytd_list, cfg, today)
+                           pools, months_ytd_list, cfg, today, cat_map=cat_map)
         # Skip replace on 0 rows — keep last good; replace only when burn produced output
         if pm_rows:
             ops_replace.replace("provider_month", pm_rows)
@@ -221,7 +332,7 @@ def _run_burn_stage(ops_ingest, ops_replace, tb_prod, creds, cfg, pools,
             notes.append("burn: 0 rows from burn.run — provider_month unchanged (last good kept)")
             statuses["burn_rows"] = 0
 
-        grant_rows = burn.grants(pools, balances, today)
+        grant_rows = burn.grants(pools, balances, today, overrides, cat_map=cat_map)
         if grant_rows:
             ops_replace.replace("grants", grant_rows)
             statuses["grant_rows"] = len(grant_rows)
@@ -256,11 +367,11 @@ def _run_burn_stage(ops_ingest, ops_replace, tb_prod, creds, cfg, pools,
 
         # needs_data notices for current month
         current_month = today[:7]
-        for row in pm_rows:
-            if row.get("status") == "needs_data" and row.get("month") == current_month:
-                nd_note = row.get("note", "")
-                if nd_note:
-                    print(f"  needs_data [{row['provider']}]: {nd_note}")
+        needs = sorted(row["provider"] for row in pm_rows
+                       if row.get("status") == "needs_data" and row.get("month") == current_month)
+        if needs:
+            print(f"  needs_data ({current_month}): {', '.join(needs)} — "
+                  f"python3 -m ingest.record meter <provider> {current_month} <usd> --funding credit")
     except Exception:
         pass
 
@@ -268,11 +379,20 @@ def _run_burn_stage(ops_ingest, ops_replace, tb_prod, creds, cfg, pools,
 def main():
     backfill = "--backfill" in sys.argv
     import_mode = "--import-archive" in sys.argv
+    reparse_mode = "--reparse-invoices" in sys.argv
+    dry_run = "--dry-run" in sys.argv
     today = datetime.date.today().isoformat()
     c, cfg = creds.load_creds(), creds.load_config()
 
     # One token for ingest — see MODULE DOCSTRING
     ops_ingest = tb.TB(cfg["tb_ops_api"], c["TINYBIRD_OPS_INGEST_TOKEN"])
+
+    # --reparse-invoices: safe append-only re-extraction of archived PDFs.
+    # Use --dry-run before any real append.
+    if reparse_mode:
+        st = reparse_invoices(cfg, ops_ingest, today, dry_run=dry_run)
+        print(f"reparse-invoices: {st}")
+        return
 
     # --import-archive: one-off backfill from pre-organized month dirs, then exit
     if import_mode:
@@ -300,9 +420,12 @@ def main():
     # 2. Payments (Wise outflows) — per month in window
     try:
         for ym in win:
-            rows = wise.outflow_rows(c, [ym], cfg["fx_eur_usd"], today)
+            rows = wise.outflow_rows(c, [ym])
             if rows:
-                ops_replace.replace("payments", rows, condition=f"month='{ym}'")
+                nxt = gaps._next_month(ym)
+                ops_replace.replace(
+                    "payments", rows,
+                    condition=f"paid_at >= '{ym}-01' AND paid_at < '{nxt}-01'")
             else:
                 notes.append(f"wise:{ym}: 0 rows — payments table unchanged")
             st[f"wise:{ym}"] = len(rows)
@@ -312,11 +435,24 @@ def main():
         notes.append(f"wise FAILED, months kept: {e}")
 
     # 3. Gaps / reconciliation — read facts back, run pure engine, write result
-    invoices = dedupe_invoices(ops_ingest.sql("SELECT * FROM invoices"))
-    payments = ops_ingest.sql("SELECT * FROM payments")
+    fx = cfg["fx_eur_usd"]
+    invoices = dedupe_invoices(ops_ingest.sql(_INV_SQL.format(fx=fx)))
+    payments = ops_ingest.sql(_PAY_SQL.format(fx=fx))
     pools = creds.load_credits().get("pools", [])
 
-    rrows = gaps.run(invoices, payments, pools, all_months, cfg, today)
+    try:
+        overrides = load_overrides(ops_ingest)
+    except Exception as e:
+        overrides = {}
+        notes.append(f"overrides read failed (treated as empty): {e}")
+
+    gaps_cfg = dict(cfg)
+    gaps_cfg["recon_accepted"] = list(cfg.get("recon_accepted", [])) + [
+        key for (scope, key, field) in overrides
+        if scope == "reconciliation" and field == "accepted"
+    ]
+
+    rrows = gaps.run(invoices, payments, pools, all_months, gaps_cfg, today)
     if rrows:
         ops_replace.replace("reconciliation", rrows)
     else:
@@ -335,6 +471,7 @@ def main():
         today=today,
         statuses=st,
         notes=notes,
+        overrides=overrides,
     )
 
     # 5. Ingest run log

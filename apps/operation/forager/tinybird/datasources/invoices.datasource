@@ -3,20 +3,22 @@ TOKEN "treasury_ingest" READ
 
 SCHEMA >
     `sha256` String `json:$.sha256`,
-    `msgid` String `json:$.msgid`,
     `provider` String `json:$.provider`,
     `category` String `json:$.category`,
     `kind` String `json:$.kind`,
     `period_month` String `json:$.period_month`,
     `amount` Float64 `json:$.amount`,
     `currency` String `json:$.currency`,
-    `amount_usd` Float64 `json:$.amount_usd`,
     `invoice_number` String `json:$.invoice_number`,
     `issued_at` Date `json:$.issued_at`,
     `source` String `json:$.source`,
     `file_ref` String `json:$.file_ref`,
     `status` String `json:$.status`,
-    `ingested_at` Date `json:$.ingested_at`
+    `ingested_at` DateTime `json:$.ingested_at`,
+    `credit_usd` Float64 `json:$.credit_usd` DEFAULT 0
 
 ENGINE "MergeTree"
 ENGINE_SORTING_KEY "provider, period_month, issued_at"
+
+FORWARD_QUERY >
+    SELECT sha256, provider, category, kind, period_month, amount, currency, invoice_number, issued_at, source, file_ref, status, toDateTime(ingested_at) AS ingested_at, defaultValueOfTypeName('Float64') AS credit_usd

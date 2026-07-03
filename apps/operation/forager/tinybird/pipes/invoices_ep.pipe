@@ -2,6 +2,23 @@ TOKEN "treasury_web" READ
 
 NODE endpoint
 SQL >
-    SELECT * FROM invoices ORDER BY provider, period_month
+    SELECT sha256, provider, category, kind, period_month, amount, currency,
+           round(if(currency = 'EUR', amount * (
+               SELECT coalesce(argMax(value_num, entered_at), 1.14)
+               FROM overrides WHERE scope = 'config' AND key = 'fx_eur_usd'
+           ), amount), 2) AS amount_usd,
+           credit_usd,
+           invoice_number, issued_at, source, file_ref, status, ingested_at
+    FROM (
+        SELECT *, row_number() OVER (
+            PARTITION BY sha256
+            ORDER BY (source = 'label') DESC,
+                     (status IN ('parsed', 'ignored')) DESC,
+                     ingested_at DESC
+        ) AS rn
+        FROM invoices
+    )
+    WHERE rn = 1
+    ORDER BY provider, period_month
 
 TYPE endpoint

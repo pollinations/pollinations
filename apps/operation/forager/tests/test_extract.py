@@ -50,6 +50,26 @@ Billing period: May 2026
 Total  $50.00
 """
 
+LAMBDA_ZERO_DUE = """\
+Lambda invoice
+Invoice number: LAMBDA-062026
+Date: June 29, 2026
+Sub Total $384.47
+Promotional Credits ($384.47)
+Amount Due $0.00
+Status PAID
+Discounts/credits applied on this invoice
+Promotional Credits ($384.47)
+"""
+
+GENERIC_PRECEDENCE = """\
+Invoice no. GEN-003
+Date: July 1, 2026
+Sub Total $999.00
+Invoice Amount $12.34
+Amount Paid $56.78
+"""
+
 
 # ---------------------------------------------------------------------------
 # Automat-IT parser tests
@@ -151,6 +171,23 @@ def test_generic_no_issued_at_without_full_date(monkeypatch, tmp_path):
     assert inv["issued_at"] in ("", "1970-01-01")
 
 
+def test_generic_amount_due_beats_subtotal_and_captures_credit():
+    """Lambda-style credit invoice stores amount due, plus applied credits."""
+    out = extract.parse(LAMBDA_ZERO_DUE, "lambda", _stub_config(), "2026-07-02")
+    inv = out["invoice"]
+    assert out["status"] == "parsed"
+    assert inv["period_month"] == "2026-06"
+    assert inv["amount"] == 0.0
+    assert inv["credit_usd"] == 384.47
+
+
+def test_generic_amount_precedence_invoice_amount_before_total():
+    out = extract.parse(GENERIC_PRECEDENCE, "runpod", _stub_config(), "2026-07-02")
+    inv = out["invoice"]
+    assert inv["amount"] == 12.34
+    assert inv["period_month"] == "2026-07"
+
+
 # ---------------------------------------------------------------------------
 # extract.py issued_at defaulting
 # ---------------------------------------------------------------------------
@@ -227,8 +264,8 @@ def test_extract_issued_at_sentinel_when_no_period():
 # ingested_at format test
 # ---------------------------------------------------------------------------
 
-def test_ingested_at_is_date_only():
-    """extract_and_push ingested_at must be YYYY-MM-DD (no time component)."""
+def test_ingested_at_is_datetime():
+    """extract_and_push ingested_at must be a 'YYYY-MM-DD HH:MM:SS' DateTime string."""
     import re
     import unittest.mock as mock
     import ingest.creds as creds_mod
@@ -253,9 +290,9 @@ def test_ingested_at_is_date_only():
                 StubTB(), pdf_path, "runpod", "compute", "msg", "email",
                 _stub_config(), "2026-07-02"
             )
-        # Must match YYYY-MM-DD only, no time part
-        assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", row["ingested_at"]), \
-            f"ingested_at should be YYYY-MM-DD but got: {row['ingested_at']!r}"
+        # Must match full DateTime format YYYY-MM-DD HH:MM:SS
+        assert re.fullmatch(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}", row["ingested_at"]), \
+            f"ingested_at should be 'YYYY-MM-DD HH:MM:SS' but got: {row['ingested_at']!r}"
     finally:
         os.unlink(pdf_path)
 
@@ -338,6 +375,27 @@ def test_extract_and_push_ait_appends_parsed_row(monkeypatch, tmp_path):
     assert row["amount"] == 1234.56
 
 
+def test_extract_and_push_carries_credit_usd(monkeypatch, tmp_path):
+    p = tmp_path / "lambda.pdf"
+    p.write_bytes(b"%PDF-LAMBDA")
+    monkeypatch.setattr(extract, "pdf_text", lambda path: LAMBDA_ZERO_DUE)
+
+    appended = []
+
+    class StubTB:
+        def append(self, datasource, rows):
+            appended.extend(rows)
+
+    row = extract.extract_and_push(
+        StubTB(), str(p), "lambda", "compute", "msg003", "email",
+        _stub_config(), "2026-07-02", billing_map={"lambda": "monthly_bill"}
+    )
+
+    assert row["amount"] == 0.0
+    assert row["credit_usd"] == 384.47
+    assert appended[0]["credit_usd"] == 384.47
+
+
 # ---------------------------------------------------------------------------
 # label.py: unknown provider exits nonzero and lists known providers
 # ---------------------------------------------------------------------------
@@ -401,6 +459,9 @@ def test_label_push_path_appends_parsed_row(monkeypatch):
     appended = {}
 
     class StubTB:
+        def sql(self, query):
+            return []  # no existing row for this sha256
+
         def append(self, datasource, rows):
             appended["datasource"] = datasource
             appended["rows"] = rows
@@ -410,6 +471,7 @@ def test_label_push_path_appends_parsed_row(monkeypatch):
         "--provider", "vast.ai",
         "--month", "2026-06",
         "--amount", "500",
+        "--credit", "12.5",
         "--currency", "EUR",
         "--kind", "prepaid_topup",
     ], tb=StubTB())
@@ -422,8 +484,53 @@ def test_label_push_path_appends_parsed_row(monkeypatch):
     assert row["status"] == "parsed"
     assert row["provider"] == "vast.ai"
     assert row["source"] == "label"
-    # EUR 500 × 1.14 = 570.0
-    assert abs(row["amount_usd"] - 570.0) < 0.001
+    # amount_usd was dropped from the schema — the row keeps the native
+    # amount + currency; USD is reconstructed in SQL at read time
+    assert row["amount"] == 500.0
+    assert row["currency"] == "EUR"
+    assert row["credit_usd"] == 12.5
+
+
+def test_label_carries_existing_credit_when_omitted(monkeypatch):
+    """A label row keeps credit_usd from the existing best row unless overridden."""
+    import ingest.creds as creds_mod
+    from ingest.invoices import label
+
+    _fake_credits = {
+        "pools": [
+            {"name": "Lambda", "billing": "monthly", "providers": ["lambda"]},
+        ]
+    }
+    _fake_config = {"fx_eur_usd": 1.14, "tb_ops_api": "https://fake.tinybird.co"}
+
+    monkeypatch.setattr(creds_mod, "_sops_decrypt", lambda p: _fake_credits)
+    monkeypatch.setattr(creds_mod, "load_config", lambda: _fake_config)
+
+    appended = {}
+
+    class StubTB:
+        def sql(self, query):
+            return [{
+                "sha256": "sha-credit", "status": "parsed", "source": "email",
+                "provider": "lambda", "category": "compute", "currency": "USD",
+                "credit_usd": 384.47, "file_ref": "/tmp/lambda.pdf",
+                "issued_at": "2026-06-29", "ingested_at": "2026-07-01 00:00:00",
+            }]
+
+        def append(self, datasource, rows):
+            appended["datasource"] = datasource
+            appended["rows"] = rows
+
+    label.main([
+        "sha-credit",
+        "--provider", "lambda",
+        "--month", "2026-06",
+        "--amount", "0",
+        "--currency", "USD",
+        "--kind", "monthly_bill",
+    ], tb=StubTB())
+
+    assert appended["rows"][0]["credit_usd"] == 384.47
 
 
 # ---------------------------------------------------------------------------
@@ -454,6 +561,22 @@ def test_dedupe_invoices_tie_break_latest_ingested_at():
     result = run_mod.dedupe_invoices(rows)
     assert len(result) == 1
     assert result[0]["ingested_at"] == "2026-06-20"
+
+
+def test_dedupe_invoices_label_beats_same_day_parsed():
+    """A source='label' row wins over a machine 'parsed' row even on the same
+    ingested_at date and regardless of input order (the enty-import bug:
+    provider 'other' sorts before 'vast.ai', so first-seen won the tie)."""
+    from ingest import run as run_mod
+
+    machine = {"sha256": "abc", "status": "parsed", "source": "email",
+               "provider": "other", "ingested_at": "2026-07-03"}
+    label = {"sha256": "abc", "status": "parsed", "source": "label",
+             "provider": "vast.ai", "ingested_at": "2026-07-03"}
+    for rows in ([machine, label], [label, machine]):
+        result = run_mod.dedupe_invoices(rows)
+        assert len(result) == 1
+        assert result[0]["provider"] == "vast.ai"
 
 
 def test_dedupe_invoices_no_overlap():
@@ -559,6 +682,58 @@ def test_extract_invalid_period_month_falls_back_to_sentinel():
         assert row["period_month"] == "", f"Expected empty period_month, got {row['period_month']!r}"
     finally:
         os.unlink(pdf_path)
+
+
+def test_reparse_invoices_dry_run_reports_credit_diff(monkeypatch, tmp_path, capsys):
+    from ingest import run as run_mod
+
+    archive = tmp_path / "archive"
+    month_dir = archive / "2026-06"
+    month_dir.mkdir(parents=True)
+    pdf = month_dir / "lambda_2026-06_msg_invoice.pdf"
+    pdf.write_bytes(b"%PDF-LAMBDA")
+
+    monkeypatch.setattr(run_mod._extract, "pdf_text", lambda path: LAMBDA_ZERO_DUE)
+    monkeypatch.setattr(
+        run_mod.creds,
+        "load_credits",
+        lambda: {"pools": [{"pool": "Lambda", "billing": "monthly", "providers": ["lambda"]}]},
+    )
+
+    class StubTB:
+        def sql(self, query):
+            return [{
+                "sha256": hashlib.sha256(b"%PDF-LAMBDA").hexdigest(),
+                "provider": "lambda",
+                "category": "compute",
+                "kind": "monthly_bill",
+                "period_month": "2026-06",
+                "amount": 384.47,
+                "currency": "USD",
+                "amount_usd": 384.47,
+                "credit_usd": 0.0,
+                "invoice_number": "old",
+                "issued_at": "2026-06-29",
+                "source": "email",
+                "file_ref": str(pdf),
+                "status": "parsed",
+                "ingested_at": "2026-07-01 00:00:00",
+            }]
+
+        def append(self, datasource, rows):
+            raise AssertionError("dry-run must not append")
+
+    stats = run_mod.reparse_invoices(
+        {"archive_dir": str(archive), "fx_eur_usd": 1.14},
+        StubTB(),
+        "2026-07-02",
+        dry_run=True,
+    )
+
+    assert stats["changed"] == 1
+    assert stats["appended"] == 0
+    out = capsys.readouterr().out
+    assert "384.47/0.00 -> parsed 0.00/384.47" in out
 
 
 # ---------------------------------------------------------------------------

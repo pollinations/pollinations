@@ -11,7 +11,6 @@ Public API:
         -> list[dict]   grants rows (pool-level; credits.json base + live overlay)
 
     CANON : dict   TB model_provider_used -> canonical slug
-    NOTES : dict   manual-forever providers -> operator instruction string
 """
 
 # ---------------------------------------------------------------------------
@@ -32,23 +31,6 @@ def _canon(provider: str) -> str:
     """Canonicalize a raw TB model_provider_used value to a credits.json pool slug."""
     p = (provider or "").strip().lower()
     return CANON.get(p, p)
-
-
-# ---------------------------------------------------------------------------
-# NOTES — exact strings per brief rule 8
-# ---------------------------------------------------------------------------
-_NOTE_TMPL = "console {where} → Billing; then: python3 -m ingest.record meter {slug} {{month}} <usd> --funding credit"
-
-NOTES: dict[str, str] = {
-    "io.net":     _NOTE_TMPL.format(where="cloud.io.net", slug="io.net"),
-    "perplexity": _NOTE_TMPL.format(where="perplexity.ai", slug="perplexity"),
-    "nebius":     _NOTE_TMPL.format(where="nebius.ai",     slug="nebius"),
-    "lambda":     _NOTE_TMPL.format(where="lambda.ai",     slug="lambda"),
-    "bytedance":  _NOTE_TMPL.format(where="console.volcengine.com", slug="bytedance"),
-    "modal":      _NOTE_TMPL.format(where="modal.com",     slug="modal"),
-    "elevenlabs": _NOTE_TMPL.format(where="elevenlabs.io", slug="elevenlabs"),
-    "daytona":    _NOTE_TMPL.format(where="app.daytona.io", slug="daytona"),
-}
 
 
 # ---------------------------------------------------------------------------
@@ -158,52 +140,31 @@ def _pick_meter(meter_rows: list[dict]) -> tuple[float, float, float, str, str]:
 
 
 # ---------------------------------------------------------------------------
-# _pick_grant_left — rule 6
-# ---------------------------------------------------------------------------
-
-def _pick_grant_left(provider: str, balances_by_prov: dict[str, list[dict]],
-                     pool: dict | None) -> tuple[float | None, str]:
-    """Return (left_usd, src) for grant_left_usd/grant_src."""
-    rows = balances_by_prov.get(provider, [])
-    # Filter to rows where left_usd is not None
-    with_left = [r for r in rows if r.get("left_usd") is not None]
-
-    if with_left:
-        # Latest snapshot by run_at
-        best = max(with_left, key=lambda r: r.get("run_at", ""))
-        src_raw = best.get("source", "")
-        src = "api" if src_raw in ("api", "cli") else "manual"
-        return float(best["left_usd"]), src
-
-    # HC fallback
-    if pool is not None:
-        left = _num(pool.get("left"))
-        if left is not None:
-            return left, "hc"
-
-    return 0.0, ""
-
-
-# ---------------------------------------------------------------------------
 # _credit_burn — rule 4
 # ---------------------------------------------------------------------------
 
 def _credit_burn(provider: str, month: str,
                  credit_meter_usd: float, credit_meter_src: str,
-                 balances_by_prov: dict[str, list[dict]]) -> tuple[float, str, str]:
-    """Return (burn_usd, src, note_override).
+                 invoice_credit_usd: float,
+                 balances_by_prov: dict[str, list[dict]]) -> tuple[float, str]:
+    """Return (burn_usd, src).
 
     Priority:
     1. credit-funded meter from api/cli/bq  → src 'meter'
-    2. balance delta (api|cli only, both distinct snapshots required, delta ≥ 0)  → src 'delta'
-    3. manual meter credit row              → src 'manual'
-    4. 0.0 / '' / needs_data note
+    2. credits applied on deduped invoice rows → src 'invoice'
+    3. balance delta (api|cli only, both distinct snapshots required, delta ≥ 0)  → src 'delta'
+    4. manual meter credit row              → src 'manual'
+    5. 0.0 / '' (needs_data)
     """
     # Rule 4-1: credit meter from a programmatic source (api/cli/bq)
     if credit_meter_usd > 0.0 and credit_meter_src in ("api", "cli", "bq"):
-        return round(credit_meter_usd, 2), "meter", ""
+        return round(credit_meter_usd, 2), "meter"
 
-    # Rule 4-2: balance delta
+    # Rule 4-2: invoice credits are explicit monthly burn evidence.
+    if invoice_credit_usd > 0.0:
+        return round(invoice_credit_usd, 2), "invoice"
+
+    # Rule 4-3: balance delta
     rows = balances_by_prov.get(provider, [])
     api_rows = [r for r in rows
                 if r.get("source") in ("api", "cli") and r.get("left_usd") is not None]
@@ -226,16 +187,15 @@ def _credit_burn(provider: str, month: str,
         snap_end = max(in_or_after, key=lambda r: r["run_at"])
         delta = float(snap_start["left_usd"]) - float(snap_end["left_usd"])
         if delta >= 0.0:
-            return round(delta, 2), "delta", ""
+            return round(delta, 2), "delta"
         # Negative delta → top-up → fall through
 
-    # Rule 4-3: manual meter credit row
+    # Rule 4-4: manual meter credit row
     if credit_meter_usd > 0.0 and credit_meter_src == "manual":
-        return round(credit_meter_usd, 2), "manual", ""
+        return round(credit_meter_usd, 2), "manual"
 
     # Needs-data fallthrough
-    note = NOTES.get(provider, f"python3 -m ingest.record meter {provider} {{month}} <usd> --funding credit")
-    return 0.0, "", note
+    return 0.0, ""
 
 
 # ---------------------------------------------------------------------------
@@ -293,8 +253,17 @@ def _status(provider: str, billing: str, is_grant: bool,
 
 def run(invoices: list[dict], payments: list[dict], meter: list[dict],
         usage: list[dict], balances: list[dict], pools: list[dict],
-        months: list[str], config: dict, today: str) -> list[dict]:
-    """Compute provider_month rows.
+        months: list[str], config: dict, today: str,
+        cat_map: dict | None = None) -> list[dict]:
+    """Compute provider_month rows — one row per (month, provider, category).
+
+    Invoice sums are keyed by each invoice's own category (fallback: the
+    provider's default category from cat_map, else 'compute'). Burn signals
+    (meters, usage, credit burn, status) attach to the provider's DEFAULT
+    category row — usage/meters are provider-level readings, and a provider's
+    platform activity lives in its default category (cloudflare → infra,
+    GPU/API providers → compute). Rows of other categories carry only
+    invoice_usd, with status ''.
 
     Args:
         invoices:  invoice rows from TB (status, period_month, provider, amount_usd, ...)
@@ -306,6 +275,7 @@ def run(invoices: list[dict], payments: list[dict], meter: list[dict],
         months:    list of "YYYY-MM" strings to evaluate
         config:    dict (currently unused; reserved for future config keys)
         today:     "YYYY-MM-DD" run_at stamp
+        cat_map:   {slug: default category} from harvest.PROVIDERS (via run.py)
 
     Returns:
         list of provider_month row dicts (full-replace datasource)
@@ -322,13 +292,19 @@ def run(invoices: list[dict], payments: list[dict], meter: list[dict],
 
     # ---- 2. Canonicalize usage providers and index inputs ----
 
-    # invoice index: (provider, month) -> list of invoice rows
-    inv_idx: dict[tuple[str, str], list[dict]] = {}
+    cat_map = cat_map or {}
+
+    def _default_cat(provider: str) -> str:
+        return cat_map.get(provider, "compute")
+
+    # invoice index: (provider, month, category) -> list of invoice rows
+    inv_idx: dict[tuple[str, str, str], list[dict]] = {}
     for r in invoices:
         p = (r.get("provider") or "").strip().lower()
         m = r.get("period_month", "")
+        cat = (r.get("category") or "").strip().lower() or _default_cat(p)
         if p and m:
-            inv_idx.setdefault((p, m), []).append(r)
+            inv_idx.setdefault((p, m, cat), []).append(r)
 
     # payment index: (provider, month) -> list of payment rows
     # Exclude rows with empty provider (unmatched)
@@ -365,98 +341,92 @@ def run(invoices: list[dict], payments: list[dict], meter: list[dict],
         if p:
             bal_by_prov.setdefault(p, []).append(r)
 
-    # ---- 3. Build universe ----
-    universe: set[tuple[str, str]] = set()
+    # ---- 3. Build universe (provider, month, category) ----
+    universe: set[tuple[str, str, str]] = set()
 
-    # Every pool provider × every month
+    # Every pool provider × every month, on the provider's default category
     for prov in prov_pool:
         for m in months:
-            universe.add((prov, m))
+            universe.add((prov, m, _default_cat(prov)))
 
     # Every month with data in any input
-    all_data_months = set(months)
-    for (p, m) in inv_idx:
-        all_data_months.add(m)
-        universe.add((p, m))
+    for (p, m, cat) in inv_idx:
+        universe.add((p, m, cat))
     for (p, m) in pay_idx:
-        all_data_months.add(m)
-        universe.add((p, m))
+        universe.add((p, m, _default_cat(p)))
     for (p, m) in meter_idx:
-        all_data_months.add(m)
-        universe.add((p, m))
+        universe.add((p, m, _default_cat(p)))
     for (p, m) in usage_idx:
-        all_data_months.add(m)
-        universe.add((p, m))
+        universe.add((p, m, _default_cat(p)))
 
     # ---- 4. Compute one row per (provider, month) ----
     results: list[dict] = []
 
-    for (provider, month) in sorted(universe):
+    for (provider, month, category) in sorted(universe):
         pool = prov_pool.get(provider)
         billing = pool.get("billing", "") if pool else ""
         is_grant = _is_grant_pool(pool) if pool else False
         in_pool = pool is not None
+        is_signal_row = category == _default_cat(provider)
 
-        # Rule 2: invoice_usd
-        inv_rows = inv_idx.get((provider, month), [])
+        # Rule 2: invoice_usd (per this row's category)
+        inv_rows = inv_idx.get((provider, month, category), [])
         invoice_usd = sum(
             (float(r.get("amount_usd") or 0.0)
              for r in inv_rows if r.get("status") == "parsed"),
             0.0,
         )
-
-        # Rule 2: cash_usd
-        pay_rows = pay_idx.get((provider, month), [])
-        cash_usd = sum((float(r.get("amount_usd") or 0.0) for r in pay_rows), 0.0)
-
-        # Rule 3: meter split
-        m_rows = meter_idx.get((provider, month), [])
-        meter_cash_usd, meter_prepaid_usd, credit_meter_usd, meter_src, credit_meter_src = _pick_meter(m_rows)
-
-        # Rule 5: usage_cost_usd
-        usage_cost_usd = usage_idx.get((provider, month), 0.0)
-
-        # Rule 6: grant_left
-        grant_left_usd, grant_src = _pick_grant_left(provider, bal_by_prov, pool)
-
-        # Rule 4: credit_burn (only for grant/sponsored pools)
-        credit_burn_usd = 0.0
-        credit_src = ""
-        burn_note = ""
-        if is_grant:
-            credit_burn_usd, credit_src, burn_note = _credit_burn(
-                provider, month, credit_meter_usd, credit_meter_src, bal_by_prov
-            )
-
-        # Rule 7: status
-        status = _status(
-            provider, billing, is_grant,
-            invoice_usd, cash_usd,
-            meter_cash_usd, meter_prepaid_usd,
-            credit_burn_usd, credit_src,
-            usage_cost_usd, in_pool,
+        invoice_credit_usd = sum(
+            (float(r.get("credit_usd") or 0.0)
+             for r in inv_rows if r.get("status") == "parsed"),
+            0.0,
         )
 
-        # Note: use burn_note when needs_data
-        note = burn_note if status == "needs_data" and burn_note else ""
+        if is_signal_row:
+            # Rule 2: cash_usd (status input only; not emitted)
+            pay_rows = pay_idx.get((provider, month), [])
+            cash_usd = sum((float(r.get("amount_usd") or 0.0) for r in pay_rows), 0.0)
+
+            # Rule 3: meter split
+            m_rows = meter_idx.get((provider, month), [])
+            meter_cash_usd, meter_prepaid_usd, credit_meter_usd, meter_src, credit_meter_src = _pick_meter(m_rows)
+
+            # Rule 5: usage_cost_usd
+            usage_cost_usd = usage_idx.get((provider, month), 0.0)
+
+            # Rule 4: credit_burn (only for grant/sponsored pools)
+            credit_burn_usd = 0.0
+            credit_src = ""
+            if is_grant:
+                credit_burn_usd, credit_src = _credit_burn(
+                    provider, month, credit_meter_usd, credit_meter_src,
+                    invoice_credit_usd, bal_by_prov
+                )
+
+            # Rule 7: status
+            status = _status(
+                provider, billing, is_grant,
+                invoice_usd, cash_usd,
+                meter_cash_usd, meter_prepaid_usd,
+                credit_burn_usd, credit_src,
+                usage_cost_usd, in_pool,
+            )
+        else:
+            meter_cash_usd = meter_prepaid_usd = usage_cost_usd = credit_burn_usd = 0.0
+            meter_src = credit_src = status = ""
 
         results.append({
             "month": month,
             "provider": provider,
-            "billing": billing,
+            "category": category,
             "invoice_usd": round(invoice_usd, 2),
-            "cash_usd": round(cash_usd, 2),
             "meter_cash_usd": round(meter_cash_usd, 2),
             "meter_prepaid_usd": round(meter_prepaid_usd, 2),
             "meter_src": meter_src,
             "usage_cost_usd": round(usage_cost_usd, 2),
             "credit_burn_usd": round(credit_burn_usd, 2),
             "credit_src": credit_src,
-            "grant_left_usd": round(float(grant_left_usd), 2),
-            "grant_src": grant_src,
             "status": status,
-            "note": note,
-            "run_at": today,
         })
 
     return results
@@ -466,12 +436,22 @@ def run(invoices: list[dict], payments: list[dict], meter: list[dict],
 # grants — pool-level merged view
 # ---------------------------------------------------------------------------
 
-def grants(pools: list[dict], balances: list[dict], today: str) -> list[dict]:
+def grants(pools: list[dict], balances: list[dict], today: str,
+           overrides: dict | None = None,
+           cat_map: dict | None = None) -> list[dict]:
     """Compute grants rows (pool-level view: credits.json base + latest live overlay).
 
-    Base values come from credits.json (src 'hc'). The latest balance snapshot
-    for any provider in the pool overlays with src 'api' (api/cli) or 'manual'.
+    Base values come from credits.json (src 'hc'), superseded by operator
+    overrides (src 'manual') from the `overrides` datasource, superseded by
+    the latest live balance snapshot (src 'api'/'manual').
+    Precedence per field: live API > override > credits.json hc.
     None values are preserved (Nullable columns in TB).
+
+    overrides: {("grants", pool_name, field): value_num} — latest per key,
+    as built by run.py from the overrides datasource. Fields: granted_usd,
+    left_usd, prepaid_left_usd.
+    cat_map: {slug: category} — pool category = category of its first mapped
+    provider (cloudflare pool → infra), default 'compute'.
 
     Args:
         pools:     list of pool dicts from load_credits()
@@ -482,6 +462,9 @@ def grants(pools: list[dict], balances: list[dict], today: str) -> list[dict]:
     Returns:
         list of grants row dicts (full-replace datasource)
     """
+    overrides = overrides or {}
+    cat_map = cat_map or {}
+
     # Index balances by provider → list of rows
     bal_by_prov: dict[str, list[dict]] = {}
     for r in balances:
@@ -496,9 +479,17 @@ def grants(pools: list[dict], balances: list[dict], today: str) -> list[dict]:
         kind = pool.get("kind", "")
 
         # Base from credits.json (hc) — coerce through _num to tolerate "n/a", "NA", "", etc.
-        hc_granted = _num(pool.get("granted"))
-        hc_left = _num(pool.get("left"))
-        hc_prepaid_left = _num(pool.get("cash_left"))
+        # An operator override (overrides datasource) supersedes the hc value.
+        def _base(field, hc_key):
+            ov = overrides.get(("grants", pool_name, field))
+            if ov is not None:
+                return _num(ov), "manual"
+            v = _num(pool.get(hc_key))
+            return v, ("hc" if v is not None else "")
+
+        hc_granted, hc_granted_src = _base("granted_usd", "granted")
+        hc_left, hc_left_src = _base("left_usd", "left")
+        hc_prepaid_left, hc_prepaid_src = _base("prepaid_left_usd", "cash_left")
 
         # Find the latest balance snapshot across all pool providers.
         # Canonicalize each provider slug so alias slugs (azure-2, bedrock (native))
@@ -517,37 +508,37 @@ def grants(pools: list[dict], balances: list[dict], today: str) -> list[dict]:
             # Overlay granted_usd if present in snapshot
             live_granted = best_bal.get("granted_usd")
             granted_usd = live_granted if live_granted is not None else hc_granted
-            granted_src = live_src if live_granted is not None else ("hc" if hc_granted is not None else "")
+            granted_src = live_src if live_granted is not None else hc_granted_src
 
             # Overlay left_usd
             live_left = best_bal.get("left_usd")
             left_usd = live_left if live_left is not None else hc_left
-            left_src = live_src if live_left is not None else ("hc" if hc_left is not None else "")
+            left_src = live_src if live_left is not None else hc_left_src
 
             # Overlay prepaid_left_usd
             live_prepaid = best_bal.get("prepaid_left_usd")
             if live_prepaid is not None:
                 prepaid_left_usd = live_prepaid
                 prepaid_left_src = live_src
-            elif hc_prepaid_left is not None:
-                prepaid_left_usd = hc_prepaid_left
-                prepaid_left_src = "hc"
             else:
-                prepaid_left_usd = None
-                prepaid_left_src = ""
+                prepaid_left_usd = hc_prepaid_left
+                prepaid_left_src = hc_prepaid_src
         else:
-            # Pure HC
+            # Pure HC / override
             granted_usd = hc_granted
-            granted_src = "hc" if hc_granted is not None else ""
+            granted_src = hc_granted_src
             left_usd = hc_left
-            left_src = "hc" if hc_left is not None else ""
+            left_src = hc_left_src
             prepaid_left_usd = hc_prepaid_left
-            prepaid_left_src = "hc" if hc_prepaid_left is not None else ""
+            prepaid_left_src = hc_prepaid_src
+
+        category = next((cat_map[p] for p in provs if p in cat_map), "compute")
 
         rows.append({
             "pool": pool_name,
             "providers": ",".join(provs),
             "kind": kind,
+            "category": category,
             "currency": pool.get("currency", "USD"),
             "granted_usd": granted_usd,
             "granted_src": granted_src,

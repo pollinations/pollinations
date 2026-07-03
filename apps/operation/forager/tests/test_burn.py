@@ -134,7 +134,7 @@ def test_rule1_pool_provider_in_universe():
 def test_rule1_usage_provider_adds_to_universe():
     usage = [{"month": "2026-06", "provider": "deepinfra", "model": "m", "event_type": "t",
                "requests": 10, "pollen_paid": 1.0, "pollen_quest": 0.0,
-               "cost_paid": 2.0, "cost_quest": 0.0, "retrieved_at": TODAY}]
+               "cost_paid": 2.0, "cost_quest": 0.0}]
     rows = _run(usage=usage)
     providers = {r["provider"] for r in rows}
     assert "deepinfra" in providers
@@ -144,7 +144,7 @@ def test_rule1_usage_raw_tb_name_canonicalized():
     # "bedrock" in usage should appear as "aws" in output
     usage = [{"month": "2026-06", "provider": "bedrock", "model": "m", "event_type": "t",
                "requests": 10, "pollen_paid": 0.0, "pollen_quest": 0.0,
-               "cost_paid": 5.0, "cost_quest": 0.0, "retrieved_at": TODAY}]
+               "cost_paid": 5.0, "cost_quest": 0.0}]
     rows = _run(usage=usage)
     providers = {r["provider"] for r in rows}
     assert "aws" in providers
@@ -152,7 +152,7 @@ def test_rule1_usage_raw_tb_name_canonicalized():
 
 
 def test_rule1_invoice_provider_adds_to_universe():
-    invoices = [{"sha256": "abc", "msgid": "m1", "provider": "nebius",
+    invoices = [{"sha256": "abc", "provider": "nebius",
                  "period_month": "2026-06", "amount_usd": 100.0,
                  "status": "parsed", "issued_at": "2026-06-01",
                  "category": "compute", "kind": "monthly_bill",
@@ -171,39 +171,40 @@ def test_rule2_invoice_usd_sums_parsed_only():
     invoices = [
         {"sha256": "s1", "provider": "google", "period_month": "2026-06",
          "amount_usd": 100.0, "status": "parsed", "issued_at": "2026-06-01",
-         "msgid": "", "category": "", "kind": "", "currency": "USD",
+         "category": "", "kind": "", "currency": "USD",
          "amount": 100.0, "invoice_number": "", "source": "", "file_ref": "", "ingested_at": TODAY},
         {"sha256": "s2", "provider": "google", "period_month": "2026-06",
          "amount_usd": 50.0, "status": "needs_label", "issued_at": "2026-06-02",
-         "msgid": "", "category": "", "kind": "", "currency": "USD",
+         "category": "", "kind": "", "currency": "USD",
          "amount": 50.0, "invoice_number": "", "source": "", "file_ref": "", "ingested_at": TODAY},
     ]
     r = _row(_run(invoices=invoices), "google")
     assert r["invoice_usd"] == 100.0  # needs_label not counted
 
 
-def test_rule2_cash_usd_sums_by_provider_month():
+def test_rule2_cash_payments_counted_by_provider_month():
+    # cash_usd was dropped from the provider_month schema; payments still feed
+    # the status rule internally — a paid provider is "ok", never "quiet".
     payments = [
         {"paid_at": "2026-06-10", "month": "2026-06", "provider": "runpod",
-         "counterparty": "", "amount_eur": 0.0, "amount_usd": 300.0, "wise_ref": "w1", "pulled_at": TODAY},
+         "counterparty": "", "amount_eur": 0.0, "amount_usd": 300.0, "wise_ref": "w1"},
         {"paid_at": "2026-06-20", "month": "2026-06", "provider": "runpod",
-         "counterparty": "", "amount_eur": 0.0, "amount_usd": 200.0, "wise_ref": "w2", "pulled_at": TODAY},
-        {"paid_at": "2026-06-10", "month": "2026-06", "provider": "google",
-         "counterparty": "", "amount_eur": 0.0, "amount_usd": 999.0, "wise_ref": "w3", "pulled_at": TODAY},
+         "counterparty": "", "amount_eur": 0.0, "amount_usd": 200.0, "wise_ref": "w2"},
     ]
     r = _row(_run(payments=payments), "runpod")
-    assert r["cash_usd"] == 500.0
+    assert r["status"] == "ok"
 
 
 def test_rule2_empty_provider_payments_excluded():
     payments = [
         {"paid_at": "2026-06-10", "month": "2026-06", "provider": "",
-         "counterparty": "", "amount_eur": 0.0, "amount_usd": 999.0, "wise_ref": "w9", "pulled_at": TODAY},
+         "counterparty": "", "amount_eur": 0.0, "amount_usd": 999.0, "wise_ref": "w9"},
     ]
     rows = _run(payments=payments)
-    # Unmatched (empty provider) should not count for any provider
+    # Unmatched (empty provider) should not count for any provider:
+    # nobody flips to "ok" because of the orphan payment
     for r in rows:
-        assert r["cash_usd"] == 0.0
+        assert r["status"] in ("quiet", "needs_data")
 
 
 # ---------------------------------------------------------------------------
@@ -213,10 +214,9 @@ def test_rule2_empty_provider_payments_excluded():
 def test_rule3_meter_api_wins_over_manual():
     meter = [
         {"month": "2026-06", "provider": "runpod", "cost_usd": 50.0,
-         "funding": "prepaid", "source": "manual", "method": "manual",
-         "retrieved_at": "2026-07-01"},
+         "funding": "prepaid", "source": "manual", "retrieved_at": "2026-07-01"},
         {"month": "2026-06", "provider": "runpod", "cost_usd": 1200.0,
-         "funding": "prepaid", "source": "api", "method": "api", "retrieved_at": "2026-07-02"},
+         "funding": "prepaid", "source": "api", "retrieved_at": "2026-07-02"},
     ]
     r = _row(_run(meter=meter), "runpod")
     assert r["meter_prepaid_usd"] == 1200.0
@@ -226,9 +226,9 @@ def test_rule3_meter_api_wins_over_manual():
 def test_rule3_meter_cash_and_prepaid_split():
     meter = [
         {"month": "2026-06", "provider": "google", "cost_usd": 80.0,
-         "funding": "cash", "source": "api", "method": "gcp bq", "retrieved_at": "2026-07-01"},
+         "funding": "cash", "source": "api", "retrieved_at": "2026-07-01"},
         {"month": "2026-06", "provider": "google", "cost_usd": 20.0,
-         "funding": "prepaid", "source": "api", "method": "gcp bq", "retrieved_at": "2026-07-01"},
+         "funding": "prepaid", "source": "api", "retrieved_at": "2026-07-01"},
     ]
     r = _row(_run(meter=meter), "google")
     assert r["meter_cash_usd"] == 80.0
@@ -246,7 +246,7 @@ def test_rule3_meter_src_empty_when_no_rows():
 def test_rule3_manual_fills_hole_when_no_api_cli_bq():
     meter = [
         {"month": "2026-06", "provider": "runpod", "cost_usd": 77.0,
-         "funding": "prepaid", "source": "manual", "method": "manual", "retrieved_at": "2026-07-01"},
+         "funding": "prepaid", "source": "manual", "retrieved_at": "2026-07-01"},
     ]
     r = _row(_run(meter=meter), "runpod")
     assert r["meter_prepaid_usd"] == 77.0
@@ -257,9 +257,9 @@ def test_rule3_latest_retrieved_at_wins_same_source():
     # Two api rows — later retrieved_at wins
     meter = [
         {"month": "2026-06", "provider": "runpod", "cost_usd": 100.0,
-         "funding": "prepaid", "source": "api", "method": "a", "retrieved_at": "2026-07-01"},
+         "funding": "prepaid", "source": "api", "retrieved_at": "2026-07-01"},
         {"month": "2026-06", "provider": "runpod", "cost_usd": 120.0,
-         "funding": "prepaid", "source": "api", "method": "b", "retrieved_at": "2026-07-02"},
+         "funding": "prepaid", "source": "api", "retrieved_at": "2026-07-02"},
     ]
     r = _row(_run(meter=meter), "runpod")
     assert r["meter_prepaid_usd"] == 120.0
@@ -272,7 +272,7 @@ def test_rule3_latest_retrieved_at_wins_same_source():
 def test_rule4_credit_burn_from_meter_credit_funding():
     meter = [
         {"month": "2026-06", "provider": "azure", "cost_usd": 500.0,
-         "funding": "credit", "source": "api", "method": "azure usage", "retrieved_at": TODAY},
+         "funding": "credit", "source": "api", "retrieved_at": TODAY},
     ]
     r = _row(_run(meter=meter), "azure")
     assert r["credit_burn_usd"] == 500.0
@@ -284,14 +284,45 @@ def test_rule4_credit_burn_from_balance_delta():
     balances = [
         {"run_at": "2026-05-31 23:00:00", "provider": "azure",
          "granted_usd": 250000.0, "spent_usd": 5000.0, "left_usd": 245000.0,
-         "prepaid_left_usd": None, "currency": "USD", "source": "api", "note": ""},
+         "prepaid_left_usd": None, "source": "api", "note": ""},
         {"run_at": "2026-06-30 23:00:00", "provider": "azure",
          "granted_usd": 250000.0, "spent_usd": 5400.0, "left_usd": 244600.0,
-         "prepaid_left_usd": None, "currency": "USD", "source": "api", "note": ""},
+         "prepaid_left_usd": None, "source": "api", "note": ""},
     ]
     r = _row(_run(balances=balances), "azure")
     assert r["credit_burn_usd"] == 400.0
     assert r["credit_src"] == "delta"
+
+
+def test_rule4_credit_burn_from_invoice_credit():
+    invoices = [
+        {"sha256": "aws-credit", "provider": "aws", "period_month": "2026-06",
+         "amount_usd": 0.0, "credit_usd": 384.47, "status": "parsed",
+         "issued_at": "2026-06-30", "category": "compute", "kind": "monthly_bill",
+         "currency": "USD", "amount": 0.0, "invoice_number": "",
+         "source": "email", "file_ref": "", "ingested_at": TODAY},
+    ]
+    r = _row(_run(invoices=invoices, pools=[POOL_MONTHLY_GRANT]), "aws")
+    assert r["invoice_usd"] == 0.0
+    assert r["credit_burn_usd"] == 384.47
+    assert r["credit_src"] == "invoice"
+
+
+def test_rule4_api_meter_credit_wins_over_invoice_credit():
+    invoices = [
+        {"sha256": "aws-credit", "provider": "aws", "period_month": "2026-06",
+         "amount_usd": 0.0, "credit_usd": 100.0, "status": "parsed",
+         "issued_at": "2026-06-30", "category": "compute", "kind": "monthly_bill",
+         "currency": "USD", "amount": 0.0, "invoice_number": "",
+         "source": "email", "file_ref": "", "ingested_at": TODAY},
+    ]
+    meter = [
+        {"month": "2026-06", "provider": "aws", "cost_usd": 250.0,
+         "funding": "credit", "source": "api", "retrieved_at": TODAY},
+    ]
+    r = _row(_run(invoices=invoices, meter=meter, pools=[POOL_MONTHLY_GRANT]), "aws")
+    assert r["credit_burn_usd"] == 250.0
+    assert r["credit_src"] == "meter"
 
 
 def test_rule4_delta_needs_both_snapshots_one_missing_gives_needs_data():
@@ -299,7 +330,7 @@ def test_rule4_delta_needs_both_snapshots_one_missing_gives_needs_data():
     balances = [
         {"run_at": "2026-05-31 23:00:00", "provider": "azure",
          "granted_usd": 250000.0, "spent_usd": 5000.0, "left_usd": 245000.0,
-         "prepaid_left_usd": None, "currency": "USD", "source": "api", "note": ""},
+         "prepaid_left_usd": None, "source": "api", "note": ""},
     ]
     r = _row(_run(balances=balances), "azure")
     assert r["credit_src"] == "" or r["status"] == "needs_data"
@@ -310,10 +341,10 @@ def test_rule4_negative_delta_falls_through():
     balances = [
         {"run_at": "2026-05-31 23:00:00", "provider": "azure",
          "granted_usd": 250000.0, "spent_usd": 5000.0, "left_usd": 244000.0,
-         "prepaid_left_usd": None, "currency": "USD", "source": "api", "note": ""},
+         "prepaid_left_usd": None, "source": "api", "note": ""},
         {"run_at": "2026-06-30 23:00:00", "provider": "azure",
          "granted_usd": 300000.0, "spent_usd": 5000.0, "left_usd": 295000.0,
-         "prepaid_left_usd": None, "currency": "USD", "source": "api", "note": ""},
+         "prepaid_left_usd": None, "source": "api", "note": ""},
     ]
     r = _row(_run(balances=balances), "azure")
     # negative delta → fallthrough → no manual either → needs_data note
@@ -325,7 +356,7 @@ def test_rule4_credit_burn_from_manual_row_fallback():
     # No api/cli snapshots, but a manual meter credit row
     meter = [
         {"month": "2026-06", "provider": "azure", "cost_usd": 300.0,
-         "funding": "credit", "source": "manual", "method": "manual", "retrieved_at": TODAY},
+         "funding": "credit", "source": "manual", "retrieved_at": TODAY},
     ]
     r = _row(_run(meter=meter), "azure")
     assert r["credit_burn_usd"] == 300.0
@@ -348,64 +379,14 @@ def test_rule5_usage_cost_sums_paid_and_quest():
         {"month": "2026-06", "provider": "google", "model": "gemini-2",
          "event_type": "generate.text", "requests": 100,
          "pollen_paid": 5.0, "pollen_quest": 1.0,
-         "cost_paid": 3.0, "cost_quest": 1.5, "retrieved_at": TODAY},
+         "cost_paid": 3.0, "cost_quest": 1.5},
         {"month": "2026-06", "provider": "google", "model": "imagen-4",
          "event_type": "generate.image", "requests": 50,
          "pollen_paid": 2.0, "pollen_quest": 0.0,
-         "cost_paid": 1.0, "cost_quest": 0.0, "retrieved_at": TODAY},
+         "cost_paid": 1.0, "cost_quest": 0.0},
     ]
     r = _row(_run(usage=usage), "google")
     assert r["usage_cost_usd"] == round(3.0 + 1.5 + 1.0 + 0.0, 2)
-
-
-# ---------------------------------------------------------------------------
-# Rule 6: grant_left_usd — HC fallback
-# ---------------------------------------------------------------------------
-
-def test_rule6_grant_left_from_api_balance():
-    balances = [
-        {"run_at": "2026-07-01 12:00:00", "provider": "azure",
-         "granted_usd": 250000.0, "spent_usd": 5400.0, "left_usd": 244600.0,
-         "prepaid_left_usd": None, "currency": "USD", "source": "api", "note": ""},
-    ]
-    r = _row(_run(balances=balances), "azure")
-    assert r["grant_left_usd"] == 244600.0
-    assert r["grant_src"] == "api"
-
-
-def test_rule6_grant_left_hc_fallback():
-    # No balances → fall back to credits.json static left
-    pool = {
-        "pool": "DeepInfra", "providers": ["deepinfra"], "billing": "sponsored",
-        "kind": "grant", "granted": 1000.0, "left": 750.0, "prepaid_left": None,
-        "expires": "", "note": "",
-    }
-    r = _row(_run(pools=[pool]), "deepinfra")
-    assert r["grant_left_usd"] == 750.0
-    assert r["grant_src"] == "hc"
-
-
-def test_rule6_grant_left_none_when_no_balance_and_no_hc():
-    # No balances, no left in pool
-    pool = {
-        "pool": "Foo", "providers": ["foo"], "billing": "sponsored",
-        "kind": "grant", "granted": None, "left": None, "prepaid_left": None,
-        "expires": "", "note": "",
-    }
-    r = _row(_run(pools=[pool]), "foo")
-    assert r["grant_left_usd"] == 0.0
-    assert r["grant_src"] == ""
-
-
-def test_rule6_manual_balance_gets_manual_src():
-    balances = [
-        {"run_at": "2026-07-01 10:00:00", "provider": "azure",
-         "granted_usd": None, "spent_usd": None, "left_usd": 100000.0,
-         "prepaid_left_usd": None, "currency": "USD", "source": "manual", "note": "hand"},
-    ]
-    r = _row(_run(balances=balances), "azure")
-    assert r["grant_left_usd"] == 100000.0
-    assert r["grant_src"] == "manual"
 
 
 # ---------------------------------------------------------------------------
@@ -421,7 +402,7 @@ def test_rule7_status_needs_data_for_sponsored_no_credit_signal():
 def test_rule7_status_grant_burn_when_credit_burn_gt_0():
     meter = [
         {"month": "2026-06", "provider": "azure", "cost_usd": 200.0,
-         "funding": "credit", "source": "api", "method": "api", "retrieved_at": TODAY},
+         "funding": "credit", "source": "api", "retrieved_at": TODAY},
     ]
     r = _row(_run(meter=meter), "azure")
     assert r["status"] == "grant_burn"
@@ -432,7 +413,7 @@ def test_rule7_status_grant_burn_when_usage_cost_gt_1_in_grant_pool():
         {"month": "2026-06", "provider": "azure", "model": "gpt-4",
          "event_type": "generate.text", "requests": 10,
          "pollen_paid": 0.0, "pollen_quest": 0.0,
-         "cost_paid": 5.0, "cost_quest": 2.0, "retrieved_at": TODAY},
+         "cost_paid": 5.0, "cost_quest": 2.0},
     ]
     # azure pool is sponsored/grant; even without credit_burn, usage_cost > 1 → grant_burn
     # BUT we need a credit signal first (needs_data wins over grant_burn for sponsored pools).
@@ -448,7 +429,7 @@ def test_rule7_status_usage_no_invoice_for_non_grant_provider():
         {"month": "2026-06", "provider": "runpod", "model": "m",
          "event_type": "generate.image", "requests": 10,
          "pollen_paid": 0.0, "pollen_quest": 0.0,
-         "cost_paid": 5.0, "cost_quest": 2.0, "retrieved_at": TODAY},
+         "cost_paid": 5.0, "cost_quest": 2.0},
     ]
     r = _row(_run(usage=usage, pools=pools_no_grant), "runpod")
     assert r["status"] == "usage_no_invoice"
@@ -464,12 +445,12 @@ def test_rule7_status_ok_when_invoice_and_cash():
     invoices = [
         {"sha256": "s1", "provider": "google", "period_month": "2026-06",
          "amount_usd": 500.0, "status": "parsed", "issued_at": "2026-06-01",
-         "msgid": "", "category": "", "kind": "", "currency": "USD",
+         "category": "", "kind": "", "currency": "USD",
          "amount": 500.0, "invoice_number": "", "source": "", "file_ref": "", "ingested_at": TODAY},
     ]
     payments = [
         {"paid_at": "2026-06-28", "month": "2026-06", "provider": "google",
-         "counterparty": "", "amount_eur": 0.0, "amount_usd": 500.0, "wise_ref": "w1", "pulled_at": TODAY},
+         "counterparty": "", "amount_eur": 0.0, "amount_usd": 500.0, "wise_ref": "w1"},
     ]
     r = _row(_run(invoices=invoices, payments=payments, pools=[POOL_MONTHLY]), "google")
     assert r["status"] == "ok"
@@ -479,8 +460,7 @@ def test_rule4_monthly_grant_pool_credit_meter_gives_credit_burn():
     # AWS-style: billing=monthly, kind=grant — credit_burn should fire via grant gate
     meter = [
         {"month": "2026-06", "provider": "aws", "cost_usd": 250.0,
-         "funding": "credit", "source": "api", "method": "aws cost-explorer",
-         "retrieved_at": TODAY},
+         "funding": "credit", "source": "api", "retrieved_at": TODAY},
     ]
     r = _row(_run(meter=meter, pools=[POOL_MONTHLY_GRANT]), "aws")
     assert r["credit_burn_usd"] == 250.0
@@ -492,31 +472,10 @@ def test_rule7_monthly_grant_pool_no_credit_signal_gives_needs_data():
     # AWS-style: billing=monthly, kind=grant — no credit signal → needs_data
     r = _row(_run(pools=[POOL_MONTHLY_GRANT]), "aws")
     assert r["status"] == "needs_data"
-    # note should contain the generic instruction since aws is not in NOTES
-    assert "aws" in r["note"]
-    assert "ingest.record" in r["note"]
 
 
-# ---------------------------------------------------------------------------
-# Rule 8: NOTES map
-# ---------------------------------------------------------------------------
-
-def test_rule8_notes_contains_io_net():
-    assert "io.net" in burn.NOTES
-    assert "cloud.io.net" in burn.NOTES["io.net"]
-    assert "ingest.record" in burn.NOTES["io.net"]
-
-
-def test_rule8_notes_contains_all_manual_providers():
-    for slug in ("io.net", "perplexity", "nebius", "lambda", "bytedance",
-                 "modal", "elevenlabs", "daytona"):
-        assert slug in burn.NOTES, f"{slug} missing from NOTES"
-        assert "ingest.record" in burn.NOTES[slug]
-
-
-def test_rule8_note_appears_in_provider_month_when_needs_data():
-    # io.net has no pool (no grant signal → needs_data shouldn't fire unless in grant pool)
-    # Add it as a sponsored pool so needs_data fires
+def test_rule7_sponsored_pool_no_signal_needs_data():
+    # A sponsored/grant pool provider with no meter/delta/manual signal → needs_data
     pool_ionet = {
         "pool": "io.net", "providers": ["io.net"], "billing": "sponsored",
         "kind": "grant", "granted": 10000.0, "left": 8000.0, "prepaid_left": None,
@@ -524,7 +483,6 @@ def test_rule8_note_appears_in_provider_month_when_needs_data():
     }
     r = _row(_run(pools=[pool_ionet]), "io.net")
     assert r["status"] == "needs_data"
-    assert "ingest.record" in r["note"]
 
 
 # ---------------------------------------------------------------------------
@@ -561,7 +519,7 @@ def test_grants_api_overlay_beats_hc():
     balances = [
         {"run_at": "2026-07-01 12:00:00", "provider": "azure",
          "granted_usd": 250000.0, "spent_usd": 5800.0, "left_usd": 244200.0,
-         "prepaid_left_usd": None, "currency": "USD", "source": "api", "note": "live"},
+         "prepaid_left_usd": None, "source": "api", "note": "live"},
     ]
     rows = burn.grants([pool], balances, TODAY)
     g = rows[0]
@@ -610,7 +568,7 @@ def test_grants_multi_provider_pool_uses_latest_balance():
     balances = [
         {"run_at": "2026-07-01 10:00:00", "provider": "google",
          "granted_usd": 350000.0, "spent_usd": 50000.0, "left_usd": 298000.0,
-         "prepaid_left_usd": None, "currency": "USD", "source": "api", "note": ""},
+         "prepaid_left_usd": None, "source": "api", "note": ""},
     ]
     rows = burn.grants([pool], balances, TODAY)
     assert rows[0]["left_usd"] == 298000.0
@@ -626,7 +584,7 @@ def test_grants_manual_balance_src():
     balances = [
         {"run_at": "2026-07-01 09:00:00", "provider": "perplexity",
          "granted_usd": None, "spent_usd": None, "left_usd": 3500.0,
-         "prepaid_left_usd": None, "currency": "USD", "source": "manual", "note": "hand"},
+         "prepaid_left_usd": None, "source": "manual", "note": "hand"},
     ]
     rows = burn.grants([pool], balances, TODAY)
     g = rows[0]
@@ -656,53 +614,52 @@ def test_full_scenario_2months_3providers():
     invoices = [
         {"sha256": "g1", "provider": "google", "period_month": "2026-05",
          "amount_usd": 1000.0, "status": "parsed", "issued_at": "2026-05-31",
-         "msgid": "", "category": "", "kind": "", "currency": "USD",
+         "category": "", "kind": "", "currency": "USD",
          "amount": 1000.0, "invoice_number": "", "source": "", "file_ref": "", "ingested_at": TODAY},
     ]
     payments = [
         {"paid_at": "2026-05-28", "month": "2026-05", "provider": "runpod",
-         "counterparty": "", "amount_eur": 0.0, "amount_usd": 500.0, "wise_ref": "rp1", "pulled_at": TODAY},
+         "counterparty": "", "amount_eur": 0.0, "amount_usd": 500.0, "wise_ref": "rp1"},
         {"paid_at": "2026-06-15", "month": "2026-06", "provider": "runpod",
-         "counterparty": "", "amount_eur": 0.0, "amount_usd": 600.0, "wise_ref": "rp2", "pulled_at": TODAY},
+         "counterparty": "", "amount_eur": 0.0, "amount_usd": 600.0, "wise_ref": "rp2"},
     ]
     meter = [
         {"month": "2026-05", "provider": "azure", "cost_usd": 300.0,
-         "funding": "credit", "source": "api", "method": "azure", "retrieved_at": TODAY},
+         "funding": "credit", "source": "api", "retrieved_at": TODAY},
         {"month": "2026-06", "provider": "azure", "cost_usd": 400.0,
-         "funding": "credit", "source": "api", "method": "azure", "retrieved_at": TODAY},
+         "funding": "credit", "source": "api", "retrieved_at": TODAY},
         {"month": "2026-06", "provider": "runpod", "cost_usd": 580.0,
-         "funding": "prepaid", "source": "api", "method": "runpod api", "retrieved_at": TODAY},
+         "funding": "prepaid", "source": "api", "retrieved_at": TODAY},
     ]
     usage = [
         {"month": "2026-05", "provider": "azure", "model": "gpt-4",
          "event_type": "generate.text", "requests": 1000,
          "pollen_paid": 10.0, "pollen_quest": 2.0,
-         "cost_paid": 5.0, "cost_quest": 1.0, "retrieved_at": TODAY},
+         "cost_paid": 5.0, "cost_quest": 1.0},
     ]
     balances = [
         {"run_at": "2026-07-01 00:00:00", "provider": "azure",
          "granted_usd": 250000.0, "spent_usd": 5700.0, "left_usd": 244300.0,
-         "prepaid_left_usd": None, "currency": "USD", "source": "api", "note": ""},
+         "prepaid_left_usd": None, "source": "api", "note": ""},
     ]
 
     rows = burn.run(invoices, payments, meter, usage, balances, pools_scen, months_scen, CFG, TODAY)
 
-    # Check schema completeness
-    required_cols = {"month", "provider", "billing", "invoice_usd", "cash_usd",
+    # Check exact schema (slimmed provider_month datasource)
+    required_cols = {"month", "provider",
+        "category", "invoice_usd",
                      "meter_cash_usd", "meter_prepaid_usd", "meter_src", "usage_cost_usd",
-                     "credit_burn_usd", "credit_src", "grant_left_usd", "grant_src",
-                     "status", "note", "run_at"}
+                     "credit_burn_usd", "credit_src", "status"}
     for r in rows:
-        missing = required_cols - set(r.keys())
-        assert not missing, f"row missing cols: {missing} in {r}"
+        assert set(r.keys()) == required_cols, (
+            f"row cols mismatch: {set(r.keys()) ^ required_cols} in {r}"
+        )
 
     # azure-2026-05: credit meter → grant_burn
     az05 = next(r for r in rows if r["provider"] == "azure" and r["month"] == "2026-05")
-    assert az05["billing"] == "sponsored"
     assert az05["credit_burn_usd"] == 300.0
     assert az05["credit_src"] == "meter"
     assert az05["status"] == "grant_burn"
-    assert az05["run_at"] == TODAY
 
     # azure-2026-06: credit meter
     az06 = next(r for r in rows if r["provider"] == "azure" and r["month"] == "2026-06")
@@ -712,14 +669,13 @@ def test_full_scenario_2months_3providers():
     # usage from "azure" provider lands on azure 2026-05
     assert az05["usage_cost_usd"] == round(5.0 + 1.0, 2)
 
-    # runpod-2026-05: cash payment, no invoice, no meter
+    # runpod-2026-05: cash payment, no invoice, no meter → ok (not quiet)
     rp05 = next(r for r in rows if r["provider"] == "runpod" and r["month"] == "2026-05")
-    assert rp05["cash_usd"] == 500.0
     assert rp05["invoice_usd"] == 0.0
+    assert rp05["status"] == "ok"
 
-    # runpod-2026-06: cash + prepaid meter
+    # runpod-2026-06: prepaid meter
     rp06 = next(r for r in rows if r["provider"] == "runpod" and r["month"] == "2026-06")
-    assert rp06["cash_usd"] == 600.0
     assert rp06["meter_prepaid_usd"] == 580.0
     assert rp06["meter_src"] == "api"
 
@@ -730,8 +686,8 @@ def test_full_scenario_2months_3providers():
 
     # All floats are rounded to 2dp
     for r in rows:
-        for col in ("invoice_usd", "cash_usd", "meter_cash_usd", "meter_prepaid_usd",
-                    "usage_cost_usd", "credit_burn_usd", "grant_left_usd"):
+        for col in ("invoice_usd", "meter_cash_usd", "meter_prepaid_usd",
+                    "usage_cost_usd", "credit_burn_usd"):
             v = r[col]
             assert isinstance(v, float), f"{col} is {type(v)} not float in {r['provider']}/{r['month']}"
             assert round(v, 2) == v, f"{col}={v} not rounded to 2dp in {r['provider']}/{r['month']}"
@@ -795,8 +751,8 @@ def test_grants_non_numeric_hc_values_become_none():
 
 
 def test_run_non_numeric_pool_does_not_raise():
-    """run() with a pool carrying 'n/a' string values must not raise ValueError
-    and must produce grant_src='' and grant_left_usd=0.0."""
+    """run() with a pool carrying 'n/a' string values must not raise ValueError;
+    the grant pool has no credit signal → needs_data."""
     pool = {
         "pool": "AWS-old",
         "providers": ["aws"],
@@ -811,8 +767,8 @@ def test_run_non_numeric_pool_does_not_raise():
     rows = burn.run([], [], [], [], [], [pool], MONTHS, CFG, TODAY)
     assert len(rows) == 1
     r = rows[0]
-    assert r["grant_left_usd"] == 0.0
-    assert r["grant_src"] == ""
+    assert r["status"] == "needs_data"
+    assert r["credit_src"] == ""
 
 
 def test_grants_comma_number_granted_parses():
@@ -880,7 +836,7 @@ def test_pool_alias_usage_under_canonical_slug():
     }
     meter = [
         {"month": "2026-06", "provider": "azure", "cost_usd": 300.0,
-         "funding": "credit", "source": "api", "method": "azure", "retrieved_at": TODAY},
+         "funding": "credit", "source": "api", "retrieved_at": TODAY},
     ]
     rows = burn.run([], [], meter, [], [], [pool_alias], MONTHS, CFG, TODAY)
     azure_rows = [r for r in rows if r["provider"] == "azure"]

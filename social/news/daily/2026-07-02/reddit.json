@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-07-02",
+  "period_start": "2026-07-02",
+  "period_end": "2026-07-02",
+  "generated_at": "2026-07-03T07:02:57.060504+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-02/images/reddit.jpg"
+    }
+  ],
+  "title": "Shipped 3D generation, self-hosted 5090s for Flux, and OAuth 2.1",
+  "text": "Merged 9 PRs today. The most noticeable change is that we support 3D generation now, but there are some infrastructure updates too.\n\n- 3D Generation: Added Trellis 2 (via inferenceport) and Rodin 2.5 (via fal.ai). Endpoints are live, and we pushed a minor UI fix to properly display their prices and icons.\n- Infrastructure: We routed Flux generation to a self-hosted Vast.ai 5090 pool. It's currently hitting sub-3-second generations. If the pool gets saturated, it automatically falls back to Fireworks.\n- Auth: Shipped proper OAuth 2.1 authorization-code grant with PKCE and RFC 8414 discovery. If you're building apps that require secure API delegation, the flow should be much cleaner now.\n- Community Models: The alpha is expanding. We allowlisted a few more creators (LynxUnbanned, Catniti, Bakhshi7889, vendouple) and added a dedicated section in the docs explaining how the community model alpha works.\n- Fixes: The /video/models endpoint actually returns just video models now instead of the full list. Minor oversight, patched.\n\nCode, docs, and the open roadmap are at github.com/pollinations/pollinations. Let us know if the 5090 pool starts throwing weird latencies or if the fallback fails to trigger."
+}

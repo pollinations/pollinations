@@ -8,6 +8,7 @@
     "packages/sdk",
     "packages/ui",
     "apps/react",
+    "apps/operation/treasury/web",
     "tools/icons"
   ],
   "scripts": {

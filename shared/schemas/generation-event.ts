@@ -94,6 +94,10 @@ export type TinybirdEvent = {
     totalCost: number;
     totalPrice: number;
     devPrice?: number;
+    adjustmentKind?: string;
+    adjustmentUnits?: number;
+    adjustmentCost?: number;
+    adjustmentPrice?: number;
     markupRate?: number;
     communityModelRewardUserId?: string;
     communityModelRewardRate?: number;

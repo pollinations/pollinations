@@ -38,6 +38,9 @@ export function getRequestData(req: ExpressLikeRequest): RequestData {
         stream_options: data.stream_options as
             | Record<string, unknown>
             | undefined,
+        web_search_options: data.web_search_options as
+            | Record<string, unknown>
+            | undefined,
         logprobs: data.logprobs,
         top_logprobs: data.top_logprobs,
         logit_bias: data.logit_bias,

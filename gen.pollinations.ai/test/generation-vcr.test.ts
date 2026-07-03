@@ -483,6 +483,10 @@ test("chat completions bill provider-reported Perplexity request cost without ex
         tokenCountPromptText: 10,
         tokenCountCompletionText: 5,
         isBilledUsage: true,
+        adjustmentKind: "perplexity.sonar_low.search_request.v1",
+        adjustmentUnits: 1,
+        adjustmentCost: 0.006,
+        adjustmentPrice: 0.006,
     });
     expect(mocks.tinybird.state.events[0].totalCost).toBeCloseTo(0.006015, 8);
 });
@@ -517,12 +521,16 @@ test("streaming chat completions bill provider-reported Perplexity request cost"
         tokenCountPromptText: 7,
         tokenCountCompletionText: 3,
         isBilledUsage: true,
+        adjustmentKind: "perplexity.sonar_low.search_request.v1",
+        adjustmentUnits: 1,
+        adjustmentCost: 0.007,
+        adjustmentPrice: 0.007,
     });
     // 0.007 provider-reported request fee + 0.00001 token cost.
     expect(mocks.tinybird.state.events[0].totalCost).toBeCloseTo(0.00701, 8);
 });
 
-test("malformed provider-reported cost fails the request with a 5xx", async ({
+test("malformed provider-reported cost bills static fallback without failing the request", async ({
     paidApiKey,
     mocks,
 }) => {
@@ -542,14 +550,22 @@ test("malformed provider-reported cost fails the request with a 5xx", async ({
         }),
     });
 
-    expect(response.status).toBe(502);
+    expect(response.status).toBe(200);
     await wait();
 
-    // The anomaly is never billed.
-    const billed = mocks.tinybird.state.events.filter(
-        (event) => event.isBilledUsage,
-    );
-    expect(billed).toHaveLength(0);
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.text",
+        modelRequested: "perplexity-fast",
+        tokenCountPromptText: 10,
+        tokenCountCompletionText: 5,
+        isBilledUsage: true,
+        adjustmentKind: "perplexity.sonar_low.search_request.v1",
+        adjustmentUnits: 1,
+        adjustmentCost: 0.005,
+        adjustmentPrice: 0.005,
+    });
+    expect(mocks.tinybird.state.events[0].totalCost).toBeCloseTo(0.005015, 8);
 });
 
 test("non-stream chat completions keep moderation telemetry in generation events", async ({

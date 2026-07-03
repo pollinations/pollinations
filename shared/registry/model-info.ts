@@ -44,35 +44,6 @@ export const ModelInfoSchema = z.object({
     pricing: z
         .record(z.string(), z.string())
         .and(z.object({ currency: z.literal("pollen") })),
-    billing: z
-        .object({
-            tiers: z
-                .array(
-                    z.object({
-                        id: z.string(),
-                        description: z.string(),
-                    }),
-                )
-                .optional(),
-            adjustments: z
-                .array(
-                    z.object({
-                        id: z.string(),
-                        description: z.string(),
-                        kind: z.string(),
-                        unit: z.string(),
-                        count: z.enum([
-                            "geminiGroundedPrompt",
-                            "geminiWebSearchQueries",
-                            "perplexityRequest",
-                        ]),
-                        when: z.enum(["grounded", "always"]),
-                        unit_price: z.string(),
-                    }),
-                )
-                .optional(),
-        })
-        .optional(),
     title: z.string(),
     description: z.string().optional(),
     input_modalities: z.array(z.string()).optional(),
@@ -129,31 +100,6 @@ function pricingInfoFromDefinition(
     return pricing;
 }
 
-function billingInfoFromDefinition(service: ModelDefinition<string>) {
-    const billing = service.billing
-        ? {
-              tiers: service.billing.tiers?.map((tier) => ({
-                  id: tier.id,
-                  description: tier.description,
-              })),
-              adjustments: service.billing.adjustments?.map((adjustment) => ({
-                  id: adjustment.id,
-                  description: adjustment.description,
-                  kind: adjustment.kind,
-                  unit: adjustment.unit,
-                  count: adjustment.count,
-                  when: adjustment.when ?? "grounded",
-                  unit_price: toFixedPoint(
-                      adjustment.unitCost *
-                          (adjustment.priceMultiplier ??
-                              service.priceMultiplier),
-                  ),
-              })),
-          }
-        : undefined;
-    return billing;
-}
-
 export function modelInfoFromDefinition(
     name: string,
     service: ModelDefinition<string>,
@@ -166,7 +112,6 @@ export function modelInfoFromDefinition(
         brand: service.brand,
         community: options.community || undefined,
         pricing: pricingInfoFromDefinition(getPriceDefinitionForModel(service)),
-        billing: billingInfoFromDefinition(service),
         // User-facing metadata from service definition
         title: service.title,
         description: service.description,

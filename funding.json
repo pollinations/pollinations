@@ -1,0 +1,63 @@
+{
+  "version": "v1.1.0",
+  "entity": {
+    "type": "organisation",
+    "role": "owner",
+    "name": "Myceli AI OÜ",
+    "email": "thomash@pollinations.ai",
+    "phone": "+49 1754863246",
+    "description": "Pollinations.AI is a free, open-source generative AI API that gives any developer instant access to image, text, audio, and video generation models with no signup required and no API key to start. The project is fully open source and self-hostable, and has grown to roughly 100,000 registered developers and 1.5 million API calls a day, almost entirely through word of mouth and GitHub.",
+    "webpageUrl": {
+      "url": "https://pollinations.ai"
+    }
+  },
+  "projects": [
+    {
+      "guid": "pollinations",
+      "name": "Pollinations.AI",
+      "description": "Open-source, unified generative AI API for image, text, audio, and video generation. Self-hostable, developer-first, and free to build on.",
+      "webpageUrl": {
+        "url": "https://pollinations.ai"
+      },
+      "repositoryUrl": {
+        "url": "https://github.com/pollinations/pollinations"
+      },
+      "licenses": [
+        "spdx:MIT"
+      ],
+      "tags": [
+        "generative-ai",
+        "api",
+        "open-source",
+        "image-generation",
+        "text-generation",
+        "audio-generation",
+        "developer-tools"
+      ]
+    }
+  ],
+  "funding": {
+    "channels": [
+      {
+        "guid": "bank-eu",
+        "type": "bank",
+        "address": "Myceli AI OÜ, Tornimäe tn 5, 10145 Tallinn, Estonia",
+        "description": "EU bank account held by Myceli AI OÜ (Estonian registered entity operating Pollinations.AI)"
+      }
+    ],
+    "plans": [
+      {
+        "guid": "compute-and-maintenance",
+        "status": "active",
+        "name": "Compute and maintenance funding",
+        "amount": 100000,
+        "currency": "USD",
+        "frequency": "yearly",
+        "channels": [
+          "bank-eu"
+        ]
+      }
+    ],
+    "history": []
+  }
+}

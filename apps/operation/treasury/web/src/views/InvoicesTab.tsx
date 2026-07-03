@@ -1,4 +1,5 @@
 import {
+    Button,
     CheckIcon,
     Chip,
     ClipboardIcon,
@@ -9,9 +10,10 @@ import {
     TableHeaderCell,
     TableRow,
 } from "@pollinations/ui";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { DataNote } from "../components/DataNote";
 import { DataTable, TableScroller } from "../components/DataTable";
+import { InvoiceEditor } from "../components/InvoiceEditor";
 import { SourceBadge } from "../components/Provenance";
 import { fmtUsd2 } from "../lib/format";
 import { statusMeta } from "../lib/recon";
@@ -75,6 +77,7 @@ function FileRefAction({ fileRef }: { fileRef: string }) {
 
 export function InvoicesTab({ data }: { data: Data }) {
     const [category, setCategory] = useState("all");
+    const [editingSha, setEditingSha] = useState<string | null>(null);
     const rows = useMemo(
         () =>
             sortedInvoices(data.invoices).filter(
@@ -124,40 +127,77 @@ export function InvoicesTab({ data }: { data: Data }) {
                             <TableHeaderCell>file</TableHeaderCell>
                             <TableHeaderCell>status</TableHeaderCell>
                             <TableHeaderCell>ingested_at</TableHeaderCell>
+                            <TableHeaderCell>action</TableHeaderCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {rows.map((row) => (
-                            <TableRow
-                                key={`${row.sha256}|${row.source}|${row.ingested_at}`}
-                            >
-                                <TableCell>{row.provider || "-"}</TableCell>
-                                <TableCell>{row.category || "-"}</TableCell>
-                                <TableCell>{row.kind || "-"}</TableCell>
-                                <TableCell>{row.period_month || "-"}</TableCell>
-                                <TableCell>{row.amount}</TableCell>
-                                <TableCell>{row.currency || "-"}</TableCell>
-                                <TableCell>{fmtUsd2(row.amount_usd)}</TableCell>
-                                <TableCell>
-                                    {row.credit_usd > 0
-                                        ? fmtUsd2(row.credit_usd)
-                                        : "-"}
-                                </TableCell>
-                                <TableCell>
-                                    {row.invoice_number || "-"}
-                                </TableCell>
-                                <TableCell>{row.issued_at || "-"}</TableCell>
-                                <TableCell>
-                                    <SourceBadge source={row.source} />
-                                </TableCell>
-                                <TableCell title={row.file_ref}>
-                                    <FileRefAction fileRef={row.file_ref} />
-                                </TableCell>
-                                <TableCell>
-                                    <StatusChip status={row.status} />
-                                </TableCell>
-                                <TableCell>{row.ingested_at || "-"}</TableCell>
-                            </TableRow>
+                            <Fragment key={`${row.sha256}|${row.ingested_at}`}>
+                                <TableRow
+                                    key={`${row.sha256}|${row.source}|${row.ingested_at}`}
+                                >
+                                    <TableCell>{row.provider || "-"}</TableCell>
+                                    <TableCell>{row.category || "-"}</TableCell>
+                                    <TableCell>{row.kind || "-"}</TableCell>
+                                    <TableCell>
+                                        {row.period_month || "-"}
+                                    </TableCell>
+                                    <TableCell>{row.amount}</TableCell>
+                                    <TableCell>{row.currency || "-"}</TableCell>
+                                    <TableCell>
+                                        {fmtUsd2(row.amount_usd)}
+                                    </TableCell>
+                                    <TableCell>
+                                        {row.credit_usd > 0
+                                            ? fmtUsd2(row.credit_usd)
+                                            : "-"}
+                                    </TableCell>
+                                    <TableCell>
+                                        {row.invoice_number || "-"}
+                                    </TableCell>
+                                    <TableCell>
+                                        {row.issued_at || "-"}
+                                    </TableCell>
+                                    <TableCell>
+                                        <SourceBadge source={row.source} />
+                                    </TableCell>
+                                    <TableCell title={row.file_ref}>
+                                        <FileRefAction fileRef={row.file_ref} />
+                                    </TableCell>
+                                    <TableCell>
+                                        <StatusChip status={row.status} />
+                                    </TableCell>
+                                    <TableCell>
+                                        {row.ingested_at || "-"}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Button
+                                            size="sm"
+                                            onClick={() =>
+                                                setEditingSha((current) =>
+                                                    current === row.sha256
+                                                        ? null
+                                                        : row.sha256,
+                                                )
+                                            }
+                                        >
+                                            Edit
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                                {editingSha === row.sha256 && (
+                                    <TableRow key={`${row.sha256}|editor`}>
+                                        <TableCell colSpan={15}>
+                                            <InvoiceEditor
+                                                row={row}
+                                                onClose={() =>
+                                                    setEditingSha(null)
+                                                }
+                                            />
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </Fragment>
                         ))}
                     </TableBody>
                 </DataTable>

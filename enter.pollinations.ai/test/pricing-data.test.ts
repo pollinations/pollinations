@@ -719,6 +719,44 @@ test("Gemini 3.x search query fee counts distinct queries and dedups chunks", ()
     expect(
         calculateCost("gemini-3-flash", usage, dupAcrossChunks).totalCost,
     ).toBeCloseTo(3.542, 8);
+
+    // Queries differing only in surrounding whitespace are the same query.
+    const whitespaceDup = {
+        choices: [
+            { groundingMetadata: { webSearchQueries: ["berlin", " berlin "] } },
+        ],
+    };
+    expect(
+        calculateCost("gemini-3-flash", usage, whitespaceDup).totalCost,
+    ).toBeCloseTo(3.514, 8);
+});
+
+test("Gemini counters never throw on malformed provider metadata", () => {
+    const usage = {
+        promptTextTokens: 1_000_000,
+        completionTextTokens: 1_000_000,
+    };
+    // Counters run before the deduction/event path in track.ts — a throw
+    // would skip billing AND tracking, so malformed shapes must bill
+    // token-only instead of throwing.
+    const malformed = [
+        { choices: [{ groundingMetadata: { webSearchQueries: "berlin" } }] },
+        { choices: [{ groundingMetadata: { webSearchQueries: [42, null] } }] },
+        { choices: [{ groundingMetadata: { groundingChunks: "nope" } }] },
+        { choices: [{ groundingMetadata: { groundingChunks: [null, 7] } }] },
+        { choices: { groundingMetadata: {} } },
+        { choices: [null, "text"] },
+        { streamEvents: { choices: [] } },
+        { streamEvents: [null, { choices: [null] }] },
+    ];
+    for (const output of malformed) {
+        expect(
+            calculateCost("gemini-3-flash", usage, output).totalCost,
+        ).toBeCloseTo(3.5, 8);
+        expect(
+            calculateCost("gemini-search", usage, output).totalCost,
+        ).toBeCloseTo(0.5, 8);
+    }
 });
 
 test("calculateBillingAdjustments returns per-rule breakdown entries", () => {

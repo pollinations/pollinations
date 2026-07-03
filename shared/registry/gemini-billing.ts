@@ -16,17 +16,32 @@ type GroundedOutput = {
     streamEvents?: GroundedOutput[];
 };
 
+// Counters walk raw provider output and must never throw — a throw here
+// happens before the deduction/event path in track.ts, so it would skip
+// billing AND the tracking event. Guard every shape assumption.
 function eachGroundingMetadata(output: unknown): GroundingMetadata[] {
     const o = output as GroundedOutput | undefined;
-    const events = o?.streamEvents ?? (o ? [o] : []);
+    const events = Array.isArray(o?.streamEvents)
+        ? o.streamEvents
+        : o
+          ? [o]
+          : [];
     const metadata: GroundingMetadata[] = [];
     for (const event of events) {
-        for (const choice of event.choices ?? []) {
-            if (choice.groundingMetadata)
+        const choices = Array.isArray(event?.choices) ? event.choices : [];
+        for (const choice of choices) {
+            if (choice?.groundingMetadata)
                 metadata.push(choice.groundingMetadata);
         }
     }
     return metadata;
+}
+
+function webSearchQueryStrings(metadata: GroundingMetadata): string[] {
+    if (!Array.isArray(metadata.webSearchQueries)) return [];
+    return metadata.webSearchQueries.filter(
+        (q): q is string => typeof q === "string" && q.trim() !== "",
+    );
 }
 
 // Gemini 2.5: Google bills one grounded prompt when Google-Search web evidence
@@ -36,9 +51,11 @@ function eachGroundingMetadata(output: unknown): GroundingMetadata[] {
 // supports and must not trigger the Google-Search fee.
 function countGeminiGroundedPrompt(output: unknown): number {
     for (const metadata of eachGroundingMetadata(output)) {
-        if (metadata.webSearchQueries?.some((q) => q?.trim())) return 1;
-        if (metadata.groundingChunks?.some((chunk) => chunk?.web?.uri))
-            return 1;
+        if (webSearchQueryStrings(metadata).length > 0) return 1;
+        const chunks = Array.isArray(metadata.groundingChunks)
+            ? metadata.groundingChunks
+            : [];
+        if (chunks.some((chunk) => chunk?.web?.uri)) return 1;
     }
     return 0;
 }
@@ -48,8 +65,8 @@ function countGeminiGroundedPrompt(output: unknown): number {
 function countGeminiWebSearchQueries(output: unknown): number {
     const queries = new Set<string>();
     for (const metadata of eachGroundingMetadata(output)) {
-        for (const q of metadata.webSearchQueries ?? []) {
-            if (q?.trim()) queries.add(q);
+        for (const q of webSearchQueryStrings(metadata)) {
+            queries.add(q.trim());
         }
     }
     return queries.size;

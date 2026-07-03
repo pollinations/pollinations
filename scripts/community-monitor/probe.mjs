@@ -3,8 +3,12 @@
 // Cost-weighted: cheap models get more requests than expensive ones (see
 // planRequestCounts), every model capped at MAX_REQUESTS_PER_MODEL so no
 // upstream -- free or paid -- ever gets hammered. ~TARGET_POLLEN is a spend
-// ceiling to aim under, not a hard target; the per-model cap usually keeps
-// actual spend well below it since most community models are near-free.
+// ceiling to aim under, not a hard target -- in practice the current
+// community catalog is cheap enough that even every model hitting the cap
+// lands around 0.05-0.1 pollen/cycle, well under target. That's fine: the
+// point is coverage (every model probed every cycle), not spend. If pricier
+// models join the catalog, the budget top-up logic will use more of the
+// headroom automatically -- no need to chase the target by loosening the cap.
 // Actual spend is reconciled from real `usage` tokens and fed back into
 // state.json so next cycle's budget self-corrects (overspend -> undershoot).
 // Writes /home/ubuntu/monitor/probe-results.json and prints a summary table.
@@ -83,7 +87,10 @@ function planRequestCounts(models, budget) {
             Math.floor(i / tierSize),
             TIER_TARGETS.length - 1,
         );
-        counts.set(m.name, Math.min(TIER_TARGETS[tier], MAX_REQUESTS_PER_MODEL));
+        counts.set(
+            m.name,
+            Math.min(TIER_TARGETS[tier], MAX_REQUESTS_PER_MODEL),
+        );
     });
 
     let spent = byCostAsc.reduce(

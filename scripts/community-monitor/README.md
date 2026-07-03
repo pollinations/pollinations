@@ -67,11 +67,16 @@ needed on the box) and allocates probe requests per model:
   those move total spend the most per request.
 - **Every model is hard-capped at 5 requests/cycle regardless of price** —
   this is a health probe, not a load test, and a free/near-free model must
-  never get hammered just because the budget "allows" more. In practice this
-  cap is almost always the binding constraint (most community models cost a
-  small fraction of a cent per request), so actual spend usually lands well
-  under 0.5 pollen — treat 0.5 as a ceiling to stay under, not a target to
-  chase exactly.
+  never get hammered just because the budget "allows" more. This cap is
+  almost always the binding constraint in practice, not the 0.5-pollen
+  budget: as of 2026-07, the entire community catalog (56 models) hitting
+  the cap simultaneously only totals ~0.07 pollen — the catalog is simply
+  cheap. Actual spend has consistently landed around 0.015 pollen/cycle.
+  This is fine and expected: the goal is coverage (every model probed every
+  cycle), not spend — 0.5 was a ceiling to stay under, never a target to
+  chase, and the cap is deliberately not loosened just to hit it. If
+  pricier models join the catalog, the top-up logic will use more of the
+  budget headroom automatically with no code change needed.
 - Actual spend is reconciled from each response's real `usage` tokens (not
   the pre-flight estimate) and written to `state.json`'s `spend` key. Next
   cycle's budget mean-reverts off last cycle's actual spend (overspend ->

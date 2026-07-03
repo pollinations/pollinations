@@ -1,0 +1,91 @@
+@import "@pollinations/ui/app.css";
+
+.treasury-source-badge {
+    display: inline-flex;
+    height: 1.25rem;
+    min-width: 1.75rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid transparent;
+    border-radius: 0.25rem;
+    padding: 0 0.4rem;
+    font-family: var(--polli-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 0.625rem;
+    font-weight: 800;
+    line-height: 1;
+    text-transform: lowercase;
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1);
+}
+
+.treasury-source-tb {
+    border-color: #c4b5fd;
+    background: #6d28d9;
+    color: #ffffff;
+}
+
+.treasury-source-iv {
+    border-color: #fde68a;
+    background: #b45309;
+    color: #fff7ed;
+}
+
+.treasury-source-hc {
+    border-color: #bef264;
+    background: #4d7c0f;
+    color: #f7fee7;
+}
+
+.treasury-source-api {
+    border-color: #93c5fd;
+    background: #1d4ed8;
+    color: #eff6ff;
+}
+
+.treasury-source-cli {
+    border-color: #5eead4;
+    background: #0f766e;
+    color: #f0fdfa;
+}
+
+.treasury-source-bq {
+    border-color: #a5b4fc;
+    background: #4338ca;
+    color: #eef2ff;
+}
+
+.treasury-source-ws {
+    border-color: #67e8f9;
+    background: #0e7490;
+    color: #ecfeff;
+}
+
+.treasury-source-st {
+    border-color: #f0abfc;
+    background: #a21caf;
+    color: #fdf4ff;
+}
+
+.treasury-source-gh {
+    border-color: #cbd5e1;
+    background: #475569;
+    color: #f8fafc;
+}
+
+.treasury-source-cf {
+    border-color: #fdba74;
+    background: #ea580c;
+    color: #fff7ed;
+}
+
+.treasury-source-eq {
+    border-color: #6ee7b7;
+    background: #047857;
+    color: #ecfdf5;
+}
+
+.treasury-source-unv {
+    border-color: #fca5a5;
+    background: #b91c1c;
+    color: #fef2f2;
+}

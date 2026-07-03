@@ -1,0 +1,32 @@
+{
+  "name": "treasury-web",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "predev": "npm run build --prefix ../../../../packages/ui",
+    "build": "vite build",
+    "prebuild": "npm run build --prefix ../../../../packages/ui",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "pretypecheck": "npm run build --prefix ../../../../packages/ui"
+  },
+  "dependencies": {
+    "@pollinations/ui": "*",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.7.2",
+    "vite": "^7.0.0",
+    "vitest": "^3.2.4"
+  }
+}

@@ -59,11 +59,16 @@ function estimateCost(model) {
 // Baseline rank-based targets, cheapest quartile first. Ranking (not raw
 // cost) drives this, so "test expensive models less" holds even if the whole
 // catalog happens to be cheap or expensive that week -- it's always relative.
-const TIER_TARGETS = [5, 4, 2, 1];
+// 3x'd from the original [5,4,2,1] -- the catalog turned out cheap enough
+// that the old cap left actual spend at ~0.015 pollen/cycle, far under the
+// 0.5 target; this trades more coverage/spend for more per-model traffic.
+// Started at 3x rather than the full 10x gap to avoid a big jump in load on
+// every upstream (incl. free models) in one step -- can raise further later.
+const TIER_TARGETS = [15, 12, 6, 3];
 // Hard per-model ceiling, regardless of price or budget -- this is a health
 // probe, not a load test, and upstream owners may have their own rate limits.
 // Free models in particular must never be used to "soak up" leftover budget.
-const MAX_REQUESTS_PER_MODEL = 5;
+const MAX_REQUESTS_PER_MODEL = 15;
 
 // Every model gets a rank-based baseline (cheapest quartile: most requests,
 // priciest quartile: floor of 1). If that overshoots budget, trim extras from

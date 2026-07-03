@@ -61,22 +61,21 @@ re-arm the loop by attaching (`screen -r community-monitor`) and sending:
 `GET https://gen.pollinations.ai/models` catalog (no D1/wrangler access
 needed on the box) and allocates probe requests per model:
 
-- Every model gets a rank-based baseline by price quartile (cheapest: 5
-  requests, priciest: 1), then extra requests top up toward a ~0.5-pollen
+- Every model gets a rank-based baseline by price quartile (cheapest: 15
+  requests, priciest: 3), then extra requests top up toward a ~0.5-pollen
   spend ceiling — added to the *most expensive* payable models first, since
   those move total spend the most per request.
-- **Every model is hard-capped at 5 requests/cycle regardless of price** —
+- **Every model is hard-capped at 15 requests/cycle regardless of price** —
   this is a health probe, not a load test, and a free/near-free model must
   never get hammered just because the budget "allows" more. This cap is
   almost always the binding constraint in practice, not the 0.5-pollen
-  budget: as of 2026-07, the entire community catalog (56 models) hitting
-  the cap simultaneously only totals ~0.07 pollen — the catalog is simply
-  cheap. Actual spend has consistently landed around 0.015 pollen/cycle.
-  This is fine and expected: the goal is coverage (every model probed every
-  cycle), not spend — 0.5 was a ceiling to stay under, never a target to
-  chase, and the cap is deliberately not loosened just to hit it. If
-  pricier models join the catalog, the top-up logic will use more of the
-  budget headroom automatically with no code change needed.
+  budget: the community catalog is cheap enough that even at this cap,
+  actual spend lands well under 0.5 (~0.05 pollen/cycle as of 2026-07,
+  up from ~0.015 at the original 5-request cap). The tiers/cap were 3x'd
+  from the original [5,4,2,1]/5 specifically to push spend higher without
+  jumping straight to the ~0.7-pollen level a full 10x would cause — can
+  raise further if more coverage/spend is wanted. The goal is still
+  coverage (every model probed every cycle) over hitting 0.5 exactly.
 - Actual spend is reconciled from each response's real `usage` tokens (not
   the pre-flight estimate) and written to `state.json`'s `spend` key. Next
   cycle's budget mean-reverts off last cycle's actual spend (overspend ->

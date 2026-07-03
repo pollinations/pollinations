@@ -35,6 +35,7 @@ type ModelsProps = {
 const SECTION_ORDER: SectionType[] = [
     "image",
     "video",
+    "3d",
     "audio",
     "realtime",
     "text",
@@ -56,6 +57,7 @@ function categorizeModels(
     return {
         image: models.filter((m) => m.type === "image"),
         video: models.filter((m) => m.type === "video"),
+        "3d": models.filter((m) => m.type === "3d"),
         audio: models.filter((m) => m.type === "audio"),
         realtime: models.filter((m) => m.type === "realtime"),
         text: models.filter((m) => m.type === "text" && !m.community),
@@ -202,6 +204,7 @@ export const Models: FC<ModelsProps> = ({ showCommunityEndpoints = false }) => {
                         <UnifiedModelTable
                             imageModels={sectionModels.image}
                             videoModels={sectionModels.video}
+                            model3dModels={sectionModels["3d"]}
                             audioModels={sectionModels.audio}
                             realtimeModels={sectionModels.realtime}
                             textModels={sectionModels.text}

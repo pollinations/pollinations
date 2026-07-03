@@ -3,6 +3,7 @@ export type ModelCategory =
     | "image"
     | "audio"
     | "video"
+    | "3d"
     | "embedding"
     | "realtime";
 
@@ -17,6 +18,7 @@ export type ModelCapability =
 export type PriceKind =
     | "text"
     | "image"
+    | "3d"
     | "cached"
     | "cacheWrite"
     | "reasoning"

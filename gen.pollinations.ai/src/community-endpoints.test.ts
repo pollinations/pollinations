@@ -811,12 +811,12 @@ fixtureTest(
                 },
             );
 
-            expect(response.status).toBe(500);
+            expect(response.status).toBe(400);
             const body = (await response.json()) as {
                 error?: { message?: string };
             };
-            expect(body.error?.message).toContain("deactivated");
-            expect(body.error?.message).toContain("repeated upstream 500s");
+            expect(body.error?.message).toContain("Invalid model or alias");
+            expect(body.error?.message).not.toContain("repeated upstream 500s");
         }
     },
 );
@@ -1270,9 +1270,8 @@ fixtureTest(
             description: "Updated description",
             promptTextPrice: 0.1,
             completionTextPrice: 0.2,
-            disabled: false,
-            disabledReason: null,
-            disabledAt: null,
+            disabled: true,
+            disabledReason: "was failing",
         });
 
         const secondListResponse = await fetchEnterApi(

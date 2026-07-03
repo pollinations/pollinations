@@ -33,6 +33,7 @@ export interface ApiKeyAuthBindings {
     DB: D1Database;
     ENVIRONMENT?: string;
     STAGING_ALLOWED_GITHUB_IDS?: string;
+    STAGING_ALLOWED_EMAILS?: string;
 }
 
 export class BannedAccountError extends Error {
@@ -50,23 +51,50 @@ export class StagingAccessDeniedError extends Error {
 }
 
 /**
- * Throws StagingAccessDeniedError if the env is staging and the user's GitHub
- * ID is not in STAGING_ALLOWED_GITHUB_IDS. No-op outside staging.
- * Fails closed: a missing githubId or empty/missing allowlist denies access.
+ * Throws StagingAccessDeniedError if the env is staging and the user is not in
+ * either staging allowlist. No-op outside staging.
+ * Fails closed: a missing user or empty/missing allowlists deny access.
  *
  * Called at request-time (every API-key or session-cookie request) to defend
  * against pre-existing sessions/keys that predate the lockdown. See #11137.
  */
 export function assertStagingAccess(
-    env: { ENVIRONMENT?: string; STAGING_ALLOWED_GITHUB_IDS?: string },
-    user: { githubId?: number | null } | null | undefined,
+    env: {
+        ENVIRONMENT?: string;
+        STAGING_ALLOWED_GITHUB_IDS?: string;
+        STAGING_ALLOWED_EMAILS?: string;
+    },
+    user:
+        | { githubId?: number | null; email?: string | null }
+        | null
+        | undefined,
 ): void {
     if (env.ENVIRONMENT !== "staging") return;
-    const allowed = parseGithubIdList(env.STAGING_ALLOWED_GITHUB_IDS);
+    const allowedGithubIds = parseGithubIdList(env.STAGING_ALLOWED_GITHUB_IDS);
+    const allowedEmails = parseEmailList(env.STAGING_ALLOWED_EMAILS);
     const ghId = user?.githubId;
-    if (!ghId || !allowed.has(Number(ghId))) {
+    const email = normalizeEmail(user?.email);
+    if (
+        (!ghId || !allowedGithubIds.has(Number(ghId))) &&
+        (!email || !allowedEmails.has(email))
+    ) {
         throw new StagingAccessDeniedError();
     }
+}
+
+export function parseEmailList(raw: string | undefined | null): Set<string> {
+    if (!raw) return new Set();
+    const emails = new Set<string>();
+    for (const part of raw.split(",")) {
+        const normalized = normalizeEmail(part);
+        if (normalized) emails.add(normalized);
+    }
+    return emails;
+}
+
+function normalizeEmail(value: string | null | undefined): string | null {
+    const normalized = value?.trim().toLowerCase();
+    return normalized?.includes("@") ? normalized : null;
 }
 
 type VerifyApiKeyResponse = {

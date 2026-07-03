@@ -515,7 +515,10 @@ function getContentTypeGuard(
             kind: "image",
             isExpected: (contentType) =>
                 contentType.startsWith("image/") ||
-                contentType.startsWith("video/"),
+                contentType.startsWith("video/") ||
+                // 3D models (model/gltf-binary, model/ply, ...) share this
+                // EventType with image/video.
+                contentType.startsWith("model/"),
         };
     }
     if (eventType === "generate.text" && requestTracking.streamRequested) {

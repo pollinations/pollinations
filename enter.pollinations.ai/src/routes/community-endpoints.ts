@@ -533,9 +533,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const update: Partial<
                 typeof schema.communityEndpoint.$inferInsert
             > = {
-                disabledAt: null,
-                disabledReason: null,
-                disabledBy: null,
                 updatedAt: new Date(),
             };
             if (input.name !== undefined) update.name = input.name;

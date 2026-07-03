@@ -117,3 +117,9 @@ export const audioCache = createMediaCache({
     defaultContentType: "audio/mpeg",
     label: "audio-cache",
 });
+
+export const model3dCache = createMediaCache({
+    mediaTypes: ["model/"],
+    defaultContentType: "model/gltf-binary",
+    label: "3d-cache",
+});

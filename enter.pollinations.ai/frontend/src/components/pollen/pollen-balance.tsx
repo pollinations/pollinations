@@ -3,6 +3,7 @@ import {
     ClockIcon,
     CopyButton,
     ExternalLinkButton,
+    GlobeIcon,
     InfoTip,
     InlineLink,
     MailIcon,
@@ -16,7 +17,11 @@ import {
     WalletBalanceCard,
     WalletKindIcon,
 } from "@pollinations/ui/wallet";
-import { POLLEN_PACKS } from "@shared/pollen-packs.ts";
+import {
+    calculateServiceFeeCents,
+    formatUsdCentsCompact,
+    POLLEN_PACKS,
+} from "@shared/pollen-packs.ts";
 import { type FC, type ReactNode, useState } from "react";
 import { AutoTopUpPanel, type BillingState } from "./auto-top-up-panel.tsx";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
@@ -314,6 +319,14 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
         POLLEN_PACKS.findIndex((pack) => pack.amountUsd === selectedPackAmount),
     );
     const selectedPack = POLLEN_PACKS[selectedPackIndex] ?? POLLEN_PACKS[0];
+    const serviceFeeCents = selectedPack
+        ? calculateServiceFeeCents(selectedPack.amountUsd * 100)
+        : 0;
+    const subtotalBeforeTaxCents =
+        (selectedPack?.amountUsd ?? 0) * 100 + serviceFeeCents;
+    const chargeLabel = selectedPack
+        ? formatUsdCentsCompact(subtotalBeforeTaxCents)
+        : "$0";
 
     return (
         <>
@@ -324,6 +337,8 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                             <PollenPackSlider
                                 value={selectedPack.amountUsd}
                                 onChange={setSelectedPackAmount}
+                                selectedBadgeLabel={chargeLabel}
+                                selectedBadgeDetail={`incl. ${formatUsdCentsCompact(serviceFeeCents)} fee`}
                             />
                         </div>
                         <Tooltip
@@ -335,10 +350,10 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                                     </span>{" "}
                                     for{" "}
                                     <span className="font-semibold text-theme-text-strong">
-                                        ${selectedPack.amountUsd}
+                                        {chargeLabel}
                                     </span>
                                     <span className="mt-1 block text-theme-text-muted">
-                                        Confirm on the next page.
+                                        Tax calculated at checkout
                                     </span>
                                 </span>
                             }
@@ -362,6 +377,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                 <AutoTopUpPanel initialBillingState={initialBillingState} />
             </Surface>
             <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                <PaymentTrustBadge className="mt-0 pt-0" />
                 <p className="flex items-start gap-1.5">
                     <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <span>
@@ -370,6 +386,13 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                             Refund Policy
                         </InlineLink>
                         .
+                    </span>
+                </p>
+                <p className="flex items-start gap-1.5">
+                    <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>
+                        Prices exclude tax — VAT or sales tax is added at
+                        checkout.
                     </span>
                 </p>
                 <p className="flex items-start gap-1.5">
@@ -387,7 +410,6 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                         — we reply same day.
                     </span>
                 </p>
-                <PaymentTrustBadge className="mt-0 pt-0" />
             </div>
         </>
     );

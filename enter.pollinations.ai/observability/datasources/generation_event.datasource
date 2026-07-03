@@ -64,6 +64,9 @@ SCHEMA >
 `token_price_completion_image`     Float64  `json:$.tokenPriceCompletionImage` DEFAULT 0,
 `token_price_completion_video_seconds` Float64 `json:$.tokenPriceCompletionVideoSeconds` DEFAULT 0,
 `token_price_completion_video_tokens`  Float64 `json:$.tokenPriceCompletionVideoTokens` DEFAULT 0,
+`adjustment_costs`                 Map(String, Float64) `json:$.adjustmentCosts` DEFAULT map(),
+`adjustment_prices`                Map(String, Float64) `json:$.adjustmentPrices` DEFAULT map(),
+`adjustment_units`                 Map(String, Float64) `json:$.adjustmentUnits` DEFAULT map(),
 
 -- Usage
 `token_count_prompt_text`          UInt32   `json:$.tokenCountPromptText` DEFAULT 0,

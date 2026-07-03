@@ -42,6 +42,7 @@ export interface TransformOptions {
     modalities?: string[];
     audio?: Record<string, unknown>;
     stream_options?: Record<string, unknown>;
+    web_search_options?: Record<string, unknown>;
     [key: string]: unknown;
 }
 
@@ -118,6 +119,7 @@ export interface RequestData {
     max_completion_tokens?: number;
     stop?: unknown;
     stream_options?: Record<string, unknown>;
+    web_search_options?: Record<string, unknown>;
     logprobs?: unknown;
     top_logprobs?: unknown;
     logit_bias?: unknown;

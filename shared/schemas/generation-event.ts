@@ -73,6 +73,9 @@ export type TinybirdEvent = {
     tokenPriceCompletionImage: number;
     tokenPriceCompletionVideoSeconds: number;
     tokenPriceCompletionVideoTokens: number;
+    adjustmentCosts?: Record<string, number>;
+    adjustmentPrices?: Record<string, number>;
+    adjustmentUnits?: Record<string, number>;
 
     // Usage
     tokenCountPromptText: number;

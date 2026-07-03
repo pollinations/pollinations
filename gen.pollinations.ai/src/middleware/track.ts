@@ -27,11 +27,12 @@ import {
 import { sendToTinybird } from "@shared/events.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import {
+    type BillingAdjustmentBreakdown,
     type CostDefinition,
-    calculateCostForModelDefinition,
-    calculatePriceForModelDefinition,
+    calculateUsageBillingWithBreakdownForModelDefinition,
     getPriceDefinitionForModel,
     type ModelDefinition,
+    type PerplexitySearchContextSize,
     type PriceDefinition,
     type Usage,
     type UsageCost,
@@ -98,6 +99,7 @@ type RequestTrackingData = {
     modelPriceDefinition: PriceDefinition;
     streamRequested: boolean;
     referrerData: ReferrerData;
+    billingRequest?: BillingRequestContext;
 };
 
 type ResponseTrackingData = {
@@ -110,6 +112,7 @@ type ResponseTrackingData = {
     usage?: Usage;
     cost?: UsageCost;
     price?: UsagePrice;
+    adjustmentBreakdown?: BillingAdjustmentBreakdown[];
     contentFilterResults?: GenerationEventContentFilterParams;
 };
 
@@ -406,6 +409,7 @@ async function trackRequest(
     }
     const streamRequested = await extractStreamRequested(request);
     const referrerData = extractReferrerHeader(request);
+    const billingRequest = await extractBillingRequestContext(request);
 
     return {
         modelRequested,
@@ -416,6 +420,7 @@ async function trackRequest(
         modelPriceDefinition,
         streamRequested,
         referrerData,
+        billingRequest,
     };
 }
 
@@ -491,17 +496,15 @@ async function trackResponse(
         });
         return notBilled({ contentFilterResults });
     }
-    const cost = calculateCostForModelDefinition(
-        resolvedModelRequested,
-        modelUsage.usage,
-        requestTracking.modelDefinition,
+    const billingOutput = withBillingRequestContext(
         modelUsage.output,
+        requestTracking.billingRequest,
     );
-    const price = calculatePriceForModelDefinition(
+    const billing = calculateUsageBillingWithBreakdownForModelDefinition(
         resolvedModelRequested,
         modelUsage.usage,
         requestTracking.modelDefinition,
-        modelUsage.output,
+        billingOutput,
     );
     return {
         responseOk: response.ok,
@@ -509,8 +512,9 @@ async function trackResponse(
         cacheData: cacheInfo,
         isBilledUsage: true,
         fallbackUsed,
-        cost,
-        price,
+        cost: billing.cost,
+        price: billing.price,
+        adjustmentBreakdown: billing.adjustments,
         modelUsed: modelUsage.model,
         usage: modelUsage.usage,
         contentFilterResults,
@@ -639,6 +643,51 @@ type TrackingEventInput = {
     errorTracking?: ErrorData;
 };
 
+function addAdjustmentMapValue(
+    target: Record<string, number>,
+    ruleId: string,
+    value: number,
+): void {
+    target[ruleId] = (target[ruleId] ?? 0) + value;
+}
+
+function adjustmentBreakdownToEventParams(
+    adjustments?: BillingAdjustmentBreakdown[],
+): Pick<
+    InsertGenerationEvent,
+    "adjustmentCosts" | "adjustmentPrices" | "adjustmentUnits"
+> {
+    if (!adjustments?.length) return {};
+
+    const adjustmentCosts: Record<string, number> = {};
+    const adjustmentPrices: Record<string, number> = {};
+    const adjustmentUnits: Record<string, number> = {};
+
+    for (const adjustment of adjustments) {
+        addAdjustmentMapValue(
+            adjustmentCosts,
+            adjustment.ruleId,
+            adjustment.cost,
+        );
+        addAdjustmentMapValue(
+            adjustmentPrices,
+            adjustment.ruleId,
+            adjustment.price,
+        );
+        addAdjustmentMapValue(
+            adjustmentUnits,
+            adjustment.ruleId,
+            adjustment.units,
+        );
+    }
+
+    return {
+        adjustmentCosts,
+        adjustmentPrices,
+        adjustmentUnits,
+    };
+}
+
 function createTrackingEvent({
     id,
     requestId,
@@ -687,6 +736,9 @@ function createTrackingEvent({
 
         ...priceToEventParams(requestTracking.modelPriceDefinition),
         ...usageToEventParams(responseTracking.usage),
+        ...adjustmentBreakdownToEventParams(
+            responseTracking.adjustmentBreakdown,
+        ),
 
         totalCost: responseTracking.cost?.totalCost || 0,
         totalPrice: billedPrice,
@@ -699,6 +751,50 @@ function createTrackingEvent({
         ...responseTracking.contentFilterResults,
         ...errorTracking,
     };
+}
+
+type BillingRequestContext = {
+    webSearchOptionsSearchContextSize?: PerplexitySearchContextSize;
+};
+
+function isPerplexitySearchContextSize(
+    value: unknown,
+): value is PerplexitySearchContextSize {
+    return value === "low" || value === "medium" || value === "high";
+}
+
+async function extractBillingRequestContext(
+    request: HonoRequest,
+): Promise<BillingRequestContext | undefined> {
+    let body: unknown;
+    if (request.method === "POST") {
+        try {
+            body = await request.raw.clone().json();
+        } catch {
+            body = undefined;
+        }
+    }
+    const webSearchOptions = (body as { web_search_options?: unknown })
+        ?.web_search_options;
+    const searchContextSize =
+        typeof webSearchOptions === "object" && webSearchOptions !== null
+            ? (webSearchOptions as { search_context_size?: unknown })
+                  .search_context_size
+            : undefined;
+
+    if (!isPerplexitySearchContextSize(searchContextSize)) return undefined;
+    return { webSearchOptionsSearchContextSize: searchContextSize };
+}
+
+function withBillingRequestContext(
+    output: unknown,
+    billingRequest: BillingRequestContext | undefined,
+): unknown {
+    if (!billingRequest) return output;
+    if (output && typeof output === "object" && !Array.isArray(output)) {
+        return { ...output, billingRequest };
+    }
+    return { billingRequest };
 }
 
 async function extractStreamRequested(request: HonoRequest): Promise<boolean> {

@@ -1,0 +1,34 @@
+{
+  "pr_number": 12181,
+  "title": "docs: link app submission criteria from tier-app submission template",
+  "author": "TRDEFI",
+  "url": "https://github.com/pollinations/pollinations/pull/12181",
+  "merged_at": "2026-07-03T12:59:06Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "Closes #11898\n\n## Description\n\nAdds a link from the Requirements section of the app submission template to the evaluation criteria in `apps/README.md` so submitters know what reviewers look for.\n\nAlso adds a stable HTML anchor (`<a name=\"submission-criteria\"></a>`) so the link target doesn't break if the heading is renamed.\n\n## Changes\n\n1. **`.github/ISSUE_TEMPLATE/tier-app-submission.yml`** — added: `- Read the [submission criteria](apps/README.md#what-makes-a-good-app-submission) before submitting`\n2. **`apps/README.md`** — added `<a name=\"submission-criteria\"></a>` anchor before the \"What Makes a Good App Submission\" section\n",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Mapping the garden path",
+    "blurb": "We've added a handy link to the app submission criteria right in the GitHub issue template. Now you know exactly what we're looking for before you hit submit!",
+    "summary": "Added a direct link to the app evaluation criteria in the tier-app submission issue template, along with a stable HTML anchor in the apps README.",
+    "impact": "Contributors can now easily review the 'What Makes a Good App Submission' guidelines directly from the GitHub issue template before submitting their apps.",
+    "keywords": [
+      "docs",
+      "community",
+      "app-submission",
+      "github-templates"
+    ],
+    "visual_concept": "Polly the bee mascot reading a map or a checklist next to a glowing retro terminal, representing clear guidelines and documentation.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing tiny reading glasses, holding a small pixelated checklist next to a glowing retro terminal. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-03/PR-12181.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing tiny reading glasses, holding a small pixelated checklist next to a glowing retro terminal. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-03T13:02:09.979919+00:00"
+}

@@ -28,12 +28,13 @@ def balance(creds, now, run_cmd=subprocess.run):
     except FileNotFoundError:
         raise RuntimeError("vastai CLI not installed (pip install vastai)")
 
+    if r.returncode != 0:
+        raise RuntimeError("vastai show user failed (rc=%d)" % r.returncode)
+
     try:
         d = json.loads(r.stdout)
     except (ValueError, TypeError):
-        raise RuntimeError(
-            f"vastai show user returned non-JSON: {(r.stderr or r.stdout or '')[:80]}"
-        )
+        raise RuntimeError("vastai show user returned non-JSON output")
 
     if d.get("credit") is None:
         raise RuntimeError("no .credit field in vastai show user response")

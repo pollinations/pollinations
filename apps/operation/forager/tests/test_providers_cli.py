@@ -146,6 +146,21 @@ def test_ovh_missing_key_raises():
         _ovh.balance({}, NOW)
 
 
+def test_ovh_time_routes_through_http_json(monkeypatch):
+    """_time() must use http_json (not urllib.request.urlopen) so UA header is sent."""
+    calls = []
+
+    def fake_http_json(url, headers=None, timeout=30, **kw):
+        calls.append(url)
+        return 1234
+
+    monkeypatch.setattr(_ovh, "http_json", fake_http_json)
+    result = _ovh._time()
+    assert result == 1234
+    assert len(calls) == 1
+    assert "/auth/time" in calls[0]
+
+
 # ===========================================================================
 # Vast
 # ===========================================================================
@@ -185,6 +200,29 @@ def test_vast_bad_json_raises():
     fake_run = lambda cmd, **kw: _fake_result(stdout="not-json", stderr="err")
     with pytest.raises(RuntimeError):
         _vast.balance(_VAST_CREDS, NOW, run_cmd=fake_run)
+
+
+def test_vast_nonzero_returncode_raises_without_content(monkeypatch):
+    """rc != 0 must raise RuntimeError; message must NOT contain stdout/stderr content."""
+    fake_run = lambda cmd, **kw: _fake_result(
+        stdout="auth error details SECRET", stderr="stderr SECRET", returncode=1
+    )
+    with pytest.raises(RuntimeError) as exc_info:
+        _vast.balance(_VAST_CREDS, NOW, run_cmd=fake_run)
+    msg = str(exc_info.value)
+    assert "SECRET" not in msg
+    assert "rc=1" in msg or "1" in msg
+
+
+def test_vast_rc0_non_json_raises_without_content(monkeypatch):
+    """rc=0 but non-JSON stdout raises RuntimeError without echoing stdout."""
+    fake_run = lambda cmd, **kw: _fake_result(
+        stdout="this is not json and has SECRET data", returncode=0
+    )
+    with pytest.raises(RuntimeError) as exc_info:
+        _vast.balance(_VAST_CREDS, NOW, run_cmd=fake_run)
+    msg = str(exc_info.value)
+    assert "SECRET" not in msg
 
 
 # ===========================================================================
@@ -295,13 +333,13 @@ def test_openai_two_page_pagination(monkeypatch):
 
 
 def test_openai_second_page_uses_next_page_token(monkeypatch):
-    """next_page token must appear in the second request URL."""
+    """next_page cursor must be sent as the 'page' query param on subsequent requests."""
     page1 = _make_oai_page([100.0], has_more=True, next_page="cursor-abc")
     page2 = _make_oai_page([50.0], has_more=False)
     cap = Capture([page1, page2])
     monkeypatch.setattr(_oai, "http_json", cap)
     _oai.balance(_OAI_CREDS, NOW)
-    assert "cursor-abc" in cap.calls[1]["url"]
+    assert "page=cursor-abc" in cap.calls[1]["url"]
 
 
 def test_openai_custom_grant(monkeypatch):

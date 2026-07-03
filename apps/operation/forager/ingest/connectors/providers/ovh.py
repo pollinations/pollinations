@@ -29,8 +29,8 @@ def _time():
     """Fetch server timestamp from OVH (unauthenticated). Falls back to local time."""
     import time
     try:
-        raw = urllib.request.urlopen(f"{BASE}/auth/time", timeout=20).read().decode().strip()
-        return int(raw)
+        d = http_json(f"{BASE}/auth/time", timeout=20)
+        return int(d)
     except Exception:
         return int(time.time())
 

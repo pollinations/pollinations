@@ -5,6 +5,7 @@ import {
     getAudioModelsInfo,
     getEmbeddingModelsInfo,
     getImageModelsInfo,
+    getModel3dModelsInfo,
     getRealtimeModelsInfo,
     getTextModelsInfo,
 } from "@shared/registry/model-info.ts";
@@ -12,15 +13,19 @@ import {
     calculateCost,
     calculatePrice,
     getCostDefinition,
-    getModelDefinition,
     getModels,
     getPriceDefinition,
+    getRegistryModelDefinition,
     type ModelName,
 } from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { expect, test } from "vitest";
-import { formatPricePer1M } from "../frontend/src/components/models/formatters.ts";
+import {
+    formatPriceFlat,
+    formatPricePer1M,
+} from "../frontend/src/components/models/formatters.ts";
 import { getModelPricesFromCatalog } from "../frontend/src/components/models/model-catalog.ts";
+import { getModelBrandLogoPath } from "../frontend/src/components/models/model-info.ts";
 
 const getCatalogModelPrices = () =>
     getModelPricesFromCatalog([
@@ -29,6 +34,7 @@ const getCatalogModelPrices = () =>
         ...getRealtimeModelsInfo(),
         ...getAudioModelsInfo(),
         ...getEmbeddingModelsInfo(),
+        ...getModel3dModelsInfo(),
     ]);
 
 const getCatalogModels = () => [
@@ -37,6 +43,7 @@ const getCatalogModels = () => [
     ...getRealtimeModelsInfo(),
     ...getAudioModelsInfo(),
     ...getEmbeddingModelsInfo(),
+    ...getModel3dModelsInfo(),
 ];
 
 const tokenPriceRows = [
@@ -45,6 +52,11 @@ const tokenPriceRows = [
         registryField: "promptCachedTokens",
         direction: "input",
         kind: "cached",
+    },
+    {
+        registryField: "promptCacheWriteTokens",
+        direction: "input",
+        kind: "cacheWrite",
     },
     {
         registryField: "promptAudioTokens",
@@ -56,6 +68,11 @@ const tokenPriceRows = [
         registryField: "completionTextTokens",
         direction: "output",
         kind: "text",
+    },
+    {
+        registryField: "completionReasoningTokens",
+        direction: "output",
+        kind: "reasoning",
     },
     {
         registryField: "completionAudioTokens",
@@ -130,12 +147,99 @@ test("catalog prices format token rates through formatPricePer1M", () => {
     expect(checkedFields).toBeGreaterThan(0);
 });
 
+test("catalog prices keep community text models flagged for display", () => {
+    const [communityModel] = getModelPricesFromCatalog([
+        {
+            name: "voodoohop/openai",
+            aliases: ["community/voodoohop/openai"],
+            category: "text",
+            community: true,
+            brand: "Community",
+            title: "OpenAI relay",
+            description: "OpenAI relay",
+            pricing: {
+                currency: "pollen",
+                promptTextTokens: "0.0000001",
+                completionTextTokens: "0.0000002",
+            },
+            input_modalities: ["text"],
+            output_modalities: ["text"],
+            capabilities: [],
+        },
+    ]);
+
+    expect(communityModel).toMatchObject({
+        name: "voodoohop/openai",
+        type: "text",
+        community: true,
+        displayName: "OpenAI relay",
+        brand: "Community",
+        capabilities: [],
+    });
+    expect(communityModel?.prices).toEqual(
+        expect.arrayContaining([
+            {
+                direction: "input",
+                kind: "text",
+                price: "0.1",
+                unit: "token",
+            },
+            {
+                direction: "output",
+                kind: "text",
+                price: "0.2",
+                unit: "token",
+            },
+        ]),
+    );
+    expect(communityModel.description).toBeUndefined();
+});
+
+test("catalog prices expose 3D flat output generation rates", () => {
+    const sourceByName = new Map(
+        getModel3dModelsInfo().map((model) => [model.name, model]),
+    );
+    const model3dPrices = getModelPricesFromCatalog(getModel3dModelsInfo());
+
+    expect(model3dPrices.length).toBeGreaterThan(0);
+
+    for (const modelPrice of model3dPrices) {
+        const rawRate = Number(
+            sourceByName.get(modelPrice.name)?.pricing.completionImageTokens,
+        );
+
+        expect(Number.isFinite(rawRate) && rawRate > 0).toBe(true);
+        expect(modelPrice.prices).toContainEqual({
+            direction: "output",
+            kind: "3d",
+            price: formatPriceFlat(rawRate),
+            unit: "request",
+        });
+    }
+});
+
+test("catalog models resolve 3D brand logo SVG assets", () => {
+    const model3dPrices = getModelPricesFromCatalog(getModel3dModelsInfo());
+    const expectedLogoByBrand = new Map([
+        ["Microsoft", "/brand-logos/microsoft.svg"],
+        ["Deemos", "/brand-logos/deemos.svg"],
+    ]);
+
+    expect(model3dPrices.length).toBeGreaterThan(0);
+
+    for (const modelPrice of model3dPrices) {
+        expect(getModelBrandLogoPath(modelPrice)).toBe(
+            expectedLogoByBrand.get(modelPrice.brand ?? ""),
+        );
+    }
+});
+
 test("model info exposes public capabilities without raw implementation flags", () => {
     let checkedCapabilities = 0;
 
     for (const model of getCatalogModels()) {
         const publicModel = model as Record<string, unknown>;
-        const definition = getModelDefinition(model.name as ModelName);
+        const definition = getRegistryModelDefinition(model.name as ModelName);
         const expectedCapabilities = [
             definition.tools ? "tool_calling" : undefined,
             definition.reasoning ? "reasoning" : undefined,

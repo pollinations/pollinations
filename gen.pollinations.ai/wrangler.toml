@@ -47,7 +47,6 @@ TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?n
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
-
 [dev]
 port = 8788
 
@@ -115,7 +114,6 @@ POLLEN_REFILL_PER_HOUR = 1
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
-
 # Staging routes
 [env.staging]
 
@@ -171,10 +169,10 @@ TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?n
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
-# GitHub OAuth lockdown — must match enter.pollinations.ai staging allowlist.
+# Staging OAuth lockdown — must match enter.pollinations.ai staging allowlist.
 # Request-time gate in shared/auth/api-key.ts fails closed without it. Issue #11137.
-STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997"
-
+STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458"
+STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai"
 [env.test]
 
 [env.test.images]
@@ -229,11 +227,14 @@ AWS_SECRET_ACCESS_KEY = "not-a-secret-workers-test-only"
 AWS_REGION = "us-east-1"
 AZURE_MYCELI_PROD_API_KEY = "not-a-secret-workers-test-only"
 AZURE_MYCELI_PROD_EASTUS2_API_KEY = "not-a-secret-workers-test-only"
+AZURE_MYCELI_PROD_IMG_WESTUS3_API_KEY = "not-a-secret-workers-test-only"
 AZURE_MYCELI_PROD_SWEDEN_API_KEY = "not-a-secret-workers-test-only"
 AZURE_CONTENT_SAFETY_API_KEY = "not-a-secret-workers-test-only"
 AZURE_CONTENT_SAFETY_ENDPOINT = "https://content-safety.test"
 FIREWORKS_API_KEY = "not-a-secret-workers-test-only"
+FIREWORKS_NEO_API_KEY = "not-a-secret-workers-test-only"
 FAL_KEY = "not-a-secret-workers-test-only"
+INFERENCEPORT_API_KEY = "not-a-secret-workers-test-only"
 STABILITY_API_KEY = "not-a-secret-workers-test-only"
 GOOGLE_CLIENT_EMAIL = "test@example.com"
 GOOGLE_PRIVATE_KEY = "not-a-secret-workers-test-only"

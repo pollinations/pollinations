@@ -1,4 +1,6 @@
 import {
+    Alert,
+    Chip,
     ClockIcon,
     ExternalLinkButton,
     GitHubIcon,
@@ -8,7 +10,8 @@ import {
     TokensIcon,
     TrendUpIcon,
 } from "@pollinations/ui";
-import { type FC, useEffect, useMemo, useState } from "react";
+import { type FC, useCallback, useEffect, useMemo, useState } from "react";
+import { CommunityEndpoints } from "../community-endpoints";
 import {
     type ApiModelInfo,
     fetchModelCatalog,
@@ -19,9 +22,25 @@ import {
     sectionLabels,
     UnifiedModelTable,
 } from "./model-table.tsx";
+import type { ModelPrice } from "./types.ts";
 import { useModelStats } from "./use-model-stats.ts";
 
-export const Models: FC = () => {
+type ModelsProps = {
+    showCommunityEndpoints?: boolean;
+};
+
+const SECTION_ORDER: SectionType[] = [
+    "image",
+    "video",
+    "3d",
+    "audio",
+    "realtime",
+    "text",
+    "community",
+    "embedding",
+];
+
+export const Models: FC<ModelsProps> = ({ showCommunityEndpoints = false }) => {
     const [activeTab, setActiveTab] = useState<SectionType>("image");
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const [catalogError, setCatalogError] = useState<string | null>(null);
@@ -31,42 +50,54 @@ export const Models: FC = () => {
         [catalogModels, stats],
     );
 
-    useEffect(() => {
-        let cancelled = false;
-
-        fetchModelCatalog()
-            .then((models) => {
-                if (!cancelled) {
+    const loadModelCatalog = useCallback(
+        (options: { refresh?: boolean } = {}) =>
+            fetchModelCatalog(options)
+                .then((models) => {
                     setCatalogModels(models);
                     setCatalogError(null);
-                }
-            })
-            .catch(() => {
-                if (!cancelled) {
+                })
+                .catch(() => {
                     setCatalogModels([]);
                     setCatalogError("Could not load models.");
-                }
-            });
+                }),
+        [],
+    );
 
-        return () => {
-            cancelled = true;
-        };
-    }, []);
+    useEffect(() => {
+        void loadModelCatalog();
+    }, [loadModelCatalog]);
 
     const imageModels = allModels.filter((m) => m.type === "image");
     const videoModels = allModels.filter((m) => m.type === "video");
+    const model3dModels = allModels.filter((m) => m.type === "3d");
     const audioModels = allModels.filter((m) => m.type === "audio");
     const realtimeModels = allModels.filter((m) => m.type === "realtime");
-    const textModels = allModels.filter((m) => m.type === "text");
+    const textModels = allModels.filter(
+        (m) => m.type === "text" && !m.community,
+    );
+    const communityModels = allModels.filter((m) => m.community);
     const embeddingModels = allModels.filter((m) => m.type === "embedding");
-    const availableSections: SectionType[] = [
-        "image",
-        "video",
-        "audio",
-        "realtime",
-        "text",
-        "embedding",
-    ];
+    const sectionModels: Record<SectionType, ModelPrice[]> = {
+        image: imageModels,
+        video: videoModels,
+        "3d": model3dModels,
+        audio: audioModels,
+        realtime: realtimeModels,
+        text: textModels,
+        community: communityModels,
+        embedding: embeddingModels,
+    };
+    const availableSections =
+        allModels.length > 0
+            ? SECTION_ORDER.filter((section) => sectionModels[section].length)
+            : SECTION_ORDER;
+
+    useEffect(() => {
+        if (!availableSections.includes(activeTab)) {
+            setActiveTab(availableSections[0] ?? "text");
+        }
+    }, [activeTab, availableSections]);
 
     return (
         <div className="flex flex-col gap-6">
@@ -103,21 +134,37 @@ export const Models: FC = () => {
                             key={section}
                             active={activeTab === section}
                             onClick={() => setActiveTab(section)}
+                            ariaLabel={
+                                section === "community"
+                                    ? "Community alpha models"
+                                    : undefined
+                            }
                         >
-                            {sectionLabels[section]}
+                            <span className="inline-flex items-center gap-1.5">
+                                {sectionLabels[section]}
+                                {section === "community" && (
+                                    <Chip intent="alpha" size="sm">
+                                        ALPHA
+                                    </Chip>
+                                )}
+                            </span>
                         </TabButton>
                     ))}
                 </div>
                 {catalogError && (
-                    <p className="mb-4 text-sm text-red-600">{catalogError}</p>
+                    <Alert intent="danger" className="mb-4">
+                        {catalogError}
+                    </Alert>
                 )}
                 <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     <UnifiedModelTable
                         imageModels={imageModels}
                         videoModels={videoModels}
+                        model3dModels={model3dModels}
                         audioModels={audioModels}
                         realtimeModels={realtimeModels}
                         textModels={textModels}
+                        communityModels={communityModels}
                         embeddingModels={embeddingModels}
                         activeTab={activeTab}
                     />
@@ -145,6 +192,13 @@ export const Models: FC = () => {
                     </p>
                 </div>
             </Section>
+            {showCommunityEndpoints && (
+                <CommunityEndpoints
+                    onChange={() => {
+                        void loadModelCatalog({ refresh: true });
+                    }}
+                />
+            )}
         </div>
     );
 };

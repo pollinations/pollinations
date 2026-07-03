@@ -14,6 +14,7 @@ import {
     type ImageModelId,
     type ImageModelName,
 } from "./image";
+import { MODEL3D_SERVICES, type Model3dId, type Model3dName } from "./model3d";
 import {
     REALTIME_SERVICES,
     type RealtimeModelId,
@@ -26,6 +27,7 @@ export type Category =
     | "image"
     | "audio"
     | "video"
+    | "3d"
     | "embedding"
     | "realtime";
 
@@ -69,13 +71,15 @@ export type ModelId =
     | TextModelId
     | AudioModelId
     | EmbeddingModelId
-    | RealtimeModelId;
+    | RealtimeModelId
+    | Model3dId;
 export type ModelName =
     | ImageModelName
     | TextModelName
     | AudioModelName
     | EmbeddingServiceId
-    | RealtimeModelName;
+    | RealtimeModelName
+    | Model3dName;
 
 export type VideoCapability =
     | "start_frame"
@@ -87,6 +91,11 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     aliases: string[];
     modelId: TModelId;
     provider: string;
+    // Optional secondary provider for binary-asset models with provider-level
+    // fallback (3D only, as of this field). Purely descriptive metadata for
+    // /models transparency — does not drive fallback logic, which lives in
+    // the handler dispatch code.
+    fallbackProvider?: string;
     brand: string;
     category: Category;
     cost: CostDefinition;
@@ -130,7 +139,7 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
 function convertUsage(
     usage: Usage,
     rateDefinition: CostDefinition,
-    model: ModelName,
+    model: string,
 ): Usage {
     const convertedUsage = Object.fromEntries(
         Object.entries(usage).map(([usageType, amount]) => {
@@ -167,6 +176,7 @@ const MODEL_REGISTRY = {
     ...AUDIO_SERVICES,
     ...EMBEDDING_SERVICES,
     ...REALTIME_SERVICES,
+    ...MODEL3D_SERVICES,
 } as Record<ModelName, ModelDefinition>;
 
 /**
@@ -217,6 +227,13 @@ function getAudioModels(): AudioModelName[] {
     return Object.keys(AUDIO_SERVICES) as AudioModelName[];
 }
 
+/**
+ * Get 3D model names
+ */
+function getModel3dModels(): Model3dName[] {
+    return Object.keys(MODEL3D_SERVICES) as Model3dName[];
+}
+
 function filterVisible<TModelName extends ModelName>(
     ids: TModelName[],
 ): TModelName[] {
@@ -230,16 +247,27 @@ export const getVisibleEmbeddingModels = () =>
     filterVisible(Object.keys(EMBEDDING_SERVICES) as EmbeddingServiceId[]);
 export const getVisibleRealtimeModels = () =>
     filterVisible(Object.keys(REALTIME_SERVICES) as RealtimeModelName[]);
+export const getVisibleModel3dModels = () => filterVisible(getModel3dModels());
 
 /**
- * Get a model definition by public model name
+ * Get a model definition from the bundled registry.
+ *
+ * This only covers built-in Pollinations models. Runtime models, such as
+ * community endpoints, should be resolved at the request boundary and then
+ * passed around as a `ModelDefinition`.
  */
-export function getModelDefinition(model: ModelName): ModelDefinition {
+export function getRegistryModelDefinition(model: ModelName): ModelDefinition {
     const definition = MODEL_REGISTRY[model];
     if (!definition) {
         throw new Error(`Invalid model: "${model}"`);
     }
     return definition;
+}
+
+export function getPriceDefinitionForModel(
+    svc: ModelDefinition<string>,
+): PriceDefinition {
+    return derivePrice(svc);
 }
 
 /**
@@ -255,7 +283,7 @@ export function getCostDefinition(model: ModelName): CostDefinition | null {
 export function getPriceDefinition(model: ModelName): PriceDefinition | null {
     const svc = MODEL_REGISTRY[model];
     if (!svc) return null;
-    return derivePrice(svc);
+    return getPriceDefinitionForModel(svc);
 }
 
 /**
@@ -267,6 +295,17 @@ export function calculateCost(model: ModelName, usage: Usage): UsageCost {
         throw new Error(
             `Failed to get current cost for model: ${model.toString()}`,
         );
+    return calculateCostWithDefinition(model, usage, costDefinition);
+}
+
+/**
+ * Calculate cost from an explicit cost definition.
+ */
+export function calculateCostWithDefinition(
+    model: string,
+    usage: Usage,
+    costDefinition: CostDefinition,
+): UsageCost {
     const usageCost = convertUsage(usage, costDefinition, model);
     const totalCost = Object.values(usageCost).reduce(
         (total, cost) => total + cost,
@@ -287,6 +326,17 @@ export function calculatePrice(model: ModelName, usage: Usage): UsagePrice {
         throw new Error(
             `Failed to get current price for model: ${model.toString()}`,
         );
+    return calculatePriceWithDefinition(model, usage, priceDefinition);
+}
+
+/**
+ * Calculate price from an explicit price definition.
+ */
+export function calculatePriceWithDefinition(
+    model: string,
+    usage: Usage,
+    priceDefinition: PriceDefinition,
+): UsagePrice {
     const usagePrice = convertUsage(usage, priceDefinition, model);
     const totalPrice = roundPollenLedgerAmount(
         Object.values(usagePrice).reduce((total, price) => total + price, 0),

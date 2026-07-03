@@ -3,8 +3,11 @@ export type ModelCategory =
     | "image"
     | "audio"
     | "video"
+    | "3d"
     | "embedding"
     | "realtime";
+
+export type ModelDisplayCategory = ModelCategory | "community";
 
 export type ModelCapability =
     | "tool_calling"
@@ -15,7 +18,10 @@ export type ModelCapability =
 export type PriceKind =
     | "text"
     | "image"
+    | "3d"
     | "cached"
+    | "cacheWrite"
+    | "reasoning"
     | "video"
     | "audioIn"
     | "audioOut";
@@ -34,6 +40,7 @@ export type ModelPriceLine = {
 export type ModelPrice = {
     name: string;
     type: ModelCategory;
+    community?: boolean;
     displayName?: string;
     description?: string;
     brand?: string;

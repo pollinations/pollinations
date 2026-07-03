@@ -17,8 +17,10 @@ import { formatPollen } from "@pollinations/ui/wallet";
 import {
     CONSENT_PERMISSIONS,
     getAuthorizeInitialPermissions,
+    PKCE_S256_CHALLENGE_REGEX,
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
+import { redirectUriMatchesAllowlistExact } from "@shared/auth/redirect-uri.ts";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
@@ -68,6 +70,9 @@ export function Authorize() {
         user_code,
         app_key,
         state,
+        response_type,
+        code_challenge,
+        code_challenge_method,
         models,
         budget,
         expiry,
@@ -76,6 +81,9 @@ export function Authorize() {
     const navigate = useNavigate();
 
     const isDeviceMode = !!user_code;
+    // OAuth 2.1 authorization-code flow: the callback carries ?code=...
+    // instead of the legacy #api_key=... fragment.
+    const isCodeFlow = !isDeviceMode && response_type === "code";
 
     const { data: session, isPending } = authClient.useSession();
     const user = session?.user as User | undefined;
@@ -124,12 +132,19 @@ export function Authorize() {
     );
     const isAttributionPending = !!app_key && !attribution;
     const canAuthorize =
-        (isDeviceMode || parsedRedirectUrl !== null) && !isAttributionPending;
+        (isDeviceMode || parsedRedirectUrl !== null) &&
+        !isAttributionPending &&
+        // The code flow only runs for registered clients with a validated
+        // redirect — no hostname-only fallback like the legacy flow.
+        (!isCodeFlow || redirectValidationState === "valid");
     const canRedirectOnDeny =
         parsedRedirectUrl !== null &&
-        (!app_key || redirectValidationState === "valid");
+        (isCodeFlow
+            ? redirectValidationState === "valid"
+            : !app_key || redirectValidationState === "valid");
 
-    useScrollLock();
+    const isMobile = window.innerWidth < 768;
+    useScrollLock(!isMobile);
 
     useEffect(() => {
         let cancelled = false;
@@ -210,6 +225,51 @@ export function Authorize() {
                 return;
             }
 
+            // The legacy fragment flow is keyed on the *absence* of
+            // response_type; an explicit unknown value must not silently
+            // alias it (RFC 6749 §4.1.2.1 unsupported_response_type).
+            if (response_type && response_type !== "code") {
+                setError(
+                    'Unsupported response_type — only "code" is supported.',
+                );
+                return;
+            }
+
+            // Code-flow front door (OAuth 2.1): PKCE and a registered client
+            // are mandatory. Errors render locally — error params are never
+            // redirected to a redirect_uri that hasn't been validated.
+            if (isCodeFlow) {
+                if (!app_key) {
+                    setError(
+                        "client_id is required for the authorization code flow",
+                    );
+                    return;
+                }
+                if (!code_challenge) {
+                    setError(
+                        "PKCE code_challenge is required for the authorization code flow",
+                    );
+                    return;
+                }
+                // An omitted method means "plain" per RFC 7636 §4.3, which we
+                // don't support — require an explicit S256 so unsupported
+                // clients fail here, before sign-in and key minting.
+                if (code_challenge_method !== "S256") {
+                    setError(
+                        "code_challenge_method=S256 is required (only S256 is supported)",
+                    );
+                    return;
+                }
+                // Same check as the server's CreateCodeSchema, so malformed
+                // challenges fail before a key is minted.
+                if (!PKCE_S256_CHALLENGE_REGEX.test(code_challenge)) {
+                    setError(
+                        "code_challenge must be a 43-character base64url S256 challenge",
+                    );
+                    return;
+                }
+            }
+
             // Attribution is identified by client_id only. Without one, the
             // consent screen falls back to the hostname display.
             if (!app_key) {
@@ -240,6 +300,21 @@ export function Authorize() {
                         setError(
                             "This app key could not be verified. Authorization blocked.",
                         );
+                    } else if (
+                        isCodeFlow &&
+                        !redirectUriMatchesAllowlistExact(
+                            redirect_url,
+                            attr.redirectUris,
+                        )
+                    ) {
+                        // The code flow needs an exact match (the code rides
+                        // the query string); app-lookup applies the legacy
+                        // flow's lenient rules, so re-check strictly here —
+                        // same check POST /api/oauth/code enforces.
+                        setRedirectValidationState("invalid");
+                        setError(
+                            "This redirect URL is not registered for this app. Authorization blocked.",
+                        );
                     } else {
                         setRedirectValidationState("valid");
                     }
@@ -253,10 +328,14 @@ export function Authorize() {
         }
     }, [
         isDeviceMode,
+        isCodeFlow,
         user_code,
         urlScope,
         app_key,
         redirect_url,
+        response_type,
+        code_challenge,
+        code_challenge_method,
         setAccountPermissions,
     ]);
 
@@ -284,6 +363,8 @@ export function Authorize() {
         try {
             const { allowedModels, pollenBudget, accountPermissions } =
                 keyPermissions.permissions;
+            const grantedAccountPermissions =
+                sanitizeAuthorizeAccountPermissions(accountPermissions) ?? [];
             const { key, id, expiresIn } = await createKeyWithPermissions({
                 name: isDeviceMode
                     ? `Device ${user_code}`
@@ -305,10 +386,7 @@ export function Authorize() {
                 permissions: {
                     allowedModels,
                     pollenBudget,
-                    accountPermissions:
-                        sanitizeAuthorizeAccountPermissions(
-                            accountPermissions,
-                        ) ?? [],
+                    accountPermissions: grantedAccountPermissions,
                 },
             });
 
@@ -319,6 +397,12 @@ export function Authorize() {
                         apiKey: key,
                         apiKeyId: id,
                         expiresIn,
+                        // Same convention as the code flow below: the token
+                        // response must echo the granted scope when it
+                        // differs from the requested one (RFC 6749 §5.1)
+                        scope: requestedScopes.size
+                            ? grantedAccountPermissions.join(" ")
+                            : undefined,
                     },
                 });
                 if (!res.ok) {
@@ -334,9 +418,53 @@ export function Authorize() {
                     throw new Error("Invalid redirect URL format");
                 }
                 const url = new URL(parsedRedirectUrl.href);
-                const hash = new URLSearchParams({ api_key: key });
-                if (state) hash.set("state", state);
-                url.hash = hash.toString();
+                if (isCodeFlow) {
+                    if (!app_key || !code_challenge || !redirect_url) {
+                        throw new Error(
+                            "Missing client_id or PKCE code_challenge",
+                        );
+                    }
+                    const res = await apiClient.oauth.code
+                        .$post({
+                            json: {
+                                apiKey: key,
+                                clientId: app_key,
+                                redirectUri: redirect_url,
+                                // "" (requested but narrowed to zero) is
+                                // distinct from undefined (nothing requested)
+                                // — RFC 6749 §5.1 needs the token response to
+                                // echo the former
+                                scope: requestedScopes.size
+                                    ? grantedAccountPermissions.join(" ")
+                                    : undefined,
+                                codeChallenge: code_challenge,
+                                codeChallengeMethod: "S256",
+                                expiresIn,
+                            },
+                        })
+                        .catch(() => null);
+                    if (!res || !res.ok) {
+                        // The key was minted but can't be delivered — don't
+                        // leave an active orphan in the account.
+                        authClient.apiKey.delete({ keyId: id }).catch(() => {});
+                        const data = (await res?.json().catch(() => null)) as {
+                            message?: string;
+                            error?: { message?: string };
+                        } | null;
+                        throw new Error(
+                            data?.message ||
+                                data?.error?.message ||
+                                "Failed to create authorization code",
+                        );
+                    }
+                    const { code } = (await res.json()) as { code: string };
+                    url.searchParams.set("code", code);
+                    if (state) url.searchParams.set("state", state);
+                } else {
+                    const hash = new URLSearchParams({ api_key: key });
+                    if (state) hash.set("state", state);
+                    url.hash = hash.toString();
+                }
                 window.location.href = url.toString();
             }
         } catch (e) {
@@ -359,9 +487,15 @@ export function Authorize() {
             setDeviceOutcome("denied");
         } else if (canRedirectOnDeny && parsedRedirectUrl) {
             const url = new URL(parsedRedirectUrl.href);
-            const hash = new URLSearchParams({ error: "access_denied" });
-            if (state) hash.set("state", state);
-            url.hash = hash.toString();
+            if (isCodeFlow) {
+                // RFC 6749 §4.1.2.1: code-flow errors ride the query string.
+                url.searchParams.set("error", "access_denied");
+                if (state) url.searchParams.set("state", state);
+            } else {
+                const hash = new URLSearchParams({ error: "access_denied" });
+                if (state) hash.set("state", state);
+                url.hash = hash.toString();
+            }
             window.location.href = url.toString();
         } else {
             navigate({ to: "/" });
@@ -561,7 +695,8 @@ export function Authorize() {
                                             &#x1F511;
                                         </span>
                                         <span>
-                                            Create, list, and revoke API keys.
+                                            Manage API keys and My Models when
+                                            enabled.
                                         </span>
                                     </li>
                                 )}

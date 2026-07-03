@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-07-02",
+  "period_start": "2026-07-02",
+  "period_end": "2026-07-02",
+  "generated_at": "2026-07-03T07:02:57.060504+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-02/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped 3d generation today (trellis 2 & rodin 2.5). also routed flux to a self-hosted 5090 pool, pushing generation times under 3 seconds. additionally, the video models endpoint now exclusively returns video models. wild concept, we know."
+}

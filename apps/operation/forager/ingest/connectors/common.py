@@ -10,9 +10,29 @@ import urllib.request
 UA = "Mozilla/5.0 (pollinations-finops-connector)"
 
 
-def http_json(url, headers=None, timeout=30):
+def http_json(url, headers=None, timeout=30, data=None, method=None):
+    """GET or POST a JSON endpoint, always setting the User-Agent header.
+
+    Args:
+        url:     Request URL.
+        headers: Extra headers dict (merged after UA).
+        timeout: Socket timeout in seconds.
+        data:    If a dict, JSON-encodes it and sends as POST body with
+                 Content-Type: application/json.  If bytes, sends as-is.
+                 None → GET (unless method overrides).
+        method:  Explicit HTTP method override (e.g. "POST" with no body).
+
+    Backward-compatible: wise.py calls http_json(url, headers) positionally.
+    """
     h = {"User-Agent": UA, **(headers or {})}
-    req = urllib.request.Request(url, headers=h)
+    body = None
+    if isinstance(data, dict):
+        body = _json.dumps(data).encode()
+        h.setdefault("Content-Type", "application/json")
+    elif isinstance(data, (bytes, bytearray)):
+        body = data
+    effective_method = method or ("POST" if body is not None else "GET")
+    req = urllib.request.Request(url, data=body, headers=h, method=effective_method)
     with urllib.request.urlopen(req, timeout=timeout) as r:
         return _json.load(r)
 

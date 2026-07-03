@@ -1,0 +1,60 @@
+"""Provider row builders shared by all balance/meter connectors.
+
+_brow  — build one balances row (append-only datasource)
+_mrow  — build one meter_monthly row (append-only datasource)
+
+Provider connector modules (openrouter, deepinfra, runpod, vast, …) are added
+in Tasks B3–B5 and import these builders.
+"""
+
+
+def _brow(now, provider, granted=None, spent=None, left=None, prepaid=None,
+          currency="USD", source="api", note=""):
+    """Build a balances datasource row.
+
+    Args:
+        now:      run_at timestamp string "YYYY-MM-DD HH:MM:SS"
+        provider: canonical provider slug (e.g. "openrouter")
+        granted:  total credit granted in USD (None if unknown)
+        spent:    total spent in USD (None if unknown)
+        left:     remaining credit in USD (None if unknown)
+        prepaid:  remaining prepaid (non-grant) balance in USD (None if not applicable)
+        currency: always "USD" for internal accounting
+        source:   "api" | "manual" | "cli"
+        note:     free-text annotation
+    """
+    r2 = lambda v: None if v is None else round(float(v), 2)
+    return {
+        "run_at": now,
+        "provider": provider,
+        "granted_usd": r2(granted),
+        "spent_usd": r2(spent),
+        "left_usd": r2(left),
+        "prepaid_left_usd": r2(prepaid),
+        "currency": currency,
+        "source": source,
+        "note": note,
+    }
+
+
+def _mrow(month, provider, cost_usd, funding, source, method, today):
+    """Build a meter_monthly datasource row.
+
+    Args:
+        month:    "YYYY-MM" billing month
+        provider: canonical provider slug
+        cost_usd: metered cost in USD
+        funding:  "cash" | "credit" | "prepaid"
+        source:   "api" | "cli" | "bq" | "manual"
+        method:   human-readable description of how the number was obtained
+        today:    retrieved_at date string "YYYY-MM-DD"
+    """
+    return {
+        "month": month,
+        "provider": provider,
+        "cost_usd": round(float(cost_usd), 2),
+        "funding": funding,
+        "source": source,
+        "method": method,
+        "retrieved_at": today,
+    }

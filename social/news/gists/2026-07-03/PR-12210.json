@@ -1,0 +1,35 @@
+{
+  "pr_number": 12210,
+  "title": "feat: bill Perplexity/Gemini search fees as itemized billing adjustments",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12210",
+  "merged_at": "2026-07-03T16:34:39Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Adds declarative \\`billing.adjustments\\` to the registry (trimmed #11683 base): Perplexity request fees (tier-pinned $5/$12/$14 per 1k by alias, provider-reported \\`request_cost\\` preferred) and Gemini grounding (2.5: $35/1k grounded prompts, web-evidence predicate; 3.x: $14/1k search queries, stream-dedup)\n- Clamp-and-alert provider-cost policy: absent → static fee + WARN (Perplexity-regression detector), malformed or >10× → static fee + ERROR; never 502s\n- Single-pass \\`calculateUsageBilling\\`: cost, price, and per-rule breakdown from one rule walk\n- Events: \\`adjustment_costs\\` / \\`adjustment_units\\` Map columns keyed by versioned rule id (\\`DEFAULT map()\\` — old rows correct, no backfill); one row per request unchanged\n- One uniform \\`priceMultiplier\\` per model applies to the whole bill; component prices derivable from cost map\n- No billing internals in public \\`/models\\`; \\`usage.cost\\`/\\`search_context_size\\` stripped from non-stream bodies (stream redaction + public cost exposure = separate later PR)\n- Drops #11683's >200K long-context tiers (prod traffic: 7 req/1 user/30d); re-add when justified\n- Comparison branches: \\`claude/billing-scalar\\`, \\`codex/billing-adjustments-{scalar,map}\\`\n\n**Rollout (in order):**\n1. Tinybird columns: \\`tb --cloud deploy --check\\` then deploy — STAGING workspace first (TB_TOKEN override), verify event round-trip, then PROD (both workspaces, #11127)\n2. Merge, then sync main→production to deploy gen\n3. Staging verify: grounded gemini-search → \\`adjustment_costs\\` populated; Perplexity stream → \\`request_cost\\` billed\n4. Later, independent: merge gateway#7 + PORTKEY_COMMIT bump (#11703); until then non-stream Perplexity bills the exact pinned static fee\n5. Monitor \\`[billing]\\` log lines + monthly invoice reconciliation vs \\`sumMap(adjustment_costs)\\`\n\nSupersedes #11683\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Itemized receipts for the hive",
+    "blurb": "We've upgraded our billing engine to support itemized adjustments for advanced model features. Now, when you use Perplexity's search or Gemini's grounding, the exact costs are transparently calculated and applied.",
+    "summary": "Added declarative billing adjustments to the registry to accurately itemize Perplexity request fees and Gemini grounding costs (versions 2.5 and 3.x) during usage calculation.",
+    "impact": "API users leveraging Perplexity search or Gemini grounding will now have these specific provider fees transparently calculated and applied to their usage.",
+    "keywords": [
+      "billing",
+      "perplexity",
+      "gemini",
+      "api",
+      "infrastructure"
+    ],
+    "visual_concept": "Polly the bee acting as an accountant, reviewing a long, itemized receipt (representing the new billing adjustments) coming out of a retro computer terminal, while the Nomnom creature eats the end of it.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing tiny reading glasses, reviewing a long, itemized receipt printing from a retro computer terminal. The round tan Nomnom creature sits nearby, happily munching on the end of the receipt paper. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-03/PR-12210.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing tiny reading glasses, reviewing a long, itemized receipt printing from a retro computer terminal. The round tan Nomnom creature sits nearby, happily munching on the end of the receipt paper. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-03T16:35:44.551160+00:00"
+}

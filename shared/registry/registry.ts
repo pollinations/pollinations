@@ -94,15 +94,6 @@ export type BillingAdjustmentCounter =
 
 export type ProviderReportedUnitCostSource = "perplexityUsageCostRequest";
 
-export type BillingTierRule = {
-    id: string;
-    description: string;
-    when: {
-        promptTokensGt: number;
-    };
-    cost: CostDefinition;
-};
-
 export type BillingAdjustmentRule = {
     id: string;
     description: string;
@@ -111,13 +102,29 @@ export type BillingAdjustmentRule = {
     count: BillingAdjustmentCounter;
     unitCost: number;
     providerReportedUnitCost?: ProviderReportedUnitCostSource;
-    priceMultiplier?: number;
+    // When set, the provider response's reported `usage.search_context_size`
+    // is compared against this value; a mismatch means the pinned tier drifted
+    // from what the provider actually charged and is logged (WARN).
+    expectedSearchContextSize?: string;
     when?: "grounded" | "always";
 };
 
 export type BillingRules = {
-    tiers?: BillingTierRule[];
     adjustments?: BillingAdjustmentRule[];
+};
+
+// Per-rule billing breakdown, returned in parallel to the numeric usage maps.
+// Adjustment cost doubles as adjustment price today (priceMultiplier === 1 is
+// enforced for every model carrying adjustments), so `cost` and `price` are
+// tracked separately here to stay correct when a marked-up search model lands.
+export type BillingAdjustment = {
+    ruleId: string;
+    kind: string;
+    unit: string;
+    units: number;
+    unitCost: number;
+    cost: number;
+    price: number;
 };
 
 export type ModelDefinition<TModelId extends string = ModelId> = {
@@ -220,33 +227,58 @@ function calculateLinearCost(
     };
 }
 
-function getPromptTokenCount(usage: Usage): number {
-    return (
-        (usage.promptTextTokens ?? 0) +
-        (usage.promptCachedTokens ?? 0) +
-        (usage.promptAudioTokens ?? 0) +
-        (usage.promptImageTokens ?? 0) +
-        (usage.promptVideoTokens ?? 0)
-    );
-}
+type GroundingMetadata = {
+    webSearchQueries?: string[];
+    // Google returns a grounding chunk per source it cites. A `web` entry means
+    // the source is a Google-Search web result (billable grounding evidence);
+    // Vertex-AI-Search chunks are a different, separately-priced product.
+    groundingChunks?: { web?: { uri?: string } }[];
+    // Non-empty when Google attached grounding-support spans to the answer —
+    // present whenever web grounding evidence backs the response.
+    groundingSupports?: unknown[];
+};
 
 type GroundedOutput = {
-    choices?: { groundingMetadata?: { webSearchQueries?: string[] } }[];
+    choices?: { groundingMetadata?: GroundingMetadata }[];
     streamEvents?: GroundedOutput[];
 };
 
-function getGeminiGroundingWebSearchQueryCount(output: unknown): number {
+function eachGroundingMetadata(output: unknown): GroundingMetadata[] {
     const o = output as GroundedOutput | undefined;
     const events = o?.streamEvents ?? (o ? [o] : []);
-    const queries = new Set<string>();
+    const metadata: GroundingMetadata[] = [];
     for (const event of events) {
         for (const choice of event.choices ?? []) {
-            for (const q of choice.groundingMetadata?.webSearchQueries ?? []) {
-                if (q?.trim()) queries.add(q);
-            }
+            if (choice.groundingMetadata)
+                metadata.push(choice.groundingMetadata);
+        }
+    }
+    return metadata;
+}
+
+// Gemini 3.x: each distinct web-search query fires a fee. Dedup the cumulative
+// query list across stream chunks (chunks repeat the running list).
+function getGeminiGroundingWebSearchQueryCount(output: unknown): number {
+    const queries = new Set<string>();
+    for (const metadata of eachGroundingMetadata(output)) {
+        for (const q of metadata.webSearchQueries ?? []) {
+            if (q?.trim()) queries.add(q);
         }
     }
     return queries.size;
+}
+
+// Gemini 2.5: Google bills one grounded prompt whenever web grounding evidence
+// is returned — search queries fired, OR web grounding chunks, OR grounding
+// supports. `retrievalQueries` (Vertex-AI-Search) is a different product and is
+// intentionally NOT counted here.
+function isGeminiGroundedPrompt(output: unknown): boolean {
+    for (const metadata of eachGroundingMetadata(output)) {
+        if (metadata.webSearchQueries?.some((q) => q?.trim())) return true;
+        if (metadata.groundingChunks?.some((chunk) => chunk?.web)) return true;
+        if ((metadata.groundingSupports?.length ?? 0) > 0) return true;
+    }
+    return false;
 }
 
 function countBillingAdjustmentUnits(
@@ -254,11 +286,10 @@ function countBillingAdjustmentUnits(
     output: unknown,
 ): number {
     if (counter === "perplexityRequest") return 1;
-    const geminiQueryCount = getGeminiGroundingWebSearchQueryCount(output);
     if (counter === "geminiGroundedPrompt") {
-        return geminiQueryCount > 0 ? 1 : 0;
+        return isGeminiGroundedPrompt(output) ? 1 : 0;
     }
-    return geminiQueryCount;
+    return getGeminiGroundingWebSearchQueryCount(output);
 }
 
 type PerplexityCostOutput = {
@@ -266,103 +297,147 @@ type PerplexityCostOutput = {
         cost?: {
             request_cost?: unknown;
         };
+        search_context_size?: unknown;
     };
     streamEvents?: unknown[];
 };
 
-// Provider-reported billing data that is present but malformed is a billing
-// fault — fail loudly instead of silently normalizing it.
-export class ProviderBillingError extends Error {}
+// Reject provider-reported request_cost that would poison the ledger.
+const PROVIDER_COST_CLAMP_FACTOR = 10;
 
-// Read `usage.cost.request_cost` from a response or stream event. Returns
-// undefined when no cost data is present; throws ProviderBillingError when
-// cost data is present but request_cost is not a finite non-negative number.
-export function readProviderRequestCost(event: unknown): number | undefined {
+// Distinguish "no cost object at all" (expected regression case) from "cost
+// object present but request_cost malformed" (should alert louder).
+type ProviderRequestCostRead =
+    | { status: "absent" }
+    | { status: "malformed"; raw: unknown }
+    | { status: "ok"; value: number };
+
+// Read `usage.cost.request_cost` from a single response or stream event.
+function readProviderRequestCost(event: unknown): ProviderRequestCostRead {
     const cost = (event as PerplexityCostOutput | undefined)?.usage?.cost;
-    if (cost == null) return undefined;
-    if (typeof cost !== "object") {
-        throw new ProviderBillingError(
-            `Provider-reported usage.cost is not an object: ${JSON.stringify(cost)}`,
-        );
-    }
-    if (!("request_cost" in cost)) return undefined;
+    if (cost == null) return { status: "absent" };
+    if (typeof cost !== "object") return { status: "malformed", raw: cost };
+    if (!("request_cost" in cost)) return { status: "absent" };
     const value = cost.request_cost;
     if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
-        throw new ProviderBillingError(
-            `Provider-reported request_cost is invalid: ${JSON.stringify(value) ?? String(value)}`,
-        );
+        return { status: "malformed", raw: value };
     }
-    return value;
+    return { status: "ok", value };
 }
 
-function getPerplexityReportedRequestCost(output: unknown): number | undefined {
+function getPerplexityReportedRequestCost(
+    output: unknown,
+): ProviderRequestCostRead {
     const o = output as PerplexityCostOutput | undefined;
     const events = o?.streamEvents ?? (o ? [o] : []);
-
     for (const event of [...events].reverse()) {
-        const unitCost = readProviderRequestCost(event);
-        if (unitCost !== undefined) return unitCost;
+        const read = readProviderRequestCost(event);
+        if (read.status !== "absent") return read;
     }
+    return { status: "absent" };
+}
 
+function getReportedSearchContextSize(output: unknown): string | undefined {
+    const o = output as PerplexityCostOutput | undefined;
+    const events = o?.streamEvents ?? (o ? [o] : []);
+    for (const event of [...events].reverse()) {
+        const size = (event as PerplexityCostOutput | undefined)?.usage
+            ?.search_context_size;
+        if (typeof size === "string") return size;
+    }
     return undefined;
 }
 
-function getBillingAdjustmentUnitCost(
+// Resolve the per-unit cost for a rule via clamp-and-alert (never throws):
+//  - absent provider cost      → static fee + WARN (Perplexity-regression signal)
+//  - malformed provider cost   → static fee + ERROR
+//  - provider cost > 10× static → clamp to static fee + ERROR
+//  - otherwise                 → provider-reported cost verbatim
+function resolveBillingAdjustmentUnitCost(
+    svc: ModelDefinition,
     rule: BillingAdjustmentRule,
     output: unknown,
 ): number {
-    if (rule.providerReportedUnitCost === "perplexityUsageCostRequest") {
-        return getPerplexityReportedRequestCost(output) ?? rule.unitCost;
+    if (rule.providerReportedUnitCost !== "perplexityUsageCostRequest") {
+        return rule.unitCost;
     }
-    return rule.unitCost;
+
+    if (rule.expectedSearchContextSize) {
+        const reported = getReportedSearchContextSize(output);
+        if (reported && reported !== rule.expectedSearchContextSize) {
+            console.warn(
+                `[billing] perplexity search_context_size drift: model=${svc.modelId} rule=${rule.id} expected=${rule.expectedSearchContextSize} reported=${reported} — static fee assumed the expected tier`,
+            );
+        }
+    }
+
+    const read = getPerplexityReportedRequestCost(output);
+    if (read.status === "absent") {
+        // Expected for non-stream Perplexity until the gateway cost-preserving
+        // fix deploys. WARN so a persistent absence is visible without paging.
+        console.warn(
+            `[billing] provider request_cost absent for model=${svc.modelId} rule=${rule.id} — using static fee ${rule.unitCost}`,
+        );
+        return rule.unitCost;
+    }
+    if (read.status === "malformed") {
+        console.error(
+            `[billing] malformed provider request_cost (${JSON.stringify(read.raw) ?? String(read.raw)}) for model=${svc.modelId} rule=${rule.id} — using static fee ${rule.unitCost}`,
+        );
+        return rule.unitCost;
+    }
+    if (read.value > rule.unitCost * PROVIDER_COST_CLAMP_FACTOR) {
+        console.error(
+            `[billing] provider request_cost ${read.value} exceeds 10× static fee ${rule.unitCost} for model=${svc.modelId} rule=${rule.id} — clamped to static fee`,
+        );
+        return rule.unitCost;
+    }
+    return read.value;
 }
 
-function selectBillingTier(
-    svc: ModelDefinition,
-    usage: Usage,
-): BillingTierRule | undefined {
-    const promptTokens = getPromptTokenCount(usage);
-    return svc.billing?.tiers?.find(
-        (tier) => promptTokens > tier.when.promptTokensGt,
-    );
-}
-
-function getBillingCostDefinition(
-    svc: ModelDefinition,
-    usage: Usage,
-): CostDefinition {
-    const billingTier = selectBillingTier(svc, usage);
-    return billingTier ? { ...svc.cost, ...billingTier.cost } : svc.cost;
+// Single source of truth: the per-rule breakdown. Cost/price totals are derived
+// from this so there is no duplicated rule loop.
+export function calculateBillingAdjustments(
+    svc: ModelDefinition<string>,
+    output: unknown,
+): BillingAdjustment[] {
+    const adjustments: BillingAdjustment[] = [];
+    for (const rule of svc.billing?.adjustments ?? []) {
+        const units = countBillingAdjustmentUnits(rule.count, output);
+        if ((rule.when ?? "grounded") !== "always" && units === 0) continue;
+        const unitCost = resolveBillingAdjustmentUnitCost(svc, rule, output);
+        const cost = units * unitCost;
+        adjustments.push({
+            ruleId: rule.id,
+            kind: rule.kind,
+            unit: rule.unit,
+            units,
+            unitCost,
+            cost,
+            price: cost * svc.priceMultiplier,
+        });
+    }
+    return adjustments;
 }
 
 function calculateBillingAdjustmentCost(
     svc: ModelDefinition,
     output: unknown,
 ): number {
-    return (svc.billing?.adjustments ?? []).reduce((total, rule) => {
-        const units = countBillingAdjustmentUnits(rule.count, output);
-        if ((rule.when ?? "grounded") !== "always" && units === 0) {
-            return total;
-        }
-        return total + units * getBillingAdjustmentUnitCost(rule, output);
-    }, 0);
+    return calculateBillingAdjustments(svc, output).reduce(
+        (total, adjustment) => total + adjustment.cost,
+        0,
+    );
 }
 
 function calculateBillingAdjustmentPrice(
     svc: ModelDefinition,
     output: unknown,
 ): number {
-    return (svc.billing?.adjustments ?? []).reduce((total, rule) => {
-        const units = countBillingAdjustmentUnits(rule.count, output);
-        if ((rule.when ?? "grounded") !== "always" && units === 0) {
-            return total;
-        }
-        const priceMultiplier = rule.priceMultiplier ?? svc.priceMultiplier;
-        return (
-            total +
-            units * getBillingAdjustmentUnitCost(rule, output) * priceMultiplier
-        );
-    }, 0);
+    return calculateBillingAdjustments(svc, output).reduce(
+        (total, adjustment) => total + adjustment.price,
+        0,
+    );
 }
 
 const MODEL_REGISTRY = {
@@ -503,11 +578,7 @@ export function calculateCostForModelDefinition(
     svc: ModelDefinition<string>,
     output?: unknown,
 ): UsageCost {
-    const usageCost = calculateLinearCost(
-        model,
-        usage,
-        getBillingCostDefinition(svc, usage),
-    );
+    const usageCost = calculateLinearCost(model, usage, svc.cost);
     const adjustmentCost = calculateBillingAdjustmentCost(svc, output);
     if (adjustmentCost === 0) return usageCost;
     return {
@@ -549,11 +620,7 @@ export function calculatePriceForModelDefinition(
     svc: ModelDefinition<string>,
     output?: unknown,
 ): UsagePrice {
-    const usageCost = calculateLinearCost(
-        model,
-        usage,
-        getBillingCostDefinition(svc, usage),
-    );
+    const usageCost = calculateLinearCost(model, usage, svc.cost);
     const usagePrice = Object.fromEntries(
         Object.entries(usageCost)
             .filter(([usageType]) => usageType !== "totalCost")

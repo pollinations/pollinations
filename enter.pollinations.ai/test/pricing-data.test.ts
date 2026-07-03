@@ -574,10 +574,10 @@ test("Perplexity billing rules carry per-tier request fees privately only", () =
             id: ruleId,
             kind: "search_request",
             unit: "request",
-            count: "perplexityRequest",
-            when: "always",
             unitCost,
         });
+        // Request fee applies to every request, independent of output content.
+        expect(adjustment?.countUnits({})).toBe(1);
     }
 
     // Public catalog exposes token pricing only — no billing internals.

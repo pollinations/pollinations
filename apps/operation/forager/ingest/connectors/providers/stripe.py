@@ -96,10 +96,18 @@ def revenue_rows(creds, months, today, _max_pages=100):
     rows = []
     all_months = months_set & (set(gross) | set(refunds) | set(net))
     for month in sorted(all_months):
-        g = round(gross.get(month, 0.0) / 100, 2)
-        r = round(refunds.get(month, 0.0) / 100, 2)
-        n = round(net.get(month, 0.0) / 100, 2)
-        f = round(g - r - n, 2)
+        # Compute fees in raw cents first to maintain identity: fees == (gross - refunds - net) / 100
+        gross_cents = gross.get(month, 0.0)
+        refunds_cents = refunds.get(month, 0.0)
+        net_cents = net.get(month, 0.0)
+        fees_cents = gross_cents - refunds_cents - net_cents
+
+        # Convert all to EUR and round to 2dp
+        g = round(gross_cents / 100, 2)
+        r = round(refunds_cents / 100, 2)
+        n = round(net_cents / 100, 2)
+        f = round(fees_cents / 100, 2)
+
         rows.append({
             "month": month,
             "gross_eur": g,

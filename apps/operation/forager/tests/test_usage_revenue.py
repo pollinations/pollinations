@@ -230,12 +230,17 @@ _STRIPE_CREDS = {"STRIPE_API_KEY": "rk_test_fakekeyvalue"}
 # ---------------------------------------------------------------------------
 
 def test_stripe_pagination_starting_after(monkeypatch):
-    """Second page request must include starting_after=<last id of page 1>."""
+    """Second page request must include starting_after=<last id of page 1>.
+
+    Note: starting_after uses the last item of page data INCLUDING payouts.
+    Payouts are skipped in processing (not accumulated in gross/net/fees), but they
+    are used for pagination cursoring. This ensures all txns are fetched.
+    """
     cap = StripeCapture([_STRIPE_PAGE1, _STRIPE_PAGE2])
     monkeypatch.setattr(_stripe, "http_json", cap)
     _stripe.revenue_rows(_STRIPE_CREDS, ["2026-06"], TODAY)
     assert len(cap.calls) == 2
-    # Second call URL must include starting_after=txn_004 (last id of page 1)
+    # Second call URL must include starting_after=txn_004 (last id of page 1, a payout)
     second_url = cap.calls[1]["url"]
     assert "starting_after=txn_004" in second_url, (
         f"starting_after param wrong in: {second_url}"
@@ -250,7 +255,7 @@ def test_stripe_payouts_excluded(monkeypatch):
     row = next(r for r in rows if r["month"] == "2026-06")
     # If payout (-1000 cents) was included, gross would differ (or net very negative)
     # gross must be exactly 18.00 (only charges count)
-    assert row["gross_eur"] == pytest.approx(18.00, abs=0.01)
+    assert row["gross_eur"] == 18.00
 
 
 def test_stripe_cents_to_eur(monkeypatch):
@@ -274,7 +279,7 @@ def test_stripe_gross_sum(monkeypatch):
     monkeypatch.setattr(_stripe, "http_json", cap)
     rows = _stripe.revenue_rows(_STRIPE_CREDS, ["2026-06"], TODAY)
     row = next(r for r in rows if r["month"] == "2026-06")
-    assert row["gross_eur"] == pytest.approx(18.00, abs=0.01)
+    assert row["gross_eur"] == 18.00
 
 
 def test_stripe_refunds_sum(monkeypatch):
@@ -283,7 +288,7 @@ def test_stripe_refunds_sum(monkeypatch):
     monkeypatch.setattr(_stripe, "http_json", cap)
     rows = _stripe.revenue_rows(_STRIPE_CREDS, ["2026-06"], TODAY)
     row = next(r for r in rows if r["month"] == "2026-06")
-    assert row["refunds_eur"] == pytest.approx(3.00, abs=0.01)
+    assert row["refunds_eur"] == 3.00
 
 
 def test_stripe_net_sum(monkeypatch):
@@ -293,7 +298,7 @@ def test_stripe_net_sum(monkeypatch):
     rows = _stripe.revenue_rows(_STRIPE_CREDS, ["2026-06"], TODAY)
     row = next(r for r in rows if r["month"] == "2026-06")
     # net = (938 + 462 + (-200) + 283 + (-100)) / 100 = 1383/100 = 13.83
-    assert row["net_eur"] == pytest.approx(13.83, abs=0.01)
+    assert row["net_eur"] == 13.83
 
 
 def test_stripe_fees_formula(monkeypatch):
@@ -302,10 +307,41 @@ def test_stripe_fees_formula(monkeypatch):
     monkeypatch.setattr(_stripe, "http_json", cap)
     rows = _stripe.revenue_rows(_STRIPE_CREDS, ["2026-06"], TODAY)
     row = next(r for r in rows if r["month"] == "2026-06")
-    expected_fees = round(row["gross_eur"] - row["refunds_eur"] - row["net_eur"], 2)
-    assert row["fees_eur"] == pytest.approx(expected_fees, abs=0.01)
+    expected_fees = row["gross_eur"] - row["refunds_eur"] - row["net_eur"]
+    # Exact identity check: fees computed in raw cents must equal fees derived from rounded EUR
+    assert row["fees_eur"] == expected_fees
     # Concrete check: 18.00 - 3.00 - 13.83 = 1.17
-    assert row["fees_eur"] == pytest.approx(1.17, abs=0.01)
+    assert row["fees_eur"] == 1.17
+
+
+def test_stripe_fees_rounding_regression(monkeypatch):
+    """Regression: fees must be computed in raw cents, not from rounded values.
+
+    The fix ensures fees_cents = gross_cents - refunds_cents - net_cents is computed
+    first, then converted to EUR. This preserves the mathematical identity exactly
+    (within floating-point precision).
+    """
+    page = {
+        "data": [
+            {"id": "txn_1", "type": "charge", "amount": 1999, "net": 1870, "created": _JUN_EPOCH1},
+            {"id": "txn_2", "type": "refund", "amount": -100, "net": -100, "created": _JUN_EPOCH1},
+        ],
+        "has_more": False,
+    }
+    cap = StripeCapture([page])
+    monkeypatch.setattr(_stripe, "http_json", cap)
+    rows = _stripe.revenue_rows(_STRIPE_CREDS, ["2026-06"], TODAY)
+    row = rows[0]
+    # Exact values (no rounding tolerance)
+    assert row["gross_eur"] == 19.99
+    assert row["refunds_eur"] == 1.00
+    assert row["net_eur"] == 17.70
+    # The identity must hold (within floating-point precision):
+    # fees == (gross - refunds - net), and round() of raw cents == rounded values subtracted
+    expected_fees = row["gross_eur"] - row["refunds_eur"] - row["net_eur"]
+    assert row["fees_eur"] == pytest.approx(expected_fees, abs=1e-9)
+    # Verify it equals 1.29 when properly rounded
+    assert row["fees_eur"] == 1.29
 
 
 def test_stripe_only_requested_months_emitted(monkeypatch):

@@ -8,7 +8,6 @@ SCHEMA >
     `spent_usd` Nullable(Float64) `json:$.spent_usd`,
     `left_usd` Nullable(Float64) `json:$.left_usd`,
     `prepaid_left_usd` Nullable(Float64) `json:$.prepaid_left_usd`,
-    `currency` String `json:$.currency`,
     `source` String `json:$.source`,
     `note` String `json:$.note`
 

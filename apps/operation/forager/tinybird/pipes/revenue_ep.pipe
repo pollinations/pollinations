@@ -2,6 +2,8 @@ TOKEN "treasury_web" READ
 
 NODE revenue
 SQL >
-    SELECT * FROM revenue_monthly ORDER BY month
+    SELECT month, gross_eur, fees_eur, refunds_eur,
+           round(gross_eur - fees_eur - refunds_eur, 2) AS net_eur
+    FROM revenue_monthly ORDER BY month
 
 TYPE endpoint

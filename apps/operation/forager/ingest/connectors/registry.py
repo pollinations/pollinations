@@ -15,8 +15,8 @@ from ..invoices.harvest import PROVIDERS as _PROVIDERS
 from .wise import ALIAS as _ALIAS
 
 # Only "compute" and "infra" categories represent billing providers.
-# "saas", "payroll", and "other" are invoice-sender slugs (office/tools/payroll/self)
-# that must NOT be accepted as valid meter/balance targets.
+# "saas", "admin", "office", "payroll", and "other" are operating-expense
+# invoice/payment slugs that must NOT be accepted as valid meter/balance targets.
 _BILLING_CATEGORIES = {"compute", "infra"}
 
 # Slugs from invoice classifier — billing categories only

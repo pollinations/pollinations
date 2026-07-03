@@ -5,15 +5,14 @@ payments row per outgoing transaction. Unmatched counterparties keep provider=''
 so payroll/office stay visible for future runway/infra UIs.
 
 Row shape matches the `payments` Tinybird datasource exactly:
-    paid_at, month, provider, counterparty, amount_eur, amount_usd,
-    wise_ref, pulled_at
+    paid_at, provider, counterparty, amount_eur, wise_ref
 """
 import urllib.parse
 from .common import http_json, strip_html
 
 # provider key -> counterparty substrings (lowercased)
-# Intentionally UNMATCHED: "Amazon" (retail — office hardware, NOT AWS; Elliot confirmed 2026-07-02),
-# payroll/rent/tools (Deel, Gaswerksiedlung, GitHub, Tinybird, Notion, ...) — they are ops, not compute.
+# Billing-provider aliases. Operating expenses are categorized separately below
+# so they stay out of compute while still showing up in cash views.
 ALIAS = {
     "google":       ["google cloud", "google cloud emea"],
     "aws":          ["automat-it", "amazon web", "aws emea"],
@@ -45,6 +44,21 @@ ALIAS = {
     "assemblyai":   ["assemblyai", "assembly ai"],
 }
 
+OPS_ALIAS = [
+    ("deel", "payroll", ["lets deel", "deel"]),
+    ("enty", "admin", ["enty"]),
+    ("wise", "admin", ["wise"]),
+    ("github", "saas", ["github"]),
+    ("slack", "saas", ["slack"]),
+    ("typeless", "saas", ["typeless"]),
+    ("wispr", "saas", ["wispr"]),
+    ("tinybird", "infra", ["tinybird"]),
+    ("tele2", "office", ["tele2"]),
+    ("naturenergie", "office", ["naturenergie"]),
+    ("", "admin", ["tax", "steuer", "consult", "accounting", "bookkeeping", "legal", "notary"]),
+    ("", "office", ["amazon", "gaswerksiedlung", "zara home", "denns biomarkt", "canva"]),
+]
+
 
 def _amount(raw):
     parts = strip_html(raw).split()
@@ -64,6 +78,31 @@ def _match(counterparty):
         if any(s in low for s in subs):
             return prov
     return None
+
+
+def _ops_match(counterparty):
+    low = counterparty.lower()
+    words = low.replace("-", " ").replace("_", " ").split()
+    for provider, category, subs in OPS_ALIAS:
+        for s in subs:
+            if len(s) <= 2:
+                if s in words:
+                    return provider, category
+            elif s in low:
+                return provider, category
+    return "", ""
+
+
+def _payment_category(provider, counterparty, slug_cat):
+    low = counterparty.lower()
+    if provider in ("anthropic", "openai", "xai", "perplexity") and any(
+        s in low for s in ("subscription", "claude", "chatgpt", "gemini", "grok")
+    ):
+        return "saas"
+    if provider:
+        return slug_cat.get(provider, "compute")
+    _provider, category = _ops_match(counterparty)
+    return category or "unmatched"
 
 
 def _fetch_month(creds, month):
@@ -94,9 +133,16 @@ def _fetch_month(creds, month):
     return acts
 
 
-def outflow_rows(creds, months, fx, today):
+def outflow_rows(creds, months):
     """One payments row per outgoing Wise transaction. Unmatched counterparties keep
-    provider='' — payroll/office stay visible for future runway/infra UIs."""
+    provider='' for unknown counterparties; category still separates admin,
+    office, payroll, saas, and truly unmatched spend.
+
+    category = the provider's default category from the harvest classifier
+    (deel → payroll, tinybird → infra, GPU/API providers → compute), with
+    direct operating-expense matches for bank/card counterparties."""
+    from ..invoices.harvest import PROVIDERS
+    slug_cat = {slug: cat for slug, cat, _ in PROVIDERS}
     rows = []
     for month in months:
         for a in _fetch_month(creds, month):
@@ -110,8 +156,15 @@ def outflow_rows(creds, months, fx, today):
                 eur = -eur
             if eur >= 0:
                 continue
-            rows.append({"paid_at": (a.get("createdOn") or f"{month}-15")[:10], "month": month,
-                         "provider": _match(cp) or "", "counterparty": cp,
-                         "amount_eur": round(-eur, 2), "amount_usd": round(-eur * fx, 2),
-                         "wise_ref": str(a.get("id") or ""), "pulled_at": today})
+            prov = _match(cp) or ""
+            ops_prov, ops_category = _ops_match(cp) if not prov else ("", "")
+            prov = prov or ops_prov
+            rows.append({"paid_at": (a.get("createdOn") or f"{month}-15")[:10],
+                         "provider": prov, "counterparty": cp,
+                         "category": (
+                             ops_category if ops_category
+                             else _payment_category(prov, cp, slug_cat)
+                         ),
+                         "amount_eur": round(-eur, 2),
+                         "wise_ref": str(a.get("id") or "")})
     return rows

@@ -115,7 +115,6 @@ def test_ovh_balance_row(monkeypatch):
     row = _ovh.balance(_OVH_CREDS, NOW, fx=fx)
 
     assert row["provider"] == "ovhcloud"
-    assert row["currency"] == "EUR"
     assert row["source"] == "api"
     assert row["run_at"] == NOW
     # granted = voucher sum 600.0 × fx; left = balance 500.0 × fx

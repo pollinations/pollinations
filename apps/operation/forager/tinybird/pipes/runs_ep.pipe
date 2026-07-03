@@ -1,0 +1,10 @@
+TOKEN "treasury_web" READ
+
+NODE runs
+SQL >
+    SELECT run_at, ok, statuses, notes
+    FROM ingest_runs
+    ORDER BY run_at DESC
+    LIMIT 50
+
+TYPE endpoint

@@ -1,7 +1,7 @@
-"""Relabel a needs_label invoice row.
+"""Relabel an invoice row.
 
 Rows are append-only: emits a corrected duplicate with status='parsed'
-(or status='ignored' for non-invoice documents).
+(or status='not_invoice' for non-invoice documents).
 The frontend/dedup always takes the latest row per sha256, preferring
 source='label' rows, so a label wins over the original machine row.
 
@@ -15,7 +15,7 @@ Usage:
         [--category compute] [--number INV-123] [--date 2026-06-14]
 
     # Non-invoice document (SOW, memo, receipt duplicate, ticket...):
-    python3 -m ingest.invoices.label <sha256> --ignore [--note "why"]
+    python3 -m ingest.invoices.label <sha256> --not-invoice [--note "why"]
 """
 import argparse
 import json
@@ -27,9 +27,8 @@ from datetime import datetime, timezone
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 from ingest import creds as _creds, tb as _tb
 
-KINDS = ["prepaid_topup", "subscription", "monthly_bill", "payg", "reseller",
-         "not_invoice"]
-CATEGORIES = ["compute", "infra", "saas", "payroll", "other"]
+KINDS = ["monthly_bill", "prepaid_topup", "subscription"]
+CATEGORIES = ["compute", "infra", "saas", "admin", "office", "payroll", "other"]
 
 
 def _all_providers(credits_data):
@@ -54,11 +53,11 @@ def _existing_row(tb, sha256):
 
 def main(argv=None, tb=None):
     parser = argparse.ArgumentParser(
-        description="Relabel a needs_label invoice row."
+        description="Relabel an invoice row."
     )
     parser.add_argument("sha256", help="SHA-256 of the invoice PDF")
-    parser.add_argument("--ignore", action="store_true",
-                        help="Mark as not-an-invoice (status='ignored'); "
+    parser.add_argument("--not-invoice", action="store_true",
+                        help="Mark as not-an-invoice (status='not_invoice'); "
                              "other fields optional")
     parser.add_argument("--provider", help="Provider slug (e.g. vast.ai)")
     parser.add_argument("--month", help="Billing period YYYY-MM")
@@ -68,21 +67,20 @@ def main(argv=None, tb=None):
     parser.add_argument("--currency", choices=["USD", "EUR"],
                         help="Invoice currency")
     parser.add_argument("--kind", choices=KINDS,
-                        help="Billing kind (prepaid_topup, subscription, "
-                             "monthly_bill, payg, reseller)")
+                        help="Billing kind (monthly_bill, prepaid_topup, subscription)")
     parser.add_argument("--category", choices=CATEGORIES,
                         help="Category (default: carried over from existing row)")
     parser.add_argument("--number", default="", help="Invoice number (optional)")
     parser.add_argument("--note", default="",
                         help="Reason (stored in invoice_number field for "
-                             "--ignore rows)")
+                             "--not-invoice rows)")
     parser.add_argument("--date", default="",
                         help="Invoice issue date YYYY-MM-DD (optional; defaults to "
                              "<month>-01 — prepaid top-up matching is date-based ±10d, "
                              "so pass the real charge date for mid-month top-ups)")
     args = parser.parse_args(argv)
 
-    if not args.ignore:
+    if not args.not_invoice:
         missing = [f for f in ("provider", "month", "amount", "currency", "kind")
                    if getattr(args, f) is None]
         if missing:
@@ -130,12 +128,12 @@ def main(argv=None, tb=None):
 
     ingested_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
-    if args.ignore:
+    if args.not_invoice:
         row = {
             "sha256":         args.sha256,
             "provider":       args.provider or prev.get("provider", "other"),
             "category":       args.category or prev.get("category", "") or "other",
-            "kind":           "not_invoice",
+            "kind":           "",
             "period_month":   "",
             "amount":         0.0,
             "currency":       currency,
@@ -143,7 +141,7 @@ def main(argv=None, tb=None):
             "issued_at":      args.date or prev.get("issued_at", "") or "1970-01-01",
             "source":         "label",
             "file_ref":       prev.get("file_ref", ""),
-            "status":         "ignored",
+            "status":         "not_invoice",
             "ingested_at":    ingested_at,
             "credit_usd":     0.0,
         }

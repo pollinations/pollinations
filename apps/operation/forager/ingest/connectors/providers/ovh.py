@@ -11,7 +11,7 @@ Keys required in creds:
   OVH_APPLICATION_SECRET — application secret (used in signature)
   OVH_CONSUMER_KEY      — consumer key (ck, scoped to account)
 
-Row: balance (EUR) × fx → USD fields; currency="EUR"; note carries expiry.
+Row: balance (EUR) × fx → USD fields; note carries expiry.
 Task B5's ovh meter will reuse _signed().
 """
 import hashlib
@@ -126,7 +126,6 @@ def meter(creds, months, today, fx=1.14):
                 cost_usd=usd,
                 funding="credit",
                 source="api",
-                method="ovh /me/credit/balance/STARTUP_PROGRAM/movement",
                 today=today,
             ))
     return rows
@@ -170,7 +169,6 @@ def balance(creds, now, fx=1.14):
         "ovhcloud",
         granted=round(granted_eur * fx, 2) if granted_eur else None,
         left=round(left_eur * fx, 2),
-        currency="EUR",
         source="api",
         note=note,
     )

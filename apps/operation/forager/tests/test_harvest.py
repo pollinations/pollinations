@@ -22,6 +22,8 @@ def test_classify_specifics_beat_generics():
 def test_classify_categories():
     assert harvest.classify("invoice+statements@mail.anthropic.com", "receipt")[1] == "compute"
     assert harvest.classify("billing@tinybird.co", "invoice")[1] == "infra"
+    assert harvest.classify("billing@enty.io", "invoice")[1] == "admin"
+    assert harvest.classify("billing@tele2.ee", "invoice")[1] == "office"
     assert harvest.classify("no-reply@deel.com", "payment summary")[1] == "payroll"
 
 
@@ -166,11 +168,11 @@ def test_gmail_sweep_skips_known_sha(monkeypatch, tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# inbox_sweep: single-parse behaviour
+# inbox_sweep: single-agent-call behaviour
 # ---------------------------------------------------------------------------
 
-def test_inbox_sweep_parses_pdf_once_per_file(monkeypatch, tmp_path):
-    """inbox_sweep must call pdf_text exactly once per inbox PDF (no double-parse)."""
+def test_inbox_sweep_extracts_pdf_once_per_file(monkeypatch, tmp_path):
+    """inbox_sweep must call the AI extractor exactly once per inbox PDF."""
     import hashlib
     import ingest.invoices.extract as extract_mod
     import ingest.creds as creds_mod
@@ -189,34 +191,46 @@ def test_inbox_sweep_parses_pdf_once_per_file(monkeypatch, tmp_path):
         "fx_eur_usd": 1.14,
     }
 
-    pdf_text_calls = []
+    extract_calls = []
 
-    def counting_pdf_text(path):
-        pdf_text_calls.append(path)
-        return "fake invoice text"
+    def fake_extract_pdf(path, file_hash, slug, category, config, today,
+                         billing_map=None, creds=None):
+        extract_calls.append(path)
+        return {
+            "provider": "runpod",
+            "category": "compute",
+            "kind": "prepaid_topup",
+            "period_month": "2026-06",
+            "amount": 100,
+            "currency": "USD",
+            "invoice_number": "INV-1",
+            "issued_at": "2026-06-15",
+            "status": "parsed",
+            "credit_usd": 0,
+        }
 
-    monkeypatch.setattr(extract_mod, "pdf_text", counting_pdf_text)
-    monkeypatch.setattr(extract_mod, "parse", lambda txt, slug, cfg, today: {
-        "invoice": {"period_month": "2026-06"},
-        "extras": {},
-    })
-    monkeypatch.setattr(extract_mod, "extract_and_push", lambda *a, **kw: None)
+    monkeypatch.setattr(extract_mod, "extract_pdf", fake_extract_pdf)
     monkeypatch.setattr(extract_mod, "sha256", lambda p: hashlib.sha256(open(p, "rb").read()).hexdigest())
     monkeypatch.setattr(extract_mod, "_build_billing_map", lambda credits: {})
     monkeypatch.setattr(creds_mod, "_sops_decrypt", lambda p: {"pools": []})
+
+    appended = []
 
     class FakeTB:
         def sql(self, query):
             return []
 
         def append(self, ds, rows):
+            appended.append((ds, rows))
             return {"successful_rows": len(rows)}
 
     harvest.inbox_sweep(cfg, FakeTB(), "2026-06-15")
 
-    assert len(pdf_text_calls) == 1, (
-        f"pdf_text called {len(pdf_text_calls)} times for a single PDF; expected 1"
+    assert len(extract_calls) == 1, (
+        f"extract_pdf called {len(extract_calls)} times for a single PDF; expected 1"
     )
+    assert appended[0][0] == "invoices"
+    assert appended[0][1][0]["provider"] == "runpod"
 
 
 # ---------------------------------------------------------------------------
@@ -293,5 +307,3 @@ def test_make_queries_backfill_uses_after_clause():
     for q in queries:
         assert "after:2026/06/01" in q, f"Expected 'after:2026/06/01' in backfill query: {q!r}"
         assert "newer_than" not in q, f"Backfill query must not contain 'newer_than': {q!r}"
-
-

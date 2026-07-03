@@ -96,7 +96,7 @@ def test_canonical_contains_compute_slugs():
 
 
 def test_canonical_excludes_non_billing_slugs():
-    """Saas/payroll/other slugs must NOT be in CANONICAL."""
+    """Operating-expense slugs must NOT be in CANONICAL."""
     must_not_have = ["deel", "google-workspace", "slack", "wise", "self-issued"]
     for slug in must_not_have:
         assert slug not in registry.CANONICAL, f"CANONICAL wrongly contains: {slug}"
@@ -109,8 +109,15 @@ def test_canonical_excludes_non_billing_slugs():
 def test_wise_counterparty_matching():
     assert wise._match("Google Cloud EMEA Ltd") == "google"
     assert wise._match("AUTOMAT-IT OU") == "aws"
-    assert wise._match("Amazon retail") is None      # office hardware stays unmatched
+    assert wise._match("Amazon retail") is None      # office hardware is not AWS
     assert wise._match("LETS DEEL LTD") is None      # payroll is ops, not compute
+
+
+def test_wise_operating_category_matching():
+    assert wise._ops_match("LETS DEEL LTD") == ("deel", "payroll")
+    assert wise._ops_match("Enty") == ("enty", "admin")
+    assert wise._ops_match("Gaswerksiedlung Berlin GmbH") == ("", "office")
+    assert wise._ops_match("Some Tax Consultant") == ("", "admin")
 
 
 def test_match_runpod():
@@ -135,7 +142,7 @@ def test_outflow_rows_keeps_unmatched(monkeypatch):
          "primaryAmount": "100 EUR", "secondaryAmount": "", "createdOn": "2026-07-01", "id": 11},
         {"status": "COMPLETED", "type": "TRANSFER", "title": "SO LAB X",
          "primaryAmount": "50 EUR", "secondaryAmount": "", "createdOn": "2026-07-02", "id": 12}])
-    rows = wise.outflow_rows({}, ["2026-07"], fx=1.14, today="2026-07-02")
+    rows = wise.outflow_rows({}, ["2026-07"])
     assert {r["provider"] for r in rows} == {"runpod", ""}
     assert all(r["wise_ref"] for r in rows)
 
@@ -146,23 +153,41 @@ def test_outflow_rows_wise_ref_and_paid_at(monkeypatch):
         {"status": "COMPLETED", "type": "TRANSFER", "title": "Anthropic",
          "primaryAmount": "200 EUR", "secondaryAmount": "", "createdOn": "2026-06-15T10:30:00Z", "id": 42}
     ])
-    rows = wise.outflow_rows({}, ["2026-06"], fx=1.14, today="2026-07-02")
+    rows = wise.outflow_rows({}, ["2026-06"])
     assert len(rows) == 1
     assert rows[0]["wise_ref"] == "42"
     assert rows[0]["paid_at"] == "2026-06-15"
-    assert rows[0]["month"] == "2026-06"
 
 
-def test_outflow_rows_amount_eur_usd(monkeypatch):
-    """amount_eur and amount_usd are positive outflow magnitudes, rounded to 2dp."""
+def test_outflow_rows_operating_categories(monkeypatch):
+    monkeypatch.setattr(wise, "_fetch_month", lambda c, m: [
+        {"status": "COMPLETED", "type": "TRANSFER", "title": "Enty",
+         "primaryAmount": "100 EUR", "secondaryAmount": "", "createdOn": "2026-06-01", "id": 1},
+        {"status": "COMPLETED", "type": "TRANSFER", "title": "Amazon retail",
+         "primaryAmount": "50 EUR", "secondaryAmount": "", "createdOn": "2026-06-02", "id": 2},
+        {"status": "COMPLETED", "type": "TRANSFER", "title": "Anthropic Claude Subscription",
+         "primaryAmount": "90 EUR", "secondaryAmount": "", "createdOn": "2026-06-03", "id": 3},
+    ])
+    rows = wise.outflow_rows({}, ["2026-06"])
+    by_ref = {row["wise_ref"]: row for row in rows}
+    assert by_ref["1"]["provider"] == "enty"
+    assert by_ref["1"]["category"] == "admin"
+    assert by_ref["2"]["provider"] == ""
+    assert by_ref["2"]["category"] == "office"
+    assert by_ref["3"]["provider"] == "anthropic"
+    assert by_ref["3"]["category"] == "saas"
+
+
+def test_outflow_rows_amount_eur(monkeypatch):
+    """amount_eur is the positive outflow magnitude, rounded to 2dp.
+    (amount_usd was dropped from the payments schema — reconstructed in SQL.)"""
     monkeypatch.setattr(wise, "_fetch_month", lambda c, m: [
         {"status": "COMPLETED", "type": "TRANSFER", "title": "OpenAI",
          "primaryAmount": "100 EUR", "secondaryAmount": "", "createdOn": "2026-05-01", "id": 99}
     ])
-    rows = wise.outflow_rows({}, ["2026-05"], fx=1.14, today="2026-07-02")
+    rows = wise.outflow_rows({}, ["2026-05"])
     assert len(rows) == 1
     assert rows[0]["amount_eur"] == 100.0
-    assert rows[0]["amount_usd"] == round(100.0 * 1.14, 2)
 
 
 # ---------------------------------------------------------------------------
@@ -177,7 +202,7 @@ def test_card_check_filtered_out(monkeypatch):
         {"status": "COMPLETED", "type": "TRANSFER", "title": "RunPod",
          "primaryAmount": "100 EUR", "secondaryAmount": "", "createdOn": "2026-07-02", "id": 2},
     ])
-    rows = wise.outflow_rows({}, ["2026-07"], fx=1.14, today="2026-07-02")
+    rows = wise.outflow_rows({}, ["2026-07"])
     assert len(rows) == 1
     assert rows[0]["wise_ref"] == "2"
 
@@ -190,7 +215,7 @@ def test_pending_filtered_out(monkeypatch):
         {"status": "COMPLETED", "type": "TRANSFER", "title": "OpenAI",
          "primaryAmount": "50 EUR", "secondaryAmount": "", "createdOn": "2026-07-02", "id": 6},
     ])
-    rows = wise.outflow_rows({}, ["2026-07"], fx=1.14, today="2026-07-02")
+    rows = wise.outflow_rows({}, ["2026-07"])
     assert len(rows) == 1
     assert rows[0]["wise_ref"] == "6"
 
@@ -201,7 +226,7 @@ def test_in_progress_included(monkeypatch):
         {"status": "IN_PROGRESS", "type": "TRANSFER", "title": "Cloudflare",
          "primaryAmount": "30 EUR", "secondaryAmount": "", "createdOn": "2026-07-03", "id": 7}
     ])
-    rows = wise.outflow_rows({}, ["2026-07"], fx=1.14, today="2026-07-03")
+    rows = wise.outflow_rows({}, ["2026-07"])
     assert len(rows) == 1
     assert rows[0]["provider"] == "cloudflare"
 
@@ -218,7 +243,7 @@ def test_incoming_positive_skipped(monkeypatch):
         {"status": "COMPLETED", "type": "TRANSFER", "title": "OpenAI",
          "primaryAmount": "50 EUR", "secondaryAmount": "", "createdOn": "2026-07-02", "id": 21},
     ])
-    rows = wise.outflow_rows({}, ["2026-07"], fx=1.14, today="2026-07-02")
+    rows = wise.outflow_rows({}, ["2026-07"])
     assert len(rows) == 1
     assert rows[0]["wise_ref"] == "21"
 
@@ -234,7 +259,7 @@ def test_usd_primary_uses_secondary_eur(monkeypatch):
          "primaryAmount": "114 USD", "secondaryAmount": "100 EUR",
          "createdOn": "2026-06-10", "id": 30}
     ])
-    rows = wise.outflow_rows({}, ["2026-06"], fx=1.14, today="2026-07-02")
+    rows = wise.outflow_rows({}, ["2026-06"])
     assert len(rows) == 1
     assert rows[0]["amount_eur"] == 100.0
 
@@ -249,12 +274,11 @@ def test_row_has_all_required_fields(monkeypatch):
         {"status": "COMPLETED", "type": "TRANSFER", "title": "Scaleway",
          "primaryAmount": "75 EUR", "secondaryAmount": "", "createdOn": "2026-07-01", "id": 55}
     ])
-    rows = wise.outflow_rows({}, ["2026-07"], fx=1.14, today="2026-07-01")
+    rows = wise.outflow_rows({}, ["2026-07"])
     assert len(rows) == 1
     r = rows[0]
-    for field in ("paid_at", "month", "provider", "counterparty",
-                  "amount_eur", "amount_usd", "wise_ref", "pulled_at"):
-        assert field in r, f"missing field: {field}"
+    assert set(r.keys()) == {"paid_at", "provider", "counterparty",
+                             "category", "amount_eur", "wise_ref"}
 
 
 # ---------------------------------------------------------------------------
@@ -269,9 +293,9 @@ def test_outflow_rows_multiple_months(monkeypatch):
         return [{"status": "COMPLETED", "type": "TRANSFER", "title": "RunPod",
                  "primaryAmount": "10 EUR", "secondaryAmount": "", "createdOn": f"{m}-15", "id": hash(m)}]
     monkeypatch.setattr(wise, "_fetch_month", fake_fetch)
-    rows = wise.outflow_rows({}, ["2026-05", "2026-06"], fx=1.14, today="2026-07-02")
+    rows = wise.outflow_rows({}, ["2026-05", "2026-06"])
     assert len(rows) == 2
-    assert {r["month"] for r in rows} == {"2026-05", "2026-06"}
+    assert {r["paid_at"][:7] for r in rows} == {"2026-05", "2026-06"}
 
 
 # ---------------------------------------------------------------------------
@@ -317,7 +341,7 @@ def test_outflow_rows_survives_null_amounts(monkeypatch):
         {"status": "COMPLETED", "type": "TRANSFER", "title": "OpenAI",
          "primaryAmount": "75 EUR", "secondaryAmount": None, "createdOn": "2026-07-02", "id": 102},
     ])
-    rows = wise.outflow_rows({}, ["2026-07"], fx=1.14, today="2026-07-02")
+    rows = wise.outflow_rows({}, ["2026-07"])
     assert len(rows) == 1
     assert rows[0]["wise_ref"] == "102"
     assert rows[0]["amount_eur"] == 75.0

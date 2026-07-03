@@ -70,7 +70,6 @@ def meter(creds, months, today):
                 cost_usd=round(cents / 100.0, 2),
                 funding="prepaid",
                 source="api",
-                method="deepinfra /payment/usage",
                 today=today,
             ))
 

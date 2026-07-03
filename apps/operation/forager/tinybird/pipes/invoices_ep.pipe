@@ -11,9 +11,9 @@ SQL >
            invoice_number, issued_at, source, file_ref, status, ingested_at
     FROM (
         SELECT *, row_number() OVER (
-            PARTITION BY sha256
-            ORDER BY (source = 'label') DESC,
-                     (status IN ('parsed', 'ignored')) DESC,
+           PARTITION BY sha256
+           ORDER BY (source = 'label') DESC,
+                     (status IN ('parsed', 'not_invoice', 'ignored')) DESC,
                      ingested_at DESC
         ) AS rn
         FROM invoices

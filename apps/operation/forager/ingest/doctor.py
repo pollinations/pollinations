@@ -1,7 +1,8 @@
 """Preflight checks for the forager ingest pipeline.
 
 HARD checks (any failure blocks the run):
-  sops, tinybird-ops (write token read+write), wise, gog (gmail reachable), pdftotext on PATH.
+  sops, tinybird-ops (write token read+write), wise, gog (gmail reachable),
+  pdftoppm on PATH, Pollinations key present.
 
 SOFT checks (warn only):
   archive_dir writable, last run < 26h.
@@ -57,14 +58,26 @@ def checks():
     except Exception as e:
         out.append(("gog", True, False, str(e)[:120]))
 
-    # HARD: pdftotext on PATH
+    # HARD: pdftoppm on PATH for PDF → image rendering
     try:
-        if shutil.which("pdftotext"):
-            out.append(("pdftotext", True, True, "ok"))
+        if shutil.which("pdftoppm"):
+            out.append(("pdftoppm", True, True, "ok"))
         else:
             raise RuntimeError("not on PATH")
     except Exception as e:
-        out.append(("pdftotext", True, False, str(e)[:120]))
+        out.append(("pdftoppm", True, False, str(e)[:120]))
+
+    # HARD: Pollinations key for invoice AI extraction
+    pollinations_key = (
+        os.environ.get("POLLINATIONS_KEY")
+        or c.get("POLLINATIONS_KEY")
+    )
+    out.append((
+        "pollinations",
+        True,
+        bool(pollinations_key),
+        "key present" if pollinations_key else "POLLINATIONS_KEY missing",
+    ))
 
     # SOFT: archive_dir writable
     out.append(("archive", False, os.access(cfg["archive_dir"], os.W_OK), cfg["archive_dir"]))

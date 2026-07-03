@@ -50,12 +50,12 @@ def test_prepaid_matched_within_tolerance_is_ok():
               "wise_ref": "w2", "paid_at": "2026-06-10"}]) if x["provider"] == "runpod")
     assert r["status"] == "ok"                # delta 5 ≤ max(2%·500, $2) = 10
 
-def test_needs_label_is_amber_not_ok():
+def test_needs_review_is_amber_not_ok():
     r = next(x for x in _run(inv=[{"provider": "google", "kind": "monthly_bill",
                                    "period_month": "2026-06", "amount_usd": 0.0,
-                                   "sha256": "c3", "status": "needs_label"}])
+                                   "sha256": "c3", "status": "needs_review"}])
              if x["provider"] == "google")
-    assert r["status"] == "needs_label"
+    assert r["status"] == "needs_review"
 
 def test_sponsored_without_evidence_is_quiet():
     assert next(x for x in _run() if x["provider"] == "azure")["status"] == "quiet"

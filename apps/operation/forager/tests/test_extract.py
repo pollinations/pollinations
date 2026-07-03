@@ -1,494 +1,466 @@
-"""Invoice extraction tests. All hermetic — monkeypatch pdf_text, no sops, no network.
-Run: cd apps/operation/treasury && python3 -m pytest tests/ -q
-"""
-import hashlib, os, sys
+"""Invoice AI extraction tests. Hermetic: no network, no real PDF rendering."""
+
+import hashlib
+import os
+import sys
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from ingest.invoices import extract
 
-# ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
+from ingest.invoices import ai_agent, extract
 
-AIT = """\
-AUTOMAT-IT ADVANCED TECHNOLOGIES LTD
 
-    BILLING PERIOD: 01/05/2026
+def test_agent_prompt_includes_exact_invoices_datasource():
+    prompt = ai_agent._system_prompt()
 
-Tax Invoice- AIT-777
+    assert 'TOKEN "treasury_ingest" APPEND' in prompt
+    assert "`period_month` String `json:$.period_month`" in prompt
+    assert "`credit_usd` Float64 `json:$.credit_usd`" in prompt
+    assert "The runner fills these operational columns" in prompt
+    assert "Return exactly these JSON keys" in prompt
 
-    INVOICE TOTAL  EUR 1,234.56
 
-    Credits Used   EUR 0.87  -1,000.00 ea  -2,000.00
+def test_agent_schema_is_derived_from_datasource(monkeypatch):
+    fake_datasource = """TOKEN "treasury_ingest" APPEND
 
-    Your remaining credits are 9,999 EUR
+SCHEMA >
+    `sha256` String `json:$.sha256`,
+    `vendor_slug` String `json:$.vendor_slug`,
+    `net_amount` Float64 `json:$.net_amount`,
+    `review_note` String `json:$.review_note`,
+    `source` String `json:$.source`,
+    `file_ref` String `json:$.file_ref`,
+    `ingested_at` DateTime `json:$.ingested_at`
+
+ENGINE "MergeTree"
 """
-
-STRIPE_RECEIPT = """\
-Receipt number:  RCPT-9876-XYZ
-Date paid:  June 1, 2026
-Amount paid  $42.00
-Thanks for paying Anthropic.
-"""
-
-STRIPE_INVOICE = """\
-Invoice number  INV-2026-001
-Date due: May 15, 2026
-Total  $150.00
-"""
-
-NEEDS_LABEL_TEXT = "Thanks for your purchase! We appreciate your business."
-
-GENERIC_WITH_FULL_DATE = """\
-Invoice no. GEN-001
-Date: 2026-05-15
-Total  $99.00
-"""
-
-GENERIC_WITHOUT_FULL_DATE = """\
-Invoice no. GEN-002
-Billing period: May 2026
-Total  $50.00
-"""
-
-LAMBDA_ZERO_DUE = """\
-Lambda invoice
-Invoice number: LAMBDA-062026
-Date: June 29, 2026
-Sub Total $384.47
-Promotional Credits ($384.47)
-Amount Due $0.00
-Status PAID
-Discounts/credits applied on this invoice
-Promotional Credits ($384.47)
-"""
-
-GENERIC_PRECEDENCE = """\
-Invoice no. GEN-003
-Date: July 1, 2026
-Sub Total $999.00
-Invoice Amount $12.34
-Amount Paid $56.78
-"""
-
-
-# ---------------------------------------------------------------------------
-# Automat-IT parser tests
-# ---------------------------------------------------------------------------
-
-def test_automat_it_amount_period_number(monkeypatch, tmp_path):
-    p = tmp_path / "ait.pdf"
-    p.write_bytes(b"%PDF")
-    monkeypatch.setattr(extract, "pdf_text", lambda _: AIT)
-
-    out = extract.parse(AIT, "aws", _stub_config(), "2026-07-02")
-    inv = out["invoice"]
-    assert inv is not None
-    assert inv["period_month"] == "2026-05"
-    assert inv["amount"] == 1234.56
-    assert inv["currency"] == "EUR"
-    assert inv["invoice_number"] == "AIT-777"
-    assert out["status"] == "parsed"
-
-
-def test_automat_it_note_has_credit_figures(monkeypatch, tmp_path):
-    p = tmp_path / "ait.pdf"
-    p.write_bytes(b"%PDF")
-    monkeypatch.setattr(extract, "pdf_text", lambda _: AIT)
-
-    out = extract.parse(AIT, "aws", _stub_config(), "2026-07-02")
-    extras = out.get("extras", {})
-    assert "ait_credit_eur" in extras
-    assert extras["ait_credit_eur"] == 2000.0
-    assert "ait_credits_left_eur" in extras
-    assert extras["ait_credits_left_eur"] == 9999.0
-
-
-# ---------------------------------------------------------------------------
-# Stripe receipt parser tests
-# ---------------------------------------------------------------------------
-
-def test_stripe_receipt_amount_period(monkeypatch, tmp_path):
-    p = tmp_path / "stripe.pdf"
-    p.write_bytes(b"%PDF")
-    monkeypatch.setattr(extract, "pdf_text", lambda _: STRIPE_RECEIPT)
-
-    out = extract.parse(STRIPE_RECEIPT, "anthropic", _stub_config(), "2026-07-02")
-    inv = out["invoice"]
-    assert inv is not None
-    assert inv["amount"] == 42.0
-    assert inv["currency"] == "USD"
-    assert inv["period_month"] == "2026-06"
-    assert inv["invoice_number"] == "RCPT-9876-XYZ"
-    assert out["status"] == "parsed"
-
-
-def test_stripe_receipt_issued_at(monkeypatch, tmp_path):
-    """stripe_receipt.py emits issued_at as ISO date when Date paid/due is present."""
-    out = extract.parse(STRIPE_RECEIPT, "anthropic", _stub_config(), "2026-07-02")
-    inv = out["invoice"]
-    assert inv["issued_at"] == "2026-06-01"
-
-
-def test_stripe_invoice_issued_at(monkeypatch, tmp_path):
-    """stripe_receipt.py emits issued_at for Date due too."""
-    out = extract.parse(STRIPE_INVOICE, "elevenlabs", _stub_config(), "2026-07-02")
-    inv = out["invoice"]
-    assert inv["issued_at"] == "2026-05-15"
-
-
-def test_stripe_invoice_amount_period(monkeypatch, tmp_path):
-    p = tmp_path / "stripe2.pdf"
-    p.write_bytes(b"%PDF")
-    monkeypatch.setattr(extract, "pdf_text", lambda _: STRIPE_INVOICE)
-
-    out = extract.parse(STRIPE_INVOICE, "elevenlabs", _stub_config(), "2026-07-02")
-    inv = out["invoice"]
-    assert inv is not None
-    assert inv["amount"] == 150.0
-    assert inv["currency"] == "USD"
-    assert inv["period_month"] == "2026-05"
-    assert out["status"] == "parsed"
-
-
-# ---------------------------------------------------------------------------
-# Generic parser issued_at tests
-# ---------------------------------------------------------------------------
-
-def test_generic_issued_at_from_iso_date(monkeypatch, tmp_path):
-    """generic.py emits issued_at when a full ISO date is found."""
-    out = extract.parse(GENERIC_WITH_FULL_DATE, "runpod", _stub_config(), "2026-07-02")
-    inv = out["invoice"]
-    assert inv["issued_at"] == "2026-05-15"
-
-
-def test_generic_no_issued_at_without_full_date(monkeypatch, tmp_path):
-    """generic.py does not emit issued_at when only month/year is found (no full date)."""
-    out = extract.parse(GENERIC_WITHOUT_FULL_DATE, "runpod", _stub_config(), "2026-07-02")
-    inv = out["invoice"]
-    # No full date present → extract.py falls back to period_month + "-01"
-    # period_month comes from "May 2026" which generic can't parse (no day) — needs_label
-    # so issued_at should be "1970-01-01" sentinel
-    assert inv["issued_at"] in ("", "1970-01-01")
-
-
-def test_generic_amount_due_beats_subtotal_and_captures_credit():
-    """Lambda-style credit invoice stores amount due, plus applied credits."""
-    out = extract.parse(LAMBDA_ZERO_DUE, "lambda", _stub_config(), "2026-07-02")
-    inv = out["invoice"]
-    assert out["status"] == "parsed"
-    assert inv["period_month"] == "2026-06"
-    assert inv["amount"] == 0.0
-    assert inv["credit_usd"] == 384.47
-
-
-def test_generic_amount_precedence_invoice_amount_before_total():
-    out = extract.parse(GENERIC_PRECEDENCE, "runpod", _stub_config(), "2026-07-02")
-    inv = out["invoice"]
-    assert inv["amount"] == 12.34
-    assert inv["period_month"] == "2026-07"
-
-
-# ---------------------------------------------------------------------------
-# extract.py issued_at defaulting
-# ---------------------------------------------------------------------------
-
-def test_extract_issued_at_defaults_to_period_month_day01():
-    """When parser omits issued_at but period_month is set, extract.py uses period_month + '-01'."""
-    # AIT parser doesn't emit issued_at, has period_month = "2026-05"
-    out = extract.parse(AIT, "aws", _stub_config(), "2026-07-02")
-    inv = out["invoice"]
-    # AIT sets issued_at="" — extract.parse passes it through; extract_and_push handles defaulting
-    # We test the full extract_and_push path:
-    appended = []
-
-    class StubTB:
-        def append(self, datasource, rows):
-            appended.extend(rows)
-
-    import ingest.creds as creds_mod
-    import pytest
-    _fake_credits = {"pools": [{"name": "AWS Reseller", "billing": "reseller", "providers": ["aws"]}]}
-
-    # We need to test this via extract_and_push to trigger the defaulting logic
-    # Use a scratch approach: call extract_and_push with monkeypatched creds and pdf_text
-    import unittest.mock as mock
-    import tempfile, pathlib
-
-    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
-        f.write(b"%PDF")
-        pdf_path = f.name
-
-    try:
-        with mock.patch.object(extract, "pdf_text", return_value=AIT), \
-             mock.patch.object(creds_mod, "_sops_decrypt", return_value=_fake_credits):
-            row = extract.extract_and_push(
-                StubTB(), pdf_path, "aws", "compute", "msg", "email",
-                _stub_config(), "2026-07-02"
-            )
-        assert row["issued_at"] == "2026-05-01"
-    finally:
-        os.unlink(pdf_path)
-
-
-def test_extract_issued_at_sentinel_when_no_period():
-    """When parser omits issued_at and period_month is empty, extract.py uses '1970-01-01'."""
-    appended = []
-
-    class StubTB:
-        def append(self, datasource, rows):
-            appended.extend(rows)
-
-    import ingest.creds as creds_mod
-    import unittest.mock as mock
-    import tempfile
-
-    _fake_credits = {"pools": []}
-
-    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
-        f.write(b"%PDF")
-        pdf_path = f.name
-
-    try:
-        with mock.patch.object(extract, "pdf_text", return_value=NEEDS_LABEL_TEXT), \
-             mock.patch.object(creds_mod, "_sops_decrypt", return_value=_fake_credits):
-            row = extract.extract_and_push(
-                StubTB(), pdf_path, "runpod", "compute", "msg", "email",
-                _stub_config(), "2026-07-02"
-            )
-        assert row["issued_at"] == "1970-01-01"
-    finally:
-        os.unlink(pdf_path)
-
-
-# ---------------------------------------------------------------------------
-# ingested_at format test
-# ---------------------------------------------------------------------------
-
-def test_ingested_at_is_datetime():
-    """extract_and_push ingested_at must be a 'YYYY-MM-DD HH:MM:SS' DateTime string."""
-    import re
-    import unittest.mock as mock
-    import ingest.creds as creds_mod
-    import tempfile
-
-    appended = []
-
-    class StubTB:
-        def append(self, datasource, rows):
-            appended.extend(rows)
-
-    _fake_credits = {"pools": []}
-
-    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
-        f.write(b"%PDF")
-        pdf_path = f.name
-
-    try:
-        with mock.patch.object(extract, "pdf_text", return_value=NEEDS_LABEL_TEXT), \
-             mock.patch.object(creds_mod, "_sops_decrypt", return_value=_fake_credits):
-            row = extract.extract_and_push(
-                StubTB(), pdf_path, "runpod", "compute", "msg", "email",
-                _stub_config(), "2026-07-02"
-            )
-        # Must match full DateTime format YYYY-MM-DD HH:MM:SS
-        assert re.fullmatch(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}", row["ingested_at"]), \
-            f"ingested_at should be 'YYYY-MM-DD HH:MM:SS' but got: {row['ingested_at']!r}"
-    finally:
-        os.unlink(pdf_path)
-
-
-# ---------------------------------------------------------------------------
-# needs_label: unparseable text still produces a row
-# ---------------------------------------------------------------------------
-
-def test_needs_label_when_no_total(monkeypatch, tmp_path):
-    p = tmp_path / "y.pdf"
-    p.write_bytes(b"%PDF")
-    monkeypatch.setattr(extract, "pdf_text", lambda _: NEEDS_LABEL_TEXT)
-
-    out = extract.parse(NEEDS_LABEL_TEXT, "runpod", _stub_config(), "2026-07-02")
-    assert out["status"] == "needs_label"
-    inv = out["invoice"]
-    assert inv is not None
-    assert inv["amount"] == 0.0
-    assert inv["period_month"] == ""
-
-
-# ---------------------------------------------------------------------------
-# extract_and_push: needs_label PDF still appends exactly one row
-# ---------------------------------------------------------------------------
-
-def test_extract_and_push_needs_label_appends_one_row(monkeypatch, tmp_path):
-    p = tmp_path / "z.pdf"
-    p.write_bytes(b"%PDF")
-    monkeypatch.setattr(extract, "pdf_text", lambda path: NEEDS_LABEL_TEXT)
-
-    appended = []
-
-    class StubTB:
-        def append(self, datasource, rows):
-            appended.extend(rows)
-            return {"successful_rows": len(rows)}
-
-    extract.extract_and_push(
-        StubTB(), str(p), "runpod", "compute", "msg001", "email",
-        _stub_config(), "2026-07-02"
-    )
-
-    assert len(appended) == 1
-    row = appended[0]
-    assert row["status"] == "needs_label"
-    assert row["sha256"] == hashlib.sha256(b"%PDF").hexdigest()
-    assert row["category"] == "compute"
-    assert row["amount"] == 0.0
-
-
-def test_extract_and_push_ait_appends_parsed_row(monkeypatch, tmp_path):
-    p = tmp_path / "ait2.pdf"
-    p.write_bytes(b"%PDF-AIT")
-    monkeypatch.setattr(extract, "pdf_text", lambda path: AIT)
-
-    appended = []
-
-    class StubTB:
-        def append(self, datasource, rows):
-            appended.extend(rows)
-            return {"successful_rows": len(rows)}
-
-    _fake_credits = {
-        "pools": [
-            {"name": "AWS Reseller", "billing": "reseller", "providers": ["aws"]}
-        ]
+    monkeypatch.setattr(ai_agent, "datasource_schema_text", lambda: fake_datasource)
+
+    schema = ai_agent.invoice_response_schema()["schema"]
+
+    assert list(schema["properties"].keys()) == [
+        "vendor_slug",
+        "net_amount",
+        "review_note",
+    ]
+    assert schema["required"] == ["vendor_slug", "net_amount", "review_note"]
+    assert schema["properties"]["net_amount"]["type"] == "number"
+
+
+def test_agent_category_enum_includes_operating_categories():
+    category = ai_agent.invoice_response_schema()["schema"]["properties"]["category"]
+    assert "admin" in category["enum"]
+    assert "office" in category["enum"]
+
+
+def test_agent_kind_enum_has_only_invoice_business_types():
+    kind = ai_agent.invoice_response_schema()["schema"]["properties"]["kind"]
+    assert kind["enum"] == ["monthly_bill", "prepaid_topup", "subscription", ""]
+
+
+def test_agent_prompt_says_payg_is_not_an_invoice_kind():
+    prompt = ai_agent._system_prompt()
+    assert "Never use payg as an invoice kind" in prompt
+    assert "pay-as-you-go provider invoices are monthly_bill" in prompt
+
+
+def test_ai_agent_extract_pdf_calls_pollinations_each_time(monkeypatch, tmp_path):
+    calls = []
+    expected = {
+        "provider": "runpod",
+        "category": "compute",
+        "kind": "prepaid_topup",
+        "period_month": "2026-06",
+        "amount": 42,
+        "currency": "USD",
+        "invoice_number": "INV-1",
+        "issued_at": "2026-06-15",
+        "status": "parsed",
+        "credit_usd": 0,
     }
 
-    import ingest.creds as creds_mod
-    monkeypatch.setattr(creds_mod, "_sops_decrypt", lambda p: _fake_credits)
-
-    row = extract.extract_and_push(
-        StubTB(), str(p), "aws", "compute", "msg002", "email",
-        _stub_config(), "2026-07-02"
+    monkeypatch.setattr(
+        ai_agent, "render_pdf_pages", lambda *a, **kw: ["data:image/jpeg;base64,abc"]
     )
 
-    assert len(appended) == 1
-    assert row["status"] == "parsed"
-    assert row["kind"] == "reseller"
-    assert row["amount"] == 1234.56
+    def fake_call(*args, **kwargs):
+        calls.append(kwargs["file_hash"])
+        return expected
+
+    monkeypatch.setattr(ai_agent, "call_pollinations_invoice_agent", fake_call)
+
+    cfg = {"archive_dir": str(tmp_path)}
+    pdf = tmp_path / "invoice.pdf"
+    pdf.write_bytes(b"%PDF")
+    file_hash = hashlib.sha256(b"%PDF").hexdigest()
+
+    first = ai_agent.extract_pdf(str(pdf), file_hash, {}, cfg, "2026-07-03")
+    second = ai_agent.extract_pdf(str(pdf), file_hash, {}, cfg, "2026-07-03")
+
+    assert first == expected
+    assert second == expected
+    assert calls == [file_hash, file_hash]
 
 
-def test_extract_and_push_carries_credit_usd(monkeypatch, tmp_path):
-    p = tmp_path / "lambda.pdf"
-    p.write_bytes(b"%PDF-LAMBDA")
-    monkeypatch.setattr(extract, "pdf_text", lambda path: LAMBDA_ZERO_DUE)
+def test_extract_and_push_calls_ai_and_appends_row(monkeypatch, tmp_path):
+    pdf = tmp_path / "runpod.pdf"
+    pdf.write_bytes(b"%PDF-RUNPOD")
+    seen = {}
 
+    def fake_extract_pdf(path, file_hash, hints, config, today, creds=None):
+        seen["path"] = path
+        seen["file_hash"] = file_hash
+        seen["hints"] = hints
+        return {
+            "provider": "runpod",
+            "category": "compute",
+            "kind": "prepaid_topup",
+            "period_month": "2026-06",
+            "amount": "1,234.50",
+            "currency": "USD",
+            "invoice_number": "INV-123",
+            "issued_at": "2026-06-29",
+            "status": "parsed",
+            "credit_usd": "12.5",
+        }
+
+    monkeypatch.setattr(extract.ai_agent, "extract_pdf", fake_extract_pdf)
     appended = []
 
     class StubTB:
         def append(self, datasource, rows):
-            appended.extend(rows)
+            appended.append((datasource, rows))
 
     row = extract.extract_and_push(
-        StubTB(), str(p), "lambda", "compute", "msg003", "email",
-        _stub_config(), "2026-07-02", billing_map={"lambda": "monthly_bill"}
+        StubTB(),
+        str(pdf),
+        "runpod",
+        "compute",
+        "msg",
+        "email",
+        _stub_config(),
+        "2026-07-03",
+        billing_map={"runpod": "prepaid_topup"},
     )
 
-    assert row["amount"] == 0.0
-    assert row["credit_usd"] == 384.47
-    assert appended[0]["credit_usd"] == 384.47
+    assert seen["path"] == str(pdf)
+    assert seen["hints"]["kind_hint"] == "prepaid_topup"
+    assert row["provider"] == "runpod"
+    assert row["category"] == "compute"
+    assert row["kind"] == "prepaid_topup"
+    assert row["amount"] == 1234.5
+    assert row["currency"] == "USD"
+    assert row["credit_usd"] == 12.5
+    assert row["status"] == "parsed"
+    assert appended == [("invoices", [row])]
 
 
-# ---------------------------------------------------------------------------
-# label.py: unknown provider exits nonzero and lists known providers
-# ---------------------------------------------------------------------------
+def test_build_row_from_missing_agent_fields_fails(tmp_path):
+    import pytest
+
+    pdf = tmp_path / "bad.pdf"
+    pdf.write_bytes(b"%PDF")
+    with pytest.raises(RuntimeError, match="missing fields"):
+        extract.build_row_from_result(
+            str(pdf),
+            "sha",
+            {"provider": "runpod"},
+            "email",
+            "2026-07-03",
+        )
+
+
+def test_row_shape_matches_invoices_datasource_columns(tmp_path):
+    row = extract.build_row_from_result(
+        str(tmp_path / "x.pdf"),
+        "sha",
+        {
+            "provider": "lambda",
+            "category": "compute",
+            "kind": "monthly_bill",
+            "period_month": "2026-06",
+            "amount": 0,
+            "currency": "USD",
+            "invoice_number": "L-1",
+            "issued_at": "2026-06-01",
+            "status": "parsed",
+            "credit_usd": 384.47,
+        },
+        "email",
+        "2026-07-03",
+        ingested_at="2026-07-03 12:00:00",
+    )
+
+    assert list(row.keys()) == ai_agent.datasource_field_order()
+    assert row["issued_at"] == "2026-06-01"
+
+
+def test_build_row_preserves_known_archive_provider(monkeypatch, tmp_path):
+    pdf = tmp_path / "exafunction.pdf"
+    pdf.write_bytes(b"%PDF")
+
+    def fake_extract_pdf(*args, **kwargs):
+        return {
+            "provider": "windsurf",
+            "category": "saas",
+            "kind": "monthly_bill",
+            "period_month": "2026-01",
+            "amount": 60,
+            "currency": "USD",
+            "invoice_number": "INV-1",
+            "issued_at": "2026-01-08",
+            "status": "parsed",
+            "credit_usd": 0,
+        }
+
+    monkeypatch.setattr(extract, "extract_pdf", fake_extract_pdf)
+
+    row = extract.build_row(
+        str(pdf), "exafunction", "compute", "msg", "agent",
+        _stub_config(), "2026-07-03", billing_map={},
+    )
+
+    assert row["provider"] == "exafunction"
+    assert row["category"] == "saas"
+
+
+def test_build_row_allows_agent_provider_for_other_archive(monkeypatch, tmp_path):
+    pdf = tmp_path / "other.pdf"
+    pdf.write_bytes(b"%PDF")
+
+    def fake_extract_pdf(*args, **kwargs):
+        return {
+            "provider": "zara_home",
+            "category": "office",
+            "kind": "monthly_bill",
+            "period_month": "2026-01",
+            "amount": 505.97,
+            "currency": "EUR",
+            "invoice_number": "80086816820",
+            "issued_at": "2026-01-12",
+            "status": "parsed",
+            "credit_usd": 0,
+        }
+
+    monkeypatch.setattr(extract, "extract_pdf", fake_extract_pdf)
+
+    row = extract.build_row(
+        str(pdf), "other", "other", "msg", "agent",
+        _stub_config(), "2026-07-03", billing_map={},
+    )
+
+    assert row["provider"] == "zara_home"
+    assert row["category"] == "office"
+
+
+def test_row_shape_follows_changed_datasource(monkeypatch, tmp_path):
+    fake_datasource = """TOKEN "treasury_ingest" APPEND
+
+SCHEMA >
+    `sha256` String `json:$.sha256`,
+    `vendor_slug` String `json:$.vendor_slug`,
+    `net_amount` Float64 `json:$.net_amount`,
+    `source` String `json:$.source`,
+    `file_ref` String `json:$.file_ref`,
+    `ingested_at` DateTime `json:$.ingested_at`
+
+ENGINE "MergeTree"
+"""
+    monkeypatch.setattr(ai_agent, "datasource_schema_text", lambda: fake_datasource)
+
+    row = extract.build_row_from_result(
+        str(tmp_path / "x.pdf"),
+        "sha",
+        {
+            "vendor_slug": "runpod",
+            "net_amount": "42.50",
+        },
+        "email",
+        "2026-07-03",
+        ingested_at="2026-07-03 12:00:00",
+    )
+
+    assert list(row.keys()) == [
+        "sha256",
+        "vendor_slug",
+        "net_amount",
+        "source",
+        "file_ref",
+        "ingested_at",
+    ]
+    assert row["net_amount"] == 42.5
+
+
+def test_ingested_at_is_datetime(monkeypatch, tmp_path):
+    row = extract.build_row_from_result(
+        str(tmp_path / "x.pdf"),
+        "sha",
+        {
+            "provider": "lambda",
+            "category": "compute",
+            "kind": "monthly_bill",
+            "period_month": "2026-06",
+            "amount": 0,
+            "currency": "USD",
+            "invoice_number": "L-1",
+            "issued_at": "2026-06-29",
+            "status": "parsed",
+            "credit_usd": 0,
+        },
+        "email",
+        "2026-07-03",
+    )
+    date_part, time_part = row["ingested_at"].split(" ")
+    assert len(date_part.split("-")) == 3
+    assert len(time_part.split(":")) == 3
+
 
 def test_label_unknown_provider_exits_with_known_list(monkeypatch, capsys):
     """label.py exits nonzero and prints known provider list for unknown provider."""
     import ingest.creds as creds_mod
     import pytest
 
-    _fake_credits = {
+    fake_credits = {
         "pools": [
-            {"name": "GPU pool", "billing": "prepaid", "providers": ["runpod", "vast.ai"]},
+            {
+                "name": "GPU pool",
+                "billing": "prepaid",
+                "providers": ["runpod", "vast.ai"],
+            },
             {"name": "Cloud", "billing": "monthly", "providers": ["aws", "gcp"]},
         ]
     }
-    _fake_config = {"fx_eur_usd": 1.14, "tb_ops_api": "https://fake.tinybird.co"}
+    fake_config = {"fx_eur_usd": 1.14, "tb_ops_api": "https://fake.tinybird.co"}
 
-    monkeypatch.setattr(creds_mod, "_sops_decrypt", lambda p: _fake_credits)
-    monkeypatch.setattr(creds_mod, "load_config", lambda: _fake_config)
+    monkeypatch.setattr(creds_mod, "_sops_decrypt", lambda p: fake_credits)
+    monkeypatch.setattr(creds_mod, "load_config", lambda: fake_config)
 
     from ingest.invoices import label
 
     with pytest.raises(SystemExit) as exc_info:
-        label.main([
-            "abc123sha256",
-            "--provider", "unknown-provider-xyz",
-            "--month", "2026-06",
-            "--amount", "100",
-            "--currency", "USD",
-            "--kind", "prepaid_topup",
-        ])
+        label.main(
+            [
+                "abc123sha256",
+                "--provider",
+                "unknown-provider-xyz",
+                "--month",
+                "2026-06",
+                "--amount",
+                "100",
+                "--currency",
+                "USD",
+                "--kind",
+                "prepaid_topup",
+            ]
+        )
 
     assert exc_info.value.code != 0
+    err_output = capsys.readouterr().err
+    assert (
+        "runpod" in err_output
+        or "aws" in err_output
+        or "vast.ai" in err_output
+        or "gcp" in err_output
+    )
 
-    captured = capsys.readouterr()
-    err_output = captured.err
-    # Must mention at least one known provider from the pool
-    assert "runpod" in err_output or "aws" in err_output or "vast.ai" in err_output or "gcp" in err_output
-
-
-# ---------------------------------------------------------------------------
-# label.py: push-path test (Finding A)
-# ---------------------------------------------------------------------------
 
 def test_label_push_path_appends_parsed_row(monkeypatch):
-    """label.main() with injected tb stub appends exactly one 'parsed' row to 'invoices'."""
+    """label.main() with injected tb stub appends exactly one parsed row."""
     import ingest.creds as creds_mod
     from ingest.invoices import label
 
-    _fake_credits = {
+    fake_credits = {
         "pools": [
-            {"name": "GPU pool", "billing": "prepaid", "providers": ["runpod", "vast.ai"]},
+            {
+                "name": "GPU pool",
+                "billing": "prepaid",
+                "providers": ["runpod", "vast.ai"],
+            },
             {"name": "Cloud", "billing": "monthly", "providers": ["aws", "google"]},
         ]
     }
-    _fake_config = {"fx_eur_usd": 1.14, "tb_ops_api": "https://fake.tinybird.co"}
+    fake_config = {"fx_eur_usd": 1.14, "tb_ops_api": "https://fake.tinybird.co"}
 
-    monkeypatch.setattr(creds_mod, "_sops_decrypt", lambda p: _fake_credits)
-    monkeypatch.setattr(creds_mod, "load_config", lambda: _fake_config)
+    monkeypatch.setattr(creds_mod, "_sops_decrypt", lambda p: fake_credits)
+    monkeypatch.setattr(creds_mod, "load_config", lambda: fake_config)
 
     appended = {}
 
     class StubTB:
         def sql(self, query):
-            return []  # no existing row for this sha256
+            return []
 
         def append(self, datasource, rows):
             appended["datasource"] = datasource
             appended["rows"] = rows
 
-    result = label.main([
-        "deadbeef1234sha256",
-        "--provider", "vast.ai",
-        "--month", "2026-06",
-        "--amount", "500",
-        "--credit", "12.5",
-        "--currency", "EUR",
-        "--kind", "prepaid_topup",
-    ], tb=StubTB())
+    label.main(
+        [
+            "deadbeef1234sha256",
+            "--provider",
+            "vast.ai",
+            "--month",
+            "2026-06",
+            "--amount",
+            "500",
+            "--credit",
+            "12.5",
+            "--currency",
+            "EUR",
+            "--kind",
+            "prepaid_topup",
+        ],
+        tb=StubTB(),
+    )
 
-    # One row appended to "invoices"
-    assert appended["datasource"] == "invoices"
-    assert len(appended["rows"]) == 1
     row = appended["rows"][0]
-
+    assert appended["datasource"] == "invoices"
     assert row["status"] == "parsed"
     assert row["provider"] == "vast.ai"
     assert row["source"] == "label"
-    # amount_usd was dropped from the schema — the row keeps the native
-    # amount + currency; USD is reconstructed in SQL at read time
     assert row["amount"] == 500.0
     assert row["currency"] == "EUR"
     assert row["credit_usd"] == 12.5
+
+
+def test_label_ignore_appends_not_invoice_row(monkeypatch):
+    import ingest.creds as creds_mod
+    from ingest.invoices import label
+
+    fake_credits = {"pools": []}
+    fake_config = {"fx_eur_usd": 1.14, "tb_ops_api": "https://fake.tinybird.co"}
+
+    monkeypatch.setattr(creds_mod, "_sops_decrypt", lambda p: fake_credits)
+    monkeypatch.setattr(creds_mod, "load_config", lambda: fake_config)
+
+    appended = {}
+
+    class StubTB:
+        def sql(self, query):
+            return [
+                {
+                    "sha256": "sha-doc",
+                    "status": "parsed",
+                    "source": "email",
+                    "provider": "other",
+                    "category": "other",
+                    "currency": "USD",
+                    "file_ref": "/tmp/doc.pdf",
+                    "issued_at": "2026-06-29",
+                    "ingested_at": "2026-07-01 00:00:00",
+                }
+            ]
+
+        def append(self, datasource, rows):
+            appended["datasource"] = datasource
+            appended["rows"] = rows
+
+    label.main(["sha-doc", "--not-invoice", "--note", "contract"], tb=StubTB())
+
+    row = appended["rows"][0]
+    assert row["status"] == "not_invoice"
+    assert row["kind"] == ""
+    assert row["amount"] == 0.0
+    assert row["invoice_number"] == "contract"
 
 
 def test_label_carries_existing_credit_when_omitted(monkeypatch):
@@ -496,54 +468,63 @@ def test_label_carries_existing_credit_when_omitted(monkeypatch):
     import ingest.creds as creds_mod
     from ingest.invoices import label
 
-    _fake_credits = {
-        "pools": [
-            {"name": "Lambda", "billing": "monthly", "providers": ["lambda"]},
-        ]
+    fake_credits = {
+        "pools": [{"name": "Lambda", "billing": "monthly", "providers": ["lambda"]}]
     }
-    _fake_config = {"fx_eur_usd": 1.14, "tb_ops_api": "https://fake.tinybird.co"}
+    fake_config = {"fx_eur_usd": 1.14, "tb_ops_api": "https://fake.tinybird.co"}
 
-    monkeypatch.setattr(creds_mod, "_sops_decrypt", lambda p: _fake_credits)
-    monkeypatch.setattr(creds_mod, "load_config", lambda: _fake_config)
+    monkeypatch.setattr(creds_mod, "_sops_decrypt", lambda p: fake_credits)
+    monkeypatch.setattr(creds_mod, "load_config", lambda: fake_config)
 
     appended = {}
 
     class StubTB:
         def sql(self, query):
-            return [{
-                "sha256": "sha-credit", "status": "parsed", "source": "email",
-                "provider": "lambda", "category": "compute", "currency": "USD",
-                "credit_usd": 384.47, "file_ref": "/tmp/lambda.pdf",
-                "issued_at": "2026-06-29", "ingested_at": "2026-07-01 00:00:00",
-            }]
+            return [
+                {
+                    "sha256": "sha-credit",
+                    "status": "parsed",
+                    "source": "email",
+                    "provider": "lambda",
+                    "category": "compute",
+                    "currency": "USD",
+                    "credit_usd": 384.47,
+                    "file_ref": "/tmp/lambda.pdf",
+                    "issued_at": "2026-06-29",
+                    "ingested_at": "2026-07-01 00:00:00",
+                }
+            ]
 
         def append(self, datasource, rows):
             appended["datasource"] = datasource
             appended["rows"] = rows
 
-    label.main([
-        "sha-credit",
-        "--provider", "lambda",
-        "--month", "2026-06",
-        "--amount", "0",
-        "--currency", "USD",
-        "--kind", "monthly_bill",
-    ], tb=StubTB())
+    label.main(
+        [
+            "sha-credit",
+            "--provider",
+            "lambda",
+            "--month",
+            "2026-06",
+            "--amount",
+            "0",
+            "--currency",
+            "USD",
+            "--kind",
+            "monthly_bill",
+        ],
+        tb=StubTB(),
+    )
 
     assert appended["rows"][0]["credit_usd"] == 384.47
 
 
-# ---------------------------------------------------------------------------
-# Finding C — invoice dedupe helper
-# ---------------------------------------------------------------------------
-
-def test_dedupe_invoices_prefers_parsed_over_needs_label():
-    """dedupe_invoices keeps the 'parsed' row when both statuses exist for same sha256."""
+def test_dedupe_invoices_prefers_parsed_over_needs_review():
     from ingest import run as run_mod
 
     rows = [
-        {"sha256": "abc", "status": "needs_label", "ingested_at": "2026-06-01"},
-        {"sha256": "abc", "status": "parsed",      "ingested_at": "2026-06-15"},
+        {"sha256": "abc", "status": "needs_review", "ingested_at": "2026-06-01"},
+        {"sha256": "abc", "status": "parsed", "ingested_at": "2026-06-15"},
     ]
     result = run_mod.dedupe_invoices(rows)
     assert len(result) == 1
@@ -551,7 +532,6 @@ def test_dedupe_invoices_prefers_parsed_over_needs_label():
 
 
 def test_dedupe_invoices_tie_break_latest_ingested_at():
-    """When two rows have same status, the later ingested_at wins."""
     from ingest import run as run_mod
 
     rows = [
@@ -564,15 +544,22 @@ def test_dedupe_invoices_tie_break_latest_ingested_at():
 
 
 def test_dedupe_invoices_label_beats_same_day_parsed():
-    """A source='label' row wins over a machine 'parsed' row even on the same
-    ingested_at date and regardless of input order (the enty-import bug:
-    provider 'other' sorts before 'vast.ai', so first-seen won the tie)."""
     from ingest import run as run_mod
 
-    machine = {"sha256": "abc", "status": "parsed", "source": "email",
-               "provider": "other", "ingested_at": "2026-07-03"}
-    label = {"sha256": "abc", "status": "parsed", "source": "label",
-             "provider": "vast.ai", "ingested_at": "2026-07-03"}
+    machine = {
+        "sha256": "abc",
+        "status": "parsed",
+        "source": "email",
+        "provider": "other",
+        "ingested_at": "2026-07-03",
+    }
+    label = {
+        "sha256": "abc",
+        "status": "parsed",
+        "source": "label",
+        "provider": "vast.ai",
+        "ingested_at": "2026-07-03",
+    }
     for rows in ([machine, label], [label, machine]):
         result = run_mod.dedupe_invoices(rows)
         assert len(result) == 1
@@ -580,111 +567,17 @@ def test_dedupe_invoices_label_beats_same_day_parsed():
 
 
 def test_dedupe_invoices_no_overlap():
-    """Different sha256s are all preserved."""
     from ingest import run as run_mod
 
     rows = [
-        {"sha256": "aaa", "status": "parsed",      "ingested_at": "2026-06-01"},
-        {"sha256": "bbb", "status": "needs_label",  "ingested_at": "2026-06-01"},
+        {"sha256": "aaa", "status": "parsed", "ingested_at": "2026-06-01"},
+        {"sha256": "bbb", "status": "needs_review", "ingested_at": "2026-06-01"},
     ]
     result = run_mod.dedupe_invoices(rows)
     assert len(result) == 2
 
 
-# ---------------------------------------------------------------------------
-# Finding E — invalid date validation in extract_and_push
-# ---------------------------------------------------------------------------
-
-def test_extract_invalid_issued_at_falls_back_to_period_month():
-    """Parser returning issued_at='2026-13-00' falls back to period_month + '-01'."""
-    import unittest.mock as mock
-    import ingest.creds as creds_mod
-    import tempfile
-
-    bad_parse_result = {
-        "invoice": {
-            "provider": "runpod", "kind": "prepaid_topup", "currency": "USD",
-            "amount": 100.0, "amount_usd": 100.0,
-            "period_month": "2026-05", "invoice_number": "",
-            "issued_at": "2026-13-00",
-            "status": "parsed",
-        },
-        "extras": {},
-        "status": "parsed",
-    }
-
-    appended = []
-
-    class StubTB:
-        def append(self, datasource, rows):
-            appended.extend(rows)
-
-    _fake_credits = {"pools": [{"name": "GPU", "billing": "prepaid", "providers": ["runpod"]}]}
-
-    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
-        f.write(b"%PDF")
-        pdf_path = f.name
-
-    try:
-        with mock.patch.object(extract, "pdf_text", return_value=""), \
-             mock.patch.object(extract, "parse", return_value=bad_parse_result), \
-             mock.patch.object(creds_mod, "_sops_decrypt", return_value=_fake_credits):
-            row = extract.extract_and_push(
-                StubTB(), pdf_path, "runpod", "compute", "msg", "email",
-                _stub_config(), "2026-06-01"
-            )
-        # issued_at must be a valid date, falling back to period_month + "-01"
-        assert row["issued_at"] == "2026-05-01", f"Expected '2026-05-01', got {row['issued_at']!r}"
-    finally:
-        os.unlink(pdf_path)
-
-
-def test_extract_invalid_period_month_falls_back_to_sentinel():
-    """Parser returning period_month='2026-13' (invalid month) triggers sentinel '1970-01-01'."""
-    import unittest.mock as mock
-    import ingest.creds as creds_mod
-    import tempfile
-
-    bad_parse_result = {
-        "invoice": {
-            "provider": "runpod", "kind": "prepaid_topup", "currency": "USD",
-            "amount": 100.0, "amount_usd": 100.0,
-            "period_month": "2026-13", "invoice_number": "",
-            "issued_at": "",
-            "status": "parsed",
-        },
-        "extras": {},
-        "status": "parsed",
-    }
-
-    appended = []
-
-    class StubTB:
-        def append(self, datasource, rows):
-            appended.extend(rows)
-
-    _fake_credits = {"pools": []}
-
-    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
-        f.write(b"%PDF")
-        pdf_path = f.name
-
-    try:
-        with mock.patch.object(extract, "pdf_text", return_value=""), \
-             mock.patch.object(extract, "parse", return_value=bad_parse_result), \
-             mock.patch.object(creds_mod, "_sops_decrypt", return_value=_fake_credits):
-            row = extract.extract_and_push(
-                StubTB(), pdf_path, "runpod", "compute", "msg", "email",
-                _stub_config(), "2026-06-01"
-            )
-        # Invalid period_month → treated as missing → issued_at sentinel
-        assert row["issued_at"] == "1970-01-01", f"Expected '1970-01-01', got {row['issued_at']!r}"
-        assert row["period_month"] == "", f"Expected empty period_month, got {row['period_month']!r}"
-    finally:
-        os.unlink(pdf_path)
-
-
-def test_reparse_invoices_dry_run_reports_credit_diff(monkeypatch, tmp_path, capsys):
+def test_reparse_invoices_does_not_call_ai(monkeypatch, tmp_path, capsys):
     from ingest import run as run_mod
 
     archive = tmp_path / "archive"
@@ -692,53 +585,51 @@ def test_reparse_invoices_dry_run_reports_credit_diff(monkeypatch, tmp_path, cap
     month_dir.mkdir(parents=True)
     pdf = month_dir / "lambda_2026-06_msg_invoice.pdf"
     pdf.write_bytes(b"%PDF-LAMBDA")
+    file_hash = hashlib.sha256(b"%PDF-LAMBDA").hexdigest()
 
-    monkeypatch.setattr(run_mod._extract, "pdf_text", lambda path: LAMBDA_ZERO_DUE)
-    monkeypatch.setattr(
-        run_mod.creds,
-        "load_credits",
-        lambda: {"pools": [{"pool": "Lambda", "billing": "monthly", "providers": ["lambda"]}]},
-    )
+    def fail_build_row(*args, **kwargs):
+        raise AssertionError("reparse_invoices must not call AI extraction")
+
+    monkeypatch.setattr(run_mod._extract, "build_row", fail_build_row)
 
     class StubTB:
         def sql(self, query):
-            return [{
-                "sha256": hashlib.sha256(b"%PDF-LAMBDA").hexdigest(),
-                "provider": "lambda",
-                "category": "compute",
-                "kind": "monthly_bill",
-                "period_month": "2026-06",
-                "amount": 384.47,
-                "currency": "USD",
-                "amount_usd": 384.47,
-                "credit_usd": 0.0,
-                "invoice_number": "old",
-                "issued_at": "2026-06-29",
-                "source": "email",
-                "file_ref": str(pdf),
-                "status": "parsed",
-                "ingested_at": "2026-07-01 00:00:00",
-            }]
+            return [
+                {
+                    "sha256": file_hash,
+                    "provider": "lambda",
+                    "category": "compute",
+                    "kind": "monthly_bill",
+                    "period_month": "2026-06",
+                    "amount": 0.0,
+                    "currency": "USD",
+                    "amount_usd": 0.0,
+                    "credit_usd": 384.47,
+                    "invoice_number": "old",
+                    "issued_at": "2026-06-29",
+                    "source": "email",
+                    "file_ref": str(pdf),
+                    "status": "parsed",
+                    "ingested_at": "2026-07-01 00:00:00",
+                }
+            ]
 
         def append(self, datasource, rows):
-            raise AssertionError("dry-run must not append")
+            raise AssertionError("reparse_invoices must not append")
 
     stats = run_mod.reparse_invoices(
         {"archive_dir": str(archive), "fx_eur_usd": 1.14},
         StubTB(),
-        "2026-07-02",
+        "2026-07-03",
         dry_run=True,
     )
 
-    assert stats["changed"] == 1
+    assert stats["scanned"] == 1
+    assert stats["known"] == 1
+    assert stats["missing"] == 0
     assert stats["appended"] == 0
-    out = capsys.readouterr().out
-    assert "384.47/0.00 -> parsed 0.00/384.47" in out
+    assert capsys.readouterr().out == ""
 
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 def _stub_config():
     return {"fx_eur_usd": 1.14}

@@ -113,8 +113,6 @@ def revenue_rows(creds, months, today, _max_pages=100):
             "gross_eur": g,
             "fees_eur": f,
             "refunds_eur": r,
-            "net_eur": n,
-            "retrieved_at": today,
         })
 
     return rows

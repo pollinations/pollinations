@@ -5,9 +5,7 @@ SCHEMA >
     `month` String `json:$.month`,
     `gross_eur` Float64 `json:$.gross_eur`,
     `fees_eur` Float64 `json:$.fees_eur`,
-    `refunds_eur` Float64 `json:$.refunds_eur`,
-    `net_eur` Float64 `json:$.net_eur`,
-    `retrieved_at` Date `json:$.retrieved_at`
+    `refunds_eur` Float64 `json:$.refunds_eur`
 
 ENGINE "MergeTree"
 ENGINE_SORTING_KEY "month"

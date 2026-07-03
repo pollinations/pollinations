@@ -9,12 +9,14 @@ Verdict statuses:
   missing_invoice — payment exists but no parsed payable invoice
   missing_payment — parsed invoice exists but no matching payment
   amount_mismatch — both present but delta exceeds tolerance
-  needs_label     — invoice present but status='needs_label', human review needed
+  needs_review    — invoice evidence present but values need human review
   needs_data      — platform usage exists but no invoice/payment/credit evidence
   quiet           — nothing happened
   accepted        — explicitly accepted in config["recon_accepted"] ("YYYY-MM:provider")
 """
 import datetime
+
+REVIEW_STATUSES = {"needs_review", "needs_label"}
 
 
 def _tol(amount, pct, usd):
@@ -120,7 +122,7 @@ def _no_invoice_verdict(provider, month, billing, pay_rows, cfg, today,
 
 def _reconcile_monthly(provider, month, billing, inv_rows, pay_rows, cfg, today,
                        used_wise_refs=None, pm_row=None):
-    """Reconcile a monthly/reseller/subscription provider for one month.
+    """Reconcile a monthly/subscription provider for one month.
 
     Logic (amended 2026-07-03 — nearest-payment matching):
     - inv_rows: invoices with period_month == month.
@@ -128,7 +130,7 @@ def _reconcile_monthly(provider, month, billing, inv_rows, pay_rows, cfg, today,
     - used_wise_refs: run-wide set of wise_refs already consumed by earlier months
       (mutated in-place so claims propagate across the caller's month loop).
     - accepted check first.
-    - If only needs_label invoices → needs_label.
+    - If only review invoices → needs_review.
     - Zero-amount parsed invoices document credit coverage and need no payment.
     - If no payable parsed invoices → evidence-driven ok_credit / needs_data / quiet,
       unless a payment exists, which remains missing_invoice.
@@ -155,7 +157,7 @@ def _reconcile_monthly(provider, month, billing, inv_rows, pay_rows, cfg, today,
                         key=lambda r: (r.get("issued_at", ""), r.get("sha256", "")))
     zero_parsed = [r for r in all_parsed if float(r.get("amount_usd") or 0.0) < tol_usd]
     parsed = [r for r in all_parsed if float(r.get("amount_usd") or 0.0) >= tol_usd]
-    needs = [r for r in inv_rows if r.get("status") == "needs_label"]
+    needs = [r for r in inv_rows if r.get("status") in REVIEW_STATUSES]
 
     if not parsed and not needs:
         zero_refs = ",".join(r.get("sha256", "") for r in zero_parsed if r.get("sha256"))
@@ -165,12 +167,12 @@ def _reconcile_monthly(provider, month, billing, inv_rows, pay_rows, cfg, today,
         )
 
     if not parsed and needs:
-        # Only needs_label, no parsed invoices
+        # Only review rows, no parsed invoices
         shas = ",".join(r.get("sha256", "") for r in needs if r.get("sha256"))
         available = [r for r in pay_rows if r.get("wise_ref") not in used_wise_refs]
         pay_sum = sum(r.get("amount_usd", 0.0) for r in available)
         refs = ",".join(r.get("wise_ref", "") for r in available if r.get("wise_ref"))
-        return _verdict_row(provider, month, billing, "needs_label", today,
+        return _verdict_row(provider, month, billing, "needs_review", today,
                             0.0, pay_sum, refs, shas)
 
     # Parsed invoices present — greedy nearest-payment match
@@ -222,7 +224,7 @@ def _reconcile_prepaid(provider, month, billing, inv_rows, pay_rows, cfg, today,
 
     Unmatched payment → missing_invoice (payment_refs = wise_refs of unmatched payments).
     Unmatched parsed invoice → missing_payment.
-    needs_label invoice present → needs_label (in addition to any mismatches).
+    Review invoice present → needs_review (in addition to any mismatches).
     No activity (no invoices, no payments) → ok.
     """
     accepted = cfg.get("recon_accepted", [])
@@ -238,7 +240,7 @@ def _reconcile_prepaid(provider, month, billing, inv_rows, pay_rows, cfg, today,
     all_parsed = [r for r in inv_rows if r.get("status") == "parsed"]
     zero_parsed = [r for r in all_parsed if float(r.get("amount_usd") or 0.0) < tol_usd]
     parsed = [r for r in all_parsed if float(r.get("amount_usd") or 0.0) >= tol_usd]
-    needs = [r for r in inv_rows if r.get("status") == "needs_label"]
+    needs = [r for r in inv_rows if r.get("status") in REVIEW_STATUSES]
 
     # No payable invoice/payment activity → evidence-driven.
     if not parsed and not needs and not pay_rows:
@@ -280,11 +282,11 @@ def _reconcile_prepaid(provider, month, billing, inv_rows, pay_rows, cfg, today,
 
     # Determine verdict
     if needs:
-        # needs_label takes amber priority if any invoice needs labeling
+        # Review rows take amber priority if any invoice needs review.
         shas = ",".join(r.get("sha256", "") for r in needs if r.get("sha256"))
         pay_sum = sum(r.get("amount_usd", 0.0) for r in pay_rows)
         refs = ",".join(r.get("wise_ref", "") for r in pay_rows if r.get("wise_ref"))
-        return _verdict_row(provider, month, billing, "needs_label", today,
+        return _verdict_row(provider, month, billing, "needs_review", today,
                             0.0, pay_sum, refs, shas)
 
     if unmatched_pay:
@@ -377,7 +379,7 @@ def run(invoices, payments, pools, months, config, today, provider_month=None):
             pm_row = pm_idx.get((prov_key, month))
 
             # Payments window depends on billing type:
-            # - monthly/reseller/subscription: [M, M+1] arrears window (monthly invoices are
+            # - monthly/subscription: [M, M+1] arrears window (monthly invoices are
             #   often paid in the following month; a payment in M+1 will also appear in M+1's
             #   own exact-month slice — that overlap is inherent to the plan's definition).
             #   Each payment is consumed at most once across the whole run per provider.

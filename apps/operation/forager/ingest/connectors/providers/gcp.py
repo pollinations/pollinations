@@ -126,7 +126,6 @@ def meter(creds, months, today, fx=1.14, run_cmd=subprocess.run):
                     cost_usd=round(gross_eur * fx, 2),
                     funding="cash",
                     source="bq",
-                    method="bq billing export (gross_eur × fx)",
                     today=today,
                 ))
             credit_usd = round(abs(credits_eur) * fx, 2)
@@ -137,7 +136,6 @@ def meter(creds, months, today, fx=1.14, run_cmd=subprocess.run):
                     cost_usd=credit_usd,
                     funding="credit",
                     source="bq",
-                    method="bq billing export (credits_eur × fx)",
                     today=today,
                 ))
         return rows

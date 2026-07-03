@@ -72,7 +72,6 @@ def meter(creds, months, today, run_cmd=subprocess.run):
                 cost_usd=amt,
                 funding="cash",
                 source="cli",
-                method="aws ce get-cost-and-usage (gross usage before credits)",
                 today=today,
             ))
 
@@ -102,7 +101,6 @@ def meter(creds, months, today, run_cmd=subprocess.run):
                 cost_usd=amt,
                 funding="credit",
                 source="cli",
-                method="aws ce get-cost-and-usage (RECORD_TYPE=Credit)",
                 today=today,
             ))
 

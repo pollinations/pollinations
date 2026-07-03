@@ -6,13 +6,124 @@ Schema/token contract: [`tinybird/README.md`](tinybird/README.md)
 
 ---
 
+## Architecture
+
+```mermaid
+flowchart LR
+    %% ───────── sources ─────────
+    subgraph SRC["Sources"]
+        direction TB
+        GMAIL["📧 Gmail — gog CLI<br/>daily invoice sweep"]
+        INBOX["📥 inbox/ drop folder<br/>portal PDFs · Enty monthly batch"]
+        WISE["🏦 Wise API<br/>bank transactions"]
+        APIS["🔌 Provider APIs + CLIs<br/>11 balance · 7 meter connectors"]
+        MANUAL["⌨️ ingest.record CLI<br/>8 console-only providers"]
+        TBPROD["📈 Tinybird prod<br/>generation_event"]
+        STRIPE["💳 Stripe API<br/>revenue"]
+        CREDITS["🎁 credits.json<br/>pools · grants · portal URLs"]
+    end
+
+    %% ───────── forager ─────────
+    subgraph FGR["🐝 forager — python3 -m ingest.run (laptop, stdlib-only)"]
+        direction TB
+        HARVEST["harvest.py<br/>gmail_sweep + inbox_sweep<br/>sha256 dedupe"]
+        EXTRACT["extract.py + AI agent<br/>pdftoppm → Pollinations vision → invoice row"]
+        WCON["wise.py"]
+        PCON["connectors/providers/*"]
+        UCON["usage.py + providers/stripe.py"]
+        GAPS["gaps.py — reconcile<br/>invoices × payments"]
+        BURN["burn.py — burn engine<br/>funding split · credit burn · statuses"]
+    end
+
+    ARCH[("🗃️ PDF archive<br/>~/Documents/treasury-invoices/<br/>ground truth — Tinybird is rebuildable")]
+
+    %% ───────── tinybird ─────────
+    subgraph TBOPS["Tinybird — operations workspace"]
+        direction TB
+        INV[("invoices")]
+        PAY[("payments")]
+        BAL[("balances<br/>meter_monthly")]
+        USE[("usage_monthly<br/>revenue_monthly")]
+        REC[("reconciliation")]
+        PM[("provider_month<br/>grants")]
+        RUNS[("ingest_runs")]
+        PIPES{{"9 read pipes — *_ep"}}
+    end
+
+    %% ───────── consumers ─────────
+    subgraph OUT["Consumers — treasury_web token (read-only)"]
+        direction TB
+        POC["📊 PoC dashboard (_local)<br/>pull_forager.py → HTML"]
+        MISS["🔜 treasury.myceli.ai/missing<br/>chase-list frontend"]
+        NEXT["🔮 future operation apps"]
+    end
+
+    CONSOLE["🖨️ run output<br/>chase list · runway alarm"]
+
+    %% ───────── flows ─────────
+    GMAIL --> HARVEST
+    INBOX --> HARVEST
+    HARVEST --> ARCH
+    ARCH --> EXTRACT
+    EXTRACT -- "append" --> INV
+    WISE --> WCON
+    WCON -- "replace by month" --> PAY
+    APIS --> PCON
+    PCON -- "append" --> BAL
+    MANUAL -. "append" .-> BAL
+    TBPROD --> UCON
+    STRIPE --> UCON
+    UCON -- "replace" --> USE
+    CREDITS --> GAPS
+    CREDITS --> BURN
+    INV --> GAPS
+    PAY --> GAPS
+    GAPS -- "full replace" --> REC
+    INV --> BURN
+    BAL --> BURN
+    USE --> BURN
+    BURN -- "full replace" --> PM
+    FGR -. "append run log" .-> RUNS
+    INV & PAY & BAL & USE & REC & PM & RUNS --> PIPES
+    PIPES --> POC
+    PIPES --> MISS
+    PIPES --> NEXT
+    FGR -.-> CONSOLE
+
+    %% ───────── colors ─────────
+    classDef src fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e
+    classDef bee fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    classDef store fill:#dcfce7,stroke:#16a34a,color:#14532d
+    classDef pipe fill:#ccfbf1,stroke:#0d9488,color:#134e4a
+    classDef out fill:#ede9fe,stroke:#7c3aed,color:#4c1d95
+    classDef arch fill:#f5f5f4,stroke:#78716c,color:#44403c
+    classDef console fill:#ffe4e6,stroke:#e11d48,color:#881337
+
+    class GMAIL,INBOX,WISE,APIS,MANUAL,TBPROD,STRIPE,CREDITS src
+    class HARVEST,EXTRACT,WCON,PCON,UCON,GAPS,BURN bee
+    class INV,PAY,BAL,USE,REC,PM,RUNS store
+    class PIPES pipe
+    class POC,MISS,NEXT out
+    class ARCH arch
+    class CONSOLE console
+
+    style SRC fill:#f8fafc,stroke:#94a3b8
+    style FGR fill:#fffbeb,stroke:#f59e0b,stroke-width:2px
+    style TBOPS fill:#f0fdf4,stroke:#16a34a,stroke-width:2px
+    style OUT fill:#faf5ff,stroke:#7c3aed
+```
+
+Tokens: appends use `treasury_ingest`, every replace uses `treasury_replace`, consumers read pipes with `treasury_web`. Admin token lives only in the local `.tinyb` (never SOPS).
+
+---
+
 ## The flow
 
 ```
 each run  (manual — cron deferred)
   1 GATHER   gmail sweep (gog, newer_than:3d)  ─┐
              inbox/ drop folder sweep           ├─► archive ~/Documents/treasury-invoices/YYYY-MM/…  (sha256-dedup vs TB)
-  2 READ     pdftotext -layout → parser registry → {provider, period, amount, currency, number}
+  2 READ     pdftoppm page images → Pollinations vision agent → {provider, period, amount, currency, number}
   3 PUSH     invoices rows (append) · payments rows (Wise, replace by month)
   4 BALANCE  11 REST/CLI balance connectors → balances (append)
   5 METER    7 meter connectors → meter_monthly (append)
@@ -46,14 +157,18 @@ Run from `apps/operation/forager/`:
 python3 -m ingest.doctor && python3 -m ingest.run
 ```
 
-- `doctor` exits 0 only when all hard checks pass (sops, tinybird-ops, wise, gog, pdftotext). Soft warnings (archive writable, freshness) print but don't block.
+- `doctor` exits 0 only when all hard checks pass (sops, tinybird-ops, wise, gog, pdftoppm, Pollinations key). Soft warnings (archive writable, freshness) print but don't block.
 - `run` harvests Gmail (last 3 days), drains the inbox, pulls Wise payments for the last 2 months, updates reconciliation, logs the run, and prints the chase list.
 
-Backfill (all months since `config.months_start`):
+Backfill (fresh rebuild since `config.months_start`):
 
 ```bash
 python3 -m ingest.run --backfill
 ```
+
+Backfill refreshes the local PDF archive, runs the invoice agent over every archived
+PDF, replaces the `invoices` datasource with one row per unique file, then rebuilds
+payments, burn/provider-month, grants, reconciliation, and the chase list.
 
 ---
 
@@ -71,7 +186,7 @@ The inbox is drained on every run: each PDF is sha256-deduped against Tinybird, 
 
 ## Label CLI
 
-When a PDF can't be fully parsed, it lands in `invoices` with `status='needs_label'` and shows up amber in the chase list. Fix it with:
+When a PDF needs manual review, it lands in `invoices` with `status='needs_review'` and shows up amber in the chase list. Fix it with:
 
 ```bash
 python3 -m ingest.invoices.label <sha256> \
@@ -79,9 +194,12 @@ python3 -m ingest.invoices.label <sha256> \
     --month YYYY-MM \
     --amount <N> \
     --currency USD|EUR \
-    --kind prepaid_topup|monthly_bill|reseller|subscription \
-    [--number INV-123]
+    --kind monthly_bill|prepaid_topup|subscription \
+    [--number INV-123] [--date YYYY-MM-DD]
 ```
+
+Pass `--date` (real charge/issue date) for prepaid top-ups — reconciliation
+matches top-ups to payments by date ±10d, and the default is `<month>-01`.
 
 The command appends a corrected row with `status='parsed'`; downstream always takes the latest row per sha256. Provider slug must exist in `credits.json` pools — an unknown slug exits with the known-provider list. EUR amounts are converted to USD using `config.json` `fx_eur_usd`.
 
@@ -93,7 +211,7 @@ These providers never send a PDF by email. Their invoices must be downloaded man
 
 | Provider | Why email can't catch it |
 |---|---|
-| **aws (direct)** | Budget/alert emails only — actual AWS cost covered by Automat-IT reseller PDFs (captured under `aws`). |
+| **aws (direct)** | Budget/alert emails only — actual AWS cost covered by Automat-IT PDFs (captured under `aws`). |
 | cloudflare | Startup-plan invoices are dashboard-only. |
 | modal | Payment receipts are link-only. |
 | openrouter | Billing-update emails only, no PDF attachment. |
@@ -145,7 +263,7 @@ Provider slug must be in `registry.CANONICAL`; month must match `YYYY-MM`. Each 
 
 ## Doctor soft checks
 
-`python3 -m ingest.doctor` runs three soft checks in addition to the five hard checks (sops, tinybird-ops, wise, gog, pdftotext). Soft checks print a warning but do not block the run:
+`python3 -m ingest.doctor` runs soft checks in addition to the hard checks (sops, tinybird-ops, wise, gog, pdftoppm, Pollinations key). Soft checks print a warning but do not block the run:
 
 | Soft check | What it verifies |
 |---|---|

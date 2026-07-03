@@ -1,8 +1,8 @@
 """Daily ingest → operations workspace.
 
     python3 -m ingest.run              # daily: harvest new invoices + repull last N months
-    python3 -m ingest.run --backfill   # everything since config.months_start
-    python3 -m ingest.run --import-archive  # one-off: push pre-organized YYYY-MM/ month dirs
+    python3 -m ingest.run --backfill   # fresh rebuild since config.months_start
+    python3 -m ingest.run --import-archive  # one-off: append pre-organized YYYY-MM/ month dirs
 
 TOKEN MODEL: three TB instances:
   ops_ingest  — TINYBIRD_OPS_INGEST_TOKEN  → .append() and .sql()
@@ -13,7 +13,6 @@ import datetime
 import inspect
 import json
 import os
-import re
 import sys
 
 from . import burn, creds, gaps, tb
@@ -46,13 +45,16 @@ def dedupe_invoices(rows):
     """Deduplicate invoice rows per sha256.
 
     Prefers source='label' (operator correction) over machine rows, then
-    status='parsed' over status='needs_label'. Tie-breaks by latest
+    final decisions over review rows. Tie-breaks by latest
     ingested_at (DateTime since 2026-07), then keeps the last-seen row.
     """
-    # Status preference: parsed/ignored > needs_label (lower = better).
-    # 'ignored' only ever appears on source='label' rows, so ranking it with
-    # 'parsed' just means the latest operator decision wins between labels.
-    _STATUS_RANK = {"parsed": 0, "ignored": 0, "needs_label": 1}
+    _STATUS_RANK = {
+        "parsed": 0,
+        "not_invoice": 0,
+        "ignored": 0,
+        "needs_review": 1,
+        "needs_label": 1,
+    }
 
     def _rank(row):
         return (0 if row.get("source") == "label" else 1,
@@ -69,7 +71,11 @@ def dedupe_invoices(rows):
     return list(best.values())
 
 
-_MONTH_RE = re.compile(r'^\d{4}-(0[1-9]|1[0-2])$')
+def _is_month_dir(name):
+    if len(name) != 7 or name[4] != "-":
+        return False
+    year, month = name[:4], name[5:]
+    return year.isdigit() and month.isdigit() and 1 <= int(month) <= 12
 
 
 def import_archive(cfg, ops_ingest, today):
@@ -77,7 +83,7 @@ def import_archive(cfg, ops_ingest, today):
 
     Walks <archive_dir>/YYYY-MM/ dirs (skips inbox/), sha256-dedups each *.pdf
     against TB and an in-run seen set, re-derives (slug, category) from the
-    filename prefix, then calls extract_and_push with source="email".
+    filename prefix, then calls the AI extractor with source="email".
 
     Returns dict of counts: pushed, dup_sha, unknown_prefix.
     """
@@ -94,7 +100,7 @@ def import_archive(cfg, ops_ingest, today):
         return {"pushed": 0, "dup_sha": 0, "unknown_prefix": 0}
 
     for entry in entries:
-        if entry == "inbox" or not _MONTH_RE.match(entry):
+        if entry == "inbox" or not _is_month_dir(entry):
             continue
         month_dir = os.path.join(archive_dir, entry)
         if not os.path.isdir(month_dir):
@@ -137,7 +143,7 @@ def _archive_pdfs(cfg):
         return
 
     for entry in entries:
-        if entry == "inbox" or not _MONTH_RE.match(entry):
+        if entry == "inbox" or not _is_month_dir(entry):
             continue
         month_dir = os.path.join(archive_dir, entry)
         if not os.path.isdir(month_dir):
@@ -153,68 +159,82 @@ def _archive_pdfs(cfg):
             yield path, slug, category, msgid
 
 
-def reparse_invoices(cfg, ops_ingest, today, dry_run=True):
-    """Re-extract archived PDFs and optionally append fresh parsed invoice rows.
+def rebuild_archive_invoices(cfg, today):
+    """Build one fresh agent row per archived PDF, deduped by sha256."""
+    billing_map = _extract._build_billing_map(creds.load_credits())
+    agent_creds = creds.load_creds()
+    items = list(_archive_pdfs(cfg))
+    rows = []
+    seen = set()
+    stats = {
+        "scanned": 0,
+        "rebuilt": 0,
+        "dup_sha": 0,
+        "parsed": 0,
+        "not_invoice": 0,
+        "needs_review": 0,
+    }
 
-    Dry-run prints old/new amount and credit values per changed sha and writes
-    nothing. Real mode appends only parsed rows; append-only dedupe keeps labels
-    ahead of machine reparses.
-    """
+    total = len(items)
+    for idx, (path, slug, category, msgid) in enumerate(items, start=1):
+        stats["scanned"] += 1
+        file_sha = _extract.sha256(path)
+        if file_sha in seen:
+            stats["dup_sha"] += 1
+            sys.stderr.write(f"  invoice {idx}/{total} dup_sha      {os.path.basename(path)}\n")
+            sys.stderr.flush()
+            continue
+        seen.add(file_sha)
+
+        row = _extract.build_row(
+            path, slug, category, msgid, "agent",
+            cfg, today, billing_map=billing_map,
+            file_hash=file_sha, creds=agent_creds,
+        )
+        rows.append(row)
+
+        stats["rebuilt"] += 1
+        status = row.get("status", "")
+        if status in stats:
+            stats[status] += 1
+        sys.stderr.write(
+            f"  invoice {idx}/{total} {status or 'unknown':12} "
+            f"{row.get('provider', ''):14} {row.get('period_month', ''):7} "
+            f"{os.path.basename(path)}\n"
+        )
+        sys.stderr.flush()
+
+    return rows, stats
+
+
+def reparse_invoices(cfg, ops_ingest, today, dry_run=True):
+    """Scan archived PDFs without re-running the once-only AI extractor."""
     fx = cfg.get("fx_eur_usd", 1.14)
     existing = {
         r["sha256"]: r
         for r in dedupe_invoices(ops_ingest.sql(_INV_SQL.format(fx=fx)))
     }
-    billing_map = _extract._build_billing_map(creds.load_credits())
-    ingested_at = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
-    scanned = changed = parsed = needs_label = 0
-    to_append = []
+    scanned = known = missing = 0
 
     for path, slug, category, msgid in _archive_pdfs(cfg):
         scanned += 1
-        row = _extract.build_row(
-            path, slug, category, msgid, "email",
-            cfg, today, billing_map=billing_map, ingested_at=ingested_at,
-        )
-
-        if row["status"] == "parsed":
-            parsed += 1
+        file_sha = _extract.sha256(path)
+        if file_sha in existing:
+            known += 1
         else:
-            needs_label += 1
-
-        old = existing.get(row["sha256"], {})
-        old_amount = float(old.get("amount") or 0.0)
-        old_credit = float(old.get("credit_usd") or 0.0)
-        old_status = old.get("status", "missing")
-        new_amount = float(row.get("amount") or 0.0)
-        new_credit = float(row.get("credit_usd") or 0.0)
-        differs = (
-            round(old_amount, 6) != round(new_amount, 6)
-            or round(old_credit, 6) != round(new_credit, 6)
-            or old_status != row["status"]
-        )
-        if differs:
-            changed += 1
-            print(
-                f"{row['sha256']} {slug} {row.get('period_month', '')} "
-                f"{old_status} {old_amount:.2f}/{old_credit:.2f} -> "
-                f"{row['status']} {new_amount:.2f}/{new_credit:.2f} {path}"
-            )
-
-        if not dry_run and row["status"] == "parsed":
-            to_append.append(row)
-
-    if not dry_run and to_append:
-        ops_ingest.append("invoices", to_append)
+            missing += 1
+            print(f"{file_sha} missing in invoices; label or import explicitly: {path}")
 
     return {
         "dry_run": dry_run,
         "scanned": scanned,
-        "changed": changed,
-        "parsed": parsed,
-        "needs_label": needs_label,
-        "appended": 0 if dry_run else len(to_append),
+        "known": known,
+        "missing": missing,
+        "changed": 0,
+        "parsed": 0,
+        "needs_review": 0,
+        "appended": 0,
     }
 
 
@@ -353,11 +373,10 @@ def _run_burn_stage(ops_ingest, ops_replace, tb_prod, creds, cfg, pools,
             latest = max(runpod_rows, key=lambda r: r.get("run_at", ""))
             note_str = latest.get("note", "") or ""
             prepaid = latest.get("prepaid_left_usd")
-            # Parse spend_per_hr=<float> from note
-            m = re.search(r"spend_per_hr=([\d.]+)", note_str)
-            if m and prepaid is not None:
+            spend_text = _note_value(note_str, "spend_per_hr")
+            if spend_text and prepaid is not None:
                 try:
-                    spend_hr = float(m.group(1))
+                    spend_hr = float(spend_text)
                     if spend_hr > 0:
                         days = float(prepaid) / (spend_hr * 24)
                         if days < 14:
@@ -378,6 +397,14 @@ def _run_burn_stage(ops_ingest, ops_replace, tb_prod, creds, cfg, pools,
     return pm_rows
 
 
+def _note_value(note, key):
+    prefix = key + "="
+    for part in str(note or "").replace(",", " ").split():
+        if part.startswith(prefix):
+            return part[len(prefix):]
+    return ""
+
+
 def main():
     backfill = "--backfill" in sys.argv
     import_mode = "--import-archive" in sys.argv
@@ -389,14 +416,13 @@ def main():
     # One token for ingest — see MODULE DOCSTRING
     ops_ingest = tb.TB(cfg["tb_ops_api"], c["TINYBIRD_OPS_INGEST_TOKEN"])
 
-    # --reparse-invoices: safe append-only re-extraction of archived PDFs.
-    # Use --dry-run before any real append.
+    # --reparse-invoices: read-only coverage scan for archived PDFs.
     if reparse_mode:
         st = reparse_invoices(cfg, ops_ingest, today, dry_run=dry_run)
         print(f"reparse-invoices: {st}")
         return
 
-    # --import-archive: one-off backfill from pre-organized month dirs, then exit
+    # --import-archive: one-off append import from pre-organized month dirs, then exit
     if import_mode:
         st = import_archive(cfg, ops_ingest, today)
         now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
@@ -414,10 +440,17 @@ def main():
     all_months = months_ytd(cfg["months_start"], today)
     win = all_months if backfill else all_months[-cfg["repull_months"]:]
 
-    # 1. Harvest invoices (append, deduped by sha256 inside harvest)
+    # 1. Harvest invoices into the archive.
+    # In backfill mode these append writes are immediately replaced by the fresh
+    # archive rebuild below; their job is to make sure the local PDF archive is current.
     since = cfg["months_start"].replace("-", "/") + "/01" if backfill else None
     st["harvest_gmail"] = harvest.gmail_sweep(cfg, ops_ingest, today, since=since)
     st["harvest_inbox"] = harvest.inbox_sweep(cfg, ops_ingest, today)
+
+    if backfill:
+        invoice_rows, invoice_stats = rebuild_archive_invoices(cfg, today)
+        ops_replace.replace("invoices", invoice_rows)
+        st["invoices"] = invoice_stats
 
     # 2. Payments (Wise outflows) — per month in window
     try:
@@ -492,7 +525,7 @@ def main():
 
     # 7. Chase list — print providers that need attention
     chase = [r for r in rrows
-             if r["status"] in ("missing_invoice", "amount_mismatch", "needs_label", "needs_data")]
+             if r["status"] in ("missing_invoice", "amount_mismatch", "needs_review", "needs_label", "needs_data")]
     if chase:
         print("CHASE LIST:")
         for r in chase:

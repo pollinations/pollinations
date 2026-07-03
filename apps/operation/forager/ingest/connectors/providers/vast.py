@@ -68,7 +68,6 @@ def meter(creds, months, today, run_cmd=subprocess.run):
                 cost_usd=cost,
                 funding="prepaid",
                 source="cli",
-                method="vastai show invoices --raw",
                 today=today,
             ))
     return rows

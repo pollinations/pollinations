@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import ingest.creds as creds_mod
 import ingest.invoices.extract as extract_mod
-from ingest.run import import_archive
+from ingest.run import import_archive, rebuild_archive_invoices
 
 
 # ---------------------------------------------------------------------------
@@ -138,6 +138,52 @@ def test_import_archive_in_run_dedup(monkeypatch, tmp_path):
 
     assert counts["pushed"] == 1, f"only 1 should push (in-run dedup), got {counts['pushed']}"
     assert counts["dup_sha"] == 1
+
+
+def test_rebuild_archive_invoices_returns_unique_rows(monkeypatch, tmp_path):
+    """Fresh rebuild creates rows in memory and sha-dedups before Tinybird replace."""
+    content = b"%PDF-1.4 same"
+    _write_pdf(str(tmp_path / "2026-05" / "google_2026-05-01_aabb1111_invoice.pdf"), content)
+    _write_pdf(str(tmp_path / "2026-06" / "google_2026-06-01_ccdd2222_invoice.pdf"), content)
+
+    cfg = {
+        "archive_dir": str(tmp_path),
+        "tb_ops_api": "https://fake.tinybird.co",
+        "fx_eur_usd": 1.14,
+    }
+
+    def fake_build_row(path, slug, category, msgid, source, config, today,
+                       billing_map=None, file_hash=None, creds=None):
+        return {
+            "sha256": file_hash,
+            "provider": slug,
+            "category": category,
+            "kind": "monthly_bill",
+            "period_month": "2026-05",
+            "amount": 12.0,
+            "currency": "USD",
+            "invoice_number": "INV-1",
+            "issued_at": "2026-05-01",
+            "source": source,
+            "file_ref": path,
+            "status": "parsed",
+            "ingested_at": "2026-07-03 12:00:00",
+            "credit_usd": 0.0,
+        }
+
+    monkeypatch.setattr(extract_mod, "build_row", fake_build_row)
+    monkeypatch.setattr(creds_mod, "load_credits", lambda: {"pools": []})
+    monkeypatch.setattr(creds_mod, "load_creds", lambda: {})
+    monkeypatch.setattr(extract_mod, "_build_billing_map", lambda credits: {})
+
+    rows, stats = rebuild_archive_invoices(cfg, "2026-07-03")
+
+    assert len(rows) == 1
+    assert stats["scanned"] == 2
+    assert stats["rebuilt"] == 1
+    assert stats["dup_sha"] == 1
+    assert stats["parsed"] == 1
+    assert rows[0]["source"] == "agent"
 
 
 def test_import_archive_msgid_from_filename(monkeypatch, tmp_path):

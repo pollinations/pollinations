@@ -21,7 +21,7 @@ from ingest.connectors import registry
 def test_brow_full():
     r = _brow("2026-07-03 14:05:00", "openrouter",
                granted=3000.0, spent=1372.48, left=1627.52,
-               prepaid=None, currency="USD", source="api", note="")
+               prepaid=None, source="api", note="")
     assert r == {
         "run_at": "2026-07-03 14:05:00",
         "provider": "openrouter",
@@ -29,7 +29,6 @@ def test_brow_full():
         "spent_usd": 1372.48,
         "left_usd": 1627.52,
         "prepaid_left_usd": None,
-        "currency": "USD",
         "source": "api",
         "note": "",
     }
@@ -50,7 +49,6 @@ def test_brow_none_stays_none():
 
 def test_brow_defaults():
     r = _brow("2026-07-03 00:00:00", "azure")
-    assert r["currency"] == "USD"
     assert r["source"] == "api"
     assert r["note"] == ""
 
@@ -60,20 +58,19 @@ def test_brow_defaults():
 # ---------------------------------------------------------------------------
 
 def test_mrow_full():
-    r = _mrow("2026-06", "deepinfra", 8.77, "prepaid", "api", "deepinfra /payment/usage", "2026-07-03")
+    r = _mrow("2026-06", "deepinfra", 8.77, "prepaid", "api", "2026-07-03")
     assert r == {
         "month": "2026-06",
         "provider": "deepinfra",
         "cost_usd": 8.77,
         "funding": "prepaid",
         "source": "api",
-        "method": "deepinfra /payment/usage",
         "retrieved_at": "2026-07-03",
     }
 
 
 def test_mrow_rounds_to_2dp():
-    r = _mrow("2026-06", "vast.ai", 8.7777, "cash", "api", "method", "2026-07-03")
+    r = _mrow("2026-06", "vast.ai", 8.7777, "cash", "api", "2026-07-03")
     assert r["cost_usd"] == 8.78
 
 
@@ -96,7 +93,7 @@ def test_canonical_contains_expected_slugs():
 
 
 def test_canonical_excludes_non_billing_slugs():
-    """CANONICAL must NOT contain saas/payroll/other invoice-sender slugs."""
+    """CANONICAL must NOT contain operating-expense invoice-sender slugs."""
     must_not_have = [
         "deel", "google-workspace", "slack", "wise", "self-issued",
         "github", "typeless", "wispr", "tele2", "enty", "naturenergie",
@@ -215,16 +212,6 @@ def test_record_meter_default_funding_cash():
     record.main(["meter", "runpod", "2026-05", "500.0"], tb_factory=_make_factory(fake))
     r = fake.appended[0][1][0]
     assert r["funding"] == "cash"
-
-
-def test_record_meter_method_field():
-    fake = _FakeTB()
-    record.main(
-        ["meter", "deepinfra", "2026-06", "8.77", "--method", "deepinfra /payment/usage"],
-        tb_factory=_make_factory(fake),
-    )
-    r = fake.appended[0][1][0]
-    assert r["method"] == "deepinfra /payment/usage"
 
 
 # ---------------------------------------------------------------------------

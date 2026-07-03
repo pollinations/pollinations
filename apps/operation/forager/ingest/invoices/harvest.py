@@ -7,7 +7,6 @@ pick_primary — from an Invoice+Receipt pair keeps the Invoice PDF.
 """
 import json
 import os
-import re
 import subprocess
 import sys
 from collections import Counter, defaultdict
@@ -32,7 +31,7 @@ PROVIDERS = [
     ("azure",            "compute", ["azure", "microsoft"]),
     ("aws",              "compute", ["amazon web services", "aws ", "amazon.com", "aws,"]),
     ("alibaba",          "compute", ["alibaba", "aliyun", "alibabacloud", "dashscope"]),
-    ("aws",              "compute", ["automat-it", "automat it"]),   # reseller
+    ("aws",              "compute", ["automat-it", "automat it"]),   # intermediary billing
     ("replicate",        "compute", ["replicate"]),
     ("xai",              "compute", ["x.ai", "xai"]),
     ("fal",              "compute", ["fal - features", "fal.ai", "features & labels", "withorb"]),
@@ -58,17 +57,19 @@ PROVIDERS = [
     ("cloudflare",       "infra",   ["cloudflare"]),
     ("vercel",           "infra",   ["vercel"]),
     ("digitalocean",     "infra",   ["digitalocean", "digital ocean"]),
-    # ----- saas/office -----
+    # ----- internal software -----
     ("exafunction",      "saas",    ["exafunction"]),
     ("daytona",          "saas",    ["daytona"]),
     ("typeless",         "saas",    ["typeless"]),
     ("wispr",            "saas",    ["wispr"]),
     ("slack",            "saas",    ["slack"]),
-    ("tele2",            "saas",    ["tele2"]),
-    ("enty",             "saas",    ["enty"]),
-    ("naturenergie",     "saas",    ["naturenergie"]),
-    ("wise",             "saas",    ["wise "]),
     ("github",           "saas",    ["github"]),
+    # ----- finance/admin -----
+    ("enty",             "admin",   ["enty"]),
+    ("wise",             "admin",   ["wise "]),
+    # ----- office/operations -----
+    ("tele2",            "office",  ["tele2"]),
+    ("naturenergie",     "office",  ["naturenergie"]),
     # ----- payroll -----
     ("deel",             "payroll", ["deel"]),
     # ----- self -----
@@ -123,7 +124,17 @@ def classify(frm, subject):
 
 def safe(s):
     """Sanitize a string for use in a filename."""
-    return re.sub(r"[^A-Za-z0-9._-]+", "-", s).strip("-")[:60]
+    out = []
+    prev_dash = False
+    for ch in s:
+        keep = ch.isascii() and (ch.isalnum() or ch in "._-")
+        if keep:
+            out.append(ch)
+            prev_dash = False
+        elif not prev_dash:
+            out.append("-")
+            prev_dash = True
+    return "".join(out).strip("-")[:60]
 
 
 def pick_primary(pdfs):
@@ -186,6 +197,7 @@ def gmail_sweep(config, tb_ops, today, since=None):
     counts = Counter()
     known_shas = _known_sha256s(tb_ops)
     billing_map = _extract._build_billing_map(_creds.load_credits())
+    agent_creds = _creds.load_creds()
 
     items = list(search_all(config, since).values())
     items.sort(key=lambda x: (x["month"], x["provider"]))
@@ -277,6 +289,7 @@ def gmail_sweep(config, tb_ops, today, since=None):
                 it["id"], "email",
                 config, today,
                 billing_map=billing_map,
+                creds=agent_creds,
             )
             counts["pushed"] += 1
             sys.stderr.write(f"  {it['month']} {it['provider']:14} {it['date'][:10]}\n")
@@ -294,10 +307,10 @@ def inbox_sweep(config, tb_ops, today):
     For each PDF:
     1. sha256 dedup vs TB — skip if known.
     2. Classify by filename prefix (<provider>_...) if it matches.
-       Else run extract.parse for a parser hint; else ("other","other") + needs_label.
+       The AI agent can override the hint from the PDF itself.
     3. Move to <archive_dir>/<YYYY-MM>/<provider>_<date>_<sha8>_<origname>.pdf
-       (month from parsed period_month, fallback today's YYYY-MM).
-    4. Push its row via extract_and_push.
+       using the month and provider returned by the AI agent.
+    4. Push the already-extracted row.
 
     Args:
         config:  forager config dict
@@ -320,6 +333,7 @@ def inbox_sweep(config, tb_ops, today):
 
     known_shas = _known_sha256s(tb_ops)
     billing_map = _extract._build_billing_map(_creds.load_credits())
+    agent_creds = _creds.load_creds()
 
     for fname in pdfs:
         src = os.path.join(inbox_dir, fname)
@@ -334,25 +348,20 @@ def inbox_sweep(config, tb_ops, today):
         # Classify: try filename prefix first
         slug, category = _classify_inbox_name(fname)
 
-        # Extract text once; reuse for both provider hint and period_month
-        txt = _extract.pdf_text(src)
-        result = _extract.parse(txt, slug, config, today)
-        inv = result.get("invoice") or {}
+        result = _extract.extract_pdf(
+            src, file_sha, slug, category, config, today,
+            billing_map=billing_map, creds=agent_creds,
+        )
+        row = _extract.build_row_from_result(
+            src, file_sha, result, "inbox", today,
+        )
 
-        # If prefix match failed, try parser hint then re-parse with correct slug
-        if slug == "other":
-            hint_slug = (result.get("extras") or {}).get("provider_hint", "")
-            if hint_slug:
-                hint_slug_cat = _slug_to_category(hint_slug)
-                slug, category = hint_slug, hint_slug_cat
-                result = _extract.parse(txt, slug, config, today)
-                inv = result.get("invoice") or {}
-
-        period_month = inv.get("period_month", "") or today[:7]
+        period_month = row["period_month"]
+        dest_slug = row["provider"]
 
         # Build destination filename
         sha8 = file_sha[:8]
-        dest_name = f"{slug}_{period_month}_{sha8}_{safe(fname)}"
+        dest_name = f"{dest_slug}_{period_month}_{sha8}_{safe(fname)}"
         dest_dir = os.path.join(config["archive_dir"], period_month)
         os.makedirs(dest_dir, exist_ok=True)
         dest_path = os.path.join(dest_dir, dest_name)
@@ -360,14 +369,8 @@ def inbox_sweep(config, tb_ops, today):
 
         known_shas.add(file_sha)
 
-        _extract.extract_and_push(
-            tb_ops, dest_path,
-            slug, category,
-            "",  # no msgid for inbox files
-            "inbox",
-            config, today,
-            billing_map=billing_map,
-        )
+        row["file_ref"] = dest_path
+        tb_ops.append("invoices", [row])
         counts["pushed"] += 1
         sys.stderr.write(f"  inbox: {fname} → {period_month}/{dest_name}\n")
 

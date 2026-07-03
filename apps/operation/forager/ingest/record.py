@@ -6,7 +6,6 @@ Usage:
                                                 [--note TEXT]
     python3 -m ingest.record meter <provider> <YYYY-MM> <cost_usd>
                                    [--funding cash|credit|prepaid]
-                                   [--method TEXT]
 
 Appends one row to `balances` or `meter_monthly` with source="manual".
 Provider must be in registry.CANONICAL; month must match YYYY-MM.
@@ -62,7 +61,6 @@ def main(argv=None, tb_factory=None):
     bp.add_argument("--spent",   type=float, default=None)
     bp.add_argument("--left",    type=float, default=None)
     bp.add_argument("--prepaid", type=float, default=None)
-    bp.add_argument("--currency", default="USD")
     bp.add_argument("--note", default="")
 
     # meter subcommand
@@ -71,7 +69,6 @@ def main(argv=None, tb_factory=None):
     mp.add_argument("month",     help="billing month YYYY-MM")
     mp.add_argument("cost_usd",  type=float, help="metered cost in USD")
     mp.add_argument("--funding", default="cash", choices=["cash", "credit", "prepaid"])
-    mp.add_argument("--method",  default="manual", help="how the number was obtained")
 
     args = parser.parse_args(argv)
 
@@ -87,7 +84,7 @@ def main(argv=None, tb_factory=None):
         now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
         row = _brow(now, args.provider,
                     granted=args.granted, spent=args.spent, left=args.left,
-                    prepaid=args.prepaid, currency=args.currency,
+                    prepaid=args.prepaid,
                     source="manual", note=args.note)
         client.append("balances", [row])
         print(json.dumps(row))
@@ -97,7 +94,7 @@ def main(argv=None, tb_factory=None):
         _validate_month(args.month)
         today = datetime.date.today().isoformat()
         row = _mrow(args.month, args.provider, args.cost_usd,
-                    args.funding, "manual", args.method, today)
+                    args.funding, "manual", today)
         client.append("meter_monthly", [row])
         print(json.dumps(row))
 

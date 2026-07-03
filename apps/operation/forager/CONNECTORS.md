@@ -120,7 +120,7 @@ These were decided during the PoC and are preserved here so they are not re-open
 
 **Cloudflare intentionally not ported** — the PoC's Cloudflare connector was verification-only (returned no balances). Cloudflare cost arrives via PDF invoices captured by the Gmail catcher; there is no balance or meter connector for Cloudflare in forager.
 
-**OpenAI granted is hardcoded (HC)** — the OpenAI Organization Costs API exposes spend totals but not grant amounts. The connector uses `OPENAI_GRANT_USD` (default 1565.58) from SOPS/creds as the hardcoded grant; the balance row carries `note="granted is HC"` to flag this. Update `OPENAI_GRANT_USD` in `apps/operation/secrets/env.json` when the grant is renewed.
+**OpenAI granted is hardcoded (HC)** — the OpenAI Organization Costs API exposes spend totals but not grant amounts. The connector uses `OPENAI_GRANT_USD` (default 1565.58) from SOPS/creds as the hardcoded grant; the balance row carries `note="granted is HC"` to flag this. Update `OPENAI_GRANT_USD` in `apps/operation/forager/secrets/env.json` when the grant is renewed.
 
 **RunPod User-Agent** — RunPod's API endpoint (`api.runpod.io/graphql`) sits behind Cloudflare. The default Python `urllib` User-Agent triggers Cloudflare's bot-detection (error 1010). All HTTP requests in forager carry `User-Agent: Mozilla/5.0 (pollinations-finops-connector)` via `ingest/connectors/common.py:UA` — this is mandatory, not optional. The RunPod API key goes in the `Authorization: Bearer` header, never in the URL query string.
 

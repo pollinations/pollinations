@@ -128,7 +128,6 @@ def meter(creds, months, today, run_cmd=subprocess.run):
                 cost_usd=cost,
                 funding="cash",
                 source="cli",
-                method="firectl billing list-invoices",
                 today=today,
             ))
     return rows

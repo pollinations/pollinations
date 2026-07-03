@@ -8,11 +8,9 @@ SCHEMA >
     `status` String `json:$.status`,
     `invoice_usd` Float64 `json:$.invoice_usd`,
     `payment_usd` Float64 `json:$.payment_usd`,
-    `delta_usd` Float64 `json:$.delta_usd`,
     `invoice_refs` String `json:$.invoice_refs`,
     `payment_refs` String `json:$.payment_refs`,
-    `note` String `json:$.note`,
-    `run_at` Date `json:$.run_at`
+    `note` String `json:$.note`
 
 ENGINE "MergeTree"
 ENGINE_SORTING_KEY "month, provider"

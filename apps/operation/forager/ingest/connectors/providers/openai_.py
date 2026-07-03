@@ -154,7 +154,6 @@ def meter(creds, months, today):
                 cost_usd=cost,
                 funding="credit",
                 source="api",
-                method="openai /v1/organization/costs",
                 today=today,
             ))
     return rows

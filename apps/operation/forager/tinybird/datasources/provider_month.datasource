@@ -4,20 +4,18 @@ TOKEN "treasury_ingest" READ
 SCHEMA >
     `month` String `json:$.month`,
     `provider` String `json:$.provider`,
-    `billing` String `json:$.billing`,
+    `category` String `json:$.category`,
     `invoice_usd` Float64 `json:$.invoice_usd`,
-    `cash_usd` Float64 `json:$.cash_usd`,
     `meter_cash_usd` Float64 `json:$.meter_cash_usd`,
     `meter_prepaid_usd` Float64 `json:$.meter_prepaid_usd`,
     `meter_src` String `json:$.meter_src`,
     `usage_cost_usd` Float64 `json:$.usage_cost_usd`,
     `credit_burn_usd` Float64 `json:$.credit_burn_usd`,
     `credit_src` String `json:$.credit_src`,
-    `grant_left_usd` Float64 `json:$.grant_left_usd`,
-    `grant_src` String `json:$.grant_src`,
-    `status` String `json:$.status`,
-    `note` String `json:$.note`,
-    `run_at` Date `json:$.run_at`
+    `status` String `json:$.status`
 
 ENGINE "MergeTree"
-ENGINE_SORTING_KEY "provider, month"
+ENGINE_SORTING_KEY "provider, month, category"
+
+FORWARD_QUERY >
+    SELECT month, provider, defaultValueOfTypeName('String') AS category, invoice_usd, meter_cash_usd, meter_prepaid_usd, meter_src, usage_cost_usd, credit_burn_usd, credit_src, status

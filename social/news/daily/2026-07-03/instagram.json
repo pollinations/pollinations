@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-07-03",
+  "period_start": "2026-07-03",
+  "period_end": "2026-07-03",
+  "generated_at": "2026-07-04T06:58:25.652675+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-03/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-03/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-03/images/instagram-3.jpg"
+    }
+  ],
+  "text": "shipped a few things to keep the garden growing this week.\n\n1. advanced search (perplexity/gemini) now shows up as itemized adjustments. transparency is nice. you should know exactly what your queries cost.\n2. flow linnom just dropped into chat. go say hi to the newest model in the greenhouse.\n3. added a warning when your browser's localStorage is about to tap out. no more silent data loss when you try to cram too many heavy attachments into a single session.\n\ncode is open. go build something weird. github.com/pollinations/pollinations\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #webdev #llm #cozyvibes",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

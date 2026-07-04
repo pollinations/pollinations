@@ -29,10 +29,9 @@ same correction-by-append pattern as invoice label rows.
 - The only `provider_month_ep` consumer is the legacy spend-audit PoC
   (`_local/2026-07-01-spend-audit/build/pull_forager.py`), which also reads
   `cash_monthly_ep`, `revenue_ep`, `grants_ep`, `usage_ep`, `balances_ep`.
-- `meter_monthly` schema today: `month, provider, cost_usd, funding, source,
-  retrieved_at` — **no `note` column** (Task 2 adds it).
-- `web/src/components/UsageEntryForm.tsx`: `buildManualBalanceChange` writes a `note`;
-  `buildManualMeterChange` does not (Task 5 fixes the asymmetry).
+- `meter_monthly` schema today: `month, provider, cost_usd, funding, source`.
+- `web/src/components/UsageEntryForm.tsx`: `buildManualMeterChange` writes the
+  minimal `meter_monthly` row shape.
 
 ## Global constraints
 
@@ -72,7 +71,7 @@ observation planes, then classifies everything else:
   | `invoice` | `invoices` | `invoices_ep` | What the provider formally BILLED: `amount` = amount due (money claim), `credit_usd` = credits applied (credit burn). Document truth. |
   | `payment` | `payments` | `payments_monthly_ep` | What actually LEFT the bank (Wise). Cash truth. |
 
-  Plus the note: usage printed ON an invoice is captured via `invoices.credit_usd`, not
+  Also: usage printed ON an invoice is captured via `invoices.credit_usd`, not
   `meter_monthly` — one real-world fact may legitimately appear on two planes;
   reconciliation's job is comparing planes.
 - [ ] Step 2: classify the rest — **stocks** `balances` (latest-wins snapshots, not
@@ -93,21 +92,6 @@ observation planes, then classifies everything else:
 
 ---
 
-### Task 2: Schema — `meter_monthly` gains `note`
-
-**Files:** modify `apps/operation/forager/tinybird/datasources/meter_monthly.datasource`
-
-- [ ] Step 1: append `` `note` String `json:$.note` DEFAULT '' `` at the END of the
-  schema. Existing writers keep working (missing JSON field → default).
-- [ ] Step 2: `tb --cloud deploy --check --wait` from `apps/operation/forager/tinybird`.
-  If the CLI demands a FORWARD_QUERY, add the suggested
-  `defaultValueOfTypeName('String') AS note` form. If it reports anything destructive,
-  STOP.
-- [ ] Step 3: do not deploy yet — deploy happens once, in Task 4, together with the new
-  pipes.
-
----
-
 ### Task 3: New pipes (datafiles only)
 
 **Files:** create `apps/operation/forager/tinybird/pipes/meter_monthly_ep.pipe`,
@@ -121,9 +105,9 @@ observation planes, then classifies everything else:
 
   NODE endpoint
   SQL >
-      SELECT month, provider, cost_usd, funding, source, retrieved_at, note
+      SELECT month, provider, cost_usd, funding, source
       FROM meter_monthly
-      ORDER BY provider, month, retrieved_at
+      ORDER BY provider, month, funding, source
 
   TYPE endpoint
   ```
@@ -177,9 +161,9 @@ modify `_local/2026-07-01-spend-audit/build/pull_forager.py`
 - [ ] Step 1: app — `tb.ts` loadAll: `cash_monthly_ep` → `payments_monthly_ep` (one
   line). Update any fixture/pipe-name references (PaymentsTab DataNote shows the pipe
   name — update it too).
-- [ ] Step 2: app — `buildManualMeterChange` gains `note` in the staged row (mirror the
-  balances builder: `note: "entered in treasury app"`, or pass through a user note if
-  the form already collects one). Update its tests for the new row shape.
+- [ ] Step 2: app — `buildManualMeterChange` stages the minimal
+  `meter_monthly` row shape: month, provider, cost_usd, funding, source. Update
+  its tests for the row shape.
 - [ ] Step 3: do NOT add a Meter tab or new UI for `meter_monthly_ep` in this plan —
   the pipe exists for future use; wiring it into GapActions/manual-entry views is a
   separate decision.
@@ -213,6 +197,6 @@ explicit approval at execution time:
 - App: `npm run test` + `npm run typecheck` green; `?fixtures=1` renders all tabs;
   Payments tab shows `payments_monthly_ep` in its DataNote line.
 - Live (after Task 4 deploy): `payments_monthly_ep` returns identical rows to
-  `cash_monthly_ep`; `meter_monthly_ep` returns rows including a `note` field; a manual
-  meter entry staged + committed from the app lands with its note.
+  `cash_monthly_ep`; a manual meter entry staged + committed from the app lands
+  with the minimal row shape.
 - Legacy PoC still builds its CSVs after the repoint.

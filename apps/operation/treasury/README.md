@@ -2,7 +2,7 @@
 
 Treasury is the raw operations viewer and editor for Forager data.
 
-Forager harvests invoices, Wise payments, provider balances, usage, revenue, and
+Forager harvests invoices, Wise payments, provider usage, revenue, and
 operator overrides into the Tinybird `operations` workspace. This app reads the
 Forager endpoint pipes and appends operator facts back through Tinybird Events
 API datasources. It does not compute reconciliation verdicts or analytics.

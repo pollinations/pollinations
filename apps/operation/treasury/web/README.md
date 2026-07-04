@@ -1,7 +1,8 @@
 # Treasury Web
 
 Treasury local UI over raw Forager Tinybird pipe outputs in the `operations`
-workspace. Tabs: Recon, Invoices, Payments, Burn, Credits, Runs.
+workspace. Tabs: Reconciliation, Invoices, Payments, Pollen Usage, Provider
+Usage, Revenue, and Ingest Log.
 
 ## Run
 
@@ -25,16 +26,14 @@ and no network calls.
 ## Data Contract
 
 Reads exactly these pipes from `apps/operation/forager/tinybird/pipes/`:
-`coverage_ep`, `gaps_ep`, `invoices_ep`, `payments_ep`, `meter_monthly_ep`,
-`usage_ep`, `grants_ep`, `runs_ep`.
+`invoices_ep`, `payments_ep`, `meter_monthly_ep`, `usage_ep`, `runs_ep`, and
+`revenue_ep`.
 
-Each tab shows one table and a short where/how/what/why note. Source labels use
-the same vocabulary as the spend-audit PoC where useful: `TB`, `WS`, `ST`,
-`API`, `IV`, `HC`, `UNV`, and `=`.
+Each tab shows one table and a short where/how/what/why note. Provider Usage is
+the manual/provider-dashboard table for monthly credit and prepaid usage.
 
-The UI must not add synthetic source columns. When Tinybird exposes a source
-field for a value, such as `granted_src` for `granted_usd`, the source is shown
-as a colored inline label inside that value cell.
+Provider Usage stores one source label per monthly usage value: `manual` when an
+operator entered it, or the connector name/source when forager fetched it.
 
-The app does not compute verdicts in the browser. Anything that derives rows
-lives in forager; edits append facts for the next ingest run to fold in.
+Reconciliation is derived in the browser from invoices and payments. Other tabs
+show the raw pipe rows; edits append facts for the next ingest run to fold in.

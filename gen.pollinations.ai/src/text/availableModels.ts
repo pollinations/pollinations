@@ -183,6 +183,11 @@ const models: ModelDefinition[] = [
         transform: claudeAdaptiveThinking,
     },
     {
+        name: "claude-fable-5",
+        config: portkeyConfig["claude-fable-5"],
+        transform: claudeAdaptiveThinking,
+    },
+    {
         name: "gemini-3-flash",
         config: portkeyConfig["gemini-3-flash-preview"],
         transform: pipe(

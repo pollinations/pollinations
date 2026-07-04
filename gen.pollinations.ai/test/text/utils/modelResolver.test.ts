@@ -17,6 +17,10 @@ describe("resolveModelConfig", () => {
             resolveModelConfig(messages, { model: "claude-large" }).options
                 .max_tokens,
         ).toBe(128000);
+        expect(
+            resolveModelConfig(messages, { model: "claude-fable-5" }).options
+                .max_tokens,
+        ).toBe(128000);
     });
 
     it("lets callers override Anthropic max_tokens", () => {

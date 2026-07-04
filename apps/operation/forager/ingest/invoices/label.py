@@ -11,7 +11,7 @@ best existing row for the sha256 so the label never erases the PDF pointer.
 Usage:
     python3 -m ingest.invoices.label <sha256> \\
         --provider vast.ai --month 2026-06 \\
-        --amount 500 --currency USD --kind prepaid_topup \\
+        --amount 500 --currency USD \\
         [--category compute] [--number INV-123] [--date 2026-06-14]
 
     # Non-invoice document (SOW, memo, receipt duplicate, ticket...):
@@ -27,7 +27,6 @@ from datetime import datetime, timezone
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 from ingest import creds as _creds, tb as _tb
 
-KINDS = ["monthly_bill", "prepaid_topup", "subscription"]
 CATEGORIES = ["compute", "infra", "saas", "admin", "office", "payroll", "other"]
 
 
@@ -66,8 +65,6 @@ def main(argv=None, tb=None):
                         help="Credits applied in USD (optional, default carried over or 0)")
     parser.add_argument("--currency", choices=["USD", "EUR"],
                         help="Invoice currency")
-    parser.add_argument("--kind", choices=KINDS,
-                        help="Billing kind (monthly_bill, prepaid_topup, subscription)")
     parser.add_argument("--category", choices=CATEGORIES,
                         help="Category (default: carried over from existing row)")
     parser.add_argument("--number", default="", help="Invoice number (optional)")
@@ -81,7 +78,7 @@ def main(argv=None, tb=None):
     args = parser.parse_args(argv)
 
     if not args.not_invoice:
-        missing = [f for f in ("provider", "month", "amount", "currency", "kind")
+        missing = [f for f in ("provider", "month", "amount", "currency")
                    if getattr(args, f) is None]
         if missing:
             print(f"ERROR: missing required options: "
@@ -133,7 +130,6 @@ def main(argv=None, tb=None):
             "sha256":         args.sha256,
             "provider":       args.provider or prev.get("provider", "other"),
             "category":       args.category or prev.get("category", "") or "other",
-            "kind":           "",
             "period_month":   "",
             "amount":         0.0,
             "currency":       currency,
@@ -150,7 +146,6 @@ def main(argv=None, tb=None):
             "sha256":         args.sha256,
             "provider":       args.provider,
             "category":       args.category or prev.get("category", "") or "other",
-            "kind":           args.kind,
             "period_month":   args.month,
             "amount":         amount,
             "currency":       currency,

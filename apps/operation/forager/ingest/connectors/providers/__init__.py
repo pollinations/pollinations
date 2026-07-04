@@ -1,7 +1,8 @@
 """Provider row builders shared by all balance/meter connectors.
 
 _brow  — build one balances row (append-only datasource)
-_mrow  — build one meter_monthly row (append-only datasource)
+_mrow  — build one meter_monthly row (run.py dedupes to one row per
+         provider-month-funding and full-replaces the table each run)
 
 Provider connector modules (openrouter, deepinfra, runpod, vast, …) are added
 in Tasks B3–B5 and import these builders.
@@ -44,7 +45,7 @@ def _mrow(month, provider, cost_usd, funding, source, today):
         cost_usd: metered cost in USD
         funding:  "cash" | "credit" | "prepaid"
         source:   "api" | "cli" | "bq" | "manual"
-        today:    retrieved_at date string "YYYY-MM-DD"
+        today:    current ingest date (kept in the call signature for connector simplicity)
     """
     return {
         "month": month,
@@ -52,5 +53,4 @@ def _mrow(month, provider, cost_usd, funding, source, today):
         "cost_usd": round(float(cost_usd), 2),
         "funding": funding,
         "source": source,
-        "retrieved_at": today,
     }

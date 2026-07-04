@@ -52,15 +52,8 @@ def test_agent_category_enum_includes_operating_categories():
     assert "office" in category["enum"]
 
 
-def test_agent_kind_enum_has_only_invoice_business_types():
-    kind = ai_agent.invoice_response_schema()["schema"]["properties"]["kind"]
-    assert kind["enum"] == ["monthly_bill", "prepaid_topup", "subscription", ""]
-
-
-def test_agent_prompt_says_payg_is_not_an_invoice_kind():
-    prompt = ai_agent._system_prompt()
-    assert "Never use payg as an invoice kind" in prompt
-    assert "pay-as-you-go provider invoices are monthly_bill" in prompt
+def test_agent_schema_has_no_invoice_kind():
+    assert "kind" not in ai_agent.invoice_response_schema()["schema"]["properties"]
 
 
 def test_ai_agent_extract_pdf_calls_pollinations_each_time(monkeypatch, tmp_path):
@@ -68,7 +61,6 @@ def test_ai_agent_extract_pdf_calls_pollinations_each_time(monkeypatch, tmp_path
     expected = {
         "provider": "runpod",
         "category": "compute",
-        "kind": "prepaid_topup",
         "period_month": "2026-06",
         "amount": 42,
         "currency": "USD",
@@ -113,7 +105,6 @@ def test_extract_and_push_calls_ai_and_appends_row(monkeypatch, tmp_path):
         return {
             "provider": "runpod",
             "category": "compute",
-            "kind": "prepaid_topup",
             "period_month": "2026-06",
             "amount": "1,234.50",
             "currency": "USD",
@@ -139,19 +130,59 @@ def test_extract_and_push_calls_ai_and_appends_row(monkeypatch, tmp_path):
         "email",
         _stub_config(),
         "2026-07-03",
-        billing_map={"runpod": "prepaid_topup"},
+        provider_slugs={"runpod"},
     )
 
     assert seen["path"] == str(pdf)
-    assert seen["hints"]["kind_hint"] == "prepaid_topup"
+    assert "runpod" in seen["hints"]["known_provider_slugs"]
     assert row["provider"] == "runpod"
     assert row["category"] == "compute"
-    assert row["kind"] == "prepaid_topup"
+    assert "kind" not in row
     assert row["amount"] == 1234.5
     assert row["currency"] == "USD"
     assert row["credit_usd"] == 12.5
     assert row["status"] == "parsed"
     assert appended == [("invoices", [row])]
+
+
+def test_extract_and_push_skips_non_parsed_row(monkeypatch, tmp_path):
+    pdf = tmp_path / "doc.pdf"
+    pdf.write_bytes(b"%PDF-DOC")
+
+    def fake_extract_pdf(*args, **kwargs):
+        return {
+            "provider": "other",
+            "category": "other",
+            "period_month": "",
+            "amount": 0,
+            "currency": "USD",
+            "invoice_number": "contract",
+            "issued_at": "2026-06-29",
+            "status": "not_invoice",
+            "credit_usd": 0,
+        }
+
+    monkeypatch.setattr(extract.ai_agent, "extract_pdf", fake_extract_pdf)
+    appended = []
+
+    class StubTB:
+        def append(self, datasource, rows):
+            appended.append((datasource, rows))
+
+    row = extract.extract_and_push(
+        StubTB(),
+        str(pdf),
+        "other",
+        "other",
+        "msg",
+        "email",
+        _stub_config(),
+        "2026-07-03",
+        provider_slugs=set(),
+    )
+
+    assert row["status"] == "not_invoice"
+    assert appended == []
 
 
 def test_build_row_from_missing_agent_fields_fails(tmp_path):
@@ -176,7 +207,6 @@ def test_row_shape_matches_invoices_datasource_columns(tmp_path):
         {
             "provider": "lambda",
             "category": "compute",
-            "kind": "monthly_bill",
             "period_month": "2026-06",
             "amount": 0,
             "currency": "USD",
@@ -202,7 +232,6 @@ def test_build_row_preserves_known_archive_provider(monkeypatch, tmp_path):
         return {
             "provider": "windsurf",
             "category": "saas",
-            "kind": "monthly_bill",
             "period_month": "2026-01",
             "amount": 60,
             "currency": "USD",
@@ -216,7 +245,7 @@ def test_build_row_preserves_known_archive_provider(monkeypatch, tmp_path):
 
     row = extract.build_row(
         str(pdf), "exafunction", "compute", "msg", "agent",
-        _stub_config(), "2026-07-03", billing_map={},
+        _stub_config(), "2026-07-03", provider_slugs=set(),
     )
 
     assert row["provider"] == "exafunction"
@@ -231,7 +260,6 @@ def test_build_row_allows_agent_provider_for_other_archive(monkeypatch, tmp_path
         return {
             "provider": "zara_home",
             "category": "office",
-            "kind": "monthly_bill",
             "period_month": "2026-01",
             "amount": 505.97,
             "currency": "EUR",
@@ -245,7 +273,7 @@ def test_build_row_allows_agent_provider_for_other_archive(monkeypatch, tmp_path
 
     row = extract.build_row(
         str(pdf), "other", "other", "msg", "agent",
-        _stub_config(), "2026-07-03", billing_map={},
+        _stub_config(), "2026-07-03", provider_slugs=set(),
     )
 
     assert row["provider"] == "zara_home"
@@ -297,7 +325,6 @@ def test_ingested_at_is_datetime(monkeypatch, tmp_path):
         {
             "provider": "lambda",
             "category": "compute",
-            "kind": "monthly_bill",
             "period_month": "2026-06",
             "amount": 0,
             "currency": "USD",
@@ -348,8 +375,6 @@ def test_label_unknown_provider_exits_with_known_list(monkeypatch, capsys):
                 "100",
                 "--currency",
                 "USD",
-                "--kind",
-                "prepaid_topup",
             ]
         )
 
@@ -406,8 +431,6 @@ def test_label_push_path_appends_parsed_row(monkeypatch):
             "12.5",
             "--currency",
             "EUR",
-            "--kind",
-            "prepaid_topup",
         ],
         tb=StubTB(),
     )
@@ -458,7 +481,7 @@ def test_label_ignore_appends_not_invoice_row(monkeypatch):
 
     row = appended["rows"][0]
     assert row["status"] == "not_invoice"
-    assert row["kind"] == ""
+    assert "kind" not in row
     assert row["amount"] == 0.0
     assert row["invoice_number"] == "contract"
 
@@ -510,8 +533,6 @@ def test_label_carries_existing_credit_when_omitted(monkeypatch):
             "0",
             "--currency",
             "USD",
-            "--kind",
-            "monthly_bill",
         ],
         tb=StubTB(),
     )
@@ -599,7 +620,6 @@ def test_reparse_invoices_does_not_call_ai(monkeypatch, tmp_path, capsys):
                     "sha256": file_hash,
                     "provider": "lambda",
                     "category": "compute",
-                    "kind": "monthly_bill",
                     "period_month": "2026-06",
                     "amount": 0.0,
                     "currency": "USD",

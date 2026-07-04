@@ -24,6 +24,24 @@ def _write_pdf(path, content=b"%PDF-1.4 fake"):
     return hashlib.sha256(content).hexdigest()
 
 
+def _parsed_import_row(path="", slug="provider"):
+    return {
+        "sha256": "sha",
+        "provider": slug,
+        "category": "compute",
+        "period_month": "2026-05",
+        "amount": 12.0,
+        "currency": "USD",
+        "invoice_number": "INV-1",
+        "issued_at": "2026-05-01",
+        "source": "email",
+        "file_ref": path,
+        "status": "parsed",
+        "ingested_at": "2026-07-03 12:00:00",
+        "credit_usd": 0.0,
+    }
+
+
 class RecordingTB:
     """Stub TB that records appended rows and returns a preset known-sha list."""
 
@@ -60,14 +78,15 @@ def test_import_archive_pushes_new_pdfs(monkeypatch, tmp_path):
     push_log = []
 
     def fake_extract_and_push(tb_ops, path, slug, category, msgid, source,
-                               config, today, billing_map=None):
+                               config, today, provider_slugs=None):
         push_log.append({"path": path, "slug": slug, "msgid": msgid, "source": source})
+        return _parsed_import_row(path, slug)
 
     monkeypatch.setattr(extract_mod, "extract_and_push", fake_extract_and_push)
     monkeypatch.setattr(extract_mod, "sha256", lambda p: hashlib.sha256(open(p, "rb").read()).hexdigest())
     monkeypatch.setattr(creds_mod, "_sops_decrypt", lambda p: {"pools": []})
     monkeypatch.setattr(creds_mod, "load_credits", lambda: {"pools": []})
-    monkeypatch.setattr(extract_mod, "_build_billing_map", lambda credits: {})
+    monkeypatch.setattr(extract_mod, "_build_provider_slugs", lambda credits: set())
 
     tb = RecordingTB(known_shas=[])
     counts = import_archive(cfg, tb, "2026-07-03")
@@ -95,12 +114,13 @@ def test_import_archive_skips_known_sha(monkeypatch, tmp_path):
 
     def fake_extract_and_push(*a, **kw):
         push_log.append(True)
+        return _parsed_import_row()
 
     monkeypatch.setattr(extract_mod, "extract_and_push", fake_extract_and_push)
     monkeypatch.setattr(extract_mod, "sha256", lambda p: hashlib.sha256(open(p, "rb").read()).hexdigest())
     monkeypatch.setattr(creds_mod, "_sops_decrypt", lambda p: {"pools": []})
     monkeypatch.setattr(creds_mod, "load_credits", lambda: {"pools": []})
-    monkeypatch.setattr(extract_mod, "_build_billing_map", lambda credits: {})
+    monkeypatch.setattr(extract_mod, "_build_provider_slugs", lambda credits: set())
 
     tb = RecordingTB(known_shas=[known_sha])
     counts = import_archive(cfg, tb, "2026-07-03")
@@ -126,12 +146,13 @@ def test_import_archive_in_run_dedup(monkeypatch, tmp_path):
 
     def fake_extract_and_push(*a, **kw):
         push_log.append(True)
+        return _parsed_import_row()
 
     monkeypatch.setattr(extract_mod, "extract_and_push", fake_extract_and_push)
     monkeypatch.setattr(extract_mod, "sha256", lambda p: hashlib.sha256(open(p, "rb").read()).hexdigest())
     monkeypatch.setattr(creds_mod, "_sops_decrypt", lambda p: {"pools": []})
     monkeypatch.setattr(creds_mod, "load_credits", lambda: {"pools": []})
-    monkeypatch.setattr(extract_mod, "_build_billing_map", lambda credits: {})
+    monkeypatch.setattr(extract_mod, "_build_provider_slugs", lambda credits: set())
 
     tb = RecordingTB(known_shas=[])
     counts = import_archive(cfg, tb, "2026-07-03")
@@ -153,12 +174,11 @@ def test_rebuild_archive_invoices_returns_unique_rows(monkeypatch, tmp_path):
     }
 
     def fake_build_row(path, slug, category, msgid, source, config, today,
-                       billing_map=None, file_hash=None, creds=None):
+                       provider_slugs=None, file_hash=None, creds=None):
         return {
             "sha256": file_hash,
             "provider": slug,
             "category": category,
-            "kind": "monthly_bill",
             "period_month": "2026-05",
             "amount": 12.0,
             "currency": "USD",
@@ -174,7 +194,7 @@ def test_rebuild_archive_invoices_returns_unique_rows(monkeypatch, tmp_path):
     monkeypatch.setattr(extract_mod, "build_row", fake_build_row)
     monkeypatch.setattr(creds_mod, "load_credits", lambda: {"pools": []})
     monkeypatch.setattr(creds_mod, "load_creds", lambda: {})
-    monkeypatch.setattr(extract_mod, "_build_billing_map", lambda credits: {})
+    monkeypatch.setattr(extract_mod, "_build_provider_slugs", lambda credits: set())
 
     rows, stats = rebuild_archive_invoices(cfg, "2026-07-03")
 
@@ -184,6 +204,52 @@ def test_rebuild_archive_invoices_returns_unique_rows(monkeypatch, tmp_path):
     assert stats["dup_sha"] == 1
     assert stats["parsed"] == 1
     assert rows[0]["source"] == "agent"
+
+
+def test_rebuild_archive_invoices_returns_only_parsed_rows(monkeypatch, tmp_path):
+    _write_pdf(str(tmp_path / "2026-05" / "google_2026-05-01_aabb1111_invoice.pdf"))
+    _write_pdf(
+        str(tmp_path / "2026-06" / "google_2026-06-01_ccdd2222_invoice.pdf"),
+        b"%PDF-1.4 other",
+    )
+
+    cfg = {
+        "archive_dir": str(tmp_path),
+        "tb_ops_api": "https://fake.tinybird.co",
+        "fx_eur_usd": 1.14,
+    }
+
+    def fake_build_row(path, slug, category, msgid, source, config, today,
+                       provider_slugs=None, file_hash=None, creds=None):
+        status = "needs_review" if "2026-06" in path else "parsed"
+        return {
+            "sha256": file_hash,
+            "provider": slug,
+            "category": category,
+            "period_month": "2026-05" if status == "parsed" else "",
+            "amount": 12.0 if status == "parsed" else 0.0,
+            "currency": "USD",
+            "invoice_number": "INV-1",
+            "issued_at": "2026-05-01",
+            "source": source,
+            "file_ref": path,
+            "status": status,
+            "ingested_at": "2026-07-03 12:00:00",
+            "credit_usd": 0.0,
+        }
+
+    monkeypatch.setattr(extract_mod, "build_row", fake_build_row)
+    monkeypatch.setattr(creds_mod, "load_credits", lambda: {"pools": []})
+    monkeypatch.setattr(creds_mod, "load_creds", lambda: {})
+    monkeypatch.setattr(extract_mod, "_build_provider_slugs", lambda credits: set())
+
+    rows, stats = rebuild_archive_invoices(cfg, "2026-07-03")
+
+    assert len(rows) == 1
+    assert rows[0]["status"] == "parsed"
+    assert stats["rebuilt"] == 2
+    assert stats["parsed"] == 1
+    assert stats["needs_review"] == 1
 
 
 def test_import_archive_msgid_from_filename(monkeypatch, tmp_path):
@@ -199,15 +265,16 @@ def test_import_archive_msgid_from_filename(monkeypatch, tmp_path):
     captured = {}
 
     def fake_extract_and_push(tb_ops, path, slug, category, msgid, source,
-                               config, today, billing_map=None):
+                               config, today, provider_slugs=None):
         captured["msgid"] = msgid
         captured["source"] = source
+        return _parsed_import_row(path, slug)
 
     monkeypatch.setattr(extract_mod, "extract_and_push", fake_extract_and_push)
     monkeypatch.setattr(extract_mod, "sha256", lambda p: hashlib.sha256(open(p, "rb").read()).hexdigest())
     monkeypatch.setattr(creds_mod, "_sops_decrypt", lambda p: {"pools": []})
     monkeypatch.setattr(creds_mod, "load_credits", lambda: {"pools": []})
-    monkeypatch.setattr(extract_mod, "_build_billing_map", lambda credits: {})
+    monkeypatch.setattr(extract_mod, "_build_provider_slugs", lambda credits: {})
 
     tb = RecordingTB(known_shas=[])
     import_archive(cfg, tb, "2026-07-03")
@@ -236,12 +303,13 @@ def test_import_archive_skips_inbox_dir(monkeypatch, tmp_path):
 
     def fake_extract_and_push(tb_ops, path, *a, **kw):
         push_log.append(path)
+        return _parsed_import_row(path)
 
     monkeypatch.setattr(extract_mod, "extract_and_push", fake_extract_and_push)
     monkeypatch.setattr(extract_mod, "sha256", lambda p: hashlib.sha256(open(p, "rb").read()).hexdigest())
     monkeypatch.setattr(creds_mod, "_sops_decrypt", lambda p: {"pools": []})
     monkeypatch.setattr(creds_mod, "load_credits", lambda: {"pools": []})
-    monkeypatch.setattr(extract_mod, "_build_billing_map", lambda credits: {})
+    monkeypatch.setattr(extract_mod, "_build_provider_slugs", lambda credits: {})
 
     tb = RecordingTB(known_shas=[])
     counts = import_archive(cfg, tb, "2026-07-03")
@@ -264,15 +332,16 @@ def test_import_archive_unknown_prefix_goes_through_other(monkeypatch, tmp_path)
     captured = {}
 
     def fake_extract_and_push(tb_ops, path, slug, category, msgid, source,
-                               config, today, billing_map=None):
+                               config, today, provider_slugs=None):
         captured["slug"] = slug
         captured["category"] = category
+        return _parsed_import_row(path, slug)
 
     monkeypatch.setattr(extract_mod, "extract_and_push", fake_extract_and_push)
     monkeypatch.setattr(extract_mod, "sha256", lambda p: hashlib.sha256(open(p, "rb").read()).hexdigest())
     monkeypatch.setattr(creds_mod, "_sops_decrypt", lambda p: {"pools": []})
     monkeypatch.setattr(creds_mod, "load_credits", lambda: {"pools": []})
-    monkeypatch.setattr(extract_mod, "_build_billing_map", lambda credits: {})
+    monkeypatch.setattr(extract_mod, "_build_provider_slugs", lambda credits: {})
 
     tb = RecordingTB(known_shas=[])
     import_archive(cfg, tb, "2026-07-03")

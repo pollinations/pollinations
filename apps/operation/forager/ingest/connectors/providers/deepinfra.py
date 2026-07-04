@@ -40,7 +40,7 @@ def meter(creds, months, today):
     Args:
         creds:  dict with DEEPINFRA_API_KEY
         months: list of "YYYY-MM" strings to query
-        today:  retrieved_at date string "YYYY-MM-DD"
+        today:  current ingest date
 
     Returns:
         list of _mrow dicts, one per month with nonzero cost

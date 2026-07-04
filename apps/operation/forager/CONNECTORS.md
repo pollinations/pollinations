@@ -63,7 +63,7 @@ python3 -m ingest.record balance <provider> [--granted N] [--left N] [--prepaid 
 python3 -m ingest.record meter <provider> <YYYY-MM> <cost_usd> --funding credit
 ```
 
-Provider must be in `registry.CANONICAL`; month must match `YYYY-MM`. Appends one row with `source="manual"` to `balances` or `meter_monthly`.
+Provider must be in `registry.CANONICAL`; month must match `YYYY-MM`. Appends one row with `source="manual"` to `balances` or `meter_monthly`. Meter entries are folded into the deduped table (one row per provider-month-funding) on the next run; a manual value holds only until a programmatic connector covers that month.
 
 ### Monthly checklist
 

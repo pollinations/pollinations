@@ -196,7 +196,7 @@ def gmail_sweep(config, tb_ops, today, since=None):
     """
     counts = Counter()
     known_shas = _known_sha256s(tb_ops)
-    billing_map = _extract._build_billing_map(_creds.load_credits())
+    provider_slugs = _extract._build_provider_slugs(_creds.load_credits())
     agent_creds = _creds.load_creds()
 
     items = list(search_all(config, since).values())
@@ -283,16 +283,22 @@ def gmail_sweep(config, tb_ops, today, since=None):
             if a is not primary:
                 continue
 
-            _extract.extract_and_push(
+            row = _extract.extract_and_push(
                 tb_ops, path,
                 it["provider"], it["category"],
                 it["id"], "email",
                 config, today,
-                billing_map=billing_map,
+                provider_slugs=provider_slugs,
                 creds=agent_creds,
             )
-            counts["pushed"] += 1
-            sys.stderr.write(f"  {it['month']} {it['provider']:14} {it['date'][:10]}\n")
+            if row.get("status") == "parsed":
+                counts["pushed"] += 1
+                sys.stderr.write(f"  {it['month']} {it['provider']:14} {it['date'][:10]}\n")
+            else:
+                counts["skipped"] += 1
+                sys.stderr.write(
+                    f"  skipped {row.get('status', '')}: {it['provider']:14} {it['date'][:10]}\n"
+                )
 
     return dict(counts)
 
@@ -332,7 +338,7 @@ def inbox_sweep(config, tb_ops, today):
         return {"pushed": 0, "dup_sha": 0}
 
     known_shas = _known_sha256s(tb_ops)
-    billing_map = _extract._build_billing_map(_creds.load_credits())
+    provider_slugs = _extract._build_provider_slugs(_creds.load_credits())
     agent_creds = _creds.load_creds()
 
     for fname in pdfs:
@@ -350,11 +356,20 @@ def inbox_sweep(config, tb_ops, today):
 
         result = _extract.extract_pdf(
             src, file_sha, slug, category, config, today,
-            billing_map=billing_map, creds=agent_creds,
+            provider_slugs=provider_slugs, creds=agent_creds,
         )
         row = _extract.build_row_from_result(
             src, file_sha, result, "inbox", today,
         )
+
+        if row.get("status") != "parsed":
+            skipped_dir = os.path.join(config["archive_dir"], "not-passed")
+            os.makedirs(skipped_dir, exist_ok=True)
+            skipped_path = os.path.join(skipped_dir, f"{file_sha[:8]}_{safe(fname)}")
+            os.rename(src, skipped_path)
+            counts["skipped"] += 1
+            sys.stderr.write(f"  inbox skipped {row.get('status', '')}: {fname}\n")
+            continue
 
         period_month = row["period_month"]
         dest_slug = row["provider"]
@@ -374,7 +389,11 @@ def inbox_sweep(config, tb_ops, today):
         counts["pushed"] += 1
         sys.stderr.write(f"  inbox: {fname} → {period_month}/{dest_name}\n")
 
-    return {"pushed": counts.get("pushed", 0), "dup_sha": counts.get("dup_sha", 0)}
+    return {
+        "pushed": counts.get("pushed", 0),
+        "dup_sha": counts.get("dup_sha", 0),
+        "skipped": counts.get("skipped", 0),
+    }
 
 
 def _classify_inbox_name(fname):

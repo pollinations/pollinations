@@ -119,7 +119,7 @@ def meter(creds, months, today):
     Args:
         creds:  dict with OPENAI_ADMIN_KEY (and optionally OPENAI_GRANT_START)
         months: list of "YYYY-MM" strings to include in output
-        today:  retrieved_at date string "YYYY-MM-DD"
+        today:  current ingest date
 
     Returns:
         list of _mrow dicts with funding=credit for nonzero months

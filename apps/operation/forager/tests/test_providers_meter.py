@@ -131,12 +131,12 @@ def test_deepinfra_meter_provider_slug(monkeypatch):
     assert rows[0]["provider"] == "deepinfra"
 
 
-def test_deepinfra_meter_retrieved_at(monkeypatch):
-    """retrieved_at must equal today."""
+def test_deepinfra_meter_has_no_freshness_timestamp(monkeypatch):
+    """Meter rows do not carry per-row freshness timestamps."""
     cap = Capture([{"months": [{"total_cost": 200, "period": "2026-04"}]}])
     monkeypatch.setattr(_di, "http_json", cap)
     rows = _di.meter(_DI_CREDS, ["2026-04"], TODAY)
-    assert rows[0]["retrieved_at"] == TODAY
+    assert set(rows[0]) == {"month", "provider", "cost_usd", "funding", "source"}
 
 
 def test_deepinfra_meter_to_capped_at_now(monkeypatch):

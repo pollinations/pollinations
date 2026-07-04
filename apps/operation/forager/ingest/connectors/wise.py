@@ -9,41 +9,11 @@ Row shape matches the `payments` Tinybird datasource exactly:
 """
 import urllib.parse
 from .common import http_json, strip_html
+from ..aliases import PROVIDER_ALIASES as ALIAS
 
-# provider key -> counterparty substrings (lowercased)
-# Billing-provider aliases. Operating expenses are categorized separately below
-# so they stay out of compute while still showing up in cash views.
-ALIAS = {
-    "google":       ["google cloud", "google cloud emea"],
-    "aws":          ["automat-it", "amazon web", "aws emea"],
-    "alibaba":      ["alibaba", "aliyun", "ant alibaba"],
-    "azure":        ["microsoft", "azure"],
-    "runpod":       ["runpod"],
-    "lambda":       ["lambda labs", "lambda cloud"],
-    "deepinfra":    ["deepinfra", "deep infra"],
-    "fireworks":    ["fireworks"],
-    "openrouter":   ["openrouter"],
-    "openai":       ["openai"],
-    "anthropic":    ["anthropic", "claude"],
-    "xai":          ["grok", "x.ai", "xai"],
-    "replicate":    ["replicate"],
-    "cloudflare":   ["cloudflare"],
-    "ovhcloud":     ["ovh"],
-    "elevenlabs":   ["elevenlabs", "eleven labs"],
-    "perplexity":   ["perplexity"],
-    "scaleway":     ["scaleway"],
-    "modal":        ["modal"],
-    "digitalocean": ["digitalocean", "digital ocean"],
-    "vast.ai":      ["vast.ai", "vast ai"],
-    "daytona":      ["daytona"],
-    "io.net":       ["io.net", "io net"],
-    "bytedance":    ["byteplus", "bytedance"],
-    "fal":          ["fal.ai", "fal ai"],
-    "pruna":        ["pruna"],
-    "stability":    ["stability"],
-    "assemblyai":   ["assemblyai", "assembly ai"],
-}
-
+# The central provider + alias list lives in ingest/aliases.py now (not Wise-
+# specific — it just happens to be matched against Wise counterparties here).
+# Operating-expense classification stays here since it also carries a category.
 OPS_ALIAS = [
     ("deel", "payroll", ["lets deel", "deel"]),
     ("enty", "admin", ["enty"]),

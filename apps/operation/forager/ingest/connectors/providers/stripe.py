@@ -38,7 +38,7 @@ def revenue_rows(creds, months, today, _max_pages=100):
     Args:
         creds:      dict with STRIPE_API_KEY (restricted rk_ read-only key)
         months:     list of "YYYY-MM" strings to emit rows for
-        today:      retrieved_at date string "YYYY-MM-DD"
+        today:      current ingest date
         _max_pages: hard cap on pagination (injectable for tests; default 100)
 
     Returns:

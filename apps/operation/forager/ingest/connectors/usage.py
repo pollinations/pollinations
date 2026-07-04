@@ -32,6 +32,10 @@ SELECT '{month}' AS month, model_provider_used AS provider, model_used AS model,
   round(sumIf(total_price, selected_meter_slug LIKE '%tier%'), 4) AS billable_quest_pollen
 FROM generation_event
 WHERE environment = 'production'
+  AND is_billed_usage = true
+  AND response_status >= 200 AND response_status < 300
+  AND model_used != 'undefined'
+  AND model_provider_used != 'undefined'
   AND start_time >= '{month}-01 00:00:00' AND start_time < '{next_month}-01 00:00:00'
 GROUP BY provider, model\
 """
@@ -44,7 +48,7 @@ def monthly_rows(tb_prod, months, today):
         tb_prod:  ingest.tb.TB instance pointed at pollinations_enter prod
                   (TINYBIRD_PROD_READ_TOKEN). Only .sql(query) is called.
         months:   list of "YYYY-MM" strings to query
-        today:    retrieved_at date string "YYYY-MM-DD"
+        today:    current ingest date
 
     Returns:
         list of usage_monthly row dicts, one per (month, provider, model) tuple
@@ -53,29 +57,43 @@ def monthly_rows(tb_prod, months, today):
     """
     from ..burn import CANON
 
-    rows = []
+    numeric_fields = (
+        "billable_requests_paid_pollen",
+        "billable_requests_quest_pollen",
+        "cost_paid_pollen",
+        "cost_quest_pollen",
+        "billable_paid_pollen",
+        "billable_quest_pollen",
+    )
+    by_key = {}
     for month in months:
         next_m = _next_month(month)
         query = _SQL.format(month=month, next_month=next_m)
         result = tb_prod.sql(query)
         for raw in result:
             # Guard against None/missing fields — keep verbatim, no fabricated placeholders
-            row = {
-                "month": month,
-                "provider": CANON.get(
-                    (raw.get("provider") or "").strip().lower(), raw.get("provider")
-                ),
-                "model": raw.get("model"),
-                "billable_requests_paid_pollen": raw.get(
-                    "billable_requests_paid_pollen"
-                ),
-                "billable_requests_quest_pollen": raw.get(
-                    "billable_requests_quest_pollen"
-                ),
-                "cost_paid_pollen": raw.get("cost_paid_pollen"),
-                "cost_quest_pollen": raw.get("cost_quest_pollen"),
-                "billable_paid_pollen": raw.get("billable_paid_pollen"),
-                "billable_quest_pollen": raw.get("billable_quest_pollen"),
-            }
-            rows.append(row)
-    return rows
+            provider = CANON.get(
+                (raw.get("provider") or "").strip().lower(), raw.get("provider")
+            )
+            key = (month, provider, raw.get("model"))
+            row = by_key.setdefault(
+                key,
+                {
+                    "month": month,
+                    "provider": provider,
+                    "model": raw.get("model"),
+                    **{field: 0 for field in numeric_fields},
+                },
+            )
+            for field in numeric_fields:
+                row[field] += raw.get(field) or 0
+
+    return [
+        {
+            "month": month,
+            "provider": provider,
+            "model": model,
+            **values,
+        }
+        for (month, provider, model), values in by_key.items()
+    ]

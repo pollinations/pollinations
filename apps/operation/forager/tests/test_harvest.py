@@ -194,12 +194,11 @@ def test_inbox_sweep_extracts_pdf_once_per_file(monkeypatch, tmp_path):
     extract_calls = []
 
     def fake_extract_pdf(path, file_hash, slug, category, config, today,
-                         billing_map=None, creds=None):
+                         provider_slugs=None, creds=None):
         extract_calls.append(path)
         return {
             "provider": "runpod",
             "category": "compute",
-            "kind": "prepaid_topup",
             "period_month": "2026-06",
             "amount": 100,
             "currency": "USD",
@@ -211,7 +210,7 @@ def test_inbox_sweep_extracts_pdf_once_per_file(monkeypatch, tmp_path):
 
     monkeypatch.setattr(extract_mod, "extract_pdf", fake_extract_pdf)
     monkeypatch.setattr(extract_mod, "sha256", lambda p: hashlib.sha256(open(p, "rb").read()).hexdigest())
-    monkeypatch.setattr(extract_mod, "_build_billing_map", lambda credits: {})
+    monkeypatch.setattr(extract_mod, "_build_provider_slugs", lambda credits: {})
     monkeypatch.setattr(creds_mod, "_sops_decrypt", lambda p: {"pools": []})
 
     appended = []

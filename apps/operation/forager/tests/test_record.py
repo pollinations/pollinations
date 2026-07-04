@@ -65,7 +65,6 @@ def test_mrow_full():
         "cost_usd": 8.77,
         "funding": "prepaid",
         "source": "api",
-        "retrieved_at": "2026-07-03",
     }
 
 

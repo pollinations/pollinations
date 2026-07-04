@@ -218,7 +218,7 @@ def _system_prompt():
         "Amount fields should be the payable total unless the field name clearly asks for a credit, tax, or subtotal. "
         "If a status field exists, use parsed for invoice evidence, not_invoice for non-invoice PDFs, "
         "and needs_review only when the document is invoice evidence but required values are unreadable. "
-        "For not_invoice rows use kind='', period_month='', amount=0, credit_usd=0, currency='USD' if no currency "
+        "For not_invoice rows use period_month='', amount=0, credit_usd=0, currency='USD' if no currency "
         "is visible, invoice_number as a short reason, and issued_at as a visible document date or today."
     )
 
@@ -247,7 +247,6 @@ def _json_type(tb_type):
 def _field_enum(name):
     enums = {
         "category": ["compute", "infra", "saas", "admin", "office", "payroll", "other"],
-        "kind": ["monthly_bill", "prepaid_topup", "subscription", ""],
         "status": ["parsed", "not_invoice", "needs_review"],
     }
     return enums.get(name)
@@ -263,12 +262,6 @@ def _field_guidance(name):
             "office is travel, food, phone, rent, utilities, hardware, and office supplies; payroll is people; "
             "other is only for unclear documents."
         ),
-        "kind": (
-            "billing type. Use monthly_bill for any regular bill, receipt, or statement for usage/spend, "
-            "including bills issued through an intermediary; prepaid_topup for credit purchases; subscription for recurring "
-            "seat, plan, or product subscriptions. Never use payg as an invoice kind; pay-as-you-go provider invoices "
-            "are monthly_bill. Use an empty string only when status is not_invoice or needs_review."
-        ),
         "period_month": "billing period or statement month in YYYY-MM; use issue month when no separate period exists.",
         "amount": "final payable or paid total in the invoice currency, after credits and taxes.",
         "currency": "ISO currency code shown by the invoice.",
@@ -278,7 +271,10 @@ def _field_guidance(name):
             "parsed when the row is usable invoice evidence; not_invoice when the PDF is not an invoice, "
             "receipt, statement, or payment document; needs_review only when invoice evidence is unreadable or contradictory."
         ),
-        "credit_usd": "applied or promotional credit in USD; use 0 when no credit is shown.",
+        "credit_usd": (
+            "credit, discount, or credits consumed amount in the invoice currency; "
+            "do not convert currencies; use 0 when no credit is shown."
+        ),
     }
     return guidance.get(
         name, "read this value from the invoice using the column name as the meaning."

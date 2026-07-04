@@ -88,6 +88,17 @@ def test_usage_environment_production_in_query():
         )
 
 
+def test_usage_query_only_imports_successful_billed_resolved_models():
+    """usage_monthly must not import non-billed undefined model groups."""
+    tb = TBStub()
+    _usage.monthly_rows(tb, ["2026-05"], TODAY)
+    q = tb.queries[0]
+    assert "is_billed_usage = true" in q
+    assert "response_status >= 200 AND response_status < 300" in q
+    assert "model_used != 'undefined'" in q
+    assert "model_provider_used != 'undefined'" in q
+
+
 def test_usage_rows_carry_month():
     """Each returned row must carry the 'month' field matching the queried month."""
     canned = [
@@ -109,7 +120,7 @@ def test_usage_rows_carry_month():
 
 def test_usage_provider_canonicalized_at_ingest():
     """provider is canonicalized via burn.CANON at ingest (bedrock → aws,
-    vastai → vast.ai); retrieved_at was dropped from the usage_monthly schema."""
+    vastai → vast.ai); freshness timestamps stay in ingest_runs."""
     canned = [
         {
             "provider": "bedrock",
@@ -135,7 +146,58 @@ def test_usage_provider_canonicalized_at_ingest():
     tb = TBStub(canned_rows=canned)
     rows = _usage.monthly_rows(tb, ["2026-06"], TODAY)
     assert {r["provider"] for r in rows} == {"aws", "vast.ai"}
-    assert all("retrieved_at" not in r for r in rows)
+    assert all(
+        set(r) == {
+            "month",
+            "provider",
+            "model",
+            "billable_requests_paid_pollen",
+            "billable_requests_quest_pollen",
+            "billable_paid_pollen",
+            "billable_quest_pollen",
+            "cost_paid_pollen",
+            "cost_quest_pollen",
+        }
+        for r in rows
+    )
+
+
+def test_usage_canonicalized_duplicates_are_summed():
+    """Raw providers can collapse to one canonical provider; keep one row."""
+    canned = [
+        {
+            "provider": "azure",
+            "model": "gpt-4o",
+            "billable_requests_paid_pollen": 10,
+            "billable_requests_quest_pollen": 2,
+            "billable_paid_pollen": 1.5,
+            "billable_quest_pollen": 0.2,
+            "cost_paid_pollen": 0.8,
+            "cost_quest_pollen": 0.1,
+        },
+        {
+            "provider": "azure-2",
+            "model": "gpt-4o",
+            "billable_requests_paid_pollen": 5,
+            "billable_requests_quest_pollen": 3,
+            "billable_paid_pollen": 0.7,
+            "billable_quest_pollen": 0.4,
+            "cost_paid_pollen": 0.3,
+            "cost_quest_pollen": 0.2,
+        },
+    ]
+    tb = TBStub(canned_rows=canned)
+    rows = _usage.monthly_rows(tb, ["2026-06"], TODAY)
+
+    assert len(rows) == 1
+    assert rows[0]["provider"] == "azure"
+    assert rows[0]["model"] == "gpt-4o"
+    assert rows[0]["billable_requests_paid_pollen"] == 15
+    assert rows[0]["billable_requests_quest_pollen"] == 5
+    assert rows[0]["billable_paid_pollen"] == pytest.approx(2.2)
+    assert rows[0]["billable_quest_pollen"] == pytest.approx(0.6)
+    assert rows[0]["cost_paid_pollen"] == pytest.approx(1.1)
+    assert rows[0]["cost_quest_pollen"] == pytest.approx(0.3)
 
 
 def test_usage_multiple_months_correct_month_tags():

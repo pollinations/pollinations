@@ -6,16 +6,7 @@ from datetime import datetime, timezone
 from . import ai_agent
 from .. import creds as _creds
 
-
 _DS = "invoices"
-
-_BILLING_KIND = {
-    "monthly": "monthly_bill",
-    "prepaid": "prepaid_topup",
-    "reseller": "monthly_bill",
-    "subscription": "subscription",
-    "sponsored": "monthly_bill",
-}
 
 
 def sha256(path):
@@ -23,27 +14,23 @@ def sha256(path):
         return hashlib.sha256(f.read()).hexdigest()
 
 
-def _build_billing_map(credits_data):
-    """Build {provider_slug: kind_string} from credits.json pools."""
-    bmap = {}
+def _build_provider_slugs(credits_data):
+    """Provider slugs from credits.json pools."""
+    slugs = set()
     for pool in credits_data.get("pools", []):
-        billing = pool.get("billing", "")
-        kind = _BILLING_KIND.get(billing, "monthly_bill")
-        for prov in pool.get("providers", []):
-            bmap[prov] = kind
-    return bmap
+        slugs.update(pool.get("providers", []))
+    return slugs
 
 
-def extract_pdf(path, file_hash, slug, category, config, today, billing_map=None, creds=None):
+def extract_pdf(path, file_hash, slug, category, config, today, provider_slugs=None, creds=None):
     """Run the once-per-PDF AI extractor and return its semantic invoice result."""
     archive_month = os.path.basename(os.path.dirname(path))
     if len(archive_month) != 7 or archive_month[4] != "-":
         archive_month = ""
-    known_provider_slugs = sorted(set((billing_map or {}).keys()) | ({slug} if slug else set()))
+    known_provider_slugs = sorted(set(provider_slugs or set()) | ({slug} if slug else set()))
     hints = {
         "provider_hint": slug or "other",
         "category_hint": category or "other",
-        "kind_hint": (billing_map or {}).get(slug or "", ""),
         "archive_month_hint": archive_month,
         "known_provider_slugs": known_provider_slugs,
         "filename": path.split("/")[-1],
@@ -53,16 +40,14 @@ def extract_pdf(path, file_hash, slug, category, config, today, billing_map=None
 
 
 def build_row(path, slug, category, msgid, source, config, today,
-              billing_map=None, ingested_at=None, result=None, file_hash=None,
+              provider_slugs=None, ingested_at=None, result=None, file_hash=None,
               creds=None):
     """Extract one PDF and return one invoices datasource row."""
     file_hash = file_hash or sha256(path)
-    if billing_map is None:
-        billing_map = _build_billing_map(_creds.load_credits())
 
     result = result or extract_pdf(
         path, file_hash, slug, category, config, today,
-        billing_map=billing_map, creds=creds,
+        provider_slugs=provider_slugs, creds=creds,
     )
     result = _with_canonical_provider(result, slug)
     return build_row_from_result(
@@ -92,13 +77,14 @@ def build_row_from_result(path, file_hash, result, source, today, ingested_at=No
 
 
 def extract_and_push(tb_ops, path, slug, category, msgid, source, config, today,
-                     billing_map=None, result=None, file_hash=None, creds=None):
-    """Append exactly one AI-extracted invoice row."""
+                     provider_slugs=None, result=None, file_hash=None, creds=None):
+    """Append exactly one accepted AI-extracted invoice row."""
     row = build_row(
         path, slug, category, msgid, source, config, today,
-        billing_map=billing_map, result=result, file_hash=file_hash, creds=creds,
+        provider_slugs=provider_slugs, result=result, file_hash=file_hash, creds=creds,
     )
-    tb_ops.append(_DS, [row])
+    if row.get("status") == "parsed":
+        tb_ops.append(_DS, [row])
     return row
 
 

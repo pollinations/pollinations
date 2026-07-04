@@ -72,7 +72,7 @@ def meter(creds, months, today, run_cmd=subprocess.run):
     Args:
         creds:   dict with FIREWORKS_API_KEY
         months:  list of "YYYY-MM" strings to include in output
-        today:   retrieved_at date string "YYYY-MM-DD"
+        today:   current ingest date
         run_cmd: injectable subprocess.run replacement (for testing)
 
     Returns:

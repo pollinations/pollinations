@@ -55,7 +55,7 @@ def meter(creds, months, today, fx=1.14, run_cmd=subprocess.run):
     Args:
         creds:   dict with GCP_BILLING_SA_JSON (service-account JSON as a string)
         months:  list of "YYYY-MM" strings to include in output
-        today:   retrieved_at date string "YYYY-MM-DD"
+        today:   current ingest date
         fx:      EUR→USD conversion rate (default 1.14)
         run_cmd: injectable subprocess.run replacement (for testing)
 

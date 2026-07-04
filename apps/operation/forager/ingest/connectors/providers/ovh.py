@@ -90,7 +90,7 @@ def meter(creds, months, today, fx=1.14):
     Args:
         creds:  dict with OVH_APPLICATION_KEY/SECRET and OVH_CONSUMER_KEY
         months: list of "YYYY-MM" strings (filter for output; all movements fetched)
-        today:  retrieved_at date string "YYYY-MM-DD"
+        today:  current ingest date
         fx:     EUR→USD conversion rate (default 1.14)
 
     Returns:

@@ -126,7 +126,7 @@ each run  (manual — cron deferred)
   2 READ     pdftoppm page images → Pollinations vision agent → {provider, period, amount, currency, number}
   3 PUSH     invoices rows (append) · payments rows (Wise, replace by month)
   4 BALANCE  11 REST/CLI balance connectors → balances (append)
-  5 METER    7 meter connectors → meter_monthly (append)
+  5 METER    7 meter connectors → meter_monthly (dedupe + full replace)
   6 BURN     burn engine (burn.py) → provider_month (full replace) · grants (full replace)
   7 FLAG     credits.json active windows × payments × invoices
              → reconciliation verdicts (full replace) → gaps_ep pipe
@@ -141,7 +141,7 @@ frontend     treasury.myceli.ai/missing — provider × month grid; red cell →
 | `invoices` | append (sha256-dedup) | invoice catcher |
 | `payments` | replace by month | Wise connector |
 | `balances` | append | balance connectors (B3/B4) |
-| `meter_monthly` | append | meter connectors (B5) |
+| `meter_monthly` | full replace — one row per (provider, month, funding); api/cli/bq beat manual, latest wins | meter connectors (B5) |
 | `grants` | full replace | burn engine |
 | `provider_month` | full replace | burn engine |
 | `reconciliation` | full replace | reconcile engine |
@@ -195,7 +195,6 @@ python3 -m ingest.invoices.label <sha256> \
     --month YYYY-MM \
     --amount <N> \
     --currency USD|EUR \
-    --kind monthly_bill|prepaid_topup|subscription \
     [--number INV-123] [--date YYYY-MM-DD]
 ```
 
@@ -258,7 +257,7 @@ python3 -m ingest.record balance <provider> --left <usd> [--granted <usd>] [--no
 
 Providers requiring monthly manual entry: `io.net`, `perplexity`, `nebius`, `lambda`, `bytedance`, `modal`, `elevenlabs`, `daytona` (fallback when wallet OIDC-gated).
 
-Provider slug must be in `registry.CANONICAL`; month must match `YYYY-MM`. Each command appends one row with `source="manual"` to `balances` or `meter_monthly`.
+Provider slug must be in `registry.CANONICAL`; month must match `YYYY-MM`. Each command appends one row with `source="manual"` to `balances` or `meter_monthly`. The next run folds meter entries into the deduped table (one row per provider-month-funding); a manual value holds only until a programmatic connector covers that same month.
 
 ---
 

@@ -501,7 +501,6 @@ export function MeterTab({
     const sortColumns = useMemo<SortColumn<MeterUsageRow>[]>(
         () => [
             { key: "provider", value: (row) => row.provider },
-            { key: "category", value: () => "usage" },
             { key: "month", value: (row) => row.month },
             {
                 key: "source",
@@ -539,9 +538,6 @@ export function MeterTab({
                         <TableRow>
                             <TableHeaderCell {...headerProps("provider")}>
                                 provider
-                            </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("category")}>
-                                category
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("month")}>
                                 time period
@@ -586,7 +582,6 @@ export function MeterTab({
                             return (
                                 <TableRow key={key}>
                                     <TableCell>{row.provider}</TableCell>
-                                    <TableCell>usage</TableCell>
                                     <TableCell>{row.month}</TableCell>
                                     <TableCell>
                                         <SourceCell sources={sources} />

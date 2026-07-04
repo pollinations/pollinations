@@ -13,16 +13,27 @@ Committed (source of truth — edit here, then deploy):
   (see "Probe spend" below).
 - `watchdog.sh` — cron job (every 5 min) that revives the `screen` session if
   it died. **This is the actual deploy path currently running on the box.**
-- `nudge.sh` — cron job (every 5 min) that handles a different failure mode:
-  the session is alive but stuck idle with unsubmitted input in the prompt
-  box. This recurs after the agent's own periodic `/compact` (CYCLE.md duty
-  0) — the follow-up "continue the cycle" text gets typed but never receives
-  its Enter keypress, so the agent silently stalls for hours until someone
-  notices. Detects via `screen -X hardcopy`: no busy indicator (spinner/
-  timer/background-shell text) AND the prompt-box line has real text after
-  the glyph — an actually-idle prompt with nothing queued is empty. If
-  detected, sends a bare carriage return to submit the pending text. Logs to
-  `nudge.log`.
+- `nudge.sh` — cron job (every 15 min, same cadence as the monitor's own
+  cycle) that handles a different failure mode than watchdog.sh: the
+  session is alive but stuck idle with unsubmitted input in the prompt box.
+  This recurs after the agent's own periodic `/compact` (CYCLE.md duty 0) —
+  the follow-up "continue the cycle" text gets typed but never receives its
+  Enter keypress, so the agent silently stalls for hours until someone
+  notices. Fix is deliberately dumb: unconditionally `screen -X stuff $'\r'`
+  every run, no detection logic at all. A bare carriage return is a no-op on
+  a genuinely empty prompt and submits whatever's typed otherwise, so there's
+  nothing to get wrong.
+  - **Why not smarter**: an earlier version tried to detect the stuck state
+    by parsing `screen -X hardcopy` (busy indicators, matching the
+    prompt-box glyph). That had a real bug — it matched a stale historical
+    `/loop` command sitting in scrollback instead of the live prompt line —
+    which caused it to "handle" a session that was actually just idle with
+    **no `/loop` armed at all** (a `watchdog.sh` restart at
+    2026-07-03T01:15 UTC requires manual re-arming, per its own log note,
+    and nobody did). The monitor was silently offline for 36+ hours; it's
+    why `mikl-shortcuts/command-a-plus` (Cohere trial key exhausted, steady
+    429s) went unflagged. The blind-`\r` version can't have that class of
+    bug because there's no parsing left to be wrong.
 - `loop.sh` + `community-monitor.service` — an alternative systemd-supervised
   design (fresh `claude -p` process per cycle instead of one long-lived
   `--remote-control` session). Not currently active — kept as the intended

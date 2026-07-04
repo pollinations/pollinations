@@ -24,6 +24,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000003,
     },
   },
+  "claude-fable-5": {
+    "cost": {
+      "completionTextTokens": 0.00005,
+      "promptCacheWriteTokens": 0.0000125,
+      "promptCachedTokens": 0.000001,
+      "promptTextTokens": 0.00001,
+    },
+    "price": {
+      "completionTextTokens": 0.00005,
+      "promptCacheWriteTokens": 0.0000125,
+      "promptCachedTokens": 0.000001,
+      "promptTextTokens": 0.00001,
+    },
+  },
   "claude-fast": {
     "cost": {
       "completionTextTokens": 0.000005,
@@ -247,13 +261,19 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "gemini-large": {
     "cost": {
       "completionTextTokens": 0.000012,
+      "promptAudioTokens": 0.000002,
       "promptCachedTokens": 0.0000002,
+      "promptImageTokens": 0.000002,
       "promptTextTokens": 0.000002,
+      "promptVideoTokens": 0.000002,
     },
     "price": {
       "completionTextTokens": 0.000012,
+      "promptAudioTokens": 0.000002,
       "promptCachedTokens": 0.0000002,
+      "promptImageTokens": 0.000002,
       "promptTextTokens": 0.000002,
+      "promptVideoTokens": 0.000002,
     },
   },
   "gemini-search": {
@@ -315,9 +335,9 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000014,
     },
     "price": {
-      "completionTextTokens": 0.0000022,
-      "promptCachedTokens": 0.00000013,
-      "promptTextTokens": 0.0000007,
+      "completionTextTokens": 0.0000044,
+      "promptCachedTokens": 0.00000026,
+      "promptTextTokens": 0.0000014,
     },
   },
   "gpt-5.4": {
@@ -470,6 +490,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "completionVideoSeconds": 0.05,
+    },
+  },
+  "hyper3d-rodin": {
+    "cost": {
+      "completionImageTokens": 0.4,
+    },
+    "price": {
+      "completionImageTokens": 0.4,
     },
   },
   "ideogram-v4-balanced": {
@@ -1104,6 +1132,30 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.00000115,
       "promptCachedTokens": 0.00000004,
       "promptTextTokens": 0.0000002,
+    },
+  },
+  "trellis-2-high": {
+    "cost": {
+      "completionImageTokens": 0.35,
+    },
+    "price": {
+      "completionImageTokens": 0.35,
+    },
+  },
+  "trellis-2-low": {
+    "cost": {
+      "completionImageTokens": 0.24,
+    },
+    "price": {
+      "completionImageTokens": 0.24,
+    },
+  },
+  "trellis-2-medium": {
+    "cost": {
+      "completionImageTokens": 0.29,
+    },
+    "price": {
+      "completionImageTokens": 0.29,
     },
   },
   "universal-2": {

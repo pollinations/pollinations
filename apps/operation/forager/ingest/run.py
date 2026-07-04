@@ -1,7 +1,8 @@
 """Daily ingest → operations workspace.
 
     python3 -m ingest.run              # daily: harvest new invoices + repull last N months
-    python3 -m ingest.run --backfill   # fresh rebuild since config.months_start
+    python3 -m ingest.run --backfill-usage  # rebuild usage_monthly only; no invoice AI
+    python3 -m ingest.run --backfill   # dangerous: rebuild invoices from archive
     python3 -m ingest.run --import-archive  # one-off: append pre-organized YYYY-MM/ month dirs
 
 TOKEN MODEL: three TB instances:
@@ -16,7 +17,7 @@ import json
 import os
 import sys
 
-from . import burn, creds, gaps, tb
+from . import burn, creds, tb
 from .connectors import registry, wise
 from .connectors import usage as _usage
 from .connectors.common import months_ytd
@@ -26,9 +27,10 @@ from .invoices import extract as _extract
 
 # Derived fields (amount_usd, month) were dropped from the tables — engines
 # still consume them, so the read queries reconstruct them with config fx.
-_INV_SQL = "SELECT *, round(if(currency='EUR', amount * {fx}, amount), 6) AS amount_usd FROM invoices"
-_PAY_SQL = ("SELECT *, substring(toString(paid_at), 1, 7) AS month, "
-            "round(amount_eur * {fx}, 2) AS amount_usd FROM payments")
+_INV_SQL = (
+    "SELECT *, round(if(currency='EUR', amount * {fx}, amount), 6) AS amount_usd "
+    "FROM invoices WHERE status = 'parsed'"
+)
 
 
 def load_overrides(ops_ingest):
@@ -93,6 +95,38 @@ def dedupe_invoices(rows):
     return list(best.values())
 
 
+_SRC_RANK = {"api": 0, "cli": 1, "bq": 2, "manual": 3}
+
+
+def _next_month(month):
+    """Return the YYYY-MM string for the month following `month`."""
+    y, m = int(month[:4]), int(month[5:7])
+    if m == 12:
+        return f"{y + 1:04d}-01"
+    return f"{y:04d}-{m + 1:02d}"
+
+
+def dedupe_meter(rows):
+    """One row per (provider, month, funding).
+
+    Programmatic sources (api/cli/bq) beat manual regardless of recency, then
+    best source rank. Ties keep the last-seen row, so fresh connector rows win
+    over rows read back from the table.
+    """
+    def _rank(row):
+        src = row.get("source", "manual")
+        return (1 if src == "manual" else 0, _SRC_RANK.get(src, 99))
+
+    best = {}
+    for row in rows:
+        key = (row.get("provider", ""), row.get("month", ""),
+               row.get("funding", ""))
+        prev = best.get(key)
+        if prev is None or _rank(row) <= _rank(prev):
+            best[key] = row
+    return list(best.values())
+
+
 def _is_month_dir(name):
     if len(name) != 7 or name[4] != "-":
         return False
@@ -112,14 +146,14 @@ def import_archive(cfg, ops_ingest, today):
     archive_dir = cfg["archive_dir"]
     known_shas = {r["sha256"] for r in ops_ingest.sql("SELECT sha256 FROM invoices")}
     seen_this_run: set = set()
-    billing_map = _extract._build_billing_map(creds.load_credits())
+    provider_slugs = _extract._build_provider_slugs(creds.load_credits())
 
-    pushed = dup_sha = unknown_prefix = 0
+    pushed = dup_sha = skipped = unknown_prefix = 0
 
     try:
         entries = sorted(os.listdir(archive_dir))
     except FileNotFoundError:
-        return {"pushed": 0, "dup_sha": 0, "unknown_prefix": 0}
+        return {"pushed": 0, "dup_sha": 0, "skipped": 0, "unknown_prefix": 0}
 
     for entry in entries:
         if entry == "inbox" or not _is_month_dir(entry):
@@ -146,14 +180,22 @@ def import_archive(cfg, ops_ingest, today):
                 unknown_prefix += 1
             msgid = parts[2] if len(parts) >= 3 else ""
 
-            _extract.extract_and_push(
+            row = _extract.extract_and_push(
                 ops_ingest, path, slug, category, msgid, "email",
-                cfg, today, billing_map=billing_map,
+                cfg, today, provider_slugs=provider_slugs,
             )
-            known_shas.add(file_sha)
-            pushed += 1
+            if row.get("status") == "parsed":
+                known_shas.add(file_sha)
+                pushed += 1
+            else:
+                skipped += 1
 
-    return {"pushed": pushed, "dup_sha": dup_sha, "unknown_prefix": unknown_prefix}
+    return {
+        "pushed": pushed,
+        "dup_sha": dup_sha,
+        "skipped": skipped,
+        "unknown_prefix": unknown_prefix,
+    }
 
 
 def _archive_pdfs(cfg):
@@ -183,7 +225,7 @@ def _archive_pdfs(cfg):
 
 def rebuild_archive_invoices(cfg, today):
     """Build one fresh agent row per archived PDF, deduped by sha256."""
-    billing_map = _extract._build_billing_map(creds.load_credits())
+    provider_slugs = _extract._build_provider_slugs(creds.load_credits())
     agent_creds = creds.load_creds()
     items = list(_archive_pdfs(cfg))
     seen = set()
@@ -221,7 +263,7 @@ def rebuild_archive_invoices(cfg, today):
         futures = {
             executor.submit(
                 _build_archive_invoice_row,
-                task, cfg, today, billing_map, agent_creds,
+                task, cfg, today, provider_slugs, agent_creds,
             ): task
             for task in tasks
         }
@@ -244,16 +286,17 @@ def rebuild_archive_invoices(cfg, today):
     rows = [
         rows_by_idx[idx]
         for idx, _path, _slug, _category, _msgid, _file_sha in tasks
+        if rows_by_idx[idx].get("status") == "parsed"
     ]
     return rows, stats
 
 
-def _build_archive_invoice_row(task, cfg, today, billing_map, agent_creds):
+def _build_archive_invoice_row(task, cfg, today, provider_slugs, agent_creds):
     idx, path, slug, category, msgid, file_sha = task
     try:
         return _extract.build_row(
             path, slug, category, msgid, "agent",
-            cfg, today, billing_map=billing_map,
+            cfg, today, provider_slugs=provider_slugs,
             file_hash=file_sha, creds=agent_creds,
         )
     except RuntimeError as e:
@@ -262,7 +305,6 @@ def _build_archive_invoice_row(task, cfg, today, billing_map, agent_creds):
         result = {
             "provider": slug or "other",
             "category": category or "other",
-            "kind": "",
             "period_month": "",
             "amount": 0,
             "currency": "USD",
@@ -318,21 +360,26 @@ def _sanitize_err(e, creds_dict):
     return msg[:200]
 
 
-def _run_burn_stage(ops_ingest, ops_replace, tb_prod, creds, cfg, pools,
+def _run_data_stage(ops_ingest, ops_replace, tb_prod, creds, cfg, pools,
                     today, statuses, notes, overrides=None):
-    """Run the full burn stage (steps 1–6 of the burn phase).
+    """Refresh the raw planes and rebuild the pool-level grants view.
+
+    The P&L burn engine and reconciliation were removed 2026-07-04; crossing the
+    raw planes is now a simple minus in the treasury frontend / spend-audit PoC.
+    This stage only pulls the raw data and folds balances into `grants`.
 
     Mutates `statuses` dict and `notes` list in place (same objects written to
-    ingest_runs by the caller).  Prints runway alarms and needs_data notices.
+    ingest_runs by the caller).
 
     Steps:
       1. Balance connectors → append to balances
-      2. Meter connectors  → append to meter_monthly
+      2. Meter connectors  → dedupe + full replace of meter_monthly
+         (one row per provider-month-funding; skip on 0 rows or read-back error)
       3. usage.monthly_rows → replace usage_monthly (skip on 0 rows)
       4. stripe.revenue_rows → replace revenue_monthly (skip on 0 rows)
-      5. Read back from TB, run burn engine → replace provider_month + grants
-         (guarded: any exception records statuses["burn"]="err:..." and returns)
-      6. Print runway alarms and needs_data notices (guarded: parse errors are silent)
+      5. Read balances, fold into grants → replace grants
+         (guarded: any exception records statuses["grants"]="err:..." and returns)
+      6. Print runway alarms (guarded: parse errors are silent)
     """
     now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     fx = cfg.get("fx_eur_usd", 1.14)
@@ -355,8 +402,15 @@ def _run_burn_stage(ops_ingest, ops_replace, tb_prod, creds, cfg, pools,
         except Exception as e:
             statuses[f"balance:{slug}"] = "err:" + _sanitize_err(e, creds)
 
-    # ---- Step 2: meter connectors ----
+    # ---- Step 2: meter connectors (collect → dedupe → full replace) ----
+    # Connectors re-report the whole YTD window every run, so appending stacks
+    # a duplicate snapshot per provider-month each run. Instead: merge fresh
+    # rows with the current table (keeps manual entries and last-good values
+    # for failed connectors), collapse to one row per (provider, month,
+    # funding), and replace. Replace is skipped if the read-back fails — a TB
+    # hiccup never wipes manual rows.
     months_ytd_list = months_ytd(cfg["months_start"], today)
+    meter_new = []
     for slug, fn in registry.METER:
         try:
             sig = inspect.signature(fn)
@@ -364,11 +418,21 @@ def _run_burn_stage(ops_ingest, ops_replace, tb_prod, creds, cfg, pools,
                 rows = fn(creds, months_ytd_list, today, fx=fx)
             else:
                 rows = fn(creds, months_ytd_list, today)
-            if rows:
-                ops_ingest.append("meter_monthly", rows)
+            meter_new.extend(rows or [])
             statuses[f"meter:{slug}"] = "ok"
         except Exception as e:
             statuses[f"meter:{slug}"] = "err:" + _sanitize_err(e, creds)
+    try:
+        meter_table = ops_ingest.sql("SELECT * FROM meter_monthly")
+        meter_merged = dedupe_meter(meter_table + meter_new)
+        if meter_merged:
+            ops_replace.replace("meter_monthly", meter_merged)
+            statuses["meter_rows"] = len(meter_merged)
+        else:
+            notes.append("meter: 0 rows — meter_monthly unchanged")
+    except Exception as e:
+        statuses["meter"] = "err:" + _sanitize_err(e, creds)
+        notes.append(f"meter replace failed: {statuses['meter']}")
 
     # ---- Step 3: usage_monthly (full replace) ----
     try:
@@ -396,43 +460,28 @@ def _run_burn_stage(ops_ingest, ops_replace, tb_prod, creds, cfg, pools,
         statuses["revenue"] = "err:" + _sanitize_err(e, creds)
         notes.append(f"revenue pull failed: {statuses['revenue']}")
 
-    # ---- Step 5: burn engine → provider_month + grants ----
-    # Wrapped in try/except so any TB network error, ValueError on 0-row replace,
-    # or bug in burn.run never escapes and kills the ingest_runs log append.
-    pm_rows = []
+    # ---- Step 5: fold balances → grants ----
+    # Wrapped in try/except so any TB network error or ValueError on 0-row
+    # replace never escapes and kills the ingest_runs log append.
     balances = []
     try:
-        invoices = dedupe_invoices(ops_ingest.sql(_INV_SQL.format(fx=fx)))
-        payments = ops_ingest.sql(_PAY_SQL.format(fx=fx))
-        meter_rows = ops_ingest.sql("SELECT * FROM meter_monthly")
-        usage_read = ops_ingest.sql("SELECT * FROM usage_monthly")
         balances = ops_ingest.sql("SELECT * FROM balances")
 
         cat_map = {slug: cat for slug, cat, _ in harvest.PROVIDERS}
-        pm_rows = burn.run(invoices, payments, meter_rows, usage_read, balances,
-                           pools, months_ytd_list, cfg, today, cat_map=cat_map)
-        # Skip replace on 0 rows — keep last good; replace only when burn produced output
-        if pm_rows:
-            ops_replace.replace("provider_month", pm_rows)
-            statuses["burn_rows"] = len(pm_rows)
-        else:
-            notes.append("burn: 0 rows from burn.run — provider_month unchanged (last good kept)")
-            statuses["burn_rows"] = 0
-
         grant_rows = burn.grants(pools, balances, today, overrides, cat_map=cat_map)
         if grant_rows:
             ops_replace.replace("grants", grant_rows)
             statuses["grant_rows"] = len(grant_rows)
         else:
-            notes.append("burn: 0 grant rows — grants table unchanged (last good kept)")
+            notes.append("grants: 0 rows — grants table unchanged (last good kept)")
             statuses["grant_rows"] = 0
 
     except Exception as e:
-        statuses["burn"] = "err:" + _sanitize_err(e, creds)
-        notes.append(f"burn stage failed: {statuses['burn']}")
-        return pm_rows
+        statuses["grants"] = "err:" + _sanitize_err(e, creds)
+        notes.append(f"grants stage failed: {statuses['grants']}")
+        return
 
-    # ---- Step 6: print runway alarms and needs_data notices ----
+    # ---- Step 6: print runway alarms ----
     try:
         # Runway alarm: find freshest runpod balance row
         runpod_rows = [r for r in balances if (r.get("provider") or "").lower() == "runpod"]
@@ -450,18 +499,22 @@ def _run_burn_stage(ops_ingest, ops_replace, tb_prod, creds, cfg, pools,
                             print(f"⚠ runpod ${prepaid:.2f} ≈ {days:.1f}d at ${spend_hr}/hr")
                 except (ValueError, ZeroDivisionError):
                     pass
-
-        # needs_data notices for current month
-        current_month = today[:7]
-        needs = sorted(row["provider"] for row in pm_rows
-                       if row.get("status") == "needs_data" and row.get("month") == current_month)
-        if needs:
-            print(f"  needs_data ({current_month}): {', '.join(needs)} — "
-                  f"python3 -m ingest.record meter <provider> {current_month} <usd> --funding credit")
     except Exception:
         pass
 
-    return pm_rows
+    return
+
+
+def backfill_usage_monthly(ops_replace, tb_prod, months, today):
+    """Rebuild usage_monthly from generation_event without touching invoices."""
+    notes = []
+    usage_rows = _usage.monthly_rows(tb_prod, months, today)
+    statuses = {"usage": len(usage_rows), "months": len(months)}
+    if usage_rows:
+        ops_replace.replace("usage_monthly", usage_rows)
+    else:
+        notes.append("usage: 0 rows — usage_monthly table unchanged")
+    return statuses, notes
 
 
 def _note_value(note, key):
@@ -474,6 +527,7 @@ def _note_value(note, key):
 
 def main():
     backfill = "--backfill" in sys.argv
+    usage_backfill = "--backfill-usage" in sys.argv
     import_mode = "--import-archive" in sys.argv
     reparse_mode = "--reparse-invoices" in sys.argv
     dry_run = "--dry-run" in sys.argv
@@ -500,6 +554,21 @@ def main():
         print(f"import-archive: {st}")
         return
 
+    if usage_backfill:
+        all_months = months_ytd(cfg["months_start"], today)
+        ops_replace = tb.TB(cfg["tb_ops_api"], c["TINYBIRD_OPS_REPLACE_TOKEN"])
+        tb_prod = tb.TB(cfg["tb_prod_api"], c["TINYBIRD_PROD_READ_TOKEN"])
+        st, notes = backfill_usage_monthly(ops_replace, tb_prod, all_months, today)
+        now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+        ops_ingest.append("ingest_runs", [{
+            "run_at": now,
+            "ok": 0 if notes else 1,
+            "statuses": json.dumps(st),
+            "notes": "; ".join(["backfill-usage"] + notes),
+        }])
+        print(f"backfill-usage: {st}" + (f"  NOTES: {notes}" if notes else ""))
+        return
+
     # Replace token needed after import-mode returns — see MODULE DOCSTRING
     ops_replace = tb.TB(cfg["tb_ops_api"], c["TINYBIRD_OPS_REPLACE_TOKEN"])
 
@@ -524,7 +593,7 @@ def main():
         for ym in win:
             rows = wise.outflow_rows(c, [ym])
             if rows:
-                nxt = gaps._next_month(ym)
+                nxt = _next_month(ym)
                 ops_replace.replace(
                     "payments", rows,
                     condition=f"paid_at >= '{ym}-01' AND paid_at < '{nxt}-01'")
@@ -532,8 +601,8 @@ def main():
                 notes.append(f"wise:{ym}: 0 rows — payments table unchanged")
             st[f"wise:{ym}"] = len(rows)
     except Exception as e:
-        # Tradeoff: reconciliation still runs against whatever payments are already in the table;
-        # verdicts may be stale for failed months but will self-heal on the next successful run.
+        # Tradeoff: keep whatever payments are already in the table; failed
+        # months self-heal on the next successful run.
         notes.append(f"wise FAILED, months kept: {e}")
 
     # 3. Shared operator truth
@@ -544,12 +613,6 @@ def main():
     except Exception as e:
         overrides = {}
         notes.append(f"overrides read failed (treated as empty): {e}")
-
-    gaps_cfg = dict(cfg)
-    gaps_cfg["recon_accepted"] = list(cfg.get("recon_accepted", [])) + [
-        key for (scope, key, field) in overrides
-        if scope == "reconciliation" and field == "accepted"
-    ]
 
     # 3.5 Operator counterparty rules → re-stamp the whole payments table
     # (history included, so one rule drains the (unmatched) bucket everywhere).
@@ -564,9 +627,9 @@ def main():
     except Exception as e:
         notes.append(f"payment rules failed: {_sanitize_err(e, c)}")
 
-    # 4. Burn stage first — provider_month folds every credit-burn evidence source.
+    # 4. Refresh raw planes + rebuild grants
     tb_prod = tb.TB(cfg["tb_prod_api"], c["TINYBIRD_PROD_READ_TOKEN"])
-    pm_rows = _run_burn_stage(
+    _run_data_stage(
         ops_ingest=ops_ingest,
         ops_replace=ops_replace,
         tb_prod=tb_prod,
@@ -579,20 +642,7 @@ def main():
         overrides=overrides,
     )
 
-    # 5. Gaps / reconciliation — read facts back, run pure engine, write result
-    fx = cfg["fx_eur_usd"]
-    invoices = dedupe_invoices(ops_ingest.sql(_INV_SQL.format(fx=fx)))
-    payments = ops_ingest.sql(_PAY_SQL.format(fx=fx))
-
-    rrows = gaps.run(invoices, payments, pools, all_months, gaps_cfg, today,
-                     provider_month=pm_rows)
-    if rrows:
-        ops_replace.replace("reconciliation", rrows)
-    else:
-        notes.append("gaps: 0 verdict rows — reconciliation table unchanged")
-    st["recon"] = len(rrows)
-
-    # 6. Ingest run log
+    # 5. Ingest run log
     now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     ops_ingest.append("ingest_runs", [{
         "run_at": now,
@@ -602,15 +652,6 @@ def main():
     }])
 
     print(f"ingested: {st}" + (f"  NOTES: {notes}" if notes else ""))
-
-    # 7. Chase list — print providers that need attention
-    chase = [r for r in rrows
-             if r["status"] in ("missing_invoice", "amount_mismatch", "needs_review", "needs_label", "needs_data")]
-    if chase:
-        print("CHASE LIST:")
-        for r in chase:
-            print(f"  {r['month']} {r['provider']:14} {r['status']:16} "
-                  f"inv=${r['invoice_usd']:.0f} pay=${r['payment_usd']:.0f}")
 
 
 if __name__ == "__main__":

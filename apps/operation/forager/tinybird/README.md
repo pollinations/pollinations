@@ -18,7 +18,7 @@ not mix them.
 | Plane | Datasource | Pipe | Meaning |
 |---|---|---|---|
 | `usage` | `usage_monthly` | `usage_ep` | What **our platform** metered while serving requests: Tinybird generation events, Pollen-denominated. This is our own estimate, not money moved. |
-| `meter` | `meter_monthly` | `meter_monthly_ep` | What the **provider** reports we consumed: dashboard/API/CLI/BigQuery. `source='manual'` means a human copied the provider dashboard. This is their measurement, still not money moved. |
+| `meter` | `meter_monthly` | `meter_monthly_ep` | What the **provider** reports we consumed: dashboard/API/CLI/BigQuery. `source='manual'` means a human copied the provider dashboard. This is their measurement, still not money moved. One row per (provider, month, funding) — forager dedupes and full-replaces the table each run; api/cli/bq beat manual, latest wins. |
 | `invoice` | `invoices` | `invoices_ep` | What the provider formally billed. `amount` is the money claim; `credit_usd` is credits applied or consumed. This is document truth. |
 | `payment` | `payments` | `payments_monthly_ep` | What actually left Wise. This is cash-out truth. |
 
@@ -31,13 +31,17 @@ layers.
 
 | Class | Datasource | Pipe | Meaning |
 |---|---|---|---|
-| Stock | `balances` | `balances_ep` | Append-only provider balance snapshots. The pipe shows the latest snapshot per provider. This is not monthly burn unless a later calculation chooses to derive a delta. |
+| Stock | `balances` | none | Append-only provider balance snapshots — input plane + history only, like `overrides`. `run.py` folds the latest snapshot per provider into `grants`; the treasury app reads the result via `grants_ep`. |
 | Derived stock view | `grants` | `grants_ep` | Pool-level view rewritten each run from `credits.json`, `overrides`, and live balances. Keep, but treat as derived. |
 | Money-in | `revenue_monthly` | `revenue_ep` | Stripe revenue per month. `net_eur` is computed in the pipe. |
-| Derived verdicts | `reconciliation` | `coverage_ep`, `gaps_ep` | Invoice/payment coverage and chase status. |
-| Derived P&L | `provider_month` | `provider_month_ep` | Mixed burn-engine output. The spend-audit PoC consumes it (by design — PoC stays a pure pipe consumer). Deletable only if the PoC is ever re-derived from the raw pipes. |
-| Corrections | `overrides` | none | Append-only operator truth. Latest row per `(scope,key,field)` wins. Scopes include `config`, `grants`, and `reconciliation`. |
+| Corrections | `overrides` | none | Append-only operator truth. Latest row per `(scope,key,field)` wins. Scopes include `config` and `grants`. |
 | Ops | `ingest_runs` | `runs_ep` | Harvest job execution log. |
+
+The P&L burn engine (`provider_month` / `provider_month_ep`) and reconciliation
+(`reconciliation` / `coverage_ep` / `gaps_ep`) were removed 2026-07-04. Crossing
+the raw planes is now a simple minus in the consuming frontend (treasury app) and
+the spend-audit PoC — see Naming Law 3. `usage_monthly` feeds only the Pollen
+Usage tab and never the cost world.
 
 ## Naming Laws
 
@@ -58,17 +62,17 @@ layers.
 
 | Pipe | Source | Status |
 |---|---|---|
-| `invoices_ep` | Deduped `invoices` with computed `amount_usd` | Keep |
+| `invoices_ep` | Parsed invoice facts from `invoices` | Keep |
 | `usage_ep` | Raw `usage_monthly` rows | Keep |
 | `meter_monthly_ep` | Raw `meter_monthly` rows | Keep (live since deployment #9) |
 | `payments_monthly_ep` | Monthly aggregate over `payments` (ex `cash_monthly_ep`) | Keep (live since deployment #9) |
-| `payments_ep` | Raw `payments` transactions (`wise_ref` grain) with computed `amount_usd` — home of counterparty rule edits | Keep (live since deployment #11) |
-| `balances_ep` | Latest `balances` snapshot per provider | Keep |
+| `payments_ep` | Raw `payments` transactions — home of counterparty rule edits | Keep (live since deployment #11) |
+| `balances_ep` | Latest `balances` snapshot per provider | Removed (pipe file deleted; drops from the workspace at the next deploy) — `grants_ep` carries the resolved values; note the legacy spend-audit PoC (`_local/2026-07-01-spend-audit`) still reads it and breaks then |
 | `grants_ep` | All `grants` rows ordered by pool | Keep |
 | `revenue_ep` | `revenue_monthly` with computed `net_eur` | Keep |
-| `coverage_ep` | All `reconciliation` rows | Keep |
-| `gaps_ep` | Reconciliation chase list | Keep |
-| `provider_month_ep` | Mixed `provider_month` rows | Keep while the spend-audit PoC consumes it; deletable only if the PoC is re-derived from raw pipes |
+| `coverage_ep` | All `reconciliation` rows | Removed 2026-07-04 (burn engine dropped; reconciliation is now a client-side minus in the treasury app) |
+| `gaps_ep` | Reconciliation chase list | Removed 2026-07-04 (see `coverage_ep`) |
+| `provider_month_ep` | Mixed `provider_month` rows | Removed 2026-07-04 (burn engine dropped; spend-audit PoC re-derives from `invoices_ep` + `meter_monthly_ep`) |
 | `runs_ep` | Latest ingest runs | Keep |
 
 ## Tokens

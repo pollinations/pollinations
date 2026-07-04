@@ -5,7 +5,6 @@ SCHEMA >
     `sha256` String `json:$.sha256`,
     `provider` String `json:$.provider`,
     `category` String `json:$.category`,
-    `kind` String `json:$.kind`,
     `period_month` String `json:$.period_month`,
     `amount` Float64 `json:$.amount`,
     `currency` String `json:$.currency`,
@@ -19,6 +18,3 @@ SCHEMA >
 
 ENGINE "MergeTree"
 ENGINE_SORTING_KEY "provider, period_month, issued_at"
-
-FORWARD_QUERY >
-    SELECT sha256, provider, category, kind, period_month, amount, currency, invoice_number, issued_at, source, file_ref, status, toDateTime(ingested_at) AS ingested_at, defaultValueOfTypeName('Float64') AS credit_usd

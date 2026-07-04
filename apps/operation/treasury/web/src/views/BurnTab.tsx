@@ -102,7 +102,7 @@ export function BurnTab({
                                 provider
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("model")}>
-                                category
+                                model
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("month")}>
                                 time period

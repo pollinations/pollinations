@@ -6,8 +6,6 @@ SQL >
         month,
         provider,
         model,
-        billable_requests_paid_pollen,
-        billable_requests_quest_pollen,
         cost_paid_pollen,
         cost_quest_pollen,
         billable_paid_pollen,

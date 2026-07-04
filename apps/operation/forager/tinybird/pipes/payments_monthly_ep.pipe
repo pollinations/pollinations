@@ -3,10 +3,13 @@ TOKEN "treasury_web" READ
 NODE payments_monthly
 SQL >
     SELECT substring(toString(paid_at), 1, 7) AS month,
-           if(provider = '', '(unmatched)', provider) AS provider,
+           paid_at,
+           provider,
            category,
-           round(sum(amount_eur), 2) AS paid_eur
+           counterparty,
+           amount_eur,
+           wise_ref
     FROM payments
-    GROUP BY month, provider, category ORDER BY month, provider
+    ORDER BY month, provider, paid_at, counterparty
 
 TYPE endpoint

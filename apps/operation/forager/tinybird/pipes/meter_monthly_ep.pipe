@@ -2,23 +2,8 @@ TOKEN "treasury_web" READ
 
 NODE endpoint
 SQL >
-    SELECT
-        month,
-        provider,
-        round(sumIf(cost_usd, funding IN ('cash', 'prepaid')), 2) AS cash_burn_usd,
-        multiIf(
-            countIf(funding IN ('cash', 'prepaid')) = 0, '',
-            uniqIf(source, funding IN ('cash', 'prepaid')) > 1, 'mixed',
-            anyIf(source, funding IN ('cash', 'prepaid'))
-        ) AS cash_src,
-        round(sumIf(cost_usd, funding = 'credit'), 2) AS credit_burn_usd,
-        multiIf(
-            countIf(funding = 'credit') = 0, '',
-            uniqIf(source, funding = 'credit') > 1, 'mixed',
-            anyIf(source, funding = 'credit')
-        ) AS credit_src
+    SELECT month, provider, cost_usd, funding, source
     FROM meter_monthly
-    GROUP BY month, provider
-    ORDER BY provider, month
+    ORDER BY provider, month, funding, source
 
 TYPE endpoint

@@ -2,7 +2,7 @@ TOKEN "treasury_web" READ
 
 NODE endpoint
 SQL >
-    SELECT paid_at, provider, category, counterparty, amount_eur
+    SELECT paid_at, provider, category, counterparty, amount_eur, wise_ref
     FROM payments
     ORDER BY paid_at DESC, counterparty
 

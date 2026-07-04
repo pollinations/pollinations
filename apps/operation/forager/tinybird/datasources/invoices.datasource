@@ -12,7 +12,6 @@ SCHEMA >
     `issued_at` Date `json:$.issued_at`,
     `source` String `json:$.source`,
     `file_ref` String `json:$.file_ref`,
-    `status` String `json:$.status`,
     `ingested_at` DateTime `json:$.ingested_at`,
     `credit_usd` Float64 `json:$.credit_usd` DEFAULT 0
 

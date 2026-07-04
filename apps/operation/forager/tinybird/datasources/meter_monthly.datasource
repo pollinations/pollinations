@@ -6,11 +6,10 @@ SCHEMA >
     `provider` String `json:$.provider`,
     `cost_usd` Float64 `json:$.cost_usd`,
     `funding` String `json:$.funding`,
-    `source` String `json:$.source`,
-    `note` String `json:$.note` DEFAULT ''
+    `source` String `json:$.source`
 
 ENGINE "MergeTree"
 ENGINE_SORTING_KEY "provider, month"
 
 FORWARD_QUERY >
-    SELECT month, provider, cost_usd, funding, source, note
+    SELECT month, provider, cost_usd, funding, source

@@ -82,7 +82,6 @@ const TABS: {
     },
 ];
 
-const INGEST_COMMAND = "python3 -m ingest.run";
 const INGEST_QUEUED_DATASOURCES = new Set(["overrides"]);
 const POST_SAVE_REFRESH_MS = 800;
 
@@ -169,8 +168,6 @@ export default function App() {
     const [category, setCategory] = useState("all");
     const [attempt, setAttempt] = useState(0);
     const [committedNonce, setCommittedNonce] = useState(0);
-    const [committedAwaitingIngest, setCommittedAwaitingIngest] = useState(0);
-    const [showCommittedBanner, setShowCommittedBanner] = useState(false);
     const [queuedKeys, setQueuedKeys] = useState<ReadonlySet<string>>(
         () => new Set(),
     );
@@ -323,12 +320,6 @@ export default function App() {
                 const ingestChanges = changes.filter((change) =>
                     INGEST_QUEUED_DATASOURCES.has(change.datasource),
                 );
-                if (ingestChanges.length > 0) {
-                    setCommittedAwaitingIngest(
-                        (current) => current + ingestChanges.length,
-                    );
-                    setShowCommittedBanner(true);
-                }
                 setQueuedKeys((current) => {
                     const next = new Set(current);
                     for (const change of ingestChanges) {
@@ -349,7 +340,6 @@ export default function App() {
         >
             <div
                 data-theme="amber"
-                data-committed-awaiting-ingest={committedAwaitingIngest}
                 className="flex h-dvh min-h-0 flex-col overflow-hidden bg-app-bg text-theme-text-strong"
             >
                 <ScrollArea axis="y" className="min-h-0 flex-1">
@@ -408,40 +398,6 @@ export default function App() {
                                     numbers.
                                 </Alert>
                             )}
-
-                        {showCommittedBanner && committedAwaitingIngest > 0 && (
-                            <Alert
-                                intent="warning"
-                                title="Committed, waiting for ingest"
-                            >
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <span>
-                                        {committedAwaitingIngest} changes
-                                        committed. Flagged rows update after the
-                                        next ingest run (
-                                        <code>{INGEST_COMMAND}</code>).
-                                    </span>
-                                    <Button
-                                        size="sm"
-                                        onClick={() =>
-                                            void navigator.clipboard?.writeText(
-                                                INGEST_COMMAND,
-                                            )
-                                        }
-                                    >
-                                        Copy command
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        onClick={() =>
-                                            setShowCommittedBanner(false)
-                                        }
-                                    >
-                                        Dismiss
-                                    </Button>
-                                </div>
-                            </Alert>
-                        )}
 
                         <FilterBar>
                             <MonthFilter

@@ -24,8 +24,6 @@ def _next_month(month: str) -> str:
 
 _SQL = """\
 SELECT '{month}' AS month, model_provider_used AS provider, model_used AS model,
-  countIf(selected_meter_slug LIKE '%pack%') AS billable_requests_paid_pollen,
-  countIf(selected_meter_slug LIKE '%tier%') AS billable_requests_quest_pollen,
   round(sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 4) AS cost_paid_pollen,
   round(sumIf(total_cost, selected_meter_slug LIKE '%tier%'), 4) AS cost_quest_pollen,
   round(sumIf(total_price, selected_meter_slug LIKE '%pack%'), 4) AS billable_paid_pollen,
@@ -52,14 +50,12 @@ def monthly_rows(tb_prod, months, today):
 
     Returns:
         list of usage_monthly row dicts, one per (month, provider, model) tuple
-        with nonzero data. provider is canonicalized via burn.CANON
+        with nonzero data. provider tags are canonicalized via provider aliases
         (bedrock/aws-bedrock → aws, azure-2 → azure, vastai → vast.ai).
     """
-    from ..burn import CANON
+    from ..aliases import PROVIDER_TAG_ALIASES
 
     numeric_fields = (
-        "billable_requests_paid_pollen",
-        "billable_requests_quest_pollen",
         "cost_paid_pollen",
         "cost_quest_pollen",
         "billable_paid_pollen",
@@ -72,7 +68,7 @@ def monthly_rows(tb_prod, months, today):
         result = tb_prod.sql(query)
         for raw in result:
             # Guard against None/missing fields — keep verbatim, no fabricated placeholders
-            provider = CANON.get(
+            provider = PROVIDER_TAG_ALIASES.get(
                 (raw.get("provider") or "").strip().lower(), raw.get("provider")
             )
             key = (month, provider, raw.get("model"))

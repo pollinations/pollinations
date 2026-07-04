@@ -1,7 +1,7 @@
 """dedupe_meter — meter_monthly holds one row per (provider, month, funding).
 
-Precedence mirrors burn._pick_meter: programmatic sources (api/cli/bq) beat
-manual regardless of recency, then source rank, then last-seen.
+Precedence: manual rows are operator overrides for a provider/month/funding
+bucket. Otherwise source rank wins, then last-seen.
 
 Run: cd apps/operation/forager && python3 -m pytest tests/test_meter_dedupe.py -q
 """
@@ -14,14 +14,13 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from ingest.run import dedupe_meter
 
 
-def _row(provider, month, cost, funding="credit", source="api", note=""):
+def _row(provider, month, cost, funding="credit", source="api"):
     return {
         "month": month,
         "provider": provider,
         "cost_usd": cost,
         "funding": funding,
         "source": source,
-        "note": note,
     }
 
 
@@ -36,15 +35,15 @@ def test_last_seen_wins_within_source():
     assert out[0]["cost_usd"] == 110.0
 
 
-def test_api_beats_newer_manual():
+def test_manual_beats_api_for_same_bucket():
     rows = [
-        _row("aws", "2026-04", 999.0, source="manual"),
         _row("aws", "2026-04", 100.0, source="api"),
+        _row("aws", "2026-04", 999.0, source="manual"),
     ]
     out = dedupe_meter(rows)
     assert len(out) == 1
-    assert out[0]["source"] == "api"
-    assert out[0]["cost_usd"] == 100.0
+    assert out[0]["source"] == "manual"
+    assert out[0]["cost_usd"] == 999.0
 
 
 def test_manual_survives_when_alone():

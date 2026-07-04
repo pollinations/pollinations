@@ -111,19 +111,6 @@ def checks():
     except Exception as e:
         out.append(("tb-prod", False, False, str(e)[:120]))
 
-    # SOFT: balances table freshness (max run_at < 26h; ok-with-note when empty)
-    try:
-        brows = ops.sql("SELECT max(run_at) AS t FROM balances")
-        last_bal = brows[0]["t"] if brows else None
-        if not last_bal:
-            # Fresh install / no balances yet — soft ok with note
-            out.append(("balances-fresh", False, True, "no rows yet (fresh install)"))
-        else:
-            age_h = (datetime.datetime.utcnow() - datetime.datetime.fromisoformat(last_bal)).total_seconds() / 3600
-            out.append(("balances-fresh", False, age_h < 26, f"last balance {age_h:.1f}h ago"))
-    except Exception as e:
-        out.append(("balances-fresh", False, False, str(e)[:120]))
-
     return out
 
 

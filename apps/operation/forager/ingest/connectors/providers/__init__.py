@@ -1,12 +1,26 @@
-"""Provider row builders shared by all balance/meter connectors.
+"""Provider row builders shared by provider connectors.
 
-_brow  — build one balances row (append-only datasource)
+_brow  — legacy helper for provider balance probes; not written by ingest.run.
 _mrow  — build one meter_monthly row (run.py dedupes to one row per
          provider-month-funding and full-replaces the table each run)
 
 Provider connector modules (openrouter, deepinfra, runpod, vast, …) are added
 in Tasks B3–B5 and import these builders.
 """
+
+from ...aliases import PROVIDER_ALIASES
+
+ALLOWED_FUNDING = {"cash", "credit", "prepaid"}
+ALLOWED_METER_SOURCES = {"api", "bq", "cli", "manual"}
+
+
+def _validate_meter_values(provider, funding, source):
+    if provider not in PROVIDER_ALIASES:
+        raise ValueError(f"unknown provider slug for meter_monthly: {provider}")
+    if funding not in ALLOWED_FUNDING:
+        raise ValueError(f"unknown funding for meter_monthly: {funding}")
+    if source not in ALLOWED_METER_SOURCES:
+        raise ValueError(f"unknown source for meter_monthly: {source}")
 
 
 def _brow(now, provider, granted=None, spent=None, left=None, prepaid=None,
@@ -43,10 +57,11 @@ def _mrow(month, provider, cost_usd, funding, source, today):
         month:    "YYYY-MM" billing month
         provider: canonical provider slug
         cost_usd: metered cost in USD
-        funding:  "cash" | "credit" | "prepaid"
+        funding:  "credit" | "prepaid" (legacy connectors may still emit "cash")
         source:   "api" | "cli" | "bq" | "manual"
         today:    current ingest date (kept in the call signature for connector simplicity)
     """
+    _validate_meter_values(provider, funding, source)
     return {
         "month": month,
         "provider": provider,

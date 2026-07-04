@@ -105,8 +105,6 @@ def test_usage_rows_carry_month():
         {
             "provider": "azure-openai",
             "model": "gpt-4o",
-            "billable_requests_paid_pollen": 100,
-            "billable_requests_quest_pollen": 0,
             "billable_paid_pollen": 1.0,
             "billable_quest_pollen": 0.5,
             "cost_paid_pollen": 0.8,
@@ -125,8 +123,6 @@ def test_usage_provider_canonicalized_at_ingest():
         {
             "provider": "bedrock",
             "model": "claude",
-            "billable_requests_paid_pollen": 10,
-            "billable_requests_quest_pollen": 0,
             "billable_paid_pollen": 0.1,
             "billable_quest_pollen": 0.0,
             "cost_paid_pollen": 0.05,
@@ -135,8 +131,6 @@ def test_usage_provider_canonicalized_at_ingest():
         {
             "provider": "vastai",
             "model": "flux",
-            "billable_requests_paid_pollen": 5,
-            "billable_requests_quest_pollen": 0,
             "billable_paid_pollen": 0.1,
             "billable_quest_pollen": 0.0,
             "cost_paid_pollen": 0.02,
@@ -151,8 +145,6 @@ def test_usage_provider_canonicalized_at_ingest():
             "month",
             "provider",
             "model",
-            "billable_requests_paid_pollen",
-            "billable_requests_quest_pollen",
             "billable_paid_pollen",
             "billable_quest_pollen",
             "cost_paid_pollen",
@@ -168,8 +160,6 @@ def test_usage_canonicalized_duplicates_are_summed():
         {
             "provider": "azure",
             "model": "gpt-4o",
-            "billable_requests_paid_pollen": 10,
-            "billable_requests_quest_pollen": 2,
             "billable_paid_pollen": 1.5,
             "billable_quest_pollen": 0.2,
             "cost_paid_pollen": 0.8,
@@ -178,8 +168,6 @@ def test_usage_canonicalized_duplicates_are_summed():
         {
             "provider": "azure-2",
             "model": "gpt-4o",
-            "billable_requests_paid_pollen": 5,
-            "billable_requests_quest_pollen": 3,
             "billable_paid_pollen": 0.7,
             "billable_quest_pollen": 0.4,
             "cost_paid_pollen": 0.3,
@@ -192,8 +180,6 @@ def test_usage_canonicalized_duplicates_are_summed():
     assert len(rows) == 1
     assert rows[0]["provider"] == "azure"
     assert rows[0]["model"] == "gpt-4o"
-    assert rows[0]["billable_requests_paid_pollen"] == 15
-    assert rows[0]["billable_requests_quest_pollen"] == 5
     assert rows[0]["billable_paid_pollen"] == pytest.approx(2.2)
     assert rows[0]["billable_quest_pollen"] == pytest.approx(0.6)
     assert rows[0]["cost_paid_pollen"] == pytest.approx(1.1)
@@ -206,8 +192,6 @@ def test_usage_multiple_months_correct_month_tags():
         {
             "provider": "azure-openai",
             "model": "gpt-4o",
-            "billable_requests_paid_pollen": 5,
-            "billable_requests_quest_pollen": 0,
             "billable_paid_pollen": 0.5,
             "billable_quest_pollen": 0.0,
             "cost_paid_pollen": 0.3,
@@ -234,8 +218,6 @@ def test_usage_none_provider_kept_as_is():
         {
             "provider": None,
             "model": "gpt-4o",
-            "billable_requests_paid_pollen": 1,
-            "billable_requests_quest_pollen": 0,
             "billable_paid_pollen": 0.0,
             "billable_quest_pollen": 0.0,
             "cost_paid_pollen": 0.0,
@@ -256,8 +238,6 @@ def test_usage_month_field_is_string():
         {
             "provider": "azure-openai",
             "model": "gpt-4o",
-            "billable_requests_paid_pollen": 1,
-            "billable_requests_quest_pollen": 0,
             "billable_paid_pollen": 0.1,
             "billable_quest_pollen": 0.0,
             "cost_paid_pollen": 0.05,

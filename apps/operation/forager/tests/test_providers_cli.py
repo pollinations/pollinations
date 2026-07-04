@@ -459,17 +459,6 @@ def test_azure_missing_creds_raises():
         _az.balance({}, NOW)
 
 
-# ===========================================================================
-# Registry: B4 slugs in BALANCE and CANONICAL
-# ===========================================================================
-
-def test_balance_has_b4_providers():
-    """After B4, BALANCE must contain the five new providers."""
-    slugs = {slug for slug, _ in registry.BALANCE}
-    for expected in ("ovhcloud", "vast.ai", "fireworks", "openai", "azure"):
-        assert expected in slugs, f"BALANCE missing: {expected}"
-
-
 def test_b4_slugs_in_canonical():
     """All B4 slugs must be in CANONICAL."""
     for slug in ("ovhcloud", "vast.ai", "fireworks", "openai", "azure"):

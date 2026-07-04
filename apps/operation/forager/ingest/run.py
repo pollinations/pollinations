@@ -1,9 +1,10 @@
 """Daily ingest → operations workspace.
 
-    python3 -m ingest.run              # daily: harvest new invoices + repull last N months
+    python3 -m ingest.run              # daily: refresh non-invoice data planes
+    python3 -m ingest.invoices.run     # invoice-only: Gmail + inbox PDF pipeline
+    python3 -m ingest.run --skip-revenue  # cost/provider refresh only
     python3 -m ingest.run --backfill-usage  # rebuild usage_monthly only; no invoice AI
-    python3 -m ingest.run --backfill   # dangerous: rebuild invoices from archive
-    python3 -m ingest.run --import-archive  # one-off: append pre-organized YYYY-MM/ month dirs
+    python3 -m ingest.run --backfill   # repull all configured payment months
 
 TOKEN MODEL: three TB instances:
   ops_ingest  — TINYBIRD_OPS_INGEST_TOKEN  → .append() and .sql()
@@ -17,10 +18,12 @@ import json
 import os
 import sys
 
-from . import burn, creds, tb
+from . import creds, tb
+from .aliases import PROVIDER_ALIASES
 from .connectors import registry, wise
 from .connectors import usage as _usage
 from .connectors.common import months_ytd
+from .connectors.providers import _validate_meter_values
 from .connectors.providers import stripe as _stripe
 from .invoices import harvest
 from .invoices import extract as _extract
@@ -29,8 +32,12 @@ from .invoices import extract as _extract
 # still consume them, so the read queries reconstruct them with config fx.
 _INV_SQL = (
     "SELECT *, round(if(currency='EUR', amount * {fx}, amount), 6) AS amount_usd "
-    "FROM invoices WHERE status = 'parsed'"
+    "FROM invoices"
 )
+
+ALLOWED_CATEGORIES = {
+    "compute", "infra", "saas", "admin", "office", "payroll", "other", "unmatched",
+}
 
 
 def load_overrides(ops_ingest):
@@ -65,10 +72,29 @@ def apply_payment_rules(rows, overrides, slug_cat):
     return changed
 
 
+def allowed_payment_providers():
+    return (
+        set(PROVIDER_ALIASES)
+        | {provider for provider, _category, _subs in wise.OPS_ALIAS if provider}
+        | {""}
+    )
+
+
+def validate_payment_rows(rows):
+    providers = allowed_payment_providers()
+    for row in rows:
+        provider = row.get("provider", "")
+        category = row.get("category", "")
+        if provider not in providers:
+            raise ValueError(f"unknown provider slug for payments: {provider}")
+        if category not in ALLOWED_CATEGORIES:
+            raise ValueError(f"unknown category for payments: {category}")
+
+
 def dedupe_invoices(rows):
     """Deduplicate invoice rows per sha256.
 
-    Prefers source='label' (operator correction) over machine rows, then
+    Prefers source='manual' (operator correction) over machine rows, then
     final decisions over review rows. Tie-breaks by latest
     ingested_at (DateTime since 2026-07), then keeps the last-seen row.
     """
@@ -81,8 +107,8 @@ def dedupe_invoices(rows):
     }
 
     def _rank(row):
-        return (0 if row.get("source") == "label" else 1,
-                _STATUS_RANK.get(row["status"], 9))
+        return (0 if row.get("source") in ("manual", "label") else 1,
+                _STATUS_RANK.get(row.get("status", "parsed"), 0))
 
     best = {}
     for row in rows:
@@ -95,7 +121,7 @@ def dedupe_invoices(rows):
     return list(best.values())
 
 
-_SRC_RANK = {"api": 0, "cli": 1, "bq": 2, "manual": 3}
+_SRC_RANK = {"manual": 0, "api": 1, "cli": 2, "bq": 3}
 
 
 def _next_month(month):
@@ -109,13 +135,12 @@ def _next_month(month):
 def dedupe_meter(rows):
     """One row per (provider, month, funding).
 
-    Programmatic sources (api/cli/bq) beat manual regardless of recency, then
-    best source rank. Ties keep the last-seen row, so fresh connector rows win
-    over rows read back from the table.
+    Manual rows are operator overrides and replace connector values for the
+    same provider/month/funding bucket. Ties keep the last-seen row.
     """
     def _rank(row):
         src = row.get("source", "manual")
-        return (1 if src == "manual" else 0, _SRC_RANK.get(src, 99))
+        return _SRC_RANK.get(src, 99)
 
     best = {}
     for row in rows:
@@ -125,6 +150,34 @@ def dedupe_meter(rows):
         if prev is None or _rank(row) <= _rank(prev):
             best[key] = row
     return list(best.values())
+
+
+def validate_meter_rows(rows):
+    """Fail before replacing meter_monthly with unknown enum-like values."""
+    for row in rows:
+        _validate_meter_values(
+            row.get("provider", ""),
+            row.get("funding", ""),
+            row.get("source", ""),
+        )
+
+
+def split_valid_meter_rows(rows):
+    """Return valid meter rows and rows rejected by the current vocabulary."""
+    valid = []
+    invalid = []
+    for row in rows:
+        try:
+            _validate_meter_values(
+                row.get("provider", ""),
+                row.get("funding", ""),
+                row.get("source", ""),
+            )
+        except ValueError:
+            invalid.append(row)
+        else:
+            valid.append(row)
+    return valid, invalid
 
 
 def _is_month_dir(name):
@@ -156,40 +209,48 @@ def import_archive(cfg, ops_ingest, today):
         return {"pushed": 0, "dup_sha": 0, "skipped": 0, "unknown_prefix": 0}
 
     for entry in entries:
-        if entry == "inbox" or not _is_month_dir(entry):
+        if entry == harvest.VALIDATED_DIR:
+            validated_root = os.path.join(archive_dir, entry)
+            month_entries = sorted(os.listdir(validated_root))
+        elif _is_month_dir(entry):
+            validated_root = archive_dir
+            month_entries = [entry]
+        else:
             continue
-        month_dir = os.path.join(archive_dir, entry)
-        if not os.path.isdir(month_dir):
-            continue
-        for fname in sorted(os.listdir(month_dir)):
-            if not fname.lower().endswith(".pdf"):
+        for month_entry in month_entries:
+            if not _is_month_dir(month_entry):
                 continue
-            path = os.path.join(month_dir, fname)
-            file_sha = _extract.sha256(path)
-            if file_sha in known_shas or file_sha in seen_this_run:
-                dup_sha += 1
+            month_dir = os.path.join(validated_root, month_entry)
+            if not os.path.isdir(month_dir):
                 continue
-            seen_this_run.add(file_sha)
+            for fname in sorted(os.listdir(month_dir)):
+                if not fname.lower().endswith(".pdf"):
+                    continue
+                path = os.path.join(month_dir, fname)
+                file_sha = _extract.sha256(path)
+                if file_sha in known_shas or file_sha in seen_this_run:
+                    dup_sha += 1
+                    continue
+                seen_this_run.add(file_sha)
 
-            # Re-derive slug+category from filename prefix: <slug>_<date>_<msgid8>_<origname>
-            parts = os.path.splitext(fname)[0].split("_")
-            slug = parts[0].lower() if parts else "other"
-            category = harvest._slug_to_category(slug)
-            if category == "other" and slug != "other":
-                # Slug not in PROVIDERS — treat as other/unknown
-                unknown_prefix += 1
-            msgid = parts[2] if len(parts) >= 3 else ""
+                # Re-derive slug+category from filename prefix.
+                parts = os.path.splitext(fname)[0].split("_")
+                slug = parts[0].lower() if parts else "other"
+                category = harvest._slug_to_category(slug)
+                if category == "other" and slug != "other":
+                    unknown_prefix += 1
+                msgid = parts[2] if len(parts) >= 3 else ""
 
-            row = _extract.extract_and_push(
-                ops_ingest, path, slug, category, msgid, "email",
-                cfg, today, provider_slugs=provider_slugs,
-            )
-            if row.get("status") == "parsed":
-                known_shas.add(file_sha)
-                pushed += 1
-            else:
-                skipped += 1
-
+                row = _extract.extract_and_push(
+                    ops_ingest, path, slug, category, msgid, "email",
+                    cfg, today, provider_slugs=provider_slugs,
+                )
+                if row.get("_document_status", "parsed") == "parsed":
+                    row.pop("_document_status", None)
+                    known_shas.add(file_sha)
+                    pushed += 1
+                else:
+                    skipped += 1
     return {
         "pushed": pushed,
         "dup_sha": dup_sha,
@@ -207,20 +268,29 @@ def _archive_pdfs(cfg):
         return
 
     for entry in entries:
-        if entry == "inbox" or not _is_month_dir(entry):
+        if entry == harvest.VALIDATED_DIR:
+            validated_root = os.path.join(archive_dir, entry)
+            month_entries = sorted(os.listdir(validated_root))
+        elif _is_month_dir(entry):
+            validated_root = archive_dir
+            month_entries = [entry]
+        else:
             continue
-        month_dir = os.path.join(archive_dir, entry)
-        if not os.path.isdir(month_dir):
-            continue
-        for fname in sorted(os.listdir(month_dir)):
-            if not fname.lower().endswith(".pdf"):
+        for month_entry in month_entries:
+            if not _is_month_dir(month_entry):
                 continue
-            path = os.path.join(month_dir, fname)
-            parts = os.path.splitext(fname)[0].split("_")
-            slug = parts[0].lower() if parts else "other"
-            category = harvest._slug_to_category(slug)
-            msgid = parts[2] if len(parts) >= 3 else ""
-            yield path, slug, category, msgid
+            month_dir = os.path.join(validated_root, month_entry)
+            if not os.path.isdir(month_dir):
+                continue
+            for fname in sorted(os.listdir(month_dir)):
+                if not fname.lower().endswith(".pdf"):
+                    continue
+                path = os.path.join(month_dir, fname)
+                parts = os.path.splitext(fname)[0].split("_")
+                slug = parts[0].lower() if parts else "other"
+                category = harvest._slug_to_category(slug)
+                msgid = parts[2] if len(parts) >= 3 else ""
+                yield path, slug, category, msgid
 
 
 def rebuild_archive_invoices(cfg, today):
@@ -269,11 +339,10 @@ def rebuild_archive_invoices(cfg, today):
         }
         for future in concurrent.futures.as_completed(futures):
             idx, path, _slug, _category, _msgid, _file_sha = futures[future]
-            row = future.result()
+            row, status = future.result()
             rows_by_idx[idx] = row
 
             stats["rebuilt"] += 1
-            status = row.get("status", "")
             if status in stats:
                 stats[status] += 1
             sys.stderr.write(
@@ -286,19 +355,28 @@ def rebuild_archive_invoices(cfg, today):
     rows = [
         rows_by_idx[idx]
         for idx, _path, _slug, _category, _msgid, _file_sha in tasks
-        if rows_by_idx[idx].get("status") == "parsed"
+        if rows_by_idx[idx].get("_document_status", "parsed") == "parsed"
     ]
+    for row in rows:
+        row.pop("_document_status", None)
     return rows, stats
 
 
 def _build_archive_invoice_row(task, cfg, today, provider_slugs, agent_creds):
     idx, path, slug, category, msgid, file_sha = task
     try:
-        return _extract.build_row(
+        result = _extract.extract_pdf(
+            path, file_sha, slug, category, cfg, today,
+            provider_slugs=provider_slugs, creds=agent_creds,
+        )
+        status = _extract.document_status(result)
+        row = _extract.build_row(
             path, slug, category, msgid, "agent",
             cfg, today, provider_slugs=provider_slugs,
-            file_hash=file_sha, creds=agent_creds,
+            file_hash=file_sha, creds=agent_creds, result=result,
         )
+        row["_document_status"] = status
+        return row, status
     except RuntimeError as e:
         if "pdftoppm failed" not in str(e):
             raise
@@ -310,10 +388,12 @@ def _build_archive_invoice_row(task, cfg, today, provider_slugs, agent_creds):
             "currency": "USD",
             "invoice_number": "unreadable_pdf",
             "issued_at": today,
-            "status": "needs_review",
+            "document_status": "needs_review",
             "credit_usd": 0,
         }
-        return _extract.build_row_from_result(path, file_sha, result, "agent", today)
+        row = _extract.build_row_from_result(path, file_sha, result, "agent", today)
+        row["_document_status"] = "needs_review"
+        return row, "needs_review"
 
 
 def reparse_invoices(cfg, ops_ingest, today, dry_run=True):
@@ -360,49 +440,27 @@ def _sanitize_err(e, creds_dict):
     return msg[:200]
 
 
-def _run_data_stage(ops_ingest, ops_replace, tb_prod, creds, cfg, pools,
-                    today, statuses, notes, overrides=None):
-    """Refresh the raw planes and rebuild the pool-level grants view.
+def _run_data_stage(ops_ingest, ops_replace, tb_prod, creds, cfg,
+                    today, statuses, notes, overrides=None, skip_revenue=False):
+    """Refresh the raw operations planes.
 
     The P&L burn engine and reconciliation were removed 2026-07-04; crossing the
     raw planes is now a simple minus in the treasury frontend / spend-audit PoC.
-    This stage only pulls the raw data and folds balances into `grants`.
+    Provider balance/grants snapshots were removed; provider usage is the
+    monthly source of truth for manually filled dashboard values.
 
     Mutates `statuses` dict and `notes` list in place (same objects written to
     ingest_runs by the caller).
 
     Steps:
-      1. Balance connectors → append to balances
-      2. Meter connectors  → dedupe + full replace of meter_monthly
+      1. Meter connectors  → dedupe + full replace of meter_monthly
          (one row per provider-month-funding; skip on 0 rows or read-back error)
-      3. usage.monthly_rows → replace usage_monthly (skip on 0 rows)
-      4. stripe.revenue_rows → replace revenue_monthly (skip on 0 rows)
-      5. Read balances, fold into grants → replace grants
-         (guarded: any exception records statuses["grants"]="err:..." and returns)
-      6. Print runway alarms (guarded: parse errors are silent)
+      2. usage.monthly_rows → replace usage_monthly (skip on 0 rows)
+      3. stripe.revenue_rows → replace revenue_monthly (skip on 0 rows)
     """
-    now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     fx = cfg.get("fx_eur_usd", 1.14)
 
-    # ---- Step 1: balance connectors ----
-    for slug, fn in registry.BALANCE:
-        try:
-            # ovhcloud balance takes fx= kwarg; pass it via inspect to avoid coupling
-            sig = inspect.signature(fn)
-            if "fx" in sig.parameters:
-                rows = fn(creds, now, fx=fx)
-            else:
-                rows = fn(creds, now)
-            # result may be a single dict or a list
-            if isinstance(rows, dict):
-                rows = [rows]
-            if rows:
-                ops_ingest.append("balances", rows)
-            statuses[f"balance:{slug}"] = "ok"
-        except Exception as e:
-            statuses[f"balance:{slug}"] = "err:" + _sanitize_err(e, creds)
-
-    # ---- Step 2: meter connectors (collect → dedupe → full replace) ----
+    # ---- Step 1: meter connectors (collect → dedupe → full replace) ----
     # Connectors re-report the whole YTD window every run, so appending stacks
     # a duplicate snapshot per provider-month each run. Instead: merge fresh
     # rows with the current table (keeps manual entries and last-good values
@@ -423,9 +481,15 @@ def _run_data_stage(ops_ingest, ops_replace, tb_prod, creds, cfg, pools,
         except Exception as e:
             statuses[f"meter:{slug}"] = "err:" + _sanitize_err(e, creds)
     try:
+        validate_meter_rows(meter_new)
         meter_table = ops_ingest.sql("SELECT * FROM meter_monthly")
+        meter_table, invalid_existing = split_valid_meter_rows(meter_table)
+        if invalid_existing:
+            notes.append(f"meter: dropped {len(invalid_existing)} invalid existing rows")
+            statuses["meter_invalid_existing"] = len(invalid_existing)
         meter_merged = dedupe_meter(meter_table + meter_new)
         if meter_merged:
+            validate_meter_rows(meter_merged)
             ops_replace.replace("meter_monthly", meter_merged)
             statuses["meter_rows"] = len(meter_merged)
         else:
@@ -434,7 +498,7 @@ def _run_data_stage(ops_ingest, ops_replace, tb_prod, creds, cfg, pools,
         statuses["meter"] = "err:" + _sanitize_err(e, creds)
         notes.append(f"meter replace failed: {statuses['meter']}")
 
-    # ---- Step 3: usage_monthly (full replace) ----
+    # ---- Step 2: usage_monthly (full replace) ----
     try:
         usage_rows = _usage.monthly_rows(tb_prod, months_ytd_list, today)
         if usage_rows:
@@ -447,60 +511,21 @@ def _run_data_stage(ops_ingest, ops_replace, tb_prod, creds, cfg, pools,
         statuses["usage"] = "err:" + _sanitize_err(e, creds)
         notes.append(f"usage pull failed: {statuses['usage']}")
 
-    # ---- Step 4: revenue_monthly (full replace) ----
-    try:
-        revenue_rows = _stripe.revenue_rows(creds, months_ytd_list, today)
-        if revenue_rows:
-            ops_replace.replace("revenue_monthly", revenue_rows)
-            statuses["revenue"] = len(revenue_rows)
-        else:
-            notes.append("revenue: 0 rows — revenue_monthly table unchanged (last good kept)")
-            statuses["revenue"] = 0
-    except Exception as e:
-        statuses["revenue"] = "err:" + _sanitize_err(e, creds)
-        notes.append(f"revenue pull failed: {statuses['revenue']}")
-
-    # ---- Step 5: fold balances → grants ----
-    # Wrapped in try/except so any TB network error or ValueError on 0-row
-    # replace never escapes and kills the ingest_runs log append.
-    balances = []
-    try:
-        balances = ops_ingest.sql("SELECT * FROM balances")
-
-        cat_map = {slug: cat for slug, cat, _ in harvest.PROVIDERS}
-        grant_rows = burn.grants(pools, balances, today, overrides, cat_map=cat_map)
-        if grant_rows:
-            ops_replace.replace("grants", grant_rows)
-            statuses["grant_rows"] = len(grant_rows)
-        else:
-            notes.append("grants: 0 rows — grants table unchanged (last good kept)")
-            statuses["grant_rows"] = 0
-
-    except Exception as e:
-        statuses["grants"] = "err:" + _sanitize_err(e, creds)
-        notes.append(f"grants stage failed: {statuses['grants']}")
-        return
-
-    # ---- Step 6: print runway alarms ----
-    try:
-        # Runway alarm: find freshest runpod balance row
-        runpod_rows = [r for r in balances if (r.get("provider") or "").lower() == "runpod"]
-        if runpod_rows:
-            latest = max(runpod_rows, key=lambda r: r.get("run_at", ""))
-            note_str = latest.get("note", "") or ""
-            prepaid = latest.get("prepaid_left_usd")
-            spend_text = _note_value(note_str, "spend_per_hr")
-            if spend_text and prepaid is not None:
-                try:
-                    spend_hr = float(spend_text)
-                    if spend_hr > 0:
-                        days = float(prepaid) / (spend_hr * 24)
-                        if days < 14:
-                            print(f"⚠ runpod ${prepaid:.2f} ≈ {days:.1f}d at ${spend_hr}/hr")
-                except (ValueError, ZeroDivisionError):
-                    pass
-    except Exception:
-        pass
+    # ---- Step 3: revenue_monthly (full replace) ----
+    if skip_revenue:
+        statuses["revenue"] = "skipped"
+    else:
+        try:
+            revenue_rows = _stripe.revenue_rows(creds, months_ytd_list, today)
+            if revenue_rows:
+                ops_replace.replace("revenue_monthly", revenue_rows)
+                statuses["revenue"] = len(revenue_rows)
+            else:
+                notes.append("revenue: 0 rows — revenue_monthly table unchanged (last good kept)")
+                statuses["revenue"] = 0
+        except Exception as e:
+            statuses["revenue"] = "err:" + _sanitize_err(e, creds)
+            notes.append(f"revenue pull failed: {statuses['revenue']}")
 
     return
 
@@ -517,17 +542,10 @@ def backfill_usage_monthly(ops_replace, tb_prod, months, today):
     return statuses, notes
 
 
-def _note_value(note, key):
-    prefix = key + "="
-    for part in str(note or "").replace(",", " ").split():
-        if part.startswith(prefix):
-            return part[len(prefix):]
-    return ""
-
-
 def main():
     backfill = "--backfill" in sys.argv
     usage_backfill = "--backfill-usage" in sys.argv
+    skip_revenue = "--skip-revenue" in sys.argv
     import_mode = "--import-archive" in sys.argv
     reparse_mode = "--reparse-invoices" in sys.argv
     dry_run = "--dry-run" in sys.argv
@@ -537,22 +555,11 @@ def main():
     # One token for ingest — see MODULE DOCSTRING
     ops_ingest = tb.TB(cfg["tb_ops_api"], c["TINYBIRD_OPS_INGEST_TOKEN"])
 
-    # --reparse-invoices: read-only coverage scan for archived PDFs.
-    if reparse_mode:
-        st = reparse_invoices(cfg, ops_ingest, today, dry_run=dry_run)
-        print(f"reparse-invoices: {st}")
-        return
-
-    # --import-archive: one-off append import from pre-organized month dirs, then exit
-    if import_mode:
-        st = import_archive(cfg, ops_ingest, today)
-        now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-        ops_ingest.append("ingest_runs", [{
-            "run_at": now, "ok": 1,
-            "statuses": json.dumps(st), "notes": "import-archive",
-        }])
-        print(f"import-archive: {st}")
-        return
+    if reparse_mode or import_mode or dry_run:
+        raise SystemExit(
+            "Invoice maintenance moved to: python3 -m ingest.invoices.run "
+            "[--import-archive | --reparse --dry-run]"
+        )
 
     if usage_backfill:
         all_months = months_ytd(cfg["months_start"], today)
@@ -576,23 +583,12 @@ def main():
     all_months = months_ytd(cfg["months_start"], today)
     win = all_months if backfill else all_months[-cfg["repull_months"]:]
 
-    # 1. Harvest invoices into the archive.
-    # In backfill mode these append writes are immediately replaced by the fresh
-    # archive rebuild below; their job is to make sure the local PDF archive is current.
-    since = cfg["months_start"].replace("-", "/") + "/01" if backfill else None
-    st["harvest_gmail"] = harvest.gmail_sweep(cfg, ops_ingest, today, since=since)
-    st["harvest_inbox"] = harvest.inbox_sweep(cfg, ops_ingest, today)
-
-    if backfill:
-        invoice_rows, invoice_stats = rebuild_archive_invoices(cfg, today)
-        ops_replace.replace("invoices", invoice_rows)
-        st["invoices"] = invoice_stats
-
-    # 2. Payments (Wise outflows) — per month in window
+    # 1. Payments (Wise outflows) — per month in window
     try:
         for ym in win:
             rows = wise.outflow_rows(c, [ym])
             if rows:
+                validate_payment_rows(rows)
                 nxt = _next_month(ym)
                 ops_replace.replace(
                     "payments", rows,
@@ -606,8 +602,6 @@ def main():
         notes.append(f"wise FAILED, months kept: {e}")
 
     # 3. Shared operator truth
-    pools = creds.load_credits().get("pools", [])
-
     try:
         overrides = load_overrides(ops_ingest)
     except Exception as e:
@@ -622,12 +616,13 @@ def main():
             pay_rows = ops_ingest.sql("SELECT * FROM payments")
             n = apply_payment_rules(pay_rows, overrides, slug_cat)
             if n:
+                validate_payment_rows(pay_rows)
                 ops_replace.replace("payments", pay_rows)
             st["payment_rules"] = n
     except Exception as e:
         notes.append(f"payment rules failed: {_sanitize_err(e, c)}")
 
-    # 4. Refresh raw planes + rebuild grants
+    # 4. Refresh raw planes
     tb_prod = tb.TB(cfg["tb_prod_api"], c["TINYBIRD_PROD_READ_TOKEN"])
     _run_data_stage(
         ops_ingest=ops_ingest,
@@ -635,11 +630,11 @@ def main():
         tb_prod=tb_prod,
         creds=c,
         cfg=cfg,
-        pools=pools,
         today=today,
         statuses=st,
         notes=notes,
         overrides=overrides,
+        skip_revenue=skip_revenue,
     )
 
     # 5. Ingest run log

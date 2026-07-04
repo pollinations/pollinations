@@ -1,13 +1,10 @@
-"""Manual entry CLI for balance snapshots and meter readings.
+"""Manual entry CLI for meter readings.
 
 Usage:
-    python3 -m ingest.record balance <provider> [--granted N] [--spent N]
-                                                [--left N] [--prepaid N]
-                                                [--note TEXT]
     python3 -m ingest.record meter <provider> <YYYY-MM> <cost_usd>
-                                   [--funding cash|credit|prepaid]
+                                   [--funding credit|prepaid]
 
-Appends one row to `balances` or `meter_monthly` with source="manual".
+Appends one row to `meter_monthly` with source="manual".
 Provider must be in registry.CANONICAL; month must match YYYY-MM.
 """
 import argparse
@@ -16,7 +13,7 @@ import json
 import re
 import sys
 
-from .connectors.providers import _brow, _mrow
+from .connectors.providers import _mrow
 from .connectors.registry import CANONICAL
 from . import creds as _creds
 from . import tb as _tb
@@ -50,25 +47,16 @@ def main(argv=None, tb_factory=None):
     """
     parser = argparse.ArgumentParser(
         prog="ingest.record",
-        description="Manually append a balance or meter reading to Tinybird.",
+        description="Manually append a meter reading to Tinybird.",
     )
     sub = parser.add_subparsers(dest="cmd", required=True)
-
-    # balance subcommand
-    bp = sub.add_parser("balance", help="append a balance snapshot")
-    bp.add_argument("provider", help="canonical provider slug")
-    bp.add_argument("--granted", type=float, default=None)
-    bp.add_argument("--spent",   type=float, default=None)
-    bp.add_argument("--left",    type=float, default=None)
-    bp.add_argument("--prepaid", type=float, default=None)
-    bp.add_argument("--note", default="")
 
     # meter subcommand
     mp = sub.add_parser("meter", help="append a meter_monthly reading")
     mp.add_argument("provider",  help="canonical provider slug")
     mp.add_argument("month",     help="billing month YYYY-MM")
     mp.add_argument("cost_usd",  type=float, help="metered cost in USD")
-    mp.add_argument("--funding", default="cash", choices=["cash", "credit", "prepaid"])
+    mp.add_argument("--funding", default="prepaid", choices=["credit", "prepaid"])
 
     args = parser.parse_args(argv)
 
@@ -79,17 +67,7 @@ def main(argv=None, tb_factory=None):
         c = _creds.load_creds()
         client = _default_tb_factory(c["TINYBIRD_OPS_INGEST_TOKEN"])
 
-    if args.cmd == "balance":
-        _validate_provider(args.provider)
-        now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-        row = _brow(now, args.provider,
-                    granted=args.granted, spent=args.spent, left=args.left,
-                    prepaid=args.prepaid,
-                    source="manual", note=args.note)
-        client.append("balances", [row])
-        print(json.dumps(row))
-
-    elif args.cmd == "meter":
+    if args.cmd == "meter":
         _validate_provider(args.provider)
         _validate_month(args.month)
         today = datetime.date.today().isoformat()

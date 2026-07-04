@@ -36,7 +36,6 @@ def _parsed_import_row(path="", slug="provider"):
         "issued_at": "2026-05-01",
         "source": "email",
         "file_ref": path,
-        "status": "parsed",
         "ingested_at": "2026-07-03 12:00:00",
         "credit_usd": 0.0,
     }
@@ -173,10 +172,9 @@ def test_rebuild_archive_invoices_returns_unique_rows(monkeypatch, tmp_path):
         "fx_eur_usd": 1.14,
     }
 
-    def fake_build_row(path, slug, category, msgid, source, config, today,
-                       provider_slugs=None, file_hash=None, creds=None):
+    def fake_extract_pdf(path, file_hash, slug, category, config, today,
+                         provider_slugs=None, creds=None):
         return {
-            "sha256": file_hash,
             "provider": slug,
             "category": category,
             "period_month": "2026-05",
@@ -184,14 +182,11 @@ def test_rebuild_archive_invoices_returns_unique_rows(monkeypatch, tmp_path):
             "currency": "USD",
             "invoice_number": "INV-1",
             "issued_at": "2026-05-01",
-            "source": source,
-            "file_ref": path,
-            "status": "parsed",
-            "ingested_at": "2026-07-03 12:00:00",
+            "document_status": "parsed",
             "credit_usd": 0.0,
         }
 
-    monkeypatch.setattr(extract_mod, "build_row", fake_build_row)
+    monkeypatch.setattr(extract_mod, "extract_pdf", fake_extract_pdf)
     monkeypatch.setattr(creds_mod, "load_credits", lambda: {"pools": []})
     monkeypatch.setattr(creds_mod, "load_creds", lambda: {})
     monkeypatch.setattr(extract_mod, "_build_provider_slugs", lambda credits: set())
@@ -219,11 +214,10 @@ def test_rebuild_archive_invoices_returns_only_parsed_rows(monkeypatch, tmp_path
         "fx_eur_usd": 1.14,
     }
 
-    def fake_build_row(path, slug, category, msgid, source, config, today,
-                       provider_slugs=None, file_hash=None, creds=None):
+    def fake_extract_pdf(path, file_hash, slug, category, config, today,
+                         provider_slugs=None, creds=None):
         status = "needs_review" if "2026-06" in path else "parsed"
         return {
-            "sha256": file_hash,
             "provider": slug,
             "category": category,
             "period_month": "2026-05" if status == "parsed" else "",
@@ -231,14 +225,11 @@ def test_rebuild_archive_invoices_returns_only_parsed_rows(monkeypatch, tmp_path
             "currency": "USD",
             "invoice_number": "INV-1",
             "issued_at": "2026-05-01",
-            "source": source,
-            "file_ref": path,
-            "status": status,
-            "ingested_at": "2026-07-03 12:00:00",
+            "document_status": status,
             "credit_usd": 0.0,
         }
 
-    monkeypatch.setattr(extract_mod, "build_row", fake_build_row)
+    monkeypatch.setattr(extract_mod, "extract_pdf", fake_extract_pdf)
     monkeypatch.setattr(creds_mod, "load_credits", lambda: {"pools": []})
     monkeypatch.setattr(creds_mod, "load_creds", lambda: {})
     monkeypatch.setattr(extract_mod, "_build_provider_slugs", lambda credits: set())
@@ -246,7 +237,7 @@ def test_rebuild_archive_invoices_returns_only_parsed_rows(monkeypatch, tmp_path
     rows, stats = rebuild_archive_invoices(cfg, "2026-07-03")
 
     assert len(rows) == 1
-    assert rows[0]["status"] == "parsed"
+    assert "status" not in rows[0]
     assert stats["rebuilt"] == 2
     assert stats["parsed"] == 1
     assert stats["needs_review"] == 1

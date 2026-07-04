@@ -22,6 +22,7 @@ DEFAULT_DPI = 150
 DEFAULT_TIMEOUT = 180
 
 RUNNER_FIELDS = {"sha256", "source", "file_ref", "ingested_at"}
+INTERNAL_STATUS_FIELD = "document_status"
 
 
 def datasource_schema_text():
@@ -58,7 +59,9 @@ def datasource_columns():
 
 def agent_columns():
     """Columns the vision agent owns; operational fields are filled by the runner."""
-    return [col for col in datasource_columns() if col["name"] not in RUNNER_FIELDS]
+    columns = [col for col in datasource_columns() if col["name"] not in RUNNER_FIELDS]
+    columns.append({"name": INTERNAL_STATUS_FIELD, "type": "String"})
+    return columns
 
 
 def agent_field_names():
@@ -198,7 +201,7 @@ def _system_prompt():
         "The datasource file is the contract. The exact current Tinybird datasource is:\n"
         f"{schema}\n\n"
         f"The runner fills these operational columns: {runner_fields}.\n"
-        "You fill only the remaining datasource columns:\n"
+        "You fill the remaining datasource columns plus one internal routing field:\n"
         f"{field_lines}\n\n"
         f"Return exactly these JSON keys and no others: {allowed_fields}.\n"
         "Do not invent aliases or duplicate facts. If the invoice has a total, payable amount, vendor, date, "
@@ -216,10 +219,11 @@ def _system_prompt():
         "For missing strings use an empty string. For missing numbers use 0. "
         "Dates must be YYYY-MM-DD. Month fields must be YYYY-MM. Currency fields must use ISO codes. "
         "Amount fields should be the payable total unless the field name clearly asks for a credit, tax, or subtotal. "
-        "If a status field exists, use parsed for invoice evidence, not_invoice for non-invoice PDFs, "
-        "and needs_review only when the document is invoice evidence but required values are unreadable. "
-        "For not_invoice rows use period_month='', amount=0, credit_usd=0, currency='USD' if no currency "
-        "is visible, invoice_number as a short reason, and issued_at as a visible document date or today."
+        "For document_status, use parsed for usable invoice evidence, not_invoice for PDFs that are clearly "
+        "not invoices, receipts, statements, or payment documents, and needs_review only when invoice evidence "
+        "exists but required values are unreadable or contradictory. For not_invoice results use period_month='', "
+        "amount=0, credit_usd=0, currency='USD' if no currency is visible, invoice_number as a short reason, "
+        "and issued_at as a visible document date or today."
     )
 
 
@@ -247,7 +251,7 @@ def _json_type(tb_type):
 def _field_enum(name):
     enums = {
         "category": ["compute", "infra", "saas", "admin", "office", "payroll", "other"],
-        "status": ["parsed", "not_invoice", "needs_review"],
+        INTERNAL_STATUS_FIELD: ["parsed", "not_invoice", "needs_review"],
     }
     return enums.get(name)
 
@@ -267,9 +271,9 @@ def _field_guidance(name):
         "currency": "ISO currency code shown by the invoice.",
         "invoice_number": "invoice, receipt, statement, or document number.",
         "issued_at": "invoice, receipt, paid, or issue date in YYYY-MM-DD.",
-        "status": (
-            "parsed when the row is usable invoice evidence; not_invoice when the PDF is not an invoice, "
-            "receipt, statement, or payment document; needs_review only when invoice evidence is unreadable or contradictory."
+        INTERNAL_STATUS_FIELD: (
+            "internal routing only; parsed when the PDF is usable invoice evidence, not_invoice when the PDF "
+            "is clearly unrelated, and needs_review when invoice evidence is unreadable or contradictory."
         ),
         "credit_usd": (
             "credit, discount, or credits consumed amount in the invoice currency; "

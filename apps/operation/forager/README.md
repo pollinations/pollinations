@@ -1,6 +1,6 @@
 # Forager — invoice ingest runbook
 
-Forager is the data app for the operations workspace. It harvests provider invoices, pulls Wise payments, and writes reconciliation verdicts to Tinybird. The treasury frontend reads those pipes; forager owns all writes.
+Forager is the data app for the operations workspace. The main run pulls Wise payments and provider data; the invoice run is separate and writes only validated invoice rows to Tinybird. The treasury frontend reads those pipes; forager owns all writes.
 
 Schema/token contract: [`tinybird/README.md`](tinybird/README.md)
 
@@ -16,11 +16,11 @@ flowchart LR
         GMAIL["📧 Gmail — gog CLI<br/>daily invoice sweep"]
         INBOX["📥 inbox/ drop folder<br/>portal PDFs · Enty monthly batch"]
         WISE["🏦 Wise API<br/>bank transactions"]
-        APIS["🔌 Provider APIs + CLIs<br/>11 balance · 7 meter connectors"]
+        APIS["🔌 Provider APIs + CLIs<br/>7 meter connectors"]
         MANUAL["⌨️ ingest.record CLI<br/>8 console-only providers"]
         TBPROD["📈 Tinybird prod<br/>generation_event"]
         STRIPE["💳 Stripe API<br/>revenue"]
-        CREDITS["🎁 credits.json<br/>pools · grants · portal URLs"]
+        CREDITS["🎁 credits.json<br/>provider list · portal URLs"]
     end
 
     %% ───────── forager ─────────
@@ -32,7 +32,6 @@ flowchart LR
         PCON["connectors/providers/*"]
         UCON["usage.py + providers/stripe.py"]
         GAPS["gaps.py — reconcile<br/>invoices × payments"]
-        BURN["burn.py — burn engine<br/>funding split · credit burn · statuses"]
     end
 
     ARCH[("🗃️ PDF archive<br/>~/Documents/treasury-invoices/<br/>ground truth — Tinybird is rebuildable")]
@@ -42,10 +41,9 @@ flowchart LR
         direction TB
         INV[("invoices")]
         PAY[("payments")]
-        BAL[("balances<br/>meter_monthly")]
+        METER[("meter_monthly")]
         USE[("usage_monthly<br/>revenue_monthly")]
         REC[("reconciliation")]
-        PM[("provider_month<br/>grants")]
         RUNS[("ingest_runs")]
         PIPES{{"9 read pipes — *_ep"}}
     end
@@ -69,22 +67,17 @@ flowchart LR
     WISE --> WCON
     WCON -- "replace by month" --> PAY
     APIS --> PCON
-    PCON -- "append" --> BAL
-    MANUAL -. "append" .-> BAL
+    PCON -- "replace" --> METER
+    MANUAL -. "append" .-> METER
     TBPROD --> UCON
     STRIPE --> UCON
     UCON -- "replace" --> USE
     CREDITS --> GAPS
-    CREDITS --> BURN
     INV --> GAPS
     PAY --> GAPS
     GAPS -- "full replace" --> REC
-    INV --> BURN
-    BAL --> BURN
-    USE --> BURN
-    BURN -- "full replace" --> PM
     FGR -. "append run log" .-> RUNS
-    INV & PAY & BAL & USE & REC & PM & RUNS --> PIPES
+    INV & PAY & METER & USE & REC & RUNS --> PIPES
     PIPES --> POC
     PIPES --> MISS
     PIPES --> NEXT
@@ -100,8 +93,8 @@ flowchart LR
     classDef console fill:#ffe4e6,stroke:#e11d48,color:#881337
 
     class GMAIL,INBOX,WISE,APIS,MANUAL,TBPROD,STRIPE,CREDITS src
-    class HARVEST,EXTRACT,WCON,PCON,UCON,GAPS,BURN bee
-    class INV,PAY,BAL,USE,REC,PM,RUNS store
+    class HARVEST,EXTRACT,WCON,PCON,UCON,GAPS bee
+    class INV,PAY,METER,USE,REC,RUNS store
     class PIPES pipe
     class POC,MISS,NEXT out
     class ARCH arch
@@ -125,10 +118,8 @@ each run  (manual — cron deferred)
              inbox/ drop folder sweep           ├─► archive ~/Documents/treasury-invoices/YYYY-MM/…  (sha256-dedup vs TB)
   2 READ     pdftoppm page images → Pollinations vision agent → {provider, period, amount, currency, number}
   3 PUSH     invoices rows (append) · payments rows (Wise, replace by month)
-  4 BALANCE  11 REST/CLI balance connectors → balances (append)
-  5 METER    7 meter connectors → meter_monthly (dedupe + full replace)
-  6 BURN     burn engine (burn.py) → provider_month (full replace) · grants (full replace)
-  7 FLAG     credits.json active windows × payments × invoices
+  4 METER    7 meter connectors → meter_monthly (dedupe + full replace)
+  5 FLAG     credits.json provider list × payments × invoices
              → reconciliation verdicts (full replace) → gaps_ep pipe
 frontend     treasury.myceli.ai/missing — provider × month grid; red cell → portal URL
              (DEFERRED — query chase list via gaps_ep in the meantime)
@@ -140,10 +131,7 @@ frontend     treasury.myceli.ai/missing — provider × month grid; red cell →
 |---|---|---|
 | `invoices` | append (sha256-dedup) | invoice catcher |
 | `payments` | replace by month | Wise connector |
-| `balances` | append | balance connectors (B3/B4) |
 | `meter_monthly` | full replace — one row per (provider, month, funding); api/cli/bq beat manual, latest wins | meter connectors (B5) |
-| `grants` | full replace | burn engine |
-| `provider_month` | full replace | burn engine |
 | `reconciliation` | full replace | reconcile engine |
 | `ingest_runs` | append | orchestrator |
 
@@ -151,14 +139,22 @@ frontend     treasury.myceli.ai/missing — provider × month grid; red cell →
 
 ## Manual refresh
 
-Run from `apps/operation/forager/`:
+Run non-invoice data from `apps/operation/forager/`:
 
 ```bash
 python3 -m ingest.doctor && python3 -m ingest.run
 ```
 
 - `doctor` exits 0 only when all hard checks pass (sops, tinybird-ops, wise, gog, pdftoppm, Pollinations key). Soft warnings (archive writable, freshness) print but don't block.
-- `run` harvests Gmail (last 3 days), drains the inbox, pulls Wise payments for the last 2 months, updates reconciliation, logs the run, and prints the chase list.
+- `run` pulls Wise payments for the last 2 months, refreshes provider data, and logs the run. It does not touch invoice PDFs.
+
+Run invoices separately:
+
+```bash
+python3 -m ingest.invoices.run
+```
+
+The invoice run searches Gmail (last 3 days), drains `inbox/`, moves every PDF to one outcome folder, and appends only validated invoices to Tinybird.
 
 Backfill (fresh rebuild since `config.months_start`):
 
@@ -166,10 +162,11 @@ Backfill (fresh rebuild since `config.months_start`):
 python3 -m ingest.run --backfill
 ```
 
-Backfill refreshes the local PDF archive, runs the invoice agent over every archived
-PDF in parallel (`config.json` `invoice_ai_parallelism`), replaces the `invoices`
-datasource with one row per unique file, then rebuilds payments, burn/provider-month,
-grants, reconciliation, and the chase list.
+Backfill repulls all configured payment months and refreshes provider data. Invoice Gmail backfill is separate:
+
+```bash
+python3 -m ingest.invoices.run --backfill-gmail
+```
 
 ---
 
@@ -179,15 +176,22 @@ For providers that never email a PDF (see dashboard-only list below):
 
 1. Download the PDF from the provider portal.
 2. Drop it into `~/Documents/treasury-invoices/inbox/`.
-3. Run `python3 -m ingest.run`.
+3. Run `python3 -m ingest.invoices.run`.
 
-The inbox is drained on every run: each PDF is sha256-deduped against Tinybird, classified from the filename prefix, extracted, moved to `YYYY-MM/<provider>_<date>_<sha8>_<origname>.pdf`, and pushed. An empty inbox after the run is the goal state.
+The inbox is drained on every invoice run. Each PDF is sha256-deduped against Tinybird and local outcome folders, classified from the filename prefix, extracted, and moved to exactly one place:
+
+| Folder | Meaning |
+|---|---|
+| `inbox/` | Input only; should be empty after a run unless a move fails |
+| `validated/YYYY-MM/` | Confirmed invoices; only these are appended to Tinybird |
+| `quarantine/` | Invoice-like PDFs that need manual review or hit an extraction error |
+| `deleted/` | Confident non-invoices, duplicates, and secondary PDFs |
 
 ---
 
 ## Label CLI
 
-When a PDF needs manual review, it lands in `invoices` with `status='needs_review'` and shows up amber in the chase list. Fix it with:
+When a PDF needs manual review, it lands in `quarantine/`. Move it back to `inbox/` after fixing the PDF/name or append a corrected validated row with:
 
 ```bash
 python3 -m ingest.invoices.label <sha256> \
@@ -201,7 +205,7 @@ python3 -m ingest.invoices.label <sha256> \
 Pass `--date` (real charge/issue date) for prepaid top-ups — reconciliation
 matches top-ups to payments by date ±10d, and the default is `<month>-01`.
 
-The command appends a corrected row with `status='parsed'`; downstream always takes the latest row per sha256. Provider slug must exist in `credits.json` pools — an unknown slug exits with the known-provider list. EUR amounts are converted to USD using `config.json` `fx_eur_usd`.
+The command appends a corrected row without any status column; downstream always takes the latest row per sha256. Provider slug must exist in `credits.json` pools — an unknown slug exits with the known-provider list. EUR amounts are converted to USD using `config.json` `fx_eur_usd`.
 
 ---
 
@@ -251,13 +255,13 @@ Quick reference — run from `apps/operation/forager/`:
 # Meter reading (most common form)
 python3 -m ingest.record meter <provider> <YYYY-MM> <cost_usd> --funding credit
 
-# Balance snapshot (use when you have a grant balance to record)
-python3 -m ingest.record balance <provider> --left <usd> [--granted <usd>] [--note TEXT]
+# Prepaid usage
+python3 -m ingest.record meter <provider> <YYYY-MM> <cost_usd> --funding prepaid
 ```
 
 Providers requiring monthly manual entry: `io.net`, `perplexity`, `nebius`, `lambda`, `bytedance`, `modal`, `elevenlabs`, `daytona` (fallback when wallet OIDC-gated).
 
-Provider slug must be in `registry.CANONICAL`; month must match `YYYY-MM`. Each command appends one row with `source="manual"` to `balances` or `meter_monthly`. The next run folds meter entries into the deduped table (one row per provider-month-funding); a manual value holds only until a programmatic connector covers that same month.
+Provider slug must be in `registry.CANONICAL`; month must match `YYYY-MM`. Each command appends one row with `source="manual"` to `meter_monthly`. Provider Usage is the monthly source of truth for dashboard/API values.
 
 ---
 
@@ -269,8 +273,6 @@ Provider slug must be in `registry.CANONICAL`; month must match `YYYY-MM`. Each 
 |---|---|
 | `clis` | `vastai`, `firectl`, `aws`, `bq` all on PATH (needed by CLI-based connectors) |
 | `tb-prod` | `TINYBIRD_PROD_READ_TOKEN` can query `generation_event` today (usage pull working) |
-| `balances-fresh` | Latest `balances` row is < 26 h old (balance connectors ran recently); "no rows yet" is soft-ok on fresh install |
-
 The existing soft checks `archive` (writable) and `freshness` (last ingest_run < 26 h) remain unchanged.
 
 ---

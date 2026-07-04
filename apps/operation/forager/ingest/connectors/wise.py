@@ -11,8 +11,9 @@ import urllib.parse
 from .common import http_json, strip_html
 from ..aliases import PROVIDER_ALIASES as ALIAS
 
-# The central provider + alias list lives in ingest/aliases.py now (not Wise-
-# specific — it just happens to be matched against Wise counterparties here).
+# The central provider alias list lives in config/provider_aliases.json via
+# ingest/aliases.py (not Wise-specific — it just happens to be matched against
+# Wise counterparties here).
 # Operating-expense classification stays here since it also carries a category.
 OPS_ALIAS = [
     ("deel", "payroll", ["lets deel", "deel"]),
@@ -20,6 +21,11 @@ OPS_ALIAS = [
     ("wise", "admin", ["wise"]),
     ("github", "saas", ["github"]),
     ("slack", "saas", ["slack"]),
+    ("buffer", "saas", ["buffer"]),
+    ("notion", "saas", ["notion"]),
+    ("discord", "saas", ["discord"]),
+    ("protonvpn", "saas", ["protonvpn", "proton vpn"]),
+    ("windsurf", "saas", ["windsurf"]),
     ("typeless", "saas", ["typeless"]),
     ("wispr", "saas", ["wispr"]),
     ("tinybird", "infra", ["tinybird"]),
@@ -126,9 +132,8 @@ def outflow_rows(creds, months):
                 eur = -eur
             if eur >= 0:
                 continue
-            prov = _match(cp) or ""
-            ops_prov, ops_category = _ops_match(cp) if not prov else ("", "")
-            prov = prov or ops_prov
+            ops_prov, ops_category = _ops_match(cp)
+            prov = _match(cp) or ops_prov
             rows.append({"paid_at": (a.get("createdOn") or f"{month}-15")[:10],
                          "provider": prov, "counterparty": cp,
                          "category": (

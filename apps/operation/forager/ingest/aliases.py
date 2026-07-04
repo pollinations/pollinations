@@ -1,65 +1,48 @@
-"""Provider aliases — the one central place that maps raw strings to a canonical
-provider slug. Not tied to any single source: the same alias list is used to
-match Wise payment counterparties today and can match invoice text or anything
-else tomorrow.
+"""Provider aliases.
 
-For now this lives in code (edit this file to add a provider or an alias); later
-it could move to a Tinybird table without changing the callers.
+Provider identity lives in one metadata file:
+`config/provider_aliases.json`.
 
-Two shapes, because there are two matching modes:
+The file is intentionally category-free. A provider can appear in multiple
+spend categories depending on the row context; for example Anthropic API usage
+can be compute while Claude subscription spend is SaaS. Category is assigned by
+the connector/classifier that creates the row, not by provider identity.
 
-  - PROVIDER_ALIASES: human/free-text strings, matched by case-insensitive
-    SUBSTRING (a bank descriptor like "AMAZON WEB SERVICES EMEA SARL" contains
-    "amazon web"). This is the central provider list + its aliases.
-  - MODEL_TAG_ALIASES: machine `model_provider_used` tags from Tinybird, matched
-    EXACTLY. Kept separate on purpose — it only holds tags that differ from the
-    canonical slug (azure-2 -> azure), never identity/pass-through entries, which
-    the burn tests enforce.
-
-Operating-expense classification (payroll/saas/office…) carries a category and
-stays in connectors/wise.py `OPS_ALIAS`; invoice-text classification lives in
-invoices/harvest.py `PROVIDERS` and could later read from here.
+The same alias list supports two matching modes:
+  - substring matching for human strings such as Wise counterparties
+  - exact matching for machine provider tags from generation events
 """
 
-# canonical provider slug -> identifying strings (lowercased), matched by substring
-PROVIDER_ALIASES: dict[str, list[str]] = {
-    "google": ["google cloud", "google cloud emea"],
-    "aws": ["automat-it", "amazon web", "aws emea"],
-    "alibaba": ["alibaba", "aliyun", "ant alibaba"],
-    "azure": ["microsoft", "azure"],
-    "runpod": ["runpod"],
-    "lambda": ["lambda labs", "lambda cloud"],
-    "deepinfra": ["deepinfra", "deep infra"],
-    "fireworks": ["fireworks"],
-    "openrouter": ["openrouter"],
-    "openai": ["openai"],
-    "anthropic": ["anthropic", "claude"],
-    "xai": ["grok", "x.ai", "xai"],
-    "replicate": ["replicate"],
-    "cloudflare": ["cloudflare"],
-    "ovhcloud": ["ovh"],
-    "elevenlabs": ["elevenlabs", "eleven labs"],
-    "perplexity": ["perplexity"],
-    "scaleway": ["scaleway"],
-    "modal": ["modal"],
-    "digitalocean": ["digitalocean", "digital ocean"],
-    "vast.ai": ["vast.ai", "vast ai"],
-    "daytona": ["daytona"],
-    "io.net": ["io.net", "io net"],
-    "bytedance": ["byteplus", "bytedance"],
-    "fal": ["fal.ai", "fal ai"],
-    "pruna": ["pruna"],
-    "stability": ["stability"],
-    "assemblyai": ["assemblyai", "assembly ai"],
-    "retell": ["retell ai", "retell"],
-}
+import json
+from pathlib import Path
 
-# raw Tinybird model_provider_used tag -> canonical provider slug (exact match).
-# Only tags that differ from the canonical slug belong here.
-MODEL_TAG_ALIASES: dict[str, str] = {
-    "aws-bedrock": "aws",
-    "bedrock": "aws",
-    "bedrock (native)": "aws",
-    "vastai": "vast.ai",
-    "azure-2": "azure",
+_ALIASES_PATH = Path(__file__).resolve().parents[1] / "config" / "provider_aliases.json"
+
+
+def _load_provider_aliases() -> dict[str, list[str]]:
+    raw = json.loads(_ALIASES_PATH.read_text())
+    out: dict[str, list[str]] = {}
+    for provider, aliases in raw.items():
+        if not isinstance(provider, str) or not provider.strip():
+            continue
+        slug = provider.strip().lower()
+        values = {
+            alias.strip().lower()
+            for alias in aliases
+            if isinstance(alias, str) and alias.strip()
+        }
+        values.add(slug)
+        out[slug] = sorted(values)
+    return out
+
+
+# canonical provider slug -> identifying strings, used for substring matching.
+PROVIDER_ALIASES: dict[str, list[str]] = _load_provider_aliases()
+
+# raw provider tag/name -> canonical provider slug, used for exact matching.
+PROVIDER_TAG_ALIASES: dict[str, str] = {
+    alias: provider
+    for provider, aliases in PROVIDER_ALIASES.items()
+    for alias in aliases
+    if alias != provider
 }

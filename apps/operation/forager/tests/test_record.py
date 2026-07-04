@@ -9,48 +9,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
 
-from ingest.connectors.providers import _brow, _mrow
+from ingest.connectors.providers import _mrow
 from ingest import record
 from ingest.connectors import registry
-
-
-# ---------------------------------------------------------------------------
-# _brow row shape
-# ---------------------------------------------------------------------------
-
-def test_brow_full():
-    r = _brow("2026-07-03 14:05:00", "openrouter",
-               granted=3000.0, spent=1372.48, left=1627.52,
-               prepaid=None, source="api", note="")
-    assert r == {
-        "run_at": "2026-07-03 14:05:00",
-        "provider": "openrouter",
-        "granted_usd": 3000.0,
-        "spent_usd": 1372.48,
-        "left_usd": 1627.52,
-        "prepaid_left_usd": None,
-        "source": "api",
-        "note": "",
-    }
-
-
-def test_brow_rounds_to_2dp():
-    r = _brow("2026-07-03 00:00:00", "runpod", left=255.666)
-    assert r["left_usd"] == 255.67
-
-
-def test_brow_none_stays_none():
-    r = _brow("2026-07-03 00:00:00", "deepinfra", granted=None, spent=None, left=None, prepaid=None)
-    assert r["granted_usd"] is None
-    assert r["spent_usd"] is None
-    assert r["left_usd"] is None
-    assert r["prepaid_left_usd"] is None
-
-
-def test_brow_defaults():
-    r = _brow("2026-07-03 00:00:00", "azure")
-    assert r["source"] == "api"
-    assert r["note"] == ""
 
 
 # ---------------------------------------------------------------------------
@@ -71,6 +32,21 @@ def test_mrow_full():
 def test_mrow_rounds_to_2dp():
     r = _mrow("2026-06", "vast.ai", 8.7777, "cash", "api", "2026-07-03")
     assert r["cost_usd"] == 8.78
+
+
+def test_mrow_rejects_unknown_provider():
+    with pytest.raises(ValueError, match="unknown provider"):
+        _mrow("2026-06", "not-a-provider", 8.77, "cash", "api", "2026-07-03")
+
+
+def test_mrow_rejects_unknown_funding():
+    with pytest.raises(ValueError, match="unknown funding"):
+        _mrow("2026-06", "vast.ai", 8.77, "coupon", "api", "2026-07-03")
+
+
+def test_mrow_rejects_unknown_source():
+    with pytest.raises(ValueError, match="unknown source"):
+        _mrow("2026-06", "vast.ai", 8.77, "cash", "spreadsheet", "2026-07-03")
 
 
 # ---------------------------------------------------------------------------
@@ -114,11 +90,10 @@ def test_canonical_no_duplicates():
 
 
 # ---------------------------------------------------------------------------
-# registry.BALANCE / METER — populated by B3–B5
+# registry.METER
 # ---------------------------------------------------------------------------
 
-def test_balance_and_meter_are_lists():
-    assert isinstance(registry.BALANCE, list)
+def test_meter_is_list():
     assert isinstance(registry.METER, list)
 
 
@@ -126,10 +101,6 @@ def test_meter_is_populated():
     # METER is populated in B5 with 7 connectors.
     assert len(registry.METER) == 7
 
-
-# ---------------------------------------------------------------------------
-# record.main: balance subcommand
-# ---------------------------------------------------------------------------
 
 class _FakeTB:
     """Minimal TB stub that captures append calls."""
@@ -143,45 +114,6 @@ class _FakeTB:
 
 def _make_factory(fake_tb):
     return lambda token: fake_tb
-
-
-def test_record_balance_appends_row():
-    fake = _FakeTB()
-    record.main(["balance", "runpod", "--left", "255.66"], tb_factory=_make_factory(fake))
-    assert len(fake.appended) == 1
-    ds, rows = fake.appended[0]
-    assert ds == "balances"
-    assert len(rows) == 1
-    r = rows[0]
-    assert r["provider"] == "runpod"
-    assert r["left_usd"] == 255.66
-    assert r["source"] == "manual"
-
-
-def test_record_balance_all_optional_fields():
-    fake = _FakeTB()
-    record.main([
-        "balance", "openrouter",
-        "--granted", "3000",
-        "--spent", "1372.48",
-        "--left", "1627.52",
-        "--prepaid", "0.0",
-        "--note", "manual entry",
-    ], tb_factory=_make_factory(fake))
-    r = fake.appended[0][1][0]
-    assert r["granted_usd"] == 3000.0
-    assert r["spent_usd"] == 1372.48
-    assert r["left_usd"] == 1627.52
-    assert r["prepaid_left_usd"] == 0.0
-    assert r["note"] == "manual entry"
-    assert r["source"] == "manual"
-
-
-def test_record_balance_prints_row(capsys):
-    fake = _FakeTB()
-    record.main(["balance", "azure", "--left", "100.0"], tb_factory=_make_factory(fake))
-    out = capsys.readouterr().out
-    assert "azure" in out
 
 
 # ---------------------------------------------------------------------------
@@ -206,11 +138,11 @@ def test_record_meter_appends_row():
     assert r["source"] == "manual"
 
 
-def test_record_meter_default_funding_cash():
+def test_record_meter_default_funding_prepaid():
     fake = _FakeTB()
     record.main(["meter", "runpod", "2026-05", "500.0"], tb_factory=_make_factory(fake))
     r = fake.appended[0][1][0]
-    assert r["funding"] == "cash"
+    assert r["funding"] == "prepaid"
 
 
 # ---------------------------------------------------------------------------
@@ -237,6 +169,6 @@ def test_bad_month_day_included():
 
 def test_unknown_provider_exits_nonzero():
     with pytest.raises(SystemExit) as exc:
-        record.main(["balance", "NOT_A_REAL_PROVIDER_XYZ", "--left", "1.0"],
+        record.main(["meter", "NOT_A_REAL_PROVIDER_XYZ", "2026-06", "1.0"],
                     tb_factory=_make_factory(_FakeTB()))
     assert exc.value.code != 0

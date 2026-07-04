@@ -41,8 +41,14 @@ ENGINE "MergeTree"
         "vendor_slug",
         "net_amount",
         "review_note",
+        "document_status",
     ]
-    assert schema["required"] == ["vendor_slug", "net_amount", "review_note"]
+    assert schema["required"] == [
+        "vendor_slug",
+        "net_amount",
+        "review_note",
+        "document_status",
+    ]
     assert schema["properties"]["net_amount"]["type"] == "number"
 
 
@@ -141,8 +147,11 @@ def test_extract_and_push_calls_ai_and_appends_row(monkeypatch, tmp_path):
     assert row["amount"] == 1234.5
     assert row["currency"] == "USD"
     assert row["credit_usd"] == 12.5
-    assert row["status"] == "parsed"
-    assert appended == [("invoices", [row])]
+    assert row["_document_status"] == "parsed"
+    assert appended[0][0] == "invoices"
+    assert appended[0][1][0]["provider"] == "runpod"
+    assert "status" not in appended[0][1][0]
+    assert "_document_status" not in appended[0][1][0]
 
 
 def test_extract_and_push_skips_non_parsed_row(monkeypatch, tmp_path):
@@ -181,7 +190,7 @@ def test_extract_and_push_skips_non_parsed_row(monkeypatch, tmp_path):
         provider_slugs=set(),
     )
 
-    assert row["status"] == "not_invoice"
+    assert row["_document_status"] == "not_invoice"
     assert appended == []
 
 
@@ -437,15 +446,15 @@ def test_label_push_path_appends_parsed_row(monkeypatch):
 
     row = appended["rows"][0]
     assert appended["datasource"] == "invoices"
-    assert row["status"] == "parsed"
+    assert "status" not in row
     assert row["provider"] == "vast.ai"
-    assert row["source"] == "label"
+    assert row["source"] == "manual"
     assert row["amount"] == 500.0
     assert row["currency"] == "EUR"
     assert row["credit_usd"] == 12.5
 
 
-def test_label_ignore_appends_not_invoice_row(monkeypatch):
+def test_label_ignore_moves_without_tinybird_append(monkeypatch):
     import ingest.creds as creds_mod
     from ingest.invoices import label
 
@@ -477,13 +486,11 @@ def test_label_ignore_appends_not_invoice_row(monkeypatch):
             appended["datasource"] = datasource
             appended["rows"] = rows
 
-    label.main(["sha-doc", "--not-invoice", "--note", "contract"], tb=StubTB())
+    result = label.main(["sha-doc", "--not-invoice", "--note", "contract"], tb=StubTB())
 
-    row = appended["rows"][0]
-    assert row["status"] == "not_invoice"
-    assert "kind" not in row
-    assert row["amount"] == 0.0
-    assert row["invoice_number"] == "contract"
+    assert appended == {}
+    assert result["action"] == "no_tinybird_row"
+    assert result["note"] == "contract"
 
 
 def test_label_carries_existing_credit_when_omitted(monkeypatch):
@@ -564,7 +571,7 @@ def test_dedupe_invoices_tie_break_latest_ingested_at():
     assert result[0]["ingested_at"] == "2026-06-20"
 
 
-def test_dedupe_invoices_label_beats_same_day_parsed():
+def test_dedupe_invoices_manual_beats_same_day_parsed():
     from ingest import run as run_mod
 
     machine = {
@@ -574,17 +581,39 @@ def test_dedupe_invoices_label_beats_same_day_parsed():
         "provider": "other",
         "ingested_at": "2026-07-03",
     }
-    label = {
+    manual = {
+        "sha256": "abc",
+        "status": "parsed",
+        "source": "manual",
+        "provider": "vast.ai",
+        "ingested_at": "2026-07-03",
+    }
+    for rows in ([machine, manual], [manual, machine]):
+        result = run_mod.dedupe_invoices(rows)
+        assert len(result) == 1
+        assert result[0]["provider"] == "vast.ai"
+
+
+def test_dedupe_invoices_legacy_label_still_beats_parsed():
+    from ingest import run as run_mod
+
+    machine = {
+        "sha256": "abc",
+        "status": "parsed",
+        "source": "email",
+        "provider": "other",
+        "ingested_at": "2026-07-03",
+    }
+    legacy = {
         "sha256": "abc",
         "status": "parsed",
         "source": "label",
         "provider": "vast.ai",
         "ingested_at": "2026-07-03",
     }
-    for rows in ([machine, label], [label, machine]):
-        result = run_mod.dedupe_invoices(rows)
-        assert len(result) == 1
-        assert result[0]["provider"] == "vast.ai"
+    result = run_mod.dedupe_invoices([machine, legacy])
+    assert len(result) == 1
+    assert result[0]["provider"] == "vast.ai"
 
 
 def test_dedupe_invoices_no_overlap():

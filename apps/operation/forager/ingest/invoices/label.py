@@ -1,12 +1,13 @@
 """Relabel an invoice row.
 
-Rows are append-only: emits a corrected duplicate with status='parsed'
-(or status='not_invoice' for non-invoice documents).
-The frontend/dedup always takes the latest row per sha256, preferring
-source='label' rows, so a label wins over the original machine row.
+Rows are append-only for validated invoices: emits a corrected duplicate with
+source='manual'. Non-invoice documents are represented by the deleted/ folder,
+not by Tinybird rows.
+The frontend/dedup always takes the latest row per sha256, preferring manual
+rows, so a human correction wins over the original machine row.
 
 file_ref and (unless overridden) category are carried over from the
-best existing row for the sha256 so the label never erases the PDF pointer.
+best existing row for the sha256 so the correction never erases the PDF pointer.
 
 Usage:
     python3 -m ingest.invoices.label <sha256> \\
@@ -14,7 +15,7 @@ Usage:
         --amount 500 --currency USD \\
         [--category compute] [--number INV-123] [--date 2026-06-14]
 
-    # Non-invoice document (SOW, memo, receipt duplicate, ticket...):
+    # Non-invoice document already present in Tinybird/local archive:
     python3 -m ingest.invoices.label <sha256> --not-invoice [--note "why"]
 """
 import argparse
@@ -56,8 +57,7 @@ def main(argv=None, tb=None):
     )
     parser.add_argument("sha256", help="SHA-256 of the invoice PDF")
     parser.add_argument("--not-invoice", action="store_true",
-                        help="Mark as not-an-invoice (status='not_invoice'); "
-                             "other fields optional")
+                        help="Move the existing PDF to deleted/ without appending to Tinybird.")
     parser.add_argument("--provider", help="Provider slug (e.g. vast.ai)")
     parser.add_argument("--month", help="Billing period YYYY-MM")
     parser.add_argument("--amount", type=float, help="Invoice amount")
@@ -126,21 +126,23 @@ def main(argv=None, tb=None):
     ingested_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
     if args.not_invoice:
+        from ingest.invoices import harvest as _harvest
+
+        file_ref = prev.get("file_ref", "")
+        moved_to = ""
+        if file_ref and os.path.exists(file_ref):
+            moved_to = _harvest._move_deleted(
+                config, file_ref, os.path.basename(file_ref), args.sha256,
+                args.note or args.number or "manual_not_invoice",
+            )
         row = {
-            "sha256":         args.sha256,
-            "provider":       args.provider or prev.get("provider", "other"),
-            "category":       args.category or prev.get("category", "") or "other",
-            "period_month":   "",
-            "amount":         0.0,
-            "currency":       currency,
-            "invoice_number": args.note or args.number,
-            "issued_at":      args.date or prev.get("issued_at", "") or "1970-01-01",
-            "source":         "label",
-            "file_ref":       prev.get("file_ref", ""),
-            "status":         "not_invoice",
-            "ingested_at":    ingested_at,
-            "credit_usd":     0.0,
+            "sha256": args.sha256,
+            "action": "moved_to_deleted" if moved_to else "no_tinybird_row",
+            "file_ref": moved_to,
+            "note": args.note or args.number,
         }
+        print(json.dumps(row, indent=2))
+        return row
     else:
         row = {
             "sha256":         args.sha256,
@@ -151,9 +153,8 @@ def main(argv=None, tb=None):
             "currency":       currency,
             "invoice_number": args.number,
             "issued_at":      args.date or (args.month + "-01"),
-            "source":         "label",
+            "source":         "manual",
             "file_ref":       prev.get("file_ref", ""),
-            "status":         "parsed",
             "ingested_at":    ingested_at,
             "credit_usd":     credit_usd,
         }

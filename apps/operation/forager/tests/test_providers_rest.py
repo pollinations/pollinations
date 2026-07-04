@@ -348,29 +348,6 @@ def test_daytona_missing_org_id_raises_before_wallet(monkeypatch):
     assert call_count[0] == 1
 
 
-# ---------------------------------------------------------------------------
-# Registry: all BALANCE slugs ∈ CANONICAL
-# ---------------------------------------------------------------------------
-
-def test_balance_slugs_in_canonical():
-    for slug, _ in registry.BALANCE:
-        assert slug in registry.CANONICAL, f"BALANCE slug not in CANONICAL: {slug}"
-
-
 def test_meter_slugs_in_canonical():
     for slug, _ in registry.METER:
         assert slug in registry.CANONICAL, f"METER slug not in CANONICAL: {slug}"
-
-
-def test_balance_has_b3_providers():
-    """After B3, BALANCE must contain all six REST providers."""
-    slugs = {slug for slug, _ in registry.BALANCE}
-    for expected in ("openrouter", "deepinfra", "runpod", "scaleway", "digitalocean", "daytona"):
-        assert expected in slugs, f"BALANCE missing: {expected}"
-
-
-def test_balance_callables():
-    """All BALANCE entries must be (str, callable) pairs."""
-    for slug, fn in registry.BALANCE:
-        assert isinstance(slug, str)
-        assert callable(fn)

@@ -13,7 +13,6 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
-import { FilterBar, FilterSelect, MonthFilter } from "../components/Filters";
 import { fmtPeriod } from "../lib/format";
 import { matchesMonth } from "../lib/months";
 import type { Data, UsageMonthlyRow } from "../types";
@@ -55,19 +54,11 @@ function fmtPollen(value: number | null | undefined): string {
 export function BurnTab({
     data,
     month = "",
-    months = [],
-    onMonthChange = () => {},
-    onProviderChange = () => {},
     provider = "all",
-    providers = ["all"],
 }: {
     data: Data;
     month?: string;
-    months?: string[];
-    onMonthChange?: (value: string) => void;
-    onProviderChange?: (value: string) => void;
     provider?: string;
-    providers?: string[];
 }) {
     const baseRows = useMemo(
         () =>
@@ -103,19 +94,6 @@ export function BurnTab({
 
     return (
         <div className="flex flex-col gap-4">
-            <FilterBar>
-                <MonthFilter
-                    months={months}
-                    value={month}
-                    onChange={onMonthChange}
-                />
-                <FilterSelect
-                    label="provider"
-                    value={provider}
-                    onChange={onProviderChange}
-                    options={providers}
-                />
-            </FilterBar>
             <TableScroller>
                 <DataTable>
                     <TableHead>

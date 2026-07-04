@@ -16,7 +16,6 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
-import { FilterBar, FilterSelect, MonthFilter } from "../components/Filters";
 import { fmtMoney } from "../lib/format";
 import { matchesMonth } from "../lib/months";
 import { queuedPaymentRuleKey } from "../lib/queued";
@@ -120,22 +119,18 @@ function PaymentProviderCell({ row }: { row: PaymentTxRow }) {
 }
 
 export function PaymentsTab({
+    category = "all",
     committedNonce = 0,
     data,
     month = "",
-    months = [],
-    onMonthChange = () => {},
-    onProviderChange = () => {},
     provider = "all",
     providers = ["all"],
     queuedKeys = new Set<string>(),
 }: {
+    category?: string;
     committedNonce?: number;
     data: Data;
     month?: string;
-    months?: string[];
-    onMonthChange?: (value: string) => void;
-    onProviderChange?: (value: string) => void;
     provider?: string;
     providers?: string[];
     queuedKeys?: ReadonlySet<string>;
@@ -146,7 +141,6 @@ export function PaymentsTab({
     const [editing, setEditing] = useState<Set<string>>(() =>
         stagedPaymentCounterparties(changes),
     );
-    const [category, setCategory] = useState("all");
     const lastNonce = useRef(committedNonce);
     const lastResetNonce = useRef(resetNonce);
     useEffect(() => {
@@ -208,33 +202,8 @@ export function PaymentsTab({
         () => providers.filter((slug) => slug !== "all"),
         [providers],
     );
-    const categoryOptions = useMemo(() => {
-        const options = new Set<string>();
-        for (const row of data.paymentsTx) options.add(row.category || "");
-        return ["all", ...[...options].sort((a, b) => a.localeCompare(b))];
-    }, [data.paymentsTx]);
-
     return (
         <div className="flex flex-col gap-4">
-            <FilterBar>
-                <MonthFilter
-                    months={months}
-                    value={month}
-                    onChange={onMonthChange}
-                />
-                <FilterSelect
-                    label="provider"
-                    value={provider}
-                    onChange={onProviderChange}
-                    options={providers}
-                />
-                <FilterSelect
-                    label="category"
-                    value={category}
-                    onChange={setCategory}
-                    options={categoryOptions}
-                />
-            </FilterBar>
             <datalist id="payment-rule-providers">
                 {knownProviders.map((slug) => (
                     <option key={slug} value={slug} />

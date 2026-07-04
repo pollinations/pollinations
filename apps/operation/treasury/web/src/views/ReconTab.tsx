@@ -14,7 +14,6 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
-import { FilterBar, FilterSelect, MonthFilter } from "../components/Filters";
 import { fmtPeriod, fmtUsd2 } from "../lib/format";
 import { matchesMonth } from "../lib/months";
 import { statusMeta } from "../lib/recon";
@@ -40,19 +39,11 @@ function isIssue(row: CoverageRow) {
 export function ReconTab({
     data,
     month = "",
-    months = [],
-    onMonthChange = () => {},
-    onProviderChange = () => {},
     provider = "all",
-    providers = ["all"],
 }: {
     data: Data;
     month?: string;
-    months?: string[];
-    onMonthChange?: (value: string) => void;
-    onProviderChange?: (value: string) => void;
     provider?: string;
-    providers?: string[];
 }) {
     const gapsByKey = useMemo(() => {
         const byKey = new Map<string, GapRow>();
@@ -102,19 +93,6 @@ export function ReconTab({
 
     return (
         <div className="flex flex-col gap-4">
-            <FilterBar>
-                <MonthFilter
-                    months={months}
-                    value={month}
-                    onChange={onMonthChange}
-                />
-                <FilterSelect
-                    label="provider"
-                    value={provider}
-                    onChange={onProviderChange}
-                    options={providers}
-                />
-            </FilterBar>
             <TableScroller>
                 <DataTable>
                     <TableHead>
@@ -153,7 +131,9 @@ export function ReconTab({
                             return (
                                 <TableRow key={key}>
                                     <TableCell>{row.provider}</TableCell>
-                                    <TableCell>{fmtPeriod(row.month)}</TableCell>
+                                    <TableCell>
+                                        {fmtPeriod(row.month)}
+                                    </TableCell>
                                     <TableCell>
                                         <Chip
                                             size="sm"

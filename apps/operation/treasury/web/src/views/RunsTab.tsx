@@ -53,7 +53,9 @@ export function RunsTab({ data }: { data: Data }) {
                         {withUniqueRowKeys(rows, (run) => run.run_at).map(
                             ({ key, row: run }) => (
                                 <TableRow key={key}>
-                                    <TableCell>{fmtPeriod(run.run_at)}</TableCell>
+                                    <TableCell>
+                                        {fmtPeriod(run.run_at)}
+                                    </TableCell>
                                     <TableCell>{run.ok}</TableCell>
                                     <TableCell title={run.statuses}>
                                         <code className="font-mono text-xs">

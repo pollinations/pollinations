@@ -16,7 +16,6 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
-import { FilterBar, FilterSelect, MonthFilter } from "../components/Filters";
 import { SourceBadge } from "../components/Provenance";
 import {
     buildManualMeterChange,
@@ -403,19 +402,15 @@ export function MeterTab({
     data,
     month = "",
     months = [],
-    onMonthChange = () => {},
     provider = "all",
     providers = ["all"],
-    onProviderChange = () => {},
     queuedKeys = new Set<string>(),
 }: {
     data: Data;
     month?: string;
     months?: string[];
-    onMonthChange?: (value: string) => void;
     provider?: string;
     providers?: string[];
-    onProviderChange?: (value: string) => void;
     queuedKeys?: ReadonlySet<string>;
     committedNonce?: number;
 }) {
@@ -499,19 +494,6 @@ export function MeterTab({
 
     return (
         <div className="flex flex-col gap-4">
-            <FilterBar>
-                <MonthFilter
-                    months={months}
-                    value={month}
-                    onChange={onMonthChange}
-                />
-                <FilterSelect
-                    label="provider"
-                    value={provider}
-                    onChange={onProviderChange}
-                    options={providers}
-                />
-            </FilterBar>
             <datalist id="meter-entry-providers">
                 {knownProviders.map((slug) => (
                     <option key={slug} value={slug} />

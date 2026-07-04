@@ -11,6 +11,7 @@ import {
     Tooltip,
 } from "@pollinations/ui";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { FilterBar, FilterSelect, MonthFilter } from "./components/Filters";
 import { OperationsGuide } from "./components/OperationsGuide";
 import { type ProvenanceCode, SourceMark } from "./components/Provenance";
 import { SaveControls } from "./components/SaveControls";
@@ -26,7 +27,7 @@ import { StagingProvider } from "./lib/staging";
 import { fixturesMode, loadAll, TbError } from "./lib/tb";
 import type { Data } from "./types";
 import { BurnTab } from "./views/BurnTab";
-import { InvoicesTab } from "./views/InvoicesTab";
+import { INVOICE_CATEGORIES, InvoicesTab } from "./views/InvoicesTab";
 import { MeterTab } from "./views/MeterTab";
 import { PaymentsTab } from "./views/PaymentsTab";
 import { ReconTab } from "./views/ReconTab";
@@ -195,6 +196,7 @@ export default function App() {
     // App-global like the period: pick a provider once, drill through the
     // provider tabs.
     const [provider, setProvider] = useState("all");
+    const [category, setCategory] = useState("all");
     const [attempt, setAttempt] = useState(0);
     const [committedNonce, setCommittedNonce] = useState(0);
     const [committedAwaitingIngest, setCommittedAwaitingIngest] = useState(0);
@@ -293,6 +295,16 @@ export default function App() {
         for (const row of data?.usageMonthly ?? [])
             addProvider(slugs, row.provider);
         return ["all", ...[...slugs].sort((a, b) => a.localeCompare(b))];
+    }, [data]);
+    const categoryOptions = useMemo(() => {
+        const categories = new Set(INVOICE_CATEGORIES);
+        for (const row of data?.invoices ?? []) {
+            if (row.category) categories.add(row.category);
+        }
+        for (const row of data?.paymentsTx ?? []) {
+            if (row.category) categories.add(row.category);
+        }
+        return ["all", ...[...categories].sort((a, b) => a.localeCompare(b))];
     }, [data]);
 
     useEffect(() => {
@@ -478,6 +490,28 @@ export default function App() {
                             </Alert>
                         )}
 
+                        <FilterBar>
+                            <MonthFilter
+                                months={months}
+                                value={activeMonth}
+                                onChange={setMonth}
+                            />
+                            <div className="flex flex-wrap gap-3">
+                                <FilterSelect
+                                    label="provider"
+                                    value={provider}
+                                    onChange={setProvider}
+                                    options={providerOptions}
+                                />
+                                <FilterSelect
+                                    label="category"
+                                    value={category}
+                                    onChange={setCategory}
+                                    options={categoryOptions}
+                                />
+                            </div>
+                        </FilterBar>
+
                         <nav className="flex flex-wrap gap-2">
                             {TABS.map((item) => (
                                 <Tooltip
@@ -533,36 +567,26 @@ export default function App() {
                             <ReconTab
                                 data={data}
                                 month={activeMonth}
-                                months={months}
-                                onMonthChange={setMonth}
                                 provider={provider}
-                                providers={providerOptions}
-                                onProviderChange={setProvider}
                             />
                         )}
                         {data && tab === "invoices" && (
                             <InvoicesTab
+                                category={category}
                                 committedNonce={committedNonce}
                                 data={data}
                                 month={activeMonth}
-                                months={months}
-                                onMonthChange={setMonth}
                                 provider={provider}
-                                providers={providerOptions}
-                                onProviderChange={setProvider}
                                 queuedKeys={queuedKeys}
                             />
                         )}
                         {data && tab === "payments" && (
                             <PaymentsTab
+                                category={category}
                                 committedNonce={committedAwaitingIngest}
                                 data={data}
                                 month={activeMonth}
-                                months={months}
-                                onMonthChange={setMonth}
                                 provider={provider}
-                                providers={providerOptions}
-                                onProviderChange={setProvider}
                                 queuedKeys={queuedKeys}
                             />
                         )}
@@ -570,11 +594,7 @@ export default function App() {
                             <BurnTab
                                 data={data}
                                 month={activeMonth}
-                                months={months}
-                                onMonthChange={setMonth}
                                 provider={provider}
-                                providers={providerOptions}
-                                onProviderChange={setProvider}
                             />
                         )}
                         {data && tab === "meter" && (
@@ -583,10 +603,8 @@ export default function App() {
                                 data={data}
                                 month={activeMonth}
                                 months={months}
-                                onMonthChange={setMonth}
                                 provider={provider}
                                 providers={providerOptions}
-                                onProviderChange={setProvider}
                                 queuedKeys={queuedKeys}
                             />
                         )}

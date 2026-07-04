@@ -16,7 +16,6 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
-import { FilterBar, FilterSelect, MonthFilter } from "../components/Filters";
 import { fmtMoney } from "../lib/format";
 import { matchesMonth, monthName } from "../lib/months";
 import { queuedInvoiceKey } from "../lib/queued";
@@ -32,8 +31,6 @@ export const INVOICE_CATEGORIES = [
     "payroll",
     "other",
 ];
-
-const CATEGORY_OPTIONS = ["all", ...INVOICE_CATEGORIES];
 
 export type InvoiceEditValues = {
     category: string;
@@ -191,28 +188,21 @@ function InvoiceEditCells({ row }: { row: InvoiceRow }) {
 }
 
 export function InvoicesTab({
+    category = "all",
     committedNonce = 0,
     data,
     month = "",
-    months = [],
-    onMonthChange = () => {},
-    onProviderChange = () => {},
     provider = "all",
-    providers = ["all"],
     queuedKeys = new Set<string>(),
 }: {
+    category?: string;
     committedNonce?: number;
     data: Data;
     month?: string;
-    months?: string[];
-    onMonthChange?: (value: string) => void;
-    onProviderChange?: (value: string) => void;
     provider?: string;
-    providers?: string[];
     queuedKeys?: ReadonlySet<string>;
 }) {
     const { changes, resetNonce, unstage } = useStaging();
-    const [category, setCategory] = useState("all");
     // Rows whose editable cells are live. Recovered from staging on mount so an
     // edit survives tab switches; wiped when a commit lands.
     const [editing, setEditing] = useState<Set<string>>(() =>
@@ -277,25 +267,6 @@ export function InvoicesTab({
 
     return (
         <div className="flex flex-col gap-4">
-            <FilterBar>
-                <MonthFilter
-                    months={months}
-                    value={month}
-                    onChange={onMonthChange}
-                />
-                <FilterSelect
-                    label="provider"
-                    value={provider}
-                    onChange={onProviderChange}
-                    options={providers}
-                />
-                <FilterSelect
-                    label="category"
-                    value={category}
-                    onChange={setCategory}
-                    options={CATEGORY_OPTIONS}
-                />
-            </FilterBar>
             <TableScroller>
                 <DataTable>
                     <TableHead>

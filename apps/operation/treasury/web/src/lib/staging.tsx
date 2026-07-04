@@ -10,28 +10,38 @@ import { appendRows } from "./write";
 
 export type StagedChange = {
     id: string;
+    // Stable identity of what is being edited (e.g. "invoices:<sha256>").
+    // Staging the same key again replaces the pending change; editors use it
+    // for per-row reset. Add-forms without a natural key get the random id.
+    key: string;
     datasource: string;
     row: Record<string, unknown>;
     summary: string;
 };
 
-export type StageInput = Omit<StagedChange, "id"> & { id?: string };
+export type StageInput = Omit<StagedChange, "id" | "key"> & {
+    id?: string;
+    key?: string;
+};
 
 export type StagingState = {
     changes: StagedChange[];
     committing: boolean;
     error: string | null;
+    resetNonce: number;
 };
 
 export const initialStagingState: StagingState = {
     changes: [],
     committing: false,
     error: null,
+    resetNonce: 0,
 };
 
 type StagingAction =
     | { type: "stage"; change: StagedChange }
-    | { type: "discard"; id: string }
+    | { type: "unstage"; key: string }
+    | { type: "clear" }
     | { type: "commitStart" }
     | { type: "commitSuccess" }
     | { type: "commitError"; error: string };
@@ -41,23 +51,40 @@ export function stagingReducer(
     action: StagingAction,
 ): StagingState {
     switch (action.type) {
-        case "stage":
-            return {
-                ...state,
-                changes: [...state.changes, action.change],
-                error: null,
-            };
-        case "discard":
+        case "stage": {
+            const exists = state.changes.some(
+                (change) => change.key === action.change.key,
+            );
+            const changes = exists
+                ? state.changes.map((change) =>
+                      change.key === action.change.key ? action.change : change,
+                  )
+                : [...state.changes, action.change];
+            return { ...state, changes, error: null };
+        }
+        case "unstage":
             return {
                 ...state,
                 changes: state.changes.filter(
-                    (change) => change.id !== action.id,
+                    (change) => change.key !== action.key,
                 ),
+            };
+        case "clear":
+            return {
+                ...state,
+                changes: [],
+                error: null,
+                resetNonce: state.resetNonce + 1,
             };
         case "commitStart":
             return { ...state, committing: true, error: null };
         case "commitSuccess":
-            return { changes: [], committing: false, error: null };
+            return {
+                changes: [],
+                committing: false,
+                error: null,
+                resetNonce: state.resetNonce,
+            };
         case "commitError":
             return { ...state, committing: false, error: action.error };
     }
@@ -77,7 +104,8 @@ export function rowsByDatasource(changes: StagedChange[]) {
 
 type StagingContextValue = StagingState & {
     stage: (change: StageInput) => string;
-    discard: (id: string) => void;
+    unstage: (key: string) => void;
+    clear: () => void;
     commitAll: () => Promise<void>;
 };
 
@@ -102,12 +130,17 @@ export function StagingProvider({
 
     const stage = useCallback((input: StageInput) => {
         const id = input.id ?? newId();
-        dispatch({ type: "stage", change: { ...input, id } });
+        const key = input.key ?? id;
+        dispatch({ type: "stage", change: { ...input, id, key } });
         return id;
     }, []);
 
-    const discard = useCallback((id: string) => {
-        dispatch({ type: "discard", id });
+    const unstage = useCallback((key: string) => {
+        dispatch({ type: "unstage", key });
+    }, []);
+
+    const clear = useCallback(() => {
+        dispatch({ type: "clear" });
     }, []);
 
     const commitAll = useCallback(async () => {
@@ -143,10 +176,11 @@ export function StagingProvider({
         () => ({
             ...state,
             stage,
-            discard,
+            unstage,
+            clear,
             commitAll,
         }),
-        [commitAll, discard, stage, state],
+        [clear, commitAll, stage, unstage, state],
     );
 
     return (

@@ -1,29 +1,25 @@
 import {
-    Button,
     Chip,
-    Switch,
     TableBody,
     TableCell,
     TableHead,
     TableHeaderCell,
     TableRow,
-    Text,
 } from "@pollinations/ui";
-import { Fragment, useMemo, useState } from "react";
-import { DataNote } from "../components/DataNote";
-import { DataTable, TableScroller } from "../components/DataTable";
-import { canResolveGapStatus, GapActions } from "../components/GapActions";
-import { HeaderWithSources, SourceMark } from "../components/Provenance";
-import { fmtUsd2 } from "../lib/format";
+import { useMemo } from "react";
 import {
-    queuedBalanceKey,
-    queuedMeterKey,
-    queuedReconKey,
-} from "../lib/queued";
+    DataTable,
+    type SortColumn,
+    TableScroller,
+    useSortableRows,
+    withUniqueRowKeys,
+} from "../components/DataTable";
+import { FilterBar, FilterSelect, MonthFilter } from "../components/Filters";
+import { HeaderWithSources } from "../components/Provenance";
+import { fmtUsd2 } from "../lib/format";
+import { matchesMonth, monthName } from "../lib/months";
 import { statusMeta } from "../lib/recon";
 import type { CoverageRow, Data, GapRow } from "../types";
-
-const OK_STATUSES = new Set(["ok", "ok_credit", "accepted"]);
 
 function sortedCoverage(rows: CoverageRow[]) {
     return [...rows].sort(
@@ -40,13 +36,21 @@ function gapKey(row: Pick<GapRow, "month" | "provider" | "status">) {
 
 export function ReconTab({
     data,
-    queuedKeys = new Set<string>(),
+    month = "",
+    months = [],
+    onMonthChange = () => {},
+    onProviderChange = () => {},
+    provider = "all",
+    providers = ["all"],
 }: {
     data: Data;
-    queuedKeys?: ReadonlySet<string>;
+    month?: string;
+    months?: string[];
+    onMonthChange?: (value: string) => void;
+    onProviderChange?: (value: string) => void;
+    provider?: string;
+    providers?: string[];
 }) {
-    const [problemsOnly, setProblemsOnly] = useState(false);
-    const [resolveKey, setResolveKey] = useState<string | null>(null);
     const gapsByKey = useMemo(() => {
         const byKey = new Map<string, GapRow>();
         const byProviderMonth = new Map<string, GapRow>();
@@ -58,179 +62,120 @@ export function ReconTab({
 
         return { byKey, byProviderMonth };
     }, [data.gaps]);
-    const coverage = useMemo(
+    const baseCoverage = useMemo(
         () =>
             sortedCoverage(data.coverage).filter(
-                (row) => !problemsOnly || !OK_STATUSES.has(row.status),
+                (row) =>
+                    matchesMonth(row.month, month) &&
+                    (provider === "all" || row.provider === provider),
             ),
-        [data.coverage, problemsOnly],
+        [data.coverage, month, provider],
+    );
+    const sortColumns = useMemo<SortColumn<CoverageRow>[]>(
+        () => [
+            { key: "status", value: (row) => row.status },
+            { key: "month", value: (row) => row.month },
+            { key: "provider", value: (row) => row.provider },
+            { key: "invoice_usd", value: (row) => row.invoice_usd },
+            { key: "payment_usd", value: (row) => row.payment_usd },
+            {
+                key: "delta_usd",
+                value: (row) =>
+                    (
+                        gapsByKey.byKey.get(gapKey(row)) ??
+                        gapsByKey.byProviderMonth.get(
+                            `${row.month}|${row.provider}`,
+                        )
+                    )?.delta_usd,
+            },
+        ],
+        [gapsByKey],
+    );
+    const { headerProps, rows: coverage } = useSortableRows(
+        baseCoverage,
+        sortColumns,
     );
 
     return (
         <div className="flex flex-col gap-4">
-            <DataNote pipe="coverage_ep" rows={coverage.length}>
-                One verdict per provider and month: invoices{" "}
-                <SourceMark code="IV" /> matched against Wise payments{" "}
-                <SourceMark code="WS" /> — missing or mismatched money surfaces
-                here first.
-            </DataNote>
-            <div className="inline-flex w-fit items-center gap-2 text-sm text-theme-text-soft">
-                <Switch
-                    checked={problemsOnly}
-                    onChange={setProblemsOnly}
-                    ariaLabel="Show reconciliation problems only"
+            <FilterBar>
+                <MonthFilter
+                    months={months}
+                    value={month}
+                    onChange={onMonthChange}
                 />
-                problems only
-            </div>
+                <FilterSelect
+                    label="provider"
+                    value={provider}
+                    onChange={onProviderChange}
+                    options={providers}
+                />
+            </FilterBar>
             <TableScroller>
                 <DataTable>
                     <TableHead>
                         <TableRow>
-                            <TableHeaderCell>actions</TableHeaderCell>
-                            <TableHeaderCell>month</TableHeaderCell>
-                            <TableHeaderCell>provider</TableHeaderCell>
-                            <TableHeaderCell>
-                                <HeaderWithSources codes={["TB"]}>
-                                    billing
-                                </HeaderWithSources>
-                            </TableHeaderCell>
-                            <TableHeaderCell>
+                            <TableHeaderCell {...headerProps("status")}>
                                 <HeaderWithSources codes={["TB"]}>
                                     status
                                 </HeaderWithSources>
                             </TableHeaderCell>
-                            <TableHeaderCell>
+                            <TableHeaderCell {...headerProps("month")}>
+                                month
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("provider")}>
+                                provider
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("invoice_usd")}>
                                 <HeaderWithSources codes={["IV"]}>
                                     invoice_usd
                                 </HeaderWithSources>
                             </TableHeaderCell>
-                            <TableHeaderCell>
+                            <TableHeaderCell {...headerProps("payment_usd")}>
                                 <HeaderWithSources codes={["WS"]}>
                                     payment_usd
                                 </HeaderWithSources>
                             </TableHeaderCell>
-                            {problemsOnly && (
-                                <>
-                                    <TableHeaderCell>delta_usd</TableHeaderCell>
-                                    <TableHeaderCell>
-                                        invoice_refs
-                                    </TableHeaderCell>
-                                    <TableHeaderCell>
-                                        payment_refs
-                                    </TableHeaderCell>
-                                    <TableHeaderCell>note</TableHeaderCell>
-                                </>
-                            )}
+                            <TableHeaderCell {...headerProps("delta_usd")}>
+                                delta_usd
+                            </TableHeaderCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {coverage.map((row) => {
+                        {withUniqueRowKeys(
+                            coverage,
+                            (row) => `${row.provider}|${row.month}`,
+                        ).map(({ key, row }) => {
                             const meta = statusMeta(row.status);
-                            const queued =
-                                queuedKeys.has(
-                                    queuedReconKey(row.month, row.provider),
-                                ) ||
-                                queuedKeys.has(
-                                    queuedMeterKey(row.month, row.provider),
-                                ) ||
-                                queuedKeys.has(queuedBalanceKey(row.provider));
                             const gap =
                                 gapsByKey.byKey.get(gapKey(row)) ??
                                 gapsByKey.byProviderMonth.get(
                                     `${row.month}|${row.provider}`,
                                 );
-                            const rowKey = `${row.provider}|${row.month}`;
                             return (
-                                <Fragment key={rowKey}>
-                                    <TableRow>
-                                        <TableCell>
-                                            {canResolveGapStatus(row.status) ? (
-                                                <Button
-                                                    size="sm"
-                                                    onClick={() =>
-                                                        setResolveKey(
-                                                            resolveKey ===
-                                                                rowKey
-                                                                ? null
-                                                                : rowKey,
-                                                        )
-                                                    }
-                                                >
-                                                    Resolve
-                                                </Button>
-                                            ) : (
-                                                "-"
-                                            )}
-                                        </TableCell>
-                                        <TableCell>{row.month}</TableCell>
-                                        <TableCell>{row.provider}</TableCell>
-                                        <TableCell>
-                                            {row.billing || "-"}
-                                        </TableCell>
-                                        <TableCell>
-                                            <span className="inline-flex items-center gap-1.5">
-                                                <Chip
-                                                    size="sm"
-                                                    intent={
-                                                        meta.intent ?? undefined
-                                                    }
-                                                >
-                                                    {row.status}
-                                                </Chip>
-                                                {queued && (
-                                                    <Chip
-                                                        size="sm"
-                                                        intent="warning"
-                                                    >
-                                                        queued
-                                                    </Chip>
-                                                )}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell>
-                                            {fmtUsd2(row.invoice_usd)}
-                                        </TableCell>
-                                        <TableCell>
-                                            {fmtUsd2(row.payment_usd)}
-                                        </TableCell>
-                                        {problemsOnly && (
-                                            <>
-                                                <TableCell>
-                                                    {fmtUsd2(gap?.delta_usd)}
-                                                </TableCell>
-                                                <TableCell
-                                                    title={gap?.invoice_refs}
-                                                >
-                                                    {gap?.invoice_refs || "-"}
-                                                </TableCell>
-                                                <TableCell
-                                                    title={gap?.payment_refs}
-                                                >
-                                                    {gap?.payment_refs || "-"}
-                                                </TableCell>
-                                                <TableCell title={gap?.note}>
-                                                    <Text as="span" tone="soft">
-                                                        {gap?.note || "-"}
-                                                    </Text>
-                                                </TableCell>
-                                            </>
-                                        )}
-                                    </TableRow>
-                                    {resolveKey === rowKey && (
-                                        <TableRow>
-                                            <TableCell
-                                                colSpan={problemsOnly ? 11 : 7}
-                                            >
-                                                <GapActions
-                                                    row={row}
-                                                    onClose={() =>
-                                                        setResolveKey(null)
-                                                    }
-                                                />
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </Fragment>
+                                <TableRow key={key}>
+                                    <TableCell>
+                                        <Chip
+                                            size="sm"
+                                            intent={meta.intent ?? undefined}
+                                        >
+                                            {row.status}
+                                        </Chip>
+                                    </TableCell>
+                                    <TableCell>
+                                        {monthName(row.month)}
+                                    </TableCell>
+                                    <TableCell>{row.provider}</TableCell>
+                                    <TableCell>
+                                        {fmtUsd2(row.invoice_usd)}
+                                    </TableCell>
+                                    <TableCell>
+                                        {fmtUsd2(row.payment_usd)}
+                                    </TableCell>
+                                    <TableCell>
+                                        {fmtUsd2(gap?.delta_usd)}
+                                    </TableCell>
+                                </TableRow>
                             );
                         })}
                     </TableBody>

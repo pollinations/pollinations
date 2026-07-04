@@ -13,17 +13,16 @@ describe("UsageEntryForm row builders", () => {
                 funding: "credit",
                 month: "2026-03",
                 provider: "assemblyai",
-                retrievedAt: "2026-07-03",
             }),
         ).toEqual({
             datasource: "meter_monthly",
+            key: "meter:assemblyai:2026-03:credit",
             row: {
                 month: "2026-03",
                 provider: "assemblyai",
                 cost_usd: 242.5,
                 funding: "credit",
                 source: "manual",
-                retrieved_at: "2026-07-03",
                 note: "entered in treasury app",
             },
             summary: "meter assemblyai 2026-03 credit -> 242.5",
@@ -39,6 +38,7 @@ describe("UsageEntryForm row builders", () => {
             }),
         ).toEqual({
             datasource: "balances",
+            key: "balances:lambda",
             row: {
                 run_at: "2026-07-03 12:00:00",
                 provider: "lambda",

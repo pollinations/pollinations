@@ -6,45 +6,58 @@ import {
     TableRow,
     Text,
 } from "@pollinations/ui";
-import { DataNote } from "../components/DataNote";
-import { DataTable, TableScroller } from "../components/DataTable";
-import { SourceMark } from "../components/Provenance";
-import type { Data } from "../types";
+import { useMemo } from "react";
+import {
+    DataTable,
+    type SortColumn,
+    TableScroller,
+    useSortableRows,
+    withUniqueRowKeys,
+} from "../components/DataTable";
+import type { Data, RunRow } from "../types";
 
 export function RunsTab({ data }: { data: Data }) {
+    const sortColumns = useMemo<SortColumn<RunRow>[]>(
+        () => [
+            { key: "run_at", value: (run) => run.run_at },
+            { key: "ok", value: (run) => run.ok },
+            { key: "statuses", value: (run) => run.statuses },
+        ],
+        [],
+    );
+    const { headerProps, rows } = useSortableRows(data.runs, sortColumns);
+
     return (
         <div className="flex flex-col gap-4">
-            <DataNote pipe="runs_ep" rows={data.runs.length}>
-                Forager ingest run log <SourceMark code="TB" /> — check
-                freshness here before trusting any other tab.
-            </DataNote>
             <TableScroller>
                 <DataTable>
                     <TableHead>
                         <TableRow>
-                            <TableHeaderCell>run_at</TableHeaderCell>
-                            <TableHeaderCell>ok</TableHeaderCell>
-                            <TableHeaderCell>statuses</TableHeaderCell>
-                            <TableHeaderCell>notes</TableHeaderCell>
+                            <TableHeaderCell {...headerProps("run_at")}>
+                                run_at
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("ok")}>
+                                ok
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("statuses")}>
+                                statuses
+                            </TableHeaderCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {data.runs.map((run) => (
-                            <TableRow key={run.run_at}>
-                                <TableCell>{run.run_at}</TableCell>
-                                <TableCell>{run.ok}</TableCell>
-                                <TableCell title={run.statuses}>
-                                    <code className="font-mono text-xs">
-                                        {run.statuses || "{}"}
-                                    </code>
-                                </TableCell>
-                                <TableCell>
-                                    <Text as="span" tone="soft">
-                                        {run.notes || "-"}
-                                    </Text>
-                                </TableCell>
-                            </TableRow>
-                        ))}
+                        {withUniqueRowKeys(rows, (run) => run.run_at).map(
+                            ({ key, row: run }) => (
+                                <TableRow key={key}>
+                                    <TableCell>{run.run_at}</TableCell>
+                                    <TableCell>{run.ok}</TableCell>
+                                    <TableCell title={run.statuses}>
+                                        <code className="font-mono text-xs">
+                                            {run.statuses || "{}"}
+                                        </code>
+                                    </TableCell>
+                                </TableRow>
+                            ),
+                        )}
                     </TableBody>
                 </DataTable>
             </TableScroller>

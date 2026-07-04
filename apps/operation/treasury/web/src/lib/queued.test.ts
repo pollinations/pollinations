@@ -14,6 +14,7 @@ const change = (
     row: Record<string, unknown>,
 ): StagedChange => ({
     id: "x",
+    key: `${datasource}:x`,
     datasource,
     row,
     summary: "x",

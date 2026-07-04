@@ -1,7 +1,6 @@
 export type CoverageRow = {
     month: string;
     provider: string;
-    billing: string;
     status: string;
     invoice_usd: number;
     payment_usd: number;
@@ -9,44 +8,30 @@ export type CoverageRow = {
 
 export type GapRow = CoverageRow & {
     delta_usd: number;
-    invoice_refs: string;
-    payment_refs: string;
-    note: string;
 };
 
 export type InvoiceRow = {
     sha256: string;
     provider: string;
     category: string;
-    kind: string;
     period_month: string;
     amount: number;
     currency: string;
-    amount_usd: number;
     credit_usd: number;
     invoice_number: string;
     issued_at: string;
-    source: string;
     file_ref: string;
-    status: string;
-    ingested_at: string;
 };
 
 export type GrantRow = {
     pool: string;
     providers: string;
-    kind: string;
     category: string;
-    currency: string;
-    granted_usd: number | null;
-    granted_src: string;
     left_usd: number | null;
     left_src: string;
     prepaid_left_usd: number | null;
     prepaid_left_src: string;
     expires: string;
-    note: string;
-    run_at: string;
 };
 
 export type PaymentTxRow = {
@@ -55,18 +40,15 @@ export type PaymentTxRow = {
     category: string;
     counterparty: string;
     amount_eur: number;
-    amount_usd: number;
-    wise_ref: string;
 };
 
 export type MeterMonthlyRow = {
     month: string;
     provider: string;
-    cost_usd: number;
-    funding: string;
-    source: string;
-    retrieved_at: string;
-    note: string;
+    cash_burn_usd: number;
+    cash_src: string;
+    credit_burn_usd: number;
+    credit_src: string;
 };
 
 export type UsageMonthlyRow = {
@@ -81,22 +63,17 @@ export type UsageMonthlyRow = {
     billable_quest_pollen: number;
 };
 
-export type BalanceRow = {
-    provider: string;
-    granted_usd: number | null;
-    spent_usd: number | null;
-    left_usd: number | null;
-    prepaid_left_usd: number | null;
-    source: string;
-    note: string;
-    last_run_at: string;
-};
-
 export type RunRow = {
     run_at: string;
     ok: number;
     statuses: string;
-    notes: string;
+};
+
+// One curated mapping row: a raw string seen in the data (a Wise counterparty,
+// an invoice sender, a model tag) assigned to a canonical provider/category.
+export type ProviderAliasRow = {
+    alias: string;
+    provider: string;
 };
 
 export type Data = {
@@ -106,7 +83,7 @@ export type Data = {
     paymentsTx: PaymentTxRow[];
     meterMonthly: MeterMonthlyRow[];
     grants: GrantRow[];
-    balances: BalanceRow[];
     usageMonthly: UsageMonthlyRow[];
     runs: RunRow[];
+    providerAliases: ProviderAliasRow[];
 };

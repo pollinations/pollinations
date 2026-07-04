@@ -9,7 +9,6 @@ const EXPECTED_PIPES = [
     "payments_ep",
     "meter_monthly_ep",
     "grants_ep",
-    "balances_ep",
     "usage_ep",
     "runs_ep",
 ];

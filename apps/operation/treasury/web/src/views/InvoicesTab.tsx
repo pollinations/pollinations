@@ -1,27 +1,30 @@
 import {
     Button,
-    CheckIcon,
     Chip,
-    ClipboardIcon,
-    CopyButton,
+    ExternalLinkIcon,
+    Input,
     TableBody,
     TableCell,
     TableHead,
     TableHeaderCell,
     TableRow,
 } from "@pollinations/ui";
-import { Fragment, useMemo, useState } from "react";
-import { DataNote } from "../components/DataNote";
-import { DataTable, TableScroller } from "../components/DataTable";
-import { InvoiceEditor } from "../components/InvoiceEditor";
-import { SourceBadge, SourceMark } from "../components/Provenance";
-import { fmtMoney, fmtUsd2 } from "../lib/format";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+    DataTable,
+    type SortColumn,
+    TableScroller,
+    useSortableRows,
+    withUniqueRowKeys,
+} from "../components/DataTable";
+import { FilterBar, FilterSelect, MonthFilter } from "../components/Filters";
+import { fmtMoney } from "../lib/format";
+import { matchesMonth, monthName } from "../lib/months";
 import { queuedInvoiceKey } from "../lib/queued";
-import { statusMeta } from "../lib/recon";
+import { type StageInput, useStaging } from "../lib/staging";
 import type { Data, InvoiceRow } from "../types";
 
-const CATEGORY_OPTIONS = [
-    "all",
+export const INVOICE_CATEGORIES = [
     "compute",
     "infra",
     "saas",
@@ -31,220 +34,421 @@ const CATEGORY_OPTIONS = [
     "other",
 ];
 
-function StatusChip({ status }: { status: string }) {
-    const meta = statusMeta(status);
-    return (
-        <Chip size="sm" intent={meta.intent ?? undefined}>
-            {status}
-        </Chip>
-    );
+const CATEGORY_OPTIONS = ["all", ...INVOICE_CATEGORIES];
+
+export type InvoiceEditValues = {
+    category: string;
+    provider: string;
+};
+
+function nowDateTime() {
+    return new Date().toISOString().replace("T", " ").slice(0, 19);
 }
+
+function finiteNumber(value: unknown, fallback = 0) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function invoiceDate(value: string, periodMonth: string) {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+    if (/^\d{4}-\d{2}$/.test(periodMonth)) return `${periodMonth}-01`;
+    return "1970-01-01";
+}
+
+export function initialInvoiceValues(row: InvoiceRow): InvoiceEditValues {
+    return {
+        category: row.category || "other",
+        provider: row.provider || "other",
+    };
+}
+
+export function validateInvoiceEdit(values: InvoiceEditValues): string | null {
+    if (!values.provider.trim()) return "provider is required";
+    if (!INVOICE_CATEGORIES.includes(values.category)) {
+        return "category is not valid";
+    }
+
+    return null;
+}
+
+export function buildInvoiceLabelChange({
+    ingestedAt = nowDateTime(),
+    row,
+    values,
+}: {
+    ingestedAt?: string;
+    row: InvoiceRow;
+    values: InvoiceEditValues;
+}): StageInput {
+    return {
+        datasource: "invoices",
+        key: `invoices:${row.sha256}`,
+        row: {
+            sha256: row.sha256,
+            provider: values.provider.trim(),
+            category: values.category,
+            period_month: row.period_month || "",
+            amount: finiteNumber(row.amount),
+            currency: row.currency || "USD",
+            invoice_number: row.invoice_number || "",
+            issued_at: invoiceDate(row.issued_at, row.period_month),
+            source: "label",
+            file_ref: row.file_ref || "",
+            status: "parsed",
+            ingested_at: ingestedAt,
+            credit_usd: finiteNumber(row.credit_usd),
+        },
+        summary: `invoice ${values.provider.trim()} ${row.period_month || "-"} label`,
+    };
+}
+
+const CELL_SELECT =
+    "rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong";
 
 function sortedInvoices(rows: InvoiceRow[]) {
     return [...rows].sort(
         (a, b) =>
-            b.ingested_at.localeCompare(a.ingested_at) ||
             b.period_month.localeCompare(a.period_month) ||
             a.provider.localeCompare(b.provider) ||
+            a.invoice_number.localeCompare(b.invoice_number) ||
             a.sha256.localeCompare(b.sha256),
     );
+}
+
+function stagedInvoiceShas(
+    changes: { datasource: string; row: Record<string, unknown> }[],
+) {
+    const shas = new Set<string>();
+    for (const change of changes) {
+        if (change.datasource === "invoices") {
+            const sha = change.row.sha256;
+            if (typeof sha === "string") shas.add(sha);
+        }
+    }
+    return shas;
 }
 
 function FileRefAction({ fileRef }: { fileRef: string }) {
     if (!fileRef) return <span>-</span>;
 
     return (
-        <CopyButton
-            value={fileRef}
-            aria-label="Copy file reference"
-            tooltip="Copy file reference"
-            copiedTooltip="Copied file reference"
-            className={(copied) =>
-                [
-                    "inline-flex h-7 w-7 items-center justify-center rounded border border-theme-border/70 bg-theme-bg/60 text-theme-text-soft transition-colors",
-                    "hover:bg-theme-bg-hover hover:text-theme-text-strong",
-                    copied ? "text-intent-success-text" : "",
-                ].join(" ")
-            }
+        <a
+            href={`/api/files/invoice?path=${encodeURIComponent(fileRef)}`}
+            target="_blank"
+            rel="noreferrer"
+            title={fileRef}
+            className="inline-flex h-8 items-center gap-1.5 rounded border border-theme-border/70 bg-theme-bg/60 px-2.5 text-sm font-medium text-theme-text-soft transition-colors hover:bg-theme-bg-hover hover:text-theme-text-strong"
         >
-            {(copied) =>
-                copied ? (
-                    <CheckIcon className="h-3.5 w-3.5" />
-                ) : (
-                    <ClipboardIcon className="h-3.5 w-3.5" />
-                )
-            }
-        </CopyButton>
+            <ExternalLinkIcon className="h-3.5 w-3.5" />
+            Open
+        </a>
+    );
+}
+
+// The label cells (provider, category) as live inputs. Mounts only
+// while the row is open, so the pending value is seeded once from the pool (or
+// the extracted row) and every keystroke re-stages it.
+function InvoiceEditCells({
+    providerSuggestions,
+    row,
+}: {
+    providerSuggestions: string[];
+    row: InvoiceRow;
+}) {
+    const { changes, stage, unstage } = useStaging();
+    const stageKey = `invoices:${row.sha256}`;
+    const [values, setValues] = useState<InvoiceEditValues>(() => {
+        const staged = changes.find((change) => change.key === stageKey);
+        return staged
+            ? {
+                  provider: String(staged.row.provider ?? ""),
+                  category: String(staged.row.category ?? ""),
+              }
+            : initialInvoiceValues(row);
+    });
+    const providerListId = `invoice-provider-${row.sha256.slice(0, 12)}`;
+
+    const update = (key: keyof InvoiceEditValues, value: string) => {
+        const next = { ...values, [key]: value };
+        setValues(next);
+        if (validateInvoiceEdit(next)) return; // invalid -> keep last staged
+        const unchanged =
+            next.provider.trim() === row.provider &&
+            next.category === row.category;
+        if (unchanged) {
+            unstage(stageKey);
+        } else {
+            stage(buildInvoiceLabelChange({ row, values: next }));
+        }
+    };
+
+    return (
+        <>
+            <TableCell>
+                <Input
+                    list={
+                        providerSuggestions.length > 0
+                            ? providerListId
+                            : undefined
+                    }
+                    value={values.provider}
+                    onChange={(event) => update("provider", event.target.value)}
+                    aria-label="provider"
+                    className={`w-36 ${values.provider.trim() ? "" : "border-intent-danger-border"}`}
+                />
+                {providerSuggestions.length > 0 && (
+                    <datalist id={providerListId}>
+                        {providerSuggestions.map((provider) => (
+                            <option key={provider} value={provider} />
+                        ))}
+                    </datalist>
+                )}
+            </TableCell>
+            <TableCell>
+                <select
+                    value={values.category}
+                    onChange={(event) => update("category", event.target.value)}
+                    aria-label="category"
+                    className={CELL_SELECT}
+                >
+                    {INVOICE_CATEGORIES.map((category) => (
+                        <option key={category} value={category}>
+                            {category}
+                        </option>
+                    ))}
+                </select>
+            </TableCell>
+        </>
     );
 }
 
 export function InvoicesTab({
+    committedNonce = 0,
     data,
+    month = "",
+    months = [],
+    onMonthChange = () => {},
+    onProviderChange = () => {},
+    provider = "all",
+    providers = ["all"],
     queuedKeys = new Set<string>(),
 }: {
+    committedNonce?: number;
     data: Data;
+    month?: string;
+    months?: string[];
+    onMonthChange?: (value: string) => void;
+    onProviderChange?: (value: string) => void;
+    provider?: string;
+    providers?: string[];
     queuedKeys?: ReadonlySet<string>;
 }) {
+    const { changes, resetNonce, unstage } = useStaging();
     const [category, setCategory] = useState("all");
-    const [provider, setProvider] = useState("all");
-    const [editingSha, setEditingSha] = useState<string | null>(null);
-    const providerOptions = useMemo(() => {
-        const options = new Set<string>();
-        for (const row of data.invoices) {
-            options.add(row.provider || "");
+    // Rows whose label cells are live. Recovered from staging on mount so an
+    // edit survives tab switches; wiped when a commit lands.
+    const [editing, setEditing] = useState<Set<string>>(() =>
+        stagedInvoiceShas(changes),
+    );
+    const lastNonce = useRef(committedNonce);
+    const lastResetNonce = useRef(resetNonce);
+    useEffect(() => {
+        if (lastNonce.current !== committedNonce) {
+            lastNonce.current = committedNonce;
+            setEditing(new Set());
         }
-        return ["all", ...[...options].sort((a, b) => a.localeCompare(b))];
-    }, [data.invoices]);
-    const rows = useMemo(
+    }, [committedNonce]);
+    useEffect(() => {
+        if (lastResetNonce.current !== resetNonce) {
+            lastResetNonce.current = resetNonce;
+            setEditing(new Set());
+        }
+    }, [resetNonce]);
+
+    const toggle = (sha: string, open: boolean) => {
+        if (!open) unstage(`invoices:${sha}`);
+        setEditing((current) => {
+            const next = new Set(current);
+            if (open) next.add(sha);
+            else next.delete(sha);
+            return next;
+        });
+    };
+
+    const providerSuggestions = useMemo(
+        () => providers.filter((option) => option && option !== "all"),
+        [providers],
+    );
+    const baseRows = useMemo(
         () =>
             sortedInvoices(data.invoices).filter((row) => {
+                // undated invoices stay visible under any month filter
+                if (!matchesMonth(row.period_month, month)) return false;
                 if (provider !== "all" && row.provider !== provider) {
                     return false;
                 }
                 return category === "all" || row.category === category;
             }),
-        [data.invoices, category, provider],
+        [data.invoices, category, month, provider],
     );
+    const sortColumns = useMemo<SortColumn<InvoiceRow>[]>(
+        () => [
+            {
+                key: "action",
+                value: (row) => queuedKeys.has(queuedInvoiceKey(row.sha256)),
+            },
+            { key: "file", value: (row) => row.file_ref },
+            { key: "provider", value: (row) => row.provider },
+            { key: "category", value: (row) => row.category },
+            { key: "period_month", value: (row) => row.period_month },
+            { key: "amount", value: (row) => row.amount },
+            { key: "credit_usd", value: (row) => row.credit_usd },
+            { key: "invoice_number", value: (row) => row.invoice_number },
+            { key: "issued_at", value: (row) => row.issued_at },
+        ],
+        [queuedKeys],
+    );
+    const { headerProps, rows } = useSortableRows(baseRows, sortColumns);
 
     return (
         <div className="flex flex-col gap-4">
-            <DataNote pipe="invoices_ep" rows={rows.length}>
-                Every harvested invoice PDF <SourceMark code="IV" /> plus
-                operator label corrections <SourceMark code="HC" /> — the
-                document side of every Recon verdict.
-            </DataNote>
-            <div className="flex flex-wrap items-center gap-3">
-                <label className="inline-flex w-fit items-center gap-2 text-sm text-theme-text-soft">
-                    provider
-                    <select
-                        value={provider}
-                        onChange={(event) => setProvider(event.target.value)}
-                        className="max-w-56 rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong"
-                    >
-                        {providerOptions.map((option) => (
-                            <option key={option} value={option}>
-                                {option || "(blank)"}
-                            </option>
-                        ))}
-                    </select>
-                </label>
-                <label className="inline-flex w-fit items-center gap-2 text-sm text-theme-text-soft">
-                    category
-                    <select
-                        value={category}
-                        onChange={(event) => setCategory(event.target.value)}
-                        className="rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong"
-                    >
-                        {CATEGORY_OPTIONS.map((option) => (
-                            <option key={option} value={option}>
-                                {option}
-                            </option>
-                        ))}
-                    </select>
-                </label>
-            </div>
+            <FilterBar>
+                <MonthFilter
+                    months={months}
+                    value={month}
+                    onChange={onMonthChange}
+                />
+                <FilterSelect
+                    label="provider"
+                    value={provider}
+                    onChange={onProviderChange}
+                    options={providers}
+                />
+                <FilterSelect
+                    label="category"
+                    value={category}
+                    onChange={setCategory}
+                    options={CATEGORY_OPTIONS}
+                />
+            </FilterBar>
             <TableScroller>
                 <DataTable>
                     <TableHead>
                         <TableRow>
-                            <TableHeaderCell>action</TableHeaderCell>
-                            <TableHeaderCell>provider</TableHeaderCell>
-                            <TableHeaderCell>category</TableHeaderCell>
-                            <TableHeaderCell>kind</TableHeaderCell>
-                            <TableHeaderCell>period_month</TableHeaderCell>
-                            <TableHeaderCell>amount</TableHeaderCell>
-                            <TableHeaderCell>amount_usd (fx)</TableHeaderCell>
-                            <TableHeaderCell>credit_usd</TableHeaderCell>
-                            <TableHeaderCell>invoice_number</TableHeaderCell>
-                            <TableHeaderCell>issued_at</TableHeaderCell>
-                            <TableHeaderCell>source</TableHeaderCell>
-                            <TableHeaderCell>file</TableHeaderCell>
-                            <TableHeaderCell>status</TableHeaderCell>
-                            <TableHeaderCell>ingested_at</TableHeaderCell>
+                            <TableHeaderCell {...headerProps("action")}>
+                                action
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("file")}>
+                                file
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("provider")}>
+                                provider
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("category")}>
+                                category
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("period_month")}>
+                                period_month
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("amount")}>
+                                amount
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("credit_usd")}>
+                                credits consumed
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("invoice_number")}>
+                                invoice_number
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("issued_at")}>
+                                issued_at
+                            </TableHeaderCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {rows.map((row) => (
-                            <Fragment key={`${row.sha256}|${row.ingested_at}`}>
-                                <TableRow
-                                    key={`${row.sha256}|${row.source}|${row.ingested_at}`}
-                                >
-                                    <TableCell>
-                                        <Button
-                                            size="sm"
-                                            onClick={() =>
-                                                setEditingSha((current) =>
-                                                    current === row.sha256
-                                                        ? null
-                                                        : row.sha256,
-                                                )
-                                            }
-                                        >
-                                            Edit
-                                        </Button>
-                                    </TableCell>
-                                    <TableCell>{row.provider || "-"}</TableCell>
-                                    <TableCell>{row.category || "-"}</TableCell>
-                                    <TableCell>{row.kind || "-"}</TableCell>
-                                    <TableCell>
-                                        {row.period_month || "-"}
-                                    </TableCell>
-                                    <TableCell>
-                                        {fmtMoney(row.amount, row.currency)}
-                                    </TableCell>
-                                    <TableCell>
-                                        {fmtUsd2(row.amount_usd)}
-                                    </TableCell>
-                                    <TableCell>
-                                        {row.credit_usd > 0
-                                            ? fmtUsd2(row.credit_usd)
-                                            : "-"}
-                                    </TableCell>
-                                    <TableCell>
-                                        {row.invoice_number || "-"}
-                                    </TableCell>
-                                    <TableCell>
-                                        {row.issued_at || "-"}
-                                    </TableCell>
-                                    <TableCell>
-                                        <SourceBadge source={row.source} />
-                                    </TableCell>
-                                    <TableCell title={row.file_ref}>
-                                        <FileRefAction fileRef={row.file_ref} />
-                                    </TableCell>
-                                    <TableCell>
-                                        <span className="inline-flex items-center gap-1.5">
-                                            <StatusChip status={row.status} />
-                                            {queuedKeys.has(
-                                                queuedInvoiceKey(row.sha256),
-                                            ) && (
-                                                <Chip
+                        {withUniqueRowKeys(rows, (row) => row.sha256).map(
+                            ({ key, row }) => {
+                                const open = editing.has(row.sha256);
+                                return (
+                                    <TableRow key={key}>
+                                        <TableCell>
+                                            <span className="inline-flex items-center gap-1.5">
+                                                <Button
                                                     size="sm"
-                                                    intent="warning"
+                                                    intent={
+                                                        open ? "danger" : "info"
+                                                    }
+                                                    onClick={() =>
+                                                        toggle(
+                                                            row.sha256,
+                                                            !open,
+                                                        )
+                                                    }
                                                 >
-                                                    queued
-                                                </Chip>
-                                            )}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell>
-                                        {row.ingested_at || "-"}
-                                    </TableCell>
-                                </TableRow>
-                                {editingSha === row.sha256 && (
-                                    <TableRow key={`${row.sha256}|editor`}>
-                                        <TableCell colSpan={14}>
-                                            <InvoiceEditor
-                                                row={row}
-                                                onClose={() =>
-                                                    setEditingSha(null)
-                                                }
+                                                    {open ? "Reset" : "Edit"}
+                                                </Button>
+                                                {queuedKeys.has(
+                                                    queuedInvoiceKey(
+                                                        row.sha256,
+                                                    ),
+                                                ) && (
+                                                    <Chip
+                                                        size="sm"
+                                                        intent="warning"
+                                                    >
+                                                        queued
+                                                    </Chip>
+                                                )}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell title={row.file_ref}>
+                                            <FileRefAction
+                                                fileRef={row.file_ref}
                                             />
                                         </TableCell>
+                                        {open ? (
+                                            <InvoiceEditCells
+                                                row={row}
+                                                providerSuggestions={
+                                                    providerSuggestions
+                                                }
+                                            />
+                                        ) : (
+                                            <>
+                                                <TableCell>
+                                                    {row.provider || "-"}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {row.category || "-"}
+                                                </TableCell>
+                                            </>
+                                        )}
+                                        <TableCell>
+                                            {row.period_month
+                                                ? monthName(row.period_month)
+                                                : "-"}
+                                        </TableCell>
+                                        <TableCell>
+                                            {fmtMoney(row.amount, row.currency)}
+                                        </TableCell>
+                                        <TableCell>
+                                            {row.credit_usd > 0
+                                                ? fmtMoney(
+                                                      row.credit_usd,
+                                                      row.currency,
+                                                  )
+                                                : "-"}
+                                        </TableCell>
+                                        <TableCell>
+                                            {row.invoice_number || "-"}
+                                        </TableCell>
+                                        <TableCell>
+                                            {row.issued_at || "-"}
+                                        </TableCell>
                                     </TableRow>
-                                )}
-                            </Fragment>
-                        ))}
+                                );
+                            },
+                        )}
                     </TableBody>
                 </DataTable>
             </TableScroller>

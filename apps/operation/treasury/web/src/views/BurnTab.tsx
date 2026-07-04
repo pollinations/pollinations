@@ -6,9 +6,15 @@ import {
     TableRow,
 } from "@pollinations/ui";
 import { useMemo } from "react";
-import { DataNote } from "../components/DataNote";
-import { DataTable, TableScroller } from "../components/DataTable";
-import { SourceMark } from "../components/Provenance";
+import {
+    DataTable,
+    type SortColumn,
+    TableScroller,
+    useSortableRows,
+    withUniqueRowKeys,
+} from "../components/DataTable";
+import { FilterBar, FilterSelect, MonthFilter } from "../components/Filters";
+import { matchesMonth, monthName } from "../lib/months";
 import type { Data, UsageMonthlyRow } from "../types";
 
 function sortedUsage(rows: UsageMonthlyRow[]) {
@@ -18,6 +24,27 @@ function sortedUsage(rows: UsageMonthlyRow[]) {
             a.provider.localeCompare(b.provider) ||
             a.model.localeCompare(b.model),
     );
+}
+
+function aggregateUsage(rows: UsageMonthlyRow[]) {
+    const byKey = new Map<string, UsageMonthlyRow>();
+    for (const row of rows) {
+        const key = `${row.month}|${row.provider}|${row.model}`;
+        const existing = byKey.get(key);
+        if (!existing) {
+            byKey.set(key, { ...row });
+            continue;
+        }
+        existing.billable_requests_paid_pollen +=
+            row.billable_requests_paid_pollen;
+        existing.billable_requests_quest_pollen +=
+            row.billable_requests_quest_pollen;
+        existing.cost_paid_pollen += row.cost_paid_pollen;
+        existing.cost_quest_pollen += row.cost_quest_pollen;
+        existing.billable_paid_pollen += row.billable_paid_pollen;
+        existing.billable_quest_pollen += row.billable_quest_pollen;
+    }
+    return [...byKey.values()];
 }
 
 function fmtCount(value: number | null | undefined): string {
@@ -33,48 +60,141 @@ function fmtPollen(value: number | null | undefined): string {
     });
 }
 
-export function BurnTab({ data }: { data: Data }) {
-    const rows = useMemo(
-        () => sortedUsage(data.usageMonthly),
-        [data.usageMonthly],
+export function BurnTab({
+    data,
+    month = "",
+    months = [],
+    onMonthChange = () => {},
+    onProviderChange = () => {},
+    provider = "all",
+    providers = ["all"],
+}: {
+    data: Data;
+    month?: string;
+    months?: string[];
+    onMonthChange?: (value: string) => void;
+    onProviderChange?: (value: string) => void;
+    provider?: string;
+    providers?: string[];
+}) {
+    const baseRows = useMemo(
+        () =>
+            sortedUsage(aggregateUsage(data.usageMonthly)).filter(
+                (row) =>
+                    matchesMonth(row.month, month) &&
+                    (provider === "all" || row.provider === provider),
+            ),
+        [data.usageMonthly, month, provider],
     );
+    const sortColumns = useMemo<SortColumn<UsageMonthlyRow>[]>(
+        () => [
+            { key: "month", value: (row) => row.month },
+            { key: "provider", value: (row) => row.provider },
+            { key: "model", value: (row) => row.model },
+            {
+                key: "billable_requests_paid_pollen",
+                value: (row) => row.billable_requests_paid_pollen,
+            },
+            {
+                key: "billable_requests_quest_pollen",
+                value: (row) => row.billable_requests_quest_pollen,
+            },
+            { key: "cost_paid_pollen", value: (row) => row.cost_paid_pollen },
+            {
+                key: "cost_quest_pollen",
+                value: (row) => row.cost_quest_pollen,
+            },
+            {
+                key: "billable_paid_pollen",
+                value: (row) => row.billable_paid_pollen,
+            },
+            {
+                key: "billable_quest_pollen",
+                value: (row) => row.billable_quest_pollen,
+            },
+        ],
+        [],
+    );
+    const { headerProps, rows } = useSortableRows(baseRows, sortColumns);
 
     return (
         <div className="flex flex-col gap-4">
-            <DataNote pipe="usage_ep" rows={rows.length}>
-                <SourceMark code="TB" /> generation events -&gt; usage_monthly
-                -&gt; one model/month row. Use this table to inspect paid vs
-                quest Pollen burn before any provider reconciliation.
-            </DataNote>
+            <FilterBar>
+                <MonthFilter
+                    months={months}
+                    value={month}
+                    onChange={onMonthChange}
+                />
+                <FilterSelect
+                    label="provider"
+                    value={provider}
+                    onChange={onProviderChange}
+                    options={providers}
+                />
+            </FilterBar>
             <TableScroller>
                 <DataTable>
                     <TableHead>
                         <TableRow>
-                            <TableHeaderCell>month</TableHeaderCell>
-                            <TableHeaderCell>provider</TableHeaderCell>
-                            <TableHeaderCell>model</TableHeaderCell>
-                            <TableHeaderCell>
-                                billable_requests_paid_pollen
+                            <TableHeaderCell {...headerProps("month")}>
+                                month
                             </TableHeaderCell>
-                            <TableHeaderCell>
-                                billable_requests_quest_pollen
+                            <TableHeaderCell {...headerProps("provider")}>
+                                provider
                             </TableHeaderCell>
-                            <TableHeaderCell>cost_paid_pollen</TableHeaderCell>
-                            <TableHeaderCell>cost_quest_pollen</TableHeaderCell>
-                            <TableHeaderCell>
-                                billable_paid_pollen
+                            <TableHeaderCell {...headerProps("model")}>
+                                model
                             </TableHeaderCell>
-                            <TableHeaderCell>
-                                billable_quest_pollen
+                            <TableHeaderCell
+                                {...headerProps(
+                                    "billable_requests_paid_pollen",
+                                )}
+                                title="billable_requests_paid_pollen"
+                            >
+                                paid requests
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                {...headerProps(
+                                    "billable_requests_quest_pollen",
+                                )}
+                                title="billable_requests_quest_pollen"
+                            >
+                                quest requests
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                {...headerProps("cost_paid_pollen")}
+                                title="cost_paid_pollen"
+                            >
+                                paid cost
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                {...headerProps("cost_quest_pollen")}
+                                title="cost_quest_pollen"
+                            >
+                                quest cost
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                {...headerProps("billable_paid_pollen")}
+                                title="billable_paid_pollen"
+                            >
+                                paid billable
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                {...headerProps("billable_quest_pollen")}
+                                title="billable_quest_pollen"
+                            >
+                                quest billable
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {rows.map((row) => (
-                            <TableRow
-                                key={`${row.month}|${row.provider}|${row.model}`}
-                            >
-                                <TableCell>{row.month}</TableCell>
+                        {withUniqueRowKeys(
+                            rows,
+                            (row) =>
+                                `${row.month}|${row.provider}|${row.model}`,
+                        ).map(({ key, row }) => (
+                            <TableRow key={key}>
+                                <TableCell>{monthName(row.month)}</TableCell>
                                 <TableCell>{row.provider}</TableCell>
                                 <TableCell>{row.model || "-"}</TableCell>
                                 <TableCell>

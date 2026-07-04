@@ -25,8 +25,8 @@ and no network calls.
 ## Data Contract
 
 Reads exactly these pipes from `apps/operation/forager/tinybird/pipes/`:
-`coverage_ep`, `gaps_ep`, `invoices_ep`, `payments_monthly_ep`, `usage_ep`,
-`grants_ep`, `balances_ep`, `runs_ep`.
+`coverage_ep`, `gaps_ep`, `invoices_ep`, `payments_ep`, `meter_monthly_ep`,
+`usage_ep`, `grants_ep`, `runs_ep`.
 
 Each tab shows one table and a short where/how/what/why note. Source labels use
 the same vocabulary as the spend-audit PoC where useful: `TB`, `WS`, `ST`,

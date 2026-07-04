@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { buildFxOverrideChange } from "../components/FxOverrideForm";
 import { buildGrantOverrideChange, canEditGrantSource } from "./CreditsTab";
 
 describe("canEditGrantSource", () => {
@@ -24,6 +23,7 @@ describe("buildGrantOverrideChange", () => {
             }),
         ).toEqual({
             datasource: "overrides",
+            key: "grants:lambda:left_usd",
             row: {
                 entered_at: "2026-07-03 12:00:00",
                 scope: "grants",
@@ -34,29 +34,6 @@ describe("buildGrantOverrideChange", () => {
                 note: "operator check",
             },
             summary: "grants lambda left_usd -> 1500",
-        });
-    });
-});
-
-describe("buildFxOverrideChange", () => {
-    it("builds the fx config override row", () => {
-        expect(
-            buildFxOverrideChange({
-                enteredAt: "2026-07-03 12:00:00",
-                value: 1.12,
-            }),
-        ).toEqual({
-            datasource: "overrides",
-            row: {
-                entered_at: "2026-07-03 12:00:00",
-                scope: "config",
-                key: "fx_eur_usd",
-                field: "value",
-                value_num: 1.12,
-                value_str: "",
-                note: "",
-            },
-            summary: "config fx_eur_usd -> 1.12",
         });
     });
 });

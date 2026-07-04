@@ -7,33 +7,51 @@ import {
     TableHead,
     TableHeaderCell,
     TableRow,
-    Text,
 } from "@pollinations/ui";
-import { Fragment, useMemo, useState } from "react";
-import { DataNote } from "../components/DataNote";
-import { DataTable, TableScroller } from "../components/DataTable";
-import { SourcedAmount, SourceMark } from "../components/Provenance";
-import { fmtUsd, fmtUsd2 } from "../lib/format";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+    DataTable,
+    type SortColumn,
+    TableScroller,
+    useSortableRows,
+    withUniqueRowKeys,
+} from "../components/DataTable";
+import { FilterBar, FilterSelect } from "../components/Filters";
+import { SourcedAmount } from "../components/Provenance";
+import { fmtUsd2 } from "../lib/format";
 import { queuedGrantKey } from "../lib/queued";
 import { type StageInput, useStaging } from "../lib/staging";
 import type { Data, GrantRow } from "../types";
 
-// Credits = grant pools only. payg pools have nothing granted to track and
-// prepaid balances live on the Provider Balance tab.
-const GRANT_KINDS = new Set(["credit", "grant"]);
-
+// Mirrors the grant values forager resolved from connector balances +
+// overrides + hc; hidden implementation labels such as kind stay out of the
+// operator table.
 function sortedGrants(rows: GrantRow[]) {
     return [...rows].sort((a, b) => a.pool.localeCompare(b.pool));
 }
 
-function grantProviders(row: GrantRow) {
-    return row.providers
-        .split(",")
-        .map((provider) => provider.trim())
-        .filter(Boolean);
+function aliasMap(data: Data) {
+    return new Map(
+        data.providerAliases
+            .filter((row) => row.alias && row.provider)
+            .map((row) => [row.alias, row.provider]),
+    );
 }
 
-type GrantAmountField = "granted_usd" | "left_usd" | "prepaid_left_usd";
+function grantProviders(row: GrantRow, aliases: Map<string, string>) {
+    const providers = row.providers
+        .split(",")
+        .map((provider) => provider.trim())
+        .map((provider) => aliases.get(provider) ?? provider)
+        .filter(Boolean);
+    return [...new Set(providers)];
+}
+
+function grantProviderLabel(row: GrantRow, aliases: Map<string, string>) {
+    return grantProviders(row, aliases).join(", ");
+}
+
+type GrantAmountField = "left_usd" | "prepaid_left_usd";
 
 export function canEditGrantSource(source: string) {
     return ["", "hc", "manual"].includes(source.toLowerCase());
@@ -58,6 +76,7 @@ export function buildGrantOverrideChange({
 }): StageInput {
     return {
         datasource: "overrides",
+        key: `grants:${pool}:${field}`,
         row: {
             entered_at: enteredAt,
             scope: "grants",
@@ -72,283 +91,298 @@ export function buildGrantOverrideChange({
 }
 
 const GRANT_FIELDS: { field: GrantAmountField; label: string }[] = [
-    { field: "granted_usd", label: "granted_usd" },
-    { field: "left_usd", label: "left_usd" },
-    { field: "prepaid_left_usd", label: "prepaid_left_usd" },
+    { field: "left_usd", label: "left" },
+    { field: "prepaid_left_usd", label: "prepaid" },
 ];
 
-function grantFieldSource(row: GrantRow, field: GrantAmountField) {
-    if (field === "granted_usd") return row.granted_src;
-    if (field === "left_usd") return row.left_src;
-    return row.prepaid_left_src;
+function stagedGrantPools(
+    changes: { datasource: string; row: Record<string, unknown> }[],
+) {
+    const pools = new Set<string>();
+    for (const change of changes) {
+        if (
+            change.datasource === "overrides" &&
+            change.row.scope === "grants"
+        ) {
+            const key = change.row.key;
+            if (typeof key === "string") pools.add(key);
+        }
+    }
+    return pools;
 }
 
-function GrantEditor({ onClose, row }: { onClose: () => void; row: GrantRow }) {
-    const { stage } = useStaging();
-    const [values, setValues] = useState<Record<GrantAmountField, string>>({
-        granted_usd: row.granted_usd?.toString() ?? "",
-        left_usd: row.left_usd?.toString() ?? "",
-        prepaid_left_usd: row.prepaid_left_usd?.toString() ?? "",
+// One editable amount cell. Mounts only while the row is open and the field is
+// operator-owned (hc/manual); live API fields keep their read-only display even
+// then. Seeded once from the pool (or the resolved value), re-staged per key.
+function GrantAmountInput({
+    field,
+    row,
+}: {
+    field: GrantAmountField;
+    row: GrantRow;
+}) {
+    const { changes, stage, unstage } = useStaging();
+    const fieldKey = `grants:${row.pool}:${field}`;
+    const [value, setValue] = useState(() => {
+        const staged = changes.find((change) => change.key === fieldKey);
+        if (staged) return String(staged.row.value_num ?? "");
+        return row[field]?.toString() ?? "";
     });
-    const [note, setNote] = useState("");
-    const [error, setError] = useState("");
+
+    const update = (raw: string) => {
+        setValue(raw);
+        const parsed = Number(raw);
+        if (raw.trim() === "" || parsed === (row[field] ?? null)) {
+            unstage(fieldKey);
+            return;
+        }
+        if (!Number.isFinite(parsed) || parsed < 0) {
+            unstage(fieldKey); // invalid -> drop the pending change
+            return;
+        }
+        stage(
+            buildGrantOverrideChange({ field, pool: row.pool, value: parsed }),
+        );
+    };
 
     return (
-        <form
-            className="flex flex-col gap-1.5"
-            onSubmit={(event) => {
-                event.preventDefault();
-                let staged = 0;
-                for (const { field } of GRANT_FIELDS) {
-                    if (!canEditGrantSource(grantFieldSource(row, field))) {
-                        continue;
-                    }
-                    const raw = values[field].trim();
-                    if (raw === "") continue;
-                    const parsed = Number(raw);
-                    if (!Number.isFinite(parsed) || parsed < 0) {
-                        setError(`${field}: number >= 0`);
-                        return;
-                    }
-                    if (parsed === (row[field] ?? null)) continue;
-                    stage(
-                        buildGrantOverrideChange({
-                            field,
-                            note: note.trim(),
-                            pool: row.pool,
-                            value: parsed,
-                        }),
-                    );
-                    staged += 1;
-                }
-                if (staged === 0) {
-                    setError("nothing changed");
-                    return;
-                }
-                onClose();
-            }}
-        >
-            <div className="flex flex-wrap items-end gap-2">
-                {GRANT_FIELDS.map(({ field, label }) => {
-                    const editable = canEditGrantSource(
-                        grantFieldSource(row, field),
-                    );
-                    return (
-                        <div
-                            key={field}
-                            className="flex flex-col gap-1 text-xs font-bold uppercase text-theme-text-soft"
-                        >
-                            <span>{label}</span>
-                            <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={values[field]}
-                                onChange={(event) =>
-                                    setValues((prev) => ({
-                                        ...prev,
-                                        [field]: event.target.value,
-                                    }))
-                                }
-                                disabled={!editable}
-                                aria-label={field}
-                                title={
-                                    editable
-                                        ? undefined
-                                        : "live API value — read-only"
-                                }
-                                className="w-32"
-                            />
-                        </div>
-                    );
-                })}
-                <Input
-                    value={note}
-                    onChange={(event) => setNote(event.target.value)}
-                    placeholder="optional note"
-                    className="w-48"
-                    aria-label="note"
-                />
-                <Button type="submit" size="sm">
-                    Stage
-                </Button>
-                <Button type="button" size="sm" onClick={onClose}>
-                    Cancel
-                </Button>
-            </div>
-            <Text size="sm" tone="soft">
-                {error ||
-                    "Greyed fields come from the live API and cannot be overridden."}
-            </Text>
-        </form>
+        <Input
+            type="number"
+            min="0"
+            step="0.01"
+            value={value}
+            onChange={(event) => update(event.target.value)}
+            aria-label={field}
+            className={`w-28 ${
+                value.trim() === "" ||
+                (Number.isFinite(Number(value)) && Number(value) >= 0)
+                    ? ""
+                    : "border-intent-danger-border"
+            }`}
+        />
     );
 }
 
 export function CreditsTab({
+    committedNonce = 0,
     data,
+    provider = "all",
+    providers = ["all"],
+    onProviderChange = () => {},
     queuedKeys = new Set<string>(),
 }: {
+    committedNonce?: number;
     data: Data;
+    provider?: string;
+    providers?: string[];
+    onProviderChange?: (value: string) => void;
     queuedKeys?: ReadonlySet<string>;
 }) {
-    const [provider, setProvider] = useState("all");
-    const [editPool, setEditPool] = useState<string | null>(null);
-    const grantPools = useMemo(
-        () =>
-            sortedGrants(data.grants).filter((row) =>
-                GRANT_KINDS.has(row.kind.toLowerCase()),
-            ),
-        [data.grants],
+    const { changes, resetNonce, unstage } = useStaging();
+    // Open pools (amount cells live). Recovered from the pool on mount; wiped
+    // when a commit lands.
+    const [editing, setEditing] = useState<Set<string>>(() =>
+        stagedGrantPools(changes),
     );
-    const providerOptions = useMemo(() => {
-        const options = new Set<string>();
-        for (const row of grantPools) {
-            for (const slug of grantProviders(row)) options.add(slug);
+    const [category, setCategory] = useState("all");
+    const lastNonce = useRef(committedNonce);
+    const lastResetNonce = useRef(resetNonce);
+    useEffect(() => {
+        if (lastNonce.current !== committedNonce) {
+            lastNonce.current = committedNonce;
+            setEditing(new Set());
         }
-        return ["all", ...[...options].sort((a, b) => a.localeCompare(b))];
-    }, [grantPools]);
-    const grants = useMemo(
+    }, [committedNonce]);
+    useEffect(() => {
+        if (lastResetNonce.current !== resetNonce) {
+            lastResetNonce.current = resetNonce;
+            setEditing(new Set());
+        }
+    }, [resetNonce]);
+
+    const toggle = (pool: string, open: boolean) => {
+        if (!open) {
+            for (const { field } of GRANT_FIELDS) {
+                unstage(`grants:${pool}:${field}`);
+            }
+        }
+        setEditing((current) => {
+            const next = new Set(current);
+            if (open) next.add(pool);
+            else next.delete(pool);
+            return next;
+        });
+    };
+    const aliases = useMemo(() => aliasMap(data), [data]);
+
+    const baseGrants = useMemo(
         () =>
-            grantPools.filter(
+            sortedGrants(data.grants).filter(
                 (row) =>
-                    provider === "all" ||
-                    grantProviders(row).includes(provider),
+                    (provider === "all" ||
+                        grantProviders(row, aliases).includes(provider)) &&
+                    (category === "all" || row.category === category),
             ),
-        [grantPools, provider],
+        [data.grants, provider, category, aliases],
+    );
+    const categoryOptions = useMemo(() => {
+        const options = new Set<string>();
+        for (const row of data.grants) options.add(row.category || "");
+        return ["all", ...[...options].sort((a, b) => a.localeCompare(b))];
+    }, [data.grants]);
+    const sortColumns = useMemo<SortColumn<GrantRow>[]>(
+        () => [
+            {
+                key: "actions",
+                value: (row) => queuedKeys.has(queuedGrantKey(row.pool)),
+            },
+            {
+                key: "provider",
+                value: (row) => grantProviderLabel(row, aliases),
+            },
+            { key: "category", value: (row) => row.category },
+            { key: "left_usd", value: (row) => row.left_usd },
+            {
+                key: "prepaid_left_usd",
+                value: (row) => row.prepaid_left_usd,
+            },
+            { key: "expires", value: (row) => row.expires },
+        ],
+        [queuedKeys, aliases],
+    );
+    const { headerProps, rows: grants } = useSortableRows(
+        baseGrants,
+        sortColumns,
     );
 
     return (
         <div className="flex flex-col gap-6">
             <section className="flex flex-col gap-4">
-                <DataNote pipe="grants_ep" rows={grants.length}>
-                    Grant pools funding the burn: granted/left from provider
-                    APIs <SourceMark code="API" />, manual values{" "}
-                    <SourceMark code="HC" /> filling the holes. payg pools have
-                    nothing granted; prepaid balances live on the Provider
-                    Balance tab.
-                </DataNote>
-                <label className="inline-flex w-fit items-center gap-2 text-sm text-theme-text-soft">
-                    provider
-                    <select
+                <FilterBar>
+                    <FilterSelect
+                        label="provider"
                         value={provider}
-                        onChange={(event) => setProvider(event.target.value)}
-                        className="max-w-56 rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong"
-                    >
-                        {providerOptions.map((option) => (
-                            <option key={option} value={option}>
-                                {option || "(blank)"}
-                            </option>
-                        ))}
-                    </select>
-                </label>
+                        onChange={onProviderChange}
+                        options={providers}
+                    />
+                    <FilterSelect
+                        label="category"
+                        value={category}
+                        onChange={setCategory}
+                        options={categoryOptions}
+                    />
+                </FilterBar>
                 <TableScroller>
                     <DataTable>
                         <TableHead>
                             <TableRow>
-                                <TableHeaderCell>actions</TableHeaderCell>
-                                <TableHeaderCell>pool</TableHeaderCell>
-                                <TableHeaderCell>providers</TableHeaderCell>
-                                <TableHeaderCell>category</TableHeaderCell>
-                                <TableHeaderCell>currency</TableHeaderCell>
-                                <TableHeaderCell>granted_usd</TableHeaderCell>
-                                <TableHeaderCell>left_usd</TableHeaderCell>
-                                <TableHeaderCell>
-                                    prepaid_left_usd
+                                <TableHeaderCell {...headerProps("actions")}>
+                                    actions
                                 </TableHeaderCell>
-                                <TableHeaderCell>expires</TableHeaderCell>
-                                <TableHeaderCell>note</TableHeaderCell>
-                                <TableHeaderCell>run_at</TableHeaderCell>
+                                <TableHeaderCell {...headerProps("provider")}>
+                                    provider
+                                </TableHeaderCell>
+                                <TableHeaderCell {...headerProps("category")}>
+                                    category
+                                </TableHeaderCell>
+                                <TableHeaderCell {...headerProps("left_usd")}>
+                                    left
+                                </TableHeaderCell>
+                                <TableHeaderCell
+                                    {...headerProps("prepaid_left_usd")}
+                                >
+                                    prepaid
+                                </TableHeaderCell>
+                                <TableHeaderCell {...headerProps("expires")}>
+                                    expires
+                                </TableHeaderCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {grants.map((row) => (
-                                <Fragment key={row.pool}>
-                                    <TableRow>
-                                        <TableCell>
-                                            <Button
-                                                size="sm"
-                                                onClick={() =>
-                                                    setEditPool(
-                                                        editPool === row.pool
-                                                            ? null
-                                                            : row.pool,
-                                                    )
-                                                }
-                                            >
-                                                Edit
-                                            </Button>
-                                        </TableCell>
-                                        <TableCell>
-                                            <span className="inline-flex items-center gap-1.5">
-                                                {row.pool}
-                                                {queuedKeys.has(
-                                                    queuedGrantKey(row.pool),
-                                                ) && (
-                                                    <Chip
-                                                        size="sm"
-                                                        intent="warning"
-                                                    >
-                                                        queued
-                                                    </Chip>
-                                                )}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell>
-                                            {row.providers || "-"}
-                                        </TableCell>
-                                        <TableCell>
-                                            {row.category || "-"}
-                                        </TableCell>
-                                        <TableCell>
-                                            {row.currency || "-"}
-                                        </TableCell>
-                                        <TableCell>
-                                            <SourcedAmount
-                                                value={row.granted_usd}
-                                                source={row.granted_src}
-                                                format={fmtUsd}
+                            {withUniqueRowKeys(grants, (row) => row.pool).map(
+                                ({ key, row }) => {
+                                    const open = editing.has(row.pool);
+                                    const cell = (
+                                        field: GrantAmountField,
+                                        value: number | null,
+                                        source: string,
+                                        format: (
+                                            value: number | null,
+                                        ) => string,
+                                    ) =>
+                                        open && canEditGrantSource(source) ? (
+                                            <GrantAmountInput
+                                                field={field}
+                                                row={row}
                                             />
-                                        </TableCell>
-                                        <TableCell>
+                                        ) : (
                                             <SourcedAmount
-                                                value={row.left_usd}
-                                                source={row.left_src}
-                                                format={fmtUsd2}
+                                                value={value}
+                                                source={source}
+                                                format={format}
                                             />
-                                        </TableCell>
-                                        <TableCell>
-                                            <SourcedAmount
-                                                value={row.prepaid_left_usd}
-                                                source={row.prepaid_left_src}
-                                                format={fmtUsd2}
-                                            />
-                                        </TableCell>
-                                        <TableCell>
-                                            {row.expires || "-"}
-                                        </TableCell>
-                                        <TableCell title={row.note}>
-                                            <Text as="span" tone="soft">
-                                                {row.note || "-"}
-                                            </Text>
-                                        </TableCell>
-                                        <TableCell>
-                                            {row.run_at || "-"}
-                                        </TableCell>
-                                    </TableRow>
-                                    {editPool === row.pool && (
-                                        <TableRow>
-                                            <TableCell colSpan={11}>
-                                                <GrantEditor
-                                                    row={row}
-                                                    onClose={() =>
-                                                        setEditPool(null)
+                                        );
+                                    return (
+                                        <TableRow key={key}>
+                                            <TableCell>
+                                                <Button
+                                                    size="sm"
+                                                    intent={
+                                                        open ? "danger" : "info"
                                                     }
-                                                />
+                                                    onClick={() =>
+                                                        toggle(row.pool, !open)
+                                                    }
+                                                >
+                                                    {open ? "Reset" : "Edit"}
+                                                </Button>
+                                            </TableCell>
+                                            <TableCell>
+                                                <span className="inline-flex items-center gap-1.5">
+                                                    {grantProviderLabel(
+                                                        row,
+                                                        aliases,
+                                                    ) || "-"}
+                                                    {queuedKeys.has(
+                                                        queuedGrantKey(
+                                                            row.pool,
+                                                        ),
+                                                    ) && (
+                                                        <Chip
+                                                            size="sm"
+                                                            intent="warning"
+                                                        >
+                                                            queued
+                                                        </Chip>
+                                                    )}
+                                                </span>
+                                            </TableCell>
+                                            <TableCell>
+                                                {row.category || "-"}
+                                            </TableCell>
+                                            <TableCell>
+                                                {cell(
+                                                    "left_usd",
+                                                    row.left_usd,
+                                                    row.left_src,
+                                                    fmtUsd2,
+                                                )}
+                                            </TableCell>
+                                            <TableCell>
+                                                {cell(
+                                                    "prepaid_left_usd",
+                                                    row.prepaid_left_usd,
+                                                    row.prepaid_left_src,
+                                                    fmtUsd2,
+                                                )}
+                                            </TableCell>
+                                            <TableCell>
+                                                {row.expires || "-"}
                                             </TableCell>
                                         </TableRow>
-                                    )}
-                                </Fragment>
-                            ))}
+                                    );
+                                },
+                            )}
                         </TableBody>
                     </DataTable>
                 </TableScroller>

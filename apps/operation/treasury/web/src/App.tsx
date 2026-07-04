@@ -8,13 +8,15 @@ import {
     ScrollArea,
     TabButton,
     Text,
+    Tooltip,
 } from "@pollinations/ui";
 import { useEffect, useMemo, useState } from "react";
-import { CommitTray } from "./components/CommitTray";
+import { OperationsGuide } from "./components/OperationsGuide";
 import { type ProvenanceCode, SourceMark } from "./components/Provenance";
-import { SourceLegend } from "./components/SourceLegend";
+import { SaveControls } from "./components/SaveControls";
 import { STALE_AFTER_HOURS } from "./config";
 import { hoursSince } from "./lib/format";
+import { collectMonths, defaultMonth } from "./lib/months";
 import {
     queuedKeysForChange,
     queuedMeterKey,
@@ -23,12 +25,12 @@ import {
 import { StagingProvider } from "./lib/staging";
 import { fixturesMode, loadAll, TbError } from "./lib/tb";
 import type { Data } from "./types";
-import { BalancesTab } from "./views/BalancesTab";
 import { BurnTab } from "./views/BurnTab";
 import { CreditsTab } from "./views/CreditsTab";
 import { InvoicesTab } from "./views/InvoicesTab";
 import { MeterTab } from "./views/MeterTab";
 import { PaymentsTab } from "./views/PaymentsTab";
+import { ProvidersTab } from "./views/ProvidersTab";
 import { ReconTab } from "./views/ReconTab";
 import { RunsTab } from "./views/RunsTab";
 
@@ -39,18 +41,83 @@ type Tab =
     | "burn"
     | "meter"
     | "credits"
-    | "balances"
+    | "providers"
     | "runs";
 
-const TABS: { id: Tab; label: string; codes: ProvenanceCode[] }[] = [
-    { id: "recon", label: "Reconciliation", codes: ["IV", "WS"] },
-    { id: "invoices", label: "Invoices", codes: ["IV", "HC"] },
-    { id: "payments", label: "Payments", codes: ["WS", "HC"] },
-    { id: "burn", label: "Our Usage", codes: ["TB"] },
-    { id: "meter", label: "Provider Usage", codes: ["API", "HC"] },
-    { id: "credits", label: "Provider Grants", codes: ["API", "HC"] },
-    { id: "balances", label: "Provider Balance", codes: ["API", "HC"] },
-    { id: "runs", label: "Ingest Log", codes: ["TB"] },
+// note + pipe surface as a hover tooltip on the tab button — the tab body
+// itself stays table-only.
+const TABS: {
+    id: Tab;
+    label: string;
+    codes: ProvenanceCode[];
+    pipe: string;
+    note: string;
+    rows: (data: Data) => number;
+}[] = [
+    {
+        id: "recon",
+        label: "Reconciliation",
+        codes: ["IV", "WS"],
+        pipe: "invoices_ep − payments_ep (derived)",
+        note: "One verdict per provider and month: summed invoices minus summed Wise payments — missing or mismatched money surfaces here first. Derived client-side (per-month minus); payment-timing gaps across months are expected.",
+        rows: (data) => data.coverage.length,
+    },
+    {
+        id: "invoices",
+        label: "Invoices",
+        codes: ["IV", "HC"],
+        pipe: "invoices_ep",
+        note: "Every harvested invoice PDF plus operator label corrections — the document side of every reconciliation verdict.",
+        rows: (data) => data.invoices.length,
+    },
+    {
+        id: "payments",
+        label: "Payments",
+        codes: ["WS", "HC"],
+        pipe: "payments_ep",
+        note: "Every Wise transaction. Edit sets a counterparty→provider rule that forager applies to the whole history.",
+        rows: (data) => data.paymentsTx.length,
+    },
+    {
+        id: "burn",
+        label: "Pollen Usage",
+        codes: ["TB"],
+        pipe: "usage_ep",
+        note: "Our own metering: Tinybird generation events → one model/month row, paid vs quest Pollen.",
+        rows: (data) => data.usageMonthly.length,
+    },
+    {
+        id: "meter",
+        label: "Provider Usage",
+        codes: ["API", "HC"],
+        pipe: "meter_monthly_ep",
+        note: "Monthly provider burn, one row per provider and month: cash burn plus grant/credit burn, with source badges on each value.",
+        rows: (data) => data.meterMonthly.length,
+    },
+    {
+        id: "credits",
+        label: "Provider Balance",
+        codes: ["API", "HC"],
+        pipe: "grants_ep",
+        note: "What's left per provider — left / prepaid — resolved from live balance reads (api) and operator overrides (manual). A stock view, no month; providers with no balance are omitted.",
+        rows: (data) => data.grants.length,
+    },
+    {
+        id: "providers",
+        label: "Provider Mapping",
+        codes: ["HC"],
+        pipe: "provider_aliases_ep",
+        note: "The central provider vocabulary: every raw string seen in the data — a Wise counterparty, an invoice sender, a model tag — mapped to a canonical provider. Forager resolves against this list; Edit to reassign, Add to map a new string.",
+        rows: (data) => data.providerAliases.length,
+    },
+    {
+        id: "runs",
+        label: "Ingest Log",
+        codes: ["TB"],
+        pipe: "runs_ep",
+        note: "Forager ingest run log — check freshness here before trusting any other tab.",
+        rows: (data) => data.runs.length,
+    },
 ];
 
 const INGEST_COMMAND = "python3 -m ingest.run";
@@ -125,6 +192,12 @@ export default function App() {
     const [error, setError] = useState<string | null>(null);
     const [data, setData] = useState<Data | null>(null);
     const [tab, setTab] = useState<Tab>("recon");
+    // null until the operator picks a period; the effective default is the
+    // last complete month once data arrives.
+    const [month, setMonth] = useState<string | null>(null);
+    // App-global like the period: pick a provider once, drill through the
+    // provider tabs.
+    const [provider, setProvider] = useState("all");
     const [attempt, setAttempt] = useState(0);
     const [committedAwaitingIngest, setCommittedAwaitingIngest] = useState(0);
     const [showCommittedBanner, setShowCommittedBanner] = useState(false);
@@ -196,6 +269,16 @@ export default function App() {
     const staleHours = useMemo(() => {
         const latest = data?.runs[0]?.run_at;
         return latest ? hoursSince(latest) : null;
+    }, [data]);
+
+    const months = useMemo(() => (data ? collectMonths(data) : []), [data]);
+    const activeMonth = month ?? defaultMonth(months);
+    const providerOptions = useMemo(() => {
+        const slugs = new Set<string>();
+        for (const row of data?.providerAliases ?? []) {
+            if (row.provider) slugs.add(row.provider);
+        }
+        return ["all", ...[...slugs].sort((a, b) => a.localeCompare(b))];
     }, [data]);
 
     useEffect(() => {
@@ -293,14 +376,9 @@ export default function App() {
                                 <Heading as="h1" size="title">
                                     Treasury
                                 </Heading>
-                                <Text tone="soft" className="mt-2 max-w-3xl">
-                                    Raw Tinybird tables for operator review.
-                                    Edits append facts; forager folds them in on
-                                    the next run.
-                                </Text>
-                                <SourceLegend />
                             </div>
                             <div className="flex shrink-0 flex-wrap items-center gap-2">
+                                <OperationsGuide />
                                 {fixtures && (
                                     <Chip intent="alpha">fixtures</Chip>
                                 )}
@@ -310,9 +388,12 @@ export default function App() {
                                             data {Math.round(staleHours)}h old
                                         </Chip>
                                     )}
+                                <SaveControls />
                                 {!fixtures && (
                                     <Button
                                         size="sm"
+                                        intent="danger"
+                                        className="h-7"
                                         onClick={() => {
                                             logout().finally(() => {
                                                 setAuthenticated(false);
@@ -373,21 +454,36 @@ export default function App() {
 
                         <nav className="flex flex-wrap gap-2">
                             {TABS.map((item) => (
-                                <TabButton
+                                <Tooltip
                                     key={item.id}
-                                    active={tab === item.id}
-                                    onClick={() => setTab(item.id)}
+                                    triggerAs="span"
+                                    content={
+                                        <span className="flex max-w-72 flex-col gap-1">
+                                            <span className="font-mono text-theme-text-soft">
+                                                {item.pipe}
+                                                {data
+                                                    ? ` · ${item.rows(data)} rows`
+                                                    : ""}
+                                            </span>
+                                            <span>{item.note}</span>
+                                        </span>
+                                    }
                                 >
-                                    <span className="inline-flex items-center gap-1.5">
-                                        {item.label}
-                                        {item.codes.map((code) => (
-                                            <SourceMark
-                                                key={code}
-                                                code={code}
-                                            />
-                                        ))}
-                                    </span>
-                                </TabButton>
+                                    <TabButton
+                                        active={tab === item.id}
+                                        onClick={() => setTab(item.id)}
+                                    >
+                                        <span className="inline-flex items-center gap-1.5">
+                                            {item.label}
+                                            {item.codes.map((code) => (
+                                                <SourceMark
+                                                    key={code}
+                                                    code={code}
+                                                />
+                                            ))}
+                                        </span>
+                                    </TabButton>
+                                </Tooltip>
                             ))}
                         </nav>
 
@@ -408,28 +504,88 @@ export default function App() {
                             <Text tone="soft">Loading pipes...</Text>
                         )}
                         {data && tab === "recon" && (
-                            <ReconTab data={data} queuedKeys={queuedKeys} />
+                            <ReconTab
+                                data={data}
+                                month={activeMonth}
+                                months={months}
+                                onMonthChange={setMonth}
+                                provider={provider}
+                                providers={providerOptions}
+                                onProviderChange={setProvider}
+                            />
                         )}
                         {data && tab === "invoices" && (
-                            <InvoicesTab data={data} queuedKeys={queuedKeys} />
+                            <InvoicesTab
+                                committedNonce={committedAwaitingIngest}
+                                data={data}
+                                month={activeMonth}
+                                months={months}
+                                onMonthChange={setMonth}
+                                provider={provider}
+                                providers={providerOptions}
+                                onProviderChange={setProvider}
+                                queuedKeys={queuedKeys}
+                            />
                         )}
                         {data && tab === "payments" && (
-                            <PaymentsTab data={data} queuedKeys={queuedKeys} />
+                            <PaymentsTab
+                                committedNonce={committedAwaitingIngest}
+                                data={data}
+                                month={activeMonth}
+                                months={months}
+                                onMonthChange={setMonth}
+                                provider={provider}
+                                providers={providerOptions}
+                                onProviderChange={setProvider}
+                                queuedKeys={queuedKeys}
+                            />
                         )}
-                        {data && tab === "burn" && <BurnTab data={data} />}
+                        {data && tab === "burn" && (
+                            <BurnTab
+                                data={data}
+                                month={activeMonth}
+                                months={months}
+                                onMonthChange={setMonth}
+                                provider={provider}
+                                providers={providerOptions}
+                                onProviderChange={setProvider}
+                            />
+                        )}
                         {data && tab === "meter" && (
-                            <MeterTab data={data} queuedKeys={queuedKeys} />
+                            <MeterTab
+                                committedNonce={committedAwaitingIngest}
+                                data={data}
+                                month={activeMonth}
+                                months={months}
+                                onMonthChange={setMonth}
+                                provider={provider}
+                                providers={providerOptions}
+                                onProviderChange={setProvider}
+                                queuedKeys={queuedKeys}
+                            />
                         )}
                         {data && tab === "credits" && (
-                            <CreditsTab data={data} queuedKeys={queuedKeys} />
+                            <CreditsTab
+                                committedNonce={committedAwaitingIngest}
+                                data={data}
+                                provider={provider}
+                                providers={providerOptions}
+                                onProviderChange={setProvider}
+                                queuedKeys={queuedKeys}
+                            />
                         )}
-                        {data && tab === "balances" && (
-                            <BalancesTab data={data} queuedKeys={queuedKeys} />
+                        {data && tab === "providers" && (
+                            <ProvidersTab
+                                committedNonce={committedAwaitingIngest}
+                                data={data}
+                                provider={provider}
+                                providers={providerOptions}
+                                onProviderChange={setProvider}
+                            />
                         )}
                         {data && tab === "runs" && <RunsTab data={data} />}
                     </main>
                 </ScrollArea>
-                <CommitTray />
             </div>
         </StagingProvider>
     );

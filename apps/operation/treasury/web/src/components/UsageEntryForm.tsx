@@ -2,11 +2,10 @@ import { Alert, Button, Input, Text } from "@pollinations/ui";
 import { useState } from "react";
 import { type StageInput, useStaging } from "../lib/staging";
 
-const FUNDING_OPTIONS = ["credit", "cash", "prepaid"];
-
-function todayDate() {
-    return new Date().toISOString().slice(0, 10);
-}
+const BURN_BUCKETS = [
+    { label: "cash burn", value: "cash" },
+    { label: "credit burn", value: "credit" },
+];
 
 function nowDateTime() {
     return new Date().toISOString().replace("T", " ").slice(0, 19);
@@ -18,24 +17,22 @@ export function buildManualMeterChange({
     month,
     note = "entered in treasury app",
     provider,
-    retrievedAt = todayDate(),
 }: {
     amount: number;
     funding: string;
     month: string;
     note?: string;
     provider: string;
-    retrievedAt?: string;
 }): StageInput {
     return {
         datasource: "meter_monthly",
+        key: `meter:${provider}:${month}:${funding}`,
         row: {
             month,
             provider,
             cost_usd: amount,
             funding,
             source: "manual",
-            retrieved_at: retrievedAt,
             note,
         },
         summary: `meter ${provider} ${month} ${funding} -> ${amount}`,
@@ -53,6 +50,7 @@ export function buildManualBalanceChange({
 }): StageInput {
     return {
         datasource: "balances",
+        key: `balances:${provider}`,
         row: {
             run_at: runAt,
             provider,
@@ -144,24 +142,24 @@ export function UsageEntryForm({
                     <select
                         value={funding}
                         onChange={(event) => setFunding(event.target.value)}
-                        aria-label="funding"
+                        aria-label="burn bucket"
                         className="rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong"
                     >
-                        {FUNDING_OPTIONS.map((option) => (
-                            <option key={option} value={option}>
-                                {option}
+                        {BURN_BUCKETS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                                {option.label}
                             </option>
                         ))}
                     </select>
                 )}
                 <Button type="submit" size="sm">
-                    Stage
+                    Add
                 </Button>
             </div>
             <Text size="sm" tone="soft">
                 {mode === "used"
                     ? "Counts as this month's burn."
-                    : "Updates the pool balance display only — no monthly burn."}
+                    : "Updates the provider balance display only — no monthly burn."}
             </Text>
         </form>
     );

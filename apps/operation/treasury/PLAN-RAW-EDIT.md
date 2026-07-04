@@ -55,7 +55,7 @@ The manual-entry form must present both options with exactly this explanation.
 - Tinybird host `https://api.europe-west2.gcp.tinybird.co` is public and committable. Tokens are not.
 - Write rows must match the datasource schemas EXACTLY (schemas in `apps/operation/forager/tinybird/datasources/*.datasource`). Timestamps: `entered_at`/`run_at`/`ingested_at` = UTC `"YYYY-MM-DD HH:MM:SS"`; `retrieved_at`/`issued_at` = `"YYYY-MM-DD"`.
 - Events API: `POST {TB_HOST}/v0/events?name=<datasource>` with NDJSON body (one JSON object per line), header `Authorization: Bearer <treasury_append>`. Response `{"successful_rows":N,"quarantined_rows":0}` — treat `quarantined_rows > 0` as an error shown to the user.
-- Kind/category vocabularies (mirror `forager/ingest/invoices/label.py`): kinds `monthly_bill | prepaid_topup | subscription`; categories `compute | infra | saas | admin | office | payroll | other`.
+- Category vocabulary (mirror `forager/ingest/invoices/label.py`): `compute | infra | saas | admin | office | payroll | other`.
 - Reconciliation statuses (exhaustive after Task F): `ok, ok_credit, accepted, needs_data, needs_review, amount_mismatch, missing_invoice, missing_payment, quiet`. Unknown strings must render, never crash.
 - `invoices_ep` is ALREADY deduped server-side — the app must NOT dedupe client-side (delete any leftover dedupe logic).
 - Do NOT modify `packages/ui`. Do NOT modify anything under `apps/operation/forager/` outside Tasks E and F (the only FORAGER tasks) or where a step explicitly says CONTROLLER.

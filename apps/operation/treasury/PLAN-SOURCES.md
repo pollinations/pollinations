@@ -18,9 +18,11 @@ same correction-by-append pattern as invoice label rows.
 
 ## Established facts (verified 2026-07-03 — trust these, don't re-derive)
 
-- The treasury app reads exactly: `coverage_ep, gaps_ep, invoices_ep, cash_monthly_ep,
-  grants_ep, balances_ep, usage_ep, runs_ep` (`web/src/lib/tb.ts` loadAll). It does NOT
-  read `provider_month_ep` or `revenue_ep`.
+- The treasury app reads exactly: `coverage_ep, gaps_ep, invoices_ep, payments_ep,
+  meter_monthly_ep, grants_ep, usage_ep, runs_ep` (`web/src/lib/tb.ts` loadAll). It does
+  NOT read `provider_month_ep` or `revenue_ep`. `balances_ep` was dropped 2026-07-04
+  (Provider Balance tab merged into Provider Grants; the `balances` datasource stays as
+  input plane + history, like `overrides`).
 - Forager's gaps engine does NOT read the `provider_month` datasource — `ingest/run.py`
   passes the burn engine's in-memory `pm_rows` into `gaps.run(...)`. The datasource is
   only a persistence side-effect (`ops_replace.replace("provider_month", pm_rows)`).
@@ -83,7 +85,7 @@ observation planes, then classifies everything else:
      approval). `cash_monthly_ep` → `payments_monthly_ep` is the live example.
   2. Manual facts live inside the fact tables via `source='manual'` — never in
      separate manual tables. (This is why there is no `manual_credit_monthly`.)
-  3. Reserved name: `payments_ep` = future transaction-grain (wise_ref) pipe. Do not
+  3. Reserved name: `payments_ep` = transaction-grain payments pipe. Do not
      build it until something needs transaction grain.
 - [ ] Step 4: mark `cash_monthly_ep` and `provider_month_ep` as **deprecated** in the
   pipe table, each with its replacement/exit condition.

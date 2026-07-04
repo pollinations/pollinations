@@ -1,0 +1,35 @@
+{
+  "pr_number": 12222,
+  "title": "[codex] restore claude fable 5",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/12222",
+  "merged_at": "2026-07-04T09:14:29Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Restores `claude-fable-5` as a paid-only Bedrock text model via `global.anthropic.claude-fable-5`.\n- Keeps Fable pricing at provider cost: $10/MTok input, $1/MTok cache read, $12.50/MTok cache write, $50/MTok output.\n- Wires Claude adaptive thinking and strips unsupported Fable sampling params.\n- Adds focused paid-only/pricing, model resolution, transform, and snapshot coverage.\n\nValidation:\n- AWS CLI: model is `ACTIVE`; direct Bedrock Runtime converse returned `OK`.\n- Local gen e2e: `/v1/chat/completions` returned 200 with `OK`; billing charged 0.00105 Pollen for 20 input + 17 output tokens.\n- `biome`, focused gen/enter vitest suites, and `gen` typecheck pass.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Claude Fable 5 returns",
+    "blurb": "We've brought Claude Fable 5 back to the API. Time to spin up some new stories with Anthropic's creative powerhouse.",
+    "summary": "Restored Claude Fable 5 (global.anthropic.claude-fable-5) as a paid-only Bedrock text model, complete with adaptive thinking support and provider-cost pricing.",
+    "impact": "Developers can now access Claude Fable 5 for text generation at standard provider rates ($10/MTok input, $50/MTok output).",
+    "keywords": [
+      "claude",
+      "fable",
+      "models",
+      "api",
+      "bedrock"
+    ],
+    "visual_concept": "The bee mascot reading a magical storybook (fable) with the monitor robot. The book glows with soft pastel light, representing the 'Fable' model.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot reading a glowing magical storybook with the chunky monitor robot. The book radiates soft pastel light in a cozy digital library. Lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-04/PR-12222.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot reading a glowing magical storybook with the chunky monitor robot. The book radiates soft pastel light in a cozy digital library. Lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-04T09:15:26.775522+00:00"
+}

@@ -57,7 +57,7 @@ const TABS: {
     {
         id: "recon",
         label: "Reconciliation",
-        codes: ["IV", "WS"],
+        codes: [],
         pipe: "invoices_ep − payments_ep (derived)",
         note: "One verdict per provider and month: summed invoices minus summed Wise payments — missing or mismatched money surfaces here first. Derived client-side (per-month minus); payment-timing gaps across months are expected.",
         rows: (data) => data.coverage.length,
@@ -113,7 +113,7 @@ const TABS: {
     {
         id: "runs",
         label: "Ingest Log",
-        codes: ["TB"],
+        codes: [],
         pipe: "runs_ep",
         note: "Forager ingest run log — check freshness here before trusting any other tab.",
         rows: (data) => data.runs.length,

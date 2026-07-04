@@ -15,7 +15,6 @@ import {
     withUniqueRowKeys,
 } from "../components/DataTable";
 import { FilterBar, FilterSelect, MonthFilter } from "../components/Filters";
-import { HeaderWithSources } from "../components/Provenance";
 import { fmtUsd2 } from "../lib/format";
 import { matchesMonth, monthName } from "../lib/months";
 import { statusMeta } from "../lib/recon";
@@ -32,6 +31,10 @@ function sortedCoverage(rows: CoverageRow[]) {
 
 function gapKey(row: Pick<GapRow, "month" | "provider" | "status">) {
     return `${row.month}|${row.provider}|${row.status}`;
+}
+
+function isIssue(row: CoverageRow) {
+    return statusMeta(row.status).severity > 0;
 }
 
 export function ReconTab({
@@ -66,6 +69,7 @@ export function ReconTab({
         () =>
             sortedCoverage(data.coverage).filter(
                 (row) =>
+                    isIssue(row) &&
                     matchesMonth(row.month, month) &&
                     (provider === "all" || row.provider === provider),
             ),
@@ -116,9 +120,7 @@ export function ReconTab({
                     <TableHead>
                         <TableRow>
                             <TableHeaderCell {...headerProps("status")}>
-                                <HeaderWithSources codes={["TB"]}>
-                                    status
-                                </HeaderWithSources>
+                                status
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("month")}>
                                 month
@@ -127,14 +129,10 @@ export function ReconTab({
                                 provider
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("invoice_usd")}>
-                                <HeaderWithSources codes={["IV"]}>
-                                    invoice_usd
-                                </HeaderWithSources>
+                                invoice_usd
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("payment_usd")}>
-                                <HeaderWithSources codes={["WS"]}>
-                                    payment_usd
-                                </HeaderWithSources>
+                                payment_usd
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("delta_usd")}>
                                 delta_usd

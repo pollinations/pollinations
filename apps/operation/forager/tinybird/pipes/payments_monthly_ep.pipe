@@ -2,13 +2,14 @@ TOKEN "treasury_web" READ
 
 NODE payments_monthly
 SQL >
-    SELECT substring(toString(paid_at), 1, 7) AS month,
-           paid_at,
-           provider,
-           category,
-           counterparty,
-           amount_eur,
-           wise_ref
+    SELECT
+        provider,
+        category,
+        substring(toString(paid_at), 1, 7) AS month,
+        formatDateTime(paid_at, '%F') AS paid_at,
+        counterparty,
+        amount_eur,
+        wise_ref
     FROM payments
     ORDER BY month, provider, paid_at, counterparty
 

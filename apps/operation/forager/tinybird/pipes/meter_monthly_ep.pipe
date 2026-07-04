@@ -2,7 +2,13 @@ TOKEN "treasury_web" READ
 
 NODE endpoint
 SQL >
-    SELECT month, provider, cost_usd, funding, source
+    SELECT
+        provider,
+        funding,
+        month,
+        if(source = 'manual', 'edited', '') AS status,
+        source,
+        cost_usd
     FROM meter_monthly
     ORDER BY provider, month, funding, source
 

@@ -2,8 +2,20 @@ TOKEN "treasury_web" READ
 
 NODE endpoint
 SQL >
-    SELECT sha256, provider, category, period_month, amount, currency, credit_usd,
-           invoice_number, issued_at, source, file_ref, ingested_at
+    SELECT
+        provider,
+        category,
+        period_month,
+        if(source IN ('manual', 'label'), 'edited', '') AS status,
+        source,
+        amount,
+        currency,
+        credit_usd,
+        invoice_number,
+        formatDateTime(issued_at, '%F') AS issued_at,
+        file_ref,
+        formatDateTime(ingested_at, '%F %T') AS ingested_at,
+        sha256
     FROM (
         SELECT *, row_number() OVER (
            PARTITION BY sha256

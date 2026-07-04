@@ -2,7 +2,7 @@ TOKEN "treasury_web" READ
 
 NODE runs
 SQL >
-    SELECT run_at, ok, statuses, notes
+    SELECT formatDateTime(run_at, '%F %T') AS run_at, ok, statuses, notes
     FROM ingest_runs
     ORDER BY run_at DESC
     LIMIT 50

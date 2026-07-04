@@ -2,7 +2,13 @@ TOKEN "treasury_web" READ
 
 NODE endpoint
 SQL >
-    SELECT paid_at, provider, category, counterparty, amount_eur, wise_ref
+    SELECT
+        provider,
+        category,
+        formatDateTime(paid_at, '%F') AS paid_at,
+        counterparty,
+        amount_eur,
+        wise_ref
     FROM payments
     ORDER BY paid_at DESC, counterparty
 

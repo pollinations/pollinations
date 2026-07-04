@@ -18,7 +18,6 @@ const row: InvoiceRow = {
     issued_at: "2026-07-01",
     source: "ai",
     file_ref: "2026-06/lambda.pdf",
-    status: "parsed",
     ingested_at: "2026-07-03 06:31:00",
 };
 
@@ -62,7 +61,6 @@ describe("buildInvoiceManualChange", () => {
                 issued_at: "2026-07-01",
                 source: "manual",
                 file_ref: "2026-06/lambda.pdf",
-                status: "parsed",
                 ingested_at: "2026-07-03 12:00:00",
                 credit_usd: 384.47,
             },

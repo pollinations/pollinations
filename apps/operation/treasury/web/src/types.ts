@@ -1,15 +1,3 @@
-export type CoverageRow = {
-    month: string;
-    provider: string;
-    status: string;
-    invoice_usd: number;
-    payment_usd: number;
-};
-
-export type GapRow = CoverageRow & {
-    delta_usd: number;
-};
-
 export type InvoiceRow = {
     sha256: string;
     provider: string;
@@ -22,7 +10,6 @@ export type InvoiceRow = {
     issued_at: string;
     source: string;
     file_ref: string;
-    status: string;
     ingested_at: string;
 };
 
@@ -32,7 +19,6 @@ export type PaymentTxRow = {
     category: string;
     counterparty: string;
     amount_eur: number;
-    wise_ref: string;
 };
 
 export type MeterMonthlyRow = {
@@ -68,8 +54,6 @@ export type RevenueMonthlyRow = {
 };
 
 export type Data = {
-    coverage: CoverageRow[];
-    gaps: GapRow[];
     invoices: InvoiceRow[];
     paymentsTx: PaymentTxRow[];
     meterMonthly: MeterMonthlyRow[];

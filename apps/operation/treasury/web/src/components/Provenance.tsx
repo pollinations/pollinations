@@ -5,6 +5,8 @@ export type ProvenanceCode =
     | "WS"
     | "ST"
     | "API"
+    | "CLI"
+    | "BQ"
     | "GH"
     | "CF"
     | "IV"
@@ -29,8 +31,16 @@ const PROVENANCE: Record<
         className: "treasury-source-st",
     },
     API: {
-        title: "Provider API/CLI - read live on refresh",
+        title: "Provider API - read live on refresh",
         className: "treasury-source-api",
+    },
+    CLI: {
+        title: "Provider CLI - read live on refresh",
+        className: "treasury-source-cli",
+    },
+    BQ: {
+        title: "BigQuery - provider usage export",
+        className: "treasury-source-bq",
     },
     GH: {
         title: "GitHub - registry source",
@@ -60,6 +70,7 @@ const PROVENANCE: Record<
 };
 
 const SOURCE_CLASS: Record<string, string> = {
+    agent: "treasury-source-iv",
     api: "treasury-source-api",
     cli: "treasury-source-cli",
     bq: "treasury-source-bq",
@@ -82,6 +93,10 @@ const SOURCE_CLASS: Record<string, string> = {
 };
 
 const SOURCE_DISPLAY: Record<string, string> = {
+    agent: "IV",
+    api: "API",
+    cli: "CLI",
+    bq: "BQ",
     email: "IV",
     inbox: "IV",
     invoice: "IV",
@@ -106,11 +121,17 @@ export function provenanceTitle(code: ProvenanceCode) {
 
 export function sourceCode(source: string): ProvenanceCode {
     const normalized = source.toLowerCase();
-    if (["email", "inbox", "invoice", "ledger", "pdf"].includes(normalized)) {
+    if (
+        ["agent", "email", "inbox", "invoice", "ledger", "pdf"].includes(
+            normalized,
+        )
+    ) {
         return "IV";
     }
     if (["label", "manual", "hc", "static"].includes(normalized)) return "HC";
-    if (["api", "cli", "bq"].includes(normalized)) return "API";
+    if (normalized === "api") return "API";
+    if (normalized === "cli") return "CLI";
+    if (normalized === "bq") return "BQ";
     if (["wise", "ws"].includes(normalized)) return "WS";
     if (["stripe", "st"].includes(normalized)) return "ST";
     if (["tinybird", "tb", "estimate"].includes(normalized)) return "TB";
@@ -175,6 +196,34 @@ export function InlineSourceBadge({ source }: { source: string }) {
             title={sourceTitle(source, code)}
         >
             {sourceDisplay(source)}
+        </span>
+    );
+}
+
+function normalizeSource(source: string) {
+    const normalized = source.trim().toLowerCase();
+    if (!normalized) return "";
+    if (normalized === "mixed") return "";
+    return normalized;
+}
+
+export function uniqueSources(sources: readonly string[]) {
+    const normalized = sources
+        .flatMap((source) => source.split(/[,+/ ]+/))
+        .map(normalizeSource)
+        .filter(Boolean);
+    return [...new Set(normalized)];
+}
+
+export function SourceCell({ sources }: { sources: readonly string[] }) {
+    const unique = uniqueSources(sources);
+    if (unique.length === 0) return <span>-</span>;
+
+    return (
+        <span className="inline-flex items-center gap-1.5 whitespace-nowrap align-middle">
+            {unique.map((source) => (
+                <InlineSourceBadge key={source} source={source} />
+            ))}
         </span>
     );
 }

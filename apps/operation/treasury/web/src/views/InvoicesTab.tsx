@@ -1,6 +1,4 @@
 import {
-    Button,
-    Chip,
     ExternalLinkIcon,
     TableBody,
     TableCell,
@@ -8,7 +6,7 @@ import {
     TableHeaderCell,
     TableRow,
 } from "@pollinations/ui";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import {
     DataTable,
     type SortColumn,
@@ -16,8 +14,13 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
+import {
+    dirtyControlClass,
+    editableControlClass,
+} from "../components/EditableCell";
+import { SourceCell } from "../components/Provenance";
 import { fmtMoney } from "../lib/format";
-import { matchesMonth, monthName } from "../lib/months";
+import { matchesMonth } from "../lib/months";
 import { queuedInvoiceKey } from "../lib/queued";
 import { type StageInput, useStaging } from "../lib/staging";
 import type { Data, InvoiceRow } from "../types";
@@ -88,16 +91,12 @@ export function buildInvoiceManualChange({
             issued_at: invoiceDate(row.issued_at, row.period_month),
             source: "manual",
             file_ref: row.file_ref || "",
-            status: "parsed",
             ingested_at: ingestedAt,
             credit_usd: finiteNumber(row.credit_usd),
         },
         summary: `invoice ${row.provider || "other"} ${row.period_month || "-"} category -> ${values.category}`,
     };
 }
-
-const CELL_SELECT =
-    "rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong";
 
 function sortedInvoices(rows: InvoiceRow[]) {
     return [...rows].sort(
@@ -139,25 +138,18 @@ function FileRefAction({ fileRef }: { fileRef: string }) {
     );
 }
 
-// The editable cell (category) as a live input. Mounts only
-// while the row is open, so the pending value is seeded once from the pool (or
-// the extracted row) and every keystroke re-stages it.
-function InvoiceEditCells({ row }: { row: InvoiceRow }) {
+function InvoiceCategoryCell({ row }: { row: InvoiceRow }) {
     const { changes, stage, unstage } = useStaging();
     const stageKey = `invoices:${row.sha256}`;
-    const [values, setValues] = useState<InvoiceEditValues>(() => {
-        const staged = changes.find((change) => change.key === stageKey);
-        return staged
-            ? {
-                  category: String(staged.row.category ?? ""),
-              }
-            : initialInvoiceValues(row);
-    });
+    const staged = changes.find((change) => change.key === stageKey);
+    const category = staged
+        ? String(staged.row.category ?? "")
+        : initialInvoiceValues(row).category;
+    const dirty = category !== initialInvoiceValues(row).category;
 
-    const update = (key: keyof InvoiceEditValues, value: string) => {
-        const next = { ...values, [key]: value };
-        setValues(next);
-        if (validateInvoiceEdit(next)) return; // invalid -> keep last staged
+    const update = (value: string) => {
+        const next = { category: value };
+        if (validateInvoiceEdit(next)) return;
         const unchanged = next.category === row.category;
         if (unchanged) {
             unstage(stageKey);
@@ -167,71 +159,36 @@ function InvoiceEditCells({ row }: { row: InvoiceRow }) {
     };
 
     return (
-        <>
-            <TableCell>{row.provider || "-"}</TableCell>
-            <TableCell>
-                <select
-                    value={values.category}
-                    onChange={(event) => update("category", event.target.value)}
-                    aria-label="category"
-                    className={CELL_SELECT}
-                >
-                    {INVOICE_CATEGORIES.map((category) => (
-                        <option key={category} value={category}>
-                            {category}
-                        </option>
-                    ))}
-                </select>
-            </TableCell>
-        </>
+        <select
+            value={category}
+            onChange={(event) => update(event.target.value)}
+            aria-label="category"
+            className={dirtyControlClass(dirty, editableControlClass)}
+        >
+            {INVOICE_CATEGORIES.map((option) => (
+                <option key={option} value={option}>
+                    {option}
+                </option>
+            ))}
+        </select>
     );
 }
 
 export function InvoicesTab({
     category = "all",
-    committedNonce = 0,
     data,
     month = "",
     provider = "all",
     queuedKeys = new Set<string>(),
 }: {
     category?: string;
-    committedNonce?: number;
     data: Data;
     month?: string;
     provider?: string;
     queuedKeys?: ReadonlySet<string>;
 }) {
-    const { changes, resetNonce, unstage } = useStaging();
-    // Rows whose editable cells are live. Recovered from staging on mount so an
-    // edit survives tab switches; wiped when a commit lands.
-    const [editing, setEditing] = useState<Set<string>>(() =>
-        stagedInvoiceShas(changes),
-    );
-    const lastNonce = useRef(committedNonce);
-    const lastResetNonce = useRef(resetNonce);
-    useEffect(() => {
-        if (lastNonce.current !== committedNonce) {
-            lastNonce.current = committedNonce;
-            setEditing(new Set());
-        }
-    }, [committedNonce]);
-    useEffect(() => {
-        if (lastResetNonce.current !== resetNonce) {
-            lastResetNonce.current = resetNonce;
-            setEditing(new Set());
-        }
-    }, [resetNonce]);
-
-    const toggle = (sha: string, open: boolean) => {
-        if (!open) unstage(`invoices:${sha}`);
-        setEditing((current) => {
-            const next = new Set(current);
-            if (open) next.add(sha);
-            else next.delete(sha);
-            return next;
-        });
-    };
+    const { changes } = useStaging();
+    const stagedShas = useMemo(() => stagedInvoiceShas(changes), [changes]);
 
     const baseRows = useMemo(
         () =>
@@ -247,21 +204,17 @@ export function InvoicesTab({
     );
     const sortColumns = useMemo<SortColumn<InvoiceRow>[]>(
         () => [
-            {
-                key: "action",
-                value: (row) => queuedKeys.has(queuedInvoiceKey(row.sha256)),
-            },
-            { key: "file", value: (row) => row.file_ref },
             { key: "provider", value: (row) => row.provider },
             { key: "category", value: (row) => row.category },
             { key: "period_month", value: (row) => row.period_month },
+            { key: "source", value: (row) => row.source },
             { key: "amount", value: (row) => row.amount },
             { key: "credit_usd", value: (row) => row.credit_usd },
             { key: "invoice_number", value: (row) => row.invoice_number },
             { key: "issued_at", value: (row) => row.issued_at },
-            { key: "source", value: (row) => row.source },
+            { key: "file", value: (row) => row.file_ref },
         ],
-        [queuedKeys],
+        [],
     );
     const { headerProps, rows } = useSortableRows(baseRows, sortColumns);
 
@@ -271,12 +224,6 @@ export function InvoicesTab({
                 <DataTable>
                     <TableHead>
                         <TableRow>
-                            <TableHeaderCell {...headerProps("action")}>
-                                action
-                            </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("file")}>
-                                file
-                            </TableHeaderCell>
                             <TableHeaderCell {...headerProps("provider")}>
                                 provider
                             </TableHeaderCell>
@@ -284,7 +231,10 @@ export function InvoicesTab({
                                 category
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("period_month")}>
-                                period_month
+                                time period
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("source")}>
+                                source
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("amount")}>
                                 paid
@@ -298,68 +248,37 @@ export function InvoicesTab({
                             <TableHeaderCell {...headerProps("issued_at")}>
                                 issued_at
                             </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("source")}>
-                                source
+                            <TableHeaderCell {...headerProps("file")}>
+                                file
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {withUniqueRowKeys(rows, (row) => row.sha256).map(
                             ({ key, row }) => {
-                                const open = editing.has(row.sha256);
+                                const manualSource =
+                                    stagedShas.has(row.sha256) ||
+                                    queuedKeys.has(queuedInvoiceKey(row.sha256))
+                                        ? "manual"
+                                        : "";
                                 return (
                                     <TableRow key={key}>
                                         <TableCell>
-                                            <span className="inline-flex items-center gap-1.5">
-                                                <Button
-                                                    size="sm"
-                                                    intent={
-                                                        open ? "danger" : "info"
-                                                    }
-                                                    onClick={() =>
-                                                        toggle(
-                                                            row.sha256,
-                                                            !open,
-                                                        )
-                                                    }
-                                                >
-                                                    {open ? "Reset" : "Edit"}
-                                                </Button>
-                                                {queuedKeys.has(
-                                                    queuedInvoiceKey(
-                                                        row.sha256,
-                                                    ),
-                                                ) && (
-                                                    <Chip
-                                                        size="sm"
-                                                        intent="warning"
-                                                    >
-                                                        queued
-                                                    </Chip>
-                                                )}
-                                            </span>
+                                            {row.provider || "-"}
                                         </TableCell>
-                                        <TableCell title={row.file_ref}>
-                                            <FileRefAction
-                                                fileRef={row.file_ref}
-                                            />
-                                        </TableCell>
-                                        {open ? (
-                                            <InvoiceEditCells row={row} />
-                                        ) : (
-                                            <>
-                                                <TableCell>
-                                                    {row.provider || "-"}
-                                                </TableCell>
-                                                <TableCell>
-                                                    {row.category || "-"}
-                                                </TableCell>
-                                            </>
-                                        )}
                                         <TableCell>
-                                            {row.period_month
-                                                ? monthName(row.period_month)
-                                                : "-"}
+                                            <InvoiceCategoryCell row={row} />
+                                        </TableCell>
+                                        <TableCell>
+                                            {row.period_month || "-"}
+                                        </TableCell>
+                                        <TableCell>
+                                            <SourceCell
+                                                sources={[
+                                                    row.source,
+                                                    manualSource,
+                                                ]}
+                                            />
                                         </TableCell>
                                         <TableCell>
                                             {fmtMoney(row.amount, row.currency)}
@@ -378,8 +297,10 @@ export function InvoicesTab({
                                         <TableCell>
                                             {row.issued_at || "-"}
                                         </TableCell>
-                                        <TableCell>
-                                            {row.source || "-"}
+                                        <TableCell title={row.file_ref}>
+                                            <FileRefAction
+                                                fileRef={row.file_ref}
+                                            />
                                         </TableCell>
                                     </TableRow>
                                 );

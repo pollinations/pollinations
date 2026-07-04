@@ -1,27 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { FIXTURES } from "./fixtures";
-import type { CoverageRow, RunRow } from "./types";
+import type { RunRow } from "./types";
 
 const EXPECTED_PIPES = [
-    "coverage_ep",
-    "gaps_ep",
     "invoices_ep",
     "payments_ep",
     "meter_monthly_ep",
     "usage_ep",
     "runs_ep",
     "revenue_ep",
-];
-
-const ALL_STATUSES = [
-    "ok",
-    "ok_credit",
-    "accepted",
-    "needs_data",
-    "needs_review",
-    "amount_mismatch",
-    "missing_invoice",
-    "missing_payment",
 ];
 
 describe("fixtures", () => {
@@ -31,16 +18,6 @@ describe("fixtures", () => {
             expect((FIXTURES[pipe] as unknown[]).length, pipe).toBeGreaterThan(
                 0,
             );
-        }
-    });
-
-    it("exercises every reconciliation status", () => {
-        const seen = new Set(
-            (FIXTURES.coverage_ep as CoverageRow[]).map((r) => r.status),
-        );
-
-        for (const status of ALL_STATUSES) {
-            expect(seen.has(status), status).toBe(true);
         }
     });
 

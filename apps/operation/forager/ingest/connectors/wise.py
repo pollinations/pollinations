@@ -5,7 +5,7 @@ payments row per outgoing transaction. Unmatched counterparties keep provider=''
 so payroll/office stay visible for future runway/infra UIs.
 
 Row shape matches the `payments` Tinybird datasource exactly:
-    paid_at, provider, counterparty, amount_eur, wise_ref
+    paid_at, provider, category, counterparty, amount_eur
 """
 import urllib.parse
 from .common import http_json, strip_html
@@ -140,6 +140,5 @@ def outflow_rows(creds, months):
                              ops_category if ops_category
                              else _payment_category(prov, cp, slug_cat)
                          ),
-                         "amount_eur": round(-eur, 2),
-                         "wise_ref": str(a.get("id") or "")})
+                         "amount_eur": round(-eur, 2)})
     return rows

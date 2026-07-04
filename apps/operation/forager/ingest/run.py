@@ -56,18 +56,36 @@ def apply_payment_rules(rows, overrides, slug_cat):
 
     An overrides row (scope='payments', key=<counterparty>, field='provider')
     maps every payment from that counterparty to a provider slug; category
-    follows the slug's default. Mutates rows in place, returns changed count.
+    follows the slug's default. A field='category' override maps every payment
+    from that counterparty to a category without changing provider. Mutates rows
+    in place, returns changed count.
     """
-    rules = {key: str(val) for (scope, key, field), val in overrides.items()
-             if scope == "payments" and field == "provider" and val}
-    if not rules:
+    provider_rules = {
+        key: str(val)
+        for (scope, key, field), val in overrides.items()
+        if scope == "payments" and field == "provider" and val
+    }
+    category_rules = {
+        key: str(val)
+        for (scope, key, field), val in overrides.items()
+        if scope == "payments" and field == "category" and val
+    }
+    if not provider_rules and not category_rules:
         return 0
     changed = 0
     for row in rows:
-        target = rules.get(row.get("counterparty", ""))
-        if target and row.get("provider") != target:
-            row["provider"] = target
-            row["category"] = slug_cat.get(target, "compute")
+        counterparty = row.get("counterparty", "")
+        target_provider = provider_rules.get(counterparty)
+        target_category = category_rules.get(counterparty)
+        before = (row.get("provider"), row.get("category"))
+
+        if target_provider:
+            row["provider"] = target_provider
+            row["category"] = slug_cat.get(target_provider, "compute")
+        if target_category:
+            row["category"] = target_category
+
+        if before != (row.get("provider"), row.get("category")):
             changed += 1
     return changed
 

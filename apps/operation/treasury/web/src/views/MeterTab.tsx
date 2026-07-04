@@ -1,6 +1,5 @@
 import {
     Button,
-    Chip,
     Input,
     TableBody,
     TableCell,
@@ -16,13 +15,13 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
-import { SourceBadge } from "../components/Provenance";
+import { dirtyControlClass } from "../components/EditableCell";
+import { SourceCell, uniqueSources } from "../components/Provenance";
 import {
     buildManualMeterChange,
     validateManualAmount,
 } from "../components/UsageEntryForm";
-import { fmtUsd2 } from "../lib/format";
-import { matchesMonth, monthLabel, monthName } from "../lib/months";
+import { matchesMonth, monthLabel } from "../lib/months";
 import { queuedMeterKey } from "../lib/queued";
 import { useStaging } from "../lib/staging";
 import type { Data, MeterMonthlyRow } from "../types";
@@ -53,6 +52,10 @@ function combineSource(current: string, next: string) {
     if (!next) return current;
     if (!current) return next;
     return current === next ? current : "mixed";
+}
+
+function combineSources(...sources: string[]) {
+    return uniqueSources(sources);
 }
 
 const METER_SOURCE_RANK: Record<string, number> = {
@@ -125,6 +128,49 @@ function sortedMeter(rows: MeterUsageRow[]) {
             b.month.localeCompare(a.month) ||
             a.provider.localeCompare(b.provider),
     );
+}
+
+function providerBackfillMonth(period: string, months: string[]) {
+    return MONTH_RE.test(period)
+        ? period
+        : defaultEntryMonth(period, entryMonthOptions(period, months));
+}
+
+function withProviderBackfillRows({
+    month,
+    provider,
+    providers,
+    rows,
+}: {
+    month: string;
+    provider: string;
+    providers: string[];
+    rows: MeterUsageRow[];
+}) {
+    const byKey = new Map(
+        rows.map((row) => [`${row.month}|${row.provider}`, row]),
+    );
+    const targetProviders =
+        provider === "all"
+            ? providers.filter((slug) => slug !== "all")
+            : [provider];
+
+    for (const slug of targetProviders) {
+        if (!slug) continue;
+        const key = `${month}|${slug}`;
+        if (!byKey.has(key)) {
+            byKey.set(key, {
+                month,
+                provider: slug,
+                creditUsage: 0,
+                prepaidUsage: 0,
+                creditSource: "",
+                prepaidSource: "",
+            });
+        }
+    }
+
+    return [...byKey.values()];
 }
 
 function selectedYear(period: string) {
@@ -208,14 +254,11 @@ function MeterAmountInput({
 }) {
     const { changes, stage, unstage } = useStaging();
     const stageKey = meterStageKey(month, provider, bucket);
-    const [input, setInput] = useState(
-        () =>
-            stagedMeterAmount(changes, month, provider, bucket) ??
-            String(amount),
-    );
+    const stagedAmount = stagedMeterAmount(changes, month, provider, bucket);
+    const input = stagedAmount ?? String(amount);
+    const dirty = stagedAmount !== null;
 
     const update = (next: string) => {
-        setInput(next);
         if (next.trim() === "") {
             unstage(stageKey);
             return;
@@ -244,20 +287,16 @@ function MeterAmountInput({
             value={input}
             onChange={(event) => update(event.target.value)}
             aria-label={`${bucket}_usage`}
-            className="w-32"
+            className={dirtyControlClass(dirty, "w-32")}
         />
     );
 }
 
 function MeterDraftRow({
-    id,
     months,
-    onDiscard,
     period,
 }: {
-    id: string;
     months: string[];
-    onDiscard: (id: string) => void;
     period: string;
 }) {
     const { stage, unstage } = useStaging();
@@ -316,18 +355,35 @@ function MeterDraftRow({
         );
     };
 
-    const reset = () => {
-        if (stagedKey.current) unstage(stagedKey.current);
-        stagedKey.current = null;
-        onDiscard(id);
-    };
-
     return (
         <TableRow>
             <TableCell>
-                <Button type="button" size="sm" intent="danger" onClick={reset}>
-                    Reset
-                </Button>
+                <Input
+                    value={provider}
+                    onChange={(event) => {
+                        setProvider(event.target.value);
+                        sync(month, event.target.value, amount, funding);
+                    }}
+                    placeholder="provider slug"
+                    aria-label="provider"
+                    list="meter-entry-providers"
+                    className="w-40"
+                />
+            </TableCell>
+            <TableCell>
+                <select
+                    value={funding}
+                    onChange={(event) => {
+                        const next = event.target.value as MeterFunding;
+                        setFunding(next);
+                        sync(month, provider, amount, next);
+                    }}
+                    aria-label="funding"
+                    className="w-28 rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong"
+                >
+                    <option value="prepaid">prepaid</option>
+                    <option value="credit">credit</option>
+                </select>
             </TableCell>
             <TableCell>
                 <select
@@ -347,52 +403,46 @@ function MeterDraftRow({
                 </select>
             </TableCell>
             <TableCell>
-                <Input
-                    value={provider}
-                    onChange={(event) => {
-                        setProvider(event.target.value);
-                        sync(month, event.target.value, amount, funding);
-                    }}
-                    placeholder="provider slug"
-                    aria-label="provider"
-                    list="meter-entry-providers"
-                    className="w-40"
-                />
+                <SourceCell sources={["manual"]} />
             </TableCell>
             <TableCell>
-                <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={amount}
-                    onChange={(event) => {
-                        setAmount(event.target.value);
-                        sync(month, provider, event.target.value, funding);
-                    }}
-                    placeholder="amount"
-                    aria-label="amount"
-                    className="w-32"
-                />
+                {funding === "credit" ? (
+                    <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={amount}
+                        onChange={(event) => {
+                            setAmount(event.target.value);
+                            sync(month, provider, event.target.value, funding);
+                        }}
+                        placeholder="amount"
+                        aria-label="amount"
+                        className="w-32"
+                    />
+                ) : (
+                    "-"
+                )}
             </TableCell>
             <TableCell>
-                <select
-                    value={funding}
-                    onChange={(event) => {
-                        const next = event.target.value as MeterFunding;
-                        setFunding(next);
-                        sync(month, provider, amount, next);
-                    }}
-                    aria-label="funding"
-                    className="w-28 rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong"
-                >
-                    <option value="prepaid">prepaid usage</option>
-                    <option value="credit">credit usage</option>
-                </select>
+                {funding === "prepaid" ? (
+                    <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={amount}
+                        onChange={(event) => {
+                            setAmount(event.target.value);
+                            sync(month, provider, event.target.value, funding);
+                        }}
+                        placeholder="amount"
+                        aria-label="amount"
+                        className="w-32"
+                    />
+                ) : (
+                    "-"
+                )}
             </TableCell>
-            <TableCell>
-                <SourceBadge source="manual" />
-            </TableCell>
-            <TableCell />
         </TableRow>
     );
 }
@@ -414,77 +464,56 @@ export function MeterTab({
     queuedKeys?: ReadonlySet<string>;
     committedNonce?: number;
 }) {
-    const { changes, resetNonce, unstage } = useStaging();
-    const [editing, setEditing] = useState<Set<string>>(() =>
-        stagedMeterEdits(changes),
-    );
+    const { changes, resetNonce } = useStaging();
     const [drafts, setDrafts] = useState<string[]>([]);
     const lastNonce = useRef(committedNonce);
     const lastResetNonce = useRef(resetNonce);
     useEffect(() => {
         if (lastNonce.current !== committedNonce) {
             lastNonce.current = committedNonce;
-            setEditing(new Set());
             setDrafts([]);
         }
     }, [committedNonce]);
     useEffect(() => {
         if (lastResetNonce.current !== resetNonce) {
             lastResetNonce.current = resetNonce;
-            setEditing(new Set());
             setDrafts([]);
         }
     }, [resetNonce]);
 
     const stagedEdits = useMemo(() => stagedMeterEdits(changes), [changes]);
-    const toggleBucket = (
-        monthValue: string,
-        providerValue: string,
-        bucket: UsageBucket,
-        open: boolean,
-    ) => {
-        if (!open) unstage(meterStageKey(monthValue, providerValue, bucket));
-        const key = meterEditKey(monthValue, providerValue, bucket);
-        setEditing((current) => {
-            const next = new Set(current);
-            if (open) next.add(key);
-            else next.delete(key);
-            return next;
-        });
-    };
     const addDraft = () => setDrafts((current) => [...current, newId()]);
-    const discardDraft = (id: string) =>
-        setDrafts((current) => current.filter((draft) => draft !== id));
-    const baseRows = useMemo(
-        () =>
-            sortedMeter(aggregateMeterRows(data.meterMonthly)).filter(
-                (row) =>
-                    matchesMonth(row.month, month) &&
-                    (provider === "all" || row.provider === provider),
-            ),
-        [data.meterMonthly, month, provider],
-    );
+    const baseRows = useMemo(() => {
+        const periodRows = aggregateMeterRows(data.meterMonthly).filter(
+            (row) =>
+                matchesMonth(row.month, month) &&
+                (provider === "all" || row.provider === provider),
+        );
+        return sortedMeter(
+            withProviderBackfillRows({
+                month: providerBackfillMonth(month, months),
+                provider,
+                providers,
+                rows: periodRows,
+            }),
+        );
+    }, [data.meterMonthly, month, months, provider, providers]);
     const sortColumns = useMemo<SortColumn<MeterUsageRow>[]>(
         () => [
+            { key: "provider", value: (row) => row.provider },
+            { key: "category", value: () => "usage" },
+            { key: "month", value: (row) => row.month },
             {
-                key: "actions",
+                key: "source",
                 value: (row) =>
-                    queuedKeys.has(queuedMeterKey(row.month, row.provider)) ||
-                    stagedEdits.has(
-                        meterEditKey(row.month, row.provider, "credit"),
-                    ) ||
-                    stagedEdits.has(
-                        meterEditKey(row.month, row.provider, "prepaid"),
+                    combineSources(row.creditSource, row.prepaidSource).join(
+                        ",",
                     ),
             },
-            { key: "month", value: (row) => row.month },
-            { key: "provider", value: (row) => row.provider },
             { key: "creditUsage", value: (row) => row.creditUsage },
             { key: "prepaidUsage", value: (row) => row.prepaidUsage },
-            { key: "creditSource", value: (row) => row.creditSource },
-            { key: "prepaidSource", value: (row) => row.prepaidSource },
         ],
-        [queuedKeys, stagedEdits],
+        [],
     );
     const { headerProps, rows } = useSortableRows(baseRows, sortColumns);
     const knownProviders = useMemo(
@@ -499,30 +528,32 @@ export function MeterTab({
                     <option key={slug} value={slug} />
                 ))}
             </datalist>
+            <div>
+                <Button size="sm" intent="info" onClick={addDraft}>
+                    Add
+                </Button>
+            </div>
             <TableScroller>
                 <DataTable>
                     <TableHead>
                         <TableRow>
-                            <TableHeaderCell {...headerProps("actions")}>
-                                actions
-                            </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("month")}>
-                                month
-                            </TableHeaderCell>
                             <TableHeaderCell {...headerProps("provider")}>
                                 provider
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("category")}>
+                                category
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("month")}>
+                                time period
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("source")}>
+                                source
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("creditUsage")}>
                                 credit usage
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("prepaidUsage")}>
                                 prepaid usage
-                            </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("creditSource")}>
-                                credit source
-                            </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("prepaidSource")}>
-                                prepaid source
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>
@@ -541,98 +572,40 @@ export function MeterTab({
                                 row.provider,
                                 "prepaid",
                             );
-                            const open =
-                                editing.has(creditEditKey) ||
-                                editing.has(prepaidEditKey);
                             const queued = queuedKeys.has(
                                 queuedMeterKey(row.month, row.provider),
                             );
                             const staged =
                                 stagedEdits.has(creditEditKey) ||
                                 stagedEdits.has(prepaidEditKey);
+                            const sources = combineSources(
+                                row.creditSource,
+                                row.prepaidSource,
+                                queued || staged ? "manual" : "",
+                            );
                             return (
                                 <TableRow key={key}>
+                                    <TableCell>{row.provider}</TableCell>
+                                    <TableCell>usage</TableCell>
+                                    <TableCell>{row.month}</TableCell>
                                     <TableCell>
-                                        <Button
-                                            size="sm"
-                                            intent={open ? "danger" : "info"}
-                                            onClick={() => {
-                                                toggleBucket(
-                                                    row.month,
-                                                    row.provider,
-                                                    "credit",
-                                                    !open,
-                                                );
-                                                toggleBucket(
-                                                    row.month,
-                                                    row.provider,
-                                                    "prepaid",
-                                                    !open,
-                                                );
-                                            }}
-                                        >
-                                            {open ? "Reset" : "Edit"}
-                                        </Button>
+                                        <SourceCell sources={sources} />
                                     </TableCell>
                                     <TableCell>
-                                        {monthName(row.month)}
+                                        <MeterAmountInput
+                                            amount={row.creditUsage}
+                                            bucket="credit"
+                                            month={row.month}
+                                            provider={row.provider}
+                                        />
                                     </TableCell>
                                     <TableCell>
-                                        <span className="inline-flex items-center gap-1.5">
-                                            {row.provider}
-                                            {(queued || staged) && (
-                                                <Chip
-                                                    size="sm"
-                                                    intent="warning"
-                                                >
-                                                    {queued
-                                                        ? "queued"
-                                                        : "edited"}
-                                                </Chip>
-                                            )}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell>
-                                        {open ? (
-                                            <MeterAmountInput
-                                                amount={row.creditUsage}
-                                                bucket="credit"
-                                                month={row.month}
-                                                provider={row.provider}
-                                            />
-                                        ) : (
-                                            fmtUsd2(row.creditUsage)
-                                        )}
-                                    </TableCell>
-                                    <TableCell>
-                                        {open ? (
-                                            <MeterAmountInput
-                                                amount={row.prepaidUsage}
-                                                bucket="prepaid"
-                                                month={row.month}
-                                                provider={row.provider}
-                                            />
-                                        ) : (
-                                            fmtUsd2(row.prepaidUsage)
-                                        )}
-                                    </TableCell>
-                                    <TableCell>
-                                        {row.creditSource ? (
-                                            <SourceBadge
-                                                source={row.creditSource}
-                                            />
-                                        ) : (
-                                            "-"
-                                        )}
-                                    </TableCell>
-                                    <TableCell>
-                                        {row.prepaidSource ? (
-                                            <SourceBadge
-                                                source={row.prepaidSource}
-                                            />
-                                        ) : (
-                                            "-"
-                                        )}
+                                        <MeterAmountInput
+                                            amount={row.prepaidUsage}
+                                            bucket="prepaid"
+                                            month={row.month}
+                                            provider={row.provider}
+                                        />
                                     </TableCell>
                                 </TableRow>
                             );
@@ -640,29 +613,10 @@ export function MeterTab({
                         {drafts.map((id) => (
                             <MeterDraftRow
                                 key={id}
-                                id={id}
                                 months={months}
-                                onDiscard={discardDraft}
                                 period={month}
                             />
                         ))}
-                        <TableRow>
-                            <TableCell>
-                                <Button
-                                    size="sm"
-                                    intent="info"
-                                    onClick={addDraft}
-                                >
-                                    Add
-                                </Button>
-                            </TableCell>
-                            <TableCell />
-                            <TableCell />
-                            <TableCell />
-                            <TableCell />
-                            <TableCell />
-                            <TableCell />
-                        </TableRow>
                     </TableBody>
                 </DataTable>
             </TableScroller>

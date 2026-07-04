@@ -22,6 +22,33 @@ def test_restamps_provider_and_category():
     assert rows[1]["provider"] == "anthropic"
 
 
+def test_restamps_category_without_changing_provider():
+    rows = [
+        {"counterparty": "OFFICE STORE", "provider": "", "category": "unmatched",
+         "amount_eur": 42.0},
+        {"counterparty": "Anthropic", "provider": "anthropic",
+         "category": "compute", "amount_eur": 100.0},
+    ]
+    overrides = {("payments", "OFFICE STORE", "category"): "office"}
+
+    assert apply_payment_rules(rows, overrides, SLUG_CAT) == 1
+    assert rows[0]["provider"] == ""
+    assert rows[0]["category"] == "office"
+    assert rows[1]["category"] == "compute"
+
+
+def test_category_rule_wins_over_provider_default_category():
+    rows = [{"counterparty": "NVIDIA CORP", "provider": "", "category": "unmatched"}]
+    overrides = {
+        ("payments", "NVIDIA CORP", "provider"): "vast.ai",
+        ("payments", "NVIDIA CORP", "category"): "infra",
+    }
+
+    assert apply_payment_rules(rows, overrides, SLUG_CAT) == 1
+    assert rows[0]["provider"] == "vast.ai"
+    assert rows[0]["category"] == "infra"
+
+
 def test_idempotent_second_pass():
     rows = [{"counterparty": "NVIDIA CORP", "provider": "vast.ai",
              "category": "compute"}]
@@ -35,6 +62,7 @@ def test_ignores_other_scopes_and_empty_values():
     overrides = {
         ("grants", "pool", "left_usd"): 5,
         ("payments", "X", "provider"): "",
+        ("payments", "X", "category"): "",
     }
 
     assert apply_payment_rules(rows, overrides, SLUG_CAT) == 0

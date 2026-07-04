@@ -1,14 +1,11 @@
 import {
-    Button,
-    Chip,
-    Input,
     TableBody,
     TableCell,
     TableHead,
     TableHeaderCell,
     TableRow,
 } from "@pollinations/ui";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import {
     DataTable,
     type SortColumn,
@@ -16,26 +13,39 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
+import { dirtyControlClass } from "../components/EditableCell";
+import { SourceCell } from "../components/Provenance";
 import { fmtMoney } from "../lib/format";
 import { matchesMonth } from "../lib/months";
 import { queuedPaymentRuleKey } from "../lib/queued";
 import { type StageInput, useStaging } from "../lib/staging";
 import type { Data, PaymentTxRow } from "../types";
 
+const PAYMENT_CATEGORIES = [
+    "compute",
+    "infra",
+    "saas",
+    "admin",
+    "office",
+    "payroll",
+    "other",
+    "unmatched",
+];
+
 function nowDateTime() {
     return new Date().toISOString().replace("T", " ").slice(0, 19);
 }
 
 export function buildPaymentRuleChange({
+    category,
     counterparty,
     enteredAt = nowDateTime(),
     note = "",
-    provider,
 }: {
+    category: string;
     counterparty: string;
     enteredAt?: string;
     note?: string;
-    provider: string;
 }): StageInput {
     return {
         datasource: "overrides",
@@ -44,12 +54,12 @@ export function buildPaymentRuleChange({
             entered_at: enteredAt,
             scope: "payments",
             key: counterparty,
-            field: "provider",
+            field: "category",
             value_num: null,
-            value_str: provider,
+            value_str: category,
             note,
         },
-        summary: `payments ${counterparty} -> ${provider}`,
+        summary: `payments ${counterparty} category -> ${category}`,
     };
 }
 
@@ -62,7 +72,7 @@ function sortedTx(rows: PaymentTxRow[]) {
 }
 
 function paymentRowKey(row: PaymentTxRow) {
-    return `${row.paid_at}|${row.counterparty}|${row.amount_eur}|${row.provider}|${row.category}|${row.wise_ref}`;
+    return `${row.paid_at}|${row.counterparty}|${row.amount_eur}|${row.provider}|${row.category}`;
 }
 
 function stagedPaymentCounterparties(
@@ -81,90 +91,68 @@ function stagedPaymentCounterparties(
     return parties;
 }
 
-// The provider cell as a live input. Staging is by counterparty, so editing one
-// transaction stages the rule that maps every payment from that counterparty.
-function PaymentProviderCell({ row }: { row: PaymentTxRow }) {
+// Staging is by counterparty, so editing one transaction stages the category
+// rule for every payment from that counterparty.
+function PaymentCategoryCell({ row }: { row: PaymentTxRow }) {
     const { changes, stage, unstage } = useStaging();
     const stageKey = `payments:${row.counterparty}`;
-    const [value, setValue] = useState(() => {
-        const staged = changes.find((change) => change.key === stageKey);
-        return staged ? String(staged.row.value_str ?? "") : row.provider;
-    });
+    const staged = changes.find((change) => change.key === stageKey);
+    const category = staged
+        ? String(staged.row.value_str ?? "")
+        : row.category || "unmatched";
+    const dirty = category !== (row.category || "unmatched");
 
     const update = (next: string) => {
-        setValue(next);
-        const slug = next.trim().toLowerCase();
-        if (!slug || slug === row.provider) {
+        if (!PAYMENT_CATEGORIES.includes(next)) return;
+        if (next === row.category) {
             unstage(stageKey);
         } else {
             stage(
                 buildPaymentRuleChange({
+                    category: next,
                     counterparty: row.counterparty,
-                    provider: slug,
                 }),
             );
         }
     };
 
     return (
-        <Input
-            value={value}
+        <select
+            value={category}
             onChange={(event) => update(event.target.value)}
-            placeholder={row.counterparty || "provider slug"}
-            aria-label="provider"
-            list="payment-rule-providers"
-            className="w-52"
-        />
+            aria-label="category"
+            className={dirtyControlClass(
+                dirty,
+                "rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong",
+            )}
+        >
+            {PAYMENT_CATEGORIES.map((option) => (
+                <option key={option} value={option}>
+                    {option}
+                </option>
+            ))}
+        </select>
     );
 }
 
 export function PaymentsTab({
     category = "all",
-    committedNonce = 0,
     data,
     month = "",
     provider = "all",
-    providers = ["all"],
     queuedKeys = new Set<string>(),
 }: {
     category?: string;
-    committedNonce?: number;
     data: Data;
     month?: string;
     provider?: string;
-    providers?: string[];
     queuedKeys?: ReadonlySet<string>;
 }) {
-    const { changes, resetNonce, unstage } = useStaging();
-    // Open counterparties (the whole rule, not a single row). Recovered from
-    // staging on mount; wiped when a commit lands.
-    const [editing, setEditing] = useState<Set<string>>(() =>
-        stagedPaymentCounterparties(changes),
+    const { changes } = useStaging();
+    const stagedCounterparties = useMemo(
+        () => stagedPaymentCounterparties(changes),
+        [changes],
     );
-    const lastNonce = useRef(committedNonce);
-    const lastResetNonce = useRef(resetNonce);
-    useEffect(() => {
-        if (lastNonce.current !== committedNonce) {
-            lastNonce.current = committedNonce;
-            setEditing(new Set());
-        }
-    }, [committedNonce]);
-    useEffect(() => {
-        if (lastResetNonce.current !== resetNonce) {
-            lastResetNonce.current = resetNonce;
-            setEditing(new Set());
-        }
-    }, [resetNonce]);
-
-    const toggle = (counterparty: string, open: boolean) => {
-        if (!open) unstage(`payments:${counterparty}`);
-        setEditing((current) => {
-            const next = new Set(current);
-            if (open) next.add(counterparty);
-            else next.delete(counterparty);
-            return next;
-        });
-    };
 
     const baseTransactions = useMemo(
         () =>
@@ -179,116 +167,73 @@ export function PaymentsTab({
     const sortColumns = useMemo<SortColumn<PaymentTxRow>[]>(
         () => [
             {
-                key: "actions",
-                value: (row) =>
-                    queuedKeys.has(queuedPaymentRuleKey(row.counterparty)),
-            },
-            { key: "paid_at", value: (row) => row.paid_at },
-            {
                 key: "provider",
                 value: (row) => row.provider || row.counterparty,
             },
             { key: "category", value: (row) => row.category },
+            { key: "paid_at", value: (row) => row.paid_at },
+            { key: "source", value: () => "wise" },
             { key: "amount", value: (row) => row.amount_eur },
-            { key: "wise_ref", value: (row) => row.wise_ref },
         ],
-        [queuedKeys],
+        [],
     );
     const { headerProps, rows: transactions } = useSortableRows(
         baseTransactions,
         sortColumns,
     );
-    const knownProviders = useMemo(
-        () => providers.filter((slug) => slug !== "all"),
-        [providers],
-    );
     return (
         <div className="flex flex-col gap-4">
-            <datalist id="payment-rule-providers">
-                {knownProviders.map((slug) => (
-                    <option key={slug} value={slug} />
-                ))}
-            </datalist>
             <TableScroller>
                 <DataTable>
                     <TableHead>
                         <TableRow>
-                            <TableHeaderCell {...headerProps("actions")}>
-                                actions
-                            </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("paid_at")}>
-                                paid_at
-                            </TableHeaderCell>
                             <TableHeaderCell {...headerProps("provider")}>
                                 provider
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("category")}>
                                 category
                             </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("paid_at")}>
+                                time period
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("source")}>
+                                source
+                            </TableHeaderCell>
                             <TableHeaderCell {...headerProps("amount")}>
                                 amount
-                            </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("wise_ref")}>
-                                wise_ref
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {withUniqueRowKeys(transactions, paymentRowKey).map(
                             ({ key, row }) => {
-                                const open = editing.has(row.counterparty);
+                                const manualSource =
+                                    stagedCounterparties.has(
+                                        row.counterparty,
+                                    ) ||
+                                    queuedKeys.has(
+                                        queuedPaymentRuleKey(row.counterparty),
+                                    )
+                                        ? "manual"
+                                        : "";
                                 return (
                                     <TableRow key={key}>
+                                        <TableCell title={row.counterparty}>
+                                            {row.provider ||
+                                                row.counterparty ||
+                                                "(unmatched)"}
+                                        </TableCell>
                                         <TableCell>
-                                            <Button
-                                                size="sm"
-                                                intent={
-                                                    open ? "danger" : "info"
-                                                }
-                                                onClick={() =>
-                                                    toggle(
-                                                        row.counterparty,
-                                                        !open,
-                                                    )
-                                                }
-                                            >
-                                                {open ? "Reset" : "Edit"}
-                                            </Button>
+                                            <PaymentCategoryCell row={row} />
                                         </TableCell>
                                         <TableCell>{row.paid_at}</TableCell>
-                                        <TableCell title={row.counterparty}>
-                                            {open ? (
-                                                <PaymentProviderCell
-                                                    row={row}
-                                                />
-                                            ) : (
-                                                <span className="inline-flex items-center gap-1.5">
-                                                    {row.provider ||
-                                                        row.counterparty ||
-                                                        "(unmatched)"}
-                                                    {queuedKeys.has(
-                                                        queuedPaymentRuleKey(
-                                                            row.counterparty,
-                                                        ),
-                                                    ) && (
-                                                        <Chip
-                                                            size="sm"
-                                                            intent="warning"
-                                                        >
-                                                            queued
-                                                        </Chip>
-                                                    )}
-                                                </span>
-                                            )}
-                                        </TableCell>
                                         <TableCell>
-                                            {row.category || "-"}
+                                            <SourceCell
+                                                sources={["wise", manualSource]}
+                                            />
                                         </TableCell>
                                         <TableCell>
                                             {fmtMoney(row.amount_eur, "EUR")}
-                                        </TableCell>
-                                        <TableCell>
-                                            {row.wise_ref || "-"}
                                         </TableCell>
                                     </TableRow>
                                 );

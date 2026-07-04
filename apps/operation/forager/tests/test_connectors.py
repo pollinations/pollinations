@@ -144,18 +144,16 @@ def test_outflow_rows_keeps_unmatched(monkeypatch):
          "primaryAmount": "50 EUR", "secondaryAmount": "", "createdOn": "2026-07-02", "id": 12}])
     rows = wise.outflow_rows({}, ["2026-07"])
     assert {r["provider"] for r in rows} == {"runpod", ""}
-    assert all(r["wise_ref"] for r in rows)
 
 
-def test_outflow_rows_wise_ref_and_paid_at(monkeypatch):
-    """Each row has correct wise_ref (str(id)) and paid_at (createdOn[:10])."""
+def test_outflow_rows_paid_at(monkeypatch):
+    """Each row has paid_at from createdOn[:10]."""
     monkeypatch.setattr(wise, "_fetch_month", lambda c, m: [
         {"status": "COMPLETED", "type": "TRANSFER", "title": "Anthropic",
          "primaryAmount": "200 EUR", "secondaryAmount": "", "createdOn": "2026-06-15T10:30:00Z", "id": 42}
     ])
     rows = wise.outflow_rows({}, ["2026-06"])
     assert len(rows) == 1
-    assert rows[0]["wise_ref"] == "42"
     assert rows[0]["paid_at"] == "2026-06-15"
 
 
@@ -169,13 +167,13 @@ def test_outflow_rows_operating_categories(monkeypatch):
          "primaryAmount": "90 EUR", "secondaryAmount": "", "createdOn": "2026-06-03", "id": 3},
     ])
     rows = wise.outflow_rows({}, ["2026-06"])
-    by_ref = {row["wise_ref"]: row for row in rows}
-    assert by_ref["1"]["provider"] == "enty"
-    assert by_ref["1"]["category"] == "admin"
-    assert by_ref["2"]["provider"] == ""
-    assert by_ref["2"]["category"] == "office"
-    assert by_ref["3"]["provider"] == "anthropic"
-    assert by_ref["3"]["category"] == "saas"
+    by_counterparty = {row["counterparty"]: row for row in rows}
+    assert by_counterparty["Enty"]["provider"] == "enty"
+    assert by_counterparty["Enty"]["category"] == "admin"
+    assert by_counterparty["Amazon retail"]["provider"] == ""
+    assert by_counterparty["Amazon retail"]["category"] == "office"
+    assert by_counterparty["Anthropic Claude Subscription"]["provider"] == "anthropic"
+    assert by_counterparty["Anthropic Claude Subscription"]["category"] == "saas"
 
 
 def test_outflow_rows_amount_eur(monkeypatch):
@@ -204,7 +202,7 @@ def test_card_check_filtered_out(monkeypatch):
     ])
     rows = wise.outflow_rows({}, ["2026-07"])
     assert len(rows) == 1
-    assert rows[0]["wise_ref"] == "2"
+    assert rows[0]["paid_at"] == "2026-07-02"
 
 
 def test_pending_filtered_out(monkeypatch):
@@ -217,7 +215,7 @@ def test_pending_filtered_out(monkeypatch):
     ])
     rows = wise.outflow_rows({}, ["2026-07"])
     assert len(rows) == 1
-    assert rows[0]["wise_ref"] == "6"
+    assert rows[0]["paid_at"] == "2026-07-02"
 
 
 def test_in_progress_included(monkeypatch):
@@ -245,7 +243,7 @@ def test_incoming_positive_skipped(monkeypatch):
     ])
     rows = wise.outflow_rows({}, ["2026-07"])
     assert len(rows) == 1
-    assert rows[0]["wise_ref"] == "21"
+    assert rows[0]["counterparty"] == "OpenAI"
 
 
 # ---------------------------------------------------------------------------
@@ -278,7 +276,7 @@ def test_row_has_all_required_fields(monkeypatch):
     assert len(rows) == 1
     r = rows[0]
     assert set(r.keys()) == {"paid_at", "provider", "counterparty",
-                             "category", "amount_eur", "wise_ref"}
+                             "category", "amount_eur"}
 
 
 # ---------------------------------------------------------------------------
@@ -343,5 +341,4 @@ def test_outflow_rows_survives_null_amounts(monkeypatch):
     ])
     rows = wise.outflow_rows({}, ["2026-07"])
     assert len(rows) == 1
-    assert rows[0]["wise_ref"] == "102"
     assert rows[0]["amount_eur"] == 75.0

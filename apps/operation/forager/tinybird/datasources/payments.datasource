@@ -6,11 +6,10 @@ SCHEMA >
     `provider` String `json:$.provider`,
     `category` String `json:$.category`,
     `counterparty` String `json:$.counterparty`,
-    `amount_eur` Float64 `json:$.amount_eur`,
-    `wise_ref` String `json:$.wise_ref`
+    `amount_eur` Float64 `json:$.amount_eur`
 
 ENGINE "MergeTree"
 ENGINE_SORTING_KEY "provider, paid_at"
 
 FORWARD_QUERY >
-    SELECT paid_at, provider, defaultValueOfTypeName('String') AS category, counterparty, amount_eur, wise_ref
+    SELECT paid_at, provider, category, counterparty, amount_eur

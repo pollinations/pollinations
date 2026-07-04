@@ -6,7 +6,6 @@ SQL >
         provider,
         funding,
         month,
-        if(source = 'manual', 'edited', '') AS status,
         source,
         cost_usd
     FROM meter_monthly

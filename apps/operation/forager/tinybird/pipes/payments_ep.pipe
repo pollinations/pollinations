@@ -7,8 +7,7 @@ SQL >
         category,
         formatDateTime(paid_at, '%F') AS paid_at,
         counterparty,
-        amount_eur,
-        wise_ref
+        amount_eur
     FROM payments
     ORDER BY paid_at DESC, counterparty
 

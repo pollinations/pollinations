@@ -8,17 +8,18 @@ import type {
     RunRow,
     UsageMonthlyRow,
 } from "../types";
-import { deriveCoverage, deriveGaps } from "./derive";
 
 export const fixturesMode = (): boolean =>
     typeof window !== "undefined" &&
     new URLSearchParams(window.location.search).has("fixtures");
 
 export class TbError extends Error {
+    pipe: string;
     status: number;
 
     constructor(pipe: string, status: number) {
         super(`${pipe}: HTTP ${status}`);
+        this.pipe = pipe;
         this.status = status;
     }
 }
@@ -50,14 +51,7 @@ export async function loadAll(): Promise<Data> {
         fetchPipe<RevenueMonthlyRow>("revenue_ep"),
     ]);
 
-    // Reconciliation is derived client-side (the invoice−payment minus), not a
-    // Tinybird pipe — the burn engine was removed 2026-07-04.
-    const coverage = deriveCoverage(invoices, paymentsTx);
-    const gaps = deriveGaps(coverage);
-
     return {
-        coverage,
-        gaps,
         invoices,
         paymentsTx,
         meterMonthly,

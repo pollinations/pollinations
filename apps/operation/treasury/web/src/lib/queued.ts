@@ -1,8 +1,5 @@
 import type { StagedChange } from "./staging";
 
-export const queuedReconKey = (month: string, provider: string) =>
-    `recon:${month}:${provider}`;
-
 export const queuedMeterKey = (month: string, provider: string) =>
     `meter_monthly:${month}:${provider}`;
 
@@ -21,10 +18,6 @@ export function queuedKeysForChange(change: StagedChange): string[] {
     if (change.datasource === "overrides") {
         const scope = stringValue(row.scope);
         const key = stringValue(row.key);
-        if (scope === "reconciliation") {
-            const [month, provider] = key.split(":");
-            return month && provider ? [queuedReconKey(month, provider)] : [];
-        }
         if (scope === "payments") {
             return key ? [queuedPaymentRuleKey(key)] : [];
         }
@@ -34,9 +27,7 @@ export function queuedKeysForChange(change: StagedChange): string[] {
     if (change.datasource === "meter_monthly") {
         const month = stringValue(row.month);
         const provider = stringValue(row.provider);
-        return month && provider
-            ? [queuedMeterKey(month, provider), queuedReconKey(month, provider)]
-            : [];
+        return month && provider ? [queuedMeterKey(month, provider)] : [];
     }
 
     if (change.datasource === "invoices") {

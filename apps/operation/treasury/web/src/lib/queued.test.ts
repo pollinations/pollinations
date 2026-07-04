@@ -3,7 +3,6 @@ import {
     queuedInvoiceKey,
     queuedKeysForChange,
     queuedMeterKey,
-    queuedReconKey,
 } from "./queued";
 import type { StagedChange } from "./staging";
 
@@ -19,18 +18,7 @@ const change = (
 });
 
 describe("queuedKeysForChange", () => {
-    it("maps reconciliation accepts", () => {
-        expect(
-            queuedKeysForChange(
-                change("overrides", {
-                    scope: "reconciliation",
-                    key: "2026-03:assemblyai",
-                }),
-            ),
-        ).toEqual([queuedReconKey("2026-03", "assemblyai")]);
-    });
-
-    it("maps meter rows to burn and recon keys", () => {
+    it("maps meter rows", () => {
         expect(
             queuedKeysForChange(
                 change("meter_monthly", {
@@ -38,10 +26,7 @@ describe("queuedKeysForChange", () => {
                     provider: "assemblyai",
                 }),
             ),
-        ).toEqual([
-            queuedMeterKey("2026-03", "assemblyai"),
-            queuedReconKey("2026-03", "assemblyai"),
-        ]);
+        ).toEqual([queuedMeterKey("2026-03", "assemblyai")]);
     });
 
     it("maps invoices", () => {

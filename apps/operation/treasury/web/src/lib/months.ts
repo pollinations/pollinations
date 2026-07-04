@@ -53,7 +53,6 @@ export function matchesMonth(value: string, filter: string): boolean {
 // Every month observed across the month-grained tables, sorted ascending.
 export function collectMonths(data: Data): string[] {
     const months = new Set<string>();
-    for (const row of data.coverage) months.add(row.month);
     for (const row of data.invoices) months.add(row.period_month);
     for (const row of data.paymentsTx) months.add(row.paid_at.slice(0, 7));
     for (const row of data.meterMonthly) months.add(row.month);

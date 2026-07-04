@@ -1,8 +1,8 @@
 # Treasury Web
 
 Treasury local UI over raw Forager Tinybird pipe outputs in the `operations`
-workspace. Tabs: Reconciliation, Invoices, Payments, Pollen Usage, Provider
-Usage, Revenue, and Ingest Log.
+workspace. Tabs: Invoices, Payments, Pollen Usage, Provider Usage, Revenue, and
+Ingest Log.
 
 ## Run
 
@@ -33,7 +33,5 @@ Each tab shows one table and a short where/how/what/why note. Provider Usage is
 the manual/provider-dashboard table for monthly credit and prepaid usage.
 
 Provider Usage stores one source label per monthly usage value: `manual` when an
-operator entered it, or the connector name/source when forager fetched it.
-
-Reconciliation is derived in the browser from invoices and payments. Other tabs
-show the raw pipe rows; edits append facts for the next ingest run to fold in.
+operator entered it, or the connector name/source when forager fetched it. Edits
+append facts for the next ingest run to fold in.

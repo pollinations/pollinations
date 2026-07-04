@@ -1,6 +1,4 @@
 import type {
-    CoverageRow,
-    GapRow,
     InvoiceRow,
     MeterMonthlyRow,
     PaymentTxRow,
@@ -8,113 +6,6 @@ import type {
     RunRow,
     UsageMonthlyRow,
 } from "./types";
-
-const coverage: CoverageRow[] = [
-    {
-        month: "2026-01",
-        provider: "vast.ai",
-        status: "missing_invoice",
-        invoice_usd: 0,
-        payment_usd: 480.19,
-    },
-    {
-        month: "2026-02",
-        provider: "vast.ai",
-        status: "missing_invoice",
-        invoice_usd: 0,
-        payment_usd: 2518.4,
-    },
-    {
-        month: "2026-03",
-        provider: "vast.ai",
-        status: "amount_mismatch",
-        invoice_usd: 3481,
-        payment_usd: 3466.55,
-    },
-    {
-        month: "2026-01",
-        provider: "openai",
-        status: "ok",
-        invoice_usd: 226.4,
-        payment_usd: 226.4,
-    },
-    {
-        month: "2026-02",
-        provider: "openai",
-        status: "ok",
-        invoice_usd: 254.1,
-        payment_usd: 254.1,
-    },
-    {
-        month: "2026-01",
-        provider: "aws",
-        status: "ok_credit",
-        invoice_usd: 0,
-        payment_usd: 0,
-    },
-    {
-        month: "2026-02",
-        provider: "aws",
-        status: "ok_credit",
-        invoice_usd: 0,
-        payment_usd: 0,
-    },
-    {
-        month: "2026-01",
-        provider: "anthropic",
-        status: "needs_review",
-        invoice_usd: 616.1,
-        payment_usd: 616.1,
-    },
-    {
-        month: "2026-02",
-        provider: "azure",
-        status: "accepted",
-        invoice_usd: 0,
-        payment_usd: 0,
-    },
-    {
-        month: "2026-03",
-        provider: "scaleway",
-        status: "missing_payment",
-        invoice_usd: 289.6,
-        payment_usd: 0,
-    },
-    {
-        month: "2026-03",
-        provider: "gcp",
-        status: "needs_data",
-        invoice_usd: 0,
-        payment_usd: 0,
-    },
-];
-
-const gaps: GapRow[] = [
-    {
-        month: "2026-01",
-        provider: "vast.ai",
-        status: "missing_invoice",
-        invoice_usd: 0,
-        payment_usd: 480.19,
-        delta_usd: -480.19,
-    },
-    {
-        month: "2026-03",
-        provider: "vast.ai",
-        status: "amount_mismatch",
-        invoice_usd: 3481,
-        payment_usd: 3466.55,
-        delta_usd: 14.45,
-    },
-    {
-        month: "2026-01",
-        provider: "anthropic",
-        status: "needs_review",
-        invoice_usd: 616.1,
-        payment_usd: 616.1,
-        delta_usd: 0,
-    },
-];
 
 const invoices: InvoiceRow[] = [
     {
@@ -129,7 +20,6 @@ const invoices: InvoiceRow[] = [
         issued_at: "2026-03-04",
         source: "ai",
         file_ref: "",
-        status: "parsed",
         ingested_at: "2026-07-03 06:31:00",
     },
     {
@@ -144,7 +34,6 @@ const invoices: InvoiceRow[] = [
         issued_at: "2026-02-01",
         source: "manual",
         file_ref: "2026-01/openai_2026-01_bb22cc33_inv.pdf",
-        status: "parsed",
         ingested_at: "2026-07-03 06:31:00",
     },
     {
@@ -159,7 +48,6 @@ const invoices: InvoiceRow[] = [
         issued_at: "2026-07-01",
         source: "ai",
         file_ref: "2026-06/aws_2026-06_dd44ee55_inv.pdf",
-        status: "parsed",
         ingested_at: "2026-07-03 06:31:00",
     },
 ];
@@ -210,7 +98,6 @@ const paymentsTx: PaymentTxRow[] = [
         category: "unmatched",
         counterparty: "NVIDIA CORP",
         amount_eur: 4400.5,
-        wise_ref: "WISE-NVIDIA-1",
     },
     {
         paid_at: "2026-06-02",
@@ -218,7 +105,6 @@ const paymentsTx: PaymentTxRow[] = [
         category: "compute",
         counterparty: "VAST AI LABS",
         amount_eur: 442.16,
-        wise_ref: "WISE-VAST-1",
     },
     {
         paid_at: "2026-05-21",
@@ -226,7 +112,6 @@ const paymentsTx: PaymentTxRow[] = [
         category: "compute",
         counterparty: "OPENAI LLC",
         amount_eur: 208.37,
-        wise_ref: "WISE-OAI-1",
     },
 ];
 
@@ -281,8 +166,6 @@ const revenueMonthly: RevenueMonthlyRow[] = [
 ];
 
 export const FIXTURES: Record<string, unknown[]> = {
-    coverage_ep: coverage,
-    gaps_ep: gaps,
     invoices_ep: invoices,
     payments_ep: paymentsTx,
     meter_monthly_ep: meterMonthly,

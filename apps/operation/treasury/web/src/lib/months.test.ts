@@ -12,8 +12,6 @@ import {
 } from "./months";
 
 const data: Data = {
-    coverage: FIXTURES.coverage_ep,
-    gaps: FIXTURES.gaps_ep,
     invoices: FIXTURES.invoices_ep,
     paymentsTx: FIXTURES.payments_ep,
     meterMonthly: FIXTURES.meter_monthly_ep,
@@ -23,12 +21,10 @@ const data: Data = {
 } as Data;
 
 describe("collectMonths", () => {
-    it("unions months across all five month-grained tables, sorted", () => {
+    it("unions months across all month-grained tables, sorted", () => {
         const months = collectMonths(data);
         expect(months).toEqual([...months].sort());
         expect(new Set(months).size).toBe(months.length);
-        // coverage carries 2026-01..03, payments/meter/usage carry 05..07
-        expect(months).toContain("2026-01");
         expect(months).toContain("2026-05");
     });
 

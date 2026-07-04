@@ -18,11 +18,7 @@ import { SaveControls } from "./components/SaveControls";
 import { STALE_AFTER_HOURS } from "./config";
 import { hoursSince } from "./lib/format";
 import { collectMonths, defaultMonth } from "./lib/months";
-import {
-    queuedKeysForChange,
-    queuedMeterKey,
-    queuedReconKey,
-} from "./lib/queued";
+import { queuedKeysForChange } from "./lib/queued";
 import { StagingProvider } from "./lib/staging";
 import { fixturesMode, loadAll, TbError } from "./lib/tb";
 import type { Data } from "./types";
@@ -30,18 +26,9 @@ import { BurnTab } from "./views/BurnTab";
 import { INVOICE_CATEGORIES, InvoicesTab } from "./views/InvoicesTab";
 import { MeterTab } from "./views/MeterTab";
 import { PaymentsTab } from "./views/PaymentsTab";
-import { ReconTab } from "./views/ReconTab";
 import { RevenueTab } from "./views/RevenueTab";
-import { RunsTab } from "./views/RunsTab";
 
-type Tab =
-    | "recon"
-    | "invoices"
-    | "payments"
-    | "burn"
-    | "meter"
-    | "revenue"
-    | "runs";
+type Tab = "invoices" | "payments" | "burn" | "meter" | "revenue";
 
 // note + pipe surface as a hover tooltip on the tab button — the tab body
 // itself stays table-only.
@@ -53,14 +40,6 @@ const TABS: {
     note: string;
     rows: (data: Data) => number;
 }[] = [
-    {
-        id: "recon",
-        label: "Reconciliation",
-        codes: [],
-        pipe: "invoices_ep − payments_ep (derived)",
-        note: "One verdict per provider and month: summed invoices minus summed Wise payments — missing or mismatched money surfaces here first. Derived client-side (per-month minus); payment-timing gaps across months are expected.",
-        rows: (data) => data.coverage.length,
-    },
     {
         id: "invoices",
         label: "Invoices",
@@ -74,7 +53,7 @@ const TABS: {
         label: "Payments",
         codes: ["WS", "HC"],
         pipe: "payments_ep",
-        note: "Raw Wise transactions, including wise_ref. Edit sets a counterparty→provider rule that forager applies to the whole history.",
+        note: "Raw Wise transactions. Edit sets a counterparty→provider rule that forager applies to the whole history.",
         rows: (data) => data.paymentsTx.length,
     },
     {
@@ -88,7 +67,7 @@ const TABS: {
     {
         id: "meter",
         label: "Provider Usage",
-        codes: ["API", "HC"],
+        codes: ["API", "CLI", "BQ", "HC"],
         pipe: "meter_monthly_ep",
         note: "Monthly provider usage. Credit usage and prepaid usage are shown as separate values; manual rows fill gaps where dashboards/APIs do not.",
         rows: (data) => data.meterMonthly.length,
@@ -101,18 +80,9 @@ const TABS: {
         note: "Raw monthly revenue rows. Net revenue is intentionally not precomputed in the pipe.",
         rows: (data) => data.revenueMonthly.length,
     },
-    {
-        id: "runs",
-        label: "Ingest Log",
-        codes: [],
-        pipe: "runs_ep",
-        note: "Forager ingest run log — check freshness here before trusting any other tab.",
-        rows: (data) => data.runs.length,
-    },
 ];
 
 const INGEST_COMMAND = "python3 -m ingest.run";
-const FINAL_STATUSES = new Set(["ok", "ok_credit", "accepted"]);
 const INGEST_QUEUED_DATASOURCES = new Set(["overrides"]);
 const POST_SAVE_REFRESH_MS = 800;
 
@@ -189,7 +159,7 @@ export default function App() {
     const [authError, setAuthError] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [data, setData] = useState<Data | null>(null);
-    const [tab, setTab] = useState<Tab>("recon");
+    const [tab, setTab] = useState<Tab>("invoices");
     // null until the operator picks a period; the effective default is the
     // last complete month once data arrives.
     const [month, setMonth] = useState<string | null>(null);
@@ -284,8 +254,6 @@ export default function App() {
     const activeMonth = month ?? defaultMonth(months);
     const providerOptions = useMemo(() => {
         const slugs = new Set<string>();
-        for (const row of data?.coverage ?? [])
-            addProvider(slugs, row.provider);
         for (const row of data?.invoices ?? [])
             addProvider(slugs, row.provider);
         for (const row of data?.paymentsTx ?? [])
@@ -305,21 +273,6 @@ export default function App() {
             if (row.category) categories.add(row.category);
         }
         return ["all", ...[...categories].sort((a, b) => a.localeCompare(b))];
-    }, [data]);
-
-    useEffect(() => {
-        if (!data) return;
-
-        setQueuedKeys((current) => {
-            const next = new Set(current);
-            for (const row of data.coverage) {
-                if (FINAL_STATUSES.has(row.status)) {
-                    next.delete(queuedReconKey(row.month, row.provider));
-                    next.delete(queuedMeterKey(row.month, row.provider));
-                }
-            }
-            return next.size === current.size ? current : next;
-        });
     }, [data]);
 
     if (!sessionChecked) {
@@ -519,6 +472,16 @@ export default function App() {
                                     triggerAs="span"
                                     content={
                                         <span className="flex max-w-72 flex-col gap-1">
+                                            {item.codes.length > 0 && (
+                                                <span className="flex items-center gap-1.5">
+                                                    {item.codes.map((code) => (
+                                                        <SourceMark
+                                                            key={code}
+                                                            code={code}
+                                                        />
+                                                    ))}
+                                                </span>
+                                            )}
                                             <span className="font-mono text-theme-text-soft">
                                                 {item.pipe}
                                                 {data
@@ -533,15 +496,7 @@ export default function App() {
                                         active={tab === item.id}
                                         onClick={() => setTab(item.id)}
                                     >
-                                        <span className="inline-flex items-center gap-1.5">
-                                            {item.label}
-                                            {item.codes.map((code) => (
-                                                <SourceMark
-                                                    key={code}
-                                                    code={code}
-                                                />
-                                            ))}
-                                        </span>
+                                        {item.label}
                                     </TabButton>
                                 </Tooltip>
                             ))}
@@ -563,17 +518,9 @@ export default function App() {
                         {!error && !data && (
                             <Text tone="soft">Loading pipes...</Text>
                         )}
-                        {data && tab === "recon" && (
-                            <ReconTab
-                                data={data}
-                                month={activeMonth}
-                                provider={provider}
-                            />
-                        )}
                         {data && tab === "invoices" && (
                             <InvoicesTab
                                 category={category}
-                                committedNonce={committedNonce}
                                 data={data}
                                 month={activeMonth}
                                 provider={provider}
@@ -583,7 +530,6 @@ export default function App() {
                         {data && tab === "payments" && (
                             <PaymentsTab
                                 category={category}
-                                committedNonce={committedAwaitingIngest}
                                 data={data}
                                 month={activeMonth}
                                 provider={provider}
@@ -611,7 +557,6 @@ export default function App() {
                         {data && tab === "revenue" && (
                             <RevenueTab data={data} />
                         )}
-                        {data && tab === "runs" && <RunsTab data={data} />}
                     </main>
                 </ScrollArea>
             </div>

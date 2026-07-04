@@ -6,7 +6,6 @@ SQL >
         provider,
         category,
         period_month,
-        if(source IN ('manual', 'label'), 'edited', '') AS status,
         source,
         amount,
         currency,

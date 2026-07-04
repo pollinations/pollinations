@@ -2,6 +2,12 @@ TOKEN "treasury_web" READ
 
 NODE grants_latest
 SQL >
-    SELECT * FROM grants ORDER BY pool
+    SELECT pool, providers, category,
+           left_usd, left_src,
+           prepaid_left_usd, prepaid_left_src, expires
+    FROM grants
+    WHERE left_usd IS NOT NULL
+       OR prepaid_left_usd IS NOT NULL
+    ORDER BY pool
 
 TYPE endpoint

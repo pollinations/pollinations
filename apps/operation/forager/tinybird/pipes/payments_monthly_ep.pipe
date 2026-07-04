@@ -5,10 +5,6 @@ SQL >
     SELECT substring(toString(paid_at), 1, 7) AS month,
            if(provider = '', '(unmatched)', provider) AS provider,
            category,
-           round(sum(amount_eur) * (
-               SELECT coalesce(argMax(value_num, entered_at), 1.14)
-               FROM overrides WHERE scope = 'config' AND key = 'fx_eur_usd'
-           ), 2) AS paid_usd,
            round(sum(amount_eur), 2) AS paid_eur
     FROM payments
     GROUP BY month, provider, category ORDER BY month, provider

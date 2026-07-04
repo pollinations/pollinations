@@ -4,18 +4,14 @@ TOKEN "treasury_ingest" READ
 SCHEMA >
     `pool` String `json:$.pool`,
     `providers` String `json:$.providers`,
-    `kind` String `json:$.kind`,
     `category` String `json:$.category`,
-    `currency` String `json:$.currency`,
     `granted_usd` Nullable(Float64) `json:$.granted_usd`,
     `granted_src` String `json:$.granted_src`,
     `left_usd` Nullable(Float64) `json:$.left_usd`,
     `left_src` String `json:$.left_src`,
     `prepaid_left_usd` Nullable(Float64) `json:$.prepaid_left_usd`,
     `prepaid_left_src` String `json:$.prepaid_left_src`,
-    `expires` String `json:$.expires`,
-    `note` String `json:$.note`,
-    `run_at` Date `json:$.run_at`
+    `expires` String `json:$.expires`
 
 ENGINE "MergeTree"
 ENGINE_SORTING_KEY "pool"

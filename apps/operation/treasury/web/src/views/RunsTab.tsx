@@ -14,6 +14,7 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
+import { fmtPeriod } from "../lib/format";
 import type { Data, RunRow } from "../types";
 
 export function RunsTab({ data }: { data: Data }) {
@@ -35,7 +36,7 @@ export function RunsTab({ data }: { data: Data }) {
                     <TableHead>
                         <TableRow>
                             <TableHeaderCell {...headerProps("run_at")}>
-                                run_at
+                                time period
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("ok")}>
                                 ok
@@ -52,7 +53,7 @@ export function RunsTab({ data }: { data: Data }) {
                         {withUniqueRowKeys(rows, (run) => run.run_at).map(
                             ({ key, row: run }) => (
                                 <TableRow key={key}>
-                                    <TableCell>{run.run_at}</TableCell>
+                                    <TableCell>{fmtPeriod(run.run_at)}</TableCell>
                                     <TableCell>{run.ok}</TableCell>
                                     <TableCell title={run.statuses}>
                                         <code className="font-mono text-xs">

@@ -14,7 +14,8 @@ import {
     withUniqueRowKeys,
 } from "../components/DataTable";
 import { FilterBar, FilterSelect, MonthFilter } from "../components/Filters";
-import { matchesMonth, monthName } from "../lib/months";
+import { fmtPeriod } from "../lib/format";
+import { matchesMonth } from "../lib/months";
 import type { Data, UsageMonthlyRow } from "../types";
 
 function sortedUsage(rows: UsageMonthlyRow[]) {
@@ -35,21 +36,12 @@ function aggregateUsage(rows: UsageMonthlyRow[]) {
             byKey.set(key, { ...row });
             continue;
         }
-        existing.billable_requests_paid_pollen +=
-            row.billable_requests_paid_pollen;
-        existing.billable_requests_quest_pollen +=
-            row.billable_requests_quest_pollen;
         existing.cost_paid_pollen += row.cost_paid_pollen;
         existing.cost_quest_pollen += row.cost_quest_pollen;
         existing.billable_paid_pollen += row.billable_paid_pollen;
         existing.billable_quest_pollen += row.billable_quest_pollen;
     }
     return [...byKey.values()];
-}
-
-function fmtCount(value: number | null | undefined): string {
-    if (value == null) return "-";
-    return value.toLocaleString("en-US", { maximumFractionDigits: 0 });
 }
 
 function fmtPollen(value: number | null | undefined): string {
@@ -88,17 +80,9 @@ export function BurnTab({
     );
     const sortColumns = useMemo<SortColumn<UsageMonthlyRow>[]>(
         () => [
-            { key: "month", value: (row) => row.month },
             { key: "provider", value: (row) => row.provider },
             { key: "model", value: (row) => row.model },
-            {
-                key: "billable_requests_paid_pollen",
-                value: (row) => row.billable_requests_paid_pollen,
-            },
-            {
-                key: "billable_requests_quest_pollen",
-                value: (row) => row.billable_requests_quest_pollen,
-            },
+            { key: "month", value: (row) => row.month },
             { key: "cost_paid_pollen", value: (row) => row.cost_paid_pollen },
             {
                 key: "cost_quest_pollen",
@@ -136,30 +120,14 @@ export function BurnTab({
                 <DataTable>
                     <TableHead>
                         <TableRow>
-                            <TableHeaderCell {...headerProps("month")}>
-                                month
-                            </TableHeaderCell>
                             <TableHeaderCell {...headerProps("provider")}>
                                 provider
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("model")}>
-                                model
+                                category
                             </TableHeaderCell>
-                            <TableHeaderCell
-                                {...headerProps(
-                                    "billable_requests_paid_pollen",
-                                )}
-                                title="billable_requests_paid_pollen"
-                            >
-                                paid requests
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                {...headerProps(
-                                    "billable_requests_quest_pollen",
-                                )}
-                                title="billable_requests_quest_pollen"
-                            >
-                                quest requests
+                            <TableHeaderCell {...headerProps("month")}>
+                                time period
                             </TableHeaderCell>
                             <TableHeaderCell
                                 {...headerProps("cost_paid_pollen")}
@@ -194,19 +162,9 @@ export function BurnTab({
                                 `${row.month}|${row.provider}|${row.model}`,
                         ).map(({ key, row }) => (
                             <TableRow key={key}>
-                                <TableCell>{monthName(row.month)}</TableCell>
                                 <TableCell>{row.provider}</TableCell>
                                 <TableCell>{row.model || "-"}</TableCell>
-                                <TableCell>
-                                    {fmtCount(
-                                        row.billable_requests_paid_pollen,
-                                    )}
-                                </TableCell>
-                                <TableCell>
-                                    {fmtCount(
-                                        row.billable_requests_quest_pollen,
-                                    )}
-                                </TableCell>
+                                <TableCell>{fmtPeriod(row.month)}</TableCell>
                                 <TableCell>
                                     {fmtPollen(row.cost_paid_pollen)}
                                 </TableCell>

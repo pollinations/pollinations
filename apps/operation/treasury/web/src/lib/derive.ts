@@ -33,6 +33,7 @@ export function deriveCoverage(
 ): CoverageRow[] {
     const inv = new Map<string, number>();
     for (const r of invoices) {
+        if (r.status && r.status !== "parsed") continue;
         if (!r.provider || !r.period_month) continue;
         const key = `${r.period_month}|${r.provider}`;
         inv.set(key, (inv.get(key) ?? 0) + invoiceUsd(r));

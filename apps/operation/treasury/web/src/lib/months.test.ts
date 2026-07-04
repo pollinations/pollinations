@@ -17,9 +17,9 @@ const data: Data = {
     invoices: FIXTURES.invoices_ep,
     paymentsTx: FIXTURES.payments_ep,
     meterMonthly: FIXTURES.meter_monthly_ep,
-    grants: FIXTURES.grants_ep,
     usageMonthly: FIXTURES.usage_ep,
     runs: FIXTURES.runs_ep,
+    revenueMonthly: FIXTURES.revenue_ep,
 } as Data;
 
 describe("collectMonths", () => {

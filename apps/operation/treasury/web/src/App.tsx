@@ -10,7 +10,7 @@ import {
     Text,
     Tooltip,
 } from "@pollinations/ui";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { OperationsGuide } from "./components/OperationsGuide";
 import { type ProvenanceCode, SourceMark } from "./components/Provenance";
 import { SaveControls } from "./components/SaveControls";
@@ -26,12 +26,11 @@ import { StagingProvider } from "./lib/staging";
 import { fixturesMode, loadAll, TbError } from "./lib/tb";
 import type { Data } from "./types";
 import { BurnTab } from "./views/BurnTab";
-import { CreditsTab } from "./views/CreditsTab";
 import { InvoicesTab } from "./views/InvoicesTab";
 import { MeterTab } from "./views/MeterTab";
 import { PaymentsTab } from "./views/PaymentsTab";
-import { ProvidersTab } from "./views/ProvidersTab";
 import { ReconTab } from "./views/ReconTab";
+import { RevenueTab } from "./views/RevenueTab";
 import { RunsTab } from "./views/RunsTab";
 
 type Tab =
@@ -40,8 +39,7 @@ type Tab =
     | "payments"
     | "burn"
     | "meter"
-    | "credits"
-    | "providers"
+    | "revenue"
     | "runs";
 
 // note + pipe surface as a hover tooltip on the tab button — the tab body
@@ -67,7 +65,7 @@ const TABS: {
         label: "Invoices",
         codes: ["IV", "HC"],
         pipe: "invoices_ep",
-        note: "Every harvested invoice PDF plus operator label corrections — the document side of every reconciliation verdict.",
+        note: "Raw latest row per invoice SHA. Edit recategorizes the invoice; provider stays read-only from Forager.",
         rows: (data) => data.invoices.length,
     },
     {
@@ -75,7 +73,7 @@ const TABS: {
         label: "Payments",
         codes: ["WS", "HC"],
         pipe: "payments_ep",
-        note: "Every Wise transaction. Edit sets a counterparty→provider rule that forager applies to the whole history.",
+        note: "Raw Wise transactions, including wise_ref. Edit sets a counterparty→provider rule that forager applies to the whole history.",
         rows: (data) => data.paymentsTx.length,
     },
     {
@@ -91,24 +89,16 @@ const TABS: {
         label: "Provider Usage",
         codes: ["API", "HC"],
         pipe: "meter_monthly_ep",
-        note: "Monthly provider burn, one row per provider and month: cash burn plus grant/credit burn, with source badges on each value.",
+        note: "Monthly provider usage. Credit usage and prepaid usage are shown as separate values; manual rows fill gaps where dashboards/APIs do not.",
         rows: (data) => data.meterMonthly.length,
     },
     {
-        id: "credits",
-        label: "Provider Balance",
-        codes: ["API", "HC"],
-        pipe: "grants_ep",
-        note: "What's left per provider — left / prepaid — resolved from live balance reads (api) and operator overrides (manual). A stock view, no month; providers with no balance are omitted.",
-        rows: (data) => data.grants.length,
-    },
-    {
-        id: "providers",
-        label: "Provider Mapping",
-        codes: ["HC"],
-        pipe: "provider_aliases_ep",
-        note: "The central provider vocabulary: every raw string seen in the data — a Wise counterparty, an invoice sender, a model tag — mapped to a canonical provider. Forager resolves against this list; Edit to reassign, Add to map a new string.",
-        rows: (data) => data.providerAliases.length,
+        id: "revenue",
+        label: "Revenue",
+        codes: ["ST"],
+        pipe: "revenue_ep",
+        note: "Raw monthly revenue rows. Net revenue is intentionally not precomputed in the pipe.",
+        rows: (data) => data.revenueMonthly.length,
     },
     {
         id: "runs",
@@ -122,6 +112,13 @@ const TABS: {
 
 const INGEST_COMMAND = "python3 -m ingest.run";
 const FINAL_STATUSES = new Set(["ok", "ok_credit", "accepted"]);
+const INGEST_QUEUED_DATASOURCES = new Set(["overrides"]);
+const POST_SAVE_REFRESH_MS = 800;
+
+function addProvider(slugs: Set<string>, provider: string) {
+    const slug = provider.trim();
+    if (slug) slugs.add(slug);
+}
 
 async function checkSession() {
     const res = await fetch("/api/auth/session");
@@ -199,11 +196,13 @@ export default function App() {
     // provider tabs.
     const [provider, setProvider] = useState("all");
     const [attempt, setAttempt] = useState(0);
+    const [committedNonce, setCommittedNonce] = useState(0);
     const [committedAwaitingIngest, setCommittedAwaitingIngest] = useState(0);
     const [showCommittedBanner, setShowCommittedBanner] = useState(false);
     const [queuedKeys, setQueuedKeys] = useState<ReadonlySet<string>>(
         () => new Set(),
     );
+    const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const ready = fixtures || (sessionChecked && authenticated);
 
     useEffect(() => {
@@ -235,7 +234,6 @@ export default function App() {
         const retryKey = attempt;
         let cancelled = false;
         setError(null);
-        setData(null);
         loadAll()
             .then((loaded) => {
                 if (!cancelled && retryKey === attempt) setData(loaded);
@@ -266,6 +264,15 @@ export default function App() {
         };
     }, [ready, attempt]);
 
+    useEffect(
+        () => () => {
+            if (refreshTimerRef.current) {
+                clearTimeout(refreshTimerRef.current);
+            }
+        },
+        [],
+    );
+
     const staleHours = useMemo(() => {
         const latest = data?.runs[0]?.run_at;
         return latest ? hoursSince(latest) : null;
@@ -275,9 +282,16 @@ export default function App() {
     const activeMonth = month ?? defaultMonth(months);
     const providerOptions = useMemo(() => {
         const slugs = new Set<string>();
-        for (const row of data?.providerAliases ?? []) {
-            if (row.provider) slugs.add(row.provider);
-        }
+        for (const row of data?.coverage ?? [])
+            addProvider(slugs, row.provider);
+        for (const row of data?.invoices ?? [])
+            addProvider(slugs, row.provider);
+        for (const row of data?.paymentsTx ?? [])
+            addProvider(slugs, row.provider);
+        for (const row of data?.meterMonthly ?? [])
+            addProvider(slugs, row.provider);
+        for (const row of data?.usageMonthly ?? [])
+            addProvider(slugs, row.provider);
         return ["all", ...[...slugs].sort((a, b) => a.localeCompare(b))];
     }, [data]);
 
@@ -340,20 +354,32 @@ export default function App() {
         <StagingProvider
             fixtures={fixtures}
             onCommitted={(changes) => {
-                setCommittedAwaitingIngest(
-                    (current) => current + changes.length,
+                setCommittedNonce((current) => current + 1);
+                const ingestChanges = changes.filter((change) =>
+                    INGEST_QUEUED_DATASOURCES.has(change.datasource),
                 );
-                setShowCommittedBanner(true);
+                if (ingestChanges.length > 0) {
+                    setCommittedAwaitingIngest(
+                        (current) => current + ingestChanges.length,
+                    );
+                    setShowCommittedBanner(true);
+                }
                 setQueuedKeys((current) => {
                     const next = new Set(current);
-                    for (const change of changes) {
+                    for (const change of ingestChanges) {
                         for (const key of queuedKeysForChange(change)) {
                             next.add(key);
                         }
                     }
                     return next;
                 });
-                setAttempt((current) => current + 1);
+                if (refreshTimerRef.current) {
+                    clearTimeout(refreshTimerRef.current);
+                }
+                refreshTimerRef.current = setTimeout(() => {
+                    setAttempt((current) => current + 1);
+                    refreshTimerRef.current = null;
+                }, POST_SAVE_REFRESH_MS);
             }}
         >
             <div
@@ -516,7 +542,7 @@ export default function App() {
                         )}
                         {data && tab === "invoices" && (
                             <InvoicesTab
-                                committedNonce={committedAwaitingIngest}
+                                committedNonce={committedNonce}
                                 data={data}
                                 month={activeMonth}
                                 months={months}
@@ -553,7 +579,7 @@ export default function App() {
                         )}
                         {data && tab === "meter" && (
                             <MeterTab
-                                committedNonce={committedAwaitingIngest}
+                                committedNonce={committedNonce}
                                 data={data}
                                 month={activeMonth}
                                 months={months}
@@ -564,24 +590,8 @@ export default function App() {
                                 queuedKeys={queuedKeys}
                             />
                         )}
-                        {data && tab === "credits" && (
-                            <CreditsTab
-                                committedNonce={committedAwaitingIngest}
-                                data={data}
-                                provider={provider}
-                                providers={providerOptions}
-                                onProviderChange={setProvider}
-                                queuedKeys={queuedKeys}
-                            />
-                        )}
-                        {data && tab === "providers" && (
-                            <ProvidersTab
-                                committedNonce={committedAwaitingIngest}
-                                data={data}
-                                provider={provider}
-                                providers={providerOptions}
-                                onProviderChange={setProvider}
-                            />
+                        {data && tab === "revenue" && (
+                            <RevenueTab data={data} />
                         )}
                         {data && tab === "runs" && <RunsTab data={data} />}
                     </main>

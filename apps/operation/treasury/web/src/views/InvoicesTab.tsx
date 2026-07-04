@@ -2,7 +2,6 @@ import {
     Button,
     Chip,
     ExternalLinkIcon,
-    Input,
     TableBody,
     TableCell,
     TableHead,
@@ -38,7 +37,6 @@ const CATEGORY_OPTIONS = ["all", ...INVOICE_CATEGORIES];
 
 export type InvoiceEditValues = {
     category: string;
-    provider: string;
 };
 
 function nowDateTime() {
@@ -59,12 +57,10 @@ function invoiceDate(value: string, periodMonth: string) {
 export function initialInvoiceValues(row: InvoiceRow): InvoiceEditValues {
     return {
         category: row.category || "other",
-        provider: row.provider || "other",
     };
 }
 
 export function validateInvoiceEdit(values: InvoiceEditValues): string | null {
-    if (!values.provider.trim()) return "provider is required";
     if (!INVOICE_CATEGORIES.includes(values.category)) {
         return "category is not valid";
     }
@@ -72,7 +68,7 @@ export function validateInvoiceEdit(values: InvoiceEditValues): string | null {
     return null;
 }
 
-export function buildInvoiceLabelChange({
+export function buildInvoiceManualChange({
     ingestedAt = nowDateTime(),
     row,
     values,
@@ -86,20 +82,20 @@ export function buildInvoiceLabelChange({
         key: `invoices:${row.sha256}`,
         row: {
             sha256: row.sha256,
-            provider: values.provider.trim(),
+            provider: row.provider || "other",
             category: values.category,
             period_month: row.period_month || "",
             amount: finiteNumber(row.amount),
             currency: row.currency || "USD",
             invoice_number: row.invoice_number || "",
             issued_at: invoiceDate(row.issued_at, row.period_month),
-            source: "label",
+            source: "manual",
             file_ref: row.file_ref || "",
             status: "parsed",
             ingested_at: ingestedAt,
             credit_usd: finiteNumber(row.credit_usd),
         },
-        summary: `invoice ${values.provider.trim()} ${row.period_month || "-"} label`,
+        summary: `invoice ${row.provider || "other"} ${row.period_month || "-"} category -> ${values.category}`,
     };
 }
 
@@ -146,65 +142,36 @@ function FileRefAction({ fileRef }: { fileRef: string }) {
     );
 }
 
-// The label cells (provider, category) as live inputs. Mounts only
+// The editable cell (category) as a live input. Mounts only
 // while the row is open, so the pending value is seeded once from the pool (or
 // the extracted row) and every keystroke re-stages it.
-function InvoiceEditCells({
-    providerSuggestions,
-    row,
-}: {
-    providerSuggestions: string[];
-    row: InvoiceRow;
-}) {
+function InvoiceEditCells({ row }: { row: InvoiceRow }) {
     const { changes, stage, unstage } = useStaging();
     const stageKey = `invoices:${row.sha256}`;
     const [values, setValues] = useState<InvoiceEditValues>(() => {
         const staged = changes.find((change) => change.key === stageKey);
         return staged
             ? {
-                  provider: String(staged.row.provider ?? ""),
                   category: String(staged.row.category ?? ""),
               }
             : initialInvoiceValues(row);
     });
-    const providerListId = `invoice-provider-${row.sha256.slice(0, 12)}`;
 
     const update = (key: keyof InvoiceEditValues, value: string) => {
         const next = { ...values, [key]: value };
         setValues(next);
         if (validateInvoiceEdit(next)) return; // invalid -> keep last staged
-        const unchanged =
-            next.provider.trim() === row.provider &&
-            next.category === row.category;
+        const unchanged = next.category === row.category;
         if (unchanged) {
             unstage(stageKey);
         } else {
-            stage(buildInvoiceLabelChange({ row, values: next }));
+            stage(buildInvoiceManualChange({ row, values: next }));
         }
     };
 
     return (
         <>
-            <TableCell>
-                <Input
-                    list={
-                        providerSuggestions.length > 0
-                            ? providerListId
-                            : undefined
-                    }
-                    value={values.provider}
-                    onChange={(event) => update("provider", event.target.value)}
-                    aria-label="provider"
-                    className={`w-36 ${values.provider.trim() ? "" : "border-intent-danger-border"}`}
-                />
-                {providerSuggestions.length > 0 && (
-                    <datalist id={providerListId}>
-                        {providerSuggestions.map((provider) => (
-                            <option key={provider} value={provider} />
-                        ))}
-                    </datalist>
-                )}
-            </TableCell>
+            <TableCell>{row.provider || "-"}</TableCell>
             <TableCell>
                 <select
                     value={values.category}
@@ -246,7 +213,7 @@ export function InvoicesTab({
 }) {
     const { changes, resetNonce, unstage } = useStaging();
     const [category, setCategory] = useState("all");
-    // Rows whose label cells are live. Recovered from staging on mount so an
+    // Rows whose editable cells are live. Recovered from staging on mount so an
     // edit survives tab switches; wiped when a commit lands.
     const [editing, setEditing] = useState<Set<string>>(() =>
         stagedInvoiceShas(changes),
@@ -276,10 +243,6 @@ export function InvoicesTab({
         });
     };
 
-    const providerSuggestions = useMemo(
-        () => providers.filter((option) => option && option !== "all"),
-        [providers],
-    );
     const baseRows = useMemo(
         () =>
             sortedInvoices(data.invoices).filter((row) => {
@@ -306,6 +269,7 @@ export function InvoicesTab({
             { key: "credit_usd", value: (row) => row.credit_usd },
             { key: "invoice_number", value: (row) => row.invoice_number },
             { key: "issued_at", value: (row) => row.issued_at },
+            { key: "source", value: (row) => row.source },
         ],
         [queuedKeys],
     );
@@ -352,16 +316,19 @@ export function InvoicesTab({
                                 period_month
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("amount")}>
-                                amount
+                                paid
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("credit_usd")}>
-                                credits consumed
+                                credits
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("invoice_number")}>
                                 invoice_number
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("issued_at")}>
                                 issued_at
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("source")}>
+                                source
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>
@@ -407,12 +374,7 @@ export function InvoicesTab({
                                             />
                                         </TableCell>
                                         {open ? (
-                                            <InvoiceEditCells
-                                                row={row}
-                                                providerSuggestions={
-                                                    providerSuggestions
-                                                }
-                                            />
+                                            <InvoiceEditCells row={row} />
                                         ) : (
                                             <>
                                                 <TableCell>
@@ -444,6 +406,9 @@ export function InvoicesTab({
                                         </TableCell>
                                         <TableCell>
                                             {row.issued_at || "-"}
+                                        </TableCell>
+                                        <TableCell>
+                                            {row.source || "-"}
                                         </TableCell>
                                     </TableRow>
                                 );

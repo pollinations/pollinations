@@ -1,11 +1,10 @@
 import type {
     CoverageRow,
     GapRow,
-    GrantRow,
     InvoiceRow,
     MeterMonthlyRow,
     PaymentTxRow,
-    ProviderAliasRow,
+    RevenueMonthlyRow,
     RunRow,
     UsageMonthlyRow,
 } from "./types";
@@ -128,7 +127,10 @@ const invoices: InvoiceRow[] = [
         credit_usd: 0,
         invoice_number: "vast-88213",
         issued_at: "2026-03-04",
+        source: "ai",
         file_ref: "",
+        status: "parsed",
+        ingested_at: "2026-07-03 06:31:00",
     },
     {
         sha256: "bb22cc33dd44ee55ff660011223344556677889900aabbccddeeff0011223344",
@@ -140,7 +142,10 @@ const invoices: InvoiceRow[] = [
         credit_usd: 0,
         invoice_number: "OAI-2026-01",
         issued_at: "2026-02-01",
+        source: "manual",
         file_ref: "2026-01/openai_2026-01_bb22cc33_inv.pdf",
+        status: "parsed",
+        ingested_at: "2026-07-03 06:31:00",
     },
     {
         sha256: "dd44ee55ff660011223344556677889900aabbccddeeff0011223344556677aa",
@@ -152,50 +157,10 @@ const invoices: InvoiceRow[] = [
         credit_usd: 1922.4,
         invoice_number: "AWS-2026-06",
         issued_at: "2026-07-01",
+        source: "ai",
         file_ref: "2026-06/aws_2026-06_dd44ee55_inv.pdf",
-    },
-];
-
-const grants: GrantRow[] = [
-    {
-        pool: "aws-activate",
-        providers: "aws",
-        category: "compute",
-        left_usd: 4200.5,
-        left_src: "api",
-        prepaid_left_usd: null,
-        prepaid_left_src: "",
-        expires: "2026-12",
-    },
-    {
-        pool: "azure-startup",
-        providers: "azure",
-        category: "compute",
-        left_usd: 244600,
-        left_src: "api",
-        prepaid_left_usd: null,
-        prepaid_left_src: "",
-        expires: "2028-04",
-    },
-    {
-        pool: "lambda-credit",
-        providers: "lambda",
-        category: "compute",
-        left_usd: 1200,
-        left_src: "hc",
-        prepaid_left_usd: null,
-        prepaid_left_src: "",
-        expires: "2026-12",
-    },
-    {
-        pool: "vastai-prepaid",
-        providers: "vast.ai",
-        category: "compute",
-        left_usd: null,
-        left_src: "",
-        prepaid_left_usd: 118.4,
-        prepaid_left_src: "api",
-        expires: "",
+        status: "parsed",
+        ingested_at: "2026-07-03 06:31:00",
     },
 ];
 
@@ -204,8 +169,6 @@ const usageMonthly: UsageMonthlyRow[] = [
         month: "2026-06",
         provider: "google",
         model: "gemini-2.5-flash",
-        billable_requests_paid_pollen: 125320,
-        billable_requests_quest_pollen: 44291,
         cost_paid_pollen: 813.24,
         cost_quest_pollen: 231.66,
         billable_paid_pollen: 642.18,
@@ -215,8 +178,6 @@ const usageMonthly: UsageMonthlyRow[] = [
         month: "2026-06",
         provider: "azure",
         model: "gpt-5.5",
-        billable_requests_paid_pollen: 23469,
-        billable_requests_quest_pollen: 69012,
         cost_paid_pollen: 834.12,
         cost_quest_pollen: 690.48,
         billable_paid_pollen: 149.22,
@@ -226,8 +187,6 @@ const usageMonthly: UsageMonthlyRow[] = [
         month: "2026-06",
         provider: "openai",
         model: "gpt-4.1-mini",
-        billable_requests_paid_pollen: 3891,
-        billable_requests_quest_pollen: 1220,
         cost_paid_pollen: 42.35,
         cost_quest_pollen: 8.92,
         billable_paid_pollen: 35.12,
@@ -237,8 +196,6 @@ const usageMonthly: UsageMonthlyRow[] = [
         month: "2026-05",
         provider: "replicate",
         model: "flux-kontext",
-        billable_requests_paid_pollen: 7054,
-        billable_requests_quest_pollen: 1301,
         cost_paid_pollen: 151.77,
         cost_quest_pollen: 130.14,
         billable_paid_pollen: 138.02,
@@ -253,6 +210,7 @@ const paymentsTx: PaymentTxRow[] = [
         category: "unmatched",
         counterparty: "NVIDIA CORP",
         amount_eur: 4400.5,
+        wise_ref: "WISE-NVIDIA-1",
     },
     {
         paid_at: "2026-06-02",
@@ -260,6 +218,7 @@ const paymentsTx: PaymentTxRow[] = [
         category: "compute",
         counterparty: "VAST AI LABS",
         amount_eur: 442.16,
+        wise_ref: "WISE-VAST-1",
     },
     {
         paid_at: "2026-05-21",
@@ -267,6 +226,7 @@ const paymentsTx: PaymentTxRow[] = [
         category: "compute",
         counterparty: "OPENAI LLC",
         amount_eur: 208.37,
+        wise_ref: "WISE-OAI-1",
     },
 ];
 
@@ -274,26 +234,23 @@ const meterMonthly: MeterMonthlyRow[] = [
     {
         month: "2026-06",
         provider: "assemblyai",
-        cash_burn_usd: 0,
-        cash_src: "",
-        credit_burn_usd: 242.45,
-        credit_src: "manual",
+        cost_usd: 242.45,
+        funding: "credit",
+        source: "manual",
     },
     {
         month: "2026-06",
         provider: "openai",
-        cash_burn_usd: 0,
-        cash_src: "",
-        credit_burn_usd: 531.25,
-        credit_src: "api",
+        cost_usd: 531.25,
+        funding: "credit",
+        source: "api",
     },
     {
         month: "2026-05",
         provider: "ovhcloud",
-        cash_burn_usd: 1208.17,
-        cash_src: "cli",
-        credit_burn_usd: 0,
-        credit_src: "",
+        cost_usd: 1208.17,
+        funding: "cash",
+        source: "cli",
     },
 ];
 
@@ -303,23 +260,24 @@ const runs: RunRow[] = [
         ok: 0,
         statuses:
             '{"wise":"ok","gmail":"ok","inbox":"ok","vast.ai":"ok","runpod":"ok","ovhcloud":"err: connection reset by peer","digitalocean":"err: 403 role-gated"}',
+        notes: "ovhcloud api timeout",
     },
     {
         run_at: "2026-07-02 06:31:44",
         ok: 1,
         statuses:
             '{"wise":"ok","gmail":"ok","inbox":"ok","vast.ai":"ok","runpod":"ok","ovhcloud":"ok","digitalocean":"err: 403 role-gated"}',
+        notes: "",
     },
 ];
 
-const providerAliases: ProviderAliasRow[] = [
-    { alias: "amazon web", provider: "aws" },
-    { alias: "automat-it", provider: "aws" },
-    { alias: "openai", provider: "openai" },
-    { alias: "vast.ai", provider: "vast.ai" },
-    { alias: "vast ai", provider: "vast.ai" },
-    { alias: "elevenlabs", provider: "elevenlabs" },
-    { alias: "retell ai", provider: "retell" },
+const revenueMonthly: RevenueMonthlyRow[] = [
+    {
+        month: "2026-06",
+        gross_eur: 1200,
+        fees_eur: 42,
+        refunds_eur: 30,
+    },
 ];
 
 export const FIXTURES: Record<string, unknown[]> = {
@@ -328,8 +286,7 @@ export const FIXTURES: Record<string, unknown[]> = {
     invoices_ep: invoices,
     payments_ep: paymentsTx,
     meter_monthly_ep: meterMonthly,
-    grants_ep: grants,
     usage_ep: usageMonthly,
     runs_ep: runs,
-    provider_aliases_ep: providerAliases,
+    revenue_ep: revenueMonthly,
 };

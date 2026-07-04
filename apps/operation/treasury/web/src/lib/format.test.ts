@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
     baseName,
+    fmtPeriod,
     fmtMoney,
     fmtUsd,
     fmtUsd2,
@@ -38,6 +39,19 @@ describe("format", () => {
         );
         expect(baseName("plain.pdf")).toBe("plain.pdf");
         expect(baseName("")).toBe("");
+    });
+
+    it("fmtPeriod keeps table dates in one numeric format", () => {
+        expect(fmtPeriod("2026-07")).toBe("2026-07");
+        expect(fmtPeriod("2026-07-04")).toBe("2026-07-04");
+        expect(fmtPeriod("2026-07-04 12:34:56")).toBe(
+            "2026-07-04 12:34:56",
+        );
+        expect(fmtPeriod("2026-07-04T12:34:56Z")).toBe(
+            "2026-07-04 12:34:56",
+        );
+        expect(fmtPeriod("")).toBe("-");
+        expect(fmtPeriod("unknown")).toBe("unknown");
     });
 
     it("hoursSince parses TB DateTime as UTC", () => {

@@ -63,7 +63,7 @@ function sortedTx(rows: PaymentTxRow[]) {
 }
 
 function paymentRowKey(row: PaymentTxRow) {
-    return `${row.paid_at}|${row.counterparty}|${row.amount_eur}|${row.provider}|${row.category}`;
+    return `${row.paid_at}|${row.counterparty}|${row.amount_eur}|${row.provider}|${row.category}|${row.wise_ref}`;
 }
 
 function stagedPaymentCounterparties(
@@ -196,6 +196,7 @@ export function PaymentsTab({
             },
             { key: "category", value: (row) => row.category },
             { key: "amount", value: (row) => row.amount_eur },
+            { key: "wise_ref", value: (row) => row.wise_ref },
         ],
         [queuedKeys],
     );
@@ -258,6 +259,9 @@ export function PaymentsTab({
                             <TableHeaderCell {...headerProps("amount")}>
                                 amount
                             </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("wise_ref")}>
+                                wise_ref
+                            </TableHeaderCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -313,6 +317,9 @@ export function PaymentsTab({
                                         </TableCell>
                                         <TableCell>
                                             {fmtMoney(row.amount_eur, "EUR")}
+                                        </TableCell>
+                                        <TableCell>
+                                            {row.wise_ref || "-"}
                                         </TableCell>
                                     </TableRow>
                                 );

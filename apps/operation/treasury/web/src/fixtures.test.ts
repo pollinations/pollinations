@@ -8,9 +8,9 @@ const EXPECTED_PIPES = [
     "invoices_ep",
     "payments_ep",
     "meter_monthly_ep",
-    "grants_ep",
     "usage_ep",
     "runs_ep",
+    "revenue_ep",
 ];
 
 const ALL_STATUSES = [

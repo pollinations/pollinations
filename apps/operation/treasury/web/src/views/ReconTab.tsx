@@ -15,8 +15,8 @@ import {
     withUniqueRowKeys,
 } from "../components/DataTable";
 import { FilterBar, FilterSelect, MonthFilter } from "../components/Filters";
-import { fmtUsd2 } from "../lib/format";
-import { matchesMonth, monthName } from "../lib/months";
+import { fmtPeriod, fmtUsd2 } from "../lib/format";
+import { matchesMonth } from "../lib/months";
 import { statusMeta } from "../lib/recon";
 import type { CoverageRow, Data, GapRow } from "../types";
 
@@ -78,8 +78,8 @@ export function ReconTab({
     const sortColumns = useMemo<SortColumn<CoverageRow>[]>(
         () => [
             { key: "status", value: (row) => row.status },
-            { key: "month", value: (row) => row.month },
             { key: "provider", value: (row) => row.provider },
+            { key: "month", value: (row) => row.month },
             { key: "invoice_usd", value: (row) => row.invoice_usd },
             { key: "payment_usd", value: (row) => row.payment_usd },
             {
@@ -119,14 +119,14 @@ export function ReconTab({
                 <DataTable>
                     <TableHead>
                         <TableRow>
-                            <TableHeaderCell {...headerProps("status")}>
-                                status
-                            </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("month")}>
-                                month
-                            </TableHeaderCell>
                             <TableHeaderCell {...headerProps("provider")}>
                                 provider
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("month")}>
+                                time period
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("status")}>
+                                status
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("invoice_usd")}>
                                 invoice_usd
@@ -152,6 +152,8 @@ export function ReconTab({
                                 );
                             return (
                                 <TableRow key={key}>
+                                    <TableCell>{row.provider}</TableCell>
+                                    <TableCell>{fmtPeriod(row.month)}</TableCell>
                                     <TableCell>
                                         <Chip
                                             size="sm"
@@ -160,10 +162,6 @@ export function ReconTab({
                                             {row.status}
                                         </Chip>
                                     </TableCell>
-                                    <TableCell>
-                                        {monthName(row.month)}
-                                    </TableCell>
-                                    <TableCell>{row.provider}</TableCell>
                                     <TableCell>
                                         {fmtUsd2(row.invoice_usd)}
                                     </TableCell>

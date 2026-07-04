@@ -30,33 +30,101 @@ import type { Data, MeterMonthlyRow } from "../types";
 
 const MONTH_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
 const YEAR_RE = /^\d{4}$/;
-type MeterFunding = "cash" | "credit";
+type MeterFunding = "prepaid" | "credit";
+type UsageBucket = "credit" | "prepaid";
+
+type MeterUsageRow = {
+    month: string;
+    provider: string;
+    creditUsage: number;
+    prepaidUsage: number;
+    creditSource: string;
+    prepaidSource: string;
+};
 
 function currentMonth() {
     return new Date().toISOString().slice(0, 7);
 }
 
-function sortedMeter(rows: MeterMonthlyRow[]) {
+function usageBucket(funding: string): UsageBucket {
+    return funding === "credit" ? "credit" : "prepaid";
+}
+
+function combineSource(current: string, next: string) {
+    if (!next) return current;
+    if (!current) return next;
+    return current === next ? current : "mixed";
+}
+
+const METER_SOURCE_RANK: Record<string, number> = {
+    manual: 0,
+    api: 1,
+    cli: 2,
+    bq: 3,
+};
+
+function meterRowRank(row: MeterMonthlyRow) {
+    return METER_SOURCE_RANK[row.source] ?? 99;
+}
+
+function effectiveMeterRows(rows: MeterMonthlyRow[]): MeterMonthlyRow[] {
+    const byBucket = new Map<string, MeterMonthlyRow>();
+
+    for (const row of rows) {
+        const key = `${row.month}|${row.provider}|${usageBucket(row.funding)}`;
+        const current = byBucket.get(key);
+        if (!current || meterRowRank(row) <= meterRowRank(current)) {
+            byBucket.set(key, row);
+        }
+    }
+
+    return [...byBucket.values()];
+}
+
+export function aggregateMeterRows(rows: MeterMonthlyRow[]): MeterUsageRow[] {
+    const byKey = new Map<string, MeterUsageRow>();
+
+    for (const row of effectiveMeterRows(rows)) {
+        const key = `${row.month}|${row.provider}`;
+        const current =
+            byKey.get(key) ??
+            ({
+                month: row.month,
+                provider: row.provider,
+                creditUsage: 0,
+                prepaidUsage: 0,
+                creditSource: "",
+                prepaidSource: "",
+            } satisfies MeterUsageRow);
+
+        if (usageBucket(row.funding) === "credit") {
+            current.creditUsage += row.cost_usd;
+            current.creditSource = combineSource(
+                current.creditSource,
+                row.source,
+            );
+        } else {
+            current.prepaidUsage += row.cost_usd;
+            current.prepaidSource = combineSource(
+                current.prepaidSource,
+                row.source,
+            );
+        }
+        byKey.set(key, current);
+    }
+
+    return [...byKey.values()].map((row) => ({
+        ...row,
+        creditUsage: Math.round(row.creditUsage * 100) / 100,
+        prepaidUsage: Math.round(row.prepaidUsage * 100) / 100,
+    }));
+}
+
+function sortedMeter(rows: MeterUsageRow[]) {
     return [...rows].sort(
         (a, b) =>
             b.month.localeCompare(a.month) ||
             a.provider.localeCompare(b.provider),
-    );
-}
-
-function AmountWithSource({
-    source,
-    value,
-}: {
-    source: string;
-    value: number;
-}) {
-    if (!value) return <span>-</span>;
-    return (
-        <span className="inline-flex items-center gap-1.5">
-            {fmtUsd2(value)}
-            {source && <SourceBadge source={source} />}
-        </span>
     );
 }
 
@@ -93,11 +161,11 @@ function newId() {
     );
 }
 
-function meterEditKey(month: string, provider: string) {
-    return `${month}|${provider}`;
+function meterEditKey(month: string, provider: string, funding: string) {
+    return `${month}|${provider}|${funding}`;
 }
 
-function meterStageKey(month: string, provider: string, funding: MeterFunding) {
+function meterStageKey(month: string, provider: string, funding: string) {
     return `meter:${provider}:${month}:${funding}`;
 }
 
@@ -109,7 +177,10 @@ function stagedMeterEdits(changes: Change[]) {
         if (change.datasource !== "meter_monthly") continue;
         const month = String(change.row.month ?? "");
         const provider = String(change.row.provider ?? "");
-        if (month && provider) set.add(meterEditKey(month, provider));
+        const funding = String(change.row.funding ?? "");
+        if (month && provider && funding) {
+            set.add(meterEditKey(month, provider, funding));
+        }
     }
     return set;
 }
@@ -118,7 +189,7 @@ function stagedMeterAmount(
     changes: Change[],
     month: string,
     provider: string,
-    funding: MeterFunding,
+    funding: string,
 ) {
     const key = meterStageKey(month, provider, funding);
     const staged = changes.find((change) => change.key === key);
@@ -126,20 +197,22 @@ function stagedMeterAmount(
 }
 
 function MeterAmountInput({
-    funding,
-    row,
-    value,
+    amount,
+    bucket,
+    month,
+    provider,
 }: {
-    funding: MeterFunding;
-    row: MeterMonthlyRow;
-    value: number;
+    amount: number;
+    bucket: UsageBucket;
+    month: string;
+    provider: string;
 }) {
     const { changes, stage, unstage } = useStaging();
-    const stageKey = meterStageKey(row.month, row.provider, funding);
+    const stageKey = meterStageKey(month, provider, bucket);
     const [input, setInput] = useState(
         () =>
-            stagedMeterAmount(changes, row.month, row.provider, funding) ??
-            String(value),
+            stagedMeterAmount(changes, month, provider, bucket) ??
+            String(amount),
     );
 
     const update = (next: string) => {
@@ -150,16 +223,16 @@ function MeterAmountInput({
         }
         const parsed = validateManualAmount(next);
         if (parsed === null) return;
-        if (parsed === value) {
+        if (parsed === amount) {
             unstage(stageKey);
             return;
         }
         stage(
             buildManualMeterChange({
                 amount: parsed,
-                funding,
-                month: row.month,
-                provider: row.provider,
+                funding: bucket,
+                month,
+                provider,
             }),
         );
     };
@@ -171,7 +244,7 @@ function MeterAmountInput({
             step="0.01"
             value={input}
             onChange={(event) => update(event.target.value)}
-            aria-label={`${funding} burn`}
+            aria-label={`${bucket}_usage`}
             className="w-32"
         />
     );
@@ -179,13 +252,11 @@ function MeterAmountInput({
 
 function MeterDraftRow({
     id,
-    knownProviders,
     months,
     onDiscard,
     period,
 }: {
     id: string;
-    knownProviders: string[];
     months: string[];
     onDiscard: (id: string) => void;
     period: string;
@@ -199,9 +270,9 @@ function MeterDraftRow({
         defaultEntryMonth(period, monthOptions),
     );
     const [provider, setProvider] = useState("");
-    const [cash, setCash] = useState("");
-    const [credit, setCredit] = useState("");
-    const stagedKeys = useRef<Set<string>>(new Set());
+    const [amount, setAmount] = useState("");
+    const [funding, setFunding] = useState<MeterFunding>("prepaid");
+    const stagedKey = useRef<string | null>(null);
 
     useEffect(() => {
         setMonth((current) =>
@@ -214,37 +285,41 @@ function MeterDraftRow({
     const sync = (
         nextMonth: string,
         nextProvider: string,
-        nextCash: string,
-        nextCredit: string,
+        nextAmount: string,
+        nextFunding: MeterFunding,
     ) => {
         const slug = nextProvider.trim().toLowerCase();
-        const nextKeys = new Set<string>();
-        const stageAmount = (funding: MeterFunding, raw: string) => {
-            if (!slug || !MONTH_RE.test(nextMonth) || raw.trim() === "") return;
-            const amount = validateManualAmount(raw);
-            if (amount === null) return;
-            nextKeys.add(meterStageKey(nextMonth, slug, funding));
-            stage(
-                buildManualMeterChange({
-                    amount,
-                    funding,
-                    month: nextMonth,
-                    provider: slug,
-                }),
-            );
-        };
-
-        stageAmount("cash", nextCash);
-        stageAmount("credit", nextCredit);
-        for (const key of stagedKeys.current) {
-            if (!nextKeys.has(key)) unstage(key);
+        const nextKey =
+            slug && MONTH_RE.test(nextMonth)
+                ? meterStageKey(nextMonth, slug, nextFunding)
+                : null;
+        if (stagedKey.current && stagedKey.current !== nextKey) {
+            unstage(stagedKey.current);
         }
-        stagedKeys.current = nextKeys;
+        stagedKey.current = nextKey;
+
+        if (!slug || !MONTH_RE.test(nextMonth) || nextAmount.trim() === "") {
+            if (nextKey) unstage(nextKey);
+            return;
+        }
+        const parsed = validateManualAmount(nextAmount);
+        if (parsed === null) {
+            if (nextKey) unstage(nextKey);
+            return;
+        }
+        stage(
+            buildManualMeterChange({
+                amount: parsed,
+                funding: nextFunding,
+                month: nextMonth,
+                provider: slug,
+            }),
+        );
     };
 
     const reset = () => {
-        for (const key of stagedKeys.current) unstage(key);
-        stagedKeys.current = new Set();
+        if (stagedKey.current) unstage(stagedKey.current);
+        stagedKey.current = null;
         onDiscard(id);
     };
 
@@ -260,7 +335,7 @@ function MeterDraftRow({
                     value={month}
                     onChange={(event) => {
                         setMonth(event.target.value);
-                        sync(event.target.value, provider, cash, credit);
+                        sync(event.target.value, provider, amount, funding);
                     }}
                     aria-label="month"
                     className="w-28 rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong"
@@ -277,49 +352,48 @@ function MeterDraftRow({
                     value={provider}
                     onChange={(event) => {
                         setProvider(event.target.value);
-                        sync(month, event.target.value, cash, credit);
+                        sync(month, event.target.value, amount, funding);
                     }}
                     placeholder="provider slug"
                     aria-label="provider"
                     list="meter-entry-providers"
                     className="w-40"
                 />
-                <datalist id="meter-entry-providers">
-                    {knownProviders.map((slug) => (
-                        <option key={slug} value={slug} />
-                    ))}
-                </datalist>
             </TableCell>
             <TableCell>
                 <Input
                     type="number"
                     min="0"
                     step="0.01"
-                    value={cash}
+                    value={amount}
                     onChange={(event) => {
-                        setCash(event.target.value);
-                        sync(month, provider, event.target.value, credit);
+                        setAmount(event.target.value);
+                        sync(month, provider, event.target.value, funding);
                     }}
-                    placeholder="cash USD"
-                    aria-label="cash burn"
+                    placeholder="amount"
+                    aria-label="amount"
                     className="w-32"
                 />
             </TableCell>
             <TableCell>
-                <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={credit}
+                <select
+                    value={funding}
                     onChange={(event) => {
-                        setCredit(event.target.value);
-                        sync(month, provider, cash, event.target.value);
+                        const next = event.target.value as MeterFunding;
+                        setFunding(next);
+                        sync(month, provider, amount, next);
                     }}
-                    placeholder="credit USD"
-                    aria-label="credit burn"
-                    className="w-32"
-                />
+                    aria-label="funding"
+                    className="w-28 rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong"
+                >
+                    <option value="prepaid">prepaid usage</option>
+                    <option value="credit">credit usage</option>
+                </select>
             </TableCell>
+            <TableCell>
+                <SourceBadge source="manual" />
+            </TableCell>
+            <TableCell />
         </TableRow>
     );
 }
@@ -368,12 +442,14 @@ export function MeterTab({
     }, [resetNonce]);
 
     const stagedEdits = useMemo(() => stagedMeterEdits(changes), [changes]);
-    const toggle = (row: MeterMonthlyRow, open: boolean) => {
-        if (!open) {
-            unstage(meterStageKey(row.month, row.provider, "cash"));
-            unstage(meterStageKey(row.month, row.provider, "credit"));
-        }
-        const key = meterEditKey(row.month, row.provider);
+    const toggleBucket = (
+        monthValue: string,
+        providerValue: string,
+        bucket: UsageBucket,
+        open: boolean,
+    ) => {
+        if (!open) unstage(meterStageKey(monthValue, providerValue, bucket));
+        const key = meterEditKey(monthValue, providerValue, bucket);
         setEditing((current) => {
             const next = new Set(current);
             if (open) next.add(key);
@@ -386,25 +462,32 @@ export function MeterTab({
         setDrafts((current) => current.filter((draft) => draft !== id));
     const baseRows = useMemo(
         () =>
-            sortedMeter(data.meterMonthly).filter(
+            sortedMeter(aggregateMeterRows(data.meterMonthly)).filter(
                 (row) =>
                     matchesMonth(row.month, month) &&
                     (provider === "all" || row.provider === provider),
             ),
         [data.meterMonthly, month, provider],
     );
-    const sortColumns = useMemo<SortColumn<MeterMonthlyRow>[]>(
+    const sortColumns = useMemo<SortColumn<MeterUsageRow>[]>(
         () => [
             {
                 key: "actions",
                 value: (row) =>
                     queuedKeys.has(queuedMeterKey(row.month, row.provider)) ||
-                    stagedEdits.has(meterEditKey(row.month, row.provider)),
+                    stagedEdits.has(
+                        meterEditKey(row.month, row.provider, "credit"),
+                    ) ||
+                    stagedEdits.has(
+                        meterEditKey(row.month, row.provider, "prepaid"),
+                    ),
             },
             { key: "month", value: (row) => row.month },
             { key: "provider", value: (row) => row.provider },
-            { key: "cash_burn_usd", value: (row) => row.cash_burn_usd },
-            { key: "credit_burn_usd", value: (row) => row.credit_burn_usd },
+            { key: "creditUsage", value: (row) => row.creditUsage },
+            { key: "prepaidUsage", value: (row) => row.prepaidUsage },
+            { key: "creditSource", value: (row) => row.creditSource },
+            { key: "prepaidSource", value: (row) => row.prepaidSource },
         ],
         [queuedKeys, stagedEdits],
     );
@@ -429,6 +512,11 @@ export function MeterTab({
                     options={providers}
                 />
             </FilterBar>
+            <datalist id="meter-entry-providers">
+                {knownProviders.map((slug) => (
+                    <option key={slug} value={slug} />
+                ))}
+            </datalist>
             <TableScroller>
                 <DataTable>
                     <TableHead>
@@ -442,13 +530,17 @@ export function MeterTab({
                             <TableHeaderCell {...headerProps("provider")}>
                                 provider
                             </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("cash_burn_usd")}>
-                                cash_burn
+                            <TableHeaderCell {...headerProps("creditUsage")}>
+                                credit usage
                             </TableHeaderCell>
-                            <TableHeaderCell
-                                {...headerProps("credit_burn_usd")}
-                            >
-                                credit_burn
+                            <TableHeaderCell {...headerProps("prepaidUsage")}>
+                                prepaid usage
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("creditSource")}>
+                                credit source
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("prepaidSource")}>
+                                prepaid source
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>
@@ -457,22 +549,45 @@ export function MeterTab({
                             rows,
                             (row) => `${row.month}|${row.provider}`,
                         ).map(({ key, row }) => {
-                            const open = editing.has(
-                                meterEditKey(row.month, row.provider),
+                            const creditEditKey = meterEditKey(
+                                row.month,
+                                row.provider,
+                                "credit",
                             );
+                            const prepaidEditKey = meterEditKey(
+                                row.month,
+                                row.provider,
+                                "prepaid",
+                            );
+                            const open =
+                                editing.has(creditEditKey) ||
+                                editing.has(prepaidEditKey);
                             const queued = queuedKeys.has(
                                 queuedMeterKey(row.month, row.provider),
                             );
-                            const staged = stagedEdits.has(
-                                meterEditKey(row.month, row.provider),
-                            );
+                            const staged =
+                                stagedEdits.has(creditEditKey) ||
+                                stagedEdits.has(prepaidEditKey);
                             return (
                                 <TableRow key={key}>
                                     <TableCell>
                                         <Button
                                             size="sm"
                                             intent={open ? "danger" : "info"}
-                                            onClick={() => toggle(row, !open)}
+                                            onClick={() => {
+                                                toggleBucket(
+                                                    row.month,
+                                                    row.provider,
+                                                    "credit",
+                                                    !open,
+                                                );
+                                                toggleBucket(
+                                                    row.month,
+                                                    row.provider,
+                                                    "prepaid",
+                                                    !open,
+                                                );
+                                            }}
                                         >
                                             {open ? "Reset" : "Edit"}
                                         </Button>
@@ -498,29 +613,43 @@ export function MeterTab({
                                     <TableCell>
                                         {open ? (
                                             <MeterAmountInput
-                                                funding="cash"
-                                                row={row}
-                                                value={row.cash_burn_usd}
+                                                amount={row.creditUsage}
+                                                bucket="credit"
+                                                month={row.month}
+                                                provider={row.provider}
                                             />
                                         ) : (
-                                            <AmountWithSource
-                                                value={row.cash_burn_usd}
-                                                source={row.cash_src}
-                                            />
+                                            fmtUsd2(row.creditUsage)
                                         )}
                                     </TableCell>
                                     <TableCell>
                                         {open ? (
                                             <MeterAmountInput
-                                                funding="credit"
-                                                row={row}
-                                                value={row.credit_burn_usd}
+                                                amount={row.prepaidUsage}
+                                                bucket="prepaid"
+                                                month={row.month}
+                                                provider={row.provider}
                                             />
                                         ) : (
-                                            <AmountWithSource
-                                                value={row.credit_burn_usd}
-                                                source={row.credit_src}
+                                            fmtUsd2(row.prepaidUsage)
+                                        )}
+                                    </TableCell>
+                                    <TableCell>
+                                        {row.creditSource ? (
+                                            <SourceBadge
+                                                source={row.creditSource}
                                             />
+                                        ) : (
+                                            "-"
+                                        )}
+                                    </TableCell>
+                                    <TableCell>
+                                        {row.prepaidSource ? (
+                                            <SourceBadge
+                                                source={row.prepaidSource}
+                                            />
+                                        ) : (
+                                            "-"
                                         )}
                                     </TableCell>
                                 </TableRow>
@@ -530,7 +659,6 @@ export function MeterTab({
                             <MeterDraftRow
                                 key={id}
                                 id={id}
-                                knownProviders={knownProviders}
                                 months={months}
                                 onDiscard={discardDraft}
                                 period={month}
@@ -546,6 +674,8 @@ export function MeterTab({
                                     Add
                                 </Button>
                             </TableCell>
+                            <TableCell />
+                            <TableCell />
                             <TableCell />
                             <TableCell />
                             <TableCell />

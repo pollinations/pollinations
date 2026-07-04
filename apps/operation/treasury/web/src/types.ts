@@ -20,18 +20,10 @@ export type InvoiceRow = {
     credit_usd: number;
     invoice_number: string;
     issued_at: string;
+    source: string;
     file_ref: string;
-};
-
-export type GrantRow = {
-    pool: string;
-    providers: string;
-    category: string;
-    left_usd: number | null;
-    left_src: string;
-    prepaid_left_usd: number | null;
-    prepaid_left_src: string;
-    expires: string;
+    status: string;
+    ingested_at: string;
 };
 
 export type PaymentTxRow = {
@@ -40,23 +32,21 @@ export type PaymentTxRow = {
     category: string;
     counterparty: string;
     amount_eur: number;
+    wise_ref: string;
 };
 
 export type MeterMonthlyRow = {
     month: string;
     provider: string;
-    cash_burn_usd: number;
-    cash_src: string;
-    credit_burn_usd: number;
-    credit_src: string;
+    cost_usd: number;
+    funding: string;
+    source: string;
 };
 
 export type UsageMonthlyRow = {
     month: string;
     provider: string;
     model: string;
-    billable_requests_paid_pollen: number;
-    billable_requests_quest_pollen: number;
     cost_paid_pollen: number;
     cost_quest_pollen: number;
     billable_paid_pollen: number;
@@ -67,13 +57,14 @@ export type RunRow = {
     run_at: string;
     ok: number;
     statuses: string;
+    notes: string;
 };
 
-// One curated mapping row: a raw string seen in the data (a Wise counterparty,
-// an invoice sender, a model tag) assigned to a canonical provider/category.
-export type ProviderAliasRow = {
-    alias: string;
-    provider: string;
+export type RevenueMonthlyRow = {
+    month: string;
+    gross_eur: number;
+    fees_eur: number;
+    refunds_eur: number;
 };
 
 export type Data = {
@@ -82,8 +73,7 @@ export type Data = {
     invoices: InvoiceRow[];
     paymentsTx: PaymentTxRow[];
     meterMonthly: MeterMonthlyRow[];
-    grants: GrantRow[];
     usageMonthly: UsageMonthlyRow[];
     runs: RunRow[];
-    providerAliases: ProviderAliasRow[];
+    revenueMonthly: RevenueMonthlyRow[];
 };

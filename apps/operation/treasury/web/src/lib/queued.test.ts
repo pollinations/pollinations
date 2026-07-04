@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-    queuedBalanceKey,
-    queuedGrantKey,
     queuedInvoiceKey,
     queuedKeysForChange,
     queuedMeterKey,
@@ -46,15 +44,7 @@ describe("queuedKeysForChange", () => {
         ]);
     });
 
-    it("maps balances, grants, and invoices", () => {
-        expect(
-            queuedKeysForChange(change("balances", { provider: "lambda" })),
-        ).toEqual([queuedBalanceKey("lambda")]);
-        expect(
-            queuedKeysForChange(
-                change("overrides", { scope: "grants", key: "lambda-credit" }),
-            ),
-        ).toEqual([queuedGrantKey("lambda-credit")]);
+    it("maps invoices", () => {
         expect(
             queuedKeysForChange(change("invoices", { sha256: "abc123" })),
         ).toEqual([queuedInvoiceKey("abc123")]);

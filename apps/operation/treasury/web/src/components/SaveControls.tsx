@@ -125,8 +125,8 @@ export function SaveControls() {
                         ))}
                     </ul>
                     <Text size="sm" tone="soft">
-                        Appends raw rows to Tinybird now; derived flags update
-                        after the next forager run.
+                        Appends rows to Tinybird now. Views built from overrides
+                        update after the next forager run.
                     </Text>
                     {error && <Alert intent="warning">{error}</Alert>}
                     <div className="flex justify-end gap-2">

@@ -22,6 +22,7 @@ export function RunsTab({ data }: { data: Data }) {
             { key: "run_at", value: (run) => run.run_at },
             { key: "ok", value: (run) => run.ok },
             { key: "statuses", value: (run) => run.statuses },
+            { key: "notes", value: (run) => run.notes },
         ],
         [],
     );
@@ -42,6 +43,9 @@ export function RunsTab({ data }: { data: Data }) {
                             <TableHeaderCell {...headerProps("statuses")}>
                                 statuses
                             </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("notes")}>
+                                notes
+                            </TableHeaderCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -55,6 +59,7 @@ export function RunsTab({ data }: { data: Data }) {
                                             {run.statuses || "{}"}
                                         </code>
                                     </TableCell>
+                                    <TableCell>{run.notes || "-"}</TableCell>
                                 </TableRow>
                             ),
                         )}

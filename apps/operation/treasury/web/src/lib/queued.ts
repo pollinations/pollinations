@@ -6,10 +6,6 @@ export const queuedReconKey = (month: string, provider: string) =>
 export const queuedMeterKey = (month: string, provider: string) =>
     `meter_monthly:${month}:${provider}`;
 
-export const queuedBalanceKey = (provider: string) => `balances:${provider}`;
-
-export const queuedGrantKey = (pool: string) => `grants:${pool}`;
-
 export const queuedInvoiceKey = (sha256: string) => `invoices:${sha256}`;
 
 export const queuedPaymentRuleKey = (counterparty: string) =>
@@ -29,7 +25,6 @@ export function queuedKeysForChange(change: StagedChange): string[] {
             const [month, provider] = key.split(":");
             return month && provider ? [queuedReconKey(month, provider)] : [];
         }
-        if (scope === "grants") return key ? [queuedGrantKey(key)] : [];
         if (scope === "payments") {
             return key ? [queuedPaymentRuleKey(key)] : [];
         }
@@ -42,11 +37,6 @@ export function queuedKeysForChange(change: StagedChange): string[] {
         return month && provider
             ? [queuedMeterKey(month, provider), queuedReconKey(month, provider)]
             : [];
-    }
-
-    if (change.datasource === "balances") {
-        const provider = stringValue(row.provider);
-        return provider ? [queuedBalanceKey(provider)] : [];
     }
 
     if (change.datasource === "invoices") {

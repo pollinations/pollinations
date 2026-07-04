@@ -1,0 +1,23 @@
+{
+  "date": "2026-07-03",
+  "period_start": "2026-07-03",
+  "period_end": "2026-07-03",
+  "title": "Transparent usage tracking for advanced search models",
+  "summary": "Transparent usage tracking for advanced search models, a new community chat interface, and a fix for silent data loss.\n\nWe've updated the registry to fully support Perplexity search and Gemini grounding (2.5 and 3.x). Usage for these advanced capabilities is now clearly itemized, giving you full visibility into your API consumption when leveraging live search.\n\nThe community apps directory just grew. Flow Linnom, a multi-model chat interface built by the community, is now live in the Greenhouse for your exploring pleasure.\n\nBrowsers have limits, and stuffing too many image attachments into chat used to silently fail when localStorage maxed out. We now throw a clear toast notification so you know exactly what's happening before you hit refresh.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 11956,
+      "date": "2026-07-03"
+    },
+    {
+      "number": 12070,
+      "date": "2026-07-03"
+    },
+    {
+      "number": 12210,
+      "date": "2026-07-03"
+    }
+  ],
+  "generated_at": "2026-07-04T06:58:25.652675+00:00"
+}

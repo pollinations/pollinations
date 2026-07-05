@@ -1,0 +1,36 @@
+{
+  "pr_number": 12238,
+  "title": "Add /motion to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12238",
+  "merged_at": "2026-07-05T16:03:37Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [/motion](https://motion-e93d3.web.app/) to image\n- /motion is a free, open-source generative graphics studio for designing WebGL shader visuals and looping motion backgrounds. It lets users tweak shader parameters, customize palettes, preview visuals\n\nFixes #12115",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Shader Magic",
+    "blurb": "We just added /motion to the ecosystem! It's a free, open-source generative graphics studio for designing WebGL shader visuals and looping motion backgrounds.",
+    "summary": "Added `/motion`, an open-source generative graphics studio for designing WebGL shader visuals and looping motion backgrounds, to the community apps directory.",
+    "impact": "Creators can now discover and use `/motion` to tweak shader parameters, customize palettes, and generate looping visuals directly from the ecosystem.",
+    "keywords": [
+      "apps",
+      "community",
+      "webgl",
+      "shaders",
+      "graphics",
+      "motion"
+    ],
+    "visual_concept": "The PR introduces a WebGL shader and motion graphics studio. The visual should feature Polly the bee acting as a digital artist or VJ, tweaking knobs on a retro console that controls a glowing, swirling, colorful screen representing shader graphics.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, turning knobs on a retro console connected to a glowing CRT monitor. The monitor displays a swirling, colorful WebGL shader pattern. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-05/PR-12238.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, turning knobs on a retro console connected to a glowing CRT monitor. The monitor displays a swirling, colorful WebGL shader pattern. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-05T16:04:34.493603+00:00",
+  "app_name": "/motion",
+  "app_url": "https://motion-e93d3.web.app/"
+}

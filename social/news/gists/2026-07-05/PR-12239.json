@@ -1,0 +1,35 @@
+{
+  "pr_number": 12239,
+  "title": "fix: remove tier-upgrade logic from app approval flow",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12239",
+  "merged_at": "2026-07-05T16:20:34Z",
+  "labels": [
+    "DEV-APP"
+  ],
+  "pr_body_excerpt": "## Summary\n- Tiers are frozen; pollen now comes from Quests (frontend already shows \"Tiers are going away\").\n- The app-approval bot still upgraded users to Flower tier and announced \"0.4 pollen per hour\" — that mechanism no longer applies.\n- Both bot messages now point contributors to the existing **Contribute a pull request** quest (5 Quest Pollen, claimed from their enter.pollinations.ai dashboard) instead of writing tier state to D1.\n\n## Changes\n- `app-upgrade-tier.yml` → renamed `app-merge-celebration.yml`: dropped the D1 tier update/verify steps (`tier-update-user.ts update-tier`/`verify-tier`), now just posts a celebration comment linking to the quest claim.\n- `app-check-registration.yml`: dropped the tier-upgrade step, kept the read-only registration check, points newly-registered users to the quest claim instead.\n\n## Test plan\n- [x] Validated both workflow YAML files parse correctly\n- [ ] Merge and confirm the next app-submission PR merge posts the new copy correctly",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "App approvals meet Quests",
+    "blurb": "We've updated the app submission bot to point contributors straight to the new Quest system. Merging an app now earns you a flat 5 Quest Pollen instead of the old tier upgrades!",
+    "summary": "The app-approval GitHub workflows have been updated to remove legacy Flower tier upgrades, instead directing contributors to claim 5 Quest Pollen via the 'Contribute a pull request' quest.",
+    "impact": "Contributors submitting new apps will now receive a flat 5 Quest Pollen reward upon merge rather than a recurring hourly drip.",
+    "keywords": [
+      "quests",
+      "pollen",
+      "github-actions",
+      "app-submissions",
+      "rewards"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot celebrating a merged pull request. The robot is holding a glowing '5' or a quest scroll, while the bee is wearing a little adventurer's hat.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny adventurer's hat, high-fiving a chunky monitor-head robot. The robot's screen displays a glowing '5' and a golden quest scroll. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-05/PR-12239.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny adventurer's hat, high-fiving a chunky monitor-head robot. The robot's screen displays a glowing '5' and a golden quest scroll. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-05T16:21:39.073752+00:00"
+}

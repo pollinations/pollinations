@@ -32,5 +32,6 @@ On Gemini models, a large static prompt prefix can be cached so repeat requests 
 }
 ```
 
-- The static prefix must be at least ~2048 tokens. Requests with tools are not cached.
-- The first request creates the cache — `usage` reports `cache_creation_input_tokens`, billed at the standard input rate plus an hourly storage fee. Requests within the 1-hour TTL report `prompt_tokens_details.cached_tokens` at the discounted rate.
+- The static prefix must be at least ~2048 tokens. Requests with tools are not cached — including built-in tools, so `gemini`, `gemini-3-flash`, `gemini-large`, and the search variants only cache when tools are disabled with `"tools": []`. `gemini-fast` and `gemini-flash-lite-3.1` cache by default.
+- The first request creates the cache — `usage` reports `cache_creation_input_tokens`, billed at the standard input rate plus a storage fee for the 1-hour TTL ($1 per 1M cached tokens on Flash models, $4.50 on Pro). Requests within the TTL report `prompt_tokens_details.cached_tokens` at the discounted rate.
+- Caching pays off when the prefix is reused often — on the cheapest models the storage fee outweighs the discount below roughly a dozen reuses per hour.

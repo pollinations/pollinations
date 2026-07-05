@@ -593,10 +593,11 @@ export const TEXT_SERVICES = {
         cost: {
             promptTextTokens: perMillion(0.1),
             promptCachedTokens: perMillion(0.01),
+            promptCacheWriteTokens: perMillion(0.1),
             promptAudioTokens: perMillion(0.3),
             completionTextTokens: perMillion(0.4),
         },
-        billing: GEMINI_25_GROUNDING_BILLING,
+        billing: withVertexCacheStorage(GEMINI_25_GROUNDING_BILLING, 1.0),
         title: "Google Gemini 2.5 Flash Lite Search",
         description:
             "Google Gemini 2.5 Flash Lite Search - Web-grounded answers via Google Search",
@@ -626,10 +627,11 @@ export const TEXT_SERVICES = {
         cost: {
             promptTextTokens: perMillion(0.25),
             promptCachedTokens: perMillion(0.025),
+            promptCacheWriteTokens: perMillion(0.25),
             promptAudioTokens: perMillion(0.5),
             completionTextTokens: perMillion(1.5),
         },
-        billing: GEMINI_3_SEARCH_BILLING,
+        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
         title: "Gemini 3.1 Flash Lite Search",
         description:
             "Gemini 3.1 Flash Lite Search - Cheap grounded web answers",
@@ -657,10 +659,11 @@ export const TEXT_SERVICES = {
         cost: {
             promptTextTokens: perMillion(1.5),
             promptCachedTokens: perMillion(0.15),
+            promptCacheWriteTokens: perMillion(1.5),
             promptAudioTokens: perMillion(1.5),
             completionTextTokens: perMillion(9.0),
         },
-        billing: GEMINI_3_SEARCH_BILLING,
+        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1.0),
         title: "Gemini 3.5 Flash Search",
         description: "Gemini 3.5 Flash Search - Premium grounded web research",
         inputModalities: ["text", "image", "audio", "video"],

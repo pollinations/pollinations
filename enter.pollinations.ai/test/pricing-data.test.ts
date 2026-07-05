@@ -785,13 +785,19 @@ test("vertex gemini models price cache writes at the standard input rate", () =>
         "gemini-flash-lite-3.1",
         "gemini-fast",
         "gemini-large",
+        "gemini-search",
+        "gemini-search-fast",
+        "gemini-search-large",
     ] as const;
     for (const model of models) {
-        const cost = getCostDefinition(model);
+        // getRegistryModelDefinition throws on unknown names, so a renamed
+        // model fails loudly instead of passing on undefined === undefined.
+        const cost = getRegistryModelDefinition(model).cost;
         expect(
             cost?.promptCacheWriteTokens,
             `${model} promptCacheWriteTokens must equal its input rate`,
-        ).toBe(cost?.promptTextTokens);
+        ).toBeDefined();
+        expect(cost?.promptCacheWriteTokens).toBe(cost?.promptTextTokens);
     }
 });
 
@@ -834,6 +840,16 @@ test("vertex cache storage adjustment bills cache-creating requests", () => {
     );
     const proStorage = pro.find((a) => a.kind === "cache_storage");
     expect(proStorage?.cost).toBeCloseTo(4.5, 8);
+
+    // Search variants share the same Vertex routes and flash-family storage.
+    const search = calculateBillingAdjustments(
+        getRegistryModelDefinition("gemini-search"),
+        { usage: { cache_creation_input_tokens: 1_000_000 } },
+    );
+    expect(search.find((a) => a.kind === "cache_storage")?.cost).toBeCloseTo(
+        1.0,
+        8,
+    );
 
     // Cache HITS report cached_tokens, not creation tokens → no storage fee.
     expect(

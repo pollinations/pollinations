@@ -1,0 +1,34 @@
+{
+  "pr_number": 12237,
+  "title": "Add Sprout to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12237",
+  "merged_at": "2026-07-05T15:56:21Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Sprout](https://murderszn.github.io/sprout/) to build\n- Display the Sprout social card image at https://murderszn.github.io/sprout/public/og-image.png.\n\nFixes #12217",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A new Sprout in the garden",
+    "blurb": "A brand new app called Sprout just took root in our community Greenhouse. We love seeing what you all build with our tools!",
+    "summary": "Added the community-built app Sprout to the Pollinations Greenhouse and apps directory.",
+    "impact": "Users can now discover and explore the Sprout app alongside other community creations in the official directory.",
+    "keywords": [
+      "community",
+      "app",
+      "greenhouse",
+      "sprout"
+    ],
+    "visual_concept": "The PR is about adding an app called 'Sprout' to the 'Greenhouse'. The visual should be literal: Polly the bee in a cozy greenhouse, watering or looking at a tiny new sprout (plant) in a pot.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny gardener's apron, carefully watering a glowing new green sprout in a terracotta pot inside a glass greenhouse. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-05/PR-12237.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny gardener's apron, carefully watering a glowing new green sprout in a terracotta pot inside a glass greenhouse. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-05T16:01:39.000726+00:00",
+  "app_name": "Sprout",
+  "app_url": "https://murderszn.github.io/sprout/"
+}

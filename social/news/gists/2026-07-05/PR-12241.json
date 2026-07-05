@@ -1,0 +1,35 @@
+{
+  "pr_number": 12241,
+  "title": "Add LLM Playground to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12241",
+  "merged_at": "2026-07-05T16:44:47Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [LLM Playground](https://llmplayground.net) to chat\n- LLM Playground is a chat workspace for GPT, Claude, Pollinations, and other AI models with markdown/LaTeX rendering. Add custom AI Characters and team servers with channels and per-member quotas.\n\nFixes #12240",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Welcome to the Playground",
+    "blurb": "LLM Playground just landed in the Greenhouse! It's a slick chat workspace for all your favorite models, complete with custom characters and team servers.",
+    "summary": "Added LLM Playground to the community apps directory, featuring a chat workspace for multiple models, markdown/LaTeX rendering, and team servers.",
+    "impact": "Users can now discover and use LLM Playground to manage custom AI characters and team chats with per-member quotas directly from the Greenhouse.",
+    "keywords": [
+      "community",
+      "apps",
+      "chat",
+      "llm-playground",
+      "greenhouse"
+    ],
+    "visual_concept": "A cozy playground setting (sandbox, swings) but made of retro tech. The bee mascot (Polly) playing in a sandbox with the Monitor Robot, building sandcastles out of chat bubbles and server blocks.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-headed robot playing in a digital sandbox. They are building sandcastles shaped like chat bubbles and server racks. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic, wholesome vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-05/PR-12241.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-headed robot playing in a digital sandbox. They are building sandcastles shaped like chat bubbles and server racks. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic, wholesome vibes."
+  },
+  "generated_at": "2026-07-05T16:45:52.444568+00:00",
+  "app_name": "LLM Playground",
+  "app_url": "https://llmplayground.net"
+}

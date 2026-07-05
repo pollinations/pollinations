@@ -6,10 +6,11 @@ set -e
 
 # Configuration
 # Using pollinations fork with upstream v1.15.2 merged + our custom patches
-# Includes: upstream vulnerability fixes, forward-header loop prevention, and Gemini/Vertex additions
-# PR: https://github.com/pollinations/gateway/pull/5
+# Includes: upstream vulnerability fixes, forward-header loop prevention, Gemini/Vertex additions,
+# and Vertex explicit context caching via cache_control markers
+# PRs: https://github.com/pollinations/gateway/pull/5, https://github.com/pollinations/gateway/pull/8
 PORTKEY_REPO="https://github.com/pollinations/gateway.git"
-PORTKEY_COMMIT="${PORTKEY_COMMIT:-c0de03381d2aad52045b405ac21aef1972cd9d8e}"  # v1.15.2 sync + fork patches (merge commit on main)
+PORTKEY_COMMIT="${PORTKEY_COMMIT:-c187bd5898e191dec8a98dd78fad6b643fb86ba4}"  # v1.15.2 sync + vertex explicit caching (#8)
 CLONE_DIR="/tmp/portkey-gateway-$$"
 ENVIRONMENT="${PORTKEY_ENV:-production}"
 PORTKEY_ACCOUNT_ID="${PORTKEY_ACCOUNT_ID:-b6ec751c0862027ba269faf7029b2501}"

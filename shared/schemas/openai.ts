@@ -84,7 +84,7 @@ const CacheControlSchema = z
         type: z.enum(["ephemeral"]),
     })
     .describe(
-        "Marks the end of a static prompt prefix to cache (Gemini models). Place on the final content block of the prefix; repeat requests bill the cached prefix at ~10% of the input rate. See Text Generation → Prompt caching.",
+        "Marks the end of a static prompt prefix to cache (Gemini, Claude, and Nova models). Place on the final content block of the prefix; repeat requests bill the cached prefix at ~10% of the input rate. See Text Generation → Prompt caching.",
     )
     .optional()
     .meta({ $id: "CacheControl" });

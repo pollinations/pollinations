@@ -1084,6 +1084,10 @@ export const TEXT_SERVICES = {
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.035),
+            // Bedrock Nova prompt caching: writes are free ($0 SKU), reads
+            // bill at 25% of input (AWS Price List API, verified 2026-07-05).
+            promptCachedTokens: perMillion(0.00875),
+            promptCacheWriteTokens: perMillion(0),
             completionTextTokens: perMillion(0.14),
         },
         title: "Nova Micro",
@@ -1104,6 +1108,10 @@ export const TEXT_SERVICES = {
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.33),
+            // Bedrock Nova prompt caching: writes are free ($0 SKU), reads
+            // bill at 25% of input (AWS Price List API, verified 2026-07-05).
+            promptCachedTokens: perMillion(0.0825),
+            promptCacheWriteTokens: perMillion(0),
             completionTextTokens: perMillion(2.75),
         },
         title: "Nova 2 Lite",

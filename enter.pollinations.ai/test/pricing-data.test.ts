@@ -801,6 +801,19 @@ test("vertex gemini models price cache writes at the standard input rate", () =>
     }
 });
 
+test("bedrock nova models price cache writes free and reads at 25% of input", () => {
+    // AWS Price List API (verified 2026-07-05): Nova cache writes are a $0
+    // SKU; cache reads bill at 25% of the standard input rate.
+    for (const model of ["nova", "nova-fast"] as const) {
+        const cost = getRegistryModelDefinition(model).cost;
+        expect(cost.promptCacheWriteTokens).toBe(0);
+        expect(cost.promptCachedTokens).toBeCloseTo(
+            (cost.promptTextTokens ?? 0) * 0.25,
+            12,
+        );
+    }
+});
+
 test("vertex cache storage adjustment bills cache-creating requests", () => {
     // Flash-family storage: $1.00 / 1M token-hours, 1-hour TTL per create.
     const created = calculateBillingAdjustments(

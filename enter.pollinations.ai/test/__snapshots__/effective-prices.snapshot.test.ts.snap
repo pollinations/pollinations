@@ -771,10 +771,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "nova": {
     "cost": {
       "completionTextTokens": 0.00000275,
+      "promptCacheWriteTokens": 0,
+      "promptCachedTokens": 0.0000000825,
       "promptTextTokens": 0.00000033,
     },
     "price": {
       "completionTextTokens": 0.00000275,
+      "promptCacheWriteTokens": 0,
+      "promptCachedTokens": 0.0000000825,
       "promptTextTokens": 0.00000033,
     },
   },
@@ -789,10 +793,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "nova-fast": {
     "cost": {
       "completionTextTokens": 0.00000014,
+      "promptCacheWriteTokens": 0,
+      "promptCachedTokens": 0.00000000875,
       "promptTextTokens": 0.000000035,
     },
     "price": {
       "completionTextTokens": 0.00000014,
+      "promptCacheWriteTokens": 0,
+      "promptCachedTokens": 0.00000000875,
       "promptTextTokens": 0.000000035,
     },
   },

@@ -70,15 +70,26 @@ export function processParameters(
         updatedOptions.temperature = 1;
     }
 
-    // Claude Opus 4.7/4.8 deprecated temperature/top_p/top_k — non-default values
-    // return 400 from Anthropic. Strip them entirely.
-    if (/claude-opus-4-[78]/i.test(model)) {
+    // Claude Opus 4.7/4.8 and Fable 5 reject non-default sampling params.
+    // Strip them entirely.
+    if (/claude-(opus-4-[78]|fable-5)/i.test(model)) {
         for (const param of ["temperature", "top_p", "top_k"] as const) {
             if (updatedOptions[param] !== undefined) {
                 log(`Stripping ${param} for ${model}`);
                 delete updatedOptions[param];
             }
         }
+    }
+
+    // Bedrock Claude models return 400 when both temperature and top_p are
+    // set. Drop top_p when temperature is also present.
+    if (
+        /anthropic\.claude/i.test(model) &&
+        updatedOptions.temperature !== undefined &&
+        updatedOptions.top_p !== undefined
+    ) {
+        log(`Dropping top_p (temperature is set) for ${model}`);
+        delete updatedOptions.top_p;
     }
 
     return { messages, options: updatedOptions };

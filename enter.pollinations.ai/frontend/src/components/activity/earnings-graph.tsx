@@ -17,7 +17,10 @@ import { useState } from "react";
 import { Chart } from "./chart";
 import { formatActivityPollen } from "./format-activity-pollen";
 import type { UsagePeriodSelection } from "./types";
-import { useEarningsData } from "./use-earnings-data";
+import {
+    formatEarningsSourceLabel,
+    useEarningsData,
+} from "./use-earnings-data";
 
 type EarningsGraphProps = {
     period: UsagePeriodSelection;
@@ -25,7 +28,7 @@ type EarningsGraphProps = {
 };
 
 export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
-    const [selectedAppKeyIds, setSelectedAppKeyIds] = useState<string[]>([]);
+    const [selectedEntityIds, setSelectedEntityIds] = useState<string[]>([]);
 
     const appSelectOptions = apps.map((a) => ({
         value: a.id,
@@ -35,17 +38,16 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
     const { loading, error, fetchEarnings, chartData, stats } = useEarningsData(
         {
             period,
-            selectedAppKeyIds,
+            selectedEntityIds,
         },
     );
 
-    const showAppBreakdown = apps.length > 0;
+    const showEarningsBreakdown = stats.entityCount > 0;
     const hasEarnings = stats.totalPollen > 0;
     const downloadDisabled = loading || !hasEarnings;
     const downloadDisabledReason = loading
         ? "Loading earnings data"
         : "No earnings to download for this selected period";
-
     function downloadEarnings(): void {
         if (downloadDisabled) return;
 
@@ -54,8 +56,8 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
             granularity: period.granularity,
             period: period.period,
         });
-        if (selectedAppKeyIds.length > 0) {
-            params.set("api_key_ids", selectedAppKeyIds.join(","));
+        if (selectedEntityIds.length > 0) {
+            params.set("entity_ids", selectedEntityIds.join(","));
         }
         const anchor = document.createElement("a");
         anchor.href = `/api/account/earnings?${params.toString()}`;
@@ -90,19 +92,19 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
     );
 
     return (
-        <Section title="App earnings" framed action={downloadAction}>
+        <Section title="Earnings" framed action={downloadAction}>
             <div className="flex flex-col gap-4">
                 <div className="flex flex-wrap items-start justify-start gap-4 sm:justify-end">
                     <div className="flex flex-col items-stretch gap-2 [&>div]:justify-between [&_button]:w-60">
                         <MultiSelect
                             options={appSelectOptions}
-                            selected={selectedAppKeyIds}
-                            onChange={setSelectedAppKeyIds}
+                            selected={selectedEntityIds}
+                            onChange={setSelectedEntityIds}
                             placeholder="All"
                             disabled={appSelectOptions.length === 0}
                             disabledText="None"
                             align="end"
-                            label="Apps"
+                            label="BYOP apps"
                         />
                     </div>
                 </div>
@@ -137,7 +139,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
                             <Chart
                                 data={chartData}
                                 metric="pollen"
-                                showModelBreakdown={showAppBreakdown}
+                                showModelBreakdown={showEarningsBreakdown}
                             />
                         ) : (
                             <EarningsEmptyState />
@@ -174,43 +176,110 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
                                                 )}
                                             </span>
                                         </TierChip>
+                                        {stats.appMarkupPollen > 0 && (
+                                            <Chip
+                                                size="lg"
+                                                className="font-semibold"
+                                            >
+                                                <span className="tabular-nums">
+                                                    {formatActivityPollen(
+                                                        stats.appMarkupPollen,
+                                                    )}
+                                                </span>
+                                                <span className="font-medium opacity-70">
+                                                    app markup
+                                                </span>
+                                            </Chip>
+                                        )}
+                                        {stats.modelRewardPollen > 0 && (
+                                            <Chip
+                                                size="lg"
+                                                className="font-semibold"
+                                            >
+                                                <span className="tabular-nums">
+                                                    {formatActivityPollen(
+                                                        stats.modelRewardPollen,
+                                                    )}
+                                                </span>
+                                                <span className="font-medium opacity-70">
+                                                    model rewards
+                                                </span>
+                                            </Chip>
+                                        )}
                                     </div>
                                 }
                             />
                         </Surface>
                         <Surface>
                             <StatCard
-                                label="Active users"
-                                value={stats.activeUsers.toLocaleString()}
+                                label="Earning sources"
+                                value={stats.sourceSummaries.length.toLocaleString()}
                                 detail={
-                                    <span className="text-theme-text-soft">
-                                        across {stats.appCount} app
-                                        {stats.appCount === 1 ? "" : "s"}
-                                    </span>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        {stats.sourceSummaries.map((source) => (
+                                            <Chip
+                                                key={source.source}
+                                                size="lg"
+                                                className="font-semibold"
+                                            >
+                                                <span>{source.label}</span>
+                                                <span className="tabular-nums">
+                                                    {source.requests.toLocaleString()}
+                                                </span>
+                                                <span className="font-medium opacity-70">
+                                                    req
+                                                </span>
+                                                {source.uniqueUsers > 0 && (
+                                                    <>
+                                                        <span className="tabular-nums">
+                                                            {source.uniqueUsers.toLocaleString()}
+                                                        </span>
+                                                        <span className="font-medium opacity-70">
+                                                            users
+                                                        </span>
+                                                    </>
+                                                )}
+                                                <span className="tabular-nums">
+                                                    {formatRewardRate(
+                                                        source.rewardRate,
+                                                    )}
+                                                </span>
+                                            </Chip>
+                                        ))}
+                                    </div>
                                 }
                             />
                         </Surface>
                         <Surface>
                             <StatCard
-                                label="Top app"
+                                label="Top earner"
                                 value={
                                     <span className="text-xl leading-tight">
-                                        {stats.topApp?.label || "None"}
+                                        {stats.topEntity?.label || "None"}
                                     </span>
                                 }
                                 detail={
-                                    stats.topApp ? (
+                                    stats.topEntity ? (
                                         <div className="flex flex-wrap items-center gap-2">
-                                            {stats.topApp.uniqueUsers > 0 && (
+                                            <Chip
+                                                size="lg"
+                                                className="font-semibold"
+                                            >
+                                                {formatEarningsSourceLabel(
+                                                    stats.topEntity.source,
+                                                )}
+                                            </Chip>
+                                            {stats.topEntity.uniqueUsers >
+                                                0 && (
                                                 <Chip
                                                     size="lg"
                                                     className="font-semibold"
                                                 >
                                                     <span className="tabular-nums">
-                                                        {stats.topApp.uniqueUsers.toLocaleString()}
+                                                        {stats.topEntity.uniqueUsers.toLocaleString()}
                                                     </span>
                                                     <span className="font-medium opacity-70">
-                                                        {stats.topApp
+                                                        {stats.topEntity
                                                             .uniqueUsers === 1
                                                             ? "user"
                                                             : "users"}
@@ -223,7 +292,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
                                             >
                                                 <span className="tabular-nums">
                                                     {formatActivityPollen(
-                                                        stats.topApp.pollen,
+                                                        stats.topEntity.pollen,
                                                     )}
                                                 </span>
                                                 <span className="font-medium opacity-70">
@@ -245,12 +314,19 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
 const EarningsEmptyState: FC = () => (
     <p className="text-sm text-ink-600">
         No earnings in this selected period. Once users start spending pollen
-        through your app, earnings will appear here.{" "}
+        through your apps or community models, earnings will appear here.{" "}
         <InlineLink href="#keys" showIcon={false}>
             Create an App key
         </InlineLink>
         .
     </p>
 );
+
+function formatRewardRate(value: number): string {
+    return new Intl.NumberFormat("en-US", {
+        style: "percent",
+        maximumFractionDigits: 1,
+    }).format(value);
+}
 
 export default EarningsGraph;

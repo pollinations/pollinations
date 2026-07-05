@@ -247,6 +247,7 @@ describe("gen worker routing", () => {
         "/models",
         "/text/models",
         "/image/models",
+        "/video/models",
         "/audio/models",
         "/embeddings/models",
     ] as const)("routes public model path %s through gen", async (path) => {
@@ -259,6 +260,15 @@ describe("gen worker routing", () => {
                 expect.objectContaining({ name: expect.any(String) }),
             ]),
         );
+    });
+
+    it("returns only video models on /video/models", async () => {
+        const response = await fetchWorker("/video/models", envWithEnter());
+
+        expect(response.status).toBe(200);
+        const models = (await response.json()) as { category?: string }[];
+        expect(models.length).toBeGreaterThan(0);
+        expect(models.every((m) => m.category === "video")).toBe(true);
     });
 
     it("serves OpenAI-compatible models without auth", async () => {

@@ -25,6 +25,9 @@ export const Route = createFileRoute("/authorize")({
             user_code?: string;
             app_key?: string;
             state?: string;
+            response_type?: string;
+            code_challenge?: string;
+            code_challenge_method?: string;
             models?: string[] | null;
             budget?: number | null;
             expiry?: number | null;
@@ -53,6 +56,25 @@ export const Route = createFileRoute("/authorize")({
         // correlate the response and defeat CSRF.
         if (search.state && typeof search.state === "string") {
             result.state = search.state;
+        }
+
+        // OAuth 2.1 authorization-code flow: `response_type=code` switches
+        // the callback from the legacy fragment token to ?code=...&state=...
+        // PKCE (S256) is mandatory for this flow.
+        if (search.response_type && typeof search.response_type === "string") {
+            result.response_type = search.response_type;
+        }
+        if (
+            search.code_challenge &&
+            typeof search.code_challenge === "string"
+        ) {
+            result.code_challenge = search.code_challenge;
+        }
+        if (
+            search.code_challenge_method &&
+            typeof search.code_challenge_method === "string"
+        ) {
+            result.code_challenge_method = search.code_challenge_method;
         }
 
         const models = parseList(search.models);

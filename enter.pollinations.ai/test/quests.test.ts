@@ -100,6 +100,41 @@ async function getOnlyUser() {
     return user;
 }
 
+async function createUsageApiKey(sessionToken: string, name: string) {
+    const createResponse = await SELF.fetch(
+        "http://localhost:3000/api/account/keys",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({ name }),
+        },
+    );
+    expect(createResponse.status).toBe(200);
+    const created = (await createResponse.json()) as {
+        id: string;
+        key: string;
+    };
+
+    const updateResponse = await SELF.fetch(
+        `http://localhost:3000/api/api-keys/${created.id}/update`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({
+                accountPermissions: ["usage"],
+            }),
+        },
+    );
+    expect(updateResponse.status).toBe(200);
+    return created.key;
+}
+
 test("recordRewards dedups on idempotency key and claimReward credits once", async ({
     sessionToken: _sessionToken,
 }) => {
@@ -244,7 +279,7 @@ test("catalog returns quest definitions without ledger stats", async ({
     });
     expectStableCatalogFields("app_listed", {
         state: "available",
-        rewardAmount: 15,
+        rewardAmount: 10,
         balanceBucket: "tier",
     });
 });
@@ -330,6 +365,99 @@ test("catalog excludes closed GitHub quest issues without merged PRs", async ({
     expect(byId.get("github:issue:801")?.state).toBe("available");
     expect(byId.has("github:issue:802")).toBe(false);
     expect(byId.get("github:issue:803")?.state).toBe("completed");
+});
+
+test("account quests merge earned rewards into completed status", async ({
+    mocks,
+    sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    await mocks.enable("github", "tinybird");
+    await env.KV.delete("quests:catalog:v22");
+    const user = await getOnlyUser();
+
+    const createKeyResponse = await SELF.fetch(
+        "http://localhost:3000/api/account/keys",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({
+                name: "quest-status-key",
+                accountPermissions: ["usage"],
+            }),
+        },
+    );
+    expect(createKeyResponse.status).toBe(200);
+    const createdKey = (await createKeyResponse.json()) as { key: string };
+
+    const recorded = await recordRewards(db, [
+        {
+            idempotencyKey: `quest:test-earned:${user.id}`,
+            userId: user.id,
+            questId: "first_api_key",
+            title: "Create your first API key",
+            amount: 0.25,
+            bucket: "tier",
+        },
+    ]);
+    expect(recorded.recorded).toBe(1);
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/account/quests",
+        {
+            headers: {
+                authorization: `Bearer ${createdKey.key}`,
+            },
+        },
+    );
+    expect(response.status).toBe(200);
+    const payload = (await response.json()) as {
+        quests: {
+            id: string;
+            state: string;
+            status: string;
+            reward: { id: string; claimedAt: string | null } | null;
+        }[];
+    };
+    const byId = new Map(payload.quests.map((quest) => [quest.id, quest]));
+
+    expect(byId.get("first_api_key")).toMatchObject({
+        state: "available",
+        status: "completed",
+        reward: {
+            id: recorded.rewardIds[0],
+            claimedAt: null,
+        },
+    });
+    expect(byId.get(LEGACY_FIRST_TOP_UP_QUEST_ID)).toMatchObject({
+        state: "completed",
+        status: "completed",
+        reward: null,
+    });
+
+    const usageKey = await createUsageApiKey(sessionToken, "quest-usage-key");
+    const usageResponse = await SELF.fetch(
+        "http://localhost:3000/api/account/quests",
+        {
+            headers: {
+                authorization: `Bearer ${usageKey}`,
+            },
+        },
+    );
+    expect(usageResponse.status).toBe(200);
+    const usagePayload = (await usageResponse.json()) as typeof payload;
+    const usageById = new Map(
+        usagePayload.quests.map((quest) => [quest.id, quest]),
+    );
+    expect(usageById.get("first_api_key")).toMatchObject({
+        status: "completed",
+        reward: {
+            id: recorded.rewardIds[0],
+        },
+    });
 });
 
 test("quest check records product rewards and claim endpoint credits one", async ({
@@ -1324,4 +1452,26 @@ test("account quest history requires account usage permission for API keys", asy
     );
 
     expect(response.status).toBe(403);
+});
+
+test("account quest history accepts account usage permission", async ({
+    sessionToken,
+}) => {
+    const usageKey = await createUsageApiKey(
+        sessionToken,
+        "quest-rewards-usage-key",
+    );
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/quests/rewards",
+        {
+            headers: {
+                authorization: `Bearer ${usageKey}`,
+            },
+        },
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+        rewards: [],
+    });
 });

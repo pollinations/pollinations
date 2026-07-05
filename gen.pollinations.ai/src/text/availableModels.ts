@@ -166,6 +166,11 @@ const models: ModelDefinition[] = [
         transform: claudeAdaptiveThinking,
     },
     {
+        name: "claude-sonnet-5",
+        config: portkeyConfig["claude-sonnet-5"],
+        transform: claudeAdaptiveThinking,
+    },
+    {
         name: "claude-opus-4.6",
         config: portkeyConfig["claude-opus-4-6"],
         transform: claudeAdaptiveThinking,
@@ -179,6 +184,11 @@ const models: ModelDefinition[] = [
     {
         name: "claude-large",
         config: portkeyConfig["claude-opus-4-8"],
+        transform: claudeAdaptiveThinking,
+    },
+    {
+        name: "claude-fable-5",
+        config: portkeyConfig["claude-fable-5"],
         transform: claudeAdaptiveThinking,
     },
     {

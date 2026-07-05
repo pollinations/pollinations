@@ -1,7 +1,10 @@
 import {
+    calculateServiceFeeCents,
     describePollenPack,
     getPollenPackByKey,
     POLLEN_PACKS,
+    SERVICE_FEE_NAME,
+    SERVICE_FEE_TAX_CODE,
 } from "@shared/pollen-packs.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { Context } from "hono";
@@ -18,6 +21,10 @@ import {
     processAutoTopUpForUser,
     updateAutoTopUpSettings,
 } from "../utils/stripe-billing.ts";
+import {
+    getStripeNewCardGateStatus,
+    stripeNewCardGateMetadata,
+} from "../utils/stripe-card-gate.ts";
 
 /**
  * Stripe pack configuration
@@ -86,6 +93,10 @@ export const stripeRoutes = new Hono<Env>()
                 c.env,
                 userId,
             );
+            const newCardGate = await getStripeNewCardGateStatus(
+                c.env.DB,
+                userId,
+            );
 
             // packKey identifies the pack; the webhook looks up its fixed USD
             // amount to credit, independent of how Adaptive Pricing localized
@@ -94,7 +105,11 @@ export const stripeRoutes = new Hono<Env>()
                 userId,
                 packKey: pack.packKey,
                 cohort,
+                ...stripeNewCardGateMetadata(newCardGate),
             };
+            const serviceFeeCents = calculateServiceFeeCents(
+                pack.amountUsd * 100,
+            );
 
             const checkoutSession = await stripe.checkout.sessions.create({
                 mode: "payment",
@@ -104,12 +119,24 @@ export const stripeRoutes = new Hono<Env>()
                         price_data: {
                             currency: "usd",
                             unit_amount: pack.amountUsd * 100,
-                            tax_behavior: "inclusive",
+                            tax_behavior: "exclusive",
                             product_data: {
                                 name: pack.checkoutName,
                                 description: pack.checkoutDescription,
                                 images: [pack.checkoutImageUrl],
                                 tax_code: pack.taxCode,
+                            },
+                        },
+                        quantity: 1,
+                    },
+                    {
+                        price_data: {
+                            currency: "usd",
+                            unit_amount: serviceFeeCents,
+                            tax_behavior: "exclusive",
+                            product_data: {
+                                name: SERVICE_FEE_NAME,
+                                tax_code: SERVICE_FEE_TAX_CODE,
                             },
                         },
                         quantity: 1,
@@ -137,7 +164,7 @@ export const stripeRoutes = new Hono<Env>()
                     enabled: true,
                     invoice_data: {
                         rendering_options: {
-                            amount_tax_display: "include_inclusive_tax",
+                            amount_tax_display: "exclude_tax",
                         },
                     },
                 },

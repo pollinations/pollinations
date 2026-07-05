@@ -1,6 +1,7 @@
 import {
     ChatIcon,
     CodeIcon,
+    CubeIcon,
     DatabaseIcon,
     EyeIcon,
     type IconProps,
@@ -35,7 +36,10 @@ export const CAPABILITY_ICON: Record<DisplayCapability, Icon> = {
 export const PRICE_ICON: Record<PriceKind, Icon> = {
     text: ChatIcon,
     image: ImageIcon,
+    "3d": CubeIcon,
     cached: DatabaseIcon,
+    cacheWrite: DatabaseIcon,
+    reasoning: ReasoningIcon,
     video: VideoIcon,
     audioIn: MicIcon,
     audioOut: SpeakerIcon,

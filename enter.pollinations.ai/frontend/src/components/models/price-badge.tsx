@@ -11,7 +11,10 @@ import type {
 const TOKEN_TYPE_LABELS: Record<PriceKind, string> = {
     text: "text",
     image: "image",
+    "3d": "3D model",
     cached: "cached",
+    cacheWrite: "cache write",
+    reasoning: "reasoning",
     video: "video",
     audioIn: "audio",
     audioOut: "audio",
@@ -23,7 +26,7 @@ const PRICE_UNIT_SUFFIX: Record<ModelPriceLine["unit"], string> = {
     request: "/gen",
 };
 
-type PriceBadgeConfig = Omit<ModelPriceLine, "direction"> & {
+export type PriceBadgeConfig = Omit<ModelPriceLine, "direction"> & {
     subKinds: PriceKind[];
 };
 
@@ -78,7 +81,7 @@ export const PriceBadgeList: FC<PriceBadgeListProps> = ({
     </div>
 );
 
-const PriceBadge: FC<PriceBadgeConfig> = ({ price, unit, subKinds }) => {
+export const PriceBadge: FC<PriceBadgeConfig> = ({ price, unit, subKinds }) => {
     const tokenTypes = [
         ...new Set(subKinds.map((item) => TOKEN_TYPE_LABELS[item])),
     ];

@@ -172,6 +172,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "global.anthropic.claude-sonnet-4-6",
             defaultOptions: { max_tokens: 64000 },
         }),
+    "claude-sonnet-5": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-sonnet-5",
+            defaultOptions: { max_tokens: 64000 },
+        }),
     "claude-opus-4-6": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-opus-4-6-v1",
@@ -187,6 +192,11 @@ export const portkeyConfig: PortkeyConfigMap = {
     "claude-opus-4-8": () =>
         createBedrockNativeConfig({
             model: "us.anthropic.claude-opus-4-8",
+            defaultOptions: { max_tokens: 128000 },
+        }),
+    "claude-fable-5": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-fable-5",
             defaultOptions: { max_tokens: 128000 },
         }),
     "claude-haiku-4-5": () =>

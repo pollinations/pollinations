@@ -1,9 +1,6 @@
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import {
-    getModelDefinition,
-    type ModelName,
-} from "@shared/registry/registry.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
@@ -12,6 +9,8 @@ import {
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
+import { fixWavHeader } from "../routes/audio.js";
+import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { type ExpressLikeRequest, getRequestData } from "./requestUtils.js";
 import type { ChatCompletion, RequestData, ServiceError } from "./types.js";
@@ -25,7 +24,7 @@ const TEXT_ENV_KEYS = [
     "AZURE_MYCELI_PROD_API_KEY",
     "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
     "DASHSCOPE_API_KEY",
-    "FIREWORKS_API_KEY",
+    "FIREWORKS_NEO_API_KEY",
     "GOOGLE_CLIENT_EMAIL",
     "GOOGLE_PRIVATE_KEY",
     "GOOGLE_PRIVATE_KEY_ID",
@@ -70,15 +69,12 @@ function createExpressLikeRequest(
     };
 }
 
-function prepareRequestParameters(requestParams: RequestData): RequestData {
-    let isAudioModel = false;
-    try {
-        const serviceDef = getModelDefinition(requestParams.model as ModelName);
-        isAudioModel = serviceDef?.outputModalities?.includes("audio") ?? false;
-    } catch {
-        // Model not in registry.
-    }
-
+function prepareRequestParameters(
+    requestParams: RequestData,
+    modelDefinition: ModelDefinition<string>,
+): RequestData {
+    const isAudioModel =
+        modelDefinition.outputModalities?.includes("audio") ?? false;
     if (!isAudioModel) return requestParams;
 
     const voice = requestParams.voice || requestParams.audio?.voice || "alloy";
@@ -106,16 +102,20 @@ function withGatewayContext(c: TextContext, requestData: RequestData) {
     };
 }
 
-function usageHeaders(completion: ChatCompletion): Headers {
+function usageHeaders(
+    completion: ChatCompletion,
+    fallbackModel?: string,
+): Headers {
     const headers = new Headers();
-    if (completion?.usage && completion?.model) {
+    const modelUsed = completion?.model || fallbackModel;
+    if (completion?.usage && modelUsed) {
         const usage = openaiUsageToUsage(
             completion.usage as unknown as Parameters<
                 typeof openaiUsageToUsage
             >[0],
         );
         for (const [key, value] of Object.entries(
-            buildUsageHeaders(completion.model, usage),
+            buildUsageHeaders(modelUsed, usage),
         )) {
             headers.set(key, String(value));
         }
@@ -126,8 +126,43 @@ function usageHeaders(completion: ChatCompletion): Headers {
     return headers;
 }
 
-function sendOpenAIResponse(completion: ChatCompletion): Response {
-    const headers = usageHeaders(completion);
+const PUBLIC_USAGE_FIELDS = new Set([
+    "cache_creation_input_tokens",
+    "cache_read_input_tokens",
+    "completion_tokens",
+    "completion_tokens_details",
+    "prompt_tokens",
+    "prompt_tokens_details",
+    "total_tokens",
+]);
+
+function publicCompletionUsage(
+    usage: ChatCompletion["usage"],
+): ChatCompletion["usage"] {
+    if (!usage || (!("cost" in usage) && !("search_context_size" in usage))) {
+        return usage;
+    }
+
+    return Object.fromEntries(
+        Object.entries(usage).filter(([key]) => PUBLIC_USAGE_FIELDS.has(key)),
+    );
+}
+
+function publicChatCompletion(completion: ChatCompletion): ChatCompletion {
+    const usage = publicCompletionUsage(completion.usage);
+    if (usage === completion.usage) return completion;
+
+    return {
+        ...completion,
+        usage,
+    };
+}
+
+function sendOpenAIResponse(
+    completion: ChatCompletion,
+    fallbackModel?: string,
+): Response {
+    const headers = usageHeaders(completion, fallbackModel);
     headers.set("Content-Type", "application/json; charset=utf-8");
 
     return new Response(
@@ -141,8 +176,11 @@ function sendOpenAIResponse(completion: ChatCompletion): Response {
     );
 }
 
-function sendTextContentResponse(completion: ChatCompletion): Response {
-    const headers = usageHeaders(completion);
+function sendTextContentResponse(
+    completion: ChatCompletion,
+    fallbackModel?: string,
+): Response {
+    const headers = usageHeaders(completion, fallbackModel);
     headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
 
     if (!completion.choices?.[0]) {
@@ -161,8 +199,20 @@ function sendTextContentResponse(completion: ChatCompletion): Response {
 
     const audio = message.audio as Record<string, unknown> | undefined;
     if (typeof audio?.data === "string") {
-        headers.set("Content-Type", "audio/mpeg");
-        return new Response(base64ToArrayBuffer(audio.data), { headers });
+        const buffer = base64ToArrayBuffer(audio.data);
+        const isWav =
+            buffer.byteLength >= 12 &&
+            new Uint8Array(buffer, 0, 4).reduce(
+                (s, b) => s + String.fromCharCode(b),
+                "",
+            ) === "RIFF";
+        if (isWav) {
+            fixWavHeader(buffer);
+            headers.set("Content-Type", "audio/wav");
+        } else {
+            headers.set("Content-Type", "audio/mpeg");
+        }
+        return new Response(buffer, { headers });
     }
 
     if (message.content !== undefined && message.content !== null) {
@@ -262,9 +312,20 @@ async function generateTextResponse(
     syncTextEnvironment(c.env);
 
     try {
+        const communityEndpoint = c.var.model?.communityEndpoint;
+        const gatewayContext = communityEndpoint
+            ? await communityEndpointGatewayContext(
+                  communityEndpoint,
+                  c.var.model.definition,
+                  requestData,
+                  c.env.BETTER_AUTH_SECRET,
+                  c.env.PORTKEY_GATEWAY_URL,
+                  c.var.auth?.apiKey?.rawKey || "",
+              )
+            : withGatewayContext(c, requestData);
         const completion = await generateTextPortkey(
             requestData.messages,
-            withGatewayContext(c, requestData),
+            gatewayContext,
         );
         completion.id = completion.id || generatePollinationsId();
 
@@ -285,8 +346,17 @@ async function generateTextResponse(
         }
 
         if (requestData.stream) return sendTextStreamResponse(completion);
-        if (contentResponse) return sendTextContentResponse(completion);
-        return sendOpenAIResponse(completion);
+        const fallbackModel = c.var.model?.resolved;
+        // Provider-reported cost is read post-response in track (clamp-and-alert
+        // in the registry) — malformed/absent cost never fails the request.
+        const trackingResponse = sendOpenAIResponse(completion, fallbackModel);
+        const publicCompletion = publicChatCompletion(completion);
+        if (contentResponse) {
+            c.var.track?.overrideResponseTracking(trackingResponse.clone());
+            return sendTextContentResponse(publicCompletion, fallbackModel);
+        }
+        c.var.track?.overrideResponseTracking(trackingResponse.clone());
+        return sendOpenAIResponse(publicCompletion, fallbackModel);
     } catch (thrown: unknown) {
         throwTextError(thrown as ServiceError, c);
     }
@@ -306,7 +376,10 @@ export async function handleTextContentLocal(
     body: Record<string, unknown>,
 ): Promise<Response> {
     const req = createExpressLikeRequest(c, body, c.req.path);
-    const requestData = prepareRequestParameters(getRequestData(req));
+    const requestData = prepareRequestParameters(
+        getRequestData(req),
+        c.var.model.definition,
+    );
     return generateTextResponse(c, requestData, true);
 }
 
@@ -320,9 +393,12 @@ export async function handleSimpleTextLocal(
         ...c.req.param(),
         0: prompt,
     });
-    const requestData = prepareRequestParameters({
-        ...getRequestData(req),
-        model,
-    });
+    const requestData = prepareRequestParameters(
+        {
+            ...getRequestData(req),
+            model,
+        },
+        c.var.model.definition,
+    );
     return generateTextResponse(c, requestData, true);
 }

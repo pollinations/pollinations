@@ -1,3 +1,13 @@
+import {
+    GEMINI_3_SEARCH_BILLING,
+    GEMINI_25_GROUNDING_BILLING,
+} from "./gemini-billing";
+import {
+    PERPLEXITY_DEEP_BILLING,
+    PERPLEXITY_FAST_BILLING,
+    PERPLEXITY_PRO_BILLING,
+    PERPLEXITY_REASONING_BILLING,
+} from "./perplexity-billing";
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
 
@@ -298,6 +308,7 @@ export const TEXT_SERVICES = {
             promptAudioTokens: perMillion(1.0),
             completionTextTokens: perMillion(3.0),
         },
+        billing: GEMINI_3_SEARCH_BILLING,
         title: "Gemini 3 Flash",
         description: "Gemini 3 Flash - Pro-Grade Reasoning at Flash Speed",
         inputModalities: ["text", "image", "audio", "video"],
@@ -327,6 +338,7 @@ export const TEXT_SERVICES = {
             promptAudioTokens: perMillion(1.5), // Audio billed at same rate as text
             completionTextTokens: perMillion(9.0),
         },
+        billing: GEMINI_3_SEARCH_BILLING,
         title: "Gemini 3.5 Flash",
         description: "Gemini 3.5 Flash - Next-Gen Reasoning at Flash Speed",
         inputModalities: ["text", "image", "audio", "video"],
@@ -358,6 +370,7 @@ export const TEXT_SERVICES = {
             promptAudioTokens: perMillion(0.5),
             completionTextTokens: perMillion(1.5),
         },
+        billing: GEMINI_3_SEARCH_BILLING,
         title: "Gemini 3.1 Flash Lite",
         description: "Gemini 3.1 Flash Lite - Fast & Cost-Effective",
         inputModalities: ["text", "image", "audio", "video"],
@@ -385,6 +398,7 @@ export const TEXT_SERVICES = {
             promptAudioTokens: perMillion(0.3), // per 1M tokens
             completionTextTokens: perMillion(0.4), // per 1M tokens
         },
+        billing: GEMINI_25_GROUNDING_BILLING,
         title: "Gemini 2.5 Flash Lite",
         description: "Gemini 2.5 Flash Lite - Ultra Fast & Cost-Effective",
         inputModalities: ["text", "image", "video"],
@@ -594,14 +608,15 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2025-10-10").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // Vertex base rates for gemini-2.5-flash-lite. Grounding fee ($0.035/grounded
-        // prompt after 1,500 RPD free) is not yet modeled; absorbed by Pollinations.
+        // Vertex base rates for gemini-2.5-flash-lite. Grounding is added by
+        // calculateCost when the response includes web search metadata.
         cost: {
             promptTextTokens: perMillion(0.1),
             promptCachedTokens: perMillion(0.01),
             promptAudioTokens: perMillion(0.3),
             completionTextTokens: perMillion(0.4),
         },
+        billing: GEMINI_25_GROUNDING_BILLING,
         title: "Google Gemini 2.5 Flash Lite Search",
         description:
             "Google Gemini 2.5 Flash Lite Search - Web-grounded answers via Google Search",
@@ -634,6 +649,7 @@ export const TEXT_SERVICES = {
             promptAudioTokens: perMillion(0.5),
             completionTextTokens: perMillion(1.5),
         },
+        billing: GEMINI_3_SEARCH_BILLING,
         title: "Gemini 3.1 Flash Lite Search",
         description:
             "Gemini 3.1 Flash Lite Search - Cheap grounded web answers",
@@ -664,6 +680,7 @@ export const TEXT_SERVICES = {
             promptAudioTokens: perMillion(1.5),
             completionTextTokens: perMillion(9.0),
         },
+        billing: GEMINI_3_SEARCH_BILLING,
         title: "Gemini 3.5 Flash Search",
         description: "Gemini 3.5 Flash Search - Premium grounded web research",
         inputModalities: ["text", "image", "audio", "video"],
@@ -766,6 +783,33 @@ export const TEXT_SERVICES = {
         contextLength: 1000000, // Bedrock global Claude Sonnet 4.6 context window.
         isSpecialized: false,
     },
+    "claude-sonnet-5": {
+        aliases: ["sonnet-5"],
+        modelId: "claude-sonnet-5",
+        provider: "bedrock",
+        brand: "Anthropic",
+        category: "text",
+        addedDate: new Date("2026-06-30").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Bedrock anthropic.claude-sonnet-5 standard rates.
+            // Intro $2/$10 through 2026-08-31; use standard $3/$15 to match
+            // siblings and avoid a price bump when the intro period ends.
+            promptTextTokens: perMillion(3),
+            promptCachedTokens: perMillion(0.3),
+            promptCacheWriteTokens: perMillion(3.75),
+            completionTextTokens: perMillion(15),
+        },
+        title: "Claude Sonnet 5",
+        description: "Claude Sonnet 5 - Best balance of speed & intelligence",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 20, // Bedrock Converse image limit.
+        tools: true,
+        contextLength: 1000000, // Bedrock Claude Sonnet 5 context window.
+        isSpecialized: false,
+    },
     "claude-opus-4.6": {
         aliases: ["claude-opus-4.5"],
         modelId: "claude-opus-4-6",
@@ -841,6 +885,31 @@ export const TEXT_SERVICES = {
         contextLength: 1000000,
         isSpecialized: false,
     },
+    "claude-fable-5": {
+        aliases: [],
+        modelId: "claude-fable-5",
+        provider: "bedrock",
+        brand: "Anthropic",
+        category: "text",
+        addedDate: new Date("2026-06-11").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Bedrock global.anthropic.claude-fable-5 global standard rates.
+            promptTextTokens: perMillion(10),
+            promptCachedTokens: perMillion(1),
+            promptCacheWriteTokens: perMillion(12.5),
+            completionTextTokens: perMillion(50),
+        },
+        title: "Claude Fable 5",
+        description: "Claude Fable 5 - Frontier reasoning & agentic work",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 20, // Bedrock Converse image limit.
+        tools: true,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
     "perplexity-fast": {
         aliases: ["sonar"],
         modelId: "sonar",
@@ -848,10 +917,8 @@ export const TEXT_SERVICES = {
         brand: "Perplexity",
         category: "text",
         addedDate: new Date("2025-11-04").getTime(),
-        // priceMultiplier 1.5 absorbs Perplexity's flat per-request search fee
-        // (~$5/1k at low search_context_size), which our token-based billing
-        // cannot capture directly. Temporary until a per-request fee field exists.
         priceMultiplier: 1,
+        billing: PERPLEXITY_FAST_BILLING,
         cost: {
             promptTextTokens: perMillion(1.0),
             completionTextTokens: perMillion(1.0),
@@ -874,11 +941,8 @@ export const TEXT_SERVICES = {
         brand: "Perplexity",
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
-        // Same sonar base as perplexity-fast but high search_context_size for
-        // broader grounding (higher per-request fee, ~$12/1k). priceMultiplier
-        // matches fast for now — they bill identically until a per-request fee
-        // field lets us price the deeper search separately.
         priceMultiplier: 1,
+        billing: PERPLEXITY_DEEP_BILLING,
         cost: {
             promptTextTokens: perMillion(1.0),
             completionTextTokens: perMillion(1.0),
@@ -900,6 +964,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
         priceMultiplier: 1,
+        billing: PERPLEXITY_PRO_BILLING,
         cost: {
             promptTextTokens: perMillion(3.0),
             completionTextTokens: perMillion(15.0),
@@ -921,6 +986,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2025-11-04").getTime(),
         priceMultiplier: 1,
+        billing: PERPLEXITY_REASONING_BILLING,
         cost: {
             promptTextTokens: perMillion(2.0),
             completionTextTokens: perMillion(8.0),
@@ -1004,8 +1070,12 @@ export const TEXT_SERVICES = {
         cost: {
             promptTextTokens: perMillion(2.0),
             promptCachedTokens: perMillion(0.2),
+            promptAudioTokens: perMillion(2.0),
+            promptImageTokens: perMillion(2.0),
+            promptVideoTokens: perMillion(2.0),
             completionTextTokens: perMillion(12.0),
         },
+        billing: GEMINI_3_SEARCH_BILLING,
         title: "Gemini 3.1 Pro",
         description:
             "Gemini 3.1 Pro - Most Intelligent Model with 1M Context (Preview)",
@@ -1069,7 +1139,7 @@ export const TEXT_SERVICES = {
         brand: "Z.ai",
         category: "text",
         addedDate: new Date("2026-01-06").getTime(),
-        priceMultiplier: 0.5,
+        priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(1.4),
             promptCachedTokens: perMillion(0.26),

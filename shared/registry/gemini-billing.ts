@@ -3,6 +3,10 @@ import type { BillingRules } from "./registry";
 const GEMINI_25_GROUNDING_COST_PER_PROMPT = 35 / 1000;
 const GEMINI_3_GROUNDING_COST_PER_QUERY = 14 / 1000;
 
+// The gateway creates Vertex cachedContents resources with a 1-hour TTL, so
+// one cache create bills exactly one hour of storage per cached token.
+const VERTEX_CACHE_TTL_HOURS = 1;
+
 type GroundingMetadata = {
     webSearchQueries?: string[];
     // Google returns a grounding chunk per source it cites. A `web` entry means
@@ -70,6 +74,56 @@ function countGeminiWebSearchQueries(output: unknown): number {
         }
     }
     return queries.size;
+}
+
+type CacheWriteOutput = {
+    usage?: { cache_creation_input_tokens?: unknown };
+    streamEvents?: CacheWriteOutput[];
+};
+
+// Vertex explicit context caching: cache-creating responses report the cached
+// prefix size as `usage.cache_creation_input_tokens` (Anthropic convention,
+// set by our gateway fork). One create × 1-hour TTL = one token-hour per
+// cached token. Cache reads/hits report `cached_tokens` instead and are
+// covered by the linear promptCachedTokens price, not this rule.
+function countVertexCacheWriteTokens(output: unknown): number {
+    const o = output as CacheWriteOutput | undefined;
+    const events = Array.isArray(o?.streamEvents)
+        ? o.streamEvents
+        : o
+          ? [o]
+          : [];
+    for (const event of [...events].reverse()) {
+        const value = event?.usage?.cache_creation_input_tokens;
+        if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+            return value;
+        }
+    }
+    return 0;
+}
+
+// Storage rates from the GCP Billing Catalog (Vertex AI SKUs "<model> Text
+// Input Caching Storage", verified 2026-07-03): $1.00/M token-hours for every
+// Flash/Flash-Lite family, $4.50/M for Pro.
+export function withVertexCacheStorage(
+    base: BillingRules,
+    storageCostPerMillionTokenHours: number,
+): BillingRules {
+    return {
+        adjustments: [
+            ...(base.adjustments ?? []),
+            {
+                id: "google.vertex.cache_storage.v1",
+                description: `Vertex explicit context caching storage: $${storageCostPerMillionTokenHours} / 1M tokens / hour, billed for the 1-hour TTL on each cache create.`,
+                kind: "cache_storage",
+                unit: "token_hour",
+                unitCost:
+                    (storageCostPerMillionTokenHours / 1_000_000) *
+                    VERTEX_CACHE_TTL_HOURS,
+                countUnits: countVertexCacheWriteTokens,
+            },
+        ],
+    };
 }
 
 export const GEMINI_25_GROUNDING_BILLING: BillingRules = {

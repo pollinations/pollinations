@@ -192,12 +192,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "cost": {
       "completionTextTokens": 0.000009,
       "promptAudioTokens": 0.0000015,
+      "promptCacheWriteTokens": 0.0000015,
       "promptCachedTokens": 0.00000015,
       "promptTextTokens": 0.0000015,
     },
     "price": {
       "completionTextTokens": 0.000009,
       "promptAudioTokens": 0.0000015,
+      "promptCacheWriteTokens": 0.0000015,
       "promptCachedTokens": 0.00000015,
       "promptTextTokens": 0.0000015,
     },
@@ -220,12 +222,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "cost": {
       "completionTextTokens": 0.000003,
       "promptAudioTokens": 0.000001,
+      "promptCacheWriteTokens": 0.0000005,
       "promptCachedTokens": 0.00000005,
       "promptTextTokens": 0.0000005,
     },
     "price": {
       "completionTextTokens": 0.000003,
       "promptAudioTokens": 0.000001,
+      "promptCacheWriteTokens": 0.0000005,
       "promptCachedTokens": 0.00000005,
       "promptTextTokens": 0.0000005,
     },
@@ -234,12 +238,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "cost": {
       "completionTextTokens": 0.0000004,
       "promptAudioTokens": 0.0000003,
+      "promptCacheWriteTokens": 0.0000001,
       "promptCachedTokens": 0.00000001,
       "promptTextTokens": 0.0000001,
     },
     "price": {
       "completionTextTokens": 0.0000004,
       "promptAudioTokens": 0.0000003,
+      "promptCacheWriteTokens": 0.0000001,
       "promptCachedTokens": 0.00000001,
       "promptTextTokens": 0.0000001,
     },
@@ -248,12 +254,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "cost": {
       "completionTextTokens": 0.0000015,
       "promptAudioTokens": 0.0000005,
+      "promptCacheWriteTokens": 0.00000025,
       "promptCachedTokens": 0.000000025,
       "promptTextTokens": 0.00000025,
     },
     "price": {
       "completionTextTokens": 0.0000015,
       "promptAudioTokens": 0.0000005,
+      "promptCacheWriteTokens": 0.00000025,
       "promptCachedTokens": 0.000000025,
       "promptTextTokens": 0.00000025,
     },
@@ -262,6 +270,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "cost": {
       "completionTextTokens": 0.000012,
       "promptAudioTokens": 0.000002,
+      "promptCacheWriteTokens": 0.000002,
       "promptCachedTokens": 0.0000002,
       "promptImageTokens": 0.000002,
       "promptTextTokens": 0.000002,
@@ -270,6 +279,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "price": {
       "completionTextTokens": 0.000012,
       "promptAudioTokens": 0.000002,
+      "promptCacheWriteTokens": 0.000002,
       "promptCachedTokens": 0.0000002,
       "promptImageTokens": 0.000002,
       "promptTextTokens": 0.000002,
@@ -280,12 +290,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "cost": {
       "completionTextTokens": 0.0000004,
       "promptAudioTokens": 0.0000003,
+      "promptCacheWriteTokens": 0.0000001,
       "promptCachedTokens": 0.00000001,
       "promptTextTokens": 0.0000001,
     },
     "price": {
       "completionTextTokens": 0.0000004,
       "promptAudioTokens": 0.0000003,
+      "promptCacheWriteTokens": 0.0000001,
       "promptCachedTokens": 0.00000001,
       "promptTextTokens": 0.0000001,
     },
@@ -294,12 +306,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "cost": {
       "completionTextTokens": 0.0000015,
       "promptAudioTokens": 0.0000005,
+      "promptCacheWriteTokens": 0.00000025,
       "promptCachedTokens": 0.000000025,
       "promptTextTokens": 0.00000025,
     },
     "price": {
       "completionTextTokens": 0.0000015,
       "promptAudioTokens": 0.0000005,
+      "promptCacheWriteTokens": 0.00000025,
       "promptCachedTokens": 0.000000025,
       "promptTextTokens": 0.00000025,
     },
@@ -308,12 +322,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "cost": {
       "completionTextTokens": 0.000009,
       "promptAudioTokens": 0.0000015,
+      "promptCacheWriteTokens": 0.0000015,
       "promptCachedTokens": 0.00000015,
       "promptTextTokens": 0.0000015,
     },
     "price": {
       "completionTextTokens": 0.000009,
       "promptAudioTokens": 0.0000015,
+      "promptCacheWriteTokens": 0.0000015,
       "promptCachedTokens": 0.00000015,
       "promptTextTokens": 0.0000015,
     },
@@ -755,10 +771,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "nova": {
     "cost": {
       "completionTextTokens": 0.00000275,
+      "promptCacheWriteTokens": 0,
+      "promptCachedTokens": 0.0000000825,
       "promptTextTokens": 0.00000033,
     },
     "price": {
       "completionTextTokens": 0.00000275,
+      "promptCacheWriteTokens": 0,
+      "promptCachedTokens": 0.0000000825,
       "promptTextTokens": 0.00000033,
     },
   },
@@ -773,10 +793,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "nova-fast": {
     "cost": {
       "completionTextTokens": 0.00000014,
+      "promptCacheWriteTokens": 0,
+      "promptCachedTokens": 0.00000000875,
       "promptTextTokens": 0.000000035,
     },
     "price": {
       "completionTextTokens": 0.00000014,
+      "promptCacheWriteTokens": 0,
+      "promptCachedTokens": 0.00000000875,
       "promptTextTokens": 0.000000035,
     },
   },

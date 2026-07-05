@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-07-05",
+  "period_start": "2026-06-28",
+  "period_end": "2026-07-04",
+  "generated_at": "2026-07-05T07:04:10.038266+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-07-05/images/linkedin.jpg"
+    }
+  ],
+  "text": "·˚✿ POLLINATIONS WEEKLY ✿˚·\nvol.50 — 3D models & 5090s\n\n50 PRs merged this week. We added a Z-axis, fired up a pool of RTX 5090s, and shipped Community Models Alpha.\n\n───\n\n→ 3D MODELS\nAdded 3D generation via Trellis 2 and Rodin 2.5. Because sometimes X and Y just aren't enough.\n\n→ INFRASTRUCTURE & 5090s\nWe are now routing Flux traffic to a self-hosted Vast.ai pool of RTX 5090s, with a Fireworks fallback. Also shipped full OAuth 2.1 authorization-code grant with PKCE.\n\n→ COMMUNITY MODELS ALPHA\nThe community text endpoints are live. We spent a good chunk of the week building guardrails: auto-deactivating unstable models and fixing errors so one bad node doesn't crash the neighborhood.\n\n→ THE GREENHOUSE\n14 new community apps added this week. Everything from AI soundscapes to games.\n\n→ FIXES OF NOTE\n1. Repaired WAV header size fields in the chat audio path.\n2. Stopped nanobanana from clobbering reference images.\n3. Dropped top_p when temperature is set for Bedrock Claude models.\n\nEverything is open source. Come build something weird.\ngithub.com/pollinations/pollinations\n\n#OpenSource #AI #DevTools"
+}

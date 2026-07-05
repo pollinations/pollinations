@@ -1,0 +1,34 @@
+{
+  "pr_number": 12231,
+  "title": "chore: update app metrics 2026-07-05",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12231",
+  "merged_at": "2026-07-05T05:28:31Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Daily automated update of app metrics, health checks, and greenhouse",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Daily Greenhouse Check",
+    "blurb": "Our automated bots just finished watering the plants and updating the daily app metrics.",
+    "summary": "Automated daily update of community app metrics, health checks, and Greenhouse listings.",
+    "impact": "Keeps the community app directory and Greenhouse metrics accurate and up to date.",
+    "keywords": [
+      "metrics",
+      "apps",
+      "greenhouse",
+      "automated"
+    ],
+    "visual_concept": "The robot monitor and Polly the bee checking on a digital greenhouse. The robot holds a clipboard with metrics while Polly waters some pixelated code-plants.",
+    "image_prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head holding a tiny clipboard, standing next to the cute bee mascot who is watering glowing code-plants in a digital greenhouse. Soft lime green (#ecf874) and pastel mint gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-05/PR-12231.jpg",
+    "prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head holding a tiny clipboard, standing next to the cute bee mascot who is watering glowing code-plants in a digital greenhouse. Soft lime green (#ecf874) and pastel mint gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "generated_at": "2026-07-05T05:29:29.406911+00:00"
+}

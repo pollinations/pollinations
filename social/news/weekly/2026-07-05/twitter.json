@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "weekly",
+  "date": "2026-07-05",
+  "period_start": "2026-06-28",
+  "period_end": "2026-07-04",
+  "generated_at": "2026-07-05T07:04:10.038266+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-07-05/images/twitter.jpg"
+    }
+  ],
+  "text": "50 PRs merged. community models alpha is live. added a z-axis with 3d generation (trellis 2, rodin 2.5). routed flux to a self-hosted rtx 5090 pool. shipped oauth 2.1. plus 13 new apps built by the community. solid week of moving pixels and tensors around. 🐝"
+}

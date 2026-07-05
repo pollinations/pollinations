@@ -1,0 +1,35 @@
+{
+  "pr_number": 12215,
+  "title": "feat: bill Vertex explicit-cache creates and storage via the adjustments system",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12215",
+  "merged_at": "2026-07-05T09:35:15Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Adds `promptCacheWriteTokens` (= standard input rate) to the 5 Vertex gemini chat models — the creating request reports its written prefix as `cache_creation_input_tokens` (gateway#8) which already maps to this price via `usage-headers.ts`; Tinybird columns existed all along\n- Adds a `google.vertex.cache_storage.v1` billing adjustment ($1.00/1M token-hours flash, $4.50/1M pro — verified against GCP Billing Catalog SKUs; 1h TTL per create), counted from `usage.cache_creation_input_tokens` in the response output\n- Regression tests: gen ingress preserves content-block `cache_control` markers (drops message-level, documented), gemini transform pipes don't strip markers, cache-write pricing + storage adjustment unit tests\n- Regenerates the effective-prices snapshot (includes #12210's registry drift — that PR's branch predates the snapshot)\n\n**Stacked on #12210** (`claude/billing-map` merged in) — diff shrinks to the caching changes once that merges.\n\n**Verified on staging** (staging.gen.myceli.ai from this branch → rubeus-dev gateway from pollinations/gateway#8 → real Vertex): create → `cached=0, cache_creation=7931`, match + stream match → `cached=7931`; staging Tinybird rows show `token_count_prompt_cache_write=7931`, `adjustment_costs={google.vertex.cache_storage.v1: 0.007931}`, hit price 94× cheaper than create.\n\n**Deploy order (billing-safe):** this PR merges + deploys to gen production BEFORE the `PORTKEY_COMMIT` bump to gateway#8 — the registry price is inert until the gateway emits the field; the reverse order would bill created prefixes at $0.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Memory is cheap",
+    "blurb": "Vertex Gemini prompt caching is now live. Stash those massive system prompts in memory and watch your token costs plummet on repeated requests.",
+    "summary": "Added explicit prompt caching support for 5 Vertex Gemini chat models, tracking cache creation and storage costs ($1.00/1M token-hours for Flash, $4.50/1M for Pro).",
+    "impact": "Developers can now use cache_control markers with Gemini models to cache large prefixes, dropping the cost of repeated hits by up to 94x.",
+    "keywords": [
+      "gemini",
+      "vertex",
+      "prompt-caching",
+      "billing",
+      "api"
+    ],
+    "visual_concept": "Polly the bee organizing glowing memory blocks (representing cache) into a retro server rack, with the Monitor Robot looking excited at the cost savings.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, organizing glowing lime green (#ecf874) memory blocks into a chunky retro server rack. The Monitor Robot stands nearby, its screen displaying a happy face and a downward trending chart. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-05/PR-12215.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, organizing glowing lime green (#ecf874) memory blocks into a chunky retro server rack. The Monitor Robot stands nearby, its screen displaying a happy face and a downward trending chart. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-07-05T09:36:20.116123+00:00"
+}

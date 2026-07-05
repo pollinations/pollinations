@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "weekly",
+  "date": "2026-07-05",
+  "period_start": "2026-06-28",
+  "period_end": "2026-07-04",
+  "generated_at": "2026-07-05T07:04:10.038266+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-07-05/images/reddit.jpg"
+    }
+  ],
+  "title": "Added 3D model generation, OAuth 2.1, and self-hosted 5090s for flux",
+  "text": "We merged 50 PRs this week. The biggest structural change is that we've added a Z-axis. 3D model generation is live via Trellis 2 (inferenceport) and Rodin 2.5 (fal.ai).\n\nOn the infrastructure side, we are now routing flux to a self-hosted Vast.ai RTX 5090 pool, keeping Fireworks as a fallback. We also had to repoint gptimage to a new Azure resource after eastus2 got blocked.\n\nCommunity Models Alpha is officially live. We built in auto-deactivation for unstable community models so a broken endpoint doesn't drag down the experience, and fixed a bug where updates were silently reactivating disabled endpoints. Several developers have been allowlisted to start bringing their models in.\n\nFor auth and API, we shipped OAuth 2.1 authorization-code grant with PKCE and RFC 8414 discovery. We also added a /v1/models/status endpoint backed by a Tinybird proxy with caching, and fixed the atomic replace for the APPS.md sync to prevent data races.\n\nFinally, the ecosystem is growing. We merged 15+ new apps into the directory this week, and enabled the \"app listed\" quest so developers can earn Pollen for shipping.\n\nCode, issues, and roadmap are open at github.com/pollinations/pollinations."
+}

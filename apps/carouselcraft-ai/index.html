@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CarouselCraft AI — Instagram Carousel Generator</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>🎠</text></svg>">
+<style>
+:root {
+  --bg: #0a0a0f;
+  --surface: #12121a;
+  --surface2: #1a1a2e;
+  --border: #2a2a4a;
+  --text: #e8e8f0;
+  --text2: #8888aa;
+  --accent: #8a2be2;
+  --accent2: #00e5ff;
+  --success: #00c853;
+  --card-bg: #16162a;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+.header {
+  background: linear-gradient(135deg, #1a0a2e, #0a0a1f);
+  border-bottom: 1px solid var(--border);
+  padding: 24px 20px;
+  text-align: center;
+}
+.header h1 { font-size: 28px; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.header p { color: var(--text2); font-size: 14px; margin-top: 4px; }
+.header p a { color: var(--accent2); -webkit-text-fill-color: var(--accent2); text-decoration: none; }
+.container { max-width: 960px; margin: 0 auto; padding: 24px 16px; }
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.card h2 { font-size: 18px; margin-bottom: 16px; color: var(--accent2); }
+label { display: block; font-size: 13px; color: var(--text2); margin-bottom: 6px; }
+input[type="text"], textarea, select {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 15px;
+  outline: none;
+  transition: border-color .2s;
+}
+input[type="text"]:focus, textarea:focus { border-color: var(--accent); }
+textarea { resize: vertical; min-height: 80px; font-family: inherit; }
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 28px;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+}
+.btn-primary { background: linear-gradient(135deg, var(--accent), #6a0dad); color: #fff; }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(138,43,226,.3); }
+.btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+.btn-group { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+.status { padding: 12px 16px; border-radius: 10px; font-size: 14px; margin-top: 12px; display: none; }
+.status.info { display: block; background: rgba(0,229,255,.1); border: 1px solid rgba(0,229,255,.2); color: var(--accent2); }
+.status.error { display: block; background: rgba(255,50,50,.1); border: 1px solid rgba(255,50,50,.2); color: #ff5050; }
+.status.success { display: block; background: rgba(0,200,83,.1); border: 1px solid rgba(0,200,83,.2); color: var(--success); }
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+.gallery-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.gallery-item .slide-label {
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--text2);
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+}
+.gallery-item img {
+  width: 100%;
+  display: block;
+}
+.gallery-item .prompt-text {
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.4;
+}
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.footer {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--text2);
+  font-size: 13px;
+  border-top: 1px solid var(--border);
+  margin-top: 40px;
+}
+.footer a { color: var(--accent2); text-decoration: none; }
+.tagline { font-size: 12px; color: var(--text2); margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🎠 CarouselCraft AI</h1>
+  <p>AI-powered Instagram Carousel Generator — <a href="https://pollinations.ai" target="_blank">Built with Pollinations.ai</a></p>
+</div>
+
+<div class="container">
+  <div class="card">
+    <h2>Generate Carousel</h2>
+    <label for="topic">Enter a DeFi/Crypto Topic</label>
+    <input type="text" id="topic" placeholder="e.g., Coinbase AI Agents, Ethereum L2, Bitcoin ETF flows..." value="Coinbase AI Agents">
+    <div class="tagline">AI will create 3 cohesive slide prompts + images + caption</div>
+    <div class="btn-group">
+      <button class="btn btn-primary" id="generateBtn" onclick="generate()">
+        <span id="btnText">🚀 Generate Carousel</span>
+      </button>
+    </div>
+    <div id="status" class="status"></div>
+  </div>
+
+  <div id="results" style="display:none">
+    <div class="card">
+      <h2>📋 Topic</h2>
+      <div id="topicDisplay" style="font-size:18px;font-weight:600;color:var(--accent2)"></div>
+    </div>
+
+    <div class="card">
+      <h2>🖼️ Generated Slides</h2>
+      <div id="gallery" class="gallery"></div>
+    </div>
+
+    <div class="card">
+      <h2>📝 Caption</h2>
+      <div id="captionDisplay" style="white-space:pre-wrap;line-height:1.6;font-size:14px"></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p><a href="https://pollinations.ai" target="_blank">🌱 pollinations.ai</a> — Open-source generative AI for everyone</p>
+    <p style="margin-top:4px">CarouselCraft uses Pollinations API for text &amp; image generation</p>
+  </div>
+</div>
+
+<script>
+const POLLINATIONS_BASE = 'https://gen.pollinations.ai';
+const APP_KEY = 'pk_0IyiIiK4iiWkuRVE';
+
+async function generate() {
+  const btn = document.getElementById('generateBtn');
+  const btnText = document.getElementById('btnText');
+  const status = document.getElementById('status');
+  const results = document.getElementById('results');
+  const gallery = document.getElementById('gallery');
+  const topicDisplay = document.getElementById('topicDisplay');
+  const captionDisplay = document.getElementById('captionDisplay');
+  const topic = document.getElementById('topic').value.trim();
+
+  if (!topic) { showStatus('Please enter a topic', 'error'); return; }
+
+  btn.disabled = true;
+  btnText.innerHTML = '<span class="spinner"></span> Generating...';
+  results.style.display = 'none';
+  showStatus('Generating prompts with AI...', 'info');
+
+  try {
+    const llmRes = await fetch(`${POLLINATIONS_BASE}/v1/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${APP_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'openai',
+        messages: [
+          { role: 'system', content: 'You generate Instagram carousel content. Return valid JSON only.' },
+          { role: 'user', content: `Topic: ${topic}\n\nGenerate a 3-slide carousel. Return JSON: {"topic":"...","prompts":{"hero":"prompt for slide 1","detail":"prompt for slide 2","cta":"prompt for slide 3"},"caption":"Instagram caption with emojis and hashtags"}\n\nAll prompts must be cohesive: same art style, color palette, visual theme. Style: cinematic, digital art, neon on dark.` }
+        ],
+        max_tokens: 1000,
+        response_format: { type: 'json_object' }
+      })
+    });
+
+    if (!llmRes.ok) throw new Error('LLM generation failed');
+    const llmData = await llmRes.json();
+    const content = JSON.parse(llmData.choices[0].message.content);
+
+    topicDisplay.textContent = content.topic;
+    captionDisplay.textContent = content.caption;
+
+    const prompts = [content.prompts.hero, content.prompts.detail, content.prompts.cta];
+    const labels = ['Slide 1: Hook', 'Slide 2: Detail', 'Slide 3: CTA'];
+
+    gallery.innerHTML = prompts.map((p, i) => `
+      <div class="gallery-item">
+        <div class="slide-label">${labels[i]}</div>
+        <div style="padding:40px;text-align:center;color:var(--text2);font-size:13px">
+          <span class="spinner"></span> Generating image...
+        </div>
+        <div class="prompt-text">${escapeHtml(p)}</div>
+      </div>
+    `).join('');
+
+    results.style.display = 'block';
+    showStatus('Generating 3 images...', 'info');
+
+    const imagePromises = prompts.map(async (prompt, i) => {
+      const url = `${POLLINATIONS_BASE}/v1/images/generations`;
+      const imgRes = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${APP_KEY}`
+        },
+        body: JSON.stringify({ model: 'flux', prompt, width: 1024, height: 1024, n: 1 })
+      });
+      if (!imgRes.ok) throw new Error(`Image ${i+1} failed`);
+      const imgData = await imgRes.json();
+      const item = imgData.data[0];
+      if (item.b64_json) return { idx: i, data: `data:image/webp;base64,${item.b64_json}` };
+      if (item.url) return { idx: i, data: item.url };
+      return { idx: i, data: '' };
+    });
+
+    const results2 = await Promise.all(imagePromises);
+
+    results2.forEach(r => {
+      const items = gallery.querySelectorAll('.gallery-item');
+      const el = items[r.idx].querySelector('div:first-of-type + div');
+      if (el && r.data) {
+        el.outerHTML = `<img src="${r.data}" alt="Slide ${r.idx+1}" loading="lazy">`;
+      } else if (el) {
+        el.innerHTML = '<div style="padding:40px;text-align:center;color:#ff5050;font-size:13px">⚠️ Failed to load</div>';
+      }
+    });
+
+    showStatus('✅ Carousel generated successfully!', 'success');
+
+  } catch (err) {
+    showStatus(`Error: ${err.message}`, 'error');
+    console.error(err);
+  } finally {
+    btn.disabled = false;
+    btnText.innerHTML = '🚀 Generate Carousel';
+  }
+}
+
+function showStatus(msg, type) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = `status ${type}`;
+}
+
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+</script>
+</body>
+</html>

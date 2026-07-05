@@ -111,5 +111,12 @@
         "outputDir": "dist",
         "title": "SlidePainter",
         "description": "AI-powered slide image generator by Pollinations"
+    },
+    "carouselcraft-ai": {
+        "subdomain": "carouselcraft-ai",
+        "buildCommand": null,
+        "outputDir": ".",
+        "title": "CarouselCraft AI",
+        "description": "AI-powered Instagram Carousel Generator using Pollinations text + image generation"
     }
 }

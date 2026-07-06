@@ -21,23 +21,24 @@ Image (default: zimage): flux, zimage, gptimage, klein|klein-large, imagen-4, gr
 Video: seedance (free default), veo (audio), seedance-pro, wan (audio), ltx-2 (audio), grok-video
 Audio: elevenlabs (TTS), elevenmusic, whisper (STT alpha), scribe (STT 90+ lang)
 
-Paid-only models (require Paid balance): claude, claude-large, claude-opus-4.7, gemini, gemini-large, grok, kontext, nanobanana(-pro), seedream(-pro), gptimage-large, veo, seedance-pro, wan, ltx-2
+Paid-only models (require Paid Pollen; Quest Pollen won't work): claude, claude-large, claude-opus-4.7, gemini, gemini-large, grok, kontext, nanobanana(-pro), seedream(-pro), gptimage-large, veo, seedance-pro, wan, ltx-2
 
 Tool calling supported: openai (all), claude (all), gemini (non-search), deepseek, kimi, glm, minimax, mistral, qwen-coder, nova-fast, grok. NOT supported: perplexity-*, gemini-search
 
-## Pollen Wallet
+## Quests (earn Pollen by completing tasks)
 
-The old account-level ladder and hourly wallet drip are gone. Wallets still have two active buckets:
-- Tier balance: existing spendable balance bucket
-- Paid balance: purchased Pollen and pack credits
-Regular models spend Tier balance first, then Paid balance. Paid-only models can only spend Paid balance.
+Complete quests from the Quests dashboard at enter.pollinations.ai → rewards land as Quest Pollen.
+- Lanes: onboarding, model usage, app growth, GitHub contributions
+- Contribute quests: comment on a POLLEN-QUEST GitHub issue to claim; fixed reward paid when merged
+- In alpha — rewards and availability evolve
+- Quest Pollen spent BEFORE Paid Pollen | Paid-only models require Paid Pollen
 
 ## Auth & Keys
 
-pk_ (publishable, 16ch): client-side, rate-limited per key+IP | sk_ (secret, 32ch): server-only, unlimited
+pk_ (publishable, 16ch): client-side, rate-limited 1 pollen/IP/hour | sk_ (secret, 32ch): server-only, unlimited
 Usage: `Authorization: Bearer <key>` or `?key=<key>` | Get keys: enter.pollinations.ai
 Per-key features: model restrictions, pollen budget cap, expiry (0-365 days)
-Balance buckets (deducted in order): tierBalance → packBalance
+Balances (spent in order): Quest Pollen → Paid Pollen
 Empty balance: HTTP 402 | Rate limited: HTTP 429 with Retry-After
 
 ## BYOP (Bring Your Own Pollen)

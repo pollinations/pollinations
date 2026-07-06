@@ -90,7 +90,7 @@ export function createFireworksModelConfig(
 ): ProviderConfig {
     return createOpenAICompatibleConfig(
         "https://api.fireworks.ai/inference/v1",
-        process.env.FIREWORKS_API_KEY,
+        process.env.FIREWORKS_NEO_API_KEY,
         overrides,
     );
 }
@@ -101,6 +101,16 @@ export function createOpenRouterModelConfig(
     return createOpenAICompatibleConfig(
         "https://openrouter.ai/api/v1",
         process.env.OPENROUTER_API_KEY,
+        overrides,
+    );
+}
+
+export function createInceptionModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://api.inceptionlabs.ai/v1",
+        process.env.INCEPTION_API_KEY,
         overrides,
     );
 }

@@ -10,7 +10,7 @@ port = 3000
 [assets]
 directory = "dist/client"
 not_found_handling = "single-page-application"
-run_worker_first = [ "/api/*" ]
+run_worker_first = [ "/api/*", "/__scheduled", "/.well-known/*" ]
 
 [[d1_databases]]
 binding = "DB"
@@ -39,7 +39,6 @@ STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 
-
 [env.local]
 
 [[env.local.d1_databases]]
@@ -55,7 +54,6 @@ id = "84512601e2a44679a4d3b0f7415d90ec"
 
 [env.local.vars]
 ENVIRONMENT = "local"
-USAGE_DEBUG_USER_ID = "ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh" # pollen@myceli.ai; local dashboard usage data
 CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
@@ -106,7 +104,6 @@ BETTER_AUTH_URL = "https://enter.pollinations.ai"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TVU4T7rcjS3l7trqtBuve71"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrY4O7rcjS3l7trnGXDTuat"
-
 [env.staging]
 
 [[env.staging.routes]]
@@ -139,12 +136,10 @@ BETTER_AUTH_URL = "https://staging.enter.pollinations.ai"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
-# GitHub OAuth lockdown — only these numeric GitHub user IDs may sign in.
-# Issue #11137. Comma-separated. IDs are immutable (usernames are not).
-# ElliotEtag=36901823, voodoohop=5099901,
-# thomashmyceli=235942848, fouchyelliot-rgb=248917639, pollen-router=241978997
-STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997"
-
+# Staging OAuth lockdown — GitHub IDs are immutable; emails allow one-off
+# team access when the exact GitHub account is unknown. Issue #11137.
+STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458"
+STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai"
 [env.dev]
 
 [[env.dev.routes]]
@@ -180,7 +175,6 @@ BETTER_AUTH_URL = "https://dev.enter.pollinations.ai"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
-
 [env.test]
 
 [[env.test.d1_databases]]

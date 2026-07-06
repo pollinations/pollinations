@@ -28,7 +28,7 @@ const TABLES: TableConfig[] = [
         datasource: "d1_user",
         query: `SELECT id, name, email, email_verified, image, created_at, updated_at,
                        role, banned, ban_reason, ban_expires, github_id, github_username,
-                       tier, tier_balance, pack_balance, last_tier_grant
+                       tier_balance, pack_balance
                 FROM user`,
     },
     {
@@ -39,6 +39,16 @@ const TABLES: TableConfig[] = [
                        created_at, updated_at, permissions, metadata, pollen_balance,
                        byop_client_key_id
                 FROM apikey`,
+    },
+    {
+        datasource: "d1_community_model",
+        query: `SELECT id, owner_user_id, name, description, upstream_model,
+                       prompt_text_price, prompt_cached_price, prompt_cache_write_price,
+                       prompt_audio_price, prompt_image_price, completion_text_price,
+                       completion_reasoning_price, completion_audio_price,
+                       disabled_at, disabled_reason, disabled_by,
+                       created_at, updated_at
+                FROM community_endpoint`,
     },
     {
         datasource: "d1_session",

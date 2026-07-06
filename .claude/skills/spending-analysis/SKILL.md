@@ -17,19 +17,17 @@ Must run from the `pollinations` repo root with access to `enter.pollinations.ai
 # Data Sources
 
 ## Polar API
-
 - **Orders**: Payment history for Pollen pack purchases
 - **Products**: Pollen pack products
 - **Customers**: User payment info linked by `external_id`
 
 ## Tinybird
-
-- **generation_event**: Usage data with `user_id`, `total_price`, and `meter_source`
-- Use `meter_source` to split spend by active balance bucket:
+- **generation_event**: Usage data with `user_id`, `total_price`, and `selected_meter_slug`
+- Use `selected_meter_slug` to split spend by active balance bucket:
   - `v1:meter:tier` / `local:tier`
   - `v1:meter:pack` / `local:pack`
 
-> **Workspace**: Two workspaces exist now: `pollinations_enter` (prod) and `pollinations_enter_staging` (staging + dev + local). Revenue queries should use prod read tokens; staging contains no real revenue.
+> **Workspace**: Two workspaces exist now — `pollinations_enter` (prod) and `pollinations_enter_staging` (staging + dev + local). All queries below use a **prod** read token by design — staging contains no real revenue. The `environment = 'production'` filters below are redundant against prod-token queries (prod WS only has prod rows after the 2026-05-18 cleanup) but kept as defence-in-depth in case the token is later widened.
 
 ---
 
@@ -62,7 +60,7 @@ curl -sL "https://api.polar.sh/v1/products" \
   -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" | jq '[.items[] | {name, id, recurring: .is_recurring}]'
 ```
 
-## Get Pack Purchases
+## Get Pack Purchases (Last 100)
 
 ```bash
 # 5 pollen pack product ID
@@ -73,7 +71,7 @@ curl -sL "https://api.polar.sh/v1/orders?limit=100&product_id=$PRODUCT_ID" \
   jq '[.items[] | {date: .created_at[0:10], amount: (.total_amount / 100), customer: .customer.email}]'
 ```
 
-## Pollen Pack Product IDs
+## All Pack Product IDs
 
 | Pack | Product ID |
 |------|------------|
@@ -100,7 +98,7 @@ curl -sL "https://api.polar.sh/v1/orders?limit=100&product_id=$PRODUCT_ID" \
 ```bash
 curl -sL "https://api.europe-west2.gcp.tinybird.co/v0/sql" \
   -H "Authorization: Bearer $TINYBIRD_TOKEN" \
-  --data-urlencode "q=SELECT toStartOfWeek(start_time) as week, meter_source, sum(total_price) as total_spend, count() as requests FROM generation_event WHERE start_time >= now() - INTERVAL 60 DAY AND environment = 'production' GROUP BY week, meter_source ORDER BY week DESC FORMAT JSON" | jq '.data'
+  --data-urlencode "q=SELECT toStartOfWeek(start_time) as week, splitByChar(':', selected_meter_slug)[-1] as meter_source, sum(total_price) as total_spend, count() as requests FROM generation_event WHERE start_time >= now() - INTERVAL 60 DAY AND environment = 'production' GROUP BY week, meter_source ORDER BY week DESC FORMAT JSON" | jq '.data'
 ```
 
 ## Top Paying Users by Pack Spend
@@ -108,7 +106,7 @@ curl -sL "https://api.europe-west2.gcp.tinybird.co/v0/sql" \
 ```bash
 curl -sL "https://api.europe-west2.gcp.tinybird.co/v0/sql" \
   -H "Authorization: Bearer $TINYBIRD_TOKEN" \
-  --data-urlencode "q=SELECT user_id, user_github_username, sum(total_price) as pack_spend, count() as requests FROM generation_event WHERE start_time >= now() - INTERVAL 30 DAY AND environment = 'production' AND meter_source IN ('v1:meter:pack', 'local:pack') GROUP BY user_id, user_github_username ORDER BY pack_spend DESC LIMIT 50 FORMAT JSON" | jq '.data'
+  --data-urlencode "q=SELECT user_id, user_github_username, sum(total_price) as pack_spend, count() as requests FROM generation_event WHERE start_time >= now() - INTERVAL 30 DAY AND environment = 'production' AND selected_meter_slug = 'v1:meter:pack' GROUP BY user_id, user_github_username ORDER BY pack_spend DESC LIMIT 50 FORMAT JSON" | jq '.data'
 ```
 
 ---
@@ -122,6 +120,24 @@ curl -sL "https://api.europe-west2.gcp.tinybird.co/v0/sql" \
 ```
 
 Shows weekly breakdown of actual pack purchases.
+
+---
+
+# Key Findings (Jan 2026 Analysis)
+
+## Revenue Trend (9 Weeks)
+
+| Week | Orders | Revenue |
+|------|--------|---------|
+| Jan 13-19 | 51 | $573 |
+| Jan 6-12 | 83 | $928 |
+| Dec 30-Jan 5 | 59 | $928 |
+| Dec 23-29 | 21 | $432 |
+| Dec 16-22 | 22 | $276 |
+| Dec 9-15 | 16 | $141 |
+| Dec 2-8 | 17 | $293 |
+| Nov 25-Dec 1 | 10 | $293 |
+| Nov 18-24 | 1 | $10 |
 
 ---
 

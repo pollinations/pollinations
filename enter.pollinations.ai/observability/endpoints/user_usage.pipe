@@ -1,6 +1,7 @@
 DESCRIPTION >
     Get billed usage history for a specific user. Only returns billed requests.
     Defaults to the last 30 days. Use 'since' and 'until' to override the date window.
+    Use 'api_key_ids' and 'models' as comma-separated filters.
     Use 'before' and 'before_event_id' for stable cursor pagination.
 
 TOKEN tinybird_read READ
@@ -35,6 +36,12 @@ SQL >
     AND total_price > 0
     {% if defined(api_key_id) %}
     AND api_key_id = {{String(api_key_id)}}
+    {% end %}
+    {% if defined(api_key_ids) %}
+    AND api_key_id IN {{Array(api_key_ids, 'String')}}
+    {% end %}
+    {% if defined(models) %}
+    AND resolved_model_requested IN {{Array(models, 'String')}}
     {% end %}
     {% if defined(since) %}
     AND start_time >= {{DateTime(since)}}

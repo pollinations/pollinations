@@ -10,13 +10,16 @@ const log = debug("pollinations:transforms:gemini-thinking");
  */
 export type GeminiModelType = "v2.5" | "v3-flash" | "v3-pro";
 
-/**
- * Maps a token budget to a reasoning_effort level for v3 models.
- */
-function budgetToReasoningEffort(budget: number): string {
-    if (budget <= 1024) return "low";
-    if (budget <= 4096) return "medium";
-    return "high";
+const EFFORT_TO_BUDGET: Record<string, number> = {
+    minimal: 1024,
+    low: 1024,
+    medium: 4096,
+    high: 8192,
+    xhigh: 8192,
+};
+
+function normalizeEffort(value: unknown): string | undefined {
+    return typeof value === "string" ? value.toLowerCase() : undefined;
 }
 
 /**
@@ -31,43 +34,29 @@ export function createGeminiThinkingTransform(
     modelType: GeminiModelType = "v2.5",
 ): TransformFn {
     return (messages, options) => {
-        const thinkingBudget = options.thinking_budget as number | undefined;
+        const effort = normalizeEffort(options.reasoning_effort);
 
-        if (thinkingBudget === undefined) {
+        if (effort === undefined) {
             return { messages, options };
         }
 
         const updatedOptions = { ...options };
-        const isDisabled = thinkingBudget === 0;
 
-        log(
-            `Configuring thinking for ${modelType}. Budget: ${thinkingBudget}, Disabled: ${isDisabled}`,
-        );
+        log("Configuring Gemini thinking for %s, effort=%s", modelType, effort);
 
-        if (isDisabled) {
-            if (modelType === "v2.5") {
-                updatedOptions.thinking = {
-                    budget_tokens: 0,
-                };
-            } else if (modelType === "v3-flash") {
-                // Gemini 3 Flash can't fully disable thinking; "none" maps to the minimal level
-                updatedOptions.reasoning_effort = "none";
-            } else {
-                // Gemini 3 Pro can't fully disable thinking; use the lowest supported level
-                updatedOptions.reasoning_effort = "low";
-            }
-        } else if (modelType === "v2.5") {
+        if (modelType === "v2.5") {
             updatedOptions.thinking = {
-                type: "enabled",
-                budget_tokens: thinkingBudget,
+                ...(effort === "none" ? {} : { type: "enabled" }),
+                budget_tokens:
+                    effort === "none"
+                        ? 0
+                        : (EFFORT_TO_BUDGET[effort] ?? EFFORT_TO_BUDGET.medium),
             };
-        } else {
-            updatedOptions.reasoning_effort =
-                budgetToReasoningEffort(thinkingBudget);
+            delete updatedOptions.reasoning_effort;
+        } else if (modelType === "v3-pro" && effort === "none") {
+            // Gemini 3 Pro can't fully disable thinking; use the lowest supported level.
+            updatedOptions.reasoning_effort = "low";
         }
-
-        // Clean up internal parameter not recognized by OpenAI/Portkey
-        delete updatedOptions.thinking_budget;
 
         log("Final options:", {
             thinking: updatedOptions.thinking,

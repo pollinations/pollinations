@@ -78,3 +78,46 @@ describe("stripCacheControl model wiring", () => {
         expect(findModelByName(modelName)?.transform).toBe(stripCacheControl);
     });
 });
+
+describe("cache_control passthrough (vertex explicit caching)", () => {
+    // Vertex explicit context caching (pollinations/gateway#8) engages on
+    // content-block cache_control markers. If a gemini pipe ever strips them
+    // (e.g. stripCacheControl gets copy-pasted onto a gemini model), caching
+    // silently degrades to uncached requests — no error, just full price.
+    it.each([
+        "gemini-3-flash",
+        "gemini",
+        "gemini-flash-lite-3.1",
+        "gemini-fast",
+        "gemini-large",
+    ])("%s transform preserves content-block cache_control markers", async (modelName) => {
+        const model = findModelByName(modelName);
+        if (!model?.transform)
+            throw new Error(`${modelName} model or transform missing`);
+
+        const { messages: result } = await model.transform(
+            [
+                {
+                    role: "system",
+                    content: [
+                        {
+                            type: "text",
+                            text: "big static prefix",
+                            cache_control: { type: "ephemeral" },
+                        },
+                    ],
+                },
+                { role: "user", content: "dynamic tail" },
+            ],
+            {},
+        );
+
+        expect(result[0].content).toEqual([
+            {
+                type: "text",
+                text: "big static prefix",
+                cache_control: { type: "ephemeral" },
+            },
+        ]);
+    });
+});

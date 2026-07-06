@@ -14,7 +14,7 @@ import type { Context } from "hono";
 // cache key prevents those requests from fragmenting the cache. "no-cache"
 // and "key" are request controls that must never affect the cache key.
 const EXCLUDED_PARAMS = ["nofeed", "no-cache", "key"];
-const SAFETY_CACHE_VERSION = "bedrock-input-v1";
+export const SAFETY_CACHE_VERSION = "bedrock-input-v1";
 const CACHED_HEADER_PREFIXES = ["x-safety-"];
 
 function hasActiveSafety(value: string | null | undefined): boolean {

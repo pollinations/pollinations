@@ -160,10 +160,13 @@ const app = new Hono<{ Bindings: Env }>();
 app.use("*", cors());
 
 // Basic Auth middleware — password set via `wrangler secret put DASHBOARD_PASSWORD`
-// If no password is set, the dashboard is public (backward compatible)
 app.use("*", async (c, next) => {
     const password = c.env.DASHBOARD_PASSWORD;
-    if (!password) return next();
+    if (!password) {
+        return new Response("Dashboard password not configured", {
+            status: 500,
+        });
+    }
 
     const auth = c.req.header("Authorization");
     if (auth) {
@@ -201,15 +204,6 @@ app.get("/api/kpi/total-users", async (c) => {
     if (result.error) return c.json({ error: result.error, total: 0 }, 500);
     const row = result.data[0] as { total: number } | undefined;
     return c.json({ total: row?.total || 0 });
-});
-
-// Tinybird: Tier distribution (from Oct 1, 2025)
-app.get("/api/kpi/tiers", async (c) => {
-    const result = await fetchTinybird(c.env, "kpi_tier_distribution", {
-        min_created_at: DATA_START_TIMESTAMP_SEC,
-    });
-    if (result.error) return c.json({ error: result.error, data: [] }, 500);
-    return c.json({ data: result.data });
 });
 
 // D7 Activations: users who made their first API request within 7 days of registration

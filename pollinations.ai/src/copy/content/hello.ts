@@ -25,9 +25,9 @@ export const HELLO_PAGE = {
     whatYouGetItems: [
         {
             emoji: "👛",
-            title: "User wallets",
-            lead: "Users bring their own Pollen.",
-            desc: "- Users **sign in** and spend from their **own wallet** 👛\n- Set **spending caps**, **revoke access** any time\n- Your app never handles billing credentials",
+            title: "Wallets & earnings",
+            lead: "Users bring their own Pollen. You take a share.",
+            desc: "- Users **sign in** and spend from their **own wallet** 👛\n- Set **spending caps**, **revoke access** any time\n- Turn on earnings on your **App Key** to receive a **share** when users spend in your app 💰",
             linkText: "Add Pollen to your app",
             linkUrl: "byopDocs",
         },
@@ -49,11 +49,11 @@ export const HELLO_PAGE = {
         },
         {
             emoji: "🌱",
-            title: "Earnings & quests",
-            lead: "Earn Pollen while you build.",
-            desc: "- Turn on earnings on your **App Key** to receive a **share** when users spend in your app 💰\n- Complete **Pollen Quests** for extra credits 🎯\n- Top up only when your app needs more room 📈",
-            linkText: "Open earnings & quests",
-            linkUrl: "enter",
+            title: "Pollen Quests",
+            lead: "Build before users show up.",
+            desc: "- Earn **Pollen** by completing **Quests** 🎯\n- Free Pollen for prototypes & testing\n- More Quests, more ways to earn 📈",
+            linkText: "How Quests work",
+            linkUrl: "enterQuestsFaq",
         },
         {
             emoji: "🎯",
@@ -107,7 +107,7 @@ export const HELLO_PAGE = {
     // Section 9 — CTA
     ctaTitle: "Start building",
     ctaBody:
-        "One API. Wallet controls, BYOP, and earnings when your app gets used.",
+        "One API. Free Pollen from Quests to start, and earnings when your app gets used.",
     browseAppsLink: "Browse Apps",
     communityLink: "Community",
 };

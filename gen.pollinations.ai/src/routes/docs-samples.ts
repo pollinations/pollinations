@@ -547,6 +547,7 @@ export const RESPONSE_EXAMPLES: Record<string, unknown> = {
     "get /account/profile": {
         githubUsername: "janedeveloper",
         image: "https://avatars.example.com/jane.jpg",
+        communityEndpointsAllowed: false,
         name: "Jane Developer",
         email: "jane@example.com",
     },

@@ -408,7 +408,7 @@ async function createServerErrorEnvelope<TEnv extends ErrorHandlerEnv>(
 ): Promise<ServerErrorEnvelope> {
     const vars = c.var as Partial<{
         auth: {
-            user?: { id?: string; tier?: string };
+            user?: { id?: string };
             apiKey?: { id?: string };
         };
         model: {

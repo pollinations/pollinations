@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Updated: 2026-05-07**
+**Updated: 2026-06-24**
 
 ## 1) Scope & Roles
 
@@ -12,10 +12,11 @@ This policy covers (a) the paid dashboard/API and (b) the pollinations.ai commun
 
 * **Accounts & auth (commercial):** email, name/handle, org, password hash or SSO IDs.
 * **API keys & app authorization:** key type, key ID, scopes, model restrictions, expiry, Pollen budget/cap, app name, redirect URI, GitHub identity shown on consent screens, connected-app records, revocations, and developer-earnings settings.
-* **Billing & wallet (commercial):** plan, invoices, payment status, VAT ID, company details, Pollen purchases, tier balance, paid balance, grants, developer earnings, refunds, chargebacks, and wallet adjustments. Card data is handled by our payment provider; we do not store full card numbers.
+* **Billing & wallet (commercial):** plan, invoices, payment status, VAT ID, company details, Pollen purchases, Quest Pollen balance, Paid Pollen balance, grants, rewards, developer earnings, refunds, chargebacks, and wallet adjustments. Card data is handled by our payment provider; we do not store full card numbers.
 * **Service usage & API metadata (commercial):** timestamps, endpoints/models, token/Pollen usage, balance bucket used, baseline model cost, app markup/developer credit where applicable, rate-limit events, IP, user-agent, and error logs.
+* **Quests & rewards (commercial/community):** quest availability, progress, completions, reward amounts, credited balance bucket, source references, and display/audit metadata such as quest titles, app names/URLs, app-directory approval records, GitHub issue/PR numbers, issue titles/URLs, assignees, labels, and completion timestamps.
 * **Prompts/outputs (commercial & demos):** processed transiently to deliver results; not retained beyond what's necessary to run the Service, except configuration you save and short-lived response caches. Generated responses may be cached temporarily for performance, reliability, cost control, and abuse prevention. Generated media cache identifiers and image metadata may include prompt-derived data.
-* **Community identifiers (community):** Discord ID/username (if you link or use our bots); GitHub username (if you contribute or identify an app); email if you contact us.
+* **Community identifiers (community):** Discord ID/username (if you link or use our bots); GitHub ID/username and public GitHub profile/repository/activity signals if you link GitHub, contribute, identify an app, or complete GitHub-based quests; email if you contact us.
 * **Analytics processing:** we also use the data categories above (account identifiers, email, name, GitHub identity where linked, wallet balance attributes, API key metadata, session metadata, and payment-provider event records including customer email) for product analytics, billing attribution, abuse prevention, and developer-earnings reporting. We do not use passwords, password hashes, OAuth tokens, API key secrets, session tokens, or IP addresses for these analytics purposes.
 * **Telemetry:** aggregated counters and performance metrics.
 * **Support:** emails, tickets, in-app chats.
@@ -23,7 +24,8 @@ This policy covers (a) the paid dashboard/API and (b) the pollinations.ai commun
 ## 3) Purposes & Lawful Bases (GDPR)
 
 * **Provide and improve services/sites** (contract; legitimate interests).
-* **Run API keys, app authorization, wallet, and developer-earnings features** (contract; legitimate interests).
+* **Run API keys, app authorization, wallet, quests, rewards, and developer-earnings features** (contract; legitimate interests).
+* **Verify quest eligibility, credit rewards, and prevent duplicate or abusive reward claims** (contract; legitimate interests).
 * **Security, abuse prevention, fraud prevention, and spending-control enforcement** (legitimate interests).
 * **Billing/tax/compliance** (legal obligations).
 * **Analytics & product research** using aggregated/pseudonymised metrics and the analytics processing described in §2 (legitimate interests).
@@ -63,6 +65,7 @@ Where data leaves the EEA, we use approved safeguards (e.g., EU Standard Contrac
 
 * **Account, billing, wallet, and tax records:** account term + 7 years (accounting/tax/legal proof).
 * **API usage metadata:** typically 24 months (billing, fraud, capacity, developer-earnings attribution).
+* **Quest and reward records:** reward ledger records follow wallet/accounting retention where needed for balance, audit, fraud, and dispute purposes. Synced public GitHub quest issue records are retained while needed to display, process, and audit quest rewards.
 * **Generated response caches (text, image, audio, video):** typically up to 30 days, plus any downstream public/browser caches.
 * **Uploaded media files (media.pollinations.ai):** typically up to 30 days from upload; re-uploading the same file resets the timer.
 * **App authorization records:** while active. Related usage, billing, security, and dispute records may be retained under the retention periods above.
@@ -75,7 +78,7 @@ Where data leaves the EEA, we use approved safeguards (e.g., EU Standard Contrac
 
 Access, correction, deletion, restriction, portability, objection to legitimate-interest processing, and withdrawal of consent where applicable.
 
-You can complain to your local authority or the Estonian Data Protection Inspectorate (AKI). **Contact:** hi@myceli.ai.
+You can complain to your local authority or the Estonian Data Protection Inspectorate (AKI). **Contact:** hello@myceli.ai.
 
 ## 11) Security
 
@@ -100,4 +103,4 @@ Myceli.AI OÜ
 Registry code: 17186693  
 VAT number: EE102877908  
 Registered address: Harju maakond, Tallinn, Kesklinna linnaosa, Tornimäe tn 5, 10145, Estonia  
-Email: hi@myceli.ai
+Email: hello@myceli.ai

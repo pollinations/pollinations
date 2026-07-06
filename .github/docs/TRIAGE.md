@@ -203,8 +203,9 @@ Any `TIER-*` labeled issue routes to the Apps project (#23). The state machine:
 | `CREDITS` | Pollen balance and usage quota issues | `project-manager.py` |
 | `BILLING` | Payment/credit card   | `project-manager.py` |
 | `ACCOUNT` | Account/login/auth    | `project-manager.py` |
+| `TIER`    | Account-level Pollen wallet balance and usage-limit questions | `project-manager.py` |
 
-(`TIER-APP-*` labels are used only for app submissions.)
+(`TIER` is unrelated to the `TIER-APP-*` family used for app submissions.)
 
 ### News Labels
 

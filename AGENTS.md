@@ -40,7 +40,7 @@ Primary: `https://gen.pollinations.ai` → routes to `enter.pollinations.ai` for
 - Auth: `pk_` (frontend), `sk_` (backend). Keys: https://enter.pollinations.ai
 - Billing: Pollen credits ($1 ≈ 1 Pollen). Full docs: `./APIDOCS.md`
 - Services: Text (Portkey, multi-provider), Image (gen Worker dispatch to providers/GPU backends), Video (Wan/Veo/LTX), Audio (ElevenLabs, TTM)
-- Wallet: `tier_balance` and `pack_balance` remain active balance buckets; old account levels and hourly drip are removed.
+- Wallet: Pollen is earned by completing Quests; balances live in the `tier_balance` (shown as Quest Pollen) and `pack_balance` (Paid) buckets. The `tier` data model is kept for compatibility; see `enter.pollinations.ai/src/tier-config.ts`.
 
 ### Local Development
 

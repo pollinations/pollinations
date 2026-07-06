@@ -42,6 +42,13 @@ export type TinybirdEvent = {
     selectedMeterSlug?: string;
     balances?: Record<string, number>;
 
+    // Billing adjustments (search/tool fees). Keyed by versioned rule id
+    // (e.g. "google.gemini_3.search_query.v1"). Left undefined when the request
+    // had no adjustments so ClickHouse's DEFAULT map() fills them; a literal {}
+    // would serialize on every event since removeUnset only strips null/undefined.
+    adjustmentCosts?: Record<string, number>; // rule id → USD cost
+    adjustmentUnits?: Record<string, number>; // rule id → units charged (fractional-capable)
+
     // Network
     ipSubnet?: string;
     ipHash?: string;
@@ -94,6 +101,9 @@ export type TinybirdEvent = {
     totalPrice: number;
     devPrice?: number;
     markupRate?: number;
+    communityModelRewardUserId?: string;
+    communityModelRewardRate?: number;
+    communityModelRewardAmount?: number;
 
     // Prompt Moderation
     moderationPromptHateSeverity?: string;

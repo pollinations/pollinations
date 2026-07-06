@@ -1,15 +1,12 @@
 import type { Logger } from "@logtape/logtape";
 import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
-import { validator } from "@shared/middleware/validator.ts";
 import {
+    AUDIO_SERVICES,
     type AudioModelName,
     ELEVENLABS_VOICES,
     resolveElevenLabsVoiceId,
 } from "@shared/registry/audio.ts";
-import {
-    getModelDefinition,
-    type ModelName,
-} from "@shared/registry/registry.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
     createAudioSecondsUsage,
@@ -30,6 +27,7 @@ import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { applySafety, withSafetyHeaders } from "@/middleware/safety.ts";
 import { track } from "@/middleware/track.ts";
+import { arrayBufferToBase64 } from "@/util.ts";
 import { requireGenerationAccess } from "@/utils/generation-access.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
 import { buildTranscriptionResponse } from "./transcription-response.ts";
@@ -37,9 +35,9 @@ import { buildTranscriptionResponse } from "./transcription-response.ts";
 const CreateSpeechRequestSchema = z
     .object({
         model: z.string().optional(),
-        input: z.string().min(1).max(4096).meta({
+        input: z.string().min(1).max(10000).meta({
             description:
-                "The text to generate audio for. Maximum 4096 characters.",
+                "The text to generate audio for. Maximum 10000 characters.",
             example: "Hello, welcome to Pollinations!",
         }),
         safe: SafeSchema,
@@ -55,18 +53,59 @@ const CreateSpeechRequestSchema = z
             .default("mp3")
             .meta({
                 description:
-                    "The audio format for the output. Qwen TTS currently returns WAV regardless of this setting.",
+                    "The audio format for the output. Qwen TTS currently returns WAV regardless of this setting; eleven-sfx supports mp3 only (other values are rejected).",
                 example: "mp3",
             }),
-        duration: z.number().min(3).max(300).optional().meta({
+        duration: z.number().min(0.5).max(300).optional().meta({
             description:
-                "Music duration in seconds, 3-300 (elevenmusic/acestep)",
+                "Output duration in seconds (elevenmusic/acestep 3-300; eleven-sfx 0.5-30)",
             example: 30,
+        }),
+        seconds: z.number().min(1).max(380).optional().meta({
+            description:
+                "Audio duration in seconds for stable-audio-3-medium/large, 1-380.",
+            example: 30,
+        }),
+        steps: z.number().int().min(1).max(100).optional().meta({
+            description:
+                "Sampling steps (stable-audio-3-medium 1-100, stable-audio-3-large 4-8).",
+            example: 8,
+        }),
+        negative_prompt: z.string().max(10000).optional().meta({
+            description: "Negative prompt for stable-audio-3-large.",
+            example: "distortion, vocals",
+        }),
+        loop: z.boolean().optional().meta({
+            description: "Loop the generated sound effect (eleven-sfx only)",
+            example: false,
+        }),
+        prompt_influence: z.number().min(0).max(1).optional().meta({
+            description:
+                "How strictly to follow the prompt, 0-1 (eleven-sfx only)",
+            example: 0.3,
         }),
         instrumental: z.boolean().optional().meta({
             description:
                 "If true, guarantees instrumental output (elevenmusic only)",
             example: false,
+        }),
+        store_for_inpainting: z.boolean().optional().meta({
+            description:
+                "If true, stores the generated elevenmusic song and returns its song ID for later inpainting.",
+            example: false,
+        }),
+        extract_composition_plan: z.boolean().optional().meta({
+            description:
+                "If true with reference audio, uploads it and asks ElevenLabs to derive a music_v2 composition plan.",
+            example: false,
+        }),
+        conditioning_ref: z.unknown().optional().meta({
+            description:
+                "ElevenLabs music_v2 AudioRefChunk to apply to the generated chunk. Multipart reference_audio can create this automatically.",
+        }),
+        composition_plan: z.unknown().optional().meta({
+            description:
+                "ElevenLabs composition_plan for music generation/inpainting. Cannot be combined with a plain prompt upstream.",
         }),
         seed: z.number().int().min(0).max(4294967295).optional().meta({
             description:
@@ -91,12 +130,39 @@ type AudioContext = Context<Env>;
 type SimpleAudioQuery = {
     safe?: SafeValue;
     duration?: number;
+    seconds?: number;
+    steps?: number;
+    negative_prompt?: string;
     style?: string;
     instrumental?: boolean;
     seed?: number;
     voice: string;
     response_format: string;
     instruct?: string;
+    loop?: boolean;
+    prompt_influence?: number;
+};
+
+type AudioRefChunk = {
+    song_id: string;
+    range: {
+        start_ms: number;
+        end_ms: number;
+    };
+};
+
+type GenerateMusicOptions = {
+    prompt: string;
+    durationSeconds?: number;
+    forceInstrumental?: boolean;
+    seed?: number;
+    storeForInpainting?: boolean;
+    extractCompositionPlan?: boolean;
+    conditioningRef?: unknown;
+    compositionPlan?: unknown;
+    referenceAudio?: File;
+    apiKey: string;
+    log: Logger;
 };
 
 function mapOutputFormat(format: string): string {
@@ -151,7 +217,8 @@ export function fixWavHeader(buffer: ArrayBuffer): ArrayBuffer {
 }
 
 export async function generateSpeech(opts: {
-    modelName?: AudioModelName;
+    modelName: string;
+    modelId: string;
     text: string;
     voice: string;
     responseFormat: string;
@@ -159,9 +226,8 @@ export async function generateSpeech(opts: {
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
-    const { modelName, text, voice, responseFormat, apiKey, log } = opts;
-    const resolvedModelName: AudioModelName = modelName ?? "elevenlabs";
-    const elevenLabsModelId = getModelDefinition(resolvedModelName).modelId;
+    const { modelName, modelId, text, voice, responseFormat, apiKey, log } =
+        opts;
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -169,9 +235,9 @@ export async function generateSpeech(opts: {
         });
     }
 
-    if (text.length > 4096) {
+    if (text.length > 10000) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Input text too long: ${text.length} characters. Maximum is 4096.`,
+            message: `Input text too long: ${text.length} characters. Maximum is 10000.`,
         });
     }
 
@@ -197,7 +263,7 @@ export async function generateSpeech(opts: {
 
     const elevenLabsBody: Record<string, unknown> = {
         text,
-        model_id: elevenLabsModelId,
+        model_id: modelId,
         voice_settings: {
             stability: 0.5,
             similarity_boost: 0.75,
@@ -223,17 +289,14 @@ export async function generateSpeech(opts: {
     const contentType = response.headers.get("content-type") || "audio/mpeg";
 
     const usageHeaders = {
-        ...buildUsageHeaders(
-            resolvedModelName,
-            createAudioTokenUsage(text.length),
-        ),
+        ...buildUsageHeaders(modelName, createAudioTokenUsage(text.length)),
         "x-tts-voice": voice,
     };
 
     log.info("TTS success: {chars} characters", { chars: text.length });
 
     // WAV needs its RIFF header repaired (ElevenLabs ships a placeholder length),
-    // which requires buffering the body. Audio is small (input capped at 4096
+    // which requires buffering the body. Audio is small (input capped at 10000
     // chars) so this is cheap; all other formats keep streaming.
     if (responseFormat === "wav") {
         const audioBuffer = fixWavHeader(await response.arrayBuffer());
@@ -443,15 +506,86 @@ function finalizeScribeUtterance(group: {
     };
 }
 
-export async function generateMusic(opts: {
+function parseJsonObject(value: string, fieldName: string): unknown {
+    try {
+        return JSON.parse(value);
+    } catch {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `${fieldName} must be valid JSON`,
+        });
+    }
+}
+
+function createConditionedCompositionPlan(opts: {
     prompt: string;
     durationSeconds?: number;
-    forceInstrumental?: boolean;
-    seed?: number;
+    conditioningRef: unknown;
+}): { chunks: unknown[] } {
+    return {
+        chunks: [
+            {
+                text: opts.prompt,
+                duration_ms: Math.round((opts.durationSeconds ?? 30) * 1000),
+                positive_styles: ["great production quality"],
+                conditioning_ref: opts.conditioningRef,
+                condition_strength: "high",
+            },
+        ],
+    };
+}
+
+async function uploadMusicReference(opts: {
+    file: File;
+    extractCompositionPlan?: boolean;
     apiKey: string;
     log: Logger;
-}): Promise<Response> {
-    const { prompt, durationSeconds, forceInstrumental, apiKey, log } = opts;
+}): Promise<{
+    song_id?: string;
+    composition_plan?: unknown;
+}> {
+    const uploadUrl = "https://api.elevenlabs.io/v1/music/upload";
+    const formData = new FormData();
+    const filename =
+        opts.file.name && opts.file.name !== "blob"
+            ? opts.file.name
+            : "reference.mp3";
+    formData.append("file", opts.file, filename);
+    if (opts.extractCompositionPlan) {
+        formData.append("extract_composition_plan", "music_v2");
+    }
+
+    opts.log.info(
+        "ElevenLabs music upload: filename={filename}, size={size}, extractPlan={extractPlan}",
+        {
+            filename,
+            size: opts.file.size,
+            extractPlan: opts.extractCompositionPlan || false,
+        },
+    );
+
+    const rawResponse = await fetch(uploadUrl, {
+        method: "POST",
+        headers: { "xi-api-key": opts.apiKey },
+        body: formData,
+    });
+    const response = await ensureUpstreamOk(rawResponse, uploadUrl);
+    return (await response.json()) as {
+        song_id?: string;
+        composition_plan?: unknown;
+    };
+}
+
+export async function generateMusic(
+    opts: GenerateMusicOptions,
+): Promise<Response> {
+    const {
+        prompt,
+        durationSeconds,
+        forceInstrumental,
+        apiKey,
+        log,
+        referenceAudio,
+    } = opts;
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -465,29 +599,82 @@ export async function generateMusic(opts: {
         });
     }
 
+    const modelId = AUDIO_SERVICES.elevenmusic.modelId;
+    let uploadedSongId: string | undefined;
+    let compositionPlan = opts.compositionPlan;
+    let conditioningRef = opts.conditioningRef;
+
+    if (referenceAudio) {
+        const upload = await uploadMusicReference({
+            file: referenceAudio,
+            extractCompositionPlan: opts.extractCompositionPlan,
+            apiKey,
+            log,
+        });
+        uploadedSongId = upload.song_id;
+        if (!uploadedSongId) {
+            throw new UpstreamError(502 as ContentfulStatusCode, {
+                message: "ElevenLabs music upload response missing song_id",
+            });
+        }
+        if (compositionPlan === undefined && opts.extractCompositionPlan) {
+            compositionPlan = upload.composition_plan;
+        }
+        if (conditioningRef === undefined) {
+            conditioningRef = {
+                song_id: uploadedSongId,
+                range: {
+                    start_ms: 0,
+                    end_ms: Math.min(
+                        Math.round((durationSeconds ?? 30) * 1000),
+                        30_000,
+                    ),
+                },
+            } satisfies AudioRefChunk;
+        }
+    }
+
+    if (compositionPlan === undefined && conditioningRef !== undefined) {
+        compositionPlan = createConditionedCompositionPlan({
+            prompt,
+            durationSeconds,
+            conditioningRef,
+        });
+    }
+
     log.info(
-        "Music request: chars={chars}, duration={duration}, instrumental={instrumental}",
+        "Music request: model={model}, chars={chars}, duration={duration}, instrumental={instrumental}, reference={reference}, plan={plan}",
         {
+            model: modelId,
             chars: prompt.length,
             duration: durationSeconds || "auto",
             instrumental: forceInstrumental || false,
+            reference: Boolean(conditioningRef),
+            plan: Boolean(compositionPlan),
         },
     );
 
     const elevenLabsUrl = "https://api.elevenlabs.io/v1/music";
 
     const elevenLabsBody: Record<string, unknown> = {
-        prompt,
-        model_id: "music_v1",
+        model_id: modelId,
     };
-    if (durationSeconds !== undefined) {
+    if (compositionPlan !== undefined) {
+        elevenLabsBody.composition_plan = compositionPlan;
+    } else {
+        elevenLabsBody.prompt = prompt;
+    }
+    if (durationSeconds !== undefined && compositionPlan === undefined) {
         elevenLabsBody.music_length_ms = Math.round(durationSeconds * 1000);
     }
-    if (forceInstrumental) {
+    if (forceInstrumental && compositionPlan === undefined) {
         elevenLabsBody.force_instrumental = true;
     }
-    if (opts.seed !== undefined) {
+    if (opts.seed !== undefined && compositionPlan === undefined) {
         elevenLabsBody.seed = opts.seed;
+    }
+    if (opts.storeForInpainting) {
+        elevenLabsBody.store_for_inpainting = true;
     }
 
     const rawResponse = await fetch(elevenLabsUrl, {
@@ -505,13 +692,30 @@ export async function generateMusic(opts: {
 
     // Buffer response and extract duration
     const audioBuffer = await response.arrayBuffer();
-    // ElevenLabs returns MP3; estimate duration from byte size (~16 kB/s) rather than parsing the container.
-    const estimatedDuration = audioBuffer.byteLength / 16000;
+    // ElevenLabs Music v2 returns 192 kbps CBR MP3 (= 24 kB/s, ffprobe-verified
+    // across 10s/30s clips). Estimate duration from byte size rather than parsing
+    // the container. NOTE: must match the real output bitrate or billing skews —
+    // the previous 16 kB/s (128 kbps) constant over-counted seconds by 1.5x.
+    const MUSIC_MP3_BYTES_PER_SECOND = 24000;
+    const estimatedDuration =
+        audioBuffer.byteLength / MUSIC_MP3_BYTES_PER_SECOND;
 
     const usageHeaders = buildUsageHeaders(
         "elevenmusic",
         createCompletionAudioSecondsUsage(estimatedDuration),
     );
+    const responseHeaders: Record<string, string> = {
+        "Content-Type": contentType,
+        ...usageHeaders,
+    };
+    const generatedSongId = response.headers.get("song-id");
+    if (generatedSongId) {
+        responseHeaders["song-id"] = generatedSongId;
+        responseHeaders["x-elevenlabs-song-id"] = generatedSongId;
+    }
+    if (uploadedSongId) {
+        responseHeaders["x-elevenlabs-reference-song-id"] = uploadedSongId;
+    }
 
     log.info("Music success: {bytes} bytes, ~{duration}s", {
         bytes: audioBuffer.byteLength,
@@ -520,10 +724,95 @@ export async function generateMusic(opts: {
 
     return new Response(audioBuffer, {
         status: 200,
-        headers: {
-            "Content-Type": contentType,
-            ...usageHeaders,
-        },
+        headers: responseHeaders,
+    });
+}
+
+/**
+ * Calls ElevenLabs Sound Effects (text -> sound effect) via /v1/sound-generation.
+ * Billed per second of output audio (see registry `eleven-sfx` cost block).
+ */
+export async function generateSoundEffect(opts: {
+    prompt: string;
+    durationSeconds?: number;
+    loop?: boolean;
+    promptInfluence?: number;
+    responseFormat?: string;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const {
+        prompt,
+        durationSeconds,
+        loop,
+        promptInfluence,
+        responseFormat,
+        apiKey,
+        log,
+    } = opts;
+
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message:
+                "Sound effects service is not configured (missing API key)",
+        });
+    }
+    // SFX always returns 128 kbps MP3. The per-second price is derived from the
+    // MP3 byte rate, so honoring other formats would need per-format billing
+    // math — reject instead of silently downgrading (default "mp3" passes).
+    if (responseFormat && responseFormat !== "mp3") {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `eleven-sfx only supports mp3 output; response_format=${responseFormat} is not available.`,
+        });
+    }
+    if (prompt.length > 1000) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Prompt too long: ${prompt.length} characters. Maximum is 1000.`,
+        });
+    }
+
+    const modelId = AUDIO_SERVICES["eleven-sfx"].modelId;
+    const elevenLabsUrl = "https://api.elevenlabs.io/v1/sound-generation";
+
+    const body: Record<string, unknown> = { text: prompt, model_id: modelId };
+    // ElevenLabs SFX supports 0.5-30s; omit to let the model decide the length.
+    if (durationSeconds !== undefined) {
+        body.duration_seconds = Math.min(Math.max(durationSeconds, 0.5), 30);
+    }
+    if (loop !== undefined) body.loop = loop;
+    if (promptInfluence !== undefined) body.prompt_influence = promptInfluence;
+
+    log.info("Sound effect request: chars={chars}, duration={duration}", {
+        chars: prompt.length,
+        duration: durationSeconds ?? "auto",
+    });
+
+    const rawResponse = await fetch(elevenLabsUrl, {
+        method: "POST",
+        headers: { "xi-api-key": apiKey, "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+    });
+    const response = await ensureUpstreamOk(rawResponse, elevenLabsUrl);
+
+    const contentType = response.headers.get("content-type") || "audio/mpeg";
+    const audioBuffer = await response.arrayBuffer();
+    // ElevenLabs Sound Effects returns 128 kbps CBR MP3 (= 16 kB/s, ffprobe-verified).
+    const SFX_MP3_BYTES_PER_SECOND = 16000;
+    const estimatedDuration = audioBuffer.byteLength / SFX_MP3_BYTES_PER_SECOND;
+
+    const usageHeaders = buildUsageHeaders(
+        "eleven-sfx",
+        createCompletionAudioSecondsUsage(estimatedDuration),
+    );
+
+    log.info("Sound effect success: {bytes} bytes, ~{duration}s", {
+        bytes: audioBuffer.byteLength,
+        duration: Math.round(estimatedDuration),
+    });
+
+    return new Response(audioBuffer, {
+        status: 200,
+        headers: { "Content-Type": contentType, ...usageHeaders },
     });
 }
 
@@ -559,8 +848,10 @@ export function isQwenTtsModel(model: string): model is QwenTtsModelName {
     return QWEN_TTS_MODELS.includes(model as QwenTtsModelName);
 }
 
-function requireTextToAudioModel(model: ModelName): void {
-    const definition = getModelDefinition(model);
+function requireTextToAudioModel(
+    model: string,
+    definition: ModelDefinition<string>,
+): void {
     const acceptsText = definition.inputModalities?.includes("text");
     const returnsAudio = definition.outputModalities?.includes("audio");
 
@@ -571,15 +862,198 @@ function requireTextToAudioModel(model: ModelName): void {
     });
 }
 
+function requireElevenMusicOptions(
+    model: string,
+    opts: {
+        referenceAudio?: File;
+        compositionPlan?: unknown;
+        conditioningRef?: unknown;
+        storeForInpainting?: boolean;
+        extractCompositionPlan?: boolean;
+    },
+): void {
+    // elevenmusic supports every conditioning option.
+    if (model === "elevenmusic") return;
+
+    // ElevenLabs-only options (everything except a plain reference clip).
+    const usesElevenOnlyOptions =
+        opts.compositionPlan !== undefined ||
+        opts.conditioningRef !== undefined ||
+        opts.storeForInpainting === true ||
+        opts.extractCompositionPlan === true;
+
+    // stable-audio-3-medium (fal) and stable-audio-3-large (Stability direct)
+    // accept reference_audio for audio-to-audio, but not the ElevenLabs
+    // composition/conditioning options.
+    if (model === "stable-audio-3-medium" || model === "stable-audio-3-large") {
+        if (usesElevenOnlyOptions) {
+            throw new UpstreamError(400 as ContentfulStatusCode, {
+                message:
+                    "conditioning_ref, composition_plan, store_for_inpainting, and extract_composition_plan are only supported with model=elevenmusic.",
+            });
+        }
+        return;
+    }
+
+    // Any other model: none of these options are supported.
+    if (!opts.referenceAudio && !usesElevenOnlyOptions) return;
+
+    throw new UpstreamError(400 as ContentfulStatusCode, {
+        message:
+            "reference_audio, conditioning_ref, composition_plan, store_for_inpainting, and extract_composition_plan are only supported with model=elevenmusic (stable-audio-3-medium and stable-audio-3-large also accept reference_audio).",
+    });
+}
+
+function parseOptionalNumber(
+    value: FormDataEntryValue | null,
+    fieldName: string,
+): number | undefined {
+    if (value === null || value === "") return undefined;
+    if (typeof value !== "string") {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `${fieldName} must be a number`,
+        });
+    }
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `${fieldName} must be a number`,
+        });
+    }
+    return parsed;
+}
+
+function parseOptionalBoolean(
+    value: FormDataEntryValue | null,
+    fieldName: string,
+): boolean | undefined {
+    if (value === null || value === "") return undefined;
+    if (typeof value !== "string") {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `${fieldName} must be a boolean`,
+        });
+    }
+    if (value === "true") return true;
+    if (value === "false") return false;
+    throw new UpstreamError(400 as ContentfulStatusCode, {
+        message: `${fieldName} must be true or false`,
+    });
+}
+
+function parseCreateSpeechRequest(
+    value: unknown,
+): CreateSpeechRequest & { reference_audio?: File } {
+    const parsed = CreateSpeechRequestSchema.extend({
+        reference_audio: z.instanceof(File).optional(),
+    }).safeParse(value);
+    if (parsed.success) return parsed.data;
+
+    const firstIssue = parsed.error.issues[0];
+    const path = firstIssue?.path.join(".") || "body";
+    throw new UpstreamError(400 as ContentfulStatusCode, {
+        message: `${path}: ${firstIssue?.message || "Invalid request body"}`,
+    });
+}
+
+async function parseSpeechRequest(c: AudioContext): Promise<
+    CreateSpeechRequest & {
+        reference_audio?: File;
+    }
+> {
+    const contentType = c.req.header("content-type") || "";
+
+    if (contentType.includes("multipart/form-data")) {
+        let formData: FormData;
+        try {
+            formData = c.get("formData") || (await c.req.formData());
+        } catch {
+            throw new UpstreamError(400 as ContentfulStatusCode, {
+                message: "Invalid multipart form data",
+            });
+        }
+
+        const input = formData.get("input");
+        const referenceAudio =
+            (formData.get("reference_audio") as File | null) ||
+            (formData.get("file") as File | null) ||
+            undefined;
+        const rawCompositionPlan = formData.get("composition_plan");
+        const rawConditioningRef = formData.get("conditioning_ref");
+        const parsed: CreateSpeechRequest & { reference_audio?: File } = {
+            model: (formData.get("model") as string | null) || undefined,
+            input: typeof input === "string" ? input : "",
+            safe: (formData.get("safe") as string | undefined) || undefined,
+            voice: (formData.get("voice") as string | null) || "alloy",
+            response_format:
+                (formData.get("response_format") as
+                    | "wav"
+                    | "mp3"
+                    | "flac"
+                    | "opus"
+                    | "aac"
+                    | "pcm") || "mp3",
+            duration: parseOptionalNumber(formData.get("duration"), "duration"),
+            // stable-audio-3-medium controls (also used on the audio-to-audio
+            // multipart path, which is the only way to send reference_audio).
+            seconds: parseOptionalNumber(formData.get("seconds"), "seconds"),
+            steps: parseOptionalNumber(formData.get("steps"), "steps"),
+            negative_prompt:
+                (formData.get("negative_prompt") as string | null) || undefined,
+            instrumental: parseOptionalBoolean(
+                formData.get("instrumental"),
+                "instrumental",
+            ),
+            store_for_inpainting: parseOptionalBoolean(
+                formData.get("store_for_inpainting"),
+                "store_for_inpainting",
+            ),
+            extract_composition_plan: parseOptionalBoolean(
+                formData.get("extract_composition_plan"),
+                "extract_composition_plan",
+            ),
+            seed: parseOptionalNumber(formData.get("seed"), "seed"),
+            style: (formData.get("style") as string | null) || undefined,
+            instruct: (formData.get("instruct") as string | null) || undefined,
+            loop: parseOptionalBoolean(formData.get("loop"), "loop"),
+            prompt_influence: parseOptionalNumber(
+                formData.get("prompt_influence"),
+                "prompt_influence",
+            ),
+            conditioning_ref:
+                typeof rawConditioningRef === "string"
+                    ? parseJsonObject(rawConditioningRef, "conditioning_ref")
+                    : undefined,
+            composition_plan:
+                typeof rawCompositionPlan === "string"
+                    ? parseJsonObject(rawCompositionPlan, "composition_plan")
+                    : undefined,
+            reference_audio: referenceAudio,
+        };
+
+        return parseCreateSpeechRequest(parsed);
+    }
+
+    let body: unknown;
+    try {
+        body = await c.req.json();
+    } catch {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: "Invalid JSON body",
+        });
+    }
+    return parseCreateSpeechRequest(body);
+}
+
 export async function generateQwenTts(opts: {
     modelName: QwenTtsModelName;
+    modelId: string;
     text: string;
     voice: string;
     instruct?: string;
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
-    const { modelName, text, voice, instruct, apiKey, log } = opts;
+    const { modelName, modelId, text, voice, instruct, apiKey, log } = opts;
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -594,17 +1068,16 @@ export async function generateQwenTts(opts: {
         });
     }
 
-    const model = getModelDefinition(modelName).modelId;
     const qwenVoice = resolveQwenVoice(voice);
 
     log.info("Qwen TTS request: model={model}, voice={voice}, chars={chars}", {
-        model,
+        model: modelId,
         voice: qwenVoice,
         chars: text.length,
     });
 
     const body: Record<string, unknown> = {
-        model,
+        model: modelId,
         input: { text, voice: qwenVoice },
         parameters:
             modelName === "qwen-tts-instruct" && instruct ? { instruct } : {},
@@ -794,12 +1267,312 @@ export async function generateAceStepMusic(opts: {
 }
 
 /**
- * Runs the 4-way text-to-audio model cascade (acestep -> elevenmusic ->
- * qwen-tts -> elevenlabs speech) for the resolved model and wraps the result in
- * safety headers. Shared by the GET /audio/:text and POST /v1/audio/speech
- * handlers. Callers normalize their inputs first (GET maps seed=-1 -> undefined
- * since only its schema permits the sentinel).
+ * Dispatches the resolved text-to-audio model and wraps the result in safety
+ * headers. Shared by the GET /audio/:text and POST /v1/audio/speech handlers.
+ * Callers normalize their inputs first (GET maps seed=-1 -> undefined since
+ * only its schema permits the sentinel).
  */
+// fal synchronous inference endpoint. Stable Audio 3 Medium generates quickly,
+// so the blocking `fal.run` route returns inline without needing the queue/poll
+// API.
+const STABLE_AUDIO_3_MEDIUM_ENDPOINT =
+    "https://fal.run/fal-ai/stable-audio-3/medium/text-to-audio";
+// A reference clip switches fal to audio-to-audio (style transfer) — a separate
+// endpoint with its own flat fee.
+const STABLE_AUDIO_3_MEDIUM_A2A_ENDPOINT =
+    "https://fal.run/fal-ai/stable-audio-3/medium/audio-to-audio";
+
+// Stable Audio 3 Large runs on Stability's direct API, which is asynchronous:
+// the POST returns 202 + { id } and the rendered audio is retrieved by polling
+// /v2beta/results/{id}.
+const STABLE_AUDIO_3_LARGE_ENDPOINT =
+    "https://api.stability.ai/v2beta/audio/stable-audio/text-to-audio";
+// A reference clip switches Large to audio-to-audio (style transfer) — a
+// separate endpoint that takes the clip in an `audio` field. Stability bills it
+// the same flat 26 credits/$0.26 as text-to-audio.
+const STABLE_AUDIO_3_LARGE_A2A_ENDPOINT =
+    "https://api.stability.ai/v2beta/audio/stable-audio/audio-to-audio";
+const STABILITY_RESULTS_ENDPOINT = "https://api.stability.ai/v2beta/results";
+
+// fal returns the generated file as a URL (or {url}) on a fal.media CDN, not
+// inline bytes — we fetch it and stream the bytes back to the caller.
+type FalAudioOutput = {
+    audio?: string | { url?: string; content_type?: string };
+    seed?: number;
+};
+
+export async function generateStableAudio3Medium(opts: {
+    prompt: string;
+    seconds?: number;
+    steps?: number;
+    seed?: number;
+    referenceAudio?: File;
+    falKey?: string;
+    log: Logger;
+}): Promise<Response> {
+    const { prompt, seconds, steps, seed, referenceAudio, falKey, log } = opts;
+
+    if (!falKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message:
+                "Stable Audio 3 Medium is not configured (missing FAL_KEY)",
+        });
+    }
+
+    if (prompt.length > 10000) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Prompt too long: ${prompt.length} characters. Maximum is 10000.`,
+        });
+    }
+
+    // A reference clip switches fal from text-to-audio to audio-to-audio
+    // (style transfer) — a different endpoint, body field, and flat fee.
+    const isAudioToAudio = referenceAudio !== undefined;
+    const duration = Math.min(380, Math.max(1, seconds ?? 30));
+    const input: Record<string, unknown> = {
+        prompt,
+        duration,
+    };
+    if (steps !== undefined) input.num_inference_steps = steps;
+    if (seed !== undefined) input.seed = seed;
+    if (isAudioToAudio) {
+        // fal a2a takes the reference clip as a data-URI `audio_url`.
+        const mime = referenceAudio.type || "audio/wav";
+        input.audio_url = `data:${mime};base64,${arrayBufferToBase64(
+            await referenceAudio.arrayBuffer(),
+        )}`;
+    }
+
+    const endpoint = isAudioToAudio
+        ? STABLE_AUDIO_3_MEDIUM_A2A_ENDPOINT
+        : STABLE_AUDIO_3_MEDIUM_ENDPOINT;
+
+    log.info(
+        "Stable Audio 3 Medium {mode} request: chars={chars}, duration={duration}, steps={steps}",
+        {
+            mode: isAudioToAudio ? "audio-to-audio" : "text-to-audio",
+            chars: prompt.length,
+            duration,
+            steps: steps ?? "(default)",
+        },
+    );
+
+    const rawResponse = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+            // fal uses `Authorization: Key <id:secret>`, NOT `Bearer`.
+            Authorization: `Key ${falKey}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(input),
+    });
+    const response = await ensureUpstreamOk(rawResponse, endpoint);
+    const result = (await response.json()) as FalAudioOutput;
+    const audioUrl =
+        typeof result.audio === "string" ? result.audio : result.audio?.url;
+    if (!audioUrl) {
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message: "Stable Audio 3 Medium returned no audio URL",
+        });
+    }
+
+    const fileResponse = await ensureUpstreamOk(
+        await fetch(audioUrl),
+        audioUrl,
+    );
+    const audioBuffer = await fileResponse.arrayBuffer();
+    // fal SA3 Medium defaults to MP3 output, but its CDN serves the file as
+    // application/octet-stream — only trust the header when it's a real audio/*
+    // type, otherwise label it audio/mpeg so clients play it correctly.
+    const headerContentType = fileResponse.headers.get("content-type");
+    const contentType = headerContentType?.startsWith("audio/")
+        ? headerContentType
+        : "audio/mpeg";
+
+    // Flat per-generation fee: always one output audio unit, plus one input
+    // audio unit when a reference clip switches fal to audio-to-audio. The
+    // registry prices the base + audio-input surcharge (see its cost block).
+    const usageHeaders = buildUsageHeaders("stable-audio-3-medium", {
+        completionAudioTokens: 1,
+        promptAudioTokens: isAudioToAudio ? 1 : 0,
+    });
+
+    log.info("Stable Audio 3 Medium success: {bytes} bytes", {
+        bytes: audioBuffer.byteLength,
+    });
+
+    return new Response(audioBuffer, {
+        status: 200,
+        headers: {
+            "Content-Type": contentType,
+            ...usageHeaders,
+        },
+    });
+}
+
+export async function generateStableAudio3Large(opts: {
+    prompt: string;
+    seconds?: number;
+    steps?: number;
+    seed?: number;
+    negativePrompt?: string;
+    referenceAudio?: File;
+    responseFormat: string;
+    apiKey?: string;
+    log: Logger;
+}): Promise<Response> {
+    const {
+        prompt,
+        seconds = 190,
+        steps,
+        seed,
+        negativePrompt,
+        referenceAudio,
+        responseFormat,
+        apiKey,
+        log,
+    } = opts;
+
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message:
+                "Stable Audio 3 Large is not configured (missing STABILITY_API_KEY)",
+        });
+    }
+
+    if (prompt.length > 10000) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Prompt too long: ${prompt.length} characters. Maximum is 10000.`,
+        });
+    }
+
+    if (!["mp3", "wav"].includes(responseFormat)) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message:
+                "stable-audio-3-large supports response_format values: mp3, wav",
+        });
+    }
+
+    // A reference clip switches Large to audio-to-audio (style transfer): a
+    // different endpoint that takes the clip in `audio` (which defines the
+    // output length) instead of `duration`. Both modes bill the same flat fee.
+    const isAudioToAudio = referenceAudio !== undefined;
+    const endpoint = isAudioToAudio
+        ? STABLE_AUDIO_3_LARGE_A2A_ENDPOINT
+        : STABLE_AUDIO_3_LARGE_ENDPOINT;
+    const duration = Math.min(380, Math.max(1, seconds));
+
+    const formData = new FormData();
+    formData.append("prompt", prompt);
+    // The direct API's only accepted `model` value is "stable-audio-3" (our
+    // registry key is stable-audio-3-large).
+    formData.append("model", "stable-audio-3");
+    formData.append("output_format", responseFormat);
+    if (isAudioToAudio) {
+        formData.append("audio", referenceAudio);
+    } else {
+        formData.append("duration", String(duration));
+    }
+    if (steps !== undefined) formData.append("steps", String(steps));
+    if (seed !== undefined) formData.append("seed", String(seed));
+    if (negativePrompt) formData.append("negative_prompt", negativePrompt);
+
+    log.info(
+        "Stable Audio 3 Large {mode} request: chars={chars}, duration={duration}, steps={steps}, hasNegativePrompt={hasNegativePrompt}",
+        {
+            mode: isAudioToAudio ? "audio-to-audio" : "text-to-audio",
+            chars: prompt.length,
+            duration: isAudioToAudio ? "(from reference)" : duration,
+            steps: steps ?? "(default)",
+            hasNegativePrompt: Boolean(negativePrompt),
+        },
+    );
+
+    // Submit returns 202 + { id }. Note the two endpoints want different Accept
+    // values — submit requires `audio/*`, while the results endpoint rejects
+    // `audio/*` and expects `*/*` (binary) or `application/json`.
+    const submitResponse = await ensureUpstreamOk(
+        await fetch(endpoint, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                Accept: "audio/*",
+            },
+            body: formData,
+        }),
+        endpoint,
+    );
+
+    const { id } = (await submitResponse.json()) as { id?: string };
+    if (!id) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "Stable Audio 3 Large did not return a generation id",
+        });
+    }
+
+    // Poll until done (202 = still rendering, 200 = audio ready). CF Workers
+    // have wall-clock limits; cap at 180s (long-form renders run longer than
+    // the ~seconds a short clip takes).
+    const resultUrl = `${STABILITY_RESULTS_ENDPOINT}/${id}`;
+    const maxPollTime = 180_000;
+    const pollInterval = 2_000;
+    const startTime = Date.now();
+    let consecutiveErrors = 0;
+
+    while (Date.now() - startTime < maxPollTime) {
+        await new Promise((r) => setTimeout(r, pollInterval));
+
+        const pollResponse = await fetch(resultUrl, {
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                Accept: "*/*",
+            },
+        });
+
+        if (pollResponse.status === 202) {
+            consecutiveErrors = 0;
+            continue;
+        }
+
+        if (!pollResponse.ok) {
+            if (++consecutiveErrors >= 3) {
+                const errorText = await pollResponse.text();
+                throw new UpstreamError(502 as ContentfulStatusCode, {
+                    message:
+                        errorText ||
+                        `Stable Audio 3 Large polling failed: ${pollResponse.status}`,
+                    upstreamStatus: pollResponse.status,
+                    responseBody: errorText,
+                });
+            }
+            continue;
+        }
+
+        const audioBuffer = await pollResponse.arrayBuffer();
+        const usageHeaders = buildUsageHeaders("stable-audio-3-large", {
+            completionAudioTokens: 1,
+        });
+
+        log.info("Stable Audio 3 Large success: {bytes} bytes", {
+            bytes: audioBuffer.byteLength,
+        });
+
+        return new Response(audioBuffer, {
+            status: 200,
+            headers: {
+                "Content-Type":
+                    pollResponse.headers.get("content-type") ||
+                    (responseFormat === "wav" ? "audio/wav" : "audio/mpeg"),
+                ...usageHeaders,
+            },
+        });
+    }
+
+    throw new UpstreamError(504 as ContentfulStatusCode, {
+        message: "Stable Audio 3 Large generation timed out",
+    });
+}
+
 async function dispatchAudioGeneration(
     c: AudioContext,
     opts: {
@@ -808,11 +1581,23 @@ async function dispatchAudioGeneration(
         responseFormat: string;
         seed?: number;
         duration?: number;
+        seconds?: number;
+        steps?: number;
+        negativePrompt?: string;
         style?: string;
         instrumental?: boolean;
+        storeForInpainting?: boolean;
+        extractCompositionPlan?: boolean;
+        conditioningRef?: unknown;
+        compositionPlan?: unknown;
+        referenceAudio?: File;
         instruct?: string;
+        loop?: boolean;
+        promptInfluence?: number;
         apiKey: string;
         dashScopeApiKey: string;
+        falKey?: string;
+        stabilityApiKey?: string;
         env: Env["Bindings"];
         log: Logger;
     },
@@ -823,11 +1608,23 @@ async function dispatchAudioGeneration(
         responseFormat,
         seed,
         duration,
+        seconds,
+        steps,
+        negativePrompt,
         style,
         instrumental,
+        storeForInpainting,
+        extractCompositionPlan,
+        conditioningRef,
+        compositionPlan,
+        referenceAudio,
         instruct,
+        loop,
+        promptInfluence,
         apiKey,
         dashScopeApiKey,
+        falKey,
+        stabilityApiKey,
         env,
         log,
     } = opts;
@@ -854,6 +1651,58 @@ async function dispatchAudioGeneration(
                 durationSeconds: duration,
                 forceInstrumental: instrumental,
                 seed,
+                storeForInpainting,
+                extractCompositionPlan,
+                conditioningRef,
+                compositionPlan,
+                referenceAudio,
+                apiKey,
+                log,
+            }),
+        );
+    }
+
+    if (c.var.model.resolved === "stable-audio-3-medium") {
+        return withSafetyHeaders(
+            c,
+            await generateStableAudio3Medium({
+                prompt: text,
+                seconds: seconds ?? duration,
+                steps,
+                seed,
+                referenceAudio,
+                falKey,
+                log,
+            }),
+        );
+    }
+
+    if (c.var.model.resolved === "stable-audio-3-large") {
+        return withSafetyHeaders(
+            c,
+            await generateStableAudio3Large({
+                prompt: text,
+                seconds: seconds ?? duration,
+                steps,
+                seed,
+                negativePrompt,
+                referenceAudio,
+                responseFormat,
+                apiKey: stabilityApiKey,
+                log,
+            }),
+        );
+    }
+
+    if (c.var.model.resolved === "eleven-sfx") {
+        return withSafetyHeaders(
+            c,
+            await generateSoundEffect({
+                prompt: text,
+                durationSeconds: duration,
+                loop,
+                promptInfluence,
+                responseFormat,
                 apiKey,
                 log,
             }),
@@ -864,7 +1713,8 @@ async function dispatchAudioGeneration(
         return withSafetyHeaders(
             c,
             await generateQwenTts({
-                modelName: c.var.model.resolved,
+                modelName: c.var.model.resolved as QwenTtsModelName,
+                modelId: c.var.model.definition.modelId,
                 text,
                 voice,
                 instruct,
@@ -877,7 +1727,8 @@ async function dispatchAudioGeneration(
     return withSafetyHeaders(
         c,
         await generateSpeech({
-            modelName: c.var.model.resolved as AudioModelName,
+            modelName: c.var.model.resolved,
+            modelId: c.var.model.definition.modelId,
             text,
             voice,
             responseFormat,
@@ -903,7 +1754,7 @@ export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
     }
 
     const query = c.req.valid("query" as never) as SimpleAudioQuery;
-    requireTextToAudioModel(c.var.model.resolved);
+    requireTextToAudioModel(c.var.model.resolved, c.var.model.definition);
     text = await applySafety(c, text, query.safe);
 
     const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
@@ -917,11 +1768,18 @@ export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
         responseFormat: query.response_format,
         seed: query.seed === -1 ? undefined : query.seed,
         duration: query.duration,
+        seconds: query.seconds,
+        steps: query.steps,
+        negativePrompt: query.negative_prompt,
         style: query.style,
         instrumental: query.instrumental,
         instruct: query.instruct,
+        loop: query.loop,
+        promptInfluence: query.prompt_influence,
         apiKey,
         dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
+        falKey: c.env.FAL_KEY,
+        stabilityApiKey: c.env.STABILITY_API_KEY,
         env: c.env,
         log,
     });
@@ -931,14 +1789,119 @@ export const audioRoutes = new Hono<Env>()
     .use("*", edgeRateLimit)
     .use("*", auth(), frontendKeyRateLimit, balance)
     .post(
+        "/music/upload",
+        describeRoute({
+            tags: ["🔊 Audio"],
+            summary: "Upload Music Reference",
+            description:
+                "Upload an audio file to ElevenLabs Music and receive a `song_id` for reference conditioning or inpainting. Set `extract_composition_plan=true` to return a music_v2 composition plan derived from the track.",
+            requestBody: {
+                required: true,
+                content: {
+                    "multipart/form-data": {
+                        schema: {
+                            type: "object",
+                            required: ["file"],
+                            properties: {
+                                file: {
+                                    type: "string",
+                                    format: "binary",
+                                    description: "Music file to upload.",
+                                },
+                                extract_composition_plan: {
+                                    type: "boolean",
+                                    default: false,
+                                    description:
+                                        "Return a music_v2 composition plan extracted from the uploaded track.",
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            responses: {
+                200: {
+                    description:
+                        "Success - Returns ElevenLabs song_id and optional composition_plan",
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                properties: {
+                                    song_id: { type: "string" },
+                                    composition_plan: { type: "object" },
+                                },
+                            },
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
+            },
+        }),
+        resolveModel("generate.audio", { defaultModel: "elevenmusic" }),
+        track("generate.audio"),
+        async (c) => {
+            const log = c.get("log").getChild("music-upload");
+            await requireGenerationAccess(c.var, c.env);
+
+            if (c.var.model.resolved !== "elevenmusic") {
+                throw new UpstreamError(400 as ContentfulStatusCode, {
+                    message: "Music upload only supports model=elevenmusic",
+                });
+            }
+
+            let formData: FormData;
+            try {
+                formData = c.get("formData") || (await c.req.formData());
+            } catch {
+                throw new UpstreamError(400 as ContentfulStatusCode, {
+                    message: "Invalid multipart form data",
+                });
+            }
+
+            const file = formData.get("file") as File | null;
+            if (!file) {
+                throw new UpstreamError(400 as ContentfulStatusCode, {
+                    message: "Missing required field: file",
+                });
+            }
+
+            const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
+                .ELEVENLABS_API_KEY;
+            const upload = await uploadMusicReference({
+                file,
+                extractCompositionPlan:
+                    parseOptionalBoolean(
+                        formData.get("extract_composition_plan"),
+                        "extract_composition_plan",
+                    ) || false,
+                apiKey,
+                log,
+            });
+            const usageHeaders = buildUsageHeaders(
+                "elevenmusic",
+                createCompletionAudioSecondsUsage(file.size / 16000),
+            );
+
+            return Response.json(upload, {
+                headers: {
+                    ...usageHeaders,
+                    ...(upload.song_id
+                        ? { "x-elevenlabs-song-id": upload.song_id }
+                        : {}),
+                },
+            });
+        },
+    )
+    .post(
         "/speech",
         describeRoute({
             tags: ["🔊 Audio"],
             summary: "Text to Speech (OpenAI-compatible)",
             description: [
-                "Generate speech or music from text. Compatible with the OpenAI TTS API — use any OpenAI SDK.",
+                "Generate speech or music from text. Compatible with the OpenAI TTS API for JSON requests.",
                 "",
-                "Set `model` to `elevenmusic` to generate music instead of speech.",
+                "Set `model` to `elevenmusic`, `acestep`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music. Send multipart/form-data with `reference_audio` plus `input` to run audio-to-audio (style transfer) on `stable-audio-3-medium` or `stable-audio-3-large`, or reference-audio conditioning on `elevenmusic`; for ElevenLabs inpainting, pass a `composition_plan`.",
                 "",
                 `**Available voices:** ${ELEVENLABS_VOICES.join(", ")}`,
                 "",
@@ -968,7 +1931,6 @@ export const audioRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(400, 401, 402, 403, 500),
             },
         }),
-        validator("json", CreateSpeechRequestSchema),
         resolveModel("generate.audio"),
         track("generate.audio"),
         async (c) => {
@@ -981,12 +1943,32 @@ export const audioRoutes = new Hono<Env>()
                 voice,
                 response_format,
                 duration,
+                seconds,
+                steps,
+                negative_prompt,
                 instrumental,
+                store_for_inpainting,
+                extract_composition_plan,
+                conditioning_ref,
+                composition_plan,
+                reference_audio,
                 seed,
                 style,
                 instruct,
-            } = c.req.valid("json" as never) as CreateSpeechRequest;
-            requireTextToAudioModel(c.var.model.resolved);
+                loop,
+                prompt_influence,
+            } = await parseSpeechRequest(c);
+            requireTextToAudioModel(
+                c.var.model.resolved,
+                c.var.model.definition,
+            );
+            requireElevenMusicOptions(c.var.model.resolved, {
+                referenceAudio: reference_audio,
+                compositionPlan: composition_plan,
+                conditioningRef: conditioning_ref,
+                storeForInpainting: store_for_inpainting,
+                extractCompositionPlan: extract_composition_plan,
+            });
             const safeInput = await applySafety(c, input, safe);
 
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
@@ -999,11 +1981,23 @@ export const audioRoutes = new Hono<Env>()
                 responseFormat: response_format,
                 seed,
                 duration,
+                seconds,
+                steps,
+                negativePrompt: negative_prompt,
                 style,
                 instrumental,
+                storeForInpainting: store_for_inpainting,
+                extractCompositionPlan: extract_composition_plan,
+                conditioningRef: conditioning_ref,
+                compositionPlan: composition_plan,
+                referenceAudio: reference_audio,
                 instruct,
+                loop,
+                promptInfluence: prompt_influence,
                 apiKey,
                 dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
+                falKey: c.env.FAL_KEY,
+                stabilityApiKey: c.env.STABILITY_API_KEY,
                 env: c.env,
                 log,
             });

@@ -1164,7 +1164,7 @@
                     {
                         "matcher": {
                             "id": "byName",
-                            "options": "tier_only_users"
+                            "options": "quest_only_users"
                         },
                         "properties": [
                             {
@@ -1213,7 +1213,7 @@
                     },
                     "format": 0,
                     "range": true,
-                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username),\nuser_day AS (\n  SELECT\n    toStartOfInterval(start_time, INTERVAL ${bucket}) AS time,\n    user_github_id,\n    countIf(selected_meter_slug IN ('v1:meter:pack', 'local:pack')) AS pack_events,\n    countIf(selected_meter_slug IN ('v1:meter:tier', 'local:tier')) AS tier_events\n  FROM generation_event\n  WHERE $__timeFilter(start_time)\n    AND environment = 'production'\n    AND response_status >= 200 AND response_status < 300\n    AND total_price > 0\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n    AND api_key_client_id != '' AND api_key_client_id != 'undefined'\n    AND user_github_id != '' AND user_github_id != 'undefined'\n    AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\n  GROUP BY time, user_github_id\n)\nSELECT\n  time,\n  countIf(pack_events > 0) AS pack_users,\n  countIf(pack_events = 0 AND tier_events > 0) AS tier_only_users\nFROM user_day\nGROUP BY time ORDER BY time",
+                    "rawSql": "WITH banned_users AS (SELECT github_username FROM d1_user WHERE banned = 1 GROUP BY github_username),\nuser_day AS (\n  SELECT\n    toStartOfInterval(start_time, INTERVAL ${bucket}) AS time,\n    user_github_id,\n    countIf(selected_meter_slug IN ('v1:meter:pack', 'local:pack')) AS pack_events,\n    countIf(selected_meter_slug IN ('v1:meter:tier', 'local:tier')) AS quest_events\n  FROM generation_event\n  WHERE $__timeFilter(start_time)\n    AND environment = 'production'\n    AND response_status >= 200 AND response_status < 300\n    AND total_price > 0\n    AND user_github_username NOT IN (SELECT github_username FROM banned_users)\n    AND api_key_client_id != '' AND api_key_client_id != 'undefined'\n    AND user_github_id != '' AND user_github_id != 'undefined'\n    AND (start_time < toDateTime('2025-12-30 16:59:45') OR start_time > toDateTime('2026-01-08 18:19:58'))\n  GROUP BY time, user_github_id\n)\nSELECT\n  time,\n  countIf(pack_events > 0) AS pack_users,\n  countIf(pack_events = 0 AND quest_events > 0) AS quest_only_users\nFROM user_day\nGROUP BY time ORDER BY time",
                     "refId": "A"
                 }
             ],

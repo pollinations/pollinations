@@ -5,10 +5,11 @@
  * billing UI, and other control-plane routes remain owned by enter.pollinations.ai.
  *
  * URL Mapping:
- *   gen.pollinations.ai/              -> redirect to /docs
+ *   gen.pollinations.ai/              -> docs SEO landing
  *   gen.pollinations.ai/docs          -> docs handled locally
  *   gen.pollinations.ai/models        -> generation models
  *   gen.pollinations.ai/account/*     -> enter account API
+ *   gen.pollinations.ai/quests/catalog -> public quest catalog from enter
  *   gen.pollinations.ai/image/*       -> image generation
  *   gen.pollinations.ai/text/*        -> text generation
  *   gen.pollinations.ai/audio/*       -> audio generation
@@ -26,7 +27,9 @@ import type { Env } from "@/env.ts";
 import { logger } from "@/middleware/logger.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
+import { modelStatusRoutes } from "./routes/model-status.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
+import { docsLandingHtml, manifestResponse } from "./routes/seo.ts";
 
 export { PollenRateLimiter } from "./durable-objects/PollenRateLimiter.ts";
 
@@ -105,7 +108,8 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .use("*", requestId())
     .use("*", logger)
     .get("/robots.txt", () => robotsTxt())
-    .get("/", (c) => c.redirect(`${getPublicOrigin(c)}/docs`, 301))
+    .get("/manifest.webmanifest", () => manifestResponse())
+    .get("/", (c) => c.html(docsLandingHtml(c)))
     .get("/docs/", (c) => c.redirect(`${getPublicOrigin(c)}/docs`, 301))
     .all("/api/docs", redirectLegacyDocs)
     .all("/api/docs/", redirectLegacyDocs)
@@ -115,6 +119,16 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .all("/account", (c) => fetchEnter(c, new URL(c.req.url)))
     .all("/account/", (c) => fetchEnter(c, new URL(c.req.url)))
     .all("/account/*", (c) => {
+        const url = new URL(c.req.url);
+        url.pathname = `/api${stripTrailingSlash(url.pathname)}`;
+        return fetchEnter(c, url);
+    })
+    // Only the read-only quest catalog is part of the public gen API. Dashboard
+    // quest actions (/check, /rewards, /claim) stay on enter's session API.
+    .all("/quests/catalog", (c) => {
+        if (c.req.method !== "GET" && c.req.method !== "HEAD") {
+            return notFound();
+        }
         const url = new URL(c.req.url);
         url.pathname = `/api${stripTrailingSlash(url.pathname)}`;
         return fetchEnter(c, url);
@@ -136,6 +150,7 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
         const merged = await buildMergedOpenApiSpec(c, app);
         return c.json(merged);
     })
+    .route("/", modelStatusRoutes)
     .route("/", proxyRoutes);
 
 app.notFound(async (c: Context<Env>) => {

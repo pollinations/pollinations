@@ -188,7 +188,7 @@ graph TD
     GEN -->|"service binding\n(zero latency)"| ENTER
 
     subgraph CF["☁️ Cloudflare Workers"]
-        ENTER["🔐 enter.pollinations.ai · API Gateway\n─────────────────\n🔑 OAuth + API Keys (pk_ / sk_)\n💰 Pollen wallet (tier + pack buckets)\n⏱️ Rate Limiting (Durable Objects)\n📊 Usage → TinyBird\n🔄 Response dedup"]:::cfWorker
+        ENTER["🔐 enter.pollinations.ai · API Gateway\n─────────────────\n🔑 OAuth + API Keys (pk_ / sk_)\n💰 Pollen wallet (Quest + Paid buckets)\n⏱️ Rate Limiting (Durable Objects)\n📊 Usage → TinyBird\n🔄 Response dedup"]:::cfWorker
         IMG_ROUTER["🎨 Image/video router\nHono routes · KV heartbeats\nProvider + GPU dispatch"]:::cfWorkerLight
         PORTKEY_W["🔀 portkey.pollinations.ai\nText routing worker"]:::cfWorkerLight
         MEDIA["📁 media.pollinations.ai\nSHA-256 uploads · 10MB"]:::cfWorkerLight

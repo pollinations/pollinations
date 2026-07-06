@@ -3,18 +3,24 @@ import {
     CardIcon,
     Chip,
     DownloadIcon,
+    InlineLink,
     MultiSelect,
     Section,
     SproutIcon,
     StatCard,
     Surface,
+    Tooltip,
 } from "@pollinations/ui";
-import { formatPollen, PaidChip, TierChip } from "@pollinations/ui/wallet";
+import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import type { FC } from "react";
 import { useState } from "react";
 import { Chart } from "./chart";
+import { formatActivityPollen } from "./format-activity-pollen";
 import type { UsagePeriodSelection } from "./types";
-import { useEarningsData } from "./use-earnings-data";
+import {
+    formatEarningsSourceLabel,
+    useEarningsData,
+} from "./use-earnings-data";
 
 type EarningsGraphProps = {
     period: UsagePeriodSelection;
@@ -22,7 +28,7 @@ type EarningsGraphProps = {
 };
 
 export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
-    const [selectedAppKeyIds, setSelectedAppKeyIds] = useState<string[]>([]);
+    const [selectedEntityIds, setSelectedEntityIds] = useState<string[]>([]);
 
     const appSelectOptions = apps.map((a) => ({
         value: a.id,
@@ -32,20 +38,26 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
     const { loading, error, fetchEarnings, chartData, stats } = useEarningsData(
         {
             period,
-            selectedAppKeyIds,
+            selectedEntityIds,
         },
     );
 
-    const showAppBreakdown = apps.length > 0;
-
+    const showEarningsBreakdown = stats.entityCount > 0;
+    const hasEarnings = stats.totalPollen > 0;
+    const downloadDisabled = loading || !hasEarnings;
+    const downloadDisabledReason = loading
+        ? "Loading earnings data"
+        : "No earnings to download for this selected period";
     function downloadEarnings(): void {
+        if (downloadDisabled) return;
+
         const params = new URLSearchParams({
             format: "csv",
             granularity: period.granularity,
             period: period.period,
         });
-        if (selectedAppKeyIds.length > 0) {
-            params.set("api_key_ids", selectedAppKeyIds.join(","));
+        if (selectedEntityIds.length > 0) {
+            params.set("entity_ids", selectedEntityIds.join(","));
         }
         const anchor = document.createElement("a");
         anchor.href = `/api/account/earnings?${params.toString()}`;
@@ -55,33 +67,44 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
         anchor.remove();
     }
 
-    return (
-        <Section
-            title="Earnings"
-            framed
-            action={
-                <Button
-                    as="button"
-                    onClick={downloadEarnings}
-                    className="flex items-center gap-1.5"
-                >
-                    <DownloadIcon className="h-3.5 w-3.5 shrink-0" />
-                    Download CSV
-                </Button>
-            }
+    const downloadButton = (
+        <Button
+            as="button"
+            onClick={downloadEarnings}
+            disabled={downloadDisabled}
+            className="flex items-center gap-1.5"
         >
+            <DownloadIcon className="h-3.5 w-3.5 shrink-0" />
+            Download CSV
+        </Button>
+    );
+    const downloadAction = downloadDisabled ? (
+        <Tooltip
+            triggerAs="span"
+            content={downloadDisabledReason}
+            align="center"
+            className="inline-flex"
+        >
+            {downloadButton}
+        </Tooltip>
+    ) : (
+        downloadButton
+    );
+
+    return (
+        <Section title="Earnings" framed action={downloadAction}>
             <div className="flex flex-col gap-4">
-                <div className="flex flex-wrap items-start justify-end gap-4">
-                    <div className="flex flex-col items-stretch gap-2 [&>div]:justify-between [&_button]:min-w-[160px]">
+                <div className="flex flex-wrap items-start justify-start gap-4 sm:justify-end">
+                    <div className="flex flex-col items-stretch gap-2 [&>div]:justify-between [&_button]:w-60">
                         <MultiSelect
                             options={appSelectOptions}
-                            selected={selectedAppKeyIds}
-                            onChange={setSelectedAppKeyIds}
+                            selected={selectedEntityIds}
+                            onChange={setSelectedEntityIds}
                             placeholder="All"
                             disabled={appSelectOptions.length === 0}
                             disabledText="None"
                             align="end"
-                            label="Apps"
+                            label="BYOP apps"
                         />
                     </div>
                 </div>
@@ -110,22 +133,26 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
                             </div>
                         </div>
                     )}
-                    {!loading && !error && (
-                        <Chart
-                            data={chartData}
-                            metric="pollen"
-                            showModelBreakdown={showAppBreakdown}
-                        />
-                    )}
+                    {!loading &&
+                        !error &&
+                        (hasEarnings ? (
+                            <Chart
+                                data={chartData}
+                                metric="pollen"
+                                showModelBreakdown={showEarningsBreakdown}
+                            />
+                        ) : (
+                            <EarningsEmptyState />
+                        ))}
                 </Surface>
 
-                <div className="grid gap-4 sm:grid-cols-3">
-                    <Surface>
-                        <StatCard
-                            label="Pollen earned"
-                            value={formatPollen(stats.totalPollen)}
-                            detail={
-                                stats.totalPollen > 0 ? (
+                {hasEarnings && (
+                    <div className="grid gap-4 sm:grid-cols-3">
+                        <Surface>
+                            <StatCard
+                                label="Pollen earned"
+                                value={formatActivityPollen(stats.totalPollen)}
+                                detail={
                                     <div className="flex flex-wrap items-center gap-2">
                                         <PaidChip
                                             size="lg"
@@ -133,7 +160,9 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
                                         >
                                             <CardIcon className="h-4 w-4" />
                                             <span className="tabular-nums">
-                                                {formatPollen(stats.totalPaid)}
+                                                {formatActivityPollen(
+                                                    stats.totalPaid,
+                                                )}
                                             </span>
                                         </PaidChip>
                                         <TierChip
@@ -142,81 +171,162 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period, apps }) => {
                                         >
                                             <SproutIcon className="h-4 w-4" />
                                             <span className="tabular-nums">
-                                                {formatPollen(stats.totalTier)}
+                                                {formatActivityPollen(
+                                                    stats.totalTier,
+                                                )}
                                             </span>
                                         </TierChip>
-                                    </div>
-                                ) : null
-                            }
-                        />
-                    </Surface>
-                    <Surface>
-                        <StatCard
-                            label="Active users"
-                            value={stats.activeUsers.toLocaleString()}
-                            detail={
-                                stats.appCount > 0 ? (
-                                    <span className="text-theme-text-soft">
-                                        across {stats.appCount} app
-                                        {stats.appCount === 1 ? "" : "s"}
-                                    </span>
-                                ) : (
-                                    "No users yet"
-                                )
-                            }
-                        />
-                    </Surface>
-                    <Surface>
-                        <StatCard
-                            label="Top app"
-                            value={
-                                <span className="text-xl leading-tight">
-                                    {stats.topApp?.label || "None"}
-                                </span>
-                            }
-                            detail={
-                                stats.topApp ? (
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        {stats.topApp.uniqueUsers > 0 && (
+                                        {stats.appMarkupPollen > 0 && (
                                             <Chip
                                                 size="lg"
                                                 className="font-semibold"
                                             >
                                                 <span className="tabular-nums">
-                                                    {stats.topApp.uniqueUsers.toLocaleString()}
+                                                    {formatActivityPollen(
+                                                        stats.appMarkupPollen,
+                                                    )}
                                                 </span>
                                                 <span className="font-medium opacity-70">
-                                                    {stats.topApp
-                                                        .uniqueUsers === 1
-                                                        ? "user"
-                                                        : "users"}
+                                                    app markup
                                                 </span>
                                             </Chip>
                                         )}
-                                        <Chip
-                                            size="lg"
-                                            className="font-semibold"
-                                        >
-                                            <span className="tabular-nums">
-                                                {formatPollen(
-                                                    stats.topApp.pollen,
-                                                )}
-                                            </span>
-                                            <span className="font-medium opacity-70">
-                                                pollen
-                                            </span>
-                                        </Chip>
+                                        {stats.modelRewardPollen > 0 && (
+                                            <Chip
+                                                size="lg"
+                                                className="font-semibold"
+                                            >
+                                                <span className="tabular-nums">
+                                                    {formatActivityPollen(
+                                                        stats.modelRewardPollen,
+                                                    )}
+                                                </span>
+                                                <span className="font-medium opacity-70">
+                                                    model rewards
+                                                </span>
+                                            </Chip>
+                                        )}
                                     </div>
-                                ) : (
-                                    "No earnings yet"
-                                )
-                            }
-                        />
-                    </Surface>
-                </div>
+                                }
+                            />
+                        </Surface>
+                        <Surface>
+                            <StatCard
+                                label="Earning sources"
+                                value={stats.sourceSummaries.length.toLocaleString()}
+                                detail={
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        {stats.sourceSummaries.map((source) => (
+                                            <Chip
+                                                key={source.source}
+                                                size="lg"
+                                                className="font-semibold"
+                                            >
+                                                <span>{source.label}</span>
+                                                <span className="tabular-nums">
+                                                    {source.requests.toLocaleString()}
+                                                </span>
+                                                <span className="font-medium opacity-70">
+                                                    req
+                                                </span>
+                                                {source.uniqueUsers > 0 && (
+                                                    <>
+                                                        <span className="tabular-nums">
+                                                            {source.uniqueUsers.toLocaleString()}
+                                                        </span>
+                                                        <span className="font-medium opacity-70">
+                                                            users
+                                                        </span>
+                                                    </>
+                                                )}
+                                                <span className="tabular-nums">
+                                                    {formatRewardRate(
+                                                        source.rewardRate,
+                                                    )}
+                                                </span>
+                                            </Chip>
+                                        ))}
+                                    </div>
+                                }
+                            />
+                        </Surface>
+                        <Surface>
+                            <StatCard
+                                label="Top earner"
+                                value={
+                                    <span className="text-xl leading-tight">
+                                        {stats.topEntity?.label || "None"}
+                                    </span>
+                                }
+                                detail={
+                                    stats.topEntity ? (
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <Chip
+                                                size="lg"
+                                                className="font-semibold"
+                                            >
+                                                {formatEarningsSourceLabel(
+                                                    stats.topEntity.source,
+                                                )}
+                                            </Chip>
+                                            {stats.topEntity.uniqueUsers >
+                                                0 && (
+                                                <Chip
+                                                    size="lg"
+                                                    className="font-semibold"
+                                                >
+                                                    <span className="tabular-nums">
+                                                        {stats.topEntity.uniqueUsers.toLocaleString()}
+                                                    </span>
+                                                    <span className="font-medium opacity-70">
+                                                        {stats.topEntity
+                                                            .uniqueUsers === 1
+                                                            ? "user"
+                                                            : "users"}
+                                                    </span>
+                                                </Chip>
+                                            )}
+                                            <Chip
+                                                size="lg"
+                                                className="font-semibold"
+                                            >
+                                                <span className="tabular-nums">
+                                                    {formatActivityPollen(
+                                                        stats.topEntity.pollen,
+                                                    )}
+                                                </span>
+                                                <span className="font-medium opacity-70">
+                                                    pollen
+                                                </span>
+                                            </Chip>
+                                        </div>
+                                    ) : null
+                                }
+                            />
+                        </Surface>
+                    </div>
+                )}
             </div>
         </Section>
     );
 };
+
+const EarningsEmptyState: FC = () => (
+    <p className="text-sm text-ink-600">
+        No earnings in this selected period. Once users start spending pollen
+        through your apps or community models, earnings will appear here.{" "}
+        <InlineLink href="#keys" showIcon={false}>
+            Create an App key
+        </InlineLink>
+        .
+    </p>
+);
+
+function formatRewardRate(value: number): string {
+    return new Intl.NumberFormat("en-US", {
+        style: "percent",
+        maximumFractionDigits: 1,
+    }).format(value);
+}
 
 export default EarningsGraph;

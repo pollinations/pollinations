@@ -3,12 +3,14 @@ import {
     Chip,
     GlobeIcon,
     IconButton,
+    InlineLink,
     KeyIcon,
     LockIcon,
     PencilIcon,
     Section,
     Surface,
     TerminalIcon,
+    TokensIcon,
     Tooltip,
     XIcon,
 } from "@pollinations/ui";
@@ -207,11 +209,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     )}
                     {isApp && (
                         <Chip
-                            intent={earningsEnabled ? "success" : undefined}
+                            intent="neutral"
                             size="sm"
                             className={
                                 earningsEnabled
-                                    ? undefined
+                                    ? "text-intent-success-text"
                                     : "bg-ink-100 text-theme-text-muted"
                             }
                         >
@@ -317,38 +319,24 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     </div>
                     <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                         <p className="flex items-start gap-1.5">
-                            <AppIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
                                 For apps where users sign in with their own
                                 Pollinations account and spend their own Pollen.
                             </span>
                         </p>
                         <p className="flex items-start gap-1.5">
-                            <AppIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                <span className="font-bold uppercase tracking-wide text-intent-danger-text mr-1">
-                                    New!
-                                </span>
                                 Turn on earnings to receive a share of pollen
                                 users spend in your app.{" "}
-                                <a
+                                <InlineLink
                                     href={genDocsUrl(
                                         "#tag/bring-your-own-pollen",
                                     )}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="font-medium text-theme-text-soft hover:text-theme-text-strong"
                                 >
-                                    <span className="underline underline-offset-2">
-                                        Read the guide
-                                    </span>
-                                    <span
-                                        aria-hidden="true"
-                                        className="no-underline ml-0.5"
-                                    >
-                                        ↗
-                                    </span>
-                                </a>
+                                    Read the guide
+                                </InlineLink>
                             </span>
                         </p>
                     </div>

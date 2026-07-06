@@ -83,6 +83,9 @@ const CacheControlSchema = z
     .object({
         type: z.enum(["ephemeral"]),
     })
+    .describe(
+        "Marks the end of a static prompt prefix to cache (Gemini, Claude, and Nova models). Place on the final content block of the prefix; repeat requests bill the cached prefix at ~10% of the input rate. See Text Generation → Prompt caching.",
+    )
     .optional()
     .meta({ $id: "CacheControl" });
 
@@ -264,14 +267,6 @@ const ChatCompletionStreamOptionsSchema = z
     .nullable()
     .optional();
 
-const ThinkingSchema = z
-    .object({
-        type: z.enum(["enabled", "disabled"]).default("disabled"),
-        budget_tokens: z.number().int().min(1).optional(),
-    })
-    .nullable()
-    .optional();
-
 export const CreateChatCompletionRequestSchema = z
     .object({
         messages: z.array(ChatCompletionRequestMessageSchema),
@@ -323,17 +318,12 @@ export const CreateChatCompletionRequestSchema = z
         stream: z.boolean().nullable().optional().default(false),
         stream_options: ChatCompletionStreamOptionsSchema,
         safe: SafeSchema,
-        // Compatibility-only request fields. Keep runtime acceptance for older
-        // Pollinations/MCP callers, but public docs should point users to
-        // standard OpenAI `reasoning_effort` instead.
-        thinking: ThinkingSchema,
         reasoning_effort: z
             .enum(["none", "minimal", "low", "medium", "high", "xhigh"])
             .describe(
                 'Requests reasoning depth for models that support adjustable reasoning. "none" requests no reasoning.',
             )
             .optional(),
-        thinking_budget: z.number().int().min(0).optional(),
         temperature: z.number().min(0).max(2).nullable().optional(),
         top_p: z.number().min(0).max(1).nullable().optional(),
         tools: z.array(ChatCompletionToolSchema).optional(),
@@ -413,6 +403,7 @@ const ChatCompletionChoiceLogprobsSchema = z
 
 export const CompletionUsageSchema = z
     .object({
+        cached_input_tokens: z.number().int().nonnegative().nullish(),
         cache_creation_input_tokens: z.number().int().nonnegative().nullish(),
         cache_read_input_tokens: z.number().int().nonnegative().nullish(),
         completion_tokens: z.number().int().nonnegative(),
@@ -440,6 +431,7 @@ export const CompletionUsageSchema = z
                 image_tokens: z.number().int().nonnegative().nullish(),
             })
             .nullish(),
+        reasoning_tokens: z.number().int().nonnegative().nullish(),
         total_tokens: z.number().int().nonnegative(),
     })
     .meta({ $id: "CompletionUsage" });
@@ -509,7 +501,7 @@ export const CreateChatCompletionResponseSchema = z.object({
     choices: z.array(CompletionChoiceSchema),
     prompt_filter_results: PromptFilterResultSchema.nullish(),
     created: z.number().int(),
-    model: z.string(),
+    model: z.string().optional(),
     system_fingerprint: z.string().nullish(),
     object: z.literal("chat.completion"),
     usage: CompletionUsageSchema.optional(),

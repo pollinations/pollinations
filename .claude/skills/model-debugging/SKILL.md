@@ -1,6 +1,6 @@
 ---
 name: model-debugging
-description: Debug and diagnose model errors in Pollinations services. Analyze logs, find error patterns, and identify affected users.
+description: Debug and diagnose model errors in Pollinations services. Analyze logs, find error patterns, identify affected users.
 ---
 
 # Model Debugging Skill
@@ -10,8 +10,6 @@ Use this skill when:
 - Finding users affected by errors (402 billing, 403 permissions, 500 backend)
 - Analyzing Tinybird/Cloudflare logs for patterns
 - Diagnosing specific request failures
-
----
 
 # Understanding Model Monitor Error Rates
 
@@ -427,7 +425,7 @@ curl -s "$H/v0/pipes/recent_server_errors.json?token=$TB&minutes=240&limit=500" 
 
 **`model_health` columns** (note: NOT `error_count`/`error_rate`): `model`, `event_type`, `provider`, `model_used`, `total_requests`, `status_2xx`, `errors_4xx`, `errors_5xx`, `last_error_at`, `latency_p50_ms`, `latency_p95_ms`, `avg_latency_ms`, `last_request_at`. Sort by `errors_5xx` to find backend issues.
 
-**`recent_server_errors`** is the go-to pipe for root-causing (defined in `enter.pollinations.ai/observability/endpoints/recent_server_errors.pipe`, params `minutes` default 1440, `limit` default 200). It returns `timestamp, status, upstream_status, upstream_host, upstream_body, message, error_code, error_class, model_requested, route_path, user_id, api_key_id`. There is **no** `model_errors` pipe.
+**`recent_server_errors`** is the go-to pipe for root-causing (defined in `enter.pollinations.ai/observability/endpoints/recent_server_errors.pipe`, params `minutes` default 1440, `limit` default 200). It returns `timestamp, status, upstream_status, upstream_host, upstream_body, message, error_code, error_class, model_requested, route_path, user_id, user_tier, api_key_id`. There is **no** `model_errors` pipe.
 
 > **JSON quirk**: `recent_server_errors` rows contain raw newlines in `stack`/`message`, which break `jq`. Parse with Python instead: `python3 -c "import json; d=json.load(open('/tmp/errs.json'),strict=False); ..."`.
 
@@ -528,13 +526,13 @@ The prod `TINYBIRD_READ_TOKEN` above can query the raw `generation_event` dataso
 ```bash
 # Find users with frequent 403 errors (last 24 hours)
 curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
-  --data-urlencode "q=SELECT user_id, user_github_username, count() as error_403_count
+  --data-urlencode "q=SELECT user_id, user_github_username, user_tier, count() as error_403_count
 FROM generation_event
 WHERE response_status = 403
   AND start_time > now() - interval 24 hour
   AND user_id != ''
   AND user_id != 'undefined'
-GROUP BY user_id, user_github_username
+GROUP BY user_id, user_github_username, user_tier
 ORDER BY error_403_count DESC
 LIMIT 20"
 
@@ -561,7 +559,7 @@ LIMIT 50"
 ### Datasource Schema
 
 The `generation_event` datasource is defined in `enter.pollinations.ai/observability/datasources/generation_event.datasource` and includes:
-- `user_id`, `user_github_username`
+- `user_id`, `user_github_username`, `user_tier`
 - `response_status`, `error_message`, `error_response_code`
 - `model_requested`, `model_used`
 - `total_price`, `total_cost`

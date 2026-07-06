@@ -9,6 +9,7 @@ import { api } from "./api.ts";
 import type { Env } from "./env.ts";
 import { logger } from "./middleware/logger.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
+import { wellKnownRoutes } from "./routes/well-known.ts";
 
 function stripTrailingSlash(path: string): string {
     return path.length > 1 ? path.replace(/\/+$/, "") : path;
@@ -75,6 +76,7 @@ const app = new Hono<Env>()
         );
         return c.redirect(url.toString(), 308);
     })
+    .route("/.well-known", wellKnownRoutes)
     .route("/api", api);
 
 app.notFound(async (c: Context<Env>) => {

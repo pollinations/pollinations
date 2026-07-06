@@ -124,7 +124,6 @@ export type {
     // Models
     ModelCategory,
     ModelInfo,
-    ModelTier,
     // Config
     PollinationsConfig,
     // Errors
@@ -135,7 +134,6 @@ export type {
     TextGenerateOptions,
     // Text
     TextModel,
-    ThinkingOptions,
     Tool,
     ToolCall,
     TranscribeOptions,

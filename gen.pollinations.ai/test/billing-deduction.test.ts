@@ -3,7 +3,7 @@ import { getUserBalance } from "@shared/billing/balance.ts";
 import { atomicDeductUserBalance } from "@shared/billing/deduction.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
-import { getModelDefinition } from "@shared/registry/registry.ts";
+import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect, it } from "vitest";
 
@@ -113,7 +113,7 @@ describe("billing deduction", () => {
 
     it("deducts an Azure paid-only model only from pack balance", async () => {
         const modelResolved = "llama-maverick";
-        const model = getModelDefinition(modelResolved);
+        const model = getRegistryModelDefinition(modelResolved);
         expect(model.provider).toBe("azure");
         expect(model.paidOnly).toBe(true);
 
@@ -127,7 +127,7 @@ describe("billing deduction", () => {
             isBilledUsage: true,
             totalPrice: 0.01,
             userId,
-            modelResolved,
+            modelPaidOnly: model.paidOnly,
         });
         let balance = await getUserBalance(db, userId);
         expect(balance.tierBalance).toBeCloseTo(0.01, 10);
@@ -138,7 +138,7 @@ describe("billing deduction", () => {
             isBilledUsage: true,
             totalPrice: 0.01,
             userId,
-            modelResolved,
+            modelPaidOnly: model.paidOnly,
         });
         balance = await getUserBalance(db, userId);
         expect(balance.tierBalance).toBeCloseTo(0.01, 10);

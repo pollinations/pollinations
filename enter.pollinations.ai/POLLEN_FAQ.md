@@ -22,13 +22,22 @@ You build the app. We handle the models and the billing.
 
 There are **three ways**:
 
-1. 💳 **Buy** — Pay by card, Pollen goes to your **paid balance**. Expires after 12 months of account inactivity. *(Want other payment options? [Vote here](https://github.com/pollinations/pollinations/issues/4826)!)*
-2. 🎯 **Quest rewards** — Earn Pollen through achievements, milestones, and community work.
+1. 💳 **Buy** — Pay by card, Pollen goes to your **Paid Pollen** balance. Expires after 12 months of account inactivity. *(Want other payment options? [Vote here](https://github.com/pollinations/pollinations/issues/4826)!)*
+2. 🎯 **Quests** — Complete tasks from the Quests dashboard. Rewards land as **Quest Pollen**. Contribute quests pay a fixed reward when your assigned GitHub issue is merged.
 3. 🌻 **Dev earnings** — Flip on Developer earnings on an App Key to take +25% on top of model price on user traffic.
 
 ## 🆓 Can I try it for free?
 
-You can register without a credit card and get API keys immediately. The automatic hourly Pollen refill ends on **June 22, 2026**; existing Tier balance stays spendable, but new users should not expect an automatic wallet grant.
+Yes — complete Quests from the Quests dashboard to earn Pollen. No credit card to register.
+
+## 🎯 How do Quests work?
+
+Earn Pollen by completing useful actions — onboarding, growing an app, GitHub contributions, and more.
+
+- 🧪 **In alpha** — new quests are added, rewards and details are evolving.
+- 📋 **Browse** the Quests dashboard for what's open and what you've done.
+- ✅ **Claim** a completed quest's reward from the dashboard to credit your wallet. Past activity counts.
+- 🐙 **Contribute quests** are GitHub issues with fixed rewards — get your assigned issue merged, then claim it.
 
 ## 💳 What payment methods do you accept?
 
@@ -53,18 +62,18 @@ Registration gets you API keys. There are two:
 
 One central wallet across all your apps, split into two balances:
 
-- **🌱 Tier balance** — an existing spendable balance bucket. It does not refill automatically.
-- **💳 Paid balance** — purchased Pollen.
+- **🌱 Quest Pollen** — earned by completing Quests.
+- **💳 Paid Pollen** — purchased Pollen.
 - **Earnings** — credited to the balance the user spent from.
 
 Balances expire after 12 months of account inactivity.
 
 **Every request comes from one balance, not both at once.**
 
-- **Regular models** use your Tier balance first. If it can't cover the cost, they switch to paid.
-- **Paid-only models** always charge your paid balance.
+- **Regular models** use your Quest Pollen first. If it can't cover the cost, they switch to Paid Pollen.
+- **Paid-only models** always charge your Paid Pollen.
 
-⏰ A request can overshoot its estimate and push the balance that paid for it negative. A negative balance clears only through future earnings, rewards, or top-ups for that balance bucket.
+⏰ A request can overshoot its estimate and push the balance that paid for it negative. Your 💳 Paid Pollen stays negative until you top up.
 
 ## 🔌 What is BYOP (Bring Your Own Pollen)?
 
@@ -80,7 +89,7 @@ BYOP lets your users connect their Pollinations account to your app and spend th
 
 1. You spend Pollen from your wallet, not the developer's.
 2. Apps may add a 25% share — shown at sign-in.
-3. Tier balance pays first; paid balance covers it if Tier balance can't.
+3. Quest Pollen pays first; Paid Pollen covers it if Quest Pollen can't.
 4. Revoke or cap any app at [enter.pollinations.ai](https://enter.pollinations.ai).
 
 📖 **[Full BYOP guide →](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md)**
@@ -96,7 +105,7 @@ Text, images, audio, and video — one API.
 
 ## 🚀 What's coming?
 
-- 🎯 **Pollen Quest** — earn Pollen through achievements, milestones, and closing issues.
+- 🎯 **More quests** — more achievements, milestones, and GitHub issue rewards.
 - 🔑 **Pollinations Login** — OAuth sign-in for your users, with token handling handled for you.
 - 🏠 **App Hosting** — run your app on our infra, no separate hosting bill.
 - 🗺️ **App Discovery** — a marketplace for users to find your app.

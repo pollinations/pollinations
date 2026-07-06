@@ -7,9 +7,9 @@ import { balance } from "../middleware/balance.ts";
 import {
     fetchTinybirdRows,
     requireTinybirdReadToken,
-    resolveUsageTargetUserId,
     TinybirdRateLimitError,
-} from "./account.ts";
+} from "../services/tinybird.ts";
+import { resolveUsageTargetUserId } from "./account.ts";
 
 type EarningsTodayRow = {
     paid_week: number;
@@ -40,7 +40,7 @@ export const customerRoutes = new Hono<Env>()
         describeRoute({
             tags: ["👤 Account"],
             description:
-                "Get detailed balance breakdown for the current user (tier, pack).",
+                "Get detailed balance breakdown for the current user (Quest Pollen, paid).",
             hide: ({ c }) => c?.env.ENVIRONMENT === "production", // Internal endpoint
         }),
         async (c) => {
@@ -60,7 +60,7 @@ export const customerRoutes = new Hono<Env>()
         describeRoute({
             tags: ["👤 Account"],
             description:
-                "Today's BYOP markup earnings split by which balance the spending user paid from. UTC calendar day.",
+                "Recent developer earnings split by which balance the spending user paid from.",
             hide: ({ c }) => c?.env.ENVIRONMENT === "production",
         }),
         async (c) => {

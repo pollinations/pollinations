@@ -3,6 +3,7 @@ import type { ApiKeyType } from "@shared/auth/api-key-creation.ts";
 import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import {
+    type CommunityModelRewardResolution,
     handleBalanceDeduction,
     type MarkupResolution,
 } from "@shared/billing/track-helpers.ts";
@@ -12,6 +13,10 @@ import {
     stripIPv4MappedPrefix,
     truncateIpToSubnet,
 } from "@shared/client-ip.ts";
+import {
+    COMMUNITY_MODEL_REWARD_RATE,
+    type CommunityEndpointRuntime,
+} from "@shared/community-endpoints.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
 import type { ErrorVariables } from "@shared/error.ts";
 import {
@@ -21,14 +26,14 @@ import {
 } from "@shared/error.ts";
 import { sendToTinybird } from "@shared/events.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
-import type { Usage } from "@shared/registry/registry.ts";
 import {
-    calculateCost,
-    calculatePrice,
-    getModelDefinition,
-    getPriceDefinition,
-    type ModelName,
+    type BillingAdjustment,
+    type CostDefinition,
+    calculateUsageBilling,
+    getPriceDefinitionForModel,
+    type ModelDefinition,
     type PriceDefinition,
+    type Usage,
     type UsageCost,
     type UsagePrice,
 } from "@shared/registry/registry.ts";
@@ -72,19 +77,24 @@ import { generateRandomId, parseBooleanLike } from "@/util.ts";
 type ModelVariables = {
     model: {
         requested: string;
-        resolved: ModelName;
+        resolved: string;
+        definition: ModelDefinition<string>;
+        communityEndpoint?: CommunityEndpointRuntime;
     };
 };
 
 export type ModelUsage = {
     model: string;
     usage: Usage;
+    output?: unknown;
 };
 
 type RequestTrackingData = {
     modelRequested: string | null;
-    resolvedModelRequested: ModelName;
+    resolvedModelRequested: string;
     modelProvider?: string;
+    modelDefinition: ModelDefinition<string>;
+    modelCostDefinition: CostDefinition;
     modelPriceDefinition: PriceDefinition;
     streamRequested: boolean;
     referrerData: ReferrerData;
@@ -100,13 +110,16 @@ type ResponseTrackingData = {
     usage?: Usage;
     cost?: UsageCost;
     price?: UsagePrice;
+    // Per-rule billing adjustment breakdown for the billed generation. Absent on
+    // cache hits / not-billed paths, which return before cost calculation.
+    adjustments?: BillingAdjustment[];
     contentFilterResults?: GenerationEventContentFilterParams;
 };
 
 export type TrackVariables = {
     track: {
         modelRequested: string | null;
-        resolvedModelRequested: ModelName;
+        resolvedModelRequested: string;
         streamRequested: boolean;
         overrideResponseTracking: (response: Response) => void;
     };
@@ -160,7 +173,7 @@ export const track = (eventType: EventType) =>
                 c.var.auth.apiKey?.byopClientUserId ?? undefined,
         } satisfies UserData;
 
-        let responseOverride = null;
+        let responseOverride: Response | null = null;
 
         c.set("track", {
             modelRequested: requestTracking.modelRequested,
@@ -177,7 +190,14 @@ export const track = (eventType: EventType) =>
 
         c.executionCtx.waitUntil(
             (async () => {
-                const response = responseOverride || c.res.clone();
+                // Routes attach telemetry headers (x-moderation-*, cache
+                // status) to the final response AFTER the override is
+                // captured, so read the body from the override but headers
+                // from c.res — keeping the override's content-type since it
+                // describes the body that usage extraction parses.
+                const response = responseOverride
+                    ? withFinalResponseHeaders(responseOverride, c.res)
+                    : c.res.clone();
                 const responseTracking = await trackResponse(
                     eventType,
                     requestTracking,
@@ -204,9 +224,12 @@ export const track = (eventType: EventType) =>
                 let payerBucket: Awaited<
                     ReturnType<typeof handleBalanceDeduction>
                 >["payerBucket"] = null;
+                let communityModelReward: CommunityModelRewardResolution | null =
+                    null;
                 let billedPrice = 0;
                 let shouldRunAutoTopUp = false;
                 try {
+                    const communityEndpoint = c.var.model?.communityEndpoint;
                     const deduction = await handleBalanceDeduction({
                         db: balanceDb,
                         isBilledUsage: responseTracking.isBilledUsage,
@@ -215,9 +238,16 @@ export const track = (eventType: EventType) =>
                         apiKeyId: c.var.auth?.apiKey?.id,
                         apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
                         byopClientKeyId,
-                        modelResolved: c.var.model?.resolved,
+                        modelPaidOnly: c.var.model?.definition.paidOnly,
+                        communityModelReward: communityEndpoint
+                            ? {
+                                  userId: communityEndpoint.ownerUserId,
+                                  rewardRate: COMMUNITY_MODEL_REWARD_RATE,
+                              }
+                            : null,
                     });
                     markup = deduction.markup;
+                    communityModelReward = deduction.communityModelReward;
                     payerBucket = deduction.payerBucket;
                     billedPrice = deduction.billedPrice;
                     const totalPrice = responseTracking.price?.totalPrice ?? 0;
@@ -265,6 +295,7 @@ export const track = (eventType: EventType) =>
                     requestTracking,
                     responseTracking,
                     markup,
+                    communityModelReward,
                     billedPrice,
                     errorTracking: collectErrorData(response, c.get("error")),
                 });
@@ -283,6 +314,8 @@ export const track = (eventType: EventType) =>
                         "  totalCost={event.totalCost}",
                         "  totalPrice={event.totalPrice}",
                         "  devPrice={event.devPrice}",
+                        "  communityModelRewardRate={event.communityModelRewardRate}",
+                        "  communityModelRewardAmount={event.communityModelRewardAmount}",
                     ].join("\n"),
                     { event: finalEvent },
                 );
@@ -364,9 +397,11 @@ async function trackRequest(
     const modelRequested = modelInfo.requested;
     const resolvedModelRequested = modelInfo.resolved;
 
-    const modelProvider = getModelDefinition(resolvedModelRequested).provider;
-    const modelPriceDefinition = getPriceDefinition(resolvedModelRequested);
-    if (!modelPriceDefinition) {
+    const modelDefinition = modelInfo.definition;
+    const modelProvider = modelDefinition.provider;
+    const modelCostDefinition = modelDefinition.cost;
+    const modelPriceDefinition = getPriceDefinitionForModel(modelDefinition);
+    if (!modelCostDefinition || !modelPriceDefinition) {
         throw new Error(
             `Failed to get price definition for model: ${resolvedModelRequested}`,
         );
@@ -378,10 +413,30 @@ async function trackRequest(
         modelRequested,
         resolvedModelRequested,
         modelProvider,
+        modelDefinition,
+        modelCostDefinition,
         modelPriceDefinition,
         streamRequested,
         referrerData,
     };
+}
+
+// Tracking overrides capture the upstream body before route handlers attach
+// telemetry headers to the final response. Combine the override body with the
+// final headers so header-based extraction (moderation, cache) stays intact.
+function withFinalResponseHeaders(
+    override: Response,
+    final: Response,
+): Response {
+    const headers = new Headers(final.headers);
+    const contentType = override.headers.get("content-type");
+    if (contentType) {
+        headers.set("content-type", contentType);
+    }
+    return new Response(override.body, {
+        status: override.status,
+        headers,
+    });
 }
 
 async function trackResponse(
@@ -413,11 +468,7 @@ async function trackResponse(
     // an unexpected content-type — e.g. a JSON/text error body with HTTP 200,
     // or JSON for a stream: true request.
     const contentType = response.headers.get("content-type") || "";
-    const contentTypeGuard = getContentTypeGuard(
-        eventType,
-        requestTracking,
-        resolvedModelRequested,
-    );
+    const contentTypeGuard = getContentTypeGuard(eventType, requestTracking);
     if (contentTypeGuard && !contentTypeGuard.isExpected(contentType)) {
         log.warn(
             "Unexpected content-type for billing: {contentType} for model {model} (kind={kind})",
@@ -442,8 +493,15 @@ async function trackResponse(
         });
         return notBilled({ contentFilterResults });
     }
-    const cost = calculateCost(resolvedModelRequested, modelUsage.usage);
-    const price = calculatePrice(resolvedModelRequested, modelUsage.usage);
+    // Single pass: cost, price, and the per-rule fee breakdown all derive from
+    // one walk over the billing rules, so the event's adjustment maps always
+    // match the billed totals and clamp warnings log once per request.
+    const { cost, price, adjustments } = calculateUsageBilling(
+        resolvedModelRequested,
+        modelUsage.usage,
+        requestTracking.modelDefinition,
+        modelUsage.output,
+    );
     return {
         responseOk: response.ok,
         responseStatus: response.status,
@@ -452,6 +510,7 @@ async function trackResponse(
         fallbackUsed,
         cost,
         price,
+        adjustments,
         modelUsed: modelUsage.model,
         usage: modelUsage.usage,
         contentFilterResults,
@@ -476,14 +535,16 @@ function parseFallbackUsed(response: Response): boolean {
 function getContentTypeGuard(
     eventType: EventType,
     requestTracking: RequestTrackingData,
-    resolvedModelRequested: ModelName,
 ): { kind: string; isExpected: (contentType: string) => boolean } | null {
     if (eventType === "generate.image") {
         return {
             kind: "image",
             isExpected: (contentType) =>
                 contentType.startsWith("image/") ||
-                contentType.startsWith("video/"),
+                contentType.startsWith("video/") ||
+                // 3D models (model/gltf-binary, model/ply, ...) share this
+                // EventType with image/video.
+                contentType.startsWith("model/"),
         };
     }
     if (eventType === "generate.text" && requestTracking.streamRequested) {
@@ -495,8 +556,7 @@ function getContentTypeGuard(
     }
     if (eventType === "generate.audio") {
         const isSTTModel =
-            getModelDefinition(resolvedModelRequested)
-                ?.outputModalities?.[0] === "text";
+            requestTracking.modelDefinition.outputModalities?.[0] === "text";
         return {
             kind: "audio",
             isExpected: (contentType) =>
@@ -573,9 +633,31 @@ type TrackingEventInput = {
     requestTracking: RequestTrackingData;
     responseTracking: ResponseTrackingData;
     markup: MarkupResolution | null;
+    communityModelReward: CommunityModelRewardResolution | null;
     billedPrice: number;
     errorTracking?: ErrorData;
 };
+
+// Reduce the per-rule adjustment breakdown into the two Map columns the event
+// carries (keyed by versioned rule id). Returns undefined for both fields when
+// there are no adjustments so removeUnset drops them and ClickHouse's
+// DEFAULT map() fills them — a literal {} would serialize on every event.
+export function reduceAdjustmentsToEventFields(
+    adjustments: BillingAdjustment[] | undefined,
+): {
+    adjustmentCosts?: Record<string, number>;
+    adjustmentUnits?: Record<string, number>;
+} {
+    if (!adjustments || adjustments.length === 0) return {};
+    const adjustmentCosts: Record<string, number> = {};
+    const adjustmentUnits: Record<string, number> = {};
+    for (const { ruleId, cost, units } of adjustments) {
+        // Defensive: sum on the off chance the same rule id appears twice.
+        adjustmentCosts[ruleId] = (adjustmentCosts[ruleId] ?? 0) + cost;
+        adjustmentUnits[ruleId] = (adjustmentUnits[ruleId] ?? 0) + units;
+    }
+    return { adjustmentCosts, adjustmentUnits };
+}
 
 function createTrackingEvent({
     id,
@@ -592,6 +674,7 @@ function createTrackingEvent({
     requestTracking,
     responseTracking,
     markup,
+    communityModelReward,
     billedPrice,
     errorTracking,
 }: TrackingEventInput): InsertGenerationEvent {
@@ -621,6 +704,7 @@ function createTrackingEvent({
         isBilledUsage: responseTracking.isBilledUsage,
 
         ...balanceTracking,
+        ...reduceAdjustmentsToEventFields(responseTracking.adjustments),
 
         ...priceToEventParams(requestTracking.modelPriceDefinition),
         ...usageToEventParams(responseTracking.usage),
@@ -629,6 +713,9 @@ function createTrackingEvent({
         totalPrice: billedPrice,
         devPrice: responseTracking.price?.totalPrice || 0,
         markupRate: markup?.markupRate ?? 0,
+        communityModelRewardUserId: communityModelReward?.userId,
+        communityModelRewardRate: communityModelReward?.rewardRate ?? 0,
+        communityModelRewardAmount: communityModelReward?.credit ?? 0,
 
         ...responseTracking.contentFilterResults,
         ...errorTracking,
@@ -684,6 +771,18 @@ function extractUsageHeaders(response: Response): ModelUsage {
     };
 }
 
+async function extractResponseJsonOutput(
+    response: Response,
+): Promise<unknown | undefined> {
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) return undefined;
+    try {
+        return await response.clone().json();
+    } catch {
+        return undefined;
+    }
+}
+
 function extractContentFilterHeaders(
     response: Response,
 ): GenerationEventContentFilterParams {
@@ -693,12 +792,16 @@ function extractContentFilterHeaders(
     return parseResult.data || {};
 }
 
-function extractUsageAndContentFilterResultsHeaders(response: Response): {
+async function extractUsageAndContentFilterResultsHeaders(
+    response: Response,
+): Promise<{
     modelUsage: ModelUsage;
     contentFilterResults: GenerationEventContentFilterParams;
-} {
+}> {
+    const modelUsage = extractUsageHeaders(response);
+    modelUsage.output = await extractResponseJsonOutput(response);
     return {
-        modelUsage: extractUsageHeaders(response),
+        modelUsage,
         contentFilterResults: extractContentFilterHeaders(response),
     };
 }
@@ -731,9 +834,11 @@ async function extractUsageAndContentFilterResultsStream(
     let usage: CompletionUsage | undefined;
     let promptFilterResults: ContentFilterResult = {};
     let completionFilterResults: ContentFilterResult = {};
+    const streamEvents: unknown[] = [];
 
     for await (const event of events) {
         const parseResult = EventSchema.safeParse(event);
+        streamEvents.push(event);
 
         const incomingPromptFilterResults =
             parseResult.data?.prompt_filter_results?.map(
@@ -779,6 +884,7 @@ async function extractUsageAndContentFilterResultsStream(
         modelUsage: {
             model,
             usage: openaiUsageToUsage(usage),
+            output: streamEvents.length > 0 ? { streamEvents } : undefined,
         },
         contentFilterResults,
     };
@@ -802,7 +908,7 @@ async function extractUsageAndContentFilterResults(
         const eventStream = extractResponseStream(response);
         return await extractUsageAndContentFilterResultsStream(eventStream);
     }
-    return extractUsageAndContentFilterResultsHeaders(response);
+    return await extractUsageAndContentFilterResultsHeaders(response);
 }
 
 type CacheData = {

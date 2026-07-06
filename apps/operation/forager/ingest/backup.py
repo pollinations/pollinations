@@ -27,9 +27,18 @@ def snapshot_table(client, datasource, directory):
     return rows
 
 
+def _canonical(row):
+    out = {}
+    for key, value in row.items():
+        if isinstance(value, float) and value.is_integer():
+            value = int(value)
+        out[key] = value
+    return json.dumps(out, sort_keys=True)
+
+
 def diff_rows(old, new):
-    old_set = {json.dumps(row, sort_keys=True) for row in old}
-    new_set = {json.dumps(row, sort_keys=True) for row in new}
+    old_set = {_canonical(row) for row in old}
+    new_set = {_canonical(row) for row in new}
     return sorted(new_set - old_set), sorted(old_set - new_set)
 
 

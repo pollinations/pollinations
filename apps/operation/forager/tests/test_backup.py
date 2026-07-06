@@ -33,6 +33,20 @@ def test_diff_rows_added_removed():
     assert removed == [json.dumps({"a": 1}, sort_keys=True)]
 
 
+def test_diff_rows_ignores_integral_float_representation():
+    old = [{"provider": "aws", "paid": 0, "credit": 3000}]
+    new = [{"provider": "aws", "paid": 0.0, "credit": 3000.0}]
+    added, removed = backup.diff_rows(old, new)
+    assert added == [] and removed == []
+
+
+def test_diff_rows_still_detects_real_value_changes():
+    old = [{"provider": "aws", "paid": 0.0}]
+    new = [{"provider": "aws", "paid": 0.5}]
+    added, removed = backup.diff_rows(old, new)
+    assert len(added) == 1 and len(removed) == 1
+
+
 def test_manual_meter_rows_lost_filters_manual_sources():
     removed = [
         json.dumps({"provider": "aws", "source": "cli"}, sort_keys=True),

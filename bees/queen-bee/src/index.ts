@@ -10,7 +10,19 @@ export { Sandbox };
 type Env = {
     Sandbox: DurableObjectNamespace;
     POLLINATIONS_KEY: string;
+    // Injected by the platform on source deploy; the community proxy sends it
+    // as the bearer token. The workers.dev URL is public, so without this
+    // check anyone with the URL could run the agent on the owner's key,
+    // bypassing gateway billing.
+    BEE_AUTH_TOKEN?: string;
 };
+
+function isAuthorized(request: Request, env: Env): boolean {
+    if (!env.BEE_AUTH_TOKEN) return true;
+    return (
+        request.headers.get("authorization") === `Bearer ${env.BEE_AUTH_TOKEN}`
+    );
+}
 
 // Runs INSIDE the container. Reads QUESTION + POLLINATIONS_KEY from env,
 // makes two real gen calls (search step + answer step), prints JSON to stdout.
@@ -53,6 +65,12 @@ export default {
             request.method === "POST" &&
             url.pathname.endsWith("/chat/completions")
         ) {
+            if (!isAuthorized(request, env)) {
+                return Response.json(
+                    { error: { message: "Unauthorized" } },
+                    { status: 401 },
+                );
+            }
             const body = (await request.json()) as {
                 messages?: { role: string; content: string }[];
             };

@@ -26,11 +26,20 @@ Validated end-to-end (routing + exact two-tier billing) in
 ```bash
 npm install
 npx wrangler secret put POLLINATIONS_KEY   # owner sk_ key used for internal calls
+npx wrangler secret put BEE_AUTH_TOKEN      # shared token; blocks direct public callers
 npm run deploy                             # first deploy provisions the container image (~2-3 min)
 ```
 
 Requires a Cloudflare account with Containers access. `nodejs_compat` is
 mandatory — the sandbox SDK imports Node builtins.
+
+The workers.dev URL is public. `BEE_AUTH_TOKEN` is the shared secret the
+community proxy sends as the bearer token; the worker rejects any
+`/chat/completions` request without it, so direct callers can't run the agent
+on your key. Set the same value as the model's bearer token when registering
+(below). If `BEE_AUTH_TOKEN` is unset the worker accepts all callers — only
+acceptable for throwaway testing. (Under source-based deploy the platform
+generates and injects this token for you.)
 
 ## Register as a community model
 
@@ -38,13 +47,13 @@ mandatory — the sandbox SDK imports Node builtins.
 polli my-models create \
   --name queen-bee \
   --base-url https://queen-bee.<your-subdomain>.workers.dev/v1 \
-  --bearer-token unused \
+  --bearer-token "$BEE_AUTH_TOKEN" \
   --kind agent \
   --prompt-text-price 0.000002 \
   --completion-text-price 0.00001 \
   --tool-price sandbox_run=0.005
 ```
 
-The worker does not check the bearer token; the trust boundary is the
-invite-only community-model allowlist. The owner's key is visible to the
-agent code running in the container — only run code you wrote.
+The trust boundary is the invite-only community-model allowlist plus the
+`BEE_AUTH_TOKEN` on the endpoint. The owner's key is visible to the agent code
+running in the container — only run code you wrote.

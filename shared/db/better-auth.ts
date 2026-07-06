@@ -239,6 +239,26 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   ),
 ]);
 
+export const userApp = sqliteTable("user_app", {
+  id: text("id").primaryKey(),
+  ownerUserId: text("owner_user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  // Immutable DNS label: the app is served at <slug>.pollinations.ai, so it
+  // is globally unique (unlike community_endpoint.name, which is per-owner).
+  slug: text("slug").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+}, (table) => [
+  index("idx_user_app_owner_user_id").on(table.ownerUserId),
+  uniqueIndex("idx_user_app_slug").on(table.slug),
+]);
+
 // Drizzle relations for query builder joins
 export const userRelations = relations(user, ({ many }) => ({
   apikeys: many(apikey),

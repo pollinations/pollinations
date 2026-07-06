@@ -33,6 +33,7 @@ import {
 } from "./account-permissions.ts";
 import { communityEndpointsRoutes } from "./community-endpoints.ts";
 import { parseMetadata } from "./metadata-utils.ts";
+import { userAppsRoutes } from "./user-apps.ts";
 
 // Calculate next tier refill time (null for tiers with no refill).
 // Matches the `0 * * * *` cron in wrangler.toml — top of the next UTC hour.
@@ -880,6 +881,7 @@ const usageResponseSchema = z.object({
 export const accountRoutes = new Hono<Env>()
     .use(auth({ allowApiKey: true, allowSessionCookie: true }))
     .route("/my-models", communityEndpointsRoutes)
+    .route("/apps", userAppsRoutes)
     .get(
         "/profile",
         describeRoute({

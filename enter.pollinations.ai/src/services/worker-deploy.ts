@@ -34,7 +34,7 @@ export function communityWorkerScriptName(endpointId: string): string {
     return `bee-${endpointId}`;
 }
 
-async function cfApi(
+export async function cfApi(
     config: WorkerDeployConfig,
     path: string,
     init: RequestInit,

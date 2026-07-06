@@ -13,9 +13,8 @@
  */
 
 import {
-    InvalidTagError,
     normalizeTags,
-    TooManyTagsError,
+    TagError,
     upsertGenerationCatalogItem,
 } from "@shared/media-catalog.ts";
 import { drizzle } from "drizzle-orm/d1";
@@ -90,14 +89,8 @@ export const mediaCatalog = createMiddleware<MediaCatalogEnv>(
         try {
             tags = normalizeTags(rawTags);
         } catch (error) {
-            if (error instanceof InvalidTagError) {
-                return c.json({ error: `Invalid tag: "${error.tag}"` }, 400);
-            }
-            if (error instanceof TooManyTagsError) {
-                return c.json(
-                    { error: `Too many tags: ${error.count} (max 8)` },
-                    400,
-                );
+            if (error instanceof TagError) {
+                return c.json({ error: error.message }, 400);
             }
             throw error;
         }

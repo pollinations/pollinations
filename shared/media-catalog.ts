@@ -13,17 +13,15 @@ type CatalogDb = ReturnType<typeof drizzle>;
 export const TAG_PATTERN = /^[a-z0-9][a-z0-9_.:+-]{0,127}$/;
 export const MAX_TAGS = 8;
 
-export class InvalidTagError extends Error {
-    constructor(public readonly tag: string) {
-        super(`Invalid tag: "${tag}"`);
-        this.name = "InvalidTagError";
-    }
-}
+// Prose twin of TAG_PATTERN for error messages — keep in sync with the regex.
+export const TAG_PATTERN_DESCRIPTION =
+    "lowercase letters, digits, and _.:+- (not leading), max 128 chars";
 
-export class TooManyTagsError extends Error {
-    constructor(public readonly count: number) {
-        super(`Too many tags: ${count} (max ${MAX_TAGS})`);
-        this.name = "TooManyTagsError";
+/** Thrown by normalizeTags; message is complete and user-facing. */
+export class TagError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "TagError";
     }
 }
 
@@ -41,13 +39,15 @@ export function normalizeTags(rawTags: string[]): string[] {
         if (!TAG_PATTERN.test(tag)) {
             // Name the tag as submitted (pre-lowercase) so the error is
             // unambiguous about which input was rejected.
-            throw new InvalidTagError(trimmed);
+            throw new TagError(
+                `Invalid tag: "${trimmed}". Tags must match ${TAG_PATTERN_DESCRIPTION}.`,
+            );
         }
         seen.add(tag);
     }
     const tags = [...seen];
     if (tags.length > MAX_TAGS) {
-        throw new TooManyTagsError(tags.length);
+        throw new TagError(`Too many tags: ${tags.length} (max ${MAX_TAGS}).`);
     }
     return tags;
 }
@@ -77,7 +77,6 @@ export async function upsertGenerationCatalogItem(
             id: crypto.randomUUID(),
             kind: "generation",
             locator: params.locator,
-            contentHash: null,
             ownerUserId: params.ownerUserId,
             appKeyId: params.appKeyId,
             contentType: params.contentType,
@@ -88,8 +87,10 @@ export async function upsertGenerationCatalogItem(
         })
         .onConflictDoUpdate({
             target: [mediaItem.ownerUserId, mediaItem.locator],
+            // createdAt is deliberately NOT updated: it marks first catalog
+            // time, so re-tagging the same generation can't bump it back to
+            // the top of newest-first feeds.
             set: {
-                createdAt: now,
                 contentType: params.contentType,
                 model: params.model,
                 prompt: params.prompt,

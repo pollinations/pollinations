@@ -1,6 +1,4 @@
-"""OVHcloud startup credit balance connector (signed API).
-
-GET /me/credit/balance/STARTUP_PROGRAM on https://eu.api.ovh.com/1.0
+"""OVHcloud startup credit meter connector (signed API).
 
 OVH requires HMAC-style request signing: each call is authenticated via
 X-Ovh-Signature which is a SHA1 over the secret, consumer key, method,
@@ -11,28 +9,21 @@ Keys required in creds:
   OVH_APPLICATION_SECRET — application secret (used in signature)
   OVH_CONSUMER_KEY      — consumer key (ck, scoped to account)
 
-Row: balance (EUR) × fx → USD fields; note carries expiry.
-Task B5's ovh meter will reuse _signed().
+Meter rows are USE movements from the STARTUP_PROGRAM credit balance.
 """
 import hashlib
-import json
-import urllib.request
 
 from ..common import http_json
-from . import _brow, _mrow
+from . import _mrow
 
 BASE = "https://eu.api.ovh.com/1.0"
 _BALANCE_NAME = "STARTUP_PROGRAM"
 
 
 def _time():
-    """Fetch server timestamp from OVH (unauthenticated). Falls back to local time."""
-    import time
-    try:
-        d = http_json(f"{BASE}/auth/time", timeout=20)
-        return int(d)
-    except Exception:
-        return int(time.time())
+    """Fetch server timestamp from OVH for request signing."""
+    d = http_json(f"{BASE}/auth/time", timeout=20)
+    return int(d)
 
 
 def _signed(creds, method, path, body="", timestamp=None):
@@ -129,46 +120,3 @@ def meter(creds, months, today, fx=1.14):
                 today=today,
             ))
     return rows
-
-
-def balance(creds, now, fx=1.14):
-    """Fetch OVHcloud startup credit balance.
-
-    Args:
-        creds: dict with OVH_APPLICATION_KEY/SECRET and OVH_CONSUMER_KEY
-        now:   run_at timestamp string "YYYY-MM-DD HH:MM:SS"
-        fx:    EUR→USD conversion rate (default 1.14, overrideable from config)
-
-    Returns:
-        balances row dict
-    """
-    if not creds.get("OVH_APPLICATION_SECRET"):
-        raise RuntimeError("OVH_APPLICATION_SECRET missing")
-
-    ts = _time()
-
-    bal = _get(creds, f"/me/credit/balance/{_BALANCE_NAME}", ts)
-    movement_ids = _get(creds, f"/me/credit/balance/{_BALANCE_NAME}/movement", ts)
-
-    granted_eur = 0.0
-    for mid in (movement_ids or []):
-        import urllib.parse as _up
-        path = f"/me/credit/balance/{_BALANCE_NAME}/movement/{_up.quote(str(mid), safe='')}"
-        mov = _get(creds, path, ts)
-        if (mov or {}).get("type") == "VOUCHER":
-            granted_eur += _amount(mov)
-
-    left_eur = float((bal or {}).get("amount", {}).get("value") or 0)
-
-    expiring = (bal or {}).get("expiring") or []
-    expires = (expiring[0].get("expirationDate") or "")[:10] if expiring else ""
-    note = f"expires={expires}" if expires else ""
-
-    return _brow(
-        now,
-        "ovhcloud",
-        granted=round(granted_eur * fx, 2) if granted_eur else None,
-        left=round(left_eur * fx, 2),
-        source="api",
-        note=note,
-    )

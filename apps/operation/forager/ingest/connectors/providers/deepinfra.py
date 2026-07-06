@@ -1,12 +1,5 @@
-"""DeepInfra REST balance + meter connector.
+"""DeepInfra REST meter connector.
 
-Balance:
-  GET https://api.deepinfra.com/v1/me?checklist=true
-  Auth: Authorization: Bearer <DEEPINFRA_API_KEY>
-  Mapping: -checklist.stripe_balance → prepaid_left_usd
-    (stripe_balance is negative when credit is held; negating gives the prepaid amount)
-
-Meter:
   GET https://api.deepinfra.com/payment/usage?from={epoch}&to={epoch}
   Epoch-second windows only; total_cost is in CENTS — divide by 100.
   The `to` epoch is capped at time.time() so the current-month window
@@ -16,19 +9,7 @@ import datetime
 import time
 
 from ..common import http_json
-from . import _brow, _mrow
-
-
-def balance(creds, now):
-    key = creds["DEEPINFRA_API_KEY"]
-    me = http_json(
-        "https://api.deepinfra.com/v1/me?checklist=true",
-        {"Authorization": f"Bearer {key}"},
-    )
-    bal = (me.get("checklist") or {}).get("stripe_balance")
-    if bal is None:
-        raise RuntimeError("unexpected /v1/me checklist response: stripe_balance missing")
-    return _brow(now, "deepinfra", prepaid=-float(bal))
+from . import _mrow
 
 
 def meter(creds, months, today):
@@ -47,7 +28,7 @@ def meter(creds, months, today):
     """
     key = creds.get("DEEPINFRA_API_KEY")
     if not key:
-        return []
+        raise RuntimeError("DEEPINFRA_API_KEY missing")
 
     rows = []
     for month in months:

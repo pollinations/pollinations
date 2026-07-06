@@ -28,10 +28,4 @@ def load_creds():
 
 def load_config():
     with open(os.path.join(APP, "config.json")) as f:
-        c = json.load(f)
-    c["archive_dir"] = os.path.expanduser(c["archive_dir"])
-    return c
-
-
-def load_credits():
-    return _sops_decrypt(os.path.join(SECRETS_DIR, "credits.json"))
+        return json.load(f)

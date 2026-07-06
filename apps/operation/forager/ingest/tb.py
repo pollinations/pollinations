@@ -17,11 +17,14 @@ class TB:
 
     def sql(self, query):
         body = urllib.parse.urlencode({"q": query + " FORMAT JSON"}).encode()
-        return _http(f"{self.api}/v0/sql", data=body, headers=self._auth(), method="POST").get("data", [])
+        response = _http(f"{self.api}/v0/sql", data=body, headers=self._auth(), method="POST")
+        if "data" not in response:
+            raise RuntimeError("Tinybird SQL response missing data")
+        return response["data"]
 
     def append(self, datasource, rows):
         if not rows:
-            return {"successful_rows": 0}
+            raise ValueError(f"refusing to append 0 rows to {datasource}")
         nd = "\n".join(json.dumps(r) for r in rows).encode()
         url = f"{self.api}/v0/events?name={urllib.parse.quote(datasource)}"
         return _http(url, data=nd, headers=self._auth(), method="POST")

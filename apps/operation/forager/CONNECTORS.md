@@ -1,12 +1,12 @@
 # Forager Connector Tracker
 
-Forager's live inventory of every cost/credit signal and how it reaches Tinybird. Programmatic meter connectors run automatically; the remaining providers are filled manually each month from their dashboards.
+Forager's live inventory of every provider usage signal and how it reaches Tinybird. Programmatic meter connectors run automatically; the remaining providers are filled manually each month from their dashboards.
 
 ---
 
 ## Programmatic connectors
 
-Auto-fetched by `python3 -m ingest.run`. Each connector is wrapped in try/except — a single failure does not kill the run; status per connector is logged to `ingest_runs`.
+Auto-fetched by `python3 -m ingest.run`. A connector failure fails the run, writes the error to `ingest_runs`, and leaves the existing Tinybird tables untouched for that failed refresh.
 
 ### Meter connectors (METER registry)
 
@@ -73,7 +73,7 @@ Provider must be in `registry.CANONICAL`; month must match `YYYY-MM`. Appends on
   python3 -m ingest.record meter elevenlabs <YYYY-MM> <usd> --funding credit
   ```
 
-- [ ] **daytona** — console [app.daytona.io](https://app.daytona.io) → Billing (fallback when wallet OIDC-gated); then:
+- [ ] **daytona** — console [app.daytona.io](https://app.daytona.io) → Billing; then:
   ```
   python3 -m ingest.record meter daytona <YYYY-MM> <usd> --funding credit
   ```

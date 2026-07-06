@@ -54,8 +54,7 @@ def test_mrow_rejects_unknown_source():
 # ---------------------------------------------------------------------------
 
 def test_canonical_contains_expected_slugs():
-    """CANONICAL must include known compute/infra slugs from harvest.PROVIDERS and wise.ALIAS,
-    plus manual-forever providers."""
+    """CANONICAL must include known compute/infra and manual-forever providers."""
     must_have = [
         "vast.ai", "io.net", "perplexity", "lambda", "nebius",
         "bytedance", "modal", "elevenlabs",
@@ -67,15 +66,15 @@ def test_canonical_contains_expected_slugs():
         assert slug in registry.CANONICAL, f"CANONICAL missing: {slug}"
 
 
-def test_canonical_excludes_non_billing_slugs():
-    """CANONICAL must NOT contain operating-expense invoice-sender slugs."""
-    must_not_have = [
+def test_canonical_contains_operating_provider_slugs():
+    """CANONICAL includes operating-expense slugs used by provider filters."""
+    must_have = [
         "deel", "google-workspace", "slack", "wise", "self-issued",
         "github", "typeless", "wispr", "tele2", "enty", "naturenergie",
         "exafunction",
     ]
-    for slug in must_not_have:
-        assert slug not in registry.CANONICAL, f"CANONICAL wrongly contains: {slug}"
+    for slug in must_have:
+        assert slug in registry.CANONICAL, f"CANONICAL missing: {slug}"
 
 
 def test_canonical_is_set_of_strings():

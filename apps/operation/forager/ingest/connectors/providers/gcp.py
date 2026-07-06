@@ -10,8 +10,6 @@ Two row types per month:
 
 BQ table name and SQL copied verbatim from PoC build/connectors/accrual.py.
 
-Expected to fail until Elliot re-enables the billing export and re-auths.
-The try/except in run.py absorbs connector failures gracefully.
 """
 import json
 import os
@@ -61,11 +59,10 @@ def meter(creds, months, today, fx=1.14, run_cmd=subprocess.run):
 
     Returns:
         list of _mrow dicts; cash + credit rows for nonzero months.
-        Returns [] on any failure (auth error, bq failure, key missing).
     """
     sa_json = creds.get("GCP_BILLING_SA_JSON")
     if not sa_json:
-        return []
+        raise RuntimeError("GCP_BILLING_SA_JSON missing")
 
     month_set = set(months)
     key_path = None

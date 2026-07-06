@@ -22,7 +22,6 @@ def http_json(url, headers=None, timeout=30, data=None, method=None):
                  None → GET (unless method overrides).
         method:  Explicit HTTP method override (e.g. "POST" with no body).
 
-    Backward-compatible: wise.py calls http_json(url, headers) positionally.
     """
     h = {"User-Agent": UA, **(headers or {})}
     body = None

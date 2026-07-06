@@ -30,7 +30,7 @@ def meter(creds, months, today, run_cmd=subprocess.run):
         list of _mrow dicts; cash rows + credit rows for nonzero months
     """
     if not months:
-        return []
+        raise RuntimeError("AWS meter requires at least one month")
 
     # Derive start/end from months list
     months_sorted = sorted(months)

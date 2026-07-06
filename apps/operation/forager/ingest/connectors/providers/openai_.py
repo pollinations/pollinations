@@ -1,7 +1,6 @@
 """OpenAI organization costs connector.
 
 Fetches spend from the Organization Costs API (paginated, 1d buckets).
-balance() derives `left = granted - spent` (grant is a hardcoded constant).
 meter() buckets daily results by month → meter_monthly rows.
 
 Endpoint: GET https://api.openai.com/v1/organization/costs
@@ -10,16 +9,14 @@ Pagination: has_more / next_page, max 20 pages
 
 Keys:
   OPENAI_ADMIN_KEY      — admin key with org read access
-  OPENAI_GRANT_USD      — total grant in USD (default 1565.58, hardcoded)
   OPENAI_GRANT_START    — start date for cost accumulation (default "2025-12-01")
 """
 import datetime
 import urllib.parse
 
 from ..common import http_json
-from . import _brow, _mrow
+from . import _mrow
 
-_DEFAULT_GRANT_USD = 1565.58
 _DEFAULT_GRANT_START = "2025-12-01"
 _COSTS_URL = "https://api.openai.com/v1/organization/costs"
 
@@ -73,43 +70,6 @@ def _fetch_costs_with_buckets(key, start_day):
     return round(total, 2), buckets
 
 
-def _fetch_costs(key, start_day):
-    """Paginate the costs endpoint and return total spent USD."""
-    total, _ = _fetch_costs_with_buckets(key, start_day)
-    return total
-
-
-def balance(creds, now):
-    """Fetch OpenAI spend and derive remaining grant balance.
-
-    Args:
-        creds: dict with OPENAI_ADMIN_KEY (and optionally OPENAI_GRANT_USD,
-               OPENAI_GRANT_START)
-        now:   run_at timestamp string "YYYY-MM-DD HH:MM:SS"
-
-    Returns:
-        balances row dict; note="granted is HC" (hardcoded grant amount)
-    """
-    key = creds.get("OPENAI_ADMIN_KEY")
-    if not key:
-        raise RuntimeError("OPENAI_ADMIN_KEY missing")
-
-    grant = float(creds.get("OPENAI_GRANT_USD") or _DEFAULT_GRANT_USD)
-    start = creds.get("OPENAI_GRANT_START") or _DEFAULT_GRANT_START
-
-    spent = _fetch_costs(key, start)
-
-    return _brow(
-        now,
-        "openai",
-        granted=round(grant, 2),
-        spent=spent,
-        left=round(grant - spent, 2),
-        source="api",
-        note="granted is HC",
-    )
-
-
 def meter(creds, months, today):
     """Fetch OpenAI metered spend per month, bucketed from daily cost data.
 
@@ -126,15 +86,12 @@ def meter(creds, months, today):
     """
     key = creds.get("OPENAI_ADMIN_KEY")
     if not key:
-        return []
+        raise RuntimeError("OPENAI_ADMIN_KEY missing")
 
     start = creds.get("OPENAI_GRANT_START") or _DEFAULT_GRANT_START
     month_set = set(months)
 
-    try:
-        _, buckets = _fetch_costs_with_buckets(key, start)
-    except Exception:
-        return []
+    _, buckets = _fetch_costs_with_buckets(key, start)
 
     # Group by month
     month_totals: dict = {}

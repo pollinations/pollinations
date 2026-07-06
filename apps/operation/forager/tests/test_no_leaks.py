@@ -18,14 +18,18 @@ def _tracked():
         text=True,
         cwd=REPO,
     )
-    return [p for p in out.stdout.splitlines() if p.strip()]
+    return [
+        p
+        for p in out.stdout.splitlines()
+        if p.strip() and os.path.exists(os.path.join(REPO, p))
+    ]
 
 
 def test_no_data_files_tracked():
     allowed_json = {
         f"{REL_SECRETS}/env.json",
-        f"{REL_SECRETS}/credits.json",
         f"{REL_FORAGER}/config.json",
+        f"{REL_FORAGER}/config/provider_aliases.json",
         f"{REL_TREASURY}/web/package.json",
         f"{REL_TREASURY}/web/package-lock.json",
         f"{REL_TREASURY}/web/tsconfig.json",
@@ -42,7 +46,7 @@ def test_no_data_files_tracked():
 
 def test_secrets_are_encrypted():
     ops_secrets = os.path.join(APP, "secrets")
-    for name in ("env.json", "credits.json"):
+    for name in ("env.json",):
         p = os.path.join(ops_secrets, name)
         if os.path.exists(p):
             data = json.load(open(p))

@@ -117,10 +117,10 @@ def test_deepinfra_meter_zero_months_excluded(monkeypatch):
     assert rows == []
 
 
-def test_deepinfra_meter_missing_key_returns_empty():
-    """Missing DEEPINFRA_API_KEY → empty list (graceful)."""
-    rows = _di.meter({}, ["2026-04"], TODAY)
-    assert rows == []
+def test_deepinfra_meter_missing_key_raises():
+    """Missing DEEPINFRA_API_KEY is a configuration error."""
+    with pytest.raises(RuntimeError, match="DEEPINFRA_API_KEY"):
+        _di.meter({}, ["2026-04"], TODAY)
 
 
 def test_deepinfra_meter_provider_slug(monkeypatch):
@@ -406,10 +406,10 @@ def test_fireworks_meter_source_cli():
         assert r["source"] == "cli"
 
 
-def test_fireworks_meter_missing_key_returns_empty():
-    """Missing FIREWORKS_API_KEY → empty list."""
-    rows = _fw.meter({}, ["2026-06"], TODAY)
-    assert rows == []
+def test_fireworks_meter_missing_key_raises():
+    """Missing FIREWORKS_API_KEY is a configuration error."""
+    with pytest.raises(RuntimeError, match="FIREWORKS_API_KEY"):
+        _fw.meter({}, ["2026-06"], TODAY)
 
 
 def test_fireworks_meter_zero_amount_excluded():
@@ -729,10 +729,10 @@ def test_gcp_meter_tempfile_deleted_even_on_raise():
         "GCP SA key tempfile was NOT deleted after bq failure"
 
 
-def test_gcp_meter_missing_key_returns_empty():
-    """Missing GCP_BILLING_SA_JSON → empty list."""
-    rows = _gcp.meter({}, ["2026-04"], TODAY)
-    assert rows == []
+def test_gcp_meter_missing_key_raises():
+    """Missing GCP_BILLING_SA_JSON is a configuration error."""
+    with pytest.raises(RuntimeError, match="GCP_BILLING_SA_JSON"):
+        _gcp.meter({}, ["2026-04"], TODAY)
 
 
 def test_gcp_meter_provider_slug():
@@ -831,10 +831,10 @@ def test_openai_meter_zero_month_excluded(monkeypatch):
     assert rows == []
 
 
-def test_openai_meter_missing_key_returns_empty():
-    """Missing OPENAI_ADMIN_KEY → empty list."""
-    rows = _oai.meter({}, ["2026-04"], TODAY)
-    assert rows == []
+def test_openai_meter_missing_key_raises():
+    """Missing OPENAI_ADMIN_KEY is a configuration error."""
+    with pytest.raises(RuntimeError, match="OPENAI_ADMIN_KEY"):
+        _oai.meter({}, ["2026-04"], TODAY)
 
 
 def test_openai_meter_provider_slug(monkeypatch):

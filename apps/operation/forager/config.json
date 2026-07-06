@@ -3,14 +3,11 @@
     "tb_prod_api": "https://api.europe-west2.gcp.tinybird.co",
     "fx_eur_usd": 1.14,
     "months_start": "2026-01",
-    "archive_dir": "~/Documents/treasury-invoices",
-    "invoice_ai_model": "qwen-vision-pro",
-    "invoice_ai_reasoning_effort": "high",
-    "invoice_ai_parallelism": 10,
-    "gog_account": "elliot@myceli.ai",
-    "aws_profile": "myceli-management",
-    "repull_months": 2,
-    "recon_tolerance_pct": 0.02,
-    "recon_tolerance_usd": 2.0,
-    "recon_accepted": []
+    "enty_ledger_dir": "~/Documents/treasury-invoices/enty-ledger",
+    "enty_ai_verify": true,
+    "enty_ai_endpoint": "https://openrouter.ai/api/v1/chat/completions",
+    "enty_ai_model": "openai/gpt-4.1-mini",
+    "enty_ai_batch_size": 40,
+    "enty_ai_max_tokens": 2500,
+    "enty_ai_timeout": 180
 }

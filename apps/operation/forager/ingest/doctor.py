@@ -1,18 +1,17 @@
 """Preflight checks for the forager ingest pipeline.
 
 HARD checks (any failure blocks the run):
-  sops, tinybird-ops (write token read+write), wise, gog (gmail reachable),
-  pdftoppm on PATH, Pollinations key present.
+  sops, tinybird-ops (write token read+write), Enty ledger folder,
+  OpenRouter/OpenAI key for Enty provider/category verification.
 
 SOFT checks (warn only):
-  archive_dir writable, last run < 26h.
+  last run < 26h.
 
 Exit 0 = all hard checks green.
 """
 import datetime
 import os
 import shutil
-import subprocess
 import sys
 
 from . import creds, tb
@@ -39,48 +38,23 @@ def checks():
     except Exception as e:
         out.append(("tinybird-ops", True, False, str(e)[:120]))
 
-    # HARD: wise connectivity
-    try:
-        from .connectors.wise import _fetch_month
-        ym = datetime.date.today().strftime("%Y-%m")
-        _fetch_month(c, ym)
-        out.append(("wise", True, True, "ok"))
-    except Exception as e:
-        out.append(("wise", True, False, str(e)[:120]))
-
-    # HARD: gog / Gmail reachable
-    try:
-        r = subprocess.run(
-            ["gog", "-a", cfg["gog_account"], "--json", "gmail", "search", "newer_than:1d"],
-            capture_output=True, timeout=60, check=True,
-        )
-        out.append(("gog", True, True, "ok"))
-    except Exception as e:
-        out.append(("gog", True, False, str(e)[:120]))
-
-    # HARD: pdftoppm on PATH for PDF → image rendering
-    try:
-        if shutil.which("pdftoppm"):
-            out.append(("pdftoppm", True, True, "ok"))
-        else:
-            raise RuntimeError("not on PATH")
-    except Exception as e:
-        out.append(("pdftoppm", True, False, str(e)[:120]))
-
-    # HARD: Pollinations key for invoice AI extraction
-    pollinations_key = (
-        os.environ.get("POLLINATIONS_KEY")
-        or c.get("POLLINATIONS_KEY")
-    )
+    # HARD: Enty ledger folder
+    enty_dir = cfg.get("enty_ledger_dir", "")
     out.append((
-        "pollinations",
+        "enty-ledger",
         True,
-        bool(pollinations_key),
-        "key present" if pollinations_key else "POLLINATIONS_KEY missing",
+        bool(enty_dir and os.path.isdir(os.path.expanduser(enty_dir))),
+        os.path.expanduser(enty_dir) if enty_dir else "enty_ledger_dir missing",
     ))
 
-    # SOFT: archive_dir writable
-    out.append(("archive", False, os.access(cfg["archive_dir"], os.W_OK), cfg["archive_dir"]))
+    # HARD: AI key for Enty provider/category verification
+    ai_key = c.get("OPENROUTER_API_KEY") or c.get("OPENAI_ADMIN_KEY") or c.get("OPENAI_API_KEY")
+    out.append((
+        "enty-ai",
+        True,
+        bool(ai_key),
+        "key present" if ai_key else "OPENROUTER_API_KEY/OPENAI key missing",
+    ))
 
     # SOFT: freshness (last ingest_run < 26h ago)
     try:
@@ -88,7 +62,12 @@ def checks():
         last = rows[0]["t"] if rows else None
         if not last:
             raise RuntimeError("no runs recorded yet")
-        age_h = (datetime.datetime.utcnow() - datetime.datetime.fromisoformat(last)).total_seconds() / 3600
+        last_dt = datetime.datetime.fromisoformat(last).replace(
+            tzinfo=datetime.timezone.utc
+        )
+        age_h = (
+            datetime.datetime.now(datetime.timezone.utc) - last_dt
+        ).total_seconds() / 3600
         out.append(("freshness", False, age_h < 26, f"last run {age_h:.1f}h ago"))
     except Exception as e:
         out.append(("freshness", False, False, str(e)[:120]))

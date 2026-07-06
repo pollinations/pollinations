@@ -46,3 +46,28 @@ PROVIDER_TAG_ALIASES: dict[str, str] = {
     for alias in aliases
     if alias != provider
 }
+
+
+def canonical_provider_tag(value: object) -> str:
+    """Canonical provider slug for exact machine tags.
+
+    Empty values stay empty so callers can decide whether blanks are allowed.
+    Non-empty unknown values remain visible for caller validation.
+    """
+    raw = "" if value is None else str(value).strip().lower()
+    if not raw:
+        return ""
+    if raw in PROVIDER_ALIASES:
+        return raw
+    return PROVIDER_TAG_ALIASES.get(raw, raw)
+
+
+def unknown_provider_tags(rows, *, field: str = "provider") -> list[str]:
+    """Sorted non-empty provider tags outside the canonical vocabulary."""
+    unknown = set()
+    for row in rows:
+        value = row.get(field) if isinstance(row, dict) else None
+        provider = canonical_provider_tag(value)
+        if provider and provider not in PROVIDER_ALIASES:
+            unknown.add(str(value).strip())
+    return sorted(unknown)

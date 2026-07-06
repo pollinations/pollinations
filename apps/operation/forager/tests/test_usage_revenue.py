@@ -103,7 +103,7 @@ def test_usage_rows_carry_month():
     """Each returned row must carry the 'month' field matching the queried month."""
     canned = [
         {
-            "provider": "azure-openai",
+            "provider": "azure",
             "model": "gpt-4o",
             "billable_paid_pollen": 1.0,
             "billable_quest_pollen": 0.5,
@@ -154,6 +154,24 @@ def test_usage_provider_canonicalized_at_ingest():
     )
 
 
+def test_usage_unknown_provider_fails_with_alias_guidance():
+    """Unknown non-empty provider tags must be fixed in provider_aliases.json."""
+    canned = [
+        {
+            "provider": "new-provider-tag",
+            "model": "gpt-4o",
+            "billable_paid_pollen": 1.0,
+            "billable_quest_pollen": 0.0,
+            "cost_paid_pollen": 0.5,
+            "cost_quest_pollen": 0.0,
+        }
+    ]
+    tb = TBStub(canned_rows=canned)
+
+    with pytest.raises(ValueError, match="provider_aliases.json"):
+        _usage.monthly_rows(tb, ["2026-06"], TODAY)
+
+
 def test_usage_canonicalized_duplicates_are_summed():
     """Raw providers can collapse to one canonical provider; keep one row."""
     canned = [
@@ -190,7 +208,7 @@ def test_usage_multiple_months_correct_month_tags():
     """Each month's rows get the correct month tag (not the same month for all)."""
     canned = [
         {
-            "provider": "azure-openai",
+            "provider": "azure",
             "model": "gpt-4o",
             "billable_paid_pollen": 0.5,
             "billable_quest_pollen": 0.0,
@@ -236,7 +254,7 @@ def test_usage_month_field_is_string():
     """month field must be a YYYY-MM string."""
     canned = [
         {
-            "provider": "azure-openai",
+            "provider": "azure",
             "model": "gpt-4o",
             "billable_paid_pollen": 0.1,
             "billable_quest_pollen": 0.0,

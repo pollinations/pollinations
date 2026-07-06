@@ -53,7 +53,7 @@ def monthly_rows(tb_prod, months, today):
         with nonzero data. provider tags are canonicalized via provider aliases
         (bedrock/aws-bedrock → aws, azure-2 → azure, vastai → vast.ai).
     """
-    from ..aliases import PROVIDER_TAG_ALIASES
+    from ..aliases import PROVIDER_ALIASES, canonical_provider_tag
 
     numeric_fields = (
         "cost_paid_pollen",
@@ -67,10 +67,16 @@ def monthly_rows(tb_prod, months, today):
         query = _SQL.format(month=month, next_month=next_m)
         result = tb_prod.sql(query)
         for raw in result:
-            # Guard against None/missing fields — keep verbatim, no fabricated placeholders
-            provider = PROVIDER_TAG_ALIASES.get(
-                (raw.get("provider") or "").strip().lower(), raw.get("provider")
-            )
+            # Guard against None/missing fields, but reject non-empty tags that
+            # are not in the provider vocabulary. That makes missing aliases
+            # visible in ingest_runs instead of silently becoming filter values.
+            raw_provider = raw.get("provider")
+            provider = canonical_provider_tag(raw_provider)
+            if provider and provider not in PROVIDER_ALIASES:
+                raise ValueError(
+                    "unknown provider slug for usage_monthly: "
+                    f"{raw_provider!r}; add it to config/provider_aliases.json"
+                )
             key = (month, provider, raw.get("model"))
             row = by_key.setdefault(
                 key,

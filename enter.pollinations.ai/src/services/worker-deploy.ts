@@ -25,18 +25,13 @@ export function requireWorkerDeployConfig(env: unknown): WorkerDeployConfig {
     };
 }
 
-// Script names become workers.dev DNS labels; slug each part and let the
-// Cloudflare API reject anything still invalid (e.g. over-long names).
-export function communityWorkerScriptName(
-    ownerGithubUsername: string,
-    modelName: string,
-): string {
-    const slug = (value: string) =>
-        value
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, "-")
-            .replace(/^-+|-+$/g, "");
-    return `bee-${slug(ownerGithubUsername)}-${slug(modelName)}`;
+// Script name is derived from the endpoint's UUID (a DNS-safe label already),
+// not the model name: the name can be renamed and slugs of different names
+// can collide (`foo.bar` vs `foo-bar`), which would let one model overwrite
+// another's script. The id is immutable and unique, so a rename redeploys the
+// same script and two endpoints can never share one.
+export function communityWorkerScriptName(endpointId: string): string {
+    return `bee-${endpointId}`;
 }
 
 async function cfApi(
@@ -71,12 +66,17 @@ async function cfApi(
     return body.result;
 }
 
-// Uploads a single-ES-module worker, exposes it on workers.dev, and returns
-// the OpenAI-compatible base URL callers should be routed to.
+// Uploads a single-ES-module worker with a BEE_AUTH_TOKEN secret binding,
+// exposes it on workers.dev, and returns the OpenAI-compatible base URL
+// callers should be routed to. The worker (and the community proxy) use the
+// token to reject direct public callers — the workers.dev URL is public, so
+// without it anyone with the URL could bypass the gateway's billing and, for
+// agents, spend the owner's key.
 export async function deployCommunityWorker(
     config: WorkerDeployConfig,
     scriptName: string,
     source: string,
+    authToken: string,
 ): Promise<string> {
     const form = new FormData();
     form.set(
@@ -84,6 +84,13 @@ export async function deployCommunityWorker(
         JSON.stringify({
             main_module: "index.mjs",
             compatibility_date: WORKER_COMPATIBILITY_DATE,
+            bindings: [
+                {
+                    type: "secret_text",
+                    name: "BEE_AUTH_TOKEN",
+                    text: authToken,
+                },
+            ],
         }),
     );
     form.set(
@@ -110,4 +117,30 @@ export async function deployCommunityWorker(
         );
     }
     return `https://${scriptName}.${subdomain.subdomain}.workers.dev/v1`;
+}
+
+// Removes a deployed worker script so it is no longer publicly callable.
+// Idempotent: a 404 (already gone) is treated as success.
+export async function deleteCommunityWorker(
+    config: WorkerDeployConfig,
+    scriptName: string,
+): Promise<void> {
+    const response = await fetch(
+        `${CF_API_BASE}/accounts/${config.accountId}/workers/scripts/${scriptName}?force=true`,
+        {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${config.apiToken}` },
+        },
+    );
+    if (response.ok || response.status === 404) return;
+    const body = (await response.json().catch(() => null)) as {
+        errors?: { message?: string }[];
+    } | null;
+    const details = body?.errors
+        ?.map((error) => error.message)
+        .filter(Boolean)
+        .join("; ");
+    throw new Error(
+        `Cloudflare API DELETE /workers/scripts/${scriptName} failed (${response.status})${details ? `: ${details}` : ""}`,
+    );
 }

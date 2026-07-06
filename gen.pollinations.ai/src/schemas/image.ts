@@ -113,16 +113,9 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
     // Media catalog params — consumed by the mediaCatalog middleware (raw
     // URL), declared here so they appear in the generated API docs. They
     // never reach the generation backend and never affect caching.
-    tag: z
-        .union([z.string(), z.array(z.string())])
-        .optional()
-        .meta({
-            description:
-                "Add this generation to your media catalog under the given tag (repeatable). Requires an API key attached to a user account. Tagged generations appear in your library (media.pollinations.ai `/me/media`) and the public gallery (`/tags/{tag}`). Lowercase slug, max 128 chars, up to 8 tags per request. Does not affect the generated output or caching.",
-        }),
     tags: z.string().optional().meta({
         description:
-            "Comma-separated catalog tags — alternative to repeated `tag` params. Same rules as `tag`.",
+            "Comma-separated catalog tags. A single tag is also passed via `tags` (for example, `?tags=gallery`). Requires an API key attached to a user account. Tagged generations appear in your library (media.pollinations.ai `/me/media`) and the public gallery (`/tags/{tag}`). Lowercase slug, max 128 chars, up to 8 tags per request. Does not affect the generated output or caching.",
     }),
 });
 

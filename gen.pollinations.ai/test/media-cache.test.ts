@@ -167,18 +167,18 @@ describe("media cache", () => {
         expect(bucket.putCount).toBe(2);
     });
 
-    it("excludes tag/tags params from the cache key", () => {
+    it("excludes tags params from the cache key", () => {
         const bare = generateCacheKey(
             new URL("https://gen.pollinations.ai/image/sunset?model=flux"),
         );
         const tagged = generateCacheKey(
             new URL(
-                "https://gen.pollinations.ai/image/sunset?model=flux&tag=sunset",
+                "https://gen.pollinations.ai/image/sunset?model=flux&tags=sunset",
             ),
         );
         const multiTagged = generateCacheKey(
             new URL(
-                "https://gen.pollinations.ai/image/sunset?model=flux&tag=a&tag=b&tags=c,d",
+                "https://gen.pollinations.ai/image/sunset?model=flux&tags=a,b,c",
             ),
         );
 

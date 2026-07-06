@@ -926,7 +926,7 @@ test("tagged image generation catalogs the generation in D1", async ({
         "https://gen.pollinations.ai/image/vcr%20tagged%20square?height=720&model=flux&seed=42&width=1280";
 
     const { response, wait } = await fetchWorker(
-        "/image/vcr%20tagged%20square?model=flux&width=1280&height=720&seed=42&tag=sunset",
+        "/image/vcr%20tagged%20square?model=flux&width=1280&height=720&seed=42&tags=sunset",
         {
             headers: { authorization: `Bearer ${key}` },
         },
@@ -961,7 +961,7 @@ test("retagging the same generation on a cache hit merges tags into one item", a
         "https://gen.pollinations.ai/image/vcr%20retag%20square?height=720&model=flux&seed=43&width=1280";
 
     const first = await fetchWorker(
-        "/image/vcr%20retag%20square?model=flux&width=1280&height=720&seed=43&tag=sunset",
+        "/image/vcr%20retag%20square?model=flux&width=1280&height=720&seed=43&tags=sunset",
         { headers: { authorization: `Bearer ${key}` } },
     );
     expect(first.response.status).toBe(200);
@@ -970,7 +970,7 @@ test("retagging the same generation on a cache hit merges tags into one item", a
     expect(mocks.fireworks.state.requests).toHaveLength(1);
 
     const second = await fetchWorker(
-        "/image/vcr%20retag%20square?model=flux&width=1280&height=720&seed=43&tag=beach",
+        "/image/vcr%20retag%20square?model=flux&width=1280&height=720&seed=43&tags=beach",
         { headers: { authorization: `Bearer ${key}` } },
     );
     expect(second.response.status).toBe(200);
@@ -999,7 +999,7 @@ test("tagging with an invalid tag returns 400 and writes no catalog row", async 
         "https://gen.pollinations.ai/image/vcr%20invalid%20tag%20square?height=720&model=flux&seed=44&width=1280";
 
     const { response, wait } = await fetchWorker(
-        "/image/vcr%20invalid%20tag%20square?model=flux&width=1280&height=720&seed=44&tag=UPPER!",
+        "/image/vcr%20invalid%20tag%20square?model=flux&width=1280&height=720&seed=44&tags=UPPER!",
         { headers: { authorization: `Bearer ${key}` } },
     );
 
@@ -1012,11 +1012,39 @@ test("tagging with an invalid tag returns 400 and writes no catalog row", async 
     expect(items).toHaveLength(0);
 });
 
+test("singular tag alias returns 400 and writes no catalog row", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "fireworks");
+    const { key, userId } = await createTestApiKey({
+        name: "catalog-singular-tag-key",
+        user: { packBalance: 100 },
+    });
+
+    const locator =
+        "https://gen.pollinations.ai/image/vcr%20singular%20tag%20square?height=720&model=flux&seed=46&width=1280";
+
+    const { response, wait } = await fetchWorker(
+        "/image/vcr%20singular%20tag%20square?model=flux&width=1280&height=720&seed=46&tag=sunset",
+        { headers: { authorization: `Bearer ${key}` } },
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+        error: 'Use "tags" instead of "tag".',
+    });
+    await wait();
+    expect(mocks.fireworks.state.requests).toHaveLength(0);
+
+    const { items } = await getCatalogRows(userId, locator);
+    expect(items).toHaveLength(0);
+});
+
 test("tagging without an API key returns 400", async ({ mocks }) => {
     await mocks.enable("tinybird", "fireworks");
 
     const { response, wait } = await fetchWorker(
-        "/image/vcr%20anon%20tag%20square?model=flux&width=1280&height=720&seed=45&tag=sunset",
+        "/image/vcr%20anon%20tag%20square?model=flux&width=1280&height=720&seed=45&tags=sunset",
         {},
     );
 
@@ -1031,9 +1059,7 @@ test("tagging without an API key returns 400", async ({ mocks }) => {
     await wait();
 });
 
-test("repeated tag params and comma-separated tags are all stored", async ({
-    mocks,
-}) => {
+test("comma-separated tags are all stored", async ({ mocks }) => {
     await mocks.enable("tinybird", "fireworks");
     const { key, userId } = await createTestApiKey({
         name: "catalog-multi-tag-key",
@@ -1043,11 +1069,8 @@ test("repeated tag params and comma-separated tags are all stored", async ({
     const locator =
         "https://gen.pollinations.ai/image/vcr%20multi%20tag%20square?height=720&model=flux&seed=47&width=1280";
 
-    // Repeated `tag` params exercise the query validator's array shape —
-    // tag/tags are declared in GenerateImageRequestQueryParamsSchema for the
-    // generated docs, and repeated params must not fail validation.
     const { response, wait } = await fetchWorker(
-        "/image/vcr%20multi%20tag%20square?model=flux&width=1280&height=720&seed=47&tag=sunset&tag=beach&tags=sea,sky",
+        "/image/vcr%20multi%20tag%20square?model=flux&width=1280&height=720&seed=47&tags=sunset,beach,sea,sky",
         { headers: { authorization: `Bearer ${key}` } },
     );
 

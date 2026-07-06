@@ -1,7 +1,7 @@
 /**
  * Opt-in media catalog tagging for gen.pollinations.ai generations.
  *
- * Requests without `tag`/`tags` params are untouched — no D1 write, no extra
+ * Requests without `tags` params are untouched — no D1 write, no extra
  * work on the hot path. Requests with tags are validated up front (before any
  * GPU cost is incurred), then — once the generation succeeds — the response
  * is cataloged into the shared media_item/media_tag tables (same D1 database
@@ -33,20 +33,19 @@ type MediaCatalogEnv = {
     Variables: LoggerVariables & AuthVariables & Partial<ModelVariables>;
 };
 
-// Splits a comma-separated `tags` value and merges it with repeated `tag`
-// params — same shape as media.pollinations.ai's collectTags.
+// Splits comma-separated `tags` values. Same field name as
+// media.pollinations.ai upload metadata.
 function collectTags(searchParams: URLSearchParams): string[] {
-    const tags = [...searchParams.getAll("tag")];
-    const tagsParam = searchParams.get("tags");
-    if (tagsParam) {
-        tags.push(...tagsParam.split(","));
+    const tags: string[] = [];
+    for (const value of searchParams.getAll("tags")) {
+        tags.push(...value.split(","));
     }
     return tags;
 }
 
 // Canonical locator: full URL on the constant gen host, pathname unchanged,
 // query params sorted alphabetically with catalog/cache-excluded params
-// stripped. Two requests for the "same" generation that differ only by tag
+// stripped. Two requests for the "same" generation that differ only by tags
 // (or any excluded param) resolve to the same locator, so upsert merges them.
 function buildCanonicalLocator(url: URL): string {
     const params = Array.from(url.searchParams.entries())
@@ -80,6 +79,9 @@ function extractPrompt(pathname: string): string | null {
 export const mediaCatalog = createMiddleware<MediaCatalogEnv>(
     async (c, next) => {
         const url = new URL(c.req.url);
+        if (url.searchParams.has("tag")) {
+            return c.json({ error: 'Use "tags" instead of "tag".' }, 400);
+        }
         const rawTags = collectTags(url.searchParams);
 
         if (rawTags.length === 0) {

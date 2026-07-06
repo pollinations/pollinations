@@ -232,13 +232,6 @@ def provider_for(text):
 
 
 def category_for(bank, provider, invoice=None):
-    context = f"{bank_text(bank)} {invoice_text(invoice or {})}".lower()
-    if provider == "anthropic":
-        if is_anthropic_saas(context):
-            return "saas"
-        if is_anthropic_compute(context):
-            return "compute"
-
     mapped = CATEGORY_MAP.get(str(bank.get("enty_category", "")).lower(), "")
     if mapped and mapped != "other":
         return mapped
@@ -255,33 +248,6 @@ def category_for(bank, provider, invoice=None):
     if provider:
         return "compute"
     return "other"
-
-
-def is_anthropic_saas(text):
-    return any(
-        phrase in text
-        for phrase in [
-            "claude.ai subscription",
-            "claudeai subscription",
-            "claude subscription",
-            "claude max monthly",
-            "cloud max monthly",
-            "max monthly",
-            "max plan",
-        ]
-    )
-
-
-def is_anthropic_compute(text):
-    return any(
-        phrase in text
-        for phrase in [
-            "one-time credit purchase",
-            "api credit",
-            "api usage",
-            "usage charge",
-        ]
-    )
 
 
 def verify_provider_categories(rows, config, creds):
@@ -323,6 +289,13 @@ def verify_provider_category_batch(rows, offset, config, endpoint, key):
                     "the bank description plus invoice product/line-item text. "
                     "Compute means raw API usage, metered inference, or provider credits. "
                     "SaaS means subscriptions, plans, seats, and human app access. "
+                    "Payroll means salaries, contractors, or payroll service payments. "
+                    "Office means rent, utilities, groceries, supplies, and workplace "
+                    "operating costs. "
+                    "Examples: Denns Biomarkt supermarket food is office; Windsurf, "
+                    "Retell, and fixed monthly Anthropic subscriptions are saas; "
+                    "SO LAB X and THOT contractor/payroll invoices are payroll; "
+                    "Anthropic API credits or metered usage are compute. "
                     "For Anthropic, Claude.ai Subscription, Claude/Cloud Max Monthly, "
                     "or Max plan line items are saas. Anthropic one-time credit purchase "
                     "or API usage is compute. "

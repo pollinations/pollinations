@@ -50,18 +50,16 @@ export function OperationsGuide() {
 
     return (
         <>
-            <Tooltip content="Operations guide">
-                <span>
-                    <HeaderButton
-                        label="Open operations guide"
-                        title="Open operations guide"
-                        tone="info"
-                        icon={<InfoIcon />}
-                        onClick={() => setOpen(true)}
-                    >
-                        Info
-                    </HeaderButton>
-                </span>
+            <Tooltip content="Operations guide" triggerAs="span">
+                <HeaderButton
+                    label="Open operations guide"
+                    title="Open operations guide"
+                    tone="info"
+                    icon={<InfoIcon />}
+                    onClick={() => setOpen(true)}
+                >
+                    Info
+                </HeaderButton>
             </Tooltip>
             <Dialog
                 open={open}

@@ -16,7 +16,10 @@
       "bedrock",
       "bedrock (native)"
     ],
-    "category": "compute"
+    "category": "compute",
+    "category_rules": [
+      { "match": "amazon*", "category": "office" }
+    ]
   },
   "alibaba": {
     "aliases": [

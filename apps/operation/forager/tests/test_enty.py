@@ -221,6 +221,11 @@ def test_category_for_keyword_rules_beat_default():
     assert enty.category_for("anthropic", "claudeai subscription anthropiccom", "") == "saas"
     assert enty.category_for("openai", "openai chatgpt subscription", "") == "saas"
     assert enty.category_for("openai", "openai api usage", "") == "compute"
+    # Wise mislabels Amazon retail card charges as counterparty "Amazon Web
+    # Services EMEA SARL"; the note's "Amazon*" descriptor only appears on retail.
+    retail = "amazon web services emea sarl card transaction issued by amazon* zee luxembourg"
+    assert enty.category_for("aws", retail, "") == "office"
+    assert enty.category_for("aws", "aws emea sarl monthly invoice", "") == "compute"
 
 
 def test_category_for_vendorless_falls_back_to_enty_tag_then_other():

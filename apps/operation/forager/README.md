@@ -17,7 +17,7 @@ The daily run refreshes:
 
 | Table | Source |
 |---|---|
-| `transactions` | Enty monthly export folders in `~/Documents/treasury-invoices/enty-ledger` |
+| `transactions` | Wise Activities API (outgoing bank movements) |
 | `provider_monthly` | Vendor APIs/CLIs plus manual rows |
 | `pollen_monthly` | Production `generation_event` usage |
 | `revenue_monthly` | Stripe balance transactions |
@@ -45,12 +45,12 @@ does not call AI and does not write Tinybird.
 python3 -m ingest.run --dry-run                      # snapshot + diff, no writes
 python3 -m ingest.run --only provider                   # one table: provider|pollen|revenue|transactions
 python3 -m ingest.run --only provider --vendor aws      # one provider connector
-python3 -m ingest.run --month 2026-07                # one month; bare still rebuilds transactions
-python3 -m ingest.run --month 2026-07 --only provider   # one month, skip the transactions rebuild
+python3 -m ingest.run --month 2026-07                # one month, spliced into every table
+python3 -m ingest.run --month 2026-07 --only transactions   # one month of Wise movements
 python3 -m ingest.run --yes                          # allow writes that lose a manual meter row's data
 python3 -m ingest.inspect provider_monthly --month 2026-07   # read-only row dump
 python3 -m ingest.doctor                             # preflight/health checks
-python3 -m pytest tests/test_enty.py -q
+python3 -m pytest tests/test_wise.py -q
 ```
 
 See [`AGENTS.md`](./AGENTS.md) for the full correction workflows (manual rows,

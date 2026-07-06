@@ -47,10 +47,9 @@ python3 -m ingest.run --dry-run --month 2026-07
 python3 -m ingest.run --month 2026-07
 ```
 
-Splices the given `YYYY-MM` into the affected tables. `--month` is invalid with
-`--only transactions` (transactions have no month scope). A bare `--month` still
-fully rebuilds `transactions` (the whole Enty rebuild); combine `--month` with
-`--only provider|pollen|revenue` to skip that rebuild.
+Splices the given `YYYY-MM` into the affected tables, including
+`transactions` (re-pulled from Wise for that month only). A bare run without
+`--month` rebuilds every table from `months_start`.
 
 ### One vendor (meter)
 
@@ -124,8 +123,9 @@ python3 -m ingest.run --only transactions
 If the alias affects a meter vendor, also re-run `--only provider` to remap its
 `provider_monthly` rows.
 
-Categories are fully deterministic (vendor default, then keyword rules, then the
-Enty CSV tag) — there is no AI verify pass.
+Categories are fully deterministic (vendor keyword rules, then exact-amount
+rules for fixed-price rows the text cannot split, then the vendor's default
+category, then `other`) — there is no AI verify pass.
 
 The slug also becomes valid for `ingest.record` (it reads `registry.CANONICAL`,
 which is the alias keys).

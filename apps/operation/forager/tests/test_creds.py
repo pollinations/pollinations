@@ -6,7 +6,6 @@ from ingest import creds
 def test_config_loads():
     c = creds.load_config()
     assert c["months_start"] == "2026-01"
-    assert c["enty_ledger_dir"].endswith("/treasury-invoices/enty-ledger")
 
 def test_env_overrides(monkeypatch):
     monkeypatch.setenv("WISE_API_TOKEN", "from-env")

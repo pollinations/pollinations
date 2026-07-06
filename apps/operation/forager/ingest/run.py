@@ -2,7 +2,7 @@
 
     python3 -m ingest.run
 Forager owns the clean Treasury data path:
-  - Enty exports -> transactions
+  - Wise activities -> transactions
   - vendor connectors/manual rows -> provider_monthly
   - generation_event -> pollen_monthly
   - Stripe balance transactions -> revenue_monthly
@@ -16,7 +16,7 @@ import datetime
 import json
 import re
 
-from . import backup, creds, enty, tb
+from . import backup, creds, tb, wise
 from .connectors import registry
 from .connectors import usage as _usage
 from .connectors.common import months_ytd
@@ -278,12 +278,26 @@ def refresh_revenue_monthly(
     statuses["revenue"] = len(rows)
 
 
-def refresh_transactions(ops_replace, secrets, config, statuses, guard):
-    rows = enty.build_transactions(config, secrets)
+def refresh_transactions(
+    ops_replace, secrets, config, today, statuses, guard, months=None
+):
+    scoped = months is not None
+    if months is None:
+        months = months_ytd(config["months_start"], today)
+    rows = wise.build_transactions(secrets, months)
     if not rows:
         raise RuntimeError("transactions returned 0 rows")
+    if scoped:
+        month_set = set(months)
+        existing = guard["existing"]["transactions"]
+        in_scope = lambda row: str(row.get("date", ""))[:7] in month_set
+        assert_fresh_in_scope("transactions", rows, in_scope)
+        rows = splice_rows(existing, rows, in_scope)
     guarded_replace(ops_replace, "transactions", rows, guard, statuses)
     statuses["transactions"] = len(rows)
+    statuses["transactions_unmatched"] = sum(
+        1 for row in rows if not row.get("vendor")
+    )
 
 
 def append_run_log(ops_ingest, statuses, notes):
@@ -324,11 +338,8 @@ def parse_args(argv=None):
                 f"({', '.join(meter_slugs)}); manual-only vendors are "
                 "updated with ingest.record"
             )
-    if args.month is not None:
-        if not _MONTH_RE.match(args.month):
-            parser.error("--month must be YYYY-MM")
-        if args.only == "transactions":
-            parser.error("--month is not valid with --only transactions")
+    if args.month is not None and not _MONTH_RE.match(args.month):
+        parser.error("--month must be YYYY-MM")
 
     return args
 
@@ -379,7 +390,9 @@ def main():
                 ops_replace, secrets, config, today, statuses, guard, months=months
             )
         if args.only in (None, "transactions"):
-            refresh_transactions(ops_replace, secrets, config, statuses, guard)
+            refresh_transactions(
+                ops_replace, secrets, config, today, statuses, guard, months=months
+            )
     except Exception as e:
         statuses["run"] = "err:" + _sanitize_err(e, secrets)
         notes.append(f"run failed: {statuses['run']}")

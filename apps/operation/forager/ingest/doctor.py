@@ -1,7 +1,7 @@
 """Preflight checks for the forager ingest pipeline.
 
 HARD checks (any failure blocks the run):
-  sops, tinybird-ops (write token read+write), Enty ledger folder.
+  sops, tinybird-ops (write token read+write), Wise credentials.
 
 SOFT checks (warn only):
   last run < 26h.
@@ -37,13 +37,17 @@ def checks():
     except Exception as e:
         out.append(("tinybird-ops", True, False, str(e)[:120]))
 
-    # HARD: Enty ledger folder
-    enty_dir = cfg.get("enty_ledger_dir", "")
+    # HARD: Wise credentials (transactions source)
+    wise_missing = [
+        key
+        for key in ("WISE_API_TOKEN", "WISE_BUSINESS_PROFILE_ID")
+        if not c.get(key)
+    ]
     out.append((
-        "enty-ledger",
+        "wise-creds",
         True,
-        bool(enty_dir and os.path.isdir(os.path.expanduser(enty_dir))),
-        os.path.expanduser(enty_dir) if enty_dir else "enty_ledger_dir missing",
+        not wise_missing,
+        "present" if not wise_missing else f"missing: {', '.join(wise_missing)}",
     ))
 
     # SOFT: freshness (last ingest_run < 26h ago)

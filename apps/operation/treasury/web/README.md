@@ -1,8 +1,7 @@
 # Treasury Web
 
 Treasury local UI over raw Forager Tinybird pipe outputs in the `operations`
-workspace. Tabs: Invoices, Payments, Pollen Usage, Provider Usage, Revenue, and
-Ingest Log.
+workspace. Tabs: Transactions, Pollen Usage, Provider Usage, and Revenue.
 
 ## Run
 
@@ -26,12 +25,8 @@ and no network calls.
 ## Data Contract
 
 Reads exactly these pipes from `apps/operation/forager/tinybird/pipes/`:
-`invoices_ep`, `payments_ep`, `meter_monthly_ep`, `usage_ep`, `runs_ep`, and
-`revenue_ep`.
+`transactions_api`, `meter_monthly_api`, `usage_monthly_api`, `ingest_runs_api`, and
+`revenue_monthly_api`.
 
-Each tab shows one table and a short where/how/what/why note. Provider Usage is
-the manual/provider-dashboard table for monthly credit and prepaid usage.
-
-Provider Usage stores one source label per monthly usage value: `manual` when an
-operator entered it, or the connector name/source when forager fetched it. Edits
-append facts for the next ingest run to fold in.
+Edits append rows to the allowed Tinybird datasources through the local server
+proxy.

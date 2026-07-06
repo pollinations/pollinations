@@ -49,8 +49,8 @@ python3 -m ingest.run --month 2026-07
 
 Splices the given `YYYY-MM` into the affected tables. `--month` is invalid with
 `--only transactions` (transactions have no month scope). A bare `--month` still
-fully rebuilds `transactions` (the whole Enty rebuild, including the AI verify
-pass); combine `--month` with `--only meter|usage|revenue` to skip that rebuild.
+fully rebuilds `transactions` (the whole Enty rebuild); combine `--month` with
+`--only meter|usage|revenue` to skip that rebuild.
 
 ### One provider (meter)
 
@@ -102,8 +102,19 @@ To correct a value, delete the row this way and re-add it with `ingest.record`.
 
 ### Add a provider alias
 
-Edit `config/provider_aliases.json` — add the canonical slug mapped to a list of
-identifying substrings (lowercased), then re-run the affected table:
+Edit `config/provider_aliases.json` — add the canonical slug mapped to an entry
+`{"aliases": [...], "category": "...", "category_rules": [...]}`:
+
+- `aliases`: identifying substrings (lowercased) that resolve rows to this slug.
+- `category`: the vendor's default category (one of `compute | infra | saas |
+  admin | office | payroll | other`).
+- `category_rules` (optional): ordered `{"match": "...", "category": "..."}`
+  keyword overrides, matched as lowercase substrings against the row's bank +
+  invoice text. Use them when one vendor spans categories — e.g. an Anthropic
+  Claude subscription is `saas` while API usage is `compute`.
+
+Adding a vendor = aliases + category. A category fix = edit the entry and re-run
+the affected table:
 
 ```bash
 python3 -m ingest.run --dry-run --only transactions   # confirm the new mapping
@@ -112,6 +123,9 @@ python3 -m ingest.run --only transactions
 
 If the alias affects a meter provider, also re-run `--only meter` to remap its
 `meter_monthly` rows.
+
+Categories are fully deterministic (vendor default, then keyword rules, then the
+Enty CSV tag) — there is no AI verify pass.
 
 The slug also becomes valid for `ingest.record` (it reads `registry.CANONICAL`,
 which is the alias keys).

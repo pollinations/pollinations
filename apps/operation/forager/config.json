@@ -3,11 +3,5 @@
     "tb_prod_api": "https://api.europe-west2.gcp.tinybird.co",
     "months_start": "2026-01",
     "backup_dir": "~/Documents/treasury-backups",
-    "enty_ledger_dir": "~/Documents/treasury-invoices/enty-ledger",
-    "enty_ai_verify": true,
-    "enty_ai_endpoint": "https://openrouter.ai/api/v1/chat/completions",
-    "enty_ai_model": "openai/gpt-4.1-mini",
-    "enty_ai_batch_size": 40,
-    "enty_ai_max_tokens": 2500,
-    "enty_ai_timeout": 180
+    "enty_ledger_dir": "~/Documents/treasury-invoices/enty-ledger"
 }

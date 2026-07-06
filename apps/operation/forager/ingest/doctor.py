@@ -1,8 +1,7 @@
 """Preflight checks for the forager ingest pipeline.
 
 HARD checks (any failure blocks the run):
-  sops, tinybird-ops (write token read+write), Enty ledger folder,
-  OpenRouter/OpenAI key for Enty provider/category verification.
+  sops, tinybird-ops (write token read+write), Enty ledger folder.
 
 SOFT checks (warn only):
   last run < 26h.
@@ -45,15 +44,6 @@ def checks():
         True,
         bool(enty_dir and os.path.isdir(os.path.expanduser(enty_dir))),
         os.path.expanduser(enty_dir) if enty_dir else "enty_ledger_dir missing",
-    ))
-
-    # HARD: AI key for Enty provider/category verification
-    ai_key = c.get("OPENROUTER_API_KEY") or c.get("OPENAI_ADMIN_KEY") or c.get("OPENAI_API_KEY")
-    out.append((
-        "enty-ai",
-        True,
-        bool(ai_key),
-        "key present" if ai_key else "OPENROUTER_API_KEY/OPENAI key missing",
     ))
 
     # SOFT: freshness (last ingest_run < 26h ago)

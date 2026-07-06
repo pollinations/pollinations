@@ -109,10 +109,7 @@ def test_enty_exports_build_minimal_transactions(tmp_path):
         [{"Type": "Charge", "ID": "ch_1", "Created": "2026-5-28", "Amount": "10", "Currency": "usd"}],
     )
 
-    rows = enty.build_transactions(
-        {"enty_ledger_dir": str(tmp_path), "enty_ai_verify": False},
-        creds={},
-    )
+    rows = enty.build_transactions({"enty_ledger_dir": str(tmp_path)})
 
     assert rows == [
         {
@@ -199,10 +196,7 @@ def test_enty_source_amount_matches_invoice_currency(tmp_path):
         ],
     )
 
-    rows = enty.build_transactions(
-        {"enty_ledger_dir": str(tmp_path), "enty_ai_verify": False},
-        creds={},
-    )
+    rows = enty.build_transactions({"enty_ledger_dir": str(tmp_path)})
 
     assert rows[0]["provider"] == "vast.ai"
     assert rows[0]["charged_amount"] == 433.61
@@ -212,40 +206,31 @@ def test_enty_source_amount_matches_invoice_currency(tmp_path):
     assert rows[0]["match_status"] == "matched"
 
 
-def test_ai_can_correct_non_empty_category_when_evidence_contradicts_it():
-    rows = [{"provider": "anthropic", "category": "compute"}]
+def test_category_for_uses_vendor_default():
+    assert enty.category_for("tinybird", "tinybird invoice 123", "") == "infra"
+    assert enty.category_for("retell", "retell ai monthly plan", "") == "saas"
+    assert enty.category_for("so-lab-x", "so lab x invoice", "") == "payroll"
+    assert enty.category_for("denns-biomarkt", "denns biomarkt karlsruhe", "") == "office"
 
-    enty.apply_corrections(rows, [{"index": 0, "category": "saas"}])
 
-    assert rows == [{"provider": "anthropic", "category": "saas"}]
+def test_category_for_keyword_rules_beat_default():
+    subscription = "card transaction of 180.00 eur issued by claude.ai subscription anthropic.com"
+    api = "card transaction of usd issued by anthropic anthropiccom"
+    assert enty.category_for("anthropic", subscription, "") == "saas"
+    assert enty.category_for("anthropic", api, "") == "compute"
+    assert enty.category_for("anthropic", "claudeai subscription anthropiccom", "") == "saas"
+    assert enty.category_for("openai", "openai chatgpt subscription", "") == "saas"
+    assert enty.category_for("openai", "openai api usage", "") == "compute"
 
 
-def test_ai_verifier_prompt_explains_invoice_based_category_examples(monkeypatch):
-    captured = {}
+def test_category_for_vendorless_falls_back_to_enty_tag_then_other():
+    assert enty.category_for("", "some grocery store", "Office") == "office"
+    assert enty.category_for("", "unknown vendor", "Employee salaries") == "payroll"
+    assert enty.category_for("", "unknown vendor", "Uncategorized expenses") == "other"
+    assert enty.category_for("", "unknown vendor", "") == "other"
 
-    def fake_post_chat(endpoint, payload, key, timeout=180):
-        captured["payload"] = payload
-        return {"choices": [{"message": {"content": '{"corrections":[]}'}}]}
 
-    monkeypatch.setattr(enty, "post_chat", fake_post_chat)
-
-    enty.verify_provider_category_batch(
-        [
-            {
-                "provider": "windsurf",
-                "category": "compute",
-                "_evidence": {"invoice": {"text": "Monthly subscription"}},
-            }
-        ],
-        0,
-        {"enty_ai_model": "test", "enty_ai_max_tokens": 100, "enty_ai_timeout": 5},
-        "https://example.test/v1/chat/completions",
-        "test-key",
-    )
-
-    prompt = captured["payload"]["messages"][0]["content"]
-    assert "Classify category from the bank description plus invoice product/line-item text" in prompt
-    assert "Denns Biomarkt supermarket food is office" in prompt
-    assert "Windsurf, Retell, and fixed monthly Anthropic subscriptions are saas" in prompt
-    assert "SO LAB X and THOT contractor/payroll invoices are payroll" in prompt
-    assert "Anthropic API credits or metered usage are compute" in prompt
+def test_amazon_retail_and_aws_stay_separate_vendors():
+    assert enty.provider_for("amazon web services emea sarl") == "aws"
+    assert enty.provider_for("amazon marketplace berlin") == "amazon"
+    assert enty.category_for("amazon", "amazon marketplace berlin", "") == "office"

@@ -18,12 +18,12 @@ import { type ProvenanceCode, SourceMark } from "./components/Provenance";
 import { STALE_AFTER_HOURS } from "./config";
 import { hoursSince } from "./lib/format";
 import { collectMonths } from "./lib/months";
-import {
-    findProviderVocabularyIssues,
-    PROVIDER_OPTIONS,
-    providerVocabularyRunIssues,
-} from "./lib/provider-vocabulary";
 import { fixturesMode, loadAll, TbError } from "./lib/tb";
+import {
+    findVendorVocabularyIssues,
+    VENDOR_OPTIONS,
+    vendorVocabularyRunIssues,
+} from "./lib/vendor-vocabulary";
 import type { Data } from "./types";
 import { BurnTab } from "./views/BurnTab";
 import { MeterTab } from "./views/MeterTab";
@@ -63,7 +63,7 @@ const TABS: {
         label: "Compute Usage",
         codes: ["API", "CLI", "BQ", "HC"],
         pipe: "meter_monthly_api",
-        note: "Monthly provider usage from provider APIs, CLIs, BigQuery exports, and manual entries.",
+        note: "Monthly vendor usage from vendor APIs, CLIs, BigQuery exports, and manual entries.",
         rows: (data) => data.meterMonthly.length,
     },
     {
@@ -76,24 +76,24 @@ const TABS: {
     },
 ];
 
-function providerOptionsForTab(data: Data | null, tab: Tab) {
-    if (!data) return PROVIDER_OPTIONS;
+function vendorOptionsForTab(data: Data | null, tab: Tab) {
+    if (!data) return VENDOR_OPTIONS;
 
-    const providers = new Set<string>();
+    const vendors = new Set<string>();
     const add = (value: string) => {
-        const provider = value.trim();
-        if (provider) providers.add(provider);
+        const vendor = value.trim();
+        if (vendor) vendors.add(vendor);
     };
 
     if (tab === "transactions") {
-        for (const row of data.transactions) add(row.provider);
+        for (const row of data.transactions) add(row.vendor);
     } else if (tab === "burn") {
-        for (const row of data.usageMonthly) add(row.provider);
+        for (const row of data.usageMonthly) add(row.vendor);
     } else if (tab === "meter") {
-        for (const row of data.meterMonthly) add(row.provider);
+        for (const row of data.meterMonthly) add(row.vendor);
     }
 
-    return ["all", ...[...providers].sort((a, b) => a.localeCompare(b))];
+    return ["all", ...[...vendors].sort((a, b) => a.localeCompare(b))];
 }
 
 async function checkSession() {
@@ -167,8 +167,8 @@ export default function App() {
     const [tab, setTab] = useState<Tab>("transactions");
     // Default to All so the transactions page opens with the full Enty export.
     const [month, setMonth] = useState("");
-    // Keep the selection while it exists in the current tab's provider set.
-    const [provider, setProvider] = useState("all");
+    // Keep the selection while it exists in the current tab's vendor set.
+    const [vendor, setVendor] = useState("all");
     const [attempt, setAttempt] = useState(0);
     const ready = fixtures || (sessionChecked && authenticated);
 
@@ -238,17 +238,17 @@ export default function App() {
 
     const months = useMemo(() => (data ? collectMonths(data) : []), [data]);
     const activeMonth = month;
-    const providerOptions = useMemo(
-        () => providerOptionsForTab(data, tab),
+    const vendorOptions = useMemo(
+        () => vendorOptionsForTab(data, tab),
         [data, tab],
     );
-    const showProviderFilter = providerOptions.length > 1;
-    const providerIssues = useMemo(
+    const showVendorFilter = vendorOptions.length > 1;
+    const vendorIssues = useMemo(
         () =>
             data
                 ? [
-                      ...providerVocabularyRunIssues(data.runs),
-                      ...findProviderVocabularyIssues(data),
+                      ...vendorVocabularyRunIssues(data.runs),
+                      ...findVendorVocabularyIssues(data),
                   ]
                 : [],
         [data],
@@ -263,10 +263,10 @@ export default function App() {
     const [category, setCategory] = useState("all");
 
     useEffect(() => {
-        if (provider !== "all" && !providerOptions.includes(provider)) {
-            setProvider("all");
+        if (vendor !== "all" && !vendorOptions.includes(vendor)) {
+            setVendor("all");
         }
-    }, [provider, providerOptions]);
+    }, [vendor, vendorOptions]);
 
     if (!sessionChecked) {
         return (
@@ -363,23 +363,21 @@ export default function App() {
                         </Alert>
                     )}
 
-                    {providerIssues.length > 0 && (
+                    {vendorIssues.length > 0 && (
                         <Alert
                             intent="warning"
-                            title="Provider vocabulary mismatch"
+                            title="Vendor vocabulary mismatch"
                         >
                             <div className="flex flex-col gap-1">
-                                {providerIssues.slice(0, 5).map((issue) => (
+                                {vendorIssues.slice(0, 5).map((issue) => (
                                     <span
-                                        key={`${issue.source}:${issue.provider}:${issue.detail}`}
+                                        key={`${issue.source}:${issue.vendor}:${issue.detail}`}
                                     >
                                         {issue.detail}
                                     </span>
                                 ))}
-                                {providerIssues.length > 5 && (
-                                    <span>
-                                        +{providerIssues.length - 5} more
-                                    </span>
+                                {vendorIssues.length > 5 && (
+                                    <span>+{vendorIssues.length - 5} more</span>
                                 )}
                             </div>
                         </Alert>
@@ -392,12 +390,12 @@ export default function App() {
                             onChange={setMonth}
                         />
                         <div className="flex flex-wrap gap-3">
-                            {showProviderFilter && (
+                            {showVendorFilter && (
                                 <FilterSelect
-                                    label="provider"
-                                    value={provider}
-                                    onChange={setProvider}
-                                    options={providerOptions}
+                                    label="vendor"
+                                    value={vendor}
+                                    onChange={setVendor}
+                                    options={vendorOptions}
                                 />
                             )}
                             {tab !== "meter" && (
@@ -468,21 +466,21 @@ export default function App() {
                             category={category}
                             data={data}
                             month={activeMonth}
-                            provider={provider}
+                            vendor={vendor}
                         />
                     )}
                     {data && tab === "burn" && (
                         <BurnTab
                             data={data}
                             month={activeMonth}
-                            provider={provider}
+                            vendor={vendor}
                         />
                     )}
                     {data && tab === "meter" && (
                         <MeterTab
                             data={data}
                             month={activeMonth}
-                            provider={provider}
+                            vendor={vendor}
                         />
                     )}
                     {data && tab === "revenue" && <RevenueTab data={data} />}

@@ -9,7 +9,7 @@ import type {
 const transactions: TransactionRow[] = [
     {
         date: "2026-06-01",
-        provider: "alibaba",
+        vendor: "alibaba",
         category: "compute",
         charged_amount: 139.31,
         charged_currency: "EUR",
@@ -20,7 +20,7 @@ const transactions: TransactionRow[] = [
     },
     {
         date: "2026-06-13",
-        provider: "elevenlabs",
+        vendor: "elevenlabs",
         category: "compute",
         charged_amount: 0,
         charged_currency: "",
@@ -31,7 +31,7 @@ const transactions: TransactionRow[] = [
     },
     {
         date: "2026-06-20",
-        provider: "tinybird",
+        vendor: "tinybird",
         category: "infra",
         charged_amount: 34.74,
         charged_currency: "EUR",
@@ -46,7 +46,7 @@ const usageMonthly: UsageMonthlyRow[] = [
     {
         source: "tinybird",
         month: "2026-06",
-        provider: "google",
+        vendor: "google",
         model: "gemini-2.5-flash",
         currency: "POLLEN",
         cost_paid: 813.24,
@@ -57,7 +57,7 @@ const usageMonthly: UsageMonthlyRow[] = [
     {
         source: "tinybird",
         month: "2026-06",
-        provider: "azure",
+        vendor: "azure",
         model: "gpt-5.5",
         currency: "POLLEN",
         cost_paid: 834.12,
@@ -68,7 +68,7 @@ const usageMonthly: UsageMonthlyRow[] = [
     {
         source: "tinybird",
         month: "2026-06",
-        provider: "openai",
+        vendor: "openai",
         model: "gpt-4.1-mini",
         currency: "POLLEN",
         cost_paid: 42.35,
@@ -79,7 +79,7 @@ const usageMonthly: UsageMonthlyRow[] = [
     {
         source: "tinybird",
         month: "2026-05",
-        provider: "replicate",
+        vendor: "replicate",
         model: "flux-kontext",
         currency: "POLLEN",
         cost_paid: 151.77,
@@ -92,7 +92,7 @@ const usageMonthly: UsageMonthlyRow[] = [
 const meterMonthly: MeterMonthlyRow[] = [
     {
         month: "2026-06",
-        provider: "assemblyai",
+        vendor: "assemblyai",
         currency: "USD",
         credit: 242.45,
         paid: 0,
@@ -100,7 +100,7 @@ const meterMonthly: MeterMonthlyRow[] = [
     },
     {
         month: "2026-06",
-        provider: "openai",
+        vendor: "openai",
         currency: "USD",
         credit: 531.25,
         paid: 0,
@@ -108,7 +108,7 @@ const meterMonthly: MeterMonthlyRow[] = [
     },
     {
         month: "2026-05",
-        provider: "ovhcloud",
+        vendor: "ovhcloud",
         currency: "EUR",
         credit: 0,
         paid: 1059.8,

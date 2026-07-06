@@ -53,9 +53,9 @@ describe("sortRows", () => {
 
     it("sorts text naturally and keeps empty values last", () => {
         const rows: Row[] = [
-            { id: "ten", name: "provider 10" },
+            { id: "ten", name: "vendor 10" },
             { id: "blank", name: "" },
-            { id: "two", name: "provider 2" },
+            { id: "two", name: "vendor 2" },
             { id: "alpha", name: "Alpha" },
         ];
         const column = { key: "name", value: (row: Row) => row.name };

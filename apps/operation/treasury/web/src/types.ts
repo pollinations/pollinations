@@ -1,6 +1,6 @@
 export type TransactionRow = {
     date: string;
-    provider: string;
+    vendor: string;
     category: string;
     charged_amount: number;
     charged_currency: string;
@@ -12,7 +12,7 @@ export type TransactionRow = {
 
 export type MeterMonthlyRow = {
     month: string;
-    provider: string;
+    vendor: string;
     currency: string;
     credit: number;
     paid: number;
@@ -22,7 +22,7 @@ export type MeterMonthlyRow = {
 export type UsageMonthlyRow = {
     source: string;
     month: string;
-    provider: string;
+    vendor: string;
     model: string;
     currency: string;
     cost_paid: number;

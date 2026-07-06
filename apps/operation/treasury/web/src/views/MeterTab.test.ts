@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import type { MeterMonthlyRow } from "../types";
 import { visibleMeterRows } from "./MeterTab";
 
-const row = (month: string, provider: string): MeterMonthlyRow => ({
+const row = (month: string, vendor: string): MeterMonthlyRow => ({
     month,
-    provider,
+    vendor,
     currency: "USD",
     credit: 1,
     paid: 0,
@@ -18,19 +18,19 @@ describe("visibleMeterRows", () => {
         row("2026-07", "gcp"),
     ];
 
-    it("filters by month and provider", () => {
+    it("filters by month and vendor", () => {
         expect(
             visibleMeterRows({
                 meterRows: rows,
                 month: "2026-07",
-                provider: "aws",
+                vendor: "aws",
             }),
         ).toEqual([row("2026-07", "aws")]);
     });
 
     it("returns everything for the all/empty filters", () => {
         expect(
-            visibleMeterRows({ meterRows: rows, month: "", provider: "all" }),
+            visibleMeterRows({ meterRows: rows, month: "", vendor: "all" }),
         ).toEqual(rows);
     });
 });

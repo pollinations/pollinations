@@ -21,7 +21,7 @@ import type { Data, TransactionRow } from "../types";
 function transactionKey(row: TransactionRow) {
     return [
         row.date,
-        row.provider,
+        row.vendor,
         row.category,
         row.charged_amount,
         row.charged_currency,
@@ -53,27 +53,27 @@ export function TransactionsTab({
     category = "all",
     data,
     month = "",
-    provider = "all",
+    vendor = "all",
 }: {
     category?: string;
     data: Data;
     month?: string;
-    provider?: string;
+    vendor?: string;
 }) {
     const baseRows = useMemo(
         () =>
             data.transactions.filter(
                 (row) =>
                     matchesMonth(row.date, month) &&
-                    (provider === "all" || row.provider === provider) &&
+                    (vendor === "all" || row.vendor === vendor) &&
                     (category === "all" || row.category === category),
             ),
-        [data.transactions, month, provider, category],
+        [data.transactions, month, vendor, category],
     );
     const sortColumns = useMemo<SortColumn<TransactionRow>[]>(
         () => [
             { key: "date", value: (row) => row.date },
-            { key: "provider", value: (row) => row.provider },
+            { key: "vendor", value: (row) => row.vendor },
             { key: "category", value: (row) => row.category },
             {
                 key: "charged_amount",
@@ -106,8 +106,8 @@ export function TransactionsTab({
                         <TableHeaderCell {...headerProps("date")}>
                             date
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("provider")}>
-                            provider
+                        <TableHeaderCell {...headerProps("vendor")}>
+                            vendor
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("category")}>
                             category
@@ -137,7 +137,7 @@ export function TransactionsTab({
                         ({ key, row }) => (
                             <TableRow key={key}>
                                 <TableCell>{fmtPeriod(row.date)}</TableCell>
-                                <TableCell>{row.provider}</TableCell>
+                                <TableCell>{row.vendor}</TableCell>
                                 <TableCell>{row.category}</TableCell>
                                 <TableCell>{row.charged_amount}</TableCell>
                                 <TableCell>{row.charged_currency}</TableCell>

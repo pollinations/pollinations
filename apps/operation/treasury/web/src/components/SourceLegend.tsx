@@ -6,8 +6,8 @@ const CODE_LABELS: { code: ProvenanceCode; text: string }[] = [
     { code: "EN", text: "Enty export" },
     { code: "TB", text: "Pollen usage" },
     { code: "ST", text: "Stripe" },
-    { code: "API", text: "provider API" },
-    { code: "CLI", text: "provider CLI" },
+    { code: "API", text: "vendor API" },
+    { code: "CLI", text: "vendor CLI" },
     { code: "BQ", text: "BigQuery" },
     { code: "HC", text: "manual / placeholder" },
 ];

@@ -17,15 +17,15 @@ const PROVENANCE: Record<
         className: "treasury-source-st",
     },
     API: {
-        title: "Provider API - read live on refresh",
+        title: "Vendor API - read live on refresh",
         className: "treasury-source-api",
     },
     CLI: {
-        title: "Provider CLI - read live on refresh",
+        title: "Vendor CLI - read live on refresh",
         className: "treasury-source-cli",
     },
     BQ: {
-        title: "BigQuery - provider usage export",
+        title: "BigQuery - vendor usage export",
         className: "treasury-source-bq",
     },
     HC: {
@@ -52,7 +52,7 @@ const SOURCE_META: Record<
     usage: {
         code: "HC",
         display: "HC",
-        title: "Provider usage is missing; placeholder row is generated for operator fill-in.",
+        title: "Vendor usage is missing; placeholder row is generated for operator fill-in.",
     },
 };
 

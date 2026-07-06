@@ -21,42 +21,42 @@ import type { Data, MeterMonthlyRow } from "../types";
 export function visibleMeterRows({
     meterRows,
     month,
-    provider,
+    vendor,
 }: {
     meterRows: MeterMonthlyRow[];
     month: string;
-    provider: string;
+    vendor: string;
 }) {
     return meterRows.filter(
         (row) =>
             matchesMonth(row.month, month) &&
-            (provider === "all" || row.provider === provider),
+            (vendor === "all" || row.vendor === vendor),
     );
 }
 
 export function MeterTab({
     data,
     month = "",
-    provider = "all",
+    vendor = "all",
 }: {
     data: Data;
     month?: string;
-    provider?: string;
+    vendor?: string;
 }) {
     const baseRows = useMemo(
         () =>
             visibleMeterRows({
                 meterRows: data.meterMonthly,
                 month,
-                provider,
+                vendor,
             }),
-        [data.meterMonthly, month, provider],
+        [data.meterMonthly, month, vendor],
     );
     const sortColumns = useMemo<SortColumn<MeterMonthlyRow>[]>(
         () => [
             { key: "month", value: (row) => row.month },
             { key: "source", value: (row) => row.source },
-            { key: "provider", value: (row) => row.provider },
+            { key: "vendor", value: (row) => row.vendor },
             { key: "credit", value: (row) => row.credit },
             { key: "paid", value: (row) => row.paid },
             { key: "currency", value: (row) => row.currency },
@@ -78,8 +78,8 @@ export function MeterTab({
                         <TableHeaderCell {...headerProps("source")}>
                             source
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("provider")}>
-                            provider
+                        <TableHeaderCell {...headerProps("vendor")}>
+                            vendor
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("credit")}>
                             credit
@@ -96,14 +96,14 @@ export function MeterTab({
                     {withUniqueRowKeys(
                         rows,
                         (row) =>
-                            `${row.month}|${row.provider}|${row.source}|${row.currency}|${row.credit}|${row.paid}`,
+                            `${row.month}|${row.vendor}|${row.source}|${row.currency}|${row.credit}|${row.paid}`,
                     ).map(({ key, row }) => (
                         <TableRow key={key}>
                             <TableCell>{fmtPeriod(row.month)}</TableCell>
                             <TableCell>
                                 <SourceCell sources={[row.source]} />
                             </TableCell>
-                            <TableCell>{row.provider}</TableCell>
+                            <TableCell>{row.vendor}</TableCell>
                             <TableCell>{row.credit}</TableCell>
                             <TableCell>{row.paid}</TableCell>
                             <TableCell>{row.currency}</TableCell>

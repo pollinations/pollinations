@@ -21,26 +21,26 @@ import type { Data, UsageMonthlyRow } from "../types";
 export function BurnTab({
     data,
     month = "",
-    provider = "all",
+    vendor = "all",
 }: {
     data: Data;
     month?: string;
-    provider?: string;
+    vendor?: string;
 }) {
     const baseRows = useMemo(
         () =>
             data.usageMonthly.filter(
                 (row) =>
                     matchesMonth(row.month, month) &&
-                    (provider === "all" || row.provider === provider),
+                    (vendor === "all" || row.vendor === vendor),
             ),
-        [data.usageMonthly, month, provider],
+        [data.usageMonthly, month, vendor],
     );
     const sortColumns = useMemo<SortColumn<UsageMonthlyRow>[]>(
         () => [
             { key: "month", value: (row) => row.month },
             { key: "source", value: (row) => row.source },
-            { key: "provider", value: (row) => row.provider },
+            { key: "vendor", value: (row) => row.vendor },
             { key: "model", value: (row) => row.model },
             { key: "currency", value: (row) => row.currency },
             { key: "cost_paid", value: (row) => row.cost_paid },
@@ -76,8 +76,8 @@ export function BurnTab({
                             <TableHeaderCell {...headerProps("source")}>
                                 source
                             </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("provider")}>
-                                provider
+                            <TableHeaderCell {...headerProps("vendor")}>
+                                vendor
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("model")}>
                                 model
@@ -102,15 +102,14 @@ export function BurnTab({
                     <TableBody>
                         {withUniqueRowKeys(
                             rows,
-                            (row) =>
-                                `${row.month}|${row.provider}|${row.model}`,
+                            (row) => `${row.month}|${row.vendor}|${row.model}`,
                         ).map(({ key, row }) => (
                             <TableRow key={key}>
                                 <TableCell>{fmtPeriod(row.month)}</TableCell>
                                 <TableCell>
                                     <SourceCell sources={[row.source]} />
                                 </TableCell>
-                                <TableCell>{row.provider}</TableCell>
+                                <TableCell>{row.vendor}</TableCell>
                                 <TableCell>{row.model}</TableCell>
                                 <TableCell>{row.currency}</TableCell>
                                 <TableCell>{row.cost_paid}</TableCell>

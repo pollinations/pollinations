@@ -3,12 +3,13 @@ import type { ProvenanceCode } from "./Provenance";
 import { SourceMark } from "./Provenance";
 
 const CODE_LABELS: { code: ProvenanceCode; text: string }[] = [
-    { code: "TB", text: "Tinybird" },
+    { code: "EN", text: "Enty export" },
+    { code: "TB", text: "Pollen usage" },
     { code: "ST", text: "Stripe" },
     { code: "API", text: "provider API" },
     { code: "CLI", text: "provider CLI" },
     { code: "BQ", text: "BigQuery" },
-    { code: "HC", text: "manual / hardcoded" },
+    { code: "HC", text: "manual / placeholder" },
 ];
 
 export function SourceLegendContent() {

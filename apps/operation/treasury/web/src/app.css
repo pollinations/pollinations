@@ -17,10 +17,23 @@
     box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1);
 }
 
+.treasury-dirty-control {
+    border-color: var(--polli-color-danger-border) !important;
+    background: var(--polli-color-danger-bg-light) !important;
+    color: var(--polli-color-danger-text) !important;
+    box-shadow: 0 0 0 1px var(--polli-color-danger-border);
+}
+
 .treasury-source-tb {
     border-color: #c4b5fd;
     background: #6d28d9;
     color: #ffffff;
+}
+
+.treasury-source-en {
+    border-color: #fcd34d;
+    background: #92400e;
+    color: #fffbeb;
 }
 
 .treasury-source-hc {

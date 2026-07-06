@@ -48,9 +48,9 @@ const TABS: {
     {
         id: "transactions",
         label: "Transactions",
-        codes: ["TB"],
+        codes: ["EN"],
         pipe: "transactions_api",
-        note: "Single Enty-backed spend table: bank charge, invoice value, credit burn, and match state.",
+        note: "Enty monthly export: bank charge, invoice value, credit burn, and match state.",
         rows: (data) => data.transactions.length,
     },
     {
@@ -64,9 +64,9 @@ const TABS: {
     {
         id: "meter",
         label: "Provider Usage",
-        codes: ["API", "CLI", "BQ", "TB", "HC"],
+        codes: ["API", "CLI", "BQ", "HC"],
         pipe: "meter_monthly_api",
-        note: "Monthly provider usage. Rows with Pollen usage but no provider meter value are shown as TB zero rows to fill manually.",
+        note: "Monthly provider usage from provider APIs, CLIs, BigQuery exports, and manual entries.",
         rows: (data) => data.meterMonthly.length,
     },
     {

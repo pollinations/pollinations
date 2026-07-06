@@ -5,12 +5,7 @@ export const editableControlClass =
     "rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong";
 
 export function dirtyControlClass(dirty: boolean, className = "") {
-    return [
-        className,
-        dirty
-            ? "border-intent-danger-border bg-intent-danger-bg-light text-intent-danger-text"
-            : "",
-    ]
+    return [className, dirty ? "treasury-dirty-control" : ""]
         .filter(Boolean)
         .join(" ");
 }

@@ -1,11 +1,15 @@
-export type ProvenanceCode = "TB" | "ST" | "API" | "CLI" | "BQ" | "HC";
+export type ProvenanceCode = "EN" | "TB" | "ST" | "API" | "CLI" | "BQ" | "HC";
 
 const PROVENANCE: Record<
     ProvenanceCode,
     { title: string; className: string; display?: string }
 > = {
+    EN: {
+        title: "Enty - monthly transactions export",
+        className: "treasury-source-en",
+    },
     TB: {
-        title: "Tinybird - pipe output or usage-derived row",
+        title: "Tinybird - generation event usage",
         className: "treasury-source-tb",
     },
     ST: {
@@ -34,6 +38,8 @@ const SOURCE_META: Record<
     string,
     { code: ProvenanceCode; display: string; title?: string }
 > = {
+    enty: { code: "EN", display: "EN" },
+    en: { code: "EN", display: "EN" },
     api: { code: "API", display: "API" },
     cli: { code: "CLI", display: "CLI" },
     bq: { code: "BQ", display: "BQ" },
@@ -44,9 +50,9 @@ const SOURCE_META: Record<
     tinybird: { code: "TB", display: "TB" },
     tb: { code: "TB", display: "TB" },
     usage: {
-        code: "TB",
-        display: "TB",
-        title: "Pollen usage exists for this provider/month, but provider usage is missing; zero row is generated for operator fill-in.",
+        code: "HC",
+        display: "HC",
+        title: "Provider usage is missing; placeholder row is generated for operator fill-in.",
     },
 };
 
@@ -113,11 +119,21 @@ export function SourceCell({
     sources: readonly (string | null | undefined)[];
 }) {
     const unique = uniqueSources(sources);
-    if (unique.length === 0) return <span>-</span>;
+    const seen = new Set<string>();
+    const badges = unique
+        .filter((source) => source !== "usage")
+        .filter((source) => {
+            const meta = sourceMeta(source);
+            const key = `${meta.code}:${meta.display}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+    if (badges.length === 0) return <span>-</span>;
 
     return (
         <span className="inline-flex items-center gap-1.5 whitespace-nowrap align-middle">
-            {unique.map((source) => (
+            {badges.map((source) => (
                 <InlineSourceBadge key={source} source={source} />
             ))}
         </span>

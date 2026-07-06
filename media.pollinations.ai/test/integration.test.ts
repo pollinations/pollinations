@@ -486,15 +486,15 @@ describe("media.pollinations.ai", () => {
         );
     });
 
-    it("rejects the singular tag alias", async () => {
+    it("rejects unsupported upload parameters", async () => {
         const res = await uploadViaForm("pk_alice", {
-            fileName: "singular-tag.png",
+            fileName: "unsupported-param.png",
             bytes: variant(30),
             extraFields: { tag: "legacy" },
         });
         expect(res.status).toBe(400);
         expect((res.body as { error: string }).error).toMatch(
-            /Use "tags" instead of "tag"/,
+            /Unsupported parameter: "tag"/,
         );
     });
 

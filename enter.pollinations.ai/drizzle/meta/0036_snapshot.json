@@ -1515,13 +1515,6 @@
           "notNull": true,
           "autoincrement": false
         },
-        "content_hash": {
-          "name": "content_hash",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "owner_user_id": {
           "name": "owner_user_id",
           "type": "text",

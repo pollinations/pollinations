@@ -1728,11 +1728,6 @@ export const accountRoutes = new Hono<Env>()
                                         .describe(
                                             "Stable id of the user that owns this key — server-attested.",
                                         ),
-                                    keyId: z
-                                        .string()
-                                        .describe(
-                                            "Stable id of this API key — server-attested.",
-                                        ),
                                     byopClientKeyId: z
                                         .string()
                                         .nullable()
@@ -1820,7 +1815,6 @@ export const accountRoutes = new Hono<Env>()
                 // stamp ownership from these values — never from request
                 // params — so user and BYOP app ids cannot be spoofed.
                 userId: c.var.auth.user?.id ?? null,
-                keyId: apiKey.id,
                 byopClientKeyId: apiKey.byopClientKeyId ?? null,
             });
         },

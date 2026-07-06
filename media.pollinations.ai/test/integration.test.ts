@@ -6,7 +6,7 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { user as userTable } from "@shared/db/better-auth.ts";
-import { mediaItem } from "@shared/db/media-catalog.ts";
+import { mediaItem, mediaTag } from "@shared/db/media-catalog.ts";
 import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -67,7 +67,6 @@ const KEY_IDENTITIES: Record<
         type?: string;
         name?: string | null;
         userId?: string | null;
-        keyId?: string;
         byopClientKeyId?: string | null;
     }
 > = {
@@ -76,7 +75,6 @@ const KEY_IDENTITIES: Record<
         type: "publishable",
         name: "alice-key",
         userId: "user_alice",
-        keyId: "key_alice",
         byopClientKeyId: "pk_app_1",
     },
     pk_bob: {
@@ -84,7 +82,6 @@ const KEY_IDENTITIES: Record<
         type: "publishable",
         name: "bob-key",
         userId: "user_bob",
-        keyId: "key_bob",
         byopClientKeyId: null,
     },
     pk_nouser: {
@@ -92,7 +89,6 @@ const KEY_IDENTITIES: Record<
         type: "publishable",
         name: "service-key",
         userId: null,
-        keyId: "key_svc",
         byopClientKeyId: null,
     },
 };
@@ -572,6 +568,80 @@ describe("media.pollinations.ai", () => {
         expect(matches[0].tags.sort()).toEqual(["first-tag", "second-tag"]);
     });
 
+    it("re-uploading does not bump feed position; late tagging publishes at tag time", async () => {
+        const tag = "bump-tag";
+        const first = await uploadViaForm("pk_alice", {
+            fileName: "bump-a.png",
+            bytes: variant(60),
+            tags: [tag],
+        });
+        const second = await uploadViaForm("pk_alice", {
+            fileName: "bump-b.png",
+            bytes: variant(61),
+            tags: [tag],
+        });
+        expect(first.status).toBe(200);
+        expect(second.status).toBe(200);
+        const a = first.body as UploadResponse;
+        const b = second.body as UploadResponse;
+
+        // Backdate deterministically: a older than b, in both tables.
+        const db = drizzle(env.DB);
+        const backdate = async (locator: string, epochSeconds: number) => {
+            const when = new Date(epochSeconds * 1000);
+            const [item] = await db
+                .select({ id: mediaItem.id })
+                .from(mediaItem)
+                .where(eq(mediaItem.locator, locator));
+            await db
+                .update(mediaItem)
+                .set({ createdAt: when })
+                .where(eq(mediaItem.id, item.id));
+            await db
+                .update(mediaTag)
+                .set({ createdAt: when })
+                .where(eq(mediaTag.itemId, item.id));
+        };
+        await backdate(a.id, 1000);
+        await backdate(b.id, 2000);
+
+        // Re-upload a (same bytes, same tag): neither its createdAt nor its
+        // gallery position may change.
+        const again = await uploadViaForm("pk_alice", {
+            fileName: "bump-a.png",
+            bytes: variant(60),
+            tags: [tag],
+        });
+        expect(again.status).toBe(200);
+
+        const galleryRes = await SELF.fetch(
+            `https://media.pollinations.ai/tags/${tag}`,
+        );
+        const gallery = (await galleryRes.json()) as MediaPageResponse;
+        const urls = gallery.items.map((i) => i.url);
+        expect(urls).toEqual([b.url, a.url]);
+        const aItem = gallery.items.find((i) => i.url === a.url);
+        expect(new Date(aItem?.createdAt as string).getTime()).toBe(1000_000);
+
+        // Late publish: tagging a into a new tag now makes it that gallery's
+        // freshest entry while its createdAt still reflects first upload.
+        const late = await uploadViaForm("pk_alice", {
+            fileName: "bump-a.png",
+            bytes: variant(60),
+            tags: ["bump-late"],
+        });
+        expect(late.status).toBe(200);
+        const lateRes = await SELF.fetch(
+            "https://media.pollinations.ai/tags/bump-late",
+        );
+        const lateGallery = (await lateRes.json()) as MediaPageResponse;
+        expect(lateGallery.items).toHaveLength(1);
+        expect(lateGallery.items[0].url).toBe(a.url);
+        expect(new Date(lateGallery.items[0].createdAt).getTime()).toBe(
+            1000_000,
+        );
+    });
+
     it("paginates a tag gallery newest-first with a keyset cursor", async () => {
         const tag = "pagination-tag";
         const uploads: UploadResponse[] = [];
@@ -588,13 +658,23 @@ describe("media.pollinations.ai", () => {
         // Uploads can land within the same wall-clock second (createdAt is
         // second-resolution), which would make "newest first" ambiguous.
         // Force distinct, strictly increasing timestamps directly in D1 so
-        // the ordering assertions below are deterministic.
+        // the ordering assertions below are deterministic. The gallery sorts
+        // by tag time (media_tag.created_at), so backdate both tables.
         const db = drizzle(env.DB);
         for (let i = 0; i < uploads.length; i++) {
+            const when = new Date((1000 + i) * 1000);
+            const [item] = await db
+                .select({ id: mediaItem.id })
+                .from(mediaItem)
+                .where(eq(mediaItem.locator, uploads[i].id));
             await db
                 .update(mediaItem)
-                .set({ createdAt: new Date((1000 + i) * 1000) })
-                .where(eq(mediaItem.locator, uploads[i].id));
+                .set({ createdAt: when })
+                .where(eq(mediaItem.id, item.id));
+            await db
+                .update(mediaTag)
+                .set({ createdAt: when })
+                .where(eq(mediaTag.itemId, item.id));
         }
 
         const page1Res = await SELF.fetch(

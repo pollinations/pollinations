@@ -1,16 +1,16 @@
 import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
+import type { Context } from "hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { describeRoute, openAPIRouteHandler, resolver } from "hono-openapi";
 import { z } from "zod";
-import type { CatalogItem, CatalogPage } from "./catalog.ts";
+import type { CatalogDb, CatalogItem, CatalogPage } from "./catalog.ts";
 import {
     addReaction,
     clampLimit,
     decodeCursor,
     getDb,
     InvalidReactionError,
-    InvalidTagError,
     isItemReactable,
     listByTag,
     listUserMedia,
@@ -20,7 +20,7 @@ import {
     reactionCountForItem,
     reactionCountsForItems,
     removeReaction,
-    TooManyTagsError,
+    TagError,
     tagsForItems,
     upsertUploadCatalogItem,
     userReactionsForItems,
@@ -51,7 +51,6 @@ interface AuthResult {
     type: string;
     name: string | null;
     userId: string | null;
-    keyId: string;
     byopClientKeyId: string | null;
 }
 
@@ -118,15 +117,8 @@ function validateMetadata(
     try {
         tags = normalizeTags(rawTags);
     } catch (error) {
-        if (error instanceof InvalidTagError) {
-            throw new MetadataValidationError(
-                `Invalid tag: "${error.tag}". Tags must match ${TAG_PATTERN_DESCRIPTION}.`,
-            );
-        }
-        if (error instanceof TooManyTagsError) {
-            throw new MetadataValidationError(
-                `Too many tags: ${error.count} (max 8).`,
-            );
+        if (error instanceof TagError) {
+            throw new MetadataValidationError(error.message);
         }
         throw error;
     }
@@ -147,9 +139,6 @@ function validateMetadata(
 
     return { tags, prompt, model };
 }
-
-const TAG_PATTERN_DESCRIPTION =
-    "lowercase letters, digits, and _.:+- (not leading), max 128 chars";
 
 const REACTION_PATTERN_DESCRIPTION =
     "lowercase letters, digits, and _- (not leading), max 32 chars";
@@ -301,6 +290,59 @@ const ReactionResponseSchema = z.object({
 });
 
 const api = new Hono<{ Bindings: Env }>();
+
+// Shared preamble for the reaction routes: authenticate, validate the
+// reaction slug, and check the item is reactable (own or publicly tagged).
+// Returns the resolved context, or an early error Response the caller should
+// return as-is.
+async function resolveReactionRequest(
+    c: Context<{ Bindings: Env }>,
+): Promise<
+    { db: CatalogDb; id: string; userId: string; reaction: string } | Response
+> {
+    const apiKey = extractApiKey(c.req.raw);
+    if (!apiKey) {
+        return c.json(
+            {
+                error: "API key required. Pass via Authorization: Bearer <key> or ?key=<key>",
+            },
+            401,
+        );
+    }
+    const authResult = await verifyApiKey(apiKey);
+    if (!authResult) {
+        return c.json({ error: "Invalid or expired API key" }, 401);
+    }
+    if (authResult.userId === null) {
+        return c.json(
+            { error: "This API key is not attached to a user account" },
+            403,
+        );
+    }
+
+    let reaction: string;
+    try {
+        reaction = normalizeReaction(c.req.param("reaction"));
+    } catch (error) {
+        if (error instanceof InvalidReactionError) {
+            return c.json(
+                {
+                    error: `Invalid reaction: "${error.reaction}". Reactions must match ${REACTION_PATTERN_DESCRIPTION}.`,
+                },
+                400,
+            );
+        }
+        throw error;
+    }
+
+    const id = c.req.param("id");
+    const db = getDb(c.env.DB);
+    if (!(await isItemReactable(db, id, authResult.userId))) {
+        return c.json({ error: "Media item not found" }, 404);
+    }
+
+    return { db, id, userId: authResult.userId, reaction };
+}
 
 api.post(
     "/upload",
@@ -511,7 +553,6 @@ api.post(
                     ownerUserId: authResult.userId,
                     appKeyId: authResult.byopClientKeyId,
                     locator: hash,
-                    contentHash: hash,
                     contentType,
                     size: fileBuffer.byteLength,
                     model: metadata.model,
@@ -556,7 +597,7 @@ api.get(
         tags: ["media.pollinations.ai"],
         summary: "List your cataloged media",
         description:
-            "List media items owned by the authenticated user, newest first. Optionally filter by tag.",
+            "List media items owned by the authenticated user, newest first. Optionally filter by tag. Upload-backed items reference storage that expires 30 days after their last upload — an expired item keeps its catalog entry, but its url 404s until the same content is re-uploaded.",
         responses: {
             200: {
                 description: "Page of media items",
@@ -637,7 +678,7 @@ api.get(
         tags: ["media.pollinations.ai"],
         summary: "Browse media by tag",
         description:
-            "Public gallery listing for a tag, newest first. Authentication is optional: pass an API key to get `myReactions` on each item.",
+            "Public gallery listing for a tag, ordered by when each item was tagged, newest first. Authentication is optional: pass an API key to get `myReactions` on each item. Upload-backed items reference storage that expires 30 days after their last upload — an expired item keeps its catalog entry, but its url 404s until the same content is re-uploaded.",
         security: [],
         responses: {
             200: {
@@ -740,56 +781,17 @@ api.put(
         },
     }),
     async (c) => {
-        const apiKey = extractApiKey(c.req.raw);
-        if (!apiKey) {
-            return c.json(
-                {
-                    error: "API key required. Pass via Authorization: Bearer <key> or ?key=<key>",
-                },
-                401,
-            );
-        }
-        const authResult = await verifyApiKey(apiKey);
-        if (!authResult) {
-            return c.json({ error: "Invalid or expired API key" }, 401);
-        }
-        if (authResult.userId === null) {
-            return c.json(
-                { error: "This API key is not attached to a user account" },
-                403,
-            );
-        }
+        const resolved = await resolveReactionRequest(c);
+        if (resolved instanceof Response) return resolved;
+        const { db, id, userId, reaction } = resolved;
 
-        let reaction: string;
-        try {
-            reaction = normalizeReaction(c.req.param("reaction"));
-        } catch (error) {
-            if (error instanceof InvalidReactionError) {
-                return c.json(
-                    {
-                        error: `Invalid reaction: "${error.reaction}". Reactions must match ${REACTION_PATTERN_DESCRIPTION}.`,
-                    },
-                    400,
-                );
-            }
-            throw error;
-        }
-
-        const id = c.req.param("id");
-        const db = getDb(c.env.DB);
-        if (!(await isItemReactable(db, id, authResult.userId))) {
-            return c.json({ error: "Media item not found" }, 404);
-        }
-
-        const added = await addReaction(db, id, authResult.userId, reaction);
+        const added = await addReaction(db, id, userId, reaction);
         if (!added) {
             // Zero rows written: either an idempotent repeat of a kind this
             // user already holds, or the atomic kind cap inside addReaction
             // refused a new kind. Only the second is an error.
             const existingKinds =
-                (await userReactionsForItems(db, [id], authResult.userId)).get(
-                    id,
-                ) ?? [];
+                (await userReactionsForItems(db, [id], userId)).get(id) ?? [];
             if (!existingKinds.includes(reaction)) {
                 return c.json(
                     {
@@ -848,48 +850,11 @@ api.delete(
         },
     }),
     async (c) => {
-        const apiKey = extractApiKey(c.req.raw);
-        if (!apiKey) {
-            return c.json(
-                {
-                    error: "API key required. Pass via Authorization: Bearer <key> or ?key=<key>",
-                },
-                401,
-            );
-        }
-        const authResult = await verifyApiKey(apiKey);
-        if (!authResult) {
-            return c.json({ error: "Invalid or expired API key" }, 401);
-        }
-        if (authResult.userId === null) {
-            return c.json(
-                { error: "This API key is not attached to a user account" },
-                403,
-            );
-        }
+        const resolved = await resolveReactionRequest(c);
+        if (resolved instanceof Response) return resolved;
+        const { db, id, userId, reaction } = resolved;
 
-        let reaction: string;
-        try {
-            reaction = normalizeReaction(c.req.param("reaction"));
-        } catch (error) {
-            if (error instanceof InvalidReactionError) {
-                return c.json(
-                    {
-                        error: `Invalid reaction: "${error.reaction}". Reactions must match ${REACTION_PATTERN_DESCRIPTION}.`,
-                    },
-                    400,
-                );
-            }
-            throw error;
-        }
-
-        const id = c.req.param("id");
-        const db = getDb(c.env.DB);
-        if (!(await isItemReactable(db, id, authResult.userId))) {
-            return c.json({ error: "Media item not found" }, 404);
-        }
-
-        await removeReaction(db, id, authResult.userId, reaction);
+        await removeReaction(db, id, userId, reaction);
         const count = await reactionCountForItem(db, id, reaction);
         return c.json({ reaction, reacted: false, count });
     },

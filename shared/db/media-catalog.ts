@@ -20,7 +20,6 @@ export const mediaItem = sqliteTable(
         // upload: 16-hex content hash on media.pollinations.ai
         // generation: canonical gen.pollinations.ai URL (catalog params stripped)
         locator: text("locator").notNull(),
-        contentHash: text("content_hash"),
         // Server-attested from the verified API key — never from request params.
         ownerUserId: text("owner_user_id").references(() => user.id, {
             onDelete: "cascade",

@@ -9,11 +9,12 @@ import {
     clampLimit,
     decodeCursor,
     getDb,
-    getItemById,
     InvalidReactionError,
     InvalidTagError,
+    isItemReactable,
     listByTag,
     listUserMedia,
+    MAX_REACTION_KINDS_PER_ITEM,
     normalizeReaction,
     normalizeTags,
     reactionCountForItem,
@@ -723,7 +724,7 @@ api.put(
         tags: ["media.pollinations.ai"],
         summary: "React to a media item",
         description:
-            "Add a reaction (e.g. `like`, `heart`, `bookmark`) to a catalog item by its id (the `id` field from /me/media or /tags/:tag, not the content hash). Idempotent: repeating the same reaction is a no-op.",
+            "Add a reaction (e.g. `like`, `heart`, `bookmark`) to a catalog item by its id (the `id` field from /me/media or /tags/:tag, not the content hash). Reactable items are your own plus anything publicly tagged; others answer 404. Idempotent: repeating the same reaction is a no-op. At most 8 distinct reaction kinds per user per item.",
         responses: {
             200: {
                 description:
@@ -798,9 +799,24 @@ api.put(
 
         const id = c.req.param("id");
         const db = getDb(c.env.DB);
-        const item = await getItemById(db, id);
-        if (!item) {
+        if (!(await isItemReactable(db, id, authResult.userId))) {
             return c.json({ error: "Media item not found" }, 404);
+        }
+
+        const existingKinds =
+            (await userReactionsForItems(db, [id], authResult.userId)).get(
+                id,
+            ) ?? [];
+        if (
+            !existingKinds.includes(reaction) &&
+            existingKinds.length >= MAX_REACTION_KINDS_PER_ITEM
+        ) {
+            return c.json(
+                {
+                    error: `Too many distinct reactions on this item (max ${MAX_REACTION_KINDS_PER_ITEM} kinds per user).`,
+                },
+                400,
+            );
         }
 
         await addReaction(db, id, authResult.userId, reaction);
@@ -815,7 +831,7 @@ api.delete(
         tags: ["media.pollinations.ai"],
         summary: "Remove a reaction from a media item",
         description:
-            "Remove your reaction of one kind from a catalog item by its id (the `id` field from /me/media or /tags/:tag, not the content hash). Idempotent: removing a reaction you haven't given is a no-op.",
+            "Remove your reaction of one kind from a catalog item by its id (the `id` field from /me/media or /tags/:tag, not the content hash). Reactable items are your own plus anything publicly tagged; others answer 404. Idempotent: removing a reaction you haven't given is a no-op.",
         responses: {
             200: {
                 description:
@@ -890,8 +906,7 @@ api.delete(
 
         const id = c.req.param("id");
         const db = getDb(c.env.DB);
-        const item = await getItemById(db, id);
-        if (!item) {
+        if (!(await isItemReactable(db, id, authResult.userId))) {
             return c.json({ error: "Media item not found" }, 404);
         }
 

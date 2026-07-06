@@ -841,6 +841,66 @@ describe("media.pollinations.ai", () => {
             );
         });
 
+        it("cannot react to another user's untagged (private) item, but the owner can", async () => {
+            const { status, body } = await uploadViaForm("pk_alice", {
+                fileName: "private-react.png",
+                bytes: variant(36),
+            });
+            expect(status).toBe(200);
+            const upload = body as UploadResponse;
+            const itemId = await catalogIdFor("pk_alice", upload.url);
+
+            // 404 (not 403) so the leaked id isn't confirmed to exist.
+            const bobRes = await SELF.fetch(reactionUrl(itemId, "like"), {
+                method: "PUT",
+                headers: { Authorization: "Bearer pk_bob" },
+            });
+            expect(bobRes.status).toBe(404);
+
+            const aliceRes = await SELF.fetch(reactionUrl(itemId, "like"), {
+                method: "PUT",
+                headers: { Authorization: "Bearer pk_alice" },
+            });
+            expect(aliceRes.status).toBe(200);
+            expect((await aliceRes.json()) as ReactionResponse).toEqual({
+                reaction: "like",
+                reacted: true,
+                count: 1,
+            });
+        });
+
+        it("caps distinct reaction kinds per user per item at 8", async () => {
+            const { status, body } = await uploadViaForm("pk_alice", {
+                fileName: "cap-kinds.png",
+                bytes: variant(37),
+                tags: ["cap-kinds-tag"],
+            });
+            expect(status).toBe(200);
+            const upload = body as UploadResponse;
+            const itemId = await catalogIdFor("pk_alice", upload.url);
+
+            for (let i = 0; i < 8; i++) {
+                const res = await SELF.fetch(reactionUrl(itemId, `kind-${i}`), {
+                    method: "PUT",
+                    headers: { Authorization: "Bearer pk_bob" },
+                });
+                expect(res.status).toBe(200);
+            }
+
+            const overCap = await SELF.fetch(reactionUrl(itemId, "kind-8"), {
+                method: "PUT",
+                headers: { Authorization: "Bearer pk_bob" },
+            });
+            expect(overCap.status).toBe(400);
+
+            // Repeating an existing kind is not a new kind — still idempotent.
+            const repeat = await SELF.fetch(reactionUrl(itemId, "kind-0"), {
+                method: "PUT",
+                headers: { Authorization: "Bearer pk_bob" },
+            });
+            expect(repeat.status).toBe(200);
+        });
+
         it("auth failures: missing/unknown/no-user keys on react, and unknown key on /tags/:tag", async () => {
             const { status, body } = await uploadViaForm("pk_alice", {
                 fileName: "auth-fail.png",

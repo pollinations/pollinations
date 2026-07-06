@@ -47,7 +47,6 @@ def build_transactions(config, creds=None):
     for group in read_export_groups(root):
         rows.extend(transactions_for_group(group))
     rows = verify_provider_categories(rows, config, creds or {})
-    rows = apply_transaction_overrides(rows, config.get("overrides", {}))
     rows = strip_private_fields(rows)
     validate_rows(rows)
     return rows
@@ -378,37 +377,6 @@ def apply_corrections(out, corrections):
             raise RuntimeError(f"Enty AI returned unknown category: {category}")
         out[index]["provider"] = provider
         out[index]["category"] = category
-
-
-def apply_transaction_overrides(rows, overrides):
-    if not overrides:
-        return rows
-
-    out = [dict(row) for row in rows]
-    for row in out:
-        key = transaction_identity(row)
-        provider = overrides.get(("transactions", key, "provider"))
-        category = overrides.get(("transactions", key, "category"))
-        if provider is not None:
-            row["provider"] = str(provider)
-        if category is not None:
-            row["category"] = str(category)
-    return out
-
-
-def transaction_identity(row):
-    return "|".join(
-        str(row.get(column, ""))
-        for column in [
-            "date",
-            "charged_amount",
-            "charged_currency",
-            "paid_amount",
-            "paid_currency",
-            "invoice_ref",
-            "match_status",
-        ]
-    )
 
 
 def strip_private_fields(rows):

@@ -14,7 +14,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from ingest.run import (
     existing_manual_meter_rows,
     merge_meter_rows,
-    without_reset_manual_meter_rows,
 )
 
 
@@ -111,53 +110,12 @@ def test_empty_input():
     assert merge_meter_rows([]) == []
 
 
-def test_reset_override_ignores_manual_row():
-    rows = [
-        _row("aws", "2026-06", credit=0.0, source="manual"),
-        _row("aws", "2026-06", credit=42.0, source="cli"),
-        _row("openai", "2026-06", credit=9.0, source="manual"),
-    ]
-    overrides = {
-        ("meter_monthly", "aws|2026-06|USD", "reset_manual"): "1",
-    }
-
-    out = without_reset_manual_meter_rows(rows, overrides)
-
-    assert out == [
-        _row("aws", "2026-06", credit=42.0, source="cli"),
-        _row("openai", "2026-06", credit=9.0, source="manual"),
-    ]
-
-
-def test_reset_override_ignores_combined_manual_source_row():
-    rows = [
-        _row("aws", "2026-06", credit=0.0, cash=42.0, source="manual,cli"),
-        _row("aws", "2026-06", credit=10.0, source="cli"),
-    ]
-    overrides = {
-        ("meter_monthly", "aws|2026-06|USD", "reset_manual"): "1",
-    }
-
-    out = without_reset_manual_meter_rows(rows, overrides)
-
-    assert out == [_row("aws", "2026-06", credit=10.0, source="cli")]
-
-
-def test_reset_override_zero_keeps_manual_row():
-    rows = [_row("aws", "2026-06", credit=0.0, source="manual")]
-    overrides = {
-        ("meter_monthly", "aws|2026-06|USD", "reset_manual"): "0",
-    }
-
-    assert without_reset_manual_meter_rows(rows, overrides) == rows
-
-
 def test_existing_manual_meter_rows_drops_stale_automatic_rows():
     rows = [
         _row("aws", "2026-01", cash=45767.52, source="cli"),
         _row("aws", "2026-06", cash=42.0, source="manual"),
     ]
 
-    assert existing_manual_meter_rows(rows, {}) == [
+    assert existing_manual_meter_rows(rows) == [
         _row("aws", "2026-06", cash=42.0, source="manual"),
     ]

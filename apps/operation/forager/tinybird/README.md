@@ -13,13 +13,11 @@ The Treasury app reads only these endpoint pipes:
 | `usage_monthly_api` | `usage_monthly` | Platform-metered Pollen usage. |
 | `revenue_monthly_api` | `revenue_monthly` | Stripe monthly revenue. |
 | `ingest_runs_api` | `ingest_runs` | Recent Forager run log. |
-| `overrides_api` | `overrides` | Latest operator overrides. |
 
 Operator writes append only to:
 
-| Datasource | Writer |
-|---|---|
-| `overrides` | Transaction provider/category corrections. |
+| Datasource      | Writer                      |
+|-----------------|-----------------------------|
 | `meter_monthly` | Manual provider usage rows. |
 
 ## Rules

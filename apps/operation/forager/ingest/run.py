@@ -27,20 +27,6 @@ from .aliases import PROVIDER_ALIASES
 _SRC_RANK = {"manual": 0, "api": 1, "cli": 2, "bq": 3}
 
 
-def load_overrides(ops_ingest):
-    """Latest operator override per (scope, key, field)."""
-    rows = ops_ingest.sql(
-        "SELECT scope, key, field, argMax(value_num, entered_at) AS value_num, "
-        "argMax(value_str, entered_at) AS value_str FROM overrides GROUP BY scope, key, field"
-    )
-    return {
-        (r["scope"], r["key"], r["field"]): (
-            r["value_num"] if r.get("value_num") is not None else r.get("value_str", "")
-        )
-        for r in rows
-    }
-
-
 def _meter_sources(source):
     normalized = str(source or "").replace("+", ",").replace("/", ",").replace(" ", ",")
     return [part.strip() for part in normalized.split(",") if part.strip()]
@@ -125,41 +111,12 @@ def merge_meter_rows(rows):
     return merged
 
 
-def meter_manual_reset_keys(overrides):
-    return {
-        key
-        for (scope, key, field), value in overrides.items()
-        if scope == "meter_monthly"
-        and field == "reset_manual"
-        and str(value).strip() == "1"
-    }
-
-
-def meter_row_key(row):
-    return f"{row.get('provider', '')}|{row.get('month', '')}|{row.get('currency', '')}"
-
-
 def _has_manual_source(row):
     return "manual" in _meter_sources(row.get("source", ""))
 
 
-def without_reset_manual_meter_rows(rows, overrides):
-    reset_keys = meter_manual_reset_keys(overrides)
-    if not reset_keys:
-        return rows
-    return [
-        row
-        for row in rows
-        if not _has_manual_source(row) or meter_row_key(row) not in reset_keys
-    ]
-
-
-def existing_manual_meter_rows(rows, overrides):
-    return [
-        row
-        for row in without_reset_manual_meter_rows(rows, overrides)
-        if _has_manual_source(row)
-    ]
+def existing_manual_meter_rows(rows):
+    return [row for row in rows if _has_manual_source(row)]
 
 
 def validate_meter_rows(rows):
@@ -193,7 +150,6 @@ def refresh_meter_monthly(
     config,
     today,
     statuses,
-    overrides,
 ):
     months = months_ytd(config["months_start"], today)
     meter_new = []
@@ -217,7 +173,6 @@ def refresh_meter_monthly(
 
     meter_manual = existing_manual_meter_rows(
         ops_ingest.sql("SELECT * FROM meter_monthly"),
-        overrides,
     )
     validate_meter_rows(meter_manual)
     meter_merged = merge_meter_rows(meter_new + meter_manual)
@@ -246,8 +201,8 @@ def refresh_revenue_monthly(ops_replace, secrets, config, today, statuses):
     statuses["revenue"] = len(rows)
 
 
-def refresh_transactions(ops_replace, secrets, config, overrides, statuses):
-    rows = enty.build_transactions({**config, "overrides": overrides}, secrets)
+def refresh_transactions(ops_replace, secrets, config, statuses):
+    rows = enty.build_transactions(config, secrets)
     if not rows:
         raise RuntimeError("transactions returned 0 rows")
     ops_replace.replace("transactions", rows)
@@ -282,7 +237,6 @@ def main():
 
     statuses, notes = {}, []
     try:
-        overrides = load_overrides(ops_ingest)
         refresh_meter_monthly(
             ops_ingest,
             ops_replace,
@@ -290,11 +244,10 @@ def main():
             config,
             today,
             statuses,
-            overrides,
         )
         refresh_usage_monthly(ops_replace, tb_prod, config, today, statuses)
         refresh_revenue_monthly(ops_replace, secrets, config, today, statuses)
-        refresh_transactions(ops_replace, secrets, config, overrides, statuses)
+        refresh_transactions(ops_replace, secrets, config, statuses)
     except Exception as e:
         statuses["run"] = "err:" + _sanitize_err(e, secrets)
         notes.append(f"run failed: {statuses['run']}")

@@ -6,23 +6,15 @@ SCHEMA >
     `vendor` String `json:$.vendor`,
     `category` String `json:$.category`,
     `charged_amount` Float64 `json:$.charged_amount`,
-    `charged_currency` String `json:$.charged_currency`,
-    `paid_amount` Float64 `json:$.paid_amount`,
-    `paid_currency` String `json:$.paid_currency`,
-    `invoice_ref` String `json:$.invoice_ref`,
-    `match_status` String `json:$.match_status`
+    `charged_currency` String `json:$.charged_currency`
 
 ENGINE "MergeTree"
-ENGINE_SORTING_KEY "date, vendor, category, match_status"
+ENGINE_SORTING_KEY "date, vendor, category"
 
 FORWARD_QUERY >
     SELECT
         date,
-        provider AS vendor,
+        vendor,
         category,
         charged_amount,
-        charged_currency,
-        paid_amount,
-        paid_currency,
-        invoice_ref,
-        match_status
+        charged_currency

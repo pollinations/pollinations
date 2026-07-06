@@ -7,12 +7,8 @@ SQL >
         vendor,
         category,
         charged_amount,
-        charged_currency,
-        paid_amount,
-        paid_currency,
-        invoice_ref,
-        match_status
+        charged_currency
     FROM transactions
-    ORDER BY date DESC, vendor, category, match_status
+    ORDER BY date DESC, vendor, category
 
 TYPE endpoint

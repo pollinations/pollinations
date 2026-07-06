@@ -49,7 +49,7 @@ const TABS: {
         label: "Transactions",
         codes: ["EN"],
         pipe: "transactions_api",
-        note: "Enty monthly export: bank charge, invoice value, credit burn, and match state.",
+        note: "Enty monthly export: charged amount, paid amount, currencies, and match state.",
         rows: (data) => data.transactions.length,
     },
     {
@@ -62,7 +62,7 @@ const TABS: {
     },
     {
         id: "meter",
-        label: "Provider Usage",
+        label: "Compute Usage",
         codes: ["API", "CLI", "BQ", "HC"],
         pipe: "meter_monthly_api",
         note: "Monthly provider usage from provider APIs, CLIs, BigQuery exports, and manual entries.",
@@ -79,6 +79,26 @@ const TABS: {
 ];
 
 const POST_SAVE_REFRESH_MS = 800;
+
+function providerOptionsForTab(data: Data | null, tab: Tab) {
+    if (!data) return PROVIDER_OPTIONS;
+
+    const providers = new Set<string>();
+    const add = (value: string) => {
+        const provider = value.trim();
+        if (provider) providers.add(provider);
+    };
+
+    if (tab === "transactions") {
+        for (const row of data.transactions) add(row.provider);
+    } else if (tab === "burn") {
+        for (const row of data.usageMonthly) add(row.provider);
+    } else if (tab === "meter") {
+        for (const row of data.meterMonthly) add(row.provider);
+    }
+
+    return ["all", ...[...providers].sort((a, b) => a.localeCompare(b))];
+}
 
 async function checkSession() {
     const res = await fetch("/api/auth/session");
@@ -151,8 +171,7 @@ export default function App() {
     const [tab, setTab] = useState<Tab>("transactions");
     // Default to All so the transactions page opens with the full Enty export.
     const [month, setMonth] = useState("");
-    // App-global like the period: pick a provider once, drill through the
-    // provider tabs.
+    // Keep the selection while it exists in the current tab's provider set.
     const [provider, setProvider] = useState("all");
     const [attempt, setAttempt] = useState(0);
     const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -233,7 +252,11 @@ export default function App() {
 
     const months = useMemo(() => (data ? collectMonths(data) : []), [data]);
     const activeMonth = month;
-    const providerOptions = PROVIDER_OPTIONS;
+    const providerOptions = useMemo(
+        () => providerOptionsForTab(data, tab),
+        [data, tab],
+    );
+    const showProviderFilter = providerOptions.length > 1;
     const providerIssues = useMemo(
         () =>
             data
@@ -252,6 +275,13 @@ export default function App() {
         return ["all", ...[...categories].sort((a, b) => a.localeCompare(b))];
     }, [data]);
     const [category, setCategory] = useState("all");
+
+    useEffect(() => {
+        if (provider !== "all" && !providerOptions.includes(provider)) {
+            setProvider("all");
+        }
+    }, [provider, providerOptions]);
+
     if (!sessionChecked) {
         return (
             <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-app-bg text-theme-text-strong">
@@ -393,18 +423,22 @@ export default function App() {
                                 onChange={setMonth}
                             />
                             <div className="flex flex-wrap gap-3">
-                                <FilterSelect
-                                    label="provider"
-                                    value={provider}
-                                    onChange={setProvider}
-                                    options={providerOptions}
-                                />
-                                <FilterSelect
-                                    label="category"
-                                    value={category}
-                                    onChange={setCategory}
-                                    options={categoryOptions}
-                                />
+                                {showProviderFilter && (
+                                    <FilterSelect
+                                        label="provider"
+                                        value={provider}
+                                        onChange={setProvider}
+                                        options={providerOptions}
+                                    />
+                                )}
+                                {tab !== "meter" && (
+                                    <FilterSelect
+                                        label="category"
+                                        value={category}
+                                        onChange={setCategory}
+                                        options={categoryOptions}
+                                    />
+                                )}
                             </div>
                         </FilterBar>
 
@@ -477,7 +511,6 @@ export default function App() {
                         )}
                         {data && tab === "meter" && (
                             <MeterTab
-                                category={category}
                                 data={data}
                                 month={activeMonth}
                                 provider={provider}

@@ -32,6 +32,10 @@ export function RevenueTab({ data }: { data: Data }) {
     const { headerProps, rows } = useSortableRows(
         data.revenueMonthly,
         sortColumns,
+        {
+            key: "month",
+            direction: "desc",
+        },
     );
 
     return (
@@ -40,7 +44,7 @@ export function RevenueTab({ data }: { data: Data }) {
                 <TableHead>
                     <TableRow>
                         <TableHeaderCell {...headerProps("month")}>
-                            time period
+                            month
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("source")}>
                             source

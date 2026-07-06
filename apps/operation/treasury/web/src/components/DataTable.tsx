@@ -15,6 +15,8 @@ type SortState = {
     direction: SortDirection;
 };
 
+export type InitialSort = SortState;
+
 export function TableScroller({ children }: { children: ReactNode }) {
     return <div className="w-full max-w-full overflow-x-auto">{children}</div>;
 }
@@ -94,8 +96,9 @@ export function withUniqueRowKeys<Row>(
 export function useSortableRows<Row>(
     rows: readonly Row[],
     columns: readonly SortColumn<Row>[],
+    initialSort: InitialSort | null = null,
 ) {
-    const [sort, setSort] = useState<SortState | null>(null);
+    const [sort, setSort] = useState<SortState | null>(initialSort);
     const columnByKey = useMemo(
         () => new Map(columns.map((column) => [column.key, column])),
         [columns],

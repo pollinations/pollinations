@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { MeterMonthlyRow, OverrideRow, TransactionRow } from "../types";
+import { buildMeterManualResetChange } from "../components/UsageEntryForm";
+import type { StageInput } from "../lib/staging";
+import type { MeterMonthlyRow, OverrideRow } from "../types";
+import type { MeterStageChange } from "./MeterTab";
 
 function meterRow(
     month: string,
@@ -11,25 +14,9 @@ function meterRow(
         month,
         provider,
         currency: "USD",
-        credit_amount: creditAmount,
-        cash_amount: 0,
+        credit: creditAmount,
+        paid: 0,
         source,
-    };
-}
-
-function transactionRow(provider: string, category: string): TransactionRow {
-    return {
-        date: "2026-06-01",
-        provider,
-        category,
-        bank_charged_amount: 0,
-        bank_charged_currency: "",
-        cash_paid_amount: 0,
-        cash_paid_currency: "",
-        credit_burned_amount: 0,
-        credit_burned_currency: "",
-        invoice_ref: "",
-        match_status: "matched",
     };
 }
 
@@ -44,6 +31,14 @@ function overrideRow(
         field,
         value_num: null,
         value_str,
+    };
+}
+
+function stagedChange(input: StageInput): MeterStageChange {
+    return {
+        datasource: input.datasource,
+        key: input.key ?? "test-change",
+        row: input.row,
     };
 }
 
@@ -98,28 +93,43 @@ describe("visibleMeterRows", () => {
         ).toEqual([meterRow("2026-06", "digitalocean", 288)]);
     });
 
-    it("treats uncategorized provider meter rows as compute", async () => {
+    it("ignores transaction categories", async () => {
         const { visibleMeterRows } = await import("./MeterTab");
         expect(
             visibleMeterRows({
-                category: "compute",
                 meterRows: [meterRow("2026-06", "digitalocean", 288)],
                 month: "2026-06",
                 provider: "all",
-                transactions: [],
             }),
         ).toEqual([meterRow("2026-06", "digitalocean", 288)]);
     });
 
-    it("uses transaction categories when a provider has one", async () => {
-        const { visibleMeterRows } = await import("./MeterTab");
+    it("keeps browser-only pending reset rows visible until saved", async () => {
+        const { visibleMeterRowsForSession } = await import("./MeterTab");
+        const rows = [meterRow("2026-07", "replicate", 200)];
+        const resetChange = stagedChange(
+            buildMeterManualResetChange({
+                currency: "USD",
+                month: "2026-07",
+                provider: "replicate",
+                reset: true,
+            }),
+        );
+
         expect(
-            visibleMeterRows({
-                category: "compute",
-                meterRows: [meterRow("2026-06", "tinybird", 34.74)],
-                month: "2026-06",
-                provider: "all",
-                transactions: [transactionRow("tinybird", "infra")],
+            visibleMeterRowsForSession({
+                meterRows: rows,
+                month: "2026-07",
+                provider: "replicate",
+            }),
+        ).toEqual(rows);
+
+        expect(
+            visibleMeterRowsForSession({
+                committedChanges: [resetChange],
+                meterRows: rows,
+                month: "2026-07",
+                provider: "replicate",
             }),
         ).toEqual([]);
     });

@@ -2,12 +2,10 @@ export type TransactionRow = {
     date: string;
     provider: string;
     category: string;
-    bank_charged_amount: number;
-    bank_charged_currency: string;
-    cash_paid_amount: number;
-    cash_paid_currency: string;
-    credit_burned_amount: number;
-    credit_burned_currency: string;
+    charged_amount: number;
+    charged_currency: string;
+    paid_amount: number;
+    paid_currency: string;
     invoice_ref: string;
     match_status: string;
 };
@@ -16,8 +14,8 @@ export type MeterMonthlyRow = {
     month: string;
     provider: string;
     currency: string;
-    credit_amount: number;
-    cash_amount: number;
+    credit: number;
+    paid: number;
     source: string;
 };
 
@@ -27,10 +25,10 @@ export type UsageMonthlyRow = {
     provider: string;
     model: string;
     currency: string;
-    cost_paid_pollen: number;
-    cost_quest_pollen: number;
-    billable_paid_pollen: number;
-    billable_quest_pollen: number;
+    cost_paid: number;
+    cost_quests: number;
+    price_paid: number;
+    price_quests: number;
 };
 
 export type RunRow = {

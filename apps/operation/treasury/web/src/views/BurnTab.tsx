@@ -43,23 +43,26 @@ export function BurnTab({
             { key: "provider", value: (row) => row.provider },
             { key: "model", value: (row) => row.model },
             { key: "currency", value: (row) => row.currency },
-            { key: "cost_paid_pollen", value: (row) => row.cost_paid_pollen },
+            { key: "cost_paid", value: (row) => row.cost_paid },
             {
-                key: "cost_quest_pollen",
-                value: (row) => row.cost_quest_pollen,
+                key: "cost_quests",
+                value: (row) => row.cost_quests,
             },
             {
-                key: "billable_paid_pollen",
-                value: (row) => row.billable_paid_pollen,
+                key: "price_paid",
+                value: (row) => row.price_paid,
             },
             {
-                key: "billable_quest_pollen",
-                value: (row) => row.billable_quest_pollen,
+                key: "price_quests",
+                value: (row) => row.price_quests,
             },
         ],
         [],
     );
-    const { headerProps, rows } = useSortableRows(baseRows, sortColumns);
+    const { headerProps, rows } = useSortableRows(baseRows, sortColumns, {
+        key: "month",
+        direction: "desc",
+    });
 
     return (
         <div className="flex flex-col gap-4">
@@ -68,7 +71,7 @@ export function BurnTab({
                     <TableHead>
                         <TableRow>
                             <TableHeaderCell {...headerProps("month")}>
-                                time period
+                                month
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("source")}>
                                 source
@@ -82,25 +85,17 @@ export function BurnTab({
                             <TableHeaderCell {...headerProps("currency")}>
                                 currency
                             </TableHeaderCell>
-                            <TableHeaderCell
-                                {...headerProps("cost_paid_pollen")}
-                            >
-                                cost_paid_pollen
+                            <TableHeaderCell {...headerProps("cost_paid")}>
+                                cost_paid
                             </TableHeaderCell>
-                            <TableHeaderCell
-                                {...headerProps("cost_quest_pollen")}
-                            >
-                                cost_quest_pollen
+                            <TableHeaderCell {...headerProps("cost_quests")}>
+                                cost_quests
                             </TableHeaderCell>
-                            <TableHeaderCell
-                                {...headerProps("billable_paid_pollen")}
-                            >
-                                billable_paid_pollen
+                            <TableHeaderCell {...headerProps("price_paid")}>
+                                price_paid
                             </TableHeaderCell>
-                            <TableHeaderCell
-                                {...headerProps("billable_quest_pollen")}
-                            >
-                                billable_quest_pollen
+                            <TableHeaderCell {...headerProps("price_quests")}>
+                                price_quests
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>
@@ -118,14 +113,10 @@ export function BurnTab({
                                 <TableCell>{row.provider}</TableCell>
                                 <TableCell>{row.model}</TableCell>
                                 <TableCell>{row.currency}</TableCell>
-                                <TableCell>{row.cost_paid_pollen}</TableCell>
-                                <TableCell>{row.cost_quest_pollen}</TableCell>
-                                <TableCell>
-                                    {row.billable_paid_pollen}
-                                </TableCell>
-                                <TableCell>
-                                    {row.billable_quest_pollen}
-                                </TableCell>
+                                <TableCell>{row.cost_paid}</TableCell>
+                                <TableCell>{row.cost_quests}</TableCell>
+                                <TableCell>{row.price_paid}</TableCell>
+                                <TableCell>{row.price_quests}</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>

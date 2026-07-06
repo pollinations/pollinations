@@ -36,12 +36,10 @@ function transactionKey(row: TransactionRow) {
         row.date,
         row.provider,
         row.category,
-        row.bank_charged_amount,
-        row.bank_charged_currency,
-        row.cash_paid_amount,
-        row.cash_paid_currency,
-        row.credit_burned_amount,
-        row.credit_burned_currency,
+        row.charged_amount,
+        row.charged_currency,
+        row.paid_amount,
+        row.paid_currency,
         row.invoice_ref,
         row.match_status,
     ].join("|");
@@ -50,12 +48,10 @@ function transactionKey(row: TransactionRow) {
 function transactionIdentity(row: TransactionRow) {
     return [
         row.date,
-        row.bank_charged_amount,
-        row.bank_charged_currency,
-        row.cash_paid_amount,
-        row.cash_paid_currency,
-        row.credit_burned_amount,
-        row.credit_burned_currency,
+        row.charged_amount,
+        row.charged_currency,
+        row.paid_amount,
+        row.paid_currency,
         row.invoice_ref,
         row.match_status,
     ].join("|");
@@ -211,32 +207,27 @@ export function TransactionsTab({
             { key: "provider", value: (row) => row.provider },
             { key: "category", value: (row) => row.category },
             {
-                key: "bank_charged_amount",
-                value: (row) => row.bank_charged_amount,
+                key: "charged_amount",
+                value: (row) => row.charged_amount,
             },
             {
-                key: "bank_charged_currency",
-                value: (row) => row.bank_charged_currency,
+                key: "charged_currency",
+                value: (row) => row.charged_currency,
             },
-            { key: "cash_paid_amount", value: (row) => row.cash_paid_amount },
+            { key: "paid_amount", value: (row) => row.paid_amount },
             {
-                key: "cash_paid_currency",
-                value: (row) => row.cash_paid_currency,
-            },
-            {
-                key: "credit_burned_amount",
-                value: (row) => row.credit_burned_amount,
-            },
-            {
-                key: "credit_burned_currency",
-                value: (row) => row.credit_burned_currency,
+                key: "paid_currency",
+                value: (row) => row.paid_currency,
             },
             { key: "match_status", value: (row) => row.match_status },
             { key: "invoice_ref", value: (row) => row.invoice_ref },
         ],
         [],
     );
-    const { headerProps, rows } = useSortableRows(baseRows, sortColumns);
+    const { headerProps, rows } = useSortableRows(baseRows, sortColumns, {
+        key: "date",
+        direction: "desc",
+    });
     const providerOptions = useMemo(
         () => PROVIDER_OPTIONS.filter((option) => option !== "all"),
         [],
@@ -248,7 +239,7 @@ export function TransactionsTab({
                 <TableHead>
                     <TableRow>
                         <TableHeaderCell {...headerProps("date")}>
-                            time period
+                            date
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("provider")}>
                             provider
@@ -256,31 +247,17 @@ export function TransactionsTab({
                         <TableHeaderCell {...headerProps("category")}>
                             category
                         </TableHeaderCell>
-                        <TableHeaderCell
-                            {...headerProps("bank_charged_amount")}
-                        >
-                            bank_charged_amount
+                        <TableHeaderCell {...headerProps("charged_amount")}>
+                            charged_amount
                         </TableHeaderCell>
-                        <TableHeaderCell
-                            {...headerProps("bank_charged_currency")}
-                        >
-                            bank_charged_currency
+                        <TableHeaderCell {...headerProps("charged_currency")}>
+                            charged_currency
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("cash_paid_amount")}>
-                            cash_paid_amount
+                        <TableHeaderCell {...headerProps("paid_amount")}>
+                            paid_amount
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("cash_paid_currency")}>
-                            cash_paid_currency
-                        </TableHeaderCell>
-                        <TableHeaderCell
-                            {...headerProps("credit_burned_amount")}
-                        >
-                            credit_burned_amount
-                        </TableHeaderCell>
-                        <TableHeaderCell
-                            {...headerProps("credit_burned_currency")}
-                        >
-                            credit_burned_currency
+                        <TableHeaderCell {...headerProps("paid_currency")}>
+                            paid_currency
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("match_status")}>
                             match_status
@@ -309,18 +286,10 @@ export function TransactionsTab({
                                         row={row}
                                     />
                                 </TableCell>
-                                <TableCell>{row.bank_charged_amount}</TableCell>
-                                <TableCell>
-                                    {row.bank_charged_currency}
-                                </TableCell>
-                                <TableCell>{row.cash_paid_amount}</TableCell>
-                                <TableCell>{row.cash_paid_currency}</TableCell>
-                                <TableCell>
-                                    {row.credit_burned_amount}
-                                </TableCell>
-                                <TableCell>
-                                    {row.credit_burned_currency}
-                                </TableCell>
+                                <TableCell>{row.charged_amount}</TableCell>
+                                <TableCell>{row.charged_currency}</TableCell>
+                                <TableCell>{row.paid_amount}</TableCell>
+                                <TableCell>{row.paid_currency}</TableCell>
                                 <TableCell>{row.match_status}</TableCell>
                                 <TableCell>
                                     <InvoiceRef value={row.invoice_ref} />

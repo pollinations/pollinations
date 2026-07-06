@@ -4,13 +4,13 @@ import { utcDateTime } from "../lib/format";
 import { type StageInput, useStaging } from "../lib/staging";
 
 export function buildManualMeterChange({
-    cashAmount,
+    paidAmount,
     creditAmount,
     currency,
     month,
     provider,
 }: {
-    cashAmount: number;
+    paidAmount: number;
     creditAmount: number;
     currency: string;
     month: string;
@@ -23,11 +23,11 @@ export function buildManualMeterChange({
             month,
             provider,
             currency,
-            credit_amount: creditAmount,
-            cash_amount: cashAmount,
+            credit: creditAmount,
+            paid: paidAmount,
             source: "manual",
         },
-        summary: `usage ${provider} ${month} -> credit ${creditAmount} ${currency}, cash ${cashAmount} ${currency}`,
+        summary: `usage ${provider} ${month} -> credit ${creditAmount} ${currency}, paid ${paidAmount} ${currency}`,
     };
 }
 
@@ -93,7 +93,7 @@ export function UsageEntryForm({
 }) {
     const { stage } = useStaging();
     const [creditAmount, setCreditAmount] = useState("");
-    const [cashAmount, setCashAmount] = useState("");
+    const [paidAmount, setPaidAmount] = useState("");
     const [currency, setCurrency] = useState("USD");
     const [error, setError] = useState<string | null>(null);
 
@@ -103,19 +103,19 @@ export function UsageEntryForm({
             onSubmit={(event) => {
                 event.preventDefault();
                 const parsedCredit = validateManualAmount(creditAmount || "0");
-                const parsedCash = validateManualAmount(cashAmount || "0");
-                if (parsedCredit === null || parsedCash === null) {
+                const parsedPaid = validateManualAmount(paidAmount || "0");
+                if (parsedCredit === null || parsedPaid === null) {
                     setError("Amounts must be numbers >= 0.");
                     return;
                 }
-                if (parsedCredit === 0 && parsedCash === 0) {
-                    setError("Enter credit or cash usage.");
+                if (parsedCredit === 0 && parsedPaid === 0) {
+                    setError("Enter credit or paid usage.");
                     return;
                 }
 
                 stage(
                     buildManualMeterChange({
-                        cashAmount: parsedCash,
+                        paidAmount: parsedPaid,
                         creditAmount: parsedCredit,
                         currency,
                         month,
@@ -123,7 +123,7 @@ export function UsageEntryForm({
                     }),
                 );
                 setCreditAmount("");
-                setCashAmount("");
+                setPaidAmount("");
                 setError(null);
                 onStaged?.();
             }}
@@ -144,10 +144,10 @@ export function UsageEntryForm({
                     type="number"
                     min="0"
                     step="0.01"
-                    value={cashAmount}
-                    onChange={(event) => setCashAmount(event.target.value)}
-                    placeholder="cash"
-                    aria-label="cash amount"
+                    value={paidAmount}
+                    onChange={(event) => setPaidAmount(event.target.value)}
+                    placeholder="paid"
+                    aria-label="paid amount"
                     className="w-32"
                 />
                 <select

@@ -9,7 +9,7 @@ describe("UsageEntryForm row builders", () => {
     it("builds a manual monthly meter row", () => {
         expect(
             buildManualMeterChange({
-                cashAmount: 10,
+                paidAmount: 10,
                 creditAmount: 242.5,
                 currency: "USD",
                 month: "2026-03",
@@ -22,12 +22,12 @@ describe("UsageEntryForm row builders", () => {
                 month: "2026-03",
                 provider: "assemblyai",
                 currency: "USD",
-                credit_amount: 242.5,
-                cash_amount: 10,
+                credit: 242.5,
+                paid: 10,
                 source: "manual",
             },
             summary:
-                "usage assemblyai 2026-03 -> credit 242.5 USD, cash 10 USD",
+                "usage assemblyai 2026-03 -> credit 242.5 USD, paid 10 USD",
         });
     });
 

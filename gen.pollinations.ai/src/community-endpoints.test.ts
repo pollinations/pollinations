@@ -372,6 +372,44 @@ describe("community endpoint helpers", () => {
         ).toBeUndefined();
     });
 
+    it("marks resolver-priced fees dynamic and omits their static price", () => {
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/deep-research",
+            description: null,
+            ...communityEndpointPrices({}),
+        });
+        // A rule whose per-unit cost is read from the response at runtime
+        // (as Perplexity's request fee is) must not advertise a static price.
+        definition.billing = {
+            adjustments: [
+                {
+                    id: "provider.request.v1",
+                    description: "Provider-reported request cost",
+                    kind: "search_request",
+                    unit: "request",
+                    unitCost: 0.005,
+                    countUnits: () => 1,
+                    resolveUnitCost: () => 0.02,
+                },
+            ],
+        };
+        const info = modelInfoFromDefinition(
+            "voodoohop/deep-research",
+            definition,
+            { community: true },
+        );
+        expect(info.fees).toEqual([
+            {
+                id: "provider.request.v1",
+                kind: "search_request",
+                unit: "request",
+                dynamic: true,
+                description: "Provider-reported request cost",
+            },
+        ]);
+        expect(info.fees?.[0]).not.toHaveProperty("price");
+    });
+
     it("builds Portkey gateway context with the saved token", async () => {
         const secret = "test-secret";
         const endpoint: CommunityEndpointRuntime = {
@@ -1606,11 +1644,10 @@ fixtureTest(
 );
 
 fixtureTest(
-    "deploys worker source on registration and redeploys on update",
+    "deploys worker source on registration, redeploys on update, deletes worker on removal",
     async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `bee-${crypto.randomUUID().slice(0, 8)}`;
-        const scriptName = `bee-${ownerGithubUsername}-${modelName}`;
         const ownerUserId = await createTestUser({
             githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
             githubUsername: ownerGithubUsername,
@@ -1658,6 +1695,7 @@ fixtureTest(
         const cookie = await signedSessionCookie(sessionToken);
         const source =
             "export default { fetch: () => Response.json({ ok: true }) };";
+        // No bearerToken sent — source deploys mint their own worker auth token.
         const createResponse = await fetchEnterApi(
             enterApi,
             new Request("http://localhost:3000/api/community-endpoints", {
@@ -1669,7 +1707,6 @@ fixtureTest(
                 body: JSON.stringify({
                     name: modelName,
                     source,
-                    bearerToken: "sk_saved_token",
                     promptTextPrice: 0.1,
                     completionTextPrice: 0.1,
                 }),
@@ -1682,6 +1719,8 @@ fixtureTest(
             baseUrl: string;
             source: string;
         };
+        // Script name is keyed on the endpoint id, not owner/name.
+        const scriptName = `bee-${created.id}`;
         expect(created).toMatchObject({
             baseUrl: `https://${scriptName}.staging-sub.workers.dev/v1`,
             source,
@@ -1695,9 +1734,15 @@ fixtureTest(
             `/client/v4/accounts/cf-account/workers/scripts/${scriptName}`,
         );
         const form = await putRequest.formData();
-        expect(JSON.parse(String(form.get("metadata")))).toMatchObject({
-            main_module: "index.mjs",
-        });
+        const metadata = JSON.parse(String(form.get("metadata")));
+        expect(metadata).toMatchObject({ main_module: "index.mjs" });
+        // The generated auth token is injected as a secret binding.
+        const authBinding = metadata.bindings?.find(
+            (b: { name?: string }) => b?.name === "BEE_AUTH_TOKEN",
+        );
+        expect(authBinding).toMatchObject({ type: "secret_text" });
+        expect(typeof authBinding.text).toBe("string");
+        expect(authBinding.text.length).toBeGreaterThan(0);
         await expect((form.get("index.mjs") as File).text()).resolves.toBe(
             source,
         );
@@ -1737,8 +1782,31 @@ fixtureTest(
             baseUrl: `https://${scriptName}.staging-sub.workers.dev/v1`,
             source: updatedSource,
         });
+        // Redeploys the same id-keyed script — no orphan from the name.
         expect(
             cfRequests.filter((request) => request.method === "PUT"),
         ).toHaveLength(1);
+
+        cfRequests.length = 0;
+        const deleteResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/community-endpoints/${created.id}`,
+                {
+                    method: "DELETE",
+                    headers: { Cookie: cookie },
+                },
+            ),
+            deployEnv,
+        );
+        expect(deleteResponse.status).toBe(200);
+        // Delete retires the public worker, not just the D1 row.
+        const deleteWorkerCall = cfRequests.find(
+            (request) => request.method === "DELETE",
+        );
+        if (!deleteWorkerCall) throw new Error("No worker DELETE captured");
+        expect(new URL(deleteWorkerCall.url).pathname).toBe(
+            `/client/v4/accounts/cf-account/workers/scripts/${scriptName}`,
+        );
     },
 );

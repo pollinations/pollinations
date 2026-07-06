@@ -28,6 +28,7 @@ import {
 } from "../services/community-endpoint-openai.ts";
 import {
     communityWorkerScriptName,
+    deleteCommunityWorker,
     deployCommunityWorker,
     requireWorkerDeployConfig,
 } from "../services/worker-deploy.ts";
@@ -74,11 +75,16 @@ const ToolPricesSchema = z
     .describe(
         "Per-call tool fees, keyed by tool name (e.g. web_search). Each request is billed `fee × usage.tool_call_counts.<name>` as reported by the endpoint in its response usage object (on the final usage-bearing event for streams). On update the map is replaced whole; send {} to clear.",
     );
+// 1 MiB is well under Cloudflare's per-script size limit and far larger than
+// any hand-written single-module bee; the cap keeps unbounded blobs out of D1
+// and the upload.
+const MAX_SOURCE_BYTES = 1_048_576;
 const SourceSchema = z
     .string()
     .min(1)
+    .max(MAX_SOURCE_BYTES)
     .describe(
-        "Single-ES-module JavaScript worker source exposing an OpenAI-compatible API (POST /v1/chat/completions). Deployed to a Pollinations-managed Cloudflare Worker and the model's baseUrl is set to its workers.dev URL. Mutually exclusive with baseUrl.",
+        "Single-ES-module JavaScript worker source (max 1 MiB) exposing an OpenAI-compatible API (POST /v1/chat/completions). Deployed to a Pollinations-managed Cloudflare Worker and the model's baseUrl is set to its workers.dev URL. Mutually exclusive with baseUrl.",
     );
 const EndpointFieldsSchema = {
     // No "/": the public model id is `<owner>/<name>`, so a slash in the name
@@ -118,6 +124,9 @@ const CreateEndpointSchema = z
             .optional()
             .default(false)
             .describe("Declares reasoning/thinking support (metadata only)."),
+        // Ignored for source deploys — the worker auth token is generated
+        // server-side and stored as the bearer token in that mode.
+        bearerToken: EndpointFieldsSchema.bearerToken.optional(),
         toolPrices: ToolPricesSchema.optional(),
         ...CreatePriceFieldsSchema,
     })
@@ -125,6 +134,12 @@ const CreateEndpointSchema = z
         (input) =>
             (input.baseUrl === undefined) !== (input.source === undefined),
         { message: "Provide exactly one of baseUrl or source" },
+    )
+    .refine(
+        (input) => input.source !== undefined || Boolean(input.bearerToken),
+        {
+            message: "bearerToken is required when registering with baseUrl",
+        },
     );
 const UpdateEndpointSchema = z
     .object({
@@ -474,43 +489,67 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 user.id,
             );
             await ensureModelNameAvailable(db, user.id, input.name);
-            const baseUrl =
-                input.source !== undefined
-                    ? await deployCommunityWorker(
-                          requireWorkerDeployConfig(c.env),
-                          communityWorkerScriptName(
-                              ownerGithubUsername,
-                              input.name,
-                          ),
-                          input.source,
-                      )
-                    : normalizeInputBaseUrl(input.baseUrl ?? "");
             const id = crypto.randomUUID();
-            const [row] = await db
-                .insert(schema.communityEndpoint)
-                .values({
-                    id,
-                    ownerUserId: user.id,
-                    name: input.name,
-                    description: input.description || null,
-                    baseUrl,
-                    source: input.source ?? null,
-                    upstreamModel: input.upstreamModel ?? input.name,
-                    bearerTokenCiphertext: await encryptSecret(
-                        normalizeInputBearerToken(input.bearerToken),
-                        c.env.BETTER_AUTH_SECRET,
-                    ),
-                    kind: input.kind,
-                    tools: input.tools,
-                    search: input.search,
-                    reasoning: input.reasoning,
-                    toolPrices: serializeToolPrices(input.toolPrices),
-                    ...communityEndpointPrices(input),
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                })
-                .returning();
-            return c.json(toResponse(row, ownerGithubUsername));
+            // For source deploys the stored bearer token IS the worker auth
+            // token: gen sends it to the (public) workers.dev URL and the
+            // worker checks it, so direct callers without it are rejected.
+            // The caller's own bearerToken is ignored in this mode.
+            const deployConfig =
+                input.source !== undefined
+                    ? requireWorkerDeployConfig(c.env)
+                    : null;
+            const workerAuthToken = deployConfig
+                ? crypto.randomUUID().replaceAll("-", "")
+                : null;
+            const baseUrl = deployConfig
+                ? await deployCommunityWorker(
+                      deployConfig,
+                      communityWorkerScriptName(id),
+                      input.source as string,
+                      workerAuthToken as string,
+                  )
+                : normalizeInputBaseUrl(input.baseUrl ?? "");
+            // Guaranteed present in baseUrl mode by CreateEndpointSchema.
+            const bearerToken =
+                workerAuthToken ??
+                normalizeInputBearerToken(input.bearerToken ?? "");
+            try {
+                const [row] = await db
+                    .insert(schema.communityEndpoint)
+                    .values({
+                        id,
+                        ownerUserId: user.id,
+                        name: input.name,
+                        description: input.description || null,
+                        baseUrl,
+                        source: input.source ?? null,
+                        upstreamModel: input.upstreamModel ?? input.name,
+                        bearerTokenCiphertext: await encryptSecret(
+                            bearerToken,
+                            c.env.BETTER_AUTH_SECRET,
+                        ),
+                        kind: input.kind,
+                        tools: input.tools,
+                        search: input.search,
+                        reasoning: input.reasoning,
+                        toolPrices: serializeToolPrices(input.toolPrices),
+                        ...communityEndpointPrices(input),
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    })
+                    .returning();
+                return c.json(toResponse(row, ownerGithubUsername));
+            } catch (error) {
+                // The worker is live but the row failed — remove the orphan so
+                // there's no callable script without a backing endpoint.
+                if (deployConfig) {
+                    await deleteCommunityWorker(
+                        deployConfig,
+                        communityWorkerScriptName(id),
+                    );
+                }
+                throw error;
+            }
         },
     )
     .post(
@@ -668,25 +707,40 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 update.description = input.description || null;
             }
             if (input.baseUrl !== undefined) {
-                // Switching to a self-hosted URL retires the deployed source.
+                // Switching to a self-hosted URL retires the deployed worker
+                // so it is no longer publicly callable.
                 update.baseUrl = normalizeInputBaseUrl(input.baseUrl);
                 update.source = null;
+                if (endpoint.source !== null) {
+                    await deleteCommunityWorker(
+                        requireWorkerDeployConfig(c.env),
+                        communityWorkerScriptName(endpoint.id),
+                    );
+                }
             }
             if (input.source !== undefined) {
+                // Redeploy the same id-keyed script with a fresh auth token;
+                // the token becomes the stored bearer token gen sends.
+                const deployConfig = requireWorkerDeployConfig(c.env);
+                const workerAuthToken = crypto.randomUUID().replaceAll("-", "");
                 update.baseUrl = await deployCommunityWorker(
-                    requireWorkerDeployConfig(c.env),
-                    communityWorkerScriptName(
-                        ownerGithubUsername,
-                        input.name ?? endpoint.name,
-                    ),
+                    deployConfig,
+                    communityWorkerScriptName(endpoint.id),
                     input.source,
+                    workerAuthToken,
                 );
                 update.source = input.source;
+                update.bearerTokenCiphertext = await encryptSecret(
+                    workerAuthToken,
+                    c.env.BETTER_AUTH_SECRET,
+                );
             }
             if (input.upstreamModel !== undefined) {
                 update.upstreamModel = input.upstreamModel;
             }
-            if (input.bearerToken !== undefined) {
+            // A caller-supplied bearer token only applies to self-hosted
+            // endpoints; source deploys manage their own token above.
+            if (input.bearerToken !== undefined && input.source === undefined) {
                 update.bearerTokenCiphertext = await encryptSecret(
                     normalizeInputBearerToken(input.bearerToken),
                     c.env.BETTER_AUTH_SECRET,
@@ -749,7 +803,16 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 user.id,
                 c.var.auth.apiKey,
             );
-            await requireOwnedEndpoint(db, id, user.id);
+            const endpoint = await requireOwnedEndpoint(db, id, user.id);
+            // Retire the deployed worker first; a failure here must not leave
+            // a callable script with no backing row, so it happens before the
+            // D1 delete.
+            if (endpoint.source !== null) {
+                await deleteCommunityWorker(
+                    requireWorkerDeployConfig(c.env),
+                    communityWorkerScriptName(endpoint.id),
+                );
+            }
             await db
                 .delete(schema.communityEndpoint)
                 .where(

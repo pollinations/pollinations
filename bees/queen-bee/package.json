@@ -1,0 +1,14 @@
+{
+    "name": "queen-bee",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "deploy": "wrangler deploy"
+    },
+    "dependencies": {
+        "@cloudflare/sandbox": "0.12.3"
+    },
+    "devDependencies": {
+        "wrangler": "^4.0.0"
+    }
+}

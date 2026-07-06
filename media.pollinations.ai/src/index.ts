@@ -5,16 +5,24 @@ import { describeRoute, openAPIRouteHandler, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { CatalogItem, CatalogPage } from "./catalog.ts";
 import {
+    addReaction,
     clampLimit,
     decodeCursor,
     getDb,
+    getItemById,
+    InvalidReactionError,
     InvalidTagError,
     listByTag,
     listUserMedia,
+    normalizeReaction,
     normalizeTags,
+    reactionCountForItem,
+    reactionCountsForItems,
+    removeReaction,
     TooManyTagsError,
     tagsForItems,
     upsertUploadCatalogItem,
+    userReactionsForItems,
 } from "./catalog.ts";
 
 const DOMAIN = "media.pollinations.ai";
@@ -143,6 +151,9 @@ function validateMetadata(
 const TAG_PATTERN_DESCRIPTION =
     "lowercase letters, digits, and _.:+- (not leading), max 128 chars";
 
+const REACTION_PATTERN_DESCRIPTION =
+    "lowercase letters, digits, and _- (not leading), max 32 chars";
+
 function hasMetadata(metadata: UploadMetadata): boolean {
     return (
         metadata.tags.length > 0 ||
@@ -163,11 +174,15 @@ interface MediaItemResponse {
     prompt: string | null;
     model: string | null;
     createdAt: string;
+    reactions: Record<string, number>;
+    myReactions?: string[];
 }
 
 function toItemResponse(
     item: CatalogItem,
     tagsByItem: Map<string, string[]>,
+    reactionsByItem: Map<string, Record<string, number>>,
+    myReactionsByItem: Map<string, string[]> | null,
 ): MediaItemResponse {
     return {
         id: item.id,
@@ -179,19 +194,38 @@ function toItemResponse(
         prompt: item.prompt,
         model: item.model,
         createdAt: item.createdAt.toISOString(),
+        reactions: reactionsByItem.get(item.id) ?? {},
+        ...(myReactionsByItem
+            ? { myReactions: myReactionsByItem.get(item.id) ?? [] }
+            : {}),
     };
 }
 
+// `myReactionsUserId` is the authenticated user's id when myReactions should
+// be computed and included, or null when it should be omitted entirely (no
+// key, or a valid key with no attached user).
 async function toPageResponse(
     db: ReturnType<typeof getDb>,
     page: CatalogPage,
+    myReactionsUserId: string | null,
 ): Promise<{ items: MediaItemResponse[]; nextCursor: string | null }> {
-    const tagsByItem = await tagsForItems(
-        db,
-        page.items.map((item) => item.id),
-    );
+    const itemIds = page.items.map((item) => item.id);
+    const [tagsByItem, reactionsByItem, myReactionsByItem] = await Promise.all([
+        tagsForItems(db, itemIds),
+        reactionCountsForItems(db, itemIds),
+        myReactionsUserId
+            ? userReactionsForItems(db, itemIds, myReactionsUserId)
+            : Promise.resolve(null),
+    ]);
     return {
-        items: page.items.map((item) => toItemResponse(item, tagsByItem)),
+        items: page.items.map((item) =>
+            toItemResponse(
+                item,
+                tagsByItem,
+                reactionsByItem,
+                myReactionsByItem,
+            ),
+        ),
         nextCursor: page.nextCursor,
     };
 }
@@ -232,6 +266,17 @@ const MediaItemResponseSchema = z.object({
     prompt: z.string().nullable(),
     model: z.string().nullable(),
     createdAt: z.string().describe("ISO-8601 timestamp"),
+    reactions: z
+        .record(z.string(), z.number().int())
+        .describe(
+            "Reaction counts by kind (e.g. {like: 3}). {} when the item has no reactions.",
+        ),
+    myReactions: z
+        .array(z.string())
+        .optional()
+        .describe(
+            "Reaction kinds the authenticated caller gave this item. Present only when computable: always on /me/media, and on /tags/:tag only when an API key with an attached user was supplied.",
+        ),
 });
 
 const MediaPageResponseSchema = z.object({
@@ -240,6 +285,19 @@ const MediaPageResponseSchema = z.object({
         .string()
         .nullable()
         .describe("Opaque cursor for the next page, null when exhausted"),
+});
+
+const ReactionResponseSchema = z.object({
+    reaction: z.string().describe("Normalized reaction kind"),
+    reacted: z
+        .boolean()
+        .describe("true after adding the reaction, false after removing it"),
+    count: z
+        .number()
+        .int()
+        .describe(
+            "Total reactions of this kind on this item after the mutation",
+        ),
 });
 
 const api = new Hono<{ Bindings: Env }>();
@@ -590,7 +648,7 @@ api.get(
             cursor,
         });
 
-        return c.json(await toPageResponse(db, page));
+        return c.json(await toPageResponse(db, page, authResult.userId));
     },
 );
 
@@ -600,7 +658,7 @@ api.get(
         tags: ["media.pollinations.ai"],
         summary: "Browse media by tag",
         description:
-            "Public gallery listing for a tag, newest first. No authentication required.",
+            "Public gallery listing for a tag, newest first. Authentication is optional: pass an API key to get `myReactions` on each item.",
         security: [],
         responses: {
             200: {
@@ -613,6 +671,12 @@ api.get(
             },
             400: {
                 description: "Invalid cursor or limit",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            401: {
+                description: "API key supplied but invalid or expired",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -633,10 +697,207 @@ api.get(
             }
         }
 
+        // Auth is optional here, but if a key IS supplied it must be valid —
+        // an invalid key fails fast rather than silently falling back to
+        // anonymous browsing.
+        let myReactionsUserId: string | null = null;
+        const apiKey = extractApiKey(c.req.raw);
+        if (apiKey) {
+            const authResult = await verifyApiKey(apiKey);
+            if (!authResult) {
+                return c.json({ error: "Invalid or expired API key" }, 401);
+            }
+            myReactionsUserId = authResult.userId;
+        }
+
         const db = getDb(c.env.DB);
         const page = await listByTag(db, { tag, limit, cursor });
 
-        return c.json(await toPageResponse(db, page));
+        return c.json(await toPageResponse(db, page, myReactionsUserId));
+    },
+);
+
+api.put(
+    "/media/:id/reactions/:reaction",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "React to a media item",
+        description:
+            "Add a reaction (e.g. `like`, `heart`, `bookmark`) to a catalog item by its id (the `id` field from /me/media or /tags/:tag, not the content hash). Idempotent: repeating the same reaction is a no-op.",
+        responses: {
+            200: {
+                description:
+                    "Current reaction state and total count for this kind",
+                content: {
+                    "application/json": {
+                        schema: resolver(ReactionResponseSchema),
+                    },
+                },
+            },
+            400: {
+                description: "Invalid reaction kind",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            401: {
+                description: "Missing or invalid API key",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            403: {
+                description: "API key is not attached to a user account",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            404: {
+                description: "Media item not found",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        const apiKey = extractApiKey(c.req.raw);
+        if (!apiKey) {
+            return c.json(
+                {
+                    error: "API key required. Pass via Authorization: Bearer <key> or ?key=<key>",
+                },
+                401,
+            );
+        }
+        const authResult = await verifyApiKey(apiKey);
+        if (!authResult) {
+            return c.json({ error: "Invalid or expired API key" }, 401);
+        }
+        if (authResult.userId === null) {
+            return c.json(
+                { error: "This API key is not attached to a user account" },
+                403,
+            );
+        }
+
+        let reaction: string;
+        try {
+            reaction = normalizeReaction(c.req.param("reaction"));
+        } catch (error) {
+            if (error instanceof InvalidReactionError) {
+                return c.json(
+                    {
+                        error: `Invalid reaction: "${error.reaction}". Reactions must match ${REACTION_PATTERN_DESCRIPTION}.`,
+                    },
+                    400,
+                );
+            }
+            throw error;
+        }
+
+        const id = c.req.param("id");
+        const db = getDb(c.env.DB);
+        const item = await getItemById(db, id);
+        if (!item) {
+            return c.json({ error: "Media item not found" }, 404);
+        }
+
+        await addReaction(db, id, authResult.userId, reaction);
+        const count = await reactionCountForItem(db, id, reaction);
+        return c.json({ reaction, reacted: true, count });
+    },
+);
+
+api.delete(
+    "/media/:id/reactions/:reaction",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "Remove a reaction from a media item",
+        description:
+            "Remove your reaction of one kind from a catalog item by its id (the `id` field from /me/media or /tags/:tag, not the content hash). Idempotent: removing a reaction you haven't given is a no-op.",
+        responses: {
+            200: {
+                description:
+                    "Current reaction state and total count for this kind",
+                content: {
+                    "application/json": {
+                        schema: resolver(ReactionResponseSchema),
+                    },
+                },
+            },
+            400: {
+                description: "Invalid reaction kind",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            401: {
+                description: "Missing or invalid API key",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            403: {
+                description: "API key is not attached to a user account",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            404: {
+                description: "Media item not found",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        const apiKey = extractApiKey(c.req.raw);
+        if (!apiKey) {
+            return c.json(
+                {
+                    error: "API key required. Pass via Authorization: Bearer <key> or ?key=<key>",
+                },
+                401,
+            );
+        }
+        const authResult = await verifyApiKey(apiKey);
+        if (!authResult) {
+            return c.json({ error: "Invalid or expired API key" }, 401);
+        }
+        if (authResult.userId === null) {
+            return c.json(
+                { error: "This API key is not attached to a user account" },
+                403,
+            );
+        }
+
+        let reaction: string;
+        try {
+            reaction = normalizeReaction(c.req.param("reaction"));
+        } catch (error) {
+            if (error instanceof InvalidReactionError) {
+                return c.json(
+                    {
+                        error: `Invalid reaction: "${error.reaction}". Reactions must match ${REACTION_PATTERN_DESCRIPTION}.`,
+                    },
+                    400,
+                );
+            }
+            throw error;
+        }
+
+        const id = c.req.param("id");
+        const db = getDb(c.env.DB);
+        const item = await getItemById(db, id);
+        if (!item) {
+            return c.json({ error: "Media item not found" }, 404);
+        }
+
+        await removeReaction(db, id, authResult.userId, reaction);
+        const count = await reactionCountForItem(db, id, reaction);
+        return c.json({ reaction, reacted: false, count });
     },
 );
 
@@ -836,7 +1097,7 @@ app.use(
     "*",
     cors({
         origin: "*",
-        allowMethods: ["GET", "POST", "HEAD", "OPTIONS"],
+        allowMethods: ["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"],
         allowHeaders: ["Content-Type", "Authorization"],
         exposeHeaders: ["X-Content-Hash", "X-Content-Size"],
     }),
@@ -851,7 +1112,11 @@ app.get("/", (c) => {
             retrieve: "GET /:hash",
             metadata: "GET /:hash/metadata",
             myMedia: "GET /me/media (requires user-owned API key)",
-            tagGallery: "GET /tags/:tag (public)",
+            tagGallery:
+                "GET /tags/:tag (public; optional API key for myReactions)",
+            react: "PUT /media/:id/reactions/:reaction (requires user-owned API key)",
+            unreact:
+                "DELETE /media/:id/reactions/:reaction (requires user-owned API key)",
             docs: "GET /openapi.json",
         },
         limits: {

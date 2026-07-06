@@ -3,9 +3,13 @@
 // awaited inline on the upload path (no waitUntil): a D1 failure surfaces as
 // a 500 rather than silently dropping catalog data.
 
-import { mediaItem, mediaTag } from "@shared/db/media-catalog.ts";
+import {
+    mediaItem,
+    mediaReaction,
+    mediaTag,
+} from "@shared/db/media-catalog.ts";
 import type { SQL } from "drizzle-orm";
-import { and, desc, eq, inArray, lt, or, sql } from "drizzle-orm";
+import { and, count, desc, eq, inArray, lt, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 
 export type CatalogDb = ReturnType<typeof drizzle>;
@@ -31,6 +35,32 @@ export class TooManyTagsError extends Error {
         super(`Too many tags: ${count} (max ${MAX_TAGS})`);
         this.name = "TooManyTagsError";
     }
+}
+
+// Reaction kinds are an open slug vocabulary ("like", "heart", "bookmark",
+// ...): lowercase letters/digits, then `_-` allowed after the first char,
+// max 32 chars.
+export const REACTION_PATTERN = /^[a-z0-9][a-z0-9_-]{0,31}$/;
+
+export class InvalidReactionError extends Error {
+    constructor(public readonly reaction: string) {
+        super(`Invalid reaction: "${reaction}"`);
+        this.name = "InvalidReactionError";
+    }
+}
+
+/**
+ * Normalize (trim + lowercase) and validate a reaction kind. Throws
+ * InvalidReactionError naming the submitted value on mismatch.
+ */
+export function normalizeReaction(raw: string): string {
+    const reaction = raw.trim().toLowerCase();
+    if (!REACTION_PATTERN.test(reaction)) {
+        // Name the value as submitted (pre-lowercase) so the error is
+        // unambiguous about which input was rejected.
+        throw new InvalidReactionError(raw.trim());
+    }
+    return reaction;
 }
 
 /**
@@ -295,6 +325,154 @@ export async function tagsForItems(
             existing.push(row.tag);
         } else {
             byItem.set(row.itemId, [row.tag]);
+        }
+    }
+    return byItem;
+}
+
+/** Fetch a single catalog item by id, or null if it doesn't exist. */
+export async function getItemById(
+    db: CatalogDb,
+    id: string,
+): Promise<CatalogItem | null> {
+    const [row] = await db
+        .select({
+            id: mediaItem.id,
+            kind: mediaItem.kind,
+            locator: mediaItem.locator,
+            contentType: mediaItem.contentType,
+            size: mediaItem.size,
+            model: mediaItem.model,
+            prompt: mediaItem.prompt,
+            createdAt: mediaItem.createdAt,
+        })
+        .from(mediaItem)
+        .where(eq(mediaItem.id, id))
+        .limit(1);
+    return row ?? null;
+}
+
+/**
+ * React to an item on behalf of a user. Idempotent: repeating the same
+ * reaction kind is a no-op.
+ */
+export async function addReaction(
+    db: CatalogDb,
+    itemId: string,
+    userId: string,
+    reaction: string,
+): Promise<void> {
+    await db
+        .insert(mediaReaction)
+        .values({ itemId, userId, reaction, createdAt: new Date() })
+        .onConflictDoNothing({
+            target: [
+                mediaReaction.itemId,
+                mediaReaction.userId,
+                mediaReaction.reaction,
+            ],
+        });
+}
+
+/**
+ * Remove a user's reaction of one kind from an item. Idempotent: removing
+ * a reaction that isn't there is a no-op.
+ */
+export async function removeReaction(
+    db: CatalogDb,
+    itemId: string,
+    userId: string,
+    reaction: string,
+): Promise<void> {
+    await db
+        .delete(mediaReaction)
+        .where(
+            and(
+                eq(mediaReaction.itemId, itemId),
+                eq(mediaReaction.userId, userId),
+                eq(mediaReaction.reaction, reaction),
+            ),
+        );
+}
+
+/** Count reactions of one kind for a single item. */
+export async function reactionCountForItem(
+    db: CatalogDb,
+    itemId: string,
+    reaction: string,
+): Promise<number> {
+    const [row] = await db
+        .select({ count: count() })
+        .from(mediaReaction)
+        .where(
+            and(
+                eq(mediaReaction.itemId, itemId),
+                eq(mediaReaction.reaction, reaction),
+            ),
+        );
+    return row?.count ?? 0;
+}
+
+/**
+ * Count reactions for a page of item ids in one grouped query, keyed by
+ * item id, then by reaction kind.
+ */
+export async function reactionCountsForItems(
+    db: CatalogDb,
+    itemIds: string[],
+): Promise<Map<string, Record<string, number>>> {
+    const byItem = new Map<string, Record<string, number>>();
+    if (itemIds.length === 0) return byItem;
+
+    const rows = await db
+        .select({
+            itemId: mediaReaction.itemId,
+            reaction: mediaReaction.reaction,
+            count: count(),
+        })
+        .from(mediaReaction)
+        .where(inArray(mediaReaction.itemId, itemIds))
+        .groupBy(mediaReaction.itemId, mediaReaction.reaction);
+
+    for (const row of rows) {
+        const existing = byItem.get(row.itemId);
+        if (existing) {
+            existing[row.reaction] = row.count;
+        } else {
+            byItem.set(row.itemId, { [row.reaction]: row.count });
+        }
+    }
+    return byItem;
+}
+
+/** A user's reaction kinds for a page of item ids, in one query. */
+export async function userReactionsForItems(
+    db: CatalogDb,
+    itemIds: string[],
+    userId: string,
+): Promise<Map<string, string[]>> {
+    const byItem = new Map<string, string[]>();
+    if (itemIds.length === 0) return byItem;
+
+    const rows = await db
+        .select({
+            itemId: mediaReaction.itemId,
+            reaction: mediaReaction.reaction,
+        })
+        .from(mediaReaction)
+        .where(
+            and(
+                inArray(mediaReaction.itemId, itemIds),
+                eq(mediaReaction.userId, userId),
+            ),
+        );
+
+    for (const row of rows) {
+        const existing = byItem.get(row.itemId);
+        if (existing) {
+            existing.push(row.reaction);
+        } else {
+            byItem.set(row.itemId, [row.reaction]);
         }
     }
     return byItem;

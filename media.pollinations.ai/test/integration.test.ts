@@ -42,11 +42,19 @@ interface MediaItemResponse {
     prompt: string | null;
     model: string | null;
     createdAt: string;
+    reactions: Record<string, number>;
+    myReactions?: string[];
 }
 
 interface MediaPageResponse {
     items: MediaItemResponse[];
     nextCursor: string | null;
+}
+
+interface ReactionResponse {
+    reaction: string;
+    reacted: boolean;
+    count: number;
 }
 
 // Kept for the pre-existing tests that don't care about identity.
@@ -593,5 +601,281 @@ describe("media.pollinations.ai", () => {
         expect(page2.items).toHaveLength(1);
         expect(page2.items[0].url).toBe(uploads[0].url);
         expect(page2.nextCursor).toBeNull();
+    });
+
+    describe("reactions", () => {
+        // Upload response `id` is the content hash, not the catalog item id.
+        // Look the item up via /me/media (as the owner) to get its catalog id.
+        async function catalogIdFor(
+            ownerKey: string,
+            uploadUrl: string,
+        ): Promise<string> {
+            const res = await SELF.fetch(
+                "https://media.pollinations.ai/me/media",
+                { headers: { Authorization: `Bearer ${ownerKey}` } },
+            );
+            const page = (await res.json()) as MediaPageResponse;
+            const item = page.items.find((i) => i.url === uploadUrl);
+            if (!item) throw new Error(`item not found for ${uploadUrl}`);
+            return item.id;
+        }
+
+        function reactionUrl(itemId: string, reaction: string): string {
+            return `https://media.pollinations.ai/media/${itemId}/reactions/${reaction}`;
+        }
+
+        it("like, repeat like, and visibility via /tags/:tag (anonymous vs authenticated)", async () => {
+            const { status, body } = await uploadViaForm("pk_alice", {
+                fileName: "like-flow.png",
+                bytes: variant(30),
+                tags: ["like-flow-tag"],
+            });
+            expect(status).toBe(200);
+            const upload = body as UploadResponse;
+            const itemId = await catalogIdFor("pk_alice", upload.url);
+
+            const likeRes = await SELF.fetch(reactionUrl(itemId, "like"), {
+                method: "PUT",
+                headers: { Authorization: "Bearer pk_bob" },
+            });
+            expect(likeRes.status).toBe(200);
+            expect((await likeRes.json()) as ReactionResponse).toEqual({
+                reaction: "like",
+                reacted: true,
+                count: 1,
+            });
+
+            // Repeat like is idempotent.
+            const likeAgainRes = await SELF.fetch(reactionUrl(itemId, "like"), {
+                method: "PUT",
+                headers: { Authorization: "Bearer pk_bob" },
+            });
+            expect(likeAgainRes.status).toBe(200);
+            expect((await likeAgainRes.json()) as ReactionResponse).toEqual({
+                reaction: "like",
+                reacted: true,
+                count: 1,
+            });
+
+            // Anonymous tag browsing: reaction counts present, no myReactions.
+            const anonRes = await SELF.fetch(
+                "https://media.pollinations.ai/tags/like-flow-tag",
+            );
+            expect(anonRes.status).toBe(200);
+            const anon = (await anonRes.json()) as MediaPageResponse;
+            const anonItem = anon.items.find((i) => i.id === itemId);
+            expect(anonItem?.reactions).toEqual({ like: 1 });
+            expect(anonItem).not.toHaveProperty("myReactions");
+
+            // Bob (the reactor) sees "like" in myReactions.
+            const bobRes = await SELF.fetch(
+                "https://media.pollinations.ai/tags/like-flow-tag",
+                { headers: { Authorization: "Bearer pk_bob" } },
+            );
+            const bobPage = (await bobRes.json()) as MediaPageResponse;
+            expect(
+                bobPage.items.find((i) => i.id === itemId)?.myReactions,
+            ).toEqual(["like"]);
+
+            // Alice (no reactions) gets an empty myReactions.
+            const aliceRes = await SELF.fetch(
+                "https://media.pollinations.ai/tags/like-flow-tag",
+                { headers: { Authorization: "Bearer pk_alice" } },
+            );
+            const alicePage = (await aliceRes.json()) as MediaPageResponse;
+            expect(
+                alicePage.items.find((i) => i.id === itemId)?.myReactions,
+            ).toEqual([]);
+        });
+
+        it("unlike and repeat unlike are idempotent", async () => {
+            const { status, body } = await uploadViaForm("pk_alice", {
+                fileName: "unlike-flow.png",
+                bytes: variant(31),
+                tags: ["unlike-flow-tag"],
+            });
+            expect(status).toBe(200);
+            const upload = body as UploadResponse;
+            const itemId = await catalogIdFor("pk_alice", upload.url);
+
+            await SELF.fetch(reactionUrl(itemId, "like"), {
+                method: "PUT",
+                headers: { Authorization: "Bearer pk_bob" },
+            });
+
+            const unlikeRes = await SELF.fetch(reactionUrl(itemId, "like"), {
+                method: "DELETE",
+                headers: { Authorization: "Bearer pk_bob" },
+            });
+            expect(unlikeRes.status).toBe(200);
+            expect((await unlikeRes.json()) as ReactionResponse).toEqual({
+                reaction: "like",
+                reacted: false,
+                count: 0,
+            });
+
+            // Repeat unlike is idempotent.
+            const unlikeAgainRes = await SELF.fetch(
+                reactionUrl(itemId, "like"),
+                {
+                    method: "DELETE",
+                    headers: { Authorization: "Bearer pk_bob" },
+                },
+            );
+            expect(unlikeAgainRes.status).toBe(200);
+            expect((await unlikeAgainRes.json()) as ReactionResponse).toEqual({
+                reaction: "like",
+                reacted: false,
+                count: 0,
+            });
+        });
+
+        it("two different likers accumulate to 2, reflected in owner's /me/media", async () => {
+            const { status, body } = await uploadViaForm("pk_alice", {
+                fileName: "two-likers.png",
+                bytes: variant(32),
+                tags: ["two-likers-tag"],
+            });
+            expect(status).toBe(200);
+            const upload = body as UploadResponse;
+            const itemId = await catalogIdFor("pk_alice", upload.url);
+
+            const aliceLike = await SELF.fetch(reactionUrl(itemId, "like"), {
+                method: "PUT",
+                headers: { Authorization: "Bearer pk_alice" },
+            });
+            expect((await aliceLike.json()) as ReactionResponse).toEqual({
+                reaction: "like",
+                reacted: true,
+                count: 1,
+            });
+
+            const bobLike = await SELF.fetch(reactionUrl(itemId, "like"), {
+                method: "PUT",
+                headers: { Authorization: "Bearer pk_bob" },
+            });
+            expect((await bobLike.json()) as ReactionResponse).toEqual({
+                reaction: "like",
+                reacted: true,
+                count: 2,
+            });
+
+            const meRes = await SELF.fetch(
+                "https://media.pollinations.ai/me/media",
+                { headers: { Authorization: "Bearer pk_alice" } },
+            );
+            const me = (await meRes.json()) as MediaPageResponse;
+            const meItem = me.items.find((i) => i.id === itemId);
+            expect(meItem?.reactions).toEqual({ like: 2 });
+            expect(meItem?.myReactions).toEqual(["like"]);
+        });
+
+        it("multiple reaction kinds from one user coexist on an item", async () => {
+            const { status, body } = await uploadViaForm("pk_alice", {
+                fileName: "multi-kind.png",
+                bytes: variant(34),
+                tags: ["multi-kind-tag"],
+            });
+            expect(status).toBe(200);
+            const upload = body as UploadResponse;
+            const itemId = await catalogIdFor("pk_alice", upload.url);
+
+            for (const kind of ["like", "bookmark"]) {
+                const res = await SELF.fetch(reactionUrl(itemId, kind), {
+                    method: "PUT",
+                    headers: { Authorization: "Bearer pk_bob" },
+                });
+                expect((await res.json()) as ReactionResponse).toEqual({
+                    reaction: kind,
+                    reacted: true,
+                    count: 1,
+                });
+            }
+            await SELF.fetch(reactionUrl(itemId, "like"), {
+                method: "PUT",
+                headers: { Authorization: "Bearer pk_alice" },
+            });
+
+            const bobRes = await SELF.fetch(
+                "https://media.pollinations.ai/tags/multi-kind-tag",
+                { headers: { Authorization: "Bearer pk_bob" } },
+            );
+            const bobPage = (await bobRes.json()) as MediaPageResponse;
+            const bobItem = bobPage.items.find((i) => i.id === itemId);
+            expect(bobItem?.reactions).toEqual({ like: 2, bookmark: 1 });
+            expect(bobItem?.myReactions?.sort()).toEqual(["bookmark", "like"]);
+        });
+
+        it("PUT /media/:id/reactions/like with a nonexistent item id returns 404", async () => {
+            const randomId = crypto.randomUUID();
+            const res = await SELF.fetch(reactionUrl(randomId, "like"), {
+                method: "PUT",
+                headers: { Authorization: "Bearer pk_alice" },
+            });
+            expect(res.status).toBe(404);
+            expect((await res.json()) as { error: string }).toEqual({
+                error: "Media item not found",
+            });
+        });
+
+        it("rejects an invalid reaction kind with 400, naming it", async () => {
+            const { status, body } = await uploadViaForm("pk_alice", {
+                fileName: "bad-kind.png",
+                bytes: variant(35),
+                tags: ["bad-kind-tag"],
+            });
+            expect(status).toBe(200);
+            const upload = body as UploadResponse;
+            const itemId = await catalogIdFor("pk_alice", upload.url);
+
+            const res = await SELF.fetch(
+                reactionUrl(itemId, encodeURIComponent("UPPER!")),
+                {
+                    method: "PUT",
+                    headers: { Authorization: "Bearer pk_alice" },
+                },
+            );
+            expect(res.status).toBe(400);
+            expect(((await res.json()) as { error: string }).error).toMatch(
+                /UPPER!/,
+            );
+        });
+
+        it("auth failures: missing/unknown/no-user keys on react, and unknown key on /tags/:tag", async () => {
+            const { status, body } = await uploadViaForm("pk_alice", {
+                fileName: "auth-fail.png",
+                bytes: variant(33),
+                tags: ["auth-fail-tag"],
+            });
+            expect(status).toBe(200);
+            const upload = body as UploadResponse;
+            const itemId = await catalogIdFor("pk_alice", upload.url);
+
+            const noKeyRes = await SELF.fetch(reactionUrl(itemId, "like"), {
+                method: "PUT",
+            });
+            expect(noKeyRes.status).toBe(401);
+
+            const unknownKeyRes = await SELF.fetch(
+                reactionUrl(itemId, "like"),
+                {
+                    method: "PUT",
+                    headers: { Authorization: "Bearer pk_unknown" },
+                },
+            );
+            expect(unknownKeyRes.status).toBe(401);
+
+            const noUserRes = await SELF.fetch(reactionUrl(itemId, "like"), {
+                method: "PUT",
+                headers: { Authorization: "Bearer pk_nouser" },
+            });
+            expect(noUserRes.status).toBe(403);
+
+            const tagUnknownKeyRes = await SELF.fetch(
+                "https://media.pollinations.ai/tags/auth-fail-tag",
+                { headers: { Authorization: "Bearer pk_unknown" } },
+            );
+            expect(tagUnknownKeyRes.status).toBe(401);
+        });
     });
 });

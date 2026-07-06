@@ -59,3 +59,29 @@ export const mediaTag = sqliteTable(
         index("idx_media_tag_tag_created").on(table.tag, table.createdAt),
     ],
 );
+
+export const mediaReaction = sqliteTable(
+    "media_reaction",
+    {
+        itemId: text("item_id")
+            .notNull()
+            .references(() => mediaItem.id, { onDelete: "cascade" }),
+        userId: text("user_id")
+            .notNull()
+            .references(() => user.id, { onDelete: "cascade" }),
+        // Open slug vocabulary ("like", "heart", "bookmark", ...) —
+        // validated at the API layer.
+        reaction: text("reaction").notNull(),
+        createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+    },
+    (table) => [
+        // A user can give multiple different reactions to one item, but each
+        // kind at most once. Leading column (itemId) also serves
+        // count-by-item queries.
+        uniqueIndex("idx_media_reaction_item_user_reaction").on(
+            table.itemId,
+            table.userId,
+            table.reaction,
+        ),
+    ],
+);

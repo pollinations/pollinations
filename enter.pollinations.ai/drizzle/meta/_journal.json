@@ -253,6 +253,13 @@
       "when": 1783347338031,
       "tag": "0035_media_catalog",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "6",
+      "when": 1783352422737,
+      "tag": "0036_media_reactions",
+      "breakpoints": true
     }
   ]
 }

@@ -781,23 +781,24 @@ api.put(
             return c.json({ error: "Media item not found" }, 404);
         }
 
-        const existingKinds =
-            (await userReactionsForItems(db, [id], authResult.userId)).get(
-                id,
-            ) ?? [];
-        if (
-            !existingKinds.includes(reaction) &&
-            existingKinds.length >= MAX_REACTION_KINDS_PER_ITEM
-        ) {
-            return c.json(
-                {
-                    error: `Too many distinct reactions on this item (max ${MAX_REACTION_KINDS_PER_ITEM} kinds per user).`,
-                },
-                400,
-            );
+        const added = await addReaction(db, id, authResult.userId, reaction);
+        if (!added) {
+            // Zero rows written: either an idempotent repeat of a kind this
+            // user already holds, or the atomic kind cap inside addReaction
+            // refused a new kind. Only the second is an error.
+            const existingKinds =
+                (await userReactionsForItems(db, [id], authResult.userId)).get(
+                    id,
+                ) ?? [];
+            if (!existingKinds.includes(reaction)) {
+                return c.json(
+                    {
+                        error: `Too many distinct reactions on this item (max ${MAX_REACTION_KINDS_PER_ITEM} kinds per user).`,
+                    },
+                    400,
+                );
+            }
         }
-
-        await addReaction(db, id, authResult.userId, reaction);
         const count = await reactionCountForItem(db, id, reaction);
         return c.json({ reaction, reacted: true, count });
     },

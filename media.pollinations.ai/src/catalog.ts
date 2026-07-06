@@ -363,24 +363,29 @@ export async function isItemReactable(
 
 /**
  * React to an item on behalf of a user. Idempotent: repeating the same
- * reaction kind is a no-op.
+ * reaction kind is a no-op. The per-user kind cap is enforced inside the
+ * INSERT itself (not check-then-insert) so concurrent requests can't race
+ * past it — each D1 statement is atomic. Returns true if a row was written;
+ * false means either an idempotent repeat or a refused over-cap kind
+ * (callers disambiguate by reading the user's kinds).
  */
 export async function addReaction(
     db: CatalogDb,
     itemId: string,
     userId: string,
     reaction: string,
-): Promise<void> {
-    await db
-        .insert(mediaReaction)
-        .values({ itemId, userId, reaction, createdAt: new Date() })
-        .onConflictDoNothing({
-            target: [
-                mediaReaction.itemId,
-                mediaReaction.userId,
-                mediaReaction.reaction,
-            ],
-        });
+): Promise<boolean> {
+    // created_at matches the column's { mode: "timestamp" } storage (seconds).
+    const result = await db.run(sql`
+        insert into ${mediaReaction} (item_id, user_id, reaction, created_at)
+        select ${itemId}, ${userId}, ${reaction}, ${Math.floor(Date.now() / 1000)}
+        where (
+            select count(*) from ${mediaReaction}
+            where item_id = ${itemId} and user_id = ${userId}
+        ) < ${MAX_REACTION_KINDS_PER_ITEM}
+        on conflict (item_id, user_id, reaction) do nothing
+    `);
+    return result.meta.changes > 0;
 }
 
 /**

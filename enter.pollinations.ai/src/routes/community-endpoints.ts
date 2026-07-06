@@ -1,4 +1,5 @@
 import {
+    COMMUNITY_ENDPOINT_KINDS,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointPriceKey,
     communityEndpointPrices,
@@ -42,6 +43,8 @@ const UpdatePriceFieldsSchema = Object.fromEntries(
     z.ZodType<number | undefined>
 >;
 
+const CAPABILITY_FLAG_KEYS = ["tools", "search", "reasoning"] as const;
+const KindSchema = z.enum(COMMUNITY_ENDPOINT_KINDS);
 const EndpointFieldsSchema = {
     // No "/": the public model id is `<owner>/<name>`, so a slash in the name
     // would inject a second separator and let one model spoof another's id.
@@ -59,6 +62,10 @@ const EndpointFieldsSchema = {
 
 const CreateEndpointSchema = z.object({
     ...EndpointFieldsSchema,
+    kind: KindSchema.optional().default("model"),
+    tools: z.boolean().optional().default(false),
+    search: z.boolean().optional().default(false),
+    reasoning: z.boolean().optional().default(false),
     ...CreatePriceFieldsSchema,
 });
 const UpdateEndpointSchema = z.object({
@@ -67,6 +74,10 @@ const UpdateEndpointSchema = z.object({
     baseUrl: EndpointFieldsSchema.baseUrl.optional(),
     upstreamModel: EndpointFieldsSchema.upstreamModel,
     bearerToken: EndpointFieldsSchema.bearerToken.optional(),
+    kind: KindSchema.optional(),
+    tools: z.boolean().optional(),
+    search: z.boolean().optional(),
+    reasoning: z.boolean().optional(),
     ...UpdatePriceFieldsSchema,
 });
 const ModelListSchema = z.object({
@@ -88,6 +99,10 @@ const CommunityEndpointResponseSchema = z.object({
     description: z.string().nullable(),
     baseUrl: z.string(),
     upstreamModel: z.string(),
+    kind: KindSchema,
+    tools: z.boolean(),
+    search: z.boolean(),
+    reasoning: z.boolean(),
     ...ResponsePriceFieldsSchema,
     disabled: z.boolean(),
     disabledReason: z.string().nullable(),
@@ -177,6 +192,10 @@ function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
         description: row.description,
         baseUrl: row.baseUrl,
         upstreamModel: row.upstreamModel,
+        kind: row.kind,
+        tools: row.tools,
+        search: row.search,
+        reasoning: row.reasoning,
         ...communityEndpointPrices(row),
         disabled: row.disabledAt !== null,
         disabledReason: row.disabledReason,
@@ -377,6 +396,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         normalizeInputBearerToken(input.bearerToken),
                         c.env.BETTER_AUTH_SECRET,
                     ),
+                    kind: input.kind,
+                    tools: input.tools,
+                    search: input.search,
+                    reasoning: input.reasoning,
                     ...communityEndpointPrices(input),
                     createdAt: new Date(),
                     updatedAt: new Date(),
@@ -550,6 +573,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     normalizeInputBearerToken(input.bearerToken),
                     c.env.BETTER_AUTH_SECRET,
                 );
+            }
+            if (input.kind !== undefined) update.kind = input.kind;
+            for (const flag of CAPABILITY_FLAG_KEYS) {
+                if (input[flag] !== undefined) update[flag] = input[flag];
             }
             for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
                 if (input[field.key] !== undefined) {

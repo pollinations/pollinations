@@ -238,6 +238,32 @@ describe("community endpoint helpers", () => {
         );
     });
 
+    it("maps declared capability flags into the model definition", () => {
+        const agentDefinition = communityModelDefinition({
+            modelId: "voodoohop/deep-research",
+            description: "Agentic community endpoint",
+            kind: "agent",
+            tools: true,
+            search: true,
+            reasoning: false,
+            ...communityEndpointPrices({}),
+        });
+        expect(agentDefinition.kind).toBe("agent");
+        expect(agentDefinition.tools).toBe(true);
+        expect(agentDefinition.search).toBe(true);
+        expect(agentDefinition.reasoning).toBeUndefined();
+
+        const modelDefinition = communityModelDefinition({
+            modelId: "voodoohop/openai",
+            description: null,
+            ...communityEndpointPrices({}),
+        });
+        expect(modelDefinition.kind).toBeUndefined();
+        expect(modelDefinition.tools).toBeUndefined();
+        expect(modelDefinition.search).toBeUndefined();
+        expect(modelDefinition.reasoning).toBeUndefined();
+    });
+
     it("builds Portkey gateway context with the saved token", async () => {
         const secret = "test-secret";
         const endpoint: CommunityEndpointRuntime = {
@@ -248,6 +274,10 @@ describe("community endpoint helpers", () => {
             description: null,
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
+            kind: "model",
+            tools: false,
+            search: false,
+            reasoning: false,
             disabledAt: null,
             disabledReason: null,
             bearerTokenCiphertext: await encryptSecret(
@@ -634,6 +664,30 @@ fixtureTest(
             createdAt: new Date(),
             updatedAt: new Date(),
         });
+        const agentModelName = `agent-${crypto.randomUUID().slice(0, 8)}`;
+        const agentModelId = communityModelId(
+            ownerGithubUsername,
+            agentModelName,
+        );
+        await db.insert(communityEndpointTable).values({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            name: agentModelName,
+            description: "Public community agent",
+            baseUrl: "https://agent.example.com/v1",
+            upstreamModel: "agent-loop",
+            bearerTokenCiphertext: await encryptSecret(
+                "sk_saved_token",
+                env.BETTER_AUTH_SECRET,
+            ),
+            kind: "agent",
+            tools: true,
+            search: true,
+            promptTextPrice: 0.1 / 1_000_000,
+            completionTextPrice: 0.2 / 1_000_000,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
 
         const textResponse = await SELF.fetch(
             "https://gen.pollinations.ai/text/models",
@@ -657,6 +711,9 @@ fixtureTest(
             alpha?: boolean;
             description?: string;
             pricing?: Record<string, string>;
+            kind?: string;
+            tools?: boolean;
+            capabilities?: string[];
             baseUrl?: string;
             bearerTokenCiphertext?: string;
         }[];
@@ -665,6 +722,8 @@ fixtureTest(
             data: {
                 id: string;
                 supported_endpoints?: string[];
+                kind?: string;
+                tools?: boolean;
             }[];
         };
 
@@ -688,6 +747,21 @@ fixtureTest(
             });
             expect(listed).not.toHaveProperty("baseUrl");
             expect(listed).not.toHaveProperty("bearerTokenCiphertext");
+            expect(listed).not.toHaveProperty("kind");
+
+            const listedAgent = models.find(
+                (model) => model.name === agentModelId,
+            );
+            expect(listedAgent).toMatchObject({
+                name: agentModelId,
+                community: true,
+                kind: "agent",
+                tools: true,
+                capabilities: expect.arrayContaining([
+                    "tool_calling",
+                    "web_search",
+                ]),
+            });
         }
 
         expect(openaiModels.data).toEqual(
@@ -698,8 +772,17 @@ fixtureTest(
                         "/v1/chat/completions",
                     ]),
                 }),
+                expect.objectContaining({
+                    id: agentModelId,
+                    kind: "agent",
+                    tools: true,
+                }),
             ]),
         );
+        const openaiPlainModel = openaiModels.data.find(
+            (model) => model.id === modelId,
+        );
+        expect(openaiPlainModel).not.toHaveProperty("kind");
     },
 );
 
@@ -1215,6 +1298,8 @@ fixtureTest(
                     baseUrl: "https://api.example.com/v1",
                     upstreamModel: "gpt-4.1-mini",
                     bearerToken: "sk_saved_token",
+                    kind: "agent",
+                    tools: true,
                     promptTextPrice: 0.1,
                     completionTextPrice: 0.2,
                 }),
@@ -1230,6 +1315,10 @@ fixtureTest(
             name: "my-test-model",
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
+            kind: "agent",
+            tools: true,
+            search: false,
+            reasoning: false,
             promptTextPrice: 0.1,
             completionTextPrice: 0.2,
             disabled: false,
@@ -1261,6 +1350,8 @@ fixtureTest(
                     },
                     body: JSON.stringify({
                         description: "Updated description",
+                        tools: false,
+                        search: true,
                     }),
                 },
             ),
@@ -1268,6 +1359,10 @@ fixtureTest(
         expect(updateResponse.status).toBe(200);
         await expect(updateResponse.json()).resolves.toMatchObject({
             description: "Updated description",
+            kind: "agent",
+            tools: false,
+            search: true,
+            reasoning: false,
             promptTextPrice: 0.1,
             completionTextPrice: 0.2,
             disabled: true,

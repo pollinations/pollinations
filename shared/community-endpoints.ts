@@ -65,6 +65,20 @@ export function communityEndpointPrices(
     ) as CommunityEndpointPrices;
 }
 
+export const COMMUNITY_ENDPOINT_KINDS = ["model", "agent"] as const;
+
+export type CommunityEndpointKind = (typeof COMMUNITY_ENDPOINT_KINDS)[number];
+
+// Owner-declared metadata: whether the endpoint is a plain model or an agent,
+// and which capabilities it supports. Declarative only — the proxy is
+// shape-agnostic and never enforces these.
+export type CommunityEndpointCapabilityFlags = {
+    kind: CommunityEndpointKind;
+    tools: boolean;
+    search: boolean;
+    reasoning: boolean;
+};
+
 export type CommunityEndpointRuntime = {
     id: string;
     ownerUserId: string;
@@ -76,12 +90,14 @@ export type CommunityEndpointRuntime = {
     bearerTokenCiphertext: string;
     disabledAt: number | null;
     disabledReason: string | null;
-} & CommunityEndpointPrices;
+} & CommunityEndpointPrices &
+    CommunityEndpointCapabilityFlags;
 
 export type CommunityModelDefinitionInput = {
     modelId: string;
     description: string | null;
-} & CommunityEndpointPrices;
+} & CommunityEndpointPrices &
+    Partial<CommunityEndpointCapabilityFlags>;
 
 export type CommunityModelParts = {
     ownerGithubUsername: string;
@@ -189,6 +205,7 @@ export function communityModelDefinition(
         provider: "community",
         brand: "Community",
         category: "text",
+        kind: endpoint.kind === "agent" ? "agent" : undefined,
         cost: communityPriceDefinition(endpoint),
         priceMultiplier: 1,
         addedDate: 0,
@@ -196,6 +213,9 @@ export function communityModelDefinition(
         description: description || undefined,
         inputModalities: ["text"],
         outputModalities: ["text"],
+        tools: endpoint.tools || undefined,
+        search: endpoint.search || undefined,
+        reasoning: endpoint.reasoning || undefined,
         paidOnly: false,
         alpha: true,
     };

@@ -36,6 +36,8 @@ const PRICE_OPTION_KEYS = [
 
 type PriceOptionKey = (typeof PRICE_OPTION_KEYS)[number];
 
+const CAPABILITY_FLAG_KEYS = ["tools", "search", "reasoning"] as const;
+
 interface MyModel {
     id: string;
     modelId: string;
@@ -43,6 +45,7 @@ interface MyModel {
     description: string | null;
     baseUrl: string;
     upstreamModel: string;
+    kind?: string;
     createdAt: string;
     updatedAt: string;
     [key: string]: unknown;
@@ -53,6 +56,17 @@ function addPriceOptions(command: Command): Command {
         command.option(flag, description);
     }
     return command;
+}
+
+function addCapabilityOptions(command: Command): Command {
+    return command
+        .option("--kind <kind>", "Endpoint kind: model or agent")
+        .option("--tools", "Declare tool-calling support")
+        .option("--no-tools", "Clear tool-calling support")
+        .option("--search", "Declare web-search support")
+        .option("--no-search", "Clear web-search support")
+        .option("--reasoning", "Declare reasoning support")
+        .option("--no-reasoning", "Clear reasoning support");
 }
 
 function readPriceOptions(opts: Record<string, unknown>) {
@@ -87,6 +101,17 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
         if (opts[optionKey] !== undefined) body[bodyKey] = opts[optionKey];
     }
 
+    if (opts.kind !== undefined) {
+        if (opts.kind !== "model" && opts.kind !== "agent") {
+            printError("--kind must be 'model' or 'agent'");
+            process.exit(1);
+        }
+        body.kind = opts.kind;
+    }
+    for (const flag of CAPABILITY_FLAG_KEYS) {
+        if (opts[flag] !== undefined) body[flag] = opts[flag];
+    }
+
     if (includeRequired) {
         for (const required of ["name", "baseUrl", "bearerToken"]) {
             if (!body[required]) {
@@ -110,11 +135,12 @@ function printModels(models: MyModel[]) {
         models.map((model) => ({
             id: chalk.dim(model.id),
             model: chalk.hex("#a78bfa").bold(model.modelId),
+            kind: model.kind ?? "model",
             upstream: model.upstreamModel,
             base_url: model.baseUrl,
             description: model.description ?? "-",
         })),
-        ["id", "model", "upstream", "base_url", "description"],
+        ["id", "model", "kind", "upstream", "base_url", "description"],
     );
 }
 
@@ -136,13 +162,15 @@ const list = new Command("list")
     });
 
 const create = addPriceOptions(
-    new Command("create")
-        .description("Register an OpenAI-compatible model endpoint")
-        .requiredOption("--name <name>", "Model name")
-        .option("--description <text>", "Model description")
-        .requiredOption("--base-url <url>", "OpenAI-compatible base URL")
-        .option("--upstream-model <model>", "Upstream model id")
-        .requiredOption("--bearer-token <token>", "Upstream bearer token"),
+    addCapabilityOptions(
+        new Command("create")
+            .description("Register an OpenAI-compatible model endpoint")
+            .requiredOption("--name <name>", "Model name")
+            .option("--description <text>", "Model description")
+            .requiredOption("--base-url <url>", "OpenAI-compatible base URL")
+            .option("--upstream-model <model>", "Upstream model id")
+            .requiredOption("--bearer-token <token>", "Upstream bearer token"),
+    ),
 ).action(async (opts) => {
     const key = requireKey();
     try {
@@ -165,14 +193,16 @@ const create = addPriceOptions(
 });
 
 const update = addPriceOptions(
-    new Command("update")
-        .description("Update one of your models")
-        .argument("<id>", "Model id")
-        .option("--name <name>", "Model name")
-        .option("--description <text>", "Model description")
-        .option("--base-url <url>", "OpenAI-compatible base URL")
-        .option("--upstream-model <model>", "Upstream model id")
-        .option("--bearer-token <token>", "Upstream bearer token"),
+    addCapabilityOptions(
+        new Command("update")
+            .description("Update one of your models")
+            .argument("<id>", "Model id")
+            .option("--name <name>", "Model name")
+            .option("--description <text>", "Model description")
+            .option("--base-url <url>", "OpenAI-compatible base URL")
+            .option("--upstream-model <model>", "Upstream model id")
+            .option("--bearer-token <token>", "Upstream bearer token"),
+    ),
 ).action(async (id, opts) => {
     const key = requireKey();
     try {

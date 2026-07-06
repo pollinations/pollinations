@@ -81,7 +81,8 @@ export function CommunityEndpointCard({
                                 "Deactivated due to repeated failures."}
                         </span>
                         <span className="text-sm">
-                            Edit, test, then save the model to reactivate it.
+                            Fix the endpoint, then contact the Pollinations team
+                            to reactivate it.
                         </span>
                     </div>
                 </Alert>

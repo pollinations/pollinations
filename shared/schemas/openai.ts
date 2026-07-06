@@ -520,6 +520,7 @@ const OpenAIModelSchema = z
         input_modalities: z.array(z.string()).optional(),
         output_modalities: z.array(z.string()).optional(),
         supported_endpoints: z.array(z.string()).optional(),
+        kind: z.enum(["model", "agent"]).optional(),
         tools: z.boolean().optional(),
         reasoning: z.boolean().optional(),
         context_length: z.number().optional(),

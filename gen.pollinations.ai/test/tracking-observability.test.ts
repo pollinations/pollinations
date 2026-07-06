@@ -106,6 +106,10 @@ function createCommunityEndpoint(
         baseUrl: "https://community.example.test/openai",
         upstreamModel: "upstream-test-model",
         bearerTokenCiphertext: "encrypted",
+        kind: "model",
+        tools: false,
+        search: false,
+        reasoning: false,
         disabledAt: null,
         disabledReason: null,
         ...communityEndpointPrices({

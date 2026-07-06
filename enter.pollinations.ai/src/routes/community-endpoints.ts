@@ -7,9 +7,11 @@ import {
     isCommunityEndpointOwnerAllowed,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
+    parseCommunityToolPrices,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
+import { COMMUNITY_TOOL_NAME_PATTERN } from "@shared/registry/community-billing.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -45,6 +47,16 @@ const UpdatePriceFieldsSchema = Object.fromEntries(
 
 const CAPABILITY_FLAG_KEYS = ["tools", "search", "reasoning"] as const;
 const KindSchema = z.enum(COMMUNITY_ENDPOINT_KINDS);
+// Whole-map semantics on update: sending toolPrices replaces the map; {} clears it.
+const ToolPricesSchema = z.record(
+    z
+        .string()
+        .regex(
+            COMMUNITY_TOOL_NAME_PATTERN,
+            "Tool names must be lowercase alphanumeric with _ or - (max 40 chars)",
+        ),
+    z.number().finite().positive(),
+);
 const EndpointFieldsSchema = {
     // No "/": the public model id is `<owner>/<name>`, so a slash in the name
     // would inject a second separator and let one model spoof another's id.
@@ -66,6 +78,7 @@ const CreateEndpointSchema = z.object({
     tools: z.boolean().optional().default(false),
     search: z.boolean().optional().default(false),
     reasoning: z.boolean().optional().default(false),
+    toolPrices: ToolPricesSchema.optional(),
     ...CreatePriceFieldsSchema,
 });
 const UpdateEndpointSchema = z.object({
@@ -78,6 +91,7 @@ const UpdateEndpointSchema = z.object({
     tools: z.boolean().optional(),
     search: z.boolean().optional(),
     reasoning: z.boolean().optional(),
+    toolPrices: ToolPricesSchema.optional(),
     ...UpdatePriceFieldsSchema,
 });
 const ModelListSchema = z.object({
@@ -103,6 +117,7 @@ const CommunityEndpointResponseSchema = z.object({
     tools: z.boolean(),
     search: z.boolean(),
     reasoning: z.boolean(),
+    toolPrices: ToolPricesSchema,
     ...ResponsePriceFieldsSchema,
     disabled: z.boolean(),
     disabledReason: z.string().nullable(),
@@ -128,6 +143,13 @@ const CommunityEndpointDeleteResponseSchema = z.object({
 const ENDPOINT_PROBE_THROTTLE_SECONDS = 30;
 type Db = ReturnType<typeof drizzle<typeof schema>>;
 type CommunityEndpointRow = typeof schema.communityEndpoint.$inferSelect;
+
+function serializeToolPrices(
+    toolPrices: Record<string, number> | undefined,
+): string | null {
+    if (!toolPrices || Object.keys(toolPrices).length === 0) return null;
+    return JSON.stringify(toolPrices);
+}
 
 function normalizeInputBaseUrl(value: string): string {
     try {
@@ -196,6 +218,7 @@ function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
         tools: row.tools,
         search: row.search,
         reasoning: row.reasoning,
+        toolPrices: parseCommunityToolPrices(row.toolPrices),
         ...communityEndpointPrices(row),
         disabled: row.disabledAt !== null,
         disabledReason: row.disabledReason,
@@ -400,6 +423,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     tools: input.tools,
                     search: input.search,
                     reasoning: input.reasoning,
+                    toolPrices: serializeToolPrices(input.toolPrices),
                     ...communityEndpointPrices(input),
                     createdAt: new Date(),
                     updatedAt: new Date(),
@@ -577,6 +601,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
             if (input.kind !== undefined) update.kind = input.kind;
             for (const flag of CAPABILITY_FLAG_KEYS) {
                 if (input[flag] !== undefined) update[flag] = input[flag];
+            }
+            if (input.toolPrices !== undefined) {
+                update.toolPrices = serializeToolPrices(input.toolPrices);
             }
             for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
                 if (input[field.key] !== undefined) {

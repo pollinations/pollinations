@@ -253,6 +253,13 @@
       "when": 1783347820746,
       "tag": "0035_community_endpoint_kind_capabilities",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "6",
+      "when": 1783353402566,
+      "tag": "0036_community_endpoint_tool_prices",
+      "breakpoints": true
     }
   ]
 }

@@ -19,6 +19,7 @@ import {
 } from "@shared/db/better-auth.ts";
 import { handleError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { calculateUsageBilling } from "@shared/registry/registry.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import {
     createTestApiKey,
@@ -264,6 +265,79 @@ describe("community endpoint helpers", () => {
         expect(modelDefinition.reasoning).toBeUndefined();
     });
 
+    it("bills owner-declared tool fees from reported tool_call_counts", () => {
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/deep-research",
+            description: null,
+            toolPrices: { web_search: 0.005, code_exec: 0.03 },
+            ...communityEndpointPrices({ completionTextPrice: 0.000001 }),
+        });
+        expect(definition.billing?.adjustments?.map((a) => a.id)).toEqual([
+            "community.tool.code_exec.v1",
+            "community.tool.web_search.v1",
+        ]);
+
+        // Non-stream: counts read from the response usage object; undeclared
+        // tools in the report are ignored.
+        const billing = calculateUsageBilling(
+            "voodoohop/deep-research",
+            { completionTextTokens: 10 },
+            definition,
+            {
+                usage: {
+                    tool_call_counts: {
+                        web_search: 3,
+                        code_exec: 1,
+                        undeclared: 5,
+                    },
+                },
+            },
+        );
+        expect(billing.adjustments).toHaveLength(2);
+        expect(billing.price.totalPrice).toBeCloseTo(
+            10 * 0.000001 + 3 * 0.005 + 1 * 0.03,
+            10,
+        );
+
+        // Stream: counts read from the last usage-bearing stream event.
+        const streamed = calculateUsageBilling(
+            "voodoohop/deep-research",
+            { completionTextTokens: 10 },
+            definition,
+            {
+                streamEvents: [
+                    { choices: [{ delta: { content: "ok" } }] },
+                    { usage: { tool_call_counts: { web_search: 2 } } },
+                ],
+            },
+        );
+        expect(streamed.adjustments).toEqual([
+            expect.objectContaining({
+                ruleId: "community.tool.web_search.v1",
+                units: 2,
+                cost: 0.01,
+            }),
+        ]);
+
+        // Malformed counts bill as 0 and never throw.
+        const malformed = calculateUsageBilling(
+            "voodoohop/deep-research",
+            { completionTextTokens: 10 },
+            definition,
+            { usage: { tool_call_counts: { web_search: "three" } } },
+        );
+        expect(malformed.adjustments).toHaveLength(0);
+
+        // No declared tools → no billing rules at all.
+        const plain = communityModelDefinition({
+            modelId: "voodoohop/openai",
+            description: null,
+            toolPrices: {},
+            ...communityEndpointPrices({}),
+        });
+        expect(plain.billing).toBeUndefined();
+    });
+
     it("builds Portkey gateway context with the saved token", async () => {
         const secret = "test-secret";
         const endpoint: CommunityEndpointRuntime = {
@@ -278,6 +352,7 @@ describe("community endpoint helpers", () => {
             tools: false,
             search: false,
             reasoning: false,
+            toolPrices: {},
             disabledAt: null,
             disabledReason: null,
             bearerTokenCiphertext: await encryptSecret(
@@ -1300,6 +1375,7 @@ fixtureTest(
                     bearerToken: "sk_saved_token",
                     kind: "agent",
                     tools: true,
+                    toolPrices: { web_search: 0.005 },
                     promptTextPrice: 0.1,
                     completionTextPrice: 0.2,
                 }),
@@ -1319,6 +1395,7 @@ fixtureTest(
             tools: true,
             search: false,
             reasoning: false,
+            toolPrices: { web_search: 0.005 },
             promptTextPrice: 0.1,
             completionTextPrice: 0.2,
             disabled: false,
@@ -1352,6 +1429,7 @@ fixtureTest(
                         description: "Updated description",
                         tools: false,
                         search: true,
+                        toolPrices: { web_search: 0.01, fetch_url: 0.0005 },
                     }),
                 },
             ),
@@ -1363,10 +1441,30 @@ fixtureTest(
             tools: false,
             search: true,
             reasoning: false,
+            toolPrices: { web_search: 0.01, fetch_url: 0.0005 },
             promptTextPrice: 0.1,
             completionTextPrice: 0.2,
             disabled: true,
             disabledReason: "was failing",
+        });
+
+        const clearToolPricesResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/account/my-models/${createdId}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ toolPrices: {} }),
+                },
+            ),
+        );
+        expect(clearToolPricesResponse.status).toBe(200);
+        await expect(clearToolPricesResponse.json()).resolves.toMatchObject({
+            toolPrices: {},
         });
 
         const secondListResponse = await fetchEnterApi(

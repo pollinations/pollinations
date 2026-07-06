@@ -110,6 +110,7 @@ function createCommunityEndpoint(
         tools: false,
         search: false,
         reasoning: false,
+        toolPrices: {},
         disabledAt: null,
         disabledReason: null,
         ...communityEndpointPrices({

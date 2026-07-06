@@ -1,4 +1,8 @@
 import { isCommunityModelAllowedGithubId } from "./auth/github-id-list.ts";
+import {
+    type CommunityToolPrices,
+    communityToolBillingRules,
+} from "./registry/community-billing.ts";
 import type { ModelDefinition, PriceDefinition } from "./registry/registry.ts";
 import {
     OPENAI_CHAT_USAGE_PATHS,
@@ -88,6 +92,7 @@ export type CommunityEndpointRuntime = {
     baseUrl: string;
     upstreamModel: string;
     bearerTokenCiphertext: string;
+    toolPrices: CommunityToolPrices;
     disabledAt: number | null;
     disabledReason: string | null;
 } & CommunityEndpointPrices &
@@ -96,8 +101,31 @@ export type CommunityEndpointRuntime = {
 export type CommunityModelDefinitionInput = {
     modelId: string;
     description: string | null;
+    toolPrices?: CommunityToolPrices;
 } & CommunityEndpointPrices &
     Partial<CommunityEndpointCapabilityFlags>;
+
+// tool_prices is stored as a JSON text column; rows are only written through
+// the zod-validated API, so malformed JSON means hand-edited data — log loudly
+// and treat as no declared tools rather than breaking the whole catalog.
+export function parseCommunityToolPrices(
+    raw: string | null,
+): CommunityToolPrices {
+    if (!raw) return {};
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(raw);
+    } catch {
+        parsed = undefined;
+    }
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        return parsed as CommunityToolPrices;
+    }
+    console.error(
+        `[community] malformed tool_prices JSON — ignoring: ${raw.slice(0, 100)}`,
+    );
+    return {};
+}
 
 export type CommunityModelParts = {
     ownerGithubUsername: string;
@@ -208,6 +236,9 @@ export function communityModelDefinition(
         kind: endpoint.kind === "agent" ? "agent" : undefined,
         cost: communityPriceDefinition(endpoint),
         priceMultiplier: 1,
+        billing: endpoint.toolPrices
+            ? communityToolBillingRules(endpoint.toolPrices)
+            : undefined,
         addedDate: 0,
         title: description || parsed?.modelName || endpoint.modelId,
         description: description || undefined,

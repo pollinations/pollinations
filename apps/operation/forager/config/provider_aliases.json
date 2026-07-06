@@ -1,68 +1,435 @@
 {
-  "google": ["google cloud", "google-cloud", "google cloud emea"],
-  "aws": ["automat-it", "amazon web", "aws emea", "aws-bedrock", "bedrock", "bedrock (native)"],
-  "alibaba": ["alibaba", "aliyun", "ant alibaba"],
-  "azure": ["microsoft", "azure", "azure-2"],
-  "runpod": ["runpod"],
-  "lambda": ["lambda labs", "lambda cloud"],
-  "deepinfra": ["deepinfra", "deep infra"],
-  "fireworks": ["fireworks"],
-  "openrouter": ["openrouter"],
-  "openai": ["openai"],
-  "anthropic": ["anthropic", "claude"],
-  "xai": ["grok", "x.ai", "xai"],
-  "replicate": ["replicate"],
-  "google-workspace": ["google workspace"],
-  "cloudflare": ["cloudflare"],
-  "vercel": ["vercel"],
-  "tinybird": ["tinybird"],
-  "ovhcloud": ["ovh"],
-  "elevenlabs": ["elevenlabs", "eleven labs"],
-  "perplexity": ["perplexity"],
-  "nebius": ["nebius"],
-  "scaleway": ["scaleway"],
-  "modal": ["modal"],
-  "digitalocean": ["digitalocean", "digital ocean"],
-  "exafunction": ["exafunction"],
-  "vast.ai": ["vast.ai", "vast ai", "vastai"],
-  "daytona": ["daytona"],
-  "io.net": ["io.net", "io net", "ionet"],
-  "bytedance": ["byteplus", "bytedance"],
-  "fal": ["fal.ai", "fal ai"],
-  "pruna": ["pruna"],
-  "stability": ["stability"],
-  "assemblyai": ["assemblyai", "assembly ai"],
-  "buffer": ["buffer"],
-  "notion": ["notion"],
-  "protonvpn": ["protonvpn", "proton vpn", "proton mail"],
-  "canva": ["canva"],
-  "typeless": ["typeless"],
-  "wispr": ["wispr"],
-  "slack": ["slack"],
-  "github": ["github"],
-  "discord": ["discord"],
-  "windsurf": ["windsurf"],
-  "stripe": ["stripe"],
-  "polar": ["polar", "polar.sh"],
-  "so-lab-x": ["so lab x", "so_lab_x"],
-  "thot": ["thot", "thot consult"],
-  "enty": ["enty"],
-  "wise": ["wise"],
-  "amazon": ["amazon"],
-  "gaswerksiedlung": ["gaswerksiedlung", "gws", "miete"],
-  "zara-home": ["zara home", "zara_home"],
-  "denns-biomarkt": ["denns biomarkt", "denns_biomarkt"],
-  "tele2": ["tele2"],
-  "naturenergie": ["naturenergie"],
-  "deel": ["deel", "lets deel"],
-  "self-issued": ["myceli.ai", "pollinations.ai"],
-  "other": [],
-  "retell": ["retell ai", "retell"],
-  "airforce": [],
-  "bpai": [],
-  "community": [],
-  "self-hosted": [],
-  "seraphyn": [],
-  "inferenceport": [],
-  "inception": []
+  "google": {
+    "aliases": [
+      "google cloud",
+      "google-cloud",
+      "google cloud emea"
+    ],
+    "category": "compute"
+  },
+  "aws": {
+    "aliases": [
+      "automat-it",
+      "amazon web",
+      "aws emea",
+      "aws-bedrock",
+      "bedrock",
+      "bedrock (native)"
+    ],
+    "category": "compute"
+  },
+  "alibaba": {
+    "aliases": [
+      "alibaba",
+      "aliyun",
+      "ant alibaba"
+    ],
+    "category": "compute"
+  },
+  "azure": {
+    "aliases": [
+      "microsoft",
+      "azure",
+      "azure-2"
+    ],
+    "category": "compute"
+  },
+  "runpod": {
+    "aliases": [
+      "runpod"
+    ],
+    "category": "compute"
+  },
+  "lambda": {
+    "aliases": [
+      "lambda labs",
+      "lambda cloud"
+    ],
+    "category": "compute"
+  },
+  "deepinfra": {
+    "aliases": [
+      "deepinfra",
+      "deep infra"
+    ],
+    "category": "compute"
+  },
+  "fireworks": {
+    "aliases": [
+      "fireworks"
+    ],
+    "category": "compute"
+  },
+  "openrouter": {
+    "aliases": [
+      "openrouter"
+    ],
+    "category": "compute"
+  },
+  "openai": {
+    "aliases": [
+      "openai"
+    ],
+    "category": "compute",
+    "category_rules": [
+      {
+        "match": "chatgpt",
+        "category": "saas"
+      }
+    ]
+  },
+  "anthropic": {
+    "aliases": [
+      "anthropic",
+      "claude"
+    ],
+    "category": "compute",
+    "category_rules": [
+      {
+        "match": "claude.ai subscription",
+        "category": "saas"
+      },
+      {
+        "match": "claudeai subscription",
+        "category": "saas"
+      }
+    ]
+  },
+  "xai": {
+    "aliases": [
+      "grok",
+      "x.ai",
+      "xai"
+    ],
+    "category": "compute"
+  },
+  "replicate": {
+    "aliases": [
+      "replicate"
+    ],
+    "category": "compute"
+  },
+  "google-workspace": {
+    "aliases": [
+      "google workspace"
+    ],
+    "category": "saas"
+  },
+  "cloudflare": {
+    "aliases": [
+      "cloudflare"
+    ],
+    "category": "infra"
+  },
+  "vercel": {
+    "aliases": [
+      "vercel"
+    ],
+    "category": "infra"
+  },
+  "tinybird": {
+    "aliases": [
+      "tinybird"
+    ],
+    "category": "infra"
+  },
+  "ovhcloud": {
+    "aliases": [
+      "ovh"
+    ],
+    "category": "infra"
+  },
+  "elevenlabs": {
+    "aliases": [
+      "elevenlabs",
+      "eleven labs"
+    ],
+    "category": "compute"
+  },
+  "perplexity": {
+    "aliases": [
+      "perplexity"
+    ],
+    "category": "compute"
+  },
+  "nebius": {
+    "aliases": [
+      "nebius"
+    ],
+    "category": "compute"
+  },
+  "scaleway": {
+    "aliases": [
+      "scaleway"
+    ],
+    "category": "compute"
+  },
+  "modal": {
+    "aliases": [
+      "modal"
+    ],
+    "category": "compute"
+  },
+  "digitalocean": {
+    "aliases": [
+      "digitalocean",
+      "digital ocean"
+    ],
+    "category": "infra"
+  },
+  "exafunction": {
+    "aliases": [
+      "exafunction"
+    ],
+    "category": "compute"
+  },
+  "vast.ai": {
+    "aliases": [
+      "vast.ai",
+      "vast ai",
+      "vastai"
+    ],
+    "category": "compute"
+  },
+  "daytona": {
+    "aliases": [
+      "daytona"
+    ],
+    "category": "compute"
+  },
+  "io.net": {
+    "aliases": [
+      "io.net",
+      "io net",
+      "ionet"
+    ],
+    "category": "compute"
+  },
+  "bytedance": {
+    "aliases": [
+      "byteplus",
+      "bytedance"
+    ],
+    "category": "compute"
+  },
+  "fal": {
+    "aliases": [
+      "fal.ai",
+      "fal ai"
+    ],
+    "category": "compute"
+  },
+  "pruna": {
+    "aliases": [
+      "pruna"
+    ],
+    "category": "compute"
+  },
+  "stability": {
+    "aliases": [
+      "stability"
+    ],
+    "category": "compute"
+  },
+  "assemblyai": {
+    "aliases": [
+      "assemblyai",
+      "assembly ai"
+    ],
+    "category": "compute"
+  },
+  "buffer": {
+    "aliases": [
+      "buffer"
+    ],
+    "category": "saas"
+  },
+  "notion": {
+    "aliases": [
+      "notion"
+    ],
+    "category": "saas"
+  },
+  "protonvpn": {
+    "aliases": [
+      "protonvpn",
+      "proton vpn",
+      "proton mail"
+    ],
+    "category": "saas"
+  },
+  "canva": {
+    "aliases": [
+      "canva"
+    ],
+    "category": "saas"
+  },
+  "typeless": {
+    "aliases": [
+      "typeless"
+    ],
+    "category": "saas"
+  },
+  "wispr": {
+    "aliases": [
+      "wispr"
+    ],
+    "category": "saas"
+  },
+  "slack": {
+    "aliases": [
+      "slack"
+    ],
+    "category": "saas"
+  },
+  "github": {
+    "aliases": [
+      "github"
+    ],
+    "category": "saas"
+  },
+  "discord": {
+    "aliases": [
+      "discord"
+    ],
+    "category": "saas"
+  },
+  "windsurf": {
+    "aliases": [
+      "windsurf"
+    ],
+    "category": "saas"
+  },
+  "stripe": {
+    "aliases": [
+      "stripe"
+    ],
+    "category": "admin"
+  },
+  "polar": {
+    "aliases": [
+      "polar",
+      "polar.sh"
+    ],
+    "category": "admin"
+  },
+  "so-lab-x": {
+    "aliases": [
+      "so lab x",
+      "so_lab_x"
+    ],
+    "category": "payroll"
+  },
+  "thot": {
+    "aliases": [
+      "thot",
+      "thot consult"
+    ],
+    "category": "payroll"
+  },
+  "enty": {
+    "aliases": [
+      "enty"
+    ],
+    "category": "admin"
+  },
+  "wise": {
+    "aliases": [
+      "wise"
+    ],
+    "category": "admin"
+  },
+  "amazon": {
+    "aliases": [
+      "amazon"
+    ],
+    "category": "office"
+  },
+  "gaswerksiedlung": {
+    "aliases": [
+      "gaswerksiedlung",
+      "gws",
+      "miete"
+    ],
+    "category": "office"
+  },
+  "zara-home": {
+    "aliases": [
+      "zara home",
+      "zara_home"
+    ],
+    "category": "office"
+  },
+  "denns-biomarkt": {
+    "aliases": [
+      "denns biomarkt",
+      "denns_biomarkt"
+    ],
+    "category": "office"
+  },
+  "tele2": {
+    "aliases": [
+      "tele2"
+    ],
+    "category": "office"
+  },
+  "naturenergie": {
+    "aliases": [
+      "naturenergie"
+    ],
+    "category": "office"
+  },
+  "deel": {
+    "aliases": [
+      "deel",
+      "lets deel"
+    ],
+    "category": "payroll"
+  },
+  "self-issued": {
+    "aliases": [
+      "myceli.ai",
+      "pollinations.ai"
+    ],
+    "category": "other"
+  },
+  "other": {
+    "aliases": [],
+    "category": "other"
+  },
+  "retell": {
+    "aliases": [
+      "retell ai",
+      "retell"
+    ],
+    "category": "saas"
+  },
+  "airforce": {
+    "aliases": [],
+    "category": "compute"
+  },
+  "bpai": {
+    "aliases": [],
+    "category": "compute"
+  },
+  "community": {
+    "aliases": [],
+    "category": "compute"
+  },
+  "self-hosted": {
+    "aliases": [],
+    "category": "compute"
+  },
+  "seraphyn": {
+    "aliases": [],
+    "category": "compute"
+  },
+  "inferenceport": {
+    "aliases": [],
+    "category": "compute"
+  },
+  "inception": {
+    "aliases": [],
+    "category": "compute"
+  }
 }

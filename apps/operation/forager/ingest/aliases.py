@@ -3,10 +3,11 @@
 Provider identity lives in one metadata file:
 `config/provider_aliases.json`.
 
-The file is intentionally category-free. A provider can appear in multiple
-spend categories depending on the row context; for example Anthropic API usage
-can be compute while Claude subscription spend is SaaS. Category is assigned by
-the connector/classifier that creates the row, not by provider identity.
+The file is the single vendor roster: each entry carries the identity aliases,
+a default category, and optional per-row keyword `category_rules`. Category
+rules are matched as lowercase substrings against row text by the consumer,
+so a provider can resolve to a different category depending on row context;
+for example Anthropic API usage is compute while a Claude subscription is SaaS.
 
 The same alias list supports two matching modes:
   - substring matching for human strings such as Wise counterparties
@@ -18,26 +19,58 @@ from pathlib import Path
 
 _ALIASES_PATH = Path(__file__).resolve().parents[1] / "config" / "provider_aliases.json"
 
+_ALLOWED_CATEGORIES = {
+    "compute",
+    "infra",
+    "saas",
+    "admin",
+    "office",
+    "payroll",
+    "other",
+}
 
-def _load_provider_aliases() -> dict[str, list[str]]:
+
+def _load_vendor_file() -> tuple[
+    dict[str, list[str]],
+    dict[str, str],
+    dict[str, list[tuple[str, str]]],
+]:
+    allowed = _ALLOWED_CATEGORIES
     raw = json.loads(_ALIASES_PATH.read_text())
-    out: dict[str, list[str]] = {}
-    for provider, aliases in raw.items():
+    aliases_out: dict[str, list[str]] = {}
+    categories_out: dict[str, str] = {}
+    rules_out: dict[str, list[tuple[str, str]]] = {}
+    for provider, entry in raw.items():
         if not isinstance(provider, str) or not provider.strip():
             continue
         slug = provider.strip().lower()
         values = {
             alias.strip().lower()
-            for alias in aliases
+            for alias in entry.get("aliases", [])
             if isinstance(alias, str) and alias.strip()
         }
         values.add(slug)
-        out[slug] = sorted(values)
-    return out
+        aliases_out[slug] = sorted(values)
+        category = str(entry.get("category", "")).strip().lower()
+        if category not in allowed:
+            raise ValueError(f"provider {slug} has invalid category: {category!r}")
+        categories_out[slug] = category
+        rules = []
+        for rule in entry.get("category_rules", []):
+            keyword = str(rule.get("match", "")).strip().lower()
+            rule_category = str(rule.get("category", "")).strip().lower()
+            if not keyword or rule_category not in allowed:
+                raise ValueError(f"provider {slug} has invalid category rule: {rule!r}")
+            rules.append((keyword, rule_category))
+        if rules:
+            rules_out[slug] = rules
+    return aliases_out, categories_out, rules_out
 
 
 # canonical provider slug -> identifying strings, used for substring matching.
-PROVIDER_ALIASES: dict[str, list[str]] = _load_provider_aliases()
+# canonical provider slug -> default category (validated against _ALLOWED_CATEGORIES).
+# canonical provider slug -> ordered (keyword, category) rules for row-context overrides.
+PROVIDER_ALIASES, PROVIDER_CATEGORIES, PROVIDER_CATEGORY_RULES = _load_vendor_file()
 
 # raw provider tag/name -> canonical provider slug, used for exact matching.
 PROVIDER_TAG_ALIASES: dict[str, str] = {

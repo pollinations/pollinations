@@ -3,8 +3,10 @@
 // uses for uploads — see shared/db/media-catalog.ts and
 // media.pollinations.ai/src/catalog.ts for the reference upload implementation).
 
-import { mediaItem, mediaTag } from "@shared/db/media-catalog.ts";
 import type { drizzle } from "drizzle-orm/d1";
+// Relative import (not @shared/...) so gen's vite build, which bundles this
+// file from outside its project root, can resolve it.
+import { mediaItem, mediaTag } from "./db/media-catalog.ts";
 
 type CatalogDb = ReturnType<typeof drizzle>;
 

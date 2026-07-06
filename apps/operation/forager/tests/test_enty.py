@@ -119,12 +119,10 @@ def test_enty_exports_build_minimal_transactions(tmp_path):
             "date": "2026-05-28",
             "provider": "alibaba",
             "category": "compute",
-            "bank_charged_amount": 1000.04,
-            "bank_charged_currency": "USD",
-            "cash_paid_amount": 1000.04,
-            "cash_paid_currency": "USD",
-            "credit_burned_amount": 0.0,
-            "credit_burned_currency": "",
+            "charged_amount": 1000.04,
+            "charged_currency": "USD",
+            "paid_amount": 1000.04,
+            "paid_currency": "USD",
             "invoice_ref": "EEAR1-2605000005128.pdf",
             "match_status": "matched",
         }
@@ -207,10 +205,10 @@ def test_enty_source_amount_matches_invoice_currency(tmp_path):
     )
 
     assert rows[0]["provider"] == "vast.ai"
-    assert rows[0]["bank_charged_amount"] == 433.61
-    assert rows[0]["bank_charged_currency"] == "EUR"
-    assert rows[0]["cash_paid_amount"] == 500.0
-    assert rows[0]["cash_paid_currency"] == "USD"
+    assert rows[0]["charged_amount"] == 433.61
+    assert rows[0]["charged_currency"] == "EUR"
+    assert rows[0]["paid_amount"] == 500.0
+    assert rows[0]["paid_currency"] == "USD"
     assert rows[0]["match_status"] == "matched"
 
 
@@ -264,8 +262,6 @@ def test_enty_applies_transaction_overrides(tmp_path):
             "USD",
             "0.0",
             "",
-            "0.0",
-            "",
             "",
             "missing_invoice",
         ]
@@ -287,13 +283,51 @@ def test_enty_applies_transaction_overrides(tmp_path):
             "date": "2026-05-28",
             "provider": "aws",
             "category": "infra",
-            "bank_charged_amount": 1000.04,
-            "bank_charged_currency": "USD",
-            "cash_paid_amount": 0.0,
-            "cash_paid_currency": "",
-            "credit_burned_amount": 0.0,
-            "credit_burned_currency": "",
+            "charged_amount": 1000.04,
+            "charged_currency": "USD",
+            "paid_amount": 0.0,
+            "paid_currency": "",
             "invoice_ref": "",
             "match_status": "missing_invoice",
         }
     ]
+
+
+def test_anthropic_subscription_is_saas_even_when_enty_says_compute():
+    bank = {
+        "counterparty": "Anthropic",
+        "note": "Card transaction issued by Claude.ai Subscription ANTHROPIC.COM",
+        "enty_category": "Compute",
+    }
+    invoice = {
+        "file_name": "Invoice-G7HR5DQW-0004.pdf",
+        "number": "G7HR5DQW-0004",
+        "counterparty": "Anthropic, PBC",
+        "text": "Description Max plan - 20x May 4-Jun 4, 2026",
+    }
+
+    assert enty.category_for(bank, "anthropic", invoice) == "saas"
+
+
+def test_anthropic_credit_purchase_stays_compute():
+    bank = {
+        "counterparty": "Anthropic",
+        "note": "Card transaction issued by Anthropic ANTHROPIC.COM",
+        "enty_category": "Uncategorized Expenses",
+    }
+    invoice = {
+        "file_name": "Invoice-PYGJUAYU-0037.pdf",
+        "number": "PYGJUAYU-0037",
+        "counterparty": "Anthropic, PBC",
+        "text": "Description One-time credit purchase",
+    }
+
+    assert enty.category_for(bank, "anthropic", invoice) == "compute"
+
+
+def test_ai_can_correct_non_empty_category_when_evidence_contradicts_it():
+    rows = [{"provider": "anthropic", "category": "compute"}]
+
+    enty.apply_corrections(rows, [{"index": 0, "category": "saas"}])
+
+    assert rows == [{"provider": "anthropic", "category": "saas"}]

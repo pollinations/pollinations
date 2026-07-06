@@ -3,6 +3,7 @@
 import csv
 import json
 import os
+import subprocess
 import urllib.request
 from pathlib import Path
 
@@ -13,12 +14,10 @@ COLUMNS = [
     "date",
     "provider",
     "category",
-    "bank_charged_amount",
-    "bank_charged_currency",
-    "cash_paid_amount",
-    "cash_paid_currency",
-    "credit_burned_amount",
-    "credit_burned_currency",
+    "charged_amount",
+    "charged_currency",
+    "paid_amount",
+    "paid_currency",
     "invoice_ref",
     "match_status",
 ]
@@ -69,7 +68,7 @@ def read_export_groups(root):
                 )
             elif {"File name", "Issue date", "Currency", "Amount"}.issubset(header):
                 group["invoices"].extend(
-                    row for row in (parse_invoice(row) for row in rows) if row
+                    row for row in (parse_invoice(row, directory) for row in rows) if row
                 )
         if group["bank"] or group["invoices"]:
             groups.append(group)
@@ -98,17 +97,43 @@ def parse_bank(row):
     }
 
 
-def parse_invoice(row):
+def parse_invoice(row, root):
     if value(row, "Transaction type") != "outcoming":
         return None
+    file_name = value(row, "File name")
     return {
         "date": date(value(row, "Issue date")),
-        "file_name": value(row, "File name"),
+        "file_name": file_name,
         "number": value(row, "Number"),
         "counterparty": value(row, "Counterparty name"),
         "amount": amount(value(row, "Amount")),
         "currency": value(row, "Currency"),
+        "text": invoice_file_text(root, file_name),
     }
+
+
+def invoice_file_text(root, file_name):
+    if not file_name.lower().endswith(".pdf"):
+        return ""
+
+    matches = sorted(Path(root).rglob(file_name))
+    if not matches:
+        return ""
+
+    try:
+        result = subprocess.run(
+            ["pdftotext", str(matches[0]), "-"],
+            capture_output=True,
+            text=True,
+            timeout=20,
+        )
+    except FileNotFoundError as exc:
+        raise RuntimeError("pdftotext is required to read invoice product text") from exc
+
+    if result.returncode != 0:
+        raise RuntimeError(f"pdftotext failed for invoice {file_name}")
+
+    return " ".join(result.stdout.split())[:2000]
 
 
 def transactions_for_group(group):
@@ -152,13 +177,11 @@ def matched(bank, invoice):
     return {
         "date": bank["date"] or invoice["date"],
         "provider": provider,
-        "category": category_for(bank, provider),
-        "bank_charged_amount": money_amount(bank["amount"]),
-        "bank_charged_currency": currency_code(bank["currency"], bank["amount"]),
-        "cash_paid_amount": money_amount(invoice["amount"]),
-        "cash_paid_currency": currency_code(invoice["currency"], invoice["amount"]),
-        "credit_burned_amount": 0.0,
-        "credit_burned_currency": "",
+        "category": category_for(bank, provider, invoice),
+        "charged_amount": money_amount(bank["amount"]),
+        "charged_currency": currency_code(bank["currency"], bank["amount"]),
+        "paid_amount": money_amount(invoice["amount"]),
+        "paid_currency": currency_code(invoice["currency"], invoice["amount"]),
         "invoice_ref": invoice["file_name"],
         "match_status": "matched",
         "_evidence": evidence(bank, invoice),
@@ -171,12 +194,10 @@ def missing_invoice(bank):
         "date": bank["date"],
         "provider": provider,
         "category": category_for(bank, provider),
-        "bank_charged_amount": money_amount(bank["amount"]),
-        "bank_charged_currency": currency_code(bank["currency"], bank["amount"]),
-        "cash_paid_amount": 0.0,
-        "cash_paid_currency": "",
-        "credit_burned_amount": 0.0,
-        "credit_burned_currency": "",
+        "charged_amount": money_amount(bank["amount"]),
+        "charged_currency": currency_code(bank["currency"], bank["amount"]),
+        "paid_amount": 0.0,
+        "paid_currency": "",
         "invoice_ref": "",
         "match_status": "missing_invoice",
         "_evidence": evidence(bank, None),
@@ -188,13 +209,11 @@ def missing_payment(invoice):
     return {
         "date": invoice["date"],
         "provider": provider,
-        "category": category_for({}, provider),
-        "bank_charged_amount": 0.0,
-        "bank_charged_currency": "",
-        "cash_paid_amount": money_amount(invoice["amount"]),
-        "cash_paid_currency": currency_code(invoice["currency"], invoice["amount"]),
-        "credit_burned_amount": 0.0,
-        "credit_burned_currency": "",
+        "category": category_for({}, provider, invoice),
+        "charged_amount": 0.0,
+        "charged_currency": "",
+        "paid_amount": money_amount(invoice["amount"]),
+        "paid_currency": currency_code(invoice["currency"], invoice["amount"]),
         "invoice_ref": invoice["file_name"],
         "match_status": "missing_payment",
         "_evidence": evidence(None, invoice),
@@ -213,7 +232,14 @@ def provider_for(text):
     return ""
 
 
-def category_for(bank, provider):
+def category_for(bank, provider, invoice=None):
+    context = f"{bank_text(bank)} {invoice_text(invoice or {})}".lower()
+    if provider == "anthropic":
+        if is_anthropic_saas(context):
+            return "saas"
+        if is_anthropic_compute(context):
+            return "compute"
+
     mapped = CATEGORY_MAP.get(str(bank.get("enty_category", "")).lower(), "")
     if mapped and mapped != "other":
         return mapped
@@ -230,6 +256,33 @@ def category_for(bank, provider):
     if provider:
         return "compute"
     return "other"
+
+
+def is_anthropic_saas(text):
+    return any(
+        phrase in text
+        for phrase in [
+            "claude.ai subscription",
+            "claudeai subscription",
+            "claude subscription",
+            "claude max monthly",
+            "cloud max monthly",
+            "max monthly",
+            "max plan",
+        ]
+    )
+
+
+def is_anthropic_compute(text):
+    return any(
+        phrase in text
+        for phrase in [
+            "one-time credit purchase",
+            "api credit",
+            "api usage",
+            "usage charge",
+        ]
+    )
 
 
 def verify_provider_categories(rows, config, creds):
@@ -266,7 +319,16 @@ def verify_provider_category_batch(rows, offset, config, endpoint, key):
                     f"Allowed providers: {sorted(PROVIDER_ALIASES)}. "
                     f"Allowed categories: {sorted(ALLOWED_CATEGORIES)}. "
                     "Use _evidence to classify the row, but never return _evidence. "
-                    "Prefer the existing provider/category when they are non-empty. "
+                    "Provider identity is not category; the same provider can have "
+                    "different categories in different invoices. Classify category from "
+                    "the bank description plus invoice product/line-item text. "
+                    "Compute means raw API usage, metered inference, or provider credits. "
+                    "SaaS means subscriptions, plans, seats, and human app access. "
+                    "For Anthropic, Claude.ai Subscription, Claude/Cloud Max Monthly, "
+                    "or Max plan line items are saas. Anthropic one-time credit purchase "
+                    "or API usage is compute. "
+                    "Prefer the existing provider when it is non-empty. Prefer the "
+                    "existing category only when evidence does not clearly contradict it. "
                     "Correct blanks, unknowns, or clearly wrong values only. "
                     "Never return a category outside the allowed categories. "
                     "Never use provider names such as community as categories. "
@@ -310,8 +372,6 @@ def apply_corrections(out, corrections):
             category = out[index]["category"]
         if out[index]["provider"] and provider != out[index]["provider"]:
             provider = out[index]["provider"]
-        if out[index]["provider"] and out[index]["category"] != "other":
-            category = out[index]["category"]
         if provider not in PROVIDER_ALIASES and provider != "":
             raise RuntimeError(f"Enty AI returned unknown provider: {provider}")
         if category not in ALLOWED_CATEGORIES:
@@ -341,12 +401,10 @@ def transaction_identity(row):
         str(row.get(column, ""))
         for column in [
             "date",
-            "bank_charged_amount",
-            "bank_charged_currency",
-            "cash_paid_amount",
-            "cash_paid_currency",
-            "credit_burned_amount",
-            "credit_burned_currency",
+            "charged_amount",
+            "charged_currency",
+            "paid_amount",
+            "paid_currency",
             "invoice_ref",
             "match_status",
         ]
@@ -411,7 +469,10 @@ def bank_text(row):
 
 
 def invoice_text(row):
-    return f"{row.get('file_name', '')} {row.get('number', '')} {row.get('counterparty', '')}"
+    return (
+        f"{row.get('file_name', '')} {row.get('number', '')} "
+        f"{row.get('counterparty', '')} {row.get('text', '')}"
+    )
 
 
 def evidence(bank, invoice):
@@ -441,6 +502,7 @@ def evidence(bank, invoice):
                     invoice.get("number", ""),
                     invoice.get("counterparty", ""),
                     money(invoice.get("amount"), invoice.get("currency")),
+                    invoice.get("text", ""),
                 ]
                 if value
             )

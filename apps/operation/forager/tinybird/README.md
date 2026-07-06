@@ -32,4 +32,4 @@ tb --cloud deploy --wait
 ```
 
 - Never use `--allow-destructive-operations` without explicit approval.
-- Never truncate/recreate `overrides` without a `FORWARD_QUERY`.
+- Forager is the only writer; the Treasury app reads these pipes and never writes.

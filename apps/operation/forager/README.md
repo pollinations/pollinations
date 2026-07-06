@@ -1,6 +1,9 @@
 # Forager
 
-Forager writes the Operations Tinybird workspace used by the Treasury app.
+Forager is the ONLY writer to the Operations Tinybird workspace read by the
+Treasury app (which is a read-only mirror). For the full correction playbook
+— scoped runs, manual rows, aliases, backups, restore — see
+[`AGENTS.md`](./AGENTS.md).
 
 ## Main Flow
 
@@ -20,8 +23,9 @@ The daily run refreshes:
 | `revenue_monthly` | Stripe balance transactions |
 | `ingest_runs` | Forager run log |
 
-Operator edits are append-only rows in `overrides`. Forager applies transaction
-provider/category overrides when rebuilding `transactions`.
+Manual corrections are entered here, not in the app: append a `meter_monthly`
+row with `ingest.record`, or run a scoped `ingest.run`. See
+[`AGENTS.md`](./AGENTS.md).
 
 ## Local Invoice Fetcher
 
@@ -38,6 +42,15 @@ does not call AI and does not write Tinybird.
 ## Useful Commands
 
 ```bash
-python3 -m ingest.doctor
+python3 -m ingest.run --dry-run                      # snapshot + diff, no writes
+python3 -m ingest.run --only meter                   # one table: meter|usage|revenue|transactions
+python3 -m ingest.run --only meter --provider aws    # one meter connector
+python3 -m ingest.run --month 2026-07                # one month (not with --only transactions)
+python3 -m ingest.run --yes                          # allow dropping manual meter rows
+python3 -m ingest.inspect meter_monthly --month 2026-07   # read-only row dump
+python3 -m ingest.doctor                             # preflight/health checks
 python3 -m pytest tests/test_enty.py -q
 ```
+
+See [`AGENTS.md`](./AGENTS.md) for the full correction workflows (manual rows,
+aliases, backups, restore).

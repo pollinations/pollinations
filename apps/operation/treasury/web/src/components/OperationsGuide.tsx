@@ -73,9 +73,12 @@ export function OperationsGuide() {
                 <div className="max-h-[calc(88dvh-4rem)] overflow-y-auto p-6 pt-3 text-sm">
                     <section className="flex flex-col gap-3">
                         <Text as="p" size="sm" tone="soft">
-                            Refresh the Treasury data after updating source
-                            exports. This app only reads Tinybird and stages
-                            manual edits; it does not run scripts.
+                            This app is a read-only mirror of the Tinybird{" "}
+                            <code>operations</code> workspace. Refresh the data
+                            after updating source exports by running the command
+                            below. Corrections (manual rows, aliases, scoped
+                            reruns) happen in the forager runbook at{" "}
+                            <code>apps/operation/forager/AGENTS.md</code>.
                         </Text>
                         <CommandBlock />
                     </section>

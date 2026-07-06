@@ -2,14 +2,19 @@ import {
     Alert,
     Button,
     ChevronIcon,
+    cn,
     Dialog,
     DialogTitle,
     Dropdown,
     DropdownItem,
     FieldStack,
+    IconButton,
     Input,
     ScrollArea,
+    XIcon,
 } from "@pollinations/ui";
+import type { CommunityEndpointKind } from "@shared/community-endpoints.ts";
+import { COMMUNITY_TOOL_NAME_PATTERN } from "@shared/registry/community-billing.ts";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
@@ -34,8 +39,47 @@ import {
     nextFormState,
     providerModelHelper,
     readError,
+    type ToolFeeRow,
     toEndpointPayload,
 } from "./types.ts";
+
+const CAPABILITY_TOGGLES = [
+    { key: "tools", label: "Tools" },
+    { key: "search", label: "Web search" },
+    { key: "reasoning", label: "Reasoning" },
+] as const;
+
+function isValidToolFeeRow(row: ToolFeeRow): boolean {
+    const price = Number(row.price.trim());
+    return (
+        COMMUNITY_TOOL_NAME_PATTERN.test(row.name.trim()) &&
+        Number.isFinite(price) &&
+        price > 0
+    );
+}
+
+function ToggleButton({
+    active,
+    onClick,
+    children,
+}: {
+    active: boolean;
+    onClick: () => void;
+    children: ReactNode;
+}) {
+    return (
+        <Button
+            type="button"
+            size="sm"
+            intent={active ? "info" : undefined}
+            aria-pressed={active}
+            className={cn("text-sm", !active && "opacity-70")}
+            onClick={onClick}
+        >
+            {children}
+        </Button>
+    );
+}
 
 type CommunityEndpointDialogProps = {
     /** Present in edit mode (prefills the form); omit to create. */
@@ -79,6 +123,41 @@ export function CommunityEndpointDialog({
 
     const hasToken = form.bearerToken.trim().length > 0;
     const tokenForRequest = { bearerToken: form.bearerToken.trim() };
+
+    function updateKind(kind: CommunityEndpointKind): void {
+        setForm((current) => ({ ...current, kind }));
+    }
+
+    function toggleCapability(key: "tools" | "search" | "reasoning"): void {
+        setForm((current) => ({ ...current, [key]: !current[key] }));
+    }
+
+    function updateToolFee(
+        index: number,
+        key: keyof ToolFeeRow,
+        value: string,
+    ): void {
+        setForm((current) => ({
+            ...current,
+            toolFees: current.toolFees.map((row, i) =>
+                i === index ? { ...row, [key]: value } : row,
+            ),
+        }));
+    }
+
+    function addToolFee(): void {
+        setForm((current) => ({
+            ...current,
+            toolFees: [...current.toolFees, { name: "", price: "" }],
+        }));
+    }
+
+    function removeToolFee(index: number): void {
+        setForm((current) => ({
+            ...current,
+            toolFees: current.toolFees.filter((_, i) => i !== index),
+        }));
+    }
 
     function updateForm(key: keyof EndpointFormState, value: string): void {
         setForm((current) => nextFormState(current, key, value));
@@ -216,6 +295,7 @@ export function CommunityEndpointDialog({
             : modelOptions.filter((model) =>
                   model.toLowerCase().includes(providerModelQuery),
               );
+    const hasValidToolFees = form.toolFees.every(isValidToolFeeRow);
     const canSubmit =
         !isSubmitting &&
         form.name.trim() !== "" &&
@@ -223,6 +303,7 @@ export function CommunityEndpointDialog({
         hasVisiblePriceFields &&
         hasValidVisiblePrices &&
         hasRequiredReturnedPrices &&
+        hasValidToolFees &&
         saveRequirementMet;
 
     return (
@@ -290,6 +371,46 @@ export function CommunityEndpointDialog({
                                     updateForm("description", e.target.value)
                                 }
                             />
+                        </FieldStack>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <FieldStack
+                            label="Type"
+                            helper="Agents run multi-step or tool-using logic behind the chat-completions shape."
+                            alignLabelRow
+                        >
+                            <div className="flex gap-2">
+                                <ToggleButton
+                                    active={form.kind === "model"}
+                                    onClick={() => updateKind("model")}
+                                >
+                                    Model
+                                </ToggleButton>
+                                <ToggleButton
+                                    active={form.kind === "agent"}
+                                    onClick={() => updateKind("agent")}
+                                >
+                                    Agent
+                                </ToggleButton>
+                            </div>
+                        </FieldStack>
+                        <FieldStack
+                            label="Capabilities"
+                            helper="Declared metadata shown in the model catalog."
+                            alignLabelRow
+                        >
+                            <div className="flex flex-wrap gap-2">
+                                {CAPABILITY_TOGGLES.map(({ key, label }) => (
+                                    <ToggleButton
+                                        key={key}
+                                        active={form[key]}
+                                        onClick={() => toggleCapability(key)}
+                                    >
+                                        {label}
+                                    </ToggleButton>
+                                ))}
+                            </div>
                         </FieldStack>
                     </div>
 
@@ -491,6 +612,75 @@ export function CommunityEndpointDialog({
                         visiblePriceKeys={visiblePriceKeys}
                         onChange={updateForm}
                     />
+
+                    <FieldStack
+                        label="Tool fees"
+                        helper="Pollen charged per tool call, billed from the usage.tool_call_counts your endpoint reports (e.g. web_search)."
+                        alignLabelRow
+                        action={
+                            <Button
+                                type="button"
+                                size="sm"
+                                intent="info"
+                                className="shrink-0 text-sm"
+                                onClick={addToolFee}
+                            >
+                                Add tool fee
+                            </Button>
+                        }
+                    >
+                        {form.toolFees.length > 0 && (
+                            <div className="grid gap-2">
+                                {form.toolFees.map((row, index) => (
+                                    <div
+                                        // biome-ignore lint/suspicious/noArrayIndexKey: rows have no stable id until named
+                                        key={index}
+                                        className="flex items-center gap-2"
+                                    >
+                                        <Input
+                                            name={`community-tool-fee-name-${index}`}
+                                            value={row.name}
+                                            placeholder="web_search"
+                                            autoComplete="off"
+                                            autoCapitalize="none"
+                                            spellCheck={false}
+                                            className="flex-1"
+                                            onChange={(e) =>
+                                                updateToolFee(
+                                                    index,
+                                                    "name",
+                                                    e.target.value,
+                                                )
+                                            }
+                                        />
+                                        <Input
+                                            name={`community-tool-fee-price-${index}`}
+                                            value={row.price}
+                                            placeholder="0.005"
+                                            inputMode="decimal"
+                                            autoComplete="off"
+                                            className="w-32"
+                                            onChange={(e) =>
+                                                updateToolFee(
+                                                    index,
+                                                    "price",
+                                                    e.target.value,
+                                                )
+                                            }
+                                        />
+                                        <IconButton
+                                            intent="danger"
+                                            title="Remove tool fee"
+                                            tooltip="Remove tool fee"
+                                            onClick={() => removeToolFee(index)}
+                                        >
+                                            <XIcon className="h-4 w-4" />
+                                        </IconButton>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </FieldStack>
                 </ScrollArea>
 
                 <div className="flex shrink-0 justify-end gap-2 p-6 pt-4">

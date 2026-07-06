@@ -2,6 +2,7 @@ import {
     Alert,
     CardIcon,
     CheckIcon,
+    Chip,
     ClipboardIcon,
     CopyButton,
     ExternalLinkIcon,
@@ -39,10 +40,20 @@ export function CommunityEndpointCard({
         >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
-                    <div className="flex min-w-0 items-center gap-2">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
                         <h3 className="min-w-0 truncate text-base font-semibold text-theme-text-strong">
                             {endpoint.name}
                         </h3>
+                        {endpoint.kind === "agent" && (
+                            <Chip intent="news" size="sm">
+                                Agent
+                            </Chip>
+                        )}
+                        {capabilityLabels(endpoint).map((label) => (
+                            <Chip key={label} intent="neutral" size="sm">
+                                {label}
+                            </Chip>
+                        ))}
                     </div>
                     {endpoint.description && (
                         <p className="mt-1 text-sm text-theme-text-muted">
@@ -114,9 +125,41 @@ export function CommunityEndpointCard({
                         value={<CommunityPriceBadges group={group} />}
                     />
                 ))}
+                {Object.keys(endpoint.toolPrices).length > 0 && (
+                    <CommunityDetailRow
+                        icon={<CardIcon className="h-3.5 w-3.5" />}
+                        label="Tool fees"
+                        value={
+                            <span className="flex min-w-0 flex-wrap items-center gap-1">
+                                {Object.entries(endpoint.toolPrices)
+                                    .sort(([a], [b]) => a.localeCompare(b))
+                                    .map(([name, price]) => (
+                                        <Chip
+                                            key={name}
+                                            intent="neutral"
+                                            size="sm"
+                                        >
+                                            <span className="font-mono">
+                                                {name}
+                                            </span>
+                                            {price} / call
+                                        </Chip>
+                                    ))}
+                            </span>
+                        }
+                    />
+                )}
             </div>
         </Surface>
     );
+}
+
+function capabilityLabels(endpoint: CommunityEndpoint): string[] {
+    const labels: string[] = [];
+    if (endpoint.tools) labels.push("Tools");
+    if (endpoint.search) labels.push("Web search");
+    if (endpoint.reasoning) labels.push("Reasoning");
+    return labels;
 }
 
 type CommunityDetailRowProps = {

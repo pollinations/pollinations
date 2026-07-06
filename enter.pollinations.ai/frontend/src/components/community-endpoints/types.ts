@@ -1,11 +1,16 @@
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    type CommunityEndpointCapabilityFlags,
+    type CommunityEndpointKind,
     type CommunityEndpointPriceKey,
     type CommunityEndpointPrices,
 } from "@shared/community-endpoints.ts";
+import { COMMUNITY_TOOL_NAME_PATTERN } from "@shared/registry/community-billing.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 
 type EndpointFormPrices = Record<CommunityEndpointPriceKey, string>;
+
+export type ToolFeeRow = { name: string; price: string };
 
 export type CommunityEndpoint = {
     id: string;
@@ -14,10 +19,12 @@ export type CommunityEndpoint = {
     description: string | null;
     baseUrl: string;
     upstreamModel: string;
+    toolPrices: Record<string, number>;
     disabled: boolean;
     disabledReason: string | null;
     disabledAt: string | null;
-} & CommunityEndpointPrices;
+} & CommunityEndpointCapabilityFlags &
+    CommunityEndpointPrices;
 
 export type EndpointFormState = {
     name: string;
@@ -25,6 +32,11 @@ export type EndpointFormState = {
     baseUrl: string;
     upstreamModel: string;
     bearerToken: string;
+    kind: CommunityEndpointKind;
+    tools: boolean;
+    search: boolean;
+    reasoning: boolean;
+    toolFees: ToolFeeRow[];
 } & EndpointFormPrices;
 
 export type EndpointPayload = {
@@ -32,6 +44,11 @@ export type EndpointPayload = {
     description: string;
     baseUrl: string;
     upstreamModel: string;
+    kind: CommunityEndpointKind;
+    tools: boolean;
+    search: boolean;
+    reasoning: boolean;
+    toolPrices: Record<string, number>;
 } & CommunityEndpointPrices;
 
 export type CommunityEndpointUsage = Record<string, unknown>;
@@ -60,6 +77,11 @@ export const emptyForm: EndpointFormState = {
     baseUrl: "",
     upstreamModel: "",
     bearerToken: "",
+    kind: "model",
+    tools: false,
+    search: false,
+    reasoning: false,
+    toolFees: [],
     ...emptyPriceForm,
 };
 
@@ -94,6 +116,13 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
         baseUrl: endpoint.baseUrl,
         upstreamModel: endpoint.upstreamModel,
         bearerToken: "",
+        kind: endpoint.kind,
+        tools: endpoint.tools,
+        search: endpoint.search,
+        reasoning: endpoint.reasoning,
+        toolFees: Object.entries(endpoint.toolPrices)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([name, price]) => ({ name, price: String(price) })),
         ...(Object.fromEntries(
             COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
                 field.key,
@@ -150,6 +179,28 @@ export function observedUsageValue(
         : null;
 }
 
+// Whole-map semantics: the API replaces toolPrices with what we send, so an
+// empty map (all rows removed) clears saved fees.
+function toolFeesToPayload(rows: ToolFeeRow[]): Record<string, number> {
+    const toolPrices: Record<string, number> = {};
+    for (const row of rows) {
+        const name = row.name.trim();
+        const price = Number(row.price.trim());
+        if (!COMMUNITY_TOOL_NAME_PATTERN.test(name)) {
+            throw new Error(
+                `Tool name "${name}" must be lowercase alphanumeric with _ or - (max 40 chars)`,
+            );
+        }
+        if (!Number.isFinite(price) || price <= 0) {
+            throw new Error(
+                `Tool fee for "${name}" must be a positive Pollen amount per call`,
+            );
+        }
+        toolPrices[name] = price;
+    }
+    return toolPrices;
+}
+
 export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
     const modelName = form.name.trim();
     return {
@@ -157,6 +208,11 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
         description: form.description.trim(),
         baseUrl: form.baseUrl.trim(),
         upstreamModel: form.upstreamModel.trim() || modelName,
+        kind: form.kind,
+        tools: form.tools,
+        search: form.search,
+        reasoning: form.reasoning,
+        toolPrices: toolFeesToPayload(form.toolFees),
         ...formPricesToPayload(form),
     };
 }

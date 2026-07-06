@@ -13,6 +13,7 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
+import { SourceCell } from "../components/Provenance";
 import { fmtMoney, fmtPeriod } from "../lib/format";
 import type { Data, RevenueMonthlyRow } from "../types";
 
@@ -20,6 +21,7 @@ export function RevenueTab({ data }: { data: Data }) {
     const sortColumns = useMemo<SortColumn<RevenueMonthlyRow>[]>(
         () => [
             { key: "month", value: (row) => row.month },
+            { key: "source", value: (row) => row.source },
             { key: "gross_eur", value: (row) => row.gross_eur },
             { key: "fees_eur", value: (row) => row.fees_eur },
             { key: "refunds_eur", value: (row) => row.refunds_eur },
@@ -39,6 +41,9 @@ export function RevenueTab({ data }: { data: Data }) {
                         <TableHeaderCell {...headerProps("month")}>
                             time period
                         </TableHeaderCell>
+                        <TableHeaderCell {...headerProps("source")}>
+                            source
+                        </TableHeaderCell>
                         <TableHeaderCell {...headerProps("gross_eur")}>
                             gross_eur
                         </TableHeaderCell>
@@ -55,6 +60,9 @@ export function RevenueTab({ data }: { data: Data }) {
                         ({ key, row }) => (
                             <TableRow key={key}>
                                 <TableCell>{fmtPeriod(row.month)}</TableCell>
+                                <TableCell>
+                                    <SourceCell sources={[row.source]} />
+                                </TableCell>
                                 <TableCell>
                                     {fmtMoney(row.gross_eur, "EUR")}
                                 </TableCell>

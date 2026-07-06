@@ -1,23 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { FIXTURES } from "../fixtures";
 import type { Data } from "../types";
-import {
-    collectMonths,
-    defaultMonth,
-    lastCompleteMonth,
-    matchesMonth,
-    monthLabel,
-    monthName,
-    yearsOf,
-} from "./months";
+import { collectMonths, matchesMonth, monthLabel, yearsOf } from "./months";
 
 const data: Data = {
-    invoices: FIXTURES.invoices_ep,
-    paymentsTx: FIXTURES.payments_ep,
-    meterMonthly: FIXTURES.meter_monthly_ep,
-    usageMonthly: FIXTURES.usage_ep,
-    runs: FIXTURES.runs_ep,
-    revenueMonthly: FIXTURES.revenue_ep,
+    transactions: FIXTURES.transactions_api,
+    meterMonthly: FIXTURES.meter_monthly_api,
+    usageMonthly: FIXTURES.usage_monthly_api,
+    runs: FIXTURES.ingest_runs_api,
+    revenueMonthly: FIXTURES.revenue_monthly_api,
 } as Data;
 
 describe("collectMonths", () => {
@@ -50,32 +41,25 @@ describe("matchesMonth", () => {
         expect(matchesMonth("2026-04", "2026-03")).toBe(false);
     });
 
-    it("undated rows are never excluded", () => {
-        expect(matchesMonth("", "2026-03")).toBe(true);
+    it("undated rows stay visible in year views", () => {
+        expect(matchesMonth("", "2026")).toBe(true);
+    });
+
+    it("undated rows are excluded from month drilldowns", () => {
+        expect(matchesMonth("", "2026-03")).toBe(false);
     });
 });
 
 describe("monthLabel", () => {
-    it("renders short month names", () => {
-        expect(monthLabel("2026-01")).toBe("Jan");
-        expect(monthLabel("2026-12")).toBe("Dec");
+    it("renders full month names with two-digit years", () => {
+        expect(monthLabel("2006-06")).toBe("June 06");
+        expect(monthLabel("2026-06")).toBe("June 26");
+        expect(monthLabel("2026-07")).toBe("July 26");
     });
 
     it("falls back to the raw value when not a month", () => {
         expect(monthLabel("2026")).toBe("2026");
         expect(monthLabel("")).toBe("");
-    });
-});
-
-describe("monthName", () => {
-    it("renders full month names", () => {
-        expect(monthName("2026-01")).toBe("January");
-        expect(monthName("2026-12")).toBe("December");
-    });
-
-    it("falls back to the raw value when not a month", () => {
-        expect(monthName("2026")).toBe("2026");
-        expect(monthName("")).toBe("");
     });
 });
 
@@ -85,33 +69,5 @@ describe("yearsOf", () => {
             "2026",
             "2027",
         ]);
-    });
-});
-
-describe("lastCompleteMonth", () => {
-    it("returns the previous month", () => {
-        expect(lastCompleteMonth(new Date(2026, 6, 3))).toBe("2026-06");
-    });
-
-    it("rolls over the year in January", () => {
-        expect(lastCompleteMonth(new Date(2026, 0, 15))).toBe("2025-12");
-    });
-});
-
-describe("defaultMonth", () => {
-    const now = new Date(2026, 6, 3);
-
-    it("picks the last complete month when it has data", () => {
-        expect(defaultMonth(["2026-05", "2026-06", "2026-07"], now)).toBe(
-            "2026-06",
-        );
-    });
-
-    it("falls back to the latest month with data", () => {
-        expect(defaultMonth(["2026-01", "2026-03"], now)).toBe("2026-03");
-    });
-
-    it("returns all when no months exist", () => {
-        expect(defaultMonth([], now)).toBe("");
     });
 });

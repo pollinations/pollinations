@@ -1,24 +1,12 @@
-export type InvoiceRow = {
-    sha256: string;
+export type TransactionRow = {
+    date: string;
     provider: string;
     category: string;
-    period_month: string;
-    amount: number;
-    currency: string;
-    credit_usd: number;
-    invoice_number: string;
-    issued_at: string;
-    source: string;
-    file_ref: string;
-    ingested_at: string;
-};
-
-export type PaymentTxRow = {
-    paid_at: string;
-    provider: string;
-    category: string;
-    counterparty: string;
-    amount_eur: number;
+    bank_charged: string;
+    cash_paid: string;
+    credit_burned: string;
+    invoice_ref: string;
+    match_status: string;
 };
 
 export type MeterMonthlyRow = {
@@ -30,6 +18,7 @@ export type MeterMonthlyRow = {
 };
 
 export type UsageMonthlyRow = {
+    source: string;
     month: string;
     provider: string;
     model: string;
@@ -47,6 +36,7 @@ export type RunRow = {
 };
 
 export type RevenueMonthlyRow = {
+    source: string;
     month: string;
     gross_eur: number;
     fees_eur: number;
@@ -54,8 +44,7 @@ export type RevenueMonthlyRow = {
 };
 
 export type Data = {
-    invoices: InvoiceRow[];
-    paymentsTx: PaymentTxRow[];
+    transactions: TransactionRow[];
     meterMonthly: MeterMonthlyRow[];
     usageMonthly: UsageMonthlyRow[];
     runs: RunRow[];

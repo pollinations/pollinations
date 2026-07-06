@@ -1,11 +1,10 @@
 import { FIXTURES } from "../fixtures";
 import type {
     Data,
-    InvoiceRow,
     MeterMonthlyRow,
-    PaymentTxRow,
     RevenueMonthlyRow,
     RunRow,
+    TransactionRow,
     UsageMonthlyRow,
 } from "../types";
 
@@ -25,7 +24,11 @@ export class TbError extends Error {
 }
 
 export async function fetchPipe<T>(pipe: string): Promise<T[]> {
-    if (fixturesMode()) return (FIXTURES[pipe] ?? []) as T[];
+    if (fixturesMode()) {
+        const rows = FIXTURES[pipe];
+        if (!rows) throw new Error(`Missing fixture for pipe ${pipe}`);
+        return rows as T[];
+    }
 
     const res = await fetch(`/api/pipes/${encodeURIComponent(pipe)}`);
     if (!res.ok) throw new TbError(pipe, res.status);
@@ -35,25 +38,17 @@ export async function fetchPipe<T>(pipe: string): Promise<T[]> {
 }
 
 export async function loadAll(): Promise<Data> {
-    const [
-        invoices,
-        paymentsTx,
-        meterMonthly,
-        usageMonthly,
-        runs,
-        revenueMonthly,
-    ] = await Promise.all([
-        fetchPipe<InvoiceRow>("invoices_ep"),
-        fetchPipe<PaymentTxRow>("payments_ep"),
-        fetchPipe<MeterMonthlyRow>("meter_monthly_ep"),
-        fetchPipe<UsageMonthlyRow>("usage_ep"),
-        fetchPipe<RunRow>("runs_ep"),
-        fetchPipe<RevenueMonthlyRow>("revenue_ep"),
-    ]);
+    const [transactions, meterMonthly, usageMonthly, runs, revenueMonthly] =
+        await Promise.all([
+            fetchPipe<TransactionRow>("transactions_api"),
+            fetchPipe<MeterMonthlyRow>("meter_monthly_api"),
+            fetchPipe<UsageMonthlyRow>("usage_monthly_api"),
+            fetchPipe<RunRow>("ingest_runs_api"),
+            fetchPipe<RevenueMonthlyRow>("revenue_monthly_api"),
+        ]);
 
     return {
-        invoices,
-        paymentsTx,
+        transactions,
         meterMonthly,
         usageMonthly,
         runs,

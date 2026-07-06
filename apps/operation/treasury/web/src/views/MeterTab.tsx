@@ -1,5 +1,4 @@
 import {
-    Button,
     Input,
     TableBody,
     TableCell,
@@ -7,7 +6,7 @@ import {
     TableHeaderCell,
     TableRow,
 } from "@pollinations/ui";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import {
     DataTable,
     type SortColumn,
@@ -21,14 +20,13 @@ import {
     buildManualMeterChange,
     validateManualAmount,
 } from "../components/UsageEntryForm";
-import { matchesMonth, monthLabel } from "../lib/months";
+import { fmtPeriod } from "../lib/format";
+import { matchesMonth } from "../lib/months";
 import { queuedMeterKey } from "../lib/queued";
 import { useStaging } from "../lib/staging";
-import type { Data, MeterMonthlyRow } from "../types";
+import type { Data, MeterMonthlyRow, UsageMonthlyRow } from "../types";
 
 const MONTH_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
-const YEAR_RE = /^\d{4}$/;
-type MeterFunding = "prepaid" | "credit";
 type UsageBucket = "credit" | "prepaid";
 
 type MeterUsageRow = {
@@ -36,22 +34,11 @@ type MeterUsageRow = {
     provider: string;
     creditUsage: number;
     prepaidUsage: number;
-    creditSource: string;
-    prepaidSource: string;
+    sources: string[];
 };
-
-function currentMonth() {
-    return new Date().toISOString().slice(0, 7);
-}
 
 function usageBucket(funding: string): UsageBucket {
     return funding === "credit" ? "credit" : "prepaid";
-}
-
-function combineSource(current: string, next: string) {
-    if (!next) return current;
-    if (!current) return next;
-    return current === next ? current : "mixed";
 }
 
 function combineSources(...sources: string[]) {
@@ -95,23 +82,15 @@ export function aggregateMeterRows(rows: MeterMonthlyRow[]): MeterUsageRow[] {
                 provider: row.provider,
                 creditUsage: 0,
                 prepaidUsage: 0,
-                creditSource: "",
-                prepaidSource: "",
+                sources: [],
             } satisfies MeterUsageRow);
 
         if (usageBucket(row.funding) === "credit") {
             current.creditUsage += row.cost_usd;
-            current.creditSource = combineSource(
-                current.creditSource,
-                row.source,
-            );
         } else {
             current.prepaidUsage += row.cost_usd;
-            current.prepaidSource = combineSource(
-                current.prepaidSource,
-                row.source,
-            );
         }
+        current.sources = combineSources(...current.sources, row.source);
         byKey.set(key, current);
     }
 
@@ -130,80 +109,36 @@ function sortedMeter(rows: MeterUsageRow[]) {
     );
 }
 
-function providerBackfillMonth(period: string, months: string[]) {
-    return MONTH_RE.test(period)
-        ? period
-        : defaultEntryMonth(period, entryMonthOptions(period, months));
-}
-
-function withProviderBackfillRows({
-    month,
+export function withProviderBackfillRows({
     provider,
-    providers,
     rows,
+    usageRows,
 }: {
-    month: string;
     provider: string;
-    providers: string[];
     rows: MeterUsageRow[];
+    usageRows: UsageMonthlyRow[];
 }) {
     const byKey = new Map(
         rows.map((row) => [`${row.month}|${row.provider}`, row]),
     );
-    const targetProviders =
-        provider === "all"
-            ? providers.filter((slug) => slug !== "all")
-            : [provider];
 
-    for (const slug of targetProviders) {
-        if (!slug) continue;
-        const key = `${month}|${slug}`;
+    for (const usage of usageRows) {
+        if (!MONTH_RE.test(usage.month) || !usage.provider) continue;
+        if (provider !== "all" && usage.provider !== provider) continue;
+
+        const key = `${usage.month}|${usage.provider}`;
         if (!byKey.has(key)) {
             byKey.set(key, {
-                month,
-                provider: slug,
+                month: usage.month,
+                provider: usage.provider,
                 creditUsage: 0,
                 prepaidUsage: 0,
-                creditSource: "",
-                prepaidSource: "",
+                sources: ["usage"],
             });
         }
     }
 
     return [...byKey.values()];
-}
-
-function selectedYear(period: string) {
-    if (MONTH_RE.test(period)) return period.slice(0, 4);
-    if (YEAR_RE.test(period)) return period;
-    return currentMonth().slice(0, 4);
-}
-
-function entryMonthOptions(period: string, months: string[]) {
-    const year = selectedYear(period);
-    const options = months.filter((month) => month.startsWith(year));
-    const current = currentMonth();
-    const fallback = MONTH_RE.test(period)
-        ? period
-        : current.startsWith(year)
-          ? current
-          : (options.at(-1) ?? `${year}-01`);
-
-    return options.includes(fallback)
-        ? options
-        : [...options, fallback].sort((a, b) => a.localeCompare(b));
-}
-
-function defaultEntryMonth(period: string, options: string[]) {
-    if (MONTH_RE.test(period)) return period;
-    const current = currentMonth();
-    return options.includes(current) ? current : (options.at(-1) ?? current);
-}
-
-function newId() {
-    return (
-        globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`
-    );
 }
 
 function meterEditKey(month: string, provider: string, funding: string) {
@@ -252,11 +187,13 @@ function MeterAmountInput({
     month: string;
     provider: string;
 }) {
-    const { changes, stage, unstage } = useStaging();
+    const { changes, committed, stage, unstage } = useStaging();
     const stageKey = meterStageKey(month, provider, bucket);
-    const stagedAmount = stagedMeterAmount(changes, month, provider, bucket);
-    const input = stagedAmount ?? String(amount);
-    const dirty = stagedAmount !== null;
+    const overlayAmount =
+        stagedMeterAmount(changes, month, provider, bucket) ??
+        stagedMeterAmount(committed, month, provider, bucket);
+    const input = overlayAmount ?? String(amount);
+    const dirty = overlayAmount !== null;
 
     const update = (next: string) => {
         if (next.trim() === "") {
@@ -287,227 +224,75 @@ function MeterAmountInput({
             value={input}
             onChange={(event) => update(event.target.value)}
             aria-label={`${bucket}_usage`}
-            className={dirtyControlClass(dirty, "w-32")}
+            className={dirtyControlClass(
+                dirty,
+                "w-24 rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong",
+            )}
         />
     );
 }
 
-function MeterDraftRow({
-    months,
-    period,
+export function visibleMeterRows({
+    meterRows,
+    month,
+    provider,
+    usageRows,
 }: {
-    months: string[];
-    period: string;
+    meterRows: MeterMonthlyRow[];
+    month: string;
+    provider: string;
+    usageRows: UsageMonthlyRow[];
 }) {
-    const { stage, unstage } = useStaging();
-    const monthOptions = useMemo(
-        () => entryMonthOptions(period, months),
-        [months, period],
+    const periodUsageRows = usageRows.filter((row) =>
+        matchesMonth(row.month, month),
     );
-    const [month, setMonth] = useState(() =>
-        defaultEntryMonth(period, monthOptions),
+    const periodMeterRows = aggregateMeterRows(meterRows).filter(
+        (row) =>
+            matchesMonth(row.month, month) &&
+            (provider === "all" || row.provider === provider),
     );
-    const [provider, setProvider] = useState("");
-    const [amount, setAmount] = useState("");
-    const [funding, setFunding] = useState<MeterFunding>("prepaid");
-    const stagedKey = useRef<string | null>(null);
-
-    useEffect(() => {
-        setMonth((current) =>
-            monthOptions.includes(current)
-                ? current
-                : defaultEntryMonth(period, monthOptions),
-        );
-    }, [monthOptions, period]);
-
-    const sync = (
-        nextMonth: string,
-        nextProvider: string,
-        nextAmount: string,
-        nextFunding: MeterFunding,
-    ) => {
-        const slug = nextProvider.trim().toLowerCase();
-        const nextKey =
-            slug && MONTH_RE.test(nextMonth)
-                ? meterStageKey(nextMonth, slug, nextFunding)
-                : null;
-        if (stagedKey.current && stagedKey.current !== nextKey) {
-            unstage(stagedKey.current);
-        }
-        stagedKey.current = nextKey;
-
-        if (!slug || !MONTH_RE.test(nextMonth) || nextAmount.trim() === "") {
-            if (nextKey) unstage(nextKey);
-            return;
-        }
-        const parsed = validateManualAmount(nextAmount);
-        if (parsed === null) {
-            if (nextKey) unstage(nextKey);
-            return;
-        }
-        stage(
-            buildManualMeterChange({
-                amount: parsed,
-                funding: nextFunding,
-                month: nextMonth,
-                provider: slug,
-            }),
-        );
-    };
-
-    return (
-        <TableRow>
-            <TableCell>
-                <Input
-                    value={provider}
-                    onChange={(event) => {
-                        setProvider(event.target.value);
-                        sync(month, event.target.value, amount, funding);
-                    }}
-                    placeholder="provider slug"
-                    aria-label="provider"
-                    list="meter-entry-providers"
-                    className="w-40"
-                />
-            </TableCell>
-            <TableCell>
-                <select
-                    value={funding}
-                    onChange={(event) => {
-                        const next = event.target.value as MeterFunding;
-                        setFunding(next);
-                        sync(month, provider, amount, next);
-                    }}
-                    aria-label="funding"
-                    className="w-28 rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong"
-                >
-                    <option value="prepaid">prepaid</option>
-                    <option value="credit">credit</option>
-                </select>
-            </TableCell>
-            <TableCell>
-                <select
-                    value={month}
-                    onChange={(event) => {
-                        setMonth(event.target.value);
-                        sync(event.target.value, provider, amount, funding);
-                    }}
-                    aria-label="month"
-                    className="w-28 rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong"
-                >
-                    {monthOptions.map((option) => (
-                        <option key={option} value={option}>
-                            {monthLabel(option)}
-                        </option>
-                    ))}
-                </select>
-            </TableCell>
-            <TableCell>
-                <SourceCell sources={["manual"]} />
-            </TableCell>
-            <TableCell>
-                {funding === "credit" ? (
-                    <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={amount}
-                        onChange={(event) => {
-                            setAmount(event.target.value);
-                            sync(month, provider, event.target.value, funding);
-                        }}
-                        placeholder="amount"
-                        aria-label="amount"
-                        className="w-32"
-                    />
-                ) : (
-                    "-"
-                )}
-            </TableCell>
-            <TableCell>
-                {funding === "prepaid" ? (
-                    <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={amount}
-                        onChange={(event) => {
-                            setAmount(event.target.value);
-                            sync(month, provider, event.target.value, funding);
-                        }}
-                        placeholder="amount"
-                        aria-label="amount"
-                        className="w-32"
-                    />
-                ) : (
-                    "-"
-                )}
-            </TableCell>
-        </TableRow>
+    return sortedMeter(
+        withProviderBackfillRows({
+            provider,
+            rows: periodMeterRows,
+            usageRows: periodUsageRows,
+        }),
     );
 }
 
 export function MeterTab({
-    committedNonce = 0,
     data,
     month = "",
-    months = [],
     provider = "all",
-    providers = ["all"],
     queuedKeys = new Set<string>(),
 }: {
     data: Data;
     month?: string;
-    months?: string[];
     provider?: string;
-    providers?: string[];
     queuedKeys?: ReadonlySet<string>;
-    committedNonce?: number;
 }) {
-    const { changes, resetNonce } = useStaging();
-    const [drafts, setDrafts] = useState<string[]>([]);
-    const lastNonce = useRef(committedNonce);
-    const lastResetNonce = useRef(resetNonce);
-    useEffect(() => {
-        if (lastNonce.current !== committedNonce) {
-            lastNonce.current = committedNonce;
-            setDrafts([]);
-        }
-    }, [committedNonce]);
-    useEffect(() => {
-        if (lastResetNonce.current !== resetNonce) {
-            lastResetNonce.current = resetNonce;
-            setDrafts([]);
-        }
-    }, [resetNonce]);
-
-    const stagedEdits = useMemo(() => stagedMeterEdits(changes), [changes]);
-    const addDraft = () => setDrafts((current) => [...current, newId()]);
-    const baseRows = useMemo(() => {
-        const periodRows = aggregateMeterRows(data.meterMonthly).filter(
-            (row) =>
-                matchesMonth(row.month, month) &&
-                (provider === "all" || row.provider === provider),
-        );
-        return sortedMeter(
-            withProviderBackfillRows({
-                month: providerBackfillMonth(month, months),
+    const { changes, committed } = useStaging();
+    const stagedEdits = useMemo(
+        () => stagedMeterEdits([...changes, ...committed]),
+        [changes, committed],
+    );
+    const baseRows = useMemo(
+        () =>
+            visibleMeterRows({
+                meterRows: data.meterMonthly,
+                month,
                 provider,
-                providers,
-                rows: periodRows,
+                usageRows: data.usageMonthly,
             }),
-        );
-    }, [data.meterMonthly, month, months, provider, providers]);
+        [data.meterMonthly, data.usageMonthly, month, provider],
+    );
     const sortColumns = useMemo<SortColumn<MeterUsageRow>[]>(
         () => [
-            { key: "provider", value: (row) => row.provider },
             { key: "month", value: (row) => row.month },
+            { key: "provider", value: (row) => row.provider },
             {
                 key: "source",
-                value: (row) =>
-                    combineSources(row.creditSource, row.prepaidSource).join(
-                        ",",
-                    ),
+                value: (row) => row.sources.join(","),
             },
             { key: "creditUsage", value: (row) => row.creditUsage },
             { key: "prepaidUsage", value: (row) => row.prepaidUsage },
@@ -515,35 +300,20 @@ export function MeterTab({
         [],
     );
     const { headerProps, rows } = useSortableRows(baseRows, sortColumns);
-    const knownProviders = useMemo(
-        () => providers.filter((slug) => slug !== "all"),
-        [providers],
-    );
-
     return (
         <div className="flex flex-col gap-4">
-            <datalist id="meter-entry-providers">
-                {knownProviders.map((slug) => (
-                    <option key={slug} value={slug} />
-                ))}
-            </datalist>
-            <div>
-                <Button size="sm" intent="info" onClick={addDraft}>
-                    Add
-                </Button>
-            </div>
             <TableScroller>
                 <DataTable>
                     <TableHead>
                         <TableRow>
-                            <TableHeaderCell {...headerProps("provider")}>
-                                provider
-                            </TableHeaderCell>
                             <TableHeaderCell {...headerProps("month")}>
                                 time period
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("source")}>
                                 source
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("provider")}>
+                                provider
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("creditUsage")}>
                                 credit usage
@@ -575,17 +345,18 @@ export function MeterTab({
                                 stagedEdits.has(creditEditKey) ||
                                 stagedEdits.has(prepaidEditKey);
                             const sources = combineSources(
-                                row.creditSource,
-                                row.prepaidSource,
+                                ...row.sources,
                                 queued || staged ? "manual" : "",
                             );
                             return (
                                 <TableRow key={key}>
-                                    <TableCell>{row.provider}</TableCell>
-                                    <TableCell>{row.month}</TableCell>
+                                    <TableCell>
+                                        {fmtPeriod(row.month)}
+                                    </TableCell>
                                     <TableCell>
                                         <SourceCell sources={sources} />
                                     </TableCell>
+                                    <TableCell>{row.provider}</TableCell>
                                     <TableCell>
                                         <MeterAmountInput
                                             amount={row.creditUsage}
@@ -605,13 +376,6 @@ export function MeterTab({
                                 </TableRow>
                             );
                         })}
-                        {drafts.map((id) => (
-                            <MeterDraftRow
-                                key={id}
-                                months={months}
-                                period={month}
-                            />
-                        ))}
                     </TableBody>
                 </DataTable>
             </TableScroller>

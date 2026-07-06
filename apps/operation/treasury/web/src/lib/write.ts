@@ -11,7 +11,9 @@ export async function appendRows(
     datasource: string,
     rows: object[],
 ): Promise<void> {
-    if (rows.length === 0) return;
+    if (rows.length === 0) {
+        throw new Error(`${datasource}: no rows to append`);
+    }
 
     const res = await fetch(
         `/api/events?name=${encodeURIComponent(datasource)}`,

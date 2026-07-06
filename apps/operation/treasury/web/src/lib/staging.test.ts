@@ -37,11 +37,15 @@ describe("stagingReducer", () => {
     it("re-staging the same key replaces instead of duplicating", () => {
         const first = stagingReducer(initialStagingState, {
             type: "stage",
-            change: change("a", "invoices", "invoices:sha1", { v: 1 }),
+            change: change("a", "overrides", "transactions:row:provider", {
+                v: 1,
+            }),
         });
         const second = stagingReducer(first, {
             type: "stage",
-            change: change("b", "invoices", "invoices:sha1", { v: 2 }),
+            change: change("b", "overrides", "transactions:row:provider", {
+                v: 2,
+            }),
         });
         expect(second.changes).toHaveLength(1);
         expect(second.changes[0].row).toEqual({ v: 2 });
@@ -53,7 +57,7 @@ describe("stagingReducer", () => {
                 type: "stage",
                 change: change("a", "overrides"),
             }),
-            { type: "stage", change: change("b", "invoices") },
+            { type: "stage", change: change("b", "meter_monthly") },
         );
         const cleared = stagingReducer(staged, { type: "clear" });
         expect(cleared.changes).toHaveLength(0);
@@ -63,10 +67,15 @@ describe("stagingReducer", () => {
     it("clears changes after commit success", () => {
         const staged = stagingReducer(initialStagingState, {
             type: "stage",
-            change: change("a", "invoices"),
+            change: change("a", "overrides"),
         });
-        const committed = stagingReducer(staged, { type: "commitSuccess" });
-        expect(committed).toEqual(initialStagingState);
+        const committed = stagingReducer(staged, {
+            type: "commitSuccess",
+            changes: staged.changes,
+        });
+        expect(committed.changes).toEqual([]);
+        expect(committed.committed).toEqual(staged.changes);
+        expect(committed.committing).toBe(false);
     });
 });
 
@@ -74,11 +83,11 @@ describe("rowsByDatasource", () => {
     it("groups staged row bodies by datasource", () => {
         const grouped = rowsByDatasource([
             change("a", "overrides"),
-            change("b", "invoices"),
+            change("b", "meter_monthly"),
             change("c", "overrides"),
         ]);
 
         expect(grouped.get("overrides")).toEqual([{ id: "a" }, { id: "c" }]);
-        expect(grouped.get("invoices")).toEqual([{ id: "b" }]);
+        expect(grouped.get("meter_monthly")).toEqual([{ id: "b" }]);
     });
 });

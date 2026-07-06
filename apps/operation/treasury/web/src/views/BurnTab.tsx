@@ -13,6 +13,7 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
+import { SourceCell } from "../components/Provenance";
 import { fmtPeriod } from "../lib/format";
 import { matchesMonth } from "../lib/months";
 import type { Data, UsageMonthlyRow } from "../types";
@@ -71,9 +72,10 @@ export function BurnTab({
     );
     const sortColumns = useMemo<SortColumn<UsageMonthlyRow>[]>(
         () => [
+            { key: "month", value: (row) => row.month },
+            { key: "source", value: (row) => row.source },
             { key: "provider", value: (row) => row.provider },
             { key: "model", value: (row) => row.model },
-            { key: "month", value: (row) => row.month },
             { key: "cost_paid_pollen", value: (row) => row.cost_paid_pollen },
             {
                 key: "cost_quest_pollen",
@@ -98,14 +100,17 @@ export function BurnTab({
                 <DataTable>
                     <TableHead>
                         <TableRow>
+                            <TableHeaderCell {...headerProps("month")}>
+                                time period
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("source")}>
+                                source
+                            </TableHeaderCell>
                             <TableHeaderCell {...headerProps("provider")}>
                                 provider
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("model")}>
                                 model
-                            </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("month")}>
-                                time period
                             </TableHeaderCell>
                             <TableHeaderCell
                                 {...headerProps("cost_paid_pollen")}
@@ -140,9 +145,12 @@ export function BurnTab({
                                 `${row.month}|${row.provider}|${row.model}`,
                         ).map(({ key, row }) => (
                             <TableRow key={key}>
+                                <TableCell>{fmtPeriod(row.month)}</TableCell>
+                                <TableCell>
+                                    <SourceCell sources={[row.source]} />
+                                </TableCell>
                                 <TableCell>{row.provider}</TableCell>
                                 <TableCell>{row.model || "-"}</TableCell>
-                                <TableCell>{fmtPeriod(row.month)}</TableCell>
                                 <TableCell>
                                     {fmtPollen(row.cost_paid_pollen)}
                                 </TableCell>

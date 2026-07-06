@@ -3,12 +3,11 @@ import { FIXTURES } from "./fixtures";
 import type { RunRow } from "./types";
 
 const EXPECTED_PIPES = [
-    "invoices_ep",
-    "payments_ep",
-    "meter_monthly_ep",
-    "usage_ep",
-    "runs_ep",
-    "revenue_ep",
+    "transactions_api",
+    "meter_monthly_api",
+    "usage_monthly_api",
+    "ingest_runs_api",
+    "revenue_monthly_api",
 ];
 
 describe("fixtures", () => {
@@ -22,7 +21,7 @@ describe("fixtures", () => {
     });
 
     it("run statuses are parseable JSON objects", () => {
-        for (const run of FIXTURES.runs_ep as RunRow[]) {
+        for (const run of FIXTURES.ingest_runs_api as RunRow[]) {
             const parsed = JSON.parse(run.statuses);
             expect(typeof parsed).toBe("object");
         }

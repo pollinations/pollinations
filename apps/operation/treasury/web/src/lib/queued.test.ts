@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-    queuedInvoiceKey,
-    queuedKeysForChange,
-    queuedMeterKey,
-} from "./queued";
+import { queuedKeysForChange, queuedMeterKey } from "./queued";
 import type { StagedChange } from "./staging";
 
 const change = (
@@ -29,9 +25,14 @@ describe("queuedKeysForChange", () => {
         ).toEqual([queuedMeterKey("2026-03", "assemblyai")]);
     });
 
-    it("maps invoices", () => {
+    it("ignores overrides because they apply after the next forager run", () => {
         expect(
-            queuedKeysForChange(change("invoices", { sha256: "abc123" })),
-        ).toEqual([queuedInvoiceKey("abc123")]);
+            queuedKeysForChange(
+                change("overrides", {
+                    scope: "transactions",
+                    key: "2026-01-01|€1.00||||missing_invoice",
+                }),
+            ),
+        ).toEqual([]);
     });
 });

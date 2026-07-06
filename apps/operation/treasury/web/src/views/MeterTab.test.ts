@@ -1,5 +1,37 @@
 import { describe, expect, it } from "vitest";
+import type { MeterMonthlyRow, UsageMonthlyRow } from "../types";
 import { aggregateMeterRows } from "./MeterTab";
+
+function usageRow(
+    month: string,
+    provider: string,
+    model = "gpt",
+): UsageMonthlyRow {
+    return {
+        source: "tinybird",
+        month,
+        provider,
+        model,
+        cost_paid_pollen: 1,
+        cost_quest_pollen: 0,
+        billable_paid_pollen: 1,
+        billable_quest_pollen: 0,
+    };
+}
+
+function meterRow(
+    month: string,
+    provider: string,
+    cost_usd: number,
+): MeterMonthlyRow {
+    return {
+        month,
+        provider,
+        cost_usd,
+        funding: "credit",
+        source: "manual",
+    };
+}
 
 describe("aggregateMeterRows", () => {
     it("uses manual rows as replacements for the same provider month bucket", () => {
@@ -26,8 +58,88 @@ describe("aggregateMeterRows", () => {
                 provider: "aws",
                 creditUsage: 0,
                 prepaidUsage: 2010,
-                creditSource: "",
-                prepaidSource: "manual",
+                sources: ["manual"],
+            },
+        ]);
+    });
+});
+
+describe("MeterTab backfill", () => {
+    it("synthesizes zero rows for providers with Pollen usage", async () => {
+        const { withProviderBackfillRows } = await import("./MeterTab");
+        expect(
+            withProviderBackfillRows({
+                provider: "all",
+                rows: [],
+                usageRows: [usageRow("2026-06", "openai")],
+            }),
+        ).toEqual([
+            {
+                month: "2026-06",
+                provider: "openai",
+                creditUsage: 0,
+                prepaidUsage: 0,
+                sources: ["usage"],
+            },
+        ]);
+    });
+
+    it("does not synthesize rows for providers without Pollen usage", async () => {
+        const { withProviderBackfillRows } = await import("./MeterTab");
+        expect(
+            withProviderBackfillRows({
+                provider: "anthropic",
+                rows: [],
+                usageRows: [usageRow("2026-06", "openai")],
+            }),
+        ).toEqual([]);
+    });
+
+    it("synthesizes one row per used provider month in a selected period", async () => {
+        const { withProviderBackfillRows } = await import("./MeterTab");
+        expect(
+            withProviderBackfillRows({
+                provider: "all",
+                rows: [],
+                usageRows: [
+                    usageRow("2026-05", "openai"),
+                    usageRow("2026-06", "openai"),
+                ],
+            }),
+        ).toEqual([
+            {
+                month: "2026-05",
+                provider: "openai",
+                creditUsage: 0,
+                prepaidUsage: 0,
+                sources: ["usage"],
+            },
+            {
+                month: "2026-06",
+                provider: "openai",
+                creditUsage: 0,
+                prepaidUsage: 0,
+                sources: ["usage"],
+            },
+        ]);
+    });
+
+    it("keeps provider meter rows even without matching Pollen usage", async () => {
+        const { visibleMeterRows } = await import("./MeterTab");
+        expect(
+            visibleMeterRows({
+                meterRows: [meterRow("2026-06", "digitalocean", 288)],
+                month: "2026-06",
+                provider: "digitalocean",
+                usageRows: [usageRow("2026-06", "openai")],
+            }),
+        ).toEqual([
+            {
+                month: "2026-06",
+                provider: "digitalocean",
+                creditUsage: 288,
+                prepaidUsage: 0,
+                sources: ["manual"],
             },
         ]);
     });

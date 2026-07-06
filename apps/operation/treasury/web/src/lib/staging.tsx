@@ -10,7 +10,7 @@ import { appendRows } from "./write";
 
 export type StagedChange = {
     id: string;
-    // Stable identity of what is being edited (e.g. "invoices:<sha256>").
+    // Stable identity of what is being edited (for example a transaction override key).
     // Staging the same key again replaces the pending change; editors use it
     // for per-row reset. Add-forms without a natural key get the random id.
     key: string;
@@ -26,6 +26,7 @@ export type StageInput = Omit<StagedChange, "id" | "key"> & {
 
 export type StagingState = {
     changes: StagedChange[];
+    committed: StagedChange[];
     committing: boolean;
     error: string | null;
     resetNonce: number;
@@ -33,6 +34,7 @@ export type StagingState = {
 
 export const initialStagingState: StagingState = {
     changes: [],
+    committed: [],
     committing: false,
     error: null,
     resetNonce: 0,
@@ -43,7 +45,7 @@ type StagingAction =
     | { type: "unstage"; key: string }
     | { type: "clear" }
     | { type: "commitStart" }
-    | { type: "commitSuccess" }
+    | { type: "commitSuccess"; changes: StagedChange[] }
     | { type: "commitError"; error: string };
 
 export function stagingReducer(
@@ -60,7 +62,14 @@ export function stagingReducer(
                       change.key === action.change.key ? action.change : change,
                   )
                 : [...state.changes, action.change];
-            return { ...state, changes, error: null };
+            return {
+                ...state,
+                changes,
+                committed: state.committed.filter(
+                    (change) => change.key !== action.change.key,
+                ),
+                error: null,
+            };
         }
         case "unstage":
             return {
@@ -78,13 +87,23 @@ export function stagingReducer(
             };
         case "commitStart":
             return { ...state, committing: true, error: null };
-        case "commitSuccess":
+        case "commitSuccess": {
+            const committedKeys = new Set(
+                action.changes.map((change) => change.key),
+            );
             return {
+                ...state,
                 changes: [],
+                committed: [
+                    ...state.committed.filter(
+                        (change) => !committedKeys.has(change.key),
+                    ),
+                    ...action.changes,
+                ],
                 committing: false,
                 error: null,
-                resetNonce: state.resetNonce,
             };
+        }
         case "commitError":
             return { ...state, committing: false, error: action.error };
     }
@@ -112,9 +131,10 @@ type StagingContextValue = StagingState & {
 const StagingContext = createContext<StagingContextValue | null>(null);
 
 function newId() {
-    return (
-        globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`
-    );
+    if (!globalThis.crypto?.randomUUID) {
+        throw new Error("crypto.randomUUID is required");
+    }
+    return globalThis.crypto.randomUUID();
 }
 
 export function StagingProvider({
@@ -161,7 +181,7 @@ export function StagingProvider({
                 );
             }
 
-            dispatch({ type: "commitSuccess" });
+            dispatch({ type: "commitSuccess", changes: committedChanges });
             onCommitted(committedChanges);
         } catch (caught) {
             dispatch({

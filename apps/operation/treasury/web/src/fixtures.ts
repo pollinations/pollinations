@@ -1,59 +1,47 @@
 import type {
-    InvoiceRow,
     MeterMonthlyRow,
-    PaymentTxRow,
     RevenueMonthlyRow,
     RunRow,
+    TransactionRow,
     UsageMonthlyRow,
 } from "./types";
 
-const invoices: InvoiceRow[] = [
+const transactions: TransactionRow[] = [
     {
-        sha256: "aa11bb22cc33dd44ee55ff6600112233445566778899aabbccddeeff00112233",
-        provider: "vast.ai",
-        category: "",
-        period_month: "2026-03",
-        amount: 500,
-        currency: "USD",
-        credit_usd: 0,
-        invoice_number: "vast-88213",
-        issued_at: "2026-03-04",
-        source: "ai",
-        file_ref: "",
-        ingested_at: "2026-07-03 06:31:00",
+        date: "2026-06-01",
+        provider: "alibaba",
+        category: "compute",
+        bank_charged: "€139.31",
+        cash_paid: "",
+        credit_burned: "",
+        invoice_ref: "",
+        match_status: "missing_invoice",
     },
     {
-        sha256: "bb22cc33dd44ee55ff660011223344556677889900aabbccddeeff0011223344",
-        provider: "openai",
+        date: "2026-06-13",
+        provider: "elevenlabs",
         category: "compute",
-        period_month: "2026-01",
-        amount: 226.4,
-        currency: "USD",
-        credit_usd: 0,
-        invoice_number: "OAI-2026-01",
-        issued_at: "2026-02-01",
-        source: "manual",
-        file_ref: "2026-01/openai_2026-01_bb22cc33_inv.pdf",
-        ingested_at: "2026-07-03 06:31:00",
+        bank_charged: "",
+        cash_paid: "$299.00",
+        credit_burned: "",
+        invoice_ref: "2026-06/elevenlabs.pdf",
+        match_status: "missing_payment",
     },
     {
-        sha256: "dd44ee55ff660011223344556677889900aabbccddeeff0011223344556677aa",
-        provider: "aws",
-        category: "compute",
-        period_month: "2026-06",
-        amount: 0,
-        currency: "USD",
-        credit_usd: 1922.4,
-        invoice_number: "AWS-2026-06",
-        issued_at: "2026-07-01",
-        source: "ai",
-        file_ref: "2026-06/aws_2026-06_dd44ee55_inv.pdf",
-        ingested_at: "2026-07-03 06:31:00",
+        date: "2026-06-20",
+        provider: "tinybird",
+        category: "infra",
+        bank_charged: "€34.74",
+        cash_paid: "$40.39",
+        credit_burned: "",
+        invoice_ref: "2026-06/Invoice-FUNAOD-00014.pdf",
+        match_status: "matched",
     },
 ];
 
 const usageMonthly: UsageMonthlyRow[] = [
     {
+        source: "tinybird",
         month: "2026-06",
         provider: "google",
         model: "gemini-2.5-flash",
@@ -63,6 +51,7 @@ const usageMonthly: UsageMonthlyRow[] = [
         billable_quest_pollen: 148.03,
     },
     {
+        source: "tinybird",
         month: "2026-06",
         provider: "azure",
         model: "gpt-5.5",
@@ -72,6 +61,7 @@ const usageMonthly: UsageMonthlyRow[] = [
         billable_quest_pollen: 407.11,
     },
     {
+        source: "tinybird",
         month: "2026-06",
         provider: "openai",
         model: "gpt-4.1-mini",
@@ -81,6 +71,7 @@ const usageMonthly: UsageMonthlyRow[] = [
         billable_quest_pollen: 6.45,
     },
     {
+        source: "tinybird",
         month: "2026-05",
         provider: "replicate",
         model: "flux-kontext",
@@ -88,30 +79,6 @@ const usageMonthly: UsageMonthlyRow[] = [
         cost_quest_pollen: 130.14,
         billable_paid_pollen: 138.02,
         billable_quest_pollen: 87.55,
-    },
-];
-
-const paymentsTx: PaymentTxRow[] = [
-    {
-        paid_at: "2026-06-14",
-        provider: "",
-        category: "unmatched",
-        counterparty: "NVIDIA CORP",
-        amount_eur: 4400.5,
-    },
-    {
-        paid_at: "2026-06-02",
-        provider: "vast.ai",
-        category: "compute",
-        counterparty: "VAST AI LABS",
-        amount_eur: 442.16,
-    },
-    {
-        paid_at: "2026-05-21",
-        provider: "openai",
-        category: "compute",
-        counterparty: "OPENAI LLC",
-        amount_eur: 208.37,
     },
 ];
 
@@ -144,20 +111,21 @@ const runs: RunRow[] = [
         run_at: "2026-07-03 06:37:02",
         ok: 0,
         statuses:
-            '{"wise":"ok","gmail":"ok","inbox":"ok","vast.ai":"ok","runpod":"ok","ovhcloud":"err: connection reset by peer","digitalocean":"err: 403 role-gated"}',
+            '{"vast.ai":"ok","runpod":"ok","ovhcloud":"err: connection reset by peer","digitalocean":"err: 403 role-gated"}',
         notes: "ovhcloud api timeout",
     },
     {
         run_at: "2026-07-02 06:31:44",
         ok: 1,
         statuses:
-            '{"wise":"ok","gmail":"ok","inbox":"ok","vast.ai":"ok","runpod":"ok","ovhcloud":"ok","digitalocean":"err: 403 role-gated"}',
+            '{"vast.ai":"ok","runpod":"ok","ovhcloud":"ok","digitalocean":"err: 403 role-gated"}',
         notes: "",
     },
 ];
 
 const revenueMonthly: RevenueMonthlyRow[] = [
     {
+        source: "stripe",
         month: "2026-06",
         gross_eur: 1200,
         fees_eur: 42,
@@ -166,10 +134,9 @@ const revenueMonthly: RevenueMonthlyRow[] = [
 ];
 
 export const FIXTURES: Record<string, unknown[]> = {
-    invoices_ep: invoices,
-    payments_ep: paymentsTx,
-    meter_monthly_ep: meterMonthly,
-    usage_ep: usageMonthly,
-    runs_ep: runs,
-    revenue_ep: revenueMonthly,
+    transactions_api: transactions,
+    meter_monthly_api: meterMonthly,
+    usage_monthly_api: usageMonthly,
+    ingest_runs_api: runs,
+    revenue_monthly_api: revenueMonthly,
 };

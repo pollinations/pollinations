@@ -1,22 +1,3 @@
-export function fmtUsd(v: number | null | undefined): string {
-    if (v == null) return "-";
-    return v.toLocaleString("en-US", {
-        style: "currency",
-        currency: "USD",
-        maximumFractionDigits: 0,
-    });
-}
-
-export function fmtUsd2(v: number | null | undefined): string {
-    if (v == null) return "-";
-    return v.toLocaleString("en-US", {
-        style: "currency",
-        currency: "USD",
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    });
-}
-
 export function fmtMoney(
     v: number | null | undefined,
     currency: string | null | undefined,
@@ -37,20 +18,50 @@ export function fmtMoney(
     })}${code ? ` ${code}` : ""}`;
 }
 
-export const sha8 = (sha: string): string => sha.slice(0, 8);
+export function utcDateTime(date = new Date()): string {
+    return date.toISOString().replace("T", " ").slice(0, 19);
+}
 
-export const baseName = (path: string): string => path.split("/").pop() ?? path;
+const MONTH_NAMES = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+];
+
+export function fmtMonthYear(year: string, month: string): string {
+    const name = MONTH_NAMES[Number(month) - 1];
+    if (!name) return `${year}-${month}`;
+    return `${name} ${year.slice(-2)}`;
+}
+
+function fmtMonthDayYear(year: string, month: string, day: string): string {
+    const name = MONTH_NAMES[Number(month) - 1];
+    if (!name) return `${year}-${month}-${day}`;
+    return `${name} ${Number(day)}, ${year.slice(-2)}`;
+}
 
 export function fmtPeriod(value: string | null | undefined): string {
     if (!value) return "-";
     const trimmed = value.trim();
     const match = trimmed.match(
-        /^(\d{4}-\d{2})(?:-(\d{2})(?:[ T](\d{2}:\d{2}:\d{2}))?)?/,
+        /^(\d{4})-(\d{2})(?:-(\d{2})(?:[ T](\d{2}:\d{2}:\d{2}))?)?/,
     );
     if (!match) return trimmed;
-    if (match[3]) return `${match[1]}-${match[2]} ${match[3]}`;
-    if (match[2]) return `${match[1]}-${match[2]}`;
-    return match[1];
+    const [, year, month, day, time] = match;
+    const monthYear = fmtMonthYear(year, month);
+    if (!day) return monthYear;
+
+    const dayLabel = fmtMonthDayYear(year, month, day);
+    return time ? `${dayLabel} ${time}` : dayLabel;
 }
 
 /** Tinybird DateTime strings ("YYYY-MM-DD HH:MM:SS") are UTC. */

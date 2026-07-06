@@ -12,23 +12,28 @@ import {
 } from "@pollinations/ui";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FilterBar, FilterSelect, MonthFilter } from "./components/Filters";
+import { HeaderButton } from "./components/HeaderButton";
 import { OperationsGuide } from "./components/OperationsGuide";
 import { type ProvenanceCode, SourceMark } from "./components/Provenance";
 import { SaveControls } from "./components/SaveControls";
 import { STALE_AFTER_HOURS } from "./config";
 import { hoursSince } from "./lib/format";
-import { collectMonths, defaultMonth } from "./lib/months";
+import { collectMonths } from "./lib/months";
+import {
+    findProviderVocabularyIssues,
+    PROVIDER_OPTIONS,
+    providerVocabularyRunIssues,
+} from "./lib/provider-vocabulary";
 import { queuedKeysForChange } from "./lib/queued";
 import { StagingProvider } from "./lib/staging";
 import { fixturesMode, loadAll, TbError } from "./lib/tb";
 import type { Data } from "./types";
 import { BurnTab } from "./views/BurnTab";
-import { INVOICE_CATEGORIES, InvoicesTab } from "./views/InvoicesTab";
 import { MeterTab } from "./views/MeterTab";
-import { PaymentsTab } from "./views/PaymentsTab";
 import { RevenueTab } from "./views/RevenueTab";
+import { TransactionsTab } from "./views/TransactionsTab";
 
-type Tab = "invoices" | "payments" | "burn" | "meter" | "revenue";
+type Tab = "transactions" | "burn" | "meter" | "revenue";
 
 // note + pipe surface as a hover tooltip on the tab button — the tab body
 // itself stays table-only.
@@ -41,54 +46,41 @@ const TABS: {
     rows: (data: Data) => number;
 }[] = [
     {
-        id: "invoices",
-        label: "Invoices",
-        codes: ["IV", "HC"],
-        pipe: "invoices_ep",
-        note: "Raw latest row per invoice SHA. Edit recategorizes the invoice; provider stays read-only from Forager.",
-        rows: (data) => data.invoices.length,
-    },
-    {
-        id: "payments",
-        label: "Payments",
-        codes: ["WS", "HC"],
-        pipe: "payments_ep",
-        note: "Raw Wise transactions. Edit sets a counterparty→provider rule that forager applies to the whole history.",
-        rows: (data) => data.paymentsTx.length,
+        id: "transactions",
+        label: "Transactions",
+        codes: ["TB"],
+        pipe: "transactions_api",
+        note: "Single Enty-backed spend table: bank charge, invoice value, credit burn, and match state.",
+        rows: (data) => data.transactions.length,
     },
     {
         id: "burn",
         label: "Pollen Usage",
         codes: ["TB"],
-        pipe: "usage_ep",
+        pipe: "usage_monthly_api",
         note: "Our own metering: Tinybird generation events → one model/month row, paid vs quest Pollen.",
         rows: (data) => data.usageMonthly.length,
     },
     {
         id: "meter",
         label: "Provider Usage",
-        codes: ["API", "CLI", "BQ", "HC"],
-        pipe: "meter_monthly_ep",
-        note: "Monthly provider usage. Credit usage and prepaid usage are shown as separate values; manual rows fill gaps where dashboards/APIs do not.",
+        codes: ["API", "CLI", "BQ", "TB", "HC"],
+        pipe: "meter_monthly_api",
+        note: "Monthly provider usage. Rows with Pollen usage but no provider meter value are shown as TB zero rows to fill manually.",
         rows: (data) => data.meterMonthly.length,
     },
     {
         id: "revenue",
         label: "Revenue",
         codes: ["ST"],
-        pipe: "revenue_ep",
+        pipe: "revenue_monthly_api",
         note: "Raw monthly revenue rows. Net revenue is intentionally not precomputed in the pipe.",
         rows: (data) => data.revenueMonthly.length,
     },
 ];
 
-const INGEST_QUEUED_DATASOURCES = new Set(["overrides"]);
+const APPENDED_DATASOURCES = new Set(["meter_monthly"]);
 const POST_SAVE_REFRESH_MS = 800;
-
-function addProvider(slugs: Set<string>, provider: string) {
-    const slug = provider.trim();
-    if (slug) slugs.add(slug);
-}
 
 async function checkSession() {
     const res = await fetch("/api/auth/session");
@@ -158,16 +150,13 @@ export default function App() {
     const [authError, setAuthError] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [data, setData] = useState<Data | null>(null);
-    const [tab, setTab] = useState<Tab>("invoices");
-    // null until the operator picks a period; the effective default is the
-    // last complete month once data arrives.
-    const [month, setMonth] = useState<string | null>(null);
+    const [tab, setTab] = useState<Tab>("transactions");
+    // Default to All so the transactions page opens with the full Enty export.
+    const [month, setMonth] = useState("");
     // App-global like the period: pick a provider once, drill through the
     // provider tabs.
     const [provider, setProvider] = useState("all");
-    const [category, setCategory] = useState("all");
     const [attempt, setAttempt] = useState(0);
-    const [committedNonce, setCommittedNonce] = useState(0);
     const [queuedKeys, setQueuedKeys] = useState<ReadonlySet<string>>(
         () => new Set(),
     );
@@ -248,30 +237,26 @@ export default function App() {
     }, [data]);
 
     const months = useMemo(() => (data ? collectMonths(data) : []), [data]);
-    const activeMonth = month ?? defaultMonth(months);
-    const providerOptions = useMemo(() => {
-        const slugs = new Set<string>();
-        for (const row of data?.invoices ?? [])
-            addProvider(slugs, row.provider);
-        for (const row of data?.paymentsTx ?? [])
-            addProvider(slugs, row.provider);
-        for (const row of data?.meterMonthly ?? [])
-            addProvider(slugs, row.provider);
-        for (const row of data?.usageMonthly ?? [])
-            addProvider(slugs, row.provider);
-        return ["all", ...[...slugs].sort((a, b) => a.localeCompare(b))];
-    }, [data]);
+    const activeMonth = month;
+    const providerOptions = PROVIDER_OPTIONS;
+    const providerIssues = useMemo(
+        () =>
+            data
+                ? [
+                      ...providerVocabularyRunIssues(data.runs),
+                      ...findProviderVocabularyIssues(data),
+                  ]
+                : [],
+        [data],
+    );
     const categoryOptions = useMemo(() => {
-        const categories = new Set(INVOICE_CATEGORIES);
-        for (const row of data?.invoices ?? []) {
-            if (row.category) categories.add(row.category);
-        }
-        for (const row of data?.paymentsTx ?? []) {
+        const categories = new Set<string>();
+        for (const row of data?.transactions ?? []) {
             if (row.category) categories.add(row.category);
         }
         return ["all", ...[...categories].sort((a, b) => a.localeCompare(b))];
     }, [data]);
-
+    const [category, setCategory] = useState("all");
     if (!sessionChecked) {
         return (
             <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-app-bg text-theme-text-strong">
@@ -316,13 +301,12 @@ export default function App() {
         <StagingProvider
             fixtures={fixtures}
             onCommitted={(changes) => {
-                setCommittedNonce((current) => current + 1);
-                const ingestChanges = changes.filter((change) =>
-                    INGEST_QUEUED_DATASOURCES.has(change.datasource),
+                const appendedChanges = changes.filter((change) =>
+                    APPENDED_DATASOURCES.has(change.datasource),
                 );
                 setQueuedKeys((current) => {
                     const next = new Set(current);
-                    for (const change of ingestChanges) {
+                    for (const change of appendedChanges) {
                         for (const key of queuedKeysForChange(change)) {
                             next.add(key);
                         }
@@ -371,10 +355,8 @@ export default function App() {
                                     )}
                                 <SaveControls />
                                 {!fixtures && (
-                                    <Button
-                                        size="sm"
-                                        intent="danger"
-                                        className="h-7"
+                                    <HeaderButton
+                                        tone="danger"
                                         onClick={() => {
                                             logout().finally(() => {
                                                 setAuthenticated(false);
@@ -383,7 +365,7 @@ export default function App() {
                                         }}
                                     >
                                         Log out
-                                    </Button>
+                                    </HeaderButton>
                                 )}
                                 <ColorModeToggle />
                             </div>
@@ -398,6 +380,28 @@ export default function App() {
                                     numbers.
                                 </Alert>
                             )}
+
+                        {providerIssues.length > 0 && (
+                            <Alert
+                                intent="warning"
+                                title="Provider vocabulary mismatch"
+                            >
+                                <div className="flex flex-col gap-1">
+                                    {providerIssues.slice(0, 5).map((issue) => (
+                                        <span
+                                            key={`${issue.source}:${issue.provider}:${issue.detail}`}
+                                        >
+                                            {issue.detail}
+                                        </span>
+                                    ))}
+                                    {providerIssues.length > 5 && (
+                                        <span>
+                                            +{providerIssues.length - 5} more
+                                        </span>
+                                    )}
+                                </div>
+                            </Alert>
+                        )}
 
                         <FilterBar>
                             <MonthFilter
@@ -462,34 +466,23 @@ export default function App() {
                             <Alert intent="warning" title="Load failed">
                                 <div className="flex flex-wrap items-center gap-2">
                                     <span>{error}</span>
-                                    <Button
-                                        size="sm"
+                                    <HeaderButton
                                         onClick={() => setAttempt((n) => n + 1)}
                                     >
                                         Retry
-                                    </Button>
+                                    </HeaderButton>
                                 </div>
                             </Alert>
                         )}
                         {!error && !data && (
                             <Text tone="soft">Loading pipes...</Text>
                         )}
-                        {data && tab === "invoices" && (
-                            <InvoicesTab
+                        {data && tab === "transactions" && (
+                            <TransactionsTab
                                 category={category}
                                 data={data}
                                 month={activeMonth}
                                 provider={provider}
-                                queuedKeys={queuedKeys}
-                            />
-                        )}
-                        {data && tab === "payments" && (
-                            <PaymentsTab
-                                category={category}
-                                data={data}
-                                month={activeMonth}
-                                provider={provider}
-                                queuedKeys={queuedKeys}
                             />
                         )}
                         {data && tab === "burn" && (
@@ -501,12 +494,9 @@ export default function App() {
                         )}
                         {data && tab === "meter" && (
                             <MeterTab
-                                committedNonce={committedNonce}
                                 data={data}
                                 month={activeMonth}
-                                months={months}
                                 provider={provider}
-                                providers={providerOptions}
                                 queuedKeys={queuedKeys}
                             />
                         )}

@@ -648,6 +648,7 @@ export function PlayGenerator({
                             className="w-full h-auto"
                             onLoadedData={() => setIsLoading(false)}
                         >
+                            <track kind="captions" />
                         </video>
                     )}
                     {resultType === "audio" && (
@@ -658,6 +659,7 @@ export function PlayGenerator({
                             className="w-full"
                             onLoadedData={() => setIsLoading(false)}
                         >
+                            <track kind="captions" />
                         </audio>
                     )}
                     {resultType === "text" && (

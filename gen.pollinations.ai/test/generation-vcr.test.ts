@@ -1031,6 +1031,40 @@ test("tagging without an API key returns 400", async ({ mocks }) => {
     await wait();
 });
 
+test("repeated tag params and comma-separated tags are all stored", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "fireworks");
+    const { key, userId } = await createTestApiKey({
+        name: "catalog-multi-tag-key",
+        user: { packBalance: 100 },
+    });
+
+    const locator =
+        "https://gen.pollinations.ai/image/vcr%20multi%20tag%20square?height=720&model=flux&seed=47&width=1280";
+
+    // Repeated `tag` params exercise the query validator's array shape —
+    // tag/tags are declared in GenerateImageRequestQueryParamsSchema for the
+    // generated docs, and repeated params must not fail validation.
+    const { response, wait } = await fetchWorker(
+        "/image/vcr%20multi%20tag%20square?model=flux&width=1280&height=720&seed=47&tag=sunset&tag=beach&tags=sea,sky",
+        { headers: { authorization: `Bearer ${key}` } },
+    );
+
+    expect(response.status).toBe(200);
+    await response.arrayBuffer();
+    await wait();
+
+    const { items, tagsByItem } = await getCatalogRows(userId, locator);
+    expect(items).toHaveLength(1);
+    expect(tagsByItem.get(items[0].id)?.sort()).toEqual([
+        "beach",
+        "sea",
+        "sky",
+        "sunset",
+    ]);
+});
+
 test("untagged generation is not cataloged", async ({ mocks }) => {
     await mocks.enable("tinybird", "fireworks");
     const { key, userId } = await createTestApiKey({

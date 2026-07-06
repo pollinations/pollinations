@@ -1,10 +1,11 @@
 import { env, SELF } from "cloudflare:test";
-import { describe, expect, it } from "vitest";
+import { describe, expect } from "vitest";
+import { test } from "./fixtures.ts";
 
 describe("Admin authentication", () => {
     const baseUrl = "https://enter.pollinations.ai";
 
-    it("should reject requests without token", async () => {
+    test("should reject requests without token", async () => {
         const response = await SELF.fetch(
             `${baseUrl}/api/admin/trigger-d1-sync`,
             {
@@ -17,7 +18,7 @@ describe("Admin authentication", () => {
         expect(response.status).toBe(401);
     });
 
-    it("should reject requests with invalid token", async () => {
+    test("should reject requests with invalid token", async () => {
         const response = await SELF.fetch(
             `${baseUrl}/api/admin/trigger-d1-sync`,
             {
@@ -31,7 +32,11 @@ describe("Admin authentication", () => {
         expect(response.status).toBe(401);
     });
 
-    it("should allow full admin token access to trigger d1 sync", async () => {
+    test("should allow full admin token access to trigger d1 sync", async ({
+        mocks,
+    }) => {
+        await mocks.enable("tinybird");
+
         const response = await SELF.fetch(
             `${baseUrl}/api/admin/trigger-d1-sync`,
             {
@@ -42,6 +47,13 @@ describe("Admin authentication", () => {
                 },
             },
         );
-        expect(response.status).not.toBe(401);
+        expect(response.status).toBe(200);
+
+        const body = (await response.json()) as {
+            success: boolean;
+            tables: Array<{ datasource: string; status: string }>;
+        };
+        expect(body.success).toBe(true);
+        expect(body.tables.every((t) => t.status === "ok")).toBe(true);
     });
 });

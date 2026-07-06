@@ -54,6 +54,31 @@ type SignupData = {
     url: string;
 };
 
+/**
+ * Creates an API key through the real POST /api/account/keys endpoint
+ * (same flow as production) and returns the created key record.
+ */
+export const createApiKeyViaApi = async (
+    sessionToken: string,
+    options: { name: string; type?: "secret" | "publishable" },
+) => {
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/account/keys",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify(options),
+        },
+    );
+    if (!response.ok) {
+        throw new Error(`Failed to create API key: ${await response.text()}`);
+    }
+    return (await response.json()) as { id: string; key: string };
+};
+
 export const test = base.extend<Fixtures>({
     // biome-ignore lint/correctness/noEmptyPattern: vitest fixture pattern requires object destructuring
     log: async ({}, use) => {
@@ -131,23 +156,10 @@ export const test = base.extend<Fixtures>({
         await use(sessionToken);
     },
     apiKey: async ({ sessionToken }, use) => {
-        const createApiKeyResponse = await SELF.fetch(
-            "http://localhost:3000/api/account/keys",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Cookie: `better-auth.session_token=${sessionToken}`,
-                },
-                body: JSON.stringify({ name: "test-api-key" }),
-            },
-        );
-        if (!createApiKeyResponse.ok)
-            throw new Error("Failed to create secret API key");
-        const created = (await createApiKeyResponse.json()) as { key: string };
-        const apiKey = created.key;
-        // expect(apiKey.startsWith("sk_")).toBe(true);
-        await use(apiKey);
+        const created = await createApiKeyViaApi(sessionToken, {
+            name: "test-api-key",
+        });
+        await use(created.key);
     },
     /**
      * API key for a user with pack balance, enabling paidOnly model access.

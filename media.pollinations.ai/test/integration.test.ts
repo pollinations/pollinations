@@ -174,8 +174,8 @@ async function uploadViaForm(
         "file",
         pngFile(options.fileName ?? "test.png", options.bytes ?? TINY_PNG),
     );
-    for (const tag of options.tags ?? []) {
-        form.append("tag", tag);
+    if (options.tags && options.tags.length > 0) {
+        form.append("tags", options.tags.join(","));
     }
     if (options.prompt) form.append("prompt", options.prompt);
     if (options.model) form.append("model", options.model);
@@ -483,6 +483,18 @@ describe("media.pollinations.ai", () => {
         expect(leadingDash.status).toBe(400);
         expect((leadingDash.body as { error: string }).error).toMatch(
             /-leading/,
+        );
+    });
+
+    it("rejects the singular tag alias", async () => {
+        const res = await uploadViaForm("pk_alice", {
+            fileName: "singular-tag.png",
+            bytes: variant(30),
+            extraFields: { tag: "legacy" },
+        });
+        expect(res.status).toBe(400);
+        expect((res.body as { error: string }).error).toMatch(
+            /Use "tags" instead of "tag"/,
         );
     });
 

@@ -1,7 +1,7 @@
 import { Alert, Dialog, Text } from "@pollinations/ui";
-import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { useStaging } from "../lib/staging";
+import { HeaderButton } from "./HeaderButton";
 
 function DiskIcon({ className }: { className?: string }) {
     return (
@@ -23,41 +23,6 @@ function DiskIcon({ className }: { className?: string }) {
     );
 }
 
-// App-side buttons: the package Button has no success recipe and its theme
-// background would fight a green fill, so the save/reset pair is styled here
-// with the design-system traffic-light tokens.
-function ActionButton({
-    children,
-    className,
-    disabled,
-    onClick,
-    title,
-}: {
-    children: ReactNode;
-    className: string;
-    disabled?: boolean;
-    onClick: () => void;
-    title?: string;
-}) {
-    return (
-        <button
-            type="button"
-            disabled={disabled}
-            onClick={onClick}
-            title={title}
-            className={[
-                "inline-flex h-7 items-center justify-center gap-1.5 rounded-full px-3 pt-0.5 pb-1 text-sm font-medium transition-colors",
-                disabled
-                    ? "cursor-not-allowed opacity-50"
-                    : "cursor-pointer hover:brightness-105",
-                className,
-            ].join(" ")}
-        >
-            {children}
-        </button>
-    );
-}
-
 export function SaveButton({
     disabled,
     label,
@@ -68,15 +33,15 @@ export function SaveButton({
     onClick: () => void;
 }) {
     return (
-        <ActionButton
+        <HeaderButton
             disabled={disabled}
             onClick={onClick}
             title="Review and commit pending changes"
-            className="bg-intent-success-bg-bright text-intent-success-text-on-bright"
+            tone="success"
+            icon={<DiskIcon className="h-3.5 w-3.5" />}
         >
-            <DiskIcon className="h-3.5 w-3.5" />
             {label}
-        </ActionButton>
+        </HeaderButton>
     );
 }
 
@@ -94,14 +59,14 @@ export function SaveControls() {
 
     return (
         <>
-            <ActionButton
+            <HeaderButton
                 disabled={count === 0 || committing}
                 onClick={clear}
                 title="Drop every pending change"
-                className="bg-transparent text-intent-danger-text hover:bg-intent-danger-bg-light"
+                tone="danger"
             >
                 Reset
-            </ActionButton>
+            </HeaderButton>
             <SaveButton
                 disabled={count === 0 || committing}
                 onClick={() => setConfirmOpen(true)}
@@ -130,20 +95,20 @@ export function SaveControls() {
                     </Text>
                     {error && <Alert intent="warning">{error}</Alert>}
                     <div className="flex justify-end gap-2">
-                        <ActionButton
+                        <HeaderButton
                             onClick={() => setConfirmOpen(false)}
                             disabled={committing}
-                            className="bg-transparent text-theme-text-soft hover:bg-theme-bg-hover"
+                            tone="neutral"
                         >
                             Cancel
-                        </ActionButton>
-                        <ActionButton
+                        </HeaderButton>
+                        <HeaderButton
                             onClick={() => void commitAll()}
                             disabled={committing}
-                            className="bg-intent-success-bg-bright text-intent-success-text-on-bright"
+                            tone="success"
                         >
                             {committing ? "Saving..." : `Confirm ${count}`}
-                        </ActionButton>
+                        </HeaderButton>
                     </div>
                 </div>
             </Dialog>

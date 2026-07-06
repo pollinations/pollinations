@@ -23,12 +23,6 @@
     color: #ffffff;
 }
 
-.treasury-source-iv {
-    border-color: #fde68a;
-    background: #b45309;
-    color: #fff7ed;
-}
-
 .treasury-source-hc {
     border-color: #bef264;
     background: #4d7c0f;
@@ -53,38 +47,8 @@
     color: #eef2ff;
 }
 
-.treasury-source-ws {
-    border-color: #67e8f9;
-    background: #0e7490;
-    color: #ecfeff;
-}
-
 .treasury-source-st {
     border-color: #f0abfc;
     background: #a21caf;
     color: #fdf4ff;
-}
-
-.treasury-source-gh {
-    border-color: #cbd5e1;
-    background: #475569;
-    color: #f8fafc;
-}
-
-.treasury-source-cf {
-    border-color: #fdba74;
-    background: #ea580c;
-    color: #fff7ed;
-}
-
-.treasury-source-eq {
-    border-color: #6ee7b7;
-    background: #047857;
-    color: #ecfdf5;
-}
-
-.treasury-source-unv {
-    border-color: #fca5a5;
-    background: #b91c1c;
-    color: #fef2f2;
 }

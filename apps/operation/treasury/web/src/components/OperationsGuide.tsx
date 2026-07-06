@@ -1,44 +1,27 @@
-import { Button, CopyButton, Dialog, Text, Tooltip } from "@pollinations/ui";
+import { CopyButton, Dialog, Text, Tooltip } from "@pollinations/ui";
 import { useState } from "react";
+import { HeaderButton } from "./HeaderButton";
 import { SourceLegendContent } from "./SourceLegend";
 
 const COMMAND_GROUPS = [
     {
-        title: "Ingest invoices",
-        description:
-            "Put PDFs in the input folder, then run one invoice pass. For backfill, copy old PDFs into the same input folder and run the same command.",
-        commands: [
-            {
-                command: "python3 -m ingest.invoices.gmail --month 2026-07",
-                label: "Gather Gmail PDFs",
-                note: "Download invoice-like PDF attachments for one month into inbox/. No AI, no Tinybird.",
-            },
-            {
-                command: "python3 -m ingest.invoices.run",
-                label: "Analyze inbox",
-                note: "Drain inbox/, append validated invoices, and move PDFs to validated/, quarantine/, or deleted/.",
-            },
-        ],
-    },
-    {
         title: "Update Tinybird",
         description:
-            "Refresh operations tables after invoice files have been analyzed.",
+            "Refresh operations tables after dropping the monthly Enty export folder.",
         commands: [
             {
                 command: "python3 -m ingest.run",
                 label: "Refresh operations",
-                note: "Update Wise payments, provider balances, meter usage, revenue, and grants.",
+                note: "Update Enty transactions, provider usage, platform usage, and revenue.",
+            },
+            {
+                command:
+                    "python3 apps/operation/_local/invoice-fetcher/fetch_gog_invoices.py --month 2026-07",
+                label: "Fetch invoice PDFs",
+                note: "Local-only helper: set GOG_ACCOUNT or pass --account to download invoice-like Gmail PDFs into the invoice inbox. No AI, no Tinybird.",
             },
         ],
     },
-];
-
-const FOLDERS = [
-    "inbox/: input folder; should be empty after a run.",
-    "validated/YYYY-MM/: confirmed invoice PDFs.",
-    "quarantine/: files that need manual review.",
-    "deleted/: confident non-invoices and duplicates.",
 ];
 
 function CommandRow({
@@ -51,9 +34,16 @@ function CommandRow({
     note: string;
 }) {
     return (
-        <li className="grid gap-x-3 gap-y-1 rounded border border-theme-border/60 bg-theme-bg/30 px-3 py-2 lg:grid-cols-[11rem_minmax(24rem,30rem)_minmax(18rem,1fr)] lg:items-center">
-            <div className="font-medium text-theme-text-strong">{label}</div>
-            <div className="flex min-w-0 items-center gap-1.5">
+        <li className="grid gap-2 border-theme-border/60 border-t py-3 first:border-t-0 md:grid-cols-[9rem_minmax(0,1fr)]">
+            <div>
+                <div className="font-medium text-theme-text-strong">
+                    {label}
+                </div>
+                <div className="mt-0.5 text-xs leading-5 text-theme-text-soft">
+                    {note}
+                </div>
+            </div>
+            <div className="flex min-w-0 items-start gap-1.5">
                 <code className="min-w-0 flex-1 rounded border border-theme-border/70 bg-theme-bg px-2 py-1 font-mono text-[11px] leading-5 text-theme-text-strong break-all sm:break-normal">
                     {command}
                 </code>
@@ -67,8 +57,18 @@ function CommandRow({
                     copy
                 </CopyButton>
             </div>
-            <div className="leading-5 text-theme-text-soft">{note}</div>
         </li>
+    );
+}
+
+function InfoIcon() {
+    return (
+        <span
+            aria-hidden="true"
+            className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-current/40 text-[11px] font-black leading-none"
+        >
+            i
+        </span>
     );
 }
 
@@ -78,35 +78,33 @@ export function OperationsGuide() {
     return (
         <>
             <Tooltip content="Operations guide">
-                <Button
-                    type="button"
-                    size="sm"
-                    onClick={() => setOpen(true)}
-                    aria-label="Open operations guide"
-                    className="h-7 w-7 px-0 pt-0 pb-0 text-xs font-bold"
-                >
-                    i
-                </Button>
+                <span>
+                    <HeaderButton
+                        label="Open operations guide"
+                        title="Open operations guide"
+                        tone="info"
+                        icon={<InfoIcon />}
+                        onClick={() => setOpen(true)}
+                    >
+                        Info
+                    </HeaderButton>
+                </span>
             </Tooltip>
             <Dialog
                 open={open}
                 onOpenChange={setOpen}
                 title="Operations guide"
                 size="lg"
-                contentClassName="max-h-[88dvh] max-w-5xl"
+                contentClassName="max-h-[88dvh] max-w-3xl"
             >
                 <div className="max-h-[calc(88dvh-4rem)] overflow-y-auto p-6 pt-3 text-sm">
-                    <section className="flex flex-col gap-4">
-                        <div>
-                            <div className="font-medium text-theme-text-strong">
-                                Scripts
-                            </div>
-                            <Text as="div" size="sm" tone="soft">
-                                Run commands from apps/operation/forager/. The
-                                app only displays them; it does not trigger
-                                external pipelines.
-                            </Text>
-                        </div>
+                    <section className="flex flex-col gap-5">
+                        <Text as="p" size="sm" tone="soft">
+                            Run Forager commands from{" "}
+                            <code>apps/operation/forager/</code>. Local helper
+                            commands run from the repo root. The app shows the
+                            routine workflow; it does not execute scripts.
+                        </Text>
                         {COMMAND_GROUPS.map((group) => (
                             <div
                                 key={group.title}
@@ -131,40 +129,19 @@ export function OperationsGuide() {
                             </div>
                         ))}
                     </section>
-                    <section className="mt-4 flex flex-col gap-2 border-theme-border/70 border-t pt-4">
+                    <section className="mt-5 grid gap-3 border-theme-border/70 border-t pt-5 md:grid-cols-[9rem_1fr]">
                         <div className="font-medium text-theme-text-strong">
-                            Invoice folders
-                        </div>
-                        <ul className="grid gap-x-6 gap-y-1 text-theme-text-soft md:grid-cols-2">
-                            {FOLDERS.map((item) => (
-                                <li key={item} className="flex gap-2">
-                                    <span aria-hidden="true">-</span>
-                                    <span>{item}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    </section>
-                    <section className="mt-4 rounded border border-intent-warning-text/40 bg-intent-warning-bg-light/20 p-3 text-sm leading-5 text-intent-warning-text">
-                        Maintenance commands for Gmail harvest, archive import,
-                        and usage/payment backfills exist in Forager, but they
-                        are not part of the normal routine. Use them only when
-                        intentionally repairing history.
-                    </section>
-                    <section className="mt-4 border-theme-border/70 border-t pt-4">
-                        <div className="mb-2 font-medium text-theme-text-strong">
                             Source badges
                         </div>
                         <SourceLegendContent />
                     </section>
                     <div className="sticky bottom-0 mt-4 flex justify-end border-theme-border/70 border-t bg-surface-opaque pt-3">
-                        <Button
-                            type="button"
-                            size="sm"
+                        <HeaderButton
                             onClick={() => setOpen(false)}
-                            className="h-7 self-end"
+                            tone="neutral"
                         >
                             Close
-                        </Button>
+                        </HeaderButton>
                     </div>
                 </div>
             </Dialog>

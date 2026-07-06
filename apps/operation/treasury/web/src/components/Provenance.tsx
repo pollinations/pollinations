@@ -1,18 +1,4 @@
-import type { ReactNode } from "react";
-
-export type ProvenanceCode =
-    | "TB"
-    | "WS"
-    | "ST"
-    | "API"
-    | "CLI"
-    | "BQ"
-    | "GH"
-    | "CF"
-    | "IV"
-    | "HC"
-    | "UNV"
-    | "EQ";
+export type ProvenanceCode = "TB" | "ST" | "API" | "CLI" | "BQ" | "HC";
 
 const PROVENANCE: Record<
     ProvenanceCode,
@@ -21,10 +7,6 @@ const PROVENANCE: Record<
     TB: {
         title: "Tinybird - pipe output or usage-derived row",
         className: "treasury-source-tb",
-    },
-    WS: {
-        title: "Wise - real bank cash, live on refresh",
-        className: "treasury-source-ws",
     },
     ST: {
         title: "Stripe - revenue and fees, live on refresh",
@@ -42,119 +24,43 @@ const PROVENANCE: Record<
         title: "BigQuery - provider usage export",
         className: "treasury-source-bq",
     },
-    GH: {
-        title: "GitHub - registry source",
-        className: "treasury-source-gh",
-    },
-    CF: {
-        title: "Cloudflare - source connector",
-        className: "treasury-source-cf",
-    },
-    IV: {
-        title: "Invoice or ledger PDF - ingested document value",
-        className: "treasury-source-iv",
-    },
     HC: {
         title: "Manual, hardcoded, or operator-corrected value",
         className: "treasury-source-hc",
     },
-    UNV: {
-        title: "Unverified figure on file",
-        className: "treasury-source-unv",
+};
+
+const SOURCE_META: Record<
+    string,
+    { code: ProvenanceCode; display: string; title?: string }
+> = {
+    api: { code: "API", display: "API" },
+    cli: { code: "CLI", display: "CLI" },
+    bq: { code: "BQ", display: "BQ" },
+    manual: { code: "HC", display: "HC" },
+    hc: { code: "HC", display: "HC" },
+    stripe: { code: "ST", display: "ST" },
+    st: { code: "ST", display: "ST" },
+    tinybird: { code: "TB", display: "TB" },
+    tb: { code: "TB", display: "TB" },
+    usage: {
+        code: "TB",
+        display: "TB",
+        title: "Pollen usage exists for this provider/month, but provider usage is missing; zero row is generated for operator fill-in.",
     },
-    EQ: {
-        title: "Computed upstream from other source columns",
-        display: "=",
-        className: "treasury-source-eq",
-    },
 };
 
-const SOURCE_CLASS: Record<string, string> = {
-    agent: "treasury-source-iv",
-    api: "treasury-source-api",
-    cli: "treasury-source-cli",
-    bq: "treasury-source-bq",
-    email: "treasury-source-iv",
-    inbox: "treasury-source-iv",
-    invoice: "treasury-source-iv",
-    ledger: "treasury-source-iv",
-    pdf: "treasury-source-iv",
-    label: "treasury-source-hc",
-    manual: "treasury-source-hc",
-    hc: "treasury-source-hc",
-    static: "treasury-source-hc",
-    wise: "treasury-source-ws",
-    ws: "treasury-source-ws",
-    stripe: "treasury-source-st",
-    st: "treasury-source-st",
-    tinybird: "treasury-source-tb",
-    tb: "treasury-source-tb",
-    estimate: "treasury-source-tb",
-};
-
-const SOURCE_DISPLAY: Record<string, string> = {
-    agent: "IV",
-    api: "API",
-    cli: "CLI",
-    bq: "BQ",
-    email: "IV",
-    inbox: "IV",
-    invoice: "IV",
-    ledger: "IV",
-    pdf: "IV",
-    label: "HC",
-    manual: "HC",
-    hc: "HC",
-    static: "HC",
-    wise: "WS",
-    ws: "WS",
-    stripe: "ST",
-    st: "ST",
-    tinybird: "TB",
-    tb: "TB",
-    estimate: "TB",
-};
-
-export function provenanceTitle(code: ProvenanceCode) {
-    return PROVENANCE[code].title;
-}
-
-export function sourceCode(source: string): ProvenanceCode {
+function sourceMeta(source: string) {
     const normalized = source.toLowerCase();
-    if (
-        ["agent", "email", "inbox", "invoice", "ledger", "pdf"].includes(
-            normalized,
-        )
-    ) {
-        return "IV";
+    const meta = SOURCE_META[normalized];
+    if (!meta) {
+        throw new Error(`Unknown source badge: ${source}`);
     }
-    if (["label", "manual", "hc", "static"].includes(normalized)) return "HC";
-    if (normalized === "api") return "API";
-    if (normalized === "cli") return "CLI";
-    if (normalized === "bq") return "BQ";
-    if (["wise", "ws"].includes(normalized)) return "WS";
-    if (["stripe", "st"].includes(normalized)) return "ST";
-    if (["tinybird", "tb", "estimate"].includes(normalized)) return "TB";
-    return "UNV";
+    return meta;
 }
 
-function sourceClass(source: string, fallbackCode: ProvenanceCode) {
-    return (
-        SOURCE_CLASS[source.toLowerCase()] ?? PROVENANCE[fallbackCode].className
-    );
-}
-
-function sourceDisplay(source: string) {
-    return SOURCE_DISPLAY[source.toLowerCase()] ?? source;
-}
-
-function sourceTitle(source: string, code: ProvenanceCode) {
-    const display = sourceDisplay(source);
-    const title = PROVENANCE[code].title;
-
-    return display === source
-        ? `${source}: ${title}`
-        : `${display}: ${title} (raw source: ${source})`;
+function sourceTitle(source: string, code: ProvenanceCode, custom?: string) {
+    return custom ?? `${source}: ${PROVENANCE[code].title}`;
 }
 
 export function SourceMark({ code }: { code: ProvenanceCode }) {
@@ -170,32 +76,18 @@ export function SourceMark({ code }: { code: ProvenanceCode }) {
     );
 }
 
-export function SourceBadge({ source }: { source: string }) {
-    if (!source) return <span>-</span>;
-
-    const code = sourceCode(source);
-
-    return (
-        <span
-            className={`treasury-source-badge ${sourceClass(source, code)}`}
-            title={sourceTitle(source, code)}
-        >
-            {source}
-        </span>
-    );
-}
-
 export function InlineSourceBadge({ source }: { source: string }) {
     if (!source) return null;
 
-    const code = sourceCode(source);
+    const meta = sourceMeta(source);
+    const provenance = PROVENANCE[meta.code];
 
     return (
         <span
-            className={`treasury-source-badge ${sourceClass(source, code)}`}
-            title={sourceTitle(source, code)}
+            className={`treasury-source-badge ${provenance.className}`}
+            title={sourceTitle(source, meta.code, meta.title)}
         >
-            {sourceDisplay(source)}
+            {meta.display}
         </span>
     );
 }
@@ -207,15 +99,19 @@ function normalizeSource(source: string) {
     return normalized;
 }
 
-export function uniqueSources(sources: readonly string[]) {
+export function uniqueSources(sources: readonly (string | null | undefined)[]) {
     const normalized = sources
-        .flatMap((source) => source.split(/[,+/ ]+/))
+        .flatMap((source) => (source ?? "").split(/[,+/ ]+/))
         .map(normalizeSource)
         .filter(Boolean);
     return [...new Set(normalized)];
 }
 
-export function SourceCell({ sources }: { sources: readonly string[] }) {
+export function SourceCell({
+    sources,
+}: {
+    sources: readonly (string | null | undefined)[];
+}) {
     const unique = uniqueSources(sources);
     if (unique.length === 0) return <span>-</span>;
 
@@ -223,68 +119,6 @@ export function SourceCell({ sources }: { sources: readonly string[] }) {
         <span className="inline-flex items-center gap-1.5 whitespace-nowrap align-middle">
             {unique.map((source) => (
                 <InlineSourceBadge key={source} source={source} />
-            ))}
-        </span>
-    );
-}
-
-export function ValueWithSource({
-    children,
-    source,
-}: {
-    children: ReactNode;
-    source: string;
-}) {
-    return (
-        <span className="inline-flex items-center gap-1.5 whitespace-nowrap align-middle">
-            <span>{children}</span>
-            <InlineSourceBadge source={source} />
-        </span>
-    );
-}
-
-export function SourcedAmount({
-    format,
-    source,
-    value,
-}: {
-    format: (value: number | null) => string;
-    source: string;
-    value: number | null;
-}) {
-    if (value == null) return <span>-</span>;
-    return <ValueWithSource source={source}>{format(value)}</ValueWithSource>;
-}
-
-export function ValueWithSources({
-    children,
-    codes,
-}: {
-    children: ReactNode;
-    codes: ProvenanceCode[];
-}) {
-    return (
-        <span className="inline-flex items-center gap-1.5 whitespace-nowrap align-middle">
-            <span>{children}</span>
-            {codes.map((code) => (
-                <SourceMark key={code} code={code} />
-            ))}
-        </span>
-    );
-}
-
-export function HeaderWithSources({
-    children,
-    codes,
-}: {
-    children: ReactNode;
-    codes: ProvenanceCode[];
-}) {
-    return (
-        <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-            <span>{children}</span>
-            {codes.map((code) => (
-                <SourceMark key={code} code={code} />
             ))}
         </span>
     );

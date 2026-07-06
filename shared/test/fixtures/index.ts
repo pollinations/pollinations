@@ -21,7 +21,7 @@ export const test = base.extend<SharedFixtures>({
     // biome-ignore lint/correctness/noEmptyPattern: vitest fixture pattern requires object destructuring
     apiKey: async ({}, use) => {
         const { key } = await createTestApiKey({
-            user: { packBalance: 100 },
+            user: { tierBalance: 100, packBalance: 0 },
         });
         await use(key);
     },

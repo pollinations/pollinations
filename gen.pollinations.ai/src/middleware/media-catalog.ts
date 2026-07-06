@@ -79,9 +79,6 @@ function extractPrompt(pathname: string): string | null {
 export const mediaCatalog = createMiddleware<MediaCatalogEnv>(
     async (c, next) => {
         const url = new URL(c.req.url);
-        if (url.searchParams.has("tag")) {
-            return c.json({ error: 'Use "tags" instead of "tag".' }, 400);
-        }
         const rawTags = collectTags(url.searchParams);
 
         if (rawTags.length === 0) {

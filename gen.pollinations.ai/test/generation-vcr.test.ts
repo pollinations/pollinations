@@ -1012,7 +1012,7 @@ test("tagging with an invalid tag returns 400 and writes no catalog row", async 
     expect(items).toHaveLength(0);
 });
 
-test("singular tag alias returns 400 and writes no catalog row", async ({
+test("singular tag query does not catalog the generation", async ({
     mocks,
 }) => {
     await mocks.enable("tinybird", "fireworks");
@@ -1023,21 +1023,25 @@ test("singular tag alias returns 400 and writes no catalog row", async ({
 
     const locator =
         "https://gen.pollinations.ai/image/vcr%20singular%20tag%20square?height=720&model=flux&seed=46&width=1280";
+    const locatorWithTag =
+        "https://gen.pollinations.ai/image/vcr%20singular%20tag%20square?height=720&model=flux&seed=46&tag=sunset&width=1280";
 
     const { response, wait } = await fetchWorker(
         "/image/vcr%20singular%20tag%20square?model=flux&width=1280&height=720&seed=46&tag=sunset",
         { headers: { authorization: `Bearer ${key}` } },
     );
 
-    expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toEqual({
-        error: 'Use "tags" instead of "tag".',
-    });
+    expect(response.status).toBe(200);
     await wait();
-    expect(mocks.fireworks.state.requests).toHaveLength(0);
+    expect(mocks.fireworks.state.requests).toHaveLength(1);
 
     const { items } = await getCatalogRows(userId, locator);
     expect(items).toHaveLength(0);
+    const { items: taggedLocatorItems } = await getCatalogRows(
+        userId,
+        locatorWithTag,
+    );
+    expect(taggedLocatorItems).toHaveLength(0);
 });
 
 test("tagging without an API key returns 400", async ({ mocks }) => {

@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type {
     Data,
-    MeterMonthlyRow,
+    PollenMonthlyRow,
+    ProviderMonthlyRow,
     RevenueMonthlyRow,
     TransactionRow,
-    UsageMonthlyRow,
 } from "../types";
 import {
     breakEvenMultiplier,
@@ -101,7 +101,7 @@ const txn = (over: Partial<TransactionRow>): TransactionRow => ({
     ...over,
 });
 
-const meter = (over: Partial<MeterMonthlyRow>): MeterMonthlyRow => ({
+const provider = (over: Partial<ProviderMonthlyRow>): ProviderMonthlyRow => ({
     month: "2026-05",
     vendor: "aws",
     currency: "USD",
@@ -113,14 +113,14 @@ const meter = (over: Partial<MeterMonthlyRow>): MeterMonthlyRow => ({
 
 const emptyData = (over: Partial<Data>): Data => ({
     transactions: [],
-    meterMonthly: [],
-    usageMonthly: [],
+    providerMonthly: [],
+    pollenMonthly: [],
     runs: [],
     revenueMonthly: [],
     ...over,
 });
 
-const usage = (over: Partial<UsageMonthlyRow>): UsageMonthlyRow => ({
+const usage = (over: Partial<PollenMonthlyRow>): PollenMonthlyRow => ({
     source: "tinybird",
     month: "2026-06",
     vendor: "google",
@@ -202,7 +202,7 @@ describe("pnlByMonth", () => {
                     paid_currency: "USD",
                 }),
             ],
-            meterMonthly: [meter({ month: "2026-05", credit: 200 })],
+            providerMonthly: [provider({ month: "2026-05", credit: 200 })],
             revenueMonthly: [
                 {
                     source: "stripe",
@@ -232,7 +232,7 @@ describe("pnlByMonth", () => {
 
     it("reports null spend for a month with no transactions at all", () => {
         const data = emptyData({
-            meterMonthly: [meter({ month: "2026-04", credit: 10 })],
+            providerMonthly: [provider({ month: "2026-04", credit: 10 })],
         });
         const [april] = pnlByMonth(data, now);
         expect(april.month).toBe("2026-04");
@@ -277,9 +277,9 @@ describe("monthSpendDetail", () => {
                     paid_currency: "USD",
                 }),
             ],
-            meterMonthly: [
-                meter({ month: "2026-05", vendor: "azure", credit: 50 }),
-                meter({ month: "2026-05", vendor: "aws", credit: 0, paid: 10 }),
+            providerMonthly: [
+                provider({ month: "2026-05", vendor: "azure", credit: 50 }),
+                provider({ month: "2026-05", vendor: "aws", credit: 0, paid: 10 }),
             ],
         });
         const detail = monthSpendDetail(data, "2026-05", now);
@@ -354,8 +354,8 @@ describe("vendorPlanes", () => {
                     paid_currency: "USD",
                 }),
             ],
-            meterMonthly: [
-                meter({
+            providerMonthly: [
+                provider({
                     month: "2026-06",
                     vendor: "google",
                     currency: "EUR",
@@ -363,7 +363,7 @@ describe("vendorPlanes", () => {
                     paid: 4389.35,
                 }),
             ],
-            usageMonthly: [
+            pollenMonthly: [
                 usage({ vendor: "google", cost_paid: 3000, cost_quests: 1940 }),
             ],
         });
@@ -371,11 +371,11 @@ describe("vendorPlanes", () => {
 
         expect(row.month).toBe("2026-06");
         expect(row.vendor).toBe("google");
-        expect(row.paidUsd).toBe(5000); // saas row excluded — compute only
-        expect(row.spentUsd).toBeCloseTo(4489.35 * 1.1518, 1);
+        expect(row.transactionsUsd).toBe(5000); // saas row excluded — compute only
+        expect(row.providerUsd).toBeCloseTo(4489.35 * 1.1518, 1);
         expect(row.creditUsd).toBeCloseTo(100 * 1.1518, 2);
-        expect(row.registeredUsd).toBe(4940);
-        expect(row.spentVsRegisteredPct).toBeCloseTo(
+        expect(row.pollenUsd).toBe(4940);
+        expect(row.providerVsPollenPct).toBeCloseTo(
             ((4489.35 * 1.1518 - 4940) / 4940) * 100,
             3,
         );
@@ -383,14 +383,14 @@ describe("vendorPlanes", () => {
 
     it("keeps missing planes null instead of zero", () => {
         const data = emptyData({
-            usageMonthly: [usage({ vendor: "runpod", cost_paid: 10 })],
+            pollenMonthly: [usage({ vendor: "runpod", cost_paid: 10 })],
         });
         const [row] = vendorPlanes(data);
-        expect(row.paidUsd).toBeNull();
-        expect(row.spentUsd).toBeNull();
+        expect(row.transactionsUsd).toBeNull();
+        expect(row.providerUsd).toBeNull();
         expect(row.creditUsd).toBeNull();
-        expect(row.registeredUsd).toBe(10);
-        expect(row.spentVsRegisteredPct).toBeNull();
+        expect(row.pollenUsd).toBe(10);
+        expect(row.providerVsPollenPct).toBeNull();
     });
 
     it("skips transactions with a malformed month key", () => {
@@ -416,8 +416,8 @@ describe("insightVendorOptions", () => {
                 txn({ vendor: "aws", category: "compute" }),
                 txn({ vendor: "deel", category: "payroll" }),
             ],
-            meterMonthly: [meter({ vendor: "ovhcloud" })],
-            usageMonthly: [usage({ vendor: "google" })],
+            providerMonthly: [provider({ vendor: "ovhcloud" })],
+            pollenMonthly: [usage({ vendor: "google" })],
         });
         expect(insightVendorOptions(data)).toEqual([
             "all",
@@ -430,8 +430,8 @@ describe("insightVendorOptions", () => {
 
 describe("modelEconomics", () => {
     const data = emptyData({
-        meterMonthly: [
-            meter({
+        providerMonthly: [
+            provider({
                 month: "2026-06",
                 vendor: "google",
                 currency: "USD",
@@ -448,7 +448,7 @@ describe("modelEconomics", () => {
                 paid_currency: "USD",
             }),
         ],
-        usageMonthly: [
+        pollenMonthly: [
             usage({
                 vendor: "google",
                 model: "gemini-a",
@@ -492,8 +492,8 @@ describe("modelEconomics", () => {
         const geminiA = rows.find((row) => row.model === "gemini-a");
         if (!geminiA) throw new Error("gemini-a missing");
 
-        expect(geminiA.basis).toBe("meter");
-        expect(geminiA.registeredCostUsd).toBe(800);
+        expect(geminiA.basis).toBe("provider");
+        expect(geminiA.pollenCostUsd).toBe(800);
         expect(geminiA.sharePct).toBeCloseTo(80, 5); // 800 of google's 1000
         expect(geminiA.trueCostUsd).toBeCloseTo(4000, 5); // 5000 × 0.8
         expect(geminiA.grossPaidUsd).toBe(900);
@@ -510,9 +510,9 @@ describe("modelEconomics", () => {
         const azure = rows.find((row) => row.vendor === "azure");
         if (!eleven || !azure) throw new Error("rows missing");
 
-        expect(eleven.basis).toBe("cash");
+        expect(eleven.basis).toBe("transactions");
         expect(eleven.trueCostUsd).toBeCloseTo(300, 5);
-        expect(azure.basis).toBe("registered");
+        expect(azure.basis).toBe("pollen");
         expect(azure.trueCostUsd).toBeCloseTo(100, 5);
         expect(azure.effectiveMultiplier).toBeCloseTo(0.8, 5); // 40/50
     });
@@ -526,7 +526,7 @@ describe("modelEconomics", () => {
 
     it("reports a null multiplier for quest-only models", () => {
         const questOnly = emptyData({
-            usageMonthly: [
+            pollenMonthly: [
                 usage({
                     vendor: "aws",
                     model: "free",
@@ -539,12 +539,12 @@ describe("modelEconomics", () => {
         });
         const [row] = modelEconomics(questOnly, "", null);
         expect(row.effectiveMultiplier).toBeNull();
-        expect(row.basis).toBe("registered");
+        expect(row.basis).toBe("pollen");
     });
 });
 
 describe("ecosystemTotals", () => {
-    it("sums byop and model credits across paid and quests meters in scope", () => {
+    it("sums byop and model credits across paid and quests in scope", () => {
         const rows = [
             usage({
                 month: "2026-06",

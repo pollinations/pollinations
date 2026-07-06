@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { MeterMonthlyRow } from "../types";
-import { visibleMeterRows } from "./MeterTab";
+import type { ProviderMonthlyRow } from "../types";
+import { visibleProviderRows } from "./ProviderTab";
 
-const row = (month: string, vendor: string): MeterMonthlyRow => ({
+const row = (month: string, vendor: string): ProviderMonthlyRow => ({
     month,
     vendor,
     currency: "USD",
@@ -11,7 +11,7 @@ const row = (month: string, vendor: string): MeterMonthlyRow => ({
     source: "api",
 });
 
-describe("visibleMeterRows", () => {
+describe("visibleProviderRows", () => {
     const rows = [
         row("2026-06", "aws"),
         row("2026-07", "aws"),
@@ -20,8 +20,8 @@ describe("visibleMeterRows", () => {
 
     it("filters by month and vendor", () => {
         expect(
-            visibleMeterRows({
-                meterRows: rows,
+            visibleProviderRows({
+                providerRows: rows,
                 month: "2026-07",
                 vendor: "aws",
             }),
@@ -30,7 +30,11 @@ describe("visibleMeterRows", () => {
 
     it("returns everything for the all/empty filters", () => {
         expect(
-            visibleMeterRows({ meterRows: rows, month: "", vendor: "all" }),
+            visibleProviderRows({
+                providerRows: rows,
+                month: "",
+                vendor: "all",
+            }),
         ).toEqual(rows);
     });
 });

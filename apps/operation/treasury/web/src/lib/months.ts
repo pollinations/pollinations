@@ -20,8 +20,8 @@ export function matchesMonth(value: string, filter: string): boolean {
 export function collectMonths(data: Data): string[] {
     const months = new Set<string>();
     for (const row of data.transactions) months.add(row.date.slice(0, 7));
-    for (const row of data.meterMonthly) months.add(row.month);
-    for (const row of data.usageMonthly) months.add(row.month);
+    for (const row of data.providerMonthly) months.add(row.month);
+    for (const row of data.pollenMonthly) months.add(row.month);
     return [...months]
         .filter((month) => MONTH_RE.test(month))
         .sort((a, b) => a.localeCompare(b));

@@ -25,15 +25,15 @@ import {
     vendorVocabularyRunIssues,
 } from "./lib/vendor-vocabulary";
 import type { Data } from "./types";
-import { BurnTab } from "./views/BurnTab";
-import { MeterTab } from "./views/MeterTab";
 import { ModelsTab } from "./views/ModelsTab";
 import { PnlTab } from "./views/PnlTab";
+import { PollenTab } from "./views/PollenTab";
+import { ProviderTab } from "./views/ProviderTab";
 import { RevenueTab } from "./views/RevenueTab";
 import { TransactionsTab } from "./views/TransactionsTab";
 import { VendorsTab } from "./views/VendorsTab";
 
-type Tab = "transactions" | "burn" | "meter" | "revenue";
+type Tab = "transactions" | "pollen" | "provider" | "revenue";
 type Section = "insights" | "raw";
 type InsightTab = "pnl" | "vendors" | "models";
 
@@ -45,12 +45,12 @@ const INSIGHT_TABS: {
     {
         id: "pnl",
         label: "P&L",
-        note: "Monthly blend: Stripe net revenue minus cash spend per category, with credit burn as a shadow. Derived client-side from transactions, meter, and revenue pipes.",
+        note: "Monthly blend: Stripe net revenue minus cash spend per category, with credit burn as a shadow. Derived client-side from the transactions, provider, and revenue pipes.",
     },
     {
         id: "vendors",
         label: "Vendors",
-        note: "Three-way per vendor and month: what the bank paid, what the vendor metered, what our own metering registered - with the delta that exposes wrong registry unit costs.",
+        note: "One spend, three witnesses per vendor and month: transactions (bank cash), provider (their meter), pollen (our metering) - with the delta that exposes wrong registry unit costs.",
     },
     {
         id: "models",
@@ -78,20 +78,20 @@ const TABS: {
         rows: (data) => data.transactions.length,
     },
     {
-        id: "burn",
-        label: "Pollen Usage",
+        id: "pollen",
+        label: "Pollen",
         codes: ["TB"],
-        pipe: "usage_monthly_api",
+        pipe: "pollen_monthly_api",
         note: "Our own metering: Tinybird generation events → one model/month row, paid vs quest Pollen.",
-        rows: (data) => data.usageMonthly.length,
+        rows: (data) => data.pollenMonthly.length,
     },
     {
-        id: "meter",
-        label: "Compute Usage",
+        id: "provider",
+        label: "Provider",
         codes: ["API", "CLI", "BQ", "HC"],
-        pipe: "meter_monthly_api",
-        note: "Monthly vendor usage from vendor APIs, CLIs, BigQuery exports, and manual entries.",
-        rows: (data) => data.meterMonthly.length,
+        pipe: "provider_monthly_api",
+        note: "Provider-reported monthly usage from vendor APIs, CLIs, BigQuery exports, and manual entries.",
+        rows: (data) => data.providerMonthly.length,
     },
     {
         id: "revenue",
@@ -114,10 +114,10 @@ function vendorOptionsForTab(data: Data | null, tab: Tab) {
 
     if (tab === "transactions") {
         for (const row of data.transactions) add(row.vendor);
-    } else if (tab === "burn") {
-        for (const row of data.usageMonthly) add(row.vendor);
-    } else if (tab === "meter") {
-        for (const row of data.meterMonthly) add(row.vendor);
+    } else if (tab === "pollen") {
+        for (const row of data.pollenMonthly) add(row.vendor);
+    } else if (tab === "provider") {
+        for (const row of data.providerMonthly) add(row.vendor);
     }
 
     return ["all", ...[...vendors].sort((a, b) => a.localeCompare(b))];
@@ -557,15 +557,15 @@ export default function App() {
                                     vendor={vendor}
                                 />
                             )}
-                        {data && section === "raw" && tab === "burn" && (
-                            <BurnTab
+                        {data && section === "raw" && tab === "pollen" && (
+                            <PollenTab
                                 data={data}
                                 month={activeMonth}
                                 vendor={vendor}
                             />
                         )}
-                        {data && section === "raw" && tab === "meter" && (
-                            <MeterTab
+                        {data && section === "raw" && tab === "provider" && (
+                            <ProviderTab
                                 data={data}
                                 month={activeMonth}
                                 vendor={vendor}

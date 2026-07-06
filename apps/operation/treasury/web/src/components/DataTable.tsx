@@ -1,4 +1,4 @@
-import { Table } from "@pollinations/ui";
+import { Table, Tooltip } from "@pollinations/ui";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 
@@ -24,6 +24,27 @@ export function TableScroller({ children }: { children: ReactNode }) {
 export function DataTable({ children }: { children: ReactNode }) {
     return (
         <Table className="w-full min-w-max whitespace-nowrap">{children}</Table>
+    );
+}
+
+// Column-header label with a how-is-this-computed hover. Only calculated
+// columns get one — identity columns stay bare.
+export function HeaderHint({
+    children,
+    hint,
+}: {
+    children: ReactNode;
+    hint: string;
+}) {
+    return (
+        <Tooltip
+            triggerAs="span"
+            content={<span className="block max-w-72">{hint}</span>}
+        >
+            <span className="underline decoration-dotted decoration-theme-border underline-offset-2">
+                {children}
+            </span>
+        </Tooltip>
     );
 }
 

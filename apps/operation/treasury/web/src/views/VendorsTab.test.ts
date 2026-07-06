@@ -5,11 +5,11 @@ import { visiblePlaneRows } from "./VendorsTab";
 const plane = (month: string, vendor: string): VendorPlanes => ({
     month,
     vendor,
-    paidUsd: null,
-    spentUsd: null,
+    transactionsUsd: null,
+    providerUsd: null,
     creditUsd: null,
-    registeredUsd: 1,
-    spentVsRegisteredPct: null,
+    pollenUsd: 1,
+    providerVsPollenPct: null,
 });
 
 describe("visiblePlaneRows", () => {

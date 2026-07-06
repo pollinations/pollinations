@@ -10,6 +10,7 @@ import {
 import { useMemo } from "react";
 import {
     DataTable,
+    HeaderHint,
     type SortColumn,
     TableScroller,
     useSortableRows,
@@ -41,7 +42,7 @@ export function gaugeParts(paid: number, quests: number, maxTotal: number) {
 }
 
 // Right-anchored: the bar grows leftwards with total pollen, so scanning
-// the column reads volume at a glance; the color split is the meter mix.
+// the column reads volume at a glance; the color split is the paid/quests mix.
 function PollenGauge({
     max,
     paid,
@@ -97,8 +98,8 @@ export function ModelsTab({
     );
     const breakEven = useMemo(() => breakEvenMultiplier(netRatio), [netRatio]);
     const ecosystem = useMemo(
-        () => ecosystemTotals(data.usageMonthly, month),
-        [data.usageMonthly, month],
+        () => ecosystemTotals(data.pollenMonthly, month),
+        [data.pollenMonthly, month],
     );
     const allRows = useMemo(
         () => modelEconomics(data, month, netRatio),
@@ -132,7 +133,7 @@ export function ModelsTab({
                     return total > 0 ? row.grossPaidUsd / total : null;
                 },
             },
-            { key: "registeredCostUsd", value: (row) => row.registeredCostUsd },
+            { key: "pollenCostUsd", value: (row) => row.pollenCostUsd },
             { key: "sharePct", value: (row) => row.sharePct },
             { key: "trueCostUsd", value: (row) => row.trueCostUsd },
             { key: "basis", value: (row) => row.basis },
@@ -181,43 +182,63 @@ export function ModelsTab({
                                 model
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("grossPaidUsd")}>
-                                gross_paid
+                                <HeaderHint hint="Pollen end users paid for this model (price_paid).">
+                                    gross_paid
+                                </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("ecoPaidUsd")}>
-                                eco_paid
+                                <HeaderHint hint="Passed onward: byop_paid (app developer share) + model_paid (community model owner share).">
+                                    eco_paid
+                                </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
                                 {...headerProps("retainedPaidUsd")}
                             >
-                                retained_paid
+                                <HeaderHint hint="gross_paid − eco_paid: the pollen Pollinations actually keeps.">
+                                    retained_paid
+                                </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("grossQuestsUsd")}>
-                                gross_quests
+                                <HeaderHint hint="Free quest pollen consumed on this model - costs us, earns nothing (price_quests).">
+                                    gross_quests
+                                </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("paid_share")}>
-                                paid / quests
+                                <HeaderHint hint="Bar length = total pollen vs the biggest model in view; colored = paid, faded = quests.">
+                                    paid / quests
+                                </HeaderHint>
                             </TableHeaderCell>
-                            <TableHeaderCell
-                                {...headerProps("registeredCostUsd")}
-                            >
-                                registered
+                            <TableHeaderCell {...headerProps("pollenCostUsd")}>
+                                <HeaderHint hint="Our metered cost for this model: cost_paid + cost_quests.">
+                                    pollen cost
+                                </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("sharePct")}>
-                                share
+                                <HeaderHint hint="This model's % of the vendor's total pollen cost - how vendor actuals get allocated to models.">
+                                    share
+                                </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("trueCostUsd")}>
-                                true cost
+                                <HeaderHint hint="Vendor actual spend × share. The actual is picked by the basis waterfall.">
+                                    true cost
+                                </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("basis")}>
-                                basis
+                                <HeaderHint hint="Which witness supplied the vendor actual for true cost: provider (their meter) → transactions (bank cash) → pollen (our metering, no vendor data yet).">
+                                    basis
+                                </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
                                 {...headerProps("effectiveMultiplier")}
                             >
-                                eff ×
+                                <HeaderHint hint="gross_paid / cost_paid: the markup achieved on paid usage. Compare to the break-even chip.">
+                                    eff ×
+                                </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("marginUsd")}>
-                                margin
+                                <HeaderHint hint="retained_paid × net ratio − true cost: what this model actually earns or loses us.">
+                                    margin
+                                </HeaderHint>
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>
@@ -249,7 +270,7 @@ export function ModelsTab({
                                     />
                                 </TableCell>
                                 <TableCell>
-                                    {fmtUsd(row.registeredCostUsd)}
+                                    {fmtUsd(row.pollenCostUsd)}
                                 </TableCell>
                                 <TableCell className="text-theme-text-soft">
                                     {row.sharePct.toFixed(1)}%
@@ -261,9 +282,7 @@ export function ModelsTab({
                                         intent="neutral"
                                         size="sm"
                                     >
-                                        {row.basis === "registered"
-                                            ? "reg"
-                                            : row.basis}
+                                        {row.basis}
                                     </Chip>
                                 </TableCell>
                                 <TableCell>
@@ -282,11 +301,10 @@ export function ModelsTab({
             <Text size="micro" tone="soft">
                 margin = retained_paid × net-ratio − true cost · retained_paid =
                 gross_paid − byop_paid − model_paid · eco_paid = byop_paid +
-                model_paid · paid / quests gauge: bar length = total pollen vs
-                the biggest model in view, colored = paid, faded = quests · true
-                cost = vendor actual × model share of registered cost · basis:
-                meter = vendor-reported, cash = bank, reg = our metering (no
-                vendor data yet) · sorted worst margin first
+                model_paid · true cost = vendor actual × model share of pollen
+                cost · basis names the witness that supplied the vendor actual:
+                provider (their meter), transactions (bank cash), pollen (our
+                metering, no vendor data yet) · sorted worst margin first
             </Text>
         </div>
     );

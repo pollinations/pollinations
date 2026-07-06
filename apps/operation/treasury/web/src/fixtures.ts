@@ -1,9 +1,9 @@
 import type {
-    MeterMonthlyRow,
+    PollenMonthlyRow,
+    ProviderMonthlyRow,
     RevenueMonthlyRow,
     RunRow,
     TransactionRow,
-    UsageMonthlyRow,
 } from "./types";
 
 const transactions: TransactionRow[] = [
@@ -64,7 +64,7 @@ const transactions: TransactionRow[] = [
     },
 ];
 
-const usageMonthly: UsageMonthlyRow[] = [
+const pollenMonthly: PollenMonthlyRow[] = [
     {
         source: "tinybird",
         month: "2026-06",
@@ -125,7 +125,7 @@ const usageMonthly: UsageMonthlyRow[] = [
         model_paid: 0,
         model_quests: 0,
     },
-    // No elevenlabs meter row + the June elevenlabs compute transaction (299
+    // No elevenlabs provider row + the June elevenlabs compute transaction (299
     // USD paid) makes this model demo the `cash` cost basis in the Models tab.
     {
         source: "tinybird",
@@ -144,7 +144,7 @@ const usageMonthly: UsageMonthlyRow[] = [
     },
 ];
 
-const meterMonthly: MeterMonthlyRow[] = [
+const providerMonthly: ProviderMonthlyRow[] = [
     {
         month: "2026-06",
         vendor: "assemblyai",
@@ -217,8 +217,8 @@ const revenueMonthly: RevenueMonthlyRow[] = [
 
 export const FIXTURES: Record<string, unknown[]> = {
     transactions_api: transactions,
-    meter_monthly_api: meterMonthly,
-    usage_monthly_api: usageMonthly,
+    provider_monthly_api: providerMonthly,
+    pollen_monthly_api: pollenMonthly,
     ingest_runs_api: runs,
     revenue_monthly_api: revenueMonthly,
 };

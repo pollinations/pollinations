@@ -5,8 +5,8 @@ import { collectMonths, matchesMonth, monthLabel, yearsOf } from "./months";
 
 const data: Data = {
     transactions: FIXTURES.transactions_api,
-    meterMonthly: FIXTURES.meter_monthly_api,
-    usageMonthly: FIXTURES.usage_monthly_api,
+    providerMonthly: FIXTURES.provider_monthly_api,
+    pollenMonthly: FIXTURES.pollen_monthly_api,
     runs: FIXTURES.ingest_runs_api,
     revenueMonthly: FIXTURES.revenue_monthly_api,
 } as Data;

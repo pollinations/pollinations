@@ -8,8 +8,8 @@ import {
 
 const baseData: Data = {
     transactions: [],
-    meterMonthly: [],
-    usageMonthly: [],
+    providerMonthly: [],
+    pollenMonthly: [],
     runs: [],
     revenueMonthly: [],
 };
@@ -25,7 +25,7 @@ describe("vendor vocabulary", () => {
     it("reports unknown row vendors without turning aliases into options", () => {
         const issues = findVendorVocabularyIssues({
             ...baseData,
-            usageMonthly: [
+            pollenMonthly: [
                 {
                     source: "tinybird",
                     month: "2026-06",
@@ -46,9 +46,9 @@ describe("vendor vocabulary", () => {
 
         expect(issues).toEqual([
             {
-                source: "usage_monthly",
+                source: "pollen_monthly",
                 vendor: "new-vendor",
-                detail: 'usage_monthly: unknown vendor "new-vendor" - add an alias or canonical vendor in vendor_aliases.json',
+                detail: 'pollen_monthly: unknown vendor "new-vendor" - add an alias or canonical vendor in vendor_aliases.json',
             },
         ]);
     });
@@ -59,7 +59,7 @@ describe("vendor vocabulary", () => {
                 run_at: "2026-07-04 12:00:00",
                 ok: 0,
                 statuses: JSON.stringify({
-                    usage: "err:ValueError: unknown vendor slug for usage_monthly: 'new-vendor'",
+                    usage: "err:ValueError: unknown vendor slug for pollen_monthly: 'new-vendor'",
                 }),
                 notes: "",
             },
@@ -69,7 +69,7 @@ describe("vendor vocabulary", () => {
             {
                 source: "usage",
                 vendor: "",
-                detail: "usage: err:ValueError: unknown vendor slug for usage_monthly: 'new-vendor'",
+                detail: "usage: err:ValueError: unknown vendor slug for pollen_monthly: 'new-vendor'",
             },
         ]);
     });

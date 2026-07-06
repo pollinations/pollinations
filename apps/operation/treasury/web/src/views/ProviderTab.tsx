@@ -16,25 +16,25 @@ import {
 import { SourceCell } from "../components/Provenance";
 import { fmtPeriod } from "../lib/format";
 import { matchesMonth } from "../lib/months";
-import type { Data, MeterMonthlyRow } from "../types";
+import type { Data, ProviderMonthlyRow } from "../types";
 
-export function visibleMeterRows({
-    meterRows,
+export function visibleProviderRows({
+    providerRows,
     month,
     vendor,
 }: {
-    meterRows: MeterMonthlyRow[];
+    providerRows: ProviderMonthlyRow[];
     month: string;
     vendor: string;
 }) {
-    return meterRows.filter(
+    return providerRows.filter(
         (row) =>
             matchesMonth(row.month, month) &&
             (vendor === "all" || row.vendor === vendor),
     );
 }
 
-export function MeterTab({
+export function ProviderTab({
     data,
     month = "",
     vendor = "all",
@@ -45,14 +45,14 @@ export function MeterTab({
 }) {
     const baseRows = useMemo(
         () =>
-            visibleMeterRows({
-                meterRows: data.meterMonthly,
+            visibleProviderRows({
+                providerRows: data.providerMonthly,
                 month,
                 vendor,
             }),
-        [data.meterMonthly, month, vendor],
+        [data.providerMonthly, month, vendor],
     );
-    const sortColumns = useMemo<SortColumn<MeterMonthlyRow>[]>(
+    const sortColumns = useMemo<SortColumn<ProviderMonthlyRow>[]>(
         () => [
             { key: "month", value: (row) => row.month },
             { key: "source", value: (row) => row.source },

@@ -16,8 +16,8 @@ const SECRETS_PATH = fileURLToPath(
 const SESSION_COOKIE = "treasury_session";
 const READ_PIPES = new Set([
     "transactions_api",
-    "meter_monthly_api",
-    "usage_monthly_api",
+    "provider_monthly_api",
+    "pollen_monthly_api",
     "ingest_runs_api",
     "revenue_monthly_api",
 ]);

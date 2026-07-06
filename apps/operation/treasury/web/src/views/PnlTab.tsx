@@ -8,7 +8,7 @@ import {
     Text,
 } from "@pollinations/ui";
 import { useMemo } from "react";
-import { DataTable, TableScroller } from "../components/DataTable";
+import { DataTable, HeaderHint, TableScroller } from "../components/DataTable";
 import { fmtUsd } from "../lib/format";
 import {
     categoryColumns,
@@ -79,15 +79,31 @@ function PnlMatrix({ data, month = "" }: { data: Data; month?: string }) {
                     <TableHead>
                         <TableRow>
                             <TableHeaderCell>month</TableHeaderCell>
-                            <TableHeaderCell>revenue</TableHeaderCell>
+                            <TableHeaderCell>
+                                <HeaderHint hint="Stripe net: gross − fees − refunds, EUR→USD at monthly ECB rates.">
+                                    revenue
+                                </HeaderHint>
+                            </TableHeaderCell>
                             {categories.map((category) => (
                                 <TableHeaderCell key={category}>
                                     {category}
                                 </TableHeaderCell>
                             ))}
-                            <TableHeaderCell>spend</TableHeaderCell>
-                            <TableHeaderCell>cash P&L</TableHeaderCell>
-                            <TableHeaderCell>credit burn</TableHeaderCell>
+                            <TableHeaderCell>
+                                <HeaderHint hint="Sum of all category columns: total cash out for the month, by invoice date.">
+                                    spend
+                                </HeaderHint>
+                            </TableHeaderCell>
+                            <TableHeaderCell>
+                                <HeaderHint hint="revenue − spend. Only shown when both sides exist.">
+                                    cash P&L
+                                </HeaderHint>
+                            </TableHeaderCell>
+                            <TableHeaderCell>
+                                <HeaderHint hint="Provider-metered consumption covered by granted credits. No cash left the bank, so it is NOT in cash P&L.">
+                                    credit burn
+                                </HeaderHint>
+                            </TableHeaderCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -163,8 +179,8 @@ function PnlMatrix({ data, month = "" }: { data: Data; month?: string }) {
             </TableScroller>
             <Text size="micro" tone="soft">
                 costs are cash-basis by transaction date · EUR→USD at monthly
-                ECB averages · (credit burn) = vendor spend covered by credits,
-                not part of cash P&L · ⚠ = Enty batch not landed
+                ECB averages · (credit burn) = provider-metered spend covered by
+                credits, not part of cash P&L · ⚠ = Enty batch not landed
             </Text>
         </div>
     );
@@ -206,7 +222,11 @@ function PnlMonthDetail({ data, month }: { data: Data; month: string }) {
                         <TableRow>
                             <TableHeaderCell>category</TableHeaderCell>
                             <TableHeaderCell>vendor</TableHeaderCell>
-                            <TableHeaderCell>cash</TableHeaderCell>
+                            <TableHeaderCell>
+                                <HeaderHint hint="Cash out for this category × vendor: bank amount when matched, invoice amount as fallback.">
+                                    cash
+                                </HeaderHint>
+                            </TableHeaderCell>
                             <TableHeaderCell>% of spend</TableHeaderCell>
                         </TableRow>
                     </TableHead>

@@ -9,6 +9,7 @@ import {
 import { useMemo } from "react";
 import {
     DataTable,
+    HeaderHint,
     type SortColumn,
     TableScroller,
     useSortableRows,
@@ -55,13 +56,13 @@ export function VendorsTab({
         () => [
             { key: "month", value: (row) => row.month },
             { key: "vendor", value: (row) => row.vendor },
-            { key: "paidUsd", value: (row) => row.paidUsd },
-            { key: "spentUsd", value: (row) => row.spentUsd },
+            { key: "transactionsUsd", value: (row) => row.transactionsUsd },
+            { key: "providerUsd", value: (row) => row.providerUsd },
             { key: "creditUsd", value: (row) => row.creditUsd },
-            { key: "registeredUsd", value: (row) => row.registeredUsd },
+            { key: "pollenUsd", value: (row) => row.pollenUsd },
             {
-                key: "spentVsRegisteredPct",
-                value: (row) => row.spentVsRegisteredPct,
+                key: "providerVsPollenPct",
+                value: (row) => row.providerVsPollenPct,
             },
         ],
         [],
@@ -83,22 +84,36 @@ export function VendorsTab({
                             <TableHeaderCell {...headerProps("vendor")}>
                                 vendor
                             </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("paidUsd")}>
-                                paid (bank)
+                            <TableHeaderCell
+                                {...headerProps("transactionsUsd")}
+                            >
+                                <HeaderHint hint="Cash actually sent to the vendor: Enty compute invoices, by invoice month. Empty = no invoice landed (credits, Enty lag, or arrears billing).">
+                                    transactions
+                                </HeaderHint>
                             </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("spentUsd")}>
-                                spent (meter)
+                            <TableHeaderCell {...headerProps("providerUsd")}>
+                                <HeaderHint hint="What the provider's own billing meter says we consumed that month (credit + paid parts).">
+                                    provider
+                                </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("creditUsd")}>
-                                of it credit
+                                <HeaderHint hint="The slice of provider consumption covered by granted credits - consumed, but no cash out.">
+                                    of it credit
+                                </HeaderHint>
                             </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("registeredUsd")}>
-                                registered (us)
+                            <TableHeaderCell {...headerProps("pollenUsd")}>
+                                <HeaderHint hint="What our own metering registered as cost for this vendor's models: cost_paid + cost_quests (Pollen ≈ $).">
+                                    pollen
+                                </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
-                                {...headerProps("spentVsRegisteredPct")}
+                                {...headerProps("providerVsPollenPct")}
                             >
-                                Δ spent vs reg
+                                <HeaderHint
+                                    hint={`(provider − pollen) / pollen. Positive = the vendor charges more than our registry thinks. Red past ±${DELTA_ALARM_PCT}%.`}
+                                >
+                                    Δ provider vs pollen
+                                </HeaderHint>
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>
@@ -110,24 +125,24 @@ export function VendorsTab({
                             <TableRow key={key}>
                                 <TableCell>{monthLabel(row.month)}</TableCell>
                                 <TableCell>{row.vendor}</TableCell>
-                                <TableCell>{fmtUsd(row.paidUsd)}</TableCell>
-                                <TableCell>{fmtUsd(row.spentUsd)}</TableCell>
+                                <TableCell>
+                                    {fmtUsd(row.transactionsUsd)}
+                                </TableCell>
+                                <TableCell>{fmtUsd(row.providerUsd)}</TableCell>
                                 <TableCell className="text-theme-text-soft">
                                     {fmtUsd(row.creditUsd)}
                                 </TableCell>
-                                <TableCell>
-                                    {fmtUsd(row.registeredUsd)}
-                                </TableCell>
+                                <TableCell>{fmtUsd(row.pollenUsd)}</TableCell>
                                 <TableCell
                                     className={
-                                        row.spentVsRegisteredPct != null &&
-                                        Math.abs(row.spentVsRegisteredPct) >
+                                        row.providerVsPollenPct != null &&
+                                        Math.abs(row.providerVsPollenPct) >
                                             DELTA_ALARM_PCT
                                             ? "text-intent-danger-text"
                                             : "text-theme-text-soft"
                                     }
                                 >
-                                    {fmtPct(row.spentVsRegisteredPct)}
+                                    {fmtPct(row.providerVsPollenPct)}
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -135,9 +150,9 @@ export function VendorsTab({
                 </DataTable>
             </TableScroller>
             <Text size="micro" tone="soft">
-                paid = Enty compute transactions (bank leg, invoice fallback) ·
-                spent = vendor-reported meter · registered = our metering
-                (Pollen ≈ $) · – = no data for that plane, never zero · Δ red
+                one spend, three witnesses — transactions: cash from the bank
+                (Enty) · provider: their own meter · pollen: our metering
+                (Pollen ≈ $) · – = that witness has no data, never zero · Δ red
                 when |Δ| &gt; {DELTA_ALARM_PCT}%
             </Text>
         </div>

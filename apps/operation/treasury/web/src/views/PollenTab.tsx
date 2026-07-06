@@ -16,9 +16,9 @@ import {
 import { SourceCell } from "../components/Provenance";
 import { fmtPeriod } from "../lib/format";
 import { matchesMonth } from "../lib/months";
-import type { Data, UsageMonthlyRow } from "../types";
+import type { Data, PollenMonthlyRow } from "../types";
 
-export function BurnTab({
+export function PollenTab({
     data,
     month = "",
     vendor = "all",
@@ -29,14 +29,14 @@ export function BurnTab({
 }) {
     const baseRows = useMemo(
         () =>
-            data.usageMonthly.filter(
+            data.pollenMonthly.filter(
                 (row) =>
                     matchesMonth(row.month, month) &&
                     (vendor === "all" || row.vendor === vendor),
             ),
-        [data.usageMonthly, month, vendor],
+        [data.pollenMonthly, month, vendor],
     );
-    const sortColumns = useMemo<SortColumn<UsageMonthlyRow>[]>(
+    const sortColumns = useMemo<SortColumn<PollenMonthlyRow>[]>(
         () => [
             { key: "month", value: (row) => row.month },
             { key: "source", value: (row) => row.source },

@@ -10,7 +10,7 @@ export type TransactionRow = {
     match_status: string;
 };
 
-export type MeterMonthlyRow = {
+export type ProviderMonthlyRow = {
     month: string;
     vendor: string;
     currency: string;
@@ -19,7 +19,7 @@ export type MeterMonthlyRow = {
     source: string;
 };
 
-export type UsageMonthlyRow = {
+export type PollenMonthlyRow = {
     source: string;
     month: string;
     vendor: string;
@@ -53,8 +53,8 @@ export type RevenueMonthlyRow = {
 
 export type Data = {
     transactions: TransactionRow[];
-    meterMonthly: MeterMonthlyRow[];
-    usageMonthly: UsageMonthlyRow[];
+    providerMonthly: ProviderMonthlyRow[];
+    pollenMonthly: PollenMonthlyRow[];
     runs: RunRow[];
     revenueMonthly: RevenueMonthlyRow[];
 };

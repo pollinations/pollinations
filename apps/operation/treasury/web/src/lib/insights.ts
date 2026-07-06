@@ -1,8 +1,8 @@
 import type {
     Data,
+    PollenMonthlyRow,
     RevenueMonthlyRow,
     TransactionRow,
-    UsageMonthlyRow,
 } from "../types";
 import { toUsd } from "./fx";
 import { matchesMonth } from "./months";
@@ -117,7 +117,7 @@ export function pnlByMonth(data: Data, now: Date): PnlMonth[] {
 
     const months = new Set<string>();
     for (const row of data.transactions) months.add(row.date.slice(0, 7));
-    for (const row of data.meterMonthly) months.add(row.month);
+    for (const row of data.providerMonthly) months.add(row.month);
     for (const row of data.revenueMonthly) months.add(row.month);
 
     return [...months]
@@ -137,7 +137,7 @@ export function pnlByMonth(data: Data, now: Date): PnlMonth[] {
                 : null;
 
             let creditBurnUsd = 0;
-            for (const row of data.meterMonthly) {
+            for (const row of data.providerMonthly) {
                 if (row.month === month) {
                     creditBurnUsd += toUsd(row.credit, row.currency, month);
                 }
@@ -222,7 +222,7 @@ export function monthSpendDetail(
         );
 
     const creditByVendor = new Map<string, number>();
-    for (const row of data.meterMonthly) {
+    for (const row of data.providerMonthly) {
         if (row.month !== month) continue;
         const credit = toUsd(row.credit, row.currency, month);
         if (credit <= 0) continue;
@@ -243,11 +243,11 @@ export function monthSpendDetail(
 export type VendorPlanes = {
     month: string;
     vendor: string;
-    paidUsd: number | null;
-    spentUsd: number | null;
+    transactionsUsd: number | null;
+    providerUsd: number | null;
     creditUsd: number | null;
-    registeredUsd: number | null;
-    spentVsRegisteredPct: number | null;
+    pollenUsd: number | null;
+    providerVsPollenPct: number | null;
 };
 
 function pctDelta(a: number | null, b: number | null): number | null {
@@ -255,53 +255,58 @@ function pctDelta(a: number | null, b: number | null): number | null {
     return ((a - b) / b) * 100;
 }
 
+// One spend, three witnesses: transactions (bank cash), provider (their
+// meter), pollen (our metering). A missing witness stays null, never zero.
 export function vendorPlanes(data: Data): VendorPlanes[] {
-    const paid = new Map<string, number>();
+    const transactions = new Map<string, number>();
     for (const row of data.transactions) {
         if (row.category !== "compute") continue;
         const month = row.date.slice(0, 7);
         if (!MONTH_KEY_RE.test(month)) continue;
         const key = `${month}|${row.vendor}`;
-        paid.set(key, (paid.get(key) ?? 0) + transactionCashUsd(row));
+        transactions.set(
+            key,
+            (transactions.get(key) ?? 0) + transactionCashUsd(row),
+        );
     }
 
-    const spent = new Map<string, { total: number; credit: number }>();
-    for (const row of data.meterMonthly) {
+    const provider = new Map<string, { total: number; credit: number }>();
+    for (const row of data.providerMonthly) {
         const key = `${row.month}|${row.vendor}`;
-        const entry = spent.get(key) ?? { total: 0, credit: 0 };
+        const entry = provider.get(key) ?? { total: 0, credit: 0 };
         entry.total += toUsd(row.credit + row.paid, row.currency, row.month);
         entry.credit += toUsd(row.credit, row.currency, row.month);
-        spent.set(key, entry);
+        provider.set(key, entry);
     }
 
-    const registered = new Map<string, number>();
-    for (const row of data.usageMonthly) {
+    const pollen = new Map<string, number>();
+    for (const row of data.pollenMonthly) {
         const key = `${row.month}|${row.vendor}`;
-        registered.set(
+        pollen.set(
             key,
-            (registered.get(key) ?? 0) +
+            (pollen.get(key) ?? 0) +
                 toUsd(row.cost_paid + row.cost_quests, row.currency, row.month),
         );
     }
 
     const keys = new Set([
-        ...paid.keys(),
-        ...spent.keys(),
-        ...registered.keys(),
+        ...transactions.keys(),
+        ...provider.keys(),
+        ...pollen.keys(),
     ]);
     return [...keys].sort().map((key) => {
         const [month, vendor] = key.split("|");
-        const spentEntry = spent.get(key);
-        const spentUsd = spentEntry ? spentEntry.total : null;
-        const registeredUsd = registered.get(key) ?? null;
+        const providerEntry = provider.get(key);
+        const providerUsd = providerEntry ? providerEntry.total : null;
+        const pollenUsd = pollen.get(key) ?? null;
         return {
             month,
             vendor,
-            paidUsd: paid.get(key) ?? null,
-            spentUsd,
-            creditUsd: spentEntry ? spentEntry.credit : null,
-            registeredUsd,
-            spentVsRegisteredPct: pctDelta(spentUsd, registeredUsd),
+            transactionsUsd: transactions.get(key) ?? null,
+            providerUsd,
+            creditUsd: providerEntry ? providerEntry.credit : null,
+            pollenUsd,
+            providerVsPollenPct: pctDelta(providerUsd, pollenUsd),
         };
     });
 }
@@ -313,10 +318,10 @@ export function insightVendorOptions(data: Data): string[] {
             vendors.add(row.vendor.trim());
         }
     }
-    for (const row of data.meterMonthly) {
+    for (const row of data.providerMonthly) {
         if (row.vendor.trim()) vendors.add(row.vendor.trim());
     }
-    for (const row of data.usageMonthly) {
+    for (const row of data.pollenMonthly) {
         if (row.vendor.trim()) vendors.add(row.vendor.trim());
     }
     return ["all", ...[...vendors].sort((a, b) => a.localeCompare(b))];
@@ -324,7 +329,7 @@ export function insightVendorOptions(data: Data): string[] {
 
 // ------------------------------------------------------- model economics
 
-export type CostBasis = "meter" | "cash" | "registered";
+export type CostBasis = "provider" | "transactions" | "pollen";
 
 export type ModelEconomics = {
     vendor: string;
@@ -333,7 +338,7 @@ export type ModelEconomics = {
     ecoPaidUsd: number;
     retainedPaidUsd: number;
     grossQuestsUsd: number;
-    registeredCostUsd: number;
+    pollenCostUsd: number;
     sharePct: number;
     basis: CostBasis;
     trueCostUsd: number;
@@ -342,9 +347,9 @@ export type ModelEconomics = {
 };
 
 // True model cost = the vendor's actual spend allocated by each model's share
-// of the vendor's registered (metered) cost. Actual waterfall: vendor meter,
-// else compute cash, else the registered cost itself. Margin is earned on
-// RETAINED pollen — gross minus the byop/model shares we credit onward.
+// of the vendor's pollen cost (our metering). Actual waterfall: provider
+// meter, else transactions cash, else the pollen cost itself. Margin is earned
+// on RETAINED pollen — gross minus the byop/model shares we credit onward.
 export function modelEconomics(
     data: Data,
     monthFilter: string,
@@ -352,55 +357,56 @@ export function modelEconomics(
 ): ModelEconomics[] {
     const ratio = netRatio ?? 1;
 
-    const spentByVendor = new Map<string, number>();
-    for (const row of data.meterMonthly) {
+    const providerByVendor = new Map<string, number>();
+    for (const row of data.providerMonthly) {
         if (!matchesMonth(row.month, monthFilter)) continue;
-        spentByVendor.set(
+        providerByVendor.set(
             row.vendor,
-            (spentByVendor.get(row.vendor) ?? 0) +
+            (providerByVendor.get(row.vendor) ?? 0) +
                 toUsd(row.credit + row.paid, row.currency, row.month),
         );
     }
 
-    const cashByVendor = new Map<string, number>();
+    const transactionsByVendor = new Map<string, number>();
     for (const row of data.transactions) {
         if (row.category !== "compute") continue;
         if (!matchesMonth(row.date, monthFilter)) continue;
-        cashByVendor.set(
+        transactionsByVendor.set(
             row.vendor,
-            (cashByVendor.get(row.vendor) ?? 0) + transactionCashUsd(row),
+            (transactionsByVendor.get(row.vendor) ?? 0) +
+                transactionCashUsd(row),
         );
     }
 
     type Accumulator = {
         vendor: string;
         model: string;
-        registered: number;
+        pollenCost: number;
         costPaid: number;
         grossPaid: number;
         ecoPaid: number;
         quest: number;
     };
     const byModel = new Map<string, Accumulator>();
-    const registeredByVendor = new Map<string, number>();
-    for (const row of data.usageMonthly) {
+    const pollenByVendor = new Map<string, number>();
+    for (const row of data.pollenMonthly) {
         if (!matchesMonth(row.month, monthFilter)) continue;
         const key = `${row.vendor}|${row.model}`;
         const entry = byModel.get(key) ?? {
             vendor: row.vendor,
             model: row.model,
-            registered: 0,
+            pollenCost: 0,
             costPaid: 0,
             grossPaid: 0,
             ecoPaid: 0,
             quest: 0,
         };
-        const registered = toUsd(
+        const pollenCost = toUsd(
             row.cost_paid + row.cost_quests,
             row.currency,
             row.month,
         );
-        entry.registered += registered;
+        entry.pollenCost += pollenCost;
         entry.costPaid += toUsd(row.cost_paid, row.currency, row.month);
         entry.grossPaid += toUsd(row.price_paid, row.currency, row.month);
         entry.ecoPaid += toUsd(
@@ -410,28 +416,27 @@ export function modelEconomics(
         );
         entry.quest += toUsd(row.price_quests, row.currency, row.month);
         byModel.set(key, entry);
-        registeredByVendor.set(
+        pollenByVendor.set(
             row.vendor,
-            (registeredByVendor.get(row.vendor) ?? 0) + registered,
+            (pollenByVendor.get(row.vendor) ?? 0) + pollenCost,
         );
     }
 
     return [...byModel.values()]
         .map((entry) => {
-            const registeredTotal = registeredByVendor.get(entry.vendor) ?? 0;
-            const share =
-                registeredTotal > 0 ? entry.registered / registeredTotal : 0;
-            const basis: CostBasis = spentByVendor.has(entry.vendor)
-                ? "meter"
-                : cashByVendor.has(entry.vendor)
-                  ? "cash"
-                  : "registered";
+            const pollenTotal = pollenByVendor.get(entry.vendor) ?? 0;
+            const share = pollenTotal > 0 ? entry.pollenCost / pollenTotal : 0;
+            const basis: CostBasis = providerByVendor.has(entry.vendor)
+                ? "provider"
+                : transactionsByVendor.has(entry.vendor)
+                  ? "transactions"
+                  : "pollen";
             const vendorActual =
-                basis === "meter"
-                    ? (spentByVendor.get(entry.vendor) ?? 0)
-                    : basis === "cash"
-                      ? (cashByVendor.get(entry.vendor) ?? 0)
-                      : registeredTotal;
+                basis === "provider"
+                    ? (providerByVendor.get(entry.vendor) ?? 0)
+                    : basis === "transactions"
+                      ? (transactionsByVendor.get(entry.vendor) ?? 0)
+                      : pollenTotal;
             const trueCostUsd = vendorActual * share;
             const retainedPaidUsd = entry.grossPaid - entry.ecoPaid;
             return {
@@ -441,7 +446,7 @@ export function modelEconomics(
                 ecoPaidUsd: entry.ecoPaid,
                 retainedPaidUsd,
                 grossQuestsUsd: entry.quest,
-                registeredCostUsd: entry.registered,
+                pollenCostUsd: entry.pollenCost,
                 sharePct: share * 100,
                 basis,
                 trueCostUsd,
@@ -458,9 +463,9 @@ export function modelEconomics(
 export type EcosystemTotals = { byopUsd: number; modelUsd: number };
 
 // Product-adoption signal: everything credited onward to app developers
-// (byop) and community model owners (model), across BOTH meters, in scope.
+// (byop) and community model owners (model), paid + quests, in scope.
 export function ecosystemTotals(
-    rows: UsageMonthlyRow[],
+    rows: PollenMonthlyRow[],
     monthFilter: string,
 ): EcosystemTotals {
     let byop = 0;

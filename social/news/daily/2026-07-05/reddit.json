@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-07-05",
+  "period_start": "2026-07-05",
+  "period_end": "2026-07-05",
+  "generated_at": "2026-07-06T07:28:23.221492+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-05/images/reddit.jpg"
+    }
+  ],
+  "title": "Vertex caching drops Gemini repeated hit costs by 94x (plus 4 PRs)",
+  "text": "Merged 5 PRs today. The most significant shift is how we are handling Vertex caching on the backend.\n\nPR #12215 wires up billing for Vertex explicit-cache creations and storage via the adjustments system. If you are hammering the same context window, Gemini prompt caching drops repeated hit costs by about 94x. We needed the backend to accurately reflect that reality without bleeding credits or overcharging for cache storage.\n\nWe also ripped out the tier-upgrade logic from the app approval flow (PR #12239). The old logic was brittle. App submissions now pay out directly via the Quests system. It is a much cleaner loop: build something, submit it to the Greenhouse, get Pollen. Speaking of the Greenhouse, Sprout was added to the build (PR #12237) and three new apps just landed.\n\nOn the generation side:\n- Added `/motion` to the image endpoint (PR #12238)\n- Shipped an LLM Playground to chat for easier model comparison and testing (PR #12241)\n\nCode is up on the pollinations GitHub if you want to look at the caching implementation or the new playground logic."
+}

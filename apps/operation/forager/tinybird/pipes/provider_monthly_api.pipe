@@ -1,0 +1,15 @@
+TOKEN "treasury_web" READ
+
+NODE endpoint
+SQL >
+    SELECT
+        month,
+        source,
+        vendor,
+        currency,
+        credit,
+        paid
+    FROM provider_monthly
+    ORDER BY vendor, month, source, currency
+
+TYPE endpoint

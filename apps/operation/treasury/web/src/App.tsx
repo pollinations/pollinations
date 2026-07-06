@@ -28,6 +28,7 @@ import {
 import type { Data } from "./types";
 import { BurnTab } from "./views/BurnTab";
 import { MeterTab } from "./views/MeterTab";
+import { ModelsTab } from "./views/ModelsTab";
 import { PnlTab } from "./views/PnlTab";
 import { RevenueTab } from "./views/RevenueTab";
 import { TransactionsTab } from "./views/TransactionsTab";
@@ -51,6 +52,11 @@ const INSIGHT_TABS: {
         id: "vendors",
         label: "Vendors",
         note: "Three-way per vendor and month: what the bank paid, what the vendor metered, what our own metering registered - with the delta that exposes wrong registry unit costs.",
+    },
+    {
+        id: "models",
+        label: "Models",
+        note: "Per-model unit economics: retained pollen (gross minus byop/model shares) vs true cost allocated from vendor actuals, with the break-even floor and ecosystem adoption totals.",
     },
 ];
 
@@ -567,6 +573,15 @@ export default function App() {
                         section === "insights" &&
                         insightTab === "vendors" && (
                             <VendorsTab
+                                data={data}
+                                month={activeMonth}
+                                vendor={vendor}
+                            />
+                        )}
+                    {data &&
+                        section === "insights" &&
+                        insightTab === "models" && (
+                            <ModelsTab
                                 data={data}
                                 month={activeMonth}
                                 vendor={vendor}

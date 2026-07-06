@@ -87,19 +87,22 @@ function mediaUrl(hash: string): string {
 const MAX_PROMPT_LENGTH = 2000;
 const MAX_MODEL_LENGTH = 128;
 
-// Splits a comma-separated `tags` value and merges it with repeated `tag`
-// params. Accepts the same shape whether it came from a query string,
-// multipart form field, or JSON body field.
-function collectTags(
-    getAll: (key: string) => string[],
-    get: (key: string) => string | null | undefined,
-): string[] {
-    const tags = [...getAll("tag")];
-    const tagsParam = get("tags");
-    if (tagsParam) {
-        tags.push(...tagsParam.split(","));
+// Splits comma-separated `tags` values. Accepts the same field name whether it
+// came from a query string, multipart form field, or JSON body field.
+function splitTags(values: string[]): string[] {
+    const tags: string[] = [];
+    for (const value of values) {
+        tags.push(...value.split(","));
     }
     return tags;
+}
+
+function collectTags(getAll: (key: string) => string[]): string[] {
+    return splitTags(getAll("tags"));
+}
+
+function tagAliasError(): { error: string } {
+    return { error: 'Use "tags" instead of "tag".' };
 }
 
 interface UploadMetadata {
@@ -365,10 +368,10 @@ api.post(
 
         const requestContentType = c.req.header("content-type") || "";
         const queryUrl = new URL(c.req.url);
-        const rawTags = collectTags(
-            (key) => queryUrl.searchParams.getAll(key),
-            (key) => queryUrl.searchParams.get(key),
-        );
+        if (queryUrl.searchParams.has("tag")) {
+            return c.json(tagAliasError(), 400);
+        }
+        const rawTags = collectTags((key) => queryUrl.searchParams.getAll(key));
         let rawPrompt = queryUrl.searchParams.get("prompt");
         let rawModel = queryUrl.searchParams.get("model");
 
@@ -394,19 +397,17 @@ api.post(
                 contentType = file.type || detectContentType(file.name);
                 fileName = file.name;
 
+                if (formData.has("tag")) {
+                    return c.json(tagAliasError(), 400);
+                }
                 rawTags.push(
-                    ...collectTags(
-                        (key) =>
-                            formData
-                                .getAll(key)
-                                .filter(
-                                    (value): value is string =>
-                                        typeof value === "string",
-                                ),
-                        (key) => {
-                            const value = formData.get(key);
-                            return typeof value === "string" ? value : null;
-                        },
+                    ...collectTags((key) =>
+                        formData
+                            .getAll(key)
+                            .filter(
+                                (value): value is string =>
+                                    typeof value === "string",
+                            ),
                     ),
                 );
                 rawPrompt =
@@ -424,12 +425,14 @@ api.post(
                     data: string;
                     contentType?: string;
                     name?: string;
-                    tag?: string | string[];
                     tags?: string;
                     prompt?: string;
                     model?: string;
                 }>();
 
+                if ("tag" in body) {
+                    return c.json(tagAliasError(), 400);
+                }
                 if (!body.data) {
                     return c.json(
                         { error: "Missing 'data' field in JSON body" },
@@ -457,19 +460,7 @@ api.post(
                 contentType = body.contentType || "application/octet-stream";
                 fileName = body.name;
 
-                rawTags.push(
-                    ...collectTags(
-                        (key) => {
-                            if (key !== "tag") return [];
-                            if (Array.isArray(body.tag)) return body.tag;
-                            return body.tag ? [body.tag] : [];
-                        },
-                        (key) => {
-                            if (key === "tags") return body.tags ?? null;
-                            return null;
-                        },
-                    ),
-                );
+                if (body.tags) rawTags.push(...splitTags([body.tags]));
                 rawPrompt = rawPrompt ?? body.prompt ?? null;
                 rawModel = rawModel ?? body.model ?? null;
             } else {

@@ -9,8 +9,8 @@ The Treasury app reads only these endpoint pipes:
 | Pipe | Datasource | Purpose |
 |---|---|---|
 | `transactions_api` | `transactions` | Enty-backed spend transactions. |
-| `meter_monthly_api` | `meter_monthly` | Vendor-reported monthly usage. |
-| `usage_monthly_api` | `usage_monthly` | Platform-metered Pollen usage. |
+| `provider_monthly_api` | `provider_monthly` | Provider-reported monthly usage. |
+| `pollen_monthly_api` | `pollen_monthly` | Platform-metered Pollen usage. |
 | `revenue_monthly_api` | `revenue_monthly` | Stripe monthly revenue. |
 | `ingest_runs_api` | `ingest_runs` | Recent Forager run log. |
 
@@ -18,7 +18,7 @@ Operator writes append only to:
 
 | Datasource      | Writer                      |
 |-----------------|-----------------------------|
-| `meter_monthly` | Manual vendor usage rows.   |
+| `provider_monthly` | Manual vendor usage rows. |
 
 ## Rules
 

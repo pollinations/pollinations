@@ -1,6 +1,6 @@
 # Forager Connector Tracker
 
-Forager's live inventory of every provider usage signal and how it reaches Tinybird. Programmatic meter connectors run automatically; the remaining providers are filled manually each month from their dashboards.
+Forager's live inventory of every vendor usage signal and how it reaches Tinybird. Programmatic meter connectors run automatically; the remaining vendors are filled manually each month from their dashboards.
 
 ---
 
@@ -10,7 +10,7 @@ Auto-fetched by `python3 -m ingest.run`. A connector failure fails the run, writ
 
 ### Meter connectors (METER registry)
 
-| Provider | What it fetches | Endpoint / CLI | Creds keys | Funding class | Verified |
+| Vendor | What it fetches | Endpoint / CLI | Creds keys | Funding class | Verified |
 |---|---|---|---|---|---|
 | **deepinfra** | metered cost per month (cents÷100, epoch-second windows) | `GET https://api.deepinfra.com/payment/usage?from={epoch}&to={epoch}` | `DEEPINFRA_API_KEY` | prepaid | 2026-07-03 |
 | **vast.ai** | charge-type invoice rows grouped by UTC month | `vastai show invoices --raw` (CLI) | — (CLI manages auth) | prepaid | 2026-07-03 |
@@ -24,16 +24,16 @@ Auto-fetched by `python3 -m ingest.run`. A connector failure fails the run, writ
 
 ## Manual monthly
 
-Providers with no programmatic API surface. Each month, read the usage cost from the provider console and enter it with the `ingest.record` CLI.
+Vendors with no programmatic API surface. Each month, read the usage cost from the vendor console and enter it with the `ingest.record` CLI.
 
 Run from `apps/operation/forager/`:
 
 ```bash
-# Monthly provider usage
-python3 -m ingest.record meter <provider> <YYYY-MM> --currency <USD|EUR|...> --credit <amount> --paid <amount>
+# Monthly vendor usage
+python3 -m ingest.record meter <vendor> <YYYY-MM> --currency <USD|EUR|...> --credit <amount> --paid <amount>
 ```
 
-Provider must be in `registry.CANONICAL`; month must match `YYYY-MM`. Appends one row with `source="manual"` to `meter_monthly`. Compute Usage is the monthly source of truth.
+Vendor must be in `registry.CANONICAL`; month must match `YYYY-MM`. Appends one row with `source="manual"` to `meter_monthly`. Compute Usage is the monthly source of truth.
 
 ### Monthly checklist
 

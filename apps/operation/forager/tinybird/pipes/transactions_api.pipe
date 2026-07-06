@@ -4,7 +4,7 @@ NODE endpoint
 SQL >
     SELECT
         formatDateTime(date, '%F') AS date,
-        provider,
+        vendor,
         category,
         charged_amount,
         charged_currency,
@@ -13,6 +13,6 @@ SQL >
         invoice_ref,
         match_status
     FROM transactions
-    ORDER BY date DESC, provider, category, match_status
+    ORDER BY date DESC, vendor, category, match_status
 
 TYPE endpoint

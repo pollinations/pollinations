@@ -1,4 +1,4 @@
-"""Shared HTTP / date / HTML helpers for direct provider connectors.
+"""Shared HTTP / date / HTML helpers for direct vendor connectors.
 
 Severed copy: only the helpers needed by the connectors live here.
 Credential loading lives exclusively in ingest/creds.py — never here.

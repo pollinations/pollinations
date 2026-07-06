@@ -43,14 +43,14 @@ def diff_rows(old, new):
 
 
 def _meter_key(row):
-    return (row.get("provider"), row.get("month"), row.get("currency"))
+    return (row.get("vendor"), row.get("month"), row.get("currency"))
 
 
 def manual_meter_rows_lost(removed, new_rows):
     """Removed manual rows with no surviving manual-sourced row for their key.
 
     A standalone manual row that gets consolidated into a merged ``manual,api``
-    row for the same ``(provider, month, currency)`` is NOT lost — its data
+    row for the same ``(vendor, month, currency)`` is NOT lost — its data
     survives in the merged row. A removed manual row is truly lost only when no
     ``new_rows`` entry shares its key with ``"manual"`` in ``source``.
     """

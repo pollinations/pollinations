@@ -1,6 +1,6 @@
-"""merge_meter_rows — meter_monthly holds one row per provider/month/currency.
+"""merge_meter_rows — meter_monthly holds one row per vendor/month/currency.
 
-Precedence: manual rows are operator overrides for a provider/month/currency
+Precedence: manual rows are operator overrides for a vendor/month/currency
 bucket. Otherwise source rank wins, then last-seen.
 
 Run: cd apps/operation/forager && python3 -m pytest tests/test_meter_dedupe.py -q
@@ -18,7 +18,7 @@ from ingest.run import (
 
 
 def _row(
-    provider,
+    vendor,
     month,
     credit=0.0,
     cash=0.0,
@@ -27,7 +27,7 @@ def _row(
 ):
     return {
         "month": month,
-        "provider": provider,
+        "vendor": vendor,
         "currency": currency,
         "credit": credit,
         "paid": cash,
@@ -76,7 +76,7 @@ def test_currency_classes_stay_separate():
     assert {r["currency"] for r in out} == {"USD", "EUR"}
 
 
-def test_providers_and_months_never_cross_collapse():
+def test_vendors_and_months_never_cross_collapse():
     rows = [
         _row("aws", "2026-05", credit=1.0),
         _row("aws", "2026-06", credit=2.0),

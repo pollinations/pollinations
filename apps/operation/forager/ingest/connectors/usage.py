@@ -22,8 +22,10 @@ def _next_month(month: str) -> str:
     return f"{y:04d}-{m + 1:02d}"
 
 
+# NOTE: `model_provider_used` is the PROD generation-event column name; it is
+# mapped to the forager `vendor` row key at ingest and must NOT be renamed here.
 _SQL = """\
-SELECT '{month}' AS month, model_provider_used AS provider, model_used AS model,
+SELECT '{month}' AS month, model_provider_used AS vendor, model_used AS model,
   round(sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 4) AS cost_paid,
   round(sumIf(total_cost, selected_meter_slug LIKE '%tier%'), 4) AS cost_quests,
   round(sumIf(total_price, selected_meter_slug LIKE '%pack%'), 4) AS price_paid,
@@ -35,7 +37,7 @@ WHERE environment = 'production'
   AND model_used != 'undefined'
   AND model_provider_used != 'undefined'
   AND start_time >= '{month}-01 00:00:00' AND start_time < '{next_month}-01 00:00:00'
-GROUP BY provider, model\
+GROUP BY vendor, model\
 """
 
 
@@ -49,11 +51,11 @@ def monthly_rows(tb_prod, months, today):
         today:    current ingest date
 
     Returns:
-        list of usage_monthly row dicts, one per (month, provider, model) tuple
-        with nonzero data. provider tags are canonicalized via provider aliases
+        list of usage_monthly row dicts, one per (month, vendor, model) tuple
+        with nonzero data. vendor tags are canonicalized via vendor aliases
         (bedrock/aws-bedrock → aws, azure-2 → azure, vastai → vast.ai).
     """
-    from ..aliases import PROVIDER_ALIASES, canonical_provider_tag
+    from ..aliases import VENDOR_ALIASES, canonical_vendor_tag
 
     numeric_fields = (
         "cost_paid",
@@ -68,21 +70,21 @@ def monthly_rows(tb_prod, months, today):
         result = tb_prod.sql(query)
         for raw in result:
             # Guard against None/missing fields, but reject non-empty tags that
-            # are not in the provider vocabulary. That makes missing aliases
+            # are not in the vendor vocabulary. That makes missing aliases
             # visible in ingest_runs instead of silently becoming filter values.
-            raw_provider = raw.get("provider")
-            provider = canonical_provider_tag(raw_provider)
-            if provider and provider not in PROVIDER_ALIASES:
+            raw_vendor = raw.get("vendor")
+            vendor = canonical_vendor_tag(raw_vendor)
+            if vendor and vendor not in VENDOR_ALIASES:
                 raise ValueError(
-                    "unknown provider slug for usage_monthly: "
-                    f"{raw_provider!r}; add it to config/provider_aliases.json"
+                    "unknown vendor slug for usage_monthly: "
+                    f"{raw_vendor!r}; add it to config/vendor_aliases.json"
                 )
-            key = (month, provider, raw.get("model"))
+            key = (month, vendor, raw.get("model"))
             row = by_key.setdefault(
                 key,
                 {
                     "month": month,
-                    "provider": provider,
+                    "vendor": vendor,
                     "model": raw.get("model"),
                     "currency": "POLLEN",
                     **{field: 0 for field in numeric_fields},
@@ -94,9 +96,9 @@ def monthly_rows(tb_prod, months, today):
     return [
         {
             "month": month,
-            "provider": provider,
+            "vendor": vendor,
             "model": model,
             **values,
         }
-        for (month, provider, model), values in by_key.items()
+        for (month, vendor, model), values in by_key.items()
     ]

@@ -5,12 +5,12 @@ import os
 import subprocess
 from pathlib import Path
 
-from .aliases import PROVIDER_ALIASES, PROVIDER_CATEGORIES, PROVIDER_CATEGORY_RULES
+from .aliases import VENDOR_ALIASES, VENDOR_CATEGORIES, VENDOR_CATEGORY_RULES
 
 
 COLUMNS = [
     "date",
-    "provider",
+    "vendor",
     "category",
     "charged_amount",
     "charged_currency",
@@ -169,12 +169,12 @@ def find_invoice(bank, invoices, used):
 
 
 def matched(bank, invoice):
-    provider = provider_for(f"{bank_text(bank)} {invoice_text(invoice)}")
+    vendor = vendor_for(f"{bank_text(bank)} {invoice_text(invoice)}")
     return {
         "date": bank["date"] or invoice["date"],
-        "provider": provider,
+        "vendor": vendor,
         "category": category_for(
-            provider,
+            vendor,
             f"{bank_text(bank)} {invoice_text(invoice)}",
             bank.get("enty_category", ""),
         ),
@@ -188,11 +188,11 @@ def matched(bank, invoice):
 
 
 def missing_invoice(bank):
-    provider = provider_for(bank_text(bank))
+    vendor = vendor_for(bank_text(bank))
     return {
         "date": bank["date"],
-        "provider": provider,
-        "category": category_for(provider, bank_text(bank), bank.get("enty_category", "")),
+        "vendor": vendor,
+        "category": category_for(vendor, bank_text(bank), bank.get("enty_category", "")),
         "charged_amount": money_amount(bank["amount"]),
         "charged_currency": currency_code(bank["currency"], bank["amount"]),
         "paid_amount": 0.0,
@@ -203,11 +203,11 @@ def missing_invoice(bank):
 
 
 def missing_payment(invoice):
-    provider = provider_for(invoice_text(invoice))
+    vendor = vendor_for(invoice_text(invoice))
     return {
         "date": invoice["date"],
-        "provider": provider,
-        "category": category_for(provider, invoice_text(invoice), ""),
+        "vendor": vendor,
+        "category": category_for(vendor, invoice_text(invoice), ""),
         "charged_amount": 0.0,
         "charged_currency": "",
         "paid_amount": money_amount(invoice["amount"]),
@@ -217,25 +217,25 @@ def missing_payment(invoice):
     }
 
 
-def provider_for(text):
+def vendor_for(text):
     low = text.lower()
-    for provider, aliases in PROVIDER_ALIASES.items():
-        if provider in {"other", "self-issued"}:
+    for vendor, aliases in VENDOR_ALIASES.items():
+        if vendor in {"other", "self-issued"}:
             continue
         values = set(aliases)
-        values.add(provider)
+        values.add(vendor)
         if any(alias and alias.lower() in low for alias in values):
-            return provider
+            return vendor
     return ""
 
 
-def category_for(provider, text, enty_category):
+def category_for(vendor, text, enty_category):
     low = text.lower()
-    for keyword, category in PROVIDER_CATEGORY_RULES.get(provider, []):
+    for keyword, category in VENDOR_CATEGORY_RULES.get(vendor, []):
         if keyword in low:
             return category
-    if provider:
-        return PROVIDER_CATEGORIES[provider]
+    if vendor:
+        return VENDOR_CATEGORIES[vendor]
     mapped = CATEGORY_MAP.get(str(enty_category or "").lower(), "")
     return mapped or "other"
 
@@ -249,8 +249,8 @@ def validate_rows(rows):
         missing = [column for column in COLUMNS if column not in row]
         if missing:
             raise ValueError(f"transactions row missing columns: {missing}")
-        if row["provider"] and row["provider"] not in PROVIDER_ALIASES:
-            raise ValueError(f"unknown provider in transactions: {row['provider']}")
+        if row["vendor"] and row["vendor"] not in VENDOR_ALIASES:
+            raise ValueError(f"unknown vendor in transactions: {row['vendor']}")
         if row["category"] not in ALLOWED_CATEGORIES:
             raise ValueError(f"unknown category in transactions: {row['category']}")
         if row["match_status"] not in {"matched", "missing_invoice", "missing_payment"}:

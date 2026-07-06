@@ -118,7 +118,7 @@ def meter(creds, months, today, run_cmd=subprocess.run):
             if gross_amount:
                 rows.append(_mrow(
                     month=month,
-                    provider="google",
+                    vendor="google",
                     amount=gross_amount,
                     currency="EUR",
                     funding="cash",
@@ -129,7 +129,7 @@ def meter(creds, months, today, run_cmd=subprocess.run):
             if credit_amount:
                 rows.append(_mrow(
                     month=month,
-                    provider="google",
+                    vendor="google",
                     amount=credit_amount,
                     currency="EUR",
                     funding="credit",

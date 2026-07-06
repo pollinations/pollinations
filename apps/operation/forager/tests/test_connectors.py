@@ -84,7 +84,7 @@ def test_http_json_ua_always_set(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# registry.CANONICAL includes all provider-column slugs
+# registry.CANONICAL includes all vendor-column slugs
 # ---------------------------------------------------------------------------
 
 def test_canonical_contains_compute_slugs():
@@ -94,8 +94,8 @@ def test_canonical_contains_compute_slugs():
         assert slug in registry.CANONICAL, f"CANONICAL missing compute slug: {slug}"
 
 
-def test_canonical_contains_operating_provider_slugs():
-    """Operating-expense slugs are canonical because provider is a cross-tab filter."""
+def test_canonical_contains_operating_vendor_slugs():
+    """Operating-expense slugs are canonical because vendor is a cross-tab filter."""
     must_have = ["deel", "google-workspace", "slack", "wise", "self-issued"]
     for slug in must_have:
         assert slug in registry.CANONICAL, f"CANONICAL missing ops slug: {slug}"

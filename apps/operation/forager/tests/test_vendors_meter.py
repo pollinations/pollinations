@@ -4,7 +4,7 @@ Connectors: deepinfra, ovh, vast, fireworks, aws, gcp, openai_.
 All hermetic — http_json monkeypatched; run_cmd injected for CLI connectors.
 No network, no SOPS, no real credentials.
 
-Run: cd apps/operation/forager && python3 -m pytest tests/test_providers_meter.py -q
+Run: cd apps/operation/forager && python3 -m pytest tests/test_vendors_meter.py -q
 """
 import json
 import os
@@ -16,13 +16,13 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
 
-import ingest.connectors.providers.deepinfra as _di
-import ingest.connectors.providers.ovh as _ovh
-import ingest.connectors.providers.vast as _vast
-import ingest.connectors.providers.fireworks as _fw
-import ingest.connectors.providers.openai_ as _oai
-import ingest.connectors.providers.aws as _aws
-import ingest.connectors.providers.gcp as _gcp
+import ingest.connectors.vendors.deepinfra as _di
+import ingest.connectors.vendors.ovh as _ovh
+import ingest.connectors.vendors.vast as _vast
+import ingest.connectors.vendors.fireworks as _fw
+import ingest.connectors.vendors.openai_ as _oai
+import ingest.connectors.vendors.aws as _aws
+import ingest.connectors.vendors.gcp as _gcp
 from ingest.connectors import registry
 
 TODAY = "2026-07-03"
@@ -124,12 +124,12 @@ def test_deepinfra_meter_missing_key_raises():
         _di.meter({}, ["2026-04"], TODAY)
 
 
-def test_deepinfra_meter_provider_slug(monkeypatch):
-    """Provider slug must be 'deepinfra'."""
+def test_deepinfra_meter_vendor_slug(monkeypatch):
+    """Vendor slug must be 'deepinfra'."""
     cap = Capture([{"months": [{"total_cost": 200, "period": "2026-04"}]}])
     monkeypatch.setattr(_di, "http_json", cap)
     rows = _di.meter(_DI_CREDS, ["2026-04"], TODAY)
-    assert rows[0]["provider"] == "deepinfra"
+    assert rows[0]["vendor"] == "deepinfra"
 
 
 def test_deepinfra_meter_has_no_freshness_timestamp(monkeypatch):
@@ -139,7 +139,7 @@ def test_deepinfra_meter_has_no_freshness_timestamp(monkeypatch):
     rows = _di.meter(_DI_CREDS, ["2026-04"], TODAY)
     assert set(rows[0]) == {
         "month",
-        "provider",
+        "vendor",
         "currency",
         "credit",
         "paid",
@@ -289,7 +289,7 @@ def test_vast_meter_charge_rows_only():
     months_seen = {r["month"] for r in rows}
     # Both April charges present; May charge present; April deposit excluded
     for r in rows:
-        assert r["provider"] == "vast.ai"
+        assert r["vendor"] == "vast.ai"
     # No negative or implausibly large amounts from deposits
     for r in rows:
         assert r["paid"] < 200.0
@@ -556,11 +556,11 @@ def test_aws_meter_zero_excluded():
     assert zero_months == []
 
 
-def test_aws_meter_provider_slug():
-    """Provider slug must be 'aws'."""
+def test_aws_meter_vendor_slug():
+    """Vendor slug must be 'aws'."""
     rows = _aws.meter(_AWS_CREDS, ["2026-04"], TODAY, run_cmd=_aws_run)
     for r in rows:
-        assert r["provider"] == "aws"
+        assert r["vendor"] == "aws"
 
 
 def test_aws_meter_run_cmd_error_propagates():
@@ -637,7 +637,7 @@ def test_gcp_meter_tempfile_deleted_on_success():
     import tempfile as _tf
     import os
 
-    import ingest.connectors.providers.gcp as _gcp_mod
+    import ingest.connectors.vendors.gcp as _gcp_mod
 
     real_ntf = _tf.NamedTemporaryFile
     orig_unlink = os.unlink
@@ -726,7 +726,7 @@ def test_gcp_meter_tempfile_deleted_even_on_raise():
         def __exit__(self, *a):
             return self._f.__exit__(*a)
 
-    import ingest.connectors.providers.gcp as _gcp_mod
+    import ingest.connectors.vendors.gcp as _gcp_mod
     orig_ntf = _tf.NamedTemporaryFile
     orig_unlink = os.unlink
 
@@ -768,11 +768,11 @@ def test_gcp_meter_missing_key_raises():
         _gcp.meter({}, ["2026-04"], TODAY)
 
 
-def test_gcp_meter_provider_slug():
-    """Provider slug must be 'google'."""
+def test_gcp_meter_vendor_slug():
+    """Vendor slug must be 'google'."""
     rows = _gcp.meter(_GCP_CREDS, ["2026-04"], TODAY, run_cmd=_gcp_run_success)
     for r in rows:
-        assert r["provider"] == "google"
+        assert r["vendor"] == "google"
 
 
 def test_gcp_meter_zero_credits_excluded():
@@ -871,14 +871,14 @@ def test_openai_meter_missing_key_raises():
         _oai.meter({}, ["2026-04"], TODAY)
 
 
-def test_openai_meter_provider_slug(monkeypatch):
-    """Provider slug must be 'openai'."""
+def test_openai_meter_vendor_slug(monkeypatch):
+    """Vendor slug must be 'openai'."""
     page = _make_oai_page([(_APR15, 10.0)])
     cap = Capture([page])
     monkeypatch.setattr(_oai, "http_json", cap)
     rows = _oai.meter(_OAI_CREDS, ["2026-04"], TODAY)
     for r in rows:
-        assert r["provider"] == "openai"
+        assert r["vendor"] == "openai"
 
 
 # ===========================================================================
@@ -891,7 +891,7 @@ def test_meter_registry_populated():
 
 
 def test_meter_registry_slugs():
-    """METER must contain all seven provider slugs."""
+    """METER must contain all seven vendor slugs."""
     slugs = {slug for slug, _ in registry.METER}
     for expected in ("deepinfra", "vast.ai", "ovhcloud", "fireworks", "aws", "google", "openai"):
         assert expected in slugs, f"METER missing: {expected}"

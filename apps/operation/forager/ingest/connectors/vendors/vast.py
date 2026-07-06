@@ -63,7 +63,7 @@ def meter(creds, months, today, run_cmd=subprocess.run):
         if cost:
             rows.append(_mrow(
                 month=month,
-                provider="vast.ai",
+                vendor="vast.ai",
                 amount=cost,
                 funding="prepaid",
                 source="cli",

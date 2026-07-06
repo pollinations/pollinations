@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
 
-from ingest.connectors.providers import _mrow
+from ingest.connectors.vendors import _mrow
 from ingest import record
 from ingest.connectors import registry
 
@@ -22,7 +22,7 @@ def test_mrow_full():
     r = _mrow("2026-06", "deepinfra", 8.77, "prepaid", "api", "2026-07-03")
     assert r == {
         "month": "2026-06",
-        "provider": "deepinfra",
+        "vendor": "deepinfra",
         "currency": "USD",
         "credit": 0.0,
         "paid": 8.77,
@@ -36,9 +36,9 @@ def test_mrow_rounds_to_2dp():
     assert r["currency"] == "USD"
 
 
-def test_mrow_rejects_unknown_provider():
-    with pytest.raises(ValueError, match="unknown provider"):
-        _mrow("2026-06", "not-a-provider", 8.77, "cash", "api", "2026-07-03")
+def test_mrow_rejects_unknown_vendor():
+    with pytest.raises(ValueError, match="unknown vendor"):
+        _mrow("2026-06", "not-a-vendor", 8.77, "cash", "api", "2026-07-03")
 
 
 def test_mrow_rejects_unknown_funding():
@@ -56,7 +56,7 @@ def test_mrow_rejects_unknown_source():
 # ---------------------------------------------------------------------------
 
 def test_canonical_contains_expected_slugs():
-    """CANONICAL must include known compute/infra and manual-forever providers."""
+    """CANONICAL must include known compute/infra and manual-forever vendors."""
     must_have = [
         "vast.ai", "io.net", "perplexity", "lambda", "nebius",
         "bytedance", "modal", "elevenlabs",
@@ -68,8 +68,8 @@ def test_canonical_contains_expected_slugs():
         assert slug in registry.CANONICAL, f"CANONICAL missing: {slug}"
 
 
-def test_canonical_contains_operating_provider_slugs():
-    """CANONICAL includes operating-expense slugs used by provider filters."""
+def test_canonical_contains_operating_vendor_slugs():
+    """CANONICAL includes operating-expense slugs used by vendor filters."""
     must_have = [
         "deel", "google-workspace", "slack", "wise", "self-issued",
         "github", "typeless", "wispr", "tele2", "enty", "naturenergie",
@@ -142,7 +142,7 @@ def test_record_meter_appends_row():
     assert ds == "meter_monthly"
     assert len(rows) == 1
     r = rows[0]
-    assert r["provider"] == "io.net"
+    assert r["vendor"] == "io.net"
     assert r["month"] == "2026-06"
     assert r["currency"] == "USD"
     assert r["credit"] == 1234.5
@@ -193,12 +193,12 @@ def test_bad_month_day_included():
     assert exc.value.code != 0
 
 
-def test_unknown_provider_exits_nonzero():
+def test_unknown_vendor_exits_nonzero():
     with pytest.raises(SystemExit) as exc:
         record.main(
             [
                 "meter",
-                "NOT_A_REAL_PROVIDER_XYZ",
+                "NOT_A_REAL_VENDOR_XYZ",
                 "2026-06",
                 "--currency",
                 "USD",

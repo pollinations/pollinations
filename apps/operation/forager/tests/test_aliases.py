@@ -1,4 +1,4 @@
-"""Provider alias metadata tests."""
+"""Vendor alias metadata tests."""
 
 import os
 import sys
@@ -9,24 +9,24 @@ from ingest import aliases
 from ingest.connectors import registry
 
 
-def test_provider_aliases_are_lists():
-    assert aliases.PROVIDER_ALIASES["aws"]
-    assert all(isinstance(v, list) for v in aliases.PROVIDER_ALIASES.values())
+def test_vendor_aliases_are_lists():
+    assert aliases.VENDOR_ALIASES["aws"]
+    assert all(isinstance(v, list) for v in aliases.VENDOR_ALIASES.values())
 
 
-def test_every_provider_has_valid_category():
-    from ingest.aliases import PROVIDER_ALIASES, PROVIDER_CATEGORIES
+def test_every_vendor_has_valid_category():
+    from ingest.aliases import VENDOR_ALIASES, VENDOR_CATEGORIES
 
     allowed = {"compute", "infra", "saas", "admin", "office", "payroll", "other"}
-    assert set(PROVIDER_CATEGORIES) == set(PROVIDER_ALIASES)
-    assert set(PROVIDER_CATEGORIES.values()) <= allowed
+    assert set(VENDOR_CATEGORIES) == set(VENDOR_ALIASES)
+    assert set(VENDOR_CATEGORIES.values()) <= allowed
 
 
 def test_category_rules_are_lowercased_ordered_pairs():
-    from ingest.aliases import PROVIDER_CATEGORIES, PROVIDER_CATEGORY_RULES
+    from ingest.aliases import VENDOR_CATEGORIES, VENDOR_CATEGORY_RULES
 
-    assert set(PROVIDER_CATEGORY_RULES) <= set(PROVIDER_CATEGORIES)
-    for rules in PROVIDER_CATEGORY_RULES.values():
+    assert set(VENDOR_CATEGORY_RULES) <= set(VENDOR_CATEGORIES)
+    for rules in VENDOR_CATEGORY_RULES.values():
         for keyword, category in rules:
             assert keyword == keyword.lower() and keyword.strip()
             assert category in {
@@ -41,35 +41,35 @@ def test_category_rules_are_lowercased_ordered_pairs():
 
 
 def test_anthropic_and_openai_have_subscription_rules():
-    from ingest.aliases import PROVIDER_CATEGORIES, PROVIDER_CATEGORY_RULES
+    from ingest.aliases import VENDOR_CATEGORIES, VENDOR_CATEGORY_RULES
 
-    assert PROVIDER_CATEGORIES["anthropic"] == "compute"
-    assert ("claude.ai subscription", "saas") in PROVIDER_CATEGORY_RULES["anthropic"]
-    assert PROVIDER_CATEGORIES["openai"] == "compute"
-    assert ("chatgpt", "saas") in PROVIDER_CATEGORY_RULES["openai"]
+    assert VENDOR_CATEGORIES["anthropic"] == "compute"
+    assert ("claude.ai subscription", "saas") in VENDOR_CATEGORY_RULES["anthropic"]
+    assert VENDOR_CATEGORIES["openai"] == "compute"
+    assert ("chatgpt", "saas") in VENDOR_CATEGORY_RULES["openai"]
 
 
-def test_provider_aliases_shape_unchanged():
-    from ingest.aliases import PROVIDER_ALIASES
+def test_vendor_aliases_shape_unchanged():
+    from ingest.aliases import VENDOR_ALIASES
 
-    assert isinstance(PROVIDER_ALIASES["aws"], list)
-    assert "amazon web" in PROVIDER_ALIASES["aws"]
-    assert list(PROVIDER_ALIASES["aws"]) == sorted(PROVIDER_ALIASES["aws"])
+    assert isinstance(VENDOR_ALIASES["aws"], list)
+    assert "amazon web" in VENDOR_ALIASES["aws"]
+    assert list(VENDOR_ALIASES["aws"]) == sorted(VENDOR_ALIASES["aws"])
 
 
 def test_same_alias_file_feeds_substring_and_exact_matching():
-    assert "amazon web" in aliases.PROVIDER_ALIASES["aws"]
-    assert aliases.PROVIDER_TAG_ALIASES["automat-it"] == "aws"
-    assert aliases.PROVIDER_TAG_ALIASES["bedrock"] == "aws"
-    assert aliases.PROVIDER_TAG_ALIASES["vastai"] == "vast.ai"
-    assert aliases.PROVIDER_TAG_ALIASES["azure-2"] == "azure"
+    assert "amazon web" in aliases.VENDOR_ALIASES["aws"]
+    assert aliases.VENDOR_TAG_ALIASES["automat-it"] == "aws"
+    assert aliases.VENDOR_TAG_ALIASES["bedrock"] == "aws"
+    assert aliases.VENDOR_TAG_ALIASES["vastai"] == "vast.ai"
+    assert aliases.VENDOR_TAG_ALIASES["azure-2"] == "azure"
 
 
 def test_alias_file_is_registry_canonical_source():
-    assert registry.CANONICAL == frozenset(aliases.PROVIDER_ALIASES.keys())
+    assert registry.CANONICAL == frozenset(aliases.VENDOR_ALIASES.keys())
 
 
-def test_aws_has_one_canonical_provider():
+def test_aws_has_one_canonical_vendor():
     assert "aws" in registry.CANONICAL
     assert "aws-new" not in registry.CANONICAL
     assert [slug for slug in registry.CANONICAL if slug.startswith("aws")] == ["aws"]

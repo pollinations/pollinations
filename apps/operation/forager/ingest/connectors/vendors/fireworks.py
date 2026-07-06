@@ -73,7 +73,7 @@ def meter(creds, months, today, run_cmd=subprocess.run):
         if cost:
             rows.append(_mrow(
                 month=month,
-                provider="fireworks",
+                vendor="fireworks",
                 amount=cost,
                 funding="cash",
                 source="cli",

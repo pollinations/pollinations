@@ -114,7 +114,7 @@ def test_enty_exports_build_minimal_transactions(tmp_path):
     assert rows == [
         {
             "date": "2026-05-28",
-            "provider": "alibaba",
+            "vendor": "alibaba",
             "category": "compute",
             "charged_amount": 1000.04,
             "charged_currency": "USD",
@@ -198,7 +198,7 @@ def test_enty_source_amount_matches_invoice_currency(tmp_path):
 
     rows = enty.build_transactions({"enty_ledger_dir": str(tmp_path)})
 
-    assert rows[0]["provider"] == "vast.ai"
+    assert rows[0]["vendor"] == "vast.ai"
     assert rows[0]["charged_amount"] == 433.61
     assert rows[0]["charged_currency"] == "EUR"
     assert rows[0]["paid_amount"] == 500.0
@@ -236,6 +236,6 @@ def test_category_for_vendorless_falls_back_to_enty_tag_then_other():
 
 
 def test_amazon_retail_and_aws_stay_separate_vendors():
-    assert enty.provider_for("amazon web services emea sarl") == "aws"
-    assert enty.provider_for("amazon marketplace berlin") == "amazon"
+    assert enty.vendor_for("amazon web services emea sarl") == "aws"
+    assert enty.vendor_for("amazon marketplace berlin") == "amazon"
     assert enty.category_for("amazon", "amazon marketplace berlin", "") == "office"

@@ -14,7 +14,7 @@ The workspace holds five datasources: `transactions`, `meter_monthly`,
   `~/Documents/treasury-backups/<UTC stamp>/<table>.ndjson` BEFORE writing, then
   prints a `+added/-removed` diff per table.
 - A write that would lose a manual `meter_monthly` row's data — no surviving
-  manual-sourced row for that provider/month/currency — aborts unless `--yes` is
+  manual-sourced row for that vendor/month/currency — aborts unless `--yes` is
   given (rows merged into a `manual,api` row are not lost).
 - `--dry-run` = snapshot + diff, write nothing. Use it before any run you are
   unsure about; it does not append to `ingest_runs`.
@@ -52,16 +52,16 @@ Splices the given `YYYY-MM` into the affected tables. `--month` is invalid with
 fully rebuilds `transactions` (the whole Enty rebuild); combine `--month` with
 `--only meter|usage|revenue` to skip that rebuild.
 
-### One provider (meter)
+### One vendor (meter)
 
 ```bash
-python3 -m ingest.run --dry-run --only meter --provider aws
-python3 -m ingest.run --only meter --provider aws
+python3 -m ingest.run --dry-run --only meter --vendor aws
+python3 -m ingest.run --only meter --vendor aws
 ```
 
-`--provider` requires `--only meter` and must be a meter-connector slug:
+`--vendor` requires `--only meter` and must be a meter-connector slug:
 `deepinfra | vast.ai | ovhcloud | fireworks | aws | google | openai`.
-Manual-only providers are updated with `ingest.record`, not here.
+Manual-only vendors are updated with `ingest.record`, not here.
 
 ### Add a manual meter row
 
@@ -69,7 +69,7 @@ Manual-only providers are updated with `ingest.record`, not here.
 python3 -m ingest.record meter io.net 2026-07 --currency USD --credit 123.45
 ```
 
-Appends one `source="manual"` row to `meter_monthly`. Provider must be in
+Appends one `source="manual"` row to `meter_monthly`. Vendor must be in
 `registry.CANONICAL`; at least one of `--credit`/`--paid` must be > 0. Manual
 rows survive every subsequent `ingest.run` (they are re-merged, not dropped).
 
@@ -90,7 +90,7 @@ write = tb.TB(config["tb_ops_api"], secrets["TINYBIRD_OPS_REPLACE_TOKEN"])
 rows = backup.snapshot_table(read, "meter_monthly", backup.run_directory(config))
 keep = [
     r for r in rows
-    if not (r["provider"] == "io.net" and r["month"] == "2026-07"
+    if not (r["vendor"] == "io.net" and r["month"] == "2026-07"
             and "manual" in r["source"])
 ]
 assert len(keep) == len(rows) - 1, "expected exactly one row to drop"
@@ -100,9 +100,9 @@ EOF
 
 To correct a value, delete the row this way and re-add it with `ingest.record`.
 
-### Add a provider alias
+### Add a vendor alias
 
-Edit `config/provider_aliases.json` — add the canonical slug mapped to an entry
+Edit `config/vendor_aliases.json` — add the canonical slug mapped to an entry
 `{"aliases": [...], "category": "...", "category_rules": [...]}`:
 
 - `aliases`: identifying substrings (lowercased) that resolve rows to this slug.
@@ -121,7 +121,7 @@ python3 -m ingest.run --dry-run --only transactions   # confirm the new mapping
 python3 -m ingest.run --only transactions
 ```
 
-If the alias affects a meter provider, also re-run `--only meter` to remap its
+If the alias affects a meter vendor, also re-run `--only meter` to remap its
 `meter_monthly` rows.
 
 Categories are fully deterministic (vendor default, then keyword rules, then the
@@ -133,12 +133,12 @@ which is the alias keys).
 ### Inspect current rows
 
 ```bash
-python3 -m ingest.inspect meter_monthly --provider replicate --month 2026-07
+python3 -m ingest.inspect meter_monthly --vendor replicate --month 2026-07
 ```
 
 Read-only; prints matching rows as JSON lines plus a count. Tables:
 `transactions | meter_monthly | usage_monthly | revenue_monthly | ingest_runs`.
-`--provider` is invalid on `revenue_monthly`/`ingest_runs`; `--limit` defaults
+`--vendor` is invalid on `revenue_monthly`/`ingest_runs`; `--limit` defaults
 to 200.
 
 ### Verify after any write

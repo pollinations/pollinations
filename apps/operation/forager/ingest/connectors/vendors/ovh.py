@@ -110,7 +110,7 @@ def meter(creds, months, today):
         if eur > 0:
             rows.append(_mrow(
                 month=month,
-                provider="ovhcloud",
+                vendor="ovhcloud",
                 amount=eur,
                 currency="EUR",
                 funding="credit",

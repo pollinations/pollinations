@@ -13,7 +13,7 @@ class FakeTB:
 
 
 def test_snapshot_writes_ndjson(tmp_path):
-    rows = [{"month": "2026-06", "provider": "aws", "credit": 1.0}]
+    rows = [{"month": "2026-06", "vendor": "aws", "credit": 1.0}]
     got = backup.snapshot_table(FakeTB(rows), "meter_monthly", tmp_path)
     assert got == rows
     lines = (tmp_path / "meter_monthly.ndjson").read_text().strip().splitlines()
@@ -34,41 +34,41 @@ def test_diff_rows_added_removed():
 
 
 def test_diff_rows_ignores_integral_float_representation():
-    old = [{"provider": "aws", "paid": 0, "credit": 3000}]
-    new = [{"provider": "aws", "paid": 0.0, "credit": 3000.0}]
+    old = [{"vendor": "aws", "paid": 0, "credit": 3000}]
+    new = [{"vendor": "aws", "paid": 0.0, "credit": 3000.0}]
     added, removed = backup.diff_rows(old, new)
     assert added == [] and removed == []
 
 
 def test_diff_rows_still_detects_real_value_changes():
-    old = [{"provider": "aws", "paid": 0.0}]
-    new = [{"provider": "aws", "paid": 0.5}]
+    old = [{"vendor": "aws", "paid": 0.0}]
+    new = [{"vendor": "aws", "paid": 0.5}]
     added, removed = backup.diff_rows(old, new)
     assert len(added) == 1 and len(removed) == 1
 
 
 def test_manual_meter_rows_lost_filters_manual_sources():
     removed = [
-        json.dumps({"provider": "aws", "source": "cli"}, sort_keys=True),
-        json.dumps({"provider": "replicate", "source": "manual"}, sort_keys=True),
-        json.dumps({"provider": "azure", "source": "manual,api"}, sort_keys=True),
+        json.dumps({"vendor": "aws", "source": "cli"}, sort_keys=True),
+        json.dumps({"vendor": "replicate", "source": "manual"}, sort_keys=True),
+        json.dumps({"vendor": "azure", "source": "manual,api"}, sort_keys=True),
     ]
     lost = backup.manual_meter_rows_lost(removed, [])
-    assert [row["provider"] for row in lost] == ["replicate", "azure"]
+    assert [row["vendor"] for row in lost] == ["replicate", "azure"]
 
 
 def test_manual_meter_rows_lost_ignores_consolidated_manual():
     # A standalone manual row is replaced by a merged manual,api row for the
-    # same (provider, month, currency) — manual data survives, so NOT lost.
+    # same (vendor, month, currency) — manual data survives, so NOT lost.
     removed = [
         json.dumps(
-            {"provider": "replicate", "month": "2026-07", "currency": "USD",
+            {"vendor": "replicate", "month": "2026-07", "currency": "USD",
              "source": "manual"},
             sort_keys=True,
         ),
     ]
     new_rows = [
-        {"provider": "replicate", "month": "2026-07", "currency": "USD",
+        {"vendor": "replicate", "month": "2026-07", "currency": "USD",
          "source": "manual,api"},
     ]
     assert backup.manual_meter_rows_lost(removed, new_rows) == []
@@ -79,34 +79,34 @@ def test_manual_meter_rows_lost_when_new_row_not_manual():
     # the manual data is actually gone, so LOST.
     removed = [
         json.dumps(
-            {"provider": "replicate", "month": "2026-07", "currency": "USD",
+            {"vendor": "replicate", "month": "2026-07", "currency": "USD",
              "source": "manual"},
             sort_keys=True,
         ),
     ]
     new_rows = [
-        {"provider": "replicate", "month": "2026-07", "currency": "USD",
+        {"vendor": "replicate", "month": "2026-07", "currency": "USD",
          "source": "api"},
     ]
     lost = backup.manual_meter_rows_lost(removed, new_rows)
-    assert [row["provider"] for row in lost] == ["replicate"]
+    assert [row["vendor"] for row in lost] == ["replicate"]
 
 
 def test_manual_meter_rows_lost_when_no_new_row_for_key():
     # Removed manual row has no surviving row for its key — LOST.
     removed = [
         json.dumps(
-            {"provider": "replicate", "month": "2026-07", "currency": "USD",
+            {"vendor": "replicate", "month": "2026-07", "currency": "USD",
              "source": "manual"},
             sort_keys=True,
         ),
     ]
     new_rows = [
-        {"provider": "aws", "month": "2026-07", "currency": "USD",
+        {"vendor": "aws", "month": "2026-07", "currency": "USD",
          "source": "manual,api"},
     ]
     lost = backup.manual_meter_rows_lost(removed, new_rows)
-    assert [row["provider"] for row in lost] == ["replicate"]
+    assert [row["vendor"] for row in lost] == ["replicate"]
 
 
 def test_guarded_replace_blocks_manual_loss_without_yes():
@@ -120,7 +120,7 @@ def test_guarded_replace_blocks_manual_loss_without_yes():
         def replace(self, datasource, rows):
             self.calls.append((datasource, rows))
 
-    existing = [{"month": "2026-07", "provider": "replicate", "currency": "USD",
+    existing = [{"month": "2026-07", "vendor": "replicate", "currency": "USD",
                  "credit": 200.0, "paid": 0.0, "source": "manual"}]
     guard = {"yes": False, "dry_run": False, "existing": {"meter_monthly": existing}}
     client = FakeReplace()

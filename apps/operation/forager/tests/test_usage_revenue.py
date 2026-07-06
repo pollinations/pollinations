@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import pytest
 
 import ingest.connectors.usage as _usage
-import ingest.connectors.providers.stripe as _stripe
+import ingest.connectors.vendors.stripe as _stripe
 
 TODAY = "2026-07-03"
 MONTHS = ["2026-04", "2026-05", "2026-06"]
@@ -103,7 +103,7 @@ def test_usage_rows_carry_month():
     """Each returned row must carry the 'month' field matching the queried month."""
     canned = [
         {
-            "provider": "azure",
+            "vendor": "azure",
             "model": "gpt-4o",
             "price_paid": 1.0,
             "price_quests": 0.5,
@@ -116,12 +116,12 @@ def test_usage_rows_carry_month():
     assert any(r["month"] == "2026-05" for r in rows)
 
 
-def test_usage_provider_canonicalized_at_ingest():
-    """provider is canonicalized via burn.CANON at ingest (bedrock → aws,
+def test_usage_vendor_canonicalized_at_ingest():
+    """vendor is canonicalized via burn.CANON at ingest (bedrock → aws,
     vastai → vast.ai); freshness timestamps stay in ingest_runs."""
     canned = [
         {
-            "provider": "bedrock",
+            "vendor": "bedrock",
             "model": "claude",
             "price_paid": 0.1,
             "price_quests": 0.0,
@@ -129,7 +129,7 @@ def test_usage_provider_canonicalized_at_ingest():
             "cost_quests": 0.0,
         },
         {
-            "provider": "vastai",
+            "vendor": "vastai",
             "model": "flux",
             "price_paid": 0.1,
             "price_quests": 0.0,
@@ -139,11 +139,11 @@ def test_usage_provider_canonicalized_at_ingest():
     ]
     tb = TBStub(canned_rows=canned)
     rows = _usage.monthly_rows(tb, ["2026-06"], TODAY)
-    assert {r["provider"] for r in rows} == {"aws", "vast.ai"}
+    assert {r["vendor"] for r in rows} == {"aws", "vast.ai"}
     assert all(
         set(r) == {
             "month",
-            "provider",
+            "vendor",
             "model",
             "currency",
             "price_paid",
@@ -155,11 +155,11 @@ def test_usage_provider_canonicalized_at_ingest():
     )
 
 
-def test_usage_unknown_provider_fails_with_alias_guidance():
-    """Unknown non-empty provider tags must be fixed in provider_aliases.json."""
+def test_usage_unknown_vendor_fails_with_alias_guidance():
+    """Unknown non-empty vendor tags must be fixed in vendor_aliases.json."""
     canned = [
         {
-            "provider": "new-provider-tag",
+            "vendor": "new-vendor-tag",
             "model": "gpt-4o",
             "price_paid": 1.0,
             "price_quests": 0.0,
@@ -169,15 +169,15 @@ def test_usage_unknown_provider_fails_with_alias_guidance():
     ]
     tb = TBStub(canned_rows=canned)
 
-    with pytest.raises(ValueError, match="provider_aliases.json"):
+    with pytest.raises(ValueError, match="vendor_aliases.json"):
         _usage.monthly_rows(tb, ["2026-06"], TODAY)
 
 
 def test_usage_canonicalized_duplicates_are_summed():
-    """Raw providers can collapse to one canonical provider; keep one row."""
+    """Raw vendors can collapse to one canonical vendor; keep one row."""
     canned = [
         {
-            "provider": "azure",
+            "vendor": "azure",
             "model": "gpt-4o",
             "price_paid": 1.5,
             "price_quests": 0.2,
@@ -185,7 +185,7 @@ def test_usage_canonicalized_duplicates_are_summed():
             "cost_quests": 0.1,
         },
         {
-            "provider": "azure-2",
+            "vendor": "azure-2",
             "model": "gpt-4o",
             "price_paid": 0.7,
             "price_quests": 0.4,
@@ -197,7 +197,7 @@ def test_usage_canonicalized_duplicates_are_summed():
     rows = _usage.monthly_rows(tb, ["2026-06"], TODAY)
 
     assert len(rows) == 1
-    assert rows[0]["provider"] == "azure"
+    assert rows[0]["vendor"] == "azure"
     assert rows[0]["model"] == "gpt-4o"
     assert rows[0]["price_paid"] == pytest.approx(2.2)
     assert rows[0]["price_quests"] == pytest.approx(0.6)
@@ -209,7 +209,7 @@ def test_usage_multiple_months_correct_month_tags():
     """Each month's rows get the correct month tag (not the same month for all)."""
     canned = [
         {
-            "provider": "azure",
+            "vendor": "azure",
             "model": "gpt-4o",
             "price_paid": 0.5,
             "price_quests": 0.0,
@@ -231,11 +231,11 @@ def test_usage_empty_result_from_tb():
     assert rows == []
 
 
-def test_usage_none_provider_kept_as_is():
-    """None/missing provider field → kept verbatim (empty string or None, no placeholder)."""
+def test_usage_none_vendor_kept_as_is():
+    """None/missing vendor field → kept verbatim (empty string or None, no placeholder)."""
     canned = [
         {
-            "provider": None,
+            "vendor": None,
             "model": "gpt-4o",
             "price_paid": 0.0,
             "price_quests": 0.0,
@@ -245,17 +245,17 @@ def test_usage_none_provider_kept_as_is():
     ]
     tb = TBStub(canned_rows=canned)
     rows = _usage.monthly_rows(tb, ["2026-06"], TODAY)
-    # The row must survive; provider is not replaced with a made-up string
+    # The row must survive; vendor is not replaced with a made-up string
     assert len(rows) == 1
     # The value should be None or "" (verbatim from TB), NOT a fabricated placeholder
-    assert rows[0]["provider"] not in ("UNKNOWN", "unknown", "N/A", "n/a")
+    assert rows[0]["vendor"] not in ("UNKNOWN", "unknown", "N/A", "n/a")
 
 
 def test_usage_month_field_is_string():
     """month field must be a YYYY-MM string."""
     canned = [
         {
-            "provider": "azure",
+            "vendor": "azure",
             "model": "gpt-4o",
             "price_paid": 0.1,
             "price_quests": 0.0,

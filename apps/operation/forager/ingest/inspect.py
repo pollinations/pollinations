@@ -1,6 +1,6 @@
 """Read-only table inspector.
 
-    python3 -m ingest.inspect meter_monthly --provider replicate --month 2026-07
+    python3 -m ingest.inspect meter_monthly --vendor replicate --month 2026-07
 Prints matching rows as JSON lines plus a count footer. Never writes.
 """
 import argparse
@@ -19,18 +19,18 @@ TABLES = {
     "ingest_runs": None,
 }
 _MONTH_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
-_PROVIDER_RE = re.compile(r"^[a-z0-9._-]+$")
+_VENDOR_RE = re.compile(r"^[a-z0-9._-]+$")
 
 
-def build_query(table, provider, month, limit):
+def build_query(table, vendor, month, limit):
     month_column = TABLES[table]
     where = []
-    if provider:
+    if vendor:
         if table in ("revenue_monthly", "ingest_runs"):
-            raise ValueError(f"{table} has no provider column")
-        if not _PROVIDER_RE.match(provider):
-            raise ValueError(f"invalid provider slug: {provider}")
-        where.append(f"provider = '{provider}'")
+            raise ValueError(f"{table} has no vendor column")
+        if not _VENDOR_RE.match(vendor):
+            raise ValueError(f"invalid vendor slug: {vendor}")
+        where.append(f"vendor = '{vendor}'")
     if month:
         if not _MONTH_RE.match(month):
             raise ValueError(f"month must be YYYY-MM, got '{month}'")
@@ -55,13 +55,13 @@ def main(argv=None, tb_factory=None):
         prog="ingest.inspect", description="Print rows from an operations table."
     )
     parser.add_argument("table", choices=sorted(TABLES))
-    parser.add_argument("--provider")
+    parser.add_argument("--vendor")
     parser.add_argument("--month")
     parser.add_argument("--limit", type=int, default=200)
     args = parser.parse_args(argv)
 
     try:
-        query = build_query(args.table, args.provider, args.month, args.limit)
+        query = build_query(args.table, args.vendor, args.month, args.limit)
     except ValueError as error:
         print(f"error: {error}", file=sys.stderr)
         sys.exit(1)

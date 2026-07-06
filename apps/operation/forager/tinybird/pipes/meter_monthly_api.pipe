@@ -5,11 +5,11 @@ SQL >
     SELECT
         month,
         source,
-        provider,
+        vendor,
         currency,
         credit,
         paid
     FROM meter_monthly
-    ORDER BY provider, month, source, currency
+    ORDER BY vendor, month, source, currency
 
 TYPE endpoint

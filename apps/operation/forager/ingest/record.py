@@ -1,18 +1,18 @@
 """Manual entry CLI for meter readings.
 
 Usage:
-    python3 -m ingest.record meter <provider> <YYYY-MM>
+    python3 -m ingest.record meter <vendor> <YYYY-MM>
                                    --currency USD|EUR [--credit N] [--paid N]
 
 Appends one row to `meter_monthly` with source="manual".
-Provider must be in registry.CANONICAL; month must match YYYY-MM.
+Vendor must be in registry.CANONICAL; month must match YYYY-MM.
 """
 import argparse
 import json
 import re
 import sys
 
-from .connectors.providers import _currency, _validate_meter_source
+from .connectors.vendors import _currency, _validate_meter_source
 from .connectors.registry import CANONICAL
 from . import creds as _creds
 from . import tb as _tb
@@ -27,9 +27,9 @@ def _default_tb_factory(token):
     return _tb.TB(cfg["tb_ops_api"], token)
 
 
-def _validate_provider(provider):
-    if provider not in CANONICAL:
-        print(f"error: unknown provider '{provider}'. known: {sorted(CANONICAL)}", file=sys.stderr)
+def _validate_vendor(vendor):
+    if vendor not in CANONICAL:
+        print(f"error: unknown vendor '{vendor}'. known: {sorted(CANONICAL)}", file=sys.stderr)
         sys.exit(1)
 
 
@@ -67,7 +67,7 @@ def main(argv=None, tb_factory=None):
 
     # meter subcommand
     mp = sub.add_parser("meter", help="append a meter_monthly reading")
-    mp.add_argument("provider",  help="canonical provider slug")
+    mp.add_argument("vendor",    help="canonical vendor slug")
     mp.add_argument("month",     help="billing month YYYY-MM")
     mp.add_argument("--currency", required=True, help="source currency code, e.g. USD or EUR")
     mp.add_argument("--credit", type=float, default=0.0, help="credit burn amount")
@@ -83,7 +83,7 @@ def main(argv=None, tb_factory=None):
         client = _default_tb_factory(c["TINYBIRD_OPS_INGEST_TOKEN"])
 
     if args.cmd == "meter":
-        _validate_provider(args.provider)
+        _validate_vendor(args.vendor)
         _validate_month(args.month)
         _validate_amount("credit", args.credit)
         _validate_amount("paid", args.paid)
@@ -94,7 +94,7 @@ def main(argv=None, tb_factory=None):
         _validate_meter_source("manual")
         row = {
             "month": args.month,
-            "provider": args.provider,
+            "vendor": args.vendor,
             "currency": _currency(currency),
             "credit": round(float(args.credit), 2),
             "paid": round(float(args.paid), 2),

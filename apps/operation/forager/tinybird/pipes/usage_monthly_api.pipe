@@ -5,7 +5,7 @@ SQL >
     SELECT
         month,
         'tinybird' AS source,
-        provider,
+        vendor,
         model,
         currency,
         cost_paid,
@@ -13,6 +13,6 @@ SQL >
         price_paid,
         price_quests
     FROM usage_monthly
-    ORDER BY month, provider, model
+    ORDER BY month, vendor, model
 
 TYPE endpoint

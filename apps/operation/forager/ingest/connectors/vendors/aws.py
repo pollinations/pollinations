@@ -97,7 +97,7 @@ def meter(creds, months, today, run_cmd=subprocess.run):
         if cash:
             rows.append(_mrow(
                 month=month,
-                provider="aws",
+                vendor="aws",
                 amount=cash,
                 funding="cash",
                 source="cli",
@@ -106,7 +106,7 @@ def meter(creds, months, today, run_cmd=subprocess.run):
         if credit:
             rows.append(_mrow(
                 month=month,
-                provider="aws",
+                vendor="aws",
                 amount=credit,
                 funding="credit",
                 source="cli",

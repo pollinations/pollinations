@@ -47,7 +47,7 @@ def meter(creds, months, today):
         if cents:
             rows.append(_mrow(
                 month=month,
-                provider="deepinfra",
+                vendor="deepinfra",
                 amount=round(cents / 100.0, 2),
                 funding="prepaid",
                 source="api",

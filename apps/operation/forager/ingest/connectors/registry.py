@@ -1,23 +1,23 @@
 """Connector registry.
 
-CANONICAL: full set of canonical provider slugs accepted by ingest.record.
-           Provider identity is defined in config/provider_aliases.json.
+CANONICAL: full set of canonical vendor slugs accepted by ingest.record.
+           Vendor identity is defined in config/vendor_aliases.json.
 
 METER: list of (slug, connector_fn) pairs.
 """
 
-from ..aliases import PROVIDER_ALIASES
+from ..aliases import VENDOR_ALIASES
 
-CANONICAL: frozenset = frozenset(PROVIDER_ALIASES.keys())
+CANONICAL: frozenset = frozenset(VENDOR_ALIASES.keys())
 
-from .providers import deepinfra as _deepinfra
-from .providers import ovh as _ovh
-from .providers import vast as _vast
-from .providers import fireworks as _fw
-from .providers import openai_ as _openai
+from .vendors import deepinfra as _deepinfra
+from .vendors import ovh as _ovh
+from .vendors import vast as _vast
+from .vendors import fireworks as _fw
+from .vendors import openai_ as _openai
 
-from .providers import aws as _aws
-from .providers import gcp as _gcp
+from .vendors import aws as _aws
+from .vendors import gcp as _gcp
 
 METER: list = [
     ("deepinfra", _deepinfra.meter),

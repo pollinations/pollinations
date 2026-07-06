@@ -16,7 +16,7 @@ Refund type identification:
   contribute to net via Σnet but are NOT counted as refunds.
 
 Not registered in BALANCE or METER registries — stripe is a revenue connector,
-not a provider cost/credit connector.
+not a vendor cost/credit connector.
 """
 import datetime
 

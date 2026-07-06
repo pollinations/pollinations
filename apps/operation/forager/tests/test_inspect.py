@@ -3,9 +3,9 @@ import pytest
 from ingest.inspect import build_query
 
 
-def test_build_query_filters_provider_and_month():
+def test_build_query_filters_vendor_and_month():
     assert build_query("meter_monthly", "replicate", "2026-07", 200) == (
-        "SELECT * FROM meter_monthly WHERE provider = 'replicate' "
+        "SELECT * FROM meter_monthly WHERE vendor = 'replicate' "
         "AND month = '2026-07' ORDER BY month DESC LIMIT 200"
     )
 

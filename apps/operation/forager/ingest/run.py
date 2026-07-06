@@ -3,7 +3,7 @@
     python3 -m ingest.run
 Forager owns the clean Treasury data path:
   - Enty exports -> transactions
-  - provider connectors/manual rows -> meter_monthly
+  - vendor connectors/manual rows -> meter_monthly
   - generation_event -> usage_monthly
   - Stripe balance transactions -> revenue_monthly
 
@@ -20,9 +20,9 @@ from . import backup, creds, enty, tb
 from .connectors import registry
 from .connectors import usage as _usage
 from .connectors.common import months_ytd
-from .connectors.providers import _validate_meter_source
-from .connectors.providers import stripe as _stripe
-from .aliases import PROVIDER_ALIASES
+from .connectors.vendors import _validate_meter_source
+from .connectors.vendors import stripe as _stripe
+from .aliases import VENDOR_ALIASES
 
 
 _SRC_RANK = {"manual": 0, "api": 1, "cli": 2, "bq": 3}
@@ -58,12 +58,12 @@ def _field_present(row, field):
 
 
 def merge_meter_rows(rows):
-    """One row per (provider, month, currency), with separate credit/paid amounts."""
+    """One row per (vendor, month, currency), with separate credit/paid amounts."""
 
     grouped = {}
     for row in rows:
         key = (
-            row.get("provider", ""),
+            row.get("vendor", ""),
             row.get("month", ""),
             row.get("currency", ""),
         )
@@ -71,7 +71,7 @@ def merge_meter_rows(rows):
             key,
             {
                 "month": row.get("month", ""),
-                "provider": row.get("provider", ""),
+                "vendor": row.get("vendor", ""),
                 "currency": row.get("currency", ""),
                 "credit": 0.0,
                 "paid": 0.0,
@@ -102,7 +102,7 @@ def merge_meter_rows(rows):
         merged.append(
             {
                 "month": row["month"],
-                "provider": row["provider"],
+                "vendor": row["vendor"],
                 "currency": row["currency"],
                 "credit": row["credit"],
                 "paid": row["paid"],
@@ -144,9 +144,9 @@ def assert_fresh_in_scope(datasource, fresh, in_scope):
 
 def validate_meter_rows(rows):
     for row in rows:
-        if row.get("provider", "") not in PROVIDER_ALIASES:
+        if row.get("vendor", "") not in VENDOR_ALIASES:
             raise ValueError(
-                f"unknown provider slug for meter_monthly: {row.get('provider', '')}"
+                f"unknown vendor slug for meter_monthly: {row.get('vendor', '')}"
             )
         _validate_meter_source(row.get("source", ""))
         if not str(row.get("currency") or "").strip():
@@ -190,7 +190,7 @@ def refresh_meter_monthly(
     today,
     statuses,
     guard,
-    providers=None,
+    vendors=None,
     months=None,
 ):
     if months is None:
@@ -199,7 +199,7 @@ def refresh_meter_monthly(
 
     def in_scope(row):
         return (
-            (providers is None or row.get("provider") in providers)
+            (vendors is None or row.get("vendor") in vendors)
             and row.get("month") in month_set
         )
 
@@ -207,7 +207,7 @@ def refresh_meter_monthly(
     errors = []
 
     for slug, fn in registry.METER:
-        if providers is not None and slug not in providers:
+        if vendors is not None and slug not in vendors:
             continue
         try:
             rows = fn(secrets, months, today)
@@ -310,18 +310,18 @@ def parse_args(argv=None):
     parser.add_argument("--dry-run", action="store_true",
                         help="snapshot + diff only, write nothing")
     parser.add_argument("--only", choices=["meter", "usage", "revenue", "transactions"])
-    parser.add_argument("--provider", help="meter only: re-fetch one connector")
+    parser.add_argument("--vendor", help="meter only: re-fetch one connector")
     parser.add_argument("--month", help="restrict to one YYYY-MM month")
     args = parser.parse_args(argv)
 
-    if args.provider is not None:
+    if args.vendor is not None:
         if args.only != "meter":
-            parser.error("--provider requires --only meter")
+            parser.error("--vendor requires --only meter")
         meter_slugs = [slug for slug, _ in registry.METER]
-        if args.provider not in meter_slugs:
+        if args.vendor not in meter_slugs:
             parser.error(
-                "--provider must be a meter connector slug "
-                f"({', '.join(meter_slugs)}); manual-only providers are "
+                "--vendor must be a meter connector slug "
+                f"({', '.join(meter_slugs)}); manual-only vendors are "
                 "updated with ingest.record"
             )
     if args.month is not None:
@@ -355,7 +355,7 @@ def main():
     print(f"backup: {backup_dir}")
 
     months = [args.month] if args.month else None
-    providers = [args.provider] if args.provider else None
+    vendors = [args.vendor] if args.vendor else None
 
     statuses, notes = {}, []
     try:
@@ -367,7 +367,7 @@ def main():
                 today,
                 statuses,
                 guard,
-                providers=providers,
+                vendors=vendors,
                 months=months,
             )
         if args.only in (None, "usage"):

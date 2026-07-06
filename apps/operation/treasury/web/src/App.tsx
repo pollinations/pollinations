@@ -494,6 +494,7 @@ export default function App() {
                         )}
                         {data && tab === "meter" && (
                             <MeterTab
+                                category={category}
                                 data={data}
                                 month={activeMonth}
                                 provider={provider}

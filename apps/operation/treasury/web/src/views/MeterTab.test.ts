@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { MeterMonthlyRow, UsageMonthlyRow } from "../types";
+import type {
+    MeterMonthlyRow,
+    TransactionRow,
+    UsageMonthlyRow,
+} from "../types";
 import { aggregateMeterRows } from "./MeterTab";
 
 function usageRow(
@@ -30,6 +34,19 @@ function meterRow(
         cost_usd,
         funding: "credit",
         source: "manual",
+    };
+}
+
+function transactionRow(provider: string, category: string): TransactionRow {
+    return {
+        date: "2026-06-01",
+        provider,
+        category,
+        bank_charged: "",
+        cash_paid: "",
+        credit_burned: "",
+        invoice_ref: "",
+        match_status: "matched",
     };
 }
 
@@ -142,5 +159,41 @@ describe("MeterTab backfill", () => {
                 sources: ["manual"],
             },
         ]);
+    });
+
+    it("treats uncategorized provider meter rows as compute", async () => {
+        const { visibleMeterRows } = await import("./MeterTab");
+        expect(
+            visibleMeterRows({
+                category: "compute",
+                meterRows: [meterRow("2026-06", "digitalocean", 288)],
+                month: "2026-06",
+                provider: "all",
+                transactions: [],
+                usageRows: [],
+            }),
+        ).toEqual([
+            {
+                month: "2026-06",
+                provider: "digitalocean",
+                creditUsage: 288,
+                prepaidUsage: 0,
+                sources: ["manual"],
+            },
+        ]);
+    });
+
+    it("uses transaction categories when a provider has one", async () => {
+        const { visibleMeterRows } = await import("./MeterTab");
+        expect(
+            visibleMeterRows({
+                category: "compute",
+                meterRows: [meterRow("2026-06", "tinybird", 34.74)],
+                month: "2026-06",
+                provider: "all",
+                transactions: [transactionRow("tinybird", "infra")],
+                usageRows: [],
+            }),
+        ).toEqual([]);
     });
 });

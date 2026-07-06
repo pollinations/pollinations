@@ -24,7 +24,12 @@ import { fmtPeriod } from "../lib/format";
 import { matchesMonth } from "../lib/months";
 import { queuedMeterKey } from "../lib/queued";
 import { useStaging } from "../lib/staging";
-import type { Data, MeterMonthlyRow, UsageMonthlyRow } from "../types";
+import type {
+    Data,
+    MeterMonthlyRow,
+    TransactionRow,
+    UsageMonthlyRow,
+} from "../types";
 
 const MONTH_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
 type UsageBucket = "credit" | "prepaid";
@@ -232,40 +237,72 @@ function MeterAmountInput({
     );
 }
 
+function providerCategoryMap(transactions: TransactionRow[]) {
+    const map = new Map<string, Set<string>>();
+    for (const row of transactions) {
+        if (!row.provider || !row.category) continue;
+        const categories = map.get(row.provider) ?? new Set<string>();
+        categories.add(row.category);
+        map.set(row.provider, categories);
+    }
+    return map;
+}
+
+function matchesCategory(
+    provider: string,
+    category: string,
+    categoriesByProvider: Map<string, Set<string>>,
+) {
+    if (category === "all") return true;
+    const categories = categoriesByProvider.get(provider);
+    if (!categories) return category === "compute";
+    return categories.has(category);
+}
+
 export function visibleMeterRows({
+    category = "all",
     meterRows,
     month,
     provider,
+    transactions = [],
     usageRows,
 }: {
+    category?: string;
     meterRows: MeterMonthlyRow[];
     month: string;
     provider: string;
+    transactions?: TransactionRow[];
     usageRows: UsageMonthlyRow[];
 }) {
+    const categoriesByProvider = providerCategoryMap(transactions);
     const periodUsageRows = usageRows.filter((row) =>
         matchesMonth(row.month, month),
     );
     const periodMeterRows = aggregateMeterRows(meterRows).filter(
         (row) =>
             matchesMonth(row.month, month) &&
-            (provider === "all" || row.provider === provider),
+            (provider === "all" || row.provider === provider) &&
+            matchesCategory(row.provider, category, categoriesByProvider),
     );
     return sortedMeter(
         withProviderBackfillRows({
             provider,
             rows: periodMeterRows,
-            usageRows: periodUsageRows,
+            usageRows: periodUsageRows.filter((row) =>
+                matchesCategory(row.provider, category, categoriesByProvider),
+            ),
         }),
     );
 }
 
 export function MeterTab({
+    category = "all",
     data,
     month = "",
     provider = "all",
     queuedKeys = new Set<string>(),
 }: {
+    category?: string;
     data: Data;
     month?: string;
     provider?: string;
@@ -279,12 +316,21 @@ export function MeterTab({
     const baseRows = useMemo(
         () =>
             visibleMeterRows({
+                category,
                 meterRows: data.meterMonthly,
                 month,
                 provider,
+                transactions: data.transactions,
                 usageRows: data.usageMonthly,
             }),
-        [data.meterMonthly, data.usageMonthly, month, provider],
+        [
+            category,
+            data.meterMonthly,
+            data.transactions,
+            data.usageMonthly,
+            month,
+            provider,
+        ],
     );
     const sortColumns = useMemo<SortColumn<MeterUsageRow>[]>(
         () => [

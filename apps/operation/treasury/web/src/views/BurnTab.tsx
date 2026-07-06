@@ -57,20 +57,20 @@ export function BurnTab({
                 value: (row) => row.price_quests,
             },
             {
-                key: "byop_credit_paid_pollen",
-                value: (row) => row.byop_credit_paid_pollen,
+                key: "byop_paid",
+                value: (row) => row.byop_paid,
             },
             {
-                key: "byop_credit_quest_pollen",
-                value: (row) => row.byop_credit_quest_pollen,
+                key: "byop_quests",
+                value: (row) => row.byop_quests,
             },
             {
-                key: "model_credit_paid_pollen",
-                value: (row) => row.model_credit_paid_pollen,
+                key: "model_paid",
+                value: (row) => row.model_paid,
             },
             {
-                key: "model_credit_quest_pollen",
-                value: (row) => row.model_credit_quest_pollen,
+                key: "model_quests",
+                value: (row) => row.model_quests,
             },
         ],
         [],
@@ -113,25 +113,17 @@ export function BurnTab({
                             <TableHeaderCell {...headerProps("price_quests")}>
                                 price_quests
                             </TableHeaderCell>
-                            <TableHeaderCell
-                                {...headerProps("byop_credit_paid_pollen")}
-                            >
-                                byop_credit_paid_pollen
+                            <TableHeaderCell {...headerProps("byop_paid")}>
+                                byop_paid
                             </TableHeaderCell>
-                            <TableHeaderCell
-                                {...headerProps("byop_credit_quest_pollen")}
-                            >
-                                byop_credit_quest_pollen
+                            <TableHeaderCell {...headerProps("byop_quests")}>
+                                byop_quests
                             </TableHeaderCell>
-                            <TableHeaderCell
-                                {...headerProps("model_credit_paid_pollen")}
-                            >
-                                model_credit_paid_pollen
+                            <TableHeaderCell {...headerProps("model_paid")}>
+                                model_paid
                             </TableHeaderCell>
-                            <TableHeaderCell
-                                {...headerProps("model_credit_quest_pollen")}
-                            >
-                                model_credit_quest_pollen
+                            <TableHeaderCell {...headerProps("model_quests")}>
+                                model_quests
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>
@@ -152,18 +144,10 @@ export function BurnTab({
                                 <TableCell>{row.cost_quests}</TableCell>
                                 <TableCell>{row.price_paid}</TableCell>
                                 <TableCell>{row.price_quests}</TableCell>
-                                <TableCell>
-                                    {row.byop_credit_paid_pollen}
-                                </TableCell>
-                                <TableCell>
-                                    {row.byop_credit_quest_pollen}
-                                </TableCell>
-                                <TableCell>
-                                    {row.model_credit_paid_pollen}
-                                </TableCell>
-                                <TableCell>
-                                    {row.model_credit_quest_pollen}
-                                </TableCell>
+                                <TableCell>{row.byop_paid}</TableCell>
+                                <TableCell>{row.byop_quests}</TableCell>
+                                <TableCell>{row.model_paid}</TableCell>
+                                <TableCell>{row.model_quests}</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>

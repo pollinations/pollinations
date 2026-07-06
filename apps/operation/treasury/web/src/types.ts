@@ -29,10 +29,10 @@ export type UsageMonthlyRow = {
     cost_quests: number;
     price_paid: number;
     price_quests: number;
-    byop_credit_paid_pollen: number;
-    byop_credit_quest_pollen: number;
-    model_credit_paid_pollen: number;
-    model_credit_quest_pollen: number;
+    byop_paid: number;
+    byop_quests: number;
+    model_paid: number;
+    model_quests: number;
 };
 
 export type RunRow = {

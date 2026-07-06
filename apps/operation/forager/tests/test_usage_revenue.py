@@ -152,10 +152,10 @@ def test_usage_vendor_canonicalized_at_ingest():
             "price_quests",
             "cost_paid",
             "cost_quests",
-            "byop_credit_paid_pollen",
-            "byop_credit_quest_pollen",
-            "model_credit_paid_pollen",
-            "model_credit_quest_pollen",
+            "byop_paid",
+            "byop_quests",
+            "model_paid",
+            "model_quests",
         }
         for r in rows
     )
@@ -189,10 +189,10 @@ def test_usage_canonicalized_duplicates_are_summed():
             "price_quests": 0.2,
             "cost_paid": 0.8,
             "cost_quests": 0.1,
-            "byop_credit_paid_pollen": 0.15,
-            "byop_credit_quest_pollen": 0.02,
-            "model_credit_paid_pollen": 0.05,
-            "model_credit_quest_pollen": 0.01,
+            "byop_paid": 0.15,
+            "byop_quests": 0.02,
+            "model_paid": 0.05,
+            "model_quests": 0.01,
         },
         {
             "vendor": "azure-2",
@@ -201,10 +201,10 @@ def test_usage_canonicalized_duplicates_are_summed():
             "price_quests": 0.4,
             "cost_paid": 0.3,
             "cost_quests": 0.2,
-            "byop_credit_paid_pollen": 0.07,
-            "byop_credit_quest_pollen": 0.04,
-            "model_credit_paid_pollen": 0.02,
-            "model_credit_quest_pollen": 0.03,
+            "byop_paid": 0.07,
+            "byop_quests": 0.04,
+            "model_paid": 0.02,
+            "model_quests": 0.03,
         },
     ]
     tb = TBStub(canned_rows=canned)
@@ -217,10 +217,10 @@ def test_usage_canonicalized_duplicates_are_summed():
     assert rows[0]["price_quests"] == pytest.approx(0.6)
     assert rows[0]["cost_paid"] == pytest.approx(1.1)
     assert rows[0]["cost_quests"] == pytest.approx(0.3)
-    assert rows[0]["byop_credit_paid_pollen"] == pytest.approx(0.22)
-    assert rows[0]["byop_credit_quest_pollen"] == pytest.approx(0.06)
-    assert rows[0]["model_credit_paid_pollen"] == pytest.approx(0.07)
-    assert rows[0]["model_credit_quest_pollen"] == pytest.approx(0.04)
+    assert rows[0]["byop_paid"] == pytest.approx(0.22)
+    assert rows[0]["byop_quests"] == pytest.approx(0.06)
+    assert rows[0]["model_paid"] == pytest.approx(0.07)
+    assert rows[0]["model_quests"] == pytest.approx(0.04)
 
 
 def test_usage_multiple_months_correct_month_tags():

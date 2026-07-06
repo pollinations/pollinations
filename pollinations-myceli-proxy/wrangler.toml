@@ -8,11 +8,6 @@ routes = [
   { pattern = "enter.pollinations.ai", custom_domain = true },
   { pattern = "gen.pollinations.ai", custom_domain = true },
   { pattern = "media.pollinations.ai", custom_domain = true },
-  # Catch-all for self-serve user apps (<slug>.pollinations.ai): the generic
-  # upstream rule maps them to <slug>.myceli.ai. Exact custom domains above
-  # and below always win over the wildcard. Requires a proxied wildcard DNS
-  # record (`*` -> 192.0.2.1) on the pollinations.ai zone (one-time, manual).
-  { pattern = "*.pollinations.ai/*", zone_id = "0942247b74a58e4fc5ea70341a3754a3" },
   # GENERATED-PROXY-ROUTES (apps + ops; injected by scripts/gen-routes.mjs)
 ]
 

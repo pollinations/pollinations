@@ -193,8 +193,12 @@ export const userAppsRoutes = new Hono<Env>()
                 // sent.
                 await attachAppDomain(config, hostname, scriptName);
             } catch (error) {
-                // The hostname was never claimed (or belongs to someone
-                // else), so only the freshly deployed script is cleaned up.
+                // The attach may have thrown yet still taken effect (network
+                // failure after Cloudflare applied it), which would leave the
+                // hostname squatted with no recoverable row. detachAppDomain
+                // is script-scoped and idempotent, so it is a no-op when the
+                // hostname was never claimed or belongs to another script.
+                await detachAppDomain(config, hostname, scriptName);
                 await deleteCommunityWorker(config, scriptName);
                 throw error;
             }
@@ -261,6 +265,16 @@ export const userAppsRoutes = new Hono<Env>()
                 .set({ updatedAt: new Date() })
                 .where(eq(schema.userApp.id, app.id))
                 .returning();
+            if (!row) {
+                // A concurrent delete removed the app mid-deploy; the redeploy
+                // recreated the script (deployAppWorker upserts), so remove it
+                // again. deleteCommunityWorker is idempotent.
+                await deleteCommunityWorker(
+                    config,
+                    appWorkerScriptName(app.id),
+                );
+                throw new HTTPException(404, { message: "App not found" });
+            }
             return c.json(toResponse(row, config));
         },
     )

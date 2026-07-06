@@ -42,15 +42,30 @@ describe("app slug rules", () => {
         expect(APP_SLUG_PATTERN.test("a".repeat(63))).toBe(true);
     });
 
-    it("reserves infra names", () => {
+    it("reserves infra names and live core-service hosts", () => {
         expect(RESERVED_APP_SLUGS.has("www")).toBe(true);
         expect(RESERVED_APP_SLUGS.has("api")).toBe(true);
+        // Live pollinations.ai services whose origin is not <slug>.myceli.ai —
+        // the reserved list is the only guard that stops a takeover.
+        for (const slug of ["gen", "enter", "image", "checkout", "polly"]) {
+            expect(RESERVED_APP_SLUGS.has(slug)).toBe(true);
+        }
         expect(RESERVED_APP_SLUGS.has("my-cool-app")).toBe(false);
     });
 });
 
 describe("requireAppDeployConfig", () => {
-    it("throws when any var is missing", () => {
+    it("throws when a base deploy var is missing", () => {
+        expect(() =>
+            requireAppDeployConfig({
+                CF_APP_ORIGIN_ZONE_ID: "zone",
+                CF_APP_ORIGIN_DOMAIN: "myceli.ai",
+                CF_APP_PUBLIC_DOMAIN: "pollinations.ai",
+            }),
+        ).toThrow(/CF_WORKER_DEPLOY/);
+    });
+
+    it("throws when an app-specific var is missing", () => {
         expect(() =>
             requireAppDeployConfig({
                 CF_WORKER_DEPLOY_ACCOUNT_ID: "acct",
@@ -58,7 +73,25 @@ describe("requireAppDeployConfig", () => {
                 CF_APP_ORIGIN_ZONE_ID: "zone",
                 CF_APP_ORIGIN_DOMAIN: "myceli.ai",
             }),
-        ).toThrow(/not configured/);
+        ).toThrow(/CF_APP_/);
+    });
+
+    it("composes the full config", () => {
+        expect(
+            requireAppDeployConfig({
+                CF_WORKER_DEPLOY_ACCOUNT_ID: "acct",
+                CF_WORKER_DEPLOY_API_TOKEN: "token",
+                CF_APP_ORIGIN_ZONE_ID: "zone",
+                CF_APP_ORIGIN_DOMAIN: "myceli.ai",
+                CF_APP_PUBLIC_DOMAIN: "pollinations.ai",
+            }),
+        ).toEqual({
+            accountId: "acct",
+            apiToken: "token",
+            originZoneId: "zone",
+            originDomain: "myceli.ai",
+            publicDomain: "pollinations.ai",
+        });
     });
 });
 
@@ -95,16 +128,13 @@ describe("decodeAppFiles", () => {
         );
     });
 
-    it("enforces the total size cap", () => {
-        const chunk = "a".repeat(1024 * 1024);
-        const files = Object.fromEntries(
-            Array.from({ length: 26 }, (_, index) => [
-                `file-${index}.txt`,
-                encode(chunk),
-            ]),
+    it("enforces the total size cap from the encoded length before decoding", () => {
+        // Each base64 blob is >2x MAX once, so the pre-decode guard trips on
+        // the encoded length rather than after inflating everything in memory.
+        const chunk = "a".repeat(MAX_APP_TOTAL_BYTES * 2 + 8);
+        expect(() => decodeAppFiles({ "big.txt": chunk })).toThrow(
+            /total size limit/,
         );
-        expect(() => decodeAppFiles(files)).toThrow(/total size limit/);
-        expect(MAX_APP_TOTAL_BYTES).toBe(25 * 1024 * 1024);
     });
 });
 

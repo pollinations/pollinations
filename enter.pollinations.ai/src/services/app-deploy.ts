@@ -1,6 +1,10 @@
-import { cfApi, type WorkerDeployConfig } from "./worker-deploy.ts";
+import {
+    CF_API_BASE,
+    cfApi,
+    requireWorkerDeployConfig,
+    type WorkerDeployConfig,
+} from "./worker-deploy.ts";
 
-const CF_API_BASE = "https://api.cloudflare.com/client/v4";
 const APP_COMPATIBILITY_DATE = "2026-01-01";
 // Keeps the whole JSON body (base64 inflates by 4/3) comfortably inside the
 // enter worker's memory while it re-uploads files to Cloudflare. Cloudflare's
@@ -11,32 +15,51 @@ export const MAX_APP_TOTAL_BYTES = 25 * 1024 * 1024;
 // first-level subdomains, so nested labels are rejected by the pattern.
 export const APP_SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 
-// Infra names that must never become user apps. Hostnames that already exist
-// on the origin zone (core services, apps.json apps) are additionally
-// rejected by Cloudflare at attach time since no override flag is sent; this
-// list covers names that may not have an origin record yet.
+// Infra names that must never become user apps. This is the authoritative
+// guard, not a nicety: a live pollinations.ai service whose origin is NOT a
+// <slug>.<originDomain> record (e.g. checkout -> Stripe, image -> GPU
+// backends) has nothing for Cloudflare to reject at attach time, so only this
+// list stops a user from claiming that public host. It must cover every live
+// or planned first-level subdomain, especially the core gateway hosts whose
+// <slug>.<originDomain> IS the production upstream (claiming `gen` could point
+// gen.<originDomain> at a user app). Keep it in sync as subdomains are added.
 export const RESERVED_APP_SLUGS = new Set([
+    // Core gateway + platform services.
     "admin",
     "api",
     "app",
     "apps",
     "assets",
+    "audio",
     "auth",
     "billing",
     "blog",
     "cdn",
+    "chat",
+    "checkout",
     "dashboard",
     "dev",
     "docs",
+    "economics",
+    "enter",
+    "gen",
     "help",
+    "image",
+    "kpi",
     "login",
     "mail",
+    "media",
+    "micro",
     "oauth",
+    "pollen",
+    "polly",
     "smtp",
     "staging",
     "static",
     "status",
     "support",
+    "text",
+    "video",
     "www",
 ]);
 
@@ -58,27 +81,25 @@ type AppDeployEnv = {
 };
 
 export function requireAppDeployConfig(env: unknown): AppDeployConfig {
+    // Reuse the base account/token validation so its error message and any
+    // future changes live in one place.
+    const base = requireWorkerDeployConfig(env);
     const {
-        CF_WORKER_DEPLOY_ACCOUNT_ID,
-        CF_WORKER_DEPLOY_API_TOKEN,
         CF_APP_ORIGIN_ZONE_ID,
         CF_APP_ORIGIN_DOMAIN,
         CF_APP_PUBLIC_DOMAIN,
     } = env as AppDeployEnv;
     if (
-        !CF_WORKER_DEPLOY_ACCOUNT_ID ||
-        !CF_WORKER_DEPLOY_API_TOKEN ||
         !CF_APP_ORIGIN_ZONE_ID ||
         !CF_APP_ORIGIN_DOMAIN ||
         !CF_APP_PUBLIC_DOMAIN
     ) {
         throw new Error(
-            "App deploys are not configured (CF_WORKER_DEPLOY_ACCOUNT_ID / CF_WORKER_DEPLOY_API_TOKEN / CF_APP_ORIGIN_ZONE_ID / CF_APP_ORIGIN_DOMAIN / CF_APP_PUBLIC_DOMAIN)",
+            "App deploys are not configured (CF_APP_ORIGIN_ZONE_ID / CF_APP_ORIGIN_DOMAIN / CF_APP_PUBLIC_DOMAIN)",
         );
     }
     return {
-        accountId: CF_WORKER_DEPLOY_ACCOUNT_ID,
-        apiToken: CF_WORKER_DEPLOY_API_TOKEN,
+        ...base,
         originZoneId: CF_APP_ORIGIN_ZONE_ID,
         originDomain: CF_APP_ORIGIN_DOMAIN,
         publicDomain: CF_APP_PUBLIC_DOMAIN,
@@ -150,6 +171,18 @@ export function decodeAppFiles(files: Record<string, string>): AppFile[] {
     const entries = Object.entries(files);
     if (entries.length === 0) {
         throw new Error("At least one file is required");
+    }
+    // Reject oversized payloads from the encoded length before decoding, so a
+    // hostile body can't force peak memory (raw JSON + decoded copies) toward
+    // the Worker's 128 MB limit. base64 is ~4/3 of the decoded size.
+    const encodedBytes = entries.reduce(
+        (sum, [, base64]) => sum + base64.length,
+        0,
+    );
+    if (encodedBytes > MAX_APP_TOTAL_BYTES * 2) {
+        throw new Error(
+            `App exceeds the ${MAX_APP_TOTAL_BYTES / (1024 * 1024)} MiB total size limit`,
+        );
     }
     const seen = new Set<string>();
     let totalBytes = 0;
@@ -350,7 +383,14 @@ export async function detachAppDomain(
         },
     );
     if (response.ok || response.status === 404) return;
+    const body = (await response.json().catch(() => null)) as {
+        errors?: { message?: string }[];
+    } | null;
+    const details = body?.errors
+        ?.map((error) => error.message)
+        .filter(Boolean)
+        .join("; ");
     throw new Error(
-        `Cloudflare API DELETE /workers/domains/${domainId} failed (${response.status})`,
+        `Cloudflare API DELETE /workers/domains/${domainId} failed (${response.status})${details ? `: ${details}` : ""}`,
     );
 }

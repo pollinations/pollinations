@@ -1,4 +1,4 @@
-const CF_API_BASE = "https://api.cloudflare.com/client/v4";
+export const CF_API_BASE = "https://api.cloudflare.com/client/v4";
 const WORKER_COMPATIBILITY_DATE = "2026-01-01";
 
 export type WorkerDeployConfig = {

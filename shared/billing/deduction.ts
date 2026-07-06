@@ -13,10 +13,10 @@ const BUCKET_COLUMNS = {
 /**
  * Atomically deducts pollen from user balance.
  *
- * Regular requests are binary: tier pays when it can cover the actual charge,
- * pack pays when tier cannot cover and pack is positive, and regular overage
- * falls back to tier when pack is empty.
- * Paid-only requests always deduct from pack and never touch tier.
+ * Regular requests are binary: Quest Pollen pays when it can cover the actual
+ * charge, pack pays when Quest Pollen cannot cover and pack is positive, and
+ * regular overage falls back to Quest Pollen when pack is empty.
+ * Paid-only requests always deduct from pack and never touch Quest Pollen.
  */
 export async function atomicDeductUserBalance(
     db: DrizzleD1Database,

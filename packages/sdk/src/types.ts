@@ -691,7 +691,6 @@ export interface AccountKey {
     expiresAt: string | null;
     lastRequest: string | null;
     permissions: {
-        tier?: string[];
         models?: string[];
         account?: string[];
     } | null;

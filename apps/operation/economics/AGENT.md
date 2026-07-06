@@ -173,10 +173,10 @@ Percentages on a different scale shouldn't be stacked with Pollen values.
 ## Conversion & Business Logic Metrics
 
 ### ❌ Don't: Design metrics that are structurally always zero
-Example: "Paid-only users" in a system where Tier balance is consumed before paid pack.
+Example: "Paid-only users" in a system where Quest Pollen is consumed before paid pack.
 
-**Business rule**: Tier balance is consumed first → Pack consumed second.
-**Result**: "Paid-only users" = 0 always (impossible to use pack without first touching tier).
+**Business rule**: Quest Pollen is consumed first → Pack consumed second.
+**Result**: "Paid-only users" = 0 always (impossible to use pack without first touching Quest Pollen).
 
 ### ✅ Do: Model the actual user journey
 Use cohort-based conversion: measure time from **first tier use** to **first pack use**.

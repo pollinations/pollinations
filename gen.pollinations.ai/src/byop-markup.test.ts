@@ -141,7 +141,7 @@ describe("BYOP markup", () => {
         expect(await resolveDevMarkup(db, pkId, 4, payerId)).toBeNull();
     });
 
-    it("credits creator tier balance when payer spends tier balance", async () => {
+    it("credits creator Quest Pollen when payer spends Quest Pollen", async () => {
         const { payerId, devId, pkId } = await setupPayerAndDev();
 
         const { markup } = await handleBalanceDeduction({

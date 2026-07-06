@@ -221,7 +221,7 @@ export type QuestCard = {
 
 // ── Presentational primitives (composed from @pollinations/ui) ───────────────
 
-// Soft bucket-colored tile for the reward chip — amber (paid) / green (tier),
+// Soft bucket-colored tile for the reward chip: amber paid / green Quest,
 // so the row's reward badge carries the bucket identity.
 const BUCKET_CHIP_CLASS: Record<RewardIconKind, string> = {
     paid: "polli-wallet-chip-paid",
@@ -257,7 +257,7 @@ export function BucketCard({
     );
 }
 
-// A bucket-agnostic total — one neutral well, used when paid/tier split would
+// A bucket-agnostic total — one neutral well, used when paid/Quest split would
 // be noise rather than signal (e.g. quest counts are all "a quest"). Uses
 // Surface card so the bg + well shadow match the Setup/quest rows exactly. The
 // glyph defaults to the sparkle; pass `icon` (and an `iconClassName` tint) to
@@ -324,7 +324,7 @@ function QuestSummaryGrid({
     const totalCard = <TotalCard value={totalValue} />;
 
     // No pollen on offer at all → just the count (kept for safety; in practice
-    // there is always at least the tier bucket).
+    // there is always at least the Quest Pollen bucket).
     if (pollenCards.length === 0) {
         return (
             <div className="flex flex-col gap-2">
@@ -346,7 +346,7 @@ function QuestSummaryGrid({
         );
     }
 
-    // Three cards (count + tier + paid) → three across when the container is
+    // Three cards (count + Quest + paid) → three across when the container is
     // wide enough; otherwise the count spans a full row and the pollen pair
     // sits side by side beneath it.
     return (
@@ -976,7 +976,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                         {/* Same frame as the logged-in summary, but neutral tiles
                             (not the green/amber owned wells) so the pollen on
                             offer never reads as a balance the visitor holds. The
-                            bucket glyph still marks tier (green sprout) vs paid
+                            bucket glyph still marks Quest (green sprout) vs paid
                             (amber card). */}
                         <QuestSummaryGrid
                             totalLabel="Available quests"

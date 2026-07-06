@@ -12,7 +12,7 @@
      - All chrome uses ONE app accent, defined once on :root via the recipe
        (--polli-hue/--polli-nudge). Switching mode flips the neutrals.
      - The multi-hue palette is reserved for dedicated ROLES only: modality
-       (model-UI dots/badges), wallet (paid/tier coins — in the wallet module),
+       (model-UI dots/badges), wallet (paid/Quest coins — in the wallet module),
        and the fixed intents (status + labels). None of these ride a page theme.
      - `neutral` is the one no-hue member, for chrome that must carry no accent.
 
@@ -120,8 +120,8 @@
     --polli-color-danger-bg-hover:  oklch(0.88 0.075 25);
     --polli-color-danger-text:      oklch(0.48 0.18 25);
     --polli-color-danger-border:    oklch(0.78 0.115 25);
-    /* Success family — coherent set at hue 140 (warmer/yellower than tier's
-       152, higher chroma) so success is visibly distinct from the tier wallet
+    /* Success family — coherent set at hue 140 (warmer/yellower than Quest's
+       152, higher chroma) so success is visibly distinct from the Quest wallet
        bucket. Two weights: `text` (deep, used for accent text on neutral) and
        `bright` (vivid filled, used for primary CTAs like Claim + Switch ON).
        No pale tile — soft success Chip/Alert/Table were unused; copy-feedback
@@ -221,7 +221,7 @@
     --polli-color-danger-bg-hover:  oklch(0.43 0.11 25);
     --polli-color-danger-text:      oklch(0.855 0.105 25);
     --polli-color-danger-border:    oklch(0.48 0.11 25);
-    /* Success family — DARK (hue 140 for separation from tier). Bright +
+    /* Success family — DARK (hue 140 for separation from Quest). Bright +
        on-bright are shared with light (vivid green reads well on both
        surfaces; near-white contrast doesn't shift). */
     --polli-color-success-text:         oklch(0.86 0.13 140);

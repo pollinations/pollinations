@@ -14,7 +14,7 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
-import { dirtyControlClass } from "../components/EditableCell";
+import { dirtyControlClass, ResetCellButton } from "../components/EditableCell";
 import { fmtPeriod, utcDateTime } from "../lib/format";
 import { matchesMonth } from "../lib/months";
 import { PROVIDER_OPTIONS } from "../lib/provider-vocabulary";
@@ -111,38 +111,67 @@ function TransactionSelectCell({
 }) {
     const { changes, committed, stage, unstage } = useStaging();
     const stageKey = `transactions:${transactionIdentity(row)}:${field}`;
-    const overlay =
-        changes.find((change) => change.key === stageKey) ??
-        committed.find((change) => change.key === stageKey);
+    const pendingOverlay = changes.find((change) => change.key === stageKey);
+    const committedOverlay = committed.find(
+        (change) => change.key === stageKey,
+    );
+    const overlay = pendingOverlay ?? committedOverlay;
     const initial = row[field] || "other";
     const value = overlay ? String(overlay.row.value_str ?? "") : initial;
-    const dirty = value !== initial;
+    const dirty = value !== initial || Boolean(pendingOverlay);
 
     const update = (next: string) => {
         if (!options.includes(next)) return;
         if (next === initial) {
-            unstage(stageKey);
+            if (committedOverlay) {
+                stage(
+                    buildTransactionOverrideChange({ field, row, value: next }),
+                );
+            } else {
+                unstage(stageKey);
+            }
         } else {
             stage(buildTransactionOverrideChange({ field, row, value: next }));
         }
     };
 
+    const reset = () => {
+        if (pendingOverlay) {
+            unstage(stageKey);
+            return;
+        }
+        stage(buildTransactionOverrideChange({ field, row, value: initial }));
+    };
+
     return (
-        <select
-            value={value}
-            onChange={(event) => update(event.target.value)}
-            aria-label={field}
-            className={dirtyControlClass(
-                dirty,
-                "rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong",
+        <span className="inline-flex items-center gap-1.5">
+            <select
+                value={value}
+                onChange={(event) => update(event.target.value)}
+                aria-label={field}
+                className={dirtyControlClass(
+                    dirty,
+                    "rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong",
+                )}
+            >
+                {options.map((option) => (
+                    <option key={option} value={option}>
+                        {option}
+                    </option>
+                ))}
+            </select>
+            {dirty && (
+                <ResetCellButton
+                    kind={pendingOverlay ? "undo" : "reset"}
+                    title={
+                        pendingOverlay
+                            ? `Undo pending ${field} edit`
+                            : `Reset saved ${field} override`
+                    }
+                    onClick={reset}
+                />
             )}
-        >
-            {options.map((option) => (
-                <option key={option} value={option}>
-                    {option}
-                </option>
-            ))}
-        </select>
+        </span>
     );
 }
 

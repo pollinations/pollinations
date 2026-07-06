@@ -50,7 +50,9 @@ export function SaveButton({
 export function SaveControls() {
     const { changes, clear, commitAll, committing, error } = useStaging();
     const [confirmOpen, setConfirmOpen] = useState(false);
+    const visibleChanges = changes.filter((change) => !change.hidden);
     const count = changes.length;
+    const visibleCount = visibleChanges.length;
 
     // commit succeeded -> pool empty -> close the modal
     useEffect(() => {
@@ -70,7 +72,7 @@ export function SaveControls() {
             <SaveButton
                 disabled={count === 0 || committing}
                 onClick={() => setConfirmOpen(true)}
-                label={count > 0 ? `Save · ${count}` : "Save"}
+                label={visibleCount > 0 ? `Save · ${visibleCount}` : "Save"}
             />
             <Dialog
                 open={confirmOpen}
@@ -80,7 +82,7 @@ export function SaveControls() {
             >
                 <div className="flex flex-col gap-3 p-6 pt-3">
                     <ul className="max-h-48 overflow-y-auto text-sm">
-                        {changes.map((change) => (
+                        {visibleChanges.map((change) => (
                             <li
                                 key={change.id}
                                 className="truncate border-theme-border/60 border-t py-1.5 first:border-t-0"
@@ -107,7 +109,9 @@ export function SaveControls() {
                             disabled={committing}
                             tone="success"
                         >
-                            {committing ? "Saving..." : `Confirm ${count}`}
+                            {committing
+                                ? "Saving..."
+                                : `Confirm ${visibleCount}`}
                         </HeaderButton>
                     </div>
                 </div>

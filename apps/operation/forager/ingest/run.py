@@ -56,6 +56,31 @@ def dedupe_meter(rows):
     return list(best.values())
 
 
+def meter_manual_reset_keys(overrides):
+    return {
+        key
+        for (scope, key, field), value in overrides.items()
+        if scope == "meter_monthly"
+        and field == "reset_manual"
+        and str(value).strip() == "1"
+    }
+
+
+def meter_row_key(row):
+    return f"{row.get('provider', '')}|{row.get('month', '')}|{row.get('funding', '')}"
+
+
+def without_reset_manual_meter_rows(rows, overrides):
+    reset_keys = meter_manual_reset_keys(overrides)
+    if not reset_keys:
+        return rows
+    return [
+        row
+        for row in rows
+        if row.get("source") != "manual" or meter_row_key(row) not in reset_keys
+    ]
+
+
 def validate_meter_rows(rows):
     for row in rows:
         _validate_meter_values(
@@ -73,7 +98,15 @@ def _sanitize_err(e, creds_dict):
     return msg[:200]
 
 
-def refresh_meter_monthly(ops_ingest, ops_replace, secrets, config, today, statuses):
+def refresh_meter_monthly(
+    ops_ingest,
+    ops_replace,
+    secrets,
+    config,
+    today,
+    statuses,
+    overrides,
+):
     fx = config["fx_eur_usd"]
     months = months_ytd(config["months_start"], today)
     meter_new = []
@@ -100,7 +133,10 @@ def refresh_meter_monthly(ops_ingest, ops_replace, secrets, config, today, statu
     if not meter_new:
         raise RuntimeError("meter connectors returned 0 rows")
 
-    meter_table = ops_ingest.sql("SELECT * FROM meter_monthly")
+    meter_table = without_reset_manual_meter_rows(
+        ops_ingest.sql("SELECT * FROM meter_monthly"),
+        overrides,
+    )
     validate_meter_rows(meter_table)
     meter_merged = dedupe_meter(meter_table + meter_new)
     validate_meter_rows(meter_merged)
@@ -172,6 +208,7 @@ def main():
             config,
             today,
             statuses,
+            overrides,
         )
         refresh_usage_monthly(ops_replace, tb_prod, config, today, statuses)
         refresh_revenue_monthly(ops_replace, secrets, config, today, statuses)

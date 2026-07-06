@@ -1,5 +1,6 @@
 import { Alert, Button, Input } from "@pollinations/ui";
 import { useState } from "react";
+import { utcDateTime } from "../lib/format";
 import { type StageInput, useStaging } from "../lib/staging";
 
 const USAGE_BUCKETS = [
@@ -29,6 +30,51 @@ export function buildManualMeterChange({
             source: "manual",
         },
         summary: `usage ${provider} ${month} ${funding} -> ${amount}`,
+    };
+}
+
+export function meterOverrideKey({
+    funding,
+    month,
+    provider,
+}: {
+    funding: string;
+    month: string;
+    provider: string;
+}) {
+    return `${provider}|${month}|${funding}`;
+}
+
+export function buildMeterManualResetChange({
+    enteredAt = utcDateTime(),
+    funding,
+    month,
+    provider,
+    reset,
+}: {
+    enteredAt?: string;
+    funding: string;
+    month: string;
+    provider: string;
+    reset: boolean;
+}): StageInput {
+    const key = meterOverrideKey({ funding, month, provider });
+    return {
+        datasource: "overrides",
+        key: `meter-reset:${key}`,
+        row: {
+            entered_at: enteredAt,
+            scope: "meter_monthly",
+            key,
+            field: "reset_manual",
+            value_num: null,
+            value_str: reset ? "1" : "0",
+            note: "",
+        },
+        summary: reset
+            ? `usage ${provider} ${month} ${funding} reset manual value`
+            : `usage ${provider} ${month} ${funding} keep manual value`,
+        hidden: !reset,
     };
 }
 

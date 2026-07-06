@@ -75,6 +75,8 @@ describe("aggregateMeterRows", () => {
                 provider: "aws",
                 creditUsage: 0,
                 prepaidUsage: 2010,
+                creditSources: [],
+                prepaidSources: ["manual"],
                 sources: ["manual"],
             },
         ]);
@@ -96,6 +98,8 @@ describe("MeterTab backfill", () => {
                 provider: "openai",
                 creditUsage: 0,
                 prepaidUsage: 0,
+                creditSources: [],
+                prepaidSources: [],
                 sources: ["usage"],
             },
         ]);
@@ -129,6 +133,8 @@ describe("MeterTab backfill", () => {
                 provider: "openai",
                 creditUsage: 0,
                 prepaidUsage: 0,
+                creditSources: [],
+                prepaidSources: [],
                 sources: ["usage"],
             },
             {
@@ -136,6 +142,8 @@ describe("MeterTab backfill", () => {
                 provider: "openai",
                 creditUsage: 0,
                 prepaidUsage: 0,
+                creditSources: [],
+                prepaidSources: [],
                 sources: ["usage"],
             },
         ]);
@@ -156,6 +164,8 @@ describe("MeterTab backfill", () => {
                 provider: "digitalocean",
                 creditUsage: 288,
                 prepaidUsage: 0,
+                creditSources: ["manual"],
+                prepaidSources: [],
                 sources: ["manual"],
             },
         ]);
@@ -178,6 +188,8 @@ describe("MeterTab backfill", () => {
                 provider: "digitalocean",
                 creditUsage: 288,
                 prepaidUsage: 0,
+                creditSources: ["manual"],
+                prepaidSources: [],
                 sources: ["manual"],
             },
         ]);

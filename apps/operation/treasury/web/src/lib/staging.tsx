@@ -17,6 +17,7 @@ export type StagedChange = {
     datasource: string;
     row: Record<string, unknown>;
     summary: string;
+    hidden?: boolean;
 };
 
 export type StageInput = Omit<StagedChange, "id" | "key"> & {

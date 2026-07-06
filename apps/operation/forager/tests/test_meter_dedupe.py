@@ -11,7 +11,7 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from ingest.run import dedupe_meter
+from ingest.run import dedupe_meter, without_reset_manual_meter_rows
 
 
 def _row(provider, month, cost, funding="credit", source="api"):
@@ -100,3 +100,30 @@ def test_cli_and_bq_rank_between_api_and_manual():
 
 def test_empty_input():
     assert dedupe_meter([]) == []
+
+
+def test_reset_override_ignores_manual_row():
+    rows = [
+        _row("aws", "2026-06", 0.0, source="manual"),
+        _row("aws", "2026-06", 42.0, source="cli"),
+        _row("openai", "2026-06", 9.0, source="manual"),
+    ]
+    overrides = {
+        ("meter_monthly", "aws|2026-06|credit", "reset_manual"): "1",
+    }
+
+    out = without_reset_manual_meter_rows(rows, overrides)
+
+    assert out == [
+        _row("aws", "2026-06", 42.0, source="cli"),
+        _row("openai", "2026-06", 9.0, source="manual"),
+    ]
+
+
+def test_reset_override_zero_keeps_manual_row():
+    rows = [_row("aws", "2026-06", 0.0, source="manual")]
+    overrides = {
+        ("meter_monthly", "aws|2026-06|credit", "reset_manual"): "0",
+    }
+
+    assert without_reset_manual_meter_rows(rows, overrides) == rows

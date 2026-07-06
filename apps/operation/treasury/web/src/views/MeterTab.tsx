@@ -14,10 +14,11 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
-import { dirtyControlClass } from "../components/EditableCell";
+import { dirtyControlClass, ResetCellButton } from "../components/EditableCell";
 import { SourceCell, uniqueSources } from "../components/Provenance";
 import {
     buildManualMeterChange,
+    buildMeterManualResetChange,
     validateManualAmount,
 } from "../components/UsageEntryForm";
 import { fmtPeriod } from "../lib/format";
@@ -39,6 +40,8 @@ type MeterUsageRow = {
     provider: string;
     creditUsage: number;
     prepaidUsage: number;
+    creditSources: string[];
+    prepaidSources: string[];
     sources: string[];
 };
 
@@ -87,13 +90,23 @@ export function aggregateMeterRows(rows: MeterMonthlyRow[]): MeterUsageRow[] {
                 provider: row.provider,
                 creditUsage: 0,
                 prepaidUsage: 0,
+                creditSources: [],
+                prepaidSources: [],
                 sources: [],
             } satisfies MeterUsageRow);
 
         if (usageBucket(row.funding) === "credit") {
             current.creditUsage += row.cost_usd;
+            current.creditSources = combineSources(
+                ...current.creditSources,
+                row.source,
+            );
         } else {
             current.prepaidUsage += row.cost_usd;
+            current.prepaidSources = combineSources(
+                ...current.prepaidSources,
+                row.source,
+            );
         }
         current.sources = combineSources(...current.sources, row.source);
         byKey.set(key, current);
@@ -138,6 +151,8 @@ export function withProviderBackfillRows({
                 provider: usage.provider,
                 creditUsage: 0,
                 prepaidUsage: 0,
+                creditSources: [],
+                prepaidSources: [],
                 sources: ["usage"],
             });
         }
@@ -152,6 +167,10 @@ function meterEditKey(month: string, provider: string, funding: string) {
 
 function meterStageKey(month: string, provider: string, funding: string) {
     return `meter:${provider}:${month}:${funding}`;
+}
+
+function meterResetStageKey(month: string, provider: string, funding: string) {
+    return `meter-reset:${provider}|${month}|${funding}`;
 }
 
 type Change = { datasource: string; key: string; row: Record<string, unknown> };
@@ -181,34 +200,64 @@ function stagedMeterAmount(
     return staged ? String(staged.row.cost_usd ?? "") : null;
 }
 
+function stagedMeterReset(
+    changes: Change[],
+    month: string,
+    provider: string,
+    funding: string,
+) {
+    const key = meterResetStageKey(month, provider, funding);
+    const staged = changes.find((change) => change.key === key);
+    if (!staged) return null;
+    const value = String(staged.row.value_str ?? "");
+    if (value === "1") return true;
+    if (value === "0") return false;
+    return null;
+}
+
 function MeterAmountInput({
     amount,
     bucket,
+    manual,
     month,
     provider,
 }: {
     amount: number;
     bucket: UsageBucket;
+    manual: boolean;
     month: string;
     provider: string;
 }) {
     const { changes, committed, stage, unstage } = useStaging();
     const stageKey = meterStageKey(month, provider, bucket);
-    const overlayAmount =
-        stagedMeterAmount(changes, month, provider, bucket) ??
-        stagedMeterAmount(committed, month, provider, bucket);
+    const resetKey = meterResetStageKey(month, provider, bucket);
+    const pendingAmount = stagedMeterAmount(changes, month, provider, bucket);
+    const committedAmount = stagedMeterAmount(
+        committed,
+        month,
+        provider,
+        bucket,
+    );
+    const pendingReset = stagedMeterReset(changes, month, provider, bucket);
+    const committedReset = stagedMeterReset(committed, month, provider, bucket);
+    const overlayAmount = pendingAmount ?? committedAmount;
     const input = overlayAmount ?? String(amount);
-    const dirty = overlayAmount !== null;
+    const hasPendingEdit = pendingAmount !== null || pendingReset !== null;
+    const hasSavedEdit =
+        manual || committedAmount !== null || committedReset !== null;
+    const altered = hasPendingEdit || hasSavedEdit;
 
     const update = (next: string) => {
         if (next.trim() === "") {
             unstage(stageKey);
+            unstage(resetKey);
             return;
         }
         const parsed = validateManualAmount(next);
         if (parsed === null) return;
         if (parsed === amount) {
             unstage(stageKey);
+            unstage(resetKey);
             return;
         }
         stage(
@@ -219,21 +268,59 @@ function MeterAmountInput({
                 provider,
             }),
         );
+        stage(
+            buildMeterManualResetChange({
+                funding: bucket,
+                month,
+                provider,
+                reset: false,
+            }),
+        );
+    };
+
+    const reset = () => {
+        if (hasPendingEdit) {
+            unstage(stageKey);
+            unstage(resetKey);
+            return;
+        }
+        if (!hasSavedEdit) return;
+        stage(
+            buildMeterManualResetChange({
+                funding: bucket,
+                month,
+                provider,
+                reset: true,
+            }),
+        );
     };
 
     return (
-        <Input
-            type="number"
-            min="0"
-            step="0.01"
-            value={input}
-            onChange={(event) => update(event.target.value)}
-            aria-label={`${bucket}_usage`}
-            className={dirtyControlClass(
-                dirty,
-                "w-24 rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong",
+        <span className="inline-flex items-center gap-1.5">
+            <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={input}
+                onChange={(event) => update(event.target.value)}
+                aria-label={`${bucket}_usage`}
+                className={dirtyControlClass(
+                    altered,
+                    "w-24 rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong",
+                )}
+            />
+            {altered && (
+                <ResetCellButton
+                    kind={hasPendingEdit ? "undo" : "reset"}
+                    title={
+                        hasPendingEdit
+                            ? `Undo pending ${bucket} usage edit`
+                            : `Reset saved ${bucket} usage value`
+                    }
+                    onClick={reset}
+                />
             )}
-        />
+        </span>
     );
 }
 
@@ -407,6 +494,9 @@ export function MeterTab({
                                         <MeterAmountInput
                                             amount={row.creditUsage}
                                             bucket="credit"
+                                            manual={row.creditSources.includes(
+                                                "manual",
+                                            )}
                                             month={row.month}
                                             provider={row.provider}
                                         />
@@ -415,6 +505,9 @@ export function MeterTab({
                                         <MeterAmountInput
                                             amount={row.prepaidUsage}
                                             bucket="prepaid"
+                                            manual={row.prepaidSources.includes(
+                                                "manual",
+                                            )}
                                             month={row.month}
                                             provider={row.provider}
                                         />

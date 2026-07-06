@@ -1044,6 +1044,31 @@ test("singular tag query does not catalog the generation", async ({
     expect(taggedLocatorItems).toHaveLength(0);
 });
 
+test("empty tags param behaves like no tags — nothing cataloged", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "fireworks");
+    const { key, userId } = await createTestApiKey({
+        name: "catalog-empty-tags-key",
+        user: { packBalance: 100 },
+    });
+
+    const locator =
+        "https://gen.pollinations.ai/image/vcr%20empty%20tags%20square?height=720&model=flux&seed=48&width=1280";
+
+    const { response, wait } = await fetchWorker(
+        "/image/vcr%20empty%20tags%20square?model=flux&width=1280&height=720&seed=48&tags=",
+        { headers: { authorization: `Bearer ${key}` } },
+    );
+
+    expect(response.status).toBe(200);
+    await response.arrayBuffer();
+    await wait();
+
+    const { items } = await getCatalogRows(userId, locator);
+    expect(items).toHaveLength(0);
+});
+
 test("tagging without an API key returns 400", async ({ mocks }) => {
     await mocks.enable("tinybird", "fireworks");
 

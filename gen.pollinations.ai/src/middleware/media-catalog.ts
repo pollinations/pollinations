@@ -102,6 +102,14 @@ export const mediaCatalog = createMiddleware<MediaCatalogEnv>(
             throw error;
         }
 
+        // `?tags=` (or only empty/whitespace values) normalizes to nothing —
+        // treat it like no tags at all rather than requiring auth and
+        // writing a tagless catalog row.
+        if (tags.length === 0) {
+            await next();
+            return;
+        }
+
         const ownerUserId = c.var.auth?.user?.id;
         if (!ownerUserId) {
             return c.json(

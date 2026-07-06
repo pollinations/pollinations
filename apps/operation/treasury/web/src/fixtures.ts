@@ -40,6 +40,28 @@ const transactions: TransactionRow[] = [
         invoice_ref: "2026-06/Invoice-FUNAOD-00014.pdf",
         match_status: "matched",
     },
+    {
+        date: "2026-05-25",
+        vendor: "deel",
+        category: "payroll",
+        charged_amount: 0,
+        charged_currency: "",
+        paid_amount: 8015.44,
+        paid_currency: "EUR",
+        invoice_ref: "",
+        match_status: "matched",
+    },
+    {
+        date: "2026-05-12",
+        vendor: "google",
+        category: "compute",
+        charged_amount: 3399.05,
+        charged_currency: "EUR",
+        paid_amount: 3967.75,
+        paid_currency: "USD",
+        invoice_ref: "",
+        match_status: "matched",
+    },
 ];
 
 const usageMonthly: UsageMonthlyRow[] = [
@@ -130,6 +152,14 @@ const meterMonthly: MeterMonthlyRow[] = [
         paid: 1059.8,
         source: "cli",
     },
+    {
+        month: "2026-06",
+        vendor: "google",
+        currency: "EUR",
+        credit: 0,
+        paid: 4489.35,
+        source: "bq",
+    },
 ];
 
 const runs: RunRow[] = [
@@ -157,6 +187,14 @@ const revenueMonthly: RevenueMonthlyRow[] = [
         gross_amount: 1200,
         fees_amount: 42,
         refunds_amount: 30,
+    },
+    {
+        source: "stripe",
+        month: "2026-05",
+        currency: "EUR",
+        gross_amount: 10392.93,
+        fees_amount: 941.58,
+        refunds_amount: 0,
     },
 ];
 

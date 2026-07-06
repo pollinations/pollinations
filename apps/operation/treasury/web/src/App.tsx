@@ -17,6 +17,7 @@ import { OperationsGuide } from "./components/OperationsGuide";
 import { type ProvenanceCode, SourceMark } from "./components/Provenance";
 import { STALE_AFTER_HOURS } from "./config";
 import { hoursSince } from "./lib/format";
+import { insightVendorOptions } from "./lib/insights";
 import { collectMonths } from "./lib/months";
 import { fixturesMode, loadAll, TbError } from "./lib/tb";
 import {
@@ -27,10 +28,25 @@ import {
 import type { Data } from "./types";
 import { BurnTab } from "./views/BurnTab";
 import { MeterTab } from "./views/MeterTab";
+import { PnlTab } from "./views/PnlTab";
 import { RevenueTab } from "./views/RevenueTab";
 import { TransactionsTab } from "./views/TransactionsTab";
 
 type Tab = "transactions" | "burn" | "meter" | "revenue";
+type Section = "insights" | "raw";
+type InsightTab = "pnl" | "vendors" | "models";
+
+const INSIGHT_TABS: {
+    id: InsightTab;
+    label: string;
+    note: string;
+}[] = [
+    {
+        id: "pnl",
+        label: "P&L",
+        note: "Monthly blend: Stripe net revenue minus cash spend per category, with credit burn as a shadow. Derived client-side from transactions, meter, and revenue pipes.",
+    },
+];
 
 // note + pipe surface as a hover tooltip on the tab button — the tab body
 // itself stays table-only.
@@ -165,6 +181,8 @@ export default function App() {
     const [error, setError] = useState<string | null>(null);
     const [data, setData] = useState<Data | null>(null);
     const [tab, setTab] = useState<Tab>("transactions");
+    const [section, setSection] = useState<Section>("insights");
+    const [insightTab, setInsightTab] = useState<InsightTab>("pnl");
     // Default to All so the transactions page opens with the full Enty export.
     const [month, setMonth] = useState("");
     // Keep the selection while it exists in the current tab's vendor set.
@@ -242,7 +260,17 @@ export default function App() {
         () => vendorOptionsForTab(data, tab),
         [data, tab],
     );
-    const showVendorFilter = vendorOptions.length > 1;
+    const insightVendors = useMemo(
+        () => (data ? insightVendorOptions(data) : ["all"]),
+        [data],
+    );
+    const showVendorFilter =
+        section === "insights"
+            ? insightTab !== "pnl"
+            : tab !== "revenue" && vendorOptions.length > 1;
+    const activeVendorOptions =
+        section === "insights" ? insightVendors : vendorOptions;
+    const showCategoryFilter = section === "raw" && tab === "transactions";
     const vendorIssues = useMemo(
         () =>
             data
@@ -263,10 +291,10 @@ export default function App() {
     const [category, setCategory] = useState("all");
 
     useEffect(() => {
-        if (vendor !== "all" && !vendorOptions.includes(vendor)) {
+        if (vendor !== "all" && !activeVendorOptions.includes(vendor)) {
             setVendor("all");
         }
-    }, [vendor, vendorOptions]);
+    }, [vendor, activeVendorOptions]);
 
     if (!sessionChecked) {
         return (
@@ -383,68 +411,108 @@ export default function App() {
                         </Alert>
                     )}
 
+                    <nav className="flex flex-wrap gap-2">
+                        <TabButton
+                            active={section === "insights"}
+                            onClick={() => setSection("insights")}
+                        >
+                            Insights
+                        </TabButton>
+                        <TabButton
+                            active={section === "raw"}
+                            onClick={() => setSection("raw")}
+                        >
+                            Raw
+                        </TabButton>
+                    </nav>
+
+                    <nav className="flex flex-wrap gap-2">
+                        {section === "raw" &&
+                            TABS.map((item) => (
+                                <Tooltip
+                                    key={item.id}
+                                    triggerAs="span"
+                                    content={
+                                        <span className="flex max-w-72 flex-col gap-1">
+                                            {item.codes.length > 0 && (
+                                                <span className="flex items-center gap-1.5">
+                                                    {item.codes.map((code) => (
+                                                        <SourceMark
+                                                            key={code}
+                                                            code={code}
+                                                        />
+                                                    ))}
+                                                </span>
+                                            )}
+                                            <span className="font-mono text-theme-text-soft">
+                                                {item.pipe}
+                                                {data
+                                                    ? ` · ${item.rows(data)} rows`
+                                                    : ""}
+                                            </span>
+                                            <span>{item.note}</span>
+                                        </span>
+                                    }
+                                >
+                                    <TabButton
+                                        active={tab === item.id}
+                                        onClick={() => setTab(item.id)}
+                                    >
+                                        {item.label}
+                                    </TabButton>
+                                </Tooltip>
+                            ))}
+                        {section === "insights" &&
+                            INSIGHT_TABS.map((item) => (
+                                <Tooltip
+                                    key={item.id}
+                                    triggerAs="span"
+                                    content={
+                                        <span className="flex max-w-72 flex-col gap-1">
+                                            <span className="font-mono text-theme-text-soft">
+                                                derived · client-side
+                                            </span>
+                                            <span>{item.note}</span>
+                                        </span>
+                                    }
+                                >
+                                    <TabButton
+                                        active={insightTab === item.id}
+                                        onClick={() => setInsightTab(item.id)}
+                                    >
+                                        {item.label}
+                                    </TabButton>
+                                </Tooltip>
+                            ))}
+                    </nav>
+
                     <FilterBar>
                         <MonthFilter
                             months={months}
                             value={activeMonth}
                             onChange={setMonth}
                         />
-                        <div className="flex flex-wrap gap-3">
-                            {showVendorFilter && (
-                                <FilterSelect
-                                    label="vendor"
-                                    value={vendor}
-                                    onChange={setVendor}
-                                    options={vendorOptions}
-                                />
-                            )}
-                            {tab !== "meter" && (
-                                <FilterSelect
-                                    label="category"
-                                    value={category}
-                                    onChange={setCategory}
-                                    options={categoryOptions}
-                                />
-                            )}
-                        </div>
+                        {(showVendorFilter || showCategoryFilter) && (
+                            <div className="flex flex-wrap gap-3">
+                                {showVendorFilter && (
+                                    <FilterSelect
+                                        label="vendor"
+                                        value={vendor}
+                                        onChange={setVendor}
+                                        options={activeVendorOptions}
+                                    />
+                                )}
+                                {showCategoryFilter && (
+                                    <FilterSelect
+                                        label="category"
+                                        value={category}
+                                        onChange={setCategory}
+                                        options={categoryOptions}
+                                    />
+                                )}
+                            </div>
+                        )}
                     </FilterBar>
-
-                    <nav className="flex flex-wrap gap-2">
-                        {TABS.map((item) => (
-                            <Tooltip
-                                key={item.id}
-                                triggerAs="span"
-                                content={
-                                    <span className="flex max-w-72 flex-col gap-1">
-                                        {item.codes.length > 0 && (
-                                            <span className="flex items-center gap-1.5">
-                                                {item.codes.map((code) => (
-                                                    <SourceMark
-                                                        key={code}
-                                                        code={code}
-                                                    />
-                                                ))}
-                                            </span>
-                                        )}
-                                        <span className="font-mono text-theme-text-soft">
-                                            {item.pipe}
-                                            {data
-                                                ? ` · ${item.rows(data)} rows`
-                                                : ""}
-                                        </span>
-                                        <span>{item.note}</span>
-                                    </span>
-                                }
-                            >
-                                <TabButton
-                                    active={tab === item.id}
-                                    onClick={() => setTab(item.id)}
-                                >
-                                    {item.label}
-                                </TabButton>
-                            </Tooltip>
-                        ))}
-                    </nav>
 
                     {error && (
                         <Alert intent="warning" title="Load failed">
@@ -461,7 +529,7 @@ export default function App() {
                     {!error && !data && (
                         <Text tone="soft">Loading pipes...</Text>
                     )}
-                    {data && tab === "transactions" && (
+                    {data && section === "raw" && tab === "transactions" && (
                         <TransactionsTab
                             category={category}
                             data={data}
@@ -469,21 +537,26 @@ export default function App() {
                             vendor={vendor}
                         />
                     )}
-                    {data && tab === "burn" && (
+                    {data && section === "raw" && tab === "burn" && (
                         <BurnTab
                             data={data}
                             month={activeMonth}
                             vendor={vendor}
                         />
                     )}
-                    {data && tab === "meter" && (
+                    {data && section === "raw" && tab === "meter" && (
                         <MeterTab
                             data={data}
                             month={activeMonth}
                             vendor={vendor}
                         />
                     )}
-                    {data && tab === "revenue" && <RevenueTab data={data} />}
+                    {data && section === "raw" && tab === "revenue" && (
+                        <RevenueTab data={data} />
+                    )}
+                    {data && section === "insights" && insightTab === "pnl" && (
+                        <PnlTab data={data} month={activeMonth} />
+                    )}
                 </main>
             </ScrollArea>
         </div>

@@ -30,51 +30,51 @@ Run from `apps/operation/forager/`:
 
 ```bash
 # Monthly vendor usage
-python3 -m ingest.record meter <vendor> <YYYY-MM> --currency <USD|EUR|...> --credit <amount> --paid <amount>
+python3 -m ingest.record provider <vendor> <YYYY-MM> --currency <USD|EUR|...> --credit <amount> --paid <amount>
 ```
 
-Vendor must be in `registry.CANONICAL`; month must match `YYYY-MM`. Appends one row with `source="manual"` to `meter_monthly`. Compute Usage is the monthly source of truth.
+Vendor must be in `registry.CANONICAL`; month must match `YYYY-MM`. Appends one row with `source="manual"` to `provider_monthly`. Compute Usage is the monthly source of truth.
 
 ### Monthly checklist
 
 - [ ] **io.net** — console [cloud.io.net](https://cloud.io.net) → Billing; then:
   ```
-  python3 -m ingest.record meter io.net <YYYY-MM> --currency USD --credit <amount>
+  python3 -m ingest.record provider io.net <YYYY-MM> --currency USD --credit <amount>
   ```
 
 - [ ] **perplexity** — console [perplexity.ai](https://perplexity.ai) → Billing; then:
   ```
-  python3 -m ingest.record meter perplexity <YYYY-MM> --currency USD --credit <amount>
+  python3 -m ingest.record provider perplexity <YYYY-MM> --currency USD --credit <amount>
   ```
 
 - [ ] **nebius** — console [nebius.ai](https://nebius.ai) → Billing; then:
   ```
-  python3 -m ingest.record meter nebius <YYYY-MM> --currency USD --credit <amount>
+  python3 -m ingest.record provider nebius <YYYY-MM> --currency USD --credit <amount>
   ```
 
 - [ ] **lambda** — console [lambda.ai](https://lambda.ai) → Billing; then:
   ```
-  python3 -m ingest.record meter lambda <YYYY-MM> --currency USD --credit <amount>
+  python3 -m ingest.record provider lambda <YYYY-MM> --currency USD --credit <amount>
   ```
 
 - [ ] **bytedance** — console [console.volcengine.com](https://console.volcengine.com) → Billing; then:
   ```
-  python3 -m ingest.record meter bytedance <YYYY-MM> --currency USD --credit <amount>
+  python3 -m ingest.record provider bytedance <YYYY-MM> --currency USD --credit <amount>
   ```
 
 - [ ] **modal** — console [modal.com](https://modal.com) → Billing; then:
   ```
-  python3 -m ingest.record meter modal <YYYY-MM> --currency USD --credit <amount>
+  python3 -m ingest.record provider modal <YYYY-MM> --currency USD --credit <amount>
   ```
 
 - [ ] **elevenlabs** — console [elevenlabs.io](https://elevenlabs.io) → Billing; then:
   ```
-  python3 -m ingest.record meter elevenlabs <YYYY-MM> --currency USD --credit <amount>
+  python3 -m ingest.record provider elevenlabs <YYYY-MM> --currency USD --credit <amount>
   ```
 
 - [ ] **daytona** — console [app.daytona.io](https://app.daytona.io) → Billing; then:
   ```
-  python3 -m ingest.record meter daytona <YYYY-MM> --currency USD --credit <amount>
+  python3 -m ingest.record provider daytona <YYYY-MM> --currency USD --credit <amount>
   ```
 ---
 

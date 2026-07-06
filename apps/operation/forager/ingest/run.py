@@ -3,8 +3,8 @@
     python3 -m ingest.run
 Forager owns the clean Treasury data path:
   - Enty exports -> transactions
-  - vendor connectors/manual rows -> meter_monthly
-  - generation_event -> usage_monthly
+  - vendor connectors/manual rows -> provider_monthly
+  - generation_event -> pollen_monthly
   - Stripe balance transactions -> revenue_monthly
 
 The old Gmail/GOG invoice fetcher is local-only under
@@ -146,15 +146,15 @@ def validate_meter_rows(rows):
     for row in rows:
         if row.get("vendor", "") not in VENDOR_ALIASES:
             raise ValueError(
-                f"unknown vendor slug for meter_monthly: {row.get('vendor', '')}"
+                f"unknown vendor slug for provider_monthly: {row.get('vendor', '')}"
             )
         _validate_meter_source(row.get("source", ""))
         if not str(row.get("currency") or "").strip():
-            raise ValueError("meter_monthly row missing currency")
+            raise ValueError("provider_monthly row missing currency")
         for field in ("credit", "paid"):
             value = row.get(field)
             if value is None:
-                raise ValueError(f"meter_monthly row missing {field}")
+                raise ValueError(f"provider_monthly row missing {field}")
             float(value)
 
 
@@ -170,7 +170,7 @@ def guarded_replace(ops_replace, datasource, rows, guard, statuses):
     added, removed = backup.diff_rows(guard["existing"][datasource], rows)
     statuses[f"{datasource}_diff"] = f"+{len(added)}/-{len(removed)}"
     print(f"{datasource}: +{len(added)} added, -{len(removed)} removed")
-    if datasource == "meter_monthly":
+    if datasource == "provider_monthly":
         lost = backup.manual_meter_rows_lost(removed, rows)
         if lost and not guard["yes"]:
             raise RuntimeError(
@@ -183,7 +183,7 @@ def guarded_replace(ops_replace, datasource, rows, guard, statuses):
     ops_replace.replace(datasource, rows)
 
 
-def refresh_meter_monthly(
+def refresh_provider_monthly(
     ops_replace,
     secrets,
     config,
@@ -212,10 +212,10 @@ def refresh_meter_monthly(
         try:
             rows = fn(secrets, months, today)
             meter_new.extend(rows or [])
-            statuses[f"meter:{slug}"] = "ok"
+            statuses[f"provider:{slug}"] = "ok"
         except Exception as e:
-            statuses[f"meter:{slug}"] = "err:" + _sanitize_err(e, secrets)
-            errors.append(f"{slug}: {statuses[f'meter:{slug}']}")
+            statuses[f"provider:{slug}"] = "err:" + _sanitize_err(e, secrets)
+            errors.append(f"{slug}: {statuses[f'provider:{slug}']}")
 
     if errors:
         raise RuntimeError("meter connector failures: " + "; ".join(errors))
@@ -224,7 +224,7 @@ def refresh_meter_monthly(
     if not meter_new:
         raise RuntimeError("meter connectors returned 0 rows")
 
-    existing_meter = guard["existing"]["meter_monthly"]
+    existing_meter = guard["existing"]["provider_monthly"]
     meter_manual = [
         row
         for row in existing_manual_meter_rows(existing_meter)
@@ -233,10 +233,10 @@ def refresh_meter_monthly(
     validate_meter_rows(meter_manual)
     meter_merged = merge_meter_rows(meter_new + meter_manual)
     validate_meter_rows(meter_merged)
-    assert_fresh_in_scope("meter_monthly", meter_merged, in_scope)
+    assert_fresh_in_scope("provider_monthly", meter_merged, in_scope)
     final_rows = splice_rows(existing_meter, meter_merged, in_scope)
-    guarded_replace(ops_replace, "meter_monthly", final_rows, guard, statuses)
-    statuses["meter_rows"] = len(final_rows)
+    guarded_replace(ops_replace, "provider_monthly", final_rows, guard, statuses)
+    statuses["provider_rows"] = len(final_rows)
 
 
 def _splice_by_month(datasource, fresh, months, scoped, guard):
@@ -250,7 +250,7 @@ def _splice_by_month(datasource, fresh, months, scoped, guard):
     return splice_rows(existing, fresh, in_scope)
 
 
-def refresh_usage_monthly(
+def refresh_pollen_monthly(
     ops_replace, tb_prod, config, today, statuses, guard, months=None
 ):
     scoped = months is not None
@@ -258,10 +258,10 @@ def refresh_usage_monthly(
         months = months_ytd(config["months_start"], today)
     rows = _usage.monthly_rows(tb_prod, months, today)
     if not rows:
-        raise RuntimeError("usage_monthly returned 0 rows")
-    rows = _splice_by_month("usage_monthly", rows, months, scoped, guard)
-    guarded_replace(ops_replace, "usage_monthly", rows, guard, statuses)
-    statuses["usage"] = len(rows)
+        raise RuntimeError("pollen_monthly returned 0 rows")
+    rows = _splice_by_month("pollen_monthly", rows, months, scoped, guard)
+    guarded_replace(ops_replace, "pollen_monthly", rows, guard, statuses)
+    statuses["pollen"] = len(rows)
 
 
 def refresh_revenue_monthly(
@@ -309,14 +309,14 @@ def parse_args(argv=None):
                         help="approve writes that would lose manual meter row data")
     parser.add_argument("--dry-run", action="store_true",
                         help="snapshot + diff only, write nothing")
-    parser.add_argument("--only", choices=["meter", "usage", "revenue", "transactions"])
-    parser.add_argument("--vendor", help="meter only: re-fetch one connector")
+    parser.add_argument("--only", choices=["provider", "pollen", "revenue", "transactions"])
+    parser.add_argument("--vendor", help="provider only: re-fetch one connector")
     parser.add_argument("--month", help="restrict to one YYYY-MM month")
     args = parser.parse_args(argv)
 
     if args.vendor is not None:
-        if args.only != "meter":
-            parser.error("--vendor requires --only meter")
+        if args.only != "provider":
+            parser.error("--vendor requires --only provider")
         meter_slugs = [slug for slug, _ in registry.METER]
         if args.vendor not in meter_slugs:
             parser.error(
@@ -349,7 +349,7 @@ def main():
         "dry_run": args.dry_run,
         "existing": {
             ds: backup.snapshot_table(ops_ingest, ds, backup_dir)
-            for ds in ("meter_monthly", "usage_monthly", "revenue_monthly", "transactions")
+            for ds in ("provider_monthly", "pollen_monthly", "revenue_monthly", "transactions")
         },
     }
     print(f"backup: {backup_dir}")
@@ -359,8 +359,8 @@ def main():
 
     statuses, notes = {}, []
     try:
-        if args.only in (None, "meter"):
-            refresh_meter_monthly(
+        if args.only in (None, "provider"):
+            refresh_provider_monthly(
                 ops_replace,
                 secrets,
                 config,
@@ -370,8 +370,8 @@ def main():
                 vendors=vendors,
                 months=months,
             )
-        if args.only in (None, "usage"):
-            refresh_usage_monthly(
+        if args.only in (None, "pollen"):
+            refresh_pollen_monthly(
                 ops_replace, tb_prod, config, today, statuses, guard, months=months
             )
         if args.only in (None, "revenue"):

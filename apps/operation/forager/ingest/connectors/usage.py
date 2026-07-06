@@ -2,7 +2,7 @@
 
 monthly_rows(tb_prod, months, today) -> list[dict]
 
-Produces usage_monthly rows (full-replace datasource) by querying the
+Produces pollen_monthly rows (full-replace datasource) by querying the
 generation_event pipe in the pollinations_enter production workspace.
 
 One SQL query per month (timeout safety — never one giant scan).
@@ -46,7 +46,7 @@ GROUP BY vendor, model\
 
 
 def monthly_rows(tb_prod, months, today):
-    """Fetch usage_monthly rows from pollinations_enter prod for each month.
+    """Fetch pollen_monthly rows from pollinations_enter prod for each month.
 
     Args:
         tb_prod:  ingest.tb.TB instance pointed at pollinations_enter prod
@@ -55,7 +55,7 @@ def monthly_rows(tb_prod, months, today):
         today:    current ingest date
 
     Returns:
-        list of usage_monthly row dicts, one per (month, vendor, model) tuple
+        list of pollen_monthly row dicts, one per (month, vendor, model) tuple
         with nonzero data. vendor tags are canonicalized via vendor aliases
         (bedrock/aws-bedrock → aws, azure-2 → azure, vastai → vast.ai).
     """
@@ -84,7 +84,7 @@ def monthly_rows(tb_prod, months, today):
             vendor = canonical_vendor_tag(raw_vendor)
             if vendor and vendor not in VENDOR_ALIASES:
                 raise ValueError(
-                    "unknown vendor slug for usage_monthly: "
+                    "unknown vendor slug for pollen_monthly: "
                     f"{raw_vendor!r}; add it to config/vendor_aliases.json"
                 )
             key = (month, vendor, raw.get("model"))

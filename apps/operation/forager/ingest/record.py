@@ -4,7 +4,7 @@ Usage:
     python3 -m ingest.record meter <vendor> <YYYY-MM>
                                    --currency USD|EUR [--credit N] [--paid N]
 
-Appends one row to `meter_monthly` with source="manual".
+Appends one row to `provider_monthly` with source="manual".
 Vendor must be in registry.CANONICAL; month must match YYYY-MM.
 """
 import argparse
@@ -65,8 +65,8 @@ def main(argv=None, tb_factory=None):
     )
     sub = parser.add_subparsers(dest="cmd", required=True)
 
-    # meter subcommand
-    mp = sub.add_parser("meter", help="append a meter_monthly reading")
+    # provider subcommand
+    mp = sub.add_parser("provider", help="append a provider_monthly reading")
     mp.add_argument("vendor",    help="canonical vendor slug")
     mp.add_argument("month",     help="billing month YYYY-MM")
     mp.add_argument("--currency", required=True, help="source currency code, e.g. USD or EUR")
@@ -82,7 +82,7 @@ def main(argv=None, tb_factory=None):
         c = _creds.load_creds()
         client = _default_tb_factory(c["TINYBIRD_OPS_INGEST_TOKEN"])
 
-    if args.cmd == "meter":
+    if args.cmd == "provider":
         _validate_vendor(args.vendor)
         _validate_month(args.month)
         _validate_amount("credit", args.credit)
@@ -100,7 +100,7 @@ def main(argv=None, tb_factory=None):
             "paid": round(float(args.paid), 2),
             "source": "manual",
         }
-        client.append("meter_monthly", [row])
+        client.append("provider_monthly", [row])
         print(json.dumps(row))
 
 

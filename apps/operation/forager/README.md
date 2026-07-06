@@ -18,12 +18,12 @@ The daily run refreshes:
 | Table | Source |
 |---|---|
 | `transactions` | Enty monthly export folders in `~/Documents/treasury-invoices/enty-ledger` |
-| `meter_monthly` | Vendor APIs/CLIs plus manual rows |
-| `usage_monthly` | Production `generation_event` usage |
+| `provider_monthly` | Vendor APIs/CLIs plus manual rows |
+| `pollen_monthly` | Production `generation_event` usage |
 | `revenue_monthly` | Stripe balance transactions |
 | `ingest_runs` | Forager run log |
 
-Manual corrections are entered here, not in the app: append a `meter_monthly`
+Manual corrections are entered here, not in the app: append a `provider_monthly`
 row with `ingest.record`, or run a scoped `ingest.run`. See
 [`AGENTS.md`](./AGENTS.md).
 
@@ -43,12 +43,12 @@ does not call AI and does not write Tinybird.
 
 ```bash
 python3 -m ingest.run --dry-run                      # snapshot + diff, no writes
-python3 -m ingest.run --only meter                   # one table: meter|usage|revenue|transactions
-python3 -m ingest.run --only meter --vendor aws      # one meter connector
+python3 -m ingest.run --only provider                   # one table: provider|pollen|revenue|transactions
+python3 -m ingest.run --only provider --vendor aws      # one provider connector
 python3 -m ingest.run --month 2026-07                # one month; bare still rebuilds transactions
-python3 -m ingest.run --month 2026-07 --only meter   # one month, skip the transactions rebuild
+python3 -m ingest.run --month 2026-07 --only provider   # one month, skip the transactions rebuild
 python3 -m ingest.run --yes                          # allow writes that lose a manual meter row's data
-python3 -m ingest.inspect meter_monthly --month 2026-07   # read-only row dump
+python3 -m ingest.inspect provider_monthly --month 2026-07   # read-only row dump
 python3 -m ingest.doctor                             # preflight/health checks
 python3 -m pytest tests/test_enty.py -q
 ```

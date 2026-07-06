@@ -8,9 +8,9 @@ ALLOWED_METER_SOURCES = {"api", "bq", "cli", "manual"}
 
 def _validate_meter_values(vendor, funding, source):
     if vendor not in VENDOR_ALIASES:
-        raise ValueError(f"unknown vendor slug for meter_monthly: {vendor}")
+        raise ValueError(f"unknown vendor slug for provider_monthly: {vendor}")
     if funding not in ALLOWED_FUNDING:
-        raise ValueError(f"unknown funding for meter_monthly: {funding}")
+        raise ValueError(f"unknown funding for provider_monthly: {funding}")
     _validate_meter_source(source)
 
 
@@ -22,10 +22,10 @@ def _meter_sources(source):
 def _validate_meter_source(source):
     parts = _meter_sources(source)
     if not parts:
-        raise ValueError("meter_monthly source is required")
+        raise ValueError("provider_monthly source is required")
     for part in parts:
         if part not in ALLOWED_METER_SOURCES:
-            raise ValueError(f"unknown source for meter_monthly: {source}")
+            raise ValueError(f"unknown source for provider_monthly: {source}")
 
 
 def _source(value):
@@ -36,12 +36,12 @@ def _source(value):
 def _currency(value):
     code = str(value or "").strip().upper()
     if not code:
-        raise ValueError("meter_monthly currency is required")
+        raise ValueError("provider_monthly currency is required")
     return code
 
 
 def _mrow(month, vendor, amount, funding, source, today, currency="USD"):
-    """Build a meter_monthly datasource row.
+    """Build a provider_monthly datasource row.
 
     Args:
         month:    "YYYY-MM" billing month

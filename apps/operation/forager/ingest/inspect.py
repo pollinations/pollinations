@@ -1,6 +1,6 @@
 """Read-only table inspector.
 
-    python3 -m ingest.inspect meter_monthly --vendor replicate --month 2026-07
+    python3 -m ingest.inspect provider_monthly --vendor replicate --month 2026-07
 Prints matching rows as JSON lines plus a count footer. Never writes.
 """
 import argparse
@@ -13,8 +13,8 @@ from . import tb as _tb
 
 TABLES = {
     "transactions": "date",
-    "meter_monthly": "month",
-    "usage_monthly": "month",
+    "provider_monthly": "month",
+    "pollen_monthly": "month",
     "revenue_monthly": "month",
     "ingest_runs": None,
 }

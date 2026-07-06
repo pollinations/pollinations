@@ -14,15 +14,15 @@ class FakeTB:
 
 def test_snapshot_writes_ndjson(tmp_path):
     rows = [{"month": "2026-06", "vendor": "aws", "credit": 1.0}]
-    got = backup.snapshot_table(FakeTB(rows), "meter_monthly", tmp_path)
+    got = backup.snapshot_table(FakeTB(rows), "provider_monthly", tmp_path)
     assert got == rows
-    lines = (tmp_path / "meter_monthly.ndjson").read_text().strip().splitlines()
+    lines = (tmp_path / "provider_monthly.ndjson").read_text().strip().splitlines()
     assert [json.loads(line) for line in lines] == rows
 
 
 def test_snapshot_empty_table(tmp_path):
-    assert backup.snapshot_table(FakeTB([]), "meter_monthly", tmp_path) == []
-    assert (tmp_path / "meter_monthly.ndjson").read_text() == ""
+    assert backup.snapshot_table(FakeTB([]), "provider_monthly", tmp_path) == []
+    assert (tmp_path / "provider_monthly.ndjson").read_text() == ""
 
 
 def test_diff_rows_added_removed():
@@ -122,14 +122,14 @@ def test_guarded_replace_blocks_manual_loss_without_yes():
 
     existing = [{"month": "2026-07", "vendor": "replicate", "currency": "USD",
                  "credit": 200.0, "paid": 0.0, "source": "manual"}]
-    guard = {"yes": False, "dry_run": False, "existing": {"meter_monthly": existing}}
+    guard = {"yes": False, "dry_run": False, "existing": {"provider_monthly": existing}}
     client = FakeReplace()
     with pytest.raises(RuntimeError, match="--yes"):
-        guarded_replace(client, "meter_monthly", [], guard, {})
+        guarded_replace(client, "provider_monthly", [], guard, {})
     assert client.calls == []
 
     guard["yes"] = True
     statuses = {}
-    guarded_replace(client, "meter_monthly", [], guard, statuses)
-    assert client.calls == [("meter_monthly", [])]
-    assert statuses["meter_monthly_diff"] == "+0/-1"
+    guarded_replace(client, "provider_monthly", [], guard, statuses)
+    assert client.calls == [("provider_monthly", [])]
+    assert statuses["provider_monthly_diff"] == "+0/-1"

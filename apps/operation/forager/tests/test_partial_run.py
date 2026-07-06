@@ -23,15 +23,15 @@ def test_assert_fresh_in_scope_passes_when_all_in_scope():
     fresh = [_row("2026-07", "aws"), _row("2026-07", "gcp")]
     in_scope = lambda row: row["month"] == "2026-07"
     # No exception, no return value contract — just must not raise.
-    assert_fresh_in_scope("meter_monthly", fresh, in_scope)
+    assert_fresh_in_scope("provider_monthly", fresh, in_scope)
 
 
 def test_assert_fresh_in_scope_raises_on_out_of_scope_row():
     fresh = [_row("2026-07", "aws"), _row("2026-06", "gcp")]
     in_scope = lambda row: row["month"] == "2026-07"
     with pytest.raises(RuntimeError) as exc:
-        assert_fresh_in_scope("meter_monthly", fresh, in_scope)
+        assert_fresh_in_scope("provider_monthly", fresh, in_scope)
     # Error must name the offending datasource and row.
-    assert "meter_monthly" in str(exc.value)
+    assert "provider_monthly" in str(exc.value)
     assert "2026-06" in str(exc.value)
     assert "gcp" in str(exc.value)

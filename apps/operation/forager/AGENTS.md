@@ -4,16 +4,16 @@ Forager is the ONLY writer to the Tinybird `operations` workspace. The treasury
 web app is a read-only mirror. Every correction happens here, via these
 workflows. Run everything from `apps/operation/forager/`.
 
-The workspace holds five datasources: `transactions`, `meter_monthly`,
-`usage_monthly`, `revenue_monthly`, `ingest_runs`.
+The workspace holds five datasources: `transactions`, `provider_monthly`,
+`pollen_monthly`, `revenue_monthly`, `ingest_runs`.
 
 ## Safety rules
 
-- Every `ingest.run` snapshots the four replaced tables (`meter_monthly`,
-  `usage_monthly`, `revenue_monthly`, `transactions`) to
+- Every `ingest.run` snapshots the four replaced tables (`provider_monthly`,
+  `pollen_monthly`, `revenue_monthly`, `transactions`) to
   `~/Documents/treasury-backups/<UTC stamp>/<table>.ndjson` BEFORE writing, then
   prints a `+added/-removed` diff per table.
-- A write that would lose a manual `meter_monthly` row's data — no surviving
+- A write that would lose a manual `provider_monthly` row's data — no surviving
   manual-sourced row for that vendor/month/currency — aborts unless `--yes` is
   given (rows merged into a `manual,api` row are not lost).
 - `--dry-run` = snapshot + diff, write nothing. Use it before any run you are
@@ -34,11 +34,11 @@ Refreshes all four tables and appends an `ingest_runs` entry.
 ### One table
 
 ```bash
-python3 -m ingest.run --dry-run --only meter   # inspect the diff first
-python3 -m ingest.run --only meter             # then write
+python3 -m ingest.run --dry-run --only provider   # inspect the diff first
+python3 -m ingest.run --only provider             # then write
 ```
 
-`--only` is one of `meter | usage | revenue | transactions`.
+`--only` is one of `provider | pollen | revenue | transactions`.
 
 ### One month
 
@@ -50,26 +50,26 @@ python3 -m ingest.run --month 2026-07
 Splices the given `YYYY-MM` into the affected tables. `--month` is invalid with
 `--only transactions` (transactions have no month scope). A bare `--month` still
 fully rebuilds `transactions` (the whole Enty rebuild); combine `--month` with
-`--only meter|usage|revenue` to skip that rebuild.
+`--only provider|pollen|revenue` to skip that rebuild.
 
 ### One vendor (meter)
 
 ```bash
-python3 -m ingest.run --dry-run --only meter --vendor aws
-python3 -m ingest.run --only meter --vendor aws
+python3 -m ingest.run --dry-run --only provider --vendor aws
+python3 -m ingest.run --only provider --vendor aws
 ```
 
-`--vendor` requires `--only meter` and must be a meter-connector slug:
+`--vendor` requires `--only provider` and must be a meter-connector slug:
 `deepinfra | vast.ai | ovhcloud | fireworks | aws | google | openai`.
 Manual-only vendors are updated with `ingest.record`, not here.
 
 ### Add a manual meter row
 
 ```bash
-python3 -m ingest.record meter io.net 2026-07 --currency USD --credit 123.45
+python3 -m ingest.record provider io.net 2026-07 --currency USD --credit 123.45
 ```
 
-Appends one `source="manual"` row to `meter_monthly`. Vendor must be in
+Appends one `source="manual"` row to `provider_monthly`. Vendor must be in
 `registry.CANONICAL`; at least one of `--credit`/`--paid` must be > 0. Manual
 rows survive every subsequent `ingest.run` (they are re-merged, not dropped).
 
@@ -87,14 +87,14 @@ secrets, config = creds.load_creds(), creds.load_config()
 read = tb.TB(config["tb_ops_api"], secrets["TINYBIRD_OPS_INGEST_TOKEN"])
 write = tb.TB(config["tb_ops_api"], secrets["TINYBIRD_OPS_REPLACE_TOKEN"])
 
-rows = backup.snapshot_table(read, "meter_monthly", backup.run_directory(config))
+rows = backup.snapshot_table(read, "provider_monthly", backup.run_directory(config))
 keep = [
     r for r in rows
     if not (r["vendor"] == "io.net" and r["month"] == "2026-07"
             and "manual" in r["source"])
 ]
 assert len(keep) == len(rows) - 1, "expected exactly one row to drop"
-write.replace("meter_monthly", keep)
+write.replace("provider_monthly", keep)
 EOF
 ```
 
@@ -121,8 +121,8 @@ python3 -m ingest.run --dry-run --only transactions   # confirm the new mapping
 python3 -m ingest.run --only transactions
 ```
 
-If the alias affects a meter vendor, also re-run `--only meter` to remap its
-`meter_monthly` rows.
+If the alias affects a meter vendor, also re-run `--only provider` to remap its
+`provider_monthly` rows.
 
 Categories are fully deterministic (vendor default, then keyword rules, then the
 Enty CSV tag) — there is no AI verify pass.
@@ -133,11 +133,11 @@ which is the alias keys).
 ### Inspect current rows
 
 ```bash
-python3 -m ingest.inspect meter_monthly --vendor replicate --month 2026-07
+python3 -m ingest.inspect provider_monthly --vendor replicate --month 2026-07
 ```
 
 Read-only; prints matching rows as JSON lines plus a count. Tables:
-`transactions | meter_monthly | usage_monthly | revenue_monthly | ingest_runs`.
+`transactions | provider_monthly | pollen_monthly | revenue_monthly | ingest_runs`.
 `--vendor` is invalid on `revenue_monthly`/`ingest_runs`; `--limit` defaults
 to 200.
 
@@ -162,7 +162,7 @@ python3 - <<'EOF'
 import json
 from ingest import backup, creds, tb
 
-SNAPSHOT = "~/Documents/treasury-backups/20260706T101112Z/meter_monthly.ndjson"
+SNAPSHOT = "~/Documents/treasury-backups/20260706T101112Z/provider_monthly.ndjson"
 
 secrets, config = creds.load_creds(), creds.load_config()
 read = tb.TB(config["tb_ops_api"], secrets["TINYBIRD_OPS_INGEST_TOKEN"])
@@ -172,8 +172,8 @@ import os
 with open(os.path.expanduser(SNAPSHOT)) as fh:
     rows = [json.loads(line) for line in fh if line.strip()]
 assert rows, "snapshot is empty — refusing to replace"
-backup.snapshot_table(read, "meter_monthly", backup.run_directory(config))
-write.replace("meter_monthly", rows)
+backup.snapshot_table(read, "provider_monthly", backup.run_directory(config))
+write.replace("provider_monthly", rows)
 EOF
 ```
 

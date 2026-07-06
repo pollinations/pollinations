@@ -30,7 +30,7 @@ def test_append_uses_events_ndjson():
 
 def test_replace_uses_datasources_multipart():
     cap = Capture(); t = _client(cap)
-    t.replace("usage_monthly", [{"month": "2026-07"}], condition="month='2026-07'")
+    t.replace("pollen_monthly", [{"month": "2026-07"}], condition="month='2026-07'")
     c = cap.calls[0]
     assert "/v0/datasources?" in c["url"] and "mode=replace" in c["url"]
     assert "replace_condition=" in c["url"]
@@ -39,7 +39,7 @@ def test_replace_uses_datasources_multipart():
 def test_replace_empty_rows_is_refused():
     cap = Capture(); t = _client(cap)
     try:
-        t.replace("usage_monthly", [], condition=None)
+        t.replace("pollen_monthly", [], condition=None)
         assert False, "must refuse full replace with 0 rows"
     except ValueError:
         pass

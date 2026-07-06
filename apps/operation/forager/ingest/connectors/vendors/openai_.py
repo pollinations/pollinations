@@ -1,7 +1,7 @@
 """OpenAI organization costs connector.
 
 Fetches spend from the Organization Costs API (paginated, 1d buckets).
-meter() buckets daily results by month → meter_monthly rows.
+meter() buckets daily results by month → provider_monthly rows.
 
 Endpoint: GET https://api.openai.com/v1/organization/costs
 Auth: Bearer OPENAI_ADMIN_KEY

@@ -89,7 +89,7 @@ def test_usage_environment_production_in_query():
 
 
 def test_usage_query_only_imports_successful_billed_resolved_models():
-    """usage_monthly must not import non-billed undefined model groups."""
+    """pollen_monthly must not import non-billed undefined model groups."""
     tb = TBStub()
     _usage.monthly_rows(tb, ["2026-05"], TODAY)
     q = tb.queries[0]

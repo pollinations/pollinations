@@ -1,4 +1,4 @@
-"""merge_meter_rows — meter_monthly holds one row per vendor/month/currency.
+"""merge_meter_rows — provider_monthly holds one row per vendor/month/currency.
 
 Precedence: manual rows are operator overrides for a vendor/month/currency
 bucket. Otherwise source rank wins, then last-seen.

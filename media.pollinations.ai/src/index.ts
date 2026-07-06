@@ -92,20 +92,6 @@ function collectTags(getAll: (key: string) => string[]): string[] {
     return splitTags(getAll("tags"));
 }
 
-function unsupportedParameterError(parameter: string): { error: string } {
-    return { error: `Unsupported parameter: "${parameter}".` };
-}
-
-function findUnsupportedParameter(
-    parameters: Iterable<string>,
-    allowed: Set<string>,
-): string | null {
-    for (const parameter of new Set(parameters)) {
-        if (!allowed.has(parameter)) return parameter;
-    }
-    return null;
-}
-
 interface UploadMetadata {
     tags: string[];
     prompt: string | null;
@@ -256,25 +242,6 @@ const MediaPageResponseSchema = z.object({
 });
 
 const api = new Hono<{ Bindings: Env }>();
-const UploadQueryParameters = new Set(["key", "tags", "prompt", "model"]);
-const UploadFormFields = new Set([
-    "file",
-    "tags",
-    "prompt",
-    "model",
-    // Accepted only to ignore spoofed ownership metadata; attribution uses the verified key.
-    "owner",
-    "app",
-    "byopClientKeyId",
-]);
-const UploadJsonFields = new Set([
-    "data",
-    "contentType",
-    "name",
-    "tags",
-    "prompt",
-    "model",
-]);
 
 api.post(
     "/upload",
@@ -338,16 +305,6 @@ api.post(
 
         const requestContentType = c.req.header("content-type") || "";
         const queryUrl = new URL(c.req.url);
-        const unsupportedQueryParameter = findUnsupportedParameter(
-            queryUrl.searchParams.keys(),
-            UploadQueryParameters,
-        );
-        if (unsupportedQueryParameter) {
-            return c.json(
-                unsupportedParameterError(unsupportedQueryParameter),
-                400,
-            );
-        }
         const rawTags = collectTags((key) => queryUrl.searchParams.getAll(key));
         let rawPrompt = queryUrl.searchParams.get("prompt");
         let rawModel = queryUrl.searchParams.get("model");
@@ -374,16 +331,6 @@ api.post(
                 contentType = file.type || detectContentType(file.name);
                 fileName = file.name;
 
-                const unsupportedFormField = findUnsupportedParameter(
-                    formData.keys(),
-                    UploadFormFields,
-                );
-                if (unsupportedFormField) {
-                    return c.json(
-                        unsupportedParameterError(unsupportedFormField),
-                        400,
-                    );
-                }
                 rawTags.push(
                     ...collectTags((key) =>
                         formData
@@ -414,16 +361,6 @@ api.post(
                     model?: string;
                 }>();
 
-                const unsupportedJsonField = findUnsupportedParameter(
-                    Object.keys(body),
-                    UploadJsonFields,
-                );
-                if (unsupportedJsonField) {
-                    return c.json(
-                        unsupportedParameterError(unsupportedJsonField),
-                        400,
-                    );
-                }
                 if (!body.data) {
                     return c.json(
                         { error: "Missing 'data' field in JSON body" },

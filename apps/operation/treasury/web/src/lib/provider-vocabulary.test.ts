@@ -12,7 +12,6 @@ const baseData: Data = {
     usageMonthly: [],
     runs: [],
     revenueMonthly: [],
-    overrides: [],
 };
 
 describe("provider vocabulary", () => {

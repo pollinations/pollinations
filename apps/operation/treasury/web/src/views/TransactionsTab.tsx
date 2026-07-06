@@ -14,22 +14,9 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
-import { dirtyControlClass, ResetCellButton } from "../components/EditableCell";
-import { fmtPeriod, utcDateTime } from "../lib/format";
+import { fmtPeriod } from "../lib/format";
 import { matchesMonth } from "../lib/months";
-import { PROVIDER_OPTIONS } from "../lib/provider-vocabulary";
-import { type StageInput, useStaging } from "../lib/staging";
 import type { Data, TransactionRow } from "../types";
-
-const TRANSACTION_CATEGORIES = [
-    "compute",
-    "infra",
-    "saas",
-    "admin",
-    "office",
-    "payroll",
-    "other",
-];
 
 function transactionKey(row: TransactionRow) {
     return [
@@ -43,46 +30,6 @@ function transactionKey(row: TransactionRow) {
         row.invoice_ref,
         row.match_status,
     ].join("|");
-}
-
-function transactionIdentity(row: TransactionRow) {
-    return [
-        row.date,
-        row.charged_amount,
-        row.charged_currency,
-        row.paid_amount,
-        row.paid_currency,
-        row.invoice_ref,
-        row.match_status,
-    ].join("|");
-}
-
-function buildTransactionOverrideChange({
-    enteredAt = utcDateTime(),
-    field,
-    row,
-    value,
-}: {
-    enteredAt?: string;
-    field: "category" | "provider";
-    row: TransactionRow;
-    value: string;
-}): StageInput {
-    const key = transactionIdentity(row);
-    return {
-        datasource: "overrides",
-        key: `transactions:${key}:${field}`,
-        row: {
-            entered_at: enteredAt,
-            scope: "transactions",
-            key,
-            field,
-            value_num: null,
-            value_str: value,
-            note: "",
-        },
-        summary: `transaction ${row.date} ${row.invoice_ref || "-"} ${field} -> ${value}`,
-    };
 }
 
 function InvoiceRef({ value }: { value: string }) {
@@ -99,84 +46,6 @@ function InvoiceRef({ value }: { value: string }) {
             invoice
             <ExternalLinkIcon className="h-3.5 w-3.5" />
         </a>
-    );
-}
-
-function TransactionSelectCell({
-    field,
-    options,
-    row,
-}: {
-    field: "category" | "provider";
-    options: string[];
-    row: TransactionRow;
-}) {
-    const { changes, committed, stage, unstage } = useStaging();
-    const stageKey = `transactions:${transactionIdentity(row)}:${field}`;
-    const pendingOverlay = changes.find((change) => change.key === stageKey);
-    const committedOverlay = committed.find(
-        (change) => change.key === stageKey,
-    );
-    const overlay = pendingOverlay ?? committedOverlay;
-    const initial = row[field];
-    const value = overlay ? String(overlay.row.value_str ?? "") : initial;
-    const dirty = value !== initial || Boolean(pendingOverlay);
-    const cellOptions = options.includes(initial)
-        ? options
-        : [initial, ...options];
-
-    const update = (next: string) => {
-        if (!cellOptions.includes(next)) return;
-        if (next === initial) {
-            if (committedOverlay) {
-                stage(
-                    buildTransactionOverrideChange({ field, row, value: next }),
-                );
-            } else {
-                unstage(stageKey);
-            }
-        } else {
-            stage(buildTransactionOverrideChange({ field, row, value: next }));
-        }
-    };
-
-    const reset = () => {
-        if (pendingOverlay) {
-            unstage(stageKey);
-            return;
-        }
-        stage(buildTransactionOverrideChange({ field, row, value: initial }));
-    };
-
-    return (
-        <span className="inline-flex items-center gap-1.5">
-            <select
-                value={value}
-                onChange={(event) => update(event.target.value)}
-                aria-label={field}
-                className={dirtyControlClass(
-                    dirty,
-                    "rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong",
-                )}
-            >
-                {cellOptions.map((option) => (
-                    <option key={option} value={option}>
-                        {option}
-                    </option>
-                ))}
-            </select>
-            {dirty && (
-                <ResetCellButton
-                    kind={pendingOverlay ? "undo" : "reset"}
-                    title={
-                        pendingOverlay
-                            ? `Undo pending ${field} edit`
-                            : `Reset saved ${field} override`
-                    }
-                    onClick={reset}
-                />
-            )}
-        </span>
     );
 }
 
@@ -228,10 +97,6 @@ export function TransactionsTab({
         key: "date",
         direction: "desc",
     });
-    const providerOptions = useMemo(
-        () => PROVIDER_OPTIONS.filter((option) => option !== "all"),
-        [],
-    );
 
     return (
         <TableScroller>
@@ -272,20 +137,8 @@ export function TransactionsTab({
                         ({ key, row }) => (
                             <TableRow key={key}>
                                 <TableCell>{fmtPeriod(row.date)}</TableCell>
-                                <TableCell>
-                                    <TransactionSelectCell
-                                        field="provider"
-                                        options={providerOptions}
-                                        row={row}
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <TransactionSelectCell
-                                        field="category"
-                                        options={TRANSACTION_CATEGORIES}
-                                        row={row}
-                                    />
-                                </TableCell>
+                                <TableCell>{row.provider}</TableCell>
+                                <TableCell>{row.category}</TableCell>
                                 <TableCell>{row.charged_amount}</TableCell>
                                 <TableCell>{row.charged_currency}</TableCell>
                                 <TableCell>{row.paid_amount}</TableCell>

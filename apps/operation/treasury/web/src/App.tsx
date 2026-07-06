@@ -10,12 +10,11 @@ import {
     Text,
     Tooltip,
 } from "@pollinations/ui";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FilterBar, FilterSelect, MonthFilter } from "./components/Filters";
 import { HeaderButton } from "./components/HeaderButton";
 import { OperationsGuide } from "./components/OperationsGuide";
 import { type ProvenanceCode, SourceMark } from "./components/Provenance";
-import { SaveControls } from "./components/SaveControls";
 import { STALE_AFTER_HOURS } from "./config";
 import { hoursSince } from "./lib/format";
 import { collectMonths } from "./lib/months";
@@ -24,7 +23,6 @@ import {
     PROVIDER_OPTIONS,
     providerVocabularyRunIssues,
 } from "./lib/provider-vocabulary";
-import { StagingProvider } from "./lib/staging";
 import { fixturesMode, loadAll, TbError } from "./lib/tb";
 import type { Data } from "./types";
 import { BurnTab } from "./views/BurnTab";
@@ -77,8 +75,6 @@ const TABS: {
         rows: (data) => data.revenueMonthly.length,
     },
 ];
-
-const POST_SAVE_REFRESH_MS = 800;
 
 function providerOptionsForTab(data: Data | null, tab: Tab) {
     if (!data) return PROVIDER_OPTIONS;
@@ -174,7 +170,6 @@ export default function App() {
     // Keep the selection while it exists in the current tab's provider set.
     const [provider, setProvider] = useState("all");
     const [attempt, setAttempt] = useState(0);
-    const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const ready = fixtures || (sessionChecked && authenticated);
 
     useEffect(() => {
@@ -235,15 +230,6 @@ export default function App() {
             cancelled = true;
         };
     }, [ready, attempt]);
-
-    useEffect(
-        () => () => {
-            if (refreshTimerRef.current) {
-                clearTimeout(refreshTimerRef.current);
-            }
-        },
-        [],
-    );
 
     const staleHours = useMemo(() => {
         const latest = data?.runs[0]?.run_at;
@@ -323,205 +309,185 @@ export default function App() {
     }
 
     return (
-        <StagingProvider
-            fixtures={fixtures}
-            onCommitted={() => {
-                if (refreshTimerRef.current) {
-                    clearTimeout(refreshTimerRef.current);
-                }
-                refreshTimerRef.current = setTimeout(() => {
-                    setAttempt((current) => current + 1);
-                    refreshTimerRef.current = null;
-                }, POST_SAVE_REFRESH_MS);
-            }}
+        <div
+            data-theme="amber"
+            className="flex h-dvh min-h-0 flex-col overflow-hidden bg-app-bg text-theme-text-strong"
         >
-            <div
-                data-theme="amber"
-                className="flex h-dvh min-h-0 flex-col overflow-hidden bg-app-bg text-theme-text-strong"
-            >
-                <ScrollArea axis="y" className="min-h-0 flex-1">
-                    <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 pb-32 sm:px-6 sm:py-10 sm:pb-32">
-                        <header className="flex flex-col gap-4 border-b border-theme-border/70 pb-5 sm:flex-row sm:items-start sm:justify-between">
-                            <div className="min-w-0">
-                                <Text
-                                    size="micro"
-                                    tone="soft"
-                                    weight="bold"
-                                    className="mb-2 uppercase tracking-wide"
-                                >
-                                    Operations
-                                </Text>
-                                <Heading as="h1" size="title">
-                                    Treasury
-                                </Heading>
-                            </div>
-                            <div className="flex shrink-0 flex-wrap items-center gap-2">
-                                <OperationsGuide />
-                                {fixtures && (
-                                    <Chip intent="alpha">fixtures</Chip>
-                                )}
-                                {staleHours !== null &&
-                                    staleHours <= STALE_AFTER_HOURS && (
-                                        <Chip size="sm">
-                                            data {Math.round(staleHours)}h old
-                                        </Chip>
-                                    )}
-                                <SaveControls />
-                                {!fixtures && (
-                                    <HeaderButton
-                                        tone="danger"
-                                        onClick={() => {
-                                            logout().finally(() => {
-                                                setAuthenticated(false);
-                                                setData(null);
-                                            });
-                                        }}
-                                    >
-                                        Log out
-                                    </HeaderButton>
-                                )}
-                                <ColorModeToggle />
-                            </div>
-                        </header>
-
-                        {staleHours !== null &&
-                            staleHours > STALE_AFTER_HOURS && (
-                                <Alert intent="warning" title="Stale data">
-                                    Last forager run was{" "}
-                                    {Math.round(staleHours)}h ago. Run{" "}
-                                    <code>python3 -m ingest.run</code> for fresh
-                                    numbers.
-                                </Alert>
-                            )}
-
-                        {providerIssues.length > 0 && (
-                            <Alert
-                                intent="warning"
-                                title="Provider vocabulary mismatch"
+            <ScrollArea axis="y" className="min-h-0 flex-1">
+                <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 pb-32 sm:px-6 sm:py-10 sm:pb-32">
+                    <header className="flex flex-col gap-4 border-b border-theme-border/70 pb-5 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0">
+                            <Text
+                                size="micro"
+                                tone="soft"
+                                weight="bold"
+                                className="mb-2 uppercase tracking-wide"
                             >
-                                <div className="flex flex-col gap-1">
-                                    {providerIssues.slice(0, 5).map((issue) => (
-                                        <span
-                                            key={`${issue.source}:${issue.provider}:${issue.detail}`}
-                                        >
-                                            {issue.detail}
-                                        </span>
-                                    ))}
-                                    {providerIssues.length > 5 && (
-                                        <span>
-                                            +{providerIssues.length - 5} more
-                                        </span>
-                                    )}
-                                </div>
-                            </Alert>
-                        )}
-
-                        <FilterBar>
-                            <MonthFilter
-                                months={months}
-                                value={activeMonth}
-                                onChange={setMonth}
-                            />
-                            <div className="flex flex-wrap gap-3">
-                                {showProviderFilter && (
-                                    <FilterSelect
-                                        label="provider"
-                                        value={provider}
-                                        onChange={setProvider}
-                                        options={providerOptions}
-                                    />
+                                Operations
+                            </Text>
+                            <Heading as="h1" size="title">
+                                Treasury
+                            </Heading>
+                        </div>
+                        <div className="flex shrink-0 flex-wrap items-center gap-2">
+                            <OperationsGuide />
+                            {fixtures && <Chip intent="alpha">fixtures</Chip>}
+                            {staleHours !== null &&
+                                staleHours <= STALE_AFTER_HOURS && (
+                                    <Chip size="sm">
+                                        data {Math.round(staleHours)}h old
+                                    </Chip>
                                 )}
-                                {tab !== "meter" && (
-                                    <FilterSelect
-                                        label="category"
-                                        value={category}
-                                        onChange={setCategory}
-                                        options={categoryOptions}
-                                    />
+                            {!fixtures && (
+                                <HeaderButton
+                                    tone="danger"
+                                    onClick={() => {
+                                        logout().finally(() => {
+                                            setAuthenticated(false);
+                                            setData(null);
+                                        });
+                                    }}
+                                >
+                                    Log out
+                                </HeaderButton>
+                            )}
+                            <ColorModeToggle />
+                        </div>
+                    </header>
+
+                    {staleHours !== null && staleHours > STALE_AFTER_HOURS && (
+                        <Alert intent="warning" title="Stale data">
+                            Last forager run was {Math.round(staleHours)}h ago.
+                            Run <code>python3 -m ingest.run</code> for fresh
+                            numbers.
+                        </Alert>
+                    )}
+
+                    {providerIssues.length > 0 && (
+                        <Alert
+                            intent="warning"
+                            title="Provider vocabulary mismatch"
+                        >
+                            <div className="flex flex-col gap-1">
+                                {providerIssues.slice(0, 5).map((issue) => (
+                                    <span
+                                        key={`${issue.source}:${issue.provider}:${issue.detail}`}
+                                    >
+                                        {issue.detail}
+                                    </span>
+                                ))}
+                                {providerIssues.length > 5 && (
+                                    <span>
+                                        +{providerIssues.length - 5} more
+                                    </span>
                                 )}
                             </div>
-                        </FilterBar>
+                        </Alert>
+                    )}
 
-                        <nav className="flex flex-wrap gap-2">
-                            {TABS.map((item) => (
-                                <Tooltip
-                                    key={item.id}
-                                    triggerAs="span"
-                                    content={
-                                        <span className="flex max-w-72 flex-col gap-1">
-                                            {item.codes.length > 0 && (
-                                                <span className="flex items-center gap-1.5">
-                                                    {item.codes.map((code) => (
-                                                        <SourceMark
-                                                            key={code}
-                                                            code={code}
-                                                        />
-                                                    ))}
-                                                </span>
-                                            )}
-                                            <span className="font-mono text-theme-text-soft">
-                                                {item.pipe}
-                                                {data
-                                                    ? ` · ${item.rows(data)} rows`
-                                                    : ""}
+                    <FilterBar>
+                        <MonthFilter
+                            months={months}
+                            value={activeMonth}
+                            onChange={setMonth}
+                        />
+                        <div className="flex flex-wrap gap-3">
+                            {showProviderFilter && (
+                                <FilterSelect
+                                    label="provider"
+                                    value={provider}
+                                    onChange={setProvider}
+                                    options={providerOptions}
+                                />
+                            )}
+                            {tab !== "meter" && (
+                                <FilterSelect
+                                    label="category"
+                                    value={category}
+                                    onChange={setCategory}
+                                    options={categoryOptions}
+                                />
+                            )}
+                        </div>
+                    </FilterBar>
+
+                    <nav className="flex flex-wrap gap-2">
+                        {TABS.map((item) => (
+                            <Tooltip
+                                key={item.id}
+                                triggerAs="span"
+                                content={
+                                    <span className="flex max-w-72 flex-col gap-1">
+                                        {item.codes.length > 0 && (
+                                            <span className="flex items-center gap-1.5">
+                                                {item.codes.map((code) => (
+                                                    <SourceMark
+                                                        key={code}
+                                                        code={code}
+                                                    />
+                                                ))}
                                             </span>
-                                            <span>{item.note}</span>
+                                        )}
+                                        <span className="font-mono text-theme-text-soft">
+                                            {item.pipe}
+                                            {data
+                                                ? ` · ${item.rows(data)} rows`
+                                                : ""}
                                         </span>
-                                    }
+                                        <span>{item.note}</span>
+                                    </span>
+                                }
+                            >
+                                <TabButton
+                                    active={tab === item.id}
+                                    onClick={() => setTab(item.id)}
                                 >
-                                    <TabButton
-                                        active={tab === item.id}
-                                        onClick={() => setTab(item.id)}
-                                    >
-                                        {item.label}
-                                    </TabButton>
-                                </Tooltip>
-                            ))}
-                        </nav>
+                                    {item.label}
+                                </TabButton>
+                            </Tooltip>
+                        ))}
+                    </nav>
 
-                        {error && (
-                            <Alert intent="warning" title="Load failed">
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <span>{error}</span>
-                                    <HeaderButton
-                                        onClick={() => setAttempt((n) => n + 1)}
-                                    >
-                                        Retry
-                                    </HeaderButton>
-                                </div>
-                            </Alert>
-                        )}
-                        {!error && !data && (
-                            <Text tone="soft">Loading pipes...</Text>
-                        )}
-                        {data && tab === "transactions" && (
-                            <TransactionsTab
-                                category={category}
-                                data={data}
-                                month={activeMonth}
-                                provider={provider}
-                            />
-                        )}
-                        {data && tab === "burn" && (
-                            <BurnTab
-                                data={data}
-                                month={activeMonth}
-                                provider={provider}
-                            />
-                        )}
-                        {data && tab === "meter" && (
-                            <MeterTab
-                                data={data}
-                                month={activeMonth}
-                                provider={provider}
-                            />
-                        )}
-                        {data && tab === "revenue" && (
-                            <RevenueTab data={data} />
-                        )}
-                    </main>
-                </ScrollArea>
-            </div>
-        </StagingProvider>
+                    {error && (
+                        <Alert intent="warning" title="Load failed">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span>{error}</span>
+                                <HeaderButton
+                                    onClick={() => setAttempt((n) => n + 1)}
+                                >
+                                    Retry
+                                </HeaderButton>
+                            </div>
+                        </Alert>
+                    )}
+                    {!error && !data && (
+                        <Text tone="soft">Loading pipes...</Text>
+                    )}
+                    {data && tab === "transactions" && (
+                        <TransactionsTab
+                            category={category}
+                            data={data}
+                            month={activeMonth}
+                            provider={provider}
+                        />
+                    )}
+                    {data && tab === "burn" && (
+                        <BurnTab
+                            data={data}
+                            month={activeMonth}
+                            provider={provider}
+                        />
+                    )}
+                    {data && tab === "meter" && (
+                        <MeterTab
+                            data={data}
+                            month={activeMonth}
+                            provider={provider}
+                        />
+                    )}
+                    {data && tab === "revenue" && <RevenueTab data={data} />}
+                </main>
+            </ScrollArea>
+        </div>
     );
 }

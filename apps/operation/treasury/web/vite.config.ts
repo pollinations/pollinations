@@ -20,15 +20,12 @@ const READ_PIPES = new Set([
     "usage_monthly_api",
     "ingest_runs_api",
     "revenue_monthly_api",
-    "overrides_api",
 ]);
-const WRITE_DATASOURCES = new Set(["meter_monthly", "overrides"]);
 const INVOICE_ROOT = resolve(homedir(), "Documents/treasury-invoices");
 
 type TreasurySecrets = {
     TREASURY_PASSWORD: string;
     TINYBIRD_TREASURY_READ_TOKEN: string;
-    TINYBIRD_TREASURY_APPEND_TOKEN?: string;
 };
 
 let secretsCache: TreasurySecrets | null = null;
@@ -50,7 +47,6 @@ function readSecrets(): TreasurySecrets {
     secretsCache = {
         TREASURY_PASSWORD: secrets.TREASURY_PASSWORD,
         TINYBIRD_TREASURY_READ_TOKEN: secrets.TINYBIRD_TREASURY_READ_TOKEN,
-        TINYBIRD_TREASURY_APPEND_TOKEN: secrets.TINYBIRD_TREASURY_APPEND_TOKEN,
     };
     return secretsCache;
 }
@@ -211,40 +207,6 @@ async function handleApi(req: IncomingMessage, res: ServerResponse) {
                 Authorization: `Bearer ${secrets.TINYBIRD_TREASURY_READ_TOKEN}`,
             },
         });
-        res.statusCode = upstream.status;
-        res.setHeader(
-            "Content-Type",
-            upstream.headers.get("content-type") ?? "application/json",
-        );
-        res.end(await upstream.text());
-        return true;
-    }
-
-    if (url.pathname === "/api/events" && req.method === "POST") {
-        const datasource = url.searchParams.get("name") ?? "";
-        if (!WRITE_DATASOURCES.has(datasource)) {
-            json(res, 404, { error: "Unknown datasource" });
-            return true;
-        }
-
-        if (!secrets.TINYBIRD_TREASURY_APPEND_TOKEN) {
-            json(res, 503, {
-                error: "Tinybird append token is not configured",
-            });
-            return true;
-        }
-
-        const upstream = await fetch(
-            `${TB_HOST}/v0/events?name=${encodeURIComponent(datasource)}`,
-            {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${secrets.TINYBIRD_TREASURY_APPEND_TOKEN}`,
-                    "Content-Type": "application/x-ndjson",
-                },
-                body: await readBody(req),
-            },
-        );
         res.statusCode = upstream.status;
         res.setHeader(
             "Content-Type",

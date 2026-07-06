@@ -8,19 +8,15 @@ const EXPECTED_PIPES = [
     "usage_monthly_api",
     "ingest_runs_api",
     "revenue_monthly_api",
-    "overrides_api",
 ];
 
 describe("fixtures", () => {
     it("covers every pipe the app fetches", () => {
         for (const pipe of EXPECTED_PIPES) {
             expect(FIXTURES[pipe], pipe).toBeDefined();
-            if (pipe !== "overrides_api") {
-                expect(
-                    (FIXTURES[pipe] as unknown[]).length,
-                    pipe,
-                ).toBeGreaterThan(0);
-            }
+            expect((FIXTURES[pipe] as unknown[]).length, pipe).toBeGreaterThan(
+                0,
+            );
         }
     });
 

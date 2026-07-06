@@ -47,19 +47,10 @@ export type RevenueMonthlyRow = {
     refunds_amount: number;
 };
 
-export type OverrideRow = {
-    scope: string;
-    key: string;
-    field: string;
-    value_num: number | null;
-    value_str: string;
-};
-
 export type Data = {
     transactions: TransactionRow[];
     meterMonthly: MeterMonthlyRow[];
     usageMonthly: UsageMonthlyRow[];
     runs: RunRow[];
     revenueMonthly: RevenueMonthlyRow[];
-    overrides: OverrideRow[];
 };

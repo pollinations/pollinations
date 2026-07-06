@@ -16,6 +16,7 @@ def test_provider_aliases_are_category_free():
 
 def test_same_alias_file_feeds_substring_and_exact_matching():
     assert "amazon web" in aliases.PROVIDER_ALIASES["aws"]
+    assert aliases.PROVIDER_TAG_ALIASES["automat-it"] == "aws"
     assert aliases.PROVIDER_TAG_ALIASES["bedrock"] == "aws"
     assert aliases.PROVIDER_TAG_ALIASES["vastai"] == "vast.ai"
     assert aliases.PROVIDER_TAG_ALIASES["azure-2"] == "azure"
@@ -23,3 +24,9 @@ def test_same_alias_file_feeds_substring_and_exact_matching():
 
 def test_alias_file_is_registry_canonical_source():
     assert registry.CANONICAL == frozenset(aliases.PROVIDER_ALIASES.keys())
+
+
+def test_aws_has_one_canonical_provider():
+    assert "aws" in registry.CANONICAL
+    assert "aws-new" not in registry.CANONICAL
+    assert [slug for slug in registry.CANONICAL if slug.startswith("aws")] == ["aws"]

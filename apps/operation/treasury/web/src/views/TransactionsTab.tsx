@@ -1,5 +1,5 @@
 import {
-    ExternalLinkIcon,
+    ExternalLinkButton,
     TableBody,
     TableCell,
     TableHead,
@@ -36,16 +36,13 @@ function InvoiceRef({ value }: { value: string }) {
     if (!value) return <span>-</span>;
 
     return (
-        <a
+        <ExternalLinkButton
             href={`/api/files/invoice?path=${encodeURIComponent(value)}`}
-            target="_blank"
-            rel="noreferrer"
+            size="sm"
             title={value}
-            className="inline-flex h-8 items-center gap-1.5 rounded border border-theme-border/70 bg-theme-bg/60 px-2.5 text-sm font-medium text-theme-text-soft transition-colors hover:bg-theme-bg-hover hover:text-theme-text-strong"
         >
             invoice
-            <ExternalLinkIcon className="h-3.5 w-3.5" />
-        </a>
+        </ExternalLinkButton>
     );
 }
 

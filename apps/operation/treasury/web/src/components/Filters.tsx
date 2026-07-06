@@ -1,3 +1,10 @@
+import {
+    Button,
+    ChevronIcon,
+    Dropdown,
+    DropdownItem,
+    TabButton,
+} from "@pollinations/ui";
 import type { ReactNode } from "react";
 import { monthLabel, yearsOf } from "../lib/months";
 
@@ -13,31 +20,21 @@ function Pill({
     children,
     onClick,
     size = "month",
-    title,
 }: {
     active: boolean;
     children: ReactNode;
     onClick: () => void;
     size?: "month" | "year";
-    title?: string;
 }) {
     return (
-        <button
-            type="button"
+        <TabButton
+            active={active}
             onClick={onClick}
-            title={title}
-            className={[
-                "rounded border transition-colors",
-                size === "year"
-                    ? "px-3.5 py-1 text-base"
-                    : "px-2.5 py-0.5 text-sm",
-                active
-                    ? "border-theme-link bg-theme-bg-hover font-medium text-theme-link"
-                    : "border-theme-border/70 text-theme-text-soft hover:bg-theme-bg-hover hover:text-theme-text-strong",
-            ].join(" ")}
+            size={size === "year" ? "md" : "sm"}
+            variant="ghost"
         >
             {children}
-        </button>
+        </TabButton>
     );
 }
 
@@ -101,19 +98,32 @@ export function FilterSelect({
     value: string;
 }) {
     return (
-        <label className="inline-flex w-fit items-center gap-2 text-sm text-theme-text-soft">
-            {label}
-            <select
-                value={value}
-                onChange={(event) => onChange(event.target.value)}
-                className="max-w-56 rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong"
+        <div className="inline-flex w-fit items-center gap-2 text-sm text-theme-text-soft">
+            <span>{label}</span>
+            <Dropdown
+                trigger={(open) => (
+                    <Button size="sm" className="max-w-56 gap-2">
+                        <span className="truncate">{value || "(blank)"}</span>
+                        <ChevronIcon expanded={open} />
+                    </Button>
+                )}
             >
-                {options.map((option) => (
-                    <option key={option} value={option}>
-                        {option || "(blank)"}
-                    </option>
-                ))}
-            </select>
-        </label>
+                {(close) => (
+                    <div className="max-h-72 w-56 overflow-y-auto p-1">
+                        {options.map((option) => (
+                            <DropdownItem
+                                key={option}
+                                onClick={() => {
+                                    onChange(option);
+                                    close();
+                                }}
+                            >
+                                {option || "(blank)"}
+                            </DropdownItem>
+                        ))}
+                    </div>
+                )}
+            </Dropdown>
+        </div>
     );
 }

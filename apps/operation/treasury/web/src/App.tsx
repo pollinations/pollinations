@@ -13,8 +13,6 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { FilterBar, FilterSelect, MonthFilter } from "./components/Filters";
-import { HeaderButton } from "./components/HeaderButton";
-import { OperationsGuide } from "./components/OperationsGuide";
 import { type ProvenanceCode, SourceMark } from "./components/Provenance";
 import { STALE_AFTER_HOURS } from "./config";
 import { hoursSince } from "./lib/format";
@@ -371,17 +369,35 @@ export default function App() {
                             </Heading>
                         </div>
                         <div className="flex shrink-0 flex-wrap items-center gap-2">
-                            <OperationsGuide />
+                            <TabButton
+                                active={section === "insights"}
+                                onClick={() => setSection("insights")}
+                                size="sm"
+                            >
+                                Insights
+                            </TabButton>
+                            <TabButton
+                                active={section === "raw"}
+                                onClick={() => setSection("raw")}
+                                size="sm"
+                            >
+                                Raw
+                            </TabButton>
                             {fixtures && <Chip intent="alpha">fixtures</Chip>}
                             {staleHours !== null &&
                                 staleHours <= STALE_AFTER_HOURS && (
-                                    <Chip size="sm">
+                                    <Chip
+                                        data-theme="neutral"
+                                        intent="neutral"
+                                        size="sm"
+                                    >
                                         data {Math.round(staleHours)}h old
                                     </Chip>
                                 )}
                             {!fixtures && (
-                                <HeaderButton
-                                    tone="danger"
+                                <Button
+                                    intent="danger"
+                                    size="sm"
                                     onClick={() => {
                                         logout().finally(() => {
                                             setAuthenticated(false);
@@ -390,7 +406,7 @@ export default function App() {
                                     }}
                                 >
                                     Log out
-                                </HeaderButton>
+                                </Button>
                             )}
                             <ColorModeToggle />
                         </div>
@@ -423,21 +439,6 @@ export default function App() {
                             </div>
                         </Alert>
                     )}
-
-                    <nav className="flex flex-wrap gap-2">
-                        <TabButton
-                            active={section === "insights"}
-                            onClick={() => setSection("insights")}
-                        >
-                            Insights
-                        </TabButton>
-                        <TabButton
-                            active={section === "raw"}
-                            onClick={() => setSection("raw")}
-                        >
-                            Raw
-                        </TabButton>
-                    </nav>
 
                     <nav className="flex flex-wrap gap-2">
                         {section === "raw" &&
@@ -531,11 +532,12 @@ export default function App() {
                         <Alert intent="warning" title="Load failed">
                             <div className="flex flex-wrap items-center gap-2">
                                 <span>{error}</span>
-                                <HeaderButton
+                                <Button
+                                    size="sm"
                                     onClick={() => setAttempt((n) => n + 1)}
                                 >
                                     Retry
-                                </HeaderButton>
+                                </Button>
                             </div>
                         </Alert>
                     )}

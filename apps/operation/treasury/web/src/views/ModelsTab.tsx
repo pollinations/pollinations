@@ -154,17 +154,21 @@ export function ModelsTab({
     return (
         <div className="flex flex-col gap-3">
             <div className="flex flex-wrap items-center gap-2">
-                <Chip size="sm">
+                <Chip data-theme="neutral" intent="neutral" size="sm">
                     net ratio{" "}
                     {netRatio == null ? "–" : `${(netRatio * 100).toFixed(0)}%`}
                 </Chip>
-                <Chip size="sm">break-even {fmtMultiplier(breakEven)}</Chip>
-                <Chip size="sm">
+                <Chip data-theme="neutral" intent="neutral" size="sm">
+                    break-even {fmtMultiplier(breakEven)}
+                </Chip>
+                <Chip data-theme="neutral" intent="neutral" size="sm">
                     ecosystem {fmtUsd(ecosystem.byopUsd + ecosystem.modelUsd)}{" "}
                     (byop {fmtUsd(ecosystem.byopUsd)} · model{" "}
                     {fmtUsd(ecosystem.modelUsd)})
                 </Chip>
-                <Chip size="sm">scope: {scopeLabel}</Chip>
+                <Chip data-theme="neutral" intent="neutral" size="sm">
+                    scope: {scopeLabel}
+                </Chip>
             </div>
             <TableScroller>
                 <DataTable>
@@ -252,7 +256,11 @@ export function ModelsTab({
                                 </TableCell>
                                 <TableCell>{fmtUsd(row.trueCostUsd)}</TableCell>
                                 <TableCell>
-                                    <Chip size="sm">
+                                    <Chip
+                                        data-theme="neutral"
+                                        intent="neutral"
+                                        size="sm"
+                                    >
                                         {row.basis === "registered"
                                             ? "reg"
                                             : row.basis}

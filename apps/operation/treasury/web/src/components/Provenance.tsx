@@ -1,38 +1,31 @@
+import { Chip } from "@pollinations/ui";
+
 export type ProvenanceCode = "EN" | "TB" | "ST" | "API" | "CLI" | "BQ" | "HC";
 
-const PROVENANCE: Record<
-    ProvenanceCode,
-    { title: string; className: string; display?: string }
-> = {
-    EN: {
-        title: "Enty - monthly transactions export",
-        className: "treasury-source-en",
-    },
-    TB: {
-        title: "Tinybird - generation event usage",
-        className: "treasury-source-tb",
-    },
-    ST: {
-        title: "Stripe - revenue and fees, live on refresh",
-        className: "treasury-source-st",
-    },
-    API: {
-        title: "Vendor API - read live on refresh",
-        className: "treasury-source-api",
-    },
-    CLI: {
-        title: "Vendor CLI - read live on refresh",
-        className: "treasury-source-cli",
-    },
-    BQ: {
-        title: "BigQuery - vendor usage export",
-        className: "treasury-source-bq",
-    },
-    HC: {
-        title: "Manual, hardcoded, or operator-corrected value",
-        className: "treasury-source-hc",
-    },
-};
+const PROVENANCE: Record<ProvenanceCode, { title: string; display?: string }> =
+    {
+        EN: {
+            title: "Enty - monthly transactions export",
+        },
+        TB: {
+            title: "Tinybird - generation event usage",
+        },
+        ST: {
+            title: "Stripe - revenue and fees, live on refresh",
+        },
+        API: {
+            title: "Vendor API - read live on refresh",
+        },
+        CLI: {
+            title: "Vendor CLI - read live on refresh",
+        },
+        BQ: {
+            title: "BigQuery - vendor usage export",
+        },
+        HC: {
+            title: "Manual, hardcoded, or operator-corrected value",
+        },
+    };
 
 const SOURCE_META: Record<
     string,
@@ -73,12 +66,15 @@ export function SourceMark({ code }: { code: ProvenanceCode }) {
     const source = PROVENANCE[code];
 
     return (
-        <span
-            className={`treasury-source-badge ${source.className}`}
+        <Chip
+            data-theme="neutral"
+            intent="neutral"
+            size="sm"
             title={source.title}
+            className="font-mono"
         >
             {source.display ?? code}
-        </span>
+        </Chip>
     );
 }
 
@@ -86,15 +82,17 @@ export function InlineSourceBadge({ source }: { source: string }) {
     if (!source) return null;
 
     const meta = sourceMeta(source);
-    const provenance = PROVENANCE[meta.code];
 
     return (
-        <span
-            className={`treasury-source-badge ${provenance.className}`}
+        <Chip
+            data-theme="neutral"
+            intent="neutral"
+            size="sm"
+            className="font-mono"
             title={sourceTitle(source, meta.code, meta.title)}
         >
             {meta.display}
-        </span>
+        </Chip>
     );
 }
 

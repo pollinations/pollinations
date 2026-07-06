@@ -180,18 +180,20 @@ function PnlMonthDetail({ data, month }: { data: Data; month: string }) {
     return (
         <div className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center gap-2">
-                <Chip size="sm">
+                <Chip data-theme="neutral" intent="neutral" size="sm">
                     {monthLabel(month)}
                     {summary?.opexIncomplete ? " ⚠" : ""}
                 </Chip>
-                <Chip size="sm">
+                <Chip data-theme="neutral" intent="neutral" size="sm">
                     revenue {fmtUsd(summary?.revenueNetUsd ?? null)}
                 </Chip>
-                <Chip size="sm">spend {fmtUsd(summary?.spendUsd ?? null)}</Chip>
-                <Chip size="sm">
+                <Chip data-theme="neutral" intent="neutral" size="sm">
+                    spend {fmtUsd(summary?.spendUsd ?? null)}
+                </Chip>
+                <Chip data-theme="neutral" intent="neutral" size="sm">
                     cash P&L {fmtUsd(summary?.cashPnlUsd ?? null)}
                 </Chip>
-                <Chip size="sm">
+                <Chip data-theme="neutral" intent="neutral" size="sm">
                     credit burn{" "}
                     {summary && summary.creditBurnUsd > 0
                         ? `(${fmtUsd(summary.creditBurnUsd)})`

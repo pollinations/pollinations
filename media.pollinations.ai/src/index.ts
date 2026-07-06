@@ -3,6 +3,19 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { describeRoute, openAPIRouteHandler, resolver } from "hono-openapi";
 import { z } from "zod";
+import type { CatalogItem, CatalogPage } from "./catalog.ts";
+import {
+    clampLimit,
+    decodeCursor,
+    getDb,
+    InvalidTagError,
+    listByTag,
+    listUserMedia,
+    normalizeTags,
+    TooManyTagsError,
+    tagsForItems,
+    upsertUploadCatalogItem,
+} from "./catalog.ts";
 
 const DOMAIN = "media.pollinations.ai";
 // gen.pollinations.ai proxies /account/* to enter — using the public path
@@ -21,12 +34,16 @@ const DEFAULT_MAX_SIZE = 52428800; // 50 MB
 interface Env {
     MEDIA_BUCKET: R2Bucket;
     MAX_FILE_SIZE: string;
+    DB: D1Database;
 }
 
 interface AuthResult {
     valid: boolean;
     type: string;
     name: string | null;
+    userId: string | null;
+    keyId: string;
+    byopClientKeyId: string | null;
 }
 
 async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
@@ -58,12 +75,137 @@ function mediaUrl(hash: string): string {
     return `https://${DOMAIN}/${hash}`;
 }
 
+const MAX_PROMPT_LENGTH = 2000;
+const MAX_MODEL_LENGTH = 128;
+
+// Splits a comma-separated `tags` value and merges it with repeated `tag`
+// params. Accepts the same shape whether it came from a query string,
+// multipart form field, or JSON body field.
+function collectTags(
+    getAll: (key: string) => string[],
+    get: (key: string) => string | null | undefined,
+): string[] {
+    const tags = [...getAll("tag")];
+    const tagsParam = get("tags");
+    if (tagsParam) {
+        tags.push(...tagsParam.split(","));
+    }
+    return tags;
+}
+
+interface UploadMetadata {
+    tags: string[];
+    prompt: string | null;
+    model: string | null;
+}
+
+class MetadataValidationError extends Error {}
+
+function validateMetadata(
+    rawTags: string[],
+    rawPrompt: string | null | undefined,
+    rawModel: string | null | undefined,
+): UploadMetadata {
+    let tags: string[];
+    try {
+        tags = normalizeTags(rawTags);
+    } catch (error) {
+        if (error instanceof InvalidTagError) {
+            throw new MetadataValidationError(
+                `Invalid tag: "${error.tag}". Tags must match ${TAG_PATTERN_DESCRIPTION}.`,
+            );
+        }
+        if (error instanceof TooManyTagsError) {
+            throw new MetadataValidationError(
+                `Too many tags: ${error.count} (max 8).`,
+            );
+        }
+        throw error;
+    }
+
+    const prompt = rawPrompt?.trim() || null;
+    if (prompt && prompt.length > MAX_PROMPT_LENGTH) {
+        throw new MetadataValidationError(
+            `Prompt too long: ${prompt.length} chars (max ${MAX_PROMPT_LENGTH}).`,
+        );
+    }
+
+    const model = rawModel?.trim() || null;
+    if (model && model.length > MAX_MODEL_LENGTH) {
+        throw new MetadataValidationError(
+            `Model name too long: ${model.length} chars (max ${MAX_MODEL_LENGTH}).`,
+        );
+    }
+
+    return { tags, prompt, model };
+}
+
+const TAG_PATTERN_DESCRIPTION =
+    "lowercase letters, digits, and _.:+- (not leading), max 128 chars";
+
+function hasMetadata(metadata: UploadMetadata): boolean {
+    return (
+        metadata.tags.length > 0 ||
+        metadata.prompt !== null ||
+        metadata.model !== null
+    );
+}
+
+// Item shape shared by /me/media and /tags/:tag — never exposes
+// ownerUserId/appKeyId.
+interface MediaItemResponse {
+    id: string;
+    url: string;
+    kind: "upload" | "generation";
+    contentType: string;
+    size: number | null;
+    tags: string[];
+    prompt: string | null;
+    model: string | null;
+    createdAt: string;
+}
+
+function toItemResponse(
+    item: CatalogItem,
+    tagsByItem: Map<string, string[]>,
+): MediaItemResponse {
+    return {
+        id: item.id,
+        url: item.kind === "upload" ? mediaUrl(item.locator) : item.locator,
+        kind: item.kind,
+        contentType: item.contentType,
+        size: item.size,
+        tags: tagsByItem.get(item.id) ?? [],
+        prompt: item.prompt,
+        model: item.model,
+        createdAt: item.createdAt.toISOString(),
+    };
+}
+
+async function toPageResponse(
+    db: ReturnType<typeof getDb>,
+    page: CatalogPage,
+): Promise<{ items: MediaItemResponse[]; nextCursor: string | null }> {
+    const tagsByItem = await tagsForItems(
+        db,
+        page.items.map((item) => item.id),
+    );
+    return {
+        items: page.items.map((item) => toItemResponse(item, tagsByItem)),
+        nextCursor: page.nextCursor,
+    };
+}
+
 const UploadResponseSchema = z.object({
     id: z.string().describe("16-char hex content hash"),
     url: z.string().describe("Public retrieval URL"),
     contentType: z.string(),
     size: z.number().int().describe("File size in bytes"),
     duplicate: z.boolean().describe("true if file already existed"),
+    tags: z
+        .array(z.string())
+        .optional()
+        .describe("Tags stored for this upload, present only when tagged"),
 });
 
 const ErrorSchema = z.object({
@@ -78,6 +220,26 @@ const MetadataResponseSchema = z.object({
         .string()
         .optional()
         .describe("ISO-8601 upload timestamp, when recorded"),
+});
+
+const MediaItemResponseSchema = z.object({
+    id: z.string().describe("Catalog item id"),
+    url: z.string().describe("Public URL, or generation locator"),
+    kind: z.enum(["upload", "generation"]),
+    contentType: z.string(),
+    size: z.number().int().nullable().describe("File size in bytes"),
+    tags: z.array(z.string()),
+    prompt: z.string().nullable(),
+    model: z.string().nullable(),
+    createdAt: z.string().describe("ISO-8601 timestamp"),
+});
+
+const MediaPageResponseSchema = z.object({
+    items: z.array(MediaItemResponseSchema),
+    nextCursor: z
+        .string()
+        .nullable()
+        .describe("Opaque cursor for the next page, null when exhausted"),
 });
 
 const api = new Hono<{ Bindings: Env }>();
@@ -143,6 +305,13 @@ api.post(
         let fileName: string | undefined;
 
         const requestContentType = c.req.header("content-type") || "";
+        const queryUrl = new URL(c.req.url);
+        const rawTags = collectTags(
+            (key) => queryUrl.searchParams.getAll(key),
+            (key) => queryUrl.searchParams.get(key),
+        );
+        let rawPrompt = queryUrl.searchParams.get("prompt");
+        let rawModel = queryUrl.searchParams.get("model");
 
         try {
             if (requestContentType.includes("multipart/form-data")) {
@@ -165,11 +334,41 @@ api.post(
                 fileBuffer = await file.arrayBuffer();
                 contentType = file.type || detectContentType(file.name);
                 fileName = file.name;
+
+                rawTags.push(
+                    ...collectTags(
+                        (key) =>
+                            formData
+                                .getAll(key)
+                                .filter(
+                                    (value): value is string =>
+                                        typeof value === "string",
+                                ),
+                        (key) => {
+                            const value = formData.get(key);
+                            return typeof value === "string" ? value : null;
+                        },
+                    ),
+                );
+                rawPrompt =
+                    rawPrompt ??
+                    (typeof formData.get("prompt") === "string"
+                        ? (formData.get("prompt") as string)
+                        : null);
+                rawModel =
+                    rawModel ??
+                    (typeof formData.get("model") === "string"
+                        ? (formData.get("model") as string)
+                        : null);
             } else if (requestContentType.includes("application/json")) {
                 const body = await c.req.json<{
                     data: string;
                     contentType?: string;
                     name?: string;
+                    tag?: string | string[];
+                    tags?: string;
+                    prompt?: string;
+                    model?: string;
                 }>();
 
                 if (!body.data) {
@@ -198,6 +397,22 @@ api.post(
 
                 contentType = body.contentType || "application/octet-stream";
                 fileName = body.name;
+
+                rawTags.push(
+                    ...collectTags(
+                        (key) => {
+                            if (key !== "tag") return [];
+                            if (Array.isArray(body.tag)) return body.tag;
+                            return body.tag ? [body.tag] : [];
+                        },
+                        (key) => {
+                            if (key === "tags") return body.tags ?? null;
+                            return null;
+                        },
+                    ),
+                );
+                rawPrompt = rawPrompt ?? body.prompt ?? null;
+                rawModel = rawModel ?? body.model ?? null;
             } else {
                 fileBuffer = await c.req.arrayBuffer();
 
@@ -209,6 +424,23 @@ api.post(
                 }
 
                 contentType = requestContentType || "application/octet-stream";
+            }
+
+            let metadata: UploadMetadata;
+            try {
+                metadata = validateMetadata(rawTags, rawPrompt, rawModel);
+            } catch (error) {
+                if (error instanceof MetadataValidationError) {
+                    return c.json({ error: error.message }, 400);
+                }
+                throw error;
+            }
+
+            if (authResult.userId === null && hasMetadata(metadata)) {
+                return c.json(
+                    { error: "cataloging requires a user-owned API key" },
+                    400,
+                );
             }
 
             const hash = await generateHash(fileBuffer, fileName);
@@ -229,6 +461,29 @@ api.post(
                 },
             });
 
+            // Catalog write is awaited inline (not waitUntil): a D1 failure
+            // must surface as a 500, not be silently swallowed. Every upload
+            // by a user-owned key is cataloged (personal media library);
+            // keys with no user never catalog — metadata on them was
+            // rejected above, and without one there's no owner to attribute
+            // a row to.
+            let storedTags: string[] | undefined;
+            if (authResult.userId !== null) {
+                const db = getDb(c.env.DB);
+                await upsertUploadCatalogItem(db, {
+                    ownerUserId: authResult.userId,
+                    appKeyId: authResult.byopClientKeyId,
+                    locator: hash,
+                    contentHash: hash,
+                    contentType,
+                    size: fileBuffer.byteLength,
+                    model: metadata.model,
+                    prompt: metadata.prompt,
+                    tags: metadata.tags,
+                });
+                storedTags = metadata.tags;
+            }
+
             console.log(
                 JSON.stringify({
                     event: "upload",
@@ -247,11 +502,141 @@ api.post(
                 contentType,
                 size: fileBuffer.byteLength,
                 duplicate: !!existing,
+                ...(storedTags && storedTags.length > 0
+                    ? { tags: storedTags }
+                    : {}),
             });
         } catch (error) {
             console.error("Upload error:", error);
             return c.json({ error: "Upload failed" }, 500);
         }
+    },
+);
+
+api.get(
+    "/me/media",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "List your cataloged media",
+        description:
+            "List media items owned by the authenticated user, newest first. Optionally filter by tag.",
+        responses: {
+            200: {
+                description: "Page of media items",
+                content: {
+                    "application/json": {
+                        schema: resolver(MediaPageResponseSchema),
+                    },
+                },
+            },
+            400: {
+                description: "Invalid cursor or limit",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            401: {
+                description: "Missing or invalid API key",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            403: {
+                description: "API key is not attached to a user account",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        const apiKey = extractApiKey(c.req.raw);
+        if (!apiKey) {
+            return c.json(
+                {
+                    error: "API key required. Pass via Authorization: Bearer <key> or ?key=<key>",
+                },
+                401,
+            );
+        }
+        const authResult = await verifyApiKey(apiKey);
+        if (!authResult) {
+            return c.json({ error: "Invalid or expired API key" }, 401);
+        }
+        if (authResult.userId === null) {
+            return c.json(
+                { error: "This API key is not attached to a user account" },
+                403,
+            );
+        }
+
+        const url = new URL(c.req.url);
+        const limit = clampLimit(url.searchParams.get("limit"));
+        const cursorParam = url.searchParams.get("cursor");
+        let cursor: { createdAt: Date; id: string } | undefined;
+        if (cursorParam) {
+            try {
+                cursor = decodeCursor(cursorParam);
+            } catch {
+                return c.json({ error: "Invalid cursor" }, 400);
+            }
+        }
+
+        const db = getDb(c.env.DB);
+        const page = await listUserMedia(db, {
+            ownerUserId: authResult.userId,
+            tag: url.searchParams.get("tag") ?? undefined,
+            limit,
+            cursor,
+        });
+
+        return c.json(await toPageResponse(db, page));
+    },
+);
+
+api.get(
+    "/tags/:tag",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "Browse media by tag",
+        description:
+            "Public gallery listing for a tag, newest first. No authentication required.",
+        security: [],
+        responses: {
+            200: {
+                description: "Page of media items",
+                content: {
+                    "application/json": {
+                        schema: resolver(MediaPageResponseSchema),
+                    },
+                },
+            },
+            400: {
+                description: "Invalid cursor or limit",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        const tag = c.req.param("tag");
+        const url = new URL(c.req.url);
+        const limit = clampLimit(url.searchParams.get("limit"));
+        const cursorParam = url.searchParams.get("cursor");
+        let cursor: { createdAt: Date; id: string } | undefined;
+        if (cursorParam) {
+            try {
+                cursor = decodeCursor(cursorParam);
+            } catch {
+                return c.json({ error: "Invalid cursor" }, 400);
+            }
+        }
+
+        const db = getDb(c.env.DB);
+        const page = await listByTag(db, { tag, limit, cursor });
+
+        return c.json(await toPageResponse(db, page));
     },
 );
 
@@ -462,8 +847,11 @@ app.get("/", (c) => {
         service: DOMAIN,
         version: "1.0.0",
         endpoints: {
-            upload: "POST /upload (requires API key)",
+            upload: "POST /upload (requires API key; optional tags/prompt/model)",
             retrieve: "GET /:hash",
+            metadata: "GET /:hash/metadata",
+            myMedia: "GET /me/media (requires user-owned API key)",
+            tagGallery: "GET /tags/:tag (public)",
             docs: "GET /openapi.json",
         },
         limits: {

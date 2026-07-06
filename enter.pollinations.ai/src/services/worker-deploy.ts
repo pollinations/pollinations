@@ -72,11 +72,17 @@ async function cfApi(
 // token to reject direct public callers — the workers.dev URL is public, so
 // without it anyone with the URL could bypass the gateway's billing and, for
 // agents, spend the owner's key.
+//
+// `extraBindings` are additional secret_text bindings injected alongside
+// BEE_AUTH_TOKEN — used by platform-authored templates (e.g. the prompt-agent
+// template) to receive their config (system prompt, base model, owner key, …).
+// User-written source deploys pass none.
 export async function deployCommunityWorker(
     config: WorkerDeployConfig,
     scriptName: string,
     source: string,
     authToken: string,
+    extraBindings: { name: string; text: string }[] = [],
 ): Promise<string> {
     const form = new FormData();
     form.set(
@@ -90,6 +96,11 @@ export async function deployCommunityWorker(
                     name: "BEE_AUTH_TOKEN",
                     text: authToken,
                 },
+                ...extraBindings.map((binding) => ({
+                    type: "secret_text",
+                    name: binding.name,
+                    text: binding.text,
+                })),
             ],
         }),
     );

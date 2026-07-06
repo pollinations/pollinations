@@ -27,6 +27,11 @@ import {
     testCommunityEndpoint,
 } from "../services/community-endpoint-openai.ts";
 import {
+    buildPromptAgentDeploy,
+    PromptAgentSchema,
+    parseStoredPromptAgent,
+} from "../services/prompt-agent.ts";
+import {
     communityWorkerScriptName,
     deleteCommunityWorker,
     deployCommunityWorker,
@@ -106,6 +111,7 @@ const CreateEndpointSchema = z
         ...EndpointFieldsSchema,
         baseUrl: EndpointFieldsSchema.baseUrl.optional(),
         source: SourceSchema.optional(),
+        promptAgent: PromptAgentSchema.optional(),
         kind: KindSchema.optional().default("model"),
         tools: z
             .boolean()
@@ -132,11 +138,15 @@ const CreateEndpointSchema = z
     })
     .refine(
         (input) =>
-            (input.baseUrl === undefined) !== (input.source === undefined),
-        { message: "Provide exactly one of baseUrl or source" },
+            [input.baseUrl, input.source, input.promptAgent].filter(
+                (value) => value !== undefined,
+            ).length === 1,
+        { message: "Provide exactly one of baseUrl, source, or promptAgent" },
     )
     .refine(
-        (input) => input.source !== undefined || Boolean(input.bearerToken),
+        // A bearer token is only meaningful for self-hosted baseUrl endpoints;
+        // source and promptAgent deploys mint and manage their own worker token.
+        (input) => input.baseUrl === undefined || Boolean(input.bearerToken),
         {
             message: "bearerToken is required when registering with baseUrl",
         },
@@ -193,8 +203,11 @@ const CommunityEndpointResponseSchema = z.object({
         .string()
         .nullable()
         .describe(
-            "Worker source for platform-deployed endpoints; null when self-hosted.",
+            "Worker source for platform-deployed endpoints; null when self-hosted or a prompt agent.",
         ),
+    promptAgent: PromptAgentSchema.nullable().describe(
+        "No-code agent config when this endpoint is a prompt agent; null otherwise.",
+    ),
     upstreamModel: z.string(),
     kind: KindSchema,
     tools: z.boolean(),
@@ -290,13 +303,19 @@ async function requireOwnerGithubUsername(
 }
 
 function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
+    // A prompt agent stores its config (and the minted key id) in `source`;
+    // surface the config as `promptAgent` and never expose the raw blob or the
+    // internal key id. Its platform-owned template is not user source, so
+    // `source` reads as null for prompt agents.
+    const storedPromptAgent = parseStoredPromptAgent(row.source);
     return {
         id: row.id,
         modelId: communityModelId(ownerGithubUsername, row.name),
         name: row.name,
         description: row.description,
         baseUrl: row.baseUrl,
-        source: row.source,
+        source: storedPromptAgent ? null : row.source,
+        promptAgent: storedPromptAgent?.promptAgent ?? null,
         upstreamModel: row.upstreamModel,
         kind: row.kind,
         tools: row.tools,
@@ -490,13 +509,25 @@ export const communityEndpointsRoutes = new Hono<Env>()
             );
             await ensureModelNameAvailable(db, user.id, input.name);
             const id = crypto.randomUUID();
-            // For source deploys the stored bearer token IS the worker auth
-            // token: gen sends it to the (public) workers.dev URL and the
-            // worker checks it, so direct callers without it are rejected.
-            // The caller's own bearerToken is ignored in this mode.
-            const deployConfig =
-                input.source !== undefined
-                    ? requireWorkerDeployConfig(c.env)
+            // Source and promptAgent both deploy a Pollinations-managed worker:
+            // the stored bearer token IS the generated worker auth token that
+            // gen sends to the (public) workers.dev URL, so direct callers
+            // without it are rejected. A prompt agent additionally deploys the
+            // fixed template with the owner's config injected as bindings.
+            const isManagedDeploy =
+                input.source !== undefined || input.promptAgent !== undefined;
+            const deployConfig = isManagedDeploy
+                ? requireWorkerDeployConfig(c.env)
+                : null;
+            const promptAgentDeploy =
+                deployConfig && input.promptAgent !== undefined
+                    ? await buildPromptAgentDeploy({
+                          authClient: c.var.auth.client,
+                          dbBinding: c.env.DB,
+                          userId: user.id,
+                          agentName: input.name,
+                          config: input.promptAgent,
+                      })
                     : null;
             const workerAuthToken = deployConfig
                 ? crypto.randomUUID().replaceAll("-", "")
@@ -505,14 +536,26 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 ? await deployCommunityWorker(
                       deployConfig,
                       communityWorkerScriptName(id),
-                      input.source as string,
+                      promptAgentDeploy?.source ?? (input.source as string),
                       workerAuthToken as string,
+                      promptAgentDeploy?.extraBindings,
                   )
                 : normalizeInputBaseUrl(input.baseUrl ?? "");
             // Guaranteed present in baseUrl mode by CreateEndpointSchema.
             const bearerToken =
                 workerAuthToken ??
                 normalizeInputBearerToken(input.bearerToken ?? "");
+            // Prompt agents default to the agent kind; source/baseUrl keep the
+            // caller's choice (which itself defaults to "model").
+            const kind =
+                input.promptAgent !== undefined && input.kind === "model"
+                    ? "agent"
+                    : input.kind;
+            // Prompt agents store their structured config (+ minted key id) in
+            // the source column; source deploys store the raw worker source.
+            const storedSource = promptAgentDeploy
+                ? promptAgentDeploy.storedSource
+                : (input.source ?? null);
             try {
                 const [row] = await db
                     .insert(schema.communityEndpoint)
@@ -522,13 +565,13 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         name: input.name,
                         description: input.description || null,
                         baseUrl,
-                        source: input.source ?? null,
+                        source: storedSource,
                         upstreamModel: input.upstreamModel ?? input.name,
                         bearerTokenCiphertext: await encryptSecret(
                             bearerToken,
                             c.env.BETTER_AUTH_SECRET,
                         ),
-                        kind: input.kind,
+                        kind,
                         tools: input.tools,
                         search: input.search,
                         reasoning: input.reasoning,
@@ -541,12 +584,18 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 return c.json(toResponse(row, ownerGithubUsername));
             } catch (error) {
                 // The worker is live but the row failed — remove the orphan so
-                // there's no callable script without a backing endpoint.
+                // there's no callable script without a backing endpoint, and
+                // revoke the prompt agent's minted key.
                 if (deployConfig) {
                     await deleteCommunityWorker(
                         deployConfig,
                         communityWorkerScriptName(id),
                     );
+                }
+                if (promptAgentDeploy) {
+                    await db
+                        .delete(schema.apikey)
+                        .where(eq(schema.apikey.id, promptAgentDeploy.keyId));
                 }
                 throw error;
             }
@@ -702,6 +751,12 @@ export const communityEndpointsRoutes = new Hono<Env>()
             > = {
                 updatedAt: new Date(),
             };
+            // Switching a prompt agent to a baseUrl or source endpoint retires
+            // its worker (below) and must also revoke its minted owner key so
+            // it can no longer spend.
+            const previousPromptAgent = parseStoredPromptAgent(endpoint.source);
+            const switchingAway =
+                input.baseUrl !== undefined || input.source !== undefined;
             if (input.name !== undefined) update.name = input.name;
             if (input.description !== undefined) {
                 update.description = input.description || null;
@@ -720,7 +775,8 @@ export const communityEndpointsRoutes = new Hono<Env>()
             }
             if (input.source !== undefined) {
                 // Redeploy the same id-keyed script with a fresh auth token;
-                // the token becomes the stored bearer token gen sends.
+                // the token becomes the stored bearer token gen sends. A prompt
+                // agent's template bindings are dropped by this overwrite.
                 const deployConfig = requireWorkerDeployConfig(c.env);
                 const workerAuthToken = crypto.randomUUID().replaceAll("-", "");
                 update.baseUrl = await deployCommunityWorker(
@@ -768,6 +824,13 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     ),
                 )
                 .returning();
+            // Revoke the old prompt agent's minted key after the row no longer
+            // references it (the worker was already retired above).
+            if (previousPromptAgent && switchingAway) {
+                await db
+                    .delete(schema.apikey)
+                    .where(eq(schema.apikey.id, previousPromptAgent.keyId));
+            }
             return c.json(toResponse(row, ownerGithubUsername));
         },
     )
@@ -812,6 +875,14 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     requireWorkerDeployConfig(c.env),
                     communityWorkerScriptName(endpoint.id),
                 );
+            }
+            // Prompt agents mint a dedicated owner key injected into the worker;
+            // remove it so it can no longer spend once the agent is gone.
+            const storedPromptAgent = parseStoredPromptAgent(endpoint.source);
+            if (storedPromptAgent) {
+                await db
+                    .delete(schema.apikey)
+                    .where(eq(schema.apikey.id, storedPromptAgent.keyId));
             }
             await db
                 .delete(schema.communityEndpoint)

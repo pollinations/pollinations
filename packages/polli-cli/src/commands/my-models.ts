@@ -119,6 +119,19 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
         }
     }
 
+    if (opts.promptAgent !== undefined) {
+        try {
+            body.promptAgent = JSON.parse(
+                readFileSync(String(opts.promptAgent), "utf8"),
+            );
+        } catch (err) {
+            printError(
+                `Failed to read/parse --prompt-agent JSON file: ${err instanceof Error ? err.message : "unknown"}`,
+            );
+            process.exit(1);
+        }
+    }
+
     if (opts.kind !== undefined) {
         if (opts.kind !== "model" && opts.kind !== "agent") {
             printError("--kind must be 'model' or 'agent'");
@@ -149,16 +162,23 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
     }
 
     if (includeRequired) {
-        for (const required of ["name", "bearerToken"]) {
-            if (!body[required]) {
-                printError(
-                    `--${required.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)} is required`,
-                );
-                process.exit(1);
-            }
+        if (!body.name) {
+            printError("--name is required");
+            process.exit(1);
         }
-        if (!body.baseUrl === !body.source) {
-            printError("Provide exactly one of --base-url or --source");
+        const modeCount = [body.baseUrl, body.source, body.promptAgent].filter(
+            (value) => value !== undefined,
+        ).length;
+        if (modeCount !== 1) {
+            printError(
+                "Provide exactly one of --base-url, --source, or --prompt-agent",
+            );
+            process.exit(1);
+        }
+        // A bearer token is only meaningful for a self-hosted --base-url
+        // endpoint; source and prompt-agent deploys mint their own.
+        if (body.baseUrl !== undefined && !body.bearerToken) {
+            printError("--bearer-token is required with --base-url");
             process.exit(1);
         }
     }
@@ -212,8 +232,12 @@ const create = addPriceOptions(
                 "--source <file>",
                 "Worker source file to deploy as a hosted endpoint (instead of --base-url)",
             )
+            .option(
+                "--prompt-agent <file>",
+                "JSON config file for a no-code prompt agent: { systemPrompt, baseModel, tools?, mcpServers? }",
+            )
             .option("--upstream-model <model>", "Upstream model id")
-            .requiredOption("--bearer-token <token>", "Upstream bearer token"),
+            .option("--bearer-token <token>", "Upstream bearer token"),
     ),
 ).action(async (opts) => {
     const key = requireKey();

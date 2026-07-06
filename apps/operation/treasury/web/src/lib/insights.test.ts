@@ -10,8 +10,10 @@ import {
     breakEvenMultiplier,
     CATEGORY_ORDER,
     categoryColumns,
+    ecosystemTotals,
     globalNetRatio,
     insightVendorOptions,
+    modelEconomics,
     monthlyRevenue,
     monthSpendDetail,
     opexIncompleteFrom,
@@ -408,5 +410,143 @@ describe("insightVendorOptions", () => {
             "google",
             "ovhcloud",
         ]);
+    });
+});
+
+describe("modelEconomics", () => {
+    const data = emptyData({
+        meterMonthly: [
+            meter({
+                month: "2026-06",
+                vendor: "google",
+                currency: "USD",
+                credit: 0,
+                paid: 5000,
+            }),
+        ],
+        transactions: [
+            txn({
+                date: "2026-06-10",
+                vendor: "elevenlabs",
+                category: "compute",
+                paid_amount: 300,
+                paid_currency: "USD",
+            }),
+        ],
+        usageMonthly: [
+            usage({
+                vendor: "google",
+                model: "gemini-a",
+                cost_paid: 600,
+                cost_quests: 200,
+                price_paid: 900,
+                price_quests: 250,
+                byop_paid: 50,
+                model_paid: 100,
+                byop_quests: 5,
+            }),
+            usage({
+                vendor: "google",
+                model: "gemini-b",
+                cost_paid: 100,
+                cost_quests: 100,
+                price_paid: 100,
+                price_quests: 90,
+            }),
+            usage({
+                vendor: "elevenlabs",
+                model: "eleven-v3",
+                cost_paid: 200,
+                cost_quests: 0,
+                price_paid: 260,
+                price_quests: 0,
+            }),
+            usage({
+                vendor: "azure",
+                model: "gpt-x",
+                cost_paid: 50,
+                cost_quests: 50,
+                price_paid: 40,
+                price_quests: 45,
+            }),
+        ],
+    });
+
+    it("allocates vendor actuals by registered-cost share and margins on retained", () => {
+        const rows = modelEconomics(data, "2026-06", 0.9);
+        const geminiA = rows.find((row) => row.model === "gemini-a");
+        if (!geminiA) throw new Error("gemini-a missing");
+
+        expect(geminiA.basis).toBe("meter");
+        expect(geminiA.registeredCostUsd).toBe(800);
+        expect(geminiA.sharePct).toBeCloseTo(80, 5); // 800 of google's 1000
+        expect(geminiA.trueCostUsd).toBeCloseTo(4000, 5); // 5000 × 0.8
+        expect(geminiA.grossPaidUsd).toBe(900);
+        expect(geminiA.ecoPaidUsd).toBe(150); // 50 byop + 100 model, paid side
+        expect(geminiA.retainedPaidUsd).toBe(750);
+        expect(geminiA.grossQuestsUsd).toBe(250);
+        expect(geminiA.marginUsd).toBeCloseTo(750 * 0.9 - 4000, 5);
+        expect(geminiA.effectiveMultiplier).toBeCloseTo(1.5, 5); // gross 900/600
+    });
+
+    it("falls back to cash then registered bases", () => {
+        const rows = modelEconomics(data, "2026-06", null);
+        const eleven = rows.find((row) => row.vendor === "elevenlabs");
+        const azure = rows.find((row) => row.vendor === "azure");
+        if (!eleven || !azure) throw new Error("rows missing");
+
+        expect(eleven.basis).toBe("cash");
+        expect(eleven.trueCostUsd).toBeCloseTo(300, 5);
+        expect(azure.basis).toBe("registered");
+        expect(azure.trueCostUsd).toBeCloseTo(100, 5);
+        expect(azure.effectiveMultiplier).toBeCloseTo(0.8, 5); // 40/50
+    });
+
+    it("sorts worst margin first and respects the month filter", () => {
+        const rows = modelEconomics(data, "2026-06", null);
+        const margins = rows.map((row) => row.marginUsd);
+        expect([...margins].sort((a, b) => a - b)).toEqual(margins);
+        expect(modelEconomics(data, "2026-05", null)).toEqual([]);
+    });
+
+    it("reports a null multiplier for quest-only models", () => {
+        const questOnly = emptyData({
+            usageMonthly: [
+                usage({
+                    vendor: "aws",
+                    model: "free",
+                    cost_paid: 0,
+                    cost_quests: 10,
+                    price_paid: 0,
+                    price_quests: 12,
+                }),
+            ],
+        });
+        const [row] = modelEconomics(questOnly, "", null);
+        expect(row.effectiveMultiplier).toBeNull();
+        expect(row.basis).toBe("registered");
+    });
+});
+
+describe("ecosystemTotals", () => {
+    it("sums byop and model credits across paid and quests meters in scope", () => {
+        const rows = [
+            usage({
+                month: "2026-06",
+                byop_paid: 50,
+                byop_quests: 5,
+                model_paid: 100,
+                model_quests: 8,
+            }),
+            usage({ month: "2026-05", byop_paid: 999 }),
+        ];
+        expect(ecosystemTotals(rows, "2026-06")).toEqual({
+            byopUsd: 55,
+            modelUsd: 108,
+        });
+        expect(ecosystemTotals(rows, "")).toEqual({
+            byopUsd: 1054,
+            modelUsd: 108,
+        });
     });
 });

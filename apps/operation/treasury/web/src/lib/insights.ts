@@ -1,5 +1,11 @@
-import type { Data, RevenueMonthlyRow, TransactionRow } from "../types";
+import type {
+    Data,
+    RevenueMonthlyRow,
+    TransactionRow,
+    UsageMonthlyRow,
+} from "../types";
 import { toUsd } from "./fx";
+import { matchesMonth } from "./months";
 
 // ---------------------------------------------------------------- revenue
 
@@ -312,4 +318,159 @@ export function insightVendorOptions(data: Data): string[] {
         if (row.vendor.trim()) vendors.add(row.vendor.trim());
     }
     return ["all", ...[...vendors].sort((a, b) => a.localeCompare(b))];
+}
+
+// ------------------------------------------------------- model economics
+
+export type CostBasis = "meter" | "cash" | "registered";
+
+export type ModelEconomics = {
+    vendor: string;
+    model: string;
+    grossPaidUsd: number;
+    ecoPaidUsd: number;
+    retainedPaidUsd: number;
+    grossQuestsUsd: number;
+    registeredCostUsd: number;
+    sharePct: number;
+    basis: CostBasis;
+    trueCostUsd: number;
+    marginUsd: number;
+    effectiveMultiplier: number | null;
+};
+
+// True model cost = the vendor's actual spend allocated by each model's share
+// of the vendor's registered (metered) cost. Actual waterfall: vendor meter,
+// else compute cash, else the registered cost itself. Margin is earned on
+// RETAINED pollen — gross minus the byop/model shares we credit onward.
+export function modelEconomics(
+    data: Data,
+    monthFilter: string,
+    netRatio: number | null,
+): ModelEconomics[] {
+    const ratio = netRatio ?? 1;
+
+    const spentByVendor = new Map<string, number>();
+    for (const row of data.meterMonthly) {
+        if (!matchesMonth(row.month, monthFilter)) continue;
+        spentByVendor.set(
+            row.vendor,
+            (spentByVendor.get(row.vendor) ?? 0) +
+                toUsd(row.credit + row.paid, row.currency, row.month),
+        );
+    }
+
+    const cashByVendor = new Map<string, number>();
+    for (const row of data.transactions) {
+        if (row.category !== "compute") continue;
+        if (!matchesMonth(row.date, monthFilter)) continue;
+        cashByVendor.set(
+            row.vendor,
+            (cashByVendor.get(row.vendor) ?? 0) + transactionCashUsd(row),
+        );
+    }
+
+    type Accumulator = {
+        vendor: string;
+        model: string;
+        registered: number;
+        costPaid: number;
+        grossPaid: number;
+        ecoPaid: number;
+        quest: number;
+    };
+    const byModel = new Map<string, Accumulator>();
+    const registeredByVendor = new Map<string, number>();
+    for (const row of data.usageMonthly) {
+        if (!matchesMonth(row.month, monthFilter)) continue;
+        const key = `${row.vendor}|${row.model}`;
+        const entry = byModel.get(key) ?? {
+            vendor: row.vendor,
+            model: row.model,
+            registered: 0,
+            costPaid: 0,
+            grossPaid: 0,
+            ecoPaid: 0,
+            quest: 0,
+        };
+        const registered = toUsd(
+            row.cost_paid + row.cost_quests,
+            row.currency,
+            row.month,
+        );
+        entry.registered += registered;
+        entry.costPaid += toUsd(row.cost_paid, row.currency, row.month);
+        entry.grossPaid += toUsd(row.price_paid, row.currency, row.month);
+        entry.ecoPaid += toUsd(
+            row.byop_paid + row.model_paid,
+            row.currency,
+            row.month,
+        );
+        entry.quest += toUsd(row.price_quests, row.currency, row.month);
+        byModel.set(key, entry);
+        registeredByVendor.set(
+            row.vendor,
+            (registeredByVendor.get(row.vendor) ?? 0) + registered,
+        );
+    }
+
+    return [...byModel.values()]
+        .map((entry) => {
+            const registeredTotal = registeredByVendor.get(entry.vendor) ?? 0;
+            const share =
+                registeredTotal > 0 ? entry.registered / registeredTotal : 0;
+            const basis: CostBasis = spentByVendor.has(entry.vendor)
+                ? "meter"
+                : cashByVendor.has(entry.vendor)
+                  ? "cash"
+                  : "registered";
+            const vendorActual =
+                basis === "meter"
+                    ? (spentByVendor.get(entry.vendor) ?? 0)
+                    : basis === "cash"
+                      ? (cashByVendor.get(entry.vendor) ?? 0)
+                      : registeredTotal;
+            const trueCostUsd = vendorActual * share;
+            const retainedPaidUsd = entry.grossPaid - entry.ecoPaid;
+            return {
+                vendor: entry.vendor,
+                model: entry.model,
+                grossPaidUsd: entry.grossPaid,
+                ecoPaidUsd: entry.ecoPaid,
+                retainedPaidUsd,
+                grossQuestsUsd: entry.quest,
+                registeredCostUsd: entry.registered,
+                sharePct: share * 100,
+                basis,
+                trueCostUsd,
+                marginUsd: retainedPaidUsd * ratio - trueCostUsd,
+                effectiveMultiplier:
+                    entry.costPaid > 0
+                        ? entry.grossPaid / entry.costPaid
+                        : null,
+            };
+        })
+        .sort((a, b) => a.marginUsd - b.marginUsd);
+}
+
+export type EcosystemTotals = { byopUsd: number; modelUsd: number };
+
+// Product-adoption signal: everything credited onward to app developers
+// (byop) and community model owners (model), across BOTH meters, in scope.
+export function ecosystemTotals(
+    rows: UsageMonthlyRow[],
+    monthFilter: string,
+): EcosystemTotals {
+    let byop = 0;
+    let model = 0;
+    for (const row of rows) {
+        if (!matchesMonth(row.month, monthFilter)) continue;
+        byop += toUsd(row.byop_paid + row.byop_quests, row.currency, row.month);
+        model += toUsd(
+            row.model_paid + row.model_quests,
+            row.currency,
+            row.month,
+        );
+    }
+    return { byopUsd: byop, modelUsd: model };
 }

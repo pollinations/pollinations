@@ -33,6 +33,7 @@ const BASE_ENV = {
     TOOLS_JSON: JSON.stringify(["web_search"]),
     MCP_JSON: "[]",
     POLLINATIONS_KEY: "sk_test",
+    GEN_BASE_URL: "https://gen.test.example",
     BEE_AUTH_TOKEN: "secret-token",
 };
 
@@ -118,6 +119,15 @@ describe("prompt-agent template", () => {
         // web_search ran once and its usage summed into the total.
         expect(json.usage.tool_call_counts).toEqual({ web_search: 1 });
         expect(json.usage.prompt_tokens).toBeGreaterThan(10);
+        // Calls the injected gateway (the minted key is only valid there), not
+        // the hardcoded production origin.
+        for (const call of fetchMock.mock.calls) {
+            const url =
+                typeof call[0] === "string"
+                    ? call[0]
+                    : (call[0] as Request).url;
+            expect(url.startsWith("https://gen.test.example")).toBe(true);
+        }
     });
 
     it("streams SSE with usage on the final chunk when stream:true", async () => {

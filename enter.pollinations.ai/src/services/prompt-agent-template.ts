@@ -21,9 +21,17 @@
 //   TOOLS_JSON       JSON array of built-in tool names, e.g. ["web_search","image"]
 //   MCP_JSON         JSON array of { name, url, auth? } MCP servers
 //   POLLINATIONS_KEY owner sk_ key used for every internal gen/image/model call
+//   GEN_BASE_URL     the gateway origin the key is valid against (env-specific:
+//                    prod uses gen.pollinations.ai, staging its own gen). The
+//                    minted key only works against the env that issued it, so
+//                    this MUST match — a prod URL with a staging key 401s.
 //   BEE_AUTH_TOKEN   shared token the community proxy sends; blocks direct callers
 export const PROMPT_AGENT_TEMPLATE_SOURCE = String.raw`
-const GEN = "https://gen.pollinations.ai";
+// The gateway origin the owner key is valid against, injected per environment.
+// Falls back to production if the binding is unset.
+function genBase(env) {
+    return env.GEN_BASE_URL || "https://gen.pollinations.ai";
+}
 // An agentic-step ceiling, NOT a retry/timeout: each fetch below is one-shot and
 // throws on error. This only bounds how many tool rounds one request may take so
 // a looping model can't run up unbounded cost on the owner's key.
@@ -35,6 +43,7 @@ const MAX_TOOL_ROUNDS = 8;
 function builtinTools(env) {
     const key = env.POLLINATIONS_KEY;
     const authHeader = { authorization: "Bearer " + key };
+    const GEN = genBase(env);
     return {
         web_search: {
             schema: {
@@ -232,7 +241,7 @@ function addUsage(usage, part) {
 async function callModel(env, model, messages, toolSchemas) {
     const body = { model, messages };
     if (toolSchemas.length > 0) body.tools = toolSchemas;
-    const res = await fetch(GEN + "/v1/chat/completions", {
+    const res = await fetch(genBase(env) + "/v1/chat/completions", {
         method: "POST",
         headers: {
             "content-type": "application/json",

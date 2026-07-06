@@ -527,6 +527,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
                           userId: user.id,
                           agentName: input.name,
                           config: input.promptAgent,
+                          genBaseUrl:
+                              (c.env as { GEN_BASE_URL?: string })
+                                  .GEN_BASE_URL ??
+                              "https://gen.pollinations.ai",
                       })
                     : null;
             const workerAuthToken = deployConfig

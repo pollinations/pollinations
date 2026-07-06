@@ -1918,6 +1918,7 @@ fixtureTest(
             "TOOLS_JSON",
             "MCP_JSON",
             "POLLINATIONS_KEY",
+            "GEN_BASE_URL",
         ]) {
             expect(bindingByName[name]).toMatchObject({ type: "secret_text" });
         }

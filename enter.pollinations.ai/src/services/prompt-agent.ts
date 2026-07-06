@@ -105,6 +105,9 @@ export async function buildPromptAgentDeploy(input: {
     userId: string;
     agentName: string;
     config: PromptAgentConfig;
+    // The gateway origin the minted key is valid against (this environment's
+    // gen). Injected so a staging-minted key calls staging gen, not prod.
+    genBaseUrl: string;
 }): Promise<{
     source: string;
     storedSource: string;
@@ -123,6 +126,7 @@ export async function buildPromptAgentDeploy(input: {
         { name: "TOOLS_JSON", text: JSON.stringify(input.config.tools) },
         { name: "MCP_JSON", text: JSON.stringify(input.config.mcpServers) },
         { name: "POLLINATIONS_KEY", text: key },
+        { name: "GEN_BASE_URL", text: input.genBaseUrl },
     ];
     return {
         source: PROMPT_AGENT_TEMPLATE_SOURCE,

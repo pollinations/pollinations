@@ -85,9 +85,10 @@ async function createEnterFrontendApi(): Promise<Hono<Env>> {
 async function fetchEnterApi(
     app: Hono<Env>,
     request: Request,
+    envOverride: typeof env = env,
 ): Promise<Response> {
     const ctx = createExecutionContext();
-    return app.fetch(request, env, ctx);
+    return app.fetch(request, envOverride, ctx);
 }
 
 async function signedSessionCookie(token: string): Promise<string> {
@@ -1555,3 +1556,189 @@ fixtureTest("rejects a community model name containing a slash", async () => {
 
     expect(response.status).toBe(400);
 });
+
+fixtureTest(
+    "rejects community registration unless exactly one of baseUrl or source is provided",
+    async () => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        const sessionToken = `session-${crypto.randomUUID()}`;
+        await db.insert(sessionTable).values({
+            id: `session-${crypto.randomUUID()}`,
+            token: sessionToken,
+            userId: ownerUserId,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const enterApi = await createEnterCommunityApi();
+        const cookie = await signedSessionCookie(sessionToken);
+        const register = (body: Record<string, unknown>) =>
+            fetchEnterApi(
+                enterApi,
+                new Request("http://localhost:3000/api/community-endpoints", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: cookie,
+                    },
+                    body: JSON.stringify({
+                        name: `bee-${crypto.randomUUID().slice(0, 8)}`,
+                        bearerToken: "sk_saved_token",
+                        ...body,
+                    }),
+                }),
+            );
+
+        const both = await register({
+            baseUrl: "https://api.example.com/v1",
+            source: "export default { fetch: () => new Response('ok') };",
+        });
+        expect(both.status).toBe(400);
+
+        const neither = await register({});
+        expect(neither.status).toBe(400);
+    },
+);
+
+fixtureTest(
+    "deploys worker source on registration and redeploys on update",
+    async () => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `bee-${crypto.randomUUID().slice(0, 8)}`;
+        const scriptName = `bee-${ownerGithubUsername}-${modelName}`;
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        const sessionToken = `session-${crypto.randomUUID()}`;
+        await db.insert(sessionTable).values({
+            id: `session-${crypto.randomUUID()}`,
+            token: sessionToken,
+            userId: ownerUserId,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const cfRequests: Request[] = [];
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            const url = new URL(request.url);
+            if (url.hostname !== "api.cloudflare.com") {
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }
+            expect(request.headers.get("authorization")).toBe(
+                "Bearer cf-deploy-token",
+            );
+            cfRequests.push(request.clone() as Request);
+            if (
+                request.method === "GET" &&
+                url.pathname.endsWith("/workers/subdomain")
+            ) {
+                return Response.json({
+                    success: true,
+                    result: { subdomain: "staging-sub" },
+                });
+            }
+            return Response.json({ success: true, result: {} });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const deployEnv = {
+            ...env,
+            CF_WORKER_DEPLOY_ACCOUNT_ID: "cf-account",
+            CF_WORKER_DEPLOY_API_TOKEN: "cf-deploy-token",
+        };
+        const enterApi = await createEnterCommunityApi();
+        const cookie = await signedSessionCookie(sessionToken);
+        const source =
+            "export default { fetch: () => Response.json({ ok: true }) };";
+        const createResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: cookie,
+                },
+                body: JSON.stringify({
+                    name: modelName,
+                    source,
+                    bearerToken: "sk_saved_token",
+                    promptTextPrice: 0.1,
+                    completionTextPrice: 0.1,
+                }),
+            }),
+            deployEnv,
+        );
+        expect(createResponse.status).toBe(200);
+        const created = (await createResponse.json()) as {
+            id: string;
+            baseUrl: string;
+            source: string;
+        };
+        expect(created).toMatchObject({
+            baseUrl: `https://${scriptName}.staging-sub.workers.dev/v1`,
+            source,
+        });
+
+        const putRequest = cfRequests.find(
+            (request) => request.method === "PUT",
+        );
+        if (!putRequest) throw new Error("No worker upload PUT captured");
+        expect(new URL(putRequest.url).pathname).toBe(
+            `/client/v4/accounts/cf-account/workers/scripts/${scriptName}`,
+        );
+        const form = await putRequest.formData();
+        expect(JSON.parse(String(form.get("metadata")))).toMatchObject({
+            main_module: "index.mjs",
+        });
+        await expect((form.get("index.mjs") as File).text()).resolves.toBe(
+            source,
+        );
+
+        const subdomainEnable = cfRequests.find(
+            (request) =>
+                request.method === "POST" &&
+                new URL(request.url).pathname.endsWith(
+                    `/workers/scripts/${scriptName}/subdomain`,
+                ),
+        );
+        if (!subdomainEnable) throw new Error("No subdomain enable captured");
+        await expect(subdomainEnable.json()).resolves.toEqual({
+            enabled: true,
+        });
+
+        cfRequests.length = 0;
+        const updatedSource =
+            "export default { fetch: () => Response.json({ ok: 2 }) };";
+        const updateResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/community-endpoints/${created.id}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: cookie,
+                    },
+                    body: JSON.stringify({ source: updatedSource }),
+                },
+            ),
+            deployEnv,
+        );
+        expect(updateResponse.status).toBe(200);
+        await expect(updateResponse.json()).resolves.toMatchObject({
+            baseUrl: `https://${scriptName}.staging-sub.workers.dev/v1`,
+            source: updatedSource,
+        });
+        expect(
+            cfRequests.filter((request) => request.method === "PUT"),
+        ).toHaveLength(1);
+    },
+);

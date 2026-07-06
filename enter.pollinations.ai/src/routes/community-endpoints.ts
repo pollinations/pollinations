@@ -26,6 +26,11 @@ import {
     listCommunityEndpointModels,
     testCommunityEndpoint,
 } from "../services/community-endpoint-openai.ts";
+import {
+    communityWorkerScriptName,
+    deployCommunityWorker,
+    requireWorkerDeployConfig,
+} from "../services/worker-deploy.ts";
 import { hasDirectAccountPermission } from "./account-permissions.ts";
 
 const PriceSchema = z.number().finite().min(0);
@@ -69,6 +74,12 @@ const ToolPricesSchema = z
     .describe(
         "Per-call tool fees, keyed by tool name (e.g. web_search). Each request is billed `fee × usage.tool_call_counts.<name>` as reported by the endpoint in its response usage object (on the final usage-bearing event for streams). On update the map is replaced whole; send {} to clear.",
     );
+const SourceSchema = z
+    .string()
+    .min(1)
+    .describe(
+        "Single-ES-module JavaScript worker source exposing an OpenAI-compatible API (POST /v1/chat/completions). Deployed to a Pollinations-managed Cloudflare Worker and the model's baseUrl is set to its workers.dev URL. Mutually exclusive with baseUrl.",
+    );
 const EndpointFieldsSchema = {
     // No "/": the public model id is `<owner>/<name>`, so a slash in the name
     // would inject a second separator and let one model spoof another's id.
@@ -84,49 +95,67 @@ const EndpointFieldsSchema = {
     bearerToken: z.string().min(1),
 } as const;
 
-const CreateEndpointSchema = z.object({
-    ...EndpointFieldsSchema,
-    kind: KindSchema.optional().default("model"),
-    tools: z
-        .boolean()
-        .optional()
-        .default(false)
-        .describe("Declares tool/function-calling support (metadata only)."),
-    search: z
-        .boolean()
-        .optional()
-        .default(false)
-        .describe("Declares web-search capability (metadata only)."),
-    reasoning: z
-        .boolean()
-        .optional()
-        .default(false)
-        .describe("Declares reasoning/thinking support (metadata only)."),
-    toolPrices: ToolPricesSchema.optional(),
-    ...CreatePriceFieldsSchema,
-});
-const UpdateEndpointSchema = z.object({
-    name: EndpointFieldsSchema.name.optional(),
-    description: EndpointFieldsSchema.description,
-    baseUrl: EndpointFieldsSchema.baseUrl.optional(),
-    upstreamModel: EndpointFieldsSchema.upstreamModel,
-    bearerToken: EndpointFieldsSchema.bearerToken.optional(),
-    kind: KindSchema.optional(),
-    tools: z
-        .boolean()
-        .optional()
-        .describe("Declares tool/function-calling support (metadata only)."),
-    search: z
-        .boolean()
-        .optional()
-        .describe("Declares web-search capability (metadata only)."),
-    reasoning: z
-        .boolean()
-        .optional()
-        .describe("Declares reasoning/thinking support (metadata only)."),
-    toolPrices: ToolPricesSchema.optional(),
-    ...UpdatePriceFieldsSchema,
-});
+const CreateEndpointSchema = z
+    .object({
+        ...EndpointFieldsSchema,
+        baseUrl: EndpointFieldsSchema.baseUrl.optional(),
+        source: SourceSchema.optional(),
+        kind: KindSchema.optional().default("model"),
+        tools: z
+            .boolean()
+            .optional()
+            .default(false)
+            .describe(
+                "Declares tool/function-calling support (metadata only).",
+            ),
+        search: z
+            .boolean()
+            .optional()
+            .default(false)
+            .describe("Declares web-search capability (metadata only)."),
+        reasoning: z
+            .boolean()
+            .optional()
+            .default(false)
+            .describe("Declares reasoning/thinking support (metadata only)."),
+        toolPrices: ToolPricesSchema.optional(),
+        ...CreatePriceFieldsSchema,
+    })
+    .refine(
+        (input) =>
+            (input.baseUrl === undefined) !== (input.source === undefined),
+        { message: "Provide exactly one of baseUrl or source" },
+    );
+const UpdateEndpointSchema = z
+    .object({
+        name: EndpointFieldsSchema.name.optional(),
+        description: EndpointFieldsSchema.description,
+        baseUrl: EndpointFieldsSchema.baseUrl.optional(),
+        source: SourceSchema.optional(),
+        upstreamModel: EndpointFieldsSchema.upstreamModel,
+        bearerToken: EndpointFieldsSchema.bearerToken.optional(),
+        kind: KindSchema.optional(),
+        tools: z
+            .boolean()
+            .optional()
+            .describe(
+                "Declares tool/function-calling support (metadata only).",
+            ),
+        search: z
+            .boolean()
+            .optional()
+            .describe("Declares web-search capability (metadata only)."),
+        reasoning: z
+            .boolean()
+            .optional()
+            .describe("Declares reasoning/thinking support (metadata only)."),
+        toolPrices: ToolPricesSchema.optional(),
+        ...UpdatePriceFieldsSchema,
+    })
+    .refine(
+        (input) => input.baseUrl === undefined || input.source === undefined,
+        { message: "Provide only one of baseUrl or source" },
+    );
 const ModelListSchema = z.object({
     baseUrl: z.string().url(),
     bearerToken: z.string().min(1),
@@ -145,6 +174,12 @@ const CommunityEndpointResponseSchema = z.object({
     name: z.string(),
     description: z.string().nullable(),
     baseUrl: z.string(),
+    source: z
+        .string()
+        .nullable()
+        .describe(
+            "Worker source for platform-deployed endpoints; null when self-hosted.",
+        ),
     upstreamModel: z.string(),
     kind: KindSchema,
     tools: z.boolean(),
@@ -246,6 +281,7 @@ function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
         name: row.name,
         description: row.description,
         baseUrl: row.baseUrl,
+        source: row.source,
         upstreamModel: row.upstreamModel,
         kind: row.kind,
         tools: row.tools,
@@ -408,7 +444,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Create My Model",
             description:
-                'Register an invite-only community text model or agent. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`. The upstream bearer token is encrypted and never returned. Callers are billed your declared per-token prices plus any `toolPrices` fees; to charge tool fees the endpoint reports per-tool call counts in `usage.tool_call_counts` (e.g. `{"web_search": 2}`) on its response — for streams, on the final usage-bearing event.',
+                'Register an invite-only community text model or agent. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`. The upstream bearer token is encrypted and never returned. Callers are billed your declared per-token prices plus any `toolPrices` fees; to charge tool fees the endpoint reports per-tool call counts in `usage.tool_call_counts` (e.g. `{"web_search": 2}`) on its response — for streams, on the final usage-bearing event. Provide exactly one of `baseUrl` (self-hosted endpoint) or `source` (worker source deployed to a Pollinations-managed Cloudflare Worker; `baseUrl` is set to the deployed URL).',
             responses: {
                 200: {
                     description: "Created community text model",
@@ -438,6 +474,17 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 user.id,
             );
             await ensureModelNameAvailable(db, user.id, input.name);
+            const baseUrl =
+                input.source !== undefined
+                    ? await deployCommunityWorker(
+                          requireWorkerDeployConfig(c.env),
+                          communityWorkerScriptName(
+                              ownerGithubUsername,
+                              input.name,
+                          ),
+                          input.source,
+                      )
+                    : normalizeInputBaseUrl(input.baseUrl ?? "");
             const id = crypto.randomUUID();
             const [row] = await db
                 .insert(schema.communityEndpoint)
@@ -446,7 +493,8 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     ownerUserId: user.id,
                     name: input.name,
                     description: input.description || null,
-                    baseUrl: normalizeInputBaseUrl(input.baseUrl),
+                    baseUrl,
+                    source: input.source ?? null,
                     upstreamModel: input.upstreamModel ?? input.name,
                     bearerTokenCiphertext: await encryptSecret(
                         normalizeInputBearerToken(input.bearerToken),
@@ -620,7 +668,20 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 update.description = input.description || null;
             }
             if (input.baseUrl !== undefined) {
+                // Switching to a self-hosted URL retires the deployed source.
                 update.baseUrl = normalizeInputBaseUrl(input.baseUrl);
+                update.source = null;
+            }
+            if (input.source !== undefined) {
+                update.baseUrl = await deployCommunityWorker(
+                    requireWorkerDeployConfig(c.env),
+                    communityWorkerScriptName(
+                        ownerGithubUsername,
+                        input.name ?? endpoint.name,
+                    ),
+                    input.source,
+                );
+                update.source = input.source;
             }
             if (input.upstreamModel !== undefined) {
                 update.upstreamModel = input.upstreamModel;

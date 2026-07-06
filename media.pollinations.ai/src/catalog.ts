@@ -330,26 +330,35 @@ export async function tagsForItems(
     return byItem;
 }
 
-/** Fetch a single catalog item by id, or null if it doesn't exist. */
-export async function getItemById(
+// A user may hold at most this many distinct reaction kinds on one item —
+// the vocabulary is open, so without a cap one user could grow D1 unbounded
+// by inventing kinds. Mirrors MAX_TAGS.
+export const MAX_REACTION_KINDS_PER_ITEM = 8;
+
+/**
+ * Whether a user may react to an item: it must be their own, or publicly
+ * discoverable (carries at least one tag). Untagged items owned by someone
+ * else are private — callers should answer 404 (not 403) so a leaked item
+ * id isn't confirmed to exist.
+ */
+export async function isItemReactable(
     db: CatalogDb,
-    id: string,
-): Promise<CatalogItem | null> {
+    itemId: string,
+    userId: string,
+): Promise<boolean> {
     const [row] = await db
-        .select({
-            id: mediaItem.id,
-            kind: mediaItem.kind,
-            locator: mediaItem.locator,
-            contentType: mediaItem.contentType,
-            size: mediaItem.size,
-            model: mediaItem.model,
-            prompt: mediaItem.prompt,
-            createdAt: mediaItem.createdAt,
-        })
+        .select({ ownerUserId: mediaItem.ownerUserId })
         .from(mediaItem)
-        .where(eq(mediaItem.id, id))
+        .where(eq(mediaItem.id, itemId))
         .limit(1);
-    return row ?? null;
+    if (!row) return false;
+    if (row.ownerUserId === userId) return true;
+    const [tagged] = await db
+        .select({ itemId: mediaTag.itemId })
+        .from(mediaTag)
+        .where(eq(mediaTag.itemId, itemId))
+        .limit(1);
+    return tagged !== undefined;
 }
 
 /**

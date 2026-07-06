@@ -10,21 +10,23 @@ describe("UsageEntryForm row builders", () => {
         expect(
             buildManualMeterChange({
                 amount: 242.5,
+                currency: "USD",
                 funding: "credit",
                 month: "2026-03",
                 provider: "assemblyai",
             }),
         ).toEqual({
             datasource: "meter_monthly",
-            key: "meter:assemblyai:2026-03:credit",
+            key: "meter:assemblyai:2026-03:credit:USD",
             row: {
                 month: "2026-03",
                 provider: "assemblyai",
-                cost_usd: 242.5,
+                amount: 242.5,
+                currency: "USD",
                 funding: "credit",
                 source: "manual",
             },
-            summary: "usage assemblyai 2026-03 credit -> 242.5",
+            summary: "usage assemblyai 2026-03 credit -> 242.5 USD",
         });
     });
 
@@ -38,6 +40,7 @@ describe("UsageEntryForm row builders", () => {
     it("builds a manual meter reset override", () => {
         expect(
             buildMeterManualResetChange({
+                currency: "USD",
                 enteredAt: "2026-07-04 12:34:56",
                 funding: "credit",
                 month: "2026-06",
@@ -46,17 +49,17 @@ describe("UsageEntryForm row builders", () => {
             }),
         ).toEqual({
             datasource: "overrides",
-            key: "meter-reset:aws|2026-06|credit",
+            key: "meter-reset:aws|2026-06|credit|USD",
             row: {
                 entered_at: "2026-07-04 12:34:56",
                 scope: "meter_monthly",
-                key: "aws|2026-06|credit",
+                key: "aws|2026-06|credit|USD",
                 field: "reset_manual",
                 value_num: null,
                 value_str: "1",
                 note: "",
             },
-            summary: "usage aws 2026-06 credit reset manual value",
+            summary: "usage aws 2026-06 credit USD reset manual value",
             hidden: false,
         });
     });
@@ -64,6 +67,7 @@ describe("UsageEntryForm row builders", () => {
     it("builds hidden reset-clear overrides for manual edits", () => {
         expect(
             buildMeterManualResetChange({
+                currency: "EUR",
                 enteredAt: "2026-07-04 12:34:56",
                 funding: "prepaid",
                 month: "2026-06",
@@ -72,7 +76,7 @@ describe("UsageEntryForm row builders", () => {
             }),
         ).toMatchObject({
             datasource: "overrides",
-            key: "meter-reset:aws|2026-06|prepaid",
+            key: "meter-reset:aws|2026-06|prepaid|EUR",
             row: {
                 value_str: "0",
             },

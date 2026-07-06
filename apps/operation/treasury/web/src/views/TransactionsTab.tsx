@@ -1,5 +1,4 @@
 import {
-    ExternalLinkIcon,
     TableBody,
     TableCell,
     TableHead,
@@ -15,7 +14,7 @@ import {
     withUniqueRowKeys,
 } from "../components/DataTable";
 import { dirtyControlClass, ResetCellButton } from "../components/EditableCell";
-import { fmtPeriod, utcDateTime } from "../lib/format";
+import { utcDateTime } from "../lib/format";
 import { matchesMonth } from "../lib/months";
 import { PROVIDER_OPTIONS } from "../lib/provider-vocabulary";
 import { type StageInput, useStaging } from "../lib/staging";
@@ -36,9 +35,12 @@ function transactionKey(row: TransactionRow) {
         row.date,
         row.provider,
         row.category,
-        row.bank_charged,
-        row.cash_paid,
-        row.credit_burned,
+        row.bank_charged_amount,
+        row.bank_charged_currency,
+        row.cash_paid_amount,
+        row.cash_paid_currency,
+        row.credit_burned_amount,
+        row.credit_burned_currency,
         row.invoice_ref,
         row.match_status,
     ].join("|");
@@ -47,9 +49,12 @@ function transactionKey(row: TransactionRow) {
 function transactionIdentity(row: TransactionRow) {
     return [
         row.date,
-        row.bank_charged,
-        row.cash_paid,
-        row.credit_burned,
+        row.bank_charged_amount,
+        row.bank_charged_currency,
+        row.cash_paid_amount,
+        row.cash_paid_currency,
+        row.credit_burned_amount,
+        row.credit_burned_currency,
         row.invoice_ref,
         row.match_status,
     ].join("|");
@@ -79,12 +84,12 @@ function buildTransactionOverrideChange({
             value_str: value,
             note: "",
         },
-        summary: `transaction ${row.date} ${row.invoice_ref || row.bank_charged || "-"} ${field} -> ${value}`,
+        summary: `transaction ${row.date} ${row.invoice_ref || "-"} ${field} -> ${value}`,
     };
 }
 
 function InvoiceRef({ value }: { value: string }) {
-    if (!value) return <span>-</span>;
+    if (!value) return null;
 
     return (
         <a
@@ -92,10 +97,9 @@ function InvoiceRef({ value }: { value: string }) {
             target="_blank"
             rel="noreferrer"
             title={value}
-            className="inline-flex h-8 items-center gap-1.5 rounded border border-theme-border/70 bg-theme-bg/60 px-2.5 text-sm font-medium text-theme-text-soft transition-colors hover:bg-theme-bg-hover hover:text-theme-text-strong"
+            className="text-theme-text-soft underline decoration-theme-border underline-offset-4 transition-colors hover:text-theme-text-strong"
         >
-            invoice
-            <ExternalLinkIcon className="h-3.5 w-3.5" />
+            {value}
         </a>
     );
 }
@@ -116,12 +120,15 @@ function TransactionSelectCell({
         (change) => change.key === stageKey,
     );
     const overlay = pendingOverlay ?? committedOverlay;
-    const initial = row[field] || "other";
+    const initial = row[field];
     const value = overlay ? String(overlay.row.value_str ?? "") : initial;
     const dirty = value !== initial || Boolean(pendingOverlay);
+    const cellOptions = options.includes(initial)
+        ? options
+        : [initial, ...options];
 
     const update = (next: string) => {
-        if (!options.includes(next)) return;
+        if (!cellOptions.includes(next)) return;
         if (next === initial) {
             if (committedOverlay) {
                 stage(
@@ -154,7 +161,7 @@ function TransactionSelectCell({
                     "rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong",
                 )}
             >
-                {options.map((option) => (
+                {cellOptions.map((option) => (
                     <option key={option} value={option}>
                         {option}
                     </option>
@@ -201,9 +208,27 @@ export function TransactionsTab({
             { key: "date", value: (row) => row.date },
             { key: "provider", value: (row) => row.provider },
             { key: "category", value: (row) => row.category },
-            { key: "bank_charged", value: (row) => row.bank_charged },
-            { key: "cash_paid", value: (row) => row.cash_paid },
-            { key: "credit_burned", value: (row) => row.credit_burned },
+            {
+                key: "bank_charged_amount",
+                value: (row) => row.bank_charged_amount,
+            },
+            {
+                key: "bank_charged_currency",
+                value: (row) => row.bank_charged_currency,
+            },
+            { key: "cash_paid_amount", value: (row) => row.cash_paid_amount },
+            {
+                key: "cash_paid_currency",
+                value: (row) => row.cash_paid_currency,
+            },
+            {
+                key: "credit_burned_amount",
+                value: (row) => row.credit_burned_amount,
+            },
+            {
+                key: "credit_burned_currency",
+                value: (row) => row.credit_burned_currency,
+            },
             { key: "match_status", value: (row) => row.match_status },
             { key: "invoice_ref", value: (row) => row.invoice_ref },
         ],
@@ -221,7 +246,7 @@ export function TransactionsTab({
                 <TableHead>
                     <TableRow>
                         <TableHeaderCell {...headerProps("date")}>
-                            time period
+                            date
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("provider")}>
                             provider
@@ -229,20 +254,37 @@ export function TransactionsTab({
                         <TableHeaderCell {...headerProps("category")}>
                             category
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("bank_charged")}>
-                            bank charged
+                        <TableHeaderCell
+                            {...headerProps("bank_charged_amount")}
+                        >
+                            bank_charged_amount
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("cash_paid")}>
-                            cash paid
+                        <TableHeaderCell
+                            {...headerProps("bank_charged_currency")}
+                        >
+                            bank_charged_currency
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("credit_burned")}>
-                            credit burned
+                        <TableHeaderCell {...headerProps("cash_paid_amount")}>
+                            cash_paid_amount
+                        </TableHeaderCell>
+                        <TableHeaderCell {...headerProps("cash_paid_currency")}>
+                            cash_paid_currency
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            {...headerProps("credit_burned_amount")}
+                        >
+                            credit_burned_amount
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            {...headerProps("credit_burned_currency")}
+                        >
+                            credit_burned_currency
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("match_status")}>
-                            match
+                            match_status
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("invoice_ref")}>
-                            invoice
+                            invoice_ref
                         </TableHeaderCell>
                     </TableRow>
                 </TableHead>
@@ -250,7 +292,7 @@ export function TransactionsTab({
                     {withUniqueRowKeys(rows, transactionKey).map(
                         ({ key, row }) => (
                             <TableRow key={key}>
-                                <TableCell>{fmtPeriod(row.date)}</TableCell>
+                                <TableCell>{row.date}</TableCell>
                                 <TableCell>
                                     <TransactionSelectCell
                                         field="provider"
@@ -265,12 +307,19 @@ export function TransactionsTab({
                                         row={row}
                                     />
                                 </TableCell>
-                                <TableCell>{row.bank_charged || "-"}</TableCell>
-                                <TableCell>{row.cash_paid || "-"}</TableCell>
+                                <TableCell>{row.bank_charged_amount}</TableCell>
                                 <TableCell>
-                                    {row.credit_burned || "-"}
+                                    {row.bank_charged_currency}
                                 </TableCell>
-                                <TableCell>{row.match_status || "-"}</TableCell>
+                                <TableCell>{row.cash_paid_amount}</TableCell>
+                                <TableCell>{row.cash_paid_currency}</TableCell>
+                                <TableCell>
+                                    {row.credit_burned_amount}
+                                </TableCell>
+                                <TableCell>
+                                    {row.credit_burned_currency}
+                                </TableCell>
+                                <TableCell>{row.match_status}</TableCell>
                                 <TableCell>
                                     <InvoiceRef value={row.invoice_ref} />
                                 </TableCell>

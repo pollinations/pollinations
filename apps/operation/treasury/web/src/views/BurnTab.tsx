@@ -13,44 +13,8 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
-import { SourceCell } from "../components/Provenance";
-import { fmtPeriod } from "../lib/format";
 import { matchesMonth } from "../lib/months";
 import type { Data, UsageMonthlyRow } from "../types";
-
-function sortedUsage(rows: UsageMonthlyRow[]) {
-    return [...rows].sort(
-        (a, b) =>
-            b.month.localeCompare(a.month) ||
-            a.provider.localeCompare(b.provider) ||
-            a.model.localeCompare(b.model),
-    );
-}
-
-function aggregateUsage(rows: UsageMonthlyRow[]) {
-    const byKey = new Map<string, UsageMonthlyRow>();
-    for (const row of rows) {
-        const key = `${row.month}|${row.provider}|${row.model}`;
-        const existing = byKey.get(key);
-        if (!existing) {
-            byKey.set(key, { ...row });
-            continue;
-        }
-        existing.cost_paid_pollen += row.cost_paid_pollen;
-        existing.cost_quest_pollen += row.cost_quest_pollen;
-        existing.billable_paid_pollen += row.billable_paid_pollen;
-        existing.billable_quest_pollen += row.billable_quest_pollen;
-    }
-    return [...byKey.values()];
-}
-
-function fmtPollen(value: number | null | undefined): string {
-    if (value == null) return "-";
-    return value.toLocaleString("en-US", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 4,
-    });
-}
 
 export function BurnTab({
     data,
@@ -63,7 +27,7 @@ export function BurnTab({
 }) {
     const baseRows = useMemo(
         () =>
-            sortedUsage(aggregateUsage(data.usageMonthly)).filter(
+            data.usageMonthly.filter(
                 (row) =>
                     matchesMonth(row.month, month) &&
                     (provider === "all" || row.provider === provider),
@@ -76,6 +40,7 @@ export function BurnTab({
             { key: "source", value: (row) => row.source },
             { key: "provider", value: (row) => row.provider },
             { key: "model", value: (row) => row.model },
+            { key: "currency", value: (row) => row.currency },
             { key: "cost_paid_pollen", value: (row) => row.cost_paid_pollen },
             {
                 key: "cost_quest_pollen",
@@ -101,7 +66,7 @@ export function BurnTab({
                     <TableHead>
                         <TableRow>
                             <TableHeaderCell {...headerProps("month")}>
-                                time period
+                                month
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("source")}>
                                 source
@@ -112,29 +77,28 @@ export function BurnTab({
                             <TableHeaderCell {...headerProps("model")}>
                                 model
                             </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("currency")}>
+                                currency
+                            </TableHeaderCell>
                             <TableHeaderCell
                                 {...headerProps("cost_paid_pollen")}
-                                title="cost_paid_pollen"
                             >
-                                paid cost
+                                cost_paid_pollen
                             </TableHeaderCell>
                             <TableHeaderCell
                                 {...headerProps("cost_quest_pollen")}
-                                title="cost_quest_pollen"
                             >
-                                quest cost
+                                cost_quest_pollen
                             </TableHeaderCell>
                             <TableHeaderCell
                                 {...headerProps("billable_paid_pollen")}
-                                title="billable_paid_pollen"
                             >
-                                paid billable
+                                billable_paid_pollen
                             </TableHeaderCell>
                             <TableHeaderCell
                                 {...headerProps("billable_quest_pollen")}
-                                title="billable_quest_pollen"
                             >
-                                quest billable
+                                billable_quest_pollen
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>
@@ -145,23 +109,18 @@ export function BurnTab({
                                 `${row.month}|${row.provider}|${row.model}`,
                         ).map(({ key, row }) => (
                             <TableRow key={key}>
-                                <TableCell>{fmtPeriod(row.month)}</TableCell>
-                                <TableCell>
-                                    <SourceCell sources={[row.source]} />
-                                </TableCell>
+                                <TableCell>{row.month}</TableCell>
+                                <TableCell>{row.source}</TableCell>
                                 <TableCell>{row.provider}</TableCell>
-                                <TableCell>{row.model || "-"}</TableCell>
+                                <TableCell>{row.model}</TableCell>
+                                <TableCell>{row.currency}</TableCell>
+                                <TableCell>{row.cost_paid_pollen}</TableCell>
+                                <TableCell>{row.cost_quest_pollen}</TableCell>
                                 <TableCell>
-                                    {fmtPollen(row.cost_paid_pollen)}
+                                    {row.billable_paid_pollen}
                                 </TableCell>
                                 <TableCell>
-                                    {fmtPollen(row.cost_quest_pollen)}
-                                </TableCell>
-                                <TableCell>
-                                    {fmtPollen(row.billable_paid_pollen)}
-                                </TableCell>
-                                <TableCell>
-                                    {fmtPollen(row.billable_quest_pollen)}
+                                    {row.billable_quest_pollen}
                                 </TableCell>
                             </TableRow>
                         ))}

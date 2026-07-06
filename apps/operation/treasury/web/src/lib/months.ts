@@ -1,10 +1,8 @@
 import type { Data } from "../types";
-import { fmtMonthYear } from "./format";
 
 const MONTH_RE = /^\d{4}-\d{2}$/;
 export function monthLabel(month: string): string {
-    if (!MONTH_RE.test(month)) return month;
-    return fmtMonthYear(month.slice(0, 4), month.slice(5, 7));
+    return month;
 }
 
 // filter is "" (everything), "YYYY" (whole year) or "YYYY-MM"; value may be a

@@ -13,8 +13,6 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
-import { SourceCell } from "../components/Provenance";
-import { fmtMoney, fmtPeriod } from "../lib/format";
 import type { Data, RevenueMonthlyRow } from "../types";
 
 export function RevenueTab({ data }: { data: Data }) {
@@ -22,9 +20,10 @@ export function RevenueTab({ data }: { data: Data }) {
         () => [
             { key: "month", value: (row) => row.month },
             { key: "source", value: (row) => row.source },
-            { key: "gross_eur", value: (row) => row.gross_eur },
-            { key: "fees_eur", value: (row) => row.fees_eur },
-            { key: "refunds_eur", value: (row) => row.refunds_eur },
+            { key: "currency", value: (row) => row.currency },
+            { key: "gross_amount", value: (row) => row.gross_amount },
+            { key: "fees_amount", value: (row) => row.fees_amount },
+            { key: "refunds_amount", value: (row) => row.refunds_amount },
         ],
         [],
     );
@@ -39,42 +38,39 @@ export function RevenueTab({ data }: { data: Data }) {
                 <TableHead>
                     <TableRow>
                         <TableHeaderCell {...headerProps("month")}>
-                            time period
+                            month
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("source")}>
                             source
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("gross_eur")}>
-                            gross_eur
+                        <TableHeaderCell {...headerProps("currency")}>
+                            currency
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("fees_eur")}>
-                            fees_eur
+                        <TableHeaderCell {...headerProps("gross_amount")}>
+                            gross_amount
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("refunds_eur")}>
-                            refunds_eur
+                        <TableHeaderCell {...headerProps("fees_amount")}>
+                            fees_amount
+                        </TableHeaderCell>
+                        <TableHeaderCell {...headerProps("refunds_amount")}>
+                            refunds_amount
                         </TableHeaderCell>
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                    {withUniqueRowKeys(rows, (row) => row.month).map(
-                        ({ key, row }) => (
-                            <TableRow key={key}>
-                                <TableCell>{fmtPeriod(row.month)}</TableCell>
-                                <TableCell>
-                                    <SourceCell sources={[row.source]} />
-                                </TableCell>
-                                <TableCell>
-                                    {fmtMoney(row.gross_eur, "EUR")}
-                                </TableCell>
-                                <TableCell>
-                                    {fmtMoney(row.fees_eur, "EUR")}
-                                </TableCell>
-                                <TableCell>
-                                    {fmtMoney(row.refunds_eur, "EUR")}
-                                </TableCell>
-                            </TableRow>
-                        ),
-                    )}
+                    {withUniqueRowKeys(
+                        rows,
+                        (row) => `${row.month}|${row.currency}`,
+                    ).map(({ key, row }) => (
+                        <TableRow key={key}>
+                            <TableCell>{row.month}</TableCell>
+                            <TableCell>{row.source}</TableCell>
+                            <TableCell>{row.currency}</TableCell>
+                            <TableCell>{row.gross_amount}</TableCell>
+                            <TableCell>{row.fees_amount}</TableCell>
+                            <TableCell>{row.refunds_amount}</TableCell>
+                        </TableRow>
+                    ))}
                 </TableBody>
             </DataTable>
         </TableScroller>

@@ -2,9 +2,12 @@ export type TransactionRow = {
     date: string;
     provider: string;
     category: string;
-    bank_charged: string;
-    cash_paid: string;
-    credit_burned: string;
+    bank_charged_amount: number;
+    bank_charged_currency: string;
+    cash_paid_amount: number;
+    cash_paid_currency: string;
+    credit_burned_amount: number;
+    credit_burned_currency: string;
     invoice_ref: string;
     match_status: string;
 };
@@ -12,7 +15,8 @@ export type TransactionRow = {
 export type MeterMonthlyRow = {
     month: string;
     provider: string;
-    cost_usd: number;
+    amount: number;
+    currency: string;
     funding: string;
     source: string;
 };
@@ -22,6 +26,7 @@ export type UsageMonthlyRow = {
     month: string;
     provider: string;
     model: string;
+    currency: string;
     cost_paid_pollen: number;
     cost_quest_pollen: number;
     billable_paid_pollen: number;
@@ -38,9 +43,10 @@ export type RunRow = {
 export type RevenueMonthlyRow = {
     source: string;
     month: string;
-    gross_eur: number;
-    fees_eur: number;
-    refunds_eur: number;
+    currency: string;
+    gross_amount: number;
+    fees_amount: number;
+    refunds_amount: number;
 };
 
 export type OverrideRow = {

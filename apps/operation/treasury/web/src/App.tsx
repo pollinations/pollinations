@@ -24,7 +24,6 @@ import {
     PROVIDER_OPTIONS,
     providerVocabularyRunIssues,
 } from "./lib/provider-vocabulary";
-import { queuedKeysForChange } from "./lib/queued";
 import { StagingProvider } from "./lib/staging";
 import { fixturesMode, loadAll, TbError } from "./lib/tb";
 import type { Data } from "./types";
@@ -79,7 +78,6 @@ const TABS: {
     },
 ];
 
-const APPENDED_DATASOURCES = new Set(["meter_monthly"]);
 const POST_SAVE_REFRESH_MS = 800;
 
 async function checkSession() {
@@ -157,9 +155,6 @@ export default function App() {
     // provider tabs.
     const [provider, setProvider] = useState("all");
     const [attempt, setAttempt] = useState(0);
-    const [queuedKeys, setQueuedKeys] = useState<ReadonlySet<string>>(
-        () => new Set(),
-    );
     const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const ready = fixtures || (sessionChecked && authenticated);
 
@@ -300,19 +295,7 @@ export default function App() {
     return (
         <StagingProvider
             fixtures={fixtures}
-            onCommitted={(changes) => {
-                const appendedChanges = changes.filter((change) =>
-                    APPENDED_DATASOURCES.has(change.datasource),
-                );
-                setQueuedKeys((current) => {
-                    const next = new Set(current);
-                    for (const change of appendedChanges) {
-                        for (const key of queuedKeysForChange(change)) {
-                            next.add(key);
-                        }
-                    }
-                    return next;
-                });
+            onCommitted={() => {
                 if (refreshTimerRef.current) {
                     clearTimeout(refreshTimerRef.current);
                 }
@@ -498,7 +481,6 @@ export default function App() {
                                 data={data}
                                 month={activeMonth}
                                 provider={provider}
-                                queuedKeys={queuedKeys}
                             />
                         )}
                         {data && tab === "revenue" && (

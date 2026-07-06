@@ -32,6 +32,7 @@ describe("provider vocabulary", () => {
                     month: "2026-06",
                     provider: "new-provider",
                     model: "model",
+                    currency: "POLLEN",
                     cost_paid_pollen: 1,
                     cost_quest_pollen: 0,
                     billable_paid_pollen: 1,

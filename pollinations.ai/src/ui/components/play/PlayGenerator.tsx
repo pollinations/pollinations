@@ -648,7 +648,6 @@ export function PlayGenerator({
                             className="w-full h-auto"
                             onLoadedData={() => setIsLoading(false)}
                         >
-                            <track kind="captions" />
                         </video>
                     )}
                     {resultType === "audio" && (
@@ -659,7 +658,6 @@ export function PlayGenerator({
                             className="w-full"
                             onLoadedData={() => setIsLoading(false)}
                         >
-                            <track kind="captions" />
                         </audio>
                     )}
                     {resultType === "text" && (
@@ -725,7 +723,7 @@ export function PlayGenerator({
                             setUrlCopied(true);
                             setTimeout(() => setUrlCopied(false), 2000);
                         }}
-                        title={copy.copyButton}
+                        title={copy.copyButton} aria-label={copy.copyButton}
                     >
                         {urlCopied ? (
                             <span className="font-body text-xs font-bold text-dark uppercase tracking-wider px-1">

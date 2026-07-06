@@ -41,6 +41,9 @@ STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 
 [env.local]
 
+[env.local.triggers]
+crons = []
+
 [[env.local.d1_databases]]
 binding = "DB"
 database_name = "development-pollinations-enter-db"
@@ -68,6 +71,9 @@ STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 
 [env.production]
+
+[env.production.triggers]
+crons = []
 
 [env.production.observability]
 enabled = true
@@ -105,6 +111,9 @@ STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TVU4T7rcjS3l7trqtBuve71"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrY4O7rcjS3l7trnGXDTuat"
 [env.staging]
+
+[env.staging.triggers]
+crons = []
 
 [[env.staging.routes]]
 pattern = "staging.enter.myceli.ai"

@@ -1,0 +1,1 @@
+ALTER TABLE `community_endpoint` ADD `max_request_price` real DEFAULT 1 NOT NULL;

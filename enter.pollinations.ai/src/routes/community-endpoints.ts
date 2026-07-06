@@ -60,12 +60,14 @@ const EndpointFieldsSchema = {
     bearerToken: z.string().min(1),
 } as const;
 
+const MaxRequestPriceSchema = z.number().finite().positive();
 const CreateEndpointSchema = z.object({
     ...EndpointFieldsSchema,
     kind: KindSchema.optional().default("model"),
     tools: z.boolean().optional().default(false),
     search: z.boolean().optional().default(false),
     reasoning: z.boolean().optional().default(false),
+    maxRequestPrice: MaxRequestPriceSchema.optional().default(1),
     ...CreatePriceFieldsSchema,
 });
 const UpdateEndpointSchema = z.object({
@@ -78,6 +80,7 @@ const UpdateEndpointSchema = z.object({
     tools: z.boolean().optional(),
     search: z.boolean().optional(),
     reasoning: z.boolean().optional(),
+    maxRequestPrice: MaxRequestPriceSchema.optional(),
     ...UpdatePriceFieldsSchema,
 });
 const ModelListSchema = z.object({
@@ -103,6 +106,7 @@ const CommunityEndpointResponseSchema = z.object({
     tools: z.boolean(),
     search: z.boolean(),
     reasoning: z.boolean(),
+    maxRequestPrice: z.number(),
     ...ResponsePriceFieldsSchema,
     disabled: z.boolean(),
     disabledReason: z.string().nullable(),
@@ -196,6 +200,7 @@ function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
         tools: row.tools,
         search: row.search,
         reasoning: row.reasoning,
+        maxRequestPrice: row.maxRequestPrice,
         ...communityEndpointPrices(row),
         disabled: row.disabledAt !== null,
         disabledReason: row.disabledReason,
@@ -400,6 +405,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     tools: input.tools,
                     search: input.search,
                     reasoning: input.reasoning,
+                    maxRequestPrice: input.maxRequestPrice,
                     ...communityEndpointPrices(input),
                     createdAt: new Date(),
                     updatedAt: new Date(),
@@ -577,6 +583,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
             if (input.kind !== undefined) update.kind = input.kind;
             for (const flag of CAPABILITY_FLAG_KEYS) {
                 if (input[flag] !== undefined) update[flag] = input[flag];
+            }
+            if (input.maxRequestPrice !== undefined) {
+                update.maxRequestPrice = input.maxRequestPrice;
             }
             for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
                 if (input[field.key] !== undefined) {

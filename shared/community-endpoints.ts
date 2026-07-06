@@ -88,6 +88,7 @@ export type CommunityEndpointRuntime = {
     baseUrl: string;
     upstreamModel: string;
     bearerTokenCiphertext: string;
+    maxRequestPrice: number;
     disabledAt: number | null;
     disabledReason: string | null;
 } & CommunityEndpointPrices &
@@ -96,6 +97,7 @@ export type CommunityEndpointRuntime = {
 export type CommunityModelDefinitionInput = {
     modelId: string;
     description: string | null;
+    maxRequestPrice?: number;
 } & CommunityEndpointPrices &
     Partial<CommunityEndpointCapabilityFlags>;
 
@@ -208,6 +210,7 @@ export function communityModelDefinition(
         kind: endpoint.kind === "agent" ? "agent" : undefined,
         cost: communityPriceDefinition(endpoint),
         priceMultiplier: 1,
+        maxRequestPrice: endpoint.maxRequestPrice,
         addedDate: 0,
         title: description || parsed?.modelName || endpoint.modelId,
         description: description || undefined,

@@ -45,6 +45,7 @@ export const ModelInfoSchema = z.object({
     pricing: z
         .record(z.string(), z.string())
         .and(z.object({ currency: z.literal("pollen") })),
+    max_request_price: z.number().optional(),
     title: z.string(),
     description: z.string().optional(),
     input_modalities: z.array(z.string()).optional(),
@@ -114,6 +115,7 @@ export function modelInfoFromDefinition(
         kind: service.kind,
         community: options.community || undefined,
         pricing: pricingInfoFromDefinition(getPriceDefinitionForModel(service)),
+        max_request_price: service.maxRequestPrice,
         // User-facing metadata from service definition
         title: service.title,
         description: service.description,

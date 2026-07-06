@@ -141,6 +141,11 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     // USD-cost to Pollen-price multiplier. Required on every model — there is
     // no implicit default. Typical values: 1 (sold at cost) or 1.5 (paid markup).
     priceMultiplier: number;
+    // Hard ceiling on the total Pollen price billed for one request (tokens +
+    // adjustments). Upstream-reported usage is not otherwise bounded, so for
+    // community endpoints this is the caller's protection against inflated
+    // usage reports. Clamps loudly in calculateUsageBilling.
+    maxRequestPrice?: number;
     billing?: BillingRules;
     // Date the model was added to the registry (ms epoch). Set once, never updated.
     addedDate: number;
@@ -296,12 +301,36 @@ export function calculateUsageBilling(
         (total, price) => total + price,
         0,
     );
+    const rawTotalPrice = roundPollenLedgerAmount(
+        tokenTotalPrice + adjustmentPrice,
+    );
+    const maxRequestPrice = svc.maxRequestPrice;
+    const clamped =
+        maxRequestPrice !== undefined && rawTotalPrice > maxRequestPrice;
+    if (clamped) {
+        console.error(
+            `[billing] ${model}: request price ${rawTotalPrice} exceeds maxRequestPrice ${maxRequestPrice} — clamping. Upstream-reported usage may be inflated.`,
+        );
+    }
     const price = {
         ...usagePrice,
-        totalPrice: roundPollenLedgerAmount(tokenTotalPrice + adjustmentPrice),
+        totalPrice: clamped
+            ? roundPollenLedgerAmount(maxRequestPrice)
+            : rawTotalPrice,
     };
+    const clampedCost = clamped
+        ? {
+              ...cost,
+              totalCost: Math.min(
+                  cost.totalCost,
+                  roundPollenLedgerAmount(
+                      maxRequestPrice / svc.priceMultiplier,
+                  ),
+              ),
+          }
+        : cost;
 
-    return { cost, price, adjustments };
+    return { cost: clampedCost, price, adjustments };
 }
 
 const MODEL_REGISTRY = {

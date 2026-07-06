@@ -51,6 +51,7 @@ export async function getCommunityModelRegistryEntries(
             tools: schema.communityEndpoint.tools,
             search: schema.communityEndpoint.search,
             reasoning: schema.communityEndpoint.reasoning,
+            maxRequestPrice: schema.communityEndpoint.maxRequestPrice,
             promptTextPrice: schema.communityEndpoint.promptTextPrice,
             promptCachedPrice: schema.communityEndpoint.promptCachedPrice,
             promptCacheWritePrice:
@@ -87,6 +88,7 @@ export async function getCommunityModelRegistryEntries(
             tools: row.tools,
             search: row.search,
             reasoning: row.reasoning,
+            maxRequestPrice: row.maxRequestPrice,
             disabledAt: row.disabledAt ? row.disabledAt.getTime() : null,
             disabledReason: row.disabledReason,
             ...communityEndpointPrices(row),

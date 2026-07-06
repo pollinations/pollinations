@@ -61,6 +61,10 @@ function addPriceOptions(command: Command): Command {
 function addCapabilityOptions(command: Command): Command {
     return command
         .option("--kind <kind>", "Endpoint kind: model or agent")
+        .option(
+            "--max-request-price <number>",
+            "Max Pollen billed per request (caller protection cap)",
+        )
         .option("--tools", "Declare tool-calling support")
         .option("--no-tools", "Clear tool-calling support")
         .option("--search", "Declare web-search support")
@@ -110,6 +114,14 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
     }
     for (const flag of CAPABILITY_FLAG_KEYS) {
         if (opts[flag] !== undefined) body[flag] = opts[flag];
+    }
+    if (opts.maxRequestPrice !== undefined) {
+        const value = Number(opts.maxRequestPrice);
+        if (!Number.isFinite(value) || value <= 0) {
+            printError("--max-request-price must be a positive number");
+            process.exit(1);
+        }
+        body.maxRequestPrice = value;
     }
 
     if (includeRequired) {

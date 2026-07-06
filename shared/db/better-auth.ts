@@ -209,6 +209,7 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   tools: integer("tools", { mode: "boolean" }).default(false).notNull(),
   search: integer("search", { mode: "boolean" }).default(false).notNull(),
   reasoning: integer("reasoning", { mode: "boolean" }).default(false).notNull(),
+  maxRequestPrice: real("max_request_price").default(1).notNull(),
   promptTextPrice: real("prompt_text_price").notNull(),
   promptCachedPrice: real("prompt_cached_price").default(0).notNull(),
   promptCacheWritePrice: real("prompt_cache_write_price").default(0).notNull(),

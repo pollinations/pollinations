@@ -19,6 +19,7 @@ import {
 } from "@shared/db/better-auth.ts";
 import { handleError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { calculateUsageBilling } from "@shared/registry/registry.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import {
     createTestApiKey,
@@ -264,6 +265,33 @@ describe("community endpoint helpers", () => {
         expect(modelDefinition.reasoning).toBeUndefined();
     });
 
+    it("clamps the billed request price to maxRequestPrice", () => {
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/inflated",
+            description: null,
+            maxRequestPrice: 0.5,
+            ...communityEndpointPrices({
+                promptTextPrice: 0.001,
+                completionTextPrice: 0.001,
+            }),
+        });
+
+        const inflated = calculateUsageBilling(
+            "voodoohop/inflated",
+            { promptTextTokens: 10, completionTextTokens: 10_000_000 },
+            definition,
+        );
+        expect(inflated.price.totalPrice).toBe(0.5);
+        expect(inflated.cost.totalCost).toBe(0.5);
+
+        const normal = calculateUsageBilling(
+            "voodoohop/inflated",
+            { promptTextTokens: 10, completionTextTokens: 20 },
+            definition,
+        );
+        expect(normal.price.totalPrice).toBeCloseTo(0.03, 10);
+    });
+
     it("builds Portkey gateway context with the saved token", async () => {
         const secret = "test-secret";
         const endpoint: CommunityEndpointRuntime = {
@@ -278,6 +306,7 @@ describe("community endpoint helpers", () => {
             tools: false,
             search: false,
             reasoning: false,
+            maxRequestPrice: 1,
             disabledAt: null,
             disabledReason: null,
             bearerTokenCiphertext: await encryptSecret(
@@ -1319,6 +1348,7 @@ fixtureTest(
             tools: true,
             search: false,
             reasoning: false,
+            maxRequestPrice: 1,
             promptTextPrice: 0.1,
             completionTextPrice: 0.2,
             disabled: false,
@@ -1352,6 +1382,7 @@ fixtureTest(
                         description: "Updated description",
                         tools: false,
                         search: true,
+                        maxRequestPrice: 2.5,
                     }),
                 },
             ),
@@ -1363,6 +1394,7 @@ fixtureTest(
             tools: false,
             search: true,
             reasoning: false,
+            maxRequestPrice: 2.5,
             promptTextPrice: 0.1,
             completionTextPrice: 0.2,
             disabled: true,

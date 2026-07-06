@@ -115,7 +115,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
     // never reach the generation backend and never affect caching.
     tags: z.string().optional().meta({
         description:
-            "Comma-separated catalog tags. A single tag is also passed via `tags` (for example, `?tags=gallery`). Requires an API key attached to a user account. Tagged generations appear in your library (media.pollinations.ai `/me/media`) and the public gallery (`/tags/{tag}`). Lowercase slug, max 128 chars, up to 8 tags per request. Does not affect the generated output or caching.",
+            "Comma-separated catalog tags, e.g. `?tags=gallery` or `?tags=sunset,beach`. Requires an API key attached to a user account. Tagged generations appear in your library (media.pollinations.ai `/me/media`) and the public gallery (`/tags/{tag}`). Lowercase slugs, max 128 chars each, up to 8 tags per request. Does not affect the generated output or caching.",
     }),
 });
 

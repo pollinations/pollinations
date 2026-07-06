@@ -48,7 +48,9 @@ python3 -m ingest.run --month 2026-07
 ```
 
 Splices the given `YYYY-MM` into the affected tables. `--month` is invalid with
-`--only transactions` (transactions have no month scope).
+`--only transactions` (transactions have no month scope). A bare `--month` still
+fully rebuilds `transactions` (the whole Enty rebuild, including the AI verify
+pass); combine `--month` with `--only meter|usage|revenue` to skip that rebuild.
 
 ### One provider (meter)
 
@@ -108,6 +110,9 @@ python3 -m ingest.run --dry-run --only transactions   # confirm the new mapping
 python3 -m ingest.run --only transactions
 ```
 
+If the alias affects a meter provider, also re-run `--only meter` to remap its
+`meter_monthly` rows.
+
 The slug also becomes valid for `ingest.record` (it reads `registry.CANONICAL`,
 which is the alias keys).
 
@@ -141,17 +146,19 @@ re-replace it with the rows from that file:
 ```bash
 python3 - <<'EOF'
 import json
-from ingest import creds, tb
+from ingest import backup, creds, tb
 
 SNAPSHOT = "~/Documents/treasury-backups/20260706T101112Z/meter_monthly.ndjson"
 
 secrets, config = creds.load_creds(), creds.load_config()
+read = tb.TB(config["tb_ops_api"], secrets["TINYBIRD_OPS_INGEST_TOKEN"])
 write = tb.TB(config["tb_ops_api"], secrets["TINYBIRD_OPS_REPLACE_TOKEN"])
 
 import os
 with open(os.path.expanduser(SNAPSHOT)) as fh:
     rows = [json.loads(line) for line in fh if line.strip()]
 assert rows, "snapshot is empty — refusing to replace"
+backup.snapshot_table(read, "meter_monthly", backup.run_directory(config))
 write.replace("meter_monthly", rows)
 EOF
 ```

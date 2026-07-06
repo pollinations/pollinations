@@ -127,6 +127,21 @@ def splice_rows(existing, fresh, in_scope):
     return [row for row in existing if not in_scope(row)] + list(fresh)
 
 
+def assert_fresh_in_scope(datasource, fresh, in_scope):
+    """Fresh rows must all fall within the spliced scope.
+
+    splice_rows keeps out-of-scope existing rows and appends every fresh row,
+    so an out-of-scope fresh row would duplicate the surviving copy. Refuse the
+    write, naming the offenders.
+    """
+    out_of_scope = [row for row in fresh if not in_scope(row)]
+    if out_of_scope:
+        raise RuntimeError(
+            f"refusing to splice out-of-scope {datasource} rows: "
+            + json.dumps(out_of_scope, sort_keys=True)
+        )
+
+
 def validate_meter_rows(rows):
     for row in rows:
         if row.get("provider", "") not in PROVIDER_ALIASES:
@@ -169,7 +184,6 @@ def guarded_replace(ops_replace, datasource, rows, guard, statuses):
 
 
 def refresh_meter_monthly(
-    ops_ingest,
     ops_replace,
     secrets,
     config,
@@ -219,6 +233,7 @@ def refresh_meter_monthly(
     validate_meter_rows(meter_manual)
     meter_merged = merge_meter_rows(meter_new + meter_manual)
     validate_meter_rows(meter_merged)
+    assert_fresh_in_scope("meter_monthly", meter_merged, in_scope)
     final_rows = splice_rows(existing_meter, meter_merged, in_scope)
     guarded_replace(ops_replace, "meter_monthly", final_rows, guard, statuses)
     statuses["meter_rows"] = len(final_rows)
@@ -230,7 +245,9 @@ def _splice_by_month(datasource, fresh, months, scoped, guard):
         return fresh
     month_set = set(months)
     existing = guard["existing"][datasource]
-    return splice_rows(existing, fresh, lambda row: row.get("month") in month_set)
+    in_scope = lambda row: row.get("month") in month_set
+    assert_fresh_in_scope(datasource, fresh, in_scope)
+    return splice_rows(existing, fresh, in_scope)
 
 
 def refresh_usage_monthly(
@@ -289,7 +306,7 @@ def parse_args(argv=None):
         prog="ingest.run", description="Refresh the Operations Tinybird tables."
     )
     parser.add_argument("--yes", action="store_true",
-                        help="approve writes that drop manual meter rows")
+                        help="approve writes that would lose manual meter row data")
     parser.add_argument("--dry-run", action="store_true",
                         help="snapshot + diff only, write nothing")
     parser.add_argument("--only", choices=["meter", "usage", "revenue", "transactions"])
@@ -344,7 +361,6 @@ def main():
     try:
         if args.only in (None, "meter"):
             refresh_meter_monthly(
-                ops_ingest,
                 ops_replace,
                 secrets,
                 config,

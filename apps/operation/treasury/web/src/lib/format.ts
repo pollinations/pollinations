@@ -1,7 +1,3 @@
-export function utcDateTime(date = new Date()): string {
-    return date.toISOString().replace("T", " ").slice(0, 19);
-}
-
 const MONTH_NAMES = [
     "January",
     "February",

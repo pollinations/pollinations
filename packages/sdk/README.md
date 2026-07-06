@@ -149,7 +149,7 @@ const accessToken = await auth.poll(); // blocks until user approves
 configure({ apiKey: accessToken });
 
 const me = await userInfo();
-console.log(`Logged in as ${me.name} (${me.tier})`);
+console.log(`Logged in as ${me.name} (${me.preferred_username})`);
 ```
 
 `authorizeDevice()` does NOT require an API key — it's how you get one.

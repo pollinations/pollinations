@@ -612,19 +612,23 @@ function renderEndpoint(
     out.push("```");
     out.push("");
 
-    // Response example (if we can synthesize one)
+    // Response example: prefer the media-type example injected by
+    // injectSamples() (RESPONSE_EXAMPLES), fall back to schema synthesis.
     const firstOk = successCodes[0];
     if (firstOk) {
         const r = asObj(responses[firstOk]);
         const jsonResp = asObj(asObj(r.content)["application/json"]);
-        if (jsonResp.schema) {
-            const ex = pickExample(spec, asObj(jsonResp.schema));
-            if (isResponseExampleWorthwhile(ex)) {
-                out.push("```json");
-                out.push(JSON.stringify(ex, null, 2));
-                out.push("```");
-                out.push("");
-            }
+        const ex =
+            jsonResp.example !== undefined
+                ? jsonResp.example
+                : jsonResp.schema
+                  ? pickExample(spec, asObj(jsonResp.schema))
+                  : undefined;
+        if (isResponseExampleWorthwhile(ex)) {
+            out.push("```json");
+            out.push(JSON.stringify(ex, null, 2));
+            out.push("```");
+            out.push("");
         }
     }
 
@@ -929,6 +933,27 @@ const CURATED_BODIES: Record<string, Json> = {
         type: "secret",
         allowedModels: ["openai", "flux"],
         pollenBudget: 100,
+    },
+    postV1AudioSpeech: {
+        input: "Hello world",
+        voice: "nova",
+    },
+    postAccountMyModels: {
+        name: "my-community-model",
+        baseUrl: "https://api.example.com/v1",
+        bearerToken: "sk-upstream-token",
+    },
+    postAccountMyModelsModels: {
+        baseUrl: "https://api.example.com/v1",
+        bearerToken: "sk-upstream-token",
+    },
+    postAccountMyModelsTest: {
+        baseUrl: "https://api.example.com/v1",
+        bearerToken: "sk-upstream-token",
+        model: "llama-3.3-70b",
+    },
+    postAccountMyModelsByIdUpdate: {
+        description: "Updated model description",
     },
 };
 

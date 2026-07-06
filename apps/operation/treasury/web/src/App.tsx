@@ -11,6 +11,7 @@ import {
     Tooltip,
 } from "@pollinations/ui";
 import { useEffect, useMemo, useState } from "react";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { FilterBar, FilterSelect, MonthFilter } from "./components/Filters";
 import { HeaderButton } from "./components/HeaderButton";
 import { OperationsGuide } from "./components/OperationsGuide";
@@ -278,7 +279,7 @@ export default function App() {
     );
     const showVendorFilter =
         section === "insights"
-            ? insightTab !== "pnl"
+            ? insightTab !== "pnl" && insightVendors.length > 1
             : tab !== "revenue" && vendorOptions.length > 1;
     const activeVendorOptions =
         section === "insights" ? insightVendors : vendorOptions;
@@ -541,52 +542,60 @@ export default function App() {
                     {!error && !data && (
                         <Text tone="soft">Loading pipes...</Text>
                     )}
-                    {data && section === "raw" && tab === "transactions" && (
-                        <TransactionsTab
-                            category={category}
-                            data={data}
-                            month={activeMonth}
-                            vendor={vendor}
-                        />
-                    )}
-                    {data && section === "raw" && tab === "burn" && (
-                        <BurnTab
-                            data={data}
-                            month={activeMonth}
-                            vendor={vendor}
-                        />
-                    )}
-                    {data && section === "raw" && tab === "meter" && (
-                        <MeterTab
-                            data={data}
-                            month={activeMonth}
-                            vendor={vendor}
-                        />
-                    )}
-                    {data && section === "raw" && tab === "revenue" && (
-                        <RevenueTab data={data} />
-                    )}
-                    {data && section === "insights" && insightTab === "pnl" && (
-                        <PnlTab data={data} month={activeMonth} />
-                    )}
-                    {data &&
-                        section === "insights" &&
-                        insightTab === "vendors" && (
-                            <VendorsTab
+                    <ErrorBoundary
+                        resetKey={`${section}:${tab}:${insightTab}:${month}:${vendor}:${category}`}
+                    >
+                        {data &&
+                            section === "raw" &&
+                            tab === "transactions" && (
+                                <TransactionsTab
+                                    category={category}
+                                    data={data}
+                                    month={activeMonth}
+                                    vendor={vendor}
+                                />
+                            )}
+                        {data && section === "raw" && tab === "burn" && (
+                            <BurnTab
                                 data={data}
                                 month={activeMonth}
                                 vendor={vendor}
                             />
                         )}
-                    {data &&
-                        section === "insights" &&
-                        insightTab === "models" && (
-                            <ModelsTab
+                        {data && section === "raw" && tab === "meter" && (
+                            <MeterTab
                                 data={data}
                                 month={activeMonth}
                                 vendor={vendor}
                             />
                         )}
+                        {data && section === "raw" && tab === "revenue" && (
+                            <RevenueTab data={data} />
+                        )}
+                        {data &&
+                            section === "insights" &&
+                            insightTab === "pnl" && (
+                                <PnlTab data={data} month={activeMonth} />
+                            )}
+                        {data &&
+                            section === "insights" &&
+                            insightTab === "vendors" && (
+                                <VendorsTab
+                                    data={data}
+                                    month={activeMonth}
+                                    vendor={vendor}
+                                />
+                            )}
+                        {data &&
+                            section === "insights" &&
+                            insightTab === "models" && (
+                                <ModelsTab
+                                    data={data}
+                                    month={activeMonth}
+                                    vendor={vendor}
+                                />
+                            )}
+                    </ErrorBoundary>
                 </main>
             </ScrollArea>
         </div>

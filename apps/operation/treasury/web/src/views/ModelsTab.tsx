@@ -53,10 +53,13 @@ function PollenGauge({
 }) {
     const parts = gaugeParts(paid, quests, max);
     if (!parts) return <span>–</span>;
+    const label = `paid ${parts.paidPct.toFixed(0)}% · quests ${parts.questsPct.toFixed(0)}% · total ${fmtUsd(paid + quests)}`;
     return (
         <div
             className="flex h-2.5 w-36 justify-end overflow-hidden rounded-sm bg-theme-bg-active"
-            title={`paid ${parts.paidPct.toFixed(0)}% · quests ${parts.questsPct.toFixed(0)}% · total ${fmtUsd(paid + quests)}`}
+            role="img"
+            aria-label={label}
+            title={label}
         >
             <div
                 className="flex h-full justify-end"

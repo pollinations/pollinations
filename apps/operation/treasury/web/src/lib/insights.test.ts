@@ -392,6 +392,21 @@ describe("vendorPlanes", () => {
         expect(row.registeredUsd).toBe(10);
         expect(row.spentVsRegisteredPct).toBeNull();
     });
+
+    it("skips transactions with a malformed month key", () => {
+        const data = emptyData({
+            transactions: [
+                txn({
+                    date: "",
+                    vendor: "aws",
+                    category: "compute",
+                    paid_amount: 500,
+                    paid_currency: "USD",
+                }),
+            ],
+        });
+        expect(vendorPlanes(data)).toEqual([]);
+    });
 });
 
 describe("insightVendorOptions", () => {

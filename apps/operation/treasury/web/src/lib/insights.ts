@@ -259,7 +259,9 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
     const paid = new Map<string, number>();
     for (const row of data.transactions) {
         if (row.category !== "compute") continue;
-        const key = `${row.date.slice(0, 7)}|${row.vendor}`;
+        const month = row.date.slice(0, 7);
+        if (!MONTH_KEY_RE.test(month)) continue;
+        const key = `${month}|${row.vendor}`;
         paid.set(key, (paid.get(key) ?? 0) + transactionCashUsd(row));
     }
 

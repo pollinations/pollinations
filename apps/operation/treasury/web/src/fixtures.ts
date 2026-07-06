@@ -125,6 +125,23 @@ const usageMonthly: UsageMonthlyRow[] = [
         model_paid: 0,
         model_quests: 0,
     },
+    // No elevenlabs meter row + the June elevenlabs compute transaction (299
+    // USD paid) makes this model demo the `cash` cost basis in the Models tab.
+    {
+        source: "tinybird",
+        month: "2026-06",
+        vendor: "elevenlabs",
+        model: "eleven-v3",
+        currency: "POLLEN",
+        cost_paid: 200,
+        cost_quests: 0,
+        price_paid: 260,
+        price_quests: 0,
+        byop_paid: 0,
+        byop_quests: 0,
+        model_paid: 0,
+        model_quests: 0,
+    },
 ];
 
 const meterMonthly: MeterMonthlyRow[] = [

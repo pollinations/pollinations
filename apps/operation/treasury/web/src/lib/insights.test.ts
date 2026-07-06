@@ -4,17 +4,20 @@ import type {
     MeterMonthlyRow,
     RevenueMonthlyRow,
     TransactionRow,
+    UsageMonthlyRow,
 } from "../types";
 import {
     breakEvenMultiplier,
     CATEGORY_ORDER,
     categoryColumns,
     globalNetRatio,
+    insightVendorOptions,
     monthlyRevenue,
     monthSpendDetail,
     opexIncompleteFrom,
     pnlByMonth,
     transactionCashUsd,
+    vendorPlanes,
 } from "./insights";
 
 const revenueRow = (
@@ -112,6 +115,23 @@ const emptyData = (over: Partial<Data>): Data => ({
     usageMonthly: [],
     runs: [],
     revenueMonthly: [],
+    ...over,
+});
+
+const usage = (over: Partial<UsageMonthlyRow>): UsageMonthlyRow => ({
+    source: "tinybird",
+    month: "2026-06",
+    vendor: "google",
+    model: "gemini-2.5-flash",
+    currency: "POLLEN",
+    cost_paid: 0,
+    cost_quests: 0,
+    price_paid: 0,
+    price_quests: 0,
+    byop_paid: 0,
+    byop_quests: 0,
+    model_paid: 0,
+    model_quests: 0,
     ...over,
 });
 
@@ -310,5 +330,83 @@ describe("categoryColumns", () => {
             new Date("2026-07-06T12:00:00Z"),
         );
         expect(categoryColumns(months)).toEqual([...CATEGORY_ORDER, "zulu"]);
+    });
+});
+
+describe("vendorPlanes", () => {
+    it("aligns the three planes on (month, vendor) and converts currencies", () => {
+        const data = emptyData({
+            transactions: [
+                txn({
+                    date: "2026-06-13",
+                    vendor: "google",
+                    category: "compute",
+                    paid_amount: 5000,
+                    paid_currency: "USD",
+                }),
+                txn({
+                    date: "2026-06-14",
+                    vendor: "google",
+                    category: "saas",
+                    paid_amount: 999,
+                    paid_currency: "USD",
+                }),
+            ],
+            meterMonthly: [
+                meter({
+                    month: "2026-06",
+                    vendor: "google",
+                    currency: "EUR",
+                    credit: 100,
+                    paid: 4389.35,
+                }),
+            ],
+            usageMonthly: [
+                usage({ vendor: "google", cost_paid: 3000, cost_quests: 1940 }),
+            ],
+        });
+        const [row] = vendorPlanes(data);
+
+        expect(row.month).toBe("2026-06");
+        expect(row.vendor).toBe("google");
+        expect(row.paidUsd).toBe(5000); // saas row excluded — compute only
+        expect(row.spentUsd).toBeCloseTo(4489.35 * 1.1518, 1);
+        expect(row.creditUsd).toBeCloseTo(100 * 1.1518, 2);
+        expect(row.registeredUsd).toBe(4940);
+        expect(row.spentVsRegisteredPct).toBeCloseTo(
+            ((4489.35 * 1.1518 - 4940) / 4940) * 100,
+            3,
+        );
+    });
+
+    it("keeps missing planes null instead of zero", () => {
+        const data = emptyData({
+            usageMonthly: [usage({ vendor: "runpod", cost_paid: 10 })],
+        });
+        const [row] = vendorPlanes(data);
+        expect(row.paidUsd).toBeNull();
+        expect(row.spentUsd).toBeNull();
+        expect(row.creditUsd).toBeNull();
+        expect(row.registeredUsd).toBe(10);
+        expect(row.spentVsRegisteredPct).toBeNull();
+    });
+});
+
+describe("insightVendorOptions", () => {
+    it("unions vendors across planes, compute transactions only", () => {
+        const data = emptyData({
+            transactions: [
+                txn({ vendor: "aws", category: "compute" }),
+                txn({ vendor: "deel", category: "payroll" }),
+            ],
+            meterMonthly: [meter({ vendor: "ovhcloud" })],
+            usageMonthly: [usage({ vendor: "google" })],
+        });
+        expect(insightVendorOptions(data)).toEqual([
+            "all",
+            "aws",
+            "google",
+            "ovhcloud",
+        ]);
     });
 });

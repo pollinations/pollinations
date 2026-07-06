@@ -231,3 +231,85 @@ export function monthSpendDetail(
 
     return { summary, spend, creditBurn };
 }
+
+// ------------------------------------------------------ vendor three-way
+
+export type VendorPlanes = {
+    month: string;
+    vendor: string;
+    paidUsd: number | null;
+    spentUsd: number | null;
+    creditUsd: number | null;
+    registeredUsd: number | null;
+    spentVsRegisteredPct: number | null;
+};
+
+function pctDelta(a: number | null, b: number | null): number | null {
+    if (a == null || b == null || b === 0) return null;
+    return ((a - b) / b) * 100;
+}
+
+export function vendorPlanes(data: Data): VendorPlanes[] {
+    const paid = new Map<string, number>();
+    for (const row of data.transactions) {
+        if (row.category !== "compute") continue;
+        const key = `${row.date.slice(0, 7)}|${row.vendor}`;
+        paid.set(key, (paid.get(key) ?? 0) + transactionCashUsd(row));
+    }
+
+    const spent = new Map<string, { total: number; credit: number }>();
+    for (const row of data.meterMonthly) {
+        const key = `${row.month}|${row.vendor}`;
+        const entry = spent.get(key) ?? { total: 0, credit: 0 };
+        entry.total += toUsd(row.credit + row.paid, row.currency, row.month);
+        entry.credit += toUsd(row.credit, row.currency, row.month);
+        spent.set(key, entry);
+    }
+
+    const registered = new Map<string, number>();
+    for (const row of data.usageMonthly) {
+        const key = `${row.month}|${row.vendor}`;
+        registered.set(
+            key,
+            (registered.get(key) ?? 0) +
+                toUsd(row.cost_paid + row.cost_quests, row.currency, row.month),
+        );
+    }
+
+    const keys = new Set([
+        ...paid.keys(),
+        ...spent.keys(),
+        ...registered.keys(),
+    ]);
+    return [...keys].sort().map((key) => {
+        const [month, vendor] = key.split("|");
+        const spentEntry = spent.get(key);
+        const spentUsd = spentEntry ? spentEntry.total : null;
+        const registeredUsd = registered.get(key) ?? null;
+        return {
+            month,
+            vendor,
+            paidUsd: paid.get(key) ?? null,
+            spentUsd,
+            creditUsd: spentEntry ? spentEntry.credit : null,
+            registeredUsd,
+            spentVsRegisteredPct: pctDelta(spentUsd, registeredUsd),
+        };
+    });
+}
+
+export function insightVendorOptions(data: Data): string[] {
+    const vendors = new Set<string>();
+    for (const row of data.transactions) {
+        if (row.category === "compute" && row.vendor.trim()) {
+            vendors.add(row.vendor.trim());
+        }
+    }
+    for (const row of data.meterMonthly) {
+        if (row.vendor.trim()) vendors.add(row.vendor.trim());
+    }
+    for (const row of data.usageMonthly) {
+        if (row.vendor.trim()) vendors.add(row.vendor.trim());
+    }
+    return ["all", ...[...vendors].sort((a, b) => a.localeCompare(b))];
+}

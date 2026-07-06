@@ -64,37 +64,12 @@ export const CATEGORY_ORDER = [
     "other",
 ] as const;
 
-// Cash that left for this row: the bank leg when present, the invoice value
-// as a fallback while the payment leg is still unmatched.
+// Cash that left the bank for this row: the settled Wise leg.
 export function transactionCashUsd(row: TransactionRow): number {
-    if (row.paid_amount > 0) {
-        return toUsd(row.paid_amount, row.paid_currency, row.date);
-    }
-    if (row.charged_amount > 0) {
-        return toUsd(row.charged_amount, row.charged_currency, row.date);
-    }
-    return 0;
+    return toUsd(row.charged_amount, row.charged_currency, row.date);
 }
 
 const MONTH_KEY_RE = /^\d{4}-\d{2}$/;
-
-// Enty batches arrive after a month closes and is filed, so the newest month
-// holding rows is only trustworthy once a LATER batch exists. Months >= the
-// returned value are incomplete; "0000-00" means nothing is trustworthy.
-export function opexIncompleteFrom(
-    transactions: TransactionRow[],
-    now: Date,
-): string {
-    const months = transactions
-        .map((row) => row.date.slice(0, 7))
-        .filter((month) => MONTH_KEY_RE.test(month));
-    const frontier =
-        months.length > 0
-            ? months.reduce((a, b) => (a > b ? a : b))
-            : "0000-00";
-    const current = now.toISOString().slice(0, 7);
-    return frontier < current ? frontier : current;
-}
 
 export type PnlMonth = {
     month: string;
@@ -103,7 +78,7 @@ export type PnlMonth = {
     spendUsd: number | null;
     cashPnlUsd: number | null;
     creditBurnUsd: number;
-    opexIncomplete: boolean;
+    monthInProgress: boolean;
 };
 
 export function pnlByMonth(data: Data, now: Date): PnlMonth[] {
@@ -113,7 +88,9 @@ export function pnlByMonth(data: Data, now: Date): PnlMonth[] {
             entry,
         ]),
     );
-    const incompleteFrom = opexIncompleteFrom(data.transactions, now);
+    // Wise cash lands near real time, so only the current calendar month is
+    // still filling — everything before it is complete.
+    const currentMonth = now.toISOString().slice(0, 7);
 
     const months = new Set<string>();
     for (const row of data.transactions) months.add(row.date.slice(0, 7));
@@ -154,7 +131,7 @@ export function pnlByMonth(data: Data, now: Date): PnlMonth[] {
                         ? revenueNetUsd - spendUsd
                         : null,
                 creditBurnUsd,
-                opexIncomplete: month >= incompleteFrom,
+                monthInProgress: month >= currentMonth,
             };
         });
 }

@@ -16,7 +16,6 @@ import {
     modelEconomics,
     monthlyRevenue,
     monthSpendDetail,
-    opexIncompleteFrom,
     pnlByMonth,
     transactionCashUsd,
     vendorPlanes,
@@ -94,10 +93,6 @@ const txn = (over: Partial<TransactionRow>): TransactionRow => ({
     category: "compute",
     charged_amount: 0,
     charged_currency: "",
-    paid_amount: 0,
-    paid_currency: "",
-    invoice_ref: "",
-    match_status: "matched",
     ...over,
 });
 
@@ -138,42 +133,18 @@ const usage = (over: Partial<PollenMonthlyRow>): PollenMonthlyRow => ({
 });
 
 describe("transactionCashUsd", () => {
-    it("uses the bank leg when present", () => {
-        const row = txn({
-            paid_amount: 100,
-            paid_currency: "USD",
-            charged_amount: 90,
-            charged_currency: "EUR",
-        });
-        expect(transactionCashUsd(row)).toBe(100);
-    });
-
-    it("falls back to the invoice leg, converting EUR by the row month", () => {
+    it("converts the settled EUR leg by the row month", () => {
         const row = txn({ charged_amount: 100, charged_currency: "EUR" });
         expect(transactionCashUsd(row)).toBeCloseTo(116.73, 2);
     });
 
-    it("is zero when both legs are empty", () => {
+    it("passes USD through 1:1", () => {
+        const row = txn({ charged_amount: 42, charged_currency: "USD" });
+        expect(transactionCashUsd(row)).toBe(42);
+    });
+
+    it("is zero for a zero amount", () => {
         expect(transactionCashUsd(txn({}))).toBe(0);
-    });
-});
-
-describe("opexIncompleteFrom", () => {
-    const now = new Date("2026-07-06T12:00:00Z");
-
-    it("flags the newest transaction month (batches land after month close)", () => {
-        const rows = [txn({ date: "2026-05-10" }), txn({ date: "2026-06-01" })];
-        expect(opexIncompleteFrom(rows, now)).toBe("2026-06");
-    });
-
-    it("never trusts the current calendar month even without rows in it", () => {
-        expect(opexIncompleteFrom([txn({ date: "2026-07-02" })], now)).toBe(
-            "2026-07",
-        );
-    });
-
-    it("flags everything when there are no transactions", () => {
-        expect(opexIncompleteFrom([], now)).toBe("0000-00");
     });
 });
 
@@ -186,20 +157,26 @@ describe("pnlByMonth", () => {
                 txn({
                     date: "2026-05-10",
                     category: "compute",
-                    paid_amount: 1000,
-                    paid_currency: "USD",
+                    charged_amount: 1000,
+                    charged_currency: "USD",
                 }),
                 txn({
                     date: "2026-05-25",
                     category: "payroll",
-                    paid_amount: 100,
-                    paid_currency: "EUR",
+                    charged_amount: 100,
+                    charged_currency: "EUR",
                 }),
                 txn({
                     date: "2026-06-01",
                     category: "compute",
-                    paid_amount: 50,
-                    paid_currency: "USD",
+                    charged_amount: 50,
+                    charged_currency: "USD",
+                }),
+                txn({
+                    date: "2026-07-02",
+                    category: "compute",
+                    charged_amount: 10,
+                    charged_currency: "USD",
                 }),
             ],
             providerMonthly: [provider({ month: "2026-05", credit: 200 })],
@@ -214,7 +191,7 @@ describe("pnlByMonth", () => {
                 },
             ],
         });
-        const [may, june] = pnlByMonth(data, now);
+        const [may, june, july] = pnlByMonth(data, now);
 
         expect(may.month).toBe("2026-05");
         expect(may.categories.compute).toBe(1000);
@@ -223,11 +200,18 @@ describe("pnlByMonth", () => {
         expect(may.revenueNetUsd).toBeCloseTo(1820 * 1.1673, 1);
         expect(may.cashPnlUsd).toBeCloseTo(1820 * 1.1673 - 1116.73, 1);
         expect(may.creditBurnUsd).toBe(200);
-        expect(may.opexIncomplete).toBe(false);
+        expect(may.monthInProgress).toBe(false);
 
-        expect(june.opexIncomplete).toBe(true);
+        // Wise cash is real time: a closed month is complete even before
+        // any later rows exist; only the current calendar month is flagged.
+        expect(june.monthInProgress).toBe(false);
+        expect(june.spendUsd).toBe(50);
         expect(june.revenueNetUsd).toBeNull();
         expect(june.cashPnlUsd).toBeNull();
+
+        expect(july.month).toBe("2026-07");
+        expect(july.monthInProgress).toBe(true);
+        expect(july.spendUsd).toBe(10);
     });
 
     it("reports null spend for a month with no transactions at all", () => {
@@ -252,34 +236,39 @@ describe("monthSpendDetail", () => {
                     date: "2026-05-10",
                     vendor: "aws",
                     category: "compute",
-                    paid_amount: 300,
-                    paid_currency: "USD",
+                    charged_amount: 300,
+                    charged_currency: "USD",
                 }),
                 txn({
                     date: "2026-05-12",
                     vendor: "aws",
                     category: "compute",
-                    paid_amount: 100,
-                    paid_currency: "USD",
+                    charged_amount: 100,
+                    charged_currency: "USD",
                 }),
                 txn({
                     date: "2026-05-25",
                     vendor: "deel",
                     category: "payroll",
-                    paid_amount: 100,
-                    paid_currency: "USD",
+                    charged_amount: 100,
+                    charged_currency: "USD",
                 }),
                 txn({
                     date: "2026-04-01",
                     vendor: "aws",
                     category: "compute",
-                    paid_amount: 999,
-                    paid_currency: "USD",
+                    charged_amount: 999,
+                    charged_currency: "USD",
                 }),
             ],
             providerMonthly: [
                 provider({ month: "2026-05", vendor: "azure", credit: 50 }),
-                provider({ month: "2026-05", vendor: "aws", credit: 0, paid: 10 }),
+                provider({
+                    month: "2026-05",
+                    vendor: "aws",
+                    credit: 0,
+                    paid: 10,
+                }),
             ],
         });
         const detail = monthSpendDetail(data, "2026-05", now);
@@ -318,14 +307,14 @@ describe("categoryColumns", () => {
                     txn({
                         date: "2026-05-01",
                         category: "zulu",
-                        paid_amount: 1,
-                        paid_currency: "USD",
+                        charged_amount: 1,
+                        charged_currency: "USD",
                     }),
                     txn({
                         date: "2026-05-02",
                         category: "compute",
-                        paid_amount: 1,
-                        paid_currency: "USD",
+                        charged_amount: 1,
+                        charged_currency: "USD",
                     }),
                 ],
             }),
@@ -343,15 +332,15 @@ describe("vendorPlanes", () => {
                     date: "2026-06-13",
                     vendor: "google",
                     category: "compute",
-                    paid_amount: 5000,
-                    paid_currency: "USD",
+                    charged_amount: 5000,
+                    charged_currency: "USD",
                 }),
                 txn({
                     date: "2026-06-14",
                     vendor: "google",
                     category: "saas",
-                    paid_amount: 999,
-                    paid_currency: "USD",
+                    charged_amount: 999,
+                    charged_currency: "USD",
                 }),
             ],
             providerMonthly: [
@@ -400,8 +389,8 @@ describe("vendorPlanes", () => {
                     date: "",
                     vendor: "aws",
                     category: "compute",
-                    paid_amount: 500,
-                    paid_currency: "USD",
+                    charged_amount: 500,
+                    charged_currency: "USD",
                 }),
             ],
         });
@@ -444,8 +433,8 @@ describe("modelEconomics", () => {
                 date: "2026-06-10",
                 vendor: "elevenlabs",
                 category: "compute",
-                paid_amount: 300,
-                paid_currency: "USD",
+                charged_amount: 300,
+                charged_currency: "USD",
             }),
         ],
         pollenMonthly: [

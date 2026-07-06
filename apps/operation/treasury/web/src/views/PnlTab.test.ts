@@ -9,7 +9,7 @@ const month = (over: Partial<PnlMonth>): PnlMonth => ({
     spendUsd: null,
     cashPnlUsd: null,
     creditBurnUsd: 0,
-    opexIncomplete: false,
+    monthInProgress: false,
     ...over,
 });
 

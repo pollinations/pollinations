@@ -1,5 +1,5 @@
 import {
-    ExternalLinkButton,
+    Chip,
     TableBody,
     TableCell,
     TableHead,
@@ -25,25 +25,7 @@ function transactionKey(row: TransactionRow) {
         row.category,
         row.charged_amount,
         row.charged_currency,
-        row.paid_amount,
-        row.paid_currency,
-        row.invoice_ref,
-        row.match_status,
     ].join("|");
-}
-
-function InvoiceRef({ value }: { value: string }) {
-    if (!value) return <span>-</span>;
-
-    return (
-        <ExternalLinkButton
-            href={`/api/files/invoice?path=${encodeURIComponent(value)}`}
-            size="sm"
-            title={value}
-        >
-            invoice
-        </ExternalLinkButton>
-    );
 }
 
 export function TransactionsTab({
@@ -80,13 +62,6 @@ export function TransactionsTab({
                 key: "charged_currency",
                 value: (row) => row.charged_currency,
             },
-            { key: "paid_amount", value: (row) => row.paid_amount },
-            {
-                key: "paid_currency",
-                value: (row) => row.paid_currency,
-            },
-            { key: "match_status", value: (row) => row.match_status },
-            { key: "invoice_ref", value: (row) => row.invoice_ref },
         ],
         [],
     );
@@ -115,18 +90,6 @@ export function TransactionsTab({
                         <TableHeaderCell {...headerProps("charged_currency")}>
                             charged_currency
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("paid_amount")}>
-                            paid_amount
-                        </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("paid_currency")}>
-                            paid_currency
-                        </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("match_status")}>
-                            match_status
-                        </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("invoice_ref")}>
-                            invoice_ref
-                        </TableHeaderCell>
                     </TableRow>
                 </TableHead>
                 <TableBody>
@@ -134,16 +97,18 @@ export function TransactionsTab({
                         ({ key, row }) => (
                             <TableRow key={key}>
                                 <TableCell>{fmtPeriod(row.date)}</TableCell>
-                                <TableCell>{row.vendor}</TableCell>
+                                <TableCell>
+                                    {row.vendor || (
+                                        <span title="no vendor match — add an alias in forager config/vendor_aliases.json and re-run the ingest">
+                                            <Chip intent="warning" size="sm">
+                                                unmatched
+                                            </Chip>
+                                        </span>
+                                    )}
+                                </TableCell>
                                 <TableCell>{row.category}</TableCell>
                                 <TableCell>{row.charged_amount}</TableCell>
                                 <TableCell>{row.charged_currency}</TableCell>
-                                <TableCell>{row.paid_amount}</TableCell>
-                                <TableCell>{row.paid_currency}</TableCell>
-                                <TableCell>{row.match_status}</TableCell>
-                                <TableCell>
-                                    <InvoiceRef value={row.invoice_ref} />
-                                </TableCell>
                             </TableRow>
                         ),
                     )}

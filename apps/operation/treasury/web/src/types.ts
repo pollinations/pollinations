@@ -4,10 +4,6 @@ export type TransactionRow = {
     category: string;
     charged_amount: number;
     charged_currency: string;
-    paid_amount: number;
-    paid_currency: string;
-    invoice_ref: string;
-    match_status: string;
 };
 
 export type ProviderMonthlyRow = {

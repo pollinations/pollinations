@@ -1,9 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { existsSync, readFileSync, statSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { homedir } from "node:os";
-import { basename, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
@@ -21,7 +18,6 @@ const READ_PIPES = new Set([
     "ingest_runs_api",
     "revenue_monthly_api",
 ]);
-const INVOICE_ROOT = resolve(homedir(), "Documents/treasury-invoices");
 
 type TreasurySecrets = {
     TREASURY_PASSWORD: string;
@@ -100,24 +96,6 @@ async function readBody(req: IncomingMessage) {
     return Buffer.concat(chunks).toString("utf8");
 }
 
-function findInvoiceFile(requested: string): string | null {
-    if (!requested) return null;
-
-    const direct = requested.startsWith(sep)
-        ? resolve(requested)
-        : resolve(INVOICE_ROOT, requested);
-    const rootPrefix = INVOICE_ROOT.endsWith(sep)
-        ? INVOICE_ROOT
-        : `${INVOICE_ROOT}${sep}`;
-
-    if (direct !== INVOICE_ROOT && !direct.startsWith(rootPrefix)) {
-        return null;
-    }
-    if (!direct.toLowerCase().endsWith(".pdf")) return null;
-
-    return existsSync(direct) ? direct : null;
-}
-
 async function handleApi(req: IncomingMessage, res: ServerResponse) {
     if (!req.url?.startsWith("/api/")) return false;
 
@@ -173,23 +151,6 @@ async function handleApi(req: IncomingMessage, res: ServerResponse) {
 
     if (!isAuthenticated(req, secrets)) {
         json(res, 401, { error: "Unauthorized" });
-        return true;
-    }
-
-    if (url.pathname === "/api/files/invoice" && req.method === "GET") {
-        const path = findInvoiceFile(url.searchParams.get("path") ?? "");
-        if (!path || !statSync(path).isFile()) {
-            json(res, 404, { error: "Invoice file not found" });
-            return true;
-        }
-
-        res.statusCode = 200;
-        res.setHeader("Content-Type", "application/pdf");
-        res.setHeader(
-            "Content-Disposition",
-            `inline; filename="${basename(path).replaceAll('"', "")}"`,
-        );
-        res.end(readFileSync(path));
         return true;
     }
 

@@ -90,7 +90,7 @@ function PnlMatrix({ data, month = "" }: { data: Data; month?: string }) {
                                 </TableHeaderCell>
                             ))}
                             <TableHeaderCell>
-                                <HeaderHint hint="Sum of all category columns: total cash out for the month, by invoice date.">
+                                <HeaderHint hint="Sum of all category columns: total cash out for the month, by transaction date.">
                                     spend
                                 </HeaderHint>
                             </TableHeaderCell>
@@ -112,9 +112,9 @@ function PnlMatrix({ data, month = "" }: { data: Data; month?: string }) {
                                 <TableCell>
                                     <span className="inline-flex items-center gap-1.5">
                                         {monthLabel(row.month)}
-                                        {row.opexIncomplete && (
+                                        {row.monthInProgress && (
                                             <span
-                                                title="opex incomplete - the Enty batch for this month has not landed yet"
+                                                title="month in progress - cash is still landing"
                                                 className="text-intent-danger-text"
                                             >
                                                 ⚠
@@ -178,9 +178,9 @@ function PnlMatrix({ data, month = "" }: { data: Data; month?: string }) {
                 </DataTable>
             </TableScroller>
             <Text size="micro" tone="soft">
-                costs are cash-basis by transaction date · EUR→USD at monthly
-                ECB averages · (credit burn) = provider-metered spend covered by
-                credits, not part of cash P&L · ⚠ = Enty batch not landed
+                costs are cash-basis by transaction date (Wise) · EUR→USD at
+                monthly ECB averages · (credit burn) = provider-metered spend
+                covered by credits, not part of cash P&L · ⚠ = month in progress
             </Text>
         </div>
     );
@@ -198,7 +198,7 @@ function PnlMonthDetail({ data, month }: { data: Data; month: string }) {
             <div className="flex flex-wrap items-center gap-2">
                 <Chip data-theme="neutral" intent="neutral" size="sm">
                     {monthLabel(month)}
-                    {summary?.opexIncomplete ? " ⚠" : ""}
+                    {summary?.monthInProgress ? " ⚠" : ""}
                 </Chip>
                 <Chip data-theme="neutral" intent="neutral" size="sm">
                     revenue {fmtUsd(summary?.revenueNetUsd ?? null)}
@@ -223,7 +223,7 @@ function PnlMonthDetail({ data, month }: { data: Data; month: string }) {
                             <TableHeaderCell>category</TableHeaderCell>
                             <TableHeaderCell>vendor</TableHeaderCell>
                             <TableHeaderCell>
-                                <HeaderHint hint="Cash out for this category × vendor: bank amount when matched, invoice amount as fallback.">
+                                <HeaderHint hint="Cash out for this category × vendor: the settled Wise bank amount.">
                                     cash
                                 </HeaderHint>
                             </TableHeaderCell>
@@ -275,7 +275,7 @@ function PnlMonthDetail({ data, month }: { data: Data; month: string }) {
             )}
             <Text size="micro" tone="soft">
                 single-month drill-down: cash by category and vendor · pick the
-                year pill for the monthly matrix · ⚠ = Enty batch not landed
+                year pill for the monthly matrix · ⚠ = month in progress
             </Text>
         </div>
     );

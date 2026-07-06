@@ -119,9 +119,12 @@ def test_enty_exports_build_minimal_transactions(tmp_path):
             "date": "2026-05-28",
             "provider": "alibaba",
             "category": "compute",
-            "bank_charged": "$1,000.04",
-            "cash_paid": "$1,000.04",
-            "credit_burned": "",
+            "bank_charged_amount": 1000.04,
+            "bank_charged_currency": "USD",
+            "cash_paid_amount": 1000.04,
+            "cash_paid_currency": "USD",
+            "credit_burned_amount": 0.0,
+            "credit_burned_currency": "",
             "invoice_ref": "EEAR1-2605000005128.pdf",
             "match_status": "matched",
         }
@@ -204,8 +207,10 @@ def test_enty_source_amount_matches_invoice_currency(tmp_path):
     )
 
     assert rows[0]["provider"] == "vast.ai"
-    assert rows[0]["bank_charged"] == "€433.61"
-    assert rows[0]["cash_paid"] == "$500.00"
+    assert rows[0]["bank_charged_amount"] == 433.61
+    assert rows[0]["bank_charged_currency"] == "EUR"
+    assert rows[0]["cash_paid_amount"] == 500.0
+    assert rows[0]["cash_paid_currency"] == "USD"
     assert rows[0]["match_status"] == "matched"
 
 
@@ -255,8 +260,11 @@ def test_enty_applies_transaction_overrides(tmp_path):
     key = "|".join(
         [
             "2026-05-28",
-            "$1,000.04",
+            "1000.04",
+            "USD",
+            "0.0",
             "",
+            "0.0",
             "",
             "",
             "missing_invoice",
@@ -279,9 +287,12 @@ def test_enty_applies_transaction_overrides(tmp_path):
             "date": "2026-05-28",
             "provider": "aws",
             "category": "infra",
-            "bank_charged": "$1,000.04",
-            "cash_paid": "",
-            "credit_burned": "",
+            "bank_charged_amount": 1000.04,
+            "bank_charged_currency": "USD",
+            "cash_paid_amount": 0.0,
+            "cash_paid_currency": "",
+            "credit_burned_amount": 0.0,
+            "credit_burned_currency": "",
             "invoice_ref": "",
             "match_status": "missing_invoice",
         }

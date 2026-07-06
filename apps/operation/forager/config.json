@@ -1,7 +1,6 @@
 {
     "tb_ops_api": "https://api.europe-west2.gcp.tinybird.co",
     "tb_prod_api": "https://api.europe-west2.gcp.tinybird.co",
-    "fx_eur_usd": 1.14,
     "months_start": "2026-01",
     "enty_ledger_dir": "~/Documents/treasury-invoices/enty-ledger",
     "enty_ai_verify": true,

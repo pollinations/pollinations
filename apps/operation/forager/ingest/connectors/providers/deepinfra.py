@@ -48,7 +48,7 @@ def meter(creds, months, today):
             rows.append(_mrow(
                 month=month,
                 provider="deepinfra",
-                cost_usd=round(cents / 100.0, 2),
+                amount=round(cents / 100.0, 2),
                 funding="prepaid",
                 source="api",
                 today=today,

@@ -145,6 +145,7 @@ def test_usage_provider_canonicalized_at_ingest():
             "month",
             "provider",
             "model",
+            "currency",
             "billable_paid_pollen",
             "billable_quest_pollen",
             "cost_paid_pollen",
@@ -402,11 +403,11 @@ def test_stripe_payouts_excluded(monkeypatch):
     row = next(r for r in rows if r["month"] == "2026-06")
     # If payout (-1000 cents) was included, gross would differ (or net very negative)
     # gross must be exactly 18.00 (only charges count)
-    assert row["gross_eur"] == 18.00
+    assert row["gross_amount"] == 18.00
 
 
-def test_stripe_cents_to_eur(monkeypatch):
-    """Amounts must be divided by 100 (cents → EUR)."""
+def test_stripe_minor_units_to_amount(monkeypatch):
+    """Amounts must be divided by 100 from Stripe minor units."""
     page = {
         "data": [
             {
@@ -422,32 +423,33 @@ def test_stripe_cents_to_eur(monkeypatch):
     cap = StripeCapture([page])
     monkeypatch.setattr(_stripe, "http_json", cap)
     rows = _stripe.revenue_rows(_STRIPE_CREDS, ["2026-06"], TODAY)
-    assert rows[0]["gross_eur"] == pytest.approx(100.00, abs=0.001)
+    assert rows[0]["gross_amount"] == pytest.approx(100.00, abs=0.001)
+    assert rows[0]["currency"] == "EUR"
     # fees = (10000 - 0 - 9725) / 100 = 2.75 — net contributes in cents
-    assert rows[0]["fees_eur"] == pytest.approx(2.75, abs=0.001)
+    assert rows[0]["fees_amount"] == pytest.approx(2.75, abs=0.001)
 
 
 def test_stripe_gross_sum(monkeypatch):
-    """gross_eur = sum of positive amounts / 100."""
+    """gross_amount = sum of positive amounts / 100."""
     cap = StripeCapture([_STRIPE_PAGE1, _STRIPE_PAGE2])
     monkeypatch.setattr(_stripe, "http_json", cap)
     rows = _stripe.revenue_rows(_STRIPE_CREDS, ["2026-06"], TODAY)
     row = next(r for r in rows if r["month"] == "2026-06")
-    assert row["gross_eur"] == 18.00
+    assert row["gross_amount"] == 18.00
 
 
 def test_stripe_refunds_sum(monkeypatch):
-    """refunds_eur = sum of abs(amount) for refund-type txns / 100."""
+    """refunds_amount = sum of abs(amount) for refund-type txns / 100."""
     cap = StripeCapture([_STRIPE_PAGE1, _STRIPE_PAGE2])
     monkeypatch.setattr(_stripe, "http_json", cap)
     rows = _stripe.revenue_rows(_STRIPE_CREDS, ["2026-06"], TODAY)
     row = next(r for r in rows if r["month"] == "2026-06")
-    assert row["refunds_eur"] == 3.00
+    assert row["refunds_amount"] == 3.00
 
 
 def test_stripe_net_sum(monkeypatch):
     """net is summed for all non-payout txns (in cents) and surfaces via fees.
-    net_eur was dropped from the schema, so the accumulation is observable only
+    net_amount was dropped from the schema, so the accumulation is observable only
     through fees = gross - refunds - net. If the payout's net (-1000 cents) leaked
     into the sum, fees would come out at 11.17 instead."""
     cap = StripeCapture([_STRIPE_PAGE1, _STRIPE_PAGE2])
@@ -455,20 +457,20 @@ def test_stripe_net_sum(monkeypatch):
     rows = _stripe.revenue_rows(_STRIPE_CREDS, ["2026-06"], TODAY)
     row = next(r for r in rows if r["month"] == "2026-06")
     # net = (938 + 462 + (-200) + 283 + (-100)) / 100 = 13.83 → fees = 18 - 3 - 13.83
-    assert row["fees_eur"] == 1.17
+    assert row["fees_amount"] == 1.17
 
 
 def test_stripe_fees_formula(monkeypatch):
-    """fees_eur = gross - refunds - net (computed in raw cents, then /100)."""
+    """fees_amount = gross - refunds - net (computed in raw cents, then /100)."""
     cap = StripeCapture([_STRIPE_PAGE1, _STRIPE_PAGE2])
     monkeypatch.setattr(_stripe, "http_json", cap)
     rows = _stripe.revenue_rows(_STRIPE_CREDS, ["2026-06"], TODAY)
     row = next(r for r in rows if r["month"] == "2026-06")
-    net_eur = 13.83  # Σnet from the fixture (net_eur itself is no longer emitted)
-    expected_fees = row["gross_eur"] - row["refunds_eur"] - net_eur
-    assert row["fees_eur"] == pytest.approx(expected_fees, abs=1e-9)
+    net_amount = 13.83  # Σnet from the fixture (net_amount itself is no longer emitted)
+    expected_fees = row["gross_amount"] - row["refunds_amount"] - net_amount
+    assert row["fees_amount"] == pytest.approx(expected_fees, abs=1e-9)
     # Concrete check: 18.00 - 3.00 - 13.83 = 1.17
-    assert row["fees_eur"] == 1.17
+    assert row["fees_amount"] == 1.17
 
 
 def test_stripe_fees_rounding_regression(monkeypatch):
@@ -502,15 +504,15 @@ def test_stripe_fees_rounding_regression(monkeypatch):
     rows = _stripe.revenue_rows(_STRIPE_CREDS, ["2026-06"], TODAY)
     row = rows[0]
     # Exact values (no rounding tolerance)
-    assert row["gross_eur"] == 19.99
-    assert row["refunds_eur"] == 1.00
+    assert row["gross_amount"] == 19.99
+    assert row["refunds_amount"] == 1.00
     # The identity must hold (within floating-point precision):
     # fees == (gross - refunds - net) computed in raw cents, then /100
-    net_eur = (1870 - 100) / 100  # Σnet from the fixture = 17.70
-    expected_fees = row["gross_eur"] - row["refunds_eur"] - net_eur
-    assert row["fees_eur"] == pytest.approx(expected_fees, abs=1e-9)
+    net_amount = (1870 - 100) / 100  # Σnet from the fixture = 17.70
+    expected_fees = row["gross_amount"] - row["refunds_amount"] - net_amount
+    assert row["fees_amount"] == pytest.approx(expected_fees, abs=1e-9)
     # Verify it equals 1.29 when properly rounded
-    assert row["fees_eur"] == 1.29
+    assert row["fees_amount"] == 1.29
 
 
 def test_stripe_only_requested_months_emitted(monkeypatch):
@@ -567,7 +569,13 @@ def test_stripe_row_shape(monkeypatch):
     monkeypatch.setattr(_stripe, "http_json", cap)
     rows = _stripe.revenue_rows(_STRIPE_CREDS, ["2026-06"], TODAY)
     assert rows
-    required = {"month", "gross_eur", "fees_eur", "refunds_eur"}
+    required = {
+        "month",
+        "currency",
+        "gross_amount",
+        "fees_amount",
+        "refunds_amount",
+    }
     for r in rows:
         assert set(r.keys()) == required, f"row fields mismatch: {r}"
 
@@ -612,4 +620,4 @@ def test_stripe_refund_type_identification(monkeypatch):
     rows = _stripe.revenue_rows(_STRIPE_CREDS, ["2026-06"], TODAY)
     row = rows[0]
     # All three refund types counted: (100 + 50 + 25) / 100 = 1.75
-    assert row["refunds_eur"] == pytest.approx(1.75, abs=0.001)
+    assert row["refunds_amount"] == pytest.approx(1.75, abs=0.001)

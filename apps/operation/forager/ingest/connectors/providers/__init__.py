@@ -15,13 +15,21 @@ def _validate_meter_values(provider, funding, source):
         raise ValueError(f"unknown source for meter_monthly: {source}")
 
 
-def _mrow(month, provider, cost_usd, funding, source, today):
+def _currency(value):
+    code = str(value or "").strip().upper()
+    if not code:
+        raise ValueError("meter_monthly currency is required")
+    return code
+
+
+def _mrow(month, provider, amount, funding, source, today, currency="USD"):
     """Build a meter_monthly datasource row.
 
     Args:
         month:    "YYYY-MM" billing month
         provider: canonical provider slug
-        cost_usd: metered cost in USD
+        amount:   metered cost in the source currency
+        currency: source currency code, e.g. "USD" or "EUR"
         funding:  "credit" | "prepaid" | "cash"
         source:   "api" | "cli" | "bq" | "manual"
         today:    current ingest date (kept in the call signature for connector simplicity)
@@ -30,7 +38,8 @@ def _mrow(month, provider, cost_usd, funding, source, today):
     return {
         "month": month,
         "provider": provider,
-        "cost_usd": round(float(cost_usd), 2),
+        "amount": round(float(amount), 2),
+        "currency": _currency(currency),
         "funding": funding,
         "source": source,
     }

@@ -11,7 +11,7 @@ Security:
 
 Refund type identification:
   Types "refund", "payment_refund", "charge_refund" are treated as refunds
-  (their amount is negative; we accumulate abs(amount) into refunds_eur).
+  (their amount is negative; we accumulate abs(amount) into refunds_amount).
   Other negative-amount non-payout types (e.g. adjustment, stripe_fee) still
   contribute to net via Σnet but are NOT counted as refunds.
 
@@ -50,9 +50,9 @@ def revenue_rows(creds, months, today, _max_pages=100):
     months_set = set(months)
 
     # Accumulators keyed by "YYYY-MM"
-    gross: dict[str, float] = {}   # Σ positive amounts
-    refunds: dict[str, float] = {} # Σ abs(amount) for refund-type txns
-    net: dict[str, float] = {}     # Σ net for all non-payout txns
+    gross: dict[tuple[str, str], float] = {}   # Σ positive amounts
+    refunds: dict[tuple[str, str], float] = {} # Σ abs(amount) for refund-type txns
+    net: dict[tuple[str, str], float] = {}     # Σ net for all non-payout txns
 
     url = f"{_STRIPE_BASE}/balance_transactions?limit=100"
     pages_fetched = 0
@@ -68,19 +68,21 @@ def revenue_rows(creds, months, today, _max_pages=100):
                 continue
 
             month = _epoch_to_month(txn.get("created", 0))
+            currency = str(txn.get("currency") or "eur").upper()
+            key = (month, currency)
             amount = txn.get("amount", 0)
             txn_net = txn.get("net", 0)
 
             # Accumulate gross (positive amounts only)
             if amount > 0:
-                gross[month] = gross.get(month, 0.0) + amount
+                gross[key] = gross.get(key, 0.0) + amount
 
             # Accumulate refunds (refund-type txns with negative amounts)
             if txn_type in _REFUND_TYPES and amount < 0:
-                refunds[month] = refunds.get(month, 0.0) + abs(amount)
+                refunds[key] = refunds.get(key, 0.0) + abs(amount)
 
             # Accumulate net (all non-payout txns)
-            net[month] = net.get(month, 0.0) + txn_net
+            net[key] = net.get(key, 0.0) + txn_net
 
         if not page.get("has_more"):
             break
@@ -94,25 +96,28 @@ def revenue_rows(creds, months, today, _max_pages=100):
 
     # Build output rows for requested months only
     rows = []
-    all_months = months_set & (set(gross) | set(refunds) | set(net))
-    for month in sorted(all_months):
+    all_keys = {
+        key for key in set(gross) | set(refunds) | set(net) if key[0] in months_set
+    }
+    for month, currency in sorted(all_keys):
         # Compute fees in raw cents first to maintain identity: fees == (gross - refunds - net) / 100
-        gross_cents = gross.get(month, 0.0)
-        refunds_cents = refunds.get(month, 0.0)
-        net_cents = net.get(month, 0.0)
+        key = (month, currency)
+        gross_cents = gross.get(key, 0.0)
+        refunds_cents = refunds.get(key, 0.0)
+        net_cents = net.get(key, 0.0)
         fees_cents = gross_cents - refunds_cents - net_cents
 
-        # Convert all to EUR and round to 2dp
+        # Stripe amounts are minor units in the transaction currency.
         g = round(gross_cents / 100, 2)
         r = round(refunds_cents / 100, 2)
-        n = round(net_cents / 100, 2)
         f = round(fees_cents / 100, 2)
 
         rows.append({
             "month": month,
-            "gross_eur": g,
-            "fees_eur": f,
-            "refunds_eur": r,
+            "gross_amount": g,
+            "fees_amount": f,
+            "refunds_amount": r,
+            "currency": currency,
         })
 
     return rows

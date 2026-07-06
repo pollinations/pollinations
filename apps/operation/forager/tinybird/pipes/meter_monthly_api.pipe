@@ -7,7 +7,8 @@ SQL >
         source,
         provider,
         funding,
-        cost_usd
+        currency,
+        amount
     FROM meter_monthly
     ORDER BY provider, month, funding, source
 

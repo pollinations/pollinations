@@ -74,7 +74,7 @@ def meter(creds, months, today, run_cmd=subprocess.run):
             rows.append(_mrow(
                 month=month,
                 provider="fireworks",
-                cost_usd=cost,
+                amount=cost,
                 funding="cash",
                 source="cli",
                 today=today,

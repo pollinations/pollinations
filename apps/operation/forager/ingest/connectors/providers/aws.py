@@ -69,7 +69,7 @@ def meter(creds, months, today, run_cmd=subprocess.run):
             rows.append(_mrow(
                 month=month,
                 provider="aws",
-                cost_usd=amt,
+                amount=amt,
                 funding="cash",
                 source="cli",
                 today=today,
@@ -98,7 +98,7 @@ def meter(creds, months, today, run_cmd=subprocess.run):
             rows.append(_mrow(
                 month=month,
                 provider="aws",
-                cost_usd=amt,
+                amount=amt,
                 funding="credit",
                 source="cli",
                 today=today,

@@ -12,7 +12,6 @@ _local/invoice_fetcher.
 """
 
 import datetime
-import inspect
 import json
 import sys
 
@@ -42,14 +41,19 @@ def load_overrides(ops_ingest):
 
 
 def dedupe_meter(rows):
-    """One row per (provider, month, funding), preferring manual rows."""
+    """One row per (provider, month, funding, currency), preferring manual rows."""
 
     def _rank(row):
         return _SRC_RANK.get(row.get("source", "manual"), 99)
 
     best = {}
     for row in rows:
-        key = (row.get("provider", ""), row.get("month", ""), row.get("funding", ""))
+        key = (
+            row.get("provider", ""),
+            row.get("month", ""),
+            row.get("funding", ""),
+            row.get("currency", ""),
+        )
         prev = best.get(key)
         if prev is None or _rank(row) <= _rank(prev):
             best[key] = row
@@ -67,7 +71,10 @@ def meter_manual_reset_keys(overrides):
 
 
 def meter_row_key(row):
-    return f"{row.get('provider', '')}|{row.get('month', '')}|{row.get('funding', '')}"
+    return (
+        f"{row.get('provider', '')}|{row.get('month', '')}|"
+        f"{row.get('funding', '')}|{row.get('currency', '')}"
+    )
 
 
 def without_reset_manual_meter_rows(rows, overrides):
@@ -88,6 +95,8 @@ def validate_meter_rows(rows):
             row.get("funding", ""),
             row.get("source", ""),
         )
+        if not str(row.get("currency") or "").strip():
+            raise ValueError("meter_monthly row missing currency")
 
 
 def _sanitize_err(e, creds_dict):
@@ -107,19 +116,13 @@ def refresh_meter_monthly(
     statuses,
     overrides,
 ):
-    fx = config["fx_eur_usd"]
     months = months_ytd(config["months_start"], today)
     meter_new = []
     errors = []
 
     for slug, fn in registry.METER:
         try:
-            sig = inspect.signature(fn)
-            rows = (
-                fn(secrets, months, today, fx=fx)
-                if "fx" in sig.parameters
-                else fn(secrets, months, today)
-            )
+            rows = fn(secrets, months, today)
             meter_new.extend(rows or [])
             statuses[f"meter:{slug}"] = "ok"
         except Exception as e:

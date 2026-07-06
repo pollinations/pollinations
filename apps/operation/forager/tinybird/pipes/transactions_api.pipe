@@ -6,9 +6,12 @@ SQL >
         formatDateTime(date, '%F') AS date,
         provider,
         category,
-        bank_charged,
-        cash_paid,
-        credit_burned,
+        bank_charged_amount,
+        bank_charged_currency,
+        cash_paid_amount,
+        cash_paid_currency,
+        credit_burned_amount,
+        credit_burned_currency,
         invoice_ref,
         match_status
     FROM transactions

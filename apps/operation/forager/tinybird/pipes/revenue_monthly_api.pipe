@@ -2,7 +2,13 @@ TOKEN "treasury_web" READ
 
 NODE revenue
 SQL >
-    SELECT month, 'stripe' AS source, gross_eur, fees_eur, refunds_eur
-    FROM revenue_monthly ORDER BY month
+    SELECT
+        month,
+        'stripe' AS source,
+        currency,
+        gross_amount,
+        fees_amount,
+        refunds_amount
+    FROM revenue_monthly ORDER BY month, currency
 
 TYPE endpoint

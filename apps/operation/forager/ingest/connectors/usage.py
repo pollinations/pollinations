@@ -84,6 +84,7 @@ def monthly_rows(tb_prod, months, today):
                     "month": month,
                     "provider": provider,
                     "model": raw.get("model"),
+                    "currency": "POLLEN",
                     **{field: 0 for field in numeric_fields},
                 },
             )

@@ -1,6 +1,6 @@
-"""dedupe_meter — meter_monthly holds one row per (provider, month, funding).
+"""dedupe_meter — meter_monthly holds one row per provider/month/funding/currency.
 
-Precedence: manual rows are operator overrides for a provider/month/funding
+Precedence: manual rows are operator overrides for a provider/month/funding/currency
 bucket. Otherwise source rank wins, then last-seen.
 
 Run: cd apps/operation/forager && python3 -m pytest tests/test_meter_dedupe.py -q
@@ -14,11 +14,12 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from ingest.run import dedupe_meter, without_reset_manual_meter_rows
 
 
-def _row(provider, month, cost, funding="credit", source="api"):
+def _row(provider, month, cost, funding="credit", source="api", currency="USD"):
     return {
         "month": month,
         "provider": provider,
-        "cost_usd": cost,
+        "amount": cost,
+        "currency": currency,
         "funding": funding,
         "source": source,
     }
@@ -32,7 +33,7 @@ def test_last_seen_wins_within_source():
     ]
     out = dedupe_meter(rows)
     assert len(out) == 1
-    assert out[0]["cost_usd"] == 110.0
+    assert out[0]["amount"] == 110.0
 
 
 def test_manual_beats_api_for_same_bucket():
@@ -43,7 +44,7 @@ def test_manual_beats_api_for_same_bucket():
     out = dedupe_meter(rows)
     assert len(out) == 1
     assert out[0]["source"] == "manual"
-    assert out[0]["cost_usd"] == 999.0
+    assert out[0]["amount"] == 999.0
 
 
 def test_manual_survives_when_alone():
@@ -67,6 +68,16 @@ def test_funding_classes_stay_separate():
     assert {r["funding"] for r in out} == {"credit", "cash"}
 
 
+def test_currency_classes_stay_separate():
+    rows = [
+        _row("aws", "2026-06", 1922.35, currency="USD"),
+        _row("aws", "2026-06", 55.0, currency="EUR"),
+    ]
+    out = dedupe_meter(rows)
+    assert len(out) == 2
+    assert {r["currency"] for r in out} == {"USD", "EUR"}
+
+
 def test_providers_and_months_never_cross_collapse():
     rows = [
         _row("aws", "2026-05", 1.0),
@@ -85,7 +96,7 @@ def test_last_seen_wins_on_exact_tie():
     ]
     out = dedupe_meter(rows)
     assert len(out) == 1
-    assert out[0]["cost_usd"] == 12.5
+    assert out[0]["amount"] == 12.5
 
 
 def test_cli_and_bq_rank_between_api_and_manual():
@@ -109,7 +120,7 @@ def test_reset_override_ignores_manual_row():
         _row("openai", "2026-06", 9.0, source="manual"),
     ]
     overrides = {
-        ("meter_monthly", "aws|2026-06|credit", "reset_manual"): "1",
+        ("meter_monthly", "aws|2026-06|credit|USD", "reset_manual"): "1",
     }
 
     out = without_reset_manual_meter_rows(rows, overrides)
@@ -123,7 +134,7 @@ def test_reset_override_ignores_manual_row():
 def test_reset_override_zero_keeps_manual_row():
     rows = [_row("aws", "2026-06", 0.0, source="manual")]
     overrides = {
-        ("meter_monthly", "aws|2026-06|credit", "reset_manual"): "0",
+        ("meter_monthly", "aws|2026-06|credit|USD", "reset_manual"): "0",
     }
 
     assert without_reset_manual_meter_rows(rows, overrides) == rows

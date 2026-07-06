@@ -108,7 +108,7 @@ def meter(creds, months, today):
             rows.append(_mrow(
                 month=month,
                 provider="openai",
-                cost_usd=cost,
+                amount=cost,
                 funding="credit",
                 source="api",
                 today=today,

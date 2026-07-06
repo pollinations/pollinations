@@ -1,8 +1,8 @@
 """Manual entry CLI for meter readings.
 
 Usage:
-    python3 -m ingest.record meter <provider> <YYYY-MM> <cost_usd>
-                                   [--funding credit|prepaid]
+    python3 -m ingest.record meter <provider> <YYYY-MM> <amount>
+                                   --currency USD|EUR [--funding credit|prepaid|cash]
 
 Appends one row to `meter_monthly` with source="manual".
 Provider must be in registry.CANONICAL; month must match YYYY-MM.
@@ -19,6 +19,7 @@ from . import creds as _creds
 from . import tb as _tb
 
 _MONTH_RE = re.compile(r'^\d{4}-(0[1-9]|1[0-2])$')
+_CURRENCY_RE = re.compile(r"^[A-Z]{3,8}$")
 
 
 def _default_tb_factory(token):
@@ -39,6 +40,14 @@ def _validate_month(month):
         sys.exit(1)
 
 
+def _validate_currency(currency):
+    code = currency.strip().upper()
+    if not _CURRENCY_RE.match(code):
+        print(f"error: currency must be a code like USD or EUR, got '{currency}'", file=sys.stderr)
+        sys.exit(1)
+    return code
+
+
 def main(argv=None, tb_factory=None):
     """Entry point.
 
@@ -55,8 +64,9 @@ def main(argv=None, tb_factory=None):
     mp = sub.add_parser("meter", help="append a meter_monthly reading")
     mp.add_argument("provider",  help="canonical provider slug")
     mp.add_argument("month",     help="billing month YYYY-MM")
-    mp.add_argument("cost_usd",  type=float, help="metered cost in USD")
-    mp.add_argument("--funding", default="prepaid", choices=["credit", "prepaid"])
+    mp.add_argument("amount",    type=float, help="metered cost in source currency")
+    mp.add_argument("--currency", required=True, help="source currency code, e.g. USD or EUR")
+    mp.add_argument("--funding", default="prepaid", choices=["credit", "prepaid", "cash"])
 
     args = parser.parse_args(argv)
 
@@ -70,9 +80,10 @@ def main(argv=None, tb_factory=None):
     if args.cmd == "meter":
         _validate_provider(args.provider)
         _validate_month(args.month)
+        currency = _validate_currency(args.currency)
         today = datetime.date.today().isoformat()
-        row = _mrow(args.month, args.provider, args.cost_usd,
-                    args.funding, "manual", today)
+        row = _mrow(args.month, args.provider, args.amount,
+                    args.funding, "manual", today, currency=currency)
         client.append("meter_monthly", [row])
         print(json.dumps(row))
 

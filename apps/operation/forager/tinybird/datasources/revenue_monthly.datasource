@@ -3,9 +3,10 @@ TOKEN "treasury_ingest" READ
 
 SCHEMA >
     `month` String `json:$.month`,
-    `gross_eur` Float64 `json:$.gross_eur`,
-    `fees_eur` Float64 `json:$.fees_eur`,
-    `refunds_eur` Float64 `json:$.refunds_eur`
+    `gross_amount` Float64 `json:$.gross_amount`,
+    `fees_amount` Float64 `json:$.fees_amount`,
+    `refunds_amount` Float64 `json:$.refunds_amount`,
+    `currency` String `json:$.currency`
 
 ENGINE "MergeTree"
-ENGINE_SORTING_KEY "month"
+ENGINE_SORTING_KEY "month, currency"

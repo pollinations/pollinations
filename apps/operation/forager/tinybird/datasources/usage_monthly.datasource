@@ -5,6 +5,7 @@ SCHEMA >
     `month` String `json:$.month`,
     `provider` String `json:$.provider`,
     `model` String `json:$.model`,
+    `currency` String `json:$.currency`,
     `cost_paid_pollen` Float64 `json:$.cost_paid_pollen`,
     `cost_quest_pollen` Float64 `json:$.cost_quest_pollen`,
     `billable_paid_pollen` Float64 `json:$.billable_paid_pollen`,

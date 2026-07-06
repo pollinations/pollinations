@@ -2,11 +2,11 @@
 
 Writes GCP_BILLING_SA_JSON to a temp file, activates the service account via
 `gcloud auth activate-service-account`, then runs `bq query` against the
-billing export table. Cost is in native EUR — multiplied by fx → USD.
+billing export table. Cost is kept in native EUR.
 
 Two row types per month:
-  gross_eur → funding=cash
-  abs(credits_eur) → funding=credit (billing discounts / sustained-use credits)
+  gross_amount → funding=cash
+  abs(credits_amount) → funding=credit (billing discounts / sustained-use credits)
 
 BQ table name and SQL copied verbatim from PoC build/connectors/accrual.py.
 
@@ -35,9 +35,9 @@ _os_unlink = os.unlink
 _SQL = f"""
 SELECT
   FORMAT_DATE('%Y-%m', DATE(usage_start_time)) AS month,
-  ROUND(SUM(cost), 2) AS gross_eur,
-  ROUND(SUM(IFNULL((SELECT SUM(c.amount) FROM UNNEST(credits) c), 0)), 2) AS credits_eur,
-  ROUND(SUM(cost) + SUM(IFNULL((SELECT SUM(c.amount) FROM UNNEST(credits) c), 0)), 2) AS net_eur,
+  ROUND(SUM(cost), 2) AS gross_amount,
+  ROUND(SUM(IFNULL((SELECT SUM(c.amount) FROM UNNEST(credits) c), 0)), 2) AS credits_amount,
+  ROUND(SUM(cost) + SUM(IFNULL((SELECT SUM(c.amount) FROM UNNEST(credits) c), 0)), 2) AS net_amount,
   COUNT(*) AS row_count,
   MAX(DATE(usage_start_time)) AS latest_usage
 FROM `{_GCP_TABLE}`
@@ -47,14 +47,13 @@ ORDER BY month
 """.strip()
 
 
-def meter(creds, months, today, fx=1.14, run_cmd=subprocess.run):
+def meter(creds, months, today, run_cmd=subprocess.run):
     """Fetch GCP metered cost per month from the BigQuery billing export.
 
     Args:
         creds:   dict with GCP_BILLING_SA_JSON (service-account JSON as a string)
         months:  list of "YYYY-MM" strings to include in output
         today:   current ingest date
-        fx:      EUR→USD conversion rate (default 1.14)
         run_cmd: injectable subprocess.run replacement (for testing)
 
     Returns:
@@ -113,24 +112,26 @@ def meter(creds, months, today, fx=1.14, run_cmd=subprocess.run):
             month = r.get("month") or ""
             if month not in month_set:
                 continue
-            gross_eur = float(r.get("gross_eur") or 0)
-            credits_eur = float(r.get("credits_eur") or 0)
+            gross_amount = float(r.get("gross_amount") or 0)
+            credits_amount = float(r.get("credits_amount") or 0)
 
-            if gross_eur:
+            if gross_amount:
                 rows.append(_mrow(
                     month=month,
                     provider="google",
-                    cost_usd=round(gross_eur * fx, 2),
+                    amount=gross_amount,
+                    currency="EUR",
                     funding="cash",
                     source="bq",
                     today=today,
                 ))
-            credit_usd = round(abs(credits_eur) * fx, 2)
-            if credit_usd:
+            credit_amount = round(abs(credits_amount), 2)
+            if credit_amount:
                 rows.append(_mrow(
                     month=month,
                     provider="google",
-                    cost_usd=credit_usd,
+                    amount=credit_amount,
+                    currency="EUR",
                     funding="credit",
                     source="bq",
                     today=today,

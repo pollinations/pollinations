@@ -13,9 +13,12 @@ COLUMNS = [
     "date",
     "provider",
     "category",
-    "bank_charged",
-    "cash_paid",
-    "credit_burned",
+    "bank_charged_amount",
+    "bank_charged_currency",
+    "cash_paid_amount",
+    "cash_paid_currency",
+    "credit_burned_amount",
+    "credit_burned_currency",
     "invoice_ref",
     "match_status",
 ]
@@ -150,9 +153,12 @@ def matched(bank, invoice):
         "date": bank["date"] or invoice["date"],
         "provider": provider,
         "category": category_for(bank, provider),
-        "bank_charged": money(bank["amount"], bank["currency"]),
-        "cash_paid": money(invoice["amount"], invoice["currency"]),
-        "credit_burned": "",
+        "bank_charged_amount": money_amount(bank["amount"]),
+        "bank_charged_currency": currency_code(bank["currency"], bank["amount"]),
+        "cash_paid_amount": money_amount(invoice["amount"]),
+        "cash_paid_currency": currency_code(invoice["currency"], invoice["amount"]),
+        "credit_burned_amount": 0.0,
+        "credit_burned_currency": "",
         "invoice_ref": invoice["file_name"],
         "match_status": "matched",
         "_evidence": evidence(bank, invoice),
@@ -165,9 +171,12 @@ def missing_invoice(bank):
         "date": bank["date"],
         "provider": provider,
         "category": category_for(bank, provider),
-        "bank_charged": money(bank["amount"], bank["currency"]),
-        "cash_paid": "",
-        "credit_burned": "",
+        "bank_charged_amount": money_amount(bank["amount"]),
+        "bank_charged_currency": currency_code(bank["currency"], bank["amount"]),
+        "cash_paid_amount": 0.0,
+        "cash_paid_currency": "",
+        "credit_burned_amount": 0.0,
+        "credit_burned_currency": "",
         "invoice_ref": "",
         "match_status": "missing_invoice",
         "_evidence": evidence(bank, None),
@@ -180,9 +189,12 @@ def missing_payment(invoice):
         "date": invoice["date"],
         "provider": provider,
         "category": category_for({}, provider),
-        "bank_charged": "",
-        "cash_paid": money(invoice["amount"], invoice["currency"]),
-        "credit_burned": "",
+        "bank_charged_amount": 0.0,
+        "bank_charged_currency": "",
+        "cash_paid_amount": money_amount(invoice["amount"]),
+        "cash_paid_currency": currency_code(invoice["currency"], invoice["amount"]),
+        "credit_burned_amount": 0.0,
+        "credit_burned_currency": "",
         "invoice_ref": invoice["file_name"],
         "match_status": "missing_payment",
         "_evidence": evidence(None, invoice),
@@ -329,9 +341,12 @@ def transaction_identity(row):
         str(row.get(column, ""))
         for column in [
             "date",
-            "bank_charged",
-            "cash_paid",
-            "credit_burned",
+            "bank_charged_amount",
+            "bank_charged_currency",
+            "cash_paid_amount",
+            "cash_paid_currency",
+            "credit_burned_amount",
+            "credit_burned_currency",
             "invoice_ref",
             "match_status",
         ]
@@ -454,6 +469,16 @@ def money(value, currency):
         return ""
     symbol = {"EUR": "€", "USD": "$", "GBP": "£"}.get(currency.upper(), currency.upper())
     return f"{symbol}{value:,.2f}" if len(symbol) == 1 else f"{value:,.2f} {symbol}".strip()
+
+
+def money_amount(value):
+    return round(float(value or 0), 2)
+
+
+def currency_code(currency, value):
+    if not value:
+        return ""
+    return str(currency or "").strip().upper()
 
 
 def date(raw):

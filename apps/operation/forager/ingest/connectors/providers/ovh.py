@@ -71,19 +71,17 @@ def _amount(row):
     return float((row or {}).get("amount", {}).get("value") or 0)
 
 
-def meter(creds, months, today, fx=1.14):
+def meter(creds, months, today):
     """Fetch OVHcloud credit burn per month from the movements ledger.
 
     GETs /me/credit/balance/STARTUP_PROGRAM/movement (list of IDs), then
     fetches each movement detail. Only type=USE movements are counted; VOUCHER
-    and other types are ignored. Amounts are EUR; multiplied by fx → USD.
+    and other types are ignored. Amounts are kept in native EUR.
 
     Args:
         creds:  dict with OVH_APPLICATION_KEY/SECRET and OVH_CONSUMER_KEY
         months: list of "YYYY-MM" strings (filter for output; all movements fetched)
         today:  current ingest date
-        fx:     EUR→USD conversion rate (default 1.14)
-
     Returns:
         list of _mrow dicts, one per month with nonzero USE burn
     """
@@ -109,12 +107,12 @@ def meter(creds, months, today, fx=1.14):
 
     rows = []
     for month, eur in sorted(totals.items()):
-        usd = round(eur * fx, 2)
-        if usd > 0:
+        if eur > 0:
             rows.append(_mrow(
                 month=month,
                 provider="ovhcloud",
-                cost_usd=usd,
+                amount=eur,
+                currency="EUR",
                 funding="credit",
                 source="api",
                 today=today,

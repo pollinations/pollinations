@@ -3,10 +3,10 @@ TOKEN "treasury_web" READ
 NODE endpoint
 SQL >
     SELECT
-        provider,
-        funding,
         month,
         source,
+        provider,
+        funding,
         cost_usd
     FROM meter_monthly
     ORDER BY provider, month, funding, source

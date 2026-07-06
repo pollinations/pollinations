@@ -1,0 +1,17 @@
+TOKEN "treasury_web" READ
+
+NODE endpoint
+SQL >
+    SELECT
+        formatDateTime(date, '%F') AS date,
+        provider,
+        category,
+        bank_charged,
+        cash_paid,
+        credit_burned,
+        invoice_ref,
+        match_status
+    FROM transactions
+    ORDER BY date DESC, provider, category, match_status
+
+TYPE endpoint

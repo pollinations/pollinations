@@ -3,9 +3,10 @@ TOKEN "treasury_web" READ
 NODE usage
 SQL >
     SELECT
+        month,
+        'tinybird' AS source,
         provider,
         model,
-        month,
         cost_paid_pollen,
         cost_quest_pollen,
         billable_paid_pollen,

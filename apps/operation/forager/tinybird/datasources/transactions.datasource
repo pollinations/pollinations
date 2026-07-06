@@ -1,0 +1,15 @@
+TOKEN "treasury_ingest" APPEND
+TOKEN "treasury_ingest" READ
+
+SCHEMA >
+    `date` Date `json:$.date`,
+    `provider` String `json:$.provider`,
+    `category` String `json:$.category`,
+    `bank_charged` String `json:$.bank_charged`,
+    `cash_paid` String `json:$.cash_paid`,
+    `credit_burned` String `json:$.credit_burned`,
+    `invoice_ref` String `json:$.invoice_ref`,
+    `match_status` String `json:$.match_status`
+
+ENGINE "MergeTree"
+ENGINE_SORTING_KEY "date, provider, category, match_status"

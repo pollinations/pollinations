@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-07-05",
+  "period_start": "2026-07-05",
+  "period_end": "2026-07-05",
+  "generated_at": "2026-07-06T07:28:23.221492+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-05/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-05/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-05/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Turns out remembering things is a lot cheaper than thinking from scratch. Gemini prompt caching is live and just dropped repeated hit costs by 94x.\n\nWe also shipped an LLM Playground, added /motion to images, and welcomed three new apps to the Greenhouse. Oh, and app submissions now pay out directly via Quests. Build something cool, get Pollen.\n\n5 PRs merged this week. Code is open as always. 🌱\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #llm #webdev",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

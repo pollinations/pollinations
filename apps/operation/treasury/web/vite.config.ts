@@ -20,6 +20,7 @@ const READ_PIPES = new Set([
     "usage_monthly_api",
     "ingest_runs_api",
     "revenue_monthly_api",
+    "overrides_api",
 ]);
 const WRITE_DATASOURCES = new Set(["meter_monthly", "overrides"]);
 const INVOICE_ROOT = resolve(homedir(), "Documents/treasury-invoices");

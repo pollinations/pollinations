@@ -28,6 +28,7 @@ import { useStaging } from "../lib/staging";
 import type {
     Data,
     MeterMonthlyRow,
+    OverrideRow,
     TransactionRow,
     UsageMonthlyRow,
 } from "../types";
@@ -169,8 +170,12 @@ function meterStageKey(month: string, provider: string, funding: string) {
     return `meter:${provider}:${month}:${funding}`;
 }
 
+function meterOverrideKey(month: string, provider: string, funding: string) {
+    return `${provider}|${month}|${funding}`;
+}
+
 function meterResetStageKey(month: string, provider: string, funding: string) {
-    return `meter-reset:${provider}|${month}|${funding}`;
+    return `meter-reset:${meterOverrideKey(month, provider, funding)}`;
 }
 
 type Change = { datasource: string; key: string; row: Record<string, unknown> };
@@ -215,6 +220,26 @@ function stagedMeterReset(
     return null;
 }
 
+function meterOverridesFromChanges(changes: Change[]): OverrideRow[] {
+    return changes
+        .filter(
+            (change) =>
+                change.datasource === "overrides" &&
+                change.row.scope === "meter_monthly" &&
+                change.row.field === "reset_manual",
+        )
+        .map((change) => ({
+            scope: String(change.row.scope ?? ""),
+            key: String(change.row.key ?? ""),
+            field: String(change.row.field ?? ""),
+            value_num:
+                typeof change.row.value_num === "number"
+                    ? change.row.value_num
+                    : null,
+            value_str: String(change.row.value_str ?? ""),
+        }));
+}
+
 function MeterAmountInput({
     amount,
     bucket,
@@ -244,8 +269,8 @@ function MeterAmountInput({
     const input = overlayAmount ?? String(amount);
     const hasPendingEdit = pendingAmount !== null || pendingReset !== null;
     const hasSavedEdit =
-        manual || committedAmount !== null || committedReset !== null;
-    const altered = hasPendingEdit || hasSavedEdit;
+        manual || committedAmount !== null || committedReset === false;
+    const showReset = hasPendingEdit || hasSavedEdit;
 
     const update = (next: string) => {
         if (next.trim() === "") {
@@ -302,14 +327,15 @@ function MeterAmountInput({
                 min="0"
                 step="0.01"
                 value={input}
+                error={hasPendingEdit}
                 onChange={(event) => update(event.target.value)}
                 aria-label={`${bucket}_usage`}
                 className={dirtyControlClass(
-                    altered,
+                    hasPendingEdit,
                     "w-24 rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong",
                 )}
             />
-            {altered && (
+            {showReset && (
                 <ResetCellButton
                     kind={hasPendingEdit ? "undo" : "reset"}
                     title={
@@ -346,10 +372,42 @@ function matchesCategory(
     return categories.has(category);
 }
 
+export function meterResetOverrideKeys(overrides: OverrideRow[]) {
+    return new Set(
+        overrides
+            .filter(
+                (row) =>
+                    row.scope === "meter_monthly" &&
+                    row.field === "reset_manual" &&
+                    row.value_str.trim() === "1",
+            )
+            .map((row) => row.key),
+    );
+}
+
+export function effectiveMeterRowsWithOverrides({
+    meterRows,
+    overrides,
+}: {
+    meterRows: MeterMonthlyRow[];
+    overrides: OverrideRow[];
+}) {
+    const resetKeys = meterResetOverrideKeys(overrides);
+    if (resetKeys.size === 0) return meterRows;
+    return meterRows.filter(
+        (row) =>
+            row.source !== "manual" ||
+            !resetKeys.has(
+                meterOverrideKey(row.month, row.provider, row.funding),
+            ),
+    );
+}
+
 export function visibleMeterRows({
     category = "all",
     meterRows,
     month,
+    overrides = [],
     provider,
     transactions = [],
     usageRows,
@@ -357,6 +415,7 @@ export function visibleMeterRows({
     category?: string;
     meterRows: MeterMonthlyRow[];
     month: string;
+    overrides?: OverrideRow[];
     provider: string;
     transactions?: TransactionRow[];
     usageRows: UsageMonthlyRow[];
@@ -365,7 +424,9 @@ export function visibleMeterRows({
     const periodUsageRows = usageRows.filter((row) =>
         matchesMonth(row.month, month),
     );
-    const periodMeterRows = aggregateMeterRows(meterRows).filter(
+    const periodMeterRows = aggregateMeterRows(
+        effectiveMeterRowsWithOverrides({ meterRows, overrides }),
+    ).filter(
         (row) =>
             matchesMonth(row.month, month) &&
             (provider === "all" || row.provider === provider) &&
@@ -400,12 +461,17 @@ export function MeterTab({
         () => stagedMeterEdits([...changes, ...committed]),
         [changes, committed],
     );
+    const stagedOverrides = useMemo(
+        () => meterOverridesFromChanges([...changes, ...committed]),
+        [changes, committed],
+    );
     const baseRows = useMemo(
         () =>
             visibleMeterRows({
                 category,
                 meterRows: data.meterMonthly,
                 month,
+                overrides: [...data.overrides, ...stagedOverrides],
                 provider,
                 transactions: data.transactions,
                 usageRows: data.usageMonthly,
@@ -413,10 +479,12 @@ export function MeterTab({
         [
             category,
             data.meterMonthly,
+            data.overrides,
             data.transactions,
             data.usageMonthly,
             month,
             provider,
+            stagedOverrides,
         ],
     );
     const sortColumns = useMemo<SortColumn<MeterUsageRow>[]>(

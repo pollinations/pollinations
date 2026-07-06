@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type {
     MeterMonthlyRow,
+    OverrideRow,
     TransactionRow,
     UsageMonthlyRow,
 } from "../types";
@@ -50,6 +51,20 @@ function transactionRow(provider: string, category: string): TransactionRow {
     };
 }
 
+function overrideRow(
+    key: string,
+    value_str: "0" | "1",
+    field = "reset_manual",
+): OverrideRow {
+    return {
+        scope: "meter_monthly",
+        key,
+        field,
+        value_num: null,
+        value_str,
+    };
+}
+
 describe("aggregateMeterRows", () => {
     it("uses manual rows as replacements for the same provider month bucket", () => {
         expect(
@@ -80,6 +95,46 @@ describe("aggregateMeterRows", () => {
                 sources: ["manual"],
             },
         ]);
+    });
+});
+
+describe("meter reset overrides", () => {
+    it("removes manual rows for reset buckets", async () => {
+        const { effectiveMeterRowsWithOverrides } = await import("./MeterTab");
+        expect(
+            effectiveMeterRowsWithOverrides({
+                meterRows: [
+                    meterRow("2026-06", "digitalocean", 288),
+                    {
+                        month: "2026-06",
+                        provider: "openai",
+                        cost_usd: 42,
+                        funding: "credit",
+                        source: "api",
+                    },
+                ],
+                overrides: [overrideRow("digitalocean|2026-06|credit", "1")],
+            }),
+        ).toEqual([
+            {
+                month: "2026-06",
+                provider: "openai",
+                cost_usd: 42,
+                funding: "credit",
+                source: "api",
+            },
+        ]);
+    });
+
+    it("keeps manual rows when the latest override says not to reset", async () => {
+        const { effectiveMeterRowsWithOverrides } = await import("./MeterTab");
+        const rows = [meterRow("2026-06", "digitalocean", 288)];
+        expect(
+            effectiveMeterRowsWithOverrides({
+                meterRows: rows,
+                overrides: [overrideRow("digitalocean|2026-06|credit", "0")],
+            }),
+        ).toEqual(rows);
     });
 });
 

@@ -1,5 +1,6 @@
 import type {
     MeterMonthlyRow,
+    OverrideRow,
     RevenueMonthlyRow,
     RunRow,
     TransactionRow,
@@ -133,10 +134,13 @@ const revenueMonthly: RevenueMonthlyRow[] = [
     },
 ];
 
+const overrides: OverrideRow[] = [];
+
 export const FIXTURES: Record<string, unknown[]> = {
     transactions_api: transactions,
     meter_monthly_api: meterMonthly,
     usage_monthly_api: usageMonthly,
     ingest_runs_api: runs,
     revenue_monthly_api: revenueMonthly,
+    overrides_api: overrides,
 };

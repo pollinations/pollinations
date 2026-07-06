@@ -494,16 +494,21 @@ describe("media.pollinations.ai", () => {
         );
     });
 
-    it("rejects the singular tag alias", async () => {
+    it("does not treat singular tag as catalog metadata", async () => {
         const res = await uploadViaForm("pk_alice", {
-            fileName: "singular-tag.png",
+            fileName: "singular-tag-ignored.png",
             bytes: variant(30),
             extraFields: { tag: "legacy" },
         });
-        expect(res.status).toBe(400);
-        expect((res.body as { error: string }).error).toMatch(
-            /Use "tags" instead of "tag"/,
+        expect(res.status).toBe(200);
+        const upload = res.body as UploadResponse;
+        expect(upload.tags).toBeUndefined();
+
+        const galleryRes = await SELF.fetch(
+            "https://media.pollinations.ai/tags/legacy",
         );
+        const gallery = (await galleryRes.json()) as MediaPageResponse;
+        expect(gallery.items.map((i) => i.url)).not.toContain(upload.url);
     });
 
     it("rejects more than 8 tags with 400", async () => {

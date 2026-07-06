@@ -43,6 +43,18 @@ jobs:
         run: npm run apply-lifecycle:production
         working-directory: ./media.pollinations.ai
 
+      # The worker queries media catalog tables in enter's D1 — enter/gen
+      # workflows also apply these migrations, but the three deploy workflows
+      # have no ordering guarantee between them, so apply before deploying
+      # rather than assuming enter ran first. `d1 migrations apply` is
+      # idempotent (already-applied files are skipped).
+      - name: Apply D1 migrations
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
+        run: npm run migrate:production
+        working-directory: ./media.pollinations.ai
+
       - name: Deploy to Cloudflare
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}

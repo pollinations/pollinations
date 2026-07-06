@@ -100,10 +100,6 @@ function collectTags(getAll: (key: string) => string[]): string[] {
     return splitTags(getAll("tags"));
 }
 
-function tagAliasError(): { error: string } {
-    return { error: 'Use "tags" instead of "tag".' };
-}
-
 interface UploadMetadata {
     tags: string[];
     prompt: string | null;
@@ -367,9 +363,6 @@ api.post(
 
         const requestContentType = c.req.header("content-type") || "";
         const queryUrl = new URL(c.req.url);
-        if (queryUrl.searchParams.has("tag")) {
-            return c.json(tagAliasError(), 400);
-        }
         const rawTags = collectTags((key) => queryUrl.searchParams.getAll(key));
         let rawPrompt = queryUrl.searchParams.get("prompt");
         let rawModel = queryUrl.searchParams.get("model");
@@ -396,9 +389,6 @@ api.post(
                 contentType = file.type || detectContentType(file.name);
                 fileName = file.name;
 
-                if (formData.has("tag")) {
-                    return c.json(tagAliasError(), 400);
-                }
                 rawTags.push(
                     ...collectTags((key) =>
                         formData
@@ -429,9 +419,6 @@ api.post(
                     model?: string;
                 }>();
 
-                if ("tag" in body) {
-                    return c.json(tagAliasError(), 400);
-                }
                 if (!body.data) {
                     return c.json(
                         { error: "Missing 'data' field in JSON body" },

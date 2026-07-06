@@ -38,8 +38,8 @@ describe("vendor vocabulary", () => {
                     price_quests: 0,
                     byop_credit_paid_pollen: 0,
                     byop_credit_quest_pollen: 0,
-                    community_credit_paid_pollen: 0,
-                    community_credit_quest_pollen: 0,
+                    model_credit_paid_pollen: 0,
+                    model_credit_quest_pollen: 0,
                 },
             ],
         });

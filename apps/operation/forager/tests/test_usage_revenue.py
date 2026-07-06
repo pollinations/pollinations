@@ -154,8 +154,8 @@ def test_usage_vendor_canonicalized_at_ingest():
             "cost_quests",
             "byop_credit_paid_pollen",
             "byop_credit_quest_pollen",
-            "community_credit_paid_pollen",
-            "community_credit_quest_pollen",
+            "model_credit_paid_pollen",
+            "model_credit_quest_pollen",
         }
         for r in rows
     )
@@ -191,8 +191,8 @@ def test_usage_canonicalized_duplicates_are_summed():
             "cost_quests": 0.1,
             "byop_credit_paid_pollen": 0.15,
             "byop_credit_quest_pollen": 0.02,
-            "community_credit_paid_pollen": 0.05,
-            "community_credit_quest_pollen": 0.01,
+            "model_credit_paid_pollen": 0.05,
+            "model_credit_quest_pollen": 0.01,
         },
         {
             "vendor": "azure-2",
@@ -203,8 +203,8 @@ def test_usage_canonicalized_duplicates_are_summed():
             "cost_quests": 0.2,
             "byop_credit_paid_pollen": 0.07,
             "byop_credit_quest_pollen": 0.04,
-            "community_credit_paid_pollen": 0.02,
-            "community_credit_quest_pollen": 0.03,
+            "model_credit_paid_pollen": 0.02,
+            "model_credit_quest_pollen": 0.03,
         },
     ]
     tb = TBStub(canned_rows=canned)
@@ -219,8 +219,8 @@ def test_usage_canonicalized_duplicates_are_summed():
     assert rows[0]["cost_quests"] == pytest.approx(0.3)
     assert rows[0]["byop_credit_paid_pollen"] == pytest.approx(0.22)
     assert rows[0]["byop_credit_quest_pollen"] == pytest.approx(0.06)
-    assert rows[0]["community_credit_paid_pollen"] == pytest.approx(0.07)
-    assert rows[0]["community_credit_quest_pollen"] == pytest.approx(0.04)
+    assert rows[0]["model_credit_paid_pollen"] == pytest.approx(0.07)
+    assert rows[0]["model_credit_quest_pollen"] == pytest.approx(0.04)
 
 
 def test_usage_multiple_months_correct_month_tags():

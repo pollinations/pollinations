@@ -14,8 +14,8 @@ SQL >
         price_quests,
         byop_credit_paid_pollen,
         byop_credit_quest_pollen,
-        community_credit_paid_pollen,
-        community_credit_quest_pollen
+        model_credit_paid_pollen,
+        model_credit_quest_pollen
     FROM usage_monthly
     ORDER BY month, vendor, model
 

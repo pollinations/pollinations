@@ -65,12 +65,12 @@ export function BurnTab({
                 value: (row) => row.byop_credit_quest_pollen,
             },
             {
-                key: "community_credit_paid_pollen",
-                value: (row) => row.community_credit_paid_pollen,
+                key: "model_credit_paid_pollen",
+                value: (row) => row.model_credit_paid_pollen,
             },
             {
-                key: "community_credit_quest_pollen",
-                value: (row) => row.community_credit_quest_pollen,
+                key: "model_credit_quest_pollen",
+                value: (row) => row.model_credit_quest_pollen,
             },
         ],
         [],
@@ -108,32 +108,30 @@ export function BurnTab({
                                 cost_quests
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("price_paid")}>
-                                gross_paid
+                                price_paid
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("price_quests")}>
-                                gross_quest
+                                price_quests
                             </TableHeaderCell>
                             <TableHeaderCell
                                 {...headerProps("byop_credit_paid_pollen")}
                             >
-                                byop_paid
+                                byop_credit_paid_pollen
                             </TableHeaderCell>
                             <TableHeaderCell
                                 {...headerProps("byop_credit_quest_pollen")}
                             >
-                                byop_quest
+                                byop_credit_quest_pollen
                             </TableHeaderCell>
                             <TableHeaderCell
-                                {...headerProps("community_credit_paid_pollen")}
+                                {...headerProps("model_credit_paid_pollen")}
                             >
-                                community_paid
+                                model_credit_paid_pollen
                             </TableHeaderCell>
                             <TableHeaderCell
-                                {...headerProps(
-                                    "community_credit_quest_pollen",
-                                )}
+                                {...headerProps("model_credit_quest_pollen")}
                             >
-                                community_quest
+                                model_credit_quest_pollen
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>
@@ -161,10 +159,10 @@ export function BurnTab({
                                     {row.byop_credit_quest_pollen}
                                 </TableCell>
                                 <TableCell>
-                                    {row.community_credit_paid_pollen}
+                                    {row.model_credit_paid_pollen}
                                 </TableCell>
                                 <TableCell>
-                                    {row.community_credit_quest_pollen}
+                                    {row.model_credit_quest_pollen}
                                 </TableCell>
                             </TableRow>
                         ))}

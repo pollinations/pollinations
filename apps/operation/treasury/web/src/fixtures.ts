@@ -55,8 +55,8 @@ const usageMonthly: UsageMonthlyRow[] = [
         price_quests: 148.03,
         byop_credit_paid_pollen: 8.12,
         byop_credit_quest_pollen: 1.86,
-        community_credit_paid_pollen: 0,
-        community_credit_quest_pollen: 0,
+        model_credit_paid_pollen: 0,
+        model_credit_quest_pollen: 0,
     },
     {
         source: "tinybird",
@@ -70,8 +70,8 @@ const usageMonthly: UsageMonthlyRow[] = [
         price_quests: 407.11,
         byop_credit_paid_pollen: 1.49,
         byop_credit_quest_pollen: 4.07,
-        community_credit_paid_pollen: 0,
-        community_credit_quest_pollen: 0,
+        model_credit_paid_pollen: 0,
+        model_credit_quest_pollen: 0,
     },
     {
         source: "tinybird",
@@ -85,8 +85,8 @@ const usageMonthly: UsageMonthlyRow[] = [
         price_quests: 6.45,
         byop_credit_paid_pollen: 0,
         byop_credit_quest_pollen: 0,
-        community_credit_paid_pollen: 0,
-        community_credit_quest_pollen: 0,
+        model_credit_paid_pollen: 0,
+        model_credit_quest_pollen: 0,
     },
     {
         source: "tinybird",
@@ -100,8 +100,8 @@ const usageMonthly: UsageMonthlyRow[] = [
         price_quests: 87.55,
         byop_credit_paid_pollen: 0.69,
         byop_credit_quest_pollen: 0,
-        community_credit_paid_pollen: 0,
-        community_credit_quest_pollen: 0,
+        model_credit_paid_pollen: 0,
+        model_credit_quest_pollen: 0,
     },
 ];
 

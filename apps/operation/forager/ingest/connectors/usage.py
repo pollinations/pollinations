@@ -32,8 +32,8 @@ SELECT '{month}' AS month, model_provider_used AS vendor, model_used AS model,
   round(sumIf(total_price, selected_meter_slug LIKE '%tier%'), 4) AS price_quests,
   round(sumIf(total_price - dev_price, selected_meter_slug LIKE '%pack%' AND markup_rate > 0), 4) AS byop_credit_paid_pollen,
   round(sumIf(total_price - dev_price, selected_meter_slug LIKE '%tier%' AND markup_rate > 0), 4) AS byop_credit_quest_pollen,
-  round(sumIf(community_model_reward_amount, selected_meter_slug LIKE '%pack%'), 4) AS community_credit_paid_pollen,
-  round(sumIf(community_model_reward_amount, selected_meter_slug LIKE '%tier%'), 4) AS community_credit_quest_pollen
+  round(sumIf(community_model_reward_amount, selected_meter_slug LIKE '%pack%'), 4) AS model_credit_paid_pollen,
+  round(sumIf(community_model_reward_amount, selected_meter_slug LIKE '%tier%'), 4) AS model_credit_quest_pollen
 FROM generation_event
 WHERE environment = 'production'
   AND is_billed_usage = true
@@ -68,8 +68,8 @@ def monthly_rows(tb_prod, months, today):
         "price_quests",
         "byop_credit_paid_pollen",
         "byop_credit_quest_pollen",
-        "community_credit_paid_pollen",
-        "community_credit_quest_pollen",
+        "model_credit_paid_pollen",
+        "model_credit_quest_pollen",
     )
     by_key = {}
     for month in months:

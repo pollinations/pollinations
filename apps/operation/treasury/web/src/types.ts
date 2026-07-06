@@ -31,8 +31,8 @@ export type UsageMonthlyRow = {
     price_quests: number;
     byop_credit_paid_pollen: number;
     byop_credit_quest_pollen: number;
-    community_credit_paid_pollen: number;
-    community_credit_quest_pollen: number;
+    model_credit_paid_pollen: number;
+    model_credit_quest_pollen: number;
 };
 
 export type RunRow = {

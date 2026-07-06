@@ -2,7 +2,6 @@ CREATE TABLE `media_item` (
 	`id` text PRIMARY KEY NOT NULL,
 	`kind` text NOT NULL,
 	`locator` text NOT NULL,
-	`content_hash` text,
 	`owner_user_id` text,
 	`app_key_id` text,
 	`content_type` text NOT NULL,

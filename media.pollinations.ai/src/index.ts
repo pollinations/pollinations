@@ -8,11 +8,10 @@ import {
     clampLimit,
     decodeCursor,
     getDb,
-    InvalidTagError,
     listByTag,
     listUserMedia,
     normalizeTags,
-    TooManyTagsError,
+    TagError,
     tagsForItems,
     upsertUploadCatalogItem,
 } from "./catalog.ts";
@@ -42,7 +41,6 @@ interface AuthResult {
     type: string;
     name: string | null;
     userId: string | null;
-    keyId: string;
     byopClientKeyId: string | null;
 }
 
@@ -109,15 +107,8 @@ function validateMetadata(
     try {
         tags = normalizeTags(rawTags);
     } catch (error) {
-        if (error instanceof InvalidTagError) {
-            throw new MetadataValidationError(
-                `Invalid tag: "${error.tag}". Tags must match ${TAG_PATTERN_DESCRIPTION}.`,
-            );
-        }
-        if (error instanceof TooManyTagsError) {
-            throw new MetadataValidationError(
-                `Too many tags: ${error.count} (max 8).`,
-            );
+        if (error instanceof TagError) {
+            throw new MetadataValidationError(error.message);
         }
         throw error;
     }
@@ -138,9 +129,6 @@ function validateMetadata(
 
     return { tags, prompt, model };
 }
-
-const TAG_PATTERN_DESCRIPTION =
-    "lowercase letters, digits, and _.:+- (not leading), max 128 chars";
 
 function hasMetadata(metadata: UploadMetadata): boolean {
     return (
@@ -452,7 +440,6 @@ api.post(
                     ownerUserId: authResult.userId,
                     appKeyId: authResult.byopClientKeyId,
                     locator: hash,
-                    contentHash: hash,
                     contentType,
                     size: fileBuffer.byteLength,
                     model: metadata.model,
@@ -497,7 +484,7 @@ api.get(
         tags: ["media.pollinations.ai"],
         summary: "List your cataloged media",
         description:
-            "List media items owned by the authenticated user, newest first. Optionally filter by tag.",
+            "List media items owned by the authenticated user, newest first. Optionally filter by tag. Upload-backed items reference storage that expires 30 days after their last upload — an expired item keeps its catalog entry, but its url 404s until the same content is re-uploaded.",
         responses: {
             200: {
                 description: "Page of media items",
@@ -578,7 +565,7 @@ api.get(
         tags: ["media.pollinations.ai"],
         summary: "Browse media by tag",
         description:
-            "Public gallery listing for a tag, newest first. No authentication required.",
+            "Public gallery listing for a tag, ordered by when each item was tagged, newest first. No authentication required. Upload-backed items reference storage that expires 30 days after their last upload — an expired item keeps its catalog entry, but its url 404s until the same content is re-uploaded.",
         security: [],
         responses: {
             200: {

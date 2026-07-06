@@ -17,19 +17,16 @@ export function getDb(d1: D1Database): CatalogDb {
 // Lowercase, trimmed slug: letters/digits, then `_.:+-` allowed after the
 // first char. Keeps tags URL-safe and consistent for gallery lookups.
 export const TAG_PATTERN = /^[a-z0-9][a-z0-9_.:+-]{0,127}$/;
+// Prose twin of TAG_PATTERN for error messages — keep in sync with the regex.
+export const TAG_PATTERN_DESCRIPTION =
+    "lowercase letters, digits, and _.:+- (not leading), max 128 chars";
 export const MAX_TAGS = 8;
 
-export class InvalidTagError extends Error {
-    constructor(public readonly tag: string) {
-        super(`Invalid tag: "${tag}"`);
-        this.name = "InvalidTagError";
-    }
-}
-
-export class TooManyTagsError extends Error {
-    constructor(public readonly count: number) {
-        super(`Too many tags: ${count} (max ${MAX_TAGS})`);
-        this.name = "TooManyTagsError";
+/** Thrown by normalizeTags; message is complete and user-facing. */
+export class TagError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "TagError";
     }
 }
 
@@ -47,13 +44,15 @@ export function normalizeTags(rawTags: string[]): string[] {
         if (!TAG_PATTERN.test(tag)) {
             // Name the tag as submitted (pre-lowercase) so the error is
             // unambiguous about which input was rejected.
-            throw new InvalidTagError(trimmed);
+            throw new TagError(
+                `Invalid tag: "${trimmed}". Tags must match ${TAG_PATTERN_DESCRIPTION}.`,
+            );
         }
         seen.add(tag);
     }
     const tags = [...seen];
     if (tags.length > MAX_TAGS) {
-        throw new TooManyTagsError(tags.length);
+        throw new TagError(`Too many tags: ${tags.length} (max ${MAX_TAGS}).`);
     }
     return tags;
 }
@@ -62,7 +61,6 @@ export interface UpsertUploadParams {
     ownerUserId: string;
     appKeyId: string | null;
     locator: string;
-    contentHash: string;
     contentType: string;
     size: number;
     model: string | null;
@@ -85,7 +83,6 @@ export async function upsertUploadCatalogItem(
             id: crypto.randomUUID(),
             kind: "upload",
             locator: params.locator,
-            contentHash: params.contentHash,
             ownerUserId: params.ownerUserId,
             appKeyId: params.appKeyId,
             contentType: params.contentType,
@@ -96,8 +93,10 @@ export async function upsertUploadCatalogItem(
         })
         .onConflictDoUpdate({
             target: [mediaItem.ownerUserId, mediaItem.locator],
+            // createdAt is deliberately NOT updated: it marks first catalog
+            // time, so re-uploading (which refreshes the R2 TTL and metadata)
+            // can't bump an item back to the top of newest-first feeds.
             set: {
-                createdAt: now,
                 contentType: params.contentType,
                 size: params.size,
                 model: params.model,
@@ -243,7 +242,13 @@ export async function listUserMedia(
     return paginate(rows, params.limit);
 }
 
-/** Public gallery: list catalog items for a tag, newest first. */
+/**
+ * Public gallery: list catalog items for a tag, newest first by when each
+ * item was tagged (media_tag.created_at is insert-only), not by the item's
+ * own createdAt. Late-tagged items surface as freshly published, and
+ * re-uploads can't bump themselves back to the top. The cursor rides on
+ * (taggedAt, itemId).
+ */
 export async function listByTag(
     db: CatalogDb,
     params: {
@@ -254,7 +259,15 @@ export async function listByTag(
 ): Promise<CatalogPage> {
     const conditions = [eq(mediaTag.tag, params.tag)];
     if (params.cursor) {
-        conditions.push(beforeCursor(params.cursor));
+        conditions.push(
+            sql`${or(
+                lt(mediaTag.createdAt, params.cursor.createdAt),
+                and(
+                    eq(mediaTag.createdAt, params.cursor.createdAt),
+                    lt(mediaItem.id, params.cursor.id),
+                ),
+            )}`,
+        );
     }
 
     const rows = await db
@@ -267,13 +280,22 @@ export async function listByTag(
             model: mediaItem.model,
             prompt: mediaItem.prompt,
             createdAt: mediaItem.createdAt,
+            taggedAt: mediaTag.createdAt,
         })
         .from(mediaTag)
         .innerJoin(mediaItem, eq(mediaItem.id, mediaTag.itemId))
         .where(and(...conditions))
-        .orderBy(desc(mediaItem.createdAt), desc(mediaItem.id))
+        .orderBy(desc(mediaTag.createdAt), desc(mediaItem.id))
         .limit(params.limit + 1);
-    return paginate(rows, params.limit);
+
+    const hasMore = rows.length > params.limit;
+    const page = hasMore ? rows.slice(0, params.limit) : rows;
+    const last = page[page.length - 1];
+    return {
+        items: page.map(({ taggedAt: _taggedAt, ...item }) => item),
+        nextCursor:
+            hasMore && last ? encodeCursor(last.taggedAt, last.id) : null,
+    };
 }
 
 /** Fetch tags for a page of item ids in one query, grouped by item id. */

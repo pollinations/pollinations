@@ -275,7 +275,12 @@ async function runAgent(env, userMessages) {
         // Key on tool_calls PRESENCE, not finish_reason: providers mislabel the
         // reason string, but the presence of tool_calls is unambiguous.
         if (!Array.isArray(calls) || calls.length === 0) {
-            return { content: message.content ?? "", usage, toolCallCounts };
+            return {
+                content: message.content ?? "",
+                usage,
+                toolCallCounts,
+                finishReason: "stop",
+            };
         }
         messages.push(message);
         for (const call of calls) {
@@ -291,7 +296,16 @@ async function runAgent(env, userMessages) {
                 } catch {
                     args = {};
                 }
-                result = await tool.run(args, usage);
+                // A tool failure is fed back to the model as the tool result so
+                // it can recover (try another tool, answer without it) rather
+                // than failing the whole request. This is NOT a retry — the
+                // failed call is not re-attempted; the error is surfaced. The
+                // call is still counted (the owner's tool ran).
+                try {
+                    result = await tool.run(args, usage);
+                } catch (err) {
+                    result = "Error: " + String(err);
+                }
                 toolCallCounts[billedToolName(name)] =
                     (toolCallCounts[billedToolName(name)] ?? 0) + 1;
             }
@@ -303,12 +317,14 @@ async function runAgent(env, userMessages) {
         }
     }
     // Hit the round ceiling without a final answer — return what we have rather
-    // than loop forever on the owner's key.
+    // than loop forever on the owner's key. finish_reason is "length": the
+    // response was cut off by a limit, not a natural stop.
     return {
         content:
             "The agent reached its maximum number of tool-use steps without a final answer.",
         usage,
         toolCallCounts,
+        finishReason: "length",
     };
 }
 
@@ -324,6 +340,64 @@ function isAuthorized(request, env) {
         request.headers.get("authorization") ===
         "Bearer " + env.BEE_AUTH_TOKEN
     );
+}
+
+function buildUsage(out) {
+    return {
+        prompt_tokens: out.usage.prompt_tokens,
+        completion_tokens: out.usage.completion_tokens,
+        total_tokens: out.usage.prompt_tokens + out.usage.completion_tokens,
+        tool_call_counts: out.toolCallCounts,
+    };
+}
+
+// The internal tool loop is not itself streamed; we run it to completion and
+// frame the final answer as a two-chunk SSE stream (content delta, then a
+// finish+usage chunk) so OpenAI streaming clients work. The usage — including
+// tool_call_counts — rides the final event where the gateway reads it for
+// billing (track.ts scans stream events for the one carrying usage).
+function streamResponse(id, created, model, out) {
+    const enc = new TextEncoder();
+    const send = (controller, payload) =>
+        controller.enqueue(
+            enc.encode("data: " + JSON.stringify(payload) + "\n\n"),
+        );
+    const stream = new ReadableStream({
+        start(controller) {
+            send(controller, {
+                id,
+                object: "chat.completion.chunk",
+                created,
+                model,
+                choices: [
+                    {
+                        index: 0,
+                        delta: { role: "assistant", content: out.content },
+                        finish_reason: null,
+                    },
+                ],
+            });
+            send(controller, {
+                id,
+                object: "chat.completion.chunk",
+                created,
+                model,
+                choices: [
+                    { index: 0, delta: {}, finish_reason: out.finishReason },
+                ],
+                usage: buildUsage(out),
+            });
+            controller.enqueue(enc.encode("data: [DONE]\n\n"));
+            controller.close();
+        },
+    });
+    return new Response(stream, {
+        headers: {
+            "content-type": "text/event-stream",
+            "cache-control": "no-cache",
+            connection: "keep-alive",
+        },
+    });
 }
 
 export default {
@@ -343,27 +417,26 @@ export default {
             const userMessages = Array.isArray(body.messages)
                 ? body.messages
                 : [];
+            const id = "chatcmpl-" + crypto.randomUUID();
+            const created = Math.floor(Date.now() / 1000);
             try {
                 const out = await runAgent(env, userMessages);
+                if (body.stream) {
+                    return streamResponse(id, created, env.BASE_MODEL, out);
+                }
                 return Response.json({
-                    id: "chatcmpl-" + crypto.randomUUID(),
+                    id,
                     object: "chat.completion",
-                    created: Math.floor(Date.now() / 1000),
+                    created,
                     model: env.BASE_MODEL,
                     choices: [
                         {
                             index: 0,
                             message: { role: "assistant", content: out.content },
-                            finish_reason: "stop",
+                            finish_reason: out.finishReason,
                         },
                     ],
-                    usage: {
-                        prompt_tokens: out.usage.prompt_tokens,
-                        completion_tokens: out.usage.completion_tokens,
-                        total_tokens:
-                            out.usage.prompt_tokens + out.usage.completion_tokens,
-                        tool_call_counts: out.toolCallCounts,
-                    },
+                    usage: buildUsage(out),
                 });
             } catch (err) {
                 return Response.json(

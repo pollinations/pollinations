@@ -1,0 +1,31 @@
+{
+  "date": "2026-07-05",
+  "period_start": "2026-07-05",
+  "period_end": "2026-07-05",
+  "title": "Gemini prompt caching drops repeated hit costs by 94x",
+  "summary": "A big day for the Greenhouse with three new community apps, plus massive efficiency gains for Gemini users via prompt caching.\n\nAdded explicit prompt caching support for five Vertex Gemini chat models. Developers can now use cache_control markers to cache large prefixes, bypassing redundant processing and dropping the cost of repeated hits by up to 94x.\n\nThe community directory is growing. We merged Sprout, LLM Playground (a multi-model chat workspace with LaTeX rendering and team quotas), and /motion (an open-source WebGL shader studio for looping visuals).\n\nWe ripped out the legacy tier upgrade logic from the app-approval GitHub workflows. Now, when you submit an app to the directory and it gets merged, you claim a flat 5 Pollen reward via the 'Contribute a pull request' Quest. Cleaner code, clearer rewards.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 12215,
+      "date": "2026-07-05"
+    },
+    {
+      "number": 12237,
+      "date": "2026-07-05"
+    },
+    {
+      "number": 12238,
+      "date": "2026-07-05"
+    },
+    {
+      "number": 12239,
+      "date": "2026-07-05"
+    },
+    {
+      "number": 12241,
+      "date": "2026-07-05"
+    }
+  ],
+  "generated_at": "2026-07-06T07:28:23.221492+00:00"
+}

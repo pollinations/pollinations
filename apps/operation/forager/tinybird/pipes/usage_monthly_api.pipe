@@ -11,7 +11,11 @@ SQL >
         cost_paid,
         cost_quests,
         price_paid,
-        price_quests
+        price_quests,
+        byop_credit_paid_pollen,
+        byop_credit_quest_pollen,
+        community_credit_paid_pollen,
+        community_credit_quest_pollen
     FROM usage_monthly
     ORDER BY month, vendor, model
 

@@ -9,7 +9,11 @@ SCHEMA >
     `cost_paid` Float64 `json:$.cost_paid`,
     `cost_quests` Float64 `json:$.cost_quests`,
     `price_paid` Float64 `json:$.price_paid`,
-    `price_quests` Float64 `json:$.price_quests`
+    `price_quests` Float64 `json:$.price_quests`,
+    `byop_credit_paid_pollen` Float64 `json:$.byop_credit_paid_pollen`,
+    `byop_credit_quest_pollen` Float64 `json:$.byop_credit_quest_pollen`,
+    `community_credit_paid_pollen` Float64 `json:$.community_credit_paid_pollen`,
+    `community_credit_quest_pollen` Float64 `json:$.community_credit_quest_pollen`
 
 ENGINE "MergeTree"
 ENGINE_SORTING_KEY "month, vendor, model"
@@ -17,10 +21,14 @@ ENGINE_SORTING_KEY "month, vendor, model"
 FORWARD_QUERY >
     SELECT
         month,
-        provider AS vendor,
+        vendor,
         model,
         currency,
         cost_paid,
         cost_quests,
         price_paid,
-        price_quests
+        price_quests,
+        defaultValueOfTypeName('Float64') AS byop_credit_paid_pollen,
+        defaultValueOfTypeName('Float64') AS byop_credit_quest_pollen,
+        defaultValueOfTypeName('Float64') AS community_credit_paid_pollen,
+        defaultValueOfTypeName('Float64') AS community_credit_quest_pollen

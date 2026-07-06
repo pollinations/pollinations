@@ -36,6 +36,10 @@ describe("vendor vocabulary", () => {
                     cost_quests: 0,
                     price_paid: 1,
                     price_quests: 0,
+                    byop_credit_paid_pollen: 0,
+                    byop_credit_quest_pollen: 0,
+                    community_credit_paid_pollen: 0,
+                    community_credit_quest_pollen: 0,
                 },
             ],
         });

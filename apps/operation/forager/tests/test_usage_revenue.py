@@ -97,6 +97,8 @@ def test_usage_query_only_imports_successful_billed_resolved_models():
     assert "response_status >= 200 AND response_status < 300" in q
     assert "model_used != 'undefined'" in q
     assert "model_provider_used != 'undefined'" in q
+    assert "total_price - dev_price" in q
+    assert "community_model_reward_amount" in q
 
 
 def test_usage_rows_carry_month():
@@ -150,6 +152,10 @@ def test_usage_vendor_canonicalized_at_ingest():
             "price_quests",
             "cost_paid",
             "cost_quests",
+            "byop_credit_paid_pollen",
+            "byop_credit_quest_pollen",
+            "community_credit_paid_pollen",
+            "community_credit_quest_pollen",
         }
         for r in rows
     )
@@ -183,6 +189,10 @@ def test_usage_canonicalized_duplicates_are_summed():
             "price_quests": 0.2,
             "cost_paid": 0.8,
             "cost_quests": 0.1,
+            "byop_credit_paid_pollen": 0.15,
+            "byop_credit_quest_pollen": 0.02,
+            "community_credit_paid_pollen": 0.05,
+            "community_credit_quest_pollen": 0.01,
         },
         {
             "vendor": "azure-2",
@@ -191,6 +201,10 @@ def test_usage_canonicalized_duplicates_are_summed():
             "price_quests": 0.4,
             "cost_paid": 0.3,
             "cost_quests": 0.2,
+            "byop_credit_paid_pollen": 0.07,
+            "byop_credit_quest_pollen": 0.04,
+            "community_credit_paid_pollen": 0.02,
+            "community_credit_quest_pollen": 0.03,
         },
     ]
     tb = TBStub(canned_rows=canned)
@@ -203,6 +217,10 @@ def test_usage_canonicalized_duplicates_are_summed():
     assert rows[0]["price_quests"] == pytest.approx(0.6)
     assert rows[0]["cost_paid"] == pytest.approx(1.1)
     assert rows[0]["cost_quests"] == pytest.approx(0.3)
+    assert rows[0]["byop_credit_paid_pollen"] == pytest.approx(0.22)
+    assert rows[0]["byop_credit_quest_pollen"] == pytest.approx(0.06)
+    assert rows[0]["community_credit_paid_pollen"] == pytest.approx(0.07)
+    assert rows[0]["community_credit_quest_pollen"] == pytest.approx(0.04)
 
 
 def test_usage_multiple_months_correct_month_tags():

@@ -18,6 +18,19 @@ import { fmtPeriod } from "../lib/format";
 import { matchesMonth } from "../lib/months";
 import type { Data, UsageMonthlyRow } from "../types";
 
+function ecosystemCredit(row: UsageMonthlyRow): number {
+    return (
+        row.byop_credit_paid_pollen +
+        row.byop_credit_quest_pollen +
+        row.community_credit_paid_pollen +
+        row.community_credit_quest_pollen
+    );
+}
+
+function retainedPollen(row: UsageMonthlyRow): number {
+    return row.price_paid + row.price_quests - ecosystemCredit(row);
+}
+
 export function BurnTab({
     data,
     month = "",
@@ -56,6 +69,30 @@ export function BurnTab({
                 key: "price_quests",
                 value: (row) => row.price_quests,
             },
+            {
+                key: "byop_credit_paid_pollen",
+                value: (row) => row.byop_credit_paid_pollen,
+            },
+            {
+                key: "byop_credit_quest_pollen",
+                value: (row) => row.byop_credit_quest_pollen,
+            },
+            {
+                key: "community_credit_paid_pollen",
+                value: (row) => row.community_credit_paid_pollen,
+            },
+            {
+                key: "community_credit_quest_pollen",
+                value: (row) => row.community_credit_quest_pollen,
+            },
+            {
+                key: "ecosystem_credit",
+                value: ecosystemCredit,
+            },
+            {
+                key: "retained_pollen",
+                value: retainedPollen,
+            },
         ],
         [],
     );
@@ -92,10 +129,42 @@ export function BurnTab({
                                 cost_quests
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("price_paid")}>
-                                price_paid
+                                gross_paid
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("price_quests")}>
-                                price_quests
+                                gross_quest
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                {...headerProps("byop_credit_paid_pollen")}
+                            >
+                                byop_paid
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                {...headerProps("byop_credit_quest_pollen")}
+                            >
+                                byop_quest
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                {...headerProps("community_credit_paid_pollen")}
+                            >
+                                community_paid
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                {...headerProps(
+                                    "community_credit_quest_pollen",
+                                )}
+                            >
+                                community_quest
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                {...headerProps("ecosystem_credit")}
+                            >
+                                ecosystem_credit
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                {...headerProps("retained_pollen")}
+                            >
+                                retained
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>
@@ -116,6 +185,20 @@ export function BurnTab({
                                 <TableCell>{row.cost_quests}</TableCell>
                                 <TableCell>{row.price_paid}</TableCell>
                                 <TableCell>{row.price_quests}</TableCell>
+                                <TableCell>
+                                    {row.byop_credit_paid_pollen}
+                                </TableCell>
+                                <TableCell>
+                                    {row.byop_credit_quest_pollen}
+                                </TableCell>
+                                <TableCell>
+                                    {row.community_credit_paid_pollen}
+                                </TableCell>
+                                <TableCell>
+                                    {row.community_credit_quest_pollen}
+                                </TableCell>
+                                <TableCell>{ecosystemCredit(row)}</TableCell>
+                                <TableCell>{retainedPollen(row)}</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>

@@ -3,53 +3,26 @@ import { useState } from "react";
 import { HeaderButton } from "./HeaderButton";
 import { SourceLegendContent } from "./SourceLegend";
 
-const COMMAND_GROUPS = [
-    {
-        title: "Update Tinybird",
-        description:
-            "Refresh operations tables after dropping the monthly Enty export folder.",
-        commands: [
-            {
-                command: "python3 -m ingest.run",
-                label: "Refresh operations",
-                note: "Update Enty transactions, provider usage, platform usage, and revenue.",
-            },
-            {
-                command:
-                    "python3 _local/invoice_fetcher/fetch_gog_invoices.py --month 2026-07",
-                label: "Fetch invoice PDFs",
-                note: "Local-only helper: set GOG_ACCOUNT or pass --account to download invoice-like Gmail PDFs into the invoice inbox. No AI, no Tinybird.",
-            },
-        ],
-    },
-];
+const UPDATE_COMMAND = "python3 -m ingest.run";
 
-function CommandRow({
-    command,
-    label,
-    note,
-}: {
-    command: string;
-    label: string;
-    note: string;
-}) {
+function CommandBlock() {
     return (
-        <li className="grid gap-2 border-theme-border/60 border-t py-3 first:border-t-0 md:grid-cols-[9rem_minmax(0,1fr)]">
+        <div className="grid gap-2 md:grid-cols-[8rem_minmax(0,1fr)]">
             <div>
                 <div className="font-medium text-theme-text-strong">
-                    {label}
+                    Refresh data
                 </div>
                 <div className="mt-0.5 text-xs leading-5 text-theme-text-soft">
-                    {note}
+                    Run from <code>apps/operation/forager/</code>.
                 </div>
             </div>
             <div className="flex min-w-0 items-start gap-1.5">
                 <code className="min-w-0 flex-1 rounded border border-theme-border/70 bg-theme-bg px-2 py-1 font-mono text-[11px] leading-5 text-theme-text-strong break-all sm:break-normal">
-                    {command}
+                    {UPDATE_COMMAND}
                 </code>
                 <CopyButton
-                    value={command}
-                    aria-label={`Copy ${label}`}
+                    value={UPDATE_COMMAND}
+                    aria-label="Copy refresh data command"
                     tooltip="Copy command"
                     copiedTooltip="Copied"
                     className="h-7 rounded border border-theme-border/70 px-2 text-xs text-theme-text-soft hover:bg-theme-bg-hover hover:text-theme-text-strong"
@@ -57,7 +30,7 @@ function CommandRow({
                     copy
                 </CopyButton>
             </div>
-        </li>
+        </div>
     );
 }
 
@@ -94,40 +67,17 @@ export function OperationsGuide() {
                 open={open}
                 onOpenChange={setOpen}
                 title="Operations guide"
-                size="lg"
-                contentClassName="max-h-[88dvh] max-w-3xl"
+                size="md"
+                contentClassName="max-h-[88dvh] max-w-2xl"
             >
                 <div className="max-h-[calc(88dvh-4rem)] overflow-y-auto p-6 pt-3 text-sm">
-                    <section className="flex flex-col gap-5">
+                    <section className="flex flex-col gap-3">
                         <Text as="p" size="sm" tone="soft">
-                            Run Forager commands from{" "}
-                            <code>apps/operation/forager/</code>. Local helper
-                            commands run from the repo root. The app shows the
-                            routine workflow; it does not execute scripts.
+                            Refresh the Treasury data after updating source
+                            exports. This app only reads Tinybird and stages
+                            manual edits; it does not run scripts.
                         </Text>
-                        {COMMAND_GROUPS.map((group) => (
-                            <div
-                                key={group.title}
-                                className="flex flex-col gap-2"
-                            >
-                                <div>
-                                    <div className="text-sm font-medium text-theme-text-strong">
-                                        {group.title}
-                                    </div>
-                                    <div className="text-xs leading-5 text-theme-text-soft">
-                                        {group.description}
-                                    </div>
-                                </div>
-                                <ul className="flex flex-col gap-1">
-                                    {group.commands.map((item) => (
-                                        <CommandRow
-                                            key={item.command}
-                                            {...item}
-                                        />
-                                    ))}
-                                </ul>
-                            </div>
-                        ))}
+                        <CommandBlock />
                     </section>
                     <section className="mt-5 grid gap-3 border-theme-border/70 border-t pt-5 md:grid-cols-[9rem_1fr]">
                         <div className="font-medium text-theme-text-strong">

@@ -11,8 +11,26 @@ def _validate_meter_values(provider, funding, source):
         raise ValueError(f"unknown provider slug for meter_monthly: {provider}")
     if funding not in ALLOWED_FUNDING:
         raise ValueError(f"unknown funding for meter_monthly: {funding}")
-    if source not in ALLOWED_METER_SOURCES:
-        raise ValueError(f"unknown source for meter_monthly: {source}")
+    _validate_meter_source(source)
+
+
+def _meter_sources(source):
+    normalized = str(source or "").replace("+", ",").replace("/", ",").replace(" ", ",")
+    return [part.strip() for part in normalized.split(",") if part.strip()]
+
+
+def _validate_meter_source(source):
+    parts = _meter_sources(source)
+    if not parts:
+        raise ValueError("meter_monthly source is required")
+    for part in parts:
+        if part not in ALLOWED_METER_SOURCES:
+            raise ValueError(f"unknown source for meter_monthly: {source}")
+
+
+def _source(value):
+    _validate_meter_source(value)
+    return ",".join(dict.fromkeys(_meter_sources(value)))
 
 
 def _currency(value):
@@ -30,16 +48,17 @@ def _mrow(month, provider, amount, funding, source, today, currency="USD"):
         provider: canonical provider slug
         amount:   metered cost in the source currency
         currency: source currency code, e.g. "USD" or "EUR"
-        funding:  "credit" | "prepaid" | "cash"
+        funding:  "credit" | "prepaid" | "cash"; prepaid is stored as cash_amount
         source:   "api" | "cli" | "bq" | "manual"
         today:    current ingest date (kept in the call signature for connector simplicity)
     """
     _validate_meter_values(provider, funding, source)
+    amount = round(float(amount), 2)
     return {
         "month": month,
         "provider": provider,
-        "amount": round(float(amount), 2),
         "currency": _currency(currency),
-        "funding": funding,
-        "source": source,
+        "credit_amount": amount if funding == "credit" else 0.0,
+        "cash_amount": amount if funding in {"cash", "prepaid"} else 0.0,
+        "source": _source(source),
     }

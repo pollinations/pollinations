@@ -1,6 +1,6 @@
-"""dedupe_meter — meter_monthly holds one row per provider/month/funding/currency.
+"""merge_meter_rows — meter_monthly holds one row per provider/month/currency.
 
-Precedence: manual rows are operator overrides for a provider/month/funding/currency
+Precedence: manual rows are operator overrides for a provider/month/currency
 bucket. Otherwise source rank wins, then last-seen.
 
 Run: cd apps/operation/forager && python3 -m pytest tests/test_meter_dedupe.py -q
@@ -11,130 +11,138 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from ingest.run import dedupe_meter, without_reset_manual_meter_rows
+from ingest.run import merge_meter_rows, without_reset_manual_meter_rows
 
 
-def _row(provider, month, cost, funding="credit", source="api", currency="USD"):
+def _row(
+    provider,
+    month,
+    credit=0.0,
+    cash=0.0,
+    source="api",
+    currency="USD",
+):
     return {
         "month": month,
         "provider": provider,
-        "amount": cost,
         "currency": currency,
-        "funding": funding,
+        "credit_amount": credit,
+        "cash_amount": cash,
         "source": source,
     }
 
 
-def test_last_seen_wins_within_source():
+def test_last_seen_wins_within_source_for_same_amount_side():
     rows = [
-        _row("aws", "2026-04", 100.0),
-        _row("aws", "2026-04", 120.0),
-        _row("aws", "2026-04", 110.0),
+        _row("aws", "2026-04", credit=100.0),
+        _row("aws", "2026-04", credit=120.0),
+        _row("aws", "2026-04", credit=110.0),
     ]
-    out = dedupe_meter(rows)
+    out = merge_meter_rows(rows)
     assert len(out) == 1
-    assert out[0]["amount"] == 110.0
+    assert out[0]["credit_amount"] == 110.0
 
 
 def test_manual_beats_api_for_same_bucket():
     rows = [
-        _row("aws", "2026-04", 100.0, source="api"),
-        _row("aws", "2026-04", 999.0, source="manual"),
+        _row("aws", "2026-04", credit=100.0, source="api"),
+        _row("aws", "2026-04", credit=999.0, source="manual"),
     ]
-    out = dedupe_meter(rows)
+    out = merge_meter_rows(rows)
     assert len(out) == 1
     assert out[0]["source"] == "manual"
-    assert out[0]["amount"] == 999.0
+    assert out[0]["credit_amount"] == 999.0
 
 
-def test_manual_survives_when_alone():
+def test_credit_and_cash_merge_into_one_row():
     rows = [
-        _row("assemblyai", "2026-06", 242.45, source="manual"),
-        _row("openai", "2026-06", 531.25, source="api"),
+        _row("aws", "2026-06", credit=1922.35, source="cli"),
+        _row("aws", "2026-06", cash=55.0, source="cli"),
     ]
-    out = dedupe_meter(rows)
-    assert len(out) == 2
-    by_prov = {r["provider"]: r for r in out}
-    assert by_prov["assemblyai"]["source"] == "manual"
-
-
-def test_funding_classes_stay_separate():
-    rows = [
-        _row("aws", "2026-06", 1922.35, funding="credit"),
-        _row("aws", "2026-06", 55.0, funding="cash"),
-    ]
-    out = dedupe_meter(rows)
-    assert len(out) == 2
-    assert {r["funding"] for r in out} == {"credit", "cash"}
+    out = merge_meter_rows(rows)
+    assert out == [_row("aws", "2026-06", credit=1922.35, cash=55.0, source="cli")]
 
 
 def test_currency_classes_stay_separate():
     rows = [
-        _row("aws", "2026-06", 1922.35, currency="USD"),
-        _row("aws", "2026-06", 55.0, currency="EUR"),
+        _row("aws", "2026-06", credit=1922.35, currency="USD"),
+        _row("aws", "2026-06", cash=55.0, currency="EUR"),
     ]
-    out = dedupe_meter(rows)
+    out = merge_meter_rows(rows)
     assert len(out) == 2
     assert {r["currency"] for r in out} == {"USD", "EUR"}
 
 
 def test_providers_and_months_never_cross_collapse():
     rows = [
-        _row("aws", "2026-05", 1.0),
-        _row("aws", "2026-06", 2.0),
-        _row("google", "2026-06", 3.0),
+        _row("aws", "2026-05", credit=1.0),
+        _row("aws", "2026-06", credit=2.0),
+        _row("google", "2026-06", credit=3.0),
     ]
-    out = dedupe_meter(rows)
+    out = merge_meter_rows(rows)
     assert len(out) == 3
-
-
-def test_last_seen_wins_on_exact_tie():
-    # Table read-back first, fresh connector row second: the fresh row wins.
-    rows = [
-        _row("aws", "2026-07", 10.0),
-        _row("aws", "2026-07", 12.5),
-    ]
-    out = dedupe_meter(rows)
-    assert len(out) == 1
-    assert out[0]["amount"] == 12.5
 
 
 def test_cli_and_bq_rank_between_api_and_manual():
     rows = [
-        _row("ovhcloud", "2026-05", 1.0, source="cli"),
-        _row("ovhcloud", "2026-05", 2.0, source="bq"),
+        _row("ovhcloud", "2026-05", credit=1.0, source="cli"),
+        _row("ovhcloud", "2026-05", credit=2.0, source="bq"),
     ]
-    out = dedupe_meter(rows)
+    out = merge_meter_rows(rows)
     assert len(out) == 1
     assert out[0]["source"] == "cli"
 
 
+def test_different_selected_sources_are_combined():
+    rows = [
+        _row("google", "2026-05", credit=1.0, source="api"),
+        _row("google", "2026-05", cash=2.0, source="bq"),
+    ]
+    out = merge_meter_rows(rows)
+    assert len(out) == 1
+    assert out[0]["source"] == "api,bq"
+
+
 def test_empty_input():
-    assert dedupe_meter([]) == []
+    assert merge_meter_rows([]) == []
 
 
 def test_reset_override_ignores_manual_row():
     rows = [
-        _row("aws", "2026-06", 0.0, source="manual"),
-        _row("aws", "2026-06", 42.0, source="cli"),
-        _row("openai", "2026-06", 9.0, source="manual"),
+        _row("aws", "2026-06", credit=0.0, source="manual"),
+        _row("aws", "2026-06", credit=42.0, source="cli"),
+        _row("openai", "2026-06", credit=9.0, source="manual"),
     ]
     overrides = {
-        ("meter_monthly", "aws|2026-06|credit|USD", "reset_manual"): "1",
+        ("meter_monthly", "aws|2026-06|USD", "reset_manual"): "1",
     }
 
     out = without_reset_manual_meter_rows(rows, overrides)
 
     assert out == [
-        _row("aws", "2026-06", 42.0, source="cli"),
-        _row("openai", "2026-06", 9.0, source="manual"),
+        _row("aws", "2026-06", credit=42.0, source="cli"),
+        _row("openai", "2026-06", credit=9.0, source="manual"),
     ]
 
 
-def test_reset_override_zero_keeps_manual_row():
-    rows = [_row("aws", "2026-06", 0.0, source="manual")]
+def test_reset_override_ignores_combined_manual_source_row():
+    rows = [
+        _row("aws", "2026-06", credit=0.0, cash=42.0, source="manual,cli"),
+        _row("aws", "2026-06", credit=10.0, source="cli"),
+    ]
     overrides = {
-        ("meter_monthly", "aws|2026-06|credit|USD", "reset_manual"): "0",
+        ("meter_monthly", "aws|2026-06|USD", "reset_manual"): "1",
+    }
+
+    out = without_reset_manual_meter_rows(rows, overrides)
+
+    assert out == [_row("aws", "2026-06", credit=10.0, source="cli")]
+
+
+def test_reset_override_zero_keeps_manual_row():
+    rows = [_row("aws", "2026-06", credit=0.0, source="manual")]
+    overrides = {
+        ("meter_monthly", "aws|2026-06|USD", "reset_manual"): "0",
     }
 
     assert without_reset_manual_meter_rows(rows, overrides) == rows

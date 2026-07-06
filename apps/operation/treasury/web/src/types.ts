@@ -15,9 +15,9 @@ export type TransactionRow = {
 export type MeterMonthlyRow = {
     month: string;
     provider: string;
-    amount: number;
     currency: string;
-    funding: string;
+    credit_amount: number;
+    cash_amount: number;
     source: string;
 };
 

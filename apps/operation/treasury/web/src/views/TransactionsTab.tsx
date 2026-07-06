@@ -1,4 +1,5 @@
 import {
+    ExternalLinkIcon,
     TableBody,
     TableCell,
     TableHead,
@@ -14,7 +15,7 @@ import {
     withUniqueRowKeys,
 } from "../components/DataTable";
 import { dirtyControlClass, ResetCellButton } from "../components/EditableCell";
-import { utcDateTime } from "../lib/format";
+import { fmtPeriod, utcDateTime } from "../lib/format";
 import { matchesMonth } from "../lib/months";
 import { PROVIDER_OPTIONS } from "../lib/provider-vocabulary";
 import { type StageInput, useStaging } from "../lib/staging";
@@ -89,7 +90,7 @@ function buildTransactionOverrideChange({
 }
 
 function InvoiceRef({ value }: { value: string }) {
-    if (!value) return null;
+    if (!value) return <span>-</span>;
 
     return (
         <a
@@ -97,9 +98,10 @@ function InvoiceRef({ value }: { value: string }) {
             target="_blank"
             rel="noreferrer"
             title={value}
-            className="text-theme-text-soft underline decoration-theme-border underline-offset-4 transition-colors hover:text-theme-text-strong"
+            className="inline-flex h-8 items-center gap-1.5 rounded border border-theme-border/70 bg-theme-bg/60 px-2.5 text-sm font-medium text-theme-text-soft transition-colors hover:bg-theme-bg-hover hover:text-theme-text-strong"
         >
-            {value}
+            invoice
+            <ExternalLinkIcon className="h-3.5 w-3.5" />
         </a>
     );
 }
@@ -246,7 +248,7 @@ export function TransactionsTab({
                 <TableHead>
                     <TableRow>
                         <TableHeaderCell {...headerProps("date")}>
-                            date
+                            time period
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("provider")}>
                             provider
@@ -292,7 +294,7 @@ export function TransactionsTab({
                     {withUniqueRowKeys(rows, transactionKey).map(
                         ({ key, row }) => (
                             <TableRow key={key}>
-                                <TableCell>{row.date}</TableCell>
+                                <TableCell>{fmtPeriod(row.date)}</TableCell>
                                 <TableCell>
                                     <TransactionSelectCell
                                         field="provider"

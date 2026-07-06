@@ -15,11 +15,13 @@ import {
     withUniqueRowKeys,
 } from "../components/DataTable";
 import { dirtyControlClass, ResetCellButton } from "../components/EditableCell";
+import { SourceCell, uniqueSources } from "../components/Provenance";
 import {
     buildManualMeterChange,
     buildMeterManualResetChange,
     validateManualAmount,
 } from "../components/UsageEntryForm";
+import { fmtPeriod } from "../lib/format";
 import { matchesMonth } from "../lib/months";
 import { useStaging } from "../lib/staging";
 import type {
@@ -29,55 +31,47 @@ import type {
     TransactionRow,
 } from "../types";
 
-function meterStageKey(
-    month: string,
-    provider: string,
-    funding: string,
-    currency: string,
-) {
-    return `meter:${provider}:${month}:${funding}:${currency}`;
+type MeterAmountField = "credit_amount" | "cash_amount";
+
+function meterStageKey(month: string, provider: string, currency: string) {
+    return `meter:${provider}:${month}:${currency}`;
 }
 
-function meterOverrideKey(
-    month: string,
-    provider: string,
-    funding: string,
-    currency: string,
-) {
-    return `${provider}|${month}|${funding}|${currency}`;
+function meterOverrideKey(month: string, provider: string, currency: string) {
+    return `${provider}|${month}|${currency}`;
 }
 
-function meterResetStageKey(
-    month: string,
-    provider: string,
-    funding: string,
-    currency: string,
-) {
-    return `meter-reset:${meterOverrideKey(month, provider, funding, currency)}`;
+function hasManualSource(source: string) {
+    return uniqueSources([source]).includes("manual");
+}
+
+function meterResetStageKey(month: string, provider: string, currency: string) {
+    return `meter-reset:${meterOverrideKey(month, provider, currency)}`;
 }
 
 type Change = { datasource: string; key: string; row: Record<string, unknown> };
 
-function stagedMeterAmount(
+function numberValue(value: unknown) {
+    return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function stagedMeterRow(
     changes: Change[],
     month: string,
     provider: string,
-    funding: string,
     currency: string,
 ) {
-    const key = meterStageKey(month, provider, funding, currency);
-    const staged = changes.find((change) => change.key === key);
-    return staged ? String(staged.row.amount ?? "") : null;
+    const key = meterStageKey(month, provider, currency);
+    return changes.find((change) => change.key === key) ?? null;
 }
 
 function stagedMeterReset(
     changes: Change[],
     month: string,
     provider: string,
-    funding: string,
     currency: string,
 ) {
-    const key = meterResetStageKey(month, provider, funding, currency);
+    const key = meterResetStageKey(month, provider, currency);
     const staged = changes.find((change) => change.key === key);
     if (!staged) return null;
     const value = String(staged.row.value_str ?? "");
@@ -106,77 +100,72 @@ function meterOverridesFromChanges(changes: Change[]): OverrideRow[] {
         }));
 }
 
+function fieldAmount(
+    field: MeterAmountField,
+    creditAmount: number,
+    cashAmount: number,
+) {
+    return field === "credit_amount" ? creditAmount : cashAmount;
+}
+
 function MeterAmountInput({
-    amount,
+    cashAmount,
+    creditAmount,
     currency,
-    funding,
+    field,
     manual,
     month,
     provider,
 }: {
-    amount: number;
+    cashAmount: number;
+    creditAmount: number;
     currency: string;
-    funding: string;
+    field: MeterAmountField;
     manual: boolean;
     month: string;
     provider: string;
 }) {
     const { changes, committed, stage, unstage } = useStaging();
-    const stageKey = meterStageKey(month, provider, funding, currency);
-    const resetKey = meterResetStageKey(month, provider, funding, currency);
-    const pendingAmount = stagedMeterAmount(
-        changes,
-        month,
-        provider,
-        funding,
-        currency,
-    );
-    const committedAmount = stagedMeterAmount(
-        committed,
-        month,
-        provider,
-        funding,
-        currency,
-    );
-    const pendingReset = stagedMeterReset(
-        changes,
-        month,
-        provider,
-        funding,
-        currency,
-    );
+    const stageKey = meterStageKey(month, provider, currency);
+    const resetKey = meterResetStageKey(month, provider, currency);
+    const pendingRow = stagedMeterRow(changes, month, provider, currency);
+    const committedRow = stagedMeterRow(committed, month, provider, currency);
+    const pendingReset = stagedMeterReset(changes, month, provider, currency);
     const committedReset = stagedMeterReset(
         committed,
         month,
         provider,
-        funding,
         currency,
     );
-    const overlayAmount = pendingAmount ?? committedAmount;
-    const input = overlayAmount ?? String(amount);
-    const hasPendingEdit = pendingAmount !== null || pendingReset !== null;
+    const overlay = pendingRow ?? committedRow;
+    const overlayCredit = overlay
+        ? numberValue(overlay.row.credit_amount)
+        : creditAmount;
+    const overlayCash = overlay
+        ? numberValue(overlay.row.cash_amount)
+        : cashAmount;
+    const initial = fieldAmount(field, creditAmount, cashAmount);
+    const input = String(fieldAmount(field, overlayCredit, overlayCash));
+    const hasPendingField =
+        pendingReset !== null ||
+        (pendingRow !== null &&
+            fieldAmount(field, overlayCredit, overlayCash) !== initial);
+    const hasPendingRow = pendingRow !== null || pendingReset !== null;
     const hasSavedEdit =
-        manual || committedAmount !== null || committedReset === false;
-    const showReset = hasPendingEdit || hasSavedEdit;
+        manual || committedRow !== null || committedReset === false;
+    const showReset = hasPendingRow || hasSavedEdit;
 
-    const update = (next: string) => {
-        if (next.trim() === "") {
-            unstage(stageKey);
-            unstage(resetKey);
-            return;
-        }
-        const parsed = validateManualAmount(next);
-        if (parsed === null) return;
-        if (parsed === amount) {
+    const stageAmounts = (nextCredit: number, nextCash: number) => {
+        if (nextCredit === creditAmount && nextCash === cashAmount) {
             unstage(stageKey);
             unstage(resetKey);
             return;
         }
         stage(
             buildManualMeterChange({
-                amount: parsed,
+                cashAmount: nextCash,
+                creditAmount: nextCredit,
                 currency,
-                funding,
                 month,
                 provider,
             }),
@@ -184,7 +173,6 @@ function MeterAmountInput({
         stage(
             buildMeterManualResetChange({
                 currency,
-                funding,
                 month,
                 provider,
                 reset: false,
@@ -192,8 +180,18 @@ function MeterAmountInput({
         );
     };
 
+    const update = (next: string) => {
+        const parsed =
+            next.trim() === "" ? initial : validateManualAmount(next);
+        if (parsed === null) return;
+        stageAmounts(
+            field === "credit_amount" ? parsed : overlayCredit,
+            field === "cash_amount" ? parsed : overlayCash,
+        );
+    };
+
     const reset = () => {
-        if (hasPendingEdit) {
+        if (hasPendingRow) {
             unstage(stageKey);
             unstage(resetKey);
             return;
@@ -202,7 +200,6 @@ function MeterAmountInput({
         stage(
             buildMeterManualResetChange({
                 currency,
-                funding,
                 month,
                 provider,
                 reset: true,
@@ -217,19 +214,19 @@ function MeterAmountInput({
                 min="0"
                 step="0.01"
                 value={input}
-                error={hasPendingEdit}
+                error={hasPendingField}
                 onChange={(event) => update(event.target.value)}
-                aria-label="amount"
+                aria-label={field}
                 className={dirtyControlClass(
-                    hasPendingEdit,
+                    hasPendingField,
                     "w-24 rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong",
                 )}
             />
             {showReset && (
                 <ResetCellButton
-                    kind={hasPendingEdit ? "undo" : "reset"}
+                    kind={hasPendingRow ? "undo" : "reset"}
                     title={
-                        hasPendingEdit
+                        hasPendingRow
                             ? "Undo pending usage edit"
                             : "Reset saved usage value"
                     }
@@ -286,14 +283,9 @@ export function effectiveMeterRowsWithOverrides({
     if (resetKeys.size === 0) return meterRows;
     return meterRows.filter(
         (row) =>
-            row.source !== "manual" ||
+            !hasManualSource(row.source) ||
             !resetKeys.has(
-                meterOverrideKey(
-                    row.month,
-                    row.provider,
-                    row.funding,
-                    row.currency,
-                ),
+                meterOverrideKey(row.month, row.provider, row.currency),
             ),
     );
 }
@@ -363,8 +355,8 @@ export function MeterTab({
             { key: "month", value: (row) => row.month },
             { key: "source", value: (row) => row.source },
             { key: "provider", value: (row) => row.provider },
-            { key: "funding", value: (row) => row.funding },
-            { key: "amount", value: (row) => row.amount },
+            { key: "credit_amount", value: (row) => row.credit_amount },
+            { key: "cash_amount", value: (row) => row.cash_amount },
             { key: "currency", value: (row) => row.currency },
         ],
         [],
@@ -376,7 +368,7 @@ export function MeterTab({
                 <TableHead>
                     <TableRow>
                         <TableHeaderCell {...headerProps("month")}>
-                            month
+                            time period
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("source")}>
                             source
@@ -384,11 +376,11 @@ export function MeterTab({
                         <TableHeaderCell {...headerProps("provider")}>
                             provider
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("funding")}>
-                            funding
+                        <TableHeaderCell {...headerProps("credit_amount")}>
+                            credit usage
                         </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("amount")}>
-                            amount
+                        <TableHeaderCell {...headerProps("cash_amount")}>
+                            cash usage
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("currency")}>
                             currency
@@ -399,20 +391,34 @@ export function MeterTab({
                     {withUniqueRowKeys(
                         rows,
                         (row) =>
-                            `${row.month}|${row.provider}|${row.funding}|${row.source}|${row.currency}|${row.amount}`,
+                            `${row.month}|${row.provider}|${row.source}|${row.currency}|${row.credit_amount}|${row.cash_amount}`,
                     ).map(({ key, row }) => {
+                        const manual = hasManualSource(row.source);
                         return (
                             <TableRow key={key}>
-                                <TableCell>{row.month}</TableCell>
-                                <TableCell>{row.source}</TableCell>
+                                <TableCell>{fmtPeriod(row.month)}</TableCell>
+                                <TableCell>
+                                    <SourceCell sources={[row.source]} />
+                                </TableCell>
                                 <TableCell>{row.provider}</TableCell>
-                                <TableCell>{row.funding}</TableCell>
                                 <TableCell>
                                     <MeterAmountInput
-                                        amount={row.amount}
+                                        cashAmount={row.cash_amount}
+                                        creditAmount={row.credit_amount}
                                         currency={row.currency}
-                                        funding={row.funding}
-                                        manual={row.source === "manual"}
+                                        field="credit_amount"
+                                        manual={manual}
+                                        month={row.month}
+                                        provider={row.provider}
+                                    />
+                                </TableCell>
+                                <TableCell>
+                                    <MeterAmountInput
+                                        cashAmount={row.cash_amount}
+                                        creditAmount={row.credit_amount}
+                                        currency={row.currency}
+                                        field="cash_amount"
+                                        manual={manual}
                                         month={row.month}
                                         provider={row.provider}
                                     />

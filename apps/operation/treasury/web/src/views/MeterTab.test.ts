@@ -4,15 +4,15 @@ import type { MeterMonthlyRow, OverrideRow, TransactionRow } from "../types";
 function meterRow(
     month: string,
     provider: string,
-    amount: number,
+    creditAmount: number,
     source = "manual",
 ): MeterMonthlyRow {
     return {
         month,
         provider,
-        amount,
         currency: "USD",
-        funding: "credit",
+        credit_amount: creditAmount,
+        cash_amount: 0,
         source,
     };
 }
@@ -56,9 +56,20 @@ describe("meter reset overrides", () => {
                     meterRow("2026-06", "digitalocean", 288),
                     meterRow("2026-06", "openai", 42, "api"),
                 ],
-                overrides: [
-                    overrideRow("digitalocean|2026-06|credit|USD", "1"),
+                overrides: [overrideRow("digitalocean|2026-06|USD", "1")],
+            }),
+        ).toEqual([meterRow("2026-06", "openai", 42, "api")]);
+    });
+
+    it("removes combined manual source rows for reset buckets", async () => {
+        const { effectiveMeterRowsWithOverrides } = await import("./MeterTab");
+        expect(
+            effectiveMeterRowsWithOverrides({
+                meterRows: [
+                    meterRow("2026-06", "digitalocean", 288, "manual,cli"),
+                    meterRow("2026-06", "openai", 42, "api"),
                 ],
+                overrides: [overrideRow("digitalocean|2026-06|USD", "1")],
             }),
         ).toEqual([meterRow("2026-06", "openai", 42, "api")]);
     });
@@ -69,9 +80,7 @@ describe("meter reset overrides", () => {
         expect(
             effectiveMeterRowsWithOverrides({
                 meterRows: rows,
-                overrides: [
-                    overrideRow("digitalocean|2026-06|credit|USD", "0"),
-                ],
+                overrides: [overrideRow("digitalocean|2026-06|USD", "0")],
             }),
         ).toEqual(rows);
     });

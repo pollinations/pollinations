@@ -13,6 +13,8 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
+import { SourceCell } from "../components/Provenance";
+import { fmtPeriod } from "../lib/format";
 import type { Data, RevenueMonthlyRow } from "../types";
 
 export function RevenueTab({ data }: { data: Data }) {
@@ -38,7 +40,7 @@ export function RevenueTab({ data }: { data: Data }) {
                 <TableHead>
                     <TableRow>
                         <TableHeaderCell {...headerProps("month")}>
-                            month
+                            time period
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("source")}>
                             source
@@ -63,8 +65,10 @@ export function RevenueTab({ data }: { data: Data }) {
                         (row) => `${row.month}|${row.currency}`,
                     ).map(({ key, row }) => (
                         <TableRow key={key}>
-                            <TableCell>{row.month}</TableCell>
-                            <TableCell>{row.source}</TableCell>
+                            <TableCell>{fmtPeriod(row.month)}</TableCell>
+                            <TableCell>
+                                <SourceCell sources={[row.source]} />
+                            </TableCell>
                             <TableCell>{row.currency}</TableCell>
                             <TableCell>{row.gross_amount}</TableCell>
                             <TableCell>{row.fees_amount}</TableCell>

@@ -3,69 +3,60 @@ import { useState } from "react";
 import { utcDateTime } from "../lib/format";
 import { type StageInput, useStaging } from "../lib/staging";
 
-const USAGE_BUCKETS = [
-    { label: "prepaid usage", value: "prepaid" },
-    { label: "credit usage", value: "credit" },
-];
-
 export function buildManualMeterChange({
-    amount,
+    cashAmount,
+    creditAmount,
     currency,
-    funding,
     month,
     provider,
 }: {
-    amount: number;
+    cashAmount: number;
+    creditAmount: number;
     currency: string;
-    funding: string;
     month: string;
     provider: string;
 }): StageInput {
     return {
         datasource: "meter_monthly",
-        key: `meter:${provider}:${month}:${funding}:${currency}`,
+        key: `meter:${provider}:${month}:${currency}`,
         row: {
             month,
             provider,
-            amount,
             currency,
-            funding,
+            credit_amount: creditAmount,
+            cash_amount: cashAmount,
             source: "manual",
         },
-        summary: `usage ${provider} ${month} ${funding} -> ${amount} ${currency}`,
+        summary: `usage ${provider} ${month} -> credit ${creditAmount} ${currency}, cash ${cashAmount} ${currency}`,
     };
 }
 
 export function meterOverrideKey({
     currency,
-    funding,
     month,
     provider,
 }: {
     currency: string;
-    funding: string;
     month: string;
     provider: string;
 }) {
-    return `${provider}|${month}|${funding}|${currency}`;
+    return `${provider}|${month}|${currency}`;
 }
 
 export function buildMeterManualResetChange({
     enteredAt = utcDateTime(),
     currency,
-    funding,
     month,
     provider,
     reset,
 }: {
     enteredAt?: string;
     currency: string;
-    funding: string;
     month: string;
     provider: string;
     reset: boolean;
 }): StageInput {
-    const key = meterOverrideKey({ currency, funding, month, provider });
+    const key = meterOverrideKey({ currency, month, provider });
     return {
         datasource: "overrides",
         key: `meter-reset:${key}`,
@@ -79,8 +70,8 @@ export function buildMeterManualResetChange({
             note: "",
         },
         summary: reset
-            ? `usage ${provider} ${month} ${funding} ${currency} reset manual value`
-            : `usage ${provider} ${month} ${funding} ${currency} keep manual value`,
+            ? `usage ${provider} ${month} ${currency} reset manual value`
+            : `usage ${provider} ${month} ${currency} keep manual value`,
         hidden: !reset,
     };
 }
@@ -101,9 +92,9 @@ export function UsageEntryForm({
     provider: string;
 }) {
     const { stage } = useStaging();
-    const [amount, setAmount] = useState("");
+    const [creditAmount, setCreditAmount] = useState("");
+    const [cashAmount, setCashAmount] = useState("");
     const [currency, setCurrency] = useState("USD");
-    const [funding, setFunding] = useState("prepaid");
     const [error, setError] = useState<string | null>(null);
 
     return (
@@ -111,22 +102,28 @@ export function UsageEntryForm({
             className="flex flex-col gap-1.5"
             onSubmit={(event) => {
                 event.preventDefault();
-                const parsed = validateManualAmount(amount);
-                if (parsed === null) {
-                    setError("Amount must be a number >= 0.");
+                const parsedCredit = validateManualAmount(creditAmount || "0");
+                const parsedCash = validateManualAmount(cashAmount || "0");
+                if (parsedCredit === null || parsedCash === null) {
+                    setError("Amounts must be numbers >= 0.");
+                    return;
+                }
+                if (parsedCredit === 0 && parsedCash === 0) {
+                    setError("Enter credit or cash usage.");
                     return;
                 }
 
                 stage(
                     buildManualMeterChange({
-                        amount: parsed,
+                        cashAmount: parsedCash,
+                        creditAmount: parsedCredit,
                         currency,
-                        funding,
                         month,
                         provider,
                     }),
                 );
-                setAmount("");
+                setCreditAmount("");
+                setCashAmount("");
                 setError(null);
                 onStaged?.();
             }}
@@ -137,10 +134,20 @@ export function UsageEntryForm({
                     type="number"
                     min="0"
                     step="0.01"
-                    value={amount}
-                    onChange={(event) => setAmount(event.target.value)}
-                    placeholder="amount"
-                    aria-label="amount"
+                    value={creditAmount}
+                    onChange={(event) => setCreditAmount(event.target.value)}
+                    placeholder="credit"
+                    aria-label="credit amount"
+                    className="w-32"
+                />
+                <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={cashAmount}
+                    onChange={(event) => setCashAmount(event.target.value)}
+                    placeholder="cash"
+                    aria-label="cash amount"
                     className="w-32"
                 />
                 <select
@@ -152,18 +159,6 @@ export function UsageEntryForm({
                     {["USD", "EUR", "GBP"].map((option) => (
                         <option key={option} value={option}>
                             {option}
-                        </option>
-                    ))}
-                </select>
-                <select
-                    value={funding}
-                    onChange={(event) => setFunding(event.target.value)}
-                    aria-label="usage bucket"
-                    className="rounded border border-theme-border/70 bg-theme-bg px-2 py-1 text-theme-text-strong"
-                >
-                    {USAGE_BUCKETS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                            {option.label}
                         </option>
                     ))}
                 </select>

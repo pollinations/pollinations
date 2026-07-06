@@ -13,6 +13,8 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
+import { SourceCell } from "../components/Provenance";
+import { fmtPeriod } from "../lib/format";
 import { matchesMonth } from "../lib/months";
 import type { Data, UsageMonthlyRow } from "../types";
 
@@ -66,7 +68,7 @@ export function BurnTab({
                     <TableHead>
                         <TableRow>
                             <TableHeaderCell {...headerProps("month")}>
-                                month
+                                time period
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("source")}>
                                 source
@@ -109,8 +111,10 @@ export function BurnTab({
                                 `${row.month}|${row.provider}|${row.model}`,
                         ).map(({ key, row }) => (
                             <TableRow key={key}>
-                                <TableCell>{row.month}</TableCell>
-                                <TableCell>{row.source}</TableCell>
+                                <TableCell>{fmtPeriod(row.month)}</TableCell>
+                                <TableCell>
+                                    <SourceCell sources={[row.source]} />
+                                </TableCell>
                                 <TableCell>{row.provider}</TableCell>
                                 <TableCell>{row.model}</TableCell>
                                 <TableCell>{row.currency}</TableCell>

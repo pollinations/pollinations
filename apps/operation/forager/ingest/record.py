@@ -1,19 +1,18 @@
 """Manual entry CLI for meter readings.
 
 Usage:
-    python3 -m ingest.record meter <provider> <YYYY-MM> <amount>
-                                   --currency USD|EUR [--funding credit|prepaid|cash]
+    python3 -m ingest.record meter <provider> <YYYY-MM>
+                                   --currency USD|EUR [--credit N] [--cash N]
 
 Appends one row to `meter_monthly` with source="manual".
 Provider must be in registry.CANONICAL; month must match YYYY-MM.
 """
 import argparse
-import datetime
 import json
 import re
 import sys
 
-from .connectors.providers import _mrow
+from .connectors.providers import _currency, _validate_meter_source
 from .connectors.registry import CANONICAL
 from . import creds as _creds
 from . import tb as _tb
@@ -48,6 +47,12 @@ def _validate_currency(currency):
     return code
 
 
+def _validate_amount(name, amount):
+    if amount < 0:
+        print(f"error: {name} must be >= 0, got '{amount}'", file=sys.stderr)
+        sys.exit(1)
+
+
 def main(argv=None, tb_factory=None):
     """Entry point.
 
@@ -64,9 +69,9 @@ def main(argv=None, tb_factory=None):
     mp = sub.add_parser("meter", help="append a meter_monthly reading")
     mp.add_argument("provider",  help="canonical provider slug")
     mp.add_argument("month",     help="billing month YYYY-MM")
-    mp.add_argument("amount",    type=float, help="metered cost in source currency")
     mp.add_argument("--currency", required=True, help="source currency code, e.g. USD or EUR")
-    mp.add_argument("--funding", default="prepaid", choices=["credit", "prepaid", "cash"])
+    mp.add_argument("--credit", type=float, default=0.0, help="credit burn amount")
+    mp.add_argument("--cash", type=float, default=0.0, help="cash/prepaid amount")
 
     args = parser.parse_args(argv)
 
@@ -80,10 +85,21 @@ def main(argv=None, tb_factory=None):
     if args.cmd == "meter":
         _validate_provider(args.provider)
         _validate_month(args.month)
+        _validate_amount("credit", args.credit)
+        _validate_amount("cash", args.cash)
+        if args.credit == 0 and args.cash == 0:
+            print("error: at least one of --credit or --cash must be > 0", file=sys.stderr)
+            sys.exit(1)
         currency = _validate_currency(args.currency)
-        today = datetime.date.today().isoformat()
-        row = _mrow(args.month, args.provider, args.amount,
-                    args.funding, "manual", today, currency=currency)
+        _validate_meter_source("manual")
+        row = {
+            "month": args.month,
+            "provider": args.provider,
+            "currency": _currency(currency),
+            "credit_amount": round(float(args.credit), 2),
+            "cash_amount": round(float(args.cash), 2),
+            "source": "manual",
+        }
         client.append("meter_monthly", [row])
         print(json.dumps(row))
 

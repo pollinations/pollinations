@@ -19,8 +19,9 @@ from . import creds, enty, tb
 from .connectors import registry
 from .connectors import usage as _usage
 from .connectors.common import months_ytd
-from .connectors.providers import _validate_meter_values
+from .connectors.providers import _validate_meter_source
 from .connectors.providers import stripe as _stripe
+from .aliases import PROVIDER_ALIASES
 
 
 _SRC_RANK = {"manual": 0, "api": 1, "cli": 2, "bq": 3}
@@ -40,24 +41,88 @@ def load_overrides(ops_ingest):
     }
 
 
-def dedupe_meter(rows):
-    """One row per (provider, month, funding, currency), preferring manual rows."""
+def _meter_sources(source):
+    normalized = str(source or "").replace("+", ",").replace("/", ",").replace(" ", ",")
+    return [part.strip() for part in normalized.split(",") if part.strip()]
 
-    def _rank(row):
-        return _SRC_RANK.get(row.get("source", "manual"), 99)
 
-    best = {}
+def _source_rank(source):
+    ranks = [_SRC_RANK.get(part, 99) for part in _meter_sources(source)]
+    return min(ranks) if ranks else 99
+
+
+def _combine_sources(*sources):
+    seen = []
+    for source in sources:
+        for part in _meter_sources(source):
+            if part not in seen:
+                seen.append(part)
+    return ",".join(seen)
+
+
+def _amount(row, field):
+    return round(float(row.get(field) or 0), 2)
+
+
+def _field_present(row, field):
+    if row.get("source") == "manual":
+        return field in row
+    return _amount(row, field) != 0
+
+
+def merge_meter_rows(rows):
+    """One row per (provider, month, currency), with separate credit/cash amounts."""
+
+    grouped = {}
     for row in rows:
         key = (
             row.get("provider", ""),
             row.get("month", ""),
-            row.get("funding", ""),
             row.get("currency", ""),
         )
-        prev = best.get(key)
-        if prev is None or _rank(row) <= _rank(prev):
-            best[key] = row
-    return list(best.values())
+        current = grouped.setdefault(
+            key,
+            {
+                "month": row.get("month", ""),
+                "provider": row.get("provider", ""),
+                "currency": row.get("currency", ""),
+                "credit_amount": 0.0,
+                "cash_amount": 0.0,
+                "source": "",
+                "_credit_rank": 999,
+                "_cash_rank": 999,
+                "_credit_source": "",
+                "_cash_source": "",
+            },
+        )
+        rank = _source_rank(row.get("source", "manual"))
+        for field, rank_field, source_field in [
+            ("credit_amount", "_credit_rank", "_credit_source"),
+            ("cash_amount", "_cash_rank", "_cash_source"),
+        ]:
+            if not _field_present(row, field):
+                continue
+            if rank <= current[rank_field]:
+                current[field] = _amount(row, field)
+                current[rank_field] = rank
+                current[source_field] = row.get("source", "")
+
+    merged = []
+    for row in grouped.values():
+        source = _combine_sources(row["_credit_source"], row["_cash_source"])
+        if not source:
+            source = row["source"] or "manual"
+        merged.append(
+            {
+                "month": row["month"],
+                "provider": row["provider"],
+                "currency": row["currency"],
+                "credit_amount": row["credit_amount"],
+                "cash_amount": row["cash_amount"],
+                "source": source,
+            }
+        )
+    return merged
 
 
 def meter_manual_reset_keys(overrides):
@@ -71,10 +136,11 @@ def meter_manual_reset_keys(overrides):
 
 
 def meter_row_key(row):
-    return (
-        f"{row.get('provider', '')}|{row.get('month', '')}|"
-        f"{row.get('funding', '')}|{row.get('currency', '')}"
-    )
+    return f"{row.get('provider', '')}|{row.get('month', '')}|{row.get('currency', '')}"
+
+
+def _has_manual_source(row):
+    return "manual" in _meter_sources(row.get("source", ""))
 
 
 def without_reset_manual_meter_rows(rows, overrides):
@@ -84,19 +150,24 @@ def without_reset_manual_meter_rows(rows, overrides):
     return [
         row
         for row in rows
-        if row.get("source") != "manual" or meter_row_key(row) not in reset_keys
+        if not _has_manual_source(row) or meter_row_key(row) not in reset_keys
     ]
 
 
 def validate_meter_rows(rows):
     for row in rows:
-        _validate_meter_values(
-            row.get("provider", ""),
-            row.get("funding", ""),
-            row.get("source", ""),
-        )
+        if row.get("provider", "") not in PROVIDER_ALIASES:
+            raise ValueError(
+                f"unknown provider slug for meter_monthly: {row.get('provider', '')}"
+            )
+        _validate_meter_source(row.get("source", ""))
         if not str(row.get("currency") or "").strip():
             raise ValueError("meter_monthly row missing currency")
+        for field in ("credit_amount", "cash_amount"):
+            value = row.get(field)
+            if value is None:
+                raise ValueError(f"meter_monthly row missing {field}")
+            float(value)
 
 
 def _sanitize_err(e, creds_dict):
@@ -141,7 +212,7 @@ def refresh_meter_monthly(
         overrides,
     )
     validate_meter_rows(meter_table)
-    meter_merged = dedupe_meter(meter_table + meter_new)
+    meter_merged = merge_meter_rows(meter_table + meter_new)
     validate_meter_rows(meter_merged)
     ops_replace.replace("meter_monthly", meter_merged)
     statuses["meter_rows"] = len(meter_merged)

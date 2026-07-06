@@ -51,13 +51,13 @@ describe("matchesMonth", () => {
 });
 
 describe("monthLabel", () => {
-    it("returns raw month values", () => {
-        expect(monthLabel("2006-06")).toBe("2006-06");
-        expect(monthLabel("2026-06")).toBe("2026-06");
-        expect(monthLabel("2026-07")).toBe("2026-07");
+    it("renders full month names with two-digit years", () => {
+        expect(monthLabel("2006-06")).toBe("June 06");
+        expect(monthLabel("2026-06")).toBe("June 26");
+        expect(monthLabel("2026-07")).toBe("July 26");
     });
 
-    it("returns raw non-month values", () => {
+    it("falls back to the raw value when not a month", () => {
         expect(monthLabel("2026")).toBe("2026");
         expect(monthLabel("")).toBe("");
     });

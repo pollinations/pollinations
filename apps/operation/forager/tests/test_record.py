@@ -23,16 +23,16 @@ def test_mrow_full():
     assert r == {
         "month": "2026-06",
         "provider": "deepinfra",
-        "amount": 8.77,
         "currency": "USD",
-        "funding": "prepaid",
+        "credit_amount": 0.0,
+        "cash_amount": 8.77,
         "source": "api",
     }
 
 
 def test_mrow_rounds_to_2dp():
     r = _mrow("2026-06", "vast.ai", 8.7777, "cash", "api", "2026-07-03")
-    assert r["amount"] == 8.78
+    assert r["cash_amount"] == 8.78
     assert r["currency"] == "USD"
 
 
@@ -128,11 +128,12 @@ def test_record_meter_appends_row():
             "meter",
             "io.net",
             "2026-06",
-            "1234.5",
             "--currency",
             "USD",
-            "--funding",
-            "credit",
+            "--credit",
+            "1234.5",
+            "--cash",
+            "12.25",
         ],
         tb_factory=_make_factory(fake),
     )
@@ -143,21 +144,22 @@ def test_record_meter_appends_row():
     r = rows[0]
     assert r["provider"] == "io.net"
     assert r["month"] == "2026-06"
-    assert r["amount"] == 1234.5
     assert r["currency"] == "USD"
-    assert r["funding"] == "credit"
+    assert r["credit_amount"] == 1234.5
+    assert r["cash_amount"] == 12.25
     assert r["source"] == "manual"
 
 
-def test_record_meter_default_funding_prepaid():
+def test_record_meter_defaults_missing_amount_side_to_zero():
     fake = _FakeTB()
     record.main(
-        ["meter", "runpod", "2026-05", "500.0", "--currency", "EUR"],
+        ["meter", "runpod", "2026-05", "--currency", "EUR", "--cash", "500.0"],
         tb_factory=_make_factory(fake),
     )
     r = fake.appended[0][1][0]
-    assert r["funding"] == "prepaid"
     assert r["currency"] == "EUR"
+    assert r["credit_amount"] == 0.0
+    assert r["cash_amount"] == 500.0
 
 
 # ---------------------------------------------------------------------------
@@ -167,7 +169,7 @@ def test_record_meter_default_funding_prepaid():
 def test_bad_month_year_only():
     with pytest.raises(SystemExit) as exc:
         record.main(
-            ["meter", "deepinfra", "2026-13", "1.0", "--currency", "USD"],
+            ["meter", "deepinfra", "2026-13", "--currency", "USD", "--credit", "1.0"],
             tb_factory=_make_factory(_FakeTB()),
         )
     assert exc.value.code != 0
@@ -176,7 +178,7 @@ def test_bad_month_year_only():
 def test_bad_month_short_format():
     with pytest.raises(SystemExit) as exc:
         record.main(
-            ["meter", "deepinfra", "26-06", "1.0", "--currency", "USD"],
+            ["meter", "deepinfra", "26-06", "--currency", "USD", "--credit", "1.0"],
             tb_factory=_make_factory(_FakeTB()),
         )
     assert exc.value.code != 0
@@ -185,7 +187,7 @@ def test_bad_month_short_format():
 def test_bad_month_day_included():
     with pytest.raises(SystemExit) as exc:
         record.main(
-            ["meter", "runpod", "2026-06-01", "1.0", "--currency", "USD"],
+            ["meter", "runpod", "2026-06-01", "--currency", "USD", "--credit", "1.0"],
             tb_factory=_make_factory(_FakeTB()),
         )
     assert exc.value.code != 0
@@ -198,10 +200,20 @@ def test_unknown_provider_exits_nonzero():
                 "meter",
                 "NOT_A_REAL_PROVIDER_XYZ",
                 "2026-06",
-                "1.0",
                 "--currency",
                 "USD",
+                "--credit",
+                "1.0",
             ],
+            tb_factory=_make_factory(_FakeTB()),
+        )
+    assert exc.value.code != 0
+
+
+def test_record_meter_requires_credit_or_cash():
+    with pytest.raises(SystemExit) as exc:
+        record.main(
+            ["meter", "deepinfra", "2026-06", "--currency", "USD"],
             tb_factory=_make_factory(_FakeTB()),
         )
     assert exc.value.code != 0

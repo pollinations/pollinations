@@ -4,13 +4,13 @@ TOKEN "treasury_ingest" READ
 SCHEMA >
     `month` String `json:$.month`,
     `provider` String `json:$.provider`,
-    `amount` Float64 `json:$.amount`,
     `currency` String `json:$.currency`,
-    `funding` String `json:$.funding`,
+    `credit_amount` Float64 `json:$.credit_amount`,
+    `cash_amount` Float64 `json:$.cash_amount`,
     `source` String `json:$.source`
 
 ENGINE "MergeTree"
 ENGINE_SORTING_KEY "provider, month"
 
 FORWARD_QUERY >
-    SELECT month, provider, amount, currency, funding, source
+    SELECT month, provider, currency, credit_amount, cash_amount, source

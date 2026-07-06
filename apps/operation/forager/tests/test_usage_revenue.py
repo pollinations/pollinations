@@ -105,10 +105,10 @@ def test_usage_rows_carry_month():
         {
             "provider": "azure",
             "model": "gpt-4o",
-            "billable_paid_pollen": 1.0,
-            "billable_quest_pollen": 0.5,
-            "cost_paid_pollen": 0.8,
-            "cost_quest_pollen": 0.2,
+            "price_paid": 1.0,
+            "price_quests": 0.5,
+            "cost_paid": 0.8,
+            "cost_quests": 0.2,
         }
     ]
     tb = TBStub(canned_rows=canned)
@@ -123,18 +123,18 @@ def test_usage_provider_canonicalized_at_ingest():
         {
             "provider": "bedrock",
             "model": "claude",
-            "billable_paid_pollen": 0.1,
-            "billable_quest_pollen": 0.0,
-            "cost_paid_pollen": 0.05,
-            "cost_quest_pollen": 0.0,
+            "price_paid": 0.1,
+            "price_quests": 0.0,
+            "cost_paid": 0.05,
+            "cost_quests": 0.0,
         },
         {
             "provider": "vastai",
             "model": "flux",
-            "billable_paid_pollen": 0.1,
-            "billable_quest_pollen": 0.0,
-            "cost_paid_pollen": 0.02,
-            "cost_quest_pollen": 0.0,
+            "price_paid": 0.1,
+            "price_quests": 0.0,
+            "cost_paid": 0.02,
+            "cost_quests": 0.0,
         },
     ]
     tb = TBStub(canned_rows=canned)
@@ -146,10 +146,10 @@ def test_usage_provider_canonicalized_at_ingest():
             "provider",
             "model",
             "currency",
-            "billable_paid_pollen",
-            "billable_quest_pollen",
-            "cost_paid_pollen",
-            "cost_quest_pollen",
+            "price_paid",
+            "price_quests",
+            "cost_paid",
+            "cost_quests",
         }
         for r in rows
     )
@@ -161,10 +161,10 @@ def test_usage_unknown_provider_fails_with_alias_guidance():
         {
             "provider": "new-provider-tag",
             "model": "gpt-4o",
-            "billable_paid_pollen": 1.0,
-            "billable_quest_pollen": 0.0,
-            "cost_paid_pollen": 0.5,
-            "cost_quest_pollen": 0.0,
+            "price_paid": 1.0,
+            "price_quests": 0.0,
+            "cost_paid": 0.5,
+            "cost_quests": 0.0,
         }
     ]
     tb = TBStub(canned_rows=canned)
@@ -179,18 +179,18 @@ def test_usage_canonicalized_duplicates_are_summed():
         {
             "provider": "azure",
             "model": "gpt-4o",
-            "billable_paid_pollen": 1.5,
-            "billable_quest_pollen": 0.2,
-            "cost_paid_pollen": 0.8,
-            "cost_quest_pollen": 0.1,
+            "price_paid": 1.5,
+            "price_quests": 0.2,
+            "cost_paid": 0.8,
+            "cost_quests": 0.1,
         },
         {
             "provider": "azure-2",
             "model": "gpt-4o",
-            "billable_paid_pollen": 0.7,
-            "billable_quest_pollen": 0.4,
-            "cost_paid_pollen": 0.3,
-            "cost_quest_pollen": 0.2,
+            "price_paid": 0.7,
+            "price_quests": 0.4,
+            "cost_paid": 0.3,
+            "cost_quests": 0.2,
         },
     ]
     tb = TBStub(canned_rows=canned)
@@ -199,10 +199,10 @@ def test_usage_canonicalized_duplicates_are_summed():
     assert len(rows) == 1
     assert rows[0]["provider"] == "azure"
     assert rows[0]["model"] == "gpt-4o"
-    assert rows[0]["billable_paid_pollen"] == pytest.approx(2.2)
-    assert rows[0]["billable_quest_pollen"] == pytest.approx(0.6)
-    assert rows[0]["cost_paid_pollen"] == pytest.approx(1.1)
-    assert rows[0]["cost_quest_pollen"] == pytest.approx(0.3)
+    assert rows[0]["price_paid"] == pytest.approx(2.2)
+    assert rows[0]["price_quests"] == pytest.approx(0.6)
+    assert rows[0]["cost_paid"] == pytest.approx(1.1)
+    assert rows[0]["cost_quests"] == pytest.approx(0.3)
 
 
 def test_usage_multiple_months_correct_month_tags():
@@ -211,10 +211,10 @@ def test_usage_multiple_months_correct_month_tags():
         {
             "provider": "azure",
             "model": "gpt-4o",
-            "billable_paid_pollen": 0.5,
-            "billable_quest_pollen": 0.0,
-            "cost_paid_pollen": 0.3,
-            "cost_quest_pollen": 0.0,
+            "price_paid": 0.5,
+            "price_quests": 0.0,
+            "cost_paid": 0.3,
+            "cost_quests": 0.0,
         }
     ]
     tb = TBStub(canned_rows=canned)
@@ -237,10 +237,10 @@ def test_usage_none_provider_kept_as_is():
         {
             "provider": None,
             "model": "gpt-4o",
-            "billable_paid_pollen": 0.0,
-            "billable_quest_pollen": 0.0,
-            "cost_paid_pollen": 0.0,
-            "cost_quest_pollen": 0.0,
+            "price_paid": 0.0,
+            "price_quests": 0.0,
+            "cost_paid": 0.0,
+            "cost_quests": 0.0,
         }
     ]
     tb = TBStub(canned_rows=canned)
@@ -257,10 +257,10 @@ def test_usage_month_field_is_string():
         {
             "provider": "azure",
             "model": "gpt-4o",
-            "billable_paid_pollen": 0.1,
-            "billable_quest_pollen": 0.0,
-            "cost_paid_pollen": 0.05,
-            "cost_quest_pollen": 0.0,
+            "price_paid": 0.1,
+            "price_quests": 0.0,
+            "cost_paid": 0.05,
+            "cost_quests": 0.0,
         }
     ]
     tb = TBStub(canned_rows=canned)

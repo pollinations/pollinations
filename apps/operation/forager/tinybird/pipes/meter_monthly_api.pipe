@@ -7,8 +7,8 @@ SQL >
         source,
         provider,
         currency,
-        credit_amount,
-        cash_amount
+        credit,
+        paid
     FROM meter_monthly
     ORDER BY provider, month, source, currency
 

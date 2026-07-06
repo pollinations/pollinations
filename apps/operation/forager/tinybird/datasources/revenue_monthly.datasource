@@ -10,3 +10,11 @@ SCHEMA >
 
 ENGINE "MergeTree"
 ENGINE_SORTING_KEY "month, currency"
+
+FORWARD_QUERY >
+    SELECT
+        month,
+        gross_eur AS gross_amount,
+        fees_eur AS fees_amount,
+        refunds_eur AS refunds_amount,
+        'EUR' AS currency

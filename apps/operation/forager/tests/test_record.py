@@ -24,15 +24,15 @@ def test_mrow_full():
         "month": "2026-06",
         "provider": "deepinfra",
         "currency": "USD",
-        "credit_amount": 0.0,
-        "cash_amount": 8.77,
+        "credit": 0.0,
+        "paid": 8.77,
         "source": "api",
     }
 
 
 def test_mrow_rounds_to_2dp():
     r = _mrow("2026-06", "vast.ai", 8.7777, "cash", "api", "2026-07-03")
-    assert r["cash_amount"] == 8.78
+    assert r["paid"] == 8.78
     assert r["currency"] == "USD"
 
 
@@ -132,7 +132,7 @@ def test_record_meter_appends_row():
             "USD",
             "--credit",
             "1234.5",
-            "--cash",
+            "--paid",
             "12.25",
         ],
         tb_factory=_make_factory(fake),
@@ -145,21 +145,21 @@ def test_record_meter_appends_row():
     assert r["provider"] == "io.net"
     assert r["month"] == "2026-06"
     assert r["currency"] == "USD"
-    assert r["credit_amount"] == 1234.5
-    assert r["cash_amount"] == 12.25
+    assert r["credit"] == 1234.5
+    assert r["paid"] == 12.25
     assert r["source"] == "manual"
 
 
 def test_record_meter_defaults_missing_amount_side_to_zero():
     fake = _FakeTB()
     record.main(
-        ["meter", "runpod", "2026-05", "--currency", "EUR", "--cash", "500.0"],
+        ["meter", "runpod", "2026-05", "--currency", "EUR", "--paid", "500.0"],
         tb_factory=_make_factory(fake),
     )
     r = fake.appended[0][1][0]
     assert r["currency"] == "EUR"
-    assert r["credit_amount"] == 0.0
-    assert r["cash_amount"] == 500.0
+    assert r["credit"] == 0.0
+    assert r["paid"] == 500.0
 
 
 # ---------------------------------------------------------------------------

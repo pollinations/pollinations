@@ -71,7 +71,7 @@ def _field_present(row, field):
 
 
 def merge_meter_rows(rows):
-    """One row per (provider, month, currency), with separate credit/cash amounts."""
+    """One row per (provider, month, currency), with separate credit/paid amounts."""
 
     grouped = {}
     for row in rows:
@@ -86,8 +86,8 @@ def merge_meter_rows(rows):
                 "month": row.get("month", ""),
                 "provider": row.get("provider", ""),
                 "currency": row.get("currency", ""),
-                "credit_amount": 0.0,
-                "cash_amount": 0.0,
+                "credit": 0.0,
+                "paid": 0.0,
                 "source": "",
                 "_credit_rank": 999,
                 "_cash_rank": 999,
@@ -97,8 +97,8 @@ def merge_meter_rows(rows):
         )
         rank = _source_rank(row.get("source", "manual"))
         for field, rank_field, source_field in [
-            ("credit_amount", "_credit_rank", "_credit_source"),
-            ("cash_amount", "_cash_rank", "_cash_source"),
+            ("credit", "_credit_rank", "_credit_source"),
+            ("paid", "_cash_rank", "_cash_source"),
         ]:
             if not _field_present(row, field):
                 continue
@@ -117,8 +117,8 @@ def merge_meter_rows(rows):
                 "month": row["month"],
                 "provider": row["provider"],
                 "currency": row["currency"],
-                "credit_amount": row["credit_amount"],
-                "cash_amount": row["cash_amount"],
+                "credit": row["credit"],
+                "paid": row["paid"],
                 "source": source,
             }
         )
@@ -154,6 +154,14 @@ def without_reset_manual_meter_rows(rows, overrides):
     ]
 
 
+def existing_manual_meter_rows(rows, overrides):
+    return [
+        row
+        for row in without_reset_manual_meter_rows(rows, overrides)
+        if _has_manual_source(row)
+    ]
+
+
 def validate_meter_rows(rows):
     for row in rows:
         if row.get("provider", "") not in PROVIDER_ALIASES:
@@ -163,7 +171,7 @@ def validate_meter_rows(rows):
         _validate_meter_source(row.get("source", ""))
         if not str(row.get("currency") or "").strip():
             raise ValueError("meter_monthly row missing currency")
-        for field in ("credit_amount", "cash_amount"):
+        for field in ("credit", "paid"):
             value = row.get(field)
             if value is None:
                 raise ValueError(f"meter_monthly row missing {field}")
@@ -207,12 +215,12 @@ def refresh_meter_monthly(
     if not meter_new:
         raise RuntimeError("meter connectors returned 0 rows")
 
-    meter_table = without_reset_manual_meter_rows(
+    meter_manual = existing_manual_meter_rows(
         ops_ingest.sql("SELECT * FROM meter_monthly"),
         overrides,
     )
-    validate_meter_rows(meter_table)
-    meter_merged = merge_meter_rows(meter_table + meter_new)
+    validate_meter_rows(meter_manual)
+    meter_merged = merge_meter_rows(meter_new + meter_manual)
     validate_meter_rows(meter_merged)
     ops_replace.replace("meter_monthly", meter_merged)
     statuses["meter_rows"] = len(meter_merged)

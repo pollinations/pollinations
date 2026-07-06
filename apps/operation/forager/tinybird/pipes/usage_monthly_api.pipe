@@ -8,10 +8,10 @@ SQL >
         provider,
         model,
         currency,
-        cost_paid_pollen,
-        cost_quest_pollen,
-        billable_paid_pollen,
-        billable_quest_pollen
+        cost_paid,
+        cost_quests,
+        price_paid,
+        price_quests
     FROM usage_monthly
     ORDER BY month, provider, model
 

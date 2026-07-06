@@ -5,14 +5,24 @@ SCHEMA >
     `date` Date `json:$.date`,
     `provider` String `json:$.provider`,
     `category` String `json:$.category`,
-    `bank_charged_amount` Float64 `json:$.bank_charged_amount`,
-    `bank_charged_currency` String `json:$.bank_charged_currency`,
-    `cash_paid_amount` Float64 `json:$.cash_paid_amount`,
-    `cash_paid_currency` String `json:$.cash_paid_currency`,
-    `credit_burned_amount` Float64 `json:$.credit_burned_amount`,
-    `credit_burned_currency` String `json:$.credit_burned_currency`,
+    `charged_amount` Float64 `json:$.charged_amount`,
+    `charged_currency` String `json:$.charged_currency`,
+    `paid_amount` Float64 `json:$.paid_amount`,
+    `paid_currency` String `json:$.paid_currency`,
     `invoice_ref` String `json:$.invoice_ref`,
     `match_status` String `json:$.match_status`
 
 ENGINE "MergeTree"
 ENGINE_SORTING_KEY "date, provider, category, match_status"
+
+FORWARD_QUERY >
+    SELECT
+        date,
+        provider,
+        category,
+        bank_charged_amount AS charged_amount,
+        bank_charged_currency AS charged_currency,
+        cash_paid_amount AS paid_amount,
+        cash_paid_currency AS paid_currency,
+        invoice_ref,
+        match_status

@@ -5,12 +5,18 @@ SCHEMA >
     `month` String `json:$.month`,
     `provider` String `json:$.provider`,
     `currency` String `json:$.currency`,
-    `credit_amount` Float64 `json:$.credit_amount`,
-    `cash_amount` Float64 `json:$.cash_amount`,
+    `credit` Float64 `json:$.credit`,
+    `paid` Float64 `json:$.paid`,
     `source` String `json:$.source`
 
 ENGINE "MergeTree"
 ENGINE_SORTING_KEY "provider, month"
 
 FORWARD_QUERY >
-    SELECT month, provider, currency, credit_amount, cash_amount, source
+    SELECT
+        month,
+        provider,
+        currency,
+        credit_amount AS credit,
+        cash_amount AS paid,
+        source

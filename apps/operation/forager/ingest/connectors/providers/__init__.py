@@ -48,7 +48,7 @@ def _mrow(month, provider, amount, funding, source, today, currency="USD"):
         provider: canonical provider slug
         amount:   metered cost in the source currency
         currency: source currency code, e.g. "USD" or "EUR"
-        funding:  "credit" | "prepaid" | "cash"; prepaid is stored as cash_amount
+        funding:  "credit" | "prepaid" | "cash"; prepaid is stored as paid
         source:   "api" | "cli" | "bq" | "manual"
         today:    current ingest date (kept in the call signature for connector simplicity)
     """
@@ -58,7 +58,7 @@ def _mrow(month, provider, amount, funding, source, today, currency="USD"):
         "month": month,
         "provider": provider,
         "currency": _currency(currency),
-        "credit_amount": amount if funding == "credit" else 0.0,
-        "cash_amount": amount if funding in {"cash", "prepaid"} else 0.0,
+        "credit": amount if funding == "credit" else 0.0,
+        "paid": amount if funding in {"cash", "prepaid"} else 0.0,
         "source": _source(source),
     }

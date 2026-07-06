@@ -70,7 +70,7 @@ def test_deepinfra_meter_cents_divided_by_100(monkeypatch):
     cap = Capture(responses)
     monkeypatch.setattr(_di, "http_json", cap)
     rows = _di.meter(_DI_CREDS, ["2026-04", "2026-05", "2026-06"], TODAY)
-    assert any(r["cash_amount"] == pytest.approx(8.77, abs=0.001) for r in rows)
+    assert any(r["paid"] == pytest.approx(8.77, abs=0.001) for r in rows)
 
 
 def test_deepinfra_meter_epoch_integers_in_url(monkeypatch):
@@ -93,13 +93,13 @@ def test_deepinfra_meter_epoch_integers_in_url(monkeypatch):
     assert int(from_val) > 1_700_000_000
 
 
-def test_deepinfra_meter_cash_amount(monkeypatch):
-    """Meter rows put paid usage into cash_amount."""
+def test_deepinfra_meter_paid(monkeypatch):
+    """Meter rows put paid usage into paid."""
     cap = Capture([{"months": [{"total_cost": 500, "period": "2026-04"}]}])
     monkeypatch.setattr(_di, "http_json", cap)
     rows = _di.meter(_DI_CREDS, ["2026-04"], TODAY)
-    assert rows[0]["credit_amount"] == 0.0
-    assert rows[0]["cash_amount"] == 5.0
+    assert rows[0]["credit"] == 0.0
+    assert rows[0]["paid"] == 5.0
 
 
 def test_deepinfra_meter_source_api(monkeypatch):
@@ -141,8 +141,8 @@ def test_deepinfra_meter_has_no_freshness_timestamp(monkeypatch):
         "month",
         "provider",
         "currency",
-        "credit_amount",
-        "cash_amount",
+        "credit",
+        "paid",
         "source",
     }
 
@@ -219,18 +219,18 @@ def test_ovh_meter_native_eur(monkeypatch):
     cap = Capture([movement_ids, movement_use])
     monkeypatch.setattr(_ovh, "http_json", cap)
     rows = _ovh.meter(_OVH_CREDS, ["2026-04", "2026-05", "2026-06"], TODAY)
-    assert rows[0]["credit_amount"] == pytest.approx(100.0, abs=0.01)
-    assert rows[0]["cash_amount"] == 0.0
+    assert rows[0]["credit"] == pytest.approx(100.0, abs=0.01)
+    assert rows[0]["paid"] == 0.0
     assert rows[0]["currency"] == "EUR"
 
 
-def test_ovh_meter_credit_amount(monkeypatch):
-    """Meter rows put credit burn into credit_amount."""
+def test_ovh_meter_credit(monkeypatch):
+    """Meter rows put credit burn into credit."""
     monkeypatch.setattr(_ovh, "_time", lambda: _OVH_TS)
     cap = Capture([[101], {"type": "USE", "amount": {"value": "-50.00"}, "creationDate": "2026-05-01T00:00:00+00:00"}])
     monkeypatch.setattr(_ovh, "http_json", cap)
     rows = _ovh.meter(_OVH_CREDS, ["2026-05"], TODAY)
-    assert rows[0]["credit_amount"] == 50.0
+    assert rows[0]["credit"] == 50.0
 
 
 def test_ovh_meter_source_api(monkeypatch):
@@ -252,7 +252,7 @@ def test_ovh_meter_month_grouping(monkeypatch):
     monkeypatch.setattr(_ovh, "http_json", cap)
     rows = _ovh.meter(_OVH_CREDS, ["2026-04"], TODAY)
     assert len(rows) == 1
-    assert rows[0]["credit_amount"] == pytest.approx(50.0, abs=0.01)
+    assert rows[0]["credit"] == pytest.approx(50.0, abs=0.01)
 
 
 def test_ovh_meter_empty_movements(monkeypatch):
@@ -292,7 +292,7 @@ def test_vast_meter_charge_rows_only():
         assert r["provider"] == "vast.ai"
     # No negative or implausibly large amounts from deposits
     for r in rows:
-        assert r["cash_amount"] < 200.0
+        assert r["paid"] < 200.0
 
 
 def test_vast_meter_grouped_by_month():
@@ -301,16 +301,16 @@ def test_vast_meter_grouped_by_month():
     rows = _vast.meter(_VAST_CREDS, ["2026-04", "2026-05"], TODAY, run_cmd=fake_run)
     apr = next((r for r in rows if r["month"] == "2026-04"), None)
     assert apr is not None
-    assert apr["cash_amount"] == pytest.approx(70.0, abs=0.01)  # 50 + 20
+    assert apr["paid"] == pytest.approx(70.0, abs=0.01)  # 50 + 20
 
 
-def test_vast_meter_cash_amount():
-    """Meter rows put paid usage into cash_amount."""
+def test_vast_meter_paid():
+    """Meter rows put paid usage into paid."""
     fake_run = lambda cmd, **kw: _fake_result(stdout=_VAST_INVOICES_JSON)
     rows = _vast.meter(_VAST_CREDS, ["2026-04"], TODAY, run_cmd=fake_run)
     for r in rows:
-        assert r["credit_amount"] == 0.0
-        assert r["cash_amount"] > 0
+        assert r["credit"] == 0.0
+        assert r["paid"] > 0
 
 
 def test_vast_meter_source_cli():
@@ -385,7 +385,7 @@ def test_fireworks_meter_prepaid_credits_ignored():
     rows = _fw.meter(_FW_CREDS, ["2026-06"], TODAY, run_cmd=fake_run)
     # 99.00 from PREPAID_CREDITS must NOT appear
     for r in rows:
-        assert r["cash_amount"] < 50.0, "prepaid top-up row leaked into meter output"
+        assert r["paid"] < 50.0, "prepaid top-up row leaked into meter output"
 
 
 def test_fireworks_meter_postpaid_paid_only():
@@ -400,13 +400,13 @@ def test_fireworks_meter_postpaid_paid_only():
     assert rows == []
 
 
-def test_fireworks_meter_cash_amount():
-    """Meter rows put paid usage into cash_amount."""
+def test_fireworks_meter_paid():
+    """Meter rows put paid usage into paid."""
     fake_run = lambda cmd, **kw: _fake_result(stdout=_FW_INVOICE_OUTPUT)
     rows = _fw.meter(_FW_CREDS, ["2026-06"], TODAY, run_cmd=fake_run)
     for r in rows:
-        assert r["credit_amount"] == 0.0
-        assert r["cash_amount"] > 0
+        assert r["credit"] == 0.0
+        assert r["paid"] > 0
 
 
 def test_fireworks_meter_source_cli():
@@ -457,6 +457,11 @@ _AWS_CREDS = {}  # CLI uses ambient profile
 _AWS_CASH_RESPONSE = json.dumps({
     "ResultsByTime": [
         {
+            "TimePeriod": {"Start": "2026-03-01", "End": "2026-04-01"},
+            "Total": {"UnblendedCost": {"Amount": "300.00", "Unit": "USD"}},
+            "Estimated": False,
+        },
+        {
             "TimePeriod": {"Start": "2026-04-01", "End": "2026-05-01"},
             "Total": {"UnblendedCost": {"Amount": "1234.56", "Unit": "USD"}},
             "Estimated": False,
@@ -471,6 +476,11 @@ _AWS_CASH_RESPONSE = json.dumps({
 
 _AWS_CREDIT_RESPONSE = json.dumps({
     "ResultsByTime": [
+        {
+            "TimePeriod": {"Start": "2026-03-01", "End": "2026-04-01"},
+            "Total": {"UnblendedCost": {"Amount": "-300.00", "Unit": "USD"}},
+            "Estimated": False,
+        },
         {
             "TimePeriod": {"Start": "2026-04-01", "End": "2026-05-01"},
             "Total": {"UnblendedCost": {"Amount": "-300.00", "Unit": "USD"}},
@@ -503,23 +513,33 @@ def test_aws_meter_two_passes(_aws_run=_aws_run):
 
 
 def test_aws_meter_cash_rows():
-    """Cash pass rows populate cash_amount."""
+    """Cash rows are net of AWS credits."""
     rows = _aws.meter(_AWS_CREDS, ["2026-04", "2026-05"], TODAY, run_cmd=_aws_run)
-    cash_rows = [r for r in rows if r["cash_amount"] > 0]
+    cash_rows = [r for r in rows if r["paid"] > 0]
     assert len(cash_rows) >= 1
     apr = next((r for r in cash_rows if r["month"] == "2026-04"), None)
     assert apr is not None
-    assert apr["cash_amount"] == pytest.approx(1234.56, abs=0.01)
+    assert apr["paid"] == pytest.approx(934.56, abs=0.01)
+
+
+def test_aws_meter_credit_covered_month_has_no_cash_row():
+    """Fully credit-paid months must not surface phantom cash usage."""
+    rows = _aws.meter(_AWS_CREDS, ["2026-03"], TODAY, run_cmd=_aws_run)
+    cash_rows = [r for r in rows if r["paid"] > 0]
+    credit_rows = [r for r in rows if r["credit"] > 0]
+    assert cash_rows == []
+    assert len(credit_rows) == 1
+    assert credit_rows[0]["credit"] == pytest.approx(300.0, abs=0.01)
 
 
 def test_aws_meter_credit_rows():
-    """Credit pass rows populate credit_amount with absolute value."""
+    """Credit pass rows populate credit with absolute value."""
     rows = _aws.meter(_AWS_CREDS, ["2026-04"], TODAY, run_cmd=_aws_run)
-    credit_rows = [r for r in rows if r["credit_amount"] > 0]
+    credit_rows = [r for r in rows if r["credit"] > 0]
     assert len(credit_rows) >= 1
     apr = next((r for r in credit_rows if r["month"] == "2026-04"), None)
     assert apr is not None
-    assert apr["credit_amount"] == pytest.approx(300.0, abs=0.01)
+    assert apr["credit"] == pytest.approx(300.0, abs=0.01)
 
 
 def test_aws_meter_source_cli():
@@ -532,7 +552,7 @@ def test_aws_meter_source_cli():
 def test_aws_meter_zero_excluded():
     """Zero-cost month (2026-05 cash = 0.00) must not produce a row."""
     rows = _aws.meter(_AWS_CREDS, ["2026-04", "2026-05"], TODAY, run_cmd=_aws_run)
-    zero_months = [r for r in rows if r["month"] == "2026-05" and r["cash_amount"] > 0]
+    zero_months = [r for r in rows if r["month"] == "2026-05" and r["paid"] > 0]
     assert zero_months == []
 
 
@@ -590,25 +610,25 @@ def _gcp_run_bq_fail(cmd, **kw):
 
 
 def test_gcp_meter_cash_rows():
-    """GCP cash rows keep native EUR in cash_amount."""
+    """GCP cash rows keep native EUR in paid."""
     rows = _gcp.meter(_GCP_CREDS, ["2026-04", "2026-05"], TODAY, run_cmd=_gcp_run_success)
-    cash_rows = [r for r in rows if r["cash_amount"] > 0]
+    cash_rows = [r for r in rows if r["paid"] > 0]
     assert len(cash_rows) >= 1
     apr = next((r for r in cash_rows if r["month"] == "2026-04"), None)
     assert apr is not None
-    assert apr["cash_amount"] == pytest.approx(1000.0, abs=0.01)
+    assert apr["paid"] == pytest.approx(1000.0, abs=0.01)
     assert apr["currency"] == "EUR"
     assert apr["source"] == "bq"
 
 
 def test_gcp_meter_credit_rows():
-    """GCP credit rows keep native abs(credits_amount) in credit_amount."""
+    """GCP credit rows keep native abs(credits_amount) in credit."""
     rows = _gcp.meter(_GCP_CREDS, ["2026-04"], TODAY, run_cmd=_gcp_run_success)
-    credit_rows = [r for r in rows if r["credit_amount"] > 0]
+    credit_rows = [r for r in rows if r["credit"] > 0]
     assert len(credit_rows) >= 1
     apr = next((r for r in credit_rows if r["month"] == "2026-04"), None)
     assert apr is not None
-    assert apr["credit_amount"] == pytest.approx(50.0, abs=0.01)
+    assert apr["credit"] == pytest.approx(50.0, abs=0.01)
     assert apr["currency"] == "EUR"
 
 
@@ -758,7 +778,7 @@ def test_gcp_meter_provider_slug():
 def test_gcp_meter_zero_credits_excluded():
     """Month with credits_amount=0.00 must NOT produce a credit row."""
     rows = _gcp.meter(_GCP_CREDS, ["2026-05"], TODAY, run_cmd=_gcp_run_success)
-    credit_rows = [r for r in rows if r["credit_amount"] > 0 and r["month"] == "2026-05"]
+    credit_rows = [r for r in rows if r["credit"] > 0 and r["month"] == "2026-05"]
     assert credit_rows == []
 
 
@@ -812,18 +832,18 @@ def test_openai_meter_month_sum(monkeypatch):
     rows = _oai.meter(_OAI_CREDS, ["2026-04"], TODAY)
     apr = next((r for r in rows if r["month"] == "2026-04"), None)
     assert apr is not None
-    assert apr["credit_amount"] == pytest.approx(80.0, abs=0.01)
+    assert apr["credit"] == pytest.approx(80.0, abs=0.01)
 
 
-def test_openai_meter_credit_amount(monkeypatch):
-    """Meter rows put grant usage into credit_amount."""
+def test_openai_meter_credit(monkeypatch):
+    """Meter rows put grant usage into credit."""
     page = _make_oai_page([(_APR15, 50.0)])
     cap = Capture([page])
     monkeypatch.setattr(_oai, "http_json", cap)
     rows = _oai.meter(_OAI_CREDS, ["2026-04"], TODAY)
     for r in rows:
-        assert r["credit_amount"] > 0
-        assert r["cash_amount"] == 0.0
+        assert r["credit"] > 0
+        assert r["paid"] == 0.0
 
 
 def test_openai_meter_source_api(monkeypatch):

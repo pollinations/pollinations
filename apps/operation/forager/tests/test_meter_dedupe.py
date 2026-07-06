@@ -11,7 +11,11 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from ingest.run import merge_meter_rows, without_reset_manual_meter_rows
+from ingest.run import (
+    existing_manual_meter_rows,
+    merge_meter_rows,
+    without_reset_manual_meter_rows,
+)
 
 
 def _row(
@@ -26,8 +30,8 @@ def _row(
         "month": month,
         "provider": provider,
         "currency": currency,
-        "credit_amount": credit,
-        "cash_amount": cash,
+        "credit": credit,
+        "paid": cash,
         "source": source,
     }
 
@@ -40,7 +44,7 @@ def test_last_seen_wins_within_source_for_same_amount_side():
     ]
     out = merge_meter_rows(rows)
     assert len(out) == 1
-    assert out[0]["credit_amount"] == 110.0
+    assert out[0]["credit"] == 110.0
 
 
 def test_manual_beats_api_for_same_bucket():
@@ -51,7 +55,7 @@ def test_manual_beats_api_for_same_bucket():
     out = merge_meter_rows(rows)
     assert len(out) == 1
     assert out[0]["source"] == "manual"
-    assert out[0]["credit_amount"] == 999.0
+    assert out[0]["credit"] == 999.0
 
 
 def test_credit_and_cash_merge_into_one_row():
@@ -146,3 +150,14 @@ def test_reset_override_zero_keeps_manual_row():
     }
 
     assert without_reset_manual_meter_rows(rows, overrides) == rows
+
+
+def test_existing_manual_meter_rows_drops_stale_automatic_rows():
+    rows = [
+        _row("aws", "2026-01", cash=45767.52, source="cli"),
+        _row("aws", "2026-06", cash=42.0, source="manual"),
+    ]
+
+    assert existing_manual_meter_rows(rows, {}) == [
+        _row("aws", "2026-06", cash=42.0, source="manual"),
+    ]

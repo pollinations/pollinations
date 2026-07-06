@@ -2,7 +2,7 @@
 
 Usage:
     python3 -m ingest.record meter <provider> <YYYY-MM>
-                                   --currency USD|EUR [--credit N] [--cash N]
+                                   --currency USD|EUR [--credit N] [--paid N]
 
 Appends one row to `meter_monthly` with source="manual".
 Provider must be in registry.CANONICAL; month must match YYYY-MM.
@@ -71,7 +71,7 @@ def main(argv=None, tb_factory=None):
     mp.add_argument("month",     help="billing month YYYY-MM")
     mp.add_argument("--currency", required=True, help="source currency code, e.g. USD or EUR")
     mp.add_argument("--credit", type=float, default=0.0, help="credit burn amount")
-    mp.add_argument("--cash", type=float, default=0.0, help="cash/prepaid amount")
+    mp.add_argument("--paid", type=float, default=0.0, help="paid/prepaid amount")
 
     args = parser.parse_args(argv)
 
@@ -86,9 +86,9 @@ def main(argv=None, tb_factory=None):
         _validate_provider(args.provider)
         _validate_month(args.month)
         _validate_amount("credit", args.credit)
-        _validate_amount("cash", args.cash)
-        if args.credit == 0 and args.cash == 0:
-            print("error: at least one of --credit or --cash must be > 0", file=sys.stderr)
+        _validate_amount("paid", args.paid)
+        if args.credit == 0 and args.paid == 0:
+            print("error: at least one of --credit or --paid must be > 0", file=sys.stderr)
             sys.exit(1)
         currency = _validate_currency(args.currency)
         _validate_meter_source("manual")
@@ -96,8 +96,8 @@ def main(argv=None, tb_factory=None):
             "month": args.month,
             "provider": args.provider,
             "currency": _currency(currency),
-            "credit_amount": round(float(args.credit), 2),
-            "cash_amount": round(float(args.cash), 2),
+            "credit": round(float(args.credit), 2),
+            "paid": round(float(args.paid), 2),
             "source": "manual",
         }
         client.append("meter_monthly", [row])

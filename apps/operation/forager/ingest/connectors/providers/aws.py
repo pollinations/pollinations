@@ -1,12 +1,12 @@
 """AWS Cost Explorer meter connector.
 
 Two passes per run:
-  1. Gross usage before credits (filter excludes Credit+Refund RECORD_TYPEs) → funding=cash
-     Note: this is gross usage BEFORE credits are applied, not net-of-credits.
-     Consumers must derive net cash = max(meter_cash − credit_burn, 0).
-     A parsed invoice always wins over the meter (phantom-cash incident in PoC cutover).
-  2. Credit amounts only (filter RECORD_TYPE=Credit, absolute value) → funding=credit
-     (quantifies the AWS grant burn)
+  1. Gross usage before credits (filter excludes Credit+Refund record types).
+  2. Credit amounts only (filter RECORD_TYPE=Credit, absolute value).
+
+The meter table stores two raw source values: actual paid usage and credit burn.
+AWS Cost Explorer exposes gross usage and credits separately, so cash is
+computed as max(gross usage - credit burn, 0).
 
 Uses the default CLI profile (Myceli-direct root account, 301235909293).
 CLI args ported verbatim from PoC build/connectors/accrual.py:aws_ce_monthly().
@@ -44,7 +44,8 @@ def meter(creds, months, today, run_cmd=subprocess.run):
         end = f"{end_year:04d}-{end_mo + 1:02d}-01"
 
     month_set = set(months)
-    rows = []
+    gross_by_month = {}
+    credit_by_month = {}
 
     # --- Pass 1: gross usage before credits (excludes Credit+Refund RECORD_TYPEs) ---
     cash_filter = json.dumps({
@@ -65,15 +66,7 @@ def meter(creds, months, today, run_cmd=subprocess.run):
         if month not in month_set:
             continue
         amt = round(float(row["Total"]["UnblendedCost"]["Amount"]), 2)
-        if amt:
-            rows.append(_mrow(
-                month=month,
-                provider="aws",
-                amount=amt,
-                funding="cash",
-                source="cli",
-                today=today,
-            ))
+        gross_by_month[month] = amt
 
     # --- Pass 2: credit (RECORD_TYPE=Credit, absolute value = grant burn) ---
     credit_filter = json.dumps({
@@ -94,11 +87,27 @@ def meter(creds, months, today, run_cmd=subprocess.run):
         if month not in month_set:
             continue
         amt = round(abs(float(row["Total"]["UnblendedCost"]["Amount"])), 2)
-        if amt:
+        credit_by_month[month] = amt
+
+    rows = []
+    for month in sorted(month_set):
+        gross = gross_by_month.get(month, 0.0)
+        credit = credit_by_month.get(month, 0.0)
+        cash = round(max(gross - credit, 0.0), 2)
+        if cash:
             rows.append(_mrow(
                 month=month,
                 provider="aws",
-                amount=amt,
+                amount=cash,
+                funding="cash",
+                source="cli",
+                today=today,
+            ))
+        if credit:
+            rows.append(_mrow(
+                month=month,
+                provider="aws",
+                amount=credit,
                 funding="credit",
                 source="cli",
                 today=today,

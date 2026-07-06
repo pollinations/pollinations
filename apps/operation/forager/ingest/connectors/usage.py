@@ -24,10 +24,10 @@ def _next_month(month: str) -> str:
 
 _SQL = """\
 SELECT '{month}' AS month, model_provider_used AS provider, model_used AS model,
-  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 4) AS cost_paid_pollen,
-  round(sumIf(total_cost, selected_meter_slug LIKE '%tier%'), 4) AS cost_quest_pollen,
-  round(sumIf(total_price, selected_meter_slug LIKE '%pack%'), 4) AS billable_paid_pollen,
-  round(sumIf(total_price, selected_meter_slug LIKE '%tier%'), 4) AS billable_quest_pollen
+  round(sumIf(total_cost, selected_meter_slug LIKE '%pack%'), 4) AS cost_paid,
+  round(sumIf(total_cost, selected_meter_slug LIKE '%tier%'), 4) AS cost_quests,
+  round(sumIf(total_price, selected_meter_slug LIKE '%pack%'), 4) AS price_paid,
+  round(sumIf(total_price, selected_meter_slug LIKE '%tier%'), 4) AS price_quests
 FROM generation_event
 WHERE environment = 'production'
   AND is_billed_usage = true
@@ -56,10 +56,10 @@ def monthly_rows(tb_prod, months, today):
     from ..aliases import PROVIDER_ALIASES, canonical_provider_tag
 
     numeric_fields = (
-        "cost_paid_pollen",
-        "cost_quest_pollen",
-        "billable_paid_pollen",
-        "billable_quest_pollen",
+        "cost_paid",
+        "cost_quests",
+        "price_paid",
+        "price_quests",
     )
     by_key = {}
     for month in months:

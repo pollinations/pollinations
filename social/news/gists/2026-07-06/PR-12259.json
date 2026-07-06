@@ -1,0 +1,35 @@
+{
+  "pr_number": 12259,
+  "title": "fix: actually disable tier refill cron (crons = [])",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12259",
+  "merged_at": "2026-07-06T17:13:12Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "## Problem\n\nPR #12019 (\"disable tier refill cron\") deleted the `[triggers]` blocks from `wrangler.toml`. Per [Cloudflare docs](https://developers.cloudflare.com/workers/wrangler/configuration/#triggers), an **undefined** `crons` property leaves previously-deployed schedules attached — **only `crons = []` detaches them**. So the hourly tier refill has kept running.\n\n## Evidence it's still running (live prod, 2026-07-06)\n\n- Prod D1 `MAX(last_tier_grant)` = current to the second; **92,760 users** refilled in the last 65 min (105,179 tier users total).\n- Staging D1 last grant at the top of the current hour.\n- Both `pollinations-enter-production` and `pollinations-enter-staging` still have `*/15 * * * *` attached despite 8+ deploys since #12019.\n\n## Fix\n\n- Add `[env.production.triggers] crons = []`\n- Add `[env.staging.triggers] crons = []`\n\nDetaches the schedules the documented way.\n\n## Deploy note\n\nConfig change alone does nothing until deployed per env; cron changes take up to ~15 min to propagate. Deploy staging first, verify no new `last_tier_grant` after the top of the next hour, then prod.\n\nAddresses the regression from #12019.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The phantom cron is dead",
+    "blurb": "We finally squashed a rogue cron job that was secretly running in the background. Cloudflare now knows we really, truly meant to turn it off.",
+    "summary": "Explicitly sets `crons = []` in `wrangler.toml` to properly detach the tier refill schedule, fixing an issue where Cloudflare kept running the deleted trigger.",
+    "impact": "Ensures the previously deprecated hourly tier refill cron is actually stopped across staging and production environments.",
+    "keywords": [
+      "cloudflare",
+      "cron",
+      "wrangler",
+      "infrastructure",
+      "bug-fix"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot turning off a giant glowing alarm clock or pulling a plug on a rogue timer.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot pulling a giant plug out of a glowing retro alarm clock. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-06/PR-12259.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot pulling a giant plug out of a glowing retro alarm clock. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-06T17:14:16.653166+00:00"
+}

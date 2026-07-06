@@ -723,7 +723,8 @@ export function PlayGenerator({
                             setUrlCopied(true);
                             setTimeout(() => setUrlCopied(false), 2000);
                         }}
-                        title={copy.copyButton} aria-label={copy.copyButton}
+                        title={copy.copyButton}
+                        aria-label={copy.copyButton}
                     >
                         {urlCopied ? (
                             <span className="font-body text-xs font-bold text-dark uppercase tracking-wider px-1">

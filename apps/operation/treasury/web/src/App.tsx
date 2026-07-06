@@ -31,6 +31,7 @@ import { MeterTab } from "./views/MeterTab";
 import { PnlTab } from "./views/PnlTab";
 import { RevenueTab } from "./views/RevenueTab";
 import { TransactionsTab } from "./views/TransactionsTab";
+import { VendorsTab } from "./views/VendorsTab";
 
 type Tab = "transactions" | "burn" | "meter" | "revenue";
 type Section = "insights" | "raw";
@@ -45,6 +46,11 @@ const INSIGHT_TABS: {
         id: "pnl",
         label: "P&L",
         note: "Monthly blend: Stripe net revenue minus cash spend per category, with credit burn as a shadow. Derived client-side from transactions, meter, and revenue pipes.",
+    },
+    {
+        id: "vendors",
+        label: "Vendors",
+        note: "Three-way per vendor and month: what the bank paid, what the vendor metered, what our own metering registered - with the delta that exposes wrong registry unit costs.",
     },
 ];
 
@@ -557,6 +563,15 @@ export default function App() {
                     {data && section === "insights" && insightTab === "pnl" && (
                         <PnlTab data={data} month={activeMonth} />
                     )}
+                    {data &&
+                        section === "insights" &&
+                        insightTab === "vendors" && (
+                            <VendorsTab
+                                data={data}
+                                month={activeMonth}
+                                vendor={vendor}
+                            />
+                        )}
                 </main>
             </ScrollArea>
         </div>

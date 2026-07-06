@@ -44,9 +44,9 @@ def test_anthropic_and_openai_have_subscription_rules():
     from ingest.aliases import VENDOR_CATEGORIES, VENDOR_CATEGORY_RULES
 
     assert VENDOR_CATEGORIES["anthropic"] == "compute"
-    assert ("claude.ai subscription", "saas") in VENDOR_CATEGORY_RULES["anthropic"]
+    assert ("claude", "saas") in VENDOR_CATEGORY_RULES["anthropic"]
     assert VENDOR_CATEGORIES["openai"] == "compute"
-    assert ("chatgpt", "saas") in VENDOR_CATEGORY_RULES["openai"]
+    assert ("chat gpt", "saas") in VENDOR_CATEGORY_RULES["openai"]
 
 
 def test_vendor_aliases_shape_unchanged():

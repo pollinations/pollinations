@@ -34,12 +34,14 @@ def _load_vendor_file() -> tuple[
     dict[str, list[str]],
     dict[str, str],
     dict[str, list[tuple[str, str]]],
+    dict[str, list[tuple[float, str]]],
 ]:
     allowed = _ALLOWED_CATEGORIES
     raw = json.loads(_ALIASES_PATH.read_text())
     aliases_out: dict[str, list[str]] = {}
     categories_out: dict[str, str] = {}
     rules_out: dict[str, list[tuple[str, str]]] = {}
+    amount_rules_out: dict[str, list[tuple[float, str]]] = {}
     for vendor, entry in raw.items():
         if not isinstance(vendor, str) or not vendor.strip():
             continue
@@ -64,13 +66,25 @@ def _load_vendor_file() -> tuple[
             rules.append((keyword, rule_category))
         if rules:
             rules_out[slug] = rules
-    return aliases_out, categories_out, rules_out
+        amount_rules = []
+        for rule in entry.get("amount_rules", []):
+            rule_category = str(rule.get("category", "")).strip().lower()
+            if "equals" not in rule or rule_category not in allowed:
+                raise ValueError(f"vendor {slug} has invalid amount rule: {rule!r}")
+            amount_rules.append((float(rule["equals"]), rule_category))
+        if amount_rules:
+            amount_rules_out[slug] = amount_rules
+    return aliases_out, categories_out, rules_out, amount_rules_out
 
 
 # canonical vendor slug -> identifying strings, used for substring matching.
 # canonical vendor slug -> default category (validated against _ALLOWED_CATEGORIES).
 # canonical vendor slug -> ordered (keyword, category) rules for row-context overrides.
-VENDOR_ALIASES, VENDOR_CATEGORIES, VENDOR_CATEGORY_RULES = _load_vendor_file()
+# canonical vendor slug -> ordered (exact amount, category) rules for rows whose
+# text carries no signal (e.g. fixed-price subscription seats).
+VENDOR_ALIASES, VENDOR_CATEGORIES, VENDOR_CATEGORY_RULES, VENDOR_AMOUNT_RULES = (
+    _load_vendor_file()
+)
 
 # raw vendor tag/name -> canonical vendor slug, used for exact matching.
 VENDOR_TAG_ALIASES: dict[str, str] = {

@@ -78,6 +78,10 @@
       {
         "match": "chatgpt",
         "category": "saas"
+      },
+      {
+        "match": "chat gpt",
+        "category": "saas"
       }
     ]
   },
@@ -89,11 +93,17 @@
     "category": "compute",
     "category_rules": [
       {
-        "match": "claude.ai subscription",
+        "match": "claude",
+        "category": "saas"
+      }
+    ],
+    "amount_rules": [
+      {
+        "equals": 90,
         "category": "saas"
       },
       {
-        "match": "claudeai subscription",
+        "equals": 180,
         "category": "saas"
       }
     ]
@@ -370,6 +380,21 @@
     ],
     "category": "office"
   },
+  "barbara-khamouguinoff": {
+    "aliases": [
+      "barbara khamouguinoff",
+      "barbara yasmina khamouguinoff",
+      "reinigungsservice"
+    ],
+    "category": "office"
+  },
+  "space-berlin": {
+    "aliases": [
+      "space berlin",
+      "space"
+    ],
+    "category": "office"
+  },
   "tele2": {
     "aliases": [
       "tele2"
@@ -389,10 +414,25 @@
     ],
     "category": "payroll"
   },
+  "ayushman": {
+    "aliases": [
+      "ayushman bhattacharya",
+      "ayushbhatt633"
+    ],
+    "category": "payroll"
+  },
+  "thomas": {
+    "aliases": [
+      "thomas daniel haferlach",
+      "thomas haferlach"
+    ],
+    "category": "payroll"
+  },
   "self-issued": {
     "aliases": [
       "myceli.ai",
-      "pollinations.ai"
+      "pollinations.ai",
+      "pollen"
     ],
     "category": "other"
   },

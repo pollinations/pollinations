@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-07-05",
+  "period_start": "2026-07-05",
+  "period_end": "2026-07-05",
+  "generated_at": "2026-07-06T07:28:23.221492+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-05/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped today:\n- gemini prompt caching (drops repeated hit costs by 94x)\n- added /motion to the image endpoint\n- llm playground live in chat\n- app submissions now pay out pollen via quests\n\nthe caching math looks like a typo, but it's not."
+}

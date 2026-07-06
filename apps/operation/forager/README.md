@@ -46,7 +46,7 @@ python3 -m ingest.run --dry-run                      # snapshot + diff, no write
 python3 -m ingest.run --only meter                   # one table: meter|usage|revenue|transactions
 python3 -m ingest.run --only meter --provider aws    # one meter connector
 python3 -m ingest.run --month 2026-07                # one month (not with --only transactions)
-python3 -m ingest.run --yes                          # allow dropping manual meter rows
+python3 -m ingest.run --yes                          # allow writes that lose a manual meter row's data
 python3 -m ingest.inspect meter_monthly --month 2026-07   # read-only row dump
 python3 -m ingest.doctor                             # preflight/health checks
 python3 -m pytest tests/test_enty.py -q

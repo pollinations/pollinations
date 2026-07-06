@@ -13,8 +13,9 @@ The workspace holds five datasources: `transactions`, `meter_monthly`,
   `usage_monthly`, `revenue_monthly`, `transactions`) to
   `~/Documents/treasury-backups/<UTC stamp>/<table>.ndjson` BEFORE writing, then
   prints a `+added/-removed` diff per table.
-- A write that would drop manual `meter_monthly` rows aborts unless `--yes` is
-  given.
+- A write that would lose a manual `meter_monthly` row's data — no surviving
+  manual-sourced row for that provider/month/currency — aborts unless `--yes` is
+  given (rows merged into a `manual,api` row are not lost).
 - `--dry-run` = snapshot + diff, write nothing. Use it before any run you are
   unsure about; it does not append to `ingest_runs`.
 - `replace` refuses to write 0 rows, so a failed pull never wipes a table.

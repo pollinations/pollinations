@@ -156,7 +156,7 @@ def guarded_replace(ops_replace, datasource, rows, guard, statuses):
     statuses[f"{datasource}_diff"] = f"+{len(added)}/-{len(removed)}"
     print(f"{datasource}: +{len(added)} added, -{len(removed)} removed")
     if datasource == "meter_monthly":
-        lost = backup.manual_meter_rows_lost(removed)
+        lost = backup.manual_meter_rows_lost(removed, rows)
         if lost and not guard["yes"]:
             raise RuntimeError(
                 "refusing to drop manual meter rows without --yes: "

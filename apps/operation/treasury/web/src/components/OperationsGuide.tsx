@@ -16,7 +16,7 @@ const COMMAND_GROUPS = [
             },
             {
                 command:
-                    "python3 apps/operation/_local/invoice-fetcher/fetch_gog_invoices.py --month 2026-07",
+                    "python3 _local/invoice_fetcher/fetch_gog_invoices.py --month 2026-07",
                 label: "Fetch invoice PDFs",
                 note: "Local-only helper: set GOG_ACCOUNT or pass --account to download invoice-like Gmail PDFs into the invoice inbox. No AI, no Tinybird.",
             },

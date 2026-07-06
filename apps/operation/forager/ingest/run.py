@@ -8,7 +8,7 @@ Forager owns the clean Treasury data path:
   - Stripe balance transactions -> revenue_monthly
 
 The old Gmail/GOG invoice fetcher is local-only under
-apps/operation/_local/invoice-fetcher.
+_local/invoice_fetcher.
 """
 
 import datetime

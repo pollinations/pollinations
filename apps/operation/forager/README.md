@@ -29,7 +29,7 @@ GOG/Gmail invoice attachment fetching is intentionally not part of Forager.
 Use the local helper instead:
 
 ```bash
-python3 apps/operation/_local/invoice-fetcher/fetch_gog_invoices.py --month 2026-07
+python3 _local/invoice_fetcher/fetch_gog_invoices.py --month 2026-07
 ```
 
 That helper only downloads invoice-like PDFs into the local invoice inbox. It

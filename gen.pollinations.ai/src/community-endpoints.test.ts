@@ -371,6 +371,44 @@ describe("community endpoint helpers", () => {
         ).toBeUndefined();
     });
 
+    it("marks resolver-priced fees dynamic and omits their static price", () => {
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/deep-research",
+            description: null,
+            ...communityEndpointPrices({}),
+        });
+        // A rule whose per-unit cost is read from the response at runtime
+        // (as Perplexity's request fee is) must not advertise a static price.
+        definition.billing = {
+            adjustments: [
+                {
+                    id: "provider.request.v1",
+                    description: "Provider-reported request cost",
+                    kind: "search_request",
+                    unit: "request",
+                    unitCost: 0.005,
+                    countUnits: () => 1,
+                    resolveUnitCost: () => 0.02,
+                },
+            ],
+        };
+        const info = modelInfoFromDefinition(
+            "voodoohop/deep-research",
+            definition,
+            { community: true },
+        );
+        expect(info.fees).toEqual([
+            {
+                id: "provider.request.v1",
+                kind: "search_request",
+                unit: "request",
+                dynamic: true,
+                description: "Provider-reported request cost",
+            },
+        ]);
+        expect(info.fees?.[0]).not.toHaveProperty("price");
+    });
+
     it("builds Portkey gateway context with the saved token", async () => {
         const secret = "test-secret";
         const endpoint: CommunityEndpointRuntime = {

@@ -24,13 +24,17 @@ export type ModelCapability = z.infer<typeof ModelCapabilitySchema>;
 
 // Per-unit fees billed on top of token pricing (billing adjustments): e.g.
 // Gemini grounded-search queries, Perplexity request fees, community
-// tool-call fees. Price is Pollen per unit as a fixed-point string, matching
-// the `pricing` map format.
+// tool-call fees. `price` is the per-unit fee in Pollen as a fixed-point
+// string (same format as `pricing`) for fees with a fixed cost. For fees
+// whose per-unit cost is resolved from the provider's response at runtime
+// (e.g. Perplexity's reported request cost), `dynamic` is true and `price`
+// is omitted — the static value would be misleading.
 export const ModelFeeSchema = z.object({
     id: z.string(),
     kind: z.string(),
     unit: z.string(),
-    price: z.string(),
+    price: z.string().optional(),
+    dynamic: z.boolean().optional(),
     description: z.string(),
 });
 
@@ -102,20 +106,33 @@ type ModelInfoOptions = {
     community?: boolean;
 };
 
-// Adjustment prices are always unitCost × the model's uniform priceMultiplier
-// (see BillingAdjustment in registry.ts).
+// Fixed-cost adjustment prices are unitCost × the model's uniform
+// priceMultiplier (see BillingAdjustment in registry.ts). Rules that carry a
+// `resolveUnitCost` resolver bill a per-request cost read from the provider
+// response, so no single static price is meaningful — mark them dynamic and
+// omit the price rather than expose the (misleading) static fallback.
 function feesFromDefinition(
     service: ModelDefinition<string>,
 ): ModelFee[] | undefined {
     const adjustments = service.billing?.adjustments;
     if (!adjustments?.length) return undefined;
-    return adjustments.map((rule) => ({
-        id: rule.id,
-        kind: rule.kind,
-        unit: rule.unit,
-        price: toFixedPoint(rule.unitCost * service.priceMultiplier),
-        description: rule.description,
-    }));
+    return adjustments.map((rule) =>
+        rule.resolveUnitCost
+            ? {
+                  id: rule.id,
+                  kind: rule.kind,
+                  unit: rule.unit,
+                  dynamic: true,
+                  description: rule.description,
+              }
+            : {
+                  id: rule.id,
+                  kind: rule.kind,
+                  unit: rule.unit,
+                  price: toFixedPoint(rule.unitCost * service.priceMultiplier),
+                  description: rule.description,
+              },
+    );
 }
 
 function pricingInfoFromDefinition(

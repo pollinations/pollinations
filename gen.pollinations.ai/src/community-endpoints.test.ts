@@ -19,6 +19,7 @@ import {
 } from "@shared/db/better-auth.ts";
 import { handleError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { modelInfoFromDefinition } from "@shared/registry/model-info.ts";
 import { calculateUsageBilling } from "@shared/registry/registry.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import {
@@ -336,6 +337,38 @@ describe("community endpoint helpers", () => {
             ...communityEndpointPrices({}),
         });
         expect(plain.billing).toBeUndefined();
+    });
+
+    it("surfaces billing adjustments as fees in catalog model info", () => {
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/deep-research",
+            description: null,
+            toolPrices: { web_search: 0.005 },
+            ...communityEndpointPrices({ completionTextPrice: 0.000001 }),
+        });
+        const info = modelInfoFromDefinition(
+            "voodoohop/deep-research",
+            definition,
+            { community: true },
+        );
+        expect(info.fees).toEqual([
+            {
+                id: "community.tool.web_search.v1",
+                kind: "tool_call",
+                unit: "call",
+                price: "0.005",
+                description: expect.stringContaining("web_search"),
+            },
+        ]);
+
+        const plain = communityModelDefinition({
+            modelId: "voodoohop/openai",
+            description: null,
+            ...communityEndpointPrices({}),
+        });
+        expect(
+            modelInfoFromDefinition("voodoohop/openai", plain).fees,
+        ).toBeUndefined();
     });
 
     it("builds Portkey gateway context with the saved token", async () => {

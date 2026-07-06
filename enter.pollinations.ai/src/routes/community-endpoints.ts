@@ -32,13 +32,17 @@ const PriceSchema = z.number().finite().min(0);
 const CreatePriceFieldsSchema = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
         field.key,
-        PriceSchema.optional().default(0),
+        PriceSchema.optional()
+            .default(0)
+            .describe(`${field.label} price in Pollen per token.`),
     ]),
 ) as unknown as Record<CommunityEndpointPriceKey, z.ZodType<number>>;
 const UpdatePriceFieldsSchema = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
         field.key,
-        PriceSchema.optional(),
+        PriceSchema.optional().describe(
+            `${field.label} price in Pollen per token.`,
+        ),
     ]),
 ) as unknown as Record<
     CommunityEndpointPriceKey,
@@ -46,17 +50,25 @@ const UpdatePriceFieldsSchema = Object.fromEntries(
 >;
 
 const CAPABILITY_FLAG_KEYS = ["tools", "search", "reasoning"] as const;
-const KindSchema = z.enum(COMMUNITY_ENDPOINT_KINDS);
+const KindSchema = z
+    .enum(COMMUNITY_ENDPOINT_KINDS)
+    .describe(
+        '"model" for a plain upstream model; "agent" for an endpoint that runs multi-step or tool-using logic behind the chat-completions shape.',
+    );
 // Whole-map semantics on update: sending toolPrices replaces the map; {} clears it.
-const ToolPricesSchema = z.record(
-    z
-        .string()
-        .regex(
-            COMMUNITY_TOOL_NAME_PATTERN,
-            "Tool names must be lowercase alphanumeric with _ or - (max 40 chars)",
-        ),
-    z.number().finite().positive(),
-);
+const ToolPricesSchema = z
+    .record(
+        z
+            .string()
+            .regex(
+                COMMUNITY_TOOL_NAME_PATTERN,
+                "Tool names must be lowercase alphanumeric with _ or - (max 40 chars)",
+            ),
+        z.number().finite().positive().describe("Pollen per call."),
+    )
+    .describe(
+        "Per-call tool fees, keyed by tool name (e.g. web_search). Each request is billed `fee × usage.tool_call_counts.<name>` as reported by the endpoint in its response usage object (on the final usage-bearing event for streams). On update the map is replaced whole; send {} to clear.",
+    );
 const EndpointFieldsSchema = {
     // No "/": the public model id is `<owner>/<name>`, so a slash in the name
     // would inject a second separator and let one model spoof another's id.
@@ -75,9 +87,21 @@ const EndpointFieldsSchema = {
 const CreateEndpointSchema = z.object({
     ...EndpointFieldsSchema,
     kind: KindSchema.optional().default("model"),
-    tools: z.boolean().optional().default(false),
-    search: z.boolean().optional().default(false),
-    reasoning: z.boolean().optional().default(false),
+    tools: z
+        .boolean()
+        .optional()
+        .default(false)
+        .describe("Declares tool/function-calling support (metadata only)."),
+    search: z
+        .boolean()
+        .optional()
+        .default(false)
+        .describe("Declares web-search capability (metadata only)."),
+    reasoning: z
+        .boolean()
+        .optional()
+        .default(false)
+        .describe("Declares reasoning/thinking support (metadata only)."),
     toolPrices: ToolPricesSchema.optional(),
     ...CreatePriceFieldsSchema,
 });
@@ -88,9 +112,18 @@ const UpdateEndpointSchema = z.object({
     upstreamModel: EndpointFieldsSchema.upstreamModel,
     bearerToken: EndpointFieldsSchema.bearerToken.optional(),
     kind: KindSchema.optional(),
-    tools: z.boolean().optional(),
-    search: z.boolean().optional(),
-    reasoning: z.boolean().optional(),
+    tools: z
+        .boolean()
+        .optional()
+        .describe("Declares tool/function-calling support (metadata only)."),
+    search: z
+        .boolean()
+        .optional()
+        .describe("Declares web-search capability (metadata only)."),
+    reasoning: z
+        .boolean()
+        .optional()
+        .describe("Declares reasoning/thinking support (metadata only)."),
     toolPrices: ToolPricesSchema.optional(),
     ...UpdatePriceFieldsSchema,
 });
@@ -375,7 +408,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Create My Model",
             description:
-                "Register an invite-only community text model. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`. The upstream bearer token is encrypted and never returned.",
+                'Register an invite-only community text model or agent. API keys require `account:keys` and an account with `communityEndpointsAllowed: true`. The upstream bearer token is encrypted and never returned. Callers are billed your declared per-token prices plus any `toolPrices` fees; to charge tool fees the endpoint reports per-tool call counts in `usage.tool_call_counts` (e.g. `{"web_search": 2}`) on its response — for streams, on the final usage-bearing event.',
             responses: {
                 200: {
                     description: "Created community text model",

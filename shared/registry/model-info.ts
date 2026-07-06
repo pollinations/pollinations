@@ -22,6 +22,20 @@ export const ModelCapabilitySchema = z.enum([
 
 export type ModelCapability = z.infer<typeof ModelCapabilitySchema>;
 
+// Per-unit fees billed on top of token pricing (billing adjustments): e.g.
+// Gemini grounded-search queries, Perplexity request fees, community
+// tool-call fees. Price is Pollen per unit as a fixed-point string, matching
+// the `pricing` map format.
+export const ModelFeeSchema = z.object({
+    id: z.string(),
+    kind: z.string(),
+    unit: z.string(),
+    price: z.string(),
+    description: z.string(),
+});
+
+export type ModelFee = z.infer<typeof ModelFeeSchema>;
+
 // Pricing uses registry field names directly, filtering out zero/undefined values
 // Fields: promptTextTokens, promptCachedTokens, promptCacheWriteTokens,
 //         promptAudioTokens, promptAudioSeconds, promptImageTokens,
@@ -45,6 +59,7 @@ export const ModelInfoSchema = z.object({
     pricing: z
         .record(z.string(), z.string())
         .and(z.object({ currency: z.literal("pollen") })),
+    fees: z.array(ModelFeeSchema).optional(),
     title: z.string(),
     description: z.string().optional(),
     input_modalities: z.array(z.string()).optional(),
@@ -87,6 +102,22 @@ type ModelInfoOptions = {
     community?: boolean;
 };
 
+// Adjustment prices are always unitCost × the model's uniform priceMultiplier
+// (see BillingAdjustment in registry.ts).
+function feesFromDefinition(
+    service: ModelDefinition<string>,
+): ModelFee[] | undefined {
+    const adjustments = service.billing?.adjustments;
+    if (!adjustments?.length) return undefined;
+    return adjustments.map((rule) => ({
+        id: rule.id,
+        kind: rule.kind,
+        unit: rule.unit,
+        price: toFixedPoint(rule.unitCost * service.priceMultiplier),
+        description: rule.description,
+    }));
+}
+
 function pricingInfoFromDefinition(
     priceDefinition: PriceDefinition,
 ): Record<string, string> & { currency: "pollen" } {
@@ -114,6 +145,7 @@ export function modelInfoFromDefinition(
         kind: service.kind,
         community: options.community || undefined,
         pricing: pricingInfoFromDefinition(getPriceDefinitionForModel(service)),
+        fees: feesFromDefinition(service),
         // User-facing metadata from service definition
         title: service.title,
         description: service.description,

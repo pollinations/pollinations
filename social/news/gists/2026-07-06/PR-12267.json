@@ -1,0 +1,35 @@
+{
+  "pr_number": 12267,
+  "title": "fix: no starting tier balance for new users",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12267",
+  "merged_at": "2026-07-06T22:53:16Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- New users no longer receive a signup Pollen grant — consistent with retiring the free hourly drip.\n- `onAfterUserCreate` stops writing `tier_balance`/`last_tier_grant`; column stays NULL (coalesced to 0 by the balance gate in `generation-access.ts`).\n- Keeps the `user_registration` Tinybird event; `pollen_amount` now 0.\n- Drops the now-unused `getTierPollen` import.\n\nBalance now comes only from quests or purchases. New users get a 402 on first generation until they have balance — intended.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "major",
+    "headline": "The quest begins at zero",
+    "blurb": "We've streamlined onboarding so new users dive straight into Quests to earn their first Pollen.",
+    "summary": "New user accounts now start with a 0 Pollen balance instead of an initial grant, fully transitioning the platform to a Quest-based earning model.",
+    "impact": "New users will receive a 402 status on their first generation request until they complete an onboarding Quest or purchase a Pollen pack.",
+    "keywords": [
+      "billing",
+      "pollen",
+      "onboarding",
+      "quests",
+      "auth"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot standing in front of a wooden Quest Board. The empty starting state is represented by an empty honey jar, but the focus is on the exciting quest board to earn the first drops.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky CRT monitor robot looking excitedly at a wooden Quest Board. The bee holds a small empty glass jar, ready to fill it. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi Stardew Valley aesthetic. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-06/PR-12267.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky CRT monitor robot looking excitedly at a wooden Quest Board. The bee holds a small empty glass jar, ready to fill it. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi Stardew Valley aesthetic. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-06T22:54:20.150283+00:00"
+}

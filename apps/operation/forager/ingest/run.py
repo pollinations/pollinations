@@ -11,11 +11,11 @@ The old Gmail/GOG invoice fetcher is local-only under
 _local/invoice_fetcher.
 """
 
+import argparse
 import datetime
 import json
-import sys
 
-from . import creds, enty, tb
+from . import backup, creds, enty, tb
 from .connectors import registry
 from .connectors import usage as _usage
 from .connectors.common import months_ytd
@@ -143,6 +143,23 @@ def _sanitize_err(e, creds_dict):
     return msg[:200]
 
 
+def guarded_replace(ops_replace, datasource, rows, guard, statuses):
+    added, removed = backup.diff_rows(guard["existing"][datasource], rows)
+    statuses[f"{datasource}_diff"] = f"+{len(added)}/-{len(removed)}"
+    print(f"{datasource}: +{len(added)} added, -{len(removed)} removed")
+    if datasource == "meter_monthly":
+        lost = backup.manual_meter_rows_lost(removed)
+        if lost and not guard["yes"]:
+            raise RuntimeError(
+                "refusing to drop manual meter rows without --yes: "
+                + json.dumps(lost)
+            )
+    if guard["dry_run"]:
+        print(f"dry-run: skipped replace of {datasource} ({len(rows)} rows)")
+        return
+    ops_replace.replace(datasource, rows)
+
+
 def refresh_meter_monthly(
     ops_ingest,
     ops_replace,
@@ -150,6 +167,7 @@ def refresh_meter_monthly(
     config,
     today,
     statuses,
+    guard,
 ):
     months = months_ytd(config["months_start"], today)
     meter_new = []
@@ -171,25 +189,23 @@ def refresh_meter_monthly(
     if not meter_new:
         raise RuntimeError("meter connectors returned 0 rows")
 
-    meter_manual = existing_manual_meter_rows(
-        ops_ingest.sql("SELECT * FROM meter_monthly"),
-    )
+    meter_manual = existing_manual_meter_rows(guard["existing"]["meter_monthly"])
     validate_meter_rows(meter_manual)
     meter_merged = merge_meter_rows(meter_new + meter_manual)
     validate_meter_rows(meter_merged)
-    ops_replace.replace("meter_monthly", meter_merged)
+    guarded_replace(ops_replace, "meter_monthly", meter_merged, guard, statuses)
     statuses["meter_rows"] = len(meter_merged)
 
 
-def refresh_usage_monthly(ops_replace, tb_prod, config, today, statuses):
+def refresh_usage_monthly(ops_replace, tb_prod, config, today, statuses, guard):
     rows = _usage.monthly_rows(tb_prod, months_ytd(config["months_start"], today), today)
     if not rows:
         raise RuntimeError("usage_monthly returned 0 rows")
-    ops_replace.replace("usage_monthly", rows)
+    guarded_replace(ops_replace, "usage_monthly", rows, guard, statuses)
     statuses["usage"] = len(rows)
 
 
-def refresh_revenue_monthly(ops_replace, secrets, config, today, statuses):
+def refresh_revenue_monthly(ops_replace, secrets, config, today, statuses, guard):
     rows = _stripe.revenue_rows(
         secrets,
         months_ytd(config["months_start"], today),
@@ -197,15 +213,15 @@ def refresh_revenue_monthly(ops_replace, secrets, config, today, statuses):
     )
     if not rows:
         raise RuntimeError("revenue_monthly returned 0 rows")
-    ops_replace.replace("revenue_monthly", rows)
+    guarded_replace(ops_replace, "revenue_monthly", rows, guard, statuses)
     statuses["revenue"] = len(rows)
 
 
-def refresh_transactions(ops_replace, secrets, config, statuses):
+def refresh_transactions(ops_replace, secrets, config, statuses, guard):
     rows = enty.build_transactions(config, secrets)
     if not rows:
         raise RuntimeError("transactions returned 0 rows")
-    ops_replace.replace("transactions", rows)
+    guarded_replace(ops_replace, "transactions", rows, guard, statuses)
     statuses["transactions"] = len(rows)
 
 
@@ -224,9 +240,19 @@ def append_run_log(ops_ingest, statuses, notes):
     )
 
 
+def parse_args(argv=None):
+    parser = argparse.ArgumentParser(
+        prog="ingest.run", description="Refresh the Operations Tinybird tables."
+    )
+    parser.add_argument("--yes", action="store_true",
+                        help="approve writes that drop manual meter rows")
+    parser.add_argument("--dry-run", action="store_true",
+                        help="snapshot + diff only, write nothing")
+    return parser.parse_args(argv)
+
+
 def main():
-    if len(sys.argv) > 1:
-        raise SystemExit("usage: python3 -m ingest.run")
+    args = parse_args()
 
     today = datetime.date.today().isoformat()
     secrets, config = creds.load_creds(), creds.load_config()
@@ -234,6 +260,17 @@ def main():
     ops_ingest = tb.TB(config["tb_ops_api"], secrets["TINYBIRD_OPS_INGEST_TOKEN"])
     ops_replace = tb.TB(config["tb_ops_api"], secrets["TINYBIRD_OPS_REPLACE_TOKEN"])
     tb_prod = tb.TB(config["tb_prod_api"], secrets["TINYBIRD_PROD_READ_TOKEN"])
+
+    backup_dir = backup.run_directory(config)
+    guard = {
+        "yes": args.yes,
+        "dry_run": args.dry_run,
+        "existing": {
+            ds: backup.snapshot_table(ops_ingest, ds, backup_dir)
+            for ds in ("meter_monthly", "usage_monthly", "revenue_monthly", "transactions")
+        },
+    }
+    print(f"backup: {backup_dir}")
 
     statuses, notes = {}, []
     try:
@@ -244,17 +281,20 @@ def main():
             config,
             today,
             statuses,
+            guard,
         )
-        refresh_usage_monthly(ops_replace, tb_prod, config, today, statuses)
-        refresh_revenue_monthly(ops_replace, secrets, config, today, statuses)
-        refresh_transactions(ops_replace, secrets, config, statuses)
+        refresh_usage_monthly(ops_replace, tb_prod, config, today, statuses, guard)
+        refresh_revenue_monthly(ops_replace, secrets, config, today, statuses, guard)
+        refresh_transactions(ops_replace, secrets, config, statuses, guard)
     except Exception as e:
         statuses["run"] = "err:" + _sanitize_err(e, secrets)
         notes.append(f"run failed: {statuses['run']}")
-        append_run_log(ops_ingest, statuses, notes)
+        if not args.dry_run:
+            append_run_log(ops_ingest, statuses, notes)
         raise
 
-    append_run_log(ops_ingest, statuses, notes)
+    if not args.dry_run:
+        append_run_log(ops_ingest, statuses, notes)
     print(f"ingested: {statuses}" + (f"  NOTES: {notes}" if notes else ""))
 
 

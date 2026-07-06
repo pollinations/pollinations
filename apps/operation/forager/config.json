@@ -2,6 +2,7 @@
     "tb_ops_api": "https://api.europe-west2.gcp.tinybird.co",
     "tb_prod_api": "https://api.europe-west2.gcp.tinybird.co",
     "months_start": "2026-01",
+    "backup_dir": "~/Documents/treasury-backups",
     "enty_ledger_dir": "~/Documents/treasury-invoices/enty-ledger",
     "enty_ai_verify": true,
     "enty_ai_endpoint": "https://openrouter.ai/api/v1/chat/completions",

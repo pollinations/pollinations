@@ -39,6 +39,7 @@ export const user = sqliteTable("user", {
   tier: text("tier").default("spore").notNull(),
   tierBalance: real("tier_balance"),
   packBalance: real("pack_balance"),
+  lastTierGrant: integer("last_tier_grant"),
   stripeCustomerId: text("stripe_customer_id").unique(),
   autoTopUpEnabled: integer("auto_top_up_enabled", { mode: "boolean" })
     .default(sql`0`)

@@ -1,7 +1,7 @@
 DESCRIPTION >
     Restricted view of D1 user table (no emails, no balances).
     Internal only: returns the full user roster (id, name, GitHub identity,
-    ban status), so it is gated behind the private read token rather
+    tier, ban status), so it is gated behind the private read token rather
     than the public one.
 
 TOKEN tinybird_read READ
@@ -13,9 +13,11 @@ SQL >
         name,
         github_username,
         github_id,
+        tier,
         banned,
         ban_reason,
         ban_expires,
+        last_tier_grant,
         created_at,
         synced_at
     FROM d1_user

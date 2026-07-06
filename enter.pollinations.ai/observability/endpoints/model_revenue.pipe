@@ -4,7 +4,7 @@ DESCRIPTION >
 Per-model revenue breakdown for successful requests, grouped by model and event type.
 Splits revenue by which balance bucket actually paid:
   - paid_revenue: requests billed to a pack (paid top-up) meter
-  - tier_value:   requests billed to the Tier balance bucket
+  - tier_value:   requests billed to tier allowance
 Only successful (2xx) requests are summed.
 PRIVATE: uses `tinybird_read` only (not `tinybird_read_public`) — exposes monetization
 data per model, not suitable for the public model monitor token.

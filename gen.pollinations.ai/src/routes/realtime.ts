@@ -60,6 +60,7 @@ type WebSocketResponseInit = ResponseInit & { webSocket?: WebSocket };
 type RealtimeDeduction = Awaited<ReturnType<typeof handleBalanceDeduction>>;
 type RealtimeBillingContext = {
     userId: string;
+    userTier?: string;
     userGithubId?: string;
     userGithubUsername?: string;
     apiKeyId?: string;
@@ -406,6 +407,7 @@ function createRealtimeTrackingEvent(args: {
         ipSubnet: args.tracking.ipSubnet,
         ipHash: args.tracking.ipHash,
         userId: args.tracking.userId,
+        userTier: args.tracking.userTier,
         userGithubId: args.tracking.userGithubId,
         userGithubUsername: args.tracking.userGithubUsername,
         apiKeyId: args.tracking.apiKeyId,
@@ -628,6 +630,7 @@ async function createRealtimeBillingContext(
 
     return {
         userId: user.id,
+        userTier: user.tier,
         userGithubId: user.githubId ? String(user.githubId) : undefined,
         userGithubUsername: user.githubUsername ?? undefined,
         apiKeyId: c.var.auth.apiKey?.id,

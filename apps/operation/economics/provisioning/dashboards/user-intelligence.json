@@ -15,7 +15,7 @@
       }
     ]
   },
-  "description": "User intelligence — registrations, activation funnels, and cohort analysis.",
+  "description": "User intelligence — registrations, tier progression, activation funnels, and cohort analysis.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -149,6 +149,78 @@
       ],
       "title": "New Users (Period)",
       "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Tier distribution of all active (non-banned) users.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "id": 3,
+      "options": {
+        "displayLabels": [
+          "name",
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "values": [
+            "value",
+            "percent"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "rawSql": "SELECT tier, COUNT(*) AS users\nFROM d1_user\nWHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n  AND banned = 0\nGROUP BY tier\nORDER BY users DESC",
+          "refId": "A"
+        }
+      ],
+      "title": "Tier Distribution",
+      "type": "piechart"
     },
     {
       "datasource": {
@@ -316,6 +388,178 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
+      "description": "Cumulative registered users over time.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "blue",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Cumulative Users",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "scheme",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "unit": "locale"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "user_tier"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "User (spore)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "dev_tier"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Dev (seed + flower + nectar)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "abuser_tier"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Abuser (microbe)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "dead_tier"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Dead (banned/deleted)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 14
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "SELECT\n  ts,\n  sum(user_tier) OVER (ORDER BY ts ASC) AS user_tier,\n  sum(dev_tier) OVER (ORDER BY ts ASC) AS dev_tier,\n  sum(abuser_tier) OVER (ORDER BY ts ASC) AS abuser_tier,\n  sum(dead_tier) OVER (ORDER BY ts ASC) AS dead_tier\nFROM (\n  SELECT\n    date_trunc('$granularity', fromUnixTimestamp(assumeNotNull(created_at))) AS ts,\n    countIf(tier = 'spore' AND banned = 0) AS user_tier,\n    countIf(tier IN ('seed', 'flower', 'nectar') AND banned = 0) AS dev_tier,\n    countIf(tier = 'microbe' AND banned = 0) AS abuser_tier,\n    countIf(banned = 1) AS dead_tier\n  FROM d1_user\n  WHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n    AND created_at IS NOT NULL\n    AND $__timeFilter(fromUnixTimestamp(created_at))\n  GROUP BY ts\n  ORDER BY ts ASC\n)",
+          "refId": "A"
+        }
+      ],
+      "title": "Cumulative Registrations (User vs Dev)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
       "description": "Registration growth rate vs previous period. Adapts to selected granularity (DoD, WoW, MoM, etc).",
       "fieldConfig": {
         "defaults": {
@@ -405,6 +649,101 @@
         }
       ],
       "title": "Registration Growth Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "New registrations broken down by tier assigned at registration time.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Registrations",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 32
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "SELECT\n  date_trunc('$granularity', fromUnixTimestamp(assumeNotNull(created_at))) AS ts,\n  tier,\n  count() AS registrations\nFROM d1_user\nWHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n  AND created_at IS NOT NULL\n  AND $__timeFilter(fromUnixTimestamp(created_at))\nGROUP BY ts, tier\nORDER BY ts ASC",
+          "refId": "A"
+        }
+      ],
+      "title": "Registrations by Tier",
       "type": "timeseries"
     },
     {
@@ -1958,7 +2297,7 @@
       "id": 111,
       "type": "table",
       "title": "Risky Users — High Payment Failures",
-      "description": "Users with the most failed payment attempts in the time range, joined to d1_user (ban status and GitHub), latest scoring_snapshot (trust score, account age) and their successful purchases. Watch success_rate_pct: legitimate customers who hit a decline or two usually still convert >70%; carders are <10%. Click the github_username to open the profile.",
+      "description": "Users with the most failed payment attempts in the time range, joined to d1_user (ban status, tier, github), latest scoring_snapshot (trust score, account age) AND their successful purchases. Watch success_rate_pct: legitimate customers who hit a decline or two usually still convert >70%; carders are <10%. Click the github_username to open the profile.",
       "gridPos": {
         "h": 14,
         "w": 24,
@@ -2462,7 +2801,7 @@
             "uid": "PAD1A0A25CD30D457"
           },
           "format": 1,
-          "rawSql": "WITH\n  failed_payments AS (\n    SELECT\n      user_id,\n      customer_email,\n      count() AS failed_attempts,\n      countIf(JSONExtractString(payload, 'data', 'object', 'last_payment_error', 'decline_code') = 'fraudulent') AS fraudulent_attempts,\n      round(sum(amount_cents) / 100.0, 2) AS attempted_amount_usd,\n      max(timestamp) AS last_failure_at\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type = 'payment_intent.payment_failed'\n      AND livemode = 1\n      AND user_id != ''\n    GROUP BY user_id, customer_email\n    HAVING failed_attempts >= 2\n  ),\n  successful_payments AS (\n    SELECT\n      user_id,\n      count() AS successful_purchases,\n      round(sum(amount_cents) / 100.0, 2) AS pollen_bought_usd\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type = 'checkout.session.completed'\n      AND payment_status = 'paid'\n      AND livemode = 1\n      AND user_id != ''\n    GROUP BY user_id\n  ),\n  latest_users AS (\n    SELECT id, github_username, email, banned\n    FROM d1_user\n    WHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n  ),\n  latest_scores AS (\n    SELECT\n      user_id,\n      argMax(trust_score, timestamp)            AS trust_score,\n      argMax(total_score, timestamp)            AS total_score,\n      argMax(github_age_days, timestamp)        AS github_age_days,\n      argMax(pollinations_age_days, timestamp)  AS pollinations_age_days\n    FROM scoring_snapshot\n    GROUP BY user_id\n  )\nSELECT\n  coalesce(nullIf(u.github_username, ''), '(no github)')                              AS github_username,\n  coalesce(nullIf(u.email, ''), f.customer_email)                                     AS email,\n  if(u.banned = 1, 'BANNED', 'active')                                                AS banned,\n  coalesce(sp.successful_purchases, 0)                                                AS successful_purchases,\n  f.failed_attempts                                                                   AS failed_attempts,\n  f.fraudulent_attempts                                                               AS fraudulent_attempts,\n  round(100.0 * coalesce(sp.successful_purchases, 0)\n        / nullIf(coalesce(sp.successful_purchases, 0) + f.failed_attempts, 0), 1)     AS success_rate_pct,\n  coalesce(sp.pollen_bought_usd, 0)                                                   AS pollen_bought_usd,\n  f.attempted_amount_usd                                                              AS attempted_amount_usd,\n  coalesce(s.trust_score, 100)                                                        AS trust_score,\n  round(coalesce(s.total_score, 0), 1)                                                AS total_score,\n  coalesce(s.github_age_days, 0)                                                      AS github_age_days,\n  coalesce(s.pollinations_age_days, 0)                                                AS pollinations_age_days,\n  f.last_failure_at                                                                   AS last_failure_at\nFROM failed_payments f\nLEFT JOIN successful_payments sp ON f.user_id = sp.user_id\nLEFT JOIN latest_users         u  ON f.user_id = u.id\nLEFT JOIN latest_scores        s  ON f.user_id = s.user_id\nORDER BY f.fraudulent_attempts DESC, f.failed_attempts DESC\nLIMIT 50",
+          "rawSql": "WITH\n  failed_payments AS (\n    SELECT\n      user_id,\n      customer_email,\n      count() AS failed_attempts,\n      countIf(JSONExtractString(payload, 'data', 'object', 'last_payment_error', 'decline_code') = 'fraudulent') AS fraudulent_attempts,\n      round(sum(amount_cents) / 100.0, 2) AS attempted_amount_usd,\n      max(timestamp) AS last_failure_at\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type = 'payment_intent.payment_failed'\n      AND livemode = 1\n      AND user_id != ''\n    GROUP BY user_id, customer_email\n    HAVING failed_attempts >= 2\n  ),\n  successful_payments AS (\n    SELECT\n      user_id,\n      count() AS successful_purchases,\n      round(sum(amount_cents) / 100.0, 2) AS pollen_bought_usd\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type = 'checkout.session.completed'\n      AND payment_status = 'paid'\n      AND livemode = 1\n      AND user_id != ''\n    GROUP BY user_id\n  ),\n  latest_users AS (\n    SELECT id, github_username, email, tier, banned\n    FROM d1_user\n    WHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n  ),\n  latest_scores AS (\n    SELECT\n      user_id,\n      argMax(trust_score, timestamp)            AS trust_score,\n      argMax(total_score, timestamp)            AS total_score,\n      argMax(github_age_days, timestamp)        AS github_age_days,\n      argMax(pollinations_age_days, timestamp)  AS pollinations_age_days\n    FROM scoring_snapshot\n    GROUP BY user_id\n  )\nSELECT\n  coalesce(nullIf(u.github_username, ''), '(no github)')                              AS github_username,\n  coalesce(nullIf(u.email, ''), f.customer_email)                                     AS email,\n  u.tier                                                                              AS tier,\n  if(u.banned = 1, 'BANNED', 'active')                                                AS banned,\n  coalesce(sp.successful_purchases, 0)                                                AS successful_purchases,\n  f.failed_attempts                                                                   AS failed_attempts,\n  f.fraudulent_attempts                                                               AS fraudulent_attempts,\n  round(100.0 * coalesce(sp.successful_purchases, 0)\n        / nullIf(coalesce(sp.successful_purchases, 0) + f.failed_attempts, 0), 1)     AS success_rate_pct,\n  coalesce(sp.pollen_bought_usd, 0)                                                   AS pollen_bought_usd,\n  f.attempted_amount_usd                                                              AS attempted_amount_usd,\n  coalesce(s.trust_score, 100)                                                        AS trust_score,\n  round(coalesce(s.total_score, 0), 1)                                                AS total_score,\n  coalesce(s.github_age_days, 0)                                                      AS github_age_days,\n  coalesce(s.pollinations_age_days, 0)                                                AS pollinations_age_days,\n  f.last_failure_at                                                                   AS last_failure_at\nFROM failed_payments f\nLEFT JOIN successful_payments sp ON f.user_id = sp.user_id\nLEFT JOIN latest_users         u  ON f.user_id = u.id\nLEFT JOIN latest_scores        s  ON f.user_id = s.user_id\nORDER BY f.fraudulent_attempts DESC, f.failed_attempts DESC\nLIMIT 50",
           "refId": "A"
         }
       ]
@@ -2471,7 +2810,7 @@
       "id": 201,
       "type": "table",
       "title": "Top Buyers — Smurf Watch",
-      "description": "Successful-payment counterpart to 'Risky Users'. Surfaces emails with 5+ paid checkouts in the time range. distinct_stripe_customers shows how many separate Stripe Customer objects the email generated — a high smurf_ratio (close to 1.0) means almost every charge created a fresh Customer, the classic throwaway-session / reseller pattern. top_card_country + card_brands show what the buyer's cards actually are (joined from charge.succeeded by payment-intent ID); a mismatch between top_card_country and the listed billing_countries is the carding signature. Joined to d1_user via user_id for ban.",
+      "description": "Successful-payment counterpart to 'Risky Users'. Surfaces emails with 5+ paid checkouts in the time range. distinct_stripe_customers shows how many separate Stripe Customer objects the email generated — a high smurf_ratio (close to 1.0) means almost every charge created a fresh Customer, the classic throwaway-session / reseller pattern. top_card_country + card_brands show what the buyer's cards actually are (joined from charge.succeeded by payment-intent ID); a mismatch between top_card_country and the listed billing_countries is the carding signature. Joined to d1_user via user_id for tier/ban.",
       "gridPos": {
         "h": 14,
         "w": 24,
@@ -2930,7 +3269,7 @@
             "uid": "PAD1A0A25CD30D457"
           },
           "format": 1,
-          "rawSql": "WITH\n  paid AS (\n    SELECT\n      customer_email,\n      user_id,\n      JSONExtractString(payload, 'data', 'object', 'payment_intent') AS pi_id,\n      timestamp,\n      amount_cents,\n      JSONExtractString(payload, 'data', 'object', 'customer') AS stripe_customer,\n      JSONExtractString(payload, 'data', 'object', 'customer_details', 'address', 'country') AS billing_country\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type = 'checkout.session.completed'\n      AND payment_status = 'paid'\n      AND livemode = 1\n      AND customer_email != ''\n  ),\n  charges AS (\n    SELECT\n      JSONExtractString(payload, 'data', 'object', 'payment_intent') AS pi_id,\n      anyHeavy(card_country) AS card_country,\n      anyHeavy(card_brand) AS card_brand\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type = 'charge.succeeded'\n      AND livemode = 1\n    GROUP BY pi_id\n  ),\n  joined AS (\n    SELECT p.*, c.card_country, c.card_brand\n    FROM paid p LEFT JOIN charges c ON p.pi_id = c.pi_id\n  ),\n  per_email AS (\n    SELECT\n      customer_email,\n      any(user_id) AS user_id,\n      count() AS charges,\n      uniq(stripe_customer) AS distinct_stripe_customers,\n      round(sum(amount_cents) / 100.0, 2) AS total_usd,\n      arraySort(arrayDistinct(groupArray(billing_country))) AS billing_countries,\n      arraySort(arrayDistinct(groupArrayIf(card_country, card_country != ''))) AS card_countries,\n      arraySort(arrayDistinct(groupArrayIf(card_brand, card_brand != ''))) AS card_brands,\n      min(timestamp) AS first_seen,\n      max(timestamp) AS last_seen\n    FROM joined\n    GROUP BY customer_email\n    HAVING charges >= 5\n  ),\n  latest_users AS (\n    SELECT id, github_username, email, banned\n    FROM d1_user\n    WHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n  )\nSELECT\n  p.customer_email                                                                  AS email,\n  coalesce(nullIf(u.github_username, ''), '(no github)')                            AS github_username,\n  if(u.banned = 1, 'BANNED', 'active')                                              AS banned,\n  p.charges                                                                         AS charges,\n  p.distinct_stripe_customers                                                       AS distinct_stripe_customers,\n  round(p.distinct_stripe_customers / nullIf(p.charges, 0), 2)                      AS smurf_ratio,\n  p.total_usd                                                                       AS total_usd,\n  length(p.billing_countries)                                                       AS distinct_billing_countries,\n  arrayStringConcat(arraySlice(p.billing_countries, 1, 5), ', ')                    AS billing_countries_sample,\n  arrayStringConcat(p.card_countries, ', ')                                         AS card_countries,\n  arrayStringConcat(p.card_brands, ', ')                                            AS card_brands,\n  if(length(p.card_countries) = 0\n     OR (length(p.billing_countries) = 1\n         AND length(p.card_countries) = 1\n         AND p.billing_countries[1] = p.card_countries[1]),\n     'match', 'mismatch')                                                           AS billing_vs_card,\n  p.first_seen                                                                      AS first_seen,\n  p.last_seen                                                                       AS last_seen\nFROM per_email p\nLEFT JOIN latest_users u ON p.user_id = u.id\nORDER BY p.charges DESC\nLIMIT 50",
+          "rawSql": "WITH\n  paid AS (\n    SELECT\n      customer_email,\n      user_id,\n      JSONExtractString(payload, 'data', 'object', 'payment_intent') AS pi_id,\n      timestamp,\n      amount_cents,\n      JSONExtractString(payload, 'data', 'object', 'customer') AS stripe_customer,\n      JSONExtractString(payload, 'data', 'object', 'customer_details', 'address', 'country') AS billing_country\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type = 'checkout.session.completed'\n      AND payment_status = 'paid'\n      AND livemode = 1\n      AND customer_email != ''\n  ),\n  charges AS (\n    SELECT\n      JSONExtractString(payload, 'data', 'object', 'payment_intent') AS pi_id,\n      anyHeavy(card_country) AS card_country,\n      anyHeavy(card_brand) AS card_brand\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type = 'charge.succeeded'\n      AND livemode = 1\n    GROUP BY pi_id\n  ),\n  joined AS (\n    SELECT p.*, c.card_country, c.card_brand\n    FROM paid p LEFT JOIN charges c ON p.pi_id = c.pi_id\n  ),\n  per_email AS (\n    SELECT\n      customer_email,\n      any(user_id) AS user_id,\n      count() AS charges,\n      uniq(stripe_customer) AS distinct_stripe_customers,\n      round(sum(amount_cents) / 100.0, 2) AS total_usd,\n      arraySort(arrayDistinct(groupArray(billing_country))) AS billing_countries,\n      arraySort(arrayDistinct(groupArrayIf(card_country, card_country != ''))) AS card_countries,\n      arraySort(arrayDistinct(groupArrayIf(card_brand, card_brand != ''))) AS card_brands,\n      min(timestamp) AS first_seen,\n      max(timestamp) AS last_seen\n    FROM joined\n    GROUP BY customer_email\n    HAVING charges >= 5\n  ),\n  latest_users AS (\n    SELECT id, github_username, email, tier, banned\n    FROM d1_user\n    WHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n  )\nSELECT\n  p.customer_email                                                                  AS email,\n  coalesce(nullIf(u.github_username, ''), '(no github)')                            AS github_username,\n  u.tier                                                                            AS tier,\n  if(u.banned = 1, 'BANNED', 'active')                                              AS banned,\n  p.charges                                                                         AS charges,\n  p.distinct_stripe_customers                                                       AS distinct_stripe_customers,\n  round(p.distinct_stripe_customers / nullIf(p.charges, 0), 2)                      AS smurf_ratio,\n  p.total_usd                                                                       AS total_usd,\n  length(p.billing_countries)                                                       AS distinct_billing_countries,\n  arrayStringConcat(arraySlice(p.billing_countries, 1, 5), ', ')                    AS billing_countries_sample,\n  arrayStringConcat(p.card_countries, ', ')                                         AS card_countries,\n  arrayStringConcat(p.card_brands, ', ')                                            AS card_brands,\n  if(length(p.card_countries) = 0\n     OR (length(p.billing_countries) = 1\n         AND length(p.card_countries) = 1\n         AND p.billing_countries[1] = p.card_countries[1]),\n     'match', 'mismatch')                                                           AS billing_vs_card,\n  p.first_seen                                                                      AS first_seen,\n  p.last_seen                                                                       AS last_seen\nFROM per_email p\nLEFT JOIN latest_users u ON p.user_id = u.id\nORDER BY p.charges DESC\nLIMIT 50",
           "refId": "A"
         }
       ]

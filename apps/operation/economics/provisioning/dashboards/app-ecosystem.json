@@ -1118,7 +1118,7 @@
                 "type": "grafana-clickhouse-datasource",
                 "uid": "PAD1A0A25CD30D456"
             },
-            "description": "Tier balance bucket (orange) vs Pack balance bucket (green) per category.",
+            "description": "Tier (free subsidy, orange) vs Pack (paid, green) per category.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -1394,7 +1394,7 @@
                 "type": "grafana-clickhouse-datasource",
                 "uid": "PAD1A0A25CD30D456"
             },
-            "description": "Tier balance bucket (orange) vs Pack balance bucket (green) per platform.",
+            "description": "Tier (free subsidy, orange) vs Pack (paid, green) per platform.",
             "fieldConfig": {
                 "defaults": {
                     "color": {

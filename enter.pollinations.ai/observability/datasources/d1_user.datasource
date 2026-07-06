@@ -1,7 +1,7 @@
 TOKEN tinybird_read READ
 
 DESCRIPTION >
-    Daily snapshot of D1 user table (auth state and balances)
+    Daily snapshot of D1 user table (auth state, tiers, balances)
 
 SCHEMA >
     `id` String `json:$.id`,
@@ -17,9 +17,11 @@ SCHEMA >
     `ban_expires` Nullable(Int64) `json:$.ban_expires`,
     `github_id` Nullable(Int32) `json:$.github_id`,
     `github_username` Nullable(String) `json:$.github_username`,
+    `tier` String `json:$.tier` DEFAULT 'spore',
     `tier_balance` Nullable(Float64) `json:$.tier_balance`,
     `pack_balance` Nullable(Float64) `json:$.pack_balance`,
     `crypto_balance` Nullable(Float64) `json:$.crypto_balance`,
+    `last_tier_grant` Nullable(Int64) `json:$.last_tier_grant`,
     `synced_at` DateTime `json:$.synced_at`
 
 ENGINE "MergeTree"

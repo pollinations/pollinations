@@ -157,6 +157,7 @@ export const track = (eventType: EventType) =>
         const byopClientKeyId = c.var.auth.apiKey?.byopClientKeyId;
         const userTracking: UserData = {
             userId: c.var.auth.user?.id,
+            userTier: c.var.auth.user?.tier,
             userGithubId: c.var.auth.user?.githubId
                 ? String(c.var.auth.user.githubId)
                 : undefined,
@@ -601,6 +602,7 @@ async function* asyncIteratorStream<T>(
 
 type UserData = {
     userId?: string;
+    userTier?: string;
     userGithubId?: string;
     userGithubUsername?: string;
     apiKeyId?: string;

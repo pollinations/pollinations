@@ -18,19 +18,6 @@ import { fmtPeriod } from "../lib/format";
 import { matchesMonth } from "../lib/months";
 import type { Data, UsageMonthlyRow } from "../types";
 
-function ecosystemCredit(row: UsageMonthlyRow): number {
-    return (
-        row.byop_credit_paid_pollen +
-        row.byop_credit_quest_pollen +
-        row.community_credit_paid_pollen +
-        row.community_credit_quest_pollen
-    );
-}
-
-function retainedPollen(row: UsageMonthlyRow): number {
-    return row.price_paid + row.price_quests - ecosystemCredit(row);
-}
-
 export function BurnTab({
     data,
     month = "",
@@ -84,14 +71,6 @@ export function BurnTab({
             {
                 key: "community_credit_quest_pollen",
                 value: (row) => row.community_credit_quest_pollen,
-            },
-            {
-                key: "ecosystem_credit",
-                value: ecosystemCredit,
-            },
-            {
-                key: "retained_pollen",
-                value: retainedPollen,
             },
         ],
         [],
@@ -156,16 +135,6 @@ export function BurnTab({
                             >
                                 community_quest
                             </TableHeaderCell>
-                            <TableHeaderCell
-                                {...headerProps("ecosystem_credit")}
-                            >
-                                ecosystem_credit
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                {...headerProps("retained_pollen")}
-                            >
-                                retained
-                            </TableHeaderCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -197,8 +166,6 @@ export function BurnTab({
                                 <TableCell>
                                     {row.community_credit_quest_pollen}
                                 </TableCell>
-                                <TableCell>{ecosystemCredit(row)}</TableCell>
-                                <TableCell>{retainedPollen(row)}</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>

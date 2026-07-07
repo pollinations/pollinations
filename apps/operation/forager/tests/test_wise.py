@@ -339,3 +339,64 @@ def test_fetch_month_follows_cursor(monkeypatch):
     assert "since=2026-07-01" in calls[0]
     assert "until=2026-08-01" in calls[0]
     assert "nextCursor=page-2" in calls[1]
+
+
+# ---------------------------------------------------------------------------
+# transaction splits (bundled transfers → invoice-line rows)
+# ---------------------------------------------------------------------------
+
+_SPLIT = [{
+    "match": {"date": "2026-01-09", "amount": 4943.18, "currency": "EUR", "text": "haferlach"},
+    "parts": [
+        {"vendor": "cloudflare", "category": "infra", "amount": 3240.67},
+        {"vendor": "scaleway", "category": "compute", "amount": 1452.91},
+        {"vendor": "google-workspace", "category": "saas", "amount": 249.60},
+    ],
+}]
+
+
+def _bundle_row():
+    return {
+        "date": "2026-01-09",
+        "vendor": "",
+        "category": "other",
+        "charged_amount": 4943.18,
+        "charged_currency": "EUR",
+    }
+
+
+def test_apply_splits_replaces_bundle_with_invoice_lines():
+    parts = wise.apply_splits(_bundle_row(), "THOMAS DANIEL HAFERLACH Sent", _SPLIT)
+    assert [(p["vendor"], p["category"], p["charged_amount"]) for p in parts] == [
+        ("cloudflare", "infra", 3240.67),
+        ("scaleway", "compute", 1452.91),
+        ("google-workspace", "saas", 249.6),
+    ]
+    assert all(p["date"] == "2026-01-09" and p["charged_currency"] == "EUR" for p in parts)
+    wise.validate_rows(parts)
+
+
+def test_apply_splits_passes_through_non_matching_rows():
+    row = _bundle_row()
+    row["charged_amount"] = 100.0
+    assert wise.apply_splits(row, "THOMAS DANIEL HAFERLACH Sent", _SPLIT) == [row]
+    other = _bundle_row()
+    assert wise.apply_splits(other, "SOMEONE ELSE", _SPLIT) == [other]
+
+
+def test_apply_splits_rejects_parts_that_do_not_sum():
+    bad = [{
+        "match": {"date": "2026-01-09", "amount": 4943.18, "currency": "EUR", "text": "haferlach"},
+        "parts": [{"vendor": "cloudflare", "category": "infra", "amount": 1000.0}],
+    }]
+    with pytest.raises(RuntimeError, match="parts sum"):
+        wise.apply_splits(_bundle_row(), "haferlach", bad)
+
+
+def test_shipped_split_config_is_coherent():
+    """Every configured split: parts sum to the match amount, vendors valid."""
+    for spec in wise.TRANSACTION_SPLITS:
+        total = round(sum(p["amount"] for p in spec["parts"]), 2)
+        assert abs(total - spec["match"]["amount"]) < 0.005, spec["match"]
+        for p in spec["parts"]:
+            assert p["vendor"] in wise.VENDOR_ALIASES, p["vendor"]

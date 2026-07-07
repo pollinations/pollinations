@@ -53,9 +53,10 @@ def build_transactions(secrets, months):
             row = transaction_for(activity)
             if row is None:
                 continue
-            rows.append(row)
-            if not row["vendor"]:
-                unmatched.append((row, activity_text(activity).strip()))
+            for part in apply_splits(row, activity_text(activity)):
+                rows.append(part)
+                if not part["vendor"]:
+                    unmatched.append((part, activity_text(activity).strip()))
     flag = unmatched_flag(unmatched)
     if flag:
         print(flag)
@@ -195,6 +196,58 @@ def fetch_statement(secrets, balance_id, month):
         f"?intervalStart={since}&intervalEnd={until}&type=COMPACT"
     )
     return http_json_sca(url, secrets).get("transactions", [])
+
+
+def _load_splits():
+    import json
+    from pathlib import Path
+
+    path = Path(__file__).resolve().parents[1] / "config" / "transaction_splits.json"
+    with open(path) as fh:
+        return json.load(fh)
+
+
+TRANSACTION_SPLITS = _load_splits()
+
+
+def apply_splits(row, text, splits=None):
+    """Replace one bank row with its invoice-line parts when a split rule matches.
+
+    Wise transfers can bundle several providers into one movement (e.g. a
+    reimbursement covering Cloudflare + Scaleway + Workspace invoices). A split
+    rule matches on (date, settled amount, currency, counterparty substring)
+    and replaces the row with one row per invoice line, each carrying an
+    explicit vendor and category. Parts must sum to the original amount to the
+    cent — a mismatch is a config error, not something to book.
+    """
+    if splits is None:
+        splits = TRANSACTION_SPLITS
+    for spec in splits:
+        m = spec["match"]
+        if (
+            row["date"] == m["date"]
+            and row["charged_currency"] == m["currency"]
+            and abs(row["charged_amount"] - m["amount"]) < 0.005
+            and m["text"] in text.lower()
+        ):
+            parts = [
+                {
+                    "date": row["date"],
+                    "vendor": p["vendor"],
+                    "category": p["category"],
+                    "charged_amount": round(float(p["amount"]), 2),
+                    "charged_currency": row["charged_currency"],
+                }
+                for p in spec["parts"]
+            ]
+            total = round(sum(p["charged_amount"] for p in parts), 2)
+            if abs(total - row["charged_amount"]) > 0.005:
+                raise RuntimeError(
+                    f"transaction split parts sum {total} != {row['charged_amount']} "
+                    f"for {m['date']} {m['amount']} {m['currency']}"
+                )
+            return parts
+    return [row]
 
 
 def transaction_for(activity):

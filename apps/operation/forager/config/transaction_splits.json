@@ -1,0 +1,28 @@
+[
+  {
+    "match": { "date": "2026-01-09", "amount": 2165.09, "currency": "EUR", "text": "haferlach" },
+    "note": "Thomas V141 — reimbursement for Cloudflare Jan 2026 (IN-54966851)",
+    "parts": [
+      { "vendor": "cloudflare", "category": "infra", "amount": 2165.09 }
+    ]
+  },
+  {
+    "match": { "date": "2026-01-09", "amount": 4943.18, "currency": "EUR", "text": "haferlach" },
+    "note": "Thomas V142 — Cloudflare Dec 2025 (IN-53016842) + Scaleway Jun–Nov 2025 + Google Workspace FY2025",
+    "parts": [
+      { "vendor": "cloudflare", "category": "infra", "amount": 3240.67 },
+      { "vendor": "scaleway", "category": "compute", "amount": 1452.91 },
+      { "vendor": "google-workspace", "category": "saas", "amount": 249.6 }
+    ]
+  },
+  {
+    "match": { "date": "2026-06-08", "amount": 4428.17, "currency": "EUR", "text": "haferlach" },
+    "note": "Thomas V143 — Cloudflare Feb (IN-57102048) + Mar (IN-59371430) + Apr (IN-61954991) 2026 + Google Workspace Jan–Jun 2026",
+    "parts": [
+      { "vendor": "cloudflare", "category": "infra", "amount": 1517.25 },
+      { "vendor": "cloudflare", "category": "infra", "amount": 1525.46 },
+      { "vendor": "cloudflare", "category": "infra", "amount": 966.07 },
+      { "vendor": "google-workspace", "category": "saas", "amount": 419.39 }
+    ]
+  }
+]

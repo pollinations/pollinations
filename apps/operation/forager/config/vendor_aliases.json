@@ -18,7 +18,10 @@
     ],
     "category": "compute",
     "category_rules": [
-      { "match": "amazon*", "category": "office" }
+      {
+        "match": "amazon*",
+        "category": "office"
+      }
     ]
   },
   "alibaba": {
@@ -45,8 +48,9 @@
   },
   "lambda": {
     "aliases": [
+      "lambda cloud",
       "lambda labs",
-      "lambda cloud"
+      "self-hosted"
     ],
     "category": "compute"
   },
@@ -421,13 +425,6 @@
     ],
     "category": "payroll"
   },
-  "thomas": {
-    "aliases": [
-      "thomas daniel haferlach",
-      "thomas haferlach"
-    ],
-    "category": "infra"
-  },
   "self-issued": {
     "aliases": [
       "myceli.ai",
@@ -456,10 +453,6 @@
     "category": "compute"
   },
   "community": {
-    "aliases": [],
-    "category": "compute"
-  },
-  "self-hosted": {
     "aliases": [],
     "category": "compute"
   },

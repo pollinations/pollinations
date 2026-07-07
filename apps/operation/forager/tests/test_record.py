@@ -99,8 +99,8 @@ def test_meter_is_list():
 
 
 def test_meter_is_populated():
-    # 8 connectors: aws CE retired (manual invoice rows); azure + openrouter added.
-    assert len(registry.METER) == 8
+    # 10 connectors: aws CE retired (manual invoice rows); azure/openrouter/elevenlabs/runpod added.
+    assert len(registry.METER) == 10
 
 
 class _FakeTB:
@@ -214,6 +214,71 @@ def test_record_meter_requires_credit_or_cash():
     with pytest.raises(SystemExit) as exc:
         record.main(
             ["provider", "deepinfra", "2026-06", "--currency", "USD"],
+            tb_factory=_make_factory(_FakeTB()),
+        )
+    assert exc.value.code != 0
+
+
+# ---------------------------------------------------------------------------
+# record.main: grant subcommand
+# ---------------------------------------------------------------------------
+
+def test_record_grant_appends_row():
+    fake = _FakeTB()
+    record.main(
+        ["grant", "lambda", "--granted", "7500", "--currency", "USD",
+         "--start", "2026-03-30"],
+        tb_factory=_make_factory(fake),
+    )
+    ds, rows = fake.appended[0]
+    assert ds == "grants"
+    r = rows[0]
+    assert r["vendor"] == "lambda"
+    assert r["label"] == ""
+    assert r["granted"] == 7500.0
+    assert r["currency"] == "USD"
+    assert r["start_date"] == "2026-03-30"
+    assert r["expires"] == "1970-01-01"
+    assert len(r["recorded_at"]) == 19  # "YYYY-MM-DD HH:MM:SS"
+
+
+def test_record_grant_label_and_expiry():
+    fake = _FakeTB()
+    record.main(
+        ["grant", "azure", "--granted", "250036", "--currency", "USD",
+         "--start", "2026-04-06", "--expires", "2028-04-06", "--label", "lot 2"],
+        tb_factory=_make_factory(fake),
+    )
+    r = fake.appended[0][1][0]
+    assert r["label"] == "lot 2"
+    assert r["expires"] == "2028-04-06"
+
+
+def test_record_grant_unknown_vendor_exits():
+    with pytest.raises(SystemExit) as exc:
+        record.main(
+            ["grant", "NOT_A_VENDOR", "--granted", "1", "--currency", "USD",
+             "--start", "2026-01-01"],
+            tb_factory=_make_factory(_FakeTB()),
+        )
+    assert exc.value.code != 0
+
+
+def test_record_grant_bad_start_date_exits():
+    with pytest.raises(SystemExit) as exc:
+        record.main(
+            ["grant", "lambda", "--granted", "1", "--currency", "USD",
+             "--start", "2026-03"],
+            tb_factory=_make_factory(_FakeTB()),
+        )
+    assert exc.value.code != 0
+
+
+def test_record_grant_zero_granted_exits():
+    with pytest.raises(SystemExit) as exc:
+        record.main(
+            ["grant", "lambda", "--granted", "0", "--currency", "USD",
+             "--start", "2026-03-30"],
             tb_factory=_make_factory(_FakeTB()),
         )
     assert exc.value.code != 0

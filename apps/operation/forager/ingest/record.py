@@ -1,13 +1,18 @@
-"""Manual entry CLI for meter readings.
+"""Manual entry CLI for meter readings and grant registrations.
 
 Usage:
-    python3 -m ingest.record meter <vendor> <YYYY-MM>
+    python3 -m ingest.record provider <vendor> <YYYY-MM>
                                    --currency USD|EUR [--credit N] [--paid N]
+    python3 -m ingest.record grant <vendor> --granted N --currency USD|EUR
+                                   --start YYYY-MM-DD [--label L] [--expires YYYY-MM-DD]
 
-Appends one row to `provider_monthly` with source="manual".
-Vendor must be in registry.CANONICAL; month must match YYYY-MM.
+`provider` appends one row to `provider_monthly` with source="manual".
+`grant` appends one row to `grants` (raw grant facts; latest recorded_at wins
+per (vendor, label) at read time — a correction is just a re-record).
+Vendor must be in registry.CANONICAL.
 """
 import argparse
+import datetime
 import json
 import re
 import sys
@@ -18,7 +23,9 @@ from . import creds as _creds
 from . import tb as _tb
 
 _MONTH_RE = re.compile(r'^\d{4}-(0[1-9]|1[0-2])$')
+_DATE_RE = re.compile(r'^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$')
 _CURRENCY_RE = re.compile(r"^[A-Z]{3,8}$")
+_NO_EXPIRY = "1970-01-01"
 
 
 def _default_tb_factory(token):
@@ -53,6 +60,12 @@ def _validate_amount(name, amount):
         sys.exit(1)
 
 
+def _validate_date(name, value):
+    if not _DATE_RE.match(value):
+        print(f"error: {name} must be YYYY-MM-DD, got '{value}'", file=sys.stderr)
+        sys.exit(1)
+
+
 def main(argv=None, tb_factory=None):
     """Entry point.
 
@@ -72,6 +85,15 @@ def main(argv=None, tb_factory=None):
     mp.add_argument("--currency", required=True, help="source currency code, e.g. USD or EUR")
     mp.add_argument("--credit", type=float, default=0.0, help="credit burn amount")
     mp.add_argument("--paid", type=float, default=0.0, help="paid/prepaid amount")
+
+    # grant subcommand
+    gp = sub.add_parser("grant", help="append a grants registration")
+    gp.add_argument("vendor",     help="canonical vendor slug")
+    gp.add_argument("--granted",  type=float, required=True, help="granted amount in source currency")
+    gp.add_argument("--currency", required=True, help="source currency code, e.g. USD or EUR")
+    gp.add_argument("--start",    required=True, help="grant start date YYYY-MM-DD")
+    gp.add_argument("--label",    default="", help="distinguishes multiple grants per vendor")
+    gp.add_argument("--expires",  default=_NO_EXPIRY, help="expiry date YYYY-MM-DD (omit = no expiry)")
 
     args = parser.parse_args(argv)
 
@@ -101,6 +123,27 @@ def main(argv=None, tb_factory=None):
             "source": "manual",
         }
         client.append("provider_monthly", [row])
+        print(json.dumps(row))
+
+    elif args.cmd == "grant":
+        _validate_vendor(args.vendor)
+        _validate_amount("granted", args.granted)
+        if args.granted == 0:
+            print("error: --granted must be > 0", file=sys.stderr)
+            sys.exit(1)
+        _validate_date("start", args.start)
+        _validate_date("expires", args.expires)
+        currency = _validate_currency(args.currency)
+        row = {
+            "vendor": args.vendor,
+            "label": args.label,
+            "granted": round(float(args.granted), 2),
+            "currency": _currency(currency),
+            "start_date": args.start,
+            "expires": args.expires,
+            "recorded_at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
+        }
+        client.append("grants", [row])
         print(json.dumps(row))
 
 

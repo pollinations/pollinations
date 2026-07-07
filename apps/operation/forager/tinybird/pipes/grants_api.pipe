@@ -1,0 +1,16 @@
+TOKEN "treasury_web" READ
+
+NODE endpoint
+SQL >
+    SELECT
+        vendor,
+        label,
+        argMax(granted, recorded_at) AS granted,
+        argMax(currency, recorded_at) AS currency,
+        formatDateTime(argMax(start_date, recorded_at), '%F') AS start_date,
+        formatDateTime(argMax(expires, recorded_at), '%F') AS expires
+    FROM grants
+    GROUP BY vendor, label
+    ORDER BY vendor, start_date
+
+TYPE endpoint

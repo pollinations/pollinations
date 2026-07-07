@@ -1,6 +1,6 @@
 """Hermetic tests for meter connectors (B5).
 
-Connectors: azure, deepinfra, ovh, vast, fireworks, gcp, openai_, openrouter.
+Connectors: azure, deepinfra, elevenlabs, ovh, vast, fireworks, gcp, openai_, openrouter, runpod.
 All hermetic — http_json monkeypatched; run_cmd injected for CLI connectors.
 No network, no SOPS, no real credentials.
 
@@ -18,11 +18,13 @@ import pytest
 
 import ingest.connectors.vendors.azure as _az
 import ingest.connectors.vendors.deepinfra as _di
+import ingest.connectors.vendors.elevenlabs as _el
 import ingest.connectors.vendors.ovh as _ovh
 import ingest.connectors.vendors.vast as _vast
 import ingest.connectors.vendors.fireworks as _fw
 import ingest.connectors.vendors.openai_ as _oai
 import ingest.connectors.vendors.openrouter as _or
+import ingest.connectors.vendors.runpod as _rp
 import ingest.connectors.vendors.gcp as _gcp
 from ingest.connectors import registry
 
@@ -714,6 +716,158 @@ def test_openrouter_meter_uses_management_key(monkeypatch):
     assert cap.calls[0]["headers"]["Authorization"] == "Bearer or-mgmt-key"
 
 
+
+# ===========================================================================
+# runpod.meter
+# ===========================================================================
+
+_RP_CREDS = {"RUNPOD_API_KEY": "rpa-read-key"}
+
+
+def _rp_responses(pods=(), endpoints=(), volumes=()):
+    """One response per billing surface, in _SURFACES order.
+
+    pods/endpoints rows carry `time`; networkvolumes rows carry `startDate`.
+    """
+    return [
+        [{"time": t, "amount": a, "podId": "p1"} for t, a in pods],
+        [{"time": t, "amount": a, "endpointId": "e1"} for t, a in endpoints],
+        [{"startDate": t, "amount": a} for t, a in volumes],
+    ]
+
+
+def test_runpod_meter_sums_three_surfaces_by_month(monkeypatch):
+    cap = Capture(_rp_responses(
+        pods=[("2026-04-01", 1069.24), ("2026-05-01", 1217.04)],
+        endpoints=[("2026-04-01", 115.36)],
+        volumes=[("2026-04-01", 6.25), ("2026-05-01", 7.32)],
+    ))
+    monkeypatch.setattr(_rp, "http_json", cap)
+    rows = _rp.meter(_RP_CREDS, ["2026-04", "2026-05"], TODAY)
+    assert {r["month"]: r["paid"] for r in rows} == {
+        "2026-04": 1190.85, "2026-05": 1224.36,
+    }
+    for r in rows:
+        assert r["vendor"] == "runpod"
+        assert r["credit"] == 0.0
+        assert r["source"] == "api"
+        assert r["currency"] == "USD"
+
+
+def test_runpod_meter_window_and_auth(monkeypatch):
+    cap = Capture(_rp_responses())
+    monkeypatch.setattr(_rp, "http_json", cap)
+    _rp.meter(_RP_CREDS, ["2026-04", "2026-06"], TODAY)
+    assert len(cap.calls) == 3
+    for call, surface in zip(cap.calls, ("pods", "endpoints", "networkvolumes")):
+        assert f"/billing/{surface}?" in call["url"]
+        assert "bucketSize=month" in call["url"]
+        assert "startTime=2026-04-01T00:00:00Z" in call["url"]
+        assert "endTime=2026-07-01T00:00:00Z" in call["url"]
+        assert call["headers"]["Authorization"] == "Bearer rpa-read-key"
+
+
+def test_runpod_meter_out_of_scope_month_skipped(monkeypatch):
+    cap = Capture(_rp_responses(pods=[("2026-03-01", 2.87)]))
+    monkeypatch.setattr(_rp, "http_json", cap)
+    assert _rp.meter(_RP_CREDS, ["2026-04"], TODAY) == []
+
+
+def test_runpod_meter_zero_month_excluded(monkeypatch):
+    cap = Capture(_rp_responses(pods=[("2026-04-01", 0.0)]))
+    monkeypatch.setattr(_rp, "http_json", cap)
+    assert _rp.meter(_RP_CREDS, ["2026-04"], TODAY) == []
+
+
+def test_runpod_meter_december_window_rolls_year(monkeypatch):
+    cap = Capture(_rp_responses())
+    monkeypatch.setattr(_rp, "http_json", cap)
+    _rp.meter(_RP_CREDS, ["2026-12"], TODAY)
+    assert "endTime=2027-01-01T00:00:00Z" in cap.calls[0]["url"]
+
+
+def test_runpod_meter_missing_key_raises():
+    with pytest.raises(RuntimeError, match="RUNPOD_API_KEY"):
+        _rp.meter({}, ["2026-07"], TODAY)
+
+
+
+# ===========================================================================
+# elevenlabs.meter
+# ===========================================================================
+
+_EL_CREDS = {"ELEVENLABS_API_KEY": "xi-admin-key"}
+
+
+def _el_analytics(*day_cost):
+    """Columnar analytics payload shaped like the live endpoint."""
+    return {
+        "columns": ["timestamp", "total_usage", "total_minutes", "total_cost",
+                    "usage_count", "total_charge_count"],
+        "rows": [[f"{day}T00:00:00Z", 0, 0.0, cost, 0, 0.0] for day, cost in day_cost],
+    }
+
+
+def test_elevenlabs_meter_sums_days_by_month(monkeypatch):
+    cap = Capture([_el_analytics(("2026-05-01", 100.0), ("2026-05-02", 26.74), ("2026-06-01", 5.0))])
+    monkeypatch.setattr(_el, "http_json", cap)
+    rows = _el.meter(_EL_CREDS, ["2026-05", "2026-06"], TODAY)
+    assert {r["month"]: r["paid"] for r in rows} == {"2026-05": 126.74, "2026-06": 5.0}
+    for r in rows:
+        assert r["vendor"] == "elevenlabs"
+        assert r["source"] == "api"
+        assert r["currency"] == "USD"
+
+
+def test_elevenlabs_meter_grant_months_are_credit(monkeypatch):
+    """Feb–Apr 2026 predate the first card charge — startup-grant credit."""
+    cap = Capture([_el_analytics(("2026-02-10", 954.0), ("2026-05-10", 226.74))])
+    monkeypatch.setattr(_el, "http_json", cap)
+    rows = _el.meter(_EL_CREDS, ["2026-02", "2026-05"], TODAY)
+    feb = next(r for r in rows if r["month"] == "2026-02")
+    may = next(r for r in rows if r["month"] == "2026-05")
+    assert feb["credit"] == 954.0 and feb["paid"] == 0.0
+    assert may["paid"] == 226.74 and may["credit"] == 0.0
+
+
+def test_elevenlabs_meter_zero_months_excluded(monkeypatch):
+    cap = Capture([_el_analytics(("2026-01-05", 0.0))])
+    monkeypatch.setattr(_el, "http_json", cap)
+    assert _el.meter(_EL_CREDS, ["2026-01"], TODAY) == []
+
+
+def test_elevenlabs_meter_out_of_scope_month_skipped(monkeypatch):
+    cap = Capture([_el_analytics(("2026-05-01", 10.0), ("2026-06-01", 20.0))])
+    monkeypatch.setattr(_el, "http_json", cap)
+    rows = _el.meter(_EL_CREDS, ["2026-06"], TODAY)
+    assert {r["month"] for r in rows} == {"2026-06"}
+
+
+def test_elevenlabs_meter_body_shape(monkeypatch):
+    """Millisecond timestamps + usd units — the endpoint 422s on anything else."""
+    cap = Capture([_el_analytics()])
+    monkeypatch.setattr(_el, "http_json", cap)
+    _el.meter(_EL_CREDS, ["2026-05", "2026-06"], TODAY)
+    body = cap.calls[0]["data"]
+    assert body["column_units"] == "usd"
+    assert body["interval_seconds"] == 86400
+    assert body["start_time"] == 1777593600000  # 2026-05-01T00:00:00Z in ms
+    assert body["end_time"] == 1782864000000    # 2026-07-01T00:00:00Z in ms
+    assert cap.calls[0]["headers"]["xi-api-key"] == "xi-admin-key"
+
+
+def test_elevenlabs_meter_unexpected_columns_raise(monkeypatch):
+    cap = Capture([{"columns": ["nope"], "rows": []}])
+    monkeypatch.setattr(_el, "http_json", cap)
+    with pytest.raises(RuntimeError, match="columns"):
+        _el.meter(_EL_CREDS, ["2026-05"], TODAY)
+
+
+def test_elevenlabs_meter_missing_key_raises():
+    with pytest.raises(RuntimeError, match="ELEVENLABS_API_KEY"):
+        _el.meter({}, ["2026-05"], TODAY)
+
+
 # ===========================================================================
 # gcp.meter
 # ===========================================================================
@@ -1021,18 +1175,18 @@ def test_openai_meter_vendor_slug(monkeypatch):
 # ===========================================================================
 
 def test_meter_registry_populated():
-    """METER must contain 7 entries (aws retired 2026-07: billing moved to the
+    """METER must contain 10 entries (aws retired 2026-07: billing moved to the
     Automat-it reseller, whose credits/accounts Cost Explorer cannot see —
     aws rows are manual from the monthly reseller invoice; azure added
-    2026-07: billing-profile invoice connector; openrouter added 2026-07:
-    activity rollup)."""
-    assert len(registry.METER) == 8
+    2026-07: billing-profile invoice connector; openrouter + elevenlabs +
+    runpod added 2026-07)."""
+    assert len(registry.METER) == 10
 
 
 def test_meter_registry_slugs():
-    """METER must contain all eight vendor slugs."""
+    """METER must contain all ten vendor slugs."""
     slugs = {slug for slug, _ in registry.METER}
-    for expected in ("azure", "deepinfra", "vast.ai", "ovhcloud", "fireworks", "google", "openai", "openrouter"):
+    for expected in ("azure", "deepinfra", "elevenlabs", "vast.ai", "ovhcloud", "fireworks", "google", "openai", "openrouter", "runpod"):
         assert expected in slugs, f"METER missing: {expected}"
     assert "aws" not in slugs, "aws CE connector was retired; rows are manual"
 

@@ -16,8 +16,10 @@ TABLES = {
     "provider_monthly": "month",
     "pollen_monthly": "month",
     "revenue_monthly": "month",
+    "grants": None,
     "ingest_runs": None,
 }
+_ORDER = {"grants": "recorded_at"}
 _MONTH_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
 _VENDOR_RE = re.compile(r"^[a-z0-9._-]+$")
 
@@ -45,7 +47,7 @@ def build_query(table, vendor, month, limit):
     query = f"SELECT * FROM {table}"
     if where:
         query += " WHERE " + " AND ".join(where)
-    order = month_column or "run_at"
+    order = month_column or _ORDER.get(table, "run_at")
     query += f" ORDER BY {order} DESC LIMIT {int(limit)}"
     return query
 

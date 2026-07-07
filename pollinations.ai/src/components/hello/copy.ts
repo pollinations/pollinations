@@ -17,7 +17,7 @@ const BYOP_DOCS =
 const ENTER_MODELS = "https://enter.pollinations.ai#models";
 const POLLI_CLI =
     "https://github.com/pollinations/pollinations/tree/main/packages/polli-cli";
-const ENTER_TIERS_FAQ = "https://enter.pollinations.ai#what-are-tiers";
+const ENTER_QUESTS_FAQ = "https://enter.pollinations.ai#how-do-quests-work";
 const GITHUB_FORK = "https://github.com/pollinations/pollinations/fork";
 
 type IconComponent = ComponentType<IconProps>;
@@ -88,9 +88,9 @@ export const TOOLBOX: ToolboxItem[] = [
     },
     {
         icon: SproutIcon,
-        title: "Free Credits",
-        desc: "- **Refill Pollen** for prototypes & testing\n- Earn extra from **Pollen Quests**\n- More activity unlocks more room",
-        link: { text: "How tiers work", href: ENTER_TIERS_FAQ },
+        title: "Pollen Quests",
+        desc: "- Earn **Pollen** by completing **Quests**\n- Free Pollen for prototypes & testing\n- More Quests, more ways to earn",
+        link: { text: "How Quests work", href: ENTER_QUESTS_FAQ },
     },
     {
         icon: ImageIcon,
@@ -107,7 +107,7 @@ export const TOOLBOX: ToolboxItem[] = [
 
 export const CTA = {
     title: "Start building",
-    body: "One API. Free credits to start, and earnings when your app gets used.",
+    body: "One API. Free Pollen from Quests to start, and earnings when your app gets used.",
     registerHref: ENTER_URL,
     docsHref: ENTER_DOCS,
 };

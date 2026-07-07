@@ -1,0 +1,32 @@
+DESCRIPTION >
+    Incrementally maintains quest_model_modalities_mv: for every billed,
+    successful text/image/audio generation, sets the user's "used this
+    modality" flag. Runs at ingest time, so the model-usage quest endpoint never
+    scans raw generation_event (a large raw GROUP BY that times out at prod
+    scale). max() of a 0/1 indicator makes backfill duplicates idempotent.
+
+    Bounded to the last 3 months: generation_event is partitioned/sorted by
+    start_time, so the one-time deploy backfill skips older partitions and stays
+    cheap. now() here is evaluated at ingest/backfill time, so live events are
+    always kept (their start_time is current) and the window slides forward. Can
+    be widened later if older milestones need crediting.
+
+NODE quest_model_modalities_populate_node
+SQL >
+    SELECT
+        user_id,
+        maxState(toUInt8(event_type = 'generate.text')) AS used_text,
+        maxState(toUInt8(event_type = 'generate.image' AND token_count_completion_video_seconds = 0 AND token_count_completion_video_tokens = 0)) AS used_image,
+        maxState(toUInt8(event_type = 'generate.audio')) AS used_audio
+    FROM generation_event
+    WHERE user_id != ''
+      AND user_id != 'undefined'
+      AND response_status >= 200
+      AND response_status < 300
+      AND total_price > 0
+      AND event_type IN ('generate.text', 'generate.image', 'generate.audio')
+      AND start_time >= now() - INTERVAL 3 MONTH
+    GROUP BY user_id
+
+TYPE MATERIALIZED
+DATASOURCE quest_model_modalities_mv

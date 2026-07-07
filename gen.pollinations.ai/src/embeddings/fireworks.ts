@@ -17,10 +17,10 @@ export async function callFireworksEmbed(
     input: string[],
     dimensions?: number,
 ): Promise<OpenAIEmbeddingResponse> {
-    const apiKey = env.FIREWORKS_API_KEY;
+    const apiKey = env.FIREWORKS_NEO_API_KEY;
 
     if (!apiKey) {
-        throw new Error("FIREWORKS_API_KEY is not configured");
+        throw new Error("FIREWORKS_NEO_API_KEY is not configured");
     }
 
     const body: FireworksEmbeddingRequest = {

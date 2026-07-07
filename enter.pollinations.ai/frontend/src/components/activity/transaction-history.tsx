@@ -79,7 +79,7 @@ function formatCost(value: number): string {
 }
 
 function MeterSourceChip({ source }: { source: string | null }) {
-    if (source === "tier") return <TierChip>tier</TierChip>;
+    if (source === "tier") return <TierChip>quest</TierChip>;
     return <PaidChip>paid</PaidChip>;
 }
 

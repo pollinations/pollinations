@@ -10,6 +10,7 @@ import {
     creditAutoTopUpInvoice,
     markAutoTopUpInvoiceFailed,
 } from "../utils/stripe-billing.ts";
+import { recordStripeCardFingerprintAttempt } from "../utils/stripe-card-gate.ts";
 
 interface StripeEventData {
     eventType: string;
@@ -42,6 +43,7 @@ type ChargeSnapshot = {
     cardCountry: string;
     cardBrand: string;
     cardNetwork: string;
+    cardFingerprint: string;
     riskLevel: string;
     riskScore: number;
 };
@@ -53,6 +55,7 @@ const EMPTY_CHARGE_SNAPSHOT: ChargeSnapshot = {
     cardCountry: "",
     cardBrand: "",
     cardNetwork: "",
+    cardFingerprint: "",
     riskLevel: "",
     riskScore: 0,
 };
@@ -84,9 +87,47 @@ function snapshotFromCharge(
         cardCountry: card?.country ?? "",
         cardBrand: card?.brand ?? "",
         cardNetwork: card?.network ?? "",
+        cardFingerprint: card?.fingerprint ?? "",
         riskLevel: outcome?.risk_level ?? "",
         riskScore: outcome?.risk_score ?? 0,
     };
+}
+
+function readUserIdFromMetadata(
+    metadata: Stripe.Metadata | null | undefined,
+): string {
+    return metadata?.userId || metadata?.pollinations_user_id || "";
+}
+
+async function recordFailedCardFingerprintFromCharge({
+    env,
+    event,
+    charge,
+    snapshot,
+    fallbackUserId = "",
+}: {
+    env: CloudflareBindings;
+    event: Stripe.Event;
+    charge: Stripe.Charge | null | undefined;
+    snapshot: ChargeSnapshot;
+    fallbackUserId?: string;
+}): Promise<void> {
+    if (!charge || !snapshot.cardFingerprint) return;
+    const userId = readUserIdFromMetadata(charge.metadata) || fallbackUserId;
+
+    try {
+        await recordStripeCardFingerprintAttempt(env.DB, {
+            eventId: event.id,
+            userId,
+            cardFingerprint: snapshot.cardFingerprint,
+            createdAt: event.created ? event.created * 1000 : Date.now(),
+        });
+    } catch (err) {
+        console.error(
+            `Failed to record Stripe failed-card fingerprint for event ${event.id}:`,
+            err,
+        );
+    }
 }
 
 /**
@@ -335,7 +376,12 @@ function emitPaymentIntentAnalytics(
     {
         paymentStatus,
         customerEmail,
-    }: { paymentStatus: string; customerEmail: string },
+        recordFailedCardFingerprint = false,
+    }: {
+        paymentStatus: string;
+        customerEmail: string;
+        recordFailedCardFingerprint?: boolean;
+    },
 ): void {
     const methodsOffered = (paymentIntent.payment_method_types ?? []).join(",");
 
@@ -346,6 +392,15 @@ function emitPaymentIntentAnalytics(
                 paymentIntent.id,
             );
             const snapshot = snapshotFromCharge(charge);
+            if (recordFailedCardFingerprint) {
+                await recordFailedCardFingerprintFromCharge({
+                    env: c.env,
+                    event,
+                    charge,
+                    snapshot,
+                    fallbackUserId: paymentIntent.metadata?.userId || "",
+                });
+            }
             await sendStripeEventToTinybird(c.env, {
                 eventType: event.type,
                 eventId: event.id,
@@ -521,9 +576,9 @@ export const stripeWebhooksRoutes = new Hono<Env>()
             case "charge.succeeded": {
                 // The Charge IS the event payload, so we can read
                 // payment_method_details + card.country + risk_score directly
-                // without an additional Stripe API call. Emitted to Tinybird
-                // for analytics; D1 credit insert happens via the parallel
-                // checkout.session.completed / async_payment_succeeded path.
+                // without an additional Stripe API call. Pack credit still
+                // happens via checkout.session.completed; successful cards
+                // don't feed the failed-card gate ledger.
                 const charge = event.data.object as Stripe.Charge;
                 const snapshot = snapshotFromCharge(charge);
                 c.executionCtx.waitUntil(
@@ -727,6 +782,7 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                 emitPaymentIntentAnalytics(c, stripe, event, paymentIntent, {
                     paymentStatus: "failed",
                     customerEmail: paymentIntent.receipt_email || "",
+                    recordFailedCardFingerprint: true,
                 });
                 break;
             }

@@ -385,11 +385,18 @@ Or revert the SOPS commit on `main`, push `main` to `production`, and redeploy.
 
 Hosts reached by SSH during `rotate-infra-gpu-token.sh`. SSH keys are stored in SOPS (`enter.pollinations.ai/secrets/{dev,staging,prod}.vars.json`) and extracted into a temp file at rotation time.
 
-| Worker | Pod / Host | SSH key (SOPS) | SSH target | `.env` path | Restart |
+> ⚠️ **The script's Flux+Z-Image leg is STALE (2026-07-02):** pod
+> `hsl3ksl31lvrcc` is terminated — flux moved to Vast.ai
+> (`image.pollinations.ai/GPU_INSTANCES.md`) and zimage to 3 single-GPU pods.
+> Pre-flight will fail against the dead host; rework the script before the next
+> rotation.
+
+| Worker | Pod / Host | SSH key | SSH target | `.env` path | Restart |
 |---|---|---|---|---|---|
-| Flux + Z-Image | RunPod `hsl3ksl31lvrcc` | `SSH_RUNPOD_FLUX_ZIMAGE` | `root@38.65.239.17 -p 19489` | `$HOME/.env` | screen sessions |
+| Flux | Vast.ai 5090 instance(s) — see `image.pollinations.ai/GPU_INSTANCES.md` | local `~/.ssh/pollinations_services_2026` (not in SOPS; attached via `vastai attach ssh`) | `vastai show instances` for IP/port | `nunchaku/.env.flux` | restart `flux` screen |
+| Z-Image | 3× RunPod single-GPU pods (discover via `runpodctl pod list`) | `SSH_RUNPOD_KLEIN` (SOPS; `SSH_RUNPOD_FLUX_ZIMAGE` does NOT auth) | rotating tcp port via RunPod GraphQL | env from PID 1 | `/root/relaunch-zimage.sh` |
 | Klein 4B | RunPod `lqh6weiexk4sth` | RunPod relay | `<pod-id>-<key-id>@ssh.runpod.io` (interactive only) | `/workspace/restart.sh` reads `PLN_GPU_TOKEN` from process env | `/workspace/restart.sh` |
-| LTX-2 + ACE-Step + Sana | Lambda Labs GH200 | `SSH_LAMBDA_SANA_LTX2_ACESTEP` | `ubuntu@192.222.51.105` | `$HOME/.env` | `systemctl restart ltx2 acestep sana` |
+| LTX-2 + ACE-Step + Sana | Lambda Labs GH200 | `SSH_LAMBDA_SANA_LTX2_ACESTEP` (SOPS) | `ubuntu@192.222.51.105` | `$HOME/.env` | `systemctl restart ltx2 acestep sana` |
 
 Klein's pod ID changes if recreated. Verify current ID with `runpodctl pod list` and the `KLEIN_URL` env in `gen.pollinations.ai/secrets/prod.vars.json`. The relay does not support non-interactive command execution — rotations against Klein currently require a manual edit of `/workspace/restart.sh` (which has the token baked in via `export`) followed by re-running it inside an interactive SSH session.
 

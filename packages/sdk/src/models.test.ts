@@ -44,6 +44,15 @@ beforeEach(() => {
                         max_reference_videos: 10,
                     },
                     {
+                        name: "alice/deepseek",
+                        aliases: ["community/alice/deepseek"],
+                        title: "DeepSeek by @alice",
+                        category: "text",
+                        community: true,
+                        input_modalities: ["text"],
+                        output_modalities: ["text"],
+                    },
+                    {
                         name: "embedding-small",
                         title: "Embedding Small",
                         category: "embedding",
@@ -105,6 +114,7 @@ describe("fetchModelCatalog", () => {
         ).toEqual([
             ["still", "image"],
             ["movie", "video"],
+            ["alice/deepseek", "text"],
             ["speech-from-chat", "audio"],
             ["tts", "audio"],
             ["embedding-small", "embedding"],
@@ -139,6 +149,16 @@ describe("fetchModelCatalog", () => {
             videoCapabilities: ["start_frame", "end_frame"],
             maxReferenceImages: 2,
             maxReferenceVideos: 10,
+        });
+        const communityModel = catalog.models.find(
+            (model) => model.id === "alice/deepseek",
+        );
+        expect(communityModel).toMatchObject({
+            category: "text",
+            community: true,
+            aliases: ["community/alice/deepseek"],
+            inputModalities: ["text"],
+            outputModalities: ["text"],
         });
         // Curated catalog item — raw ModelInfo wire fields don't leak through.
         expect(stillModel).not.toHaveProperty("input_modalities");

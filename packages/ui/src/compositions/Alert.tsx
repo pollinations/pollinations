@@ -2,11 +2,10 @@ import type { ComponentPropsWithoutRef, FC, ReactNode } from "react";
 import { cn } from "../lib/cn.ts";
 import { Text } from "../primitives/Typography.tsx";
 
-type AlertIntent = "info" | "success" | "warning" | "danger";
+type AlertIntent = "info" | "warning" | "danger";
 
 const intentClasses: Record<AlertIntent, string> = {
     info: "polli:bg-theme-bg-pale polli:text-theme-text-strong",
-    success: "polli:bg-intent-success-bg-light polli:text-intent-success-text",
     warning: "polli:bg-intent-warning-bg-light polli:text-intent-warning-text",
     danger: "polli:bg-intent-danger-bg-light polli:text-intent-danger-text",
 };

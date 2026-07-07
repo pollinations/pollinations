@@ -89,6 +89,23 @@ describe("openaiUsageToUsage", () => {
         expect(usage.promptCachedTokens).toBe(30);
     });
 
+    it("should handle Inception top-level cached and reasoning tokens", () => {
+        const openaiUsage = {
+            prompt_tokens: 8,
+            reasoning_tokens: 49,
+            completion_tokens: 4,
+            total_tokens: 61,
+            cached_input_tokens: 8,
+        };
+
+        const usage = openaiUsageToUsage(openaiUsage);
+
+        expect(usage.promptTextTokens).toBe(0);
+        expect(usage.promptCachedTokens).toBe(8);
+        expect(usage.completionTextTokens).toBe(4);
+        expect(usage.completionReasoningTokens).toBe(49);
+    });
+
     it("should handle Anthropic cache creation tokens", () => {
         const openaiUsage = {
             prompt_tokens: 8596,

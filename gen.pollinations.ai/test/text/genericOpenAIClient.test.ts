@@ -13,6 +13,9 @@ describe("genericOpenAIClient", () => {
             async (input, init) => {
                 expect(String(input)).toBe("https://portkey.test/chat");
                 expect(init?.signal).toBeUndefined();
+                expect(new Headers(init?.headers).get("authorization")).toBe(
+                    "Bearer secret",
+                );
                 upstreamBody = JSON.parse(String(init?.body));
                 return Response.json({
                     id: "chatcmpl_test",

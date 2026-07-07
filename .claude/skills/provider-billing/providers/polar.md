@@ -35,26 +35,20 @@ If you accidentally surface the token, rotate it at: https://polar.sh/dashboard/
 Organization:         b3caa8b6-a64b-4c7c-94ad-03f70cc06841
   name:               Myceli.AI OÜ
   slug:               myceli-ai
-  total_orders:       ~1.9 million (98% are $0 Spore subscription cycles)
-  active_subscriptions: 20,117 (stable since 2026-01)
+  total_orders:       ~1.9 million historical orders
+  active_subscriptions: historical $0 subscription records may still exist
 Secret in SOPS:       prod.vars.json → POLAR_ACCESS_TOKEN (polar_oat_)
 Webhook secret:       prod.vars.json → POLAR_WEBHOOK_SECRET (polar_whs_)
 Tinybird ingest:      prod.vars.json → TINYBIRD_POLAR_INGEST_TOKEN
                       → suggests Tinybird already has Polar pipes; check `enter.pollinations.ai/observability`
 ```
 
-### Tier / product structure
+### Product structure
 
-Pollinations uses a **"pay-what-you-use" model**, not monthly subscriptions. As of 2026-04-11 the org has 19 products:
+Pollinations uses a **"pay-what-you-use" model**, not monthly user-tier subscriptions. Active revenue comes from one-time Pollen packs. Historical $0 subscription products may still exist in Polar data, but they are not the current product model.
 
 | Product | Type | Price | Notes |
 |---|---|---|---|
-| 🦠 Spore | recurring | $0 | Free tier, auto-assigned |
-| 🌱 Seed | recurring | $0 | Tier upgrade |
-| 🌸 Flower | recurring | $0 | Tier upgrade |
-| 🍯 Nectar | recurring | $0 | Tier upgrade |
-| 🌏 Router | recurring | $0 | Router tier |
-| ⚠️ Router Pack - 500 pollen | one-time | $0 | Free router pack |
 | 🐝 5 pollen + 5 FREE | one-time | $5 | Entry pack |
 | 🐝 10 pollen (pack) | one-time | $10 | |
 | 🐝 10 pollen + 10 FREE | one-time | $10 | |
@@ -64,7 +58,7 @@ Pollinations uses a **"pay-what-you-use" model**, not monthly subscriptions. As 
 | 🐝 50 pollen + 50 FREE | one-time | $50 | |
 | (+ "Boost beta" pack variants) | one-time | $5/$10/$20 | |
 
-**All tier subscriptions are free.** Real money only flows through the **one-time pollen packs**.
+Real money flows through **one-time Pollen packs**.
 
 ---
 
@@ -86,7 +80,7 @@ curl -sS "https://api.polar.sh/v1/organizations/" -H "Authorization: Bearer $POL
 
 Returns `{items: [{id, name, slug, ...}]}`. Capture the org `id` — most other endpoints require it as `?organization_id=<uuid>`.
 
-## Endpoint: Products / tiers
+## Endpoint: Products
 
 ```bash
 curl -sS "https://api.polar.sh/v1/products/?organization_id=$ORG_ID&limit=50" \
@@ -170,7 +164,7 @@ curl -sS "https://api.polar.sh/v1/orders/?organization_id=$ORG_ID&limit=100" \
   -H "Authorization: Bearer $POLAR_TOKEN"
 ```
 
-**DO NOT rely on this for totals** — our org has **1.9 million orders** (98% are $0 Spore subscription cycles). Pagination through all of them is impractical. Use `/metrics/` for aggregates.
+**DO NOT rely on this for totals** — our org has **1.9 million historical orders**, including many $0 records. Pagination through all of them is impractical. Use `/metrics/` for aggregates.
 
 Each order has many fields:
 
@@ -255,7 +249,7 @@ curl -sS "https://api.polar.sh/v1/customers/?organization_id=$ORG_ID&limit=100" 
 | What's the churn rate? | `GET /v1/metrics/` → `churn_rate` |
 | One-time pack sales by month | `GET /v1/metrics/` → `one_time_products_revenue` (⚠️ 0 for us — see reconciliation gap) |
 | Sales by specific product | Loop `GET /v1/orders/?product_id=<uuid>` over pollen-pack product IDs |
-| What products / tiers exist? | `GET /v1/products/?organization_id=<uuid>` |
+| What products exist? | `GET /v1/products/?organization_id=<uuid>` |
 | Customer list | `GET /v1/customers/?organization_id=<uuid>` |
 | Subscription list | `GET /v1/subscriptions/?organization_id=<uuid>` |
 
@@ -264,10 +258,10 @@ curl -sS "https://api.polar.sh/v1/customers/?organization_id=$ORG_ID&limit=100" 
 ## Gotchas
 
 - **`organization_id` is required on almost every query.** Without it you get zero results (or sometimes all-orgs, depending on endpoint).
-- **`/v1/orders/` paginates ALL orders**, including $0 subscription cycles. For us that's 1.9 M rows. Never paginate the full list; use `/v1/metrics/` for aggregates.
+- **`/v1/orders/` paginates ALL orders**, including historical $0 records. For us that's 1.9 M rows. Never paginate the full list; use `/v1/metrics/` for aggregates.
 - **Values are in USD cents**, not EUR. [Stripe](stripe.md) account default is EUR. Convert when comparing.
 - **Most `/orders/` filter params silently ignore unsupported values** — you'll get a 200 with the full unfiltered list. Always verify `total_count` in the pagination block didn't stay the same as an unfiltered query.
-- **Tier products (Spore/Seed/Flower/Nectar/Router) are all $0/month.** All real revenue is one-time pollen packs.
+- **Historical $0 products may still appear in Polar.** Treat one-time Pollen packs as the active revenue products.
 - **Metric discrepancy**: `/metrics.revenue` reports $0 since Feb 2026 while Stripe processes ~€7k/month. Do not trust Polar as the sole revenue source until this is explained.
 - **OATs don't expire by default** but can be revoked. If requests start 401ing, rotate via https://polar.sh/dashboard/myceli-ai/settings#organization-access-tokens.
 - **`interval=month` requires ≥60 days** in the date window (`/metrics/limits`). Shorter spans need `interval=day` or `week`.

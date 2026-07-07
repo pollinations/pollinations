@@ -225,6 +225,10 @@ if [ -z "$TEST_TOKEN" ]; then
 fi
 
 section "Pre-flight: SSH reachability"
+# ⚠️ STALE (2026-07-02): pod hsl3ksl31lvrcc is TERMINATED — flux moved to
+# Vast.ai (image.pollinations.ai/GPU_INSTANCES.md) and zimage to 3 single-GPU
+# pods (SSH_RUNPOD_KLEIN key). This leg fails pre-flight; rework before the
+# next rotation. See tools/scripts/rotation/README.md "GPU workers".
 FLUX_ZIMAGE_KEY=$(extract_ssh_key SSH_RUNPOD_FLUX_ZIMAGE) || { error "Missing SSH_RUNPOD_FLUX_ZIMAGE in SOPS"; exit 1; }
 KLEIN_KEY=$(extract_ssh_key SSH_RUNPOD_KLEIN) || { error "Missing SSH_RUNPOD_KLEIN in SOPS"; exit 1; }
 LAMBDA_KEY=$(extract_ssh_key SSH_LAMBDA_SANA_LTX2_ACESTEP) || { error "Missing SSH_LAMBDA_SANA_LTX2_ACESTEP in SOPS"; exit 1; }

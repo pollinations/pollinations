@@ -2,7 +2,7 @@ import type { ComponentPropsWithoutRef, FC, ReactNode } from "react";
 import { cn } from "../lib/cn.ts";
 
 type Align = "left" | "center" | "right";
-type RowIntent = "default" | "success" | "warning" | "danger";
+type RowIntent = "default" | "warning" | "danger";
 type SortDirection = "asc" | "desc";
 
 const alignClasses: Record<Align, string> = {
@@ -13,7 +13,6 @@ const alignClasses: Record<Align, string> = {
 
 const rowIntentClasses: Record<RowIntent, string> = {
     default: "",
-    success: "polli:bg-intent-success-bg-light/55",
     warning: "polli:bg-intent-warning-bg-light/65",
     danger: "polli:bg-intent-danger-bg-light/65",
 };

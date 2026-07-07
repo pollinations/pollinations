@@ -13,10 +13,12 @@ import {
 import { sendToTinybird } from "@shared/events.ts";
 import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
 import {
-    calculateCost,
-    calculatePrice,
-    getModelDefinition,
-    getPriceDefinition,
+    type CostDefinition,
+    calculateCostWithDefinition,
+    calculatePriceWithDefinition,
+    getPriceDefinitionForModel,
+    type ModelDefinition,
+    type PriceDefinition,
     type Usage,
     type UsageCost,
     type UsagePrice,
@@ -32,10 +34,7 @@ import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
-import {
-    type RealtimeRequestQueryParams,
-    RealtimeUsageSchema,
-} from "@/schemas/realtime.ts";
+import { RealtimeUsageSchema } from "@/schemas/realtime.ts";
 import { generateRandomId } from "@/util.ts";
 import { checkBalance } from "@/utils/generation-access.ts";
 
@@ -73,6 +72,11 @@ type RealtimeBillingContext = {
     apiKeyClientId?: string;
     apiKeyPollenBalance?: number | null;
     byopClientKeyId?: string | null;
+    modelRequested: string;
+    resolvedModelRequested: string;
+    modelDefinition: ModelDefinition<string>;
+    modelCostDefinition: CostDefinition;
+    modelPriceDefinition: PriceDefinition;
     requestId: string;
     requestPath: string;
     environment: string;
@@ -390,7 +394,6 @@ function createRealtimeTrackingEvent(args: {
     payerBucket: "tier" | "pack" | null;
     balances: { tierBalance: number; packBalance: number };
 }): TinybirdEvent {
-    const model = getModelDefinition(DEFAULT_REALTIME_MODEL);
     return {
         id: generateRandomId(),
         requestId: args.tracking.requestId,
@@ -416,13 +419,13 @@ function createRealtimeTrackingEvent(args: {
         apiKeyClientId: args.tracking.apiKeyClientId,
         referrerUrl: args.tracking.referrerUrl,
         referrerDomain: args.tracking.referrerDomain,
-        modelRequested: DEFAULT_REALTIME_MODEL,
-        resolvedModelRequested: DEFAULT_REALTIME_MODEL,
-        modelUsed: DEFAULT_REALTIME_MODEL,
-        modelProviderUsed: model.provider,
+        modelRequested: args.tracking.modelRequested,
+        resolvedModelRequested: args.tracking.resolvedModelRequested,
+        modelUsed: args.tracking.resolvedModelRequested,
+        modelProviderUsed: args.tracking.modelDefinition.provider,
         isBilledUsage: true,
         ...getPostDeductionBalances(args.payerBucket, args.balances),
-        ...priceToEventParams(getPriceDefinition(DEFAULT_REALTIME_MODEL) ?? {}),
+        ...priceToEventParams(args.tracking.modelPriceDefinition),
         ...usageToEventParams(args.usage),
         totalCost: args.cost.totalCost,
         totalPrice: args.price.totalPrice + (args.markup?.devCredit ?? 0),
@@ -444,8 +447,16 @@ async function settleRealtimeSession(
         return;
     }
 
-    const cost = calculateCost(DEFAULT_REALTIME_MODEL, usage);
-    const price = calculatePrice(DEFAULT_REALTIME_MODEL, usage);
+    const cost = calculateCostWithDefinition(
+        tracking.resolvedModelRequested,
+        usage,
+        tracking.modelCostDefinition,
+    );
+    const price = calculatePriceWithDefinition(
+        tracking.resolvedModelRequested,
+        usage,
+        tracking.modelPriceDefinition,
+    );
     if (price.totalPrice <= 0) {
         tracking.settled = true;
         return;
@@ -464,7 +475,7 @@ async function settleRealtimeSession(
         apiKeyId: tracking.apiKeyId,
         apiKeyPollenBalance: tracking.apiKeyPollenBalance,
         byopClientKeyId: tracking.byopClientKeyId,
-        modelResolved: DEFAULT_REALTIME_MODEL,
+        modelPaidOnly: tracking.modelDefinition.paidOnly,
     });
 
     if (!tracking.rateLimitConsumed) {
@@ -607,6 +618,15 @@ async function createRealtimeBillingContext(
     const clientIp =
         rawIp !== "unknown" ? stripIPv4MappedPrefix(rawIp) : undefined;
     const referrer = extractReferrerHeader(c);
+    const modelInfo = c.var.model;
+    const modelPriceDefinition = getPriceDefinitionForModel(
+        modelInfo.definition,
+    );
+    if (!modelInfo.definition.cost || !modelPriceDefinition) {
+        throw new Error(
+            `Failed to get price definition for model: ${modelInfo.resolved}`,
+        );
+    }
 
     return {
         userId: user.id,
@@ -623,6 +643,11 @@ async function createRealtimeBillingContext(
         apiKeyClientId: c.var.auth.apiKey?.byopClientKeyId ?? undefined,
         apiKeyPollenBalance: c.var.auth.apiKey?.pollenBalance,
         byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
+        modelRequested: modelInfo.requested,
+        resolvedModelRequested: modelInfo.resolved,
+        modelDefinition: modelInfo.definition,
+        modelCostDefinition: modelInfo.definition.cost,
+        modelPriceDefinition,
         requestId: c.get("requestId"),
         requestPath: getRoutePath(c),
         environment: c.env.ENVIRONMENT,
@@ -651,22 +676,17 @@ export async function handleRealtimeWebSocket(
     });
     const user = c.var.auth.requireUser();
 
-    const query = c.req.valid("query" as never) as RealtimeRequestQueryParams;
-    const requestedModel = query.model;
-    if (requestedModel !== DEFAULT_REALTIME_MODEL) {
+    const resolvedModel = c.var.model.resolved;
+    if (resolvedModel !== DEFAULT_REALTIME_MODEL) {
         throw new HTTPException(400, {
             message: `Only ${DEFAULT_REALTIME_MODEL} is currently supported for realtime sessions.`,
         });
     }
-    requireAllowedModel(c, requestedModel);
+    requireAllowedModel(c, resolvedModel);
 
     // Same model-independent, estimated-price balance gate as every other
-    // generation route (tier or pack balance, paidOnly handled by the model
-    // definition). checkBalance reads model.resolved.
-    c.set("model", {
-        requested: requestedModel,
-        resolved: DEFAULT_REALTIME_MODEL,
-    });
+    // generation route (tier or pack balance, paidOnly handled by the resolved
+    // model definition). checkBalance reads c.var.model.
     await checkBalance(c.var, c.env);
 
     if (!c.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY) {

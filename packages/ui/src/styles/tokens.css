@@ -120,8 +120,15 @@
     --polli-color-danger-bg-hover:  oklch(0.88 0.075 25);
     --polli-color-danger-text:      oklch(0.48 0.18 25);
     --polli-color-danger-border:    oklch(0.78 0.115 25);
-    --polli-color-success-bg-light: oklch(0.94 0.055 150);
-    --polli-color-success-text:     oklch(0.38 0.12 150);
+    /* Success family — coherent set at hue 140 (warmer/yellower than tier's
+       152, higher chroma) so success is visibly distinct from the tier wallet
+       bucket. Two weights: `text` (deep, used for accent text on neutral) and
+       `bright` (vivid filled, used for primary CTAs like Claim + Switch ON).
+       No pale tile — soft success Chip/Alert/Table were unused; copy-feedback
+       relies on the icon swap instead. */
+    --polli-color-success-text:         oklch(0.42 0.17 140);
+    --polli-color-success-bright:       oklch(0.68 0.18 140);
+    --polli-color-success-text-on-bright: oklch(0.98 0.005 80);
     --polli-color-warning-bg-light: oklch(0.94 0.06 75);
     --polli-color-warning-text:     oklch(0.45 0.13 65);
     --polli-color-info-bg-light:    oklch(0.935 0.04 252);
@@ -158,7 +165,7 @@
 :root {
     --polli-color-switch-thumb:         oklch(0.98 0.005 80);
     --polli-color-switch-track-off:     oklch(0.86 0.012 80);
-    --polli-color-switch-track-on:      oklch(0.68 0.17 150);
+    --polli-color-switch-track-on:      var(--polli-color-success-bright);
     --polli-color-switch-track-invalid: oklch(0.62 0.2 25);
 }
 
@@ -214,8 +221,12 @@
     --polli-color-danger-bg-hover:  oklch(0.43 0.11 25);
     --polli-color-danger-text:      oklch(0.855 0.105 25);
     --polli-color-danger-border:    oklch(0.48 0.11 25);
-    --polli-color-success-bg-light: oklch(0.35 0.075 150);
-    --polli-color-success-text:     oklch(0.86 0.1 150);
+    /* Success family — DARK (hue 140 for separation from tier). Bright +
+       on-bright are shared with light (vivid green reads well on both
+       surfaces; near-white contrast doesn't shift). */
+    --polli-color-success-text:         oklch(0.86 0.13 140);
+    --polli-color-success-bright:       oklch(0.68 0.18 140);
+    --polli-color-success-text-on-bright: oklch(0.98 0.005 80);
     --polli-color-warning-bg-light: oklch(0.36 0.075 75);
     --polli-color-warning-text:     oklch(0.87 0.1 75);
     --polli-color-info-bg-light:    oklch(0.36 0.08 252);
@@ -310,8 +321,9 @@
     --color-intent-danger-bg-hover:  var(--polli-color-danger-bg-hover);
     --color-intent-danger-text:      var(--polli-color-danger-text);
     --color-intent-danger-border:    var(--polli-color-danger-border);
-    --color-intent-success-bg-light: var(--polli-color-success-bg-light);
-    --color-intent-success-text:     var(--polli-color-success-text);
+    --color-intent-success-text:             var(--polli-color-success-text);
+    --color-intent-success-bg-bright:        var(--polli-color-success-bright);
+    --color-intent-success-text-on-bright:   var(--polli-color-success-text-on-bright);
     --color-intent-warning-bg-light: var(--polli-color-warning-bg-light);
     --color-intent-warning-text:     var(--polli-color-warning-text);
     --color-intent-info-bg-light:    var(--polli-color-info-bg-light);

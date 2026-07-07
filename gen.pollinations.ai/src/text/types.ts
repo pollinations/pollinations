@@ -39,7 +39,6 @@ export interface TransformOptions {
     jsonMode?: boolean;
     voice?: string;
     reasoning_effort?: string;
-    thinking_budget?: number;
     modalities?: string[];
     audio?: Record<string, unknown>;
     stream_options?: Record<string, unknown>;
@@ -74,7 +73,7 @@ export interface ChatCompletion {
     created?: number;
     model?: string;
     choices?: CompletionChoice[];
-    usage?: Record<string, number>;
+    usage?: Record<string, unknown>;
     citations?: string[];
     error?: string | { message?: string; status?: number; details?: unknown };
     stream?: boolean;
@@ -114,7 +113,6 @@ export interface RequestData {
     modalities?: string[];
     audio?: Record<string, unknown>;
     reasoning_effort?: string;
-    thinking_budget?: number;
     response_format?: { type: string; [key: string]: unknown };
     max_tokens?: number;
     max_completion_tokens?: number;

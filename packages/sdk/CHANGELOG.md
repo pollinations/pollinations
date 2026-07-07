@@ -2,6 +2,16 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.2] - 2026-07-02
+
+### Changed
+- `authorizeDevice()` is now a spec-compliant RFC 8628 client: requests are
+  form-encoded, polling goes through the standard OAuth token endpoint
+  (`/api/oauth/token`) and includes `client_id`, and `slow_down` responses back
+  off by 5 seconds. Requires the enter.pollinations.ai deploy that ships the
+  OAuth 2.1 endpoints (publishes under the `alpha` dist-tag; sync production
+  right after merging).
+
 ## [5.1.0-alpha.1] - 2026-06-12
 
 ### Removed (Breaking)

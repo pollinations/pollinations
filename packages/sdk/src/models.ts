@@ -17,6 +17,7 @@ export interface ModelCatalogItem {
     title: string;
     category: ModelCategory;
     brand?: string;
+    community: boolean;
     description?: string;
     aliases: string[];
     inputModalities: string[];
@@ -71,6 +72,7 @@ function normalizeModel(model: ModelInfo): ModelCatalogItem | null {
         title: model.title,
         category: model.category,
         brand: model.brand,
+        community: model.community ?? false,
         description: model.description,
         aliases: model.aliases ?? [],
         inputModalities: model.input_modalities ?? [],

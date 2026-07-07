@@ -3,7 +3,8 @@ import { getUserBalance } from "@shared/billing/balance.ts";
 import { atomicDeductUserBalance } from "@shared/billing/deduction.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
-import { getModelDefinition } from "@shared/registry/registry.ts";
+import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
+import { TIER_POLLEN, type TierName } from "@shared/tier-config.ts";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
@@ -30,16 +31,18 @@ describe("Tier System End-to-End", () => {
             const db = drizzle(env.DB);
             const _executionContext = createExecutionContext();
             const userId = "heavy-user";
+            const tier: TierName = "flower";
+            const tierPollen = TIER_POLLEN[tier];
 
-            // User starts with flower tier (0.4 pollen/hour) and bought a pack (50 pollen)
+            // User starts with flower tier allowance and bought a pack.
             await db
                 .insert(userTable)
                 .values({
                     id: userId,
                     email: "heavy@test.com",
                     name: "Heavy User",
-                    tier: "flower",
-                    tierBalance: 0.4,
+                    tier,
+                    tierBalance: tierPollen,
                     packBalance: 50,
                     lastTierGrant: Date.now() - 86400000, // Yesterday
                     createdAt: new Date(),
@@ -48,8 +51,8 @@ describe("Tier System End-to-End", () => {
                 .onConflictDoUpdate({
                     target: userTable.id,
                     set: {
-                        tier: "flower",
-                        tierBalance: 0.4,
+                        tier,
+                        tierBalance: tierPollen,
                         packBalance: 50,
                         lastTierGrant: Date.now() - 86400000,
                     },
@@ -73,7 +76,7 @@ describe("Tier System End-to-End", () => {
 
             // Binary deduction: each charge is larger than tier, so pack pays
             // the full 20 pollen and tier remains available for smaller calls.
-            expect(afterUsage[0]?.tierBalance).toBeCloseTo(0.4, 4);
+            expect(afterUsage[0]?.tierBalance).toBeCloseTo(tierPollen, 4);
             expect(afterUsage[0]?.packBalance).toBeCloseTo(30, 4);
 
             // Trigger tier refill
@@ -91,7 +94,7 @@ describe("Tier System End-to-End", () => {
                 .limit(1);
 
             // Tier is already at its hourly floor and pack is unchanged.
-            expect(afterRefill[0]?.tierBalance).toBeCloseTo(0.4, 4);
+            expect(afterRefill[0]?.tierBalance).toBeCloseTo(tierPollen, 4);
             expect(afterRefill[0]?.packBalance).toBeCloseTo(30, 4);
             expect(afterRefill[0]?.lastTierGrant).toBeGreaterThan(
                 Date.now() - 5000,
@@ -108,13 +111,12 @@ describe("Tier System End-to-End", () => {
                 {
                     id: "free-user",
                     tier: "spore",
-                    expectedPollen: 0.01,
                 },
-                { id: "basic-user", tier: "seed", expectedPollen: 0.15 },
-                { id: "pro-user", tier: "flower", expectedPollen: 0.4 },
-                { id: "enterprise-user", tier: "nectar", expectedPollen: 0.8 },
-                { id: "router-user", tier: "router", expectedPollen: 10 },
-            ];
+                { id: "basic-user", tier: "seed" },
+                { id: "pro-user", tier: "flower" },
+                { id: "enterprise-user", tier: "nectar" },
+                { id: "router-user", tier: "router" },
+            ] satisfies { id: string; tier: TierName }[];
 
             // Create all users with depleted balances
             for (const user of users) {
@@ -150,7 +152,7 @@ describe("Tier System End-to-End", () => {
                     .where(sql`${userTable.id} = ${user.id}`)
                     .limit(1);
 
-                expect(result[0]?.tierBalance).toBe(user.expectedPollen);
+                expect(result[0]?.tierBalance).toBe(TIER_POLLEN[user.tier]);
             }
         });
     });
@@ -272,7 +274,7 @@ describe("Tier System End-to-End", () => {
                 {
                     id: "migrated-new",
                     tier: "seed",
-                    tierBalance: 0.15, // Full hourly balance
+                    tierBalance: TIER_POLLEN.seed, // Full hourly balance
                     packBalance: 0,
                 },
                 {
@@ -333,7 +335,7 @@ describe("Tier System End-to-End", () => {
                 .where(sql`${userTable.id} = 'migrated-depleted'`)
                 .limit(1);
 
-            expect(depletedUser[0]?.tierBalance).toBe(0.4); // Flower tier (additive: MIN(0 + 0.4, 0.4) = 0.4)
+            expect(depletedUser[0]?.tierBalance).toBe(TIER_POLLEN.flower);
             expect(depletedUser[0]?.packBalance).toBe(50); // Unchanged
         });
     });
@@ -429,7 +431,7 @@ describe("Tier System End-to-End", () => {
             const db = drizzle(env.DB);
             const userId = `azure-depletion-${crypto.randomUUID()}`;
             const modelResolved = "openai-fast";
-            const model = getModelDefinition(modelResolved);
+            const model = getRegistryModelDefinition(modelResolved);
 
             expect(model.provider).toBe("azure");
             expect(model.paidOnly).not.toBe(true);

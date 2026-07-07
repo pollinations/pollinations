@@ -1,6 +1,5 @@
 name: Community Quest
-description: Propose a community quest — earn Pollen by shipping a self-contained piece of work
-title: "[🎯 QUEST] "
+description: Define a maintainer-owned community quest with a fixed Pollen reward
 body:
   - type: textarea
     id: process
@@ -8,12 +7,13 @@ body:
       label: How this quest works
       description: Standard quest workflow. Leave as-is unless you need to override.
       value: |
-        Community quests are self-contained tasks with a fixed Pollen reward paid on PR merge.
+        Community quests are maintainer-owned tasks with a fixed Pollen reward earned after a linked PR is merged.
+        Only maintainer-authored quest issues should receive the `POLLEN-QUEST` label. If a community member proposes a quest, a maintainer should create the final quest issue before labeling it.
 
         1. Comment on this issue if you'd like to take it on — multiple devs can express interest
         2. A maintainer picks one dev and assigns the issue to them — please wait until you're assigned before starting work
-        3. Once assigned, open a PR against `main` — **start the description with `Fixes #N`** so the payout bot finds your quest
-        4. On merge, the reward is credited to your [enter.pollinations.ai](https://enter.pollinations.ai) account
+        3. Once assigned, open a PR against `main` — **start the description with `Fixes #N`** so GitHub links it to this quest
+        4. After merge, open [enter.pollinations.ai](https://enter.pollinations.ai), check quests, and claim the pending reward
 
         Need help? Drop a comment here or ask in [Discord #dev-talk](https://discord.com/channels/885844321461485618/920274483896516609).
     validations:
@@ -74,7 +74,7 @@ body:
     id: reward
     attributes:
       label: Reward
-      description: Pollen credited on PR merge
+      description: Pollen reward amount
       placeholder: "e.g. 20"
     validations:
       required: true

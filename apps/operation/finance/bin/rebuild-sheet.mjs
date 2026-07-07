@@ -2,6 +2,7 @@
 import { aggregate } from "../lib/aggregate.mjs";
 import { buildFleetLayout } from "../lib/fleet-layout.mjs";
 import { forecast } from "../lib/forecast.mjs";
+import { fetchUsdToEur } from "../lib/fx.mjs";
 import {
     applyFormat,
     applyNumberFormat,
@@ -124,6 +125,20 @@ async function main() {
     if (!spreadsheetId || !account) {
         throw new Error(
             "config.local.json must set spreadsheetId and gogAccount",
+        );
+    }
+
+    // Refresh USD→EUR from the ECB at rebuild time so the rate never silently
+    // goes stale. Falls back to the static config value if the fetch fails
+    // (e.g. the daily cron runs while offline).
+    const liveFx = await fetchUsdToEur();
+    if (liveFx) {
+        config.usd_to_eur = liveFx.rate;
+        config.usd_to_eur_as_of = liveFx.asOf;
+        console.log(`FX (ECB live): 1 USD = €${liveFx.rate} (${liveFx.asOf})`);
+    } else {
+        console.log(
+            `FX (config fallback): 1 USD = €${config.usd_to_eur} (${config.usd_to_eur_as_of})`,
         );
     }
 

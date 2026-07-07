@@ -82,13 +82,7 @@ export function CompositionsPage() {
                     >
                         <CopyButton
                             value="pollinations"
-                            className={(copied) =>
-                                `rounded-full px-3 py-1.5 text-sm font-medium ${
-                                    copied
-                                        ? "bg-intent-success-bg-light text-intent-success-text"
-                                        : "bg-theme-bg-active text-theme-text-strong"
-                                }`
-                            }
+                            className="rounded-full bg-theme-bg-active px-3 py-1.5 text-sm font-medium text-theme-text-strong"
                         >
                             {(copied) => (copied ? "Copied" : "Copy value")}
                         </CopyButton>

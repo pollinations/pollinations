@@ -44,4 +44,4 @@ Defined in [`buffer-schedule.yml`](buffer-schedule.yml).
 
 The old per-platform standalone scripts and workflows have been removed. The 3-tier pipeline above replaces all of them.
 
-The old Devvit-based Reddit pipeline (`social/reddit/`) is also superseded — Reddit now posts via SSH deployment to a VPS in `publish_daily.py` and `publish_weekly.py`.
+The old Devvit-based Reddit pipeline has been removed. Reddit now posts via SSH deployment to a VPS in `publish_daily.py` and `publish_weekly.py`.

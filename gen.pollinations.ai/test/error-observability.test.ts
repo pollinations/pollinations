@@ -3,6 +3,7 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { handleError, UpstreamError } from "@shared/error.ts";
+import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { requestId } from "hono/request-id";
@@ -25,6 +26,7 @@ function createTestApp() {
         c.set("model", {
             requested: "openai",
             resolved: "openai",
+            definition: getRegistryModelDefinition("openai"),
         });
         throw new UpstreamError(502, {
             message:
@@ -248,6 +250,99 @@ describe("error observability", () => {
                     token: "[redacted]",
                 },
             }),
+        });
+    });
+
+    it("redacts credential fields from request bodies in error telemetry", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+
+        const app = new Hono<Env>();
+        app.post("/body-error", () => {
+            throw new Error("body failure");
+        });
+        app.onError(handleError);
+
+        const ctx = createExecutionContext();
+        const response = await app.fetch(
+            new Request(
+                "https://gen.pollinations.ai/body-error?api_key=query_secret",
+                {
+                    method: "POST",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({
+                        bearerToken: "sk_body_secret",
+                        authorization: "Bearer body_secret",
+                        nested: {
+                            api_key: "nested_api_secret",
+                            apiKey: "nested_api_key_secret",
+                            token: "nested_token_secret",
+                            keep: "visible",
+                        },
+                        items: [
+                            {
+                                key: "array_key_secret",
+                                access_token: "array_access_secret",
+                                accessToken: "array_access_token_secret",
+                            },
+                        ],
+                    }),
+                },
+            ),
+            {
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(500);
+        expect(tinybirdRequests).toHaveLength(1);
+        const tinybirdPayload = (await tinybirdRequests[0].json()) as Record<
+            string,
+            unknown
+        >;
+        const requestInputsText = tinybirdPayload.request_inputs as string;
+        expect(requestInputsText).not.toContain("sk_body_secret");
+        expect(requestInputsText).not.toContain("body_secret");
+        expect(requestInputsText).not.toContain("nested_api_secret");
+        expect(requestInputsText).not.toContain("nested_api_key_secret");
+        expect(requestInputsText).not.toContain("nested_token_secret");
+        expect(requestInputsText).not.toContain("array_key_secret");
+        expect(requestInputsText).not.toContain("array_access_secret");
+        expect(requestInputsText).not.toContain("array_access_token_secret");
+        expect(JSON.parse(requestInputsText)).toMatchObject({
+            query: {
+                api_key: "[redacted]",
+            },
+            body: {
+                bearerToken: "[redacted]",
+                authorization: "[redacted]",
+                nested: {
+                    api_key: "[redacted]",
+                    apiKey: "[redacted]",
+                    token: "[redacted]",
+                    keep: "visible",
+                },
+                items: [
+                    {
+                        key: "[redacted]",
+                        access_token: "[redacted]",
+                        accessToken: "[redacted]",
+                    },
+                ],
+            },
         });
     });
 

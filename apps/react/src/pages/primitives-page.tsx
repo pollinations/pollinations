@@ -275,7 +275,6 @@ export function PrimitivesPage() {
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
                                 <Chip intent="neutral">neutral</Chip>
-                                <Chip intent="success">success</Chip>
                                 <Chip intent="warning">warning</Chip>
                                 <Chip intent="danger">danger</Chip>
                             </div>

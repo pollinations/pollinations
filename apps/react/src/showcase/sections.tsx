@@ -310,9 +310,9 @@ const tokenRows = [
         "bg-intent-danger-bg-light",
     ],
     [
-        "success-bg",
-        "var(--polli-color-success-bg-light)",
-        "bg-intent-success-bg-light",
+        "success-bright",
+        "var(--polli-color-success-bright)",
+        "bg-intent-success-bg-bright",
     ],
     [
         "warning-bg",
@@ -475,13 +475,7 @@ export const ButtonsDemo: FC = () => (
             <Row label="Copy button">
                 <CopyButton
                     value="pk_showcase_123"
-                    className={(copied) =>
-                        `inline-flex h-8 items-center gap-2 rounded-full px-3 text-sm font-medium transition-colors ${
-                            copied
-                                ? "bg-intent-success-bg-light text-intent-success-text"
-                                : "bg-theme-bg-active text-theme-text-strong"
-                        }`
-                    }
+                    className="inline-flex h-8 items-center gap-2 rounded-full bg-theme-bg-active px-3 text-sm font-medium text-theme-text-strong transition-colors"
                 >
                     {(copied) => (
                         <>
@@ -513,7 +507,6 @@ export const ButtonsDemo: FC = () => (
                 <Chip intent="news">NEW</Chip>
                 <Chip intent="alpha">ALPHA</Chip>
                 <Chip intent="neutral">Neutral</Chip>
-                <Chip intent="success">Success</Chip>
                 <Chip intent="warning">Warning</Chip>
                 <Chip intent="danger">Danger</Chip>
             </Row>
@@ -563,11 +556,27 @@ export const InputsDemo: FC = () => {
                     <Textarea placeholder="Disabled" rows={3} disabled />
                 </ControlGroup>
                 <div className="col-span-full">
-                    <FieldStack label="FieldStack" className="max-w-xl">
+                    <FieldStack
+                        label="FieldStack"
+                        helper="Package-owned label stack for common app forms."
+                        action={
+                            <Button type="button" size="sm" intent="info">
+                                Check
+                            </Button>
+                        }
+                        alignLabelRow
+                        className="max-w-xl"
+                    >
                         <Input placeholder="Project name" />
-                        <Text size="xs" tone="soft">
-                            Package-owned label stack for common app forms.
-                        </Text>
+                    </FieldStack>
+                </div>
+                <div className="col-span-full">
+                    <FieldStack
+                        label="FieldStack error"
+                        error="Enter a valid project name."
+                        className="max-w-xl"
+                    >
+                        <Input placeholder="Invalid project" error />
                     </FieldStack>
                 </div>
                 <div className="col-span-full">
@@ -966,7 +975,12 @@ export const LayoutDemo: FC = () => (
                                         </span>
                                     </TableCell>
                                     <TableCell>
-                                        <Chip intent={row.intent} size="sm">
+                                        <Chip
+                                            intent={tableStatusChipIntent(
+                                                row.intent,
+                                            )}
+                                            size="sm"
+                                        >
                                             {row.status}
                                         </Chip>
                                     </TableCell>
@@ -996,7 +1010,7 @@ const tableRows = [
         status: "Healthy",
         requests: "22,115",
         success: "99.9%",
-        intent: "success" as const,
+        intent: "default" as const,
     },
     {
         model: "video-large",
@@ -1014,6 +1028,10 @@ const tableRows = [
     },
 ] as const;
 
+function tableStatusChipIntent(intent: (typeof tableRows)[number]["intent"]) {
+    return intent === "default" ? "neutral" : intent;
+}
+
 export const FeedbackDemo: FC = () => (
     <ShowcaseSection
         id="feedback"
@@ -1024,9 +1042,6 @@ export const FeedbackDemo: FC = () => (
             <Row label="Alert">
                 <div className="grid min-w-0 flex-1 grid-cols-[repeat(auto-fit,minmax(210px,1fr))] gap-2">
                     <Alert title="Info">Catalog metadata is synced.</Alert>
-                    <Alert intent="success" title="Success">
-                        Package assets generated.
-                    </Alert>
                     <Alert intent="warning" title="Warning">
                         Fallback data is active.
                     </Alert>
@@ -1089,7 +1104,7 @@ export const ModuleRecipesDemo: FC = () => {
                     </span>
                     <span className="inline-flex items-center gap-2 text-sm text-theme-text-strong">
                         <WalletKindIcon kind="tier" />
-                        tier balance
+                        quest balance
                     </span>
                 </Row>
                 <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3">
@@ -1109,7 +1124,7 @@ export const ModuleRecipesDemo: FC = () => {
                     />
                     <WalletBalanceCard
                         kind="tier"
-                        label="Tier"
+                        label="Quest"
                         value={formatPollen(183.4)}
                         footer={
                             <>
@@ -1119,7 +1134,9 @@ export const ModuleRecipesDemo: FC = () => {
                                 </span>
                             </>
                         }
-                        info={<InfoTip content="Tier allowance balance." />}
+                        info={
+                            <InfoTip content="Quest Pollen earned from completing Quests." />
+                        }
                     />
                 </div>
                 <Row label="ModalityDot">

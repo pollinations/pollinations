@@ -13,7 +13,10 @@ import {
     withSafetyHeaders,
 } from "@/middleware/safety.ts";
 import type { BedrockResponse } from "@/utils/bedrock-guardrail.ts";
-import { generateCacheKey as generateMediaCacheKey } from "@/utils/media-cache.ts";
+import {
+    generateCacheKey as generateMediaCacheKey,
+    SAFETY_CACHE_VERSION as MEDIA_SAFETY_CACHE_VERSION,
+} from "@/utils/media-cache.ts";
 import {
     generateCacheKey as generateTextCacheKey,
     prepareMetadata as prepareTextCacheMetadata,
@@ -514,7 +517,7 @@ describe("safety cache keys", () => {
         expect(withQueryOverride).not.toBe(withHeaderSafety);
     });
 
-    it("adds a visible safety namespace to media cache keys when safe is active", () => {
+    it("separates media cache keys when safe is active", () => {
         const withSafety = generateMediaCacheKey(
             new URL("https://gen.pollinations.ai/image/hello?safe=true"),
         );
@@ -522,11 +525,14 @@ describe("safety cache keys", () => {
             new URL("https://gen.pollinations.ai/image/hello?safe=false"),
         );
 
-        expect(withSafety).toContain("safety_bedrock-input-v1");
-        expect(withoutSafety).not.toContain("safety_bedrock-input-v1");
+        expect(withSafety).not.toBe(withoutSafety);
+        expect(withSafety).toContain(`__safety_${MEDIA_SAFETY_CACHE_VERSION}`);
     });
 
-    it("adds header safety to media cache keys", () => {
+    it("separates media cache keys when safe is provided by header", () => {
+        const withoutHeaderSafety = generateMediaCacheKey(
+            new URL("https://gen.pollinations.ai/image/hello"),
+        );
         const withHeaderSafety = generateMediaCacheKey(
             new URL("https://gen.pollinations.ai/image/hello"),
             "privacy",
@@ -536,9 +542,15 @@ describe("safety cache keys", () => {
             "privacy",
         );
 
-        expect(withHeaderSafety).toContain("safe_header_privacy");
-        expect(withHeaderSafety).toContain("safety_bedrock-input-v1");
-        expect(withQueryOverride).not.toContain("safe_header");
-        expect(withQueryOverride).not.toContain("safety_bedrock-input-v1");
+        expect(withHeaderSafety).not.toBe(withoutHeaderSafety);
+        expect(withHeaderSafety).toContain(
+            `__safety_${MEDIA_SAFETY_CACHE_VERSION}`,
+        );
+        expect(withQueryOverride).not.toBe(withHeaderSafety);
+        expect(withQueryOverride).toBe(
+            generateMediaCacheKey(
+                new URL("https://gen.pollinations.ai/image/hello?safe=false"),
+            ),
+        );
     });
 });

@@ -160,10 +160,13 @@ const app = new Hono<{ Bindings: Env }>();
 app.use("*", cors());
 
 // Basic Auth middleware — password set via `wrangler secret put DASHBOARD_PASSWORD`
-// If no password is set, the dashboard is public (backward compatible)
 app.use("*", async (c, next) => {
     const password = c.env.DASHBOARD_PASSWORD;
-    if (!password) return next();
+    if (!password) {
+        return new Response("Dashboard password not configured", {
+            status: 500,
+        });
+    }
 
     const auth = c.req.header("Authorization");
     if (auth) {

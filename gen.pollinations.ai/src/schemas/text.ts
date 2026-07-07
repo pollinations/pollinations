@@ -1,4 +1,4 @@
-import { DEFAULT_TEXT_MODEL, TEXT_SERVICES } from "@shared/registry/text.ts";
+import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
 import { z } from "zod";
 import { parseBooleanLike } from "@/util.ts";
@@ -10,20 +10,11 @@ const BooleanQueryParamSchema = z.preprocess(
     z.boolean(),
 );
 
-const VALID_TEXT_MODELS = [
-    ...Object.keys(TEXT_SERVICES),
-    ...Object.values(TEXT_SERVICES).flatMap((service) => service.aliases),
-] as const;
-
 export const GenerateTextRequestQueryParamsSchema = z.object({
-    model: z
-        .enum(VALID_TEXT_MODELS as unknown as [string, ...string[]])
-        .optional()
-        .default(DEFAULT_TEXT_MODEL)
-        .meta({
-            description:
-                "Text model to use. See /v1/models or /text/models for the full list of available models.",
-        }),
+    model: z.string().optional().default(DEFAULT_TEXT_MODEL).meta({
+        description:
+            "Text model to use. See /v1/models or /text/models for the full list of available models.",
+    }),
     seed: z.coerce.number().int().min(-1).optional().default(0).meta({
         description: "Seed for reproducible results. Use -1 for random.",
     }),

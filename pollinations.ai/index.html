@@ -1,29 +1,12 @@
 <!DOCTYPE html>
-<html lang="en" class="polli-ui-root">
+<html lang="en">
   <head>
-    <!-- Set color mode before paint to avoid a flash of light. Reads the
-         cross-subdomain cookie first, then localStorage (both written by
-         @pollinations/ui ColorModeToggle; key = polli-color-mode). -->
-    <script>
-      (() => {
-        try {
-          const cookie = (document.cookie.match(/(?:^|;\s*)polli-color-mode=(light|dark)(?:;|$)/) || [])[1];
-          const stored = cookie || localStorage.getItem("polli-color-mode");
-          const dark =
-            stored === "dark" ||
-            (stored !== "light" &&
-              window.matchMedia("(prefers-color-scheme: dark)").matches);
-          document.documentElement.classList.toggle("dark", dark);
-        } catch {
-          /* storage / matchMedia unavailable — default to light */
-        }
-      })();
-    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
-    <!-- Description -->
-    <meta name="description" content="Build AI apps with easy APIs, free compute, and community support" />
+    <!-- Theme & Description -->
+    <meta name="theme-color" content="#E8F372" />
+    <meta name="description" content="Build AI apps with easy APIs and community support" />
     
     <!-- Favicons -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
@@ -36,7 +19,7 @@
     <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167x167.png" />
     
     <!-- PWA Manifest -->
-    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="manifest" href="/manifest.json" />
     <link rel="canonical" href="https://pollinations.ai" />
     
     <!-- iOS Meta Tags -->
@@ -47,7 +30,7 @@
     
     <!-- Open Graph / Social Media -->
     <meta property="og:title" content="pollinations.ai" />
-    <meta property="og:description" content="Build AI apps with easy APIs, free compute, and community support" />
+    <meta property="og:description" content="Build AI apps with easy APIs and community support" />
     <meta property="og:image" content="https://pollinations.ai/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -60,18 +43,23 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@pollinations_ai" />
     <meta name="twitter:title" content="pollinations.ai" />
-    <meta name="twitter:description" content="Build AI apps with easy APIs, free compute, and community support" />
+    <meta name="twitter:description" content="Build AI apps with easy APIs and community support" />
     <meta name="twitter:image" content="https://pollinations.ai/og-image.png" />
     <meta name="twitter:image:alt" content="pollinations.ai logo" />
     
+    <!-- Fonts (display=swap prevents FOIT) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IBM+Plex+Mono:wght@400;700&display=swap" />
+
     <title>pollinations.ai</title>
   </head>
-  <body class="polli-ui-shell">
+  <body>
     <div id="root"></div>
     <noscript>
       <div style="font-family:sans-serif;padding:2rem;max-width:600px;margin:0 auto">
         <h1>pollinations.ai</h1>
-        <p>Build AI apps with easy APIs, free compute, and community support. Generate images, text, audio and video with state-of-the-art AI models.</p>
+        <p>Build AI apps with easy APIs and community support. Generate images, text, audio and video with state-of-the-art AI models.</p>
         <nav style="margin-top:1rem">
           <a href="/">Home</a> &middot;
           <a href="/play">Play</a> &middot;

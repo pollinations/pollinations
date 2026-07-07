@@ -135,7 +135,6 @@ export type {
     TextGenerateOptions,
     // Text
     TextModel,
-    ThinkingOptions,
     Tool,
     ToolCall,
     TranscribeOptions,

@@ -952,9 +952,7 @@ export class Pollinations {
             tools: options.tools,
             tool_choice: options.toolChoice,
             parallel_tool_calls: options.parallelToolCalls,
-            thinking: options.thinking,
             reasoning_effort: options.reasoningEffort,
-            thinking_budget: options.thinkingBudget,
             modalities: options.modalities,
             audio: options.audio,
             user: options.user,
@@ -1493,8 +1491,11 @@ export class Pollinations {
 
         const response = await fetch(`${AUTH_BASE_URL}/api/device/code`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ client_id: clientId, scope }),
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+                client_id: clientId,
+                scope,
+            }).toString(),
             signal: options.signal,
         });
 
@@ -1509,7 +1510,7 @@ export class Pollinations {
 
         const code = (await response.json()) as DeviceCodeResponse;
         const expiresAt = new Date(Date.now() + code.expires_in * 1000);
-        const pollMs = Math.max(code.interval, 5) * 1000;
+        let pollMs = Math.max(code.interval, 5) * 1000;
 
         const poll = async (): Promise<string> => {
             while (Date.now() < expiresAt.getTime()) {
@@ -1523,15 +1524,18 @@ export class Pollinations {
                 }
 
                 const tokenRes = await fetch(
-                    `${AUTH_BASE_URL}/api/device/token`,
+                    `${AUTH_BASE_URL}/api/oauth/token`,
                     {
                         method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            device_code: code.device_code,
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded",
+                        },
+                        body: new URLSearchParams({
                             grant_type:
                                 "urn:ietf:params:oauth:grant-type:device_code",
-                        }),
+                            device_code: code.device_code,
+                            client_id: clientId,
+                        }).toString(),
                     },
                 );
 
@@ -1542,10 +1546,12 @@ export class Pollinations {
                 if (tokenRes.ok && body.access_token) {
                     return body.access_token;
                 }
-                if (
-                    body.error === "authorization_pending" ||
-                    body.error === "slow_down"
-                ) {
+                if (body.error === "authorization_pending") {
+                    continue;
+                }
+                if (body.error === "slow_down") {
+                    // RFC 8628 §3.5: back off by 5s on slow_down
+                    pollMs += 5000;
                     continue;
                 }
                 throw new PollinationsError(

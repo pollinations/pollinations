@@ -1,6 +1,6 @@
 ---
 name: model-debugging
-description: Debug and diagnose model errors in Pollinations services. Analyze logs, find error patterns, identify affected users. For taking action on user tiers, see tier-management skill.
+description: Debug and diagnose model errors in Pollinations services. Analyze logs, find error patterns, identify affected users. To look up a user's balance or tier, see tier-management skill.
 ---
 
 # Model Debugging Skill
@@ -11,7 +11,7 @@ Use this skill when:
 - Analyzing Tinybird/Cloudflare logs for patterns
 - Diagnosing specific request failures
 
-**Related skill**: Use `tier-management` to upgrade users or check balances after identifying issues here.
+**Related skill**: Use `tier-management` to look up a user's balance or tier after identifying issues here.
 
 ---
 
@@ -580,9 +580,6 @@ Helper scripts for common debugging tasks. Run from repo root.
 ```bash
 # Find users with >10 403 errors in last 24 hours
 .claude/skills/model-debugging/scripts/find-403-users.sh 24 10
-
-# Filter by tier (e.g., only spore users)
-.claude/skills/model-debugging/scripts/find-403-users.sh 24 10 spore
 ```
 
 ## Find 500 Errors (Backend Issues)

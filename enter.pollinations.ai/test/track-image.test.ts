@@ -1,6 +1,7 @@
-import type { ModelName, Usage } from "@shared/registry/registry.ts";
+import type { ModelName, Usage, UsageType } from "@shared/registry/registry.ts";
 import {
     calculateCost,
+    getCostDefinition,
     getPriceDefinition,
 } from "@shared/registry/registry.ts";
 import { priceToEventParams } from "@shared/schemas/generation-event.ts";
@@ -8,6 +9,17 @@ import { expect, test } from "vitest";
 
 // Test image model cost tracking
 // Tests cost calculation properties without hardcoding specific values
+
+function requiredCostRate(model: ModelName, field: UsageType): number {
+    const rate = getCostDefinition(model)?.[field];
+
+    expect(rate, `${model}.${field} must have a configured cost`).toEqual(
+        expect.any(Number),
+    );
+    expect(rate).toBeGreaterThan(0);
+
+    return rate as number;
+}
 
 test("Image models should calculate costs proportionally to token count", () => {
     const models: ModelName[] = [
@@ -77,9 +89,11 @@ test("gptimage-large should calculate costs for image output tokens", () => {
         completionImageTokens: 1000,
     };
     const cost = calculateCost("gptimage-large", usage);
-    // $32 per 1M tokens = $0.032 per 1K tokens
-    expect(cost.completionImageTokens).toBeCloseTo(0.032, 4);
-    expect(cost.totalCost).toBeCloseTo(0.032, 4);
+    const rate = requiredCostRate("gptimage-large", "completionImageTokens");
+    const expectedCost = rate * (usage.completionImageTokens ?? 0);
+
+    expect(cost.completionImageTokens).toBeCloseTo(expectedCost, 4);
+    expect(cost.totalCost).toBeCloseTo(expectedCost, 4);
 });
 
 test("gptimage-large should calculate costs for text input tokens", () => {
@@ -87,9 +101,11 @@ test("gptimage-large should calculate costs for text input tokens", () => {
         promptTextTokens: 1000,
     };
     const cost = calculateCost("gptimage-large", usage);
-    // $5 per 1M tokens = $0.005 per 1K tokens
-    expect(cost.promptTextTokens).toBeCloseTo(0.005, 4);
-    expect(cost.totalCost).toBeCloseTo(0.005, 4);
+    const rate = requiredCostRate("gptimage-large", "promptTextTokens");
+    const expectedCost = rate * (usage.promptTextTokens ?? 0);
+
+    expect(cost.promptTextTokens).toBeCloseTo(expectedCost, 4);
+    expect(cost.totalCost).toBeCloseTo(expectedCost, 4);
 });
 
 test("gptimage-large should calculate costs for image input tokens", () => {
@@ -97,9 +113,11 @@ test("gptimage-large should calculate costs for image input tokens", () => {
         promptImageTokens: 1000,
     };
     const cost = calculateCost("gptimage-large", usage);
-    // $8 per 1M tokens = $0.008 per 1K tokens
-    expect(cost.promptImageTokens).toBeCloseTo(0.008, 4);
-    expect(cost.totalCost).toBeCloseTo(0.008, 4);
+    const rate = requiredCostRate("gptimage-large", "promptImageTokens");
+    const expectedCost = rate * (usage.promptImageTokens ?? 0);
+
+    expect(cost.promptImageTokens).toBeCloseTo(expectedCost, 4);
+    expect(cost.totalCost).toBeCloseTo(expectedCost, 4);
 });
 
 test("gptimage-large should calculate costs for text output tokens", () => {
@@ -107,9 +125,11 @@ test("gptimage-large should calculate costs for text output tokens", () => {
         completionTextTokens: 1000,
     };
     const cost = calculateCost("gptimage-large", usage);
-    // $10 per 1M tokens = $0.01 per 1K tokens
-    expect(cost.completionTextTokens).toBeCloseTo(0.01, 4);
-    expect(cost.totalCost).toBeCloseTo(0.01, 4);
+    const rate = requiredCostRate("gptimage-large", "completionTextTokens");
+    const expectedCost = rate * (usage.completionTextTokens ?? 0);
+
+    expect(cost.completionTextTokens).toBeCloseTo(expectedCost, 4);
+    expect(cost.totalCost).toBeCloseTo(expectedCost, 4);
 });
 
 test("gptimage-large combined text/image input + output costs", () => {
@@ -120,10 +140,17 @@ test("gptimage-large combined text/image input + output costs", () => {
         completionImageTokens: 1000,
     };
     const cost = calculateCost("gptimage-large", usage);
-    // Input: 500*$5/1M + 3000*$8/1M = $0.0265
-    // Text output: 200*$10/1M = $0.002
-    // Output: 1000*$32/1M = $0.032
-    expect(cost.totalCost).toBeCloseTo(0.0605, 4);
+    const expectedCost =
+        requiredCostRate("gptimage-large", "promptTextTokens") *
+            (usage.promptTextTokens ?? 0) +
+        requiredCostRate("gptimage-large", "promptImageTokens") *
+            (usage.promptImageTokens ?? 0) +
+        requiredCostRate("gptimage-large", "completionTextTokens") *
+            (usage.completionTextTokens ?? 0) +
+        requiredCostRate("gptimage-large", "completionImageTokens") *
+            (usage.completionImageTokens ?? 0);
+
+    expect(cost.totalCost).toBeCloseTo(expectedCost, 4);
 });
 
 test("nanobanana models calculate reasoning token costs", () => {
@@ -134,13 +161,21 @@ test("nanobanana models calculate reasoning token costs", () => {
     };
 
     const flashCost = calculateCost("nanobanana-2", usage);
-    expect(flashCost.completionReasoningTokens).toBeCloseTo(0.001005, 8);
+    expect(flashCost.completionReasoningTokens).toBeCloseTo(
+        requiredCostRate("nanobanana-2", "completionTextTokens") *
+            (usage.completionReasoningTokens ?? 0),
+        8,
+    );
     expect(flashCost.totalCost).toBeGreaterThan(
         flashCost.completionImageTokens || 0,
     );
 
     const proCost = calculateCost("nanobanana-pro", usage);
-    expect(proCost.completionReasoningTokens).toBeCloseTo(0.00402, 8);
+    expect(proCost.completionReasoningTokens).toBeCloseTo(
+        requiredCostRate("nanobanana-pro", "completionTextTokens") *
+            (usage.completionReasoningTokens ?? 0),
+        8,
+    );
     expect(proCost.totalCost).toBeGreaterThan(
         proCost.completionImageTokens || 0,
     );

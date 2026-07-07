@@ -256,12 +256,6 @@ export type BuiltInToolType =
     | "computer_use"
     | "file_search";
 
-/** Thinking/reasoning options */
-export interface ThinkingOptions {
-    type: "enabled" | "disabled";
-    budget_tokens?: number;
-}
-
 /** Options for chat completions (POST endpoint) */
 export interface ChatOptions extends RequestOptions {
     /** Text model to use (default: 'openai') */
@@ -298,12 +292,8 @@ export interface ChatOptions extends RequestOptions {
         | { type: "function"; function: { name: string } };
     /** Allow parallel tool calls (default: true) */
     parallelToolCalls?: boolean;
-    /** Enable thinking/reasoning for supported models */
-    thinking?: ThinkingOptions | null;
     /** Reasoning effort for thinking models */
     reasoningEffort?: "none" | "minimal" | "low" | "medium" | "high" | "xhigh";
-    /** Thinking budget in tokens */
-    thinkingBudget?: number;
     /** Output modalities */
     modalities?: ("text" | "audio")[];
     /** Audio output options */

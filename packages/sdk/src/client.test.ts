@@ -270,6 +270,23 @@ describe("Pollinations.chat vs chatStream — seed resolution (characterization)
         // chatStream passes the raw seed through untouched.
         expect(body.seed).toBe(-1);
     });
+
+    it("chat() serializes the standard reasoning effort option", async () => {
+        const client = newClient();
+
+        fetchMock.mockResolvedValue(
+            makeResponse({ choices: [{ message: { content: "ok" } }] }),
+        );
+
+        await client.chat([{ role: "user", content: "hi" }], {
+            reasoningEffort: "medium",
+        });
+
+        const body = bodyOf(fetchMock.mock.calls[0]);
+        expect(body.reasoning_effort).toBe("medium");
+        expect("thinking" in body).toBe(false);
+        expect("thinking_budget" in body).toBe(false);
+    });
 });
 
 describe("Pollinations.imageEdit — response resolution (characterization)", () => {

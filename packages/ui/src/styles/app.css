@@ -53,8 +53,9 @@
     --color-intent-danger-text:     var(--polli-color-danger-text);
     --color-intent-danger-border:   var(--polli-color-danger-border);
 
-    --color-intent-success-bg-light: var(--polli-color-success-bg-light);
-    --color-intent-success-text:    var(--polli-color-success-text);
+    --color-intent-success-text:           var(--polli-color-success-text);
+    --color-intent-success-bg-bright:      var(--polli-color-success-bright);
+    --color-intent-success-text-on-bright: var(--polli-color-success-text-on-bright);
 
     --color-intent-warning-bg-light: var(--polli-color-warning-bg-light);
     --color-intent-warning-text:    var(--polli-color-warning-text);

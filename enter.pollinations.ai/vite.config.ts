@@ -7,6 +7,12 @@ import { defineConfig } from "vite";
 
 const frontendSrc = fileURLToPath(new URL("./frontend/src", import.meta.url));
 const sharedSrc = fileURLToPath(new URL("../shared", import.meta.url));
+const rootReact = fileURLToPath(
+    new URL("../node_modules/react", import.meta.url),
+);
+const rootReactDom = fileURLToPath(
+    new URL("../node_modules/react-dom", import.meta.url),
+);
 
 // The origin that serves THIS deployment's static assets, so social-preview
 // image tags (og:image / twitter:image) resolve to the build's own amber card
@@ -29,6 +35,8 @@ export default defineConfig(({ mode }) => ({
         alias: {
             "@frontend": frontendSrc,
             "@shared": sharedSrc,
+            react: rootReact,
+            "react-dom": rootReactDom,
         },
         // react/react-dom must resolve to a single copy — enter pulls @pollinations/ui
         // (and @shared) which resolve React from the repo-root node_modules, while

@@ -1,8 +1,9 @@
 import {
     assertStagingAccess,
-    parseGithubIdList,
+    parseEmailList,
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
+import { parseGithubIdList } from "@shared/auth/github-id-list.ts";
 import { describe, expect, it } from "vitest";
 
 describe("parseGithubIdList", () => {
@@ -42,6 +43,7 @@ describe("parseGithubIdList", () => {
 
 describe("assertStagingAccess", () => {
     const allowlist = "36901823,5099901";
+    const emailAllowlist = "elliot@pollinations.ai";
 
     it("is a no-op outside staging, even with no allowlist", () => {
         expect(() =>
@@ -70,14 +72,28 @@ describe("assertStagingAccess", () => {
         ).not.toThrow();
     });
 
+    it("allows users whose email is in the staging email allowlist", () => {
+        expect(() =>
+            assertStagingAccess(
+                {
+                    ENVIRONMENT: "staging",
+                    STAGING_ALLOWED_GITHUB_IDS: allowlist,
+                    STAGING_ALLOWED_EMAILS: emailAllowlist,
+                },
+                { githubId: 99999, email: " Elliot@Pollinations.AI " },
+            ),
+        ).not.toThrow();
+    });
+
     it("denies users whose githubId is not in the allowlist", () => {
         expect(() =>
             assertStagingAccess(
                 {
                     ENVIRONMENT: "staging",
                     STAGING_ALLOWED_GITHUB_IDS: allowlist,
+                    STAGING_ALLOWED_EMAILS: emailAllowlist,
                 },
-                { githubId: 99999 },
+                { githubId: 99999, email: "not-elliot@pollinations.ai" },
             ),
         ).toThrow(StagingAccessDeniedError);
     });
@@ -125,5 +141,19 @@ describe("assertStagingAccess", () => {
                 { githubId: 36901823 },
             ),
         ).toThrow(StagingAccessDeniedError);
+    });
+});
+
+describe("parseEmailList", () => {
+    it("parses and normalizes comma-separated emails", () => {
+        expect(
+            parseEmailList(" Elliot@Pollinations.AI, team@pollinations.ai "),
+        ).toEqual(new Set(["elliot@pollinations.ai", "team@pollinations.ai"]));
+    });
+
+    it("drops entries that are not emails", () => {
+        expect(parseEmailList("elliot, ,team@pollinations.ai")).toEqual(
+            new Set(["team@pollinations.ai"]),
+        );
     });
 });

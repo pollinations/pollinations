@@ -47,6 +47,18 @@ jobs:
       - name: Setup SOPS
         uses: nhedger/setup-sops@v2
 
+      # Deploy BEFORE pushing secrets: a fresh `wrangler deploy` makes the
+      # latest worker version the deployed one. `wrangler secret bulk` edits
+      # the latest version's settings and fails (Cloudflare 10214) if that
+      # version isn't deployed — which happens after a manual version upload or
+      # rollback. Deploying first guarantees latest == deployed so the secret
+      # push can never hit that state. A brand-new secret is briefly missing in
+      # the few seconds between deploy and push, which self-heals.
+      - name: Deploy to Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+        run: npm run deploy:production --workspace pollinations-gen
+
       - name: Push generation secrets
         env:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
@@ -57,8 +69,3 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
         run: npm run apply-lifecycle:production --workspace pollinations-gen
-
-      - name: Deploy to Cloudflare
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
-        run: npm run deploy:production --workspace pollinations-gen

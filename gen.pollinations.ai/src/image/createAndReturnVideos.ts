@@ -3,6 +3,7 @@
  * Separate from image logic - no logo processing, no JPEG conversion, no EXIF metadata
  */
 
+import { getVideoModelIds } from "@shared/registry/image.ts";
 import debug from "debug";
 import { callLtx2API } from "./models/ltx2VideoModel.ts";
 import { callNovaReelAPI } from "./models/novaReelModel.ts";
@@ -27,10 +28,8 @@ import type { ImageParams } from "./params.ts";
 
 export type { VideoGenerationResult };
 
-import type { ImageModelName } from "@shared/registry/image.ts";
-import { IMAGE_CONFIG } from "./models.ts";
-
 const logOps = debug("pollinations:video:ops");
+const VIDEO_MODEL_IDS = new Set(getVideoModelIds());
 
 export async function createAndReturnVideo(
     prompt: string,
@@ -91,11 +90,8 @@ export async function createAndReturnVideo(
 }
 
 /**
- * Check if a model is a video model by looking at the IMAGE_CONFIG
+ * Check if a model is a video model by looking at the shared registry.
  */
 export function isVideoModel(model: string): boolean {
-    const config = IMAGE_CONFIG[model as ImageModelName] as {
-        isVideo?: boolean;
-    };
-    return config?.isVideo === true;
+    return VIDEO_MODEL_IDS.has(model);
 }

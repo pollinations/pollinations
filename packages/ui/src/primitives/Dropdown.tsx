@@ -50,7 +50,7 @@ export const Dropdown: FC<DropdownProps> = ({
                 <Popover.Positioner>
                     <Popover.Content
                         className={cn(
-                            "polli:z-50 polli:overflow-hidden polli:focus:outline-none",
+                            "polli:z-[120] polli:overflow-hidden polli:focus:outline-none",
                             DEFAULT_PANEL,
                             className,
                         )}

@@ -8,7 +8,7 @@ Pair with [lambda-labs.md](lambda-labs.md) — these two providers are both "cre
 
 ## Why this exists
 
-RunPod runs two Pollinations workloads: `gpu-worker` (Flux / Z-Image image generation, 4× RTX 4090) and `klein-worker` (Klein model, 1× RTX 3090). Both bill against a credit pool, so our Stripe history and bank statements will NEVER show RunPod charges — making all "how much do we spend on GPU" analysis blind without this skill.
+RunPod runs Pollinations' Z-Image pods (3× single-GPU as of 2026-06) and `klein-worker` (Klein model). Flux moved to Vast.ai on 2026-07-02 (`image.pollinations.ai/GPU_INSTANCES.md`) — the old `gpu-worker` 4× 4090 pod is terminated. Pods bill against a credit pool, so our Stripe history and bank statements will NEVER show RunPod charges — making all "how much do we spend on GPU" analysis blind without this skill.
 
 The question this skill answers is: **"How fast are we burning the RunPod credit pool, what's left, and when does it run out?"**
 

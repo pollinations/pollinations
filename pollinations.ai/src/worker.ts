@@ -57,7 +57,7 @@ const ROUTE_META: Record<string, { title: string; description: string }> = {
     "/": {
         title: "pollinations.ai",
         description:
-            "Build AI apps with one API, free Pollen, user wallets, and developer earnings",
+            "Build AI apps with one API, user wallets, and developer earnings",
     },
     "/play": {
         title: "Play | pollinations.ai",
@@ -97,7 +97,7 @@ const JSON_LD_HOME = JSON.stringify({
         "https://x.com/pollinations_ai",
     ],
     description:
-        "Build AI apps with one API, free Pollen, user wallets, and developer earnings",
+        "Build AI apps with one API, user wallets, and developer earnings",
 });
 
 const JSON_LD_PLAYGROUND = JSON.stringify({

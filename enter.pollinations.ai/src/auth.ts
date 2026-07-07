@@ -66,9 +66,13 @@ export async function ensureUniqueHandle(
 }
 
 /**
- * For every new user that arrives without a handle (e.g. Google, email/password),
- * derive one from the email local-part and ensure it is unique.
- * GitHub signups are untouched — mapProfileToUser already set handle = profile.login.
+ * Normalises the handle for every new user before the row is written.
+ *
+ * - GitHub signups: `mapProfileToUser` sets `handle = profile.login`.
+ *   We still run it through `sanitizeHandle` (lowercases, strips bad chars)
+ *   and `ensureUniqueHandle` so a new GitHub user whose login collides with an
+ *   existing handle gets a suffix instead of hitting the unique index.
+ * - All other providers (Google, email/password, …): derive from email local-part.
  */
 function handleFallbackPlugin(env: Cloudflare.Env): BetterAuthPlugin {
     return {
@@ -82,13 +86,17 @@ function handleFallbackPlugin(env: Cloudflare.Env): BetterAuthPlugin {
                                 const u = user as GenericUser & {
                                     handle?: string | null;
                                 };
-                                if (u.handle) return { data: u };
-
                                 const db = drizzle(env.DB, {
                                     schema: betterAuthSchema,
                                 });
-                                const localPart = u.email.split("@")[0] ?? "";
-                                const sanitized = sanitizeHandle(localPart);
+                                // Use existing handle (e.g. from GitHub login) or fall back
+                                // to email local-part. sanitizeHandle lowercases so the
+                                // ensureUniqueHandle probe (`lower(handle) = ${attempt}`)
+                                // is always comparing equal-case strings.
+                                const raw = u.handle
+                                    ? u.handle
+                                    : (u.email.split("@")[0] ?? "");
+                                const sanitized = sanitizeHandle(raw);
                                 const candidate = sanitized || "user";
                                 const handle = await ensureUniqueHandle(
                                     db,

@@ -14,9 +14,11 @@ import {
     appPublicUrl,
     appWorkerScriptName,
     attachAppDomain,
+    attachPublicDomain,
     decodeAppFiles,
     deployAppWorker,
     detachAppDomain,
+    detachPublicDomain,
     RESERVED_APP_SLUGS,
     requireAppDeployConfig,
 } from "../services/app-deploy.ts";
@@ -185,6 +187,7 @@ export const userAppsRoutes = new Hono<Env>()
             const id = crypto.randomUUID();
             const scriptName = appWorkerScriptName(id);
             const hostname = `${input.slug}.${config.originDomain}`;
+            const publicHostname = `${input.slug}.${config.publicDomain}`;
             await deployAppWorker(config, scriptName, files);
             try {
                 // The attach also guards slug races: Cloudflare rejects a
@@ -198,6 +201,18 @@ export const userAppsRoutes = new Hono<Env>()
                 // hostname squatted with no recoverable row. detachAppDomain
                 // is script-scoped and idempotent, so it is a no-op when the
                 // hostname was never claimed or belongs to another script.
+                await detachAppDomain(config, hostname, scriptName);
+                await deleteCommunityWorker(config, scriptName);
+                throw error;
+            }
+            try {
+                // Bind the public hostname to the proxy (no-op when public
+                // exposure isn't configured — app stays reachable only at the
+                // origin host). Done before the row insert so a squatted
+                // public host also blocks registration.
+                await attachPublicDomain(config, publicHostname);
+            } catch (error) {
+                await detachPublicDomain(config, publicHostname);
                 await detachAppDomain(config, hostname, scriptName);
                 await deleteCommunityWorker(config, scriptName);
                 throw error;
@@ -217,6 +232,7 @@ export const userAppsRoutes = new Hono<Env>()
             } catch (error) {
                 // The worker is live but the app isn't registered — remove
                 // the orphans so no hostname/script outlives its D1 row.
+                await detachPublicDomain(config, publicHostname);
                 await detachAppDomain(config, hostname, scriptName);
                 await deleteCommunityWorker(config, scriptName);
                 throw error;
@@ -310,9 +326,13 @@ export const userAppsRoutes = new Hono<Env>()
             );
             const config = requireAppDeployConfig(c.env);
             const app = await requireOwnedApp(db, id, user.id);
-            // Unpublish before dropping the row: hostname first (public
-            // reachability), then the script, so a failure never leaves a
-            // served app with no backing row. Both calls are idempotent.
+            // Unpublish before dropping the row: public hostname first (what
+            // users hit), then the origin host, then the script, so a failure
+            // never leaves a served app with no backing row. All idempotent.
+            await detachPublicDomain(
+                config,
+                `${app.slug}.${config.publicDomain}`,
+            );
             await detachAppDomain(
                 config,
                 `${app.slug}.${config.originDomain}`,

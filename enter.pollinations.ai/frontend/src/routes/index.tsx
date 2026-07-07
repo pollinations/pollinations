@@ -11,6 +11,7 @@ import {
     type UsagePeriodSelection,
     UsageSection,
 } from "../components/activity";
+import { Apps } from "../components/apps";
 import {
     type ApiKey,
     ApiKeyList,
@@ -21,7 +22,10 @@ import {
     type DashboardPage,
     DashboardShell,
 } from "../components/layout/dashboard-shell.tsx";
-import { isDashboardPage } from "../components/layout/dashboard-theme.ts";
+import {
+    DASHBOARD_NAV_ITEMS,
+    isDashboardPage,
+} from "../components/layout/dashboard-theme.ts";
 import { usePageFromHash } from "../components/layout/use-page-from-hash.ts";
 import { Models } from "../components/models";
 import { NewsFaq } from "../components/news-faq";
@@ -128,6 +132,14 @@ function RouteComponent() {
     const [activityPeriod, setActivityPeriod] =
         useState<UsagePeriodSelection>(currentUsagePeriod);
     const showCommunityEndpoints = communityEndpointsAllowed;
+    // Apps share the community invite gate; hide the nav item for others.
+    const navItems = useMemo(
+        () =>
+            showCommunityEndpoints
+                ? DASHBOARD_NAV_ITEMS
+                : DASHBOARD_NAV_ITEMS.filter((item) => item.id !== "apps"),
+        [showCommunityEndpoints],
+    );
 
     const selectableKeys = useMemo(
         () =>
@@ -247,6 +259,7 @@ function RouteComponent() {
     return (
         <DashboardShell
             activePage={activePage}
+            navItems={navItems}
             githubUsername={githubUsername}
             githubAvatarUrl={user?.image || ""}
             onPageChange={handlePageChange}
@@ -312,6 +325,7 @@ function RouteComponent() {
             {activePage === "models" && (
                 <Models showCommunityEndpoints={showCommunityEndpoints} />
             )}
+            {activePage === "apps" && showCommunityEndpoints && <Apps />}
         </DashboardShell>
     );
 }

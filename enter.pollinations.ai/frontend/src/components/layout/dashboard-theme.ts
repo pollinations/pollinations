@@ -5,6 +5,7 @@ import {
     BeakerIcon,
     LockIcon,
     NewspaperIcon,
+    RocketIcon,
     SparkleIcon,
     TrendUpIcon,
     WalletIcon,
@@ -14,6 +15,7 @@ import type { ComponentType } from "react";
 export const DASHBOARD_NAV_ITEMS = [
     { id: "news-faq", label: "News & FAQ", icon: NewspaperIcon },
     { id: "models", label: "Models", icon: BeakerIcon },
+    { id: "apps", label: "Apps", icon: RocketIcon },
     { id: "keys", label: "Keys", icon: LockIcon },
     { id: "pollen", label: "Pollen", icon: WalletIcon },
     { id: "activity", label: "Activity", icon: TrendUpIcon },

@@ -70,6 +70,21 @@ export type AppDeployConfig = WorkerDeployConfig & {
     originZoneId: string;
     originDomain: string;
     publicDomain: string;
+    // Optional public-exposure binding. The <slug>.<publicDomain> hostname
+    // lives in a DIFFERENT Cloudflare account (the one that owns the public
+    // zone and runs the proxy worker), so it needs its own account + token.
+    // When absent, deploys still succeed but the app is reachable only at
+    // <slug>.<originDomain>; attaching the public hostname is left to ops.
+    proxy?: ProxyDeployConfig;
+};
+
+export type ProxyDeployConfig = {
+    accountId: string;
+    apiToken: string;
+    publicZoneId: string;
+    // The proxy worker the public hostname is attached to; its generic rule
+    // forwards <slug>.<publicDomain> -> <slug>.<originDomain>.
+    proxyService: string;
 };
 
 type AppDeployEnv = {
@@ -78,7 +93,42 @@ type AppDeployEnv = {
     CF_APP_ORIGIN_ZONE_ID?: string;
     CF_APP_ORIGIN_DOMAIN?: string;
     CF_APP_PUBLIC_DOMAIN?: string;
+    CF_PROXY_DEPLOY_ACCOUNT_ID?: string;
+    CF_PROXY_DEPLOY_API_TOKEN?: string;
+    CF_APP_PUBLIC_ZONE_ID?: string;
+    CF_APP_PROXY_SERVICE?: string;
 };
+
+// Reads the optional public-exposure binding. Returns undefined when it is
+// not fully configured — the deploy then stops at the origin hostname. All
+// four vars are required together (partial config is a misconfiguration, so
+// it throws rather than silently degrading).
+function readProxyConfig(env: unknown): ProxyDeployConfig | undefined {
+    const {
+        CF_PROXY_DEPLOY_ACCOUNT_ID,
+        CF_PROXY_DEPLOY_API_TOKEN,
+        CF_APP_PUBLIC_ZONE_ID,
+        CF_APP_PROXY_SERVICE,
+    } = env as AppDeployEnv;
+    const values = [
+        CF_PROXY_DEPLOY_ACCOUNT_ID,
+        CF_PROXY_DEPLOY_API_TOKEN,
+        CF_APP_PUBLIC_ZONE_ID,
+        CF_APP_PROXY_SERVICE,
+    ];
+    if (values.every((value) => !value)) return undefined;
+    if (values.some((value) => !value)) {
+        throw new Error(
+            "Public app exposure is partially configured (need all of CF_PROXY_DEPLOY_ACCOUNT_ID / CF_PROXY_DEPLOY_API_TOKEN / CF_APP_PUBLIC_ZONE_ID / CF_APP_PROXY_SERVICE)",
+        );
+    }
+    return {
+        accountId: CF_PROXY_DEPLOY_ACCOUNT_ID as string,
+        apiToken: CF_PROXY_DEPLOY_API_TOKEN as string,
+        publicZoneId: CF_APP_PUBLIC_ZONE_ID as string,
+        proxyService: CF_APP_PROXY_SERVICE as string,
+    };
+}
 
 export function requireAppDeployConfig(env: unknown): AppDeployConfig {
     // Reuse the base account/token validation so its error message and any
@@ -103,6 +153,7 @@ export function requireAppDeployConfig(env: unknown): AppDeployConfig {
         originZoneId: CF_APP_ORIGIN_ZONE_ID,
         originDomain: CF_APP_ORIGIN_DOMAIN,
         publicDomain: CF_APP_PUBLIC_DOMAIN,
+        proxy: readProxyConfig(env),
     };
 }
 
@@ -392,5 +443,100 @@ export async function detachAppDomain(
         .join("; ");
     throw new Error(
         `Cloudflare API DELETE /workers/domains/${domainId} failed (${response.status})${details ? `: ${details}` : ""}`,
+    );
+}
+
+// Minimal Cloudflare call against the PROXY account (a different account +
+// token than the origin), used only for the public custom-domain lifecycle.
+async function proxyApi(
+    proxy: ProxyDeployConfig,
+    path: string,
+    init: RequestInit,
+): Promise<unknown> {
+    const response = await fetch(
+        `${CF_API_BASE}/accounts/${proxy.accountId}${path}`,
+        {
+            ...init,
+            headers: {
+                ...init.headers,
+                Authorization: `Bearer ${proxy.apiToken}`,
+            },
+        },
+    );
+    const body = (await response.json().catch(() => null)) as {
+        success?: boolean;
+        errors?: { message?: string }[];
+        result?: unknown;
+    } | null;
+    if (!response.ok || !body?.success) {
+        const details = body?.errors
+            ?.map((error) => error.message)
+            .filter(Boolean)
+            .join("; ");
+        throw new Error(
+            `Cloudflare proxy API ${init.method ?? "GET"} ${path} failed (${response.status})${details ? `: ${details}` : ""}`,
+        );
+    }
+    return body.result;
+}
+
+// Attaches the public hostname <slug>.<publicDomain> to the proxy worker in
+// the public zone's account. The proxy's generic rule then forwards it to
+// <slug>.<originDomain> where the app worker serves. No-op when public
+// exposure is not configured (app stays reachable only at the origin host).
+// No override flags: an already-claimed public host (a core service, an
+// apps.json app) is rejected rather than stolen.
+export async function attachPublicDomain(
+    config: AppDeployConfig,
+    hostname: string,
+): Promise<void> {
+    const { proxy } = config;
+    if (!proxy) return;
+    await proxyApi(proxy, "/workers/domains", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            zone_id: proxy.publicZoneId,
+            hostname,
+            service: proxy.proxyService,
+        }),
+    });
+}
+
+// Detaches the public hostname, but only when it points at the proxy service
+// (never touches a host owned by something else). Idempotent; no-op when
+// public exposure is not configured.
+export async function detachPublicDomain(
+    config: AppDeployConfig,
+    hostname: string,
+): Promise<void> {
+    const { proxy } = config;
+    if (!proxy) return;
+    const attached = (await proxyApi(
+        proxy,
+        `/workers/domains?hostname=${encodeURIComponent(hostname)}&zone_id=${proxy.publicZoneId}`,
+        { method: "GET" },
+    )) as { id?: string; service?: string }[] | null;
+    const domainId = attached?.find(
+        (domain) => domain.service === proxy.proxyService,
+    )?.id;
+    if (!domainId) return;
+    const response = await fetch(
+        `${CF_API_BASE}/accounts/${proxy.accountId}/workers/domains/${domainId}`,
+        {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${proxy.apiToken}` },
+        },
+    );
+    if (response.ok || response.status === 404) return;
+    const body = (await response.json().catch(() => null)) as {
+        errors?: { message?: string }[];
+    } | null;
+    const details = body?.errors
+        ?.map((error) => error.message)
+        .filter(Boolean)
+        .join("; ");
+    throw new Error(
+        `Cloudflare proxy API DELETE /workers/domains/${domainId} failed (${response.status})${details ? `: ${details}` : ""}`,
     );
 }

@@ -5,9 +5,11 @@ import {
     appPublicUrl,
     appWorkerScriptName,
     attachAppDomain,
+    attachPublicDomain,
     decodeAppFiles,
     deployAppWorker,
     detachAppDomain,
+    detachPublicDomain,
     MAX_APP_TOTAL_BYTES,
     RESERVED_APP_SLUGS,
     requireAppDeployConfig,
@@ -19,6 +21,16 @@ const config: AppDeployConfig = {
     originZoneId: "zone",
     originDomain: "myceli.ai",
     publicDomain: "pollinations.ai",
+};
+
+const proxyConfig: AppDeployConfig = {
+    ...config,
+    proxy: {
+        accountId: "old-acct",
+        apiToken: "old_token",
+        publicZoneId: "public-zone",
+        proxyService: "pollinations-proxy",
+    },
 };
 
 afterEach(() => {
@@ -76,7 +88,7 @@ describe("requireAppDeployConfig", () => {
         ).toThrow(/CF_APP_/);
     });
 
-    it("composes the full config", () => {
+    it("composes the full config without public exposure", () => {
         expect(
             requireAppDeployConfig({
                 CF_WORKER_DEPLOY_ACCOUNT_ID: "acct",
@@ -91,7 +103,41 @@ describe("requireAppDeployConfig", () => {
             originZoneId: "zone",
             originDomain: "myceli.ai",
             publicDomain: "pollinations.ai",
+            proxy: undefined,
         });
+    });
+
+    it("includes the proxy config when all public-exposure vars are set", () => {
+        const result = requireAppDeployConfig({
+            CF_WORKER_DEPLOY_ACCOUNT_ID: "acct",
+            CF_WORKER_DEPLOY_API_TOKEN: "token",
+            CF_APP_ORIGIN_ZONE_ID: "zone",
+            CF_APP_ORIGIN_DOMAIN: "myceli.ai",
+            CF_APP_PUBLIC_DOMAIN: "pollinations.ai",
+            CF_PROXY_DEPLOY_ACCOUNT_ID: "old-acct",
+            CF_PROXY_DEPLOY_API_TOKEN: "old-token",
+            CF_APP_PUBLIC_ZONE_ID: "public-zone",
+            CF_APP_PROXY_SERVICE: "pollinations-proxy",
+        });
+        expect(result.proxy).toEqual({
+            accountId: "old-acct",
+            apiToken: "old-token",
+            publicZoneId: "public-zone",
+            proxyService: "pollinations-proxy",
+        });
+    });
+
+    it("throws when public exposure is partially configured", () => {
+        expect(() =>
+            requireAppDeployConfig({
+                CF_WORKER_DEPLOY_ACCOUNT_ID: "acct",
+                CF_WORKER_DEPLOY_API_TOKEN: "token",
+                CF_APP_ORIGIN_ZONE_ID: "zone",
+                CF_APP_ORIGIN_DOMAIN: "myceli.ai",
+                CF_APP_PUBLIC_DOMAIN: "pollinations.ai",
+                CF_PROXY_DEPLOY_ACCOUNT_ID: "old-acct",
+            }),
+        ).toThrow(/partially configured/);
     });
 });
 
@@ -315,6 +361,64 @@ describe("app domains", () => {
             detachAppDomain(config, "my-app.myceli.ai", "app-123"),
         ).resolves.toBeUndefined();
         expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe("public domains", () => {
+    it("is a no-op when public exposure is not configured", async () => {
+        const fetchMock = vi.fn();
+        vi.stubGlobal("fetch", fetchMock);
+
+        await attachPublicDomain(config, "my-app.pollinations.ai");
+        await detachPublicDomain(config, "my-app.pollinations.ai");
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("attaches the public host to the proxy account/service", async () => {
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            expect(request.url).toBe(
+                "https://api.cloudflare.com/client/v4/accounts/old-acct/workers/domains",
+            );
+            expect(request.headers.get("authorization")).toBe(
+                "Bearer old_token",
+            );
+            await expect(request.json()).resolves.toEqual({
+                zone_id: "public-zone",
+                hostname: "my-app.pollinations.ai",
+                service: "pollinations-proxy",
+            });
+            return Response.json({ success: true, result: { id: "pd" } });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await attachPublicDomain(proxyConfig, "my-app.pollinations.ai");
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("detaches only a public host owned by the proxy service", async () => {
+        const deleted: string[] = [];
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            if (request.method === "GET") {
+                expect(request.url).toContain("/accounts/old-acct/");
+                return Response.json({
+                    success: true,
+                    result: [
+                        { id: "other", service: "someone-else" },
+                        { id: "mine", service: "pollinations-proxy" },
+                    ],
+                });
+            }
+            deleted.push(request.url);
+            return new Response(null, { status: 200 });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await detachPublicDomain(proxyConfig, "my-app.pollinations.ai");
+        expect(deleted).toEqual([
+            "https://api.cloudflare.com/client/v4/accounts/old-acct/workers/domains/mine",
+        ]);
     });
 });
 

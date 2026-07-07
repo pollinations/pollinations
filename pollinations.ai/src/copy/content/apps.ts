@@ -77,6 +77,12 @@ export const badges = {
 // Genre filters — category-based, each with a glow color cycling through palette
 export const GENRE_FILTERS = [
     {
+        id: "all",
+        label: "✨ All",
+        match: (_app: App) => true,
+        glow: "var(--primary-strong)",
+    },
+    {
         id: "image",
         label: "🖼️ Image",
         match: (app: App) => app.category === "image",

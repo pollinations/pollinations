@@ -1,3 +1,4 @@
+import { getLinkedGithub } from "@shared/auth/github-account.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { eq } from "drizzle-orm";
@@ -19,13 +20,18 @@ async function resolveAttribution(
         columns: { name: true, handle: true },
         where: eq(schema.user.id, keyRow.userId),
     });
+    // Real GitHub login from the linked account row — undefined when the user
+    // has no linked GitHub account (or no synced username). The consent screen
+    // must only render a github.com link for actual GitHub identities.
+    const github = await getLinkedGithub(db, keyRow.userId);
     const redirectUris = getRedirectUris(meta);
     return {
         found: true as const,
         clientId: keyRow.id,
         userId: keyRow.userId,
         userName: user?.name,
-        githubUsername: user?.handle || undefined, // deprecated field name; now sourced from handle
+        handle: user?.handle || undefined,
+        githubUsername: github?.username || undefined,
         appName: keyRow.name,
         redirectUris,
         earningsEnabled: meta.earningsEnabled === true,
@@ -46,7 +52,7 @@ const AppLookupQuerySchema = z.object({
         .startsWith("pk_")
         .optional()
         .describe(
-            "Your publishable App Key (pk_...). When provided, the consent screen shows your app name and GitHub username. Canonical OAuth name.",
+            "Your publishable App Key (pk_...). When provided, the consent screen shows your app name and handle. Canonical OAuth name.",
         ),
     app_key: z
         .string()

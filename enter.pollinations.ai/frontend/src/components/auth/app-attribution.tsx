@@ -2,6 +2,9 @@ import { InfoTip } from "@pollinations/ui";
 
 type Attribution = {
     appName?: string;
+    /** Provider-neutral handle — the canonical author display name. */
+    handle?: string | null;
+    /** Real GitHub login; present only when a GitHub account is linked. */
     githubUsername?: string;
     found?: boolean;
 };
@@ -22,6 +25,7 @@ export function AppAttribution({
     const displayName =
         attribution?.appName ??
         (isDeviceMode ? "A device" : redirectHostname || "An app");
+    const authorHandle = attribution?.handle || attribution?.githubUsername;
     const tipText = [
         "Same as copy-pasting an API key into their app.",
         "Only share with apps you trust.",
@@ -31,17 +35,23 @@ export function AppAttribution({
             <p className="text-theme-text-strong">
                 <span className="font-bold text-lg">{displayName}</span>
             </p>
-            {attribution?.githubUsername && (
+            {authorHandle && (
                 <p className="text-sm text-theme-text-base mt-1">
                     by{" "}
-                    <a
-                        href={`https://github.com/${attribution.githubUsername}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-medium underline hover:text-theme-text-strong"
-                    >
-                        @{attribution.githubUsername}
-                    </a>
+                    {attribution?.githubUsername ? (
+                        // Only link to github.com when a GitHub account is
+                        // actually linked — a bare handle gets plain text.
+                        <a
+                            href={`https://github.com/${attribution.githubUsername}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-medium underline hover:text-theme-text-strong"
+                        >
+                            @{authorHandle}
+                        </a>
+                    ) : (
+                        <span className="font-medium">@{authorHandle}</span>
+                    )}
                 </p>
             )}
             {!isDeviceMode && attribution?.appName && redirectHostname && (

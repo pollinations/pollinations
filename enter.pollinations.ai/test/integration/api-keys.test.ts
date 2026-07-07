@@ -711,6 +711,95 @@ describe("API Key Management", () => {
             });
         });
 
+        test("returns handle and the real github login from the account row", async ({
+            sessionToken,
+        }) => {
+            const appResponse = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "attribution-app",
+                        type: "publishable",
+                    }),
+                },
+            );
+            expect(appResponse.status).toBe(200);
+            const appKey = await appResponse.json();
+
+            const db = drizzle(env.DB, { schema });
+            // githubUsername must mirror account.username (the live GitHub
+            // login), not user.handle. Simulate a GitHub-side rename so the
+            // two values diverge.
+            await db
+                .update(schema.account)
+                .set({ username: "renamed-login" })
+                .where(eq(schema.account.providerId, "github"));
+
+            const lookup = await SELF.fetch(
+                `http://localhost:3000/api/app-lookup?client_id=${encodeURIComponent(appKey.key)}`,
+            );
+            expect(lookup.status).toBe(200);
+            const body = (await lookup.json()) as {
+                found: boolean;
+                handle?: string;
+                githubUsername?: string;
+            };
+            expect(body.found).toBe(true);
+            expect(body.handle).toBe("testuser");
+            const [acct] = await db
+                .select({ username: schema.account.username })
+                .from(schema.account)
+                .where(eq(schema.account.providerId, "github"));
+            expect(body.githubUsername).toBe(acct.username);
+            expect(body.githubUsername).toBe("renamed-login");
+        });
+
+        test("omits githubUsername but keeps handle when no github account is linked", async ({
+            sessionToken,
+        }) => {
+            const appResponse = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "no-github-app",
+                        type: "publishable",
+                    }),
+                },
+            );
+            expect(appResponse.status).toBe(200);
+            const appKey = await appResponse.json();
+
+            // Remove the github account row — future non-GitHub identities
+            // have a handle but no linked GitHub account.
+            const db = drizzle(env.DB, { schema });
+            await db
+                .delete(schema.account)
+                .where(eq(schema.account.providerId, "github"));
+
+            const lookup = await SELF.fetch(
+                `http://localhost:3000/api/app-lookup?client_id=${encodeURIComponent(appKey.key)}`,
+            );
+            expect(lookup.status).toBe(200);
+            const body = (await lookup.json()) as {
+                found: boolean;
+                handle?: string;
+                githubUsername?: string;
+            };
+            expect(body.found).toBe(true);
+            expect(body.handle).toBe("testuser");
+            expect(body.githubUsername).toBeUndefined();
+        });
+
         test("createApiKey enforces same flexible redirect_uri rules", async ({
             sessionToken,
         }) => {

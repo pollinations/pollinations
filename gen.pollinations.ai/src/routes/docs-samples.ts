@@ -338,7 +338,7 @@ response = requests.get(
     headers={"Authorization": "Bearer YOUR_API_KEY"},
 )
 profile = response.json()
-print(profile["githubUsername"])`,
+print(profile["handle"])`,
         },
         {
             label: "JavaScript",
@@ -348,7 +348,7 @@ print(profile["githubUsername"])`,
   { headers: { Authorization: "Bearer YOUR_API_KEY" } },
 );
 const profile = await response.json();
-console.log(profile.githubUsername);`,
+console.log(profile.handle);`,
         },
     ],
     "get /account/key": [
@@ -545,7 +545,7 @@ export const RESPONSE_EXAMPLES: Record<string, unknown> = {
         balance: 42.5,
     },
     "get /account/profile": {
-        githubUsername: "janedeveloper",
+        handle: "janedeveloper",
         image: "https://avatars.example.com/jane.jpg",
         tier: "seed",
         nextResetAt: "2026-01-01T01:00:00Z",

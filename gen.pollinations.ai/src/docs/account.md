@@ -16,7 +16,7 @@ Self-service endpoints for the authenticated user. All endpoints require authent
 
 ### GET /account/profile
 
-Returns user profile. `githubUsername`, `image`, `tier`, and `nextResetAt` are always included. `name` and `email` are included only when the API key has `account:profile`.
+Returns user profile. `handle`, `image`, `tier`, and `nextResetAt` are always included. `name` and `email` are included only when the API key has `account:profile`. (`githubUsername` is also returned, deprecated — use `handle`)
 
 ### GET /account/balance
 

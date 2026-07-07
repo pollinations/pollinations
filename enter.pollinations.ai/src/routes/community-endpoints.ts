@@ -1,3 +1,4 @@
+import { getLinkedGithub } from "@shared/auth/github-account.ts";
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointPriceKey,
@@ -142,37 +143,29 @@ async function requireCommunityEndpointAccess(
     db: Db,
     userId: string,
 ): Promise<void> {
-    const user = await db.query.user.findFirst({
-        columns: { githubId: true },
-        where: eq(schema.user.id, userId),
-    });
-
-    if (!isCommunityEndpointOwnerAllowed(user)) {
+    const gh = await getLinkedGithub(db, userId);
+    if (!isCommunityEndpointOwnerAllowed({ githubId: gh?.githubId ?? null })) {
         throw new HTTPException(403, {
             message: "Community endpoints are invite-only",
         });
     }
 }
 
-async function requireOwnerGithubUsername(
-    db: Db,
-    userId: string,
-): Promise<string> {
+async function requireOwnerHandle(db: Db, userId: string): Promise<string> {
     const owner = await db.query.user.findFirst({
-        columns: { githubUsername: true },
+        columns: { handle: true },
         where: eq(schema.user.id, userId),
     });
-    if (owner?.githubUsername) return owner.githubUsername;
+    if (owner?.handle) return owner.handle;
     throw new HTTPException(400, {
-        message:
-            "A GitHub username is required to register community endpoints",
+        message: "A handle is required to register community endpoints",
     });
 }
 
-function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
+function toResponse(row: CommunityEndpointRow, ownerHandle: string) {
     return {
         id: row.id,
-        modelId: communityModelId(ownerGithubUsername, row.name),
+        modelId: communityModelId(ownerHandle, row.name),
         name: row.name,
         description: row.description,
         baseUrl: row.baseUrl,
@@ -314,16 +307,13 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 user.id,
                 c.var.auth.apiKey,
             );
-            const ownerGithubUsername = await requireOwnerGithubUsername(
-                db,
-                user.id,
-            );
+            const ownerHandle = await requireOwnerHandle(db, user.id);
             const rows = await db.query.communityEndpoint.findMany({
                 where: eq(schema.communityEndpoint.ownerUserId, user.id),
                 orderBy: (endpoint, { desc }) => [desc(endpoint.createdAt)],
             });
             return c.json({
-                data: rows.map((row) => toResponse(row, ownerGithubUsername)),
+                data: rows.map((row) => toResponse(row, ownerHandle)),
             });
         },
     )
@@ -358,10 +348,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 user.id,
                 c.var.auth.apiKey,
             );
-            const ownerGithubUsername = await requireOwnerGithubUsername(
-                db,
-                user.id,
-            );
+            const ownerHandle = await requireOwnerHandle(db, user.id);
             await ensureModelNameAvailable(db, user.id, input.name);
             const id = crypto.randomUUID();
             const [row] = await db
@@ -382,7 +369,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     updatedAt: new Date(),
                 })
                 .returning();
-            return c.json(toResponse(row, ownerGithubUsername));
+            return c.json(toResponse(row, ownerHandle));
         },
     )
     .post(
@@ -518,10 +505,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 user.id,
                 c.var.auth.apiKey,
             );
-            const ownerGithubUsername = await requireOwnerGithubUsername(
-                db,
-                user.id,
-            );
+            const ownerHandle = await requireOwnerHandle(db, user.id);
             const endpoint = await requireOwnedEndpoint(db, id, user.id);
             await ensureModelNameAvailable(
                 db,
@@ -566,7 +550,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     ),
                 )
                 .returning();
-            return c.json(toResponse(row, ownerGithubUsername));
+            return c.json(toResponse(row, ownerHandle));
         },
     )
     .delete(

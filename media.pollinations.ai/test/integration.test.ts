@@ -35,7 +35,6 @@ interface UploadResponse {
 interface MediaItemResponse {
     id: string;
     url: string;
-    kind: string;
     contentType: string;
     size: number | null;
     tags: string[];

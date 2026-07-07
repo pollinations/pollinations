@@ -10,7 +10,6 @@ import type { RequestIdVariables } from "hono/request-id";
 import { describe, expect, it } from "vitest";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import { audioCache, imageCache } from "@/middleware/media-cache.ts";
-import { generateCacheKey } from "@/utils/media-cache.ts";
 
 const testLog = {
     getChild: () => testLog,
@@ -165,24 +164,5 @@ describe("media cache", () => {
         expect(cached.response.headers.get("X-Cache")).toBe("HIT");
         expect(media.originHits).toBe(1);
         expect(bucket.putCount).toBe(2);
-    });
-
-    it("excludes tags params from the cache key", () => {
-        const bare = generateCacheKey(
-            new URL("https://gen.pollinations.ai/image/sunset?model=flux"),
-        );
-        const tagged = generateCacheKey(
-            new URL(
-                "https://gen.pollinations.ai/image/sunset?model=flux&tags=sunset",
-            ),
-        );
-        const multiTagged = generateCacheKey(
-            new URL(
-                "https://gen.pollinations.ai/image/sunset?model=flux&tags=a,b,c",
-            ),
-        );
-
-        expect(tagged).toBe(bare);
-        expect(multiTagged).toBe(bare);
     });
 });

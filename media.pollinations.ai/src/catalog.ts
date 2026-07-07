@@ -109,7 +109,6 @@ export async function upsertUploadCatalogItem(
         .insert(mediaItem)
         .values({
             id: crypto.randomUUID(),
-            kind: "upload",
             locator: params.locator,
             ownerUserId: params.ownerUserId,
             appKeyId: params.appKeyId,
@@ -149,7 +148,6 @@ export async function upsertUploadCatalogItem(
 
 export interface CatalogItem {
     id: string;
-    kind: "upload" | "generation";
     locator: string;
     contentType: string;
     size: number | null;
@@ -223,7 +221,6 @@ export async function listUserMedia(
         const rows = await db
             .select({
                 id: mediaItem.id,
-                kind: mediaItem.kind,
                 locator: mediaItem.locator,
                 contentType: mediaItem.contentType,
                 size: mediaItem.size,
@@ -240,7 +237,6 @@ export async function listUserMedia(
     const rows = await db
         .select({
             id: mediaItem.id,
-            kind: mediaItem.kind,
             locator: mediaItem.locator,
             contentType: mediaItem.contentType,
             size: mediaItem.size,
@@ -284,7 +280,6 @@ export async function listByTag(
     const rows = await db
         .select({
             id: mediaItem.id,
-            kind: mediaItem.kind,
             locator: mediaItem.locator,
             contentType: mediaItem.contentType,
             size: mediaItem.size,

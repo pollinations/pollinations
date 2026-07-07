@@ -23,7 +23,6 @@ const genAliases = [
     "middleware/balance.ts",
     "middleware/logger.ts",
     "middleware/media-cache.ts",
-    "middleware/media-catalog.ts",
     "middleware/model.ts",
     "middleware/rate-limit-durable.ts",
     "middleware/rate-limit-edge.ts",

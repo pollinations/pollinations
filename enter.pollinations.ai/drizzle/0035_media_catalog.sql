@@ -1,6 +1,5 @@
 CREATE TABLE `media_item` (
 	`id` text PRIMARY KEY NOT NULL,
-	`kind` text NOT NULL,
 	`locator` text NOT NULL,
 	`owner_user_id` text,
 	`app_key_id` text,
@@ -20,4 +19,14 @@ CREATE TABLE `media_tag` (
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `idx_media_tag_item_tag` ON `media_tag` (`item_id`,`tag`);--> statement-breakpoint
-CREATE INDEX `idx_media_tag_tag_created` ON `media_tag` (`tag`,`created_at`);
+CREATE INDEX `idx_media_tag_tag_created` ON `media_tag` (`tag`,`created_at`);--> statement-breakpoint
+CREATE TABLE `media_reaction` (
+	`item_id` text NOT NULL,
+	`user_id` text NOT NULL,
+	`reaction` text NOT NULL,
+	`created_at` integer NOT NULL,
+	FOREIGN KEY (`item_id`) REFERENCES `media_item`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `idx_media_reaction_item_user_reaction` ON `media_reaction` (`item_id`,`user_id`,`reaction`);

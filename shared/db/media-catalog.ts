@@ -1,6 +1,7 @@
-// Media catalog: queryable metadata for stored media (uploads now,
-// generations later). Blobs stay in R2 — these tables only index them.
-// One row per (owner, locator); public discovery is strictly opt-in via tags.
+// Media catalog: queryable metadata for uploaded media. Blobs stay in R2 —
+// these tables only index them. One row per (owner, locator); public
+// discovery is strictly opt-in via tags. (Generations are not cataloged yet;
+// see the generation-tagging followup.)
 
 import {
     index,
@@ -15,10 +16,7 @@ export const mediaItem = sqliteTable(
     "media_item",
     {
         id: text("id").primaryKey(),
-        // What produced the bytes: direct upload today, gen catalog-by-reference later.
-        kind: text("kind", { enum: ["upload", "generation"] }).notNull(),
-        // upload: 16-hex content hash on media.pollinations.ai
-        // generation: canonical gen.pollinations.ai URL (catalog params stripped)
+        // 16-hex content hash of the uploaded bytes on media.pollinations.ai.
         locator: text("locator").notNull(),
         // Server-attested from the verified API key — never from request params.
         ownerUserId: text("owner_user_id").references(() => user.id, {

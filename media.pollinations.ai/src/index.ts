@@ -126,7 +126,6 @@ const REACTION_PATTERN_DESCRIPTION =
 interface MediaItemResponse {
     id: string;
     url: string;
-    kind: "upload" | "generation";
     contentType: string;
     size: number | null;
     tags: string[];
@@ -143,8 +142,7 @@ function toItemResponse(
 ): MediaItemResponse {
     return {
         id: item.id,
-        url: item.kind === "upload" ? mediaUrl(item.locator) : item.locator,
-        kind: item.kind,
+        url: mediaUrl(item.locator),
         contentType: item.contentType,
         size: item.size,
         tags: tagsByItem.get(item.id) ?? [],
@@ -213,8 +211,7 @@ const MetadataResponseSchema = z.object({
 
 const MediaItemResponseSchema = z.object({
     id: z.string().describe("Catalog item id"),
-    url: z.string().describe("Public URL, or generation locator"),
-    kind: z.enum(["upload", "generation"]),
+    url: z.string().describe("Public retrieval URL"),
     contentType: z.string(),
     size: z.number().int().nullable().describe("File size in bytes"),
     tags: z.array(z.string()),

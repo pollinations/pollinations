@@ -1501,13 +1501,6 @@
           "notNull": true,
           "autoincrement": false
         },
-        "kind": {
-          "name": "kind",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
         "locator": {
           "name": "locator",
           "type": "text",
@@ -1638,6 +1631,81 @@
           "tableTo": "media_item",
           "columnsFrom": [
             "item_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "media_reaction": {
+      "name": "media_reaction",
+      "columns": {
+        "item_id": {
+          "name": "item_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "reaction": {
+          "name": "reaction",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "idx_media_reaction_item_user_reaction": {
+          "name": "idx_media_reaction_item_user_reaction",
+          "columns": [
+            "item_id",
+            "user_id",
+            "reaction"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "media_reaction_item_id_media_item_id_fk": {
+          "name": "media_reaction_item_id_media_item_id_fk",
+          "tableFrom": "media_reaction",
+          "tableTo": "media_item",
+          "columnsFrom": [
+            "item_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "media_reaction_user_id_user_id_fk": {
+          "name": "media_reaction_user_id_user_id_fk",
+          "tableFrom": "media_reaction",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
           ],
           "columnsTo": [
             "id"

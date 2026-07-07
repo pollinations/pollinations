@@ -3,7 +3,7 @@ import { FOOTER_BRANDING, FOOTER_LEGAL, SOCIAL_LINKS } from "./links.ts";
 
 export function Footer() {
     return (
-        <footer className="border-t border-divider bg-app-bg">
+        <footer className="bg-app-bg">
             <div className="mx-auto grid max-w-5xl grid-cols-1 items-center gap-4 px-4 py-8 sm:grid-cols-3 sm:px-6">
                 <p className="text-center font-body text-sm text-theme-text-base sm:text-left">
                     {FOOTER_BRANDING}

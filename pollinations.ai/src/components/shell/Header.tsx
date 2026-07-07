@@ -20,7 +20,7 @@ export function Header() {
     return (
         <header
             className={cn(
-                "sticky top-0 z-30 border-b border-theme-text-strong/20 bg-app-bg transition-transform duration-300",
+                "sticky top-0 z-30 bg-app-bg transition-transform duration-300",
                 hidden && "-translate-y-full",
             )}
         >

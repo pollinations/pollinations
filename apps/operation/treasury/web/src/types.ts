@@ -10,6 +10,8 @@ export type ProviderMonthlyRow = {
     month: string;
     vendor: string;
     currency: string;
+    // "compute" | "infra"; rows that predate the column count as compute
+    category?: string;
     credit: number;
     paid: number;
     source: string;

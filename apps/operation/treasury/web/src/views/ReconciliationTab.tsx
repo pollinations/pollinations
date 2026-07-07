@@ -123,7 +123,7 @@ export function ReconciliationTab({
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("providerUsd")}>
-                                <HeaderHint hint="What the provider's own billing meter says we consumed that month (credit + paid parts).">
+                                <HeaderHint hint="What the provider's own billing meter says we consumed that month (credit + paid parts). Compute rows only — infra (Cloudflare, the EC2 share of AWS) has no pollen plane and reconciles through cash directly.">
                                     provider
                                 </HeaderHint>
                             </TableHeaderCell>
@@ -145,7 +145,7 @@ export function ReconciliationTab({
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("coverage")}>
-                                <HeaderHint hint="Is this consumption funded? ok cash = Wise cash that month · ok credit = provider credit burn · cash ±1mo = cash lands in an adjacent month (prepaid/arrears) · internal = no payment expected · ⚠ uncovered = active in pollen but no funding found · ⚠ paid unverified = provider says we paid cash the bank never saw.">
+                                <HeaderHint hint="Is this consumption funded? ok cash = Wise cash that month · ok credit = provider credit burn · cash ±1mo = cash lands in an adjacent month (arrears) · prepaid = balance-funded, cumulative top-ups cover cumulative burn · internal = no payment expected · ⚠ uncovered = active in pollen but no funding found · ⚠ paid unverified = provider says we paid cash the bank never saw.">
                                     coverage
                                 </HeaderHint>
                             </TableHeaderCell>

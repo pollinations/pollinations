@@ -222,13 +222,37 @@ export function monthSpendDetail(
 // seraphyn/inferenceport are real vendors with pollen-basis provider rows.)
 export const INTERNAL_VENDORS = new Set(["community"]);
 
+// Vendors funded by prepaid balance top-ups: cash precedes usage by more
+// than a month, so monthly cash matching is meaningless — coverage holds as
+// long as cumulative cash keeps up with cumulative paid burn.
+export const PREPAID_VENDORS = new Set([
+    "vast.ai",
+    "deepinfra",
+    "pruna",
+    "fal",
+]);
+
 // Pollen activity below this is noise, not a funding question.
 const POLLEN_ACTIVE_USD = 1;
+
+// Provider paid amounts at or below this never raise funding warnings.
+const PROVIDER_PAID_FLOOR_USD = 1;
+
+// Slack for prepaid cumulative matching (FX drift, fees, cents).
+const PREPAID_EPS_USD = 50;
+
+// Infra rows (Cloudflare, the EC2/CloudFront share of AWS) fund pools and
+// cash flow, but they have no pollen plane — they stay out of the compute
+// lenses (reconciliation, calibration).
+export function isInfraRow(row: { category?: string }): boolean {
+    return row.category === "infra";
+}
 
 export type Coverage =
     | "ok cash"
     | "ok credit"
     | "cash ±1mo"
+    | "prepaid"
     | "internal"
     | "uncovered"
     | "paid unverified"
@@ -256,12 +280,14 @@ export function monthShift(month: string, delta: number): string {
 }
 
 // Every pollen-active vendor-month must be funded somewhere: cash from the
-// bank, provider credit burn, or cash in an adjacent month (prepaid top-ups
-// and arrears invoices land off by one). The inverse also warns: provider
-// says we paid cash, but the bank never saw it.
+// bank, provider credit burn, cash in an adjacent month (arrears invoices
+// land off by one), or a prepaid balance whose cumulative top-ups keep up
+// with cumulative burn. The inverse also warns: provider says we paid cash,
+// but the bank never saw it.
 function coverageFor({
     cash,
     creditUsd,
+    cumulative,
     month,
     pollenUsd,
     providerUsd,
@@ -270,6 +296,7 @@ function coverageFor({
 }: {
     cash: Map<string, number>;
     creditUsd: number | null;
+    cumulative: Map<string, { cashUsd: number; paidUsd: number }>;
     month: string;
     pollenUsd: number | null;
     providerUsd: number | null;
@@ -284,7 +311,19 @@ function coverageFor({
     const cashNear =
         cash.has(`${monthShift(month, -1)}|${vendor}`) ||
         cash.has(`${monthShift(month, 1)}|${vendor}`);
-    const providerPaid = (providerUsd ?? 0) - (creditUsd ?? 0) > 0;
+    const providerPaid =
+        (providerUsd ?? 0) - (creditUsd ?? 0) > PROVIDER_PAID_FLOOR_USD;
+
+    if (PREPAID_VENDORS.has(vendor)) {
+        const run = cumulative.get(`${month}|${vendor}`);
+        const funded =
+            run != null && run.cashUsd + PREPAID_EPS_USD >= run.paidUsd;
+        if (funded) {
+            if (pollenActive || providerPaid || hasCash) return "prepaid";
+            return null;
+        }
+        // balance overdrawn — fall through to the funding warnings
+    }
 
     if (pollenActive && !hasCash && !hasCredit && !cashNear) return "uncovered";
     if (providerPaid && !hasCash && !cashNear) return "paid unverified";
@@ -322,6 +361,7 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
     const provider = new Map<string, { total: number; credit: number }>();
     for (const row of data.providerMonthly) {
         if (row.month < WINDOW_START) continue; // pre-window grant-burn rows
+        if (isInfraRow(row)) continue; // infra has no pollen plane to reconcile
         const key = `${row.month}|${row.vendor}`;
         const entry = provider.get(key) ?? { total: 0, credit: 0 };
         entry.total += toUsd(row.credit + row.paid, row.currency, row.month);
@@ -344,6 +384,28 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
         ...provider.keys(),
         ...pollen.keys(),
     ]);
+
+    // Running cash vs paid burn per vendor, for prepaid-balance coverage.
+    const cumulative = new Map<string, { cashUsd: number; paidUsd: number }>();
+    const monthsByVendor = new Map<string, string[]>();
+    for (const key of keys) {
+        const [month, vendor] = key.split("|");
+        const months = monthsByVendor.get(vendor) ?? [];
+        months.push(month);
+        monthsByVendor.set(vendor, months);
+    }
+    for (const [vendor, months] of monthsByVendor) {
+        let cashUsd = 0;
+        let paidUsd = 0;
+        for (const month of months.sort()) {
+            const key = `${month}|${vendor}`;
+            cashUsd += transactions.get(key) ?? 0;
+            const entry = provider.get(key);
+            if (entry) paidUsd += entry.total - entry.credit;
+            cumulative.set(key, { cashUsd, paidUsd });
+        }
+    }
+
     return [...keys].sort().map((key) => {
         const [month, vendor] = key.split("|");
         const providerEntry = provider.get(key);
@@ -362,6 +424,7 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
             coverage: coverageFor({
                 cash: transactions,
                 creditUsd,
+                cumulative,
                 month,
                 pollenUsd,
                 providerUsd,
@@ -461,6 +524,7 @@ export function economics(
 
     for (const row of data.providerMonthly) {
         if (row.month < WINDOW_START) continue; // pre-window grant-burn rows
+        if (isInfraRow(row)) continue; // calib compares compute against pollen
         if (!matchesMonth(row.month, monthFilter)) continue;
         const facts = factsFor(row.vendor);
         facts.hasProvider = true;

@@ -418,6 +418,36 @@ describe("vendorPlanes", () => {
         });
         expect(vendorPlanes(data)).toEqual([]);
     });
+
+    it("keeps infra rows out of the provider witness", () => {
+        const data = emptyData({
+            providerMonthly: [
+                provider({
+                    month: "2026-06",
+                    vendor: "cloudflare",
+                    category: "infra",
+                    paid: 1073,
+                }),
+                provider({
+                    month: "2026-06",
+                    vendor: "aws",
+                    category: "compute",
+                    credit: 3986.47,
+                }),
+                provider({
+                    month: "2026-06",
+                    vendor: "aws",
+                    category: "infra",
+                    credit: 754.97,
+                }),
+            ],
+        });
+        const rows = vendorPlanes(data);
+        // cloudflare is all infra — no row at all
+        expect(rows.map((row) => row.vendor)).toEqual(["aws"]);
+        // aws keeps only its compute slice
+        expect(rows[0].providerUsd).toBeCloseTo(3986.47, 2);
+    });
 });
 
 describe("coverage", () => {
@@ -474,9 +504,53 @@ describe("coverage", () => {
             providerMonthly: [
                 provider({
                     month: "2026-05",
-                    vendor: "deepinfra",
+                    vendor: "replicate",
                     paid: 36.26,
                 }),
+            ],
+        });
+        const [row] = vendorPlanes(data);
+        expect(row.coverage).toBe("paid unverified");
+    });
+
+    it("never alarms on sub-dollar provider paid amounts", () => {
+        const data = emptyData({
+            providerMonthly: [
+                provider({
+                    month: "2026-01",
+                    vendor: "elevenlabs",
+                    paid: 0.49,
+                }),
+            ],
+        });
+        const [row] = vendorPlanes(data);
+        expect(row.coverage).toBeNull();
+    });
+
+    it("covers prepaid vendors while cumulative top-ups keep up with burn", () => {
+        const data = emptyData({
+            transactions: [
+                txn({
+                    date: "2026-04-02",
+                    vendor: "vast.ai",
+                    category: "compute",
+                    charged_amount: 500,
+                    charged_currency: "USD",
+                }),
+            ],
+            providerMonthly: [
+                provider({ month: "2026-06", vendor: "vast.ai", paid: 66 }),
+            ],
+        });
+        const rows = vendorPlanes(data);
+        const june = rows.find((row) => row.month === "2026-06");
+        expect(june?.coverage).toBe("prepaid");
+    });
+
+    it("still alarms when a prepaid balance is overdrawn", () => {
+        const data = emptyData({
+            providerMonthly: [
+                provider({ month: "2026-06", vendor: "vast.ai", paid: 200 }),
             ],
         });
         const [row] = vendorPlanes(data);
@@ -555,6 +629,24 @@ describe("economics", () => {
                 price_quests: 45,
             }),
         ],
+    });
+
+    it("ignores infra provider rows when computing calib", () => {
+        const withInfra = emptyData({
+            providerMonthly: [
+                ...data.providerMonthly,
+                provider({
+                    month: "2026-06",
+                    vendor: "google",
+                    category: "infra",
+                    paid: 9999,
+                }),
+            ],
+            pollenMonthly: data.pollenMonthly,
+        });
+        const rows = economics(withInfra, "2026-06", "model");
+        const geminiA = rows.find((row) => row.model === "gemini-a");
+        expect(geminiA?.calib).toBeCloseTo(5, 5); // unchanged by the infra row
     });
 
     it("computes calib as a raw scope division and applies it per model", () => {

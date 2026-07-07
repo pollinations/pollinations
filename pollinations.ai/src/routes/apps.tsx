@@ -26,6 +26,8 @@ import { type AppFilters, loadApps, selectApps } from "../lib/apps.ts";
 
 const INITIAL_VISIBLE_APPS = 24;
 const VISIBLE_APPS_INCREMENT = 24;
+const inactiveFilterTabClass =
+    "!border-theme-border/60 !bg-surface-white/75 hover:!bg-surface-white";
 
 function parseSearchList<T extends string>(
     value: unknown,
@@ -280,6 +282,13 @@ function AppsPage() {
                                     }
                                     size="sm"
                                     variant="ghost"
+                                    className={
+                                        selectedFilters.categories.includes(
+                                            item.id,
+                                        )
+                                            ? undefined
+                                            : inactiveFilterTabClass
+                                    }
                                 >
                                     {item.label}
                                 </TabButton>
@@ -309,6 +318,13 @@ function AppsPage() {
                                     }
                                     size="sm"
                                     variant="ghost"
+                                    className={
+                                        selectedFilters.platforms.includes(
+                                            item.id,
+                                        )
+                                            ? undefined
+                                            : inactiveFilterTabClass
+                                    }
                                 >
                                     {item.label}
                                 </TabButton>
@@ -338,6 +354,13 @@ function AppsPage() {
                                     }
                                     size="sm"
                                     variant="ghost"
+                                    className={
+                                        selectedFilters.signals.includes(
+                                            item.id,
+                                        )
+                                            ? undefined
+                                            : inactiveFilterTabClass
+                                    }
                                 >
                                     {item.label}
                                 </TabButton>

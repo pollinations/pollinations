@@ -602,16 +602,22 @@ async function fetchEnterSchema(c: Context<Env>) {
     return transformEnterSchema(stripGenerationPaths(schema));
 }
 
-async function fetchMediaSchema(): Promise<OpenApiSchema | undefined> {
-    const response = await fetch("https://media.pollinations.ai/openapi.json");
+async function fetchMediaSchema(
+    c: Context<Env>,
+): Promise<OpenApiSchema | undefined> {
+    // Local dev merges the local media worker (port 8790, its wrangler [dev]
+    // port) so schema changes are visible before a media prod deploy.
+    const mediaOrigin =
+        c.env.ENVIRONMENT === "development"
+            ? "http://localhost:8790"
+            : "https://media.pollinations.ai";
+    const response = await fetch(`${mediaOrigin}/openapi.json`);
     if (!response.ok) return undefined;
     const schema = (await response.json()) as OpenApiSchema;
 
     for (const [path, operations] of Object.entries(asRecord(schema.paths))) {
         if (!operations || typeof operations !== "object") continue;
-        (operations as OpenApiSchema).servers = [
-            { url: "https://media.pollinations.ai" },
-        ];
+        (operations as OpenApiSchema).servers = [{ url: mediaOrigin }];
         for (const [method, operation] of Object.entries(
             operations as OpenApiSchema,
         )) {
@@ -951,7 +957,7 @@ export async function buildMergedOpenApiSpec(
     const [generationSchema, enterSchema, mediaSchema] = await Promise.all([
         getGenerationSchema(genApp),
         fetchEnterSchema(c).catch(() => undefined),
-        fetchMediaSchema().catch(() => undefined),
+        fetchMediaSchema(c).catch(() => undefined),
     ]);
     return injectSamples(
         mergeSchemas(generationSchema, enterSchema, mediaSchema),

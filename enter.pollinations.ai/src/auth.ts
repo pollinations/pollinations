@@ -81,6 +81,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                 mapProfileToUser: (profile) => ({
                     githubId: profile.id,
                     githubUsername: profile.login,
+                    handle: profile.login,
                 }),
             },
         },

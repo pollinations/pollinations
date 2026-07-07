@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { apiKey } from "better-auth/plugins";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { alias } from "drizzle-orm/sqlite-core";
 import * as schema from "../db/better-auth.ts";
@@ -9,7 +9,10 @@ import { parseGithubIdList } from "./github-id-list.ts";
 
 const PUBLISHABLE_KEY_PREFIX = "pk";
 
-export type AuthUser = typeof schema.user.$inferSelect;
+export type AuthUser = typeof schema.user.$inferSelect & {
+    githubId: number | null;
+    githubUsername: string | null;
+};
 
 export interface AuthenticatedApiKey {
     id: string;
@@ -224,7 +227,7 @@ export async function authenticateApiKeyRequest(opts: {
     const db = drizzle(opts.env.DB, { schema });
     const userId = typeof key.userId === "string" ? key.userId : undefined;
     const byopClientKey = alias(schema.apikey, "byop_client_key");
-    const [apiKeyExtra, userData] = await Promise.all([
+    const [apiKeyExtra, rawUser, githubAccount] = await Promise.all([
         db
             .select({
                 pollenBalance: schema.apikey.pollenBalance,
@@ -246,7 +249,30 @@ export async function authenticateApiKeyRequest(opts: {
                   .where(eq(schema.user.id, userId))
                   .get()
             : null,
+        userId
+            ? db
+                  .select({
+                      accountId: schema.account.accountId,
+                      username: schema.account.username,
+                  })
+                  .from(schema.account)
+                  .where(
+                      and(
+                          eq(schema.account.userId, userId),
+                          eq(schema.account.providerId, "github"),
+                      ),
+                  )
+                  .get()
+            : null,
     ]);
+
+    const userData: AuthUser | undefined = rawUser
+        ? {
+              ...rawUser,
+              githubId: githubAccount ? Number(githubAccount.accountId) : null,
+              githubUsername: githubAccount?.username ?? null,
+          }
+        : undefined;
 
     if (userData) {
         assertNotBanned(userData);

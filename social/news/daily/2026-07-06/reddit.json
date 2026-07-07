@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-07-06",
+  "period_start": "2026-07-06",
+  "period_end": "2026-07-06",
+  "generated_at": "2026-07-07T07:08:17.247415+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-06/images/reddit.jpg"
+    }
+  ],
+  "title": "Ecosystem directory maintenance and deduping the Tomdacat Roblox app listing",
+  "text": "A quiet day on the repo. We merged exactly one pull request today.\n\nPR #12250 fixes a duplicate listing for an app called Tomdacat in our ecosystem directory. Tomdacat is a Roblox integration built on top of our API.\n\nWhen you have over 500 different community apps, Discord bots, scripts, and plugins hitting the infrastructure, the directory gets messy. Sometimes people submit the same project twice, or an update creates a duplicate entry instead of overwriting the old one. Cleaning this up is not glamorous, but it keeps the ecosystem page usable and ensures the people building on our stack actually get proper visibility.\n\nIf you are building something with our endpoints—whether it is generating textures for Roblox, wiring up a local bash script, or just messing around with the models—you can add it to the directory. Just try to only submit it once.\n\nYou can see the full directory of what people are building, or submit your own project, over on our GitHub. All our endpoints for text, image, and audio generation remain open and available via simple HTTP calls. No keys required for basic usage.\n\nRepo: https://github.com/pollinations/pollinations\nDirectory PR: https://github.com/pollinations/pollinations/pull/12250"
+}

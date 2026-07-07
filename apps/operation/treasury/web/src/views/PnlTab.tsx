@@ -9,7 +9,7 @@ import {
 } from "@pollinations/ui";
 import { useMemo } from "react";
 import { DataTable, HeaderHint, TableScroller } from "../components/DataTable";
-import { fmtUsd } from "../lib/format";
+import { fmtUnsignedPct, fmtUsd } from "../lib/format";
 import {
     categoryColumns,
     monthSpendDetail,
@@ -239,7 +239,7 @@ function PnlMonthDetail({ data, month }: { data: Data; month: string }) {
                                 <TableCell className="text-theme-text-soft">
                                     {row.pctOfSpend == null
                                         ? "–"
-                                        : `${row.pctOfSpend.toFixed(1)}%`}
+                                        : fmtUnsignedPct(row.pctOfSpend)}
                                 </TableCell>
                             </TableRow>
                         ))}

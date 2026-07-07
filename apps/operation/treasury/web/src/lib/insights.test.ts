@@ -7,17 +7,20 @@ import type {
     TransactionRow,
 } from "../types";
 import {
+    allocateGrants,
     breakEvenMultiplier,
     CATEGORY_ORDER,
     categoryColumns,
+    creditRunway,
+    economics,
     ecosystemTotals,
     globalNetRatio,
     insightVendorOptions,
-    modelEconomics,
     monthlyRevenue,
     monthSpendDetail,
     pnlByMonth,
     transactionCashUsd,
+    ungrantedCreditBurn,
     vendorPlanes,
 } from "./insights";
 
@@ -225,6 +228,18 @@ describe("pnlByMonth", () => {
         expect(april.cashPnlUsd).toBeNull();
         expect(april.creditBurnUsd).toBe(10);
     });
+
+    it("ignores pre-window grant-burn rows entirely", () => {
+        const data = emptyData({
+            providerMonthly: [
+                provider({ month: "2025-12", vendor: "aws", credit: 35000 }),
+                provider({ month: "2026-04", credit: 10 }),
+            ],
+        });
+        expect(pnlByMonth(data, now).map((row) => row.month)).toEqual([
+            "2026-04",
+        ]);
+    });
 });
 
 describe("monthSpendDetail", () => {
@@ -365,10 +380,7 @@ describe("vendorPlanes", () => {
         expect(row.providerUsd).toBeCloseTo(4489.35 * 1.1518, 1);
         expect(row.creditUsd).toBeCloseTo(100 * 1.1518, 2);
         expect(row.pollenUsd).toBe(4940);
-        expect(row.providerVsPollenPct).toBeCloseTo(
-            ((4489.35 * 1.1518 - 4940) / 4940) * 100,
-            3,
-        );
+        expect(row.calibX).toBeCloseTo((4489.35 * 1.1518) / 4940, 5);
     });
 
     it("keeps missing planes null instead of zero", () => {
@@ -380,7 +392,7 @@ describe("vendorPlanes", () => {
         expect(row.providerUsd).toBeNull();
         expect(row.creditUsd).toBeNull();
         expect(row.pollenUsd).toBe(10);
-        expect(row.providerVsPollenPct).toBeNull();
+        expect(row.calibX).toBeNull();
     });
 
     it("skips transactions with a malformed month key", () => {
@@ -393,6 +405,15 @@ describe("vendorPlanes", () => {
                     charged_amount: 500,
                     charged_currency: "USD",
                 }),
+            ],
+        });
+        expect(vendorPlanes(data)).toEqual([]);
+    });
+
+    it("excludes pre-window grant-burn provider rows", () => {
+        const data = emptyData({
+            providerMonthly: [
+                provider({ month: "2025-12", vendor: "aws", credit: 35000 }),
             ],
         });
         expect(vendorPlanes(data)).toEqual([]);
@@ -492,24 +513,17 @@ describe("insightVendorOptions", () => {
     });
 });
 
-describe("modelEconomics", () => {
+describe("economics", () => {
+    // google: metered 1000 (800 + 200), actual 5000 (1000 credit + 4000 paid)
+    // → calib 5.00, credit share 20%. azure: pollen active, no provider rows.
     const data = emptyData({
         providerMonthly: [
             provider({
                 month: "2026-06",
                 vendor: "google",
                 currency: "USD",
-                credit: 0,
-                paid: 5000,
-            }),
-        ],
-        transactions: [
-            txn({
-                date: "2026-06-10",
-                vendor: "elevenlabs",
-                category: "compute",
-                charged_amount: 300,
-                charged_currency: "USD",
+                credit: 1000,
+                paid: 4000,
             }),
         ],
         pollenMonthly: [
@@ -533,14 +547,6 @@ describe("modelEconomics", () => {
                 price_quests: 90,
             }),
             usage({
-                vendor: "elevenlabs",
-                model: "eleven-v3",
-                cost_paid: 200,
-                cost_quests: 0,
-                price_paid: 260,
-                price_quests: 0,
-            }),
-            usage({
                 vendor: "azure",
                 model: "gpt-x",
                 cost_paid: 50,
@@ -551,41 +557,159 @@ describe("modelEconomics", () => {
         ],
     });
 
-    it("allocates vendor actuals by registered-cost share and margins on retained", () => {
-        const rows = modelEconomics(data, "2026-06", 0.9);
+    it("computes calib as a raw scope division and applies it per model", () => {
+        const rows = economics(data, "2026-06", "model");
         const geminiA = rows.find((row) => row.model === "gemini-a");
         if (!geminiA) throw new Error("gemini-a missing");
 
-        expect(geminiA.basis).toBe("provider");
-        expect(geminiA.pollenCostUsd).toBe(800);
-        expect(geminiA.sharePct).toBeCloseTo(80, 5); // 800 of google's 1000
-        expect(geminiA.trueCostUsd).toBeCloseTo(4000, 5); // 5000 × 0.8
-        expect(geminiA.grossPaidUsd).toBe(900);
+        expect(geminiA.calib).toBeCloseTo(5, 5); // 5000 actual / 1000 metered
+        expect(geminiA.creditSharePct).toBeCloseTo(20, 5);
+        expect(geminiA.trueCostPaidUsd).toBeCloseTo(3000, 5); // 600 × 5
+        expect(geminiA.questBurnUsd).toBeCloseTo(1000, 5); // 200 × 5
+        expect(geminiA.soldPaidUsd).toBe(900);
         expect(geminiA.ecoPaidUsd).toBe(150); // 50 byop + 100 model, paid side
         expect(geminiA.retainedPaidUsd).toBe(750);
-        expect(geminiA.grossQuestsUsd).toBe(250);
-        expect(geminiA.marginUsd).toBeCloseTo(750 * 0.9 - 4000, 5);
-        expect(geminiA.effectiveMultiplier).toBeCloseTo(1.5, 5); // gross 900/600
+        expect(geminiA.soldQuestsUsd).toBe(250);
+        expect(geminiA.trueMultiplier).toBeCloseTo(750 / 3000, 5);
+        expect(geminiA.marginUsd).toBeCloseTo(750 - 3000, 5);
+        expect(geminiA.pollenPriced).toBe(false);
+        expect(geminiA.flags).toEqual([]);
     });
 
-    it("falls back to cash then registered bases", () => {
-        const rows = modelEconomics(data, "2026-06", null);
-        const eleven = rows.find((row) => row.vendor === "elevenlabs");
+    it("flags a vendor with no meter and falls back to our metering", () => {
+        const rows = economics(data, "2026-06", "model");
         const azure = rows.find((row) => row.vendor === "azure");
-        if (!eleven || !azure) throw new Error("rows missing");
+        if (!azure) throw new Error("azure missing");
 
-        expect(eleven.basis).toBe("transactions");
-        expect(eleven.trueCostUsd).toBeCloseTo(300, 5);
-        expect(azure.basis).toBe("pollen");
-        expect(azure.trueCostUsd).toBeCloseTo(100, 5);
-        expect(azure.effectiveMultiplier).toBeCloseTo(0.8, 5); // 40/50
+        expect(azure.calib).toBeNull();
+        expect(azure.flags).toEqual(["no meter"]);
+        expect(azure.trueCostPaidUsd).toBeCloseTo(50, 5); // metering unadjusted
+        expect(azure.trueMultiplier).toBeCloseTo(0.8, 5); // 40 / 50
+        expect(azure.creditSharePct).toBeNull();
     });
 
-    it("sorts worst margin first and respects the month filter", () => {
-        const rows = modelEconomics(data, "2026-06", null);
-        const margins = rows.map((row) => row.marginUsd);
-        expect([...margins].sort((a, b) => a - b)).toEqual(margins);
-        expect(modelEconomics(data, "2026-05", null)).toEqual([]);
+    it("rolls the vendor grain up to exactly the sum of its model rows", () => {
+        const models = economics(data, "2026-06", "model").filter(
+            (row) => row.vendor === "google",
+        );
+        const vendorRow = economics(data, "2026-06", "vendor").find(
+            (row) => row.vendor === "google",
+        );
+        if (!vendorRow) throw new Error("google vendor row missing");
+
+        const sum = (pick: (row: (typeof models)[number]) => number) =>
+            models.reduce((total, row) => total + pick(row), 0);
+        expect(vendorRow.model).toBeNull();
+        expect(vendorRow.soldPaidUsd).toBeCloseTo(
+            sum((row) => row.soldPaidUsd),
+            5,
+        );
+        expect(vendorRow.trueCostPaidUsd).toBeCloseTo(
+            sum((row) => row.trueCostPaidUsd),
+            5,
+        );
+        expect(vendorRow.questBurnUsd).toBeCloseTo(
+            sum((row) => row.questBurnUsd),
+            5,
+        );
+        expect(vendorRow.marginUsd).toBeCloseTo(
+            sum((row) => row.marginUsd),
+            5,
+        );
+        expect(vendorRow.trueMultiplier).toBeCloseTo(
+            sum((row) => row.retainedPaidUsd) /
+                sum((row) => row.trueCostPaidUsd),
+            5,
+        );
+    });
+
+    it("flags unwitnessed months instead of pairing them away", () => {
+        const lagged = emptyData({
+            providerMonthly: [
+                provider({
+                    month: "2026-06",
+                    vendor: "google",
+                    currency: "USD",
+                    paid: 500,
+                }),
+            ],
+            pollenMonthly: [
+                usage({
+                    month: "2026-06",
+                    vendor: "google",
+                    cost_paid: 250,
+                    price_paid: 300,
+                }),
+                usage({
+                    month: "2026-07",
+                    vendor: "google",
+                    cost_paid: 250,
+                    price_paid: 300,
+                }),
+            ],
+        });
+        const [row] = economics(lagged, "", "vendor");
+        // Naive division over the whole scope: 500 / (250 + 250).
+        expect(row.calib).toBeCloseTo(1, 5);
+        expect(row.flags).toEqual(["unwitnessed July 26"]);
+    });
+
+    it("flags provider months with no pollen as unmetered", () => {
+        const ghost = emptyData({
+            providerMonthly: [
+                provider({
+                    month: "2026-05",
+                    vendor: "google",
+                    currency: "USD",
+                    paid: 100,
+                }),
+                provider({
+                    month: "2026-06",
+                    vendor: "google",
+                    currency: "USD",
+                    paid: 100,
+                }),
+            ],
+            pollenMonthly: [
+                usage({
+                    month: "2026-06",
+                    vendor: "google",
+                    cost_paid: 100,
+                    price_paid: 120,
+                }),
+            ],
+        });
+        const [row] = economics(ghost, "", "vendor");
+        expect(row.calib).toBeCloseTo(2, 5); // 200 actual / 100 metered
+        expect(row.flags).toEqual(["unmetered May 26"]);
+    });
+
+    it("treats pollen-priced vendors as 1.00 by construction, never flagged", () => {
+        const mirror = emptyData({
+            pollenMonthly: [
+                usage({
+                    month: "2026-06",
+                    vendor: "community",
+                    model: "user-model",
+                    cost_paid: 80,
+                    price_paid: 100,
+                }),
+            ],
+        });
+        const [row] = economics(mirror, "", "vendor");
+        expect(row.calib).toBe(1);
+        expect(row.pollenPriced).toBe(true);
+        expect(row.flags).toEqual([]);
+        expect(row.trueCostPaidUsd).toBeCloseTo(80, 5);
+    });
+
+    it("sorts most underpriced first, ratio-less rows last, and scopes by month", () => {
+        const rows = economics(data, "2026-06", "model");
+        const ratios = rows.map((row) => row.trueMultiplier);
+        const defined = ratios.filter((value) => value != null);
+        expect([...defined].sort((a, b) => a - b)).toEqual(defined);
+        expect(ratios.slice(defined.length).every((v) => v == null)).toBe(true);
+        expect(economics(data, "2026-05", "model")).toEqual([]);
     });
 
     it("reports a null multiplier for quest-only models", () => {
@@ -601,9 +725,315 @@ describe("modelEconomics", () => {
                 }),
             ],
         });
-        const [row] = modelEconomics(questOnly, "", null);
-        expect(row.effectiveMultiplier).toBeNull();
-        expect(row.basis).toBe("pollen");
+        const [row] = economics(questOnly, "", "model");
+        expect(row.trueMultiplier).toBeNull();
+        expect(row.questBurnUsd).toBeCloseTo(10, 5);
+        expect(row.flags).toEqual(["no meter"]);
+    });
+});
+
+const grant = (
+    over: Partial<Data["grants"][number]>,
+): Data["grants"][number] => ({
+    vendor: "lambda",
+    label: "",
+    granted: 0,
+    currency: "USD",
+    start_date: "2026-03-01",
+    expires: "1970-01-01",
+    ...over,
+});
+
+describe("creditRunway", () => {
+    const NOW = new Date("2026-07-08T12:00:00Z"); // day 8 of July
+
+    it("pools grants per vendor, converts EUR at the start month, and nets naive remaining", () => {
+        const data = emptyData({
+            grants: [
+                grant({ vendor: "fireworks", label: "a", granted: 700 }),
+                grant({ vendor: "fireworks", label: "b", granted: 300 }),
+                grant({
+                    vendor: "ovhcloud",
+                    granted: 1000,
+                    currency: "EUR",
+                    start_date: "2026-03-09",
+                }),
+            ],
+            providerMonthly: [
+                provider({ month: "2026-04", vendor: "fireworks", credit: 80 }),
+                provider({ month: "2026-05", vendor: "fireworks", credit: 20 }),
+            ],
+        });
+        const rows = creditRunway(data, NOW);
+        const fireworks = rows.find((row) => row.vendor === "fireworks");
+        const ovh = rows.find((row) => row.vendor === "ovhcloud");
+        if (!fireworks || !ovh) throw new Error("rows missing");
+
+        expect(fireworks.grantedUsd).toBe(1000);
+        expect(fireworks.grants).toHaveLength(2);
+        expect(fireworks.burnedUsd).toBe(100);
+        expect(fireworks.remainingUsd).toBe(900);
+        expect(ovh.grantedUsd).toBeCloseTo(1155.8, 5); // 1000 × 1.1558 (Mar)
+    });
+
+    it("prorates the running month into a rate and projects the burn depletion date", () => {
+        const data = emptyData({
+            grants: [grant({ vendor: "lambda", granted: 1000 })],
+            providerMonthly: [
+                provider({ month: "2026-07", vendor: "lambda", credit: 80 }),
+            ],
+        });
+        const [row] = creditRunway(data, NOW);
+        expect(row.currentMonthBurnUsd).toBe(80);
+        expect(row.rateBasis).toBe("current");
+        expect(row.monthlyRateUsd).toBeCloseTo((80 / 8) * 30.44, 5);
+        // remaining 920 at $10/day → 92 days from Jul 8
+        expect(row.depletionDate).toBe("2026-10-08");
+        expect(row.depletionReason).toBe("burn");
+    });
+
+    it("falls back to the latest witnessed month when recent months lag, flagged stale", () => {
+        // aws shape: Automat-it deducts credits at invoice time (~the 10th of
+        // the next month), so June/July read zero until the invoice lands.
+        const data = emptyData({
+            grants: [grant({ vendor: "aws", granted: 10000 })],
+            providerMonthly: [
+                provider({ month: "2026-05", vendor: "aws", credit: 3000 }),
+            ],
+        });
+        const [row] = creditRunway(data, NOW);
+        expect(row.rateBasis).toBe("stale");
+        expect(row.monthlyRateUsd).toBe(3000);
+        expect(row.flags).toContain("no burn data since May 26");
+        expect(row.depletionDate).not.toBeNull();
+    });
+
+    it("falls back to the last complete month when the running month is silent", () => {
+        const data = emptyData({
+            grants: [grant({ vendor: "lambda", granted: 1000 })],
+            providerMonthly: [
+                provider({ month: "2026-06", vendor: "lambda", credit: 50 }),
+            ],
+        });
+        const [row] = creditRunway(data, NOW);
+        expect(row.rateBasis).toBe("last");
+        expect(row.monthlyRateUsd).toBe(50);
+        const dormant = creditRunway(
+            emptyData({ grants: [grant({ vendor: "lambda", granted: 10 })] }),
+            NOW,
+        );
+        expect(dormant[0].monthlyRateUsd).toBeNull();
+        expect(dormant[0].depletionDate).toBeNull();
+    });
+
+    it("lets an upcoming expiry beat a later burn date", () => {
+        const data = emptyData({
+            grants: [
+                grant({
+                    vendor: "digitalocean",
+                    granted: 1000,
+                    expires: "2026-07-22",
+                }),
+            ],
+            providerMonthly: [
+                provider({
+                    month: "2026-07",
+                    vendor: "digitalocean",
+                    credit: 80,
+                }),
+            ],
+        });
+        const [row] = creditRunway(data, NOW);
+        expect(row.depletionDate).toBe("2026-07-22");
+        expect(row.depletionReason).toBe("expiry");
+    });
+
+    it("flags pre-window grants, lapsed remainders, and unallocated burn", () => {
+        const data = emptyData({
+            grants: [
+                grant({
+                    vendor: "google",
+                    granted: 100,
+                    start_date: "2025-01-01",
+                }),
+                grant({
+                    vendor: "scaleway",
+                    label: "old",
+                    granted: 100,
+                    expires: "2026-01-31",
+                }),
+                grant({ vendor: "elevenlabs", granted: 100 }),
+                grant({ vendor: "runpod", granted: 100 }),
+            ],
+            providerMonthly: [
+                provider({
+                    month: "2026-04",
+                    vendor: "elevenlabs",
+                    credit: 120,
+                }),
+                provider({ month: "2026-04", vendor: "runpod", credit: 100 }),
+            ],
+        });
+        const byVendor = new Map(
+            creditRunway(data, NOW).map((row) => [row.vendor, row]),
+        );
+        expect(byVendor.get("google")?.flags).toContain(
+            "pre-window burn unwitnessed",
+        );
+        // unused capacity of the expired grant lapses to zero remaining
+        expect(byVendor.get("scaleway")?.flags).toContain("lapsed 100");
+        expect(byVendor.get("scaleway")?.remainingUsd).toBe(0);
+        expect(byVendor.get("scaleway")?.finished).toBe(true);
+        expect(byVendor.get("scaleway")?.finishedDate).toBe("2026-01-31");
+        // burn beyond every grant's capacity is unallocated, not negative
+        expect(byVendor.get("elevenlabs")?.flags).toContain(
+            "unallocated burn 20",
+        );
+        expect(byVendor.get("elevenlabs")?.remainingUsd).toBe(0);
+        expect(byVendor.get("elevenlabs")?.finished).toBe(true);
+        // exactly consumed pool: finished with its fill month
+        expect(byVendor.get("runpod")?.finished).toBe(true);
+        expect(byVendor.get("runpod")?.finishedDate).toBe("2026-04");
+        expect(byVendor.get("runpod")?.flags).toEqual([]);
+    });
+
+    it("allocates burn to grants by active window, then overflow to open grants", () => {
+        // aws shape: an early grant caps out, the leftover flows to a grant
+        // that had not started yet (vendor-pooled burn cannot be attributed
+        // per-grant more precisely).
+        const data = emptyData({
+            grants: [
+                grant({
+                    vendor: "aws",
+                    label: "early",
+                    granted: 100,
+                    start_date: "2025-11-01",
+                    expires: "2026-02-28",
+                }),
+                grant({
+                    vendor: "aws",
+                    label: "late",
+                    granted: 200,
+                    start_date: "2026-04-01",
+                }),
+            ],
+            providerMonthly: [
+                provider({ month: "2026-01", vendor: "aws", credit: 130 }),
+            ],
+        });
+        const [row] = creditRunway(data, NOW);
+        const early = row.grants.find((g) => g.label === "early");
+        const late = row.grants.find((g) => g.label === "late");
+        expect(early?.allocatedUsd).toBe(100); // window-respecting fill
+        expect(late?.allocatedUsd).toBe(30); // overflow pass
+        expect(row.remainingUsd).toBe(170);
+        expect(row.flags).not.toContain("unallocated burn 30");
+    });
+
+    it("reports grant statuses for the raw Grants tab", () => {
+        const data = emptyData({
+            grants: [
+                grant({ vendor: "lambda", label: "live", granted: 100 }),
+                grant({
+                    vendor: "runpod",
+                    label: "done",
+                    granted: 50,
+                }),
+                grant({
+                    vendor: "scaleway",
+                    label: "old",
+                    granted: 100,
+                    expires: "2026-01-31",
+                }),
+            ],
+            providerMonthly: [
+                provider({ month: "2026-04", vendor: "runpod", credit: 50 }),
+            ],
+        });
+        const { grants } = allocateGrants(data, NOW);
+        const byKey = new Map(grants.map((g) => [`${g.vendor}|${g.label}`, g]));
+        expect(byKey.get("lambda|live")?.active).toBe(true);
+        expect(byKey.get("runpod|done")?.active).toBe(false);
+        expect(byKey.get("runpod|done")?.finishedDate).toBe("2026-04");
+        expect(byKey.get("scaleway|old")?.active).toBe(false);
+        expect(byKey.get("scaleway|old")?.lapsedUsd).toBe(100);
+    });
+
+    it("includes pre-window burn rows that every other lens excludes", () => {
+        const data = emptyData({
+            grants: [
+                grant({
+                    vendor: "aws",
+                    granted: 100000,
+                    start_date: "2025-09-01",
+                }),
+            ],
+            providerMonthly: [
+                provider({ month: "2025-12", vendor: "aws", credit: 35000 }),
+                provider({ month: "2026-01", vendor: "aws", credit: 45000 }),
+            ],
+        });
+        const [row] = creditRunway(data, NOW);
+        expect(row.burnedUsd).toBe(80000);
+        expect(row.remainingUsd).toBe(20000);
+        // economics stays clamped: the 2025 row must not exist there
+        expect(
+            economics(data, "", "vendor").find((r) => r.vendor === "aws"),
+        ).toBeUndefined();
+    });
+
+    it("excludes pollen-priced vendors and sorts soonest depletion first", () => {
+        const data = emptyData({
+            grants: [
+                grant({ vendor: "community", granted: 100 }),
+                grant({ vendor: "lambda", granted: 100 }),
+                grant({
+                    vendor: "digitalocean",
+                    granted: 1000,
+                    expires: "2026-07-22",
+                }),
+                grant({ vendor: "fireworks", granted: 50 }), // dormant, no depletion
+            ],
+            providerMonthly: [
+                provider({ month: "2026-07", vendor: "lambda", credit: 90 }),
+                provider({
+                    month: "2026-07",
+                    vendor: "digitalocean",
+                    credit: 10,
+                }),
+            ],
+        });
+        const rows = creditRunway(data, NOW);
+        expect(rows.map((row) => row.vendor)).toEqual([
+            "lambda", // remaining 10 at $11.25/day → ~Jul 9
+            "digitalocean", // expiry Jul 22
+            "fireworks", // no depletion → last
+        ]);
+    });
+});
+
+describe("ungrantedCreditBurn", () => {
+    it("lists credit burners without grants, excluding pollen-priced vendors", () => {
+        const NOW = new Date("2026-07-08T12:00:00Z");
+        const data = emptyData({
+            grants: [grant({ vendor: "lambda", granted: 100 })],
+            providerMonthly: [
+                provider({ month: "2026-06", vendor: "alibaba", credit: 87 }),
+                provider({ month: "2026-07", vendor: "alibaba", credit: 5 }),
+                provider({ month: "2026-06", vendor: "airforce", credit: 50 }),
+                provider({ month: "2026-06", vendor: "lambda", credit: 10 }),
+                provider({ month: "2026-06", vendor: "deepinfra", paid: 10 }),
+            ],
+        });
+        const rows = ungrantedCreditBurn(data, NOW);
+        expect(rows).toEqual([
+            {
+                vendor: "alibaba",
+                burnedUsd: 92,
+                lastMonthBurnUsd: 87,
+                currentMonthBurnUsd: 5,
+            },
+        ]);
     });
 });
 

@@ -5,7 +5,7 @@ import type {
     TransactionRow,
 } from "../types";
 import { toUsd } from "./fx";
-import { matchesMonth } from "./months";
+import { matchesMonth, monthLabel, WINDOW_START } from "./months";
 
 // ---------------------------------------------------------------- revenue
 
@@ -98,7 +98,7 @@ export function pnlByMonth(data: Data, now: Date): PnlMonth[] {
     for (const row of data.revenueMonthly) months.add(row.month);
 
     return [...months]
-        .filter((month) => MONTH_KEY_RE.test(month))
+        .filter((month) => MONTH_KEY_RE.test(month) && month >= WINDOW_START)
         .sort()
         .map((month) => {
             const categories: Record<string, number> = {};
@@ -217,10 +217,10 @@ export function monthSpendDetail(
 
 // ------------------------------------------------------ vendor three-way
 
-// Vendors that never invoice us — community models, our own hardware.
-// Extend as Elliot classifies more (airforce/bpai/seraphyn/inferenceport
-// are still undecided).
-export const INTERNAL_VENDORS = new Set(["community", "self-hosted"]);
+// Vendors that never invoice us — community models. (self-hosted was a
+// mis-tagged lambda row, remapped at ingest 2026-07-07; airforce/bpai/
+// seraphyn/inferenceport are real vendors with pollen-basis provider rows.)
+export const INTERNAL_VENDORS = new Set(["community"]);
 
 // Pollen activity below this is noise, not a funding question.
 const POLLEN_ACTIVE_USD = 1;
@@ -241,7 +241,7 @@ export type VendorPlanes = {
     providerUsd: number | null;
     creditUsd: number | null;
     pollenUsd: number | null;
-    providerVsPollenPct: number | null;
+    calibX: number | null;
     coverage: Coverage;
 };
 
@@ -294,9 +294,14 @@ function coverageFor({
     return null;
 }
 
-function pctDelta(a: number | null, b: number | null): number | null {
-    if (a == null || b == null || b === 0) return null;
-    return ((a - b) / b) * 100;
+// Raw month ratio: what $1 of our metering cost at the provider that month.
+function monthCalib(
+    providerUsd: number | null,
+    pollenUsd: number | null,
+): number | null {
+    if (providerUsd == null || pollenUsd == null || pollenUsd === 0)
+        return null;
+    return providerUsd / pollenUsd;
 }
 
 // One spend, three witnesses: transactions (bank cash), provider (their
@@ -316,6 +321,7 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
 
     const provider = new Map<string, { total: number; credit: number }>();
     for (const row of data.providerMonthly) {
+        if (row.month < WINDOW_START) continue; // pre-window grant-burn rows
         const key = `${row.month}|${row.vendor}`;
         const entry = provider.get(key) ?? { total: 0, credit: 0 };
         entry.total += toUsd(row.credit + row.paid, row.currency, row.month);
@@ -352,7 +358,7 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
             providerUsd,
             creditUsd,
             pollenUsd,
-            providerVsPollenPct: pctDelta(providerUsd, pollenUsd),
+            calibX: monthCalib(providerUsd, pollenUsd),
             coverage: coverageFor({
                 cash: transactions,
                 creditUsd,
@@ -382,137 +388,570 @@ export function insightVendorOptions(data: Data): string[] {
     return ["all", ...[...vendors].sort((a, b) => a.localeCompare(b))];
 }
 
-// ------------------------------------------------------- model economics
+// ------------------------------------------------------------- economics
 
-export type CostBasis = "provider" | "transactions" | "pollen";
+// Vendors whose provider_monthly rows are our own pollen numbers booked back
+// (community mirror + meter-less free partners) — their calib is 1.00 by
+// construction, a definition rather than a measurement.
+export const POLLEN_PRICED_VENDORS = new Set([
+    "airforce",
+    "bpai",
+    "community",
+    "inferenceport",
+    "seraphyn",
+]);
 
-export type ModelEconomics = {
+// |calib − 1| beyond this marks a registry mispricing worth fixing.
+export const CALIB_DRIFT_ALARM = 0.25;
+
+export type EconGrain = "vendor" | "model";
+
+export type EconRow = {
     vendor: string;
-    model: string;
-    grossPaidUsd: number;
+    model: string | null;
+    soldPaidUsd: number;
     ecoPaidUsd: number;
     retainedPaidUsd: number;
-    grossQuestsUsd: number;
-    pollenCostUsd: number;
-    sharePct: number;
-    basis: CostBasis;
-    trueCostUsd: number;
+    soldQuestsUsd: number;
+    trueCostPaidUsd: number;
+    questBurnUsd: number;
+    calib: number | null;
+    pollenPriced: boolean;
+    creditSharePct: number | null;
+    trueMultiplier: number | null;
     marginUsd: number;
-    effectiveMultiplier: number | null;
+    flags: string[];
 };
 
-// True model cost = the vendor's actual spend allocated by each model's share
-// of the vendor's pollen cost (our metering). Actual waterfall: provider
-// meter, else transactions cash, else the pollen cost itself. Margin is earned
-// on RETAINED pollen — gross minus the byop/model shares we credit onward.
-export function modelEconomics(
+// One table, two grains: the Vendors summary is exactly the Models table
+// rolled up (calib is per-vendor, so every dollar column is additive and
+// true × is Σ/Σ). The math treats the raw data as perfect — calib is a plain
+// Σ provider actual / Σ our metering over the scope, no pairing or smoothing —
+// and every condition that could bend that number becomes a flag instead:
+// "unwitnessed" months (pollen active, no provider row yet — calib reads low),
+// "unmetered" months (provider billed, no pollen — calib reads high),
+// "no meter" (no provider rows at all — true cost falls back to our metering).
+export function economics(
     data: Data,
     monthFilter: string,
-    netRatio: number | null,
-): ModelEconomics[] {
-    const ratio = netRatio ?? 1;
+    grain: EconGrain,
+): EconRow[] {
+    type VendorFacts = {
+        meteredByMonth: Map<string, number>;
+        actualUsd: number;
+        creditUsd: number;
+        providerMonths: Set<string>;
+        hasProvider: boolean;
+    };
+    const vendors = new Map<string, VendorFacts>();
+    const factsFor = (vendor: string): VendorFacts => {
+        let facts = vendors.get(vendor);
+        if (!facts) {
+            facts = {
+                meteredByMonth: new Map(),
+                actualUsd: 0,
+                creditUsd: 0,
+                providerMonths: new Set(),
+                hasProvider: false,
+            };
+            vendors.set(vendor, facts);
+        }
+        return facts;
+    };
 
-    const providerByVendor = new Map<string, number>();
     for (const row of data.providerMonthly) {
+        if (row.month < WINDOW_START) continue; // pre-window grant-burn rows
         if (!matchesMonth(row.month, monthFilter)) continue;
-        providerByVendor.set(
-            row.vendor,
-            (providerByVendor.get(row.vendor) ?? 0) +
-                toUsd(row.credit + row.paid, row.currency, row.month),
+        const facts = factsFor(row.vendor);
+        facts.hasProvider = true;
+        facts.providerMonths.add(row.month);
+        facts.actualUsd += toUsd(
+            row.credit + row.paid,
+            row.currency,
+            row.month,
         );
-    }
-
-    const transactionsByVendor = new Map<string, number>();
-    for (const row of data.transactions) {
-        if (row.category !== "compute") continue;
-        if (!matchesMonth(row.date, monthFilter)) continue;
-        transactionsByVendor.set(
-            row.vendor,
-            (transactionsByVendor.get(row.vendor) ?? 0) +
-                transactionCashUsd(row),
-        );
+        facts.creditUsd += toUsd(row.credit, row.currency, row.month);
     }
 
     type Accumulator = {
         vendor: string;
-        model: string;
-        pollenCost: number;
-        costPaid: number;
-        grossPaid: number;
-        ecoPaid: number;
-        quest: number;
+        model: string | null;
+        soldPaid: number;
+        eco: number;
+        soldQuests: number;
+        meteredPaid: number;
+        meteredQuests: number;
     };
-    const byModel = new Map<string, Accumulator>();
-    const pollenByVendor = new Map<string, number>();
+    const byKey = new Map<string, Accumulator>();
     for (const row of data.pollenMonthly) {
         if (!matchesMonth(row.month, monthFilter)) continue;
-        const key = `${row.vendor}|${row.model}`;
-        const entry = byModel.get(key) ?? {
-            vendor: row.vendor,
-            model: row.model,
-            pollenCost: 0,
-            costPaid: 0,
-            grossPaid: 0,
-            ecoPaid: 0,
-            quest: 0,
-        };
-        const pollenCost = toUsd(
-            row.cost_paid + row.cost_quests,
-            row.currency,
+        const facts = factsFor(row.vendor);
+        facts.meteredByMonth.set(
             row.month,
+            (facts.meteredByMonth.get(row.month) ?? 0) +
+                toUsd(row.cost_paid + row.cost_quests, row.currency, row.month),
         );
-        entry.pollenCost += pollenCost;
-        entry.costPaid += toUsd(row.cost_paid, row.currency, row.month);
-        entry.grossPaid += toUsd(row.price_paid, row.currency, row.month);
-        entry.ecoPaid += toUsd(
+        const key =
+            grain === "model" ? `${row.vendor}|${row.model}` : row.vendor;
+        const entry = byKey.get(key) ?? {
+            vendor: row.vendor,
+            model: grain === "model" ? row.model : null,
+            soldPaid: 0,
+            eco: 0,
+            soldQuests: 0,
+            meteredPaid: 0,
+            meteredQuests: 0,
+        };
+        entry.soldPaid += toUsd(row.price_paid, row.currency, row.month);
+        entry.eco += toUsd(
             row.byop_paid + row.model_paid,
             row.currency,
             row.month,
         );
-        entry.quest += toUsd(row.price_quests, row.currency, row.month);
-        byModel.set(key, entry);
-        pollenByVendor.set(
-            row.vendor,
-            (pollenByVendor.get(row.vendor) ?? 0) + pollenCost,
-        );
+        entry.soldQuests += toUsd(row.price_quests, row.currency, row.month);
+        entry.meteredPaid += toUsd(row.cost_paid, row.currency, row.month);
+        entry.meteredQuests += toUsd(row.cost_quests, row.currency, row.month);
+        byKey.set(key, entry);
     }
 
-    return [...byModel.values()]
+    type VendorCalib = {
+        calib: number | null;
+        pollenPriced: boolean;
+        creditSharePct: number | null;
+        flags: string[];
+    };
+    const calibs = new Map<string, VendorCalib>();
+    for (const [vendor, facts] of vendors) {
+        if (facts.meteredByMonth.size === 0) continue; // not pollen-routed
+        const metered = [...facts.meteredByMonth.values()].reduce(
+            (a, b) => a + b,
+            0,
+        );
+        const pollenPriced = POLLEN_PRICED_VENDORS.has(vendor);
+        const flags: string[] = [];
+        let calib: number | null = null;
+        if (pollenPriced) {
+            calib = 1;
+        } else if (!facts.hasProvider) {
+            flags.push("no meter");
+        } else if (metered > 0) {
+            calib = facts.actualUsd / metered;
+            const unwitnessed = [...facts.meteredByMonth.entries()]
+                .filter(
+                    ([month, usd]) =>
+                        usd > POLLEN_ACTIVE_USD &&
+                        !facts.providerMonths.has(month),
+                )
+                .map(([month]) => month)
+                .sort();
+            if (unwitnessed.length) {
+                flags.push(
+                    `unwitnessed ${unwitnessed.map(monthLabel).join(", ")}`,
+                );
+            }
+            const unmetered = [...facts.providerMonths]
+                .filter((month) => !facts.meteredByMonth.has(month))
+                .sort();
+            if (unmetered.length) {
+                flags.push(`unmetered ${unmetered.map(monthLabel).join(", ")}`);
+            }
+        }
+        calibs.set(vendor, {
+            calib,
+            pollenPriced,
+            creditSharePct:
+                facts.hasProvider && facts.actualUsd > 0
+                    ? (facts.creditUsd / facts.actualUsd) * 100
+                    : null,
+            flags,
+        });
+    }
+
+    return [...byKey.values()]
         .map((entry) => {
-            const pollenTotal = pollenByVendor.get(entry.vendor) ?? 0;
-            const share = pollenTotal > 0 ? entry.pollenCost / pollenTotal : 0;
-            const basis: CostBasis = providerByVendor.has(entry.vendor)
-                ? "provider"
-                : transactionsByVendor.has(entry.vendor)
-                  ? "transactions"
-                  : "pollen";
-            const vendorActual =
-                basis === "provider"
-                    ? (providerByVendor.get(entry.vendor) ?? 0)
-                    : basis === "transactions"
-                      ? (transactionsByVendor.get(entry.vendor) ?? 0)
-                      : pollenTotal;
-            const trueCostUsd = vendorActual * share;
-            const retainedPaidUsd = entry.grossPaid - entry.ecoPaid;
+            const vendorCalib = calibs.get(entry.vendor);
+            const applied = vendorCalib?.calib ?? 1;
+            const trueCostPaidUsd = entry.meteredPaid * applied;
+            const retainedPaidUsd = entry.soldPaid - entry.eco;
             return {
                 vendor: entry.vendor,
                 model: entry.model,
-                grossPaidUsd: entry.grossPaid,
-                ecoPaidUsd: entry.ecoPaid,
+                soldPaidUsd: entry.soldPaid,
+                ecoPaidUsd: entry.eco,
                 retainedPaidUsd,
-                grossQuestsUsd: entry.quest,
-                pollenCostUsd: entry.pollenCost,
-                sharePct: share * 100,
-                basis,
-                trueCostUsd,
-                marginUsd: retainedPaidUsd * ratio - trueCostUsd,
-                effectiveMultiplier:
-                    entry.costPaid > 0
-                        ? entry.grossPaid / entry.costPaid
+                soldQuestsUsd: entry.soldQuests,
+                trueCostPaidUsd,
+                questBurnUsd: entry.meteredQuests * applied,
+                calib: vendorCalib?.calib ?? null,
+                pollenPriced: vendorCalib?.pollenPriced ?? false,
+                creditSharePct: vendorCalib?.creditSharePct ?? null,
+                trueMultiplier:
+                    trueCostPaidUsd > 0
+                        ? retainedPaidUsd / trueCostPaidUsd
                         : null,
+                marginUsd: retainedPaidUsd - trueCostPaidUsd,
+                flags: vendorCalib?.flags ?? [],
             };
         })
-        .sort((a, b) => a.marginUsd - b.marginUsd);
+        .sort((a, b) => {
+            // Most underpriced first; ratio-less rows (quest-only) last,
+            // ordered by what they burn.
+            if (a.trueMultiplier == null && b.trueMultiplier == null) {
+                return b.questBurnUsd - a.questBurnUsd;
+            }
+            if (a.trueMultiplier == null) return 1;
+            if (b.trueMultiplier == null) return -1;
+            return a.trueMultiplier - b.trueMultiplier;
+        });
+}
+
+// --------------------------------------------------------- credit runway
+
+export type GrantStatus = {
+    vendor: string;
+    label: string;
+    grantedUsd: number;
+    startDate: string;
+    expires: string | null; // null = no expiry
+    allocatedUsd: number;
+    lapsedUsd: number; // unused capacity of an expired grant
+    active: boolean; // not expired, capacity remains
+    finishedDate: string | null; // fill month ("YYYY-MM") or expiry date
+};
+
+export type RunwayRow = {
+    vendor: string;
+    grantedUsd: number;
+    burnedUsd: number;
+    remainingUsd: number;
+    lapsedUsd: number;
+    unallocatedUsd: number; // burn no grant could absorb
+    lastMonthBurnUsd: number;
+    currentMonthBurnUsd: number;
+    cashLastMonthUsd: number;
+    cashCurrentMonthUsd: number;
+    monthlyRateUsd: number | null;
+    rateBasis: "current" | "last" | "stale" | null;
+    depletionDate: string | null; // ISO day
+    depletionReason: "burn" | "expiry" | null;
+    finished: boolean;
+    finishedDate: string | null;
+    flags: string[];
+    grants: GrantStatus[];
+};
+
+const NO_EXPIRY = "1970-01-01";
+const AVG_DAYS_PER_MONTH = 30.44;
+const POOL_EPS_USD = 0.5;
+
+// Allocate each vendor's monthly credit burn to its grants. Pass 1 respects
+// each grant's active window (start month ≤ burn month ≤ expiry month),
+// oldest grant first — so an expired grant only absorbs burn from its own
+// lifetime and its unused remainder LAPSES. Pass 2 re-allocates any leftover
+// to non-expired grants regardless of window (vendor-pooled burn can't be
+// attributed per-grant more precisely than that); what still doesn't fit is
+// real unallocated burn. Exhaustion (allocated ≈ granted) marks a grant
+// inactive and records the month it filled.
+export function allocateGrants(
+    data: Data,
+    now: Date,
+): { grants: GrantStatus[]; unallocated: Map<string, number> } {
+    const today = now.toISOString().slice(0, 10);
+
+    const byVendor = new Map<string, GrantStatus[]>();
+    for (const grant of data.grants) {
+        if (POLLEN_PRICED_VENDORS.has(grant.vendor)) continue;
+        const list = byVendor.get(grant.vendor) ?? [];
+        list.push({
+            vendor: grant.vendor,
+            label: grant.label,
+            grantedUsd: toUsd(grant.granted, grant.currency, grant.start_date),
+            startDate: grant.start_date,
+            expires: grant.expires === NO_EXPIRY ? null : grant.expires,
+            allocatedUsd: 0,
+            lapsedUsd: 0,
+            active: true,
+            finishedDate: null,
+        });
+        byVendor.set(grant.vendor, list);
+    }
+    for (const list of byVendor.values()) {
+        list.sort(
+            (a, b) =>
+                a.startDate.localeCompare(b.startDate) ||
+                a.label.localeCompare(b.label),
+        );
+    }
+
+    const burnByMonth = new Map<string, Map<string, number>>();
+    for (const row of data.providerMonthly) {
+        if (!byVendor.has(row.vendor)) continue;
+        const credit = toUsd(row.credit, row.currency, row.month);
+        if (credit <= 0) continue;
+        const months = burnByMonth.get(row.vendor) ?? new Map();
+        months.set(row.month, (months.get(row.month) ?? 0) + credit);
+        burnByMonth.set(row.vendor, months);
+    }
+
+    const fillMonth = new Map<GrantStatus, string>();
+    const unallocated = new Map<string, number>();
+    for (const [vendor, grants] of byVendor) {
+        const months = [
+            ...(burnByMonth.get(vendor) ?? new Map()).entries(),
+        ].sort((a, b) => a[0].localeCompare(b[0]));
+        let overflow = 0;
+        for (const [month, burn] of months) {
+            let left = burn;
+            for (const grant of grants) {
+                if (left <= 0) break;
+                if (grant.startDate.slice(0, 7) > month) continue;
+                if (grant.expires && grant.expires.slice(0, 7) < month) {
+                    continue;
+                }
+                const capacity = grant.grantedUsd - grant.allocatedUsd;
+                if (capacity <= 0) continue;
+                const take = Math.min(capacity, left);
+                grant.allocatedUsd += take;
+                left -= take;
+                if (grant.grantedUsd - grant.allocatedUsd <= POOL_EPS_USD) {
+                    fillMonth.set(grant, month);
+                }
+            }
+            overflow += left;
+        }
+        // Pass 2: leftover into any non-expired grant with capacity.
+        if (overflow > 0) {
+            for (const grant of grants) {
+                if (overflow <= 0) break;
+                if (grant.expires && grant.expires < today) continue;
+                const capacity = grant.grantedUsd - grant.allocatedUsd;
+                if (capacity <= 0) continue;
+                const take = Math.min(capacity, overflow);
+                grant.allocatedUsd += take;
+                overflow -= take;
+                if (grant.grantedUsd - grant.allocatedUsd <= POOL_EPS_USD) {
+                    const latest = months[months.length - 1];
+                    if (latest && !fillMonth.has(grant)) {
+                        fillMonth.set(grant, latest[0]);
+                    }
+                }
+            }
+        }
+        if (overflow > POOL_EPS_USD) unallocated.set(vendor, overflow);
+
+        for (const grant of grants) {
+            const expired = grant.expires != null && grant.expires < today;
+            const exhausted =
+                grant.grantedUsd - grant.allocatedUsd <= POOL_EPS_USD;
+            grant.lapsedUsd = expired
+                ? Math.max(grant.grantedUsd - grant.allocatedUsd, 0)
+                : 0;
+            grant.active = !expired && !exhausted;
+            grant.finishedDate = expired
+                ? grant.expires
+                : exhausted
+                  ? (fillMonth.get(grant) ?? null)
+                  : null;
+        }
+    }
+
+    return { grants: [...byVendor.values()].flat(), unallocated };
+}
+
+// Where do credits stand NOW — the lens ignores the global period filter and
+// reads pre-window burn rows every other lens excludes. Remaining counts only
+// non-expired grant capacity (expired remainders lapse); burn rate prefers
+// the running month prorated by elapsed days, else the last complete month.
+// Vendors whose pools are done (remaining ≈ 0) carry finished=true and their
+// finish date — the tab shows them in a separate table.
+export function creditRunway(data: Data, now: Date): RunwayRow[] {
+    const today = now.toISOString().slice(0, 10);
+    const currentMonth = today.slice(0, 7);
+    const lastMonth = monthShift(currentMonth, -1);
+    const { grants, unallocated } = allocateGrants(data, now);
+
+    const byVendor = new Map<string, RunwayRow>();
+    for (const grant of grants) {
+        const row = byVendor.get(grant.vendor) ?? {
+            vendor: grant.vendor,
+            grantedUsd: 0,
+            burnedUsd: 0,
+            remainingUsd: 0,
+            lapsedUsd: 0,
+            unallocatedUsd: unallocated.get(grant.vendor) ?? 0,
+            lastMonthBurnUsd: 0,
+            currentMonthBurnUsd: 0,
+            cashLastMonthUsd: 0,
+            cashCurrentMonthUsd: 0,
+            monthlyRateUsd: null,
+            rateBasis: null,
+            depletionDate: null,
+            depletionReason: null,
+            finished: false,
+            finishedDate: null,
+            flags: [],
+            grants: [],
+        };
+        row.grantedUsd += grant.grantedUsd;
+        row.lapsedUsd += grant.lapsedUsd;
+        if (!(grant.expires != null && grant.expires < today)) {
+            row.remainingUsd += Math.max(
+                grant.grantedUsd - grant.allocatedUsd,
+                0,
+            );
+        }
+        row.grants.push(grant);
+        byVendor.set(grant.vendor, row);
+    }
+
+    const burnMonths = new Map<string, Map<string, number>>();
+    for (const row of data.providerMonthly) {
+        const entry = byVendor.get(row.vendor);
+        if (!entry) continue;
+        const credit = toUsd(row.credit, row.currency, row.month);
+        const paid = toUsd(row.paid, row.currency, row.month);
+        if (credit > 0) {
+            entry.burnedUsd += credit;
+            if (row.month === lastMonth) entry.lastMonthBurnUsd += credit;
+            if (row.month === currentMonth) {
+                entry.currentMonthBurnUsd += credit;
+            }
+            const months = burnMonths.get(row.vendor) ?? new Map();
+            months.set(row.month, (months.get(row.month) ?? 0) + credit);
+            burnMonths.set(row.vendor, months);
+        }
+        if (paid > 0) {
+            if (row.month === lastMonth) entry.cashLastMonthUsd += paid;
+            if (row.month === currentMonth) entry.cashCurrentMonthUsd += paid;
+        }
+    }
+
+    for (const row of byVendor.values()) {
+        row.finished = row.remainingUsd <= POOL_EPS_USD;
+        if (row.finished) {
+            row.finishedDate =
+                row.grants
+                    .map((grant) => grant.finishedDate)
+                    .filter((date): date is string => date != null)
+                    .sort()
+                    .pop() ?? null;
+        }
+
+        // Some vendors' burn is witnessed in monthly steps well after the
+        // usage (aws: Automat-it deducts credits when it INVOICES, ~the 10th
+        // of the next month) — a silent June/July does not mean the pool
+        // stopped burning. Fall back to the latest witnessed month, marked
+        // stale and flagged, rather than showing a dead pool.
+        const latestBurnMonth = [
+            ...(burnMonths.get(row.vendor) ?? new Map()),
+        ].sort((a, b) => b[0].localeCompare(a[0]))[0];
+        if (row.currentMonthBurnUsd > 0) {
+            const elapsedDays = Math.max(1, now.getUTCDate());
+            row.monthlyRateUsd =
+                (row.currentMonthBurnUsd / elapsedDays) * AVG_DAYS_PER_MONTH;
+            row.rateBasis = "current";
+        } else if (row.lastMonthBurnUsd > 0) {
+            row.monthlyRateUsd = row.lastMonthBurnUsd;
+            row.rateBasis = "last";
+        } else if (!row.finished && latestBurnMonth) {
+            row.monthlyRateUsd = latestBurnMonth[1];
+            row.rateBasis = "stale";
+            row.flags.push(
+                `no burn data since ${monthLabel(latestBurnMonth[0])}`,
+            );
+        }
+
+        if (!row.finished) {
+            let burnDate: string | null = null;
+            if (row.monthlyRateUsd && row.remainingUsd > 0) {
+                const days =
+                    (row.remainingUsd / row.monthlyRateUsd) *
+                    AVG_DAYS_PER_MONTH;
+                burnDate = new Date(now.getTime() + days * 86_400_000)
+                    .toISOString()
+                    .slice(0, 10);
+            }
+            const upcomingExpiry =
+                row.grants
+                    .map((grant) => grant.expires)
+                    .filter(
+                        (expiry): expiry is string =>
+                            expiry != null && expiry >= today,
+                    )
+                    .sort()[0] ?? null;
+            if (burnDate && (!upcomingExpiry || burnDate <= upcomingExpiry)) {
+                row.depletionDate = burnDate;
+                row.depletionReason = "burn";
+            } else if (upcomingExpiry) {
+                row.depletionDate = upcomingExpiry;
+                row.depletionReason = "expiry";
+            }
+        }
+
+        if (row.grants.some((grant) => grant.startDate < "2026-01-01")) {
+            row.flags.push("pre-window burn unwitnessed");
+        }
+        if (row.lapsedUsd > POOL_EPS_USD) {
+            row.flags.push(`lapsed ${Math.round(row.lapsedUsd)}`);
+        }
+        if (row.unallocatedUsd > POOL_EPS_USD) {
+            row.flags.push(
+                `unallocated burn ${Math.round(row.unallocatedUsd)}`,
+            );
+        }
+    }
+
+    return [...byVendor.values()].sort((a, b) => {
+        if (a.finished !== b.finished) return a.finished ? 1 : -1;
+        if (a.finished) {
+            return (b.finishedDate ?? "").localeCompare(a.finishedDate ?? "");
+        }
+        if (a.depletionDate == null && b.depletionDate == null) {
+            return b.burnedUsd - a.burnedUsd;
+        }
+        if (a.depletionDate == null) return 1;
+        if (b.depletionDate == null) return -1;
+        return (
+            a.depletionDate.localeCompare(b.depletionDate) ||
+            a.remainingUsd - b.remainingUsd
+        );
+    });
+}
+
+export type UngrantedBurnRow = {
+    vendor: string;
+    burnedUsd: number;
+    lastMonthBurnUsd: number;
+    currentMonthBurnUsd: number;
+};
+
+// Credit burn from vendors with NO grant row — either a missing grant fact
+// (record it) or per-invoice discounts that never formed a pool (alibaba
+// coupons). Pollen-priced free partners are excluded: their "credit" is our
+// own bookkeeping, not a pool that can run dry.
+export function ungrantedCreditBurn(data: Data, now: Date): UngrantedBurnRow[] {
+    const currentMonth = now.toISOString().slice(0, 7);
+    const lastMonth = monthShift(currentMonth, -1);
+    const granted = new Set(data.grants.map((grant) => grant.vendor));
+
+    const byVendor = new Map<string, UngrantedBurnRow>();
+    for (const row of data.providerMonthly) {
+        if (granted.has(row.vendor)) continue;
+        if (POLLEN_PRICED_VENDORS.has(row.vendor)) continue;
+        const credit = toUsd(row.credit, row.currency, row.month);
+        if (credit <= 0) continue;
+        const entry = byVendor.get(row.vendor) ?? {
+            vendor: row.vendor,
+            burnedUsd: 0,
+            lastMonthBurnUsd: 0,
+            currentMonthBurnUsd: 0,
+        };
+        entry.burnedUsd += credit;
+        if (row.month === lastMonth) entry.lastMonthBurnUsd += credit;
+        if (row.month === currentMonth) entry.currentMonthBurnUsd += credit;
+        byVendor.set(row.vendor, entry);
+    }
+    return [...byVendor.values()].sort((a, b) => b.burnedUsd - a.burnedUsd);
 }
 
 export type EcosystemTotals = { byopUsd: number; modelUsd: number };

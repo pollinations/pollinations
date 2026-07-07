@@ -2,9 +2,11 @@ import {
     Alert,
     Button,
     Chip,
+    ClockIcon,
     ColorModeToggle,
     cn,
     DatabaseIcon,
+    EyeIcon,
     GenApiIcon,
     Heading,
     Input,
@@ -44,18 +46,20 @@ import {
     vendorVocabularyRunIssues,
 } from "./lib/vendor-vocabulary";
 import type { Data } from "./types";
+import { CreditsTab } from "./views/CreditsTab";
 import { GrantsTab } from "./views/GrantsTab";
 import { ModelsTab } from "./views/ModelsTab";
 import { PnlTab } from "./views/PnlTab";
 import { PollenTab } from "./views/PollenTab";
 import { ProviderTab } from "./views/ProviderTab";
+import { ReconciliationTab } from "./views/ReconciliationTab";
 import { RevenueTab } from "./views/RevenueTab";
 import { TransactionsTab } from "./views/TransactionsTab";
 import { VendorsTab } from "./views/VendorsTab";
 
 type Tab = "transactions" | "pollen" | "provider" | "grants" | "revenue";
 type TreasurySection = "insights" | "raw";
-type InsightTab = "pnl" | "vendors" | "models";
+type InsightTab = "pnl" | "vendors" | "models" | "reconciliation" | "credits";
 
 const logoMask: CSSProperties = {
     WebkitMask: `url(${logoUrl}) center / contain no-repeat`,
@@ -84,7 +88,7 @@ const INSIGHT_TABS: {
     {
         id: "vendors",
         label: "Vendors",
-        note: "One spend, three witnesses per vendor and month: transactions (bank cash), provider (their meter), pollen (our metering) - with the delta that exposes wrong registry unit costs.",
+        note: "Per-vendor unit economics: the Models table rolled up one grain - retained pollen vs true cost from provider actuals, with credit share, break-even, and data-quality flags.",
         icon: WalletIcon,
     },
     {
@@ -92,6 +96,18 @@ const INSIGHT_TABS: {
         label: "Models",
         note: "Per-model unit economics: retained pollen (gross minus byop/model shares) vs true cost allocated from vendor actuals, with the break-even floor and ecosystem adoption totals.",
         icon: GenApiIcon,
+    },
+    {
+        id: "reconciliation",
+        label: "Reconciliation",
+        note: "One spend, three witnesses per vendor and month: transactions (bank cash), provider (their meter), pollen (our metering) - coverage flags unfunded months, calib exposes wrong registry unit costs.",
+        icon: EyeIcon,
+    },
+    {
+        id: "credits",
+        label: "Credits",
+        note: "Credit burn rate and runway per vendor: grants pooled vs witnessed credit burn, current burn rate, and the earlier of exhaustion or expiry - naive math, every caveat is a flag.",
+        icon: ClockIcon,
     },
 ] satisfies readonly DrawerItem<InsightTab>[];
 
@@ -905,6 +921,20 @@ export default function App() {
                                     month={activeMonth}
                                     vendor={vendor}
                                 />
+                            )}
+                        {data &&
+                            section === "insights" &&
+                            insightTab === "reconciliation" && (
+                                <ReconciliationTab
+                                    data={data}
+                                    month={activeMonth}
+                                    vendor={vendor}
+                                />
+                            )}
+                        {data &&
+                            section === "insights" &&
+                            insightTab === "credits" && (
+                                <CreditsTab data={data} vendor={vendor} />
                             )}
                     </ErrorBoundary>
                 </Section>

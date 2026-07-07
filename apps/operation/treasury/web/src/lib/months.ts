@@ -22,14 +22,20 @@ export function matchesMonth(value: string, filter: string): boolean {
     return value.startsWith(filter);
 }
 
-// Every month observed across the month-grained tables, sorted ascending.
+// The reconciliation window starts 2026-01 (the December hard rule).
+// provider_monthly also holds pre-window credit rows (2025 usage recorded
+// solely for grant-burn accounting) — every month-grained lens except the
+// Credits runway must clamp to the window.
+export const WINDOW_START = "2026-01";
+
+// Every in-window month observed across the month-grained tables, ascending.
 export function collectMonths(data: Data): string[] {
     const months = new Set<string>();
     for (const row of data.transactions) months.add(row.date.slice(0, 7));
     for (const row of data.providerMonthly) months.add(row.month);
     for (const row of data.pollenMonthly) months.add(row.month);
     return [...months]
-        .filter((month) => MONTH_RE.test(month))
+        .filter((month) => MONTH_RE.test(month) && month >= WINDOW_START)
         .sort((a, b) => a.localeCompare(b));
 }
 

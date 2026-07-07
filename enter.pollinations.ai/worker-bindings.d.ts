@@ -185,6 +185,7 @@ declare namespace Cloudflare {
 	interface Env {
 		KV: KVNamespace;
 		DB: D1Database;
+		ADMIN_USER_IDS: string;
 		ENVIRONMENT: "local" | "production" | "staging" | "dev" | "test" | "development";
 		CLOUDFLARE_ACCOUNT_ID: "b6ec751c0862027ba269faf7029b2501";
 		LOG_LEVEL: "trace" | "debug";

@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { ParkedBee } from "../bee/PolliBee.tsx";
 import { FOOTER_BRANDING, FOOTER_LEGAL, SOCIAL_LINKS } from "./links.ts";
 
 export function Footer() {
@@ -7,6 +8,7 @@ export function Footer() {
             <div className="mx-auto grid max-w-5xl grid-cols-1 items-center gap-4 px-4 py-8 sm:grid-cols-3 sm:px-6">
                 <p className="text-center font-body text-sm text-theme-text-base sm:text-left">
                     {FOOTER_BRANDING}
+                    <ParkedBee className="ml-2 align-middle" />
                 </p>
 
                 <nav className="flex flex-wrap items-center justify-center gap-2 text-sm">

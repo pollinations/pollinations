@@ -6,6 +6,7 @@ import {
     useRouterState,
 } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { BeeFlyby } from "../components/bee/PolliBee.tsx";
 import { Footer } from "../components/shell/Footer.tsx";
 import { Header } from "../components/shell/Header.tsx";
 
@@ -45,6 +46,7 @@ function RootLayout() {
                     <Footer />
                 </div>
             </main>
+            <BeeFlyby />
         </div>
     );
 }

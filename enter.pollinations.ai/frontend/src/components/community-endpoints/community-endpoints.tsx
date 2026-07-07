@@ -15,8 +15,6 @@ import {
     type CommunityEndpoint,
     type EndpointPayload,
     readError,
-    toUnpublishPayload,
-    type VisibilityUpdatePayload,
 } from "./types.ts";
 
 type CommunityEndpointsProps = {
@@ -80,23 +78,6 @@ export function CommunityEndpoints({
         if (!response.ok) throw new Error(await readError(response));
         await loadEndpoints();
         await onChange?.();
-    }
-
-    async function handleUnpublish(endpoint: CommunityEndpoint): Promise<void> {
-        setError(null);
-        const payload: VisibilityUpdatePayload = toUnpublishPayload(endpoint);
-        try {
-            const response = await apiClient.account["my-models"][
-                ":id"
-            ].update.$post({ param: { id: endpoint.id }, json: payload });
-            if (!response.ok) throw new Error(await readError(response));
-            await loadEndpoints();
-            await onChange?.();
-        } catch (thrown) {
-            setError(
-                thrown instanceof Error ? thrown.message : "Unpublish failed",
-            );
-        }
     }
 
     async function handleDelete(): Promise<void> {
@@ -170,14 +151,7 @@ export function CommunityEndpoints({
                             <CommunityEndpointCard
                                 key={endpoint.id}
                                 endpoint={endpoint}
-                                canPublish={canPublish}
                                 onEdit={() => setEditing(endpoint)}
-                                // Publishing is a form step (set prices, test),
-                                // so "Make public" opens the edit dialog.
-                                onPublish={() => setEditing(endpoint)}
-                                onUnpublish={() =>
-                                    void handleUnpublish(endpoint)
-                                }
                                 onDelete={() => setDeleting(endpoint)}
                             />
                         ))

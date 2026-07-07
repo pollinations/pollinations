@@ -167,29 +167,6 @@ export function observedUsageValue(
         : null;
 }
 
-// Reverting a public endpoint to private is a one-click card action with no
-// form: it only flips visibility, resending the endpoint's stored prices
-// unchanged (a private endpoint never applies them). Sent to the update
-// endpoint. The update json type requires every price field, hence the full
-// spread.
-export type VisibilityUpdatePayload = {
-    visibility: CommunityEndpointVisibility;
-} & CommunityEndpointPrices;
-
-export function toUnpublishPayload(
-    endpoint: CommunityEndpoint,
-): VisibilityUpdatePayload {
-    return {
-        visibility: "private",
-        ...(Object.fromEntries(
-            COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
-                field.key,
-                endpoint[field.key],
-            ]),
-        ) as CommunityEndpointPrices),
-    };
-}
-
 export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
     const modelName = form.name.trim();
     return {

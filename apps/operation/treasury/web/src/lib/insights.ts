@@ -245,7 +245,7 @@ export type VendorPlanes = {
     coverage: Coverage;
 };
 
-function monthShift(month: string, delta: number): string {
+export function monthShift(month: string, delta: number): string {
     const total =
         Number(month.slice(0, 4)) * 12 +
         (Number(month.slice(5, 7)) - 1) +

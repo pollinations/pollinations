@@ -15,8 +15,10 @@ import {
     withUniqueRowKeys,
 } from "../components/DataTable";
 import { fmtPeriod } from "../lib/format";
+import { toUsd } from "../lib/fx";
+import { monthShift } from "../lib/insights";
 import { matchesMonth } from "../lib/months";
-import type { Data, TransactionRow } from "../types";
+import type { Data, ProviderMonthlyRow, TransactionRow } from "../types";
 
 function transactionKey(row: TransactionRow) {
     return [
@@ -26,6 +28,67 @@ function transactionKey(row: TransactionRow) {
         row.charged_amount,
         row.charged_currency,
     ].join("|");
+}
+
+export type ProviderMatch = "match" | "miss" | null;
+
+// A compute charge is provider-matched when a provider paid row for the same
+// vendor, in the charge month or the month before (arrears billers settle
+// last month's usage), carries the same amount — exact to the cent in the
+// same currency, within 2.5% across currencies (monthly-average FX drifts
+// against the charge's daily rate). Non-compute rows get no badge.
+export function providerMatchFor(
+    row: TransactionRow,
+    providerRows: ProviderMonthlyRow[],
+): ProviderMatch {
+    if (row.category !== "compute") return null;
+    const txMonth = row.date.slice(0, 7);
+    const months = new Set([txMonth, monthShift(txMonth, -1)]);
+    for (const provider of providerRows) {
+        if (provider.vendor !== row.vendor) continue;
+        if (!months.has(provider.month) || provider.paid <= 0) continue;
+        if (provider.currency === row.charged_currency) {
+            if (Math.abs(provider.paid - row.charged_amount) <= 0.01) {
+                return "match";
+            }
+            continue;
+        }
+        const chargedUsd = toUsd(
+            row.charged_amount,
+            row.charged_currency,
+            txMonth,
+        );
+        const paidUsd = toUsd(provider.paid, provider.currency, provider.month);
+        if (
+            chargedUsd > 0 &&
+            Math.abs(paidUsd - chargedUsd) / chargedUsd <= 0.025
+        ) {
+            return "match";
+        }
+    }
+    return "miss";
+}
+
+function ProviderMatchChip({ match }: { match: ProviderMatch }) {
+    if (match === "match") {
+        return (
+            <span title="a provider paid row (same or previous month) matches this charge">
+                <Chip data-theme="neutral" intent="neutral" size="sm">
+                    provider ✓
+                </Chip>
+            </span>
+        );
+    }
+    if (match === "miss") {
+        return (
+            <span title="no provider paid row matches this amount in the charge month or the month before — the provider plane is missing this spend (or the meter disagrees with the bank)">
+                <Chip intent="danger" size="sm">
+                    no provider
+                </Chip>
+            </span>
+        );
+    }
+    return null;
 }
 
 export function TransactionsTab({
@@ -107,7 +170,17 @@ export function TransactionsTab({
                                     )}
                                 </TableCell>
                                 <TableCell>{row.category}</TableCell>
-                                <TableCell>{row.charged_amount}</TableCell>
+                                <TableCell>
+                                    <span className="inline-flex items-center gap-2">
+                                        {row.charged_amount}
+                                        <ProviderMatchChip
+                                            match={providerMatchFor(
+                                                row,
+                                                data.providerMonthly,
+                                            )}
+                                        />
+                                    </span>
+                                </TableCell>
                                 <TableCell>{row.charged_currency}</TableCell>
                             </TableRow>
                         ),

@@ -165,6 +165,15 @@ const providerMonthly: ProviderMonthlyRow[] = [
         paid: 4489.35,
         source: "bq",
     },
+    // Matches the May google compute transaction — demos the provider ✓ chip.
+    {
+        month: "2026-05",
+        vendor: "google",
+        currency: "EUR",
+        credit: 0,
+        paid: 3399.05,
+        source: "bq",
+    },
 ];
 
 const grants: GrantRow[] = [

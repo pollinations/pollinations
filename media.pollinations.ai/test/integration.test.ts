@@ -287,19 +287,83 @@ describe("media.pollinations.ai", () => {
         expect(dup.duplicate).toBe(true);
     });
 
+    it("uploads via base64 JSON, hashing identically to the multipart form", async () => {
+        const base64 = btoa(String.fromCharCode(...TINY_PNG));
+        const uploadRes = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${VALID_KEY}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    data: `data:image/png;base64,${base64}`,
+                    contentType: "image/png",
+                    name: "test.png",
+                    // JSON array form — the natural shape for a JSON API caller.
+                    tags: ["gallery"],
+                }),
+            },
+        );
+        expect(uploadRes.status).toBe(200);
+        const upload = (await uploadRes.json()) as UploadResponse;
+        expect(upload.id).toMatch(/^[a-f0-9]{16}$/);
+        expect(upload.contentType).toBe("image/png");
+        expect(upload.size).toBe(TINY_PNG.length);
+        expect(upload.tags).toEqual(["gallery"]);
+
+        // Same bytes + same filename → same content hash as a multipart upload.
+        const formRes = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                body: (() => {
+                    const form = new FormData();
+                    form.append("file", pngFile("test.png"));
+                    return form;
+                })(),
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            },
+        );
+        const formUpload = (await formRes.json()) as UploadResponse;
+        expect(formUpload.id).toBe(upload.id);
+        expect(formUpload.duplicate).toBe(true);
+
+        const getRes = await SELF.fetch(
+            `https://media.pollinations.ai/${upload.id}`,
+        );
+        expect(getRes.status).toBe(200);
+        const body = new Uint8Array(await getRes.arrayBuffer());
+        expect(body.length).toBe(TINY_PNG.length);
+    });
+
+    it("rejects an unsupported upload content type with 400", async () => {
+        const res = await SELF.fetch("https://media.pollinations.ai/upload", {
+            method: "POST",
+            body: TINY_PNG,
+            headers: {
+                Authorization: `Bearer ${VALID_KEY}`,
+                "Content-Type": "image/png",
+            },
+        });
+        expect(res.status).toBe(400);
+        const body = (await res.json()) as { error: string };
+        expect(body.error).toContain("multipart/form-data");
+    });
+
     it("refreshes uploaded media TTL on aged GET", async () => {
         const bucket = createTestR2Bucket();
         const mediaEnv = createMediaEnv(bucket);
         const uploadCtx = createExecutionContext();
 
+        const uploadForm = new FormData();
+        uploadForm.append("file", pngFile("ttl.png"));
         const uploadRes = await app.fetch(
             new Request("https://media.pollinations.ai/upload", {
                 method: "POST",
-                body: TINY_PNG,
-                headers: {
-                    Authorization: `Bearer ${VALID_KEY}`,
-                    "Content-Type": "image/png",
-                },
+                body: uploadForm,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
             }),
             mediaEnv,
             uploadCtx,
@@ -698,6 +762,36 @@ describe("media.pollinations.ai", () => {
         expect(page2.items).toHaveLength(1);
         expect(page2.items[0].url).toBe(uploads[0].url);
         expect(page2.nextCursor).toBeNull();
+    });
+
+    it("validates the limit query param: valid passes, malformed 400s", async () => {
+        // A well-formed integer limit is accepted.
+        const ok = await SELF.fetch(
+            "https://media.pollinations.ai/me/media?limit=10",
+            { headers: { Authorization: "Bearer pk_alice" } },
+        );
+        expect(ok.status).toBe(200);
+
+        // Non-numeric, out-of-range, and repeated (hono flattens repeats to an
+        // array) limits are malformed scalar params → 400.
+        for (const q of [
+            "limit=abc",
+            "limit=0",
+            "limit=1000",
+            "limit=1&limit=2",
+        ]) {
+            const res = await SELF.fetch(
+                `https://media.pollinations.ai/me/media?${q}`,
+                { headers: { Authorization: "Bearer pk_alice" } },
+            );
+            expect(res.status, q).toBe(400);
+        }
+
+        // The public tag route validates limit the same way.
+        const tagBad = await SELF.fetch(
+            "https://media.pollinations.ai/tags/sunset?limit=abc",
+        );
+        expect(tagBad.status).toBe(400);
     });
 
     describe("reactions", () => {

@@ -10,10 +10,21 @@ Base URL: https://media.pollinations.ai
 | `GET /{hash}` | Retrieve a previously uploaded file |
 | `GET /{hash}/metadata` | Get file metadata as JSON |
 
-Upload requires API key; retrieval is public.
+Upload requires API key; retrieval is public. Two upload formats are accepted:
+
+Multipart form (browsers, files on disk):
 
 ```bash
 curl -X POST "https://media.pollinations.ai/upload" \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -F file=@path/to/image.png
+```
+
+Base64 JSON (programmatic callers that already hold the bytes):
+
+```bash
+curl -X POST "https://media.pollinations.ai/upload" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"data": "<base64-or-data-uri>", "contentType": "image/png", "name": "image.png"}'
 ```

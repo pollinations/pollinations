@@ -212,13 +212,6 @@ export function decodeCursor(cursor: string): {
 export const DEFAULT_LIMIT = 20;
 export const MAX_LIMIT = 100;
 
-/** Clamp a user-supplied limit into [1, MAX_LIMIT], NaN-safe. */
-export function clampLimit(raw: string | null | undefined): number {
-    const parsed = Number.parseInt(raw ?? "", 10);
-    if (!Number.isFinite(parsed) || parsed <= 0) return DEFAULT_LIMIT;
-    return Math.min(parsed, MAX_LIMIT);
-}
-
 /** List catalog items owned by a user, newest first, optionally by tag. */
 export async function listUserMedia(
     db: CatalogDb,

@@ -2,18 +2,24 @@ import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { describeRoute, openAPIRouteHandler, resolver } from "hono-openapi";
+import {
+    describeRoute,
+    openAPIRouteHandler,
+    resolver,
+    validator,
+} from "hono-openapi";
 import { z } from "zod";
 import type { CatalogDb, CatalogItem, CatalogPage } from "./catalog.ts";
 import {
     addReaction,
-    clampLimit,
+    DEFAULT_LIMIT,
     decodeCursor,
     getDb,
     InvalidReactionError,
     isItemReactable,
     listByTag,
     listUserMedia,
+    MAX_LIMIT,
     MAX_REACTION_KINDS_PER_ITEM,
     normalizeReaction,
     normalizeTags,
@@ -87,10 +93,12 @@ const MAX_PROMPT_LENGTH = 2000;
 const MAX_MODEL_LENGTH = 128;
 
 // Splits comma-separated `tags` values. Accepts the same field name whether it
-// came from a query string, multipart form field, or JSON body field.
-function splitTags(values: string[]): string[] {
+// came from a query string, multipart form field, or JSON body field. Non-string
+// entries (possible from an arbitrary JSON body) are ignored rather than throwing.
+function splitTags(values: unknown[]): string[] {
     const tags: string[] = [];
     for (const value of values) {
+        if (typeof value !== "string") continue;
         tags.push(...value.split(","));
     }
     return tags;
@@ -289,6 +297,83 @@ const ReactionResponseSchema = z.object({
         ),
 });
 
+// Query-param schemas for the listing routes, used with validator("query", …):
+// one schema that both validates and documents. `limit` is a coerced integer
+// (query values arrive as strings) bounded to [1, MAX_LIMIT]; non-numeric,
+// out-of-range, or repeated values are rejected with a 400 — the standard
+// behavior for a scalar param. `cursor` and `tag` are plain optional strings.
+const MediaListQuerySchema = z.object({
+    limit: z.coerce
+        .number()
+        .int()
+        .min(1)
+        .max(MAX_LIMIT)
+        .optional()
+        .describe(`Page size, 1–${MAX_LIMIT}. Omitted → ${DEFAULT_LIMIT}.`),
+    cursor: z
+        .string()
+        .optional()
+        .describe(
+            "Opaque pagination cursor from a previous response's nextCursor.",
+        ),
+});
+
+const MyMediaQuerySchema = MediaListQuerySchema.extend({
+    tag: z
+        .string()
+        .optional()
+        .describe("Restrict the listing to items carrying this tag."),
+});
+
+// Path params for the reaction routes, described for the docs. hono derives
+// the params from the route path, but supplying `parameters` attaches prose.
+const REACTION_PATH_PARAMS = [
+    {
+        name: "id",
+        in: "path",
+        required: true,
+        description:
+            "Catalog item id (the `id` field from /me/media or /tags/:tag, not the content hash).",
+        schema: { type: "string" },
+    },
+    {
+        name: "reaction",
+        in: "path",
+        required: true,
+        description: "Reaction kind, e.g. `like`, `heart`, `bookmark`.",
+        schema: { type: "string" },
+    },
+] as const;
+
+// The JSON upload body, declared for the docs only. The handler parses
+// multipart and JSON by hand (a single validator can't span both content
+// types), so this schema describes the surface without gating requests. The
+// multipart shape is declared inline in the route's requestBody because its
+// `file` field needs OpenAPI's string/binary format that zod can't express.
+const UploadJsonBodySchema = z.object({
+    data: z
+        .string()
+        .describe(
+            "Base64-encoded file bytes (with or without a data: prefix).",
+        ),
+    contentType: z
+        .string()
+        .optional()
+        .describe("MIME type; defaults to application/octet-stream."),
+    name: z
+        .string()
+        .optional()
+        .describe("Filename; participates in the content hash."),
+    tags: z
+        .union([z.string(), z.array(z.string())])
+        .optional()
+        .describe(
+            "Catalog tags (makes the item public): a comma-separated string or an array of strings.",
+        ),
+    prompt: z.string().optional().describe("Prompt to store with the item."),
+    model: z.string().optional().describe("Model name to store with the item."),
+});
+
 const api = new Hono<{ Bindings: Env }>();
 
 // Shared preamble for the reaction routes: authenticate, validate the
@@ -350,7 +435,41 @@ api.post(
         tags: ["media.pollinations.ai"],
         summary: "Upload media",
         description:
-            "Upload an image, audio, or video file. Supports multipart/form-data, raw binary, or base64 JSON. Returns a content-addressed hash URL. The hash includes the filename, so the same content with different filenames gets different URLs. Files are retained for 30 days; re-uploading resets the timer. Optional `tags`, `prompt`, and `model` fields catalog the upload to your media library; tags make it publicly visible on /tags/:tag. **Alpha:** the catalog metadata fields are new and may still change.",
+            "Upload an image, audio, or video file via multipart/form-data (field `file`) or application/json (base64 `data`). Returns a content-addressed hash URL. The hash includes the filename, so the same content with different filenames gets different URLs. Files are retained for 30 days; re-uploading resets the timer. Optional `tags`, `prompt`, and `model` fields catalog the upload to your media library; tags make it publicly visible on /tags/:tag. **Alpha:** the catalog metadata fields are new and may still change.",
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    schema: {
+                        type: "object",
+                        required: ["file"],
+                        properties: {
+                            file: {
+                                type: "string",
+                                format: "binary",
+                                description: "The media file to upload.",
+                            },
+                            tags: {
+                                type: "string",
+                                description:
+                                    "Comma-separated catalog tags (makes the item public).",
+                            },
+                            prompt: {
+                                type: "string",
+                                description: "Prompt to store with the item.",
+                            },
+                            model: {
+                                type: "string",
+                                description:
+                                    "Model name to store with the item.",
+                            },
+                        },
+                    },
+                },
+                "application/json": {
+                    schema: resolver(UploadJsonBodySchema),
+                },
+            },
+        },
         responses: {
             200: {
                 description: "Upload successful",
@@ -457,7 +576,7 @@ api.post(
                     data: string;
                     contentType?: string;
                     name?: string;
-                    tags?: string;
+                    tags?: string | string[];
                     prompt?: string;
                     model?: string;
                 }>();
@@ -489,20 +608,23 @@ api.post(
                 contentType = body.contentType || "application/octet-stream";
                 fileName = body.name;
 
-                if (body.tags) rawTags.push(...splitTags([body.tags]));
+                // Accept `tags` as either a comma-separated string or a JSON
+                // array of strings — both are natural in a JSON body.
+                if (body.tags) {
+                    const tagValues = Array.isArray(body.tags)
+                        ? body.tags
+                        : [body.tags];
+                    rawTags.push(...splitTags(tagValues));
+                }
                 rawPrompt = rawPrompt ?? body.prompt ?? null;
                 rawModel = rawModel ?? body.model ?? null;
             } else {
-                fileBuffer = await c.req.arrayBuffer();
-
-                if (fileBuffer.byteLength > maxSize) {
-                    return c.json(fileTooLargeError(maxSize), 413);
-                }
-                if (fileBuffer.byteLength === 0) {
-                    return c.json({ error: "Empty file" }, 400);
-                }
-
-                contentType = requestContentType || "application/octet-stream";
+                return c.json(
+                    {
+                        error: "Unsupported content type. Use multipart/form-data (field `file`) or application/json (base64 `data`).",
+                    },
+                    400,
+                );
             }
 
             let metadata: UploadMetadata;
@@ -627,6 +749,7 @@ api.get(
             },
         },
     }),
+    validator("query", MyMediaQuerySchema),
     async (c) => {
         const apiKey = extractApiKey(c.req.raw);
         if (!apiKey) {
@@ -648,13 +771,12 @@ api.get(
             );
         }
 
-        const url = new URL(c.req.url);
-        const limit = clampLimit(url.searchParams.get("limit"));
-        const cursorParam = url.searchParams.get("cursor");
+        const query = c.req.valid("query");
+        const limit = query.limit ?? DEFAULT_LIMIT;
         let cursor: { createdAt: Date; id: string } | undefined;
-        if (cursorParam) {
+        if (query.cursor) {
             try {
-                cursor = decodeCursor(cursorParam);
+                cursor = decodeCursor(query.cursor);
             } catch {
                 return c.json({ error: "Invalid cursor" }, 400);
             }
@@ -663,7 +785,7 @@ api.get(
         const db = getDb(c.env.DB);
         const page = await listUserMedia(db, {
             ownerUserId: authResult.userId,
-            tag: url.searchParams.get("tag") ?? undefined,
+            tag: query.tag,
             limit,
             cursor,
         });
@@ -680,6 +802,15 @@ api.get(
         description:
             "Public gallery listing for a tag, ordered by when each item was tagged, newest first. Authentication is optional: pass an API key to get `myReactions` on each item. Upload-backed items reference storage that expires 30 days after their last upload — an expired item keeps its catalog entry, but its url 404s until the same content is re-uploaded. **Alpha:** this endpoint is new and its API may still change.",
         security: [],
+        parameters: [
+            {
+                name: "tag",
+                in: "path",
+                required: true,
+                description: "Tag slug to list, e.g. `gallery`.",
+                schema: { type: "string" },
+            },
+        ],
         responses: {
             200: {
                 description: "Page of media items",
@@ -703,15 +834,15 @@ api.get(
             },
         },
     }),
+    validator("query", MediaListQuerySchema),
     async (c) => {
         const tag = c.req.param("tag");
-        const url = new URL(c.req.url);
-        const limit = clampLimit(url.searchParams.get("limit"));
-        const cursorParam = url.searchParams.get("cursor");
+        const query = c.req.valid("query");
+        const limit = query.limit ?? DEFAULT_LIMIT;
         let cursor: { createdAt: Date; id: string } | undefined;
-        if (cursorParam) {
+        if (query.cursor) {
             try {
-                cursor = decodeCursor(cursorParam);
+                cursor = decodeCursor(query.cursor);
             } catch {
                 return c.json({ error: "Invalid cursor" }, 400);
             }
@@ -744,6 +875,7 @@ api.put(
         summary: "React to a media item",
         description:
             "Add a reaction (e.g. `like`, `heart`, `bookmark`) to a catalog item by its id (the `id` field from /me/media or /tags/:tag, not the content hash). Reactable items are your own plus anything publicly tagged; others answer 404. Idempotent: repeating the same reaction is a no-op. At most 8 distinct reaction kinds per user per item. **Alpha:** this endpoint is new and its API may still change.",
+        parameters: [...REACTION_PATH_PARAMS],
         responses: {
             200: {
                 description:
@@ -813,6 +945,7 @@ api.delete(
         summary: "Remove a reaction from a media item",
         description:
             "Remove your reaction of one kind from a catalog item by its id (the `id` field from /me/media or /tags/:tag, not the content hash). Reactable items are your own plus anything publicly tagged; others answer 404. Idempotent: removing a reaction you haven't given is a no-op. **Alpha:** this endpoint is new and its API may still change.",
+        parameters: [...REACTION_PATH_PARAMS],
         responses: {
             200: {
                 description:

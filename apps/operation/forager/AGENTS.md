@@ -4,15 +4,17 @@ Forager is the ONLY writer to the Tinybird `operations` workspace. The treasury
 web app is a read-only mirror. Every correction happens here, via these
 workflows. Run everything from `apps/operation/forager/`.
 
-The workspace holds five datasources: `transactions`, `provider_monthly`,
-`pollen_monthly`, `revenue_monthly`, `ingest_runs`.
+The workspace holds six datasources: `transactions`, `provider_monthly`,
+`pollen_monthly`, `revenue_monthly`, `grants`, `ingest_runs`. The first four
+are rebuilt by `ingest.run` (replace); `grants` and `ingest_runs` are
+append-only.
 
 ## Safety rules
 
-- Every `ingest.run` snapshots the four replaced tables (`provider_monthly`,
-  `pollen_monthly`, `revenue_monthly`, `transactions`) to
+- Every `ingest.run` snapshots ALL six datasources (append-only `grants` and
+  `ingest_runs` included) to
   `~/Documents/treasury-backups/<UTC stamp>/<table>.ndjson` BEFORE writing, then
-  prints a `+added/-removed` diff per table.
+  prints a `+added/-removed` diff per replaced table.
 - A write that would lose a manual `provider_monthly` row's data — no surviving
   manual-sourced row for that vendor/month/currency — aborts unless `--yes` is
   given (rows merged into a `manual,api` row are not lost).
@@ -20,6 +22,17 @@ The workspace holds five datasources: `transactions`, `provider_monthly`,
   unsure about; it does not append to `ingest_runs`.
 - `replace` refuses to write 0 rows, so a failed pull never wipes a table.
 - Restore = re-replace a table with its snapshot file (see Restore below).
+- Hard scope rule: December 2025 (pre-window) costs and revenue are ignored —
+  `months_start` is 2026-01. Cross-window artifacts (a December invoice charged
+  in January, a December reload funding January usage) are accepted
+  reconciliation wedges, never data to backfill.
+- ONE carve-out (2026-07-07): `provider_monthly` also holds pre-window (2025)
+  CREDIT rows recorded manually so grant burn accounts to zero — witnessed
+  where an API reaches back (azure Cost Management, openai org costs), derived
+  from dashboard used/left facts otherwise (aws, google, io.net — booked as a
+  2025-12 bucket). They serve ONLY the treasury app's Credits runway lens; the
+  web app clamps every other lens to `WINDOW_START = 2026-01`. Never record
+  pre-window PAID rows except the invoice-witnessed azure Dec 2025.
 
 ## Workflows
 
@@ -59,7 +72,9 @@ python3 -m ingest.run --only provider --vendor fireworks
 ```
 
 `--vendor` requires `--only provider` and must be a meter-connector slug:
-`azure | deepinfra | elevenlabs | vast.ai | ovhcloud | fireworks | google | openai | openrouter | runpod`.
+`alibaba | anthropic | azure | cloudflare | community | deepinfra | elevenlabs | vast.ai | ovhcloud | fireworks | google | openai | openrouter | runpod | xai`.
+`community` mirrors our own pollen ledger (user-deployed models earn pollen,
+75/25 split, never cashed out) — all credit, no cash ever.
 Manual-only vendors are updated with `ingest.record`, not here.
 `aws` is manual-only: billing runs through the Automat-it reseller (two AWS
 accounts, reseller-side credits), which Cost Explorer cannot see — record one
@@ -74,6 +89,15 @@ python3 -m ingest.record provider io.net 2026-07 --currency USD --credit 123.45
 Appends one `source="manual"` row to `provider_monthly`. Vendor must be in
 `registry.CANONICAL`; at least one of `--credit`/`--paid` must be > 0. Manual
 rows survive every subsequent `ingest.run` (they are re-merged, not dropped).
+
+**Month contract: `provider_monthly.month` is the USAGE month (the service
+period the charge covers), never the invoice or charge date.** An invoice
+issued Feb 3 for January consumption is recorded as `2026-01`. When an invoice
+spans months, split it into one row per month. The treasury app's calibration
+math (provider actual ÷ our metering, per month) silently breaks when a row
+lands in the billing month instead — the app flags the mismatch as swinging
+`calib ×` values on the Vendors tab, but the fix is always here, at recording
+time.
 
 ### Remove / correct a manual meter row
 
@@ -132,6 +156,19 @@ category, then `other`) — there is no AI verify pass.
 
 The slug also becomes valid for `ingest.record` (it reads `registry.CANONICAL`,
 which is the alias keys).
+
+### Split a bundled bank transfer
+
+`config/transaction_splits.json` replaces one Wise movement with its
+invoice-line parts at ingest (a deliberate, per-row exception to the 1:1 Wise
+mirror — e.g. a reimbursement transfer covering Cloudflare + Scaleway +
+Workspace invoices). Each rule: `match` on `{date, amount, currency, text}`
+(text = lowercase counterparty substring) + `parts` of
+`{vendor, category, amount}`. Parts must sum to the matched amount to the
+cent or the run fails. Splits survive every rebuild because they are applied
+by `wise.apply_splits` during the pull — never edit the table directly (the
+next run would wipe it). After editing, `--dry-run --only transactions`,
+then write.
 
 ### Inspect current rows
 

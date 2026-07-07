@@ -1,4 +1,4 @@
-"""Table snapshots and row diffs — every replace is preceded by a backup.
+"""Table snapshots and row diffs — every run backs up every datasource.
 
 Snapshots land in <backup_dir>/<UTC run stamp>/<datasource>.ndjson so any
 table state can be restored by re-replacing with the snapshot file.

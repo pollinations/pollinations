@@ -5,6 +5,98 @@ Treasury app (which is a read-only mirror). For the full correction playbook
 — scoped runs, manual rows, aliases, backups, restore — see
 [`AGENTS.md`](./AGENTS.md).
 
+## Architecture
+
+```mermaid
+flowchart LR
+    subgraph SRC [External sources]
+        WISE[Wise Activities API]
+        VEND[14 vendor meter APIs / CLIs]
+        PROD[(prod Tinybird<br/>generation_event)]
+        STRIPE[Stripe API]
+    end
+
+    subgraph LAPTOP [Laptop — manual invocation only, no cron/CI]
+        RUN["ingest.run<br/>snapshot → connectors → merge/splice → guarded replace"]
+        REC["ingest.record<br/>manual rows"]
+        BAK[("~/Documents/treasury-backups/&lt;stamp&gt;/<br/>pre-write snapshot, every run")]
+    end
+
+    subgraph OPS [Tinybird `operations` workspace]
+        T1[(transactions)]
+        T2[(provider_monthly)]
+        T3[(pollen_monthly)]
+        T4[(revenue_monthly)]
+        T5[(grants — append-only)]
+        T6[(ingest_runs — append-only)]
+        PIPES[["6 read pipes *_api"]]
+    end
+
+    subgraph APP [Treasury web app 127.0.0.1:4180]
+        PROXY["vite server proxy /api/pipes/*<br/>GET-only, pipe allowlist, password gate"]
+        UI[React UI — read-only mirror]
+    end
+
+    WISE --> RUN
+    VEND --> RUN
+    PROD -- "read-only token" --> RUN
+    STRIPE --> RUN
+    RUN -- "snapshot first" --> BAK
+    RUN -- "REPLACE token" --> T1 & T2 & T3 & T4
+    RUN -- "APPEND token (run log)" --> T6
+    REC -- "APPEND token" --> T2 & T5
+    T1 & T2 & T3 & T4 & T5 & T6 --> PIPES
+    PIPES -- "READ-only token" --> PROXY
+    PROXY --> UI
+```
+
+## Write Safety — why a rewrite-all cannot happen
+
+Four tables (`transactions`, `provider_monthly`, `pollen_monthly`,
+`revenue_monthly`) are rebuilt by `mode=replace`; `grants` and `ingest_runs`
+are append-only. The entire write surface is two methods in
+[`ingest/tb.py`](./ingest/tb.py) — `append()` and `replace()` — and there is
+exactly ONE `replace()` call site in the codebase:
+`guarded_replace()` in [`ingest/run.py`](./ingest/run.py). No truncate,
+delete, or drop exists anywhere.
+
+Every replace passes this guard chain, in order:
+
+1. **Snapshot before anything** — every datasource (the four replaced tables
+   plus append-only `grants` and `ingest_runs`) is dumped to
+   `~/Documents/treasury-backups/<UTC stamp>/<table>.ndjson` at the start of
+   `main()`, before any connector runs. Restore = re-replace with the file.
+2. **Connector failure aborts** — any meter-connector exception raises before
+   the write; a broken pull never reaches Tinybird.
+3. **Zero rows refused, twice** — the run raises on 0 fresh rows per table,
+   and `tb.replace()` independently refuses an empty payload. A failed pull
+   can never wipe a table.
+4. **Scoped runs splice, never sweep** — `--month` / `--vendor` runs keep all
+   out-of-scope existing rows (`splice_rows`) and `assert_fresh_in_scope`
+   refuses any fresh row outside the requested scope.
+5. **Manual rows survive** — manual `provider_monthly` rows are re-merged into
+   every rebuild; a write that would lose one aborts unless `--yes` is given.
+6. **Visible diff** — every replace prints `+added/-removed` and logs it to
+   `ingest_runs`; `--dry-run` runs the whole chain without writing.
+
+Token separation backs this up: the everyday `TINYBIRD_OPS_INGEST_TOKEN`
+carries only APPEND+READ scopes and physically cannot replace a table. The
+`TINYBIRD_OPS_REPLACE_TOKEN` is used at that single call site (and the
+runbook restore heredocs). The web app's token is PIPES:READ only. Schema
+deploys (`tb --cloud deploy` from [`tinybird/`](./tinybird/)) are manual,
+human-approved, and destructive plans additionally require
+`--allow-destructive-operations`.
+
+Re-derivability invariant: everything in a replaced table is re-derivable
+from its upstream source (Wise, vendor APIs, prod Tinybird, Stripe) — except
+manual `provider_monthly` rows, which is exactly what the `--yes` gate
+protects. Operator truth that cannot be re-derived (`grants`, manual rows)
+only ever lands via append.
+
+Nothing schedules `ingest.run`: no cron, launchd, or CI touches this app.
+Every write starts with a human (or an agent a human is driving) at a
+terminal.
+
 ## Main Flow
 
 Run from this directory:

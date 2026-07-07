@@ -360,7 +360,8 @@ def main():
         "dry_run": args.dry_run,
         "existing": {
             ds: backup.snapshot_table(ops_ingest, ds, backup_dir)
-            for ds in ("provider_monthly", "pollen_monthly", "revenue_monthly", "transactions")
+            for ds in ("provider_monthly", "pollen_monthly", "revenue_monthly",
+                       "transactions", "grants", "ingest_runs")
         },
     }
     print(f"backup: {backup_dir}")

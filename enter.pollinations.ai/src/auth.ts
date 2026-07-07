@@ -13,6 +13,7 @@ import { sendTierEventToTinybird } from "@shared/events.ts";
 import { AUTH_TRUSTED_ORIGINS } from "@shared/public-urls.ts";
 import { DEFAULT_TIER } from "@shared/tier-config.ts";
 import {
+    type Account,
     type BetterAuthOptions,
     type BetterAuthPlugin,
     betterAuth,
@@ -112,6 +113,50 @@ function handleFallbackPlugin(env: Cloudflare.Env): BetterAuthPlugin {
     } satisfies BetterAuthPlugin;
 }
 
+/**
+ * Sets `account.username` synchronously when a GitHub account row is created
+ * (fresh signup), so brand-new users have the live GitHub login available
+ * immediately — `/account/profile` and the APPS.md `LOWER(a.username)` join
+ * must not have to wait for the async login sync in `onAfterSessionCreate`.
+ *
+ * NOTE: this reads the legacy dual-written `user.github_username` column
+ * (written by `mapProfileToUser` and committed before better-auth creates the
+ * account row in the signup flow). When the identity contract PR drops that
+ * column, re-source this value (e.g. from the OAuth profile in context).
+ * Link flows where the user row has no github_username leave `username`
+ * unset — the async login sync remains the corrector there.
+ */
+export function onBeforeAccountCreate(env: Cloudflare.Env) {
+    return async (account: Account & { username?: string | null }) => {
+        if (account.providerId !== "github" || account.username) return;
+        const db = drizzle(env.DB);
+        const [row] = await db
+            .select({ githubUsername: userTable.githubUsername })
+            .from(userTable)
+            .where(eq(userTable.id, account.userId))
+            .limit(1);
+        if (!row?.githubUsername) return;
+        return { data: { ...account, username: row.githubUsername } };
+    };
+}
+
+function githubAccountUsernamePlugin(env: Cloudflare.Env): BetterAuthPlugin {
+    return {
+        id: "github-account-username",
+        init: () => ({
+            options: {
+                databaseHooks: {
+                    account: {
+                        create: {
+                            before: onBeforeAccountCreate(env),
+                        },
+                    },
+                },
+            } satisfies Partial<BetterAuthOptions>,
+        }),
+    } satisfies BetterAuthPlugin;
+}
+
 export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const db = drizzle(env.DB);
     const apiKeyPlugin = createApiKeyPlugin();
@@ -164,6 +209,9 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         user: {
             additionalFields: authAdditionalFields.user,
         },
+        account: {
+            additionalFields: authAdditionalFields.account,
+        },
         socialProviders: {
             github: {
                 clientId: env.GITHUB_CLIENT_ID,
@@ -181,6 +229,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             tierPlugin(env, ctx),
             stagingAccessPlugin(env),
             handleFallbackPlugin(env),
+            githubAccountUsernamePlugin(env),
             openAPIPlugin,
         ],
         telemetry: { enabled: false },

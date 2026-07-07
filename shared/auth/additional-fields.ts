@@ -18,4 +18,14 @@ export const authAdditionalFields = {
             input: false,
         },
     },
+    account: {
+        // Live provider login (GitHub) — set synchronously at account
+        // creation and kept fresh by the login sync. Must be registered
+        // here or the adapter strips it from account writes.
+        username: {
+            type: "string",
+            required: false,
+            input: false,
+        },
+    },
 } as const;

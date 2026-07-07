@@ -3,7 +3,11 @@ import * as schema from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect, it } from "vitest";
-import { ensureUniqueHandle, sanitizeHandle } from "../src/auth.ts";
+import {
+    ensureUniqueHandle,
+    onBeforeAccountCreate,
+    sanitizeHandle,
+} from "../src/auth.ts";
 import { test } from "./fixtures.ts";
 
 // After a GitHub OAuth signup the user row's handle should be set to
@@ -20,6 +24,96 @@ test("github signup persists handle from profile.login", async ({
         .limit(1);
 
     expect(u.handle).toBe("testuser");
+});
+
+/**
+ * Fix: `account.username` must be populated synchronously by the
+ * `account.create.before` hook at GitHub signup — NOT by the async
+ * `onAfterSessionCreate` login sync (waitUntil + GitHub API).
+ *
+ * Isolation from the async sync: the sync fetches `GET /user/{githubId}`
+ * (here `/user/12345`) from the GitHub mock before it can write anything.
+ * The sessionToken fixture's trailing `mocks.clear()` awaits all in-flight
+ * mock requests, so by the time this test body runs, any sync fetch that
+ * went through the mock is settled and recorded in `state.requests`.
+ * Asserting `/user/12345` was never requested proves the sync never
+ * obtained a login — the value below can only come from the create hook.
+ */
+test("github signup sets account.username synchronously at account creation", async ({
+    sessionToken: _sessionToken,
+    mocks,
+}) => {
+    const db = drizzle(env.DB, { schema });
+
+    const [acct] = await db
+        .select({ username: schema.account.username })
+        .from(schema.account)
+        .where(eq(schema.account.providerId, "github"))
+        .limit(1);
+
+    expect(acct.username).toBe("testuser");
+
+    // The async login sync endpoint must not have been hit — see docblock.
+    const syncRequests = mocks.github.state.requests.filter(
+        (r) => r.path === "/user/12345",
+    );
+    expect(syncRequests).toEqual([]);
+});
+
+// ── onBeforeAccountCreate (github-account-username plugin) ───────────────────
+
+describe("onBeforeAccountCreate", () => {
+    const baseAccount = {
+        id: "acct-hook-test",
+        accountId: "999999",
+        providerId: "github",
+        userId: "hook-user",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    };
+
+    const seedUser = async (githubUsername: string | null) => {
+        const db = drizzle(env.DB, { schema });
+        await db.insert(schema.user).values({
+            id: "hook-user",
+            name: "Hook User",
+            email: "hook-user@example.com",
+            emailVerified: false,
+            handle: "hook-user",
+            githubUsername,
+            tier: "spore",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+    };
+
+    it("fills username from the user's legacy github_username column", async () => {
+        await seedUser("GhLogin");
+        const hook = onBeforeAccountCreate(env);
+        const result = await hook({ ...baseAccount });
+        expect(result).toMatchObject({ data: { username: "GhLogin" } });
+    });
+
+    it("leaves non-github accounts untouched", async () => {
+        await seedUser("GhLogin");
+        const hook = onBeforeAccountCreate(env);
+        const result = await hook({ ...baseAccount, providerId: "google" });
+        expect(result).toBeUndefined();
+    });
+
+    it("leaves username unset when the user row has no github_username", async () => {
+        await seedUser(null);
+        const hook = onBeforeAccountCreate(env);
+        const result = await hook({ ...baseAccount });
+        expect(result).toBeUndefined();
+    });
+
+    it("does not overwrite an already-populated username", async () => {
+        await seedUser("GhLogin");
+        const hook = onBeforeAccountCreate(env);
+        const result = await hook({ ...baseAccount, username: "existing" });
+        expect(result).toBeUndefined();
+    });
 });
 
 // ── handleFallbackPlugin integration ─────────────────────────────────────────

@@ -197,4 +197,22 @@ export const questsCommand = addQuestFilters(
                 process.exit(1);
             }
         }),
+    )
+    .addCommand(
+        new Command("rewards")
+            .description(
+                "List your earned quest rewards and which are ready to claim",
+            )
+            .option("--pending", "Show only unclaimed (claimable) rewards")
+            .option("--claimed", "Show only already-claimed rewards")
+            .action(async (opts) => {
+                try {
+                    await listRewards(opts);
+                } catch (err) {
+                    printError(
+                        `Failed to fetch quest rewards: ${err instanceof Error ? err.message : "unknown"}`,
+                    );
+                    process.exit(1);
+                }
+            }),
     );

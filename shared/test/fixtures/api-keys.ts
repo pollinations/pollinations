@@ -6,7 +6,10 @@ import {
     type CallerMetadata,
     createApiKeyForUser,
 } from "../../auth/api-key-creation.ts";
-import { user as userTable } from "../../db/better-auth.ts";
+import {
+    account as accountTable,
+    user as userTable,
+} from "../../db/better-auth.ts";
 
 export type CreateTestUserOptions = {
     id?: string;
@@ -56,6 +59,24 @@ export async function createTestUser(opts: CreateTestUserOptions = {}) {
         createdAt: new Date(),
         updatedAt: new Date(),
     });
+
+    // Mirror production: better-auth writes an account row for every GitHub
+    // user at signup. Without it, getLinkedGithub returns null and community-
+    // endpoint ownership checks resolve to 403.
+    if (opts.githubId != null) {
+        await db
+            .insert(accountTable)
+            .values({
+                id: `test-account-${userId}`,
+                accountId: String(opts.githubId),
+                providerId: "github",
+                username: opts.githubUsername ?? null,
+                userId,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            })
+            .onConflictDoNothing();
+    }
 
     return userId;
 }

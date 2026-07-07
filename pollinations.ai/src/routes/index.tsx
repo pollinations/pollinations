@@ -97,8 +97,8 @@ function HelloPage() {
     return (
         <div className="mx-auto flex max-w-5xl flex-col gap-12 px-4 py-10 sm:px-6">
             {/* Hero */}
-            <section className="flex flex-col gap-5">
-                <h1 className="font-heading text-4xl leading-none text-theme-text-strong sm:text-5xl">
+            <section className="flex flex-col gap-5 pt-6 sm:pt-12">
+                <h1 className="font-heading text-[clamp(3rem,9vw,7.5rem)] leading-[0.92] tracking-tight text-theme-text-strong">
                     {HERO.title}
                 </h1>
                 <p className="flex flex-col font-body text-lg text-theme-text-base">

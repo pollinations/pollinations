@@ -1,29 +1,34 @@
 /*
- * Alive layer: per-page accent + breathing flat background.
+ * Alive layer: bold flat color fields + the homepage palette journey.
  * Rides the documented public knob --polli-hue from @pollinations/ui;
  * no component or package changes. Flat by design: no gradients, no
  * shades. Motion is gated behind prefers-reduced-motion at the bottom.
  */
 
-/* Register the package's hue knob so navigation changes crossfade. */
+/* Register the package's hue knob so it can animate and crossfade. */
 @property --polli-hue {
     syntax: "<number>";
     inherits: true;
     initial-value: 85;
 }
 
-/* Animated drift offset, applied to the background hue only. */
+/* Slow ambient drift, applied to the field hue only. */
 @property --site-hue-drift {
     syntax: "<number>";
     inherits: true;
-    initial-value: -20;
+    initial-value: -14;
 }
 
-/* Per-page accent, stamped as data-route by __root.tsx. 85 = brand amber. */
+/*
+ * Per-page accent, stamped as data-route by __root.tsx. 85 = brand amber.
+ * The homepage doesn't need a rule: it starts at 85 and the scroll journey
+ * below takes over where supported.
+ */
 :root {
     --polli-hue: 85;
     transition: --polli-hue 800ms ease;
     animation: site-breathe 60s ease-in-out infinite;
+    timeline-scope: --page-scroll;
 }
 :root[data-route="play"] {
     --polli-hue: 300;
@@ -36,30 +41,69 @@
 }
 
 /*
- * Breathing flat background. Stock app-bg is oklch(0.902 0.013 80) light /
- * oklch(0.185 0.005 80) dark; same lightness here, but the hue follows the
- * page accent and drifts ±20° over 60s.
+ * Bold flat field: the page background is a real color, not a whisper.
+ * Cards (surface-opaque) and text tokens stay stock, so content pops.
+ * The dial pair below is the single place to tune intensity.
  */
 :root {
+    --site-field-l: 0.88;
+    --site-field-c: 0.09;
     --site-bg-hue: calc(var(--polli-hue) + var(--site-hue-drift));
-    --polli-color-app-bg: oklch(0.902 0.02 var(--site-bg-hue));
+    --polli-color-app-bg: oklch(
+        var(--site-field-l) var(--site-field-c) var(--site-bg-hue)
+    );
 }
 .dark {
-    --polli-color-app-bg: oklch(0.185 0.012 var(--site-bg-hue));
+    --site-field-l: 0.22;
+    --site-field-c: 0.07;
+}
+
+/*
+ * Signature: scrolling the homepage travels the site's own palette —
+ * Hello amber → Play magenta → Apps blue → Community teal. #app-scroll
+ * (the <main> scroller) drives the timeline. Browsers without
+ * scroll-driven animations simply keep the static amber field.
+ */
+main#app-scroll {
+    scroll-timeline: --page-scroll block;
+}
+:root[data-route="home"] {
+    animation-name: site-breathe, site-journey;
+    animation-duration: 60s, auto;
+    animation-timing-function: ease-in-out, linear;
+    animation-iteration-count: infinite, 1;
+    animation-fill-mode: none, both;
+    animation-timeline: auto, --page-scroll;
 }
 
 @keyframes site-breathe {
     0%,
     100% {
-        --site-hue-drift: -20;
+        --site-hue-drift: -14;
     }
     50% {
-        --site-hue-drift: 20;
+        --site-hue-drift: 14;
+    }
+}
+
+@keyframes site-journey {
+    0% {
+        --polli-hue: 85;
+    }
+    38% {
+        --polli-hue: 300;
+    }
+    72% {
+        --polli-hue: 252;
+    }
+    100% {
+        --polli-hue: 152;
     }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    :root {
+    :root,
+    :root[data-route="home"] {
         transition: none;
         animation: none;
         --site-hue-drift: 0;

@@ -1,4 +1,5 @@
 import type {
+    GrantRow,
     PollenMonthlyRow,
     ProviderMonthlyRow,
     RevenueMonthlyRow,
@@ -166,6 +167,42 @@ const providerMonthly: ProviderMonthlyRow[] = [
     },
 ];
 
+const grants: GrantRow[] = [
+    {
+        vendor: "azure",
+        label: "lot 1",
+        granted: 100000,
+        currency: "USD",
+        start_date: "2025-09-19",
+        expires: "2025-12-15",
+    },
+    {
+        vendor: "azure",
+        label: "lot 2",
+        granted: 250036,
+        currency: "USD",
+        start_date: "2026-04-06",
+        expires: "2028-04-06",
+    },
+    // No-expiry sentinel renders as a dash.
+    {
+        vendor: "fireworks",
+        label: "myceli",
+        granted: 10000,
+        currency: "USD",
+        start_date: "2026-01-01",
+        expires: "1970-01-01",
+    },
+    {
+        vendor: "elevenlabs",
+        label: "",
+        granted: 3300,
+        currency: "USD",
+        start_date: "2026-02-01",
+        expires: "2026-04-30",
+    },
+];
+
 const runs: RunRow[] = [
     {
         run_at: "2026-07-03 06:37:02",
@@ -206,6 +243,7 @@ export const FIXTURES: Record<string, unknown[]> = {
     transactions_api: transactions,
     provider_monthly_api: providerMonthly,
     pollen_monthly_api: pollenMonthly,
+    grants_api: grants,
     ingest_runs_api: runs,
     revenue_monthly_api: revenueMonthly,
 };

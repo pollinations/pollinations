@@ -10,6 +10,7 @@ const baseData: Data = {
     transactions: [],
     providerMonthly: [],
     pollenMonthly: [],
+    grants: [],
     runs: [],
     revenueMonthly: [],
 };

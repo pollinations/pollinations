@@ -110,6 +110,7 @@ const emptyData = (over: Partial<Data>): Data => ({
     transactions: [],
     providerMonthly: [],
     pollenMonthly: [],
+    grants: [],
     runs: [],
     revenueMonthly: [],
     ...over,

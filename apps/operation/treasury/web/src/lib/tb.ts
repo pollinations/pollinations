@@ -1,6 +1,7 @@
 import { FIXTURES } from "../fixtures";
 import type {
     Data,
+    GrantRow,
     PollenMonthlyRow,
     ProviderMonthlyRow,
     RevenueMonthlyRow,
@@ -38,19 +39,27 @@ export async function fetchPipe<T>(pipe: string): Promise<T[]> {
 }
 
 export async function loadAll(): Promise<Data> {
-    const [transactions, providerMonthly, pollenMonthly, runs, revenueMonthly] =
-        await Promise.all([
-            fetchPipe<TransactionRow>("transactions_api"),
-            fetchPipe<ProviderMonthlyRow>("provider_monthly_api"),
-            fetchPipe<PollenMonthlyRow>("pollen_monthly_api"),
-            fetchPipe<RunRow>("ingest_runs_api"),
-            fetchPipe<RevenueMonthlyRow>("revenue_monthly_api"),
-        ]);
+    const [
+        transactions,
+        providerMonthly,
+        pollenMonthly,
+        grants,
+        runs,
+        revenueMonthly,
+    ] = await Promise.all([
+        fetchPipe<TransactionRow>("transactions_api"),
+        fetchPipe<ProviderMonthlyRow>("provider_monthly_api"),
+        fetchPipe<PollenMonthlyRow>("pollen_monthly_api"),
+        fetchPipe<GrantRow>("grants_api"),
+        fetchPipe<RunRow>("ingest_runs_api"),
+        fetchPipe<RevenueMonthlyRow>("revenue_monthly_api"),
+    ]);
 
     return {
         transactions,
         providerMonthly,
         pollenMonthly,
+        grants,
         runs,
         revenueMonthly,
     };

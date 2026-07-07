@@ -31,6 +31,16 @@ export type PollenMonthlyRow = {
     model_quests: number;
 };
 
+export type GrantRow = {
+    vendor: string;
+    label: string;
+    granted: number;
+    currency: string;
+    start_date: string;
+    // 1970-01-01 = no expiry (sentinel from the grants datasource)
+    expires: string;
+};
+
 export type RunRow = {
     run_at: string;
     ok: number;
@@ -51,6 +61,7 @@ export type Data = {
     transactions: TransactionRow[];
     providerMonthly: ProviderMonthlyRow[];
     pollenMonthly: PollenMonthlyRow[];
+    grants: GrantRow[];
     runs: RunRow[];
     revenueMonthly: RevenueMonthlyRow[];
 };

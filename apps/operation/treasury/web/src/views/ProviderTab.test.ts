@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { ProviderMonthlyRow } from "../types";
-import { visibleProviderRows } from "./ProviderTab";
+import type { GrantRow, ProviderMonthlyRow } from "../types";
+import { visibleGrantRows, visibleProviderRows } from "./ProviderTab";
 
 const row = (month: string, vendor: string): ProviderMonthlyRow => ({
     month,
@@ -36,5 +36,34 @@ describe("visibleProviderRows", () => {
                 vendor: "all",
             }),
         ).toEqual(rows);
+    });
+});
+
+describe("visibleGrantRows", () => {
+    const grant = (vendor: string, label: string): GrantRow => ({
+        vendor,
+        label,
+        granted: 1000,
+        currency: "USD",
+        start_date: "2026-01-01",
+        expires: "1970-01-01",
+    });
+    const rows = [
+        grant("azure", "lot 1"),
+        grant("azure", "lot 2"),
+        grant("lambda", ""),
+    ];
+
+    it("filters by vendor only", () => {
+        expect(visibleGrantRows({ grantRows: rows, vendor: "azure" })).toEqual([
+            grant("azure", "lot 1"),
+            grant("azure", "lot 2"),
+        ]);
+    });
+
+    it("returns everything for the all filter", () => {
+        expect(visibleGrantRows({ grantRows: rows, vendor: "all" })).toEqual(
+            rows,
+        );
     });
 });

@@ -6,6 +6,7 @@ const EXPECTED_PIPES = [
     "transactions_api",
     "provider_monthly_api",
     "pollen_monthly_api",
+    "grants_api",
     "ingest_runs_api",
     "revenue_monthly_api",
 ];

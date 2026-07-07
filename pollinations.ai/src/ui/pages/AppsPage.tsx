@@ -364,10 +364,47 @@ export default function AppsPage() {
                                 <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
                             </Button>
                         </div>
+                        <div className="flex items-center gap-4 p-4 bg-secondary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4">
+                            <div className="flex-1">
+                                <p className="font-headline text-xs font-black text-dark mb-1">
+                                    {pageCopy.docsCtaTitle}
+                                </p>
+                                <p className="font-body text-sm text-muted">
+                                    {pageCopy.docsCtaDescription}
+                                </p>
+                            </div>
+                            <Button
+                                as="a"
+                                href={LINKS.enterDocs}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                variant="primary"
+                                size="default"
+                                className="bg-secondary-strong text-dark hover:bg-secondary-strong/80 hover:text-dark"
+                            >
+                                {pageCopy.docsCtaButton}
+                                <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* Search */}
+                    <div className="flex justify-center mb-4">
+                        <input
+                            type="search"
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder={pageCopy.searchPlaceholder}
+                            aria-label={pageCopy.searchPlaceholder}
+                            className="w-full max-w-md px-4 py-2 text-sm font-body bg-white text-dark border-2 border-dark border-r-4 border-b-4 rounded-tag placeholder:text-muted focus:outline-none focus:border-primary-strong"
+                        />
                     </div>
 
                     {/* Filters */}
-                    <div id="filters" className="flex flex-wrap gap-2 mb-4">
+                    <div
+                        id="filters"
+                        className="flex flex-wrap justify-center gap-2 mb-4"
+                    >
                         {translatedGenre.map((f) => (
                             <Button
                                 key={f.id}

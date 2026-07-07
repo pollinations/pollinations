@@ -28,3 +28,8 @@ custom_domain = true
 pattern = "staging.pollinations.myceli.ai"
 zone_name = "myceli.ai"
 custom_domain = true
+
+[[env.staging.routes]]
+pattern = "staging.myceli.ai"
+zone_name = "myceli.ai"
+custom_domain = true

@@ -1,0 +1,44 @@
+/*
+ * Alive layer: bold flat color fields + per-page accents.
+ * Rides the documented public knob --polli-hue from @pollinations/ui;
+ * no component or package changes. Flat by design: no gradients, no
+ * shades.
+ */
+
+/* Register the package's hue knob so it can animate and crossfade. */
+@property --polli-hue {
+    syntax: "<number>";
+    inherits: true;
+    initial-value: 85;
+}
+
+/*
+ * Per-page accent, stamped as data-route by __root.tsx. 85 = brand amber.
+ * The homepage doesn't need a rule: it starts at 85.
+ */
+:root {
+    --polli-hue: 85;
+}
+:root[data-route="apps"] {
+    --polli-hue: 252;
+}
+:root[data-route="community"] {
+    --polli-hue: 152;
+}
+
+/*
+ * Bold flat field: the page background is a real color, not a whisper.
+ * Cards (surface-opaque) and text tokens stay stock, so content pops.
+ * The dial pair below is the single place to tune intensity.
+ */
+:root {
+    --site-field-l: 0.88;
+    --site-field-c: 0.09;
+    --polli-color-app-bg: oklch(
+        var(--site-field-l) var(--site-field-c) var(--polli-hue)
+    );
+}
+.dark {
+    --site-field-l: 0.22;
+    --site-field-c: 0.07;
+}

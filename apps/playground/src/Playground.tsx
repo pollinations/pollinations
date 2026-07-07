@@ -65,7 +65,7 @@ type PlaygroundResult =
 export type PlaygroundProps = {
     title?: string;
     subtitle?: string;
-    showTitle?: boolean;
+    showHeader?: boolean;
     className?: string;
 };
 
@@ -187,12 +187,10 @@ function ModalityTabs({
 function ResultPanel({
     result,
     isLoading,
-    activeCategory,
     className,
 }: {
     result: PlaygroundResult | null;
     isLoading: boolean;
-    activeCategory: ModelCategory;
     className?: string;
 }) {
     return (
@@ -203,14 +201,8 @@ function ResultPanel({
                 className,
             )}
         >
-            <div className="polli:flex polli:items-center polli:justify-between polli:gap-3">
-                <span className="polli:inline-flex polli:items-center polli:gap-1.5">
-                    <ModalityDot modality={activeCategory} />
-                    <Text as="h2" size="sm" tone="strong" weight="semibold">
-                        Output
-                    </Text>
-                </span>
-                {result && result.type !== "text" && (
+            {result && result.type !== "text" && (
+                <div className="polli:flex polli:justify-end">
                     <Button
                         as="a"
                         href={result.url}
@@ -221,8 +213,8 @@ function ResultPanel({
                     >
                         Save
                     </Button>
-                )}
-            </div>
+                </div>
+            )}
 
             {isLoading ? (
                 <MediaPlaceholder
@@ -304,7 +296,7 @@ async function uploadReferenceImages(
 export function Playground({
     title = "Playground",
     subtitle = "Create and refine images, text, audio, and video from one focused workspace.",
-    showTitle = true,
+    showHeader = true,
     className,
 }: PlaygroundProps) {
     const { apiKey, isLoggedIn, isHydrated } = useAuthState();
@@ -544,8 +536,8 @@ export function Playground({
                 className,
             )}
         >
-            <section className="polli:flex polli:flex-col polli:gap-1">
-                {showTitle && (
+            {showHeader && (
+                <section className="polli:flex polli:flex-col polli:gap-1">
                     <Heading
                         as="h1"
                         size="title"
@@ -553,11 +545,11 @@ export function Playground({
                     >
                         {title}
                     </Heading>
-                )}
-                <p className="polli:m-0 polli:max-w-3xl polli:text-base polli:leading-relaxed polli:text-theme-text-base">
-                    {subtitle}
-                </p>
-            </section>
+                    <p className="polli:m-0 polli:max-w-3xl polli:text-base polli:leading-relaxed polli:text-theme-text-base">
+                        {subtitle}
+                    </p>
+                </section>
+            )}
 
             {catalogError && (
                 <Alert intent="danger">
@@ -882,7 +874,6 @@ export function Playground({
                 <ResultPanel
                     result={result}
                     isLoading={isGenerating}
-                    activeCategory={currentModel?.category ?? activeCategory}
                     className="polli-playground-output-panel"
                 />
             </div>

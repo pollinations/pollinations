@@ -76,7 +76,7 @@ src/theme/
 │   └── semantic-ids.types.ts # Type-safe token IDs
 │
 ├── copy/                # Default UI text for each page
-│   ├── hello.ts, docs.ts, play.ts, ...
+│   ├── hello.ts, docs.ts, apps.ts, ...
 │
 └── presets/             # Saved themes (auto-discovered)
     ├── bioluminescent-deep-sea-...ts

@@ -12,9 +12,10 @@ type EndpointFormPrices = Record<CommunityEndpointPriceKey, string>;
 
 export type ToolFeeRow = { name: string; price: string };
 
-// The two ways to register: point at a self-hosted OpenAI-compatible endpoint
-// (external) or have the platform deploy a no-code prompt agent (prompt-agent).
-export type EndpointMode = "external" | "prompt-agent";
+// The three ways to register: point at a self-hosted OpenAI-compatible endpoint
+// (external), upload worker code the platform deploys and hosts (source), or
+// have the platform run a no-code prompt agent (prompt-agent).
+export type EndpointMode = "external" | "source" | "prompt-agent";
 
 // Built-in tools a prompt agent can be granted; mirrors PROMPT_AGENT_BUILTIN_TOOLS
 // on the backend.
@@ -38,6 +39,9 @@ export type CommunityEndpoint = {
     description: string | null;
     baseUrl: string;
     upstreamModel: string;
+    // Worker source for platform-deployed endpoints; null when self-hosted or a
+    // prompt agent (whose config is surfaced separately as `promptAgent`).
+    source: string | null;
     // No-code prompt-agent config, present only when the endpoint is a prompt
     // agent; null for self-hosted / source-deployed endpoints.
     promptAgent: PromptAgentConfig | null;
@@ -55,6 +59,8 @@ export type EndpointFormState = {
     baseUrl: string;
     upstreamModel: string;
     bearerToken: string;
+    // Worker source; only read when mode === "source".
+    source: string;
     // Prompt-agent fields; only read when mode === "prompt-agent".
     systemPrompt: string;
     baseModel: string;
@@ -70,8 +76,9 @@ export type EndpointFormState = {
 export type EndpointPayload = {
     name: string;
     description: string;
-    // Exactly one of baseUrl / promptAgent is sent, per the create mode.
+    // Exactly one of baseUrl / source / promptAgent is sent, per the create mode.
     baseUrl?: string;
+    source?: string;
     promptAgent?: PromptAgentConfig;
     upstreamModel: string;
     kind: CommunityEndpointKind;
@@ -108,6 +115,7 @@ export const emptyForm: EndpointFormState = {
     baseUrl: "",
     upstreamModel: "",
     bearerToken: "",
+    source: "",
     systemPrompt: "",
     baseModel: "",
     builtinTools: [],
@@ -146,13 +154,21 @@ export function isValidPriceInput(value: string): boolean {
 
 export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
     const promptAgent = endpoint.promptAgent;
+    // A non-prompt-agent endpoint with stored worker source is source-deployed;
+    // otherwise it's a self-hosted external endpoint.
+    const mode: EndpointMode = promptAgent
+        ? "prompt-agent"
+        : endpoint.source
+          ? "source"
+          : "external";
     return {
-        mode: promptAgent ? "prompt-agent" : "external",
+        mode,
         name: endpoint.name,
         description: endpoint.description ?? "",
         baseUrl: endpoint.baseUrl,
         upstreamModel: endpoint.upstreamModel,
         bearerToken: "",
+        source: endpoint.source ?? "",
         systemPrompt: promptAgent?.systemPrompt ?? "",
         baseModel: promptAgent?.baseModel ?? "",
         builtinTools: promptAgent?.tools ?? [],
@@ -310,6 +326,18 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
             // The template runs the base model; there is no separate upstream id.
             upstreamModel: modelName,
             promptAgent: toPromptAgentConfig(form),
+        };
+    }
+    if (form.mode === "source") {
+        const source = form.source.trim();
+        if (!source) {
+            throw new Error("Worker source is required for a source deploy");
+        }
+        return {
+            ...shared,
+            // The deployed worker is the model; there is no separate upstream id.
+            upstreamModel: modelName,
+            source,
         };
     }
     return {

@@ -1,0 +1,35 @@
+{
+  "pr_number": 12282,
+  "title": "fix: resolve real client IP for proxied requests (X-Forwarded-Host trust)",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12282",
+  "merged_at": "2026-07-07T13:07:53Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "## Problem\n\nNearly all `generation_event` rows log the **proxy's AWS egress IP** instead of the visitor's. Over the last 7 days, **7,976,737 of 7,976,740 requests (99.99996%)** carry an AWS-owned subnet; single `ip_hash` values accrue **1,600+ distinct users**. This makes any IP-based abuse clustering / rate-limiting effectively inert.\n\n## Root cause\n\nThe `pollinations-myceli-proxy` Worker forwards the real visitor IP as `X-Original-Client-IP`, but `getRealClientIp` only uses it when `hasTrustedProxyHeaders(c)` is true. That check compared `new URL(c.req.url).host` against the `TRUSTED_FORWARDED_HOSTS` table — but on Cloudflare custom-domain routes `c.req.url.host` is already the **public** host (`gen.pollinations.ai`), equal to the `X-Forwarded-Host` the proxy sets. The table is keyed by `*.myceli.ai`, so the lookup never matched, `hasTrustedProxyHeaders` returned `false`, and the code fell back to `CF-Connecting-IP` = the proxy's IP.\n\n## Fix\n\nTrust `X-Forwarded-Host` when it names a **known public host** (`TRUSTED_PUBLIC_HOSTS`), instead of the same-value comparison that can't match on a custom-domain route. `getPublicOrigin` (same helper) still returns the public host.\n\n## Verified\n\n- Live 2-request experiment (same machine): before this fix, `gen.pollinations.ai` (via proxy) logged `130.176.161.0` (AWS) while direct `gen.myceli.ai` logged the real subnet. The fix makes the proxied path resolve the real IP.\n- New test `gen.pollinations.ai/test/proxy-client-ip.test.ts` (5 cases: proxied→real IP, public origin, spoofed host rejected, direct hit) — passes.\n- Existing `tracking-observability.test.ts` (13 tests) still passes.\n\nNote: this is self-resolving once `gen.pollinations.ai` points directly at the myceli Worker (no proxy hop), but the proxy path is live today.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Seeing through the proxy",
+    "blurb": "Fixed a sneaky routing bug where our proxy was masking real visitor IPs. Now our systems can properly recognize individual bees in the swarm!",
+    "summary": "Fixed IP resolution for proxied requests by trusting X-Forwarded-Host against known public hosts, ensuring the real client IP is logged instead of the proxy's AWS egress IP.",
+    "impact": "Internal tracking and rate-limiting systems will now correctly identify individual users instead of grouping thousands of requests under a single proxy IP.",
+    "keywords": [
+      "proxy",
+      "ip-resolution",
+      "bug-fix",
+      "tracking",
+      "backend"
+    ],
+    "visual_concept": "Polly the bee as a detective looking through a magnifying glass at a proxy server, revealing the true data packets inside.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny detective hat, looking through a magnifying glass at a glowing retro proxy server. The magnifying glass reveals colorful data packets flowing inside. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-07/PR-12282.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny detective hat, looking through a magnifying glass at a glowing retro proxy server. The magnifying glass reveals colorful data packets flowing inside. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-07-07T13:08:59.909244+00:00"
+}

@@ -423,9 +423,18 @@ describe("public domains", () => {
 });
 
 describe("naming", () => {
-    it("derives script name from the app id and url from the slug", () => {
+    it("derives the script name from the app id", () => {
         expect(appWorkerScriptName("123")).toBe("app-123");
-        expect(appPublicUrl(config, "my-app")).toBe(
+    });
+
+    it("returns the origin URL when public exposure is off", () => {
+        // Without a proxy binding the public host is never attached, so the
+        // reachable URL is the origin host, not a pollinations.ai one.
+        expect(appPublicUrl(config, "my-app")).toBe("https://my-app.myceli.ai");
+    });
+
+    it("returns the public URL when public exposure is configured", () => {
+        expect(appPublicUrl(proxyConfig, "my-app")).toBe(
             "https://my-app.pollinations.ai",
         );
     });

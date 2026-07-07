@@ -165,8 +165,12 @@ export function appWorkerScriptName(appId: string): string {
     return `app-${appId}`;
 }
 
+// The URL the app is actually reachable at. With public exposure configured
+// that's the public host; without it the app is only bound at the origin
+// host, so return that rather than a public URL that doesn't resolve yet.
 export function appPublicUrl(config: AppDeployConfig, slug: string): string {
-    return `https://${slug}.${config.publicDomain}`;
+    const domain = config.proxy ? config.publicDomain : config.originDomain;
+    return `https://${slug}.${domain}`;
 }
 
 // Content types are stored per uploaded asset, so files must be sent with

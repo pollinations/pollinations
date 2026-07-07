@@ -73,6 +73,9 @@ Get your API key at: https://enter.pollinations.ai
 - **getBalance** - Remaining Pollen for the authenticated key (requires account:usage)
 - **getUsage** - Recent usage history; pass daily=true for daily aggregated summary
 
+### Quests
+- **listQuests** - List quests with your account status and earned rewards, flagging which are ready to claim (requires account:usage). Read-only: claiming a reward requires a dashboard session, not an API key.
+
 ## API Endpoint
 All requests go through: https://gen.pollinations.ai
 

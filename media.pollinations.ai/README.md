@@ -1,14 +1,13 @@
 # media.pollinations.ai 📦
 
-> Content-addressed media upload service for Pollinations
+> Media upload service for Pollinations
 
-Upload files and get back a content-addressed URL to use with Pollinations models.
+Upload files and get back a URL to use with Pollinations models.
 
 ## 🎯 What it does
 
 - **Upload** media files via `POST /upload`
-- **Retrieve** media by hash via `GET /:hash`
-- **Deduplicate** - identical files return the same URL (SHA-256 content hashing)
+- **Retrieve** media by id via `GET /:id`
 - **CORS enabled** for browser uploads
 
 ## 🚀 Quick Start
@@ -41,25 +40,24 @@ curl -X POST https://media.pollinations.ai/upload \
 
 # Returns:
 # {
-#   "id": "a3f2b1c4d5e6f7...",
-#   "url": "https://media.pollinations.ai/a3f2b1c4d5e6f7...",
+#   "id": "3f9c1e2a-7b4d-4e2f-9a1c-8d6b5e4f3a2b",
+#   "url": "https://media.pollinations.ai/3f9c1e2a-7b4d-4e2f-9a1c-8d6b5e4f3a2b",
 #   "contentType": "image/jpeg",
-#   "size": 123456,
-#   "duplicate": false
+#   "size": 123456
 # }
 ```
 
 ### Retrieve a file
 
 ```bash
-curl https://media.pollinations.ai/a3f2b1c4d5e6f7...
+curl https://media.pollinations.ai/3f9c1e2a-7b4d-4e2f-9a1c-8d6b5e4f3a2b
 # Returns: original file with correct content-type
 ```
 
 ### Check if file exists (HEAD request)
 
 ```bash
-curl -I https://media.pollinations.ai/a3f2b1c4d5e6f7...
+curl -I https://media.pollinations.ai/3f9c1e2a-7b4d-4e2f-9a1c-8d6b5e4f3a2b
 # Returns: 200 with headers, or 404 if not found
 ```
 
@@ -84,11 +82,10 @@ Upload a media file. **Requires API key** via `Authorization: Bearer <key>` head
 **Response:**
 ```json
 {
-  "id": "sha256-hash-of-content-and-filename",
-  "url": "https://media.pollinations.ai/{hash}",
+  "id": "unique-media-id",
+  "url": "https://media.pollinations.ai/{id}",
   "contentType": "image/jpeg",
-  "size": 123456,
-  "duplicate": false
+  "size": 123456
 }
 ```
 
@@ -96,9 +93,9 @@ Upload a media file. **Requires API key** via `Authorization: Bearer <key>` head
 - `400` - No file provided, empty file, or invalid JSON/base64
 - `413` - File too large (max 50MB)
 
-### `GET /:hash`
+### `GET /:id`
 
-Retrieve a media file by its hash.
+Retrieve a media file by its id.
 
 **Response:**
 - Binary file with correct `Content-Type`
@@ -107,14 +104,13 @@ Retrieve a media file by its hash.
 **Headers:**
 - `Content-Type` - MIME type
 - `Cache-Control` - `public, max-age=31536000, immutable`
-- `X-Content-Hash` - 16-char hex content hash
+- `X-Content-Id` - Media id
 - `X-Content-Size` - File size in bytes
 
 **Errors:**
-- `400` - Invalid hash format
 - `404` - File not found
 
-### `HEAD /:hash`
+### `HEAD /:id`
 
 Check if a file exists without downloading.
 
@@ -179,20 +175,18 @@ npm run deploy:production
 
 - **Max file size:** 50MB
 - **Storage:** Cloudflare R2
-- **Default retention:** 30 days (re-uploading the same file resets the timer)
+- **Default retention:** 30 days after upload (accessing a file resets its timer)
 
-## 🔒 Content Addressing
+## 🆔 Identifiers
 
-Files are stored using a truncated SHA-256 hash (16 hex characters = 64 bits) as the key:
-- **Deduplication:** Uploading the same file twice returns the same URL
-- **Immutable:** Once uploaded, content cannot change (hash = content)
-- **Cacheable:** Files are served with `Cache-Control: public, max-age=31536000, immutable` — content-addressed URLs are safe to cache forever because the URL → bytes mapping is fixed
-- **Collision resistance:** Birthday-paradox collision expected around ~4 billion files
+Each upload gets a unique id. That single id is the storage key, the retrieval id (`GET /:id`), and — for cataloged uploads — the id you react to. Re-uploading the same bytes yields a new id (no content deduplication).
+
+- **Immutable:** an id maps to one fixed set of bytes; it's never reused for other content, so URLs are safe to cache forever (`Cache-Control: public, max-age=31536000, immutable`).
 
 ## 📌 Retention Policy
 
-- **30-day retention:** Files are retained for 30 days after upload. Re-uploading the same file resets the timer.
-- **No delete endpoint:** Content-addressed storage is append-only. Files cannot be deleted via the API.
+- **30-day retention:** Files are retained for 30 days after upload; accessing a file resets its timer.
+- **No delete endpoint:** Files cannot be deleted via the API.
 - **Listing (alpha):** Tag uploads (via the `tags` field) to catalog them, then list with `GET /media`. See the API Reference.
 - **Abuse/copyright:** For takedown requests, contact the Pollinations team.
 
@@ -204,7 +198,7 @@ Pass the key via:
 - `Authorization: Bearer <key>` header (recommended)
 - `?key=<key>` query parameter
 
-Retrieval (`GET /:hash`, `HEAD /:hash`) is **public** — no authentication required.
+Retrieval (`GET /:id`, `HEAD /:id`) is **public** — no authentication required.
 
 ---
 

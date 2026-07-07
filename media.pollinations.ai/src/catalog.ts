@@ -87,68 +87,51 @@ export function normalizeTags(rawTags: string[]): string[] {
     return tags;
 }
 
-export interface UpsertUploadParams {
+export interface InsertUploadParams {
+    // The upload's id — also its R2 storage key. Minted by the caller so the
+    // same value keys the blob and this row.
+    id: string;
     ownerUserId: string;
     appKeyId: string | null;
-    locator: string;
     contentType: string;
     size: number;
     tags: string[];
 }
 
 /**
- * Upsert a catalog row for an upload (keyed on ownerUserId+locator), then
- * merge in any tags. Returns the catalog item id.
+ * Insert a catalog row for an upload, then add any tags. Each upload is its
+ * own row (re-uploading the same bytes is a new item, not an upsert). Returns
+ * the item id.
  */
-export async function upsertUploadCatalogItem(
+export async function insertUploadCatalogItem(
     db: CatalogDb,
-    params: UpsertUploadParams,
+    params: InsertUploadParams,
 ): Promise<string> {
     const now = new Date();
-    const [row] = await db
-        .insert(mediaItem)
-        .values({
-            id: crypto.randomUUID(),
-            locator: params.locator,
-            ownerUserId: params.ownerUserId,
-            appKeyId: params.appKeyId,
-            contentType: params.contentType,
-            size: params.size,
-            createdAt: now,
-        })
-        .onConflictDoUpdate({
-            target: [mediaItem.ownerUserId, mediaItem.locator],
-            // createdAt is deliberately NOT updated: it marks first catalog
-            // time, so re-uploading (which refreshes the R2 TTL and metadata)
-            // can't bump an item back to the top of newest-first feeds.
-            set: {
-                contentType: params.contentType,
-                size: params.size,
-            },
-        })
-        .returning({ id: mediaItem.id });
+    await db.insert(mediaItem).values({
+        id: params.id,
+        ownerUserId: params.ownerUserId,
+        appKeyId: params.appKeyId,
+        contentType: params.contentType,
+        size: params.size,
+        createdAt: now,
+    });
 
     if (params.tags.length > 0) {
-        await db
-            .insert(mediaTag)
-            .values(
-                params.tags.map((tag) => ({
-                    itemId: row.id,
-                    tag,
-                    createdAt: now,
-                })),
-            )
-            .onConflictDoNothing({
-                target: [mediaTag.itemId, mediaTag.tag],
-            });
+        await db.insert(mediaTag).values(
+            params.tags.map((tag) => ({
+                itemId: params.id,
+                tag,
+                createdAt: now,
+            })),
+        );
     }
 
-    return row.id;
+    return params.id;
 }
 
 export interface CatalogItem {
     id: string;
-    locator: string;
     contentType: string;
     size: number | null;
     createdAt: Date;
@@ -237,7 +220,6 @@ export async function listMedia(
 
     const columns = {
         id: mediaItem.id,
-        locator: mediaItem.locator,
         contentType: mediaItem.contentType,
         size: mediaItem.size,
         createdAt: mediaItem.createdAt,

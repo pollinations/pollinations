@@ -16,6 +16,7 @@ import {
     decodeCursor,
     getDb,
     InvalidReactionError,
+    insertUploadCatalogItem,
     isItemReactable,
     listMedia,
     MAX_LIMIT,
@@ -27,7 +28,6 @@ import {
     removeReaction,
     TagError,
     tagsForItems,
-    upsertUploadCatalogItem,
     userReactionsForItems,
 } from "./catalog.ts";
 
@@ -36,13 +36,10 @@ const DOMAIN = "media.pollinations.ai";
 // keeps internal services consistent with the documented SDK/external usage.
 const KEY_VERIFY_URL = "https://gen.pollinations.ai/account/key";
 // Keep in sync with shared/http/cache-control.ts (IMMUTABLE_CACHE_CONTROL).
-// Content-addressed storage means the URL → bytes mapping is fixed forever:
-// re-uploading the
-// same content reproduces the same URL, and there is no other content the URL
-// could ever point to. R2's 30-day lifecycle can delete the underlying object,
-// but a fresh upload restores byte-identical content, so `immutable` is safe.
+// Each upload gets a unique id that is also its R2 key, so a given id maps to
+// one immutable set of bytes forever — safe to cache indefinitely. R2's 30-day
+// lifecycle may delete the object, but the id is never reused for other bytes.
 const CACHE_CONTROL = "public, max-age=31536000, immutable";
-const HASH_PATTERN = /^[a-f0-9]{16}$/i;
 const DEFAULT_MAX_SIZE = 52428800; // 50 MB
 
 interface Env {
@@ -84,8 +81,8 @@ function fileTooLargeError(maxSize: number): { error: string } {
     return { error: `File too large. Max size: ${maxSize / 1024 / 1024}MB` };
 }
 
-function mediaUrl(hash: string): string {
-    return `https://${DOMAIN}/${hash}`;
+function mediaUrl(id: string): string {
+    return `https://${DOMAIN}/${id}`;
 }
 
 // Splits comma-separated `tags` values. Accepts the same field name whether it
@@ -140,7 +137,7 @@ function toItemResponse(
 ): MediaItemResponse {
     return {
         id: item.id,
-        url: mediaUrl(item.locator),
+        url: mediaUrl(item.id),
         contentType: item.contentType,
         size: item.size,
         tags: tagsByItem.get(item.id) ?? [],
@@ -187,11 +184,10 @@ async function toPageResponse(
 }
 
 const UploadResponseSchema = z.object({
-    id: z.string().describe("16-char hex content hash"),
+    id: z.string().describe("Unique media id (also the retrieval id)"),
     url: z.string().describe("Public retrieval URL"),
     contentType: z.string(),
     size: z.number().int().describe("File size in bytes"),
-    duplicate: z.boolean().describe("true if file already existed"),
     tags: z
         .array(z.string())
         .optional()
@@ -203,7 +199,7 @@ const ErrorSchema = z.object({
 });
 
 const MetadataResponseSchema = z.object({
-    hash: z.string().describe("16-char hex content hash"),
+    id: z.string().describe("Unique media id"),
     contentType: z.string(),
     size: z.number().int().describe("File size in bytes"),
     uploadedAt: z
@@ -294,8 +290,7 @@ const REACTION_PATH_PARAMS = [
         name: "id",
         in: "path",
         required: true,
-        description:
-            "Catalog item id (the `id` field from GET /media, not the content hash).",
+        description: "Media id (from the upload response or GET /media).",
         schema: { type: "string" },
     },
     {
@@ -368,7 +363,7 @@ api.post(
         tags: ["media.pollinations.ai"],
         summary: "Upload media",
         description:
-            "Upload an image, audio, or video file via multipart/form-data (field `file`) or application/json (base64 `data`). Returns a content-addressed hash URL. The hash includes the filename, so the same content with different filenames gets different URLs. Files are retained for 30 days; re-uploading resets the timer. An optional `tags` field catalogs the upload to your media library and makes it publicly visible in that tag's gallery (GET /media?tag=). **Alpha:** the catalog tagging is new and may still change.",
+            "Upload an image, audio, or video file via multipart/form-data (field `file`) or application/json (base64 `data`). Returns a unique id and its retrieval URL; each upload gets its own id (re-uploading the same bytes yields a new one). Files are retained for 30 days. An optional `tags` field catalogs the upload to your media library and makes it publicly visible in that tag's gallery (GET /media?tag=). **Alpha:** the catalog tagging is new and may still change.",
         requestBody: {
             content: {
                 "multipart/form-data": {
@@ -407,7 +402,7 @@ api.post(
                             name: {
                                 type: "string",
                                 description:
-                                    "Filename; participates in the content hash.",
+                                    "Filename; used for the download Content-Disposition.",
                             },
                             tags: {
                                 oneOf: [
@@ -583,12 +578,11 @@ api.post(
                 );
             }
 
-            const hash = await generateHash(fileBuffer, fileName);
+            // One id for everything: the R2 storage key, the retrieval id,
+            // and (for user uploads) the catalog row id.
+            const id = crypto.randomUUID();
 
-            const existing = await c.env.MEDIA_BUCKET.head(hash);
-
-            // Always re-PUT to reset the R2 object timestamp (resets lifecycle TTL).
-            await c.env.MEDIA_BUCKET.put(hash, fileBuffer, {
+            await c.env.MEDIA_BUCKET.put(id, fileBuffer, {
                 httpMetadata: {
                     contentType,
                     cacheControl: CACHE_CONTROL,
@@ -609,10 +603,10 @@ api.post(
             let storedTags: string[] | undefined;
             if (authResult.userId !== null) {
                 const db = getDb(c.env.DB);
-                await upsertUploadCatalogItem(db, {
+                await insertUploadCatalogItem(db, {
+                    id,
                     ownerUserId: authResult.userId,
                     appKeyId: authResult.byopClientKeyId,
-                    locator: hash,
                     contentType,
                     size: fileBuffer.byteLength,
                     tags,
@@ -623,21 +617,19 @@ api.post(
             console.log(
                 JSON.stringify({
                     event: "upload",
-                    hash,
+                    id,
                     size: fileBuffer.byteLength,
                     contentType,
                     keyType: authResult.type,
                     uploadedBy: authResult.name || "unknown",
-                    duplicate: !!existing,
                 }),
             );
 
             return c.json({
-                id: hash,
-                url: mediaUrl(hash),
+                id,
+                url: mediaUrl(id),
                 contentType,
                 size: fileBuffer.byteLength,
-                duplicate: !!existing,
                 ...(storedTags && storedTags.length > 0
                     ? { tags: storedTags }
                     : {}),
@@ -752,7 +744,7 @@ api.put(
         tags: ["media.pollinations.ai"],
         summary: "React to a media item",
         description:
-            "Add a reaction (e.g. `like`, `heart`, `bookmark`) to a catalog item by its id (the `id` field from GET /media, not the content hash). Reactable items are your own plus anything publicly tagged; others answer 404. Idempotent: repeating the same reaction is a no-op. At most 8 distinct reaction kinds per user per item. **Alpha:** this endpoint is new and its API may still change.",
+            "Add a reaction (e.g. `like`, `heart`, `bookmark`) to a media item by its id (from the upload response or GET /media). Reactable items are your own plus anything publicly tagged; others answer 404. Idempotent: repeating the same reaction is a no-op. At most 8 distinct reaction kinds per user per item. **Alpha:** this endpoint is new and its API may still change.",
         parameters: [...REACTION_PATH_PARAMS],
         responses: {
             200: {
@@ -822,7 +814,7 @@ api.delete(
         tags: ["media.pollinations.ai"],
         summary: "Remove a reaction from a media item",
         description:
-            "Remove your reaction of one kind from a catalog item by its id (the `id` field from GET /media, not the content hash). Reactable items are your own plus anything publicly tagged; others answer 404. Idempotent: removing a reaction you haven't given is a no-op. **Alpha:** this endpoint is new and its API may still change.",
+            "Remove your reaction of one kind from a media item by its id (from the upload response or GET /media). Reactable items are your own plus anything publicly tagged; others answer 404. Idempotent: removing a reaction you haven't given is a no-op. **Alpha:** this endpoint is new and its API may still change.",
         parameters: [...REACTION_PATH_PARAMS],
         responses: {
             200: {
@@ -872,21 +864,14 @@ api.delete(
 );
 
 api.get(
-    "/:hash",
+    "/:id",
     describeRoute({
         tags: ["media.pollinations.ai"],
         summary: "Retrieve media",
-        description:
-            "Get a file by its content hash. Access keeps files from expiring.",
+        description: "Get a file by its id. Access keeps files from expiring.",
         security: [],
         responses: {
             200: { description: "File content with appropriate Content-Type" },
-            400: {
-                description: "Invalid hash format",
-                content: {
-                    "application/json": { schema: resolver(ErrorSchema) },
-                },
-            },
             404: {
                 description: "File not found",
                 content: {
@@ -896,14 +881,10 @@ api.get(
         },
     }),
     async (c) => {
-        const hash = c.req.param("hash");
-
-        if (!HASH_PATTERN.test(hash)) {
-            return c.json({ error: "Invalid hash format" }, 400);
-        }
+        const id = c.req.param("id");
 
         try {
-            const object = await c.env.MEDIA_BUCKET.get(hash);
+            const object = await c.env.MEDIA_BUCKET.get(id);
 
             if (!object) {
                 return c.json({ error: "Not found" }, 404);
@@ -915,7 +896,7 @@ api.get(
                 object.httpMetadata?.contentType || "application/octet-stream",
             );
             headers.set("Cache-Control", CACHE_CONTROL);
-            headers.set("X-Content-Hash", hash);
+            headers.set("X-Content-Id", id);
             headers.set("X-Content-Size", object.size.toString());
 
             const originalName = object.customMetadata?.originalName;
@@ -930,7 +911,7 @@ api.get(
 
             const responseBody = refreshR2ObjectTtl(
                 c.env.MEDIA_BUCKET,
-                hash,
+                id,
                 object,
                 (promise) => c.executionCtx.waitUntil(promise),
                 (error) => {
@@ -947,12 +928,12 @@ api.get(
 );
 
 api.get(
-    "/:hash/metadata",
+    "/:id/metadata",
     describeRoute({
         tags: ["media.pollinations.ai"],
         summary: "Get file metadata",
         description:
-            "Return file metadata (hash, content type, size, upload timestamp) as JSON without downloading the file body.",
+            "Return file metadata (id, content type, size, upload timestamp) as JSON without downloading the file body.",
         security: [],
         responses: {
             200: {
@@ -961,12 +942,6 @@ api.get(
                     "application/json": {
                         schema: resolver(MetadataResponseSchema),
                     },
-                },
-            },
-            400: {
-                description: "Invalid hash format",
-                content: {
-                    "application/json": { schema: resolver(ErrorSchema) },
                 },
             },
             404: {
@@ -978,14 +953,10 @@ api.get(
         },
     }),
     async (c) => {
-        const hash = c.req.param("hash");
-
-        if (!HASH_PATTERN.test(hash)) {
-            return c.json({ error: "Invalid hash format" }, 400);
-        }
+        const id = c.req.param("id");
 
         try {
-            const object = await c.env.MEDIA_BUCKET.head(hash);
+            const object = await c.env.MEDIA_BUCKET.head(id);
 
             if (!object) {
                 return c.json({ error: "Not found" }, 404);
@@ -993,7 +964,7 @@ api.get(
 
             c.header("Cache-Control", CACHE_CONTROL);
             return c.json({
-                hash,
+                id,
                 contentType:
                     object.httpMetadata?.contentType ||
                     "application/octet-stream",
@@ -1011,7 +982,7 @@ api.get(
 
 api.on(
     "HEAD",
-    "/:hash",
+    "/:id",
     describeRoute({
         tags: ["media.pollinations.ai"],
         summary: "Check if media exists",
@@ -1021,21 +992,16 @@ api.on(
         responses: {
             200: {
                 description:
-                    "File exists (headers include Content-Type, Content-Length, X-Content-Hash)",
+                    "File exists (headers include Content-Type, Content-Length, X-Content-Id)",
             },
-            400: { description: "Invalid hash format" },
             404: { description: "File not found" },
         },
     }),
     async (c) => {
-        const hash = c.req.param("hash");
-
-        if (!HASH_PATTERN.test(hash)) {
-            return new Response(null, { status: 400 });
-        }
+        const id = c.req.param("id");
 
         try {
-            const object = await c.env.MEDIA_BUCKET.head(hash);
+            const object = await c.env.MEDIA_BUCKET.head(id);
 
             if (!object) {
                 return new Response(null, { status: 404 });
@@ -1048,7 +1014,7 @@ api.on(
             );
             headers.set("Content-Length", object.size.toString());
             headers.set("Cache-Control", CACHE_CONTROL);
-            headers.set("X-Content-Hash", hash);
+            headers.set("X-Content-Id", id);
 
             if (object.customMetadata?.uploadedAt) {
                 headers.set("X-Uploaded-At", object.customMetadata.uploadedAt);
@@ -1069,7 +1035,7 @@ app.use(
         origin: "*",
         allowMethods: ["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"],
         allowHeaders: ["Content-Type", "Authorization"],
-        exposeHeaders: ["X-Content-Hash", "X-Content-Size"],
+        exposeHeaders: ["X-Content-Id", "X-Content-Size"],
     }),
 );
 
@@ -1079,8 +1045,8 @@ app.get("/", (c) => {
         version: "1.0.0",
         endpoints: {
             upload: "POST /upload (requires API key; optional tags)",
-            retrieve: "GET /:hash",
-            metadata: "GET /:hash/metadata",
+            retrieve: "GET /:id",
+            metadata: "GET /:id/metadata",
             listMedia:
                 "GET /media (your library; requires user-owned API key) or GET /media?tag=<tag> (public gallery; optional API key for myReactions)",
             react: "PUT /media/:id/reactions/:reaction (requires user-owned API key)",
@@ -1101,7 +1067,7 @@ app.get("/openapi.json", async (c, next) => {
                 title: "media.pollinations.ai",
                 version: "1.0.0",
                 description:
-                    "Content-addressed media storage. Upload images, audio, and video with deduplication via SHA-256 hashing. Uploads require a pollinations.ai API key (`pk_` or `sk_`). Retrieval is public. The catalog features (tags, galleries, reactions) are **alpha** — their API may still change.",
+                    "Media storage for Pollinations. Upload images, audio, and video and get back a unique id and URL. Uploads require a pollinations.ai API key (`pk_` or `sk_`). Retrieval is public. The catalog features (tags, galleries, reactions) are **alpha** — their API may still change.",
             },
             servers: [{ url: `https://${DOMAIN}` }],
             components: {
@@ -1124,34 +1090,6 @@ app.get("/openapi.json", async (c, next) => {
 });
 
 app.route("/", api);
-
-// 16 hex chars = 64 bits -- collision expected around ~4B files (birthday paradox)
-// Hash includes filename so the same content with different names gets different URLs.
-async function generateHash(
-    buffer: ArrayBuffer,
-    fileName?: string,
-): Promise<string> {
-    const nameBytes = new TextEncoder().encode(fileName || "");
-    const separator = new Uint8Array([0x00]); // null byte for domain separation
-    const combined = new Uint8Array(
-        buffer.byteLength + separator.length + nameBytes.length,
-    );
-    combined.set(new Uint8Array(buffer), 0);
-    combined.set(separator, buffer.byteLength);
-    combined.set(nameBytes, buffer.byteLength + separator.length);
-    const hashBuffer = await crypto.subtle.digest(
-        "SHA-256",
-        combined.buffer.slice(
-            combined.byteOffset,
-            combined.byteOffset + combined.byteLength,
-        ),
-    );
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join("")
-        .substring(0, 16);
-}
 
 const MIME_TYPES: Record<string, string> = {
     jpg: "image/jpeg",

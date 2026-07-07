@@ -1,7 +1,8 @@
 // Media catalog: queryable metadata for uploaded media. Blobs stay in R2 —
-// these tables only index them. One row per (owner, locator); public
-// discovery is strictly opt-in via tags. (Generations are not cataloged yet;
-// see the generation-tagging followup.)
+// these tables only index them. One row per upload; the row id is the R2
+// storage key and the public retrieval id. Public discovery is strictly
+// opt-in via tags. (Generations are not cataloged yet; see the
+// generation-tagging followup.)
 
 import {
     index,
@@ -15,9 +16,8 @@ import { user } from "./better-auth.ts";
 export const mediaItem = sqliteTable(
     "media_item",
     {
+        // Per-upload id: also the R2 storage key and the public retrieval id.
         id: text("id").primaryKey(),
-        // 16-hex content hash of the uploaded bytes on media.pollinations.ai.
-        locator: text("locator").notNull(),
         // Server-attested from the verified API key — never from request params.
         ownerUserId: text("owner_user_id").references(() => user.id, {
             onDelete: "cascade",
@@ -28,10 +28,6 @@ export const mediaItem = sqliteTable(
         createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
     },
     (table) => [
-        uniqueIndex("idx_media_item_owner_locator").on(
-            table.ownerUserId,
-            table.locator,
-        ),
         index("idx_media_item_owner_created").on(
             table.ownerUserId,
             table.createdAt,

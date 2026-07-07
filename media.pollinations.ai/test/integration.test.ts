@@ -28,7 +28,6 @@ interface UploadResponse {
     url: string;
     contentType: string;
     size: number;
-    duplicate: boolean;
     tags?: string[];
 }
 
@@ -219,7 +218,7 @@ describe("media.pollinations.ai", () => {
         expect(res.status).toBe(401);
     });
 
-    it("upload, retrieve, and deduplicate", async () => {
+    it("upload and retrieve", async () => {
         const form = new FormData();
         form.append(
             "file",
@@ -236,7 +235,7 @@ describe("media.pollinations.ai", () => {
         );
         expect(uploadRes.status).toBe(200);
         const upload = (await uploadRes.json()) as UploadResponse;
-        expect(upload.id).toMatch(/^[a-f0-9]{16}$/);
+        expect(upload.id).not.toBe("");
         expect(upload.url).toContain(upload.id);
         expect(upload.contentType).toBe("image/png");
         expect(upload.size).toBe(TINY_PNG.length);
@@ -260,9 +259,9 @@ describe("media.pollinations.ai", () => {
             { method: "HEAD" },
         );
         expect(headRes.status).toBe(200);
-        expect(headRes.headers.get("x-content-hash")).toBe(upload.id);
+        expect(headRes.headers.get("x-content-id")).toBe(upload.id);
 
-        // Duplicate re-upload returns same hash
+        // Re-uploading the same bytes now yields a distinct new id.
         const dupForm = new FormData();
         dupForm.append(
             "file",
@@ -277,11 +276,10 @@ describe("media.pollinations.ai", () => {
             },
         );
         const dup = (await dupRes.json()) as UploadResponse;
-        expect(dup.id).toBe(upload.id);
-        expect(dup.duplicate).toBe(true);
+        expect(dup.id).not.toBe(upload.id);
     });
 
-    it("uploads via base64 JSON, hashing identically to the multipart form", async () => {
+    it("uploads via base64 JSON", async () => {
         const base64 = btoa(String.fromCharCode(...TINY_PNG));
         const uploadRes = await SELF.fetch(
             "https://media.pollinations.ai/upload",
@@ -302,27 +300,10 @@ describe("media.pollinations.ai", () => {
         );
         expect(uploadRes.status).toBe(200);
         const upload = (await uploadRes.json()) as UploadResponse;
-        expect(upload.id).toMatch(/^[a-f0-9]{16}$/);
+        expect(upload.id).not.toBe("");
         expect(upload.contentType).toBe("image/png");
         expect(upload.size).toBe(TINY_PNG.length);
         expect(upload.tags).toEqual(["gallery"]);
-
-        // Same bytes + same filename → same content hash as a multipart upload.
-        const formRes = await SELF.fetch(
-            "https://media.pollinations.ai/upload",
-            {
-                method: "POST",
-                body: (() => {
-                    const form = new FormData();
-                    form.append("file", pngFile("test.png"));
-                    return form;
-                })(),
-                headers: { Authorization: `Bearer ${VALID_KEY}` },
-            },
-        );
-        const formUpload = (await formRes.json()) as UploadResponse;
-        expect(formUpload.id).toBe(upload.id);
-        expect(formUpload.duplicate).toBe(true);
 
         const getRes = await SELF.fetch(
             `https://media.pollinations.ai/${upload.id}`,
@@ -382,7 +363,7 @@ describe("media.pollinations.ai", () => {
         expect(bucket.putCount).toBe(2);
     });
 
-    it("same content with different filename produces different hash", async () => {
+    it("identical uploads get distinct ids", async () => {
         const form1 = new FormData();
         form1.append(
             "file",
@@ -391,7 +372,7 @@ describe("media.pollinations.ai", () => {
         const form2 = new FormData();
         form2.append(
             "file",
-            new File([TINY_PNG], "b.png", { type: "image/png" }),
+            new File([TINY_PNG], "a.png", { type: "image/png" }),
         );
 
         const res1 = await SELF.fetch("https://media.pollinations.ai/upload", {
@@ -410,16 +391,9 @@ describe("media.pollinations.ai", () => {
         expect(upload1.id).not.toBe(upload2.id);
     });
 
-    it("GET /:invalid-hash returns 400", async () => {
+    it("GET /:nonexistent-id returns 404", async () => {
         const res = await SELF.fetch(
-            "https://media.pollinations.ai/not-a-valid-hash",
-        );
-        expect(res.status).toBe(400);
-    });
-
-    it("GET /:nonexistent-hash returns 404", async () => {
-        const res = await SELF.fetch(
-            "https://media.pollinations.ai/0000000000000000",
+            "https://media.pollinations.ai/does-not-exist",
         );
         expect(res.status).toBe(404);
     });
@@ -589,7 +563,7 @@ describe("media.pollinations.ai", () => {
         expect(upload.tags).toBeUndefined();
     });
 
-    it("re-uploading the same file with an additional tag merges tags into one item", async () => {
+    it("re-uploading the same bytes creates a distinct item, not a merge", async () => {
         const first = await uploadViaForm("pk_alice", {
             fileName: "merge.png",
             bytes: variant(10),
@@ -605,27 +579,28 @@ describe("media.pollinations.ai", () => {
         });
         expect(second.status).toBe(200);
         const secondUpload = second.body as UploadResponse;
-        expect(secondUpload.id).toBe(firstUpload.id);
-        expect(secondUpload.duplicate).toBe(true);
+        // Each upload is its own item now (no content dedup).
+        expect(secondUpload.id).not.toBe(firstUpload.id);
 
         const meRes = await SELF.fetch("https://media.pollinations.ai/media", {
             headers: { Authorization: "Bearer pk_alice" },
         });
         const me = (await meRes.json()) as MediaPageResponse;
-        const matches = me.items.filter((i) => i.url === firstUpload.url);
-        expect(matches).toHaveLength(1);
-        expect(matches[0].tags.sort()).toEqual(["first-tag", "second-tag"]);
+        const firstItem = me.items.find((i) => i.url === firstUpload.url);
+        const secondItem = me.items.find((i) => i.url === secondUpload.url);
+        expect(firstItem?.tags).toEqual(["first-tag"]);
+        expect(secondItem?.tags).toEqual(["second-tag"]);
     });
 
-    it("re-uploading does not bump gallery position; galleries order by upload time", async () => {
-        const tag = "bump-tag";
+    it("galleries order by upload time (createdAt)", async () => {
+        const tag = "order-tag";
         const first = await uploadViaForm("pk_alice", {
-            fileName: "bump-a.png",
+            fileName: "order-a.png",
             bytes: variant(60),
             tags: [tag],
         });
         const second = await uploadViaForm("pk_alice", {
-            fileName: "bump-b.png",
+            fileName: "order-b.png",
             bytes: variant(61),
             tags: [tag],
         });
@@ -634,32 +609,17 @@ describe("media.pollinations.ai", () => {
         const a = first.body as UploadResponse;
         const b = second.body as UploadResponse;
 
-        // Backdate deterministically on the item table: a older than b.
-        // Ordering is by mediaItem.createdAt now, so the tag table's
-        // timestamp is irrelevant to gallery position.
+        // Backdate deterministically: a older than b. The upload id is the
+        // item id, so update the row directly. Ordering is by createdAt.
         const db = drizzle(env.DB);
-        const backdate = async (locator: string, epochSeconds: number) => {
-            const when = new Date(epochSeconds * 1000);
-            const [item] = await db
-                .select({ id: mediaItem.id })
-                .from(mediaItem)
-                .where(eq(mediaItem.locator, locator));
+        const backdate = async (id: string, epochSeconds: number) => {
             await db
                 .update(mediaItem)
-                .set({ createdAt: when })
-                .where(eq(mediaItem.id, item.id));
+                .set({ createdAt: new Date(epochSeconds * 1000) })
+                .where(eq(mediaItem.id, id));
         };
         await backdate(a.id, 1000);
         await backdate(b.id, 2000);
-
-        // Re-upload a (same bytes, same tag): createdAt is insert-only, so
-        // neither its timestamp nor its gallery position may change.
-        const again = await uploadViaForm("pk_alice", {
-            fileName: "bump-a.png",
-            bytes: variant(60),
-            tags: [tag],
-        });
-        expect(again.status).toBe(200);
 
         const galleryRes = await SELF.fetch(
             `https://media.pollinations.ai/media?tag=${tag}`,
@@ -669,24 +629,6 @@ describe("media.pollinations.ai", () => {
         expect(urls).toEqual([b.url, a.url]);
         const aItem = gallery.items.find((i) => i.url === a.url);
         expect(new Date(aItem?.createdAt as string).getTime()).toBe(1000_000);
-
-        // Late tagging into a new tag surfaces the item at its original
-        // upload time (createdAt), not at tag time.
-        const late = await uploadViaForm("pk_alice", {
-            fileName: "bump-a.png",
-            bytes: variant(60),
-            tags: ["bump-late"],
-        });
-        expect(late.status).toBe(200);
-        const lateRes = await SELF.fetch(
-            "https://media.pollinations.ai/media?tag=bump-late",
-        );
-        const lateGallery = (await lateRes.json()) as MediaPageResponse;
-        expect(lateGallery.items).toHaveLength(1);
-        expect(lateGallery.items[0].url).toBe(a.url);
-        expect(new Date(lateGallery.items[0].createdAt).getTime()).toBe(
-            1000_000,
-        );
     });
 
     it("paginates a tag gallery newest-first with a keyset cursor", async () => {
@@ -710,14 +652,10 @@ describe("media.pollinations.ai", () => {
         const db = drizzle(env.DB);
         for (let i = 0; i < uploads.length; i++) {
             const when = new Date((1000 + i) * 1000);
-            const [item] = await db
-                .select({ id: mediaItem.id })
-                .from(mediaItem)
-                .where(eq(mediaItem.locator, uploads[i].id));
             await db
                 .update(mediaItem)
                 .set({ createdAt: when })
-                .where(eq(mediaItem.id, item.id));
+                .where(eq(mediaItem.id, uploads[i].id));
         }
 
         const page1Res = await SELF.fetch(
@@ -800,22 +738,7 @@ describe("media.pollinations.ai", () => {
     });
 
     describe("reactions", () => {
-        // Upload response `id` is the content hash, not the catalog item id.
-        // Look the item up via GET /media (as the owner) to get its catalog id.
-        async function catalogIdFor(
-            ownerKey: string,
-            uploadUrl: string,
-        ): Promise<string> {
-            const res = await SELF.fetch(
-                "https://media.pollinations.ai/media",
-                { headers: { Authorization: `Bearer ${ownerKey}` } },
-            );
-            const page = (await res.json()) as MediaPageResponse;
-            const item = page.items.find((i) => i.url === uploadUrl);
-            if (!item) throw new Error(`item not found for ${uploadUrl}`);
-            return item.id;
-        }
-
+        // The upload response `id` is the media item id — react to it directly.
         function reactionUrl(itemId: string, reaction: string): string {
             return `https://media.pollinations.ai/media/${itemId}/reactions/${reaction}`;
         }
@@ -828,7 +751,7 @@ describe("media.pollinations.ai", () => {
             });
             expect(status).toBe(200);
             const upload = body as UploadResponse;
-            const itemId = await catalogIdFor("pk_alice", upload.url);
+            const itemId = upload.id;
 
             const likeRes = await SELF.fetch(reactionUrl(itemId, "like"), {
                 method: "PUT",
@@ -892,7 +815,7 @@ describe("media.pollinations.ai", () => {
             });
             expect(status).toBe(200);
             const upload = body as UploadResponse;
-            const itemId = await catalogIdFor("pk_alice", upload.url);
+            const itemId = upload.id;
 
             await SELF.fetch(reactionUrl(itemId, "like"), {
                 method: "PUT",
@@ -934,7 +857,7 @@ describe("media.pollinations.ai", () => {
             });
             expect(status).toBe(200);
             const upload = body as UploadResponse;
-            const itemId = await catalogIdFor("pk_alice", upload.url);
+            const itemId = upload.id;
 
             const aliceLike = await SELF.fetch(reactionUrl(itemId, "like"), {
                 method: "PUT",
@@ -974,7 +897,7 @@ describe("media.pollinations.ai", () => {
             });
             expect(status).toBe(200);
             const upload = body as UploadResponse;
-            const itemId = await catalogIdFor("pk_alice", upload.url);
+            const itemId = upload.id;
 
             for (const kind of ["like", "bookmark"]) {
                 const res = await SELF.fetch(reactionUrl(itemId, kind), {
@@ -1022,7 +945,7 @@ describe("media.pollinations.ai", () => {
             });
             expect(status).toBe(200);
             const upload = body as UploadResponse;
-            const itemId = await catalogIdFor("pk_alice", upload.url);
+            const itemId = upload.id;
 
             const res = await SELF.fetch(
                 reactionUrl(itemId, encodeURIComponent("UPPER!")),
@@ -1044,7 +967,7 @@ describe("media.pollinations.ai", () => {
             });
             expect(status).toBe(200);
             const upload = body as UploadResponse;
-            const itemId = await catalogIdFor("pk_alice", upload.url);
+            const itemId = upload.id;
 
             // 404 (not 403) so the leaked id isn't confirmed to exist.
             const bobRes = await SELF.fetch(reactionUrl(itemId, "like"), {
@@ -1073,7 +996,7 @@ describe("media.pollinations.ai", () => {
             });
             expect(status).toBe(200);
             const upload = body as UploadResponse;
-            const itemId = await catalogIdFor("pk_alice", upload.url);
+            const itemId = upload.id;
 
             for (let i = 0; i < 8; i++) {
                 const res = await SELF.fetch(reactionUrl(itemId, `kind-${i}`), {
@@ -1105,7 +1028,7 @@ describe("media.pollinations.ai", () => {
             });
             expect(status).toBe(200);
             const upload = body as UploadResponse;
-            const itemId = await catalogIdFor("pk_alice", upload.url);
+            const itemId = upload.id;
 
             const noKeyRes = await SELF.fetch(reactionUrl(itemId, "like"), {
                 method: "PUT",

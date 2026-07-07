@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "988e38a5-9d8e-4b78-882c-d4cac21b52f2",
+  "id": "baccbe6d-d8e2-40ea-a1bb-286b35dc212d",
   "prevId": "b06b2fc4-e749-4253-90ba-e8da6ee5f553",
   "tables": {
     "account": {
@@ -1501,13 +1501,6 @@
           "notNull": true,
           "autoincrement": false
         },
-        "locator": {
-          "name": "locator",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
         "owner_user_id": {
           "name": "owner_user_id",
           "type": "text",
@@ -1545,14 +1538,6 @@
         }
       },
       "indexes": {
-        "idx_media_item_owner_locator": {
-          "name": "idx_media_item_owner_locator",
-          "columns": [
-            "owner_user_id",
-            "locator"
-          ],
-          "isUnique": true
-        },
         "idx_media_item_owner_created": {
           "name": "idx_media_item_owner_created",
           "columns": [
@@ -1569,68 +1554,6 @@
           "tableTo": "user",
           "columnsFrom": [
             "owner_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "media_tag": {
-      "name": "media_tag",
-      "columns": {
-        "item_id": {
-          "name": "item_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "tag": {
-          "name": "tag",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        }
-      },
-      "indexes": {
-        "idx_media_tag_item_tag": {
-          "name": "idx_media_tag_item_tag",
-          "columns": [
-            "item_id",
-            "tag"
-          ],
-          "isUnique": true
-        },
-        "idx_media_tag_tag_created": {
-          "name": "idx_media_tag_tag_created",
-          "columns": [
-            "tag",
-            "created_at"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "media_tag_item_id_media_item_id_fk": {
-          "name": "media_tag_item_id_media_item_id_fk",
-          "tableFrom": "media_tag",
-          "tableTo": "media_item",
-          "columnsFrom": [
-            "item_id"
           ],
           "columnsTo": [
             "id"
@@ -1706,6 +1629,68 @@
           "tableTo": "user",
           "columnsFrom": [
             "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "media_tag": {
+      "name": "media_tag",
+      "columns": {
+        "item_id": {
+          "name": "item_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "tag": {
+          "name": "tag",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "idx_media_tag_item_tag": {
+          "name": "idx_media_tag_item_tag",
+          "columns": [
+            "item_id",
+            "tag"
+          ],
+          "isUnique": true
+        },
+        "idx_media_tag_tag_created": {
+          "name": "idx_media_tag_tag_created",
+          "columns": [
+            "tag",
+            "created_at"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "media_tag_item_id_media_item_id_fk": {
+          "name": "media_tag_item_id_media_item_id_fk",
+          "tableFrom": "media_tag",
+          "tableTo": "media_item",
+          "columnsFrom": [
+            "item_id"
           ],
           "columnsTo": [
             "id"

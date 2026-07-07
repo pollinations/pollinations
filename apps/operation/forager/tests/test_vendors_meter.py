@@ -736,35 +736,65 @@ def _rp_responses(pods=(), endpoints=(), volumes=()):
     ]
 
 
-def test_runpod_meter_sums_three_surfaces_by_month(monkeypatch):
+def test_runpod_meter_sums_three_surfaces_credit_era(monkeypatch):
+    """Grant-era months (waterfall not yet exhausted) land as credit."""
     cap = Capture(_rp_responses(
-        pods=[("2026-04-01", 1069.24), ("2026-05-01", 1217.04)],
+        pods=[("2026-03-01", 2.87), ("2026-04-01", 1069.24)],
         endpoints=[("2026-04-01", 115.36)],
-        volumes=[("2026-04-01", 6.25), ("2026-05-01", 7.32)],
+        volumes=[("2026-04-01", 6.25)],
     ))
     monkeypatch.setattr(_rp, "http_json", cap)
-    rows = _rp.meter(_RP_CREDS, ["2026-04", "2026-05"], TODAY)
-    assert {r["month"]: r["paid"] for r in rows} == {
-        "2026-04": 1190.85, "2026-05": 1224.36,
+    rows = _rp.meter(_RP_CREDS, ["2026-03", "2026-04"], TODAY)
+    assert {r["month"]: r["credit"] for r in rows} == {
+        "2026-03": 2.87, "2026-04": 1190.85,
     }
     for r in rows:
         assert r["vendor"] == "runpod"
-        assert r["credit"] == 0.0
+        assert r["paid"] == 0.0
         assert r["source"] == "api"
         assert r["currency"] == "USD"
 
 
-def test_runpod_meter_window_and_auth(monkeypatch):
+def test_runpod_meter_waterfall_splits_cutover_month(monkeypatch):
+    """June 2026: the $2,500 code dies mid-month → credit remnant + paid rest.
+    The waterfall replays from March even when June alone is requested."""
+    cap = Capture(_rp_responses(
+        pods=[("2026-03-01", 2.87), ("2026-04-01", 1190.85),
+              ("2026-05-01", 1224.36), ("2026-06-01", 981.32),
+              ("2026-07-01", 221.82)],
+    ))
+    monkeypatch.setattr(_rp, "http_json", cap)
+    rows = _rp.meter(_RP_CREDS, ["2026-06", "2026-07"], TODAY)
+    by_month = {}
+    for r in rows:
+        entry = by_month.setdefault(r["month"], {"credit": 0.0, "paid": 0.0})
+        entry["credit"] += r["credit"]
+        entry["paid"] += r["paid"]
+    assert by_month == {
+        "2026-06": {"credit": 81.92, "paid": 899.4},
+        "2026-07": {"credit": 0.0, "paid": 221.82},
+    }
+
+
+def test_runpod_meter_window_spans_grant_era_and_auth(monkeypatch):
+    """Window always reaches back to MONTHS_START so the waterfall is replayed."""
     cap = Capture(_rp_responses())
     monkeypatch.setattr(_rp, "http_json", cap)
-    _rp.meter(_RP_CREDS, ["2026-04", "2026-06"], TODAY)
+    _rp.meter(_RP_CREDS, ["2026-06"], TODAY)
     assert len(cap.calls) == 3
     for call, surface in zip(cap.calls, ("pods", "endpoints", "networkvolumes")):
         assert f"/billing/{surface}?" in call["url"]
         assert "bucketSize=month" in call["url"]
-        assert "startTime=2026-04-01T00:00:00Z" in call["url"]
+        assert "startTime=2026-03-01T00:00:00Z" in call["url"]
         assert "endTime=2026-07-01T00:00:00Z" in call["url"]
         assert call["headers"]["Authorization"] == "Bearer rpa-read-key"
+
+
+def test_runpod_meter_networkvolumes_startdate_key(monkeypatch):
+    cap = Capture(_rp_responses(volumes=[("2026-04-01", 6.25)]))
+    monkeypatch.setattr(_rp, "http_json", cap)
+    rows = _rp.meter(_RP_CREDS, ["2026-04"], TODAY)
+    assert rows[0]["credit"] == 6.25
 
 
 def test_runpod_meter_out_of_scope_month_skipped(monkeypatch):

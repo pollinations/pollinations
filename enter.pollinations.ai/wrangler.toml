@@ -116,6 +116,17 @@ GEN_BASE_URL = "https://gen.pollinations.ai"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TVU4T7rcjS3l7trqtBuve71"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrY4O7rcjS3l7trnGXDTuat"
+# User app deploys (<slug>.pollinations.ai). Account id + API token ride the
+# CF_WORKER_DEPLOY_* secrets; these are the non-secret halves.
+CF_APP_ORIGIN_ZONE_ID = "c257e1acc22c4ba4a45fbff519ff071f"
+CF_APP_ORIGIN_DOMAIN = "myceli.ai"
+CF_APP_PUBLIC_DOMAIN = "pollinations.ai"
+# Public exposure: the <slug>.pollinations.ai hostname is attached to the
+# proxy worker, which lives in the OLD account that owns the pollinations.ai
+# zone — so it needs its own account + token (CF_PROXY_DEPLOY_* secrets).
+# Without those secrets set, deploys succeed but stop at <slug>.myceli.ai.
+CF_APP_PUBLIC_ZONE_ID = "0942247b74a58e4fc5ea70341a3754a3"
+CF_APP_PROXY_SERVICE = "pollinations-proxy"
 [env.staging]
 
 # See production note above: explicit empty crons detaches the schedule.
@@ -159,6 +170,13 @@ STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 # team access when the exact GitHub account is unknown. Issue #11137.
 STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458"
 STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai"
+# User app deploys share the prod hostname namespace (slug conflicts are
+# rejected by Cloudflare at custom-domain attach time).
+CF_APP_ORIGIN_ZONE_ID = "c257e1acc22c4ba4a45fbff519ff071f"
+CF_APP_ORIGIN_DOMAIN = "myceli.ai"
+CF_APP_PUBLIC_DOMAIN = "pollinations.ai"
+CF_APP_PUBLIC_ZONE_ID = "0942247b74a58e4fc5ea70341a3754a3"
+CF_APP_PROXY_SERVICE = "pollinations-proxy"
 [env.dev]
 
 [[env.dev.routes]]

@@ -386,7 +386,7 @@ function requireCommunityEndpointManagePermission(apiKey?: {
     }
 }
 
-async function requireCommunityEndpointManageAccess(
+export async function requireCommunityEndpointManageAccess(
     db: Db,
     userId: string,
     apiKey?: {

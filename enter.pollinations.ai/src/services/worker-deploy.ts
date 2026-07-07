@@ -1,4 +1,4 @@
-const CF_API_BASE = "https://api.cloudflare.com/client/v4";
+export const CF_API_BASE = "https://api.cloudflare.com/client/v4";
 const WORKER_COMPATIBILITY_DATE = "2026-01-01";
 
 export type WorkerDeployConfig = {
@@ -34,7 +34,7 @@ export function communityWorkerScriptName(endpointId: string): string {
     return `bee-${endpointId}`;
 }
 
-async function cfApi(
+export async function cfApi(
     config: WorkerDeployConfig,
     path: string,
     init: RequestInit,
@@ -51,7 +51,7 @@ async function cfApi(
     );
     const body = (await response.json().catch(() => null)) as {
         success?: boolean;
-        errors?: { code?: number; message?: string }[];
+        errors?: { message?: string }[];
         result?: unknown;
     } | null;
     if (!response.ok || !body?.success) {

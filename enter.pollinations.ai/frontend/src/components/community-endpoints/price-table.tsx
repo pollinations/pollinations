@@ -299,6 +299,14 @@ export function savedEndpointPriceKeys(
     );
 }
 
+// A prompt agent runs a base text model, so its callers are always billed on
+// prompt/completion text tokens. There is no endpoint to test, so these two
+// price fields are shown unconditionally in prompt-agent mode.
+export const PROMPT_AGENT_PRICE_KEYS: Set<PriceFieldKey> = new Set([
+    "promptTextPrice",
+    "completionTextPrice",
+]);
+
 export function returnedPriceFields(testState: ActionState): PriceField[] {
     if (testState.status !== "success") return [];
     return COMMUNITY_ENDPOINT_PRICE_FIELDS.filter((field) =>

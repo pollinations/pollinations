@@ -8,6 +8,8 @@ allowed-tools: Bash(polli *)
 
 Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video; transcribes speech; manages API keys, usage, quests, and invite-only my-models.
 
+Install: `npm i -g @pollinations/cli@latest` (provides the `polli` binary).
+
 ## When to use this skill
 
 - User asks to **generate an image / text / audio / video** via pollinations

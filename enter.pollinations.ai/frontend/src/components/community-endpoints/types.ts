@@ -60,6 +60,9 @@ export type EndpointFormState = {
     mode: EndpointMode;
     name: string;
     description: string;
+    // private → owner-only, unlisted, free; public → listed + billed to callers.
+    // Only editable by allowlisted owners; defaults private for everyone else.
+    visibility: CommunityEndpointVisibility;
     baseUrl: string;
     upstreamModel: string;
     bearerToken: string;
@@ -118,6 +121,7 @@ export const emptyForm: EndpointFormState = {
     mode: "external",
     name: "",
     description: "",
+    visibility: "private",
     baseUrl: "",
     upstreamModel: "",
     bearerToken: "",
@@ -177,6 +181,7 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
         mode,
         name: endpoint.name,
         description: endpoint.description ?? "",
+        visibility: endpoint.visibility,
         baseUrl: endpoint.baseUrl,
         upstreamModel: endpoint.upstreamModel,
         bearerToken: "",
@@ -320,31 +325,19 @@ function toPromptAgentConfig(form: EndpointFormState): PromptAgentConfig {
     };
 }
 
-// Publishing (or unpublishing) an existing endpoint only touches visibility,
-// pricing, and tool fees — never baseUrl/source/promptAgent, so it never
-// redeploys a managed worker. Sent to the update endpoint.
-export type PublishPayload = {
+// Reverting a public endpoint to private is a one-click card action with no
+// form: it only flips visibility, resending the endpoint's stored prices and
+// tool fees unchanged (a private endpoint never applies them). Sent to the
+// update endpoint, so it never redeploys a managed worker. The update json type
+// requires every price field, hence the full spread.
+export type VisibilityUpdatePayload = {
     visibility: CommunityEndpointVisibility;
     toolPrices: Record<string, number>;
 } & CommunityEndpointPrices;
 
-export function toPublishPayload(
-    visibility: CommunityEndpointVisibility,
-    form: EndpointFormState,
-): PublishPayload {
-    return {
-        visibility,
-        toolPrices: toolFeesToPayload(form.toolFees),
-        ...formPricesToPayload(form),
-    };
-}
-
-// A published endpoint reverts to private. Its stored prices are resent
-// unchanged (a private endpoint never applies them) so the update payload
-// matches the shared PublishPayload shape.
 export function toUnpublishPayload(
     endpoint: CommunityEndpoint,
-): PublishPayload {
+): VisibilityUpdatePayload {
     return {
         visibility: "private",
         toolPrices: endpoint.toolPrices,
@@ -362,6 +355,7 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
     const shared = {
         name: modelName,
         description: form.description.trim(),
+        visibility: form.visibility,
         kind: form.kind,
         tools: form.tools,
         search: form.search,

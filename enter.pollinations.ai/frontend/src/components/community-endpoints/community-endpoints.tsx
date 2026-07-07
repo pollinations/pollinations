@@ -11,28 +11,30 @@ import { apiClient } from "../../api.ts";
 import { CommunityEndpointCard } from "./community-endpoint-card.tsx";
 import { CommunityEndpointDeleteConfirmation } from "./community-endpoint-delete-confirmation.tsx";
 import { CommunityEndpointDialog } from "./community-endpoint-dialog.tsx";
-import { CommunityEndpointPublishDialog } from "./community-endpoint-publish-dialog.tsx";
 import {
     type CommunityEndpoint,
     type EndpointPayload,
-    type PublishPayload,
     readError,
     toUnpublishPayload,
+    type VisibilityUpdatePayload,
 } from "./types.ts";
 
 type CommunityEndpointsProps = {
     onChange?: () => void | Promise<void>;
+    // Allowlisted owners can make models public (set prices, list in /models).
+    // Everyone else can only create and edit private, owner-only models.
+    canPublish: boolean;
 };
 
-export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
+export function CommunityEndpoints({
+    onChange,
+    canPublish,
+}: CommunityEndpointsProps) {
     const [endpoints, setEndpoints] = useState<CommunityEndpoint[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [createOpen, setCreateOpen] = useState(false);
     const [editing, setEditing] = useState<CommunityEndpoint | null>(null);
-    const [publishing, setPublishing] = useState<CommunityEndpoint | null>(
-        null,
-    );
     const [deleting, setDeleting] = useState<CommunityEndpoint | null>(null);
 
     const loadEndpoints = useCallback(async (): Promise<void> => {
@@ -83,25 +85,16 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
         await onChange?.();
     }
 
-    async function submitVisibility(
-        endpoint: CommunityEndpoint,
-        payload: PublishPayload,
-    ): Promise<void> {
-        const response = await apiClient.account["my-models"][
-            ":id"
-        ].update.$post({
-            param: { id: endpoint.id },
-            json: payload,
-        });
-        if (!response.ok) throw new Error(await readError(response));
-        await loadEndpoints();
-        await onChange?.();
-    }
-
     async function handleUnpublish(endpoint: CommunityEndpoint): Promise<void> {
         setError(null);
+        const payload: VisibilityUpdatePayload = toUnpublishPayload(endpoint);
         try {
-            await submitVisibility(endpoint, toUnpublishPayload(endpoint));
+            const response = await apiClient.account["my-models"][
+                ":id"
+            ].update.$post({ param: { id: endpoint.id }, json: payload });
+            if (!response.ok) throw new Error(await readError(response));
+            await loadEndpoints();
+            await onChange?.();
         } catch (thrown) {
             setError(
                 thrown instanceof Error ? thrown.message : "Unpublish failed",
@@ -140,6 +133,7 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
                         open={createOpen}
                         onOpenChange={setCreateOpen}
                         onSubmit={handleCreate}
+                        canPublish={canPublish}
                         trigger={
                             <Button
                                 type="button"
@@ -169,9 +163,9 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
                                 Register your first model
                             </p>
                             <p className="text-sm text-theme-text-muted">
-                                Expose an OpenAI-compatible endpoint as a
-                                community model with your own per-1M-token
-                                pricing.
+                                {canPublish
+                                    ? "Register an OpenAI-compatible endpoint, worker, or prompt agent — private to you, or public with your own per-1M-token pricing."
+                                    : "Register an OpenAI-compatible endpoint, worker, or prompt agent as a private model callable only by you."}
                             </p>
                         </Surface>
                     ) : (
@@ -179,8 +173,11 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
                             <CommunityEndpointCard
                                 key={endpoint.id}
                                 endpoint={endpoint}
+                                canPublish={canPublish}
                                 onEdit={() => setEditing(endpoint)}
-                                onPublish={() => setPublishing(endpoint)}
+                                // Publishing is a form step (set prices, test),
+                                // so "Make public" opens the edit dialog.
+                                onPublish={() => setEditing(endpoint)}
                                 onUnpublish={() =>
                                     void handleUnpublish(endpoint)
                                 }
@@ -192,9 +189,20 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
                 <p className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                     <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <span>
-                        Published community models appear in{" "}
-                        <strong>/models</strong> and are billed to callers at
-                        your per-1M-token pricing.
+                        {canPublish ? (
+                            <>
+                                Private models are callable only by you and
+                                billed at cost. Make one public to list it in{" "}
+                                <strong>/models</strong> and bill callers at
+                                your per-1M-token pricing.
+                            </>
+                        ) : (
+                            <>
+                                Your models are private — callable only by you
+                                with your API key, and never listed in{" "}
+                                <strong>/models</strong>.
+                            </>
+                        )}
                     </span>
                 </p>
             </Section>
@@ -205,12 +213,7 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
                 open={!!editing}
                 onOpenChange={(open) => !open && setEditing(null)}
                 onSubmit={handleUpdate}
-            />
-
-            <CommunityEndpointPublishDialog
-                endpoint={publishing}
-                onOpenChange={(open) => !open && setPublishing(null)}
-                onSubmit={submitVisibility}
+                canPublish={canPublish}
             />
 
             <CommunityEndpointDeleteConfirmation

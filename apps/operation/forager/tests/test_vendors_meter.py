@@ -352,100 +352,162 @@ def test_vast_meter_empty_returns_empty():
 # fireworks.meter
 # ===========================================================================
 
-_FW_CREDS = {"FIREWORKS_API_KEY": "fw-key"}
+_FW_CREDS = {
+    "FIREWORKS_API_KEY": "fw-poll",
+    "FIREWORKS_API_KEY_MYCELI": "fw-myceli",
+    "FIREWORKS_API_KEY_NEO_GLYPH": "fw-neo",
+    "FIREWORKS_API_KEY_PIXELMARKET": "fw-pix",
+}
 
-# Real firectl billing list-invoices layout:
-#   ID  AMOUNT  CURRENCY  TYPE  INVOICE_URL  STATE  TARGET_DATE  TARGET_TIME  PAID_DATE  PAID_TIME
-# TARGET_DATE + TARGET_TIME are two separate whitespace tokens.
-# POSTPAID invoice cut 2026-07-01 covers usage month 2026-06.
-# PREPAID_CREDITS rows have stripe URLs and are excluded by type.
-# 0.00-amount POSTPAID rows exist and are excluded by amount.
-_FW_INVOICE_OUTPUT = """\
-ID  AMOUNT  TYPE  INVOICE URL  STATE  TARGET TIME  PAID TIME
-VCbMHvhn5FwFgYHY  10.00  USD  POSTPAID_BILLING  https://invoices.withorb.com/view?token=FAKE001  PAID  2026-07-01  02:00:00  2026-07-02  07:24:50
-AbCdEfGh12345678   5.50  USD  POSTPAID_BILLING  https://invoices.withorb.com/view?token=FAKE002  PAID  2026-06-01  02:00:00  2026-06-02  07:24:50
-StRiPeInVoIcEurl  99.00  USD  PREPAID_CREDITS   https://pay.stripe.com/invoice/FAKE003          PAID  2026-07-01  02:00:00  2026-07-02  07:24:50
-ZeRoAmOuNtInVoId   0.00  USD  POSTPAID_BILLING  https://invoices.withorb.com/view?token=FAKE004  PAID  2026-07-01  02:00:00  2026-07-02  07:24:50
-DrAfTiNvOiCeIddd   8.00  USD  POSTPAID_BILLING  https://invoices.withorb.com/view?token=FAKE005  DRAFT 2026-08-01  02:00:00
-"""
+_FW_NO_INVOICES = "ID  AMOUNT  TYPE  INVOICE URL  STATE  TARGET TIME  PAID TIME\n"
 
 
-def test_fireworks_meter_month_minus_one():
-    """Invoice cut on 2026-07-01 → usage month 2026-06."""
-    fake_run = lambda cmd, **kw: _fake_result(stdout=_FW_INVOICE_OUTPUT)
-    rows = _fw.meter(_FW_CREDS, ["2026-06", "2026-05"], TODAY, run_cmd=fake_run)
-    months = {r["month"] for r in rows}
-    assert "2026-06" in months  # inv-001 (cut 2026-07 → usage 2026-06)
-    assert "2026-05" in months  # inv-002 (cut 2026-06 → usage 2026-05)
+def _fw_costs(total):
+    """A get-usage --account-costs-only JSON body with the given month total.
+
+    Mirrors the real proto-JSON Money shape: int64 units as a string, nanos
+    as an int, both omitted when zero.
+    """
+    units, cents = int(total), round((total - int(total)) * 100)
+    money = {"currency_code": "USD"}
+    if units:
+        money["units"] = str(units)
+    if cents:
+        money["nanos"] = cents * 10_000_000
+    return json.dumps({"account_costs": {"cost_data_items": [{"total": money}]}})
 
 
-def test_fireworks_meter_prepaid_credits_ignored():
-    """PREPAID_CREDITS rows must not produce meter rows."""
-    fake_run = lambda cmd, **kw: _fake_result(stdout=_FW_INVOICE_OUTPUT)
-    rows = _fw.meter(_FW_CREDS, ["2026-06"], TODAY, run_cmd=fake_run)
-    # 99.00 from PREPAID_CREDITS must NOT appear
-    for r in rows:
-        assert r["paid"] < 50.0, "prepaid top-up row leaked into meter output"
-
-
-def test_fireworks_meter_postpaid_paid_only():
-    """Only POSTPAID_BILLING + PAID rows count; UNPAID skipped."""
-    output = (
-        "InVoIcExXxUnPaId  20.00  USD  POSTPAID_BILLING"
-        "  https://invoices.withorb.com/view?token=FAKEUNPAID"
-        "  UNPAID  2026-07-01  02:00:00  \n"
+def _fw_invoice(amount, target, kind="POSTPAID_BILLING", state="PAID"):
+    return (
+        f"SoMeInVoIcEiDxx  {amount:.2f}  USD  {kind}"
+        f"  https://invoices.withorb.com/view?token=X  {state}"
+        f"  {target}  02:00:00  2026-07-02  07:24:50\n"
     )
-    fake_run = lambda cmd, **kw: _fake_result(stdout=output)
-    rows = _fw.meter(_FW_CREDS, ["2026-06"], TODAY, run_cmd=fake_run)
-    assert rows == []
 
 
-def test_fireworks_meter_paid():
-    """Meter rows put paid usage into paid."""
-    fake_run = lambda cmd, **kw: _fake_result(stdout=_FW_INVOICE_OUTPUT)
-    rows = _fw.meter(_FW_CREDS, ["2026-06"], TODAY, run_cmd=fake_run)
-    for r in rows:
-        assert r["credit"] == 0.0
-        assert r["paid"] > 0
+class _FwRun:
+    """run_cmd fake: per-(key, month) usage + per-key invoice ledgers."""
+
+    def __init__(self, usage=None, invoices=None):
+        self.usage = usage or {}
+        self.invoices = invoices or {}
+        self.calls = []
+
+    def __call__(self, cmd, **kw):
+        self.calls.append(cmd)
+        key = cmd[cmd.index("--api-key") + 1]
+        if "list-invoices" in cmd:
+            return _fake_result(
+                stdout=_FW_NO_INVOICES + self.invoices.get(key, "")
+            )
+        month = cmd[cmd.index("--start-time") + 1][:7]
+        return _fake_result(stdout=_fw_costs(self.usage.get((key, month), 0.0)))
 
 
-def test_fireworks_meter_source_cli():
-    """Meter rows must have source=cli."""
-    fake_run = lambda cmd, **kw: _fake_result(stdout=_FW_INVOICE_OUTPUT)
-    rows = _fw.meter(_FW_CREDS, ["2026-06"], TODAY, run_cmd=fake_run)
-    for r in rows:
-        assert r["source"] == "cli"
-
-
-def test_fireworks_meter_missing_key_raises():
-    """Missing FIREWORKS_API_KEY is a configuration error."""
-    with pytest.raises(RuntimeError, match="FIREWORKS_API_KEY"):
-        _fw.meter({}, ["2026-06"], TODAY)
-
-
-def test_fireworks_meter_zero_amount_excluded():
-    """$0.00 POSTPAID+PAID invoice must not produce a row."""
-    output = (
-        "ZeRoAmOuNtInVoId   0.00  USD  POSTPAID_BILLING"
-        "  https://invoices.withorb.com/view?token=FAKEZ"
-        "  PAID  2026-07-01  02:00:00  2026-07-02  07:24:50\n"
+def test_fireworks_waterfall_credit_until_the_invoice_anchor():
+    """Grant months are credit; the invoice month fixes cash and closes the
+    grant; later consumption is our money (prepaid balance)."""
+    run = _FwRun(
+        usage={
+            ("fw-poll", "2026-04"): 2000.0,
+            ("fw-poll", "2026-05"): 3000.0,
+            ("fw-poll", "2026-06"): 7000.0,
+            ("fw-poll", "2026-07"): 300.0,
+        },
+        # invoice cut 2026-07-01 covers June usage
+        invoices={"fw-poll": _fw_invoice(2432.84, "2026-07-01")},
     )
-    fake_run = lambda cmd, **kw: _fake_result(stdout=output)
-    rows = _fw.meter(_FW_CREDS, ["2026-06"], TODAY, run_cmd=fake_run)
-    assert rows == []
-
-
-def test_fireworks_meter_january_shift():
-    """Invoice cut 2026-01-01 → usage month 2025-12."""
-    output = (
-        "JaNiNvOiCeJanWrp  10.00  USD  POSTPAID_BILLING"
-        "  https://invoices.withorb.com/view?token=FAKEJAN"
-        "  PAID  2026-01-01  02:00:00  2026-01-02  07:24:50\n"
+    rows = _fw.meter(
+        _FW_CREDS, ["2026-04", "2026-05", "2026-06", "2026-07"], TODAY, run_cmd=run
     )
-    fake_run = lambda cmd, **kw: _fake_result(stdout=output)
-    rows = _fw.meter(_FW_CREDS, ["2025-12", "2026-01"], TODAY, run_cmd=fake_run)
-    months = {r["month"] for r in rows}
-    assert "2025-12" in months
+    by_month = {}
+    for r in rows:
+        entry = by_month.setdefault(r["month"], {"credit": 0.0, "paid": 0.0})
+        entry["credit"] += r["credit"]
+        entry["paid"] += r["paid"]
+
+    assert by_month["2026-04"] == {"credit": 2000.0, "paid": 0.0}
+    assert by_month["2026-05"] == {"credit": 3000.0, "paid": 0.0}
+    assert by_month["2026-06"] == {"credit": 4567.16, "paid": 2432.84}
+    assert by_month["2026-07"] == {"credit": 0.0, "paid": 300.0}
+    assert all(r["vendor"] == "fireworks" and r["source"] == "cli" for r in rows)
+
+
+def test_fireworks_meter_sums_accounts_per_month():
+    run = _FwRun(
+        usage={
+            ("fw-poll", "2026-04"): 100.0,
+            ("fw-myceli", "2026-04"): 50.0,
+            ("fw-neo", "2026-04"): 25.0,
+        },
+    )
+    rows = _fw.meter(_FW_CREDS, ["2026-04"], TODAY, run_cmd=run)
+    assert len(rows) == 1
+    assert rows[0]["credit"] == 175.0 and rows[0]["paid"] == 0.0
+
+
+def test_fireworks_scoped_month_still_replays_grant_history():
+    """--month runs must not restart the waterfall: July after an exhausting
+    invoice is paid, even when only July is requested."""
+    run = _FwRun(
+        usage={
+            ("fw-poll", "2026-06"): 7000.0,
+            ("fw-poll", "2026-07"): 300.0,
+        },
+        invoices={"fw-poll": _fw_invoice(500.0, "2026-07-01")},
+    )
+    rows = _fw.meter(_FW_CREDS, ["2026-07"], TODAY, run_cmd=run)
+    assert len(rows) == 1
+    assert rows[0]["month"] == "2026-07"
+    assert rows[0]["paid"] == 300.0 and rows[0]["credit"] == 0.0
+
+
+def test_fireworks_prepaid_and_draft_invoices_are_not_cash_anchors():
+    run = _FwRun(
+        usage={("fw-poll", "2026-06"): 100.0},
+        invoices={
+            "fw-poll": (
+                _fw_invoice(99.0, "2026-07-01", kind="PREPAID_CREDITS")
+                + _fw_invoice(88.0, "2026-07-01", state="DRAFT")
+                + _fw_invoice(0.0, "2026-07-01")
+            )
+        },
+    )
+    rows = _fw.meter(_FW_CREDS, ["2026-06"], TODAY, run_cmd=run)
+    assert len(rows) == 1
+    assert rows[0]["credit"] == 100.0 and rows[0]["paid"] == 0.0
+
+
+def test_fireworks_meter_zero_months_emit_nothing():
+    run = _FwRun()
+    assert _fw.meter(_FW_CREDS, ["2026-05"], TODAY, run_cmd=run) == []
+
+
+def test_fireworks_meter_windows_clamp_the_running_month():
+    """Full [1st, next 1st) usage windows; the running month ends tomorrow."""
+    run = _FwRun()
+    _fw.meter(_FW_CREDS, ["2026-06", "2026-07"], TODAY, run_cmd=run)  # TODAY 2026-07-03
+    windows = {
+        (c[c.index("--start-time") + 1], c[c.index("--end-time") + 1])
+        for c in run.calls
+        if "get-usage" in c
+    }
+    assert ("2026-06-01", "2026-07-01") in windows
+    assert ("2026-07-01", "2026-07-04") in windows
+
+
+def test_fireworks_meter_missing_keys_raise_without_values():
+    with pytest.raises(RuntimeError) as err:
+        _fw.meter({"FIREWORKS_API_KEY": "fw-poll"}, ["2026-06"], TODAY)
+    message = str(err.value)
+    assert "FIREWORKS_API_KEY_MYCELI" in message
+    assert "fw-poll" not in message
+
+
+def test_fireworks_meter_cli_failure_raises():
+    fake_run = lambda cmd, **kw: _fake_result(returncode=1, stderr="SECRET")
+    with pytest.raises(RuntimeError, match="failed"):
+        _fw.meter(_FW_CREDS, ["2026-06"], TODAY, run_cmd=fake_run)
 
 
 # ===========================================================================

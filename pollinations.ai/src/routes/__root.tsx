@@ -1,5 +1,11 @@
 import { useColorMode } from "@pollinations/ui";
-import { createRootRoute, HeadContent, Outlet } from "@tanstack/react-router";
+import {
+    createRootRoute,
+    HeadContent,
+    Outlet,
+    useRouterState,
+} from "@tanstack/react-router";
+import { useEffect } from "react";
 import { Footer } from "../components/shell/Footer.tsx";
 import { Header } from "../components/shell/Header.tsx";
 
@@ -10,8 +16,18 @@ export const Route = createRootRoute({
     component: RootLayout,
 });
 
+/** First path segment → html[data-route] so alive.css can map page → hue. */
+function useRouteAccent() {
+    const pathname = useRouterState({ select: (s) => s.location.pathname });
+    useEffect(() => {
+        document.documentElement.dataset.route =
+            pathname.split("/")[1] || "home";
+    }, [pathname]);
+}
+
 function RootLayout() {
     useColorMode();
+    useRouteAccent();
 
     return (
         <div className="flex h-full min-w-0 flex-col">

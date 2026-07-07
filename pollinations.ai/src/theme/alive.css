@@ -1,0 +1,67 @@
+/*
+ * Alive layer: per-page accent + breathing flat background.
+ * Rides the documented public knob --polli-hue from @pollinations/ui;
+ * no component or package changes. Flat by design: no gradients, no
+ * shades. Motion is gated behind prefers-reduced-motion at the bottom.
+ */
+
+/* Register the package's hue knob so navigation changes crossfade. */
+@property --polli-hue {
+    syntax: "<number>";
+    inherits: true;
+    initial-value: 85;
+}
+
+/* Animated drift offset, applied to the background hue only. */
+@property --site-hue-drift {
+    syntax: "<number>";
+    inherits: true;
+    initial-value: -20;
+}
+
+/* Per-page accent, stamped as data-route by __root.tsx. 85 = brand amber. */
+:root {
+    --polli-hue: 85;
+    transition: --polli-hue 800ms ease;
+    animation: site-breathe 60s ease-in-out infinite;
+}
+:root[data-route="play"] {
+    --polli-hue: 300;
+}
+:root[data-route="apps"] {
+    --polli-hue: 252;
+}
+:root[data-route="community"] {
+    --polli-hue: 152;
+}
+
+/*
+ * Breathing flat background. Stock app-bg is oklch(0.902 0.013 80) light /
+ * oklch(0.185 0.005 80) dark; same lightness here, but the hue follows the
+ * page accent and drifts ±20° over 60s.
+ */
+:root {
+    --site-bg-hue: calc(var(--polli-hue) + var(--site-hue-drift));
+    --polli-color-app-bg: oklch(0.902 0.02 var(--site-bg-hue));
+}
+.dark {
+    --polli-color-app-bg: oklch(0.185 0.012 var(--site-bg-hue));
+}
+
+@keyframes site-breathe {
+    0%,
+    100% {
+        --site-hue-drift: -20;
+    }
+    50% {
+        --site-hue-drift: 20;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :root {
+        transition: none;
+        animation: none;
+        --site-hue-drift: 0;
+    }
+}

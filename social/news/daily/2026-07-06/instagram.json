@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-07-06",
+  "period_start": "2026-07-06",
+  "period_end": "2026-07-06",
+  "generated_at": "2026-07-07T07:08:17.247415+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-06/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-06/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-06/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Spent some time in the ecosystem directory doing a little digital spring cleaning. We deduped some entries and updated the Tomdacat app listing for Roblox so everything points exactly where it should. Sometimes open-source is building massive new AI infrastructure, and sometimes it's just making sure the shelves are tidy and the links actually work. \n\nDirectory is looking clean over on the repo. Link in bio.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #robloxdev #techart #buildinpublic #cozygamer",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

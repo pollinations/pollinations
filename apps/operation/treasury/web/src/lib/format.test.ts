@@ -4,6 +4,8 @@ import {
     fmtMultiplier,
     fmtPct,
     fmtPeriod,
+    fmtSmartNumber,
+    fmtUnsignedPct,
     fmtUsd,
     hoursSince,
 } from "./format";
@@ -31,13 +33,29 @@ describe("format", () => {
     });
 });
 
+describe("fmtSmartNumber", () => {
+    it("uses up to five significant digits", () => {
+        expect(fmtSmartNumber(1234.567)).toBe("1,234.6");
+        expect(fmtSmartNumber(123.4567)).toBe("123.46");
+        expect(fmtSmartNumber(12.34567)).toBe("12.346");
+        expect(fmtSmartNumber(1.234567)).toBe("1.2346");
+        expect(fmtSmartNumber(0.00123456)).toBe("0.0012346");
+    });
+
+    it("uses compact suffixes for large numbers", () => {
+        expect(fmtSmartNumber(12409.6)).toBe("12.41k");
+        expect(fmtSmartNumber(1234567)).toBe("1.2346M");
+    });
+});
+
 describe("fmtUsd", () => {
-    it("renders whole dollars with thousands separators", () => {
-        expect(fmtUsd(12409.6)).toBe("$12,410");
+    it("renders adaptive compact dollars", () => {
+        expect(fmtUsd(12409.6)).toBe("$12.41k");
+        expect(fmtUsd(1234.567)).toBe("$1,234.6");
     });
 
     it("renders negatives with a minus sign", () => {
-        expect(fmtUsd(-13921.4)).toBe("−$13,921");
+        expect(fmtUsd(-13921.4)).toBe("−$13.921k");
     });
 
     it("renders missing values as an en dash", () => {
@@ -48,9 +66,9 @@ describe("fmtUsd", () => {
 });
 
 describe("fmtPct", () => {
-    it("renders signed one-decimal percentages", () => {
-        expect(fmtPct(4.66)).toBe("+4.7%");
-        expect(fmtPct(-30.71)).toBe("−30.7%");
+    it("renders signed adaptive percentages", () => {
+        expect(fmtPct(4.66666)).toBe("+4.6667%");
+        expect(fmtPct(-30.714)).toBe("−30.714%");
     });
 
     it("renders null as an en dash", () => {
@@ -58,9 +76,21 @@ describe("fmtPct", () => {
     });
 });
 
+describe("fmtUnsignedPct", () => {
+    it("renders unsigned adaptive percentages", () => {
+        expect(fmtUnsignedPct(99.999)).toBe("99.999%");
+        expect(fmtUnsignedPct(12345.6)).toBe("12.346k%");
+    });
+
+    it("renders missing values as an en dash", () => {
+        expect(fmtUnsignedPct(null)).toBe("–");
+        expect(fmtUnsignedPct(undefined)).toBe("–");
+    });
+});
+
 describe("fmtMultiplier", () => {
-    it("renders two-decimal multipliers", () => {
-        expect(fmtMultiplier(1.098)).toBe("1.10×");
+    it("renders adaptive multipliers", () => {
+        expect(fmtMultiplier(1.09876)).toBe("1.0988×");
     });
 
     it("renders null and non-finite as an en dash", () => {

@@ -113,3 +113,61 @@ test(
         expect(data[0].modelId).toBe("testuser/listed-model");
     },
 );
+
+test(
+    "POST /my-models requires a handle",
+    { timeout: 30_000 },
+    async ({ sessionToken, mocks }) => {
+        await mocks.enable("github", "tinybird");
+
+        const db = drizzle(env.DB, { schema });
+
+        // Seed user with allowed GitHub account
+        const [u] = await db
+            .select({ id: schema.user.id })
+            .from(schema.user)
+            .limit(1);
+
+        // Set both handle and githubUsername to null to ensure guard is exercised
+        await db
+            .update(schema.user)
+            .set({ handle: null, githubUsername: null })
+            .where(eq(schema.user.id, u.id));
+
+        // Replace the github account row with one that has an allowed github id
+        await db.delete(schema.account).where(eq(schema.account.userId, u.id));
+        await db.insert(schema.account).values({
+            id: "a-allowed-github",
+            accountId: "36901823", // ElliotEtag — on the allowlist
+            providerId: "github",
+            username: null,
+            userId: u.id,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const res = await SELF.fetch(MY_MODELS, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({
+                name: "my-model",
+                baseUrl: "https://upstream.example.com/v1",
+                bearerToken: "sk-test-token",
+            }),
+        });
+
+        // Should fail because handle is null
+        const text = await res.clone().text();
+        expect(res.status, text).toBe(400);
+
+        const data = (await res.json()) as {
+            error?: { message?: string };
+        };
+        expect(data.error?.message, text).toContain(
+            "A handle is required to register community endpoints",
+        );
+    },
+);

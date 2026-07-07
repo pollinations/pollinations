@@ -306,7 +306,7 @@ export function CommunityEndpointDialog({
                     <code>
                         {"{username}"}/{"{model-id}"}
                     </code>{" "}
-                    model with your own per-1M-token pricing.
+                    model.
                 </p>
             </div>
 

@@ -59,4 +59,22 @@ describe("proxied request client-IP resolution", () => {
         expect(hasTrustedProxyHeaders(direct)).toBe(false);
         expect(getRealClientIp(direct)).toBe("46.142.212.69");
     });
+
+    // The CloudFront pln-gen-viewer-ip function overwrites X-Original-Client-IP
+    // with event.viewer.ip before the request leaves the edge, so any value a
+    // client tried to spoof is gone by the time the Worker trusts the header.
+    // From the Worker's perspective it simply reads the (already-overwritten)
+    // value — this documents that a trusted hop's X-Original-Client-IP is
+    // authoritative even though the raw header name is client-controllable.
+    it("uses the CloudFront-injected client IP on a trusted hop", () => {
+        const viaCloudFront = mockContext(
+            "https://gen.pollinations.ai/text/hi",
+            {
+                "x-forwarded-host": "gen.pollinations.ai",
+                "x-original-client-ip": "46.142.212.69", // injected by CloudFront fn
+                "cf-connecting-ip": "64.252.67.10", // Origin Shield egress IP
+            },
+        );
+        expect(getRealClientIp(viaCloudFront)).toBe("46.142.212.69");
+    });
 });

@@ -6,7 +6,7 @@ Self-service endpoints for the authenticated user. All endpoints require authent
 
 | Endpoint | Description |
 |----------|-------------|
-| `GET /account/profile` | GitHub username, image, tier, reset time |
+| `GET /account/profile` | handle, image, tier, reset time |
 | `GET /account/balance` | Current pollen balance |
 | `GET /account/quests` | Read-only quest status |
 | `GET /account/usage` | Per-request usage history with costs |

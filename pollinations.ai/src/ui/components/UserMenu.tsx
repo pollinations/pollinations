@@ -39,7 +39,8 @@ export function UserMenu() {
         );
     }
 
-    const displayName = profile?.handle || copy.defaultUsername;
+    const displayName =
+        profile?.handle || profile?.githubUsername || copy.defaultUsername;
 
     return (
         <div ref={menuRef} className="relative">

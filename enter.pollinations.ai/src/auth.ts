@@ -19,8 +19,83 @@ import {
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
 import { admin, openAPI } from "better-auth/plugins";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
+import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { drizzle } from "drizzle-orm/d1";
+
+/**
+ * Sanitize a raw string into a valid handle:
+ * - lowercase, non-alphanumeric/hyphen chars become dashes
+ * - collapse consecutive dashes, strip leading/trailing dashes
+ * - cap at 39 chars (GitHub username max)
+ */
+export function sanitizeHandle(raw: string): string {
+    return raw
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "")
+        .slice(0, 39);
+}
+
+/**
+ * Ensure a candidate handle is unique in the DB.
+ * Tries candidate, candidate-1 … candidate-4 then falls back to candidate-<6 random chars>.
+ */
+export async function ensureUniqueHandle(
+    db: DrizzleD1Database<typeof betterAuthSchema>,
+    candidate: string,
+): Promise<string> {
+    for (let i = 0; i < 5; i++) {
+        const attempt = i === 0 ? candidate : `${candidate}-${i}`;
+        const clash = await db
+            .select({ id: betterAuthSchema.user.id })
+            .from(betterAuthSchema.user)
+            .where(sql`lower(${betterAuthSchema.user.handle}) = ${attempt}`)
+            .get();
+        if (!clash) return attempt;
+    }
+    return `${candidate}-${crypto.randomUUID().slice(0, 6)}`;
+}
+
+/**
+ * For every new user that arrives without a handle (e.g. Google, email/password),
+ * derive one from the email local-part and ensure it is unique.
+ * GitHub signups are untouched — mapProfileToUser already set handle = profile.login.
+ */
+function handleFallbackPlugin(env: Cloudflare.Env): BetterAuthPlugin {
+    return {
+        id: "handle-fallback",
+        init: () => ({
+            options: {
+                databaseHooks: {
+                    user: {
+                        create: {
+                            before: async (user: GenericUser) => {
+                                const u = user as GenericUser & {
+                                    handle?: string | null;
+                                };
+                                if (u.handle) return { data: u };
+
+                                const db = drizzle(env.DB, {
+                                    schema: betterAuthSchema,
+                                });
+                                const localPart = u.email.split("@")[0] ?? "";
+                                const sanitized = sanitizeHandle(localPart);
+                                const candidate = sanitized || "user";
+                                const handle = await ensureUniqueHandle(
+                                    db,
+                                    candidate,
+                                );
+                                return { data: { ...u, handle } };
+                            },
+                        },
+                    },
+                },
+            } satisfies Partial<BetterAuthOptions>,
+        }),
+    } satisfies BetterAuthPlugin;
+}
 
 export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const db = drizzle(env.DB);
@@ -90,6 +165,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             apiKeyPlugin,
             tierPlugin(env, ctx),
             stagingAccessPlugin(env),
+            handleFallbackPlugin(env),
             openAPIPlugin,
         ],
         telemetry: { enabled: false },

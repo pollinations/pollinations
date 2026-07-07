@@ -13,7 +13,10 @@ import type { Context } from "hono";
 // community clients still send `?nofeed=true`, and excluding it from the
 // cache key prevents those requests from fragmenting the cache. "no-cache"
 // and "key" are request controls that must never affect the cache key.
-const EXCLUDED_PARAMS = ["nofeed", "no-cache", "key"];
+// "tags" opts a generation into the media catalog (see
+// middleware/media-catalog.ts). It must never fragment the cache, so two
+// requests differing only by tags hit the same cached bytes.
+export const EXCLUDED_PARAMS = ["nofeed", "no-cache", "key", "tags"];
 export const SAFETY_CACHE_VERSION = "bedrock-input-v1";
 const CACHED_HEADER_PREFIXES = ["x-safety-"];
 

@@ -7,6 +7,7 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "deploy:production": "wrangler deploy --env production",
+    "migrate:production": "wrangler d1 migrations apply DB --remote --env production",
     "apply-lifecycle:production": "wrangler r2 bucket lifecycle set pollinations-media --file r2-lifecycle.json --force",
     "tail": "wrangler tail",
     "test": "vitest run",
@@ -14,6 +15,7 @@
   },
   "dependencies": {
     "@hono/standard-validator": "^0.2.2",
+    "drizzle-orm": "^0.44.7",
     "hono": "^4.6.0",
     "hono-openapi": "^1.2.0",
     "zod": "^3.25.76",

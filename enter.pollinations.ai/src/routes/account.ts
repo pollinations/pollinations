@@ -1722,6 +1722,18 @@ export const accountRoutes = new Hono<Env>()
                                         .describe(
                                             "Whether rate limiting is enabled for this key",
                                         ),
+                                    userId: z
+                                        .string()
+                                        .nullable()
+                                        .describe(
+                                            "Stable id of the user that owns this key — server-attested.",
+                                        ),
+                                    byopClientKeyId: z
+                                        .string()
+                                        .nullable()
+                                        .describe(
+                                            "Publishable app key that minted this key via the BYOP authorize flow. Server-attested; clients cannot forge.",
+                                        ),
                                 }),
                             ),
                         },
@@ -1799,6 +1811,11 @@ export const accountRoutes = new Hono<Env>()
                 pollenBudget: apiKey.pollenBalance ?? null,
                 // Generation rate limiting applies to publishable keys only.
                 rateLimitEnabled: keyType === "publishable",
+                // Server-attested identity. Downstream services (media catalog)
+                // stamp ownership from these values — never from request
+                // params — so user and BYOP app ids cannot be spoofed.
+                userId: c.var.auth.user?.id ?? null,
+                byopClientKeyId: apiKey.byopClientKeyId ?? null,
             });
         },
     )

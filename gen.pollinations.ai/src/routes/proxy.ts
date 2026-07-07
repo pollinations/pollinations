@@ -11,6 +11,7 @@ import {
     imageCache,
     model3dCache,
 } from "@/middleware/media-cache.ts";
+import { mediaCatalog } from "@/middleware/media-catalog.ts";
 import { resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
@@ -97,6 +98,7 @@ const textBodyLimit = bodyLimit({
 const imageVideoHandlers = factory.createHandlers(
     resolveModel("generate.image"),
     track("generate.image"),
+    mediaCatalog,
     imageCache,
     generationAccess,
     async (c) => {

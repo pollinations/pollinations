@@ -5,6 +5,7 @@ import {
     ColorModeToggle,
     cn,
     DatabaseIcon,
+    GenApiIcon,
     Heading,
     Input,
     MenuIcon,
@@ -14,6 +15,7 @@ import {
     Text,
     TrendUpIcon,
     useScrollLock,
+    WalletIcon,
     XIcon,
 } from "@pollinations/ui";
 import logoUrl from "@pollinations/ui/assets/logo.svg";
@@ -83,13 +85,13 @@ const INSIGHT_TABS: {
         id: "vendors",
         label: "Vendors",
         note: "One spend, three witnesses per vendor and month: transactions (bank cash), provider (their meter), pollen (our metering) - with the delta that exposes wrong registry unit costs.",
-        icon: DatabaseIcon,
+        icon: WalletIcon,
     },
     {
         id: "models",
         label: "Models",
         note: "Per-model unit economics: retained pollen (gross minus byop/model shares) vs true cost allocated from vendor actuals, with the break-even floor and ecosystem adoption totals.",
-        icon: DatabaseIcon,
+        icon: GenApiIcon,
     },
 ] satisfies readonly DrawerItem<InsightTab>[];
 

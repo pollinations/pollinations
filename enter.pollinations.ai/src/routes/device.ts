@@ -355,7 +355,7 @@ export async function handleUserinfo(c: AuthedContext) {
             name: true,
             email: true,
             image: true,
-            githubUsername: true,
+            handle: true,
         },
     });
     if (!row) {
@@ -365,6 +365,6 @@ export async function handleUserinfo(c: AuthedContext) {
         sub: row.id,
         ...(includeProfilePII && { name: row.name, email: row.email }),
         picture: row.image,
-        preferred_username: row.githubUsername,
+        preferred_username: row.handle,
     });
 }

@@ -14,6 +14,7 @@ import { audioTools } from "./services/audioService.js";
 import { authTools } from "./services/authService.js";
 // Import tools from services
 import { imageTools } from "./services/imageService.js";
+import { questTools } from "./services/questsService.js";
 import { textTools } from "./services/textService.js";
 
 // Combine all tools
@@ -23,6 +24,7 @@ const allTools = [
     ...audioTools,
     ...authTools,
     ...accountTools,
+    ...questTools,
 ];
 
 /**

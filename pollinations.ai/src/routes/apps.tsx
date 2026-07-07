@@ -9,7 +9,7 @@ import {
     TabButton,
 } from "@pollinations/ui";
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AppCard } from "../components/apps/AppCard.tsx";
 import {
     APP_LINKS,
@@ -23,6 +23,9 @@ import {
     SIGNAL_FILTERS,
 } from "../components/apps/copy.ts";
 import { type AppFilters, loadApps, selectApps } from "../lib/apps.ts";
+
+const INITIAL_VISIBLE_APPS = 24;
+const VISIBLE_APPS_INCREMENT = 24;
 
 function parseSearchList<T extends string>(
     value: unknown,
@@ -95,6 +98,8 @@ function AppsPage() {
     const { apps, error } = Route.useLoaderData();
     const { category, platform, signal } = Route.useSearch();
     const navigate = Route.useNavigate();
+    const loadMoreRef = useRef<HTMLDivElement | null>(null);
+    const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_APPS);
     const selectedFilters = useMemo<AppFilters>(
         () => ({
             categories: parseSearchList(category, CATEGORY_FILTER_IDS),
@@ -107,10 +112,39 @@ function AppsPage() {
         () => selectApps(apps, selectedFilters),
         [apps, selectedFilters],
     );
+    const visibleApps = selectedApps.slice(0, visibleCount);
+    const hasMoreApps = visibleCount < selectedApps.length;
     const activeFilterCount =
         selectedFilters.categories.length +
         selectedFilters.platforms.length +
         selectedFilters.signals.length;
+    const filterSignature = `${category ?? ""}|${platform ?? ""}|${signal ?? ""}`;
+
+    useEffect(() => {
+        if (filterSignature === undefined) return;
+        setVisibleCount(INITIAL_VISIBLE_APPS);
+    }, [filterSignature]);
+
+    useEffect(() => {
+        const target = loadMoreRef.current;
+        if (!target || !hasMoreApps) return;
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (!entry?.isIntersecting) return;
+                setVisibleCount((count) =>
+                    Math.min(
+                        count + VISIBLE_APPS_INCREMENT,
+                        selectedApps.length,
+                    ),
+                );
+            },
+            { rootMargin: "480px 0px" },
+        );
+
+        observer.observe(target);
+        return () => observer.disconnect();
+    }, [hasMoreApps, selectedApps.length]);
 
     const setFilters = (nextFilters: AppFilters) => {
         navigate({
@@ -315,14 +349,36 @@ function AppsPage() {
                 {error ? (
                     <Surface className="text-theme-text-base">{error}</Surface>
                 ) : selectedApps.length > 0 ? (
-                    <div className="flex flex-col gap-2">
-                        {selectedApps.map((app, index) => (
-                            <AppCard
-                                key={`${app.name}-${app.githubId || index}`}
-                                app={app}
-                            />
-                        ))}
-                    </div>
+                    <>
+                        <div className="flex flex-col gap-2">
+                            {visibleApps.map((app, index) => (
+                                <AppCard
+                                    key={`${app.name}-${app.githubId || index}`}
+                                    app={app}
+                                />
+                            ))}
+                        </div>
+                        {hasMoreApps && (
+                            <div
+                                ref={loadMoreRef}
+                                className="flex justify-center pt-3"
+                            >
+                                <Button
+                                    type="button"
+                                    onClick={() =>
+                                        setVisibleCount((count) =>
+                                            Math.min(
+                                                count + VISIBLE_APPS_INCREMENT,
+                                                selectedApps.length,
+                                            ),
+                                        )
+                                    }
+                                >
+                                    Show more
+                                </Button>
+                            </div>
+                        )}
+                    </>
                 ) : (
                     <Surface className="text-center text-theme-text-base">
                         {APPS_COPY.noAppsMessage}

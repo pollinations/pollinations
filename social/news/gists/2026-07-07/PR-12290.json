@@ -1,0 +1,33 @@
+{
+  "pr_number": 12290,
+  "title": "docs: add install command to polli skill",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12290",
+  "merged_at": "2026-07-07T20:00:25Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `npm i -g @pollinations/cli@latest` to the polli SKILL.md.\n- The skill assumed `polli` was already on PATH; the old `@pollinations_ai` scope now 404s, so documenting the current scope prevents a dead install command.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Path to Polli",
+    "blurb": "Updated the Polli CLI skill docs with the correct npm install command so you can get up and running without hitting a 404.",
+    "summary": "Added the `npm i -g @pollinations/cli@latest` install command to the Polli CLI SKILL.md documentation.",
+    "impact": "Developers using the Polli skill will now have the correct, working npm scope to install the CLI instead of encountering a 404 error from the old scope.",
+    "keywords": [
+      "docs",
+      "cli",
+      "npm",
+      "polli",
+      "skill"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot reading a technical manual together next to a glowing terminal. Represents documentation and installation instructions.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot reading a glowing lime green (#ecf874) retro terminal screen. A chunky Monitor Robot companion stands nearby holding a small pixelated instruction manual. Soft lavender and warm cream pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-07/PR-12290.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot reading a glowing lime green (#ecf874) retro terminal screen. A chunky Monitor Robot companion stands nearby holding a small pixelated instruction manual. Soft lavender and warm cream pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-07T20:01:25.304751+00:00"
+}

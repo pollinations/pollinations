@@ -398,6 +398,80 @@ describe("vendorPlanes", () => {
     });
 });
 
+describe("coverage", () => {
+    it("classifies funded, adjacent-cash, internal, and uncovered months", () => {
+        const data = emptyData({
+            transactions: [
+                txn({
+                    date: "2026-06-13",
+                    vendor: "google",
+                    category: "compute",
+                    charged_amount: 5000,
+                    charged_currency: "USD",
+                }),
+                txn({
+                    date: "2026-05-11",
+                    vendor: "aws",
+                    category: "compute",
+                    charged_amount: 4044,
+                    charged_currency: "USD",
+                }),
+            ],
+            providerMonthly: [
+                provider({ month: "2026-06", vendor: "azure", credit: 3000 }),
+                provider({ month: "2026-06", vendor: "aws", paid: 4698 }),
+            ],
+            pollenMonthly: [
+                usage({ month: "2026-06", vendor: "google", cost_paid: 4000 }),
+                usage({ month: "2026-06", vendor: "azure", cost_paid: 4000 }),
+                usage({ month: "2026-06", vendor: "aws", cost_paid: 3500 }),
+                usage({
+                    month: "2026-06",
+                    vendor: "openrouter",
+                    cost_paid: 1000,
+                }),
+                usage({ month: "2026-06", vendor: "community", cost_paid: 50 }),
+            ],
+        });
+        const byKey = new Map(
+            vendorPlanes(data).map((row) => [
+                `${row.month}|${row.vendor}`,
+                row.coverage,
+            ]),
+        );
+        expect(byKey.get("2026-06|google")).toBe("ok cash");
+        expect(byKey.get("2026-06|azure")).toBe("ok credit");
+        // aws paid in May for June consumption — adjacent cash, no alarm
+        expect(byKey.get("2026-06|aws")).toBe("cash ±1mo");
+        expect(byKey.get("2026-06|openrouter")).toBe("uncovered");
+        expect(byKey.get("2026-06|community")).toBe("internal");
+    });
+
+    it("flags provider cash the bank never saw", () => {
+        const data = emptyData({
+            providerMonthly: [
+                provider({
+                    month: "2026-05",
+                    vendor: "deepinfra",
+                    paid: 36.26,
+                }),
+            ],
+        });
+        const [row] = vendorPlanes(data);
+        expect(row.coverage).toBe("paid unverified");
+    });
+
+    it("ignores sub-dollar pollen noise", () => {
+        const data = emptyData({
+            pollenMonthly: [
+                usage({ month: "2026-06", vendor: "fal", cost_paid: 0.5 }),
+            ],
+        });
+        const [row] = vendorPlanes(data);
+        expect(row.coverage).toBeNull();
+    });
+});
+
 describe("insightVendorOptions", () => {
     it("unions vendors across planes, compute transactions only", () => {
         const data = emptyData({

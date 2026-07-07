@@ -1,4 +1,5 @@
 import {
+    Chip,
     TableBody,
     TableCell,
     TableHead,
@@ -16,11 +17,27 @@ import {
     withUniqueRowKeys,
 } from "../components/DataTable";
 import { fmtPct, fmtUsd } from "../lib/format";
-import { type VendorPlanes, vendorPlanes } from "../lib/insights";
+import {
+    type Coverage,
+    type VendorPlanes,
+    vendorPlanes,
+} from "../lib/insights";
 import { matchesMonth, monthLabel } from "../lib/months";
 import type { Data } from "../types";
 
 const DELTA_ALARM_PCT = 25;
+
+function CoverageCell({ value }: { value: Coverage }) {
+    if (value == null) return <span className="text-theme-text-soft">–</span>;
+    if (value === "uncovered" || value === "paid unverified") {
+        return (
+            <Chip intent="warning" size="sm">
+                ⚠ {value}
+            </Chip>
+        );
+    }
+    return <span className="text-theme-text-soft">{value}</span>;
+}
 
 export function visiblePlaneRows({
     month,
@@ -64,6 +81,7 @@ export function VendorsTab({
                 key: "providerVsPollenPct",
                 value: (row) => row.providerVsPollenPct,
             },
+            { key: "coverage", value: (row) => row.coverage },
         ],
         [],
     );
@@ -87,7 +105,7 @@ export function VendorsTab({
                             <TableHeaderCell
                                 {...headerProps("transactionsUsd")}
                             >
-                                <HeaderHint hint="Cash actually sent to the vendor: Enty compute invoices, by invoice month. Empty = no invoice landed (credits, Enty lag, or arrears billing).">
+                                <HeaderHint hint="Cash actually sent to the vendor: Wise compute outflows, by transaction month. Empty = no cash left the bank that month (credits, prepaid balance, or arrears billing).">
                                     transactions
                                 </HeaderHint>
                             </TableHeaderCell>
@@ -113,6 +131,11 @@ export function VendorsTab({
                                     hint={`(provider − pollen) / pollen. Positive = the vendor charges more than our registry thinks. Red past ±${DELTA_ALARM_PCT}%.`}
                                 >
                                     Δ provider vs pollen
+                                </HeaderHint>
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("coverage")}>
+                                <HeaderHint hint="Is this consumption funded? ok cash = Wise cash that month · ok credit = provider credit burn · cash ±1mo = cash lands in an adjacent month (prepaid/arrears) · internal = no payment expected · ⚠ uncovered = active in pollen but no funding found · ⚠ paid unverified = provider says we paid cash the bank never saw.">
+                                    coverage
                                 </HeaderHint>
                             </TableHeaderCell>
                         </TableRow>
@@ -144,6 +167,9 @@ export function VendorsTab({
                                 >
                                     {fmtPct(row.providerVsPollenPct)}
                                 </TableCell>
+                                <TableCell>
+                                    <CoverageCell value={row.coverage} />
+                                </TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
@@ -151,9 +177,10 @@ export function VendorsTab({
             </TableScroller>
             <Text size="micro" tone="soft">
                 one spend, three witnesses — transactions: cash from the bank
-                (Enty) · provider: their own meter · pollen: our metering
+                (Wise) · provider: their own meter · pollen: our metering
                 (Pollen ≈ $) · – = that witness has no data, never zero · Δ red
-                when |Δ| &gt; {DELTA_ALARM_PCT}%
+                when |Δ| &gt; {DELTA_ALARM_PCT}% · coverage = every
+                pollen-active vendor-month must be funded by cash or credit
             </Text>
         </div>
     );

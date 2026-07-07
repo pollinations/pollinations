@@ -217,6 +217,23 @@ export function monthSpendDetail(
 
 // ------------------------------------------------------ vendor three-way
 
+// Vendors that never invoice us — community models, our own hardware.
+// Extend as Elliot classifies more (airforce/bpai/seraphyn/inferenceport
+// are still undecided).
+export const INTERNAL_VENDORS = new Set(["community", "self-hosted"]);
+
+// Pollen activity below this is noise, not a funding question.
+const POLLEN_ACTIVE_USD = 1;
+
+export type Coverage =
+    | "ok cash"
+    | "ok credit"
+    | "cash ±1mo"
+    | "internal"
+    | "uncovered"
+    | "paid unverified"
+    | null;
+
 export type VendorPlanes = {
     month: string;
     vendor: string;
@@ -225,7 +242,57 @@ export type VendorPlanes = {
     creditUsd: number | null;
     pollenUsd: number | null;
     providerVsPollenPct: number | null;
+    coverage: Coverage;
 };
+
+function monthShift(month: string, delta: number): string {
+    const total =
+        Number(month.slice(0, 4)) * 12 +
+        (Number(month.slice(5, 7)) - 1) +
+        delta;
+    const year = Math.floor(total / 12);
+    const mon = (total % 12) + 1;
+    return `${String(year).padStart(4, "0")}-${String(mon).padStart(2, "0")}`;
+}
+
+// Every pollen-active vendor-month must be funded somewhere: cash from the
+// bank, provider credit burn, or cash in an adjacent month (prepaid top-ups
+// and arrears invoices land off by one). The inverse also warns: provider
+// says we paid cash, but the bank never saw it.
+function coverageFor({
+    cash,
+    creditUsd,
+    month,
+    pollenUsd,
+    providerUsd,
+    transactionsUsd,
+    vendor,
+}: {
+    cash: Map<string, number>;
+    creditUsd: number | null;
+    month: string;
+    pollenUsd: number | null;
+    providerUsd: number | null;
+    transactionsUsd: number | null;
+    vendor: string;
+}): Coverage {
+    if (INTERNAL_VENDORS.has(vendor)) return "internal";
+
+    const pollenActive = pollenUsd != null && pollenUsd > POLLEN_ACTIVE_USD;
+    const hasCash = transactionsUsd != null;
+    const hasCredit = creditUsd != null && creditUsd > 0;
+    const cashNear =
+        cash.has(`${monthShift(month, -1)}|${vendor}`) ||
+        cash.has(`${monthShift(month, 1)}|${vendor}`);
+    const providerPaid = (providerUsd ?? 0) - (creditUsd ?? 0) > 0;
+
+    if (pollenActive && !hasCash && !hasCredit && !cashNear) return "uncovered";
+    if (providerPaid && !hasCash && !cashNear) return "paid unverified";
+    if (pollenActive && hasCash) return "ok cash";
+    if (pollenActive && hasCredit) return "ok credit";
+    if (pollenActive && cashNear) return "cash ±1mo";
+    return null;
+}
 
 function pctDelta(a: number | null, b: number | null): number | null {
     if (a == null || b == null || b === 0) return null;
@@ -275,15 +342,26 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
         const [month, vendor] = key.split("|");
         const providerEntry = provider.get(key);
         const providerUsd = providerEntry ? providerEntry.total : null;
+        const creditUsd = providerEntry ? providerEntry.credit : null;
         const pollenUsd = pollen.get(key) ?? null;
+        const transactionsUsd = transactions.get(key) ?? null;
         return {
             month,
             vendor,
-            transactionsUsd: transactions.get(key) ?? null,
+            transactionsUsd,
             providerUsd,
-            creditUsd: providerEntry ? providerEntry.credit : null,
+            creditUsd,
             pollenUsd,
             providerVsPollenPct: pctDelta(providerUsd, pollenUsd),
+            coverage: coverageFor({
+                cash: transactions,
+                creditUsd,
+                month,
+                pollenUsd,
+                providerUsd,
+                transactionsUsd,
+                vendor,
+            }),
         };
     });
 }

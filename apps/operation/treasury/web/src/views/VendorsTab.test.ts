@@ -10,6 +10,7 @@ const plane = (month: string, vendor: string): VendorPlanes => ({
     creditUsd: null,
     pollenUsd: 1,
     providerVsPollenPct: null,
+    coverage: null,
 });
 
 describe("visiblePlaneRows", () => {

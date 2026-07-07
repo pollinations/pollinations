@@ -422,8 +422,8 @@ export default function AppsPage() {
                     </div>
 
                     {/* Sort + Legend */}
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-8">
-                        <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-col items-center gap-3 mb-8">
+                        <div className="flex flex-wrap items-center justify-center gap-2">
                             <span className="font-headline text-xs font-black uppercase tracking-wider text-muted">
                                 {pageCopy.sortLabel}
                             </span>
@@ -445,26 +445,13 @@ export default function AppsPage() {
                                 </Button>
                             ))}
                         </div>
-                        <div className="flex flex-col items-start md:items-end gap-0.5 text-xs text-muted">
-                            <span className="inline-flex items-center gap-1 flex-wrap md:flex-nowrap">
+                        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-muted">
+                            <span>
                                 <span className="text-dark font-bold">
                                     {pageCopy.pollenBadge}
                                 </span>
                                 {" = "}
                                 {pageCopy.pollenLegendDesc}
-                                {" · "}
-                                <a
-                                    href={LINKS.byopDocs}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="font-headline font-black text-dark bg-accent-strong px-1.5 py-0.5 hover:underline inline-flex items-center gap-0.5"
-                                >
-                                    {pageCopy.pollenDocsLink}
-                                    <ExternalLinkIcon
-                                        className="w-2.5 h-2.5"
-                                        strokeWidth="4"
-                                    />
-                                </a>
                             </span>
                             <span>
                                 <span className="text-dark font-bold">

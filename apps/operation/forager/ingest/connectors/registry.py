@@ -16,7 +16,6 @@ from .vendors import vast as _vast
 from .vendors import fireworks as _fw
 from .vendors import openai_ as _openai
 
-from .vendors import aws as _aws
 from .vendors import gcp as _gcp
 
 METER: list = [
@@ -24,7 +23,6 @@ METER: list = [
     ("vast.ai", _vast.meter),
     ("ovhcloud", _ovh.meter),
     ("fireworks", _fw.meter),
-    ("aws", _aws.meter),
     ("google", _gcp.meter),
     ("openai", _openai.meter),
 ]

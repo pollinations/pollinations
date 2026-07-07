@@ -44,7 +44,7 @@ does not call AI and does not write Tinybird.
 ```bash
 python3 -m ingest.run --dry-run                      # snapshot + diff, no writes
 python3 -m ingest.run --only provider                   # one table: provider|pollen|revenue|transactions
-python3 -m ingest.run --only provider --vendor aws      # one provider connector
+python3 -m ingest.run --only provider --vendor fireworks   # one provider connector
 python3 -m ingest.run --month 2026-07                # one month, spliced into every table
 python3 -m ingest.run --month 2026-07 --only transactions   # one month of Wise movements
 python3 -m ingest.run --yes                          # allow writes that lose a manual meter row's data

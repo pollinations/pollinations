@@ -54,13 +54,16 @@ Splices the given `YYYY-MM` into the affected tables, including
 ### One vendor (meter)
 
 ```bash
-python3 -m ingest.run --dry-run --only provider --vendor aws
-python3 -m ingest.run --only provider --vendor aws
+python3 -m ingest.run --dry-run --only provider --vendor fireworks
+python3 -m ingest.run --only provider --vendor fireworks
 ```
 
 `--vendor` requires `--only provider` and must be a meter-connector slug:
-`deepinfra | vast.ai | ovhcloud | fireworks | aws | google | openai`.
+`deepinfra | vast.ai | ovhcloud | fireworks | google | openai`.
 Manual-only vendors are updated with `ingest.record`, not here.
+`aws` is manual-only: billing runs through the Automat-it reseller (two AWS
+accounts, reseller-side credits), which Cost Explorer cannot see — record one
+row per month from the Automat-it invoice when it arrives.
 
 ### Add a manual meter row
 

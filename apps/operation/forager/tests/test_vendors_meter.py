@@ -1,6 +1,6 @@
 """Hermetic tests for meter connectors (B5).
 
-Connectors: deepinfra, ovh, vast, fireworks, aws, gcp, openai_.
+Connectors: deepinfra, ovh, vast, fireworks, gcp, openai_.
 All hermetic — http_json monkeypatched; run_cmd injected for CLI connectors.
 No network, no SOPS, no real credentials.
 
@@ -21,7 +21,6 @@ import ingest.connectors.vendors.ovh as _ovh
 import ingest.connectors.vendors.vast as _vast
 import ingest.connectors.vendors.fireworks as _fw
 import ingest.connectors.vendors.openai_ as _oai
-import ingest.connectors.vendors.aws as _aws
 import ingest.connectors.vendors.gcp as _gcp
 from ingest.connectors import registry
 
@@ -511,137 +510,6 @@ def test_fireworks_meter_cli_failure_raises():
 
 
 # ===========================================================================
-# aws.meter
-# ===========================================================================
-
-_AWS_CREDS = {}  # CLI uses ambient profile
-
-_AWS_CASH_RESPONSE = json.dumps({
-    "ResultsByTime": [
-        {
-            "TimePeriod": {"Start": "2026-03-01", "End": "2026-04-01"},
-            "Total": {"UnblendedCost": {"Amount": "300.00", "Unit": "USD"}},
-            "Estimated": False,
-        },
-        {
-            "TimePeriod": {"Start": "2026-04-01", "End": "2026-05-01"},
-            "Total": {"UnblendedCost": {"Amount": "1234.56", "Unit": "USD"}},
-            "Estimated": False,
-        },
-        {
-            "TimePeriod": {"Start": "2026-05-01", "End": "2026-06-01"},
-            "Total": {"UnblendedCost": {"Amount": "0.00", "Unit": "USD"}},
-            "Estimated": False,
-        },
-    ]
-})
-
-_AWS_CREDIT_RESPONSE = json.dumps({
-    "ResultsByTime": [
-        {
-            "TimePeriod": {"Start": "2026-03-01", "End": "2026-04-01"},
-            "Total": {"UnblendedCost": {"Amount": "-300.00", "Unit": "USD"}},
-            "Estimated": False,
-        },
-        {
-            "TimePeriod": {"Start": "2026-04-01", "End": "2026-05-01"},
-            "Total": {"UnblendedCost": {"Amount": "-300.00", "Unit": "USD"}},
-            "Estimated": False,
-        },
-    ]
-})
-
-
-def _aws_run(cmd, **kw):
-    """Fake run_cmd that returns different responses for cash vs credit pass."""
-    flt_str = cmd[cmd.index("--filter") + 1] if "--filter" in cmd else ""
-    flt = json.loads(flt_str) if flt_str else {}
-    if "Not" in flt:
-        # Cash pass (excludes Credit/Refund)
-        return _fake_result(stdout=_AWS_CASH_RESPONSE)
-    else:
-        # Credit pass (RECORD_TYPE=Credit)
-        return _fake_result(stdout=_AWS_CREDIT_RESPONSE)
-
-
-def test_aws_meter_two_passes(_aws_run=_aws_run):
-    """meter() makes two subprocess calls (cash pass + credit pass)."""
-    cmds = []
-    def recording_run(cmd, **kw):
-        cmds.append(cmd)
-        return _aws_run(cmd, **kw)
-    rows = _aws.meter(_AWS_CREDS, ["2026-04", "2026-05"], TODAY, run_cmd=recording_run)
-    assert len(cmds) == 2
-
-
-def test_aws_meter_cash_rows():
-    """Cash rows are net of AWS credits."""
-    rows = _aws.meter(_AWS_CREDS, ["2026-04", "2026-05"], TODAY, run_cmd=_aws_run)
-    cash_rows = [r for r in rows if r["paid"] > 0]
-    assert len(cash_rows) >= 1
-    apr = next((r for r in cash_rows if r["month"] == "2026-04"), None)
-    assert apr is not None
-    assert apr["paid"] == pytest.approx(934.56, abs=0.01)
-
-
-def test_aws_meter_credit_covered_month_has_no_cash_row():
-    """Fully credit-paid months must not surface phantom cash usage."""
-    rows = _aws.meter(_AWS_CREDS, ["2026-03"], TODAY, run_cmd=_aws_run)
-    cash_rows = [r for r in rows if r["paid"] > 0]
-    credit_rows = [r for r in rows if r["credit"] > 0]
-    assert cash_rows == []
-    assert len(credit_rows) == 1
-    assert credit_rows[0]["credit"] == pytest.approx(300.0, abs=0.01)
-
-
-def test_aws_meter_credit_rows():
-    """Credit pass rows populate credit with absolute value."""
-    rows = _aws.meter(_AWS_CREDS, ["2026-04"], TODAY, run_cmd=_aws_run)
-    credit_rows = [r for r in rows if r["credit"] > 0]
-    assert len(credit_rows) >= 1
-    apr = next((r for r in credit_rows if r["month"] == "2026-04"), None)
-    assert apr is not None
-    assert apr["credit"] == pytest.approx(300.0, abs=0.01)
-
-
-def test_aws_meter_source_cli():
-    """All meter rows must have source=cli."""
-    rows = _aws.meter(_AWS_CREDS, ["2026-04"], TODAY, run_cmd=_aws_run)
-    for r in rows:
-        assert r["source"] == "cli"
-
-
-def test_aws_meter_zero_excluded():
-    """Zero-cost month (2026-05 cash = 0.00) must not produce a row."""
-    rows = _aws.meter(_AWS_CREDS, ["2026-04", "2026-05"], TODAY, run_cmd=_aws_run)
-    zero_months = [r for r in rows if r["month"] == "2026-05" and r["paid"] > 0]
-    assert zero_months == []
-
-
-def test_aws_meter_vendor_slug():
-    """Vendor slug must be 'aws'."""
-    rows = _aws.meter(_AWS_CREDS, ["2026-04"], TODAY, run_cmd=_aws_run)
-    for r in rows:
-        assert r["vendor"] == "aws"
-
-
-def test_aws_meter_run_cmd_error_propagates():
-    """run_cmd raising (e.g. JSON parse error) must propagate — not be swallowed."""
-    def raising_run(cmd, **kw):
-        raise RuntimeError("aws CE connection refused")
-
-    with pytest.raises(RuntimeError, match="aws CE connection refused"):
-        _aws.meter(_AWS_CREDS, ["2026-04"], TODAY, run_cmd=raising_run)
-
-
-def test_aws_meter_bad_json_propagates():
-    """Non-JSON stdout raises JSONDecodeError — not silently returns []."""
-    fake_run = lambda cmd, **kw: _fake_result(stdout="NOT JSON", returncode=0)
-    with pytest.raises(Exception):
-        _aws.meter(_AWS_CREDS, ["2026-04"], TODAY, run_cmd=fake_run)
-
-
-# ===========================================================================
 # gcp.meter
 # ===========================================================================
 
@@ -948,15 +816,18 @@ def test_openai_meter_vendor_slug(monkeypatch):
 # ===========================================================================
 
 def test_meter_registry_populated():
-    """METER must contain 7 entries after B5."""
-    assert len(registry.METER) == 7
+    """METER must contain 6 entries (aws retired 2026-07: billing moved to the
+    Automat-it reseller, whose credits/accounts Cost Explorer cannot see;
+    aws rows are manual from the monthly reseller invoice)."""
+    assert len(registry.METER) == 6
 
 
 def test_meter_registry_slugs():
-    """METER must contain all seven vendor slugs."""
+    """METER must contain all six vendor slugs."""
     slugs = {slug for slug, _ in registry.METER}
-    for expected in ("deepinfra", "vast.ai", "ovhcloud", "fireworks", "aws", "google", "openai"):
+    for expected in ("deepinfra", "vast.ai", "ovhcloud", "fireworks", "google", "openai"):
         assert expected in slugs, f"METER missing: {expected}"
+    assert "aws" not in slugs, "aws CE connector was retired; rows are manual"
 
 
 def test_meter_slugs_in_canonical():

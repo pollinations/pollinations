@@ -67,7 +67,7 @@ def checks():
         out.append(("freshness", False, False, str(e)[:120]))
 
     # SOFT: CLI tools required by connectors
-    _clis = ["vastai", "firectl", "aws", "bq"]
+    _clis = ["vastai", "firectl", "bq"]
     missing = [cli for cli in _clis if not shutil.which(cli)]
     out.append(("clis", False, not missing,
                 "all present" if not missing else f"missing: {', '.join(missing)}"))

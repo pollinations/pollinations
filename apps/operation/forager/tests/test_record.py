@@ -99,8 +99,8 @@ def test_meter_is_list():
 
 
 def test_meter_is_populated():
-    # METER is populated in B5 with 7 connectors.
-    assert len(registry.METER) == 7
+    # 6 connectors since the aws CE connector was retired (manual invoice rows).
+    assert len(registry.METER) == 6
 
 
 class _FakeTB:

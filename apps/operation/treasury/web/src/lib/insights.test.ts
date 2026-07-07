@@ -868,19 +868,23 @@ describe("creditRunway", () => {
         expect(ovh.grantedUsd).toBeCloseTo(1155.8, 5); // 1000 × 1.1558 (Mar)
     });
 
-    it("prorates the running month into a rate and projects the burn depletion date", () => {
+    it("projects depletion from last full-month base and current-month intensity", () => {
         const data = emptyData({
             grants: [grant({ vendor: "lambda", granted: 1000 })],
             providerMonthly: [
+                provider({ month: "2026-06", vendor: "lambda", credit: 100 }),
                 provider({ month: "2026-07", vendor: "lambda", credit: 80 }),
             ],
         });
         const [row] = creditRunway(data, NOW);
         expect(row.currentMonthBurnUsd).toBe(80);
+        expect(row.lastMonthBurnUsd).toBe(100);
+        // June close had $900 left. July consumed $80 so far, leaving $820
+        // at $10/day from the current-month intensity.
+        expect(row.remainingUsd).toBe(820);
         expect(row.rateBasis).toBe("current");
         expect(row.monthlyRateUsd).toBeCloseTo((80 / 8) * 30.44, 5);
-        // remaining 920 at $10/day → 92 days from Jul 8
-        expect(row.depletionDate).toBe("2026-10-08");
+        expect(row.depletionDate).toBe("2026-09-28");
         expect(row.depletionReason).toBe("burn");
     });
 

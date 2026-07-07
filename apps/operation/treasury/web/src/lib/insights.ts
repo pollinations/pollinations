@@ -824,10 +824,12 @@ export function allocateGrants(
 
 // Where do credits stand NOW — the lens ignores the global period filter and
 // reads pre-window burn rows every other lens excludes. Remaining counts only
-// non-expired grant capacity (expired remainders lapse); burn rate prefers
-// the running month prorated by elapsed days, else the last complete month.
+// non-expired grant capacity (expired remainders lapse). Burn depletion starts
+// from the last full-month close, deducts the running month's witnessed burn,
+// then divides the live remainder by this month's daily burn intensity. When
+// the running month is silent, the last complete month is the fallback signal.
 // Vendors whose pools are done (remaining ≈ 0) carry finished=true and their
-// finish date — the tab shows them in a separate table.
+// finish date.
 export function creditRunway(data: Data, now: Date): RunwayRow[] {
     const today = now.toISOString().slice(0, 10);
     const currentMonth = today.slice(0, 7);
@@ -928,6 +930,8 @@ export function creditRunway(data: Data, now: Date): RunwayRow[] {
         if (!row.finished) {
             let burnDate: string | null = null;
             if (row.monthlyRateUsd && row.remainingUsd > 0) {
+                // remainingUsd is the last full-month close minus this
+                // month's witnessed burn, so this projects from today.
                 const days =
                     (row.remainingUsd / row.monthlyRateUsd) *
                     AVG_DAYS_PER_MONTH;

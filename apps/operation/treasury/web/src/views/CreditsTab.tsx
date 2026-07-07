@@ -142,7 +142,6 @@ export function CreditsTab({
                 key: "currentMonthBurnUsd",
                 value: (row) => row.currentMonthBurnUsd,
             },
-            { key: "monthlyRateUsd", value: (row) => row.monthlyRateUsd },
             { key: "depletionDate", value: (row) => row.depletionDate },
             { key: "flags", value: (row) => row.flags.join(", ") },
         ],
@@ -205,24 +204,19 @@ export function CreditsTab({
                                 {...headerProps("lastMonthBurnUsd")}
                             >
                                 <HeaderHint hint="Credit burn in the last complete month.">
-                                    last mo
+                                    last month
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
                                 {...headerProps("currentMonthBurnUsd")}
                             >
                                 <HeaderHint hint="Credit burn so far in the running month.">
-                                    this mo
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("monthlyRateUsd")}>
-                                <HeaderHint hint="Monthly burn rate: running month prorated by elapsed days; falls back to the last complete month when the running month is silent.">
-                                    rate /mo
+                                    this month
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("depletionDate")}>
-                                <HeaderHint hint="Active rows show the earlier of credit exhaustion at the current rate and the next grant expiry. Finished rows show when the pool ended. Red < 30 days, amber < 90.">
-                                    depletes
+                                <HeaderHint hint="Active rows show the earlier of credit exhaustion and the next grant expiry. Burn depletion uses last full month as the base, deducts this month's consumed credit, then projects runway from this month's daily intensity. Finished rows show when the pool ended. Red < 30 days, amber < 90.">
+                                    depletion
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("flags")}>
@@ -267,36 +261,6 @@ export function CreditsTab({
                                     </TableCell>
                                     <TableCell className="text-theme-text-soft">
                                         {fmtUsd(row.currentMonthBurnUsd)}
-                                    </TableCell>
-                                    <TableCell>
-                                        {row.monthlyRateUsd == null ? (
-                                            <span className="text-theme-text-soft">
-                                                –
-                                            </span>
-                                        ) : (
-                                            <span
-                                                className={
-                                                    row.rateBasis === "stale"
-                                                        ? "text-theme-text-soft"
-                                                        : undefined
-                                                }
-                                                title={
-                                                    row.rateBasis === "current"
-                                                        ? "prorated from the running month"
-                                                        : row.rateBasis ===
-                                                            "last"
-                                                          ? "last complete month"
-                                                          : "latest witnessed month — this vendor's burn is deducted at invoice time, so recent months lag (see flags)"
-                                                }
-                                            >
-                                                {fmtUsd(row.monthlyRateUsd)}
-                                                {row.rateBasis === "last"
-                                                    ? " ·"
-                                                    : row.rateBasis === "stale"
-                                                      ? " ··"
-                                                      : ""}
-                                            </span>
-                                        )}
                                     </TableCell>
                                     <TableCell
                                         className={depletionTone(
@@ -346,8 +310,12 @@ export function CreditsTab({
                                 <TableRow>
                                     <TableHeaderCell>vendor</TableHeaderCell>
                                     <TableHeaderCell>burned</TableHeaderCell>
-                                    <TableHeaderCell>last mo</TableHeaderCell>
-                                    <TableHeaderCell>this mo</TableHeaderCell>
+                                    <TableHeaderCell>
+                                        last month
+                                    </TableHeaderCell>
+                                    <TableHeaderCell>
+                                        this month
+                                    </TableHeaderCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>

@@ -28,9 +28,7 @@ export function TableScroller({ children }: { children: ReactNode }) {
 }
 
 export function DataTable({ children }: { children: ReactNode }) {
-    return (
-        <Table className="w-full min-w-max whitespace-nowrap">{children}</Table>
-    );
+    return <Table className="min-w-full">{children}</Table>;
 }
 
 // Column-header label with a how-is-this-computed hover. Only calculated

@@ -38,9 +38,6 @@ function Pill({
     );
 }
 
-// Global period picker: one pill per year (= that whole year) and one pill
-// per month with data, all always visible. Lives in each affected tab's
-// filter row; the selection itself is app-global.
 export function MonthFilter({
     months,
     onChange,
@@ -102,7 +99,7 @@ export function FilterSelect({
             <span>{label}</span>
             <Dropdown
                 trigger={(open) => (
-                    <Button size="sm" className="max-w-56 gap-2">
+                    <Button className="max-w-56 gap-2">
                         <span className="truncate">{value || "(blank)"}</span>
                         <ChevronIcon expanded={open} />
                     </Button>

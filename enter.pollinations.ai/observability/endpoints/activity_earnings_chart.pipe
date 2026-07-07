@@ -9,30 +9,48 @@ TOKEN "tinybird_read" READ
 NODE activity_earnings_chart_node
 SQL >
     %
+    -- Inner scope uses *_sum aliases so aggregate aliases never shadow the
+    -- source columns (ClickHouse rejects a shadowed alias inside sumIf).
     SELECT
-        if(
-            {{ String(grain, 'day') }} = 'hour',
-            formatDateTime(toStartOfHour(timestamp), '%F %T'),
-            formatDateTime(toStartOfDay(timestamp), '%F')
-        ) AS date,
+        date,
         entity_id,
         entity_name,
         source,
-        count() AS requests,
-        countIf(meter_source = 'pack') AS paid_requests,
-        countIf(meter_source = 'tier') AS tier_requests,
-        sum(baseline_price) AS baseline_price,
-        sum(pollen_earned) AS pollen_earned,
-        sumIf(pollen_earned, meter_source = 'pack') AS paid_earned,
-        sumIf(pollen_earned, meter_source = 'tier') AS tier_earned,
-        sum(cost_usd) AS cost_usd,
-        avg(reward_rate) AS reward_rate
-    FROM activity_earnings_events
-    WHERE
-        dev_user_id = {{ String(dev_user_id, '') }}
-        {% if defined(since) %} AND timestamp >= {{ DateTime(since) }} {% end %}
-        {% if defined(until) %} AND timestamp < {{ DateTime(until) }} {% end %}
-    GROUP BY date, entity_id, entity_name, source
+        requests,
+        paid_requests,
+        tier_requests,
+        baseline_price_sum AS baseline_price,
+        pollen_earned_sum AS pollen_earned,
+        paid_earned,
+        tier_earned,
+        price_sum AS cost_usd,
+        reward_rate_avg AS reward_rate
+    FROM (
+        SELECT
+            if(
+                {{ String(grain, 'day') }} = 'hour',
+                formatDateTime(toStartOfHour(timestamp), '%F %T'),
+                formatDateTime(toStartOfDay(timestamp), '%F')
+            ) AS date,
+            entity_id,
+            entity_name,
+            source,
+            count() AS requests,
+            countIf(meter_source = 'pack') AS paid_requests,
+            countIf(meter_source = 'tier') AS tier_requests,
+            sum(baseline_price) AS baseline_price_sum,
+            sum(pollen_earned) AS pollen_earned_sum,
+            sumIf(pollen_earned, meter_source = 'pack') AS paid_earned,
+            sumIf(pollen_earned, meter_source = 'tier') AS tier_earned,
+            sum(price_usd) AS price_sum,
+            avg(reward_rate) AS reward_rate_avg
+        FROM activity_earnings_events
+        WHERE
+            dev_user_id = {{ String(dev_user_id, '') }}
+            {% if defined(since) %} AND timestamp >= {{ DateTime(since) }} {% end %}
+            {% if defined(until) %} AND timestamp < {{ DateTime(until) }} {% end %}
+        GROUP BY date, entity_id, entity_name, source
+    )
     ORDER BY date DESC, entity_id, entity_name, source
 
 TYPE endpoint

@@ -17,7 +17,7 @@ SQL >
         resolved_model as model,
         meter_source,
         count() as requests,
-        sum(cost_usd) as cost_usd
+        sum(price_usd) as cost_usd
     FROM activity_usage_events
     WHERE
         user_id = {{ String(user_id, '') }}

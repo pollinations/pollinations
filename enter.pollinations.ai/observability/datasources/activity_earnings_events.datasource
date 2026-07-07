@@ -1,6 +1,8 @@
 DESCRIPTION >
     Developer earning events for Activity dashboard earnings charts, transactions, and CSV export.
     Includes BYOP app markup and community model reward earnings.
+    price_usd is the gross price charged to the end user for BYOP rows; for
+    community model rows it is the baseline (dev) price the reward is based on.
 
 TOKEN "tinybird_read" READ
 
@@ -14,10 +16,11 @@ SCHEMA >
     `model` LowCardinality(String),
     `meter_source` LowCardinality(String),
     `baseline_price` Float64,
-    `cost_usd` Float64,
+    `price_usd` Float64,
     `pollen_earned` Float64,
     `reward_rate` Float64
 
 ENGINE MergeTree
 ENGINE_PARTITION_KEY toYYYYMM(timestamp)
 ENGINE_SORTING_KEY dev_user_id, timestamp, event_id
+ENGINE_TTL timestamp + toIntervalMonth(12)

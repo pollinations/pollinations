@@ -20,12 +20,11 @@ SQL >
             'unknown'
         ) AS meter_source,
         dev_price AS baseline_price,
-        total_price AS cost_usd,
+        total_price AS price_usd,
         total_price - dev_price AS pollen_earned,
         markup_rate AS reward_rate
     FROM generation_event
     WHERE api_key_created_for_user_id != 'undefined'
-      AND markup_rate > 0
       AND total_price > dev_price
       AND start_time >= toDateTime('2026-01-01 00:00:00')
 

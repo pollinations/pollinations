@@ -26,7 +26,7 @@ SQL >
         output_audio_seconds,
         output_image_tokens,
         output_video_seconds,
-        cost_usd,
+        price_usd as cost_usd,
         response_time_ms
     FROM activity_usage_events
     WHERE

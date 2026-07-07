@@ -17,7 +17,7 @@ SQL >
             'unknown'
         ) AS meter_source,
         dev_price AS baseline_price,
-        dev_price AS cost_usd,
+        dev_price AS price_usd,
         community_model_reward_amount AS pollen_earned,
         community_model_reward_rate AS reward_rate
     FROM generation_event

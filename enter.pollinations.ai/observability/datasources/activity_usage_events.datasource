@@ -24,9 +24,10 @@ SCHEMA >
     `output_audio_seconds` Float64,
     `output_image_tokens` UInt32,
     `output_video_seconds` Float64,
-    `cost_usd` Float64,
+    `price_usd` Float64,
     `response_time_ms` Float32
 
 ENGINE MergeTree
 ENGINE_PARTITION_KEY toYYYYMM(timestamp)
 ENGINE_SORTING_KEY user_id, timestamp, event_id
+ENGINE_TTL timestamp + toIntervalMonth(12)

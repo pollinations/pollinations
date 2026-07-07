@@ -28,7 +28,7 @@ SQL >
         token_count_completion_audio_seconds AS output_audio_seconds,
         token_count_completion_image AS output_image_tokens,
         token_count_completion_video_seconds AS output_video_seconds,
-        total_price AS cost_usd,
+        total_price AS price_usd,
         response_time AS response_time_ms
     FROM generation_event
     WHERE total_price > 0

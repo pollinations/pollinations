@@ -21,15 +21,13 @@ import { drizzle } from "drizzle-orm/d1";
 import { createMiddleware } from "hono/factory";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
-import type { ModelVariables } from "@/middleware/model.ts";
 import { EXCLUDED_PARAMS } from "@/utils/media-cache.ts";
 
 const CATALOG_HOST = "https://gen.pollinations.ai";
-const MAX_PROMPT_LENGTH = 2000;
 
 type MediaCatalogEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables & AuthVariables & Partial<ModelVariables>;
+    Variables: LoggerVariables & AuthVariables;
 };
 
 // Splits comma-separated `tags` values. Same field name as
@@ -58,21 +56,6 @@ function buildCanonicalLocator(url: URL): string {
     const query = search.toString();
 
     return `${CATALOG_HOST}${url.pathname}${query ? `?${query}` : ""}`;
-}
-
-// Extracts and decodes the prompt segment following `/image/` or `/video/` in
-// the request path, truncated to MAX_PROMPT_LENGTH.
-function extractPrompt(pathname: string): string | null {
-    const match = pathname.match(/^\/(?:image|video)\/([\s\S]+)$/);
-    if (!match) return null;
-    const raw = match[1];
-    let decoded: string;
-    try {
-        decoded = decodeURIComponent(raw);
-    } catch {
-        decoded = raw;
-    }
-    return decoded.slice(0, MAX_PROMPT_LENGTH);
 }
 
 export const mediaCatalog = createMiddleware<MediaCatalogEnv>(
@@ -116,8 +99,6 @@ export const mediaCatalog = createMiddleware<MediaCatalogEnv>(
         if (c.res.status !== 200) return;
 
         const locator = buildCanonicalLocator(url);
-        const prompt = extractPrompt(url.pathname);
-        const model = c.var.model?.resolved ?? null;
         const appKeyId = c.var.auth?.apiKey?.byopClientKeyId ?? null;
         const contentType =
             c.res.headers.get("content-type") || "application/octet-stream";
@@ -129,8 +110,6 @@ export const mediaCatalog = createMiddleware<MediaCatalogEnv>(
                 appKeyId,
                 locator,
                 contentType,
-                model,
-                prompt,
                 tags,
             }).catch((error) => {
                 log.error("Failed to write media catalog item: {error}", {

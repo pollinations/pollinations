@@ -942,8 +942,6 @@ test("tagged image generation catalogs the generation in D1", async ({
         kind: "generation",
         ownerUserId: userId,
         locator,
-        prompt: "vcr tagged square",
-        model: "flux",
     });
     expect(tagsByItem.get(items[0].id)).toEqual(["sunset"]);
 });

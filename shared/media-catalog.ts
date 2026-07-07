@@ -59,8 +59,6 @@ export interface UpsertGenerationCatalogItemParams {
     appKeyId: string | null;
     locator: string;
     contentType: string;
-    model: string | null;
-    prompt: string | null;
     tags: string[];
 }
 
@@ -83,8 +81,6 @@ export async function upsertGenerationCatalogItem(
             appKeyId: params.appKeyId,
             contentType: params.contentType,
             size: null,
-            model: params.model,
-            prompt: params.prompt,
             createdAt: now,
         })
         .onConflictDoUpdate({
@@ -94,8 +90,6 @@ export async function upsertGenerationCatalogItem(
             // the top of newest-first feeds.
             set: {
                 contentType: params.contentType,
-                model: params.model,
-                prompt: params.prompt,
             },
         })
         .returning({ id: mediaItem.id });

@@ -1,4 +1,4 @@
-// Media catalog: D1-backed metadata for stored media (tags, prompt, model,
+// Media catalog: D1-backed metadata for stored media (tags, reactions,
 // galleries). Blobs stay in R2 — this module only indexes them. Writes are
 // awaited inline on the upload path (no waitUntil): a D1 failure surfaces as
 // a 500 rather than silently dropping catalog data.
@@ -93,8 +93,6 @@ export interface UpsertUploadParams {
     locator: string;
     contentType: string;
     size: number;
-    model: string | null;
-    prompt: string | null;
     tags: string[];
 }
 
@@ -117,8 +115,6 @@ export async function upsertUploadCatalogItem(
             appKeyId: params.appKeyId,
             contentType: params.contentType,
             size: params.size,
-            model: params.model,
-            prompt: params.prompt,
             createdAt: now,
         })
         .onConflictDoUpdate({
@@ -129,8 +125,6 @@ export async function upsertUploadCatalogItem(
             set: {
                 contentType: params.contentType,
                 size: params.size,
-                model: params.model,
-                prompt: params.prompt,
             },
         })
         .returning({ id: mediaItem.id });
@@ -159,8 +153,6 @@ export interface CatalogItem {
     locator: string;
     contentType: string;
     size: number | null;
-    model: string | null;
-    prompt: string | null;
     createdAt: Date;
 }
 
@@ -235,8 +227,6 @@ export async function listUserMedia(
                 locator: mediaItem.locator,
                 contentType: mediaItem.contentType,
                 size: mediaItem.size,
-                model: mediaItem.model,
-                prompt: mediaItem.prompt,
                 createdAt: mediaItem.createdAt,
             })
             .from(mediaItem)
@@ -254,8 +244,6 @@ export async function listUserMedia(
             locator: mediaItem.locator,
             contentType: mediaItem.contentType,
             size: mediaItem.size,
-            model: mediaItem.model,
-            prompt: mediaItem.prompt,
             createdAt: mediaItem.createdAt,
         })
         .from(mediaItem)
@@ -300,8 +288,6 @@ export async function listByTag(
             locator: mediaItem.locator,
             contentType: mediaItem.contentType,
             size: mediaItem.size,
-            model: mediaItem.model,
-            prompt: mediaItem.prompt,
             createdAt: mediaItem.createdAt,
             taggedAt: mediaTag.createdAt,
         })

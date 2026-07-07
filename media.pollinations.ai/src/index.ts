@@ -89,9 +89,6 @@ function mediaUrl(hash: string): string {
     return `https://${DOMAIN}/${hash}`;
 }
 
-const MAX_PROMPT_LENGTH = 2000;
-const MAX_MODEL_LENGTH = 128;
-
 // Splits comma-separated `tags` values. Accepts the same field name whether it
 // came from a query string, multipart form field, or JSON body field. Non-string
 // entries (possible from an arbitrary JSON body) are ignored rather than throwing.
@@ -108,56 +105,21 @@ function collectTags(getAll: (key: string) => string[]): string[] {
     return splitTags(getAll("tags"));
 }
 
-interface UploadMetadata {
-    tags: string[];
-    prompt: string | null;
-    model: string | null;
-}
+class TagValidationError extends Error {}
 
-class MetadataValidationError extends Error {}
-
-function validateMetadata(
-    rawTags: string[],
-    rawPrompt: string | null | undefined,
-    rawModel: string | null | undefined,
-): UploadMetadata {
-    let tags: string[];
+function validateTags(rawTags: string[]): string[] {
     try {
-        tags = normalizeTags(rawTags);
+        return normalizeTags(rawTags);
     } catch (error) {
         if (error instanceof TagError) {
-            throw new MetadataValidationError(error.message);
+            throw new TagValidationError(error.message);
         }
         throw error;
     }
-
-    const prompt = rawPrompt?.trim() || null;
-    if (prompt && prompt.length > MAX_PROMPT_LENGTH) {
-        throw new MetadataValidationError(
-            `Prompt too long: ${prompt.length} chars (max ${MAX_PROMPT_LENGTH}).`,
-        );
-    }
-
-    const model = rawModel?.trim() || null;
-    if (model && model.length > MAX_MODEL_LENGTH) {
-        throw new MetadataValidationError(
-            `Model name too long: ${model.length} chars (max ${MAX_MODEL_LENGTH}).`,
-        );
-    }
-
-    return { tags, prompt, model };
 }
 
 const REACTION_PATTERN_DESCRIPTION =
     "lowercase letters, digits, and _- (not leading), max 32 chars";
-
-function hasMetadata(metadata: UploadMetadata): boolean {
-    return (
-        metadata.tags.length > 0 ||
-        metadata.prompt !== null ||
-        metadata.model !== null
-    );
-}
 
 // Item shape shared by /me/media and /tags/:tag — never exposes
 // ownerUserId/appKeyId.
@@ -168,8 +130,6 @@ interface MediaItemResponse {
     contentType: string;
     size: number | null;
     tags: string[];
-    prompt: string | null;
-    model: string | null;
     createdAt: string;
     reactions: Record<string, number>;
     myReactions?: string[];
@@ -188,8 +148,6 @@ function toItemResponse(
         contentType: item.contentType,
         size: item.size,
         tags: tagsByItem.get(item.id) ?? [],
-        prompt: item.prompt,
-        model: item.model,
         createdAt: item.createdAt.toISOString(),
         reactions: reactionsByItem.get(item.id) ?? {},
         ...(myReactionsByItem
@@ -260,8 +218,6 @@ const MediaItemResponseSchema = z.object({
     contentType: z.string(),
     size: z.number().int().nullable().describe("File size in bytes"),
     tags: z.array(z.string()),
-    prompt: z.string().nullable(),
-    model: z.string().nullable(),
     createdAt: z.string().describe("ISO-8601 timestamp"),
     reactions: z
         .record(z.string(), z.number().int())
@@ -406,7 +362,7 @@ api.post(
         tags: ["media.pollinations.ai"],
         summary: "Upload media",
         description:
-            "Upload an image, audio, or video file via multipart/form-data (field `file`) or application/json (base64 `data`). Returns a content-addressed hash URL. The hash includes the filename, so the same content with different filenames gets different URLs. Files are retained for 30 days; re-uploading resets the timer. Optional `tags`, `prompt`, and `model` fields catalog the upload to your media library; tags make it publicly visible on /tags/:tag. **Alpha:** the catalog metadata fields are new and may still change.",
+            "Upload an image, audio, or video file via multipart/form-data (field `file`) or application/json (base64 `data`). Returns a content-addressed hash URL. The hash includes the filename, so the same content with different filenames gets different URLs. Files are retained for 30 days; re-uploading resets the timer. An optional `tags` field catalogs the upload to your media library and makes it publicly visible on /tags/:tag. **Alpha:** the catalog tagging is new and may still change.",
         requestBody: {
             content: {
                 "multipart/form-data": {
@@ -423,15 +379,6 @@ api.post(
                                 type: "string",
                                 description:
                                     "Comma-separated catalog tags (makes the item public).",
-                            },
-                            prompt: {
-                                type: "string",
-                                description: "Prompt to store with the item.",
-                            },
-                            model: {
-                                type: "string",
-                                description:
-                                    "Model name to store with the item.",
                             },
                         },
                     },
@@ -466,15 +413,6 @@ api.post(
                                 ],
                                 description:
                                     "Catalog tags (makes the item public): a comma-separated string or an array of strings.",
-                            },
-                            prompt: {
-                                type: "string",
-                                description: "Prompt to store with the item.",
-                            },
-                            model: {
-                                type: "string",
-                                description:
-                                    "Model name to store with the item.",
                             },
                         },
                     },
@@ -537,8 +475,6 @@ api.post(
         const requestContentType = c.req.header("content-type") || "";
         const queryUrl = new URL(c.req.url);
         const rawTags = collectTags((key) => queryUrl.searchParams.getAll(key));
-        let rawPrompt = queryUrl.searchParams.get("prompt");
-        let rawModel = queryUrl.searchParams.get("model");
 
         try {
             if (requestContentType.includes("multipart/form-data")) {
@@ -572,24 +508,12 @@ api.post(
                             ),
                     ),
                 );
-                rawPrompt =
-                    rawPrompt ??
-                    (typeof formData.get("prompt") === "string"
-                        ? (formData.get("prompt") as string)
-                        : null);
-                rawModel =
-                    rawModel ??
-                    (typeof formData.get("model") === "string"
-                        ? (formData.get("model") as string)
-                        : null);
             } else if (requestContentType.includes("application/json")) {
                 const body = await c.req.json<{
                     data: string;
                     contentType?: string;
                     name?: string;
                     tags?: string | string[];
-                    prompt?: string;
-                    model?: string;
                 }>();
 
                 if (!body.data) {
@@ -627,8 +551,6 @@ api.post(
                         : [body.tags];
                     rawTags.push(...splitTags(tagValues));
                 }
-                rawPrompt = rawPrompt ?? body.prompt ?? null;
-                rawModel = rawModel ?? body.model ?? null;
             } else {
                 return c.json(
                     {
@@ -638,17 +560,17 @@ api.post(
                 );
             }
 
-            let metadata: UploadMetadata;
+            let tags: string[];
             try {
-                metadata = validateMetadata(rawTags, rawPrompt, rawModel);
+                tags = validateTags(rawTags);
             } catch (error) {
-                if (error instanceof MetadataValidationError) {
+                if (error instanceof TagValidationError) {
                     return c.json({ error: error.message }, 400);
                 }
                 throw error;
             }
 
-            if (authResult.userId === null && hasMetadata(metadata)) {
+            if (authResult.userId === null && tags.length > 0) {
                 return c.json(
                     { error: "cataloging requires a user-owned API key" },
                     400,
@@ -676,9 +598,8 @@ api.post(
             // Catalog write is awaited inline (not waitUntil): a D1 failure
             // must surface as a 500, not be silently swallowed. Every upload
             // by a user-owned key is cataloged (personal media library);
-            // keys with no user never catalog — metadata on them was
-            // rejected above, and without one there's no owner to attribute
-            // a row to.
+            // keys with no user never catalog — tags on them were rejected
+            // above, and without one there's no owner to attribute a row to.
             let storedTags: string[] | undefined;
             if (authResult.userId !== null) {
                 const db = getDb(c.env.DB);
@@ -688,11 +609,9 @@ api.post(
                     locator: hash,
                     contentType,
                     size: fileBuffer.byteLength,
-                    model: metadata.model,
-                    prompt: metadata.prompt,
-                    tags: metadata.tags,
+                    tags,
                 });
-                storedTags = metadata.tags;
+                storedTags = tags;
             }
 
             console.log(
@@ -1211,7 +1130,7 @@ app.get("/", (c) => {
         service: DOMAIN,
         version: "1.0.0",
         endpoints: {
-            upload: "POST /upload (requires API key; optional tags/prompt/model)",
+            upload: "POST /upload (requires API key; optional tags)",
             retrieve: "GET /:hash",
             metadata: "GET /:hash/metadata",
             myMedia: "GET /me/media (requires user-owned API key)",

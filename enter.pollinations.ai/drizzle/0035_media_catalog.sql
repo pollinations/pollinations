@@ -6,8 +6,6 @@ CREATE TABLE `media_item` (
 	`app_key_id` text,
 	`content_type` text NOT NULL,
 	`size` integer,
-	`model` text,
-	`prompt` text,
 	`created_at` integer NOT NULL,
 	FOREIGN KEY (`owner_user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
 );

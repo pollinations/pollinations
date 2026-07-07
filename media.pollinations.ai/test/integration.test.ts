@@ -39,8 +39,6 @@ interface MediaItemResponse {
     contentType: string;
     size: number | null;
     tags: string[];
-    prompt: string | null;
-    model: string | null;
     createdAt: string;
     reactions: Record<string, number>;
     myReactions?: string[];
@@ -168,8 +166,6 @@ async function uploadViaForm(
         fileName?: string;
         bytes?: Uint8Array;
         tags?: string[];
-        prompt?: string;
-        model?: string;
         extraFields?: Record<string, string>;
     } = {},
 ): Promise<{ status: number; body: UploadResponse | { error: string } }> {
@@ -181,8 +177,6 @@ async function uploadViaForm(
     if (options.tags && options.tags.length > 0) {
         form.append("tags", options.tags.join(","));
     }
-    if (options.prompt) form.append("prompt", options.prompt);
-    if (options.model) form.append("model", options.model);
     for (const [field, value] of Object.entries(options.extraFields ?? {})) {
         form.append(field, value);
     }

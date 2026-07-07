@@ -27,8 +27,6 @@ export const mediaItem = sqliteTable(
         appKeyId: text("app_key_id"),
         contentType: text("content_type").notNull(),
         size: integer("size"),
-        model: text("model"),
-        prompt: text("prompt"),
         createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
     },
     (table) => [

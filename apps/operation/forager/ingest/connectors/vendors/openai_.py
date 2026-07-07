@@ -1,7 +1,13 @@
-"""OpenAI organization costs connector.
+"""OpenAI organization costs connector — grant waterfall.
 
 Fetches spend from the Organization Costs API (paginated, 1d buckets).
 meter() buckets daily results by month → provider_monthly rows.
+
+Funding (dashboard-witnessed 2026-07-07): ONE credit grant of $1,565.58
+received 2025-12-04, expires 2026-08-01 ($411.19 left at the reading —
+reconciles with this API to the dollar). Usage from GRANT_FROM is credit
+until the grant exhausts or past GRANT_LAST_MONTH (expiry), cash after.
+Aug–Nov 2025 pre-grant usage was card auto-recharges (manual paid rows).
 
 Endpoint: GET https://api.openai.com/v1/organization/costs
 Auth: Bearer OPENAI_ADMIN_KEY
@@ -19,6 +25,10 @@ from . import _mrow
 
 _DEFAULT_GRANT_START = "2025-12-01"
 _COSTS_URL = "https://api.openai.com/v1/organization/costs"
+
+GRANT_USD = 1_565.58
+GRANT_FROM = "2025-12"
+GRANT_LAST_MONTH = "2026-07"  # credits expire 2026-08-01
 
 
 def _epoch(day):
@@ -71,10 +81,12 @@ def _fetch_costs_with_buckets(key, start_day):
 
 
 def meter(creds, months, today):
-    """Fetch OpenAI metered spend per month, bucketed from daily cost data.
+    """Fetch OpenAI metered spend per month, credit/paid via the waterfall.
 
-    Reuses the B4 costs pagination; groups 1d buckets by UTC month.
-    Rides the grant → funding=credit.
+    Reuses the B4 costs pagination; groups 1d buckets by UTC month. The
+    waterfall always walks from GRANT_FROM so scoped runs still see the
+    grant state; only the requested months are emitted. Credit stops when
+    the grant exhausts or after GRANT_LAST_MONTH (the Aug 1 expiry).
 
     Args:
         creds:  dict with OPENAI_ADMIN_KEY (and optionally OPENAI_GRANT_START)
@@ -82,7 +94,8 @@ def meter(creds, months, today):
         today:  current ingest date
 
     Returns:
-        list of _mrow dicts with funding=credit for nonzero months
+        list of _mrow dicts — at most one credit and one cash row per month
+        (merge_meter_rows folds them into a single table row).
     """
     key = creds.get("OPENAI_ADMIN_KEY")
     if not key:
@@ -93,24 +106,31 @@ def meter(creds, months, today):
 
     _, buckets = _fetch_costs_with_buckets(key, start)
 
-    # Group by month
+    # Group by month (all months from GRANT_FROM — the waterfall needs them)
     month_totals: dict = {}
     for ts, val in buckets:
         mo = datetime.datetime.utcfromtimestamp(ts).strftime("%Y-%m")
-        if mo not in month_set:
-            continue
         month_totals[mo] = round(month_totals.get(mo, 0.0) + val, 2)
 
+    remaining = GRANT_USD
     rows = []
     for month in sorted(month_totals):
-        cost = month_totals[month]
-        if cost:
-            rows.append(_mrow(
-                month=month,
-                vendor="openai",
-                amount=cost,
-                funding="credit",
-                source="api",
-                today=today,
-            ))
+        usage = month_totals[month]
+        if not usage:
+            continue
+        in_grant_window = GRANT_FROM <= month <= GRANT_LAST_MONTH
+        credit = round(min(usage, remaining), 2) if in_grant_window else 0.0
+        remaining = round(remaining - credit, 2)
+        if month not in month_set:
+            continue
+        for funding, amount in (("credit", credit), ("cash", round(usage - credit, 2))):
+            if amount:
+                rows.append(_mrow(
+                    month=month,
+                    vendor="openai",
+                    amount=amount,
+                    funding=funding,
+                    source="api",
+                    today=today,
+                ))
     return rows

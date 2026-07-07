@@ -23,9 +23,14 @@ import ingest.connectors.vendors.ovh as _ovh
 import ingest.connectors.vendors.vast as _vast
 import ingest.connectors.vendors.fireworks as _fw
 import ingest.connectors.vendors.openai_ as _oai
+import ingest.connectors.vendors.alibaba as _ali
+import ingest.connectors.vendors.anthropic_ as _ant
 import ingest.connectors.vendors.openrouter as _or
 import ingest.connectors.vendors.runpod as _rp
+import ingest.connectors.vendors.xai as _xai
 import ingest.connectors.vendors.gcp as _gcp
+import ingest.connectors.vendors.community as _comm
+import ingest.connectors.vendors.cloudflare as _cf
 from ingest.connectors import registry
 
 TODAY = "2026-07-03"
@@ -195,19 +200,36 @@ def test_ovh_meter_use_only_filtered(monkeypatch):
     movement_use = {
         "type": "USE",
         "amount": {"value": "-100.00"},
-        "creationDate": "2026-04-15T10:00:00+00:00",
+        "creationDate": "2026-05-01T10:00:00+00:00",
     }
     movement_voucher = {
         "type": "VOUCHER",
         "amount": {"value": "500.00"},
-        "creationDate": "2026-04-01T10:00:00+00:00",
+        "creationDate": "2026-05-01T10:00:00+00:00",
     }
     cap = Capture([movement_ids, movement_use, movement_voucher])
     monkeypatch.setattr(_ovh, "http_json", cap)
     rows = _ovh.meter(_OVH_CREDS, ["2026-04", "2026-05", "2026-06"], TODAY)
-    # Only 1 row for 2026-04 (the USE); VOUCHER ignored
+    # Only 1 row (the USE, as April usage billed May 1); VOUCHER ignored
     assert len(rows) == 1
     assert rows[0]["month"] == "2026-04"
+
+
+def test_ovh_meter_usage_month_is_debit_month_minus_one(monkeypatch):
+    """OVH debits the credit balance on the 1st for the PREVIOUS month's
+    consumption — a Jul 1 movement is June usage, and a Jan 1 movement wraps
+    to December of the prior year."""
+    monkeypatch.setattr(_ovh, "_time", lambda: _OVH_TS)
+    movement_ids = [101, 102]
+    july_first = {"type": "USE", "amount": {"value": "-40.00"},
+                  "creationDate": "2026-07-01T00:00:00+00:00"}
+    jan_first = {"type": "USE", "amount": {"value": "-10.00"},
+                 "creationDate": "2026-01-01T00:00:00+00:00"}
+    cap = Capture([movement_ids, july_first, jan_first])
+    monkeypatch.setattr(_ovh, "http_json", cap)
+    rows = _ovh.meter(_OVH_CREDS, ["2025-12", "2026-06"], TODAY)
+    by_month = {r["month"]: r["credit"] for r in rows}
+    assert by_month == {"2025-12": 10.0, "2026-06": 40.0}
 
 
 def test_ovh_meter_native_eur(monkeypatch):
@@ -217,7 +239,7 @@ def test_ovh_meter_native_eur(monkeypatch):
     movement_use = {
         "type": "USE",
         "amount": {"value": "-100.00"},
-        "creationDate": "2026-04-15T10:00:00+00:00",
+        "creationDate": "2026-05-01T10:00:00+00:00",
     }
     cap = Capture([movement_ids, movement_use])
     monkeypatch.setattr(_ovh, "http_json", cap)
@@ -232,7 +254,7 @@ def test_ovh_meter_credit(monkeypatch):
     monkeypatch.setattr(_ovh, "_time", lambda: _OVH_TS)
     cap = Capture([[101], {"type": "USE", "amount": {"value": "-50.00"}, "creationDate": "2026-05-01T00:00:00+00:00"}])
     monkeypatch.setattr(_ovh, "http_json", cap)
-    rows = _ovh.meter(_OVH_CREDS, ["2026-05"], TODAY)
+    rows = _ovh.meter(_OVH_CREDS, ["2026-04"], TODAY)
     assert rows[0]["credit"] == 50.0
 
 
@@ -241,16 +263,16 @@ def test_ovh_meter_source_api(monkeypatch):
     monkeypatch.setattr(_ovh, "_time", lambda: _OVH_TS)
     cap = Capture([[101], {"type": "USE", "amount": {"value": "-50.00"}, "creationDate": "2026-05-01T00:00:00+00:00"}])
     monkeypatch.setattr(_ovh, "http_json", cap)
-    rows = _ovh.meter(_OVH_CREDS, ["2026-05"], TODAY)
+    rows = _ovh.meter(_OVH_CREDS, ["2026-04"], TODAY)
     assert rows[0]["source"] == "api"
 
 
 def test_ovh_meter_month_grouping(monkeypatch):
-    """Multiple USE movements in the same month should be summed into one row."""
+    """Multiple USE movements debited the same day are summed into one row."""
     monkeypatch.setattr(_ovh, "_time", lambda: _OVH_TS)
     movement_ids = [101, 102]
-    m1 = {"type": "USE", "amount": {"value": "-30.00"}, "creationDate": "2026-04-10T00:00:00+00:00"}
-    m2 = {"type": "USE", "amount": {"value": "-20.00"}, "creationDate": "2026-04-20T00:00:00+00:00"}
+    m1 = {"type": "USE", "amount": {"value": "-30.00"}, "creationDate": "2026-05-01T00:00:00+00:00"}
+    m2 = {"type": "USE", "amount": {"value": "-20.00"}, "creationDate": "2026-05-01T00:00:00+00:00"}
     cap = Capture([movement_ids, m1, m2])
     monkeypatch.setattr(_ovh, "http_json", cap)
     rows = _ovh.meter(_OVH_CREDS, ["2026-04"], TODAY)
@@ -326,21 +348,52 @@ def test_vast_meter_source_cli():
 
 def test_vast_meter_cli_command():
     """Must call vastai show invoices --raw with an explicit date window —
-    without -s/-e the CLI silently returns TODAY only (lost months of history)."""
+    without -s/-e the CLI silently returns TODAY only (lost months of history).
+    The end extends past TODAY (not just past the requested months) because
+    rollups covering a month can be POSTED weeks later."""
     cmds = []
     fake_run = lambda cmd, **kw: (cmds.append(cmd), _fake_result(stdout=_VAST_INVOICES_JSON))[1]
     _vast.meter(_VAST_CREDS, ["2026-04"], TODAY, run_cmd=fake_run)
     assert cmds[0] == ["vastai", "show", "invoices", "--raw",
-                       "-s", "2026-04-01", "-e", "2026-05-01"]
+                       "-s", "2026-04-01", "-e", "2026-07-04"]
 
 
 def test_vast_meter_window_spans_all_months():
-    """Window = first day of min month → first day after max month."""
+    """Window = first day of min month → first day after max month (when that
+    is already past today+1)."""
     cmds = []
     fake_run = lambda cmd, **kw: (cmds.append(cmd), _fake_result(stdout="[]"))[1]
     _vast.meter(_VAST_CREDS, ["2026-01", "2026-07", "2026-12"], TODAY, run_cmd=fake_run)
     assert cmds[0][cmds[0].index("-s") + 1] == "2026-01-01"
     assert cmds[0][cmds[0].index("-e") + 1] == "2027-01-01"
+
+
+def test_vast_meter_spreads_rollups_across_usage_months():
+    """A rollup charge covers [timestamp − quantity hours, timestamp]; its
+    amount splits across months by overlap. 480h ending 2026-04-10 00:00 UTC
+    = 2026-03-21 → 2026-04-10: 11 of 20 days in March, 9 in April."""
+    rollup = json.dumps([{
+        "type": "charge", "timestamp": 1775779200,  # 2026-04-10 00:00:00 UTC
+        "amount": "100.0", "quantity": "480.0", "rate": "0.2083",
+    }])
+    fake_run = lambda cmd, **kw: _fake_result(stdout=rollup)
+    rows = _vast.meter(_VAST_CREDS, ["2026-03", "2026-04"], TODAY, run_cmd=fake_run)
+    by_month = {r["month"]: r["paid"] for r in rows}
+    assert by_month["2026-03"] == pytest.approx(55.0, abs=0.01)
+    assert by_month["2026-04"] == pytest.approx(45.0, abs=0.01)
+
+
+def test_vast_meter_spread_parts_outside_requested_months_dropped():
+    """Only requested months appear even when the covered window reaches
+    further back."""
+    rollup = json.dumps([{
+        "type": "charge", "timestamp": 1775779200,  # 2026-04-10 00:00:00 UTC
+        "amount": "100.0", "quantity": "480.0", "rate": "0.2083",
+    }])
+    fake_run = lambda cmd, **kw: _fake_result(stdout=rollup)
+    rows = _vast.meter(_VAST_CREDS, ["2026-04"], TODAY, run_cmd=fake_run)
+    assert [r["month"] for r in rows] == ["2026-04"]
+    assert rows[0]["paid"] == pytest.approx(45.0, abs=0.01)
 
 
 def test_vast_meter_nonzero_rc_no_stdout_in_error():
@@ -823,6 +876,227 @@ def test_runpod_meter_missing_key_raises():
 
 
 # ===========================================================================
+# alibaba.meter
+# ===========================================================================
+
+def _ali_overview(items):
+    return _fake_result(stdout=json.dumps({
+        "Code": "Success",
+        "Data": {"Items": {"Item": items}},
+    }))
+
+
+def _ali_runner(results):
+    calls = []
+    seq = list(results)
+
+    def run_cmd(args, capture_output=True, text=True, timeout=60):
+        calls.append(args)
+        return seq.pop(0)
+    run_cmd.calls = calls
+    return run_cmd
+
+
+def test_alibaba_meter_splits_credit_and_cash(monkeypatch):
+    run_cmd = _ali_runner([_ali_overview([
+        {"PretaxGrossAmount": 1509.19, "InvoiceDiscount": 285.10,
+         "DeductedByCoupons": 1000.00, "PretaxAmount": 224.08},
+    ])])
+    rows = _ali.meter({}, ["2026-03"], TODAY, run_cmd=run_cmd)
+    by = {("credit" if r["credit"] else "paid"): r for r in rows}
+    assert by["credit"]["credit"] == 1285.1
+    assert by["paid"]["paid"] == 224.08
+    for r in rows:
+        assert r["vendor"] == "alibaba"
+        assert r["currency"] == "USD"
+        assert r["source"] == "cli"
+
+
+def test_alibaba_meter_month_per_call_argv(monkeypatch):
+    run_cmd = _ali_runner([_ali_overview([]), _ali_overview([])])
+    _ali.meter({}, ["2026-05", "2026-04"], TODAY, run_cmd=run_cmd)
+    assert run_cmd.calls[0][:3] == ["aliyun", "bssopenapi", "QueryBillOverview"]
+    assert "--BillingCycle" in run_cmd.calls[0]
+    assert run_cmd.calls[0][run_cmd.calls[0].index("--BillingCycle") + 1] == "2026-04"
+    assert run_cmd.calls[1][run_cmd.calls[1].index("--BillingCycle") + 1] == "2026-05"
+    assert "-p" in run_cmd.calls[0]  # profile auth, no key in argv
+
+
+def test_alibaba_meter_zero_month_emits_nothing(monkeypatch):
+    run_cmd = _ali_runner([_ali_overview([{"PretaxAmount": 0}])])
+    assert _ali.meter({}, ["2026-07"], TODAY, run_cmd=run_cmd) == []
+
+
+def test_alibaba_meter_non_success_code_raises(monkeypatch):
+    run_cmd = _ali_runner([_fake_result(stdout='{"Code": "Throttling"}')])
+    with pytest.raises(RuntimeError, match="code=Throttling"):
+        _ali.meter({}, ["2026-06"], TODAY, run_cmd=run_cmd)
+
+
+def test_alibaba_meter_cli_failure_raises(monkeypatch):
+    run_cmd = _ali_runner([_fake_result(returncode=1)])
+    with pytest.raises(RuntimeError, match="rc=1"):
+        _ali.meter({}, ["2026-06"], TODAY, run_cmd=run_cmd)
+
+
+# ===========================================================================
+# xai.meter
+# ===========================================================================
+
+_XAI_CREDS = {"XAI_MANAGEMENT_API_KEY": "xai-token-test"}
+_XAI_TEAMS = {"teams": [{"teamId": "team-1"}]}
+
+
+def _xai_invoice(create_time, lines):
+    return {"createTime": create_time, "lines": lines}
+
+
+def _xai_usage_line(cents):
+    return {"unitType": "Generated image", "amount": str(cents)}
+
+
+_XAI_PREPAID_LINE = {"unitType": "prepaid_tokens", "amount": "20000"}
+
+
+def test_xai_meter_cycle_invoices_bill_previous_month(monkeypatch):
+    cap = Capture([_XAI_TEAMS, {"invoices": [
+        _xai_invoice("2026-04-05T19:40:05Z", [_xai_usage_line(30854)]),
+        _xai_invoice("2026-05-03T14:42:21Z", [_xai_usage_line(30000), _xai_usage_line(25231)]),
+    ]}])
+    monkeypatch.setattr(_xai, "http_json", cap)
+    rows = _xai.meter(_XAI_CREDS, ["2026-03", "2026-04"], TODAY)
+    assert {r["month"]: r["paid"] for r in rows} == {
+        "2026-03": 308.54, "2026-04": 552.31,
+    }
+    for r in rows:
+        assert r["vendor"] == "xai"
+        assert r["credit"] == 0.0
+        assert r["source"] == "api"
+
+
+def test_xai_meter_excludes_prepaid_topups(monkeypatch):
+    cap = Capture([_XAI_TEAMS, {"invoices": [
+        _xai_invoice("2026-06-26T14:02:56Z", [_XAI_PREPAID_LINE]),
+        _xai_invoice("2026-06-04T20:01:02Z", [_xai_usage_line(32230)]),
+    ]}])
+    monkeypatch.setattr(_xai, "http_json", cap)
+    rows = _xai.meter(_XAI_CREDS, ["2026-05"], TODAY)
+    assert [(r["month"], r["paid"]) for r in rows] == [("2026-05", 322.3)]
+
+
+def test_xai_meter_team_autodiscovery_and_auth(monkeypatch):
+    cap = Capture([_XAI_TEAMS, {"invoices": []}])
+    monkeypatch.setattr(_xai, "http_json", cap)
+    _xai.meter(_XAI_CREDS, ["2026-06"], TODAY)
+    assert cap.calls[0]["url"].endswith("/auth/teams")
+    assert "/v1/billing/teams/team-1/invoices" in cap.calls[1]["url"]
+    assert cap.calls[0]["headers"]["Authorization"] == "Bearer xai-token-test"
+
+
+def test_xai_meter_multiple_teams_raises(monkeypatch):
+    cap = Capture([{"teams": [{"teamId": "a"}, {"teamId": "b"}]}])
+    monkeypatch.setattr(_xai, "http_json", cap)
+    with pytest.raises(RuntimeError, match="exactly one team"):
+        _xai.meter(_XAI_CREDS, ["2026-06"], TODAY)
+
+
+def test_xai_meter_january_cycle_rolls_year(monkeypatch):
+    cap = Capture([_XAI_TEAMS, {"invoices": [
+        _xai_invoice("2027-01-05T00:00:00Z", [_xai_usage_line(1000)]),
+    ]}])
+    monkeypatch.setattr(_xai, "http_json", cap)
+    rows = _xai.meter(_XAI_CREDS, ["2026-12"], TODAY)
+    assert rows[0]["month"] == "2026-12"
+
+
+def test_xai_meter_missing_key_raises():
+    with pytest.raises(RuntimeError, match="XAI_MANAGEMENT_API_KEY"):
+        _xai.meter({}, ["2026-07"], TODAY)
+
+
+# ===========================================================================
+# anthropic_.meter
+# ===========================================================================
+
+_ANT_CREDS = {"ANTHROPIC_ADMIN_KEY": "sk-ant-admin-test"}
+
+
+def _ant_month(cents_amounts):
+    """Cost-report response for one month window (amounts in cents)."""
+    return {
+        "data": [
+            {"starting_at": "x", "results": [{"amount": str(c)}]}
+            for c in cents_amounts
+        ],
+        "has_more": False,
+    }
+
+
+def _ant_year(**month_cents):
+    """Responses for the 7 month windows Jan..Jul (TODAY is 2026-07)."""
+    return [
+        _ant_month(month_cents.get(f"m{i:02d}", []))
+        for i in range(1, 8)
+    ]
+
+
+def test_anthropic_meter_waterfall_splits_cutover_month(monkeypatch):
+    """$5k grant from Feb: credit until exhausted, cash after — the cutover
+    month splits. The waterfall replays from January even for scoped
+    month requests."""
+    cap = Capture(_ant_year(
+        m01=[100000], m02=[300000], m03=[150000, 100000], m04=[20000],
+    ))
+    monkeypatch.setattr(_ant, "http_json", cap)
+    rows = _ant.meter(_ANT_CREDS, ["2026-03", "2026-04"], TODAY)
+    by_month = {}
+    for r in rows:
+        entry = by_month.setdefault(r["month"], {"credit": 0.0, "paid": 0.0})
+        entry["credit"] += r["credit"]
+        entry["paid"] += r["paid"]
+    assert by_month == {
+        "2026-03": {"credit": 2000.0, "paid": 500.0},
+        "2026-04": {"credit": 0.0, "paid": 200.0},
+    }
+    for r in rows:
+        assert r["vendor"] == "anthropic"
+        assert r["source"] == "api"
+        assert r["currency"] == "USD"
+
+
+def test_anthropic_meter_cents_to_usd_and_pre_grant_cash(monkeypatch):
+    """January predates the grant (auto-recharge era) — cash, and cents→USD."""
+    cap = Capture(_ant_year(m01=[186500]))
+    monkeypatch.setattr(_ant, "http_json", cap)
+    rows = _ant.meter(_ANT_CREDS, ["2026-01"], TODAY)
+    assert rows[0]["paid"] == 1865.0
+    assert rows[0]["credit"] == 0.0
+
+
+def test_anthropic_meter_month_windows_and_auth(monkeypatch):
+    cap = Capture(_ant_year())
+    monkeypatch.setattr(_ant, "http_json", cap)
+    _ant.meter(_ANT_CREDS, ["2026-06"], TODAY)
+    assert len(cap.calls) == 7
+    first = cap.calls[0]
+    assert "starting_at=2026-01-01T00:00:00Z" in first["url"]
+    assert "ending_at=2026-02-01T00:00:00Z" in first["url"]
+    assert first["headers"]["x-api-key"] == "sk-ant-admin-test"
+    assert first["headers"]["anthropic-version"] == "2023-06-01"
+
+
+def test_anthropic_meter_zero_months_emit_nothing(monkeypatch):
+    cap = Capture(_ant_year(m01=[100]))
+    monkeypatch.setattr(_ant, "http_json", cap)
+    assert _ant.meter(_ANT_CREDS, ["2026-05"], TODAY) == []
+
+
+def test_anthropic_meter_missing_key_raises():
+    with pytest.raises(RuntimeError, match="ANTHROPIC_ADMIN_KEY"):
+        _ant.meter({}, ["2026-07"], TODAY)
+
+
+# ===========================================================================
 # elevenlabs.meter
 # ===========================================================================
 
@@ -839,25 +1113,50 @@ def _el_analytics(*day_cost):
 
 
 def test_elevenlabs_meter_sums_days_by_month(monkeypatch):
-    cap = Capture([_el_analytics(("2026-05-01", 100.0), ("2026-05-02", 26.74), ("2026-06-01", 5.0))])
+    cap = Capture([_el_analytics(("2026-02-01", 900.0), ("2026-02-02", 54.0), ("2026-03-01", 5.0))])
     monkeypatch.setattr(_el, "http_json", cap)
-    rows = _el.meter(_EL_CREDS, ["2026-05", "2026-06"], TODAY)
-    assert {r["month"]: r["paid"] for r in rows} == {"2026-05": 126.74, "2026-06": 5.0}
+    rows = _el.meter(_EL_CREDS, ["2026-02", "2026-03"], TODAY)
+    assert {r["month"]: r["credit"] for r in rows} == {"2026-02": 954.0, "2026-03": 5.0}
     for r in rows:
         assert r["vendor"] == "elevenlabs"
         assert r["source"] == "api"
         assert r["currency"] == "USD"
 
 
-def test_elevenlabs_meter_grant_months_are_credit(monkeypatch):
-    """Feb–Apr 2026 predate the first card charge — startup-grant credit."""
-    cap = Capture([_el_analytics(("2026-02-10", 954.0), ("2026-05-10", 226.74))])
+def test_elevenlabs_meter_grant_waterfall(monkeypatch):
+    """The $3,300 grant runs dry mid-April: Feb+Mar full credit, April splits
+    credit/cash, May onward is all cash."""
+    cap = Capture([_el_analytics(
+        ("2026-02-10", 954.0),
+        ("2026-03-10", 1821.77),
+        ("2026-04-10", 1169.71),
+        ("2026-05-10", 226.74),
+    )])
     monkeypatch.setattr(_el, "http_json", cap)
-    rows = _el.meter(_EL_CREDS, ["2026-02", "2026-05"], TODAY)
-    feb = next(r for r in rows if r["month"] == "2026-02")
-    may = next(r for r in rows if r["month"] == "2026-05")
-    assert feb["credit"] == 954.0 and feb["paid"] == 0.0
-    assert may["paid"] == 226.74 and may["credit"] == 0.0
+    rows = _el.meter(_EL_CREDS, ["2026-02", "2026-03", "2026-04", "2026-05"], TODAY)
+    by = {(r["month"], "credit" if r["credit"] else "paid"): r for r in rows}
+    assert by[("2026-02", "credit")]["credit"] == 954.0
+    assert by[("2026-03", "credit")]["credit"] == 1821.77
+    assert by[("2026-04", "credit")]["credit"] == pytest.approx(524.23, abs=0.01)
+    assert by[("2026-04", "paid")]["paid"] == pytest.approx(645.48, abs=0.01)
+    assert by[("2026-05", "paid")]["paid"] == 226.74
+    assert ("2026-05", "credit") not in by
+
+
+def test_elevenlabs_meter_waterfall_replays_on_scoped_runs(monkeypatch):
+    """A run scoped to May must still see the grant exhausted by Feb–Apr —
+    the waterfall walks from MONTHS_START regardless of requested months."""
+    cap = Capture([_el_analytics(
+        ("2026-02-10", 954.0),
+        ("2026-03-10", 1821.77),
+        ("2026-04-10", 1169.71),
+        ("2026-05-10", 226.74),
+    )])
+    monkeypatch.setattr(_el, "http_json", cap)
+    rows = _el.meter(_EL_CREDS, ["2026-05"], TODAY)
+    assert len(rows) == 1
+    assert rows[0]["paid"] == 226.74
+    assert rows[0]["credit"] == 0.0
 
 
 def test_elevenlabs_meter_zero_months_excluded(monkeypatch):
@@ -866,23 +1165,18 @@ def test_elevenlabs_meter_zero_months_excluded(monkeypatch):
     assert _el.meter(_EL_CREDS, ["2026-01"], TODAY) == []
 
 
-def test_elevenlabs_meter_out_of_scope_month_skipped(monkeypatch):
-    cap = Capture([_el_analytics(("2026-05-01", 10.0), ("2026-06-01", 20.0))])
-    monkeypatch.setattr(_el, "http_json", cap)
-    rows = _el.meter(_EL_CREDS, ["2026-06"], TODAY)
-    assert {r["month"] for r in rows} == {"2026-06"}
-
-
 def test_elevenlabs_meter_body_shape(monkeypatch):
-    """Millisecond timestamps + usd units — the endpoint 422s on anything else."""
+    """Millisecond timestamps + usd units — the endpoint 422s on anything else.
+    The window always starts at MONTHS_START (waterfall replay) and ends after
+    the walked months."""
     cap = Capture([_el_analytics()])
     monkeypatch.setattr(_el, "http_json", cap)
     _el.meter(_EL_CREDS, ["2026-05", "2026-06"], TODAY)
     body = cap.calls[0]["data"]
     assert body["column_units"] == "usd"
     assert body["interval_seconds"] == 86400
-    assert body["start_time"] == 1777593600000  # 2026-05-01T00:00:00Z in ms
-    assert body["end_time"] == 1782864000000    # 2026-07-01T00:00:00Z in ms
+    assert body["start_time"] == 1767225600000  # 2026-01-01T00:00:00Z in ms
+    assert body["end_time"] == 1785542400000    # 2026-08-01T00:00:00Z in ms
     assert cap.calls[0]["headers"]["xi-api-key"] == "xi-admin-key"
 
 
@@ -1200,23 +1494,171 @@ def test_openai_meter_vendor_slug(monkeypatch):
         assert r["vendor"] == "openai"
 
 
+def test_openai_meter_waterfall_splits_at_grant_exhaustion(monkeypatch):
+    """Usage crossing the $1,565.58 grant splits credit/cash in that month;
+    earlier months count against the grant even when not requested."""
+    page = _make_oai_page([(_APR15, 1500.0), (_JUN01, 100.0)])
+    cap = Capture([page])
+    monkeypatch.setattr(_oai, "http_json", cap)
+    rows = _oai.meter(_OAI_CREDS, ["2026-06"], TODAY)
+    by = {"credit" if r["credit"] else "paid": r for r in rows}
+    assert by["credit"]["credit"] == pytest.approx(65.58, abs=0.01)
+    assert by["paid"]["paid"] == pytest.approx(34.42, abs=0.01)
+
+
+def test_openai_meter_cash_after_expiry_month(monkeypatch):
+    """Past GRANT_LAST_MONTH (credits expire Aug 1) usage is cash even with
+    grant capacity left."""
+    aug03 = 1785715200  # 2026-08-03 UTC
+    page = _make_oai_page([(_APR15, 10.0), (aug03, 25.0)])
+    cap = Capture([page])
+    monkeypatch.setattr(_oai, "http_json", cap)
+    rows = _oai.meter(_OAI_CREDS, ["2026-08"], TODAY)
+    assert len(rows) == 1
+    assert rows[0]["paid"] == 25.0
+    assert rows[0]["credit"] == 0.0
+
+
+# ===========================================================================
+# community.meter
+# ===========================================================================
+
+
+class _CommTB:
+    """Minimal TB stub returning canned pollen_monthly aggregates."""
+
+    def __init__(self, rows):
+        self.rows = rows
+        self.queries = []
+
+    def sql(self, query):
+        self.queries.append(query)
+        return self.rows
+
+
+def test_community_mirrors_pollen_as_credit():
+    """Community usage is settled in pollen, never cash → credit rows."""
+    tb = _CommTB([
+        {"month": "2026-06", "cost": 0.29},
+        {"month": "2026-07", "cost": 44.71},
+    ])
+    rows = _comm.meter({}, ["2026-06", "2026-07"], "2026-07-07", tb_client=tb)
+    assert rows == [
+        {"month": "2026-06", "vendor": "community", "currency": "USD",
+         "credit": 0.29, "paid": 0.0, "source": "api"},
+        {"month": "2026-07", "vendor": "community", "currency": "USD",
+         "credit": 44.71, "paid": 0.0, "source": "api"},
+    ]
+
+
+def test_community_filters_months_and_zero_cost():
+    tb = _CommTB([
+        {"month": "2026-05", "cost": 12.0},   # outside requested window
+        {"month": "2026-06", "cost": 0.0},    # zero month → no row
+        {"month": "2026-07", "cost": 1.5},
+    ])
+    rows = _comm.meter({}, ["2026-06", "2026-07"], "2026-07-07", tb_client=tb)
+    assert [r["month"] for r in rows] == ["2026-07"]
+
+
+def test_community_queries_pollen_monthly_for_community_vendor():
+    tb = _CommTB([])
+    assert _comm.meter({}, ["2026-07"], "2026-07-07", tb_client=tb) == []
+    assert len(tb.queries) == 1
+    assert "pollen_monthly" in tb.queries[0]
+    assert "vendor = 'community'" in tb.queries[0]
+
+
+def test_community_missing_token_raises():
+    with pytest.raises(RuntimeError, match="TINYBIRD_OPS_INGEST_TOKEN"):
+        _comm.meter({}, ["2026-07"], "2026-07-07")
+
+
+# ===========================================================================
+# cloudflare.meter
+# ===========================================================================
+
+_CF_CREDS = {
+    "CLOUDFLARE_POLLINATIONS_BILLING_TOKEN": "cfat_old",
+    "CLOUDFLARE_MYCELI_API_TOKEN": "cf_myceli",
+}
+
+
+def _cf_history(*entries):
+    return {"success": True, "result": [
+        {"occurred_at": f"{month}-15T00:00:00Z", "type": kind, "amount": amount, "currency": "usd"}
+        for month, kind, amount in entries
+    ]}
+
+
+def test_cloudflare_sums_invoices_across_both_accounts():
+    responses = [
+        _cf_history(("2026-01", "invoice", 2522.76), ("2026-02", "invoice", 1772.45)),
+        _cf_history(("2026-02", "invoice", 100.0)),
+    ]
+    tokens_seen = []
+
+    def fake_http(url, headers, timeout=60):
+        tokens_seen.append(headers["Authorization"])
+        return responses.pop(0)
+
+    rows = _cf.meter(_CF_CREDS, ["2026-01", "2026-02"], "2026-07-07", http=fake_http)
+    assert rows == [
+        {"month": "2026-01", "vendor": "cloudflare", "currency": "USD",
+         "credit": 0.0, "paid": 2522.76, "source": "api"},
+        {"month": "2026-02", "vendor": "cloudflare", "currency": "USD",
+         "credit": 0.0, "paid": 1872.45, "source": "api"},
+    ]
+    assert tokens_seen == ["Bearer cfat_old", "Bearer cf_myceli"]
+
+
+def test_cloudflare_credits_offset_invoices_and_zero_months_skip():
+    """A billing correction (credit) nets against the invoice — myceli June."""
+    responses = [
+        _cf_history(("2026-06", "invoice", 48.36)),
+        _cf_history(("2026-06", "invoice", 1399.04), ("2026-06", "credit", 1399.04)),
+    ]
+    rows = _cf.meter(_CF_CREDS, ["2026-06"], "2026-07-07",
+                     http=lambda *a, **k: responses.pop(0))
+    assert rows == [
+        {"month": "2026-06", "vendor": "cloudflare", "currency": "USD",
+         "credit": 0.0, "paid": 48.36, "source": "api"},
+    ]
+
+
+def test_cloudflare_skips_none_amounts_and_out_of_window_months():
+    responses = [
+        _cf_history(("2025-12", "invoice", 3782.31), ("2026-03", "invoice", None)),
+        _cf_history(),
+    ]
+    rows = _cf.meter(_CF_CREDS, ["2026-03"], "2026-07-07",
+                     http=lambda *a, **k: responses.pop(0))
+    assert rows == []
+
+
+def test_cloudflare_missing_tokens_raise():
+    with pytest.raises(RuntimeError, match="CLOUDFLARE_MYCELI_API_TOKEN"):
+        _cf.meter({"CLOUDFLARE_POLLINATIONS_BILLING_TOKEN": "x"}, ["2026-06"], "2026-07-07")
+
+
 # ===========================================================================
 # Registry: METER populated and slugs canonical
 # ===========================================================================
 
 def test_meter_registry_populated():
-    """METER must contain 10 entries (aws retired 2026-07: billing moved to the
+    """METER must contain 14 entries (aws retired 2026-07: billing moved to the
     Automat-it reseller, whose credits/accounts Cost Explorer cannot see —
     aws rows are manual from the monthly reseller invoice; azure added
     2026-07: billing-profile invoice connector; openrouter + elevenlabs +
-    runpod added 2026-07)."""
-    assert len(registry.METER) == 10
+    runpod + anthropic + xai + alibaba added 2026-07; community added
+    2026-07: pollen-ledger mirror for user-deployed models)."""
+    assert len(registry.METER) == 15
 
 
 def test_meter_registry_slugs():
-    """METER must contain all ten vendor slugs."""
+    """METER must contain all fourteen vendor slugs."""
     slugs = {slug for slug, _ in registry.METER}
-    for expected in ("azure", "deepinfra", "elevenlabs", "vast.ai", "ovhcloud", "fireworks", "google", "openai", "openrouter", "runpod"):
+    for expected in ("alibaba", "anthropic", "azure", "cloudflare", "community", "deepinfra", "elevenlabs", "vast.ai", "ovhcloud", "fireworks", "google", "openai", "openrouter", "runpod", "xai"):
         assert expected in slugs, f"METER missing: {expected}"
     assert "aws" not in slugs, "aws CE connector was retired; rows are manual"
 

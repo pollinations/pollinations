@@ -99,8 +99,8 @@ def test_meter_is_list():
 
 
 def test_meter_is_populated():
-    # 10 connectors: aws CE retired (manual invoice rows); azure/openrouter/elevenlabs/runpod added.
-    assert len(registry.METER) == 10
+    # 15 connectors: aws CE retired (manual invoice rows); azure/openrouter/elevenlabs/runpod/anthropic/xai/alibaba/community/cloudflare added.
+    assert len(registry.METER) == 15
 
 
 class _FakeTB:

@@ -1,26 +1,30 @@
-"""ElevenLabs meter connector — workspace analytics.
+"""ElevenLabs meter connector — workspace analytics with a grant waterfall.
 
 Witness = `POST /v1/workspace/analytics/query/usage-by-product-over-time`
 (admin-scoped xi-api-key): columnar daily rows; `total_cost` with
 column_units=usd is the fiat cost of consumption.
 
-Funding cutover: the "3 months free" startup grant silently covered
-2026-02..2026-04 (no Wise cash exists before 2026-05; card charges start
-2026-05-02) — months before _CASH_FROM are credit, from it on cash. The
-meter's cost can differ from the card total (the subscription plan fee and
-overage timing live on the invoice, not in analytics) — that gap is the
-Δ column's story, not an error.
+Funding is a grant waterfall (fireworks/runpod/anthropic precedent): the
+$3,300 startup grant covered usage from 2026-02 until it ran dry — usage
+alone exceeded it mid-April (Feb 954.00 + Mar 1,821.77 crossed 3,300 during
+April), after which Elliot paid via top-ups and then a monthly subscription.
+Months before GRANT_FROM are cash. The meter's cost can differ from the card
+total (the subscription plan fee and overage timing live on the invoice, not
+in analytics) — that gap is the Δ column's story, not an error.
 
 Creds: ELEVENLABS_API_KEY (must be admin/usage-scoped; a plain key 401s).
 """
 import datetime
 from collections import defaultdict
 
-from ..common import http_json
+from ..common import http_json, months_ytd
 from . import _mrow
 
 _URL = "https://api.elevenlabs.io/v1/workspace/analytics/query/usage-by-product-over-time"
-_CASH_FROM = "2026-05"  # first month billed for real; earlier = startup grant
+
+GRANT_USD = 3_300.0
+GRANT_FROM = "2026-02"
+MONTHS_START = "2026-01"
 
 
 def _ms(month):
@@ -35,7 +39,10 @@ def _next_month(month):
 
 
 def meter(creds, months, today):
-    """Fetch ElevenLabs fiat cost per month from workspace analytics.
+    """Fetch ElevenLabs fiat cost per month, credit/paid via the waterfall.
+
+    The waterfall always replays from MONTHS_START so scoped runs still see
+    the grant state; only the requested months are emitted.
 
     Args:
         creds:  dict with ELEVENLABS_API_KEY
@@ -43,7 +50,8 @@ def meter(creds, months, today):
         today:  current ingest date
 
     Returns:
-        list of _mrow dicts (USD), one per month with nonzero cost
+        list of _mrow dicts (USD) — at most one credit and one cash row per
+        month (merge_meter_rows folds them into a single table row).
     """
     if not months:
         raise RuntimeError("elevenlabs meter requires at least one month")
@@ -51,9 +59,10 @@ def meter(creds, months, today):
     if not key:
         raise RuntimeError("ELEVENLABS_API_KEY missing")
 
+    walk = months_ytd(MONTHS_START, today)
     body = {
-        "start_time": _ms(min(months)),
-        "end_time": _ms(_next_month(max(months))),
+        "start_time": _ms(MONTHS_START),
+        "end_time": _ms(_next_month(max(list(months) + list(walk)))),
         "interval_seconds": 86400,
         "column_units": "usd",
     }
@@ -67,16 +76,25 @@ def meter(creds, months, today):
     for row in d.get("rows") or []:
         totals[str(row[ti])[:7]] += float(row[ci] or 0)
 
+    wanted = set(months)
+    remaining = GRANT_USD
     rows = []
-    for month in sorted(set(months) & set(totals)):
-        amount = round(totals[month], 2)
-        if amount:
-            rows.append(_mrow(
-                month=month,
-                vendor="elevenlabs",
-                amount=amount,
-                funding="credit" if month < _CASH_FROM else "cash",
-                source="api",
-                today=today,
-            ))
+    for month in walk:
+        usage = round(totals.get(month, 0.0), 2)
+        if not usage:
+            continue
+        credit = 0.0 if month < GRANT_FROM else round(min(usage, remaining), 2)
+        remaining = round(remaining - credit, 2)
+        if month not in wanted:
+            continue
+        for funding, amount in (("credit", credit), ("cash", round(usage - credit, 2))):
+            if amount:
+                rows.append(_mrow(
+                    month=month,
+                    vendor="elevenlabs",
+                    amount=amount,
+                    funding=funding,
+                    source="api",
+                    today=today,
+                ))
     return rows

@@ -71,12 +71,29 @@ def _amount(row):
     return float((row or {}).get("amount", {}).get("value") or 0)
 
 
+def _usage_month(creation_date):
+    """USAGE month for a USE movement: the month BEFORE the debit month.
+
+    OVH issues the monthly bill on the 1st covering the previous calendar
+    month's consumption, and debits the credit balance the same day — every
+    USE movement in the ledger is dated the 1st. Booking by creationDate
+    would shift every month +1 (the provider_monthly usage-month contract).
+    """
+    month = (creation_date or "")[:7]
+    if len(month) != 7:
+        return ""
+    y, m = int(month[:4]), int(month[5:7])
+    py, pm = (y - 1, 12) if m == 1 else (y, m - 1)
+    return f"{py:04d}-{pm:02d}"
+
+
 def meter(creds, months, today):
-    """Fetch OVHcloud credit burn per month from the movements ledger.
+    """Fetch OVHcloud credit burn per USAGE month from the movements ledger.
 
     GETs /me/credit/balance/STARTUP_PROGRAM/movement (list of IDs), then
     fetches each movement detail. Only type=USE movements are counted; VOUCHER
-    and other types are ignored. Amounts are kept in native EUR.
+    and other types are ignored. Movements are attributed to the month BEFORE
+    their creationDate (see _usage_month). Amounts are kept in native EUR.
 
     Args:
         creds:  dict with OVH_APPLICATION_KEY/SECRET and OVH_CONSUMER_KEY
@@ -100,7 +117,7 @@ def meter(creds, months, today):
         mov = _get(creds, path, ts)
         if (mov or {}).get("type") != "USE":
             continue
-        month = (mov.get("creationDate") or "")[:7]
+        month = _usage_month(mov.get("creationDate"))
         if month not in month_set:
             continue
         totals[month] += -_amount(mov)  # USE amounts are negative; negate to get positive burn

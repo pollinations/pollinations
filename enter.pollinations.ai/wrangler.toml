@@ -10,7 +10,7 @@ port = 3000
 [assets]
 directory = "dist/client"
 not_found_handling = "single-page-application"
-run_worker_first = [ "/api/*", "/__scheduled" ]
+run_worker_first = [ "/api/*", "/__scheduled", "/.well-known/*" ]
 
 [[d1_databases]]
 binding = "DB"
@@ -71,6 +71,12 @@ STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 
 [env.production]
 
+# Explicitly detach cron schedules. Deleting the [triggers] block leaves
+# previously-deployed crons attached (crons undefined = unchanged); only
+# `crons = []` removes them. See Cloudflare Workers cron-triggers docs.
+[env.production.triggers]
+crons = []
+
 [env.production.observability]
 enabled = true
 head_sampling_rate = 1
@@ -109,6 +115,10 @@ STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TVU4T7rcjS3l7trqtBuve71"
 STRIPE_PMC = "pmc_1SrY4O7rcjS3l7trnGXDTuat"
 [env.staging]
 
+# See production note above: explicit empty crons detaches the schedule.
+[env.staging.triggers]
+crons = []
+
 [[env.staging.routes]]
 pattern = "staging.enter.myceli.ai"
 zone_name = "myceli.ai"
@@ -140,9 +150,10 @@ BETTER_AUTH_URL = "https://staging.enter.pollinations.ai"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
-# GitHub OAuth lockdown — only these numeric GitHub user IDs may sign in.
-# Issue #11137. Comma-separated. IDs are immutable (usernames are not).
-STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997"
+# Staging OAuth lockdown — GitHub IDs are immutable; emails allow one-off
+# team access when the exact GitHub account is unknown. Issue #11137.
+STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458"
+STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai"
 [env.dev]
 
 [[env.dev.routes]]

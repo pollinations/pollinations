@@ -8,7 +8,7 @@ import * as betterAuthSchema from "@shared/db/better-auth.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
 import { sendTierEventToTinybird } from "@shared/events.ts";
 import { AUTH_TRUSTED_ORIGINS } from "@shared/public-urls.ts";
-import { DEFAULT_TIER, getTierPollen } from "@shared/tier-config.ts";
+import { DEFAULT_TIER } from "@shared/tier-config.ts";
 import {
     type BetterAuthOptions,
     type BetterAuthPlugin,
@@ -202,8 +202,9 @@ function onAfterSessionCreate(
 }
 
 /**
- * Set initial tier balance in D1 after user creation.
- * This guarantees new users get their default tier pollen.
+ * Log user registration to Tinybird after user creation.
+ * New users get NO starting Pollen — free drip is retired; balance comes from
+ * quests or purchases. tier_balance stays NULL (treated as 0 by the gate).
  */
 function onAfterUserCreate(
     env: Cloudflare.Env,
@@ -211,16 +212,6 @@ function onAfterUserCreate(
 ) {
     return async (user: GenericUser, _ctx: GenericEndpointContext | null) => {
         try {
-            const db = drizzle(env.DB);
-            const tierBalance = getTierPollen(DEFAULT_TIER);
-            await db
-                .update(userTable)
-                .set({
-                    tierBalance,
-                    lastTierGrant: Date.now(),
-                })
-                .where(eq(userTable.id, user.id));
-
             // Log user registration event to Tinybird
             // Use the ExecutionContext passed from createAuth, not better-auth's internal context
             executionCtx?.waitUntil(
@@ -230,7 +221,7 @@ function onAfterUserCreate(
                         environment: env.ENVIRONMENT || "unknown",
                         user_id: user.id,
                         tier: DEFAULT_TIER,
-                        pollen_amount: tierBalance,
+                        pollen_amount: 0,
                     },
                     env.TINYBIRD_TIER_INGEST_URL,
                     env.TINYBIRD_INGEST_TOKEN,
@@ -239,15 +230,15 @@ function onAfterUserCreate(
         } catch (e: unknown) {
             const messageOrError = e instanceof Error ? e.message : e;
             throw new APIError("INTERNAL_SERVER_ERROR", {
-                message: `User tier initialization failed. Error: ${messageOrError}`,
+                message: `User registration logging failed. Error: ${messageOrError}`,
             });
         }
     };
 }
 
 /**
- * Restricts new signups on staging to an allowlist of GitHub user IDs
- * (immutable, unlike usernames). No-op outside staging.
+ * Restricts new signups on staging to explicit GitHub ID or email allowlists.
+ * GitHub IDs are immutable, unlike usernames. No-op outside staging.
  *
  * This is a thin UX layer only — it rejects disallowed users during OAuth
  * before a `user` row is created, so /error shows "staging is invite-only"
@@ -273,6 +264,7 @@ function stagingAccessPlugin(env: Cloudflare.Env): BetterAuthPlugin {
                                         githubId: (
                                             user as { githubId?: number }
                                         ).githubId,
+                                        email: user.email,
                                     });
                                 } catch (e) {
                                     if (e instanceof StagingAccessDeniedError) {

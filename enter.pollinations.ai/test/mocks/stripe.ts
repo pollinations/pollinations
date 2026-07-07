@@ -102,6 +102,23 @@ type StripeInvoice = {
     currency: string;
     metadata: Record<string, string>;
     hosted_invoice_url?: string | null;
+    lines?: {
+        object: "list";
+        data: StripeInvoiceLineItem[];
+        has_more: boolean;
+        url: string;
+    };
+};
+
+type StripeInvoiceLineItem = {
+    id: string;
+    object: "line_item";
+    amount: number;
+    amount_excluding_tax: number;
+    currency: string;
+    description: string | null;
+    invoice: string | null;
+    metadata: Record<string, string>;
 };
 
 type StripeInvoicePayment = {
@@ -146,6 +163,7 @@ export type MockStripeState = {
     portalSessions: StripePortalSession[];
     portalConfigurations: StripePortalConfiguration[];
     invoices: StripeInvoice[];
+    invoiceItems: StripeInvoiceLineItem[];
     invoicePayments: StripeInvoicePayment[];
     paymentIntents: StripePaymentIntent[];
     requests: StripeRequest[];
@@ -331,6 +349,10 @@ export function createMockStripe(): MockAPI<MockStripeState> {
                 amount_paid: 0,
                 currency: "usd",
                 metadata: parseMetadata(form),
+                lines: createInvoiceLineList(
+                    `in_mock_${state.invoices.length + 1}`,
+                    [],
+                ),
             };
             state.invoices.push(invoice);
             return c.json(invoice);
@@ -359,17 +381,45 @@ export function createMockStripe(): MockAPI<MockStripeState> {
         .post("/v1/invoiceitems", async (c) => {
             const form = await parseForm(c.req.raw);
             recordRequest(c, state, form);
+            const invoiceId = form.get("invoice");
+            const amount = Number(form.get("amount") ?? 0);
+            const lineItem: StripeInvoiceLineItem = {
+                id: `il_mock_${state.invoiceItems.length + 1}`,
+                object: "line_item",
+                amount,
+                amount_excluding_tax: amount,
+                currency: form.get("currency") ?? "usd",
+                description: form.get("description"),
+                invoice: invoiceId,
+                metadata: parseMetadata(form),
+            };
+            state.invoiceItems.push(lineItem);
             const invoice = state.invoices.find(
-                (item) => item.id === form.get("invoice"),
+                (item) => item.id === invoiceId,
             );
             if (invoice) {
-                invoice.amount_due += Number(form.get("amount") ?? 0);
+                invoice.amount_due += amount;
+                invoice.lines = createInvoiceLineList(
+                    invoice.id,
+                    getInvoiceLineItems(state, invoice.id),
+                );
             }
             return c.json({
-                id: "ii_mock_1",
+                id: `ii_mock_${state.invoiceItems.length}`,
                 object: "invoiceitem",
-                invoice: form.get("invoice"),
+                invoice: invoiceId,
             });
+        })
+        .get("/v1/invoices/:id/lines", (c) => {
+            recordRequest(c, state);
+            const invoiceId = c.req.param("id");
+            if (!findInvoice(state, invoiceId)) return stripeNotFound(c);
+            return c.json(
+                createInvoiceLineList(
+                    invoiceId,
+                    getInvoiceLineItems(state, invoiceId),
+                ),
+            );
         })
         .post("/v1/invoices/:id/finalize", (c) => {
             recordRequest(c, state);
@@ -501,6 +551,7 @@ function createInitialState(): MockStripeState {
         portalSessions: [],
         portalConfigurations: [],
         invoices: [],
+        invoiceItems: [],
         invoicePayments: [],
         paymentIntents: [],
         requests: [],
@@ -657,6 +708,25 @@ function findInvoice(
     id: string,
 ): StripeInvoice | undefined {
     return state.invoices.find((invoice) => invoice.id === id);
+}
+
+function getInvoiceLineItems(
+    state: MockStripeState,
+    invoiceId: string,
+): StripeInvoiceLineItem[] {
+    return state.invoiceItems.filter((item) => item.invoice === invoiceId);
+}
+
+function createInvoiceLineList(
+    invoiceId: string,
+    data: StripeInvoiceLineItem[],
+): NonNullable<StripeInvoice["lines"]> {
+    return {
+        object: "list",
+        data,
+        has_more: false,
+        url: `/v1/invoices/${invoiceId}/lines`,
+    };
 }
 
 function stripeNotFound(c: Context) {

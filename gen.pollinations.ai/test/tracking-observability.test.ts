@@ -11,7 +11,12 @@ import {
     communityModelDefinition,
 } from "@shared/community-endpoints.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
-import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
+import {
+    type BillingAdjustment,
+    getRegistryModelDefinition,
+} from "@shared/registry/registry.ts";
+import type { TinybirdEvent } from "@shared/schemas/generation-event.ts";
+import { removeUnset } from "@shared/util.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
@@ -20,7 +25,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
 import { logger } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
-import { track } from "@/middleware/track.ts";
+import { reduceAdjustmentsToEventFields, track } from "@/middleware/track.ts";
 
 afterEach(() => {
     vi.restoreAllMocks();
@@ -514,6 +519,60 @@ describe("tracking observability", () => {
         expect(consumePollen).toHaveBeenCalledWith(0);
     });
 
+    it("bills 3D generation that returns a model/ content-type", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+
+        // 3D models share the "generate.image" EventType but respond with a
+        // model/* content-type (e.g. model/gltf-binary), not image/ or video/.
+        const upstream = new Response(new Uint8Array([1, 2, 3]), {
+            headers: {
+                "content-type": "model/gltf-binary",
+                "x-model-used": "triposr",
+                "x-usage-completion-image-tokens": "1",
+            },
+        });
+
+        const ctx = createExecutionContext();
+        const response = await createWrongContentTypeApp(
+            consumePollen,
+            "generate.image",
+            upstream,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/upstream", {
+                method: "GET",
+            }),
+            {
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+            eventType: "generate.image",
+            responseStatus: 200,
+            isBilledUsage: true,
+        });
+    });
+
     it("does not bill a streamed text request that returns a non-SSE content-type", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
@@ -592,5 +651,97 @@ describe("tracking observability", () => {
     it("records fallbackUsed=false when no fallback header is present", async () => {
         const event = await captureFallbackEvent({});
         expect(event.fallbackUsed).toBe(false);
+    });
+});
+
+function makeAdjustment(
+    ruleId: string,
+    cost: number,
+    units: number,
+): BillingAdjustment {
+    return {
+        ruleId,
+        kind: "search_query",
+        unit: "query",
+        units,
+        unitCost: units === 0 ? 0 : cost / units,
+        cost,
+        price: cost,
+    };
+}
+
+describe("reduceAdjustmentsToEventFields", () => {
+    it("returns undefined map fields when there are no adjustments", () => {
+        expect(reduceAdjustmentsToEventFields(undefined)).toEqual({});
+        expect(reduceAdjustmentsToEventFields([])).toEqual({});
+    });
+
+    it("maps a single adjustment to keyed cost/units records", () => {
+        expect(
+            reduceAdjustmentsToEventFields([
+                makeAdjustment("google.gemini_3.search_query.v1", 0.042, 3),
+            ]),
+        ).toEqual({
+            adjustmentCosts: { "google.gemini_3.search_query.v1": 0.042 },
+            adjustmentUnits: { "google.gemini_3.search_query.v1": 3 },
+        });
+    });
+
+    it("maps two distinct rule ids into both records", () => {
+        expect(
+            reduceAdjustmentsToEventFields([
+                makeAdjustment("google.gemini_3.search_query.v1", 0.042, 3),
+                makeAdjustment(
+                    "perplexity.sonar_low.search_request.v1",
+                    0.006,
+                    1,
+                ),
+            ]),
+        ).toEqual({
+            adjustmentCosts: {
+                "google.gemini_3.search_query.v1": 0.042,
+                "perplexity.sonar_low.search_request.v1": 0.006,
+            },
+            adjustmentUnits: {
+                "google.gemini_3.search_query.v1": 3,
+                "perplexity.sonar_low.search_request.v1": 1,
+            },
+        });
+    });
+
+    it("survives the JSON.stringify(removeUnset(event)) ingestion round-trip", () => {
+        // Mirror shared/events.ts sendToTinybird: body = JSON.stringify(removeUnset(event)).
+        const withAdjustments = {
+            id: "evt_with",
+            isBilledUsage: true,
+            ...reduceAdjustmentsToEventFields([
+                makeAdjustment("google.gemini_3.search_query.v1", 0.042, 3),
+            ]),
+        } as unknown as TinybirdEvent;
+        const parsedWith = JSON.parse(
+            JSON.stringify(removeUnset(withAdjustments)),
+        );
+        expect(parsedWith.adjustmentCosts).toEqual({
+            "google.gemini_3.search_query.v1": 0.042,
+        });
+        expect(parsedWith.adjustmentUnits).toEqual({
+            "google.gemini_3.search_query.v1": 3,
+        });
+
+        // No adjustments → neither key is present in the serialized payload
+        // (removeUnset drops undefined; ClickHouse DEFAULT map() fills them).
+        const withoutAdjustments = {
+            id: "evt_without",
+            isBilledUsage: true,
+            ...reduceAdjustmentsToEventFields([]),
+        } as unknown as TinybirdEvent;
+        const serializedWithout = JSON.stringify(
+            removeUnset(withoutAdjustments),
+        );
+        expect(serializedWithout).not.toContain("adjustmentCosts");
+        expect(serializedWithout).not.toContain("adjustmentUnits");
+        const parsedWithout = JSON.parse(serializedWithout);
+        expect(parsedWithout).not.toHaveProperty("adjustmentCosts");
+        expect(parsedWithout).not.toHaveProperty("adjustmentUnits");
     });
 });

@@ -78,7 +78,7 @@ Where data leaves the EEA, we use approved safeguards (e.g., EU Standard Contrac
 
 Access, correction, deletion, restriction, portability, objection to legitimate-interest processing, and withdrawal of consent where applicable.
 
-You can complain to your local authority or the Estonian Data Protection Inspectorate (AKI). **Contact:** hi@myceli.ai.
+You can complain to your local authority or the Estonian Data Protection Inspectorate (AKI). **Contact:** hello@myceli.ai.
 
 ## 11) Security
 
@@ -103,4 +103,4 @@ Myceli.AI OÜ
 Registry code: 17186693  
 VAT number: EE102877908  
 Registered address: Harju maakond, Tallinn, Kesklinna linnaosa, Tornimäe tn 5, 10145, Estonia  
-Email: hi@myceli.ai
+Email: hello@myceli.ai

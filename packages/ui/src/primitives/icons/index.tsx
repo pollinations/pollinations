@@ -156,6 +156,16 @@ export function ImageIcon(props: IconProps) {
     );
 }
 
+export function CubeIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="m21 16-9 5-9-5V8l9-5 9 5z" />
+            <path d="m3 8 9 5 9-5" />
+            <path d="M12 13v8" />
+        </svg>
+    );
+}
+
 export function AudioIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>

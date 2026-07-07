@@ -40,6 +40,7 @@ curl https://gen.pollinations.ai/v1/models \
   - [✍️ Text](#-text)
   - [🖼️ Image](#-image)
   - [🎬 Video](#-video)
+  - [🧊 3D](#-3d)
   - [🔊 Audio](#-audio)
   - [🎙️ Realtime](#-realtime)
   - [🔢 Embeddings](#-embeddings)
@@ -300,6 +301,35 @@ curl -X POST "https://gen.pollinations.ai/v1/chat/completions" \
   -d '{"model":"openai","messages":[{"role":"user","content":"Hello!"}]}'
 ```
 
+##### Prompt caching
+
+On Gemini, Claude, and Nova models, a large static prompt prefix can be cached so repeat requests bill it at a fraction of the input rate. Mark the end of the static prefix with `cache_control` on a content block (not on the message); everything before the marker must be byte-identical across requests, everything dynamic goes after. The first request creates the cache (`usage` reports `cache_creation_input_tokens`); repeat requests within the TTL report `prompt_tokens_details.cached_tokens` at the discounted rate.
+
+```json
+{
+  "model": "gemini-fast",
+  "messages": [
+    {
+      "role": "system",
+      "content": [
+        {
+          "type": "text",
+          "text": "<large static prompt>",
+          "cache_control": { "type": "ephemeral" }
+        }
+      ]
+    },
+    { "role": "user", "content": "<dynamic message>" }
+  ]
+}
+```
+
+**Gemini** — the prefix must be at least ~2,048 tokens (~4,096 on Gemini 3 models). Requests with tools are not cached — including built-in tools, so `gemini`, `gemini-3-flash`, `gemini-large`, and the search variants only cache when tools are disabled (`"tools": []`) or a JSON `response_format` is set; `gemini-fast` and `gemini-flash-lite-3.1` cache by default. Cache creates bill at the standard input rate plus a storage fee for the 1-hour TTL ($1 per 1M cached tokens on Flash models, $4.50 on Pro); hits bill at ~10% of input. The storage fee means caching pays off only when the prefix is reused often — roughly a dozen reuses per hour on the cheapest models.
+
+**Claude** — all Claude models cache. The prefix must be at least 4,096 tokens (1,024 on `claude` and `claude-fable-5`); tools are fine. Cache creates bill at 1.25× the input rate (no storage fee); hits bill at 10% of input. The cache lives ~5 minutes, refreshed on each hit.
+
+**Nova** — `nova` and `nova-fast` cache. The prefix must be at least ~1,000 tokens (up to 20K tokens cacheable). Cache creates are free; hits bill at 25% of input. ~5-minute TTL.
+
 ---
 
 #### `POST` `/text` — Text Generation With Messages
@@ -526,6 +556,40 @@ Browse all available models and their `video_capabilities` at [`/image/models`](
 ```bash
 curl "https://gen.pollinations.ai/video/a%20sunset%20timelapse%20over%20the%20ocean?model=veo&width=1024" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
+### 🧊 3D
+
+#### `GET` `/3d/{prompt}` — Generate 3D Model
+
+Generate a 3D model from a text prompt or reference image(s). Returns GLB by default.
+
+**Available models:** `trellis-2-low`, `trellis-2-medium`, `trellis-2-high`, `hyper3d-rodin`. `trellis-2-low` is the default. All models return GLB.
+
+Pass reference image URL(s) via the `image` parameter for image-to-3D models (`trellis-2-*`). Separate multiple URLs with `|` or `,`. `hyper3d-rodin` accepts both images and a text prompt.
+
+Browse all available models and their input requirements at [`/3d/models`](https://gen.pollinations.ai/3d/models).
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `prompt` * | `path` | `string` | Text description of the 3D model to generate (required for text-to-3D models; ignored by image-only models) |
+| `model` | `query` | `string` | Model to use. See /3d/models for the full list and per-model input requirements. · default: `"trellis-2-low"` |
+| `image` | `query` | `string` | Reference image URL(s) for image-to-3D generation. Separate multiple URLs with `\|` or `,`. Required for `trellis-2-*` models. |
+| `seed` | `query` | `integer` | Seed for varied generations. Passed through to models that support it (`hyper3d-rodin`); otherwise only affects the media-cache key, so a new seed forces a fresh generation for the same prompt/image. |
+| `safe` | `query` | `string` \| `boolean` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
+
+<sub>`*` = required parameter</sub>
+
+📤 **Response** · `200` · `model/gltf-binary` — Success - Returns the generated 3D model
+
+💻 **Example**
+
+```bash
+curl "https://gen.pollinations.ai/3d/a%20low-poly%20treasure%20chest?model=trellis-2-low&image=https://example.com/ref.jpg" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  --output model.glb
 ```
 
 ### 🔊 Audio
@@ -1387,6 +1451,8 @@ All endpoints return errors in this envelope:
 Reusable request/response objects referenced from the endpoints above.
 
 ### `CacheControl`
+
+Marks the end of a static prompt prefix to cache (Gemini models). Place on the final content block of the prefix; repeat requests bill the cached prefix at ~10% of the input rate. See the **Prompt caching** section under Chat Completions.
 
 | Field | Type | Description |
 |---|---|---|

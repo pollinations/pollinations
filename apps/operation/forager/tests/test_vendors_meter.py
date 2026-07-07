@@ -322,11 +322,22 @@ def test_vast_meter_source_cli():
 
 
 def test_vast_meter_cli_command():
-    """Must call vastai show invoices --raw."""
+    """Must call vastai show invoices --raw with an explicit date window —
+    without -s/-e the CLI silently returns TODAY only (lost months of history)."""
     cmds = []
     fake_run = lambda cmd, **kw: (cmds.append(cmd), _fake_result(stdout=_VAST_INVOICES_JSON))[1]
     _vast.meter(_VAST_CREDS, ["2026-04"], TODAY, run_cmd=fake_run)
-    assert cmds[0] == ["vastai", "show", "invoices", "--raw"]
+    assert cmds[0] == ["vastai", "show", "invoices", "--raw",
+                       "-s", "2026-04-01", "-e", "2026-05-01"]
+
+
+def test_vast_meter_window_spans_all_months():
+    """Window = first day of min month → first day after max month."""
+    cmds = []
+    fake_run = lambda cmd, **kw: (cmds.append(cmd), _fake_result(stdout="[]"))[1]
+    _vast.meter(_VAST_CREDS, ["2026-01", "2026-07", "2026-12"], TODAY, run_cmd=fake_run)
+    assert cmds[0][cmds[0].index("-s") + 1] == "2026-01-01"
+    assert cmds[0][cmds[0].index("-e") + 1] == "2027-01-01"
 
 
 def test_vast_meter_nonzero_rc_no_stdout_in_error():

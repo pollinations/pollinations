@@ -25,7 +25,7 @@ export async function fetchTinybirdRows<T>(
 ): Promise<T[]> {
     const url = new URL(path, origin);
     for (const [key, value] of Object.entries(params)) {
-        if (value) {
+        if (value !== undefined && value !== "") {
             url.searchParams.set(key, value);
         }
     }

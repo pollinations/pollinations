@@ -325,31 +325,6 @@ function toPromptAgentConfig(form: EndpointFormState): PromptAgentConfig {
     };
 }
 
-// Reverting a public endpoint to private is a one-click card action with no
-// form: it only flips visibility, resending the endpoint's stored prices and
-// tool fees unchanged (a private endpoint never applies them). Sent to the
-// update endpoint, so it never redeploys a managed worker. The update json type
-// requires every price field, hence the full spread.
-export type VisibilityUpdatePayload = {
-    visibility: CommunityEndpointVisibility;
-    toolPrices: Record<string, number>;
-} & CommunityEndpointPrices;
-
-export function toUnpublishPayload(
-    endpoint: CommunityEndpoint,
-): VisibilityUpdatePayload {
-    return {
-        visibility: "private",
-        toolPrices: endpoint.toolPrices,
-        ...(Object.fromEntries(
-            COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
-                field.key,
-                endpoint[field.key],
-            ]),
-        ) as CommunityEndpointPrices),
-    };
-}
-
 export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
     const modelName = form.name.trim();
     const shared = {

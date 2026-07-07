@@ -1,13 +1,14 @@
 import {
     Alert,
-    Button,
     CardIcon,
     CheckIcon,
     Chip,
     ClipboardIcon,
     CopyButton,
     ExternalLinkIcon,
+    GlobeIcon,
     IconButton,
+    LockIcon,
     PencilIcon,
     Surface,
     TerminalIcon,
@@ -26,21 +27,13 @@ import {
 
 type CommunityEndpointCardProps = {
     endpoint: CommunityEndpoint;
-    // Allowlisted owners get the Make public / Make private controls; others
-    // only manage private models.
-    canPublish: boolean;
     onEdit: () => void;
-    onPublish: () => void;
-    onUnpublish: () => void;
     onDelete: () => void;
 };
 
 export function CommunityEndpointCard({
     endpoint,
-    canPublish,
     onEdit,
-    onPublish,
-    onUnpublish,
     onDelete,
 }: CommunityEndpointCardProps) {
     const isPublic = endpoint.visibility === "public";
@@ -58,14 +51,14 @@ export function CommunityEndpointCard({
                         <h3 className="min-w-0 truncate text-base font-semibold text-theme-text-strong">
                             {endpoint.name}
                         </h3>
-                        {canPublish && (
-                            <Chip
-                                intent={isPublic ? "news" : "neutral"}
-                                size="sm"
-                            >
-                                {VISIBILITY_LABELS[endpoint.visibility]}
-                            </Chip>
-                        )}
+                        <Chip intent={isPublic ? "news" : "neutral"} size="sm">
+                            {isPublic ? (
+                                <GlobeIcon className="h-3 w-3" />
+                            ) : (
+                                <LockIcon className="h-3 w-3" />
+                            )}
+                            {VISIBILITY_LABELS[endpoint.visibility]}
+                        </Chip>
                         {endpoint.kind === "agent" && (
                             <Chip intent="news" size="sm">
                                 Agent
@@ -84,27 +77,6 @@ export function CommunityEndpointCard({
                     )}
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
-                    {canPublish &&
-                        (isPublic ? (
-                            <Button
-                                type="button"
-                                size="sm"
-                                className="whitespace-nowrap text-sm"
-                                onClick={onUnpublish}
-                            >
-                                Make private
-                            </Button>
-                        ) : (
-                            <Button
-                                type="button"
-                                size="sm"
-                                intent="info"
-                                className="whitespace-nowrap text-sm"
-                                onClick={onPublish}
-                            >
-                                Make public
-                            </Button>
-                        ))}
                     <IconButton
                         intent="info"
                         title="Edit model"

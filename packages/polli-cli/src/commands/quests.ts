@@ -1,6 +1,7 @@
 import chalk from "chalk";
 import { Command } from "commander";
-import { gen, requireKey } from "../lib/api.js";
+import { enter, gen, requireKey } from "../lib/api.js";
+import { ENTER_URL } from "../lib/config.js";
 import {
     getOutputMode,
     printError,
@@ -36,6 +37,10 @@ interface QuestEntry {
 
 interface QuestsResponse {
     quests: QuestEntry[];
+}
+
+interface QuestRewardsResponse {
+    rewards: QuestReward[];
 }
 
 function questStatus(quest: QuestEntry): QuestStatus {
@@ -113,6 +118,49 @@ async function listAccountQuests(opts: Record<string, unknown>): Promise<void> {
         apiKey: requireKey(),
     });
     renderQuests(filterQuests(data.quests ?? [], opts));
+}
+
+function renderRewards(rewards: QuestReward[]): void {
+    if (getOutputMode() === "json") {
+        printResult(rewards);
+        return;
+    }
+
+    printTable(
+        rewards.map((reward) => ({
+            status: reward.claimedAt
+                ? chalk.dim("claimed")
+                : chalk.green("claimable"),
+            reward: `${reward.pollenAmount} ${reward.balanceBucket}`,
+            title: reward.title,
+            earned: reward.earnedAt.slice(0, 10),
+        })),
+        ["status", "reward", "title", "earned"],
+    );
+}
+
+async function listRewards(opts: Record<string, unknown>): Promise<void> {
+    const data = await enter<QuestRewardsResponse>("/api/quests/rewards", {
+        apiKey: requireKey(),
+    });
+    const all = data.rewards ?? [];
+    const claimable = all.filter((reward) => reward.claimedAt === null);
+
+    if (getOutputMode() !== "json" && claimable.length > 0) {
+        const total = claimable.reduce(
+            (sum, reward) => sum + reward.pollenAmount,
+            0,
+        );
+        printInfo(
+            `${claimable.length} reward(s) ready to claim (${total} pollen). ` +
+                `Claim them in the dashboard: ${ENTER_URL}/#quests`,
+        );
+    }
+
+    let rewards = all;
+    if (opts.pending) rewards = rewards.filter((r) => r.claimedAt === null);
+    if (opts.claimed) rewards = rewards.filter((r) => r.claimedAt !== null);
+    renderRewards(rewards);
 }
 
 export const questsCommand = addQuestFilters(

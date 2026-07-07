@@ -118,16 +118,19 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period }) => {
                                 Apps
                             </span>
                             <div className="min-w-0 flex-1 max-w-60 [&_button]:w-full">
-                                <MultiSelect
-                                    options={appSelectOptions}
-                                    selected={selectedAppKeyIds}
-                                    onChange={setSelectedAppKeyIds}
-                                    placeholder="All"
-                                    disabled={appSelectOptions.length === 0}
-                                    disabledText="None"
-                                    disabledTooltip="No app earnings in this period"
-                                    align="start"
-                                />
+                                {appSelectOptions.length === 0 ? (
+                                    <span className="inline-flex min-h-8 items-center text-xs text-theme-text-muted">
+                                        No app earnings in this period
+                                    </span>
+                                ) : (
+                                    <MultiSelect
+                                        options={appSelectOptions}
+                                        selected={selectedAppKeyIds}
+                                        onChange={setSelectedAppKeyIds}
+                                        placeholder="All"
+                                        align="start"
+                                    />
+                                )}
                             </div>
                         </div>
                         <div className="flex w-full items-center gap-3">
@@ -135,16 +138,19 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({ period }) => {
                                 Models
                             </span>
                             <div className="min-w-0 flex-1 max-w-60 [&_button]:w-full">
-                                <MultiSelect
-                                    options={modelSelectOptions}
-                                    selected={selectedModelIds}
-                                    onChange={setSelectedModelIds}
-                                    placeholder="All"
-                                    disabled={modelSelectOptions.length === 0}
-                                    disabledText="None"
-                                    disabledTooltip="No model earnings in this period"
-                                    align="start"
-                                />
+                                {modelSelectOptions.length === 0 ? (
+                                    <span className="inline-flex min-h-8 items-center text-xs text-theme-text-muted">
+                                        No model earnings in this period
+                                    </span>
+                                ) : (
+                                    <MultiSelect
+                                        options={modelSelectOptions}
+                                        selected={selectedModelIds}
+                                        onChange={setSelectedModelIds}
+                                        placeholder="All"
+                                        align="start"
+                                    />
+                                )}
                             </div>
                         </div>
                         <MetricTabs value={metric} onChange={setMetric} />

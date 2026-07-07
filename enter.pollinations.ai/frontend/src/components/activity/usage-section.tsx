@@ -137,21 +137,24 @@ export const UsageSection: FC<UsageSectionProps> = ({ period }) => {
                                 Keys
                             </span>
                             <div className="min-w-0 flex-1 max-w-60 [&_button]:w-full">
-                                <MultiSelect
-                                    options={keySelectOptions}
-                                    selected={filters.selectedKeyIds}
-                                    onChange={(v) =>
-                                        setFilters((f) => ({
-                                            ...f,
-                                            selectedKeyIds: v,
-                                        }))
-                                    }
-                                    placeholder="All"
-                                    disabled={keySelectOptions.length === 0}
-                                    disabledText="None"
-                                    disabledTooltip="No API key usage in this period"
-                                    align="start"
-                                />
+                                {keySelectOptions.length === 0 ? (
+                                    <span className="inline-flex min-h-8 items-center text-xs text-theme-text-muted">
+                                        No API key usage in this period
+                                    </span>
+                                ) : (
+                                    <MultiSelect
+                                        options={keySelectOptions}
+                                        selected={filters.selectedKeyIds}
+                                        onChange={(v) =>
+                                            setFilters((f) => ({
+                                                ...f,
+                                                selectedKeyIds: v,
+                                            }))
+                                        }
+                                        placeholder="All"
+                                        align="start"
+                                    />
+                                )}
                             </div>
                         </div>
                         <div className="flex w-full items-center gap-3">
@@ -159,21 +162,24 @@ export const UsageSection: FC<UsageSectionProps> = ({ period }) => {
                                 Models
                             </span>
                             <div className="min-w-0 flex-1 max-w-60 [&_button]:w-full">
-                                <MultiSelect
-                                    options={modelSelectOptions}
-                                    selected={filters.selectedModels}
-                                    onChange={(v) =>
-                                        setFilters((f) => ({
-                                            ...f,
-                                            selectedModels: v,
-                                        }))
-                                    }
-                                    placeholder="All"
-                                    disabled={modelSelectOptions.length === 0}
-                                    disabledText="None"
-                                    disabledTooltip="No model usage in this period"
-                                    align="start"
-                                />
+                                {modelSelectOptions.length === 0 ? (
+                                    <span className="inline-flex min-h-8 items-center text-xs text-theme-text-muted">
+                                        No model usage in this period
+                                    </span>
+                                ) : (
+                                    <MultiSelect
+                                        options={modelSelectOptions}
+                                        selected={filters.selectedModels}
+                                        onChange={(v) =>
+                                            setFilters((f) => ({
+                                                ...f,
+                                                selectedModels: v,
+                                            }))
+                                        }
+                                        placeholder="All"
+                                        align="start"
+                                    />
+                                )}
                             </div>
                         </div>
                         <MetricTabs

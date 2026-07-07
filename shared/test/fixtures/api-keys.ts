@@ -17,6 +17,7 @@ export type CreateTestUserOptions = {
     packBalance?: number | null;
     githubId?: number | null;
     githubUsername?: string | null;
+    handle?: string | null;
 };
 
 export type CreateTestApiKeyOptions = {
@@ -46,6 +47,12 @@ export async function createTestUser(opts: CreateTestUserOptions = {}) {
         packBalance: opts.packBalance ?? 0,
         githubId: opts.githubId ?? null,
         githubUsername: opts.githubUsername ?? null,
+        // Mirror the production backfill: if handle is not explicitly set,
+        // default to githubUsername (which is always equal for existing users).
+        handle:
+            opts.handle !== undefined
+                ? opts.handle
+                : (opts.githubUsername ?? null),
         createdAt: new Date(),
         updatedAt: new Date(),
     });

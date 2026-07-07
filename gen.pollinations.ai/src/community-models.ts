@@ -40,7 +40,7 @@ export async function getCommunityModelRegistryEntries(
         .select({
             id: schema.communityEndpoint.id,
             ownerUserId: schema.communityEndpoint.ownerUserId,
-            ownerGithubUsername: schema.user.githubUsername,
+            ownerHandle: schema.user.handle,
             name: schema.communityEndpoint.name,
             description: schema.communityEndpoint.description,
             baseUrl: schema.communityEndpoint.baseUrl,
@@ -65,11 +65,11 @@ export async function getCommunityModelRegistryEntries(
             schema.user,
             eq(schema.communityEndpoint.ownerUserId, schema.user.id),
         )
-        .where(isNotNull(schema.user.githubUsername));
+        .where(isNotNull(schema.user.handle));
 
     return rows.flatMap((row): CommunityModelRegistryEntry[] => {
-        if (!row.ownerGithubUsername) return [];
-        const modelId = communityModelId(row.ownerGithubUsername, row.name);
+        if (!row.ownerHandle) return [];
+        const modelId = communityModelId(row.ownerHandle, row.name);
         const communityEndpoint: CommunityEndpointRuntime = {
             id: row.id,
             ownerUserId: row.ownerUserId,

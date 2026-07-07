@@ -30,6 +30,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
+import { getCommunityModelRegistryEntries } from "./community-models.ts";
 import { resetGenerationModelRegistryCache } from "./model-registry.ts";
 import { communityEndpointGatewayContext } from "./text/communityEndpoint.ts";
 
@@ -1328,4 +1329,39 @@ fixtureTest("rejects a community model name containing a slash", async () => {
     );
 
     expect(response.status).toBe(400);
+});
+
+it("resolves community model registry entry from user.handle when githubUsername is null", async () => {
+    const handle = `handle-${crypto.randomUUID().slice(0, 8)}`;
+    const modelName = `model-${crypto.randomUUID().slice(0, 8)}`;
+    const expectedModelId = communityModelId(handle, modelName);
+
+    const ownerUserId = await createTestUser({
+        githubId: null,
+        githubUsername: null,
+        handle,
+    });
+    await db.insert(communityEndpointTable).values({
+        id: `endpoint-${crypto.randomUUID()}`,
+        ownerUserId,
+        name: modelName,
+        description: "Handle-only community endpoint",
+        baseUrl: "https://api.example.com/v1",
+        upstreamModel: "gpt-4.1-mini",
+        bearerTokenCiphertext: await encryptSecret(
+            "sk_saved_token",
+            env.BETTER_AUTH_SECRET,
+        ),
+        promptTextPrice: 0.1,
+        completionTextPrice: 0.1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    });
+
+    const entries = await getCommunityModelRegistryEntries(env.DB);
+    const entry = entries.find((e) => e.id === expectedModelId);
+
+    expect(entry).toBeDefined();
+    expect(entry?.id).toBe(expectedModelId);
+    expect(entry?.communityEndpoint.modelId).toBe(expectedModelId);
 });

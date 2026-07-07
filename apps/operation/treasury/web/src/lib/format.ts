@@ -49,9 +49,13 @@ export function hoursSince(runAt: string, nowMs: number = Date.now()): number {
 
 export function fmtSmartNumber(
     value: number,
-    { compactAt = 10_000 }: { compactAt?: number } = {},
+    {
+        compactAt = 10_000,
+        tinyAt = 0.001,
+    }: { compactAt?: number; tinyAt?: number } = {},
 ): string {
     const abs = Math.abs(value);
+    if (abs > 0 && abs < tinyAt) return `<${formatFourDigits(tinyAt)}`;
     const units = [
         { value: 1_000_000_000_000, suffix: "T" },
         { value: 1_000_000_000, suffix: "B" },
@@ -61,18 +65,23 @@ export function fmtSmartNumber(
     const unit =
         abs >= compactAt ? units.find((item) => abs >= item.value) : null;
     const divisor = unit?.value ?? 1;
-    return `${formatFourSig(abs / divisor)}${unit?.suffix ?? ""}`;
+    return `${formatFourDigits(abs / divisor)}${unit?.suffix ?? ""}`;
 }
 
-function formatFourSig(value: number): string {
+function formatFourDigits(value: number): string {
     if (value === 0) return "0";
-    const magnitude = Math.floor(Math.log10(value));
-    const scale = 10 ** (magnitude - 3);
-    const truncated = Math.trunc(value / scale) * scale;
-    const decimals = Math.max(
-        0,
-        3 - Math.floor(Math.log10(truncated || value)),
-    );
+
+    if (value < 1) {
+        const truncated = Math.trunc(value * 1000) / 1000;
+        return new Intl.NumberFormat("en-US", {
+            maximumFractionDigits: 3,
+        }).format(truncated);
+    }
+
+    const integerDigits = Math.floor(value).toString().length;
+    const decimals = Math.max(0, 4 - integerDigits);
+    const scale = 10 ** decimals;
+    const truncated = Math.trunc(value * scale) / scale;
     return new Intl.NumberFormat("en-US", {
         maximumFractionDigits: decimals,
     }).format(truncated);
@@ -83,6 +92,11 @@ function formatFourSig(value: number): string {
 export function fmtUsd(value: number | null | undefined): string {
     if (value == null || !Number.isFinite(value)) return "–";
     const magnitude = fmtSmartNumber(Math.abs(value));
+    if (magnitude.startsWith("<")) {
+        return value < 0
+            ? `−<${"$"}${magnitude.slice(1)}`
+            : `<$${magnitude.slice(1)}`;
+    }
     return value < 0 ? `−$${magnitude}` : `$${magnitude}`;
 }
 

@@ -248,12 +248,20 @@ const sortApps = (a: App, b: App) => {
 
 export default function AppsPage() {
     const [searchParams, setSearchParams] = useSearchParams();
-    const filter = searchParams.get("filter") || "image";
+    const filter = searchParams.get("filter") || "all";
     const sort = searchParams.get("sort") || "new";
-    const setFilter = (f: string) =>
-        setSearchParams({ filter: f, ...(sort ? { sort } : {}) });
-    const setSort = (s: string) =>
-        setSearchParams({ filter, sort: sort === s ? "" : s });
+    const query = searchParams.get("query") || "";
+    const updateParams = (patch: Record<string, string>) => {
+        const next = new URLSearchParams(searchParams);
+        for (const [key, value] of Object.entries(patch)) {
+            if (value) next.set(key, value);
+            else next.delete(key);
+        }
+        setSearchParams(next, { replace: true });
+    };
+    const setFilter = (f: string) => updateParams({ filter: f });
+    const setSort = (s: string) => updateParams({ sort: sort === s ? "" : s });
+    const setQuery = (q: string) => updateParams({ query: q });
     const { apiKey } = useAuth();
 
     const { apps: allApps } = useApps(COPY_CONSTANTS.appsFilePath);

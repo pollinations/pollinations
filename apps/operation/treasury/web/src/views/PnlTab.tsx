@@ -85,7 +85,7 @@ function PnlMatrix({ data, month = "" }: { data: Data; month?: string }) {
                             </TableHeaderCell>
                             {categories.map((category) => (
                                 <TableHeaderCell key={category}>
-                                    {category}
+                                    {category.toLowerCase()}
                                 </TableHeaderCell>
                             ))}
                             <TableHeaderCell>
@@ -95,7 +95,7 @@ function PnlMatrix({ data, month = "" }: { data: Data; month?: string }) {
                             </TableHeaderCell>
                             <TableHeaderCell>
                                 <HeaderHint hint="revenue − spend. Only shown when both sides exist.">
-                                    cash P&L
+                                    cash p&l
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell>

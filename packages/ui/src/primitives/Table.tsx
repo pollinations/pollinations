@@ -108,7 +108,7 @@ export const TableHeaderCell: FC<TableHeaderCellProps> = ({
     );
 
     const classes = cn(
-        "polli:px-3 polli:py-2 polli:font-bold polli:uppercase polli:tracking-wide",
+        "polli:px-3 polli:py-2 polli:font-bold polli:normal-case polli:tracking-wide",
         alignClasses[align],
         active && "polli:text-theme-text-strong",
         onSort &&

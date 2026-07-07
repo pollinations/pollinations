@@ -73,8 +73,8 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - 📝 **Text Generation** - GPT, Claude, Gemini, Grok, DeepSeek...
 - 🎬 **Video Generation** — Seedance, Veo, Grok Video...
 - 🎵 **Audio** — Text-to-speech and speech-to-text with Wisper, EvenLabs...
-- 💠 **3D Generation** - Trellis, Hyper3D
-- 🧪 **Embeddings creation** - OpenAI, Gemini, Qwen Embedding...
+- 🧊 **3D Generation** - Trellis, Hyper3D
+- 🔢 **Embeddings creation** - OpenAI, Gemini, Qwen Embedding...
 - 🎣 **_Easy-to-use Packages_** ([Packages](packages/))
 
 <a href="https://star-history.com/#pollinations/pollinations&Date">
@@ -96,8 +96,8 @@ Pollinations supports:
 - 📝 Text  
 - 🔊 Audio  
 - 🎬 Video
-- 💠 3D
-- 🧪 Embeddings
+- 🧊 3D
+- 🔢 Embeddings
 
 3️⃣ **Make your first request**  
 Use one of the examples below to generate your first AI output in seconds.

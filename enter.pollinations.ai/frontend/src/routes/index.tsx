@@ -87,10 +87,16 @@ export const Route = createFileRoute("/")({
         const tierWeek = earningsTodayResult?.tierWeek ?? 0;
         // Prefer D1; session (KV-cached) may hold a stale username after relog.
         const sessionUser = context.user as
-            | (typeof context.user & { githubUsername?: string | null })
+            | (typeof context.user & {
+                  handle?: string | null;
+                  githubUsername?: string | null;
+              })
             | undefined;
         const githubUsername =
-            profileResult?.githubUsername ?? sessionUser?.githubUsername ?? "";
+            profileResult?.handle ??
+            profileResult?.githubUsername ??
+            sessionUser?.githubUsername ??
+            "";
 
         return {
             user: context.user,

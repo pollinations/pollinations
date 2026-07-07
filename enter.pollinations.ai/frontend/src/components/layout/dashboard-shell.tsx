@@ -50,6 +50,7 @@ const brandWordmarkMask: CSSProperties = {
 type DashboardShellProps = PropsWithChildren<{
     activePage: DashboardPage;
     navItems?: readonly DashboardNavItem[];
+    handle?: string | null;
     githubUsername?: string;
     githubAvatarUrl?: string;
     onPageChange: (page: DashboardPage) => void;

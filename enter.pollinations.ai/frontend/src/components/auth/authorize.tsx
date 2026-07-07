@@ -46,6 +46,7 @@ type Attribution = {
     clientId?: string;
     userId?: string;
     userName?: string;
+    handle?: string | null;
     githubUsername?: string;
     appName?: string;
     redirectUris?: string[];
@@ -603,7 +604,7 @@ export function Authorize() {
                             />
                         )}
                         <span className="text-sm font-medium text-theme-text-strong truncate">
-                            {user.githubUsername || user.email}
+                            {user.handle || user.githubUsername || user.email}
                         </span>
                     </a>
                     <div className="inline-flex items-stretch rounded-full bg-theme-bg-pale border border-theme-border text-sm overflow-hidden shrink-0">

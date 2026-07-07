@@ -57,7 +57,6 @@ export function MonthFilter({
             className="flex min-w-0 flex-wrap items-center gap-1.5 text-sm text-theme-text-soft"
             aria-label="month filter"
         >
-            <span className="mr-0.5">period</span>
             {yearsOf(months).map((year) => (
                 <span
                     key={year}
@@ -87,6 +86,14 @@ export function MonthFilter({
     );
 }
 
+function filterOptionLabel(option: string, label: string) {
+    if (option === "all") {
+        if (label === "vendor") return "All Vendor";
+        if (label === "category") return "All Category";
+    }
+    return option || "(blank)";
+}
+
 export function FilterSelect({
     label,
     onChange,
@@ -100,11 +107,15 @@ export function FilterSelect({
 }) {
     return (
         <div className="inline-flex w-fit items-center gap-2 text-sm text-theme-text-soft">
-            <span>{label}</span>
             <Dropdown
                 trigger={(open) => (
-                    <Button className="max-w-56 gap-2">
-                        <span className="truncate">{value || "(blank)"}</span>
+                    <Button
+                        aria-label={`${label} filter`}
+                        className="max-w-56 gap-2"
+                    >
+                        <span className="truncate">
+                            {filterOptionLabel(value, label)}
+                        </span>
                         <ChevronIcon expanded={open} />
                     </Button>
                 )}
@@ -119,7 +130,7 @@ export function FilterSelect({
                                     close();
                                 }}
                             >
-                                {option || "(blank)"}
+                                {filterOptionLabel(option, label)}
                             </DropdownItem>
                         ))}
                     </div>

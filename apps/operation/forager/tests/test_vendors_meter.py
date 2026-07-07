@@ -1,6 +1,6 @@
 """Hermetic tests for meter connectors (B5).
 
-Connectors: azure, deepinfra, ovh, vast, fireworks, gcp, openai_.
+Connectors: azure, deepinfra, ovh, vast, fireworks, gcp, openai_, openrouter.
 All hermetic — http_json monkeypatched; run_cmd injected for CLI connectors.
 No network, no SOPS, no real credentials.
 
@@ -22,6 +22,7 @@ import ingest.connectors.vendors.ovh as _ovh
 import ingest.connectors.vendors.vast as _vast
 import ingest.connectors.vendors.fireworks as _fw
 import ingest.connectors.vendors.openai_ as _oai
+import ingest.connectors.vendors.openrouter as _or
 import ingest.connectors.vendors.gcp as _gcp
 from ingest.connectors import registry
 
@@ -644,6 +645,76 @@ def test_azure_meter_missing_creds_raise():
 
 
 # ===========================================================================
+# openrouter.meter
+# ===========================================================================
+
+_OR_CREDS = {"OPENROUTER_MANAGEMENT_API_KEY": "or-mgmt-key"}
+
+
+def _or_activity(*day_usage):
+    """Activity payload: (date, usage) pairs, one model row per day."""
+    return {"data": [
+        {"date": f"{day} 00:00:00", "model": "test/model", "usage": usage}
+        for day, usage in day_usage
+    ]}
+
+
+def test_openrouter_meter_sums_days_by_month(monkeypatch):
+    cap = Capture([_or_activity(
+        ("2026-06-01", 10.0), ("2026-06-20", 5.5), ("2026-07-01", 2.25),
+    )])
+    monkeypatch.setattr(_or, "http_json", cap)
+    rows = _or.meter(_OR_CREDS, ["2026-06", "2026-07"], TODAY)
+    assert {r["month"]: r["credit"] for r in rows} == {"2026-06": 15.5, "2026-07": 2.25}
+    for r in rows:
+        assert r["vendor"] == "openrouter"
+        assert r["paid"] == 0.0
+        assert r["source"] == "api"
+
+
+def test_openrouter_meter_skips_window_truncated_month(monkeypatch):
+    """A month the ~30-day window cannot cover from day 1 must NOT emit a
+    partial (understated) row — history lives as manual rows instead."""
+    cap = Capture([_or_activity(("2026-06-06", 10.0), ("2026-07-01", 2.0))])
+    monkeypatch.setattr(_or, "http_json", cap)
+    rows = _or.meter(_OR_CREDS, ["2026-05", "2026-06", "2026-07"], TODAY)
+    assert {r["month"] for r in rows} == {"2026-07"}
+
+
+def test_openrouter_meter_covered_month_from_first_day(monkeypatch):
+    """Window reaching a month's first day makes that month emittable."""
+    cap = Capture([_or_activity(("2026-06-01", 3.0), ("2026-06-15", 4.0))])
+    monkeypatch.setattr(_or, "http_json", cap)
+    rows = _or.meter(_OR_CREDS, ["2026-06"], TODAY)
+    assert rows[0]["credit"] == 7.0
+
+
+def test_openrouter_meter_out_of_scope_month_skipped(monkeypatch):
+    cap = Capture([_or_activity(("2026-07-01", 2.0), ("2026-07-02", 3.0))])
+    monkeypatch.setattr(_or, "http_json", cap)
+    rows = _or.meter(_OR_CREDS, ["2026-06"], TODAY)
+    assert rows == []
+
+
+def test_openrouter_meter_empty_activity(monkeypatch):
+    cap = Capture([{"data": []}])
+    monkeypatch.setattr(_or, "http_json", cap)
+    assert _or.meter(_OR_CREDS, ["2026-07"], TODAY) == []
+
+
+def test_openrouter_meter_missing_key_raises():
+    with pytest.raises(RuntimeError, match="OPENROUTER_MANAGEMENT_API_KEY"):
+        _or.meter({}, ["2026-07"], TODAY)
+
+
+def test_openrouter_meter_uses_management_key(monkeypatch):
+    cap = Capture([{"data": []}])
+    monkeypatch.setattr(_or, "http_json", cap)
+    _or.meter(_OR_CREDS, ["2026-07"], TODAY)
+    assert cap.calls[0]["headers"]["Authorization"] == "Bearer or-mgmt-key"
+
+
+# ===========================================================================
 # gcp.meter
 # ===========================================================================
 
@@ -953,14 +1024,15 @@ def test_meter_registry_populated():
     """METER must contain 7 entries (aws retired 2026-07: billing moved to the
     Automat-it reseller, whose credits/accounts Cost Explorer cannot see —
     aws rows are manual from the monthly reseller invoice; azure added
-    2026-07: billing-profile invoice connector)."""
-    assert len(registry.METER) == 7
+    2026-07: billing-profile invoice connector; openrouter added 2026-07:
+    activity rollup)."""
+    assert len(registry.METER) == 8
 
 
 def test_meter_registry_slugs():
-    """METER must contain all seven vendor slugs."""
+    """METER must contain all eight vendor slugs."""
     slugs = {slug for slug, _ in registry.METER}
-    for expected in ("azure", "deepinfra", "vast.ai", "ovhcloud", "fireworks", "google", "openai"):
+    for expected in ("azure", "deepinfra", "vast.ai", "ovhcloud", "fireworks", "google", "openai", "openrouter"):
         assert expected in slugs, f"METER missing: {expected}"
     assert "aws" not in slugs, "aws CE connector was retired; rows are manual"
 

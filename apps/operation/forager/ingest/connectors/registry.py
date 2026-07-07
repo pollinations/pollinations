@@ -16,6 +16,7 @@ from .vendors import ovh as _ovh
 from .vendors import vast as _vast
 from .vendors import fireworks as _fw
 from .vendors import openai_ as _openai
+from .vendors import openrouter as _openrouter
 
 from .vendors import gcp as _gcp
 
@@ -27,4 +28,5 @@ METER: list = [
     ("fireworks", _fw.meter),
     ("google", _gcp.meter),
     ("openai", _openai.meter),
+    ("openrouter", _openrouter.meter),
 ]

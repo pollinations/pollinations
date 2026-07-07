@@ -243,9 +243,14 @@ mechanism, no bundler / no CI in the path:
    name (e.g. `./_pollinations_agent.mjs`) — a 2-line string transform, not bundling.
 3. `deployCommunityWorker` grows one more `form.set()` for the SDK part; `metadata.main_module`
    stays `index.mjs`.
-**Decided:** users write a **relative import** — `import { defineAgent } from "./pollinations-agent.mjs"` —
-matching the SDK part name directly. No bare-specifier rewrite (one less transform; honest about the
-mechanism). It resolves **only our SDK part**, not arbitrary user npm — arbitrary deps are what the
+**Decided + VERIFIED ON STAGING (2026-07-07):** users write a **relative import** —
+`import { defineAgent } from "./pollinations-agent.mjs"` — matching the SDK part name directly. No
+bare-specifier rewrite (one less transform; honest about the mechanism). Proven end-to-end: a
+prompt-agent deployed via the two-part upload responded correctly through gen (`'Hello there,
+friend.'` with a proper zeroed `tool_call_counts` usage), confirming CF resolves the relative import
+between module parts at the edge — module evaluation would have thrown otherwise. The same run
+confirmed the scoped key (#43): the minted key had `pollen_balance` 5.0 draining per call and an
+expiry set. It resolves **only our SDK part**, not arbitrary user npm — arbitrary deps are what the
 container tier (#46) is for. (Deno-based platforms like Val.town/Deno Deploy avoid bundling by
 resolving `npm:`/`jsr:`/URL specifiers at the runtime loader; CF isolates can't, so multi-part is the
 CF-appropriate equivalent.)

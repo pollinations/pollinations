@@ -266,10 +266,16 @@ export async function authenticateApiKeyRequest(opts: {
             : null,
     ]);
 
+    const parsedGithubId = githubAccount
+        ? Number(githubAccount.accountId)
+        : null;
     const userData: AuthUser | undefined = rawUser
         ? {
               ...rawUser,
-              githubId: githubAccount ? Number(githubAccount.accountId) : null,
+              githubId:
+                  parsedGithubId !== null && Number.isFinite(parsedGithubId)
+                      ? parsedGithubId
+                      : null,
               githubUsername: githubAccount?.username ?? null,
           }
         : undefined;

@@ -278,15 +278,24 @@ export default function AppsPage() {
 
     const filteredApps = useMemo(() => {
         const f = GENRE_FILTERS.find((x) => x.id === filter);
-        if (!f) return allApps.slice().sort(sortApps);
-        const filtered = allApps.filter(f.match).sort(sortApps);
+        let filtered = f ? allApps.filter(f.match) : allApps.slice();
+        const q = query.trim().toLowerCase();
+        if (q) {
+            filtered = filtered.filter(
+                (a) =>
+                    a.name.toLowerCase().includes(q) ||
+                    (a.description || "").toLowerCase().includes(q) ||
+                    (a.github || "").toLowerCase().includes(q),
+            );
+        }
+        filtered = filtered.sort(sortApps);
         // If a badge sort is active, float matching apps to top
         const badgeFn = BADGE_FILTERS.find((x) => x.id === sort);
         if (!badgeFn) return filtered;
         const matching = filtered.filter(badgeFn.match);
         const rest = filtered.filter((a) => !badgeFn.match(a));
         return [...matching, ...rest];
-    }, [allApps, filter, sort]);
+    }, [allApps, filter, sort, query]);
 
     const { prettified } = usePrettify(
         filteredApps,
@@ -310,7 +319,7 @@ export default function AppsPage() {
                     </Body>
 
                     {/* CTAs */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
                         <div className="flex items-center gap-4 p-4 bg-primary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4">
                             <div className="flex-1">
                                 <p className="font-headline text-xs font-black text-dark mb-1">

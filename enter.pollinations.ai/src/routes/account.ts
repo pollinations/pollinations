@@ -3,6 +3,7 @@ import {
     type ApiKeyType,
     createApiKeyForUser,
 } from "@shared/auth/api-key-creation.ts";
+import { getLinkedGithub } from "@shared/auth/github-account.ts";
 import { isCommunityEndpointOwnerAllowed } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import {
@@ -734,7 +735,16 @@ async function respondDetailedUsage(
 
 // Response schemas for OpenAPI documentation
 const profileResponseSchema = z.object({
-    githubUsername: z.string().nullable().describe("GitHub username if linked"),
+    handle: z
+        .string()
+        .nullable()
+        .describe("Public handle (provider-neutral, always returned)"),
+    githubUsername: z
+        .string()
+        .nullable()
+        .describe(
+            "@deprecated Use `handle` instead. GitHub username sourced from the linked GitHub account; null for non-GitHub users.",
+        ),
     image: z
         .string()
         .nullable()
@@ -886,7 +896,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Profile",
             description:
-                "Returns your account profile. GitHub username, profile image, current tier, next pollen refill timestamp, and community model access are always returned. Name and email are returned only when the API key has `account:profile`.",
+                "Returns your account profile. Handle, profile image, current tier, next pollen refill timestamp, and community model access are always returned. `githubUsername` is also returned (deprecated — use `handle`) and is sourced from the linked GitHub account. Name and email are returned only when the API key has `account:profile`.",
             responses: {
                 200: {
                     description: "User profile",
@@ -906,11 +916,10 @@ export const accountRoutes = new Hono<Env>()
             const includeProfilePII =
                 !apiKey || hasAccountReadPermission(apiKey, "profile");
 
-            const db = drizzle(c.env.DB);
+            const db = drizzle(c.env.DB, { schema });
             const users = await db
                 .select({
-                    githubId: userTable.githubId,
-                    githubUsername: userTable.githubUsername,
+                    handle: userTable.handle,
                     image: userTable.image,
                     tier: userTable.tier,
                     name: userTable.name,
@@ -925,13 +934,17 @@ export const accountRoutes = new Hono<Env>()
                 throw new HTTPException(404, { message: "User not found" });
             }
 
+            const gh = await getLinkedGithub(db, user.id);
+
             return c.json({
-                githubUsername: profile.githubUsername ?? null,
+                handle: profile.handle ?? null,
+                githubUsername: gh?.username ?? null, // deprecated; sourced from linked account
                 image: profile.image ?? null,
                 tier: profile.tier,
                 nextResetAt: getNextRefillAt(profile.tier),
-                communityEndpointsAllowed:
-                    isCommunityEndpointOwnerAllowed(profile),
+                communityEndpointsAllowed: isCommunityEndpointOwnerAllowed({
+                    githubId: gh?.githubId ?? null,
+                }),
                 ...(includeProfilePII && {
                     name: profile.name ?? null,
                     email: profile.email ?? null,

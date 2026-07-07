@@ -3,7 +3,7 @@ import { describe, expect } from "vitest";
 import { test } from "../fixtures.ts";
 
 describe("GET /api/account/profile", () => {
-    test("session auth returns githubUsername, image, tier, nextResetAt, name, email", async ({
+    test("session auth returns handle, githubUsername, image, tier, nextResetAt, name, email", async ({
         sessionToken,
     }) => {
         const response = await SELF.fetch(
@@ -17,6 +17,7 @@ describe("GET /api/account/profile", () => {
 
         expect(response.status).toBe(200);
         const data = (await response.json()) as Record<string, unknown>;
+        expect(data).toHaveProperty("handle");
         expect(data).toHaveProperty("githubUsername");
         expect(data).toHaveProperty("image");
         expect(data).toHaveProperty("tier");
@@ -26,7 +27,7 @@ describe("GET /api/account/profile", () => {
         expect(data).toHaveProperty("email");
     });
 
-    test("api key without profile scope returns githubUsername, image, tier, nextResetAt (no name/email)", async ({
+    test("api key without profile scope returns handle, githubUsername, image, tier, nextResetAt (no name/email)", async ({
         apiKey,
     }) => {
         const response = await SELF.fetch(
@@ -36,6 +37,7 @@ describe("GET /api/account/profile", () => {
 
         expect(response.status).toBe(200);
         const data = (await response.json()) as Record<string, unknown>;
+        expect(data).toHaveProperty("handle");
         expect(data).toHaveProperty("githubUsername");
         expect(data).toHaveProperty("image");
         expect(data).toHaveProperty("tier");

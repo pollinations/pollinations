@@ -54,6 +54,19 @@ function visibleFlags(row: RunwayRow) {
     return row.flags.filter((flag) => !flag.startsWith("lapsed "));
 }
 
+function ActiveDot({ active }: { active: boolean }) {
+    return (
+        <span
+            role="img"
+            aria-label={active ? "active" : "inactive"}
+            title={active ? "active" : "inactive"}
+            className={`inline-block h-2.5 w-2.5 rounded-full ${
+                active ? "bg-intent-success-text" : "bg-intent-danger-text"
+            }`}
+        />
+    );
+}
+
 function GrantsHint({ row }: { row: RunwayRow }) {
     return (
         <Tooltip
@@ -119,6 +132,7 @@ export function CreditsTab({
 
     const sortColumns = useMemo<SortColumn<RunwayRow>[]>(
         () => [
+            { key: "active", value: (row) => isActiveCreditRow(row) },
             { key: "vendor", value: (row) => row.vendor },
             { key: "grantedUsd", value: (row) => row.grantedUsd },
             { key: "burnedPct", value: (row) => burnedPct(row) },
@@ -130,7 +144,6 @@ export function CreditsTab({
             },
             { key: "monthlyRateUsd", value: (row) => row.monthlyRateUsd },
             { key: "depletionDate", value: (row) => row.depletionDate },
-            { key: "active", value: (row) => isActiveCreditRow(row) },
             { key: "flags", value: (row) => row.flags.join(", ") },
         ],
         [],
@@ -162,6 +175,14 @@ export function CreditsTab({
                 <DataTable>
                     <TableHead>
                         <TableRow>
+                            <TableHeaderCell
+                                {...headerProps("active")}
+                                align="center"
+                            >
+                                <HeaderHint hint="green = credit remains in the pool. red = the pool is finished; rows are muted but kept in the same table for context.">
+                                    active
+                                </HeaderHint>
+                            </TableHeaderCell>
                             <TableHeaderCell {...headerProps("vendor")}>
                                 vendor
                             </TableHeaderCell>
@@ -204,11 +225,6 @@ export function CreditsTab({
                                     depletes
                                 </HeaderHint>
                             </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("active")}>
-                                <HeaderHint hint="yes = credit remains in the pool. no = the pool is finished; rows are muted but kept in the same table for context.">
-                                    active
-                                </HeaderHint>
-                            </TableHeaderCell>
                             <TableHeaderCell {...headerProps("flags")}>
                                 <HeaderHint hint="pre-window burn unwitnessed = grant older than the data window, remaining is an upper bound · over-burn = burned more than granted (grant figure or credit rows need a look) · exhausted = pool fully consumed.">
                                     flags
@@ -225,6 +241,11 @@ export function CreditsTab({
                                         row.finished ? "opacity-60" : undefined
                                     }
                                 >
+                                    <TableCell className="text-center">
+                                        <ActiveDot
+                                            active={isActiveCreditRow(row)}
+                                        />
+                                    </TableCell>
                                     <TableCell>
                                         <GrantsHint row={row} />
                                     </TableCell>
@@ -290,20 +311,6 @@ export function CreditsTab({
                                             : row.depletionDate
                                               ? `${fmtPeriod(row.depletionDate)}${row.depletionReason === "expiry" ? " (expiry)" : ""}`
                                               : "–"}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Chip
-                                            intent={
-                                                isActiveCreditRow(row)
-                                                    ? "alpha"
-                                                    : "neutral"
-                                            }
-                                            size="sm"
-                                        >
-                                            {isActiveCreditRow(row)
-                                                ? "yes"
-                                                : "no"}
-                                        </Chip>
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex flex-wrap gap-1">

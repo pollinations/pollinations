@@ -4,6 +4,8 @@ import {
     ClockIcon,
     ExternalLinkButton,
     GitHubIcon,
+    Input,
+    SearchIcon,
     Section,
     SparklesIcon,
     TabButton,
@@ -17,6 +19,7 @@ import {
     fetchModelCatalog,
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
+import { getModelDisplayName } from "./model-info.ts";
 import {
     type SectionType,
     sectionLabels,
@@ -40,14 +43,44 @@ const SECTION_ORDER: SectionType[] = [
     "embedding",
 ];
 
+function matchesQuery(model: ModelPrice, query: string): boolean {
+    if (!query) return true;
+    const displayName = getModelDisplayName(model) ?? "";
+    const haystack =
+        `${model.name} ${displayName} ${model.description ?? ""} ${model.brand ?? ""}`.toLowerCase();
+    return haystack.includes(query);
+}
+
+function categorizeModels(
+    models: ModelPrice[],
+): Record<SectionType, ModelPrice[]> {
+    return {
+        image: models.filter((m) => m.type === "image"),
+        video: models.filter((m) => m.type === "video"),
+        "3d": models.filter((m) => m.type === "3d"),
+        audio: models.filter((m) => m.type === "audio"),
+        realtime: models.filter((m) => m.type === "realtime"),
+        text: models.filter((m) => m.type === "text" && !m.community),
+        community: models.filter((m) => m.community),
+        embedding: models.filter((m) => m.type === "embedding"),
+    };
+}
+
 export const Models: FC<ModelsProps> = ({ showCommunityEndpoints = false }) => {
     const [activeTab, setActiveTab] = useState<SectionType>("image");
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const [catalogError, setCatalogError] = useState<string | null>(null);
+    const [search, setSearch] = useState("");
     const { stats } = useModelStats();
     const allModels = useMemo(
         () => getModelPricesFromCatalog(catalogModels, stats),
         [catalogModels, stats],
+    );
+    const query = search.trim().toLowerCase();
+    const filteredModels = useMemo(
+        () =>
+            query ? allModels.filter((m) => matchesQuery(m, query)) : allModels,
+        [allModels, query],
     );
 
     const loadModelCatalog = useCallback(
@@ -68,29 +101,21 @@ export const Models: FC<ModelsProps> = ({ showCommunityEndpoints = false }) => {
         void loadModelCatalog();
     }, [loadModelCatalog]);
 
-    const imageModels = allModels.filter((m) => m.type === "image");
-    const videoModels = allModels.filter((m) => m.type === "video");
-    const model3dModels = allModels.filter((m) => m.type === "3d");
-    const audioModels = allModels.filter((m) => m.type === "audio");
-    const realtimeModels = allModels.filter((m) => m.type === "realtime");
-    const textModels = allModels.filter(
-        (m) => m.type === "text" && !m.community,
+    // Tab visibility follows the full catalog so a search query never hides
+    // or auto-switches away from a tab — only its contents are filtered.
+    const sectionModelsAll = useMemo(
+        () => categorizeModels(allModels),
+        [allModels],
     );
-    const communityModels = allModels.filter((m) => m.community);
-    const embeddingModels = allModels.filter((m) => m.type === "embedding");
-    const sectionModels: Record<SectionType, ModelPrice[]> = {
-        image: imageModels,
-        video: videoModels,
-        "3d": model3dModels,
-        audio: audioModels,
-        realtime: realtimeModels,
-        text: textModels,
-        community: communityModels,
-        embedding: embeddingModels,
-    };
+    const sectionModels = useMemo(
+        () => categorizeModels(filteredModels),
+        [filteredModels],
+    );
     const availableSections =
         allModels.length > 0
-            ? SECTION_ORDER.filter((section) => sectionModels[section].length)
+            ? SECTION_ORDER.filter(
+                  (section) => sectionModelsAll[section].length,
+              )
             : SECTION_ORDER;
 
     useEffect(() => {
@@ -128,47 +153,67 @@ export const Models: FC<ModelsProps> = ({ showCommunityEndpoints = false }) => {
                     </div>
                 }
             >
-                <div className="mb-4 flex flex-wrap gap-1.5">
-                    {availableSections.map((section) => (
-                        <TabButton
-                            key={section}
-                            active={activeTab === section}
-                            onClick={() => setActiveTab(section)}
-                            ariaLabel={
-                                section === "community"
-                                    ? "Community alpha models"
-                                    : undefined
-                            }
-                        >
-                            <span className="inline-flex items-center gap-1.5">
-                                {sectionLabels[section]}
-                                {section === "community" && (
-                                    <Chip intent="alpha" size="sm">
-                                        ALPHA
-                                    </Chip>
-                                )}
-                            </span>
-                        </TabButton>
-                    ))}
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-wrap gap-1.5">
+                        {availableSections.map((section) => (
+                            <TabButton
+                                key={section}
+                                active={activeTab === section}
+                                onClick={() => setActiveTab(section)}
+                                ariaLabel={
+                                    section === "community"
+                                        ? "Community alpha models"
+                                        : undefined
+                                }
+                            >
+                                <span className="inline-flex items-center gap-1.5">
+                                    {sectionLabels[section]}
+                                    {section === "community" && (
+                                        <Chip intent="alpha" size="sm">
+                                            ALPHA
+                                        </Chip>
+                                    )}
+                                </span>
+                            </TabButton>
+                        ))}
+                    </div>
+                    <div className="relative w-full sm:w-64">
+                        <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
+                        <Input
+                            type="search"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Search models…"
+                            aria-label="Search models"
+                            className="w-full pl-9"
+                        />
+                    </div>
                 </div>
                 {catalogError && (
                     <Alert intent="danger" className="mb-4">
                         {catalogError}
                     </Alert>
                 )}
-                <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                    <UnifiedModelTable
-                        imageModels={imageModels}
-                        videoModels={videoModels}
-                        model3dModels={model3dModels}
-                        audioModels={audioModels}
-                        realtimeModels={realtimeModels}
-                        textModels={textModels}
-                        communityModels={communityModels}
-                        embeddingModels={embeddingModels}
-                        activeTab={activeTab}
-                    />
-                </div>
+                {query && sectionModels[activeTab].length === 0 ? (
+                    <p className="py-8 text-center text-sm text-theme-text-muted">
+                        No {sectionLabels[activeTab].toLowerCase()} models match
+                        “{search.trim()}”.
+                    </p>
+                ) : (
+                    <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                        <UnifiedModelTable
+                            imageModels={sectionModels.image}
+                            videoModels={sectionModels.video}
+                            model3dModels={sectionModels["3d"]}
+                            audioModels={sectionModels.audio}
+                            realtimeModels={sectionModels.realtime}
+                            textModels={sectionModels.text}
+                            communityModels={sectionModels.community}
+                            embeddingModels={sectionModels.embedding}
+                            activeTab={activeTab}
+                        />
+                    </div>
+                )}
                 <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                     <p className="flex items-start gap-1.5">
                         <SparklesIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />

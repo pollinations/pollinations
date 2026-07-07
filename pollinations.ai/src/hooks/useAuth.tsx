@@ -15,6 +15,7 @@ const ENTER_URL = "https://enter.pollinations.ai";
 const ACCOUNT_API_BASE = "https://enter.pollinations.ai/api";
 
 interface UserProfile {
+    handle: string | null;
     githubUsername: string | null;
     image: string | null;
 }
@@ -109,6 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 );
                 const data = await response.json();
                 setProfile({
+                    handle: data.handle ?? null,
                     githubUsername: data.githubUsername,
                     image: data.image ?? null,
                 });

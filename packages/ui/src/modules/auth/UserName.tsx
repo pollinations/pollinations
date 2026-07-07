@@ -11,7 +11,7 @@ export function UserName({ className }: UserNameProps) {
     const { isLoggedIn } = useAuthState();
     const { data: profile } = useAccountProfile({ enabled: isLoggedIn });
     if (!isLoggedIn || !profile) return null;
-    const display = profile.name || profile.githubUsername;
+    const display = profile.name || profile.handle;
     if (!display) return null;
     return (
         <span data-polli="user-name" className={className}>

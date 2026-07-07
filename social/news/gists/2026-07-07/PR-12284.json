@@ -1,0 +1,35 @@
+{
+  "pr_number": 12284,
+  "title": "fix: inject real viewer IP via CloudFront function for gen.pollinations.ai",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12284",
+  "merged_at": "2026-07-07T14:50:52Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "## What\n\n- Adds CloudFront viewer-request function `pln-gen-viewer-ip` (`infra/cloudfront/`) that stamps `event.viewer.ip` into `X-Original-Client-IP` before Origin Shield.\n- Documents the full gen CloudFront stack (distribution config, Origin Shield, logging) in `infra/cloudfront/README.md`.\n- Adds a test for the CloudFront-injected client-IP case.\n- Small comment update in `shared/client-ip.ts`.\n\n## Why\n\nOrigin Shield (us-east-1, added to fix the East-Asia hang) collapses every client to ~5 shared `64.252.x` egress IPs by the time the request reaches the Worker — breaking per-client rate limiting and abuse detection. The function restores the real viewer IP at the edge. It overwrites any client-supplied value, so the trusted header can't be spoofed through CloudFront.\n\n## Deploy\n\n- **Function is already live** (deployed + associated on distribution `E35MFLKOJK04O7`, 2026-07-07 14:41Z). This PR is the source + docs of record.\n- **No Worker runtime change** — `getRealClientIp` already prefers `X-Original-Client-IP` on trusted hops (#12282). No production sync needed.\n\n## Verified in prod\n\n- Spoofed `x-original-client-ip: 9.9.9.9` → Tinybird recorded my real subnet `46.142.212.0`, not the spoof.\n- Traffic flipped from 100% `64.252.x` to real diverse client subnets; last 3 min = 2,907 real vs 0 shield.\n- No health regression across the deploy boundary (volume/5xx/latency steady); 499s stayed at healthy ~1% with no East-Asia concentration.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Seeing through the shield",
+    "blurb": "We've updated our CloudFront setup to properly track real viewer IPs through Origin Shield. This keeps our rate limiting accurate and prevents the hive from getting confused by shared IP addresses.",
+    "summary": "Added a CloudFront viewer-request function to inject the real viewer IP into the X-Original-Client-IP header before Origin Shield, fixing rate limiting and abuse detection.",
+    "impact": "Rate limiting and abuse detection now correctly identify individual clients instead of grouping them under shared Origin Shield egress IPs.",
+    "keywords": [
+      "cloudfront",
+      "infrastructure",
+      "rate-limiting",
+      "networking",
+      "security"
+    ],
+    "visual_concept": "Polly the bee wearing a detective hat, looking through a glowing magnifying glass that reveals a specific unique network node hidden behind a large, generic metal shield.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny detective hat, holding a glowing magnifying glass up to a large metal shield. The magnifying glass reveals a unique glowing network node hidden behind the shield. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-07/PR-12284.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny detective hat, holding a glowing magnifying glass up to a large metal shield. The magnifying glass reveals a unique glowing network node hidden behind the shield. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-07T14:51:56.323068+00:00"
+}

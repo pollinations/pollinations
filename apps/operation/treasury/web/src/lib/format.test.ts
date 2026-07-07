@@ -34,28 +34,32 @@ describe("format", () => {
 });
 
 describe("fmtSmartNumber", () => {
-    it("uses up to five significant digits", () => {
-        expect(fmtSmartNumber(1234.567)).toBe("1,234.6");
-        expect(fmtSmartNumber(123.4567)).toBe("123.46");
-        expect(fmtSmartNumber(12.34567)).toBe("12.346");
-        expect(fmtSmartNumber(1.234567)).toBe("1.2346");
-        expect(fmtSmartNumber(0.00123456)).toBe("0.0012346");
+    it("uses up to four significant digits without trailing zeroes", () => {
+        expect(fmtSmartNumber(1234.567)).toBe("1,234");
+        expect(fmtSmartNumber(123.4567)).toBe("123.4");
+        expect(fmtSmartNumber(20.7)).toBe("20.7");
+        expect(fmtSmartNumber(20.74)).toBe("20.74");
+        expect(fmtSmartNumber(20.725)).toBe("20.72");
+        expect(fmtSmartNumber(1.234567)).toBe("1.234");
+        expect(fmtSmartNumber(0.00123456)).toBe("0.001234");
     });
 
     it("uses compact suffixes for large numbers", () => {
-        expect(fmtSmartNumber(12409.6)).toBe("12.41k");
-        expect(fmtSmartNumber(1234567)).toBe("1.2346M");
+        expect(fmtSmartNumber(12409.6)).toBe("12.4k");
+        expect(fmtSmartNumber(1234567)).toBe("1.234M");
+        expect(fmtSmartNumber(1234567890)).toBe("1.234B");
+        expect(fmtSmartNumber(1234567890123)).toBe("1.234T");
     });
 });
 
 describe("fmtUsd", () => {
     it("renders adaptive compact dollars", () => {
-        expect(fmtUsd(12409.6)).toBe("$12.41k");
-        expect(fmtUsd(1234.567)).toBe("$1,234.6");
+        expect(fmtUsd(12409.6)).toBe("$12.4k");
+        expect(fmtUsd(1234.567)).toBe("$1,234");
     });
 
     it("renders negatives with a minus sign", () => {
-        expect(fmtUsd(-13921.4)).toBe("−$13.921k");
+        expect(fmtUsd(-13921.4)).toBe("−$13.92k");
     });
 
     it("renders missing values as an en dash", () => {
@@ -67,8 +71,8 @@ describe("fmtUsd", () => {
 
 describe("fmtPct", () => {
     it("renders signed adaptive percentages", () => {
-        expect(fmtPct(4.66666)).toBe("+4.6667%");
-        expect(fmtPct(-30.714)).toBe("−30.714%");
+        expect(fmtPct(4.66666)).toBe("+4.666%");
+        expect(fmtPct(-30.714)).toBe("−30.71%");
     });
 
     it("renders null as an en dash", () => {
@@ -78,8 +82,8 @@ describe("fmtPct", () => {
 
 describe("fmtUnsignedPct", () => {
     it("renders unsigned adaptive percentages", () => {
-        expect(fmtUnsignedPct(99.999)).toBe("99.999%");
-        expect(fmtUnsignedPct(12345.6)).toBe("12.346k%");
+        expect(fmtUnsignedPct(99.999)).toBe("99.99%");
+        expect(fmtUnsignedPct(12345.6)).toBe("12.34k%");
     });
 
     it("renders missing values as an en dash", () => {
@@ -90,7 +94,7 @@ describe("fmtUnsignedPct", () => {
 
 describe("fmtMultiplier", () => {
     it("renders adaptive multipliers", () => {
-        expect(fmtMultiplier(1.09876)).toBe("1.0988×");
+        expect(fmtMultiplier(1.09876)).toBe("1.098×");
     });
 
     it("renders null and non-finite as an en dash", () => {

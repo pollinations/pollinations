@@ -51,13 +51,31 @@ export function fmtSmartNumber(
     value: number,
     { compactAt = 10_000 }: { compactAt?: number } = {},
 ): string {
-    const notation = Math.abs(value) >= compactAt ? "compact" : "standard";
+    const abs = Math.abs(value);
+    const units = [
+        { value: 1_000_000_000_000, suffix: "T" },
+        { value: 1_000_000_000, suffix: "B" },
+        { value: 1_000_000, suffix: "M" },
+        { value: 1_000, suffix: "k" },
+    ];
+    const unit =
+        abs >= compactAt ? units.find((item) => abs >= item.value) : null;
+    const divisor = unit?.value ?? 1;
+    return `${formatFourSig(abs / divisor)}${unit?.suffix ?? ""}`;
+}
+
+function formatFourSig(value: number): string {
+    if (value === 0) return "0";
+    const magnitude = Math.floor(Math.log10(value));
+    const scale = 10 ** (magnitude - 3);
+    const truncated = Math.trunc(value / scale) * scale;
+    const decimals = Math.max(
+        0,
+        3 - Math.floor(Math.log10(truncated || value)),
+    );
     return new Intl.NumberFormat("en-US", {
-        maximumSignificantDigits: 5,
-        notation,
-    })
-        .format(value)
-        .replace("K", "k");
+        maximumFractionDigits: decimals,
+    }).format(truncated);
 }
 
 // Insight money: adaptive precision, en dash for unknown. Uses U+2212 minus so

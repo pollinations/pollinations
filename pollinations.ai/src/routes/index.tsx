@@ -2,7 +2,7 @@ import {
     Button,
     ExternalLinkButton,
     InlineLink,
-    Section,
+    Surface,
 } from "@pollinations/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -160,14 +160,15 @@ function HelloPage() {
                 </div>
             </section>
 
-            {/* Dev kit */}
-            <Section title="Dev kit" framed>
-                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                    {TOOLBOX.map((item) => (
-                        <ToolboxCard key={item.title} item={item} />
-                    ))}
-                </div>
-            </Section>
+            <section className="flex scroll-mt-10 flex-col">
+                <Surface variant="panel" className="flex flex-col gap-5">
+                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                        {TOOLBOX.map((item) => (
+                            <ToolboxCard key={item.title} item={item} />
+                        ))}
+                    </div>
+                </Surface>
+            </section>
 
             {/* CTA */}
             <section className="flex flex-col gap-4 border-t border-theme-border pt-8">

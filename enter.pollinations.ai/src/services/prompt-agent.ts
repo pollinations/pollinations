@@ -14,6 +14,16 @@ import { PROMPT_AGENT_TEMPLATE_SOURCE } from "./prompt-agent-template.ts";
 
 export const PROMPT_AGENT_BUILTIN_TOOLS = ["web_search", "image"] as const;
 
+// The minted owner key is scoped so a leaked key (it lives in the deployed
+// worker's binding, readable inside the sandbox) can't drain the owner's
+// balance. It carries no model allowlist — an agent may call any text or image
+// model — but it expires quickly and can only ever spend a few pollen before
+// it locks (both the pre-request check and post-response debit are enforced on
+// the key's own `pollenBalance`). Each redeploy mints a fresh key and deletes
+// the old one, so the effective exposure window is one deploy's lifetime.
+const OWNER_KEY_EXPIRES_IN_SECONDS = 10 * 60;
+const OWNER_KEY_POLLEN_BUDGET = 5;
+
 const McpServerSchema = z.object({
     // Namespaces the server's tools (mcp__<name>__<tool>); lowercase to match
     // the community tool-name pattern so its fees can be declared.
@@ -90,6 +100,8 @@ async function mintOwnerKey(
         userId,
         name: `prompt-agent:${agentName}`,
         type: "secret",
+        expiresIn: OWNER_KEY_EXPIRES_IN_SECONDS,
+        pollenBudget: OWNER_KEY_POLLEN_BUDGET,
         allowAccountKeysPermission: false,
         defaultCreatedVia: "prompt-agent",
     });

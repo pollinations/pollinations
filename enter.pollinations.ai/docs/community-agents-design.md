@@ -89,6 +89,31 @@ footgun:** the outer response must still include a `usage` object —
 `usage` makes the whole request unbilled (tool fees included). The `defineAgent` wrapper
 enforces "always emit zeroed usage."
 
+**How the scoped-key spend and the 75% owner reward relate (verified complementary, not
+double-counting).** Two independent ledger events fire per agent run:
+1. *Inner calls* (agent's scoped key → gen): billed to the **owner's** balance at real model
+   list price; the key's `pollenBalance` drains toward its cap. No reward, no markup.
+2. *Outer call* (caller → community endpoint): when `visibility === "public"`, credits the owner
+   `outerPrice × 0.75` — the outer price comes from the **endpoint's own** price config, not the
+   inner spend.
+
+The owner *spends* base compute inside and *earns* 75% of the outer price — different money,
+netting to a margin. **No line item is billed twice.** The only gap: a public agent priced at
+**zero** earns nothing on the outer call while still paying inner compute — the owner subsidizes
+callers. That's a pricing rule (a public agent should carry a non-zero outer price), not a code
+conflict.
+
+**Follow-up (deferred) — platform markup on internal-model calls.** Mirror the BYOP markup shape
+(`resolveDevMarkup` in `shared/billing/track-helpers.ts`) but flowing *Polli-ward*: an agent's
+inner call costs +25%, charged to the owner, retained as Pollinations margin. Because it meters
+**actual consumption** on every inner call, it makes the platform's cut robust to a zero-priced
+outer endpoint — the subsidy gap above closes without a mandatory-pricing gate. Decided scope:
+**scoped agent keys + public community endpoints only** (not all internal calls); **retained as
+margin, no house-account credit row** (charge owner base×1.25, don't pay anyone the 0.25). ~30
+lines: one `resolvePlatformMarkup` sibling in `handleBalanceDeduction`, gated on the key's
+`createdVia === "prompt-agent"` (+ community-endpoint calls). **Not in Block 1** — the scoped key
+(the live security fix) ships first; this is a separate billing PR.
+
 ### Q8 — GitHub / config-in-repo: **build-and-register, not a deploy tool**
 
 The whole agent — code, config, and **pricing** — can live in a GitHub repo and register on
@@ -168,23 +193,26 @@ Ordered by leverage. Each block is roughly one PR.
 ### 0. Ship PR #12281 (in flight)
 Visibility/publish split + squashed migration. Independent of everything below.
 
-### 1. Scoped agent keys + base/markup billing split  *(highest leverage — also fixes a live security hole)*
-- **`mintOwnerKey`** (`src/services/prompt-agent.ts`): pass `expiresIn` (short TTL, re-minted on
-  redeploy), `allowedModels` (the agent's declared base model + any tool models), `pollenBudget`
-  (spend cap) through to `createApiKeyForUser`. No signature change to `createApiKeyForUser`
-  needed — it already accepts all three.
-- **`buildPromptAgentDeploy`** input contract: grow it to carry the agent's allowed-model set +
-  budget so the minted key can be scoped.
-- **Base/markup split**: confirm the outer community endpoint bills tool fees only when tokens are
-  billed via the scoped key. `communityPriceDefinition` already omits zero-price keys, so
-  "token prices at 0 + `toolPrices` set" is the config. The agent template must always emit a
-  `usage` object with zeroed token fields + `tool_call_counts` (missing `usage` → whole request
-  unbilled).
-- **Reward path** (`shared/billing/track-helpers.ts` `resolveCommunityModelReward`): revisit —
-  with the caller paying base cost directly via the scoped key, the flat 75%-of-outer-price
-  reward is replaced by the owner's explicit fee. Decide whether the reward mechanism stays for
-  a markup or is removed.
-- **Key rotation**: re-mint the scoped key on each redeploy (short TTL means stale keys expire).
+### 1. Scoped agent keys  *(highest leverage — fixes a live security hole)*
+- **`mintOwnerKey`** (`src/services/prompt-agent.ts`): pass `expiresIn` (**10 min**) and
+  `pollenBudget` (**~5 pollen** hard cap) through to `createApiKeyForUser`. **No model allowlist** —
+  an agent may call any text or image model (matches "an agent could want to generate image etc").
+  No signature change to `createApiKeyForUser` needed — it already accepts both. Verified: budget
+  is a real cap — checked pre-request (`generation-access.ts`) *and* atomically debited after each
+  spend (`deductApiKeyBalance`); `expiresIn` is in seconds, and our `minExpiresIn: 0` config lets a
+  600s TTL through.
+- **Key rotation**: each redeploy already mints a fresh key + deletes the old one, so the exposure
+  window of a leaked key is one deploy's lifetime, floored by the 10-min TTL.
+- **Base/markup split (already holds, no code change)**: inner calls bill base compute to the owner
+  via the scoped key; the outer endpoint bills its own price. `communityPriceDefinition` already
+  omits zero-price keys, so "token prices at 0 + `toolPrices` set" is a valid fees-only config.
+  The agent template must always emit a `usage` object with zeroed token fields + `tool_call_counts`
+  (missing `usage` → whole request unbilled).
+
+**Deferred to a follow-up billing PR (not Block 1):** platform markup on internal-model calls (see
+Q7) — +25% on scoped-key + public-endpoint calls, retained as Pollinations margin. Also: the
+`resolveCommunityModelReward` 75% path stays as owner upside; revisit only if the platform markup
+lands.
 
 ### 2. Grouped billing events (`agent_request_id`)
 - **`TinybirdEvent`** (`shared/schemas/generation-event.ts`): add an `agentRequestId` field (no

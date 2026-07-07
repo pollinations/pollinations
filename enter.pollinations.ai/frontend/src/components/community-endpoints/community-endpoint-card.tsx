@@ -1,5 +1,6 @@
 import {
     Alert,
+    Button,
     CardIcon,
     CheckIcon,
     Chip,
@@ -17,19 +18,28 @@ import { COMMUNITY_ENDPOINT_PRICE_FIELDS } from "@shared/community-endpoints.ts"
 import type { ReactNode } from "react";
 import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
 import type { PriceKind } from "../models/types.ts";
-import { type CommunityEndpoint, pricePerTokenToPerMillion } from "./types.ts";
+import {
+    type CommunityEndpoint,
+    pricePerTokenToPerMillion,
+    VISIBILITY_LABELS,
+} from "./types.ts";
 
 type CommunityEndpointCardProps = {
     endpoint: CommunityEndpoint;
     onEdit: () => void;
+    onPublish: () => void;
+    onUnpublish: () => void;
     onDelete: () => void;
 };
 
 export function CommunityEndpointCard({
     endpoint,
     onEdit,
+    onPublish,
+    onUnpublish,
     onDelete,
 }: CommunityEndpointCardProps) {
+    const isPublic = endpoint.visibility === "public";
     const priceGroups = communityPriceGroups(endpoint);
 
     return (
@@ -44,6 +54,9 @@ export function CommunityEndpointCard({
                         <h3 className="min-w-0 truncate text-base font-semibold text-theme-text-strong">
                             {endpoint.name}
                         </h3>
+                        <Chip intent={isPublic ? "news" : "neutral"} size="sm">
+                            {VISIBILITY_LABELS[endpoint.visibility]}
+                        </Chip>
                         {endpoint.kind === "agent" && (
                             <Chip intent="news" size="sm">
                                 Agent
@@ -62,6 +75,26 @@ export function CommunityEndpointCard({
                     )}
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
+                    {isPublic ? (
+                        <Button
+                            type="button"
+                            size="sm"
+                            className="whitespace-nowrap text-sm"
+                            onClick={onUnpublish}
+                        >
+                            Make private
+                        </Button>
+                    ) : (
+                        <Button
+                            type="button"
+                            size="sm"
+                            intent="info"
+                            className="whitespace-nowrap text-sm"
+                            onClick={onPublish}
+                        >
+                            Make public
+                        </Button>
+                    )}
                     <IconButton
                         intent="info"
                         title="Edit model"

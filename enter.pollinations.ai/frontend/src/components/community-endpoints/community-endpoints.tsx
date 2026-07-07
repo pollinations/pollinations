@@ -11,10 +11,13 @@ import { apiClient } from "../../api.ts";
 import { CommunityEndpointCard } from "./community-endpoint-card.tsx";
 import { CommunityEndpointDeleteConfirmation } from "./community-endpoint-delete-confirmation.tsx";
 import { CommunityEndpointDialog } from "./community-endpoint-dialog.tsx";
+import { CommunityEndpointPublishDialog } from "./community-endpoint-publish-dialog.tsx";
 import {
     type CommunityEndpoint,
     type EndpointPayload,
+    type PublishPayload,
     readError,
+    toUnpublishPayload,
 } from "./types.ts";
 
 type CommunityEndpointsProps = {
@@ -27,6 +30,9 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
     const [error, setError] = useState<string | null>(null);
     const [createOpen, setCreateOpen] = useState(false);
     const [editing, setEditing] = useState<CommunityEndpoint | null>(null);
+    const [publishing, setPublishing] = useState<CommunityEndpoint | null>(
+        null,
+    );
     const [deleting, setDeleting] = useState<CommunityEndpoint | null>(null);
 
     const loadEndpoints = useCallback(async (): Promise<void> => {
@@ -75,6 +81,32 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
         if (!response.ok) throw new Error(await readError(response));
         await loadEndpoints();
         await onChange?.();
+    }
+
+    async function submitVisibility(
+        endpoint: CommunityEndpoint,
+        payload: PublishPayload,
+    ): Promise<void> {
+        const response = await apiClient.account["my-models"][
+            ":id"
+        ].update.$post({
+            param: { id: endpoint.id },
+            json: payload,
+        });
+        if (!response.ok) throw new Error(await readError(response));
+        await loadEndpoints();
+        await onChange?.();
+    }
+
+    async function handleUnpublish(endpoint: CommunityEndpoint): Promise<void> {
+        setError(null);
+        try {
+            await submitVisibility(endpoint, toUnpublishPayload(endpoint));
+        } catch (thrown) {
+            setError(
+                thrown instanceof Error ? thrown.message : "Unpublish failed",
+            );
+        }
     }
 
     async function handleDelete(): Promise<void> {
@@ -148,6 +180,10 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
                                 key={endpoint.id}
                                 endpoint={endpoint}
                                 onEdit={() => setEditing(endpoint)}
+                                onPublish={() => setPublishing(endpoint)}
+                                onUnpublish={() =>
+                                    void handleUnpublish(endpoint)
+                                }
                                 onDelete={() => setDeleting(endpoint)}
                             />
                         ))
@@ -169,6 +205,12 @@ export function CommunityEndpoints({ onChange }: CommunityEndpointsProps) {
                 open={!!editing}
                 onOpenChange={(open) => !open && setEditing(null)}
                 onSubmit={handleUpdate}
+            />
+
+            <CommunityEndpointPublishDialog
+                endpoint={publishing}
+                onOpenChange={(open) => !open && setPublishing(null)}
+                onSubmit={submitVisibility}
             />
 
             <CommunityEndpointDeleteConfirmation

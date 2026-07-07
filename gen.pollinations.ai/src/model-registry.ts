@@ -99,7 +99,12 @@ function communityEntryToGenerationEntry(
         definition: entry.definition,
         info: entry.info,
         communityEndpoint: entry.communityEndpoint,
-        visible: entry.communityEndpoint.disabledAt === null,
+        // Only public endpoints appear in the model catalog. Private/app
+        // endpoints are unlisted (still resolvable/callable per the access gate
+        // in resolveModelDefinition).
+        visible:
+            entry.communityEndpoint.disabledAt === null &&
+            entry.communityEndpoint.visibility === "public",
     };
 }
 

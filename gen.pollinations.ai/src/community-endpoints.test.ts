@@ -420,6 +420,7 @@ describe("community endpoint helpers", () => {
             description: null,
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
+            visibility: "public",
             kind: "model",
             tools: false,
             search: false,
@@ -480,6 +481,7 @@ fixtureTest(
         await db.insert(communityEndpointTable).values({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
+            visibility: "public",
             name: modelName,
             description: "OpenAI via community endpoint",
             baseUrl: "https://api.example.com/v1",
@@ -591,6 +593,111 @@ fixtureTest(
 );
 
 fixtureTest(
+    "a private community model is callable by its owner but not by other callers",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `private-${crypto.randomUUID().slice(0, 8)}`;
+        const modelId = communityModelId(ownerGithubUsername, modelName);
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubUsername: ownerGithubUsername,
+        });
+        // A key belonging to the endpoint owner — its calls are owner calls.
+        const { key: ownerApiKey } = await createTestApiKey({
+            name: "owner-key",
+            userId: ownerUserId,
+        });
+        await db.insert(communityEndpointTable).values({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            visibility: "private",
+            name: modelName,
+            description: "Private community endpoint",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "gpt-4.1-mini",
+            bearerTokenCiphertext: await encryptSecret(
+                "Bearer sk_saved_token",
+                env.BETTER_AUTH_SECRET,
+            ),
+            // A private endpoint is free (billed to its owner); prices are 0.
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            if (isPortkeyChatCompletionsRequest(request)) {
+                return Response.json({
+                    id: "chatcmpl_private",
+                    object: "chat.completion",
+                    model: "gpt-4.1-mini",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "ok" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 2,
+                        completion_tokens: 3,
+                        total_tokens: 5,
+                    },
+                });
+            }
+            if (isBillingFetch(request)) return Response.json({ data: [] });
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        // A non-owner caller: the private model resolves to "invalid model",
+        // indistinguishable from an unknown name so it isn't discoverable.
+        const otherResponse = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: modelId,
+                    messages: [{ role: "user", content: "hello" }],
+                }),
+            }),
+        );
+        expect(otherResponse.status).toBe(400);
+
+        // The owner reaches their own private model.
+        const ownerResponse = await SELF.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${ownerApiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: modelId,
+                    messages: [{ role: "user", content: "hello" }],
+                }),
+            }),
+        );
+        expect(ownerResponse.status).toBe(200);
+        await expect(ownerResponse.json()).resolves.toMatchObject({
+            choices: [{ message: { content: "ok" } }],
+        });
+
+        // And it never appears in the public catalog.
+        const modelsResponse = await SELF.fetch(
+            "https://gen.pollinations.ai/text/models",
+        );
+        const models = (await modelsResponse.json()) as { name: string }[];
+        expect(models.some((model) => model.name === modelId)).toBe(false);
+    },
+);
+
+fixtureTest(
     "streams chat completions through a registered community endpoint",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
@@ -603,6 +710,7 @@ fixtureTest(
         await db.insert(communityEndpointTable).values({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
+            visibility: "public",
             name: modelName,
             description: "Streaming community endpoint",
             baseUrl: "https://api.example.com/v1",
@@ -701,6 +809,7 @@ fixtureTest(
         await db.insert(communityEndpointTable).values({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
+            visibility: "public",
             name: modelName,
             description: "Simple text community endpoint",
             baseUrl: "https://api.example.com/v1",
@@ -798,6 +907,7 @@ fixtureTest(
         await db.insert(communityEndpointTable).values({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
+            visibility: "public",
             name: modelName,
             description: "Public community model",
             baseUrl: "https://api.example.com/v1",
@@ -819,6 +929,7 @@ fixtureTest(
         await db.insert(communityEndpointTable).values({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
+            visibility: "public",
             name: agentModelName,
             description: "Public community agent",
             baseUrl: "https://agent.example.com/v1",
@@ -946,6 +1057,7 @@ fixtureTest(
         await db.insert(communityEndpointTable).values({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
+            visibility: "public",
             name: modelName,
             description: "Deactivated community model",
             baseUrl: "https://api.example.com/v1",
@@ -1007,6 +1119,7 @@ fixtureTest(
         await db.insert(communityEndpointTable).values({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
+            visibility: "public",
             name: modelName,
             description: "Deactivated community model",
             baseUrl: "https://api.example.com/v1",
@@ -1052,7 +1165,7 @@ fixtureTest(
 );
 
 fixtureTest(
-    "rejects registration outside the allowlist without blocking saved endpoints",
+    "lets a non-allowlisted user register a private model but blocks publishing it",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `denied-${crypto.randomUUID().slice(0, 8)}`;
@@ -1072,7 +1185,30 @@ fixtureTest(
         });
 
         const enterApi = await createEnterCommunityApi();
+        // Creation is open to everyone: a non-allowlisted user can register a
+        // private model for their own use.
         const registerResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify({
+                    name: `${modelName}-private`,
+                    description: "Private community endpoint",
+                    baseUrl: "https://api.example.com/v1",
+                    upstreamModel: "gpt-4.1-mini",
+                    bearerToken: "sk_saved_token",
+                }),
+            }),
+        );
+        expect(registerResponse.status).toBe(200);
+
+        // But sharing (public) is allowlist-gated: the same denied user is
+        // rejected when they try to register a public model.
+        const publishResponse = await fetchEnterApi(
             enterApi,
             new Request("http://localhost:3000/api/community-endpoints", {
                 method: "POST",
@@ -1086,16 +1222,18 @@ fixtureTest(
                     baseUrl: "https://api.example.com/v1",
                     upstreamModel: "gpt-4.1-mini",
                     bearerToken: "sk_saved_token",
+                    visibility: "public",
                     promptTextPrice: 0.1,
                     completionTextPrice: 0.1,
                 }),
             }),
         );
-        expect(registerResponse.status).toBe(403);
+        expect(publishResponse.status).toBe(403);
 
         await db.insert(communityEndpointTable).values({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
+            visibility: "public",
             name: modelName,
             description: "Denied community model",
             baseUrl: "https://api.example.com/v1",
@@ -1288,6 +1426,7 @@ fixtureTest(
                     baseUrl: "https://gen.pollinations.ai/v1",
                     upstreamModel: "openai",
                     bearerToken: "Bearer sk_pollinations_upstream",
+                    visibility: "public",
                     promptTextPrice: 0.1,
                     completionTextPrice: 0.1,
                 }),

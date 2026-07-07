@@ -4,6 +4,7 @@ import {
     type CommunityEndpointKind,
     type CommunityEndpointPriceKey,
     type CommunityEndpointPrices,
+    type CommunityEndpointVisibility,
 } from "@shared/community-endpoints.ts";
 import { COMMUNITY_TOOL_NAME_PATTERN } from "@shared/registry/community-billing.ts";
 import type { Usage } from "@shared/registry/registry.ts";
@@ -45,6 +46,9 @@ export type CommunityEndpoint = {
     // No-code prompt-agent config, present only when the endpoint is a prompt
     // agent; null for self-hosted / source-deployed endpoints.
     promptAgent: PromptAgentConfig | null;
+    // private → owner-only, unlisted, free; app → owner+app users [staged];
+    // public → listed + billed to callers.
+    visibility: CommunityEndpointVisibility;
     toolPrices: Record<string, number>;
     disabled: boolean;
     disabledReason: string | null;
@@ -81,6 +85,8 @@ export type EndpointPayload = {
     source?: string;
     promptAgent?: PromptAgentConfig;
     upstreamModel: string;
+    // Omitted on create (defaults private server-side); set by the publish flow.
+    visibility?: CommunityEndpointVisibility;
     kind: CommunityEndpointKind;
     tools: boolean;
     search: boolean;
@@ -129,6 +135,12 @@ export const emptyForm: EndpointFormState = {
 };
 
 export const idleAction: ActionState = { status: "idle" };
+
+export const VISIBILITY_LABELS: Record<CommunityEndpointVisibility, string> = {
+    private: "Private",
+    app: "App users",
+    public: "Public",
+};
 
 const TOKENS_PER_MILLION = 1_000_000;
 
@@ -305,6 +317,43 @@ function toPromptAgentConfig(form: EndpointFormState): PromptAgentConfig {
         baseModel,
         tools: form.builtinTools,
         mcpServers: mcpServersToPayload(form.mcpServers),
+    };
+}
+
+// Publishing (or unpublishing) an existing endpoint only touches visibility,
+// pricing, and tool fees — never baseUrl/source/promptAgent, so it never
+// redeploys a managed worker. Sent to the update endpoint.
+export type PublishPayload = {
+    visibility: CommunityEndpointVisibility;
+    toolPrices: Record<string, number>;
+} & CommunityEndpointPrices;
+
+export function toPublishPayload(
+    visibility: CommunityEndpointVisibility,
+    form: EndpointFormState,
+): PublishPayload {
+    return {
+        visibility,
+        toolPrices: toolFeesToPayload(form.toolFees),
+        ...formPricesToPayload(form),
+    };
+}
+
+// A published endpoint reverts to private. Its stored prices are resent
+// unchanged (a private endpoint never applies them) so the update payload
+// matches the shared PublishPayload shape.
+export function toUnpublishPayload(
+    endpoint: CommunityEndpoint,
+): PublishPayload {
+    return {
+        visibility: "private",
+        toolPrices: endpoint.toolPrices,
+        ...(Object.fromEntries(
+            COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
+                field.key,
+                endpoint[field.key],
+            ]),
+        ) as CommunityEndpointPrices),
     };
 }
 

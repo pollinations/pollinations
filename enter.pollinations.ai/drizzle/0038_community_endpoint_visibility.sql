@@ -1,0 +1,1 @@
+ALTER TABLE `community_endpoint` ADD `visibility` text DEFAULT 'private' NOT NULL;

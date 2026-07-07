@@ -73,6 +73,31 @@ export const COMMUNITY_ENDPOINT_KINDS = ["model", "agent"] as const;
 
 export type CommunityEndpointKind = (typeof COMMUNITY_ENDPOINT_KINDS)[number];
 
+// Access/visibility of a registered endpoint. Owner-declared, but the jump out
+// of `private` (i.e. exposing to any other caller) is allowlist-gated.
+//   private → owner-only callable, unlisted, free (base cost billed to owner)
+//   app     → owner + owner's app users callable, unlisted, priced [staged]
+//   public  → anyone callable, listed in the model catalog, priced
+export const COMMUNITY_ENDPOINT_VISIBILITIES = [
+    "private",
+    "app",
+    "public",
+] as const;
+
+export type CommunityEndpointVisibility =
+    (typeof COMMUNITY_ENDPOINT_VISIBILITIES)[number];
+
+export const DEFAULT_COMMUNITY_ENDPOINT_VISIBILITY: CommunityEndpointVisibility =
+    "private";
+
+// Sharing an endpoint with any caller other than its owner requires the
+// allowlist and mandatory pricing; only `private` stays free and ungated.
+export function isSharedCommunityVisibility(
+    visibility: CommunityEndpointVisibility,
+): boolean {
+    return visibility !== "private";
+}
+
 // Owner-declared metadata: whether the endpoint is a plain model or an agent,
 // and which capabilities it supports. Declarative only — the proxy is
 // shape-agnostic and never enforces these.
@@ -92,6 +117,7 @@ export type CommunityEndpointRuntime = {
     baseUrl: string;
     upstreamModel: string;
     bearerTokenCiphertext: string;
+    visibility: CommunityEndpointVisibility;
     toolPrices: CommunityToolPrices;
     disabledAt: number | null;
     disabledReason: string | null;

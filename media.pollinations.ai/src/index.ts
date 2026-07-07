@@ -350,7 +350,7 @@ api.post(
         tags: ["media.pollinations.ai"],
         summary: "Upload media",
         description:
-            "Upload an image, audio, or video file. Supports multipart/form-data, raw binary, or base64 JSON. Returns a content-addressed hash URL. The hash includes the filename, so the same content with different filenames gets different URLs. Files are retained for 30 days; re-uploading resets the timer.",
+            "Upload an image, audio, or video file. Supports multipart/form-data, raw binary, or base64 JSON. Returns a content-addressed hash URL. The hash includes the filename, so the same content with different filenames gets different URLs. Files are retained for 30 days; re-uploading resets the timer. Optional `tags`, `prompt`, and `model` fields catalog the upload to your media library; tags make it publicly visible on /tags/:tag. **Alpha:** the catalog metadata fields are new and may still change.",
         responses: {
             200: {
                 description: "Upload successful",
@@ -597,7 +597,7 @@ api.get(
         tags: ["media.pollinations.ai"],
         summary: "List your cataloged media",
         description:
-            "List media items owned by the authenticated user, newest first. Optionally filter by tag. Upload-backed items reference storage that expires 30 days after their last upload — an expired item keeps its catalog entry, but its url 404s until the same content is re-uploaded.",
+            "List media items owned by the authenticated user, newest first. Optionally filter by tag. Upload-backed items reference storage that expires 30 days after their last upload — an expired item keeps its catalog entry, but its url 404s until the same content is re-uploaded. **Alpha:** this endpoint is new and its API may still change.",
         responses: {
             200: {
                 description: "Page of media items",
@@ -678,7 +678,7 @@ api.get(
         tags: ["media.pollinations.ai"],
         summary: "Browse media by tag",
         description:
-            "Public gallery listing for a tag, ordered by when each item was tagged, newest first. Authentication is optional: pass an API key to get `myReactions` on each item. Upload-backed items reference storage that expires 30 days after their last upload — an expired item keeps its catalog entry, but its url 404s until the same content is re-uploaded.",
+            "Public gallery listing for a tag, ordered by when each item was tagged, newest first. Authentication is optional: pass an API key to get `myReactions` on each item. Upload-backed items reference storage that expires 30 days after their last upload — an expired item keeps its catalog entry, but its url 404s until the same content is re-uploaded. **Alpha:** this endpoint is new and its API may still change.",
         security: [],
         responses: {
             200: {
@@ -743,7 +743,7 @@ api.put(
         tags: ["media.pollinations.ai"],
         summary: "React to a media item",
         description:
-            "Add a reaction (e.g. `like`, `heart`, `bookmark`) to a catalog item by its id (the `id` field from /me/media or /tags/:tag, not the content hash). Reactable items are your own plus anything publicly tagged; others answer 404. Idempotent: repeating the same reaction is a no-op. At most 8 distinct reaction kinds per user per item.",
+            "Add a reaction (e.g. `like`, `heart`, `bookmark`) to a catalog item by its id (the `id` field from /me/media or /tags/:tag, not the content hash). Reactable items are your own plus anything publicly tagged; others answer 404. Idempotent: repeating the same reaction is a no-op. At most 8 distinct reaction kinds per user per item. **Alpha:** this endpoint is new and its API may still change.",
         responses: {
             200: {
                 description:
@@ -812,7 +812,7 @@ api.delete(
         tags: ["media.pollinations.ai"],
         summary: "Remove a reaction from a media item",
         description:
-            "Remove your reaction of one kind from a catalog item by its id (the `id` field from /me/media or /tags/:tag, not the content hash). Reactable items are your own plus anything publicly tagged; others answer 404. Idempotent: removing a reaction you haven't given is a no-op.",
+            "Remove your reaction of one kind from a catalog item by its id (the `id` field from /me/media or /tags/:tag, not the content hash). Reactable items are your own plus anything publicly tagged; others answer 404. Idempotent: removing a reaction you haven't given is a no-op. **Alpha:** this endpoint is new and its API may still change.",
         responses: {
             200: {
                 description:
@@ -1091,7 +1091,7 @@ app.get("/openapi.json", async (c, next) => {
                 title: "media.pollinations.ai",
                 version: "1.0.0",
                 description:
-                    "Content-addressed media storage. Upload images, audio, and video with deduplication via SHA-256 hashing. Uploads require a pollinations.ai API key (`pk_` or `sk_`). Retrieval is public.",
+                    "Content-addressed media storage. Upload images, audio, and video with deduplication via SHA-256 hashing. Uploads require a pollinations.ai API key (`pk_` or `sk_`). Retrieval is public. The catalog features (tags, galleries, reactions) are **alpha** — their API may still change.",
             },
             servers: [{ url: `https://${DOMAIN}` }],
             components: {

@@ -16,7 +16,7 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
-import { fmtPeriod, fmtUsd } from "../lib/format";
+import { fmtPeriod, fmtUnsignedPct, fmtUsd } from "../lib/format";
 import {
     creditRunway,
     type RunwayRow,
@@ -39,6 +39,15 @@ export function depletionTone(date: string | null, now: Date): string {
 
 function remainingTone(value: number) {
     return value < 0 ? "text-intent-danger-text" : "";
+}
+
+export function burnedPct(row: Pick<RunwayRow, "burnedUsd" | "grantedUsd">) {
+    if (row.grantedUsd <= 0) return null;
+    return (row.burnedUsd / row.grantedUsd) * 100;
+}
+
+function visibleFlags(row: RunwayRow) {
+    return row.flags.filter((flag) => !flag.startsWith("lapsed "));
 }
 
 function GrantsHint({ row }: { row: RunwayRow }) {
@@ -112,7 +121,7 @@ export function CreditsTab({
         () => [
             { key: "vendor", value: (row) => row.vendor },
             { key: "grantedUsd", value: (row) => row.grantedUsd },
-            { key: "burnedUsd", value: (row) => row.burnedUsd },
+            { key: "burnedPct", value: (row) => burnedPct(row) },
             { key: "remainingUsd", value: (row) => row.remainingUsd },
             { key: "lastMonthBurnUsd", value: (row) => row.lastMonthBurnUsd },
             {
@@ -134,7 +143,12 @@ export function CreditsTab({
                     granted {fmtUsd(totals.granted)}
                 </Chip>
                 <Chip data-theme="neutral" intent="neutral" size="sm">
-                    burned {fmtUsd(totals.burned)}
+                    burned{" "}
+                    {fmtUnsignedPct(
+                        totals.granted > 0
+                            ? (totals.burned / totals.granted) * 100
+                            : null,
+                    )}
                 </Chip>
                 <Chip data-theme="neutral" intent="neutral" size="sm">
                     remaining {fmtUsd(totals.remaining)} (naive)
@@ -155,13 +169,13 @@ export function CreditsTab({
                                     granted
                                 </HeaderHint>
                             </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("burnedUsd")}>
-                                <HeaderHint hint="Witnessed credit burn: Σ provider_monthly.credit across the whole window (2026-01+).">
+                            <TableHeaderCell {...headerProps("burnedPct")}>
+                                <HeaderHint hint="Witnessed credit burn as a share of granted credit: burned ÷ granted. Burn is Σ provider_monthly.credit across the whole window (2026-01+).">
                                     burned
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("remainingUsd")}>
-                                <HeaderHint hint="granted − burned, naive. For grants that started before 2026 this is an UPPER BOUND (pre-window burn is unwitnessed) — see flags.">
+                                <HeaderHint hint="granted − witnessed burned dollars, naive. For grants that started before 2026 this is an upper bound (pre-window burn is unwitnessed) — see flags.">
                                     remaining
                                 </HeaderHint>
                             </TableHeaderCell>
@@ -190,7 +204,7 @@ export function CreditsTab({
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("flags")}>
-                                <HeaderHint hint="pre-window burn unwitnessed = grant older than the data window, remaining is an upper bound · includes expired grants = part of the granted total already lapsed unused · over-burn = burned more than granted (grant figure or credit rows need a look) · exhausted = pool fully consumed.">
+                                <HeaderHint hint="pre-window burn unwitnessed = grant older than the data window, remaining is an upper bound · over-burn = burned more than granted (grant figure or credit rows need a look) · exhausted = pool fully consumed.">
                                     flags
                                 </HeaderHint>
                             </TableHeaderCell>
@@ -207,7 +221,7 @@ export function CreditsTab({
                                         {fmtUsd(row.grantedUsd)}
                                     </TableCell>
                                     <TableCell>
-                                        {fmtUsd(row.burnedUsd)}
+                                        {fmtUnsignedPct(burnedPct(row))}
                                     </TableCell>
                                     <TableCell
                                         className={remainingTone(
@@ -264,7 +278,7 @@ export function CreditsTab({
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex flex-wrap gap-1">
-                                            {row.flags.map((flag) => (
+                                            {visibleFlags(row).map((flag) => (
                                                 <Chip
                                                     key={flag}
                                                     intent={
@@ -298,11 +312,6 @@ export function CreditsTab({
                                     <TableHeaderCell>granted</TableHeaderCell>
                                     <TableHeaderCell>burned</TableHeaderCell>
                                     <TableHeaderCell>
-                                        <HeaderHint hint="Grant capacity that expired unused — money that was never real for us.">
-                                            lapsed
-                                        </HeaderHint>
-                                    </TableHeaderCell>
-                                    <TableHeaderCell>
                                         <HeaderHint hint="Cash paid to this vendor in the last complete month — the post-credit cost of keeping it.">
                                             cash last mo
                                         </HeaderHint>
@@ -328,12 +337,7 @@ export function CreditsTab({
                                             {fmtUsd(row.grantedUsd)}
                                         </TableCell>
                                         <TableCell>
-                                            {fmtUsd(row.burnedUsd)}
-                                        </TableCell>
-                                        <TableCell className="text-theme-text-soft">
-                                            {row.lapsedUsd > 0.5
-                                                ? fmtUsd(row.lapsedUsd)
-                                                : "–"}
+                                            {fmtUnsignedPct(burnedPct(row))}
                                         </TableCell>
                                         <TableCell>
                                             {fmtUsd(row.cashLastMonthUsd)}
@@ -348,15 +352,17 @@ export function CreditsTab({
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex flex-wrap gap-1">
-                                                {row.flags.map((flag) => (
-                                                    <Chip
-                                                        key={flag}
-                                                        intent="warning"
-                                                        size="sm"
-                                                    >
-                                                        {flag}
-                                                    </Chip>
-                                                ))}
+                                                {visibleFlags(row).map(
+                                                    (flag) => (
+                                                        <Chip
+                                                            key={flag}
+                                                            intent="warning"
+                                                            size="sm"
+                                                        >
+                                                            {flag}
+                                                        </Chip>
+                                                    ),
+                                                )}
                                             </div>
                                         </TableCell>
                                     </TableRow>

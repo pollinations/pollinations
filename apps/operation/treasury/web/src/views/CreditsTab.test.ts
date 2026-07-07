@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { RunwayRow } from "../lib/insights";
-import { depletionTone, visibleRunwayRows } from "./CreditsTab";
+import { burnedPct, depletionTone, visibleRunwayRows } from "./CreditsTab";
 
 const row = (vendor: string): RunwayRow => ({
     vendor,
@@ -29,6 +29,16 @@ describe("visibleRunwayRows", () => {
     it("filters by vendor and passes everything through for all", () => {
         expect(visibleRunwayRows(rows, "lambda")).toEqual([row("lambda")]);
         expect(visibleRunwayRows(rows, "all")).toEqual(rows);
+    });
+});
+
+describe("burnedPct", () => {
+    it("returns burned share of granted credit", () => {
+        expect(burnedPct({ grantedUsd: 200, burnedUsd: 50 })).toBe(25);
+    });
+
+    it("is null without a grant base", () => {
+        expect(burnedPct({ grantedUsd: 0, burnedUsd: 50 })).toBeNull();
     });
 });
 

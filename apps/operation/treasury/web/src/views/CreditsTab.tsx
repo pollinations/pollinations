@@ -5,7 +5,6 @@ import {
     TableHead,
     TableHeaderCell,
     TableRow,
-    Text,
     Tooltip,
 } from "@pollinations/ui";
 import { useMemo } from "react";
@@ -291,11 +290,6 @@ export function CreditsTab({
             </TableScroller>
             {finished.length > 0 && (
                 <div className="flex flex-col gap-2">
-                    <Text size="micro" tone="soft">
-                        finished pools — grant fully used or lapsed; cash
-                        columns show what the vendor costs now that credits are
-                        gone
-                    </Text>
                     <TableScroller>
                         <DataTable>
                             <TableHead>
@@ -374,10 +368,6 @@ export function CreditsTab({
             )}
             {ungranted.length > 0 && (
                 <div className="flex flex-col gap-2">
-                    <Text size="micro" tone="soft">
-                        credit burn without a recorded grant — record the grant
-                        fact, or it never formed a pool (per-invoice coupons)
-                    </Text>
                     <TableScroller>
                         <DataTable>
                             <TableHead>
@@ -408,16 +398,6 @@ export function CreditsTab({
                     </TableScroller>
                 </div>
             )}
-            <Text size="micro" tone="soft">
-                remaining = Σ granted − Σ witnessed credit burn (2026-01+),
-                naive by design — flags carry every caveat · rate /mo = running
-                month prorated by elapsed days, "·" = from the last complete
-                month · depletes = earlier of exhaustion at the current rate and
-                the next expiry · period filter does not apply (this lens
-                answers "now") · pollen-priced free partners
-                (airforce/bpai/seraphyn/inferenceport/community) are excluded —
-                their credit is our own bookkeeping, not a pool
-            </Text>
         </div>
     );
 }

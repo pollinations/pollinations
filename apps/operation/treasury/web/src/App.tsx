@@ -9,6 +9,7 @@ import {
     EyeIcon,
     GenApiIcon,
     Heading,
+    InfoTip,
     Input,
     MenuIcon,
     NavItem,
@@ -485,9 +486,108 @@ function activeViewTitle(
     insightTab: InsightTab,
 ) {
     if (section === "insights") {
+        if (insightTab === "vendors") return "Vendor Economics";
+        if (insightTab === "models") return "Model Economics";
         return INSIGHT_TABS.find((item) => item.id === insightTab)?.label ?? "";
     }
     return TABS.find((item) => item.id === tab)?.label ?? "";
+}
+
+function InfoLine({ children }: { children: ReactNode }) {
+    return <span className="block">• {children}</span>;
+}
+
+function viewInfoContent(
+    section: TreasurySection,
+    tab: Tab,
+    insightTab: InsightTab,
+) {
+    if (section === "raw") {
+        const active = TABS.find((item) => item.id === tab);
+        if (!active) return null;
+        return (
+            <span className="block max-w-72">
+                <strong>{active.label}</strong>
+                <InfoLine>{active.note}</InfoLine>
+                <InfoLine>
+                    Source: <strong>{active.pipe}</strong>
+                </InfoLine>
+            </span>
+        );
+    }
+
+    if (insightTab === "vendors") {
+        return (
+            <span className="block max-w-72">
+                <strong>Vendor Economics</strong>
+                <InfoLine>Models rolled up by vendor.</InfoLine>
+                <InfoLine>
+                    Compare retained paid pollen against true provider cost.
+                </InfoLine>
+                <InfoLine>
+                    Open <strong>Model Economics</strong> to inspect each model
+                    per vendor.
+                </InfoLine>
+            </span>
+        );
+    }
+    if (insightTab === "models") {
+        return (
+            <span className="block max-w-72">
+                <strong>Model Economics</strong>
+                <InfoLine>One row per model per vendor.</InfoLine>
+                <InfoLine>
+                    True cost uses provider calibration, then compares against
+                    retained paid pollen.
+                </InfoLine>
+                <InfoLine>
+                    Quest burn is shown separately from paid margin.
+                </InfoLine>
+            </span>
+        );
+    }
+    if (insightTab === "reconciliation") {
+        return (
+            <span className="block max-w-72">
+                <strong>Reconciliation</strong>
+                <InfoLine>One row per vendor-month.</InfoLine>
+                <InfoLine>
+                    Compares bank transactions, provider billing, and Pollen
+                    metering.
+                </InfoLine>
+                <InfoLine>
+                    Funding gaps and calibration drift sort first.
+                </InfoLine>
+            </span>
+        );
+    }
+    if (insightTab === "credits") {
+        return (
+            <span className="block max-w-72">
+                <strong>Credits</strong>
+                <InfoLine>Current grant runway, not a period view.</InfoLine>
+                <InfoLine>
+                    Remaining is granted minus witnessed credit burn.
+                </InfoLine>
+                <InfoLine>
+                    Depletion is the earlier of burn-out or expiry.
+                </InfoLine>
+            </span>
+        );
+    }
+    if (insightTab === "pnl") {
+        return (
+            <span className="block max-w-72">
+                <strong>P&amp;L</strong>
+                <InfoLine>Stripe net revenue minus Wise cash spend.</InfoLine>
+                <InfoLine>
+                    Credit burn is shown separately because no cash left the
+                    bank.
+                </InfoLine>
+            </span>
+        );
+    }
+    return null;
 }
 
 function vendorOptionsForTab(data: Data | null, tab: Tab) {
@@ -780,6 +880,7 @@ export default function App() {
         </>
     );
     const viewTitle = activeViewTitle(section, tab, insightTab);
+    const viewInfo = viewInfoContent(section, tab, insightTab);
 
     return (
         <TreasuryShell
@@ -822,7 +923,20 @@ export default function App() {
                     </Alert>
                 )}
 
-                <Section title={viewTitle} framed panelClassName="gap-5">
+                <Section
+                    title={viewTitle}
+                    action={
+                        viewInfo ? (
+                            <InfoTip
+                                content={viewInfo}
+                                label={`${viewTitle} info`}
+                            />
+                        ) : null
+                    }
+                    actionClassName="mr-auto"
+                    framed
+                    panelClassName="gap-5"
+                >
                     {hasFilters && (
                         <FilterBar>
                             {showPeriodFilter && (

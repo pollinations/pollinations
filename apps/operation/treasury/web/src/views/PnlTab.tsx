@@ -5,7 +5,6 @@ import {
     TableHead,
     TableHeaderCell,
     TableRow,
-    Text,
 } from "@pollinations/ui";
 import { useMemo } from "react";
 import { DataTable, HeaderHint, TableScroller } from "../components/DataTable";
@@ -177,11 +176,6 @@ function PnlMatrix({ data, month = "" }: { data: Data; month?: string }) {
                     </TableBody>
                 </DataTable>
             </TableScroller>
-            <Text size="micro" tone="soft">
-                costs are cash-basis by transaction date (Wise) · EUR→USD at
-                monthly ECB averages · (credit burn) = provider-metered spend
-                covered by credits, not part of cash P&L · ⚠ = month in progress
-            </Text>
         </div>
     );
 }
@@ -247,36 +241,27 @@ function PnlMonthDetail({ data, month }: { data: Data; month: string }) {
                 </DataTable>
             </TableScroller>
             {detail.creditBurn.length > 0 && (
-                <>
-                    <Text size="micro" tone="soft">
-                        credit burn (not cash)
-                    </Text>
-                    <TableScroller>
-                        <DataTable>
-                            <TableHead>
-                                <TableRow>
-                                    <TableHeaderCell>vendor</TableHeaderCell>
-                                    <TableHeaderCell>credit</TableHeaderCell>
+                <TableScroller>
+                    <DataTable>
+                        <TableHead>
+                            <TableRow>
+                                <TableHeaderCell>vendor</TableHeaderCell>
+                                <TableHeaderCell>credit</TableHeaderCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {detail.creditBurn.map((row) => (
+                                <TableRow key={row.vendor}>
+                                    <TableCell>{row.vendor}</TableCell>
+                                    <TableCell className="text-theme-text-soft">
+                                        ({fmtUsd(row.creditUsd)})
+                                    </TableCell>
                                 </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {detail.creditBurn.map((row) => (
-                                    <TableRow key={row.vendor}>
-                                        <TableCell>{row.vendor}</TableCell>
-                                        <TableCell className="text-theme-text-soft">
-                                            ({fmtUsd(row.creditUsd)})
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </DataTable>
-                    </TableScroller>
-                </>
+                            ))}
+                        </TableBody>
+                    </DataTable>
+                </TableScroller>
             )}
-            <Text size="micro" tone="soft">
-                single-month drill-down: cash by category and vendor · pick the
-                year pill for the monthly matrix · ⚠ = month in progress
-            </Text>
         </div>
     );
 }

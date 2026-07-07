@@ -5,7 +5,6 @@ import {
     TableHead,
     TableHeaderCell,
     TableRow,
-    Text,
 } from "@pollinations/ui";
 import { useMemo } from "react";
 import {
@@ -106,10 +105,6 @@ export function ReconciliationTab({
 
     return (
         <div className="flex flex-col gap-2">
-            <Text size="micro" tone="soft">
-                one spend, three witnesses per vendor-month — problem rows sort
-                first
-            </Text>
             <TableScroller>
                 <DataTable>
                     <TableHead>
@@ -191,14 +186,6 @@ export function ReconciliationTab({
                     </TableBody>
                 </DataTable>
             </TableScroller>
-            <Text size="micro" tone="soft">
-                one spend, three witnesses — transactions: cash from the bank
-                (Wise) · provider: their own meter · pollen: our metering
-                (Pollen ≈ $) · – = that witness has no data, never zero · calib
-                × = provider ÷ pollen that month, red past ±
-                {Math.round(CALIB_DRIFT_ALARM * 100)}% · coverage = every
-                pollen-active vendor-month must be funded by cash or credit
-            </Text>
         </div>
     );
 }

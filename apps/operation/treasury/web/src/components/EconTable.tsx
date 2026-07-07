@@ -5,7 +5,6 @@ import {
     TableHead,
     TableHeaderCell,
     TableRow,
-    Text,
     Tooltip,
 } from "@pollinations/ui";
 import { useMemo } from "react";
@@ -307,16 +306,6 @@ export function EconTable({
                     </TableBody>
                 </DataTable>
             </TableScroller>
-            <Text size="micro" tone="soft">
-                true cost = our metered cost_paid × calib · calib = Σ provider
-                actual ÷ Σ our metering over the scope — raw division, no
-                smoothing; flags call out months where a witness is missing ·
-                quest burn = cost_quests × calib (subsidy, no price) · true × =
-                retained_paid ÷ true cost — red loses cash on compute alone,
-                amber loses after Stripe fees · margin = retained_paid − true
-                cost · credit = grant-funded share of the vendor actual · sorted
-                most underpriced first
-            </Text>
         </div>
     );
 }

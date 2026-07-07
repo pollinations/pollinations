@@ -277,21 +277,24 @@ function onAfterSessionCreate(
 
                     const profile = (await res.json()) as { login: string };
                     if (profile.login && profile.login !== acct?.username) {
-                        // Write account.username (canonical new column)
-                        await db
-                            .update(accountTable)
-                            .set({ username: profile.login })
-                            .where(
-                                and(
-                                    eq(accountTable.userId, session.userId),
-                                    eq(accountTable.providerId, "github"),
+                        // Atomic dual-write: update both account.username (canonical)
+                        // and user.githubUsername (legacy) in a single batch transaction.
+                        // If either fails, the entire batch rolls back — no orphaned state.
+                        await db.batch([
+                            db
+                                .update(accountTable)
+                                .set({ username: profile.login })
+                                .where(
+                                    and(
+                                        eq(accountTable.userId, session.userId),
+                                        eq(accountTable.providerId, "github"),
+                                    ),
                                 ),
-                            );
-                        // Dual-write: keep legacy user.github_username in sync
-                        await db
-                            .update(userTable)
-                            .set({ githubUsername: profile.login })
-                            .where(eq(userTable.id, session.userId));
+                            db
+                                .update(userTable)
+                                .set({ githubUsername: profile.login })
+                                .where(eq(userTable.id, session.userId)),
+                        ]);
                     }
                 } catch (e) {
                     console.error(

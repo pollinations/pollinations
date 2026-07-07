@@ -92,7 +92,7 @@ export const Route = createFileRoute("/")({
                   githubUsername?: string | null;
               })
             | undefined;
-        const githubUsername =
+        const displayName =
             profileResult?.handle ??
             profileResult?.githubUsername ??
             sessionUser?.githubUsername ??
@@ -100,7 +100,7 @@ export const Route = createFileRoute("/")({
 
         return {
             user: context.user,
-            githubUsername,
+            githubUsername: displayName,
             apiKeys,
             tierData,
             tierBalance,
@@ -118,7 +118,7 @@ function RouteComponent() {
     const router = useRouter();
     const {
         user,
-        githubUsername,
+        githubUsername: displayName,
         apiKeys,
         tierData,
         tierBalance,
@@ -253,7 +253,7 @@ function RouteComponent() {
     return (
         <DashboardShell
             activePage={activePage}
-            githubUsername={githubUsername}
+            githubUsername={displayName}
             githubAvatarUrl={user?.image || ""}
             onPageChange={handlePageChange}
             onSignOut={handleSignOut}

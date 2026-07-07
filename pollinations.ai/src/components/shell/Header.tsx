@@ -11,6 +11,8 @@ import { ENTER_HREF, NAV_ITEMS } from "./links.ts";
 import { useHideOnScroll } from "./useHideOnScroll.ts";
 
 const headerNavItemClass = "polli:font-bold";
+const headerActiveNavItemClass =
+    "polli:bg-surface-white/95 polli:text-theme-text-strong polli:shadow-sm polli:ring-1 polli:ring-theme-text-strong/15";
 
 export function Header() {
     const hidden = useHideOnScroll("app-scroll");
@@ -56,6 +58,7 @@ export function Header() {
                                 }),
                             )}
                             className={headerNavItemClass}
+                            activeClassName={headerActiveNavItemClass}
                         >
                             {item.label}
                         </NavItem>

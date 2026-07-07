@@ -6,6 +6,7 @@ type BaseNavItemProps = {
     active?: boolean;
     /** Optional leading icon. */
     icon?: ComponentType<{ className?: string }>;
+    activeClassName?: string;
     className?: string;
 };
 
@@ -32,6 +33,7 @@ export function NavItem<T extends React.ElementType = "button">({
     as,
     active = false,
     icon: Icon,
+    activeClassName,
     className,
     children,
     ...rest
@@ -42,7 +44,7 @@ export function NavItem<T extends React.ElementType = "button">({
             aria-current={active ? "page" : undefined}
             className={cn(
                 base,
-                active ? activeClasses : inactiveClasses,
+                active ? cn(activeClasses, activeClassName) : inactiveClasses,
                 className,
             )}
             {...rest}

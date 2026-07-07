@@ -2,6 +2,7 @@ import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointPriceKey,
     type CommunityEndpointPrices,
+    type CommunityEndpointVisibility,
 } from "@shared/community-endpoints.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 
@@ -14,6 +15,9 @@ export type CommunityEndpoint = {
     description: string | null;
     baseUrl: string;
     upstreamModel: string;
+    // private → owner-only, unlisted, free; app → owner+app users [staged];
+    // public → listed + billed to callers.
+    visibility: CommunityEndpointVisibility;
     disabled: boolean;
     disabledReason: string | null;
     disabledAt: string | null;
@@ -32,6 +36,8 @@ export type EndpointPayload = {
     description: string;
     baseUrl: string;
     upstreamModel: string;
+    // Omitted on create (defaults private server-side); set by the publish flow.
+    visibility?: CommunityEndpointVisibility;
 } & CommunityEndpointPrices;
 
 export type CommunityEndpointUsage = Record<string, unknown>;
@@ -64,6 +70,12 @@ export const emptyForm: EndpointFormState = {
 };
 
 export const idleAction: ActionState = { status: "idle" };
+
+export const VISIBILITY_LABELS: Record<CommunityEndpointVisibility, string> = {
+    private: "Private",
+    app: "App users",
+    public: "Public",
+};
 
 const TOKENS_PER_MILLION = 1_000_000;
 
@@ -148,6 +160,39 @@ export function observedUsageValue(
     return hasObservedPriceField(usage, field)
         ? (billableUsage?.[field.usageType] ?? 0)
         : null;
+}
+
+// Publishing (or unpublishing) an existing endpoint only touches visibility
+// and pricing — never baseUrl or the bearer token. Sent to the update endpoint.
+export type PublishPayload = {
+    visibility: CommunityEndpointVisibility;
+} & CommunityEndpointPrices;
+
+export function toPublishPayload(
+    visibility: CommunityEndpointVisibility,
+    form: EndpointFormState,
+): PublishPayload {
+    return {
+        visibility,
+        ...formPricesToPayload(form),
+    };
+}
+
+// A published endpoint reverts to private. Its stored prices are resent
+// unchanged (a private endpoint never applies them) so the update payload
+// matches the shared PublishPayload shape.
+export function toUnpublishPayload(
+    endpoint: CommunityEndpoint,
+): PublishPayload {
+    return {
+        visibility: "private",
+        ...(Object.fromEntries(
+            COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
+                field.key,
+                endpoint[field.key],
+            ]),
+        ) as CommunityEndpointPrices),
+    };
 }
 
 export function toEndpointPayload(form: EndpointFormState): EndpointPayload {

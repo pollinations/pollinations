@@ -1,9 +1,12 @@
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    COMMUNITY_ENDPOINT_VISIBILITIES,
     type CommunityEndpointPriceKey,
+    type CommunityEndpointVisibility,
     communityEndpointPrices,
     communityModelId,
     isCommunityEndpointOwnerAllowed,
+    isSharedCommunityVisibility,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
@@ -42,6 +45,11 @@ const UpdatePriceFieldsSchema = Object.fromEntries(
     z.ZodType<number | undefined>
 >;
 
+const VisibilitySchema = z
+    .enum(COMMUNITY_ENDPOINT_VISIBILITIES)
+    .describe(
+        '"private" (default): owner-only, unlisted, free. "app": owner + app users, unlisted, priced. "public": anyone, listed in the catalog, priced. Sharing (app/public) requires an allowlisted account and pricing.',
+    );
 const EndpointFieldsSchema = {
     // No "/": the public model id is `<owner>/<name>`, so a slash in the name
     // would inject a second separator and let one model spoof another's id.
@@ -59,6 +67,7 @@ const EndpointFieldsSchema = {
 
 const CreateEndpointSchema = z.object({
     ...EndpointFieldsSchema,
+    visibility: VisibilitySchema.optional().default("private"),
     ...CreatePriceFieldsSchema,
 });
 const UpdateEndpointSchema = z.object({
@@ -67,6 +76,7 @@ const UpdateEndpointSchema = z.object({
     baseUrl: EndpointFieldsSchema.baseUrl.optional(),
     upstreamModel: EndpointFieldsSchema.upstreamModel,
     bearerToken: EndpointFieldsSchema.bearerToken.optional(),
+    visibility: VisibilitySchema.optional(),
     ...UpdatePriceFieldsSchema,
 });
 const ModelListSchema = z.object({
@@ -88,6 +98,7 @@ const CommunityEndpointResponseSchema = z.object({
     description: z.string().nullable(),
     baseUrl: z.string(),
     upstreamModel: z.string(),
+    visibility: VisibilitySchema,
     ...ResponsePriceFieldsSchema,
     disabled: z.boolean(),
     disabledReason: z.string().nullable(),
@@ -138,7 +149,10 @@ function normalizeInputBearerToken(value: string): string {
     }
 }
 
-async function requireCommunityEndpointAccess(
+// The allowlist now gates SHARING (exposing an endpoint to any caller other
+// than its owner), not creation. Anyone may register private endpoints for
+// their own use; going app/public requires an allowlisted account.
+async function requireCommunitySharingAllowed(
     db: Db,
     userId: string,
 ): Promise<void> {
@@ -149,7 +163,8 @@ async function requireCommunityEndpointAccess(
 
     if (!isCommunityEndpointOwnerAllowed(user)) {
         throw new HTTPException(403, {
-            message: "Community endpoints are invite-only",
+            message:
+                "Sharing a community model (app/public) is invite-only. It can stay private for your own use.",
         });
     }
 }
@@ -177,6 +192,7 @@ function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
         description: row.description,
         baseUrl: row.baseUrl,
         upstreamModel: row.upstreamModel,
+        visibility: row.visibility,
         ...communityEndpointPrices(row),
         disabled: row.disabledAt !== null,
         disabledReason: row.disabledReason,
@@ -241,16 +257,41 @@ function requireCommunityEndpointManagePermission(apiKey?: {
     }
 }
 
-async function requireCommunityEndpointManageAccess(
+// Managing endpoints (create/update/delete/probe) is open to any account with
+// the API-key permission — the allowlist only applies when sharing (see
+// requireCommunitySharingAllowed).
+function requireCommunityEndpointManageAccess(apiKey?: {
+    permissions?: Record<string, string[]>;
+    metadata?: Record<string, unknown>;
+}): void {
+    requireCommunityEndpointManagePermission(apiKey);
+}
+
+// Prices a shared endpoint must carry so callers aren't billed zero. Base text
+// pricing is the minimum; other buckets can stay 0.
+const REQUIRED_SHARED_PRICE_KEYS: readonly CommunityEndpointPriceKey[] = [
+    "promptTextPrice",
+    "completionTextPrice",
+];
+
+// Enforce the sharing rules when an endpoint's effective visibility is app or
+// public: the account must be allowlisted and the endpoint must be priced.
+async function enforceSharingRules(
     db: Db,
     userId: string,
-    apiKey?: {
-        permissions?: Record<string, string[]>;
-        metadata?: Record<string, unknown>;
-    },
+    visibility: CommunityEndpointVisibility,
+    prices: Record<CommunityEndpointPriceKey, number>,
 ): Promise<void> {
-    requireCommunityEndpointManagePermission(apiKey);
-    await requireCommunityEndpointAccess(db, userId);
+    if (!isSharedCommunityVisibility(visibility)) return;
+    await requireCommunitySharingAllowed(db, userId);
+    const missing = REQUIRED_SHARED_PRICE_KEYS.filter(
+        (key) => !(prices[key] > 0),
+    );
+    if (missing.length > 0) {
+        throw new HTTPException(400, {
+            message: `A shared (${visibility}) model must set positive pricing: ${missing.join(", ")}`,
+        });
+    }
 }
 
 async function enforceEndpointProbeThrottle(
@@ -309,11 +350,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const db = drizzle(c.env.DB, { schema });
-            await requireCommunityEndpointManageAccess(
-                db,
-                user.id,
-                c.var.auth.apiKey,
-            );
+            requireCommunityEndpointManageAccess(c.var.auth.apiKey);
             const ownerGithubUsername = await requireOwnerGithubUsername(
                 db,
                 user.id,
@@ -353,16 +390,20 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
             const db = drizzle(c.env.DB, { schema });
-            await requireCommunityEndpointManageAccess(
-                db,
-                user.id,
-                c.var.auth.apiKey,
-            );
+            requireCommunityEndpointManageAccess(c.var.auth.apiKey);
             const ownerGithubUsername = await requireOwnerGithubUsername(
                 db,
                 user.id,
             );
             await ensureModelNameAvailable(db, user.id, input.name);
+            // Gate + price-check before any worker deploy so a rejected share
+            // never leaves an orphaned managed worker behind.
+            await enforceSharingRules(
+                db,
+                user.id,
+                input.visibility,
+                communityEndpointPrices(input),
+            );
             const id = crypto.randomUUID();
             const [row] = await db
                 .insert(schema.communityEndpoint)
@@ -377,6 +418,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         normalizeInputBearerToken(input.bearerToken),
                         c.env.BETTER_AUTH_SECRET,
                     ),
+                    visibility: input.visibility,
                     ...communityEndpointPrices(input),
                     createdAt: new Date(),
                     updatedAt: new Date(),
@@ -413,12 +455,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
-            const db = drizzle(c.env.DB, { schema });
-            await requireCommunityEndpointManageAccess(
-                db,
-                user.id,
-                c.var.auth.apiKey,
-            );
+            requireCommunityEndpointManageAccess(c.var.auth.apiKey);
             const throttled = await enforceEndpointProbeThrottle(
                 c,
                 user.id,
@@ -461,12 +498,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
-            const db = drizzle(c.env.DB, { schema });
-            await requireCommunityEndpointManageAccess(
-                db,
-                user.id,
-                c.var.auth.apiKey,
-            );
+            requireCommunityEndpointManageAccess(c.var.auth.apiKey);
             const throttled = await enforceEndpointProbeThrottle(
                 c,
                 user.id,
@@ -513,11 +545,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const input = c.req.valid("json");
             const { id } = c.req.param();
             const db = drizzle(c.env.DB, { schema });
-            await requireCommunityEndpointManageAccess(
-                db,
-                user.id,
-                c.var.auth.apiKey,
-            );
+            requireCommunityEndpointManageAccess(c.var.auth.apiKey);
             const ownerGithubUsername = await requireOwnerGithubUsername(
                 db,
                 user.id,
@@ -551,11 +579,28 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     c.env.BETTER_AUTH_SECRET,
                 );
             }
+            if (input.visibility !== undefined) {
+                update.visibility = input.visibility;
+            }
             for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
                 if (input[field.key] !== undefined) {
                     update[field.key] = input[field.key];
                 }
             }
+            // Enforce sharing rules against the effective post-update state:
+            // the incoming visibility (or the stored one) plus prices merged
+            // from the existing row and this update's changes.
+            const effectiveVisibility = input.visibility ?? endpoint.visibility;
+            const effectivePrices = communityEndpointPrices({
+                ...endpoint,
+                ...update,
+            });
+            await enforceSharingRules(
+                db,
+                user.id,
+                effectiveVisibility,
+                effectivePrices,
+            );
             const [row] = await db
                 .update(schema.communityEndpoint)
                 .set(update)
@@ -596,11 +641,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const { id } = c.req.param();
             const db = drizzle(c.env.DB, { schema });
-            await requireCommunityEndpointManageAccess(
-                db,
-                user.id,
-                c.var.auth.apiKey,
-            );
+            requireCommunityEndpointManageAccess(c.var.auth.apiKey);
             await requireOwnedEndpoint(db, id, user.id);
             await db
                 .delete(schema.communityEndpoint)

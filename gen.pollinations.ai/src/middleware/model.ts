@@ -9,6 +9,7 @@ import type { EventType } from "@shared/schemas/generation-event.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { getGenerationModelRegistry } from "../model-registry.ts";
+import type { AuthVariables } from "./auth.ts";
 
 const ENDPOINT_LABEL: Record<EventType, string> = {
     "generate.text": "text",
@@ -53,10 +54,27 @@ export async function resolveModelDefinition(
     model: string,
     eventType: EventType,
     env: CloudflareBindings,
+    callerUserId?: string,
 ): Promise<ModelVariables["model"]> {
     const registry = await getGenerationModelRegistry(env);
     const entry = registry.resolve(model);
     if (!entry) {
+        throw new HTTPException(400, {
+            message: `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
+        });
+    }
+
+    // A private community endpoint is owner-only: to everyone else it doesn't
+    // exist. Reuse the same "invalid model" response as an unknown name so
+    // private models aren't discoverable by probing. (`app` visibility — owner
+    // plus the owner's app users — is staged for a follow-up; treated as
+    // owner-only here.)
+    const community = entry.communityEndpoint;
+    if (
+        community &&
+        community.visibility !== "public" &&
+        community.ownerUserId !== callerUserId
+    ) {
         throw new HTTPException(400, {
             message: `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
         });
@@ -89,7 +107,7 @@ export function resolveModel(
 ) {
     return createMiddleware<{
         Bindings: CloudflareBindings;
-        Variables: ModelVariables;
+        Variables: ModelVariables & Partial<AuthVariables>;
     }>(async (c, next) => {
         // Extract model from request
         let rawModel: string | null = null;
@@ -136,7 +154,19 @@ export function resolveModel(
                       ? DEFAULT_REALTIME_MODEL
                       : DEFAULT_IMAGE_MODEL);
         const model = rawModel || defaultModel;
-        c.set("model", await resolveModelDefinition(model, eventType, c.env));
+        // auth() runs before resolveModel on the authenticated generation
+        // routes, so the caller identity is available to gate private
+        // endpoints. If it isn't (unauthenticated path), callerUserId is
+        // undefined and a private endpoint fails closed — never exposed.
+        c.set(
+            "model",
+            await resolveModelDefinition(
+                model,
+                eventType,
+                c.env,
+                c.var.auth?.user?.id,
+            ),
+        );
         await next();
     });
 }

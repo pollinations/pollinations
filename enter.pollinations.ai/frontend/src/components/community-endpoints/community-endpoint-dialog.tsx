@@ -193,12 +193,16 @@ export function CommunityEndpointDialog({
         }
     }
 
-    const returnedFields = returnedPriceFields(testState);
-    const visiblePriceKeys = visiblePriceFieldKeys(
-        savedPriceKeys,
-        returnedFields,
+    // Pricing lives in the publish flow, not here. This edit form only prices
+    // an endpoint that is already shared (editing a public/app model); creating
+    // and private-editing carry no pricing at all.
+    const isShared = isEdit && endpoint.visibility !== "private";
+    const returnedFields = isShared ? returnedPriceFields(testState) : [];
+    // Only shown for shared endpoints: reveal the fields the test observed (or
+    // the ones already saved), so a public model can be re-priced in place.
+    const visiblePriceKeys = new Set(
+        isShared ? visiblePriceFieldKeys(savedPriceKeys, returnedFields) : [],
     );
-    const hasVisiblePriceFields = visiblePriceKeys.size > 0;
     const hasValidVisiblePrices = hasValidVisibleFormPrices(
         form,
         visiblePriceKeys,
@@ -208,7 +212,13 @@ export function CommunityEndpointDialog({
     );
     const testRequirementMet =
         testState.status === "success" && returnedFields.length > 0;
-    const saveRequirementMet = isEdit || (testRequirementMet && hasToken);
+    // A shared external edit re-observes pricing, so it needs a successful
+    // test. Private create/edit does not — the owner is the only caller and
+    // pricing is deferred to publish. External endpoints always need a token to
+    // be callable at all.
+    const saveRequirementMet = isShared
+        ? testRequirementMet && (isEdit || hasToken)
+        : isEdit || hasToken;
     const providerModelQuery = form.upstreamModel.trim().toLowerCase();
     const visibleModelOptions =
         providerModelQuery === ""
@@ -220,7 +230,6 @@ export function CommunityEndpointDialog({
         !isSubmitting &&
         form.name.trim() !== "" &&
         form.baseUrl.trim() !== "" &&
-        hasVisiblePriceFields &&
         hasValidVisiblePrices &&
         hasRequiredReturnedPrices &&
         saveRequirementMet;
@@ -485,12 +494,14 @@ export function CommunityEndpointDialog({
                         )}
                     </div>
 
-                    <PriceGroups
-                        form={form}
-                        testState={testState}
-                        visiblePriceKeys={visiblePriceKeys}
-                        onChange={updateForm}
-                    />
+                    {isShared && (
+                        <PriceGroups
+                            form={form}
+                            testState={testState}
+                            visiblePriceKeys={visiblePriceKeys}
+                            onChange={updateForm}
+                        />
+                    )}
                 </ScrollArea>
 
                 <div className="flex shrink-0 justify-end gap-2 p-6 pt-4">

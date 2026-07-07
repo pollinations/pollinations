@@ -203,6 +203,12 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   baseUrl: text("base_url").notNull(),
   upstreamModel: text("upstream_model").notNull(),
   bearerTokenCiphertext: text("bearer_token_ciphertext").notNull(),
+  // private (default) → owner-only, unlisted, free; app → owner+app users,
+  // unlisted, priced; public → anyone, listed, priced. Sharing (app/public) is
+  // allowlist-gated and requires pricing.
+  visibility: text("visibility", { enum: ["private", "app", "public"] })
+    .default("private")
+    .notNull(),
   promptTextPrice: real("prompt_text_price").notNull(),
   promptCachedPrice: real("prompt_cached_price").default(0).notNull(),
   promptCacheWritePrice: real("prompt_cache_write_price").default(0).notNull(),

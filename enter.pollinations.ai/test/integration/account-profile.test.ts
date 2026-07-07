@@ -82,6 +82,7 @@ describe("GET /api/account/profile", () => {
 
         expect(response.status).toBe(200);
         const data = (await response.json()) as Record<string, unknown>;
+        expect(data).toHaveProperty("handle");
         expect(data).toHaveProperty("githubUsername");
         expect(data).toHaveProperty("image");
         expect(data).toHaveProperty("tier");

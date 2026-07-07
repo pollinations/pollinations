@@ -352,12 +352,16 @@ export function CommunityEndpointDialog({
     }
 
     const isPromptAgent = form.mode === "prompt-agent";
+    const isSource = form.mode === "source";
+    // Source and prompt-agent are both platform-deployed: the worker doesn't
+    // exist until saved, so there is no create-time endpoint to test.
+    const isManagedDeploy = isPromptAgent || isSource;
     const returnedFields = returnedPriceFields(testState);
-    // Prompt agents have no endpoint to test, so their base text price fields
-    // are always shown; external endpoints reveal price fields from the test.
+    // Managed deploys can't be tested at create time, so their base text price
+    // fields are always shown; external endpoints reveal fields from the test.
     const visiblePriceKeys = new Set([
         ...visiblePriceFieldKeys(savedPriceKeys, returnedFields),
-        ...(isPromptAgent ? PROMPT_AGENT_PRICE_KEYS : []),
+        ...(isManagedDeploy ? PROMPT_AGENT_PRICE_KEYS : []),
     ]);
     const hasVisiblePriceFields = visiblePriceKeys.size > 0;
     const hasValidVisiblePrices = hasValidVisibleFormPrices(
@@ -368,7 +372,8 @@ export function CommunityEndpointDialog({
         hasPositivePriceInput(form, field),
     );
     // Prompt agents must carry positive base text pricing (there is no test to
-    // observe usage), so require the forced keys to be set.
+    // observe usage). Source deploys may bill via tool fees only or be free, so
+    // their base prices are shown but not required.
     const hasRequiredPromptAgentPrices =
         !isPromptAgent ||
         COMMUNITY_ENDPOINT_PRICE_FIELDS.filter((field) =>
@@ -386,14 +391,19 @@ export function CommunityEndpointDialog({
               );
     const hasValidToolFees = form.toolFees.every(isValidToolFeeRow);
     const hasValidMcpServers = form.mcpServers.every(isValidMcpRow);
-    // The external endpoint path keeps its full baseUrl + test + token gate;
-    // the prompt-agent path validates the no-code config instead.
+    // Each mechanism gates differently: external keeps its baseUrl + test +
+    // token requirement; source needs worker code; prompt agent validates its
+    // no-code config.
+    const sourceWithinLimit =
+        new TextEncoder().encode(form.source).length <= MAX_SOURCE_BYTES;
     const modeRequirementsMet = isPromptAgent
         ? form.systemPrompt.trim() !== "" &&
           form.baseModel.trim() !== "" &&
           hasValidMcpServers &&
           hasRequiredPromptAgentPrices
-        : form.baseUrl.trim() !== "" && saveRequirementMet;
+        : isSource
+          ? form.source.trim() !== "" && sourceWithinLimit
+          : form.baseUrl.trim() !== "" && saveRequirementMet;
     const canSubmit =
         !isSubmitting &&
         form.name.trim() !== "" &&
@@ -427,6 +437,15 @@ export function CommunityEndpointDialog({
                             </code>{" "}
                             model. Pollinations hosts and runs it.
                         </>
+                    ) : isSource ? (
+                        <>
+                            Upload a single-file worker; Pollinations deploys
+                            and hosts it as a{" "}
+                            <code>
+                                {"{username}"}/{"{model-id}"}
+                            </code>{" "}
+                            model with your own per-1M-token pricing.
+                        </>
                     ) : (
                         <>
                             Register an OpenAI-compatible endpoint as a{" "}
@@ -454,16 +473,24 @@ export function CommunityEndpointDialog({
                             helper={
                                 isPromptAgent
                                     ? "Pollinations deploys and runs a prompt agent for you — no endpoint or token needed."
-                                    : "Point at your own OpenAI-compatible endpoint. You host and run it."
+                                    : isSource
+                                      ? "Upload a single-file worker; Pollinations deploys and hosts it — no token needed."
+                                      : "Point at your own OpenAI-compatible endpoint. You host and run it."
                             }
                             alignLabelRow
                         >
                             <div className="flex flex-wrap gap-2">
                                 <ToggleButton
-                                    active={!isPromptAgent}
+                                    active={form.mode === "external"}
                                     onClick={() => updateMode("external")}
                                 >
                                     External endpoint
+                                </ToggleButton>
+                                <ToggleButton
+                                    active={isSource}
+                                    onClick={() => updateMode("source")}
+                                >
+                                    Upload worker code
                                 </ToggleButton>
                                 <ToggleButton
                                     active={isPromptAgent}
@@ -564,7 +591,15 @@ export function CommunityEndpointDialog({
                         />
                     )}
 
-                    {!isPromptAgent && (
+                    {isSource && (
+                        <SourceFields
+                            name={form.name}
+                            source={form.source}
+                            onChange={updateForm}
+                        />
+                    )}
+
+                    {form.mode === "external" && (
                         <>
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <FieldStack
@@ -887,6 +922,66 @@ export function CommunityEndpointDialog({
                 </div>
             </form>
         </Dialog>
+    );
+}
+
+// Matches SourceSchema.max on the backend (1 MiB single-ES-module worker).
+const MAX_SOURCE_BYTES = 1_048_576;
+
+// Upload-worker-code registration: the owner pastes a single-file worker that
+// Pollinations deploys and hosts. Editable in both create and edit (the update
+// endpoint accepts `source` and redeploys).
+function SourceFields({
+    name,
+    source,
+    onChange,
+}: {
+    name: string;
+    source: string;
+    onChange: (key: keyof EndpointFormState, value: string) => void;
+}) {
+    const byteLength = new TextEncoder().encode(source).length;
+    const overLimit = byteLength > MAX_SOURCE_BYTES;
+    const modelId = name.trim() || "my-model";
+    return (
+        <div className="space-y-4">
+            <FieldStack
+                label="Worker source"
+                helper="A single ES-module worker exposing POST /v1/chat/completions. Deployed to a Pollinations-managed Cloudflare Worker."
+                alignLabelRow
+            >
+                <Textarea
+                    name="community-worker-source"
+                    value={source}
+                    placeholder={
+                        "export default {\n  async fetch(request, env) {\n    // return an OpenAI-compatible chat completion\n  },\n};"
+                    }
+                    rows={12}
+                    spellCheck={false}
+                    error={overLimit}
+                    className="font-mono text-sm"
+                    onChange={(e) => onChange("source", e.target.value)}
+                />
+                <p
+                    className={cn(
+                        "mt-1 text-xs",
+                        overLimit
+                            ? "text-intent-danger-text"
+                            : "text-theme-text-muted",
+                    )}
+                >
+                    {(byteLength / 1024).toFixed(1)} KiB / 1024 KiB
+                    {overLimit && " — worker source exceeds the 1 MiB limit"}
+                </p>
+            </FieldStack>
+
+            <Alert intent="info">
+                Prefer the CLI for larger workers or files on disk:
+                <code className="mt-1 block whitespace-pre-wrap break-all font-mono text-xs">
+                    polli my-models create --name {modelId} --source ./worker.js
+                </code>
+            </Alert>
+        </div>
     );
 }
 

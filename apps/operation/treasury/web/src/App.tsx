@@ -3,17 +3,30 @@ import {
     Button,
     Chip,
     ColorModeToggle,
+    DatabaseIcon,
     Heading,
     Input,
+    MenuIcon,
+    NavItem,
     ScrollArea,
-    TabButton,
     Text,
-    Tooltip,
+    TrendUpIcon,
+    useScrollLock,
+    XIcon,
 } from "@pollinations/ui";
-import { useEffect, useMemo, useState } from "react";
+import {
+    type ComponentType,
+    type ReactNode,
+    type RefObject,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { FilterBar, FilterSelect, MonthFilter } from "./components/Filters";
-import { type ProvenanceCode, SourceMark } from "./components/Provenance";
+import type { ProvenanceCode } from "./components/Provenance";
 import { STALE_AFTER_HOURS } from "./config";
 import { hoursSince } from "./lib/format";
 import { insightVendorOptions } from "./lib/insights";
@@ -37,27 +50,38 @@ type Tab = "transactions" | "pollen" | "provider" | "revenue";
 type Section = "insights" | "raw";
 type InsightTab = "pnl" | "vendors" | "models";
 
+type DrawerItem<Id extends string> = {
+    id: Id;
+    label: string;
+    note: string;
+    icon: ComponentType<{ className?: string }>;
+};
+
 const INSIGHT_TABS: {
     id: InsightTab;
     label: string;
     note: string;
+    icon: ComponentType<{ className?: string }>;
 }[] = [
     {
         id: "pnl",
         label: "P&L",
         note: "Monthly blend: Stripe net revenue minus cash spend per category, with credit burn as a shadow. Derived client-side from the transactions, provider, and revenue pipes.",
+        icon: TrendUpIcon,
     },
     {
         id: "vendors",
         label: "Vendors",
         note: "One spend, three witnesses per vendor and month: transactions (bank cash), provider (their meter), pollen (our metering) - with the delta that exposes wrong registry unit costs.",
+        icon: DatabaseIcon,
     },
     {
         id: "models",
         label: "Models",
         note: "Per-model unit economics: retained pollen (gross minus byop/model shares) vs true cost allocated from vendor actuals, with the break-even floor and ecosystem adoption totals.",
+        icon: DatabaseIcon,
     },
-];
+] satisfies readonly DrawerItem<InsightTab>[];
 
 // note + pipe surface as a hover tooltip on the tab button — the tab body
 // itself stays table-only.
@@ -67,6 +91,7 @@ const TABS: {
     codes: ProvenanceCode[];
     pipe: string;
     note: string;
+    icon: ComponentType<{ className?: string }>;
     rows: (data: Data) => number;
 }[] = [
     {
@@ -75,6 +100,7 @@ const TABS: {
         codes: ["EN"],
         pipe: "transactions_api",
         note: "Enty monthly export: charged amount, paid amount, currencies, and match state.",
+        icon: DatabaseIcon,
         rows: (data) => data.transactions.length,
     },
     {
@@ -83,15 +109,17 @@ const TABS: {
         codes: ["TB"],
         pipe: "pollen_monthly_api",
         note: "Our own metering: Tinybird generation events → one model/month row, paid vs quest Pollen.",
+        icon: DatabaseIcon,
         rows: (data) => data.pollenMonthly.length,
     },
     {
         id: "provider",
         label: "Provider",
         codes: ["API", "CLI", "BQ", "HC"],
-        pipe: "provider_monthly_api",
-        note: "Provider-reported monthly usage from vendor APIs, CLIs, BigQuery exports, and manual entries.",
-        rows: (data) => data.providerMonthly.length,
+        pipe: "provider_monthly_api + grants_api",
+        note: "Provider-reported monthly usage from vendor APIs, CLIs, BigQuery exports, and manual entries. Grants on top: credit start points per vendor.",
+        icon: DatabaseIcon,
+        rows: (data) => data.providerMonthly.length + data.grants.length,
     },
     {
         id: "revenue",
@@ -99,9 +127,312 @@ const TABS: {
         codes: ["ST"],
         pipe: "revenue_monthly_api",
         note: "Raw monthly revenue rows. Net revenue is intentionally not precomputed in the pipe.",
+        icon: DatabaseIcon,
         rows: (data) => data.revenueMonthly.length,
     },
 ];
+
+function codesLabel(codes: readonly ProvenanceCode[]) {
+    return codes.length ? `${codes.join(", ")} · ` : "";
+}
+
+function MobileMenuButton({
+    buttonRef,
+    onOpen,
+}: {
+    buttonRef: RefObject<HTMLButtonElement | null>;
+    onOpen: () => void;
+}) {
+    return (
+        <button
+            ref={buttonRef}
+            type="button"
+            className="fixed left-3 top-3 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque text-theme-text-strong shadow-md ring-1 ring-theme-text-strong/10 hover:bg-surface-opaque md:hidden"
+            onClick={onOpen}
+            aria-label="Open navigation"
+        >
+            <MenuIcon className="h-5 w-5" />
+        </button>
+    );
+}
+
+function DrawerGroup({
+    label,
+    children,
+}: {
+    label: string;
+    children: ReactNode;
+}) {
+    return (
+        <div className="flex flex-col gap-1">
+            <Text
+                size="micro"
+                tone="soft"
+                weight="bold"
+                className="px-3 uppercase tracking-wide"
+            >
+                {label}
+            </Text>
+            <div className="flex flex-col gap-1">{children}</div>
+        </div>
+    );
+}
+
+function TreasuryNav({
+    data,
+    insightTab,
+    section,
+    tab,
+    onInsightTabChange,
+    onRawTabChange,
+}: {
+    data: Data | null;
+    insightTab: InsightTab;
+    section: Section;
+    tab: Tab;
+    onInsightTabChange: (value: InsightTab) => void;
+    onRawTabChange: (value: Tab) => void;
+}) {
+    return (
+        <nav className="flex flex-col gap-5 pr-2" aria-label="Treasury views">
+            <DrawerGroup label="Insights">
+                {INSIGHT_TABS.map((item) => (
+                    <NavItem
+                        key={item.id}
+                        type="button"
+                        data-theme="accent"
+                        icon={item.icon}
+                        active={
+                            section === "insights" && insightTab === item.id
+                        }
+                        title={item.note}
+                        onClick={() => onInsightTabChange(item.id)}
+                    >
+                        {item.label}
+                    </NavItem>
+                ))}
+            </DrawerGroup>
+            <DrawerGroup label="Raw">
+                {TABS.map((item) => (
+                    <NavItem
+                        key={item.id}
+                        type="button"
+                        data-theme="accent"
+                        icon={item.icon}
+                        active={section === "raw" && tab === item.id}
+                        title={`${codesLabel(item.codes)}${item.pipe}${data ? ` · ${item.rows(data)} rows` : ""}\n${item.note}`}
+                        onClick={() => onRawTabChange(item.id)}
+                    >
+                        <span className="min-w-0 flex-1 truncate">
+                            {item.label}
+                        </span>
+                        {data ? (
+                            <Chip
+                                data-theme="neutral"
+                                intent="neutral"
+                                size="sm"
+                                className="ml-auto bg-transparent text-theme-text-soft"
+                            >
+                                {item.rows(data)}
+                            </Chip>
+                        ) : null}
+                    </NavItem>
+                ))}
+            </DrawerGroup>
+        </nav>
+    );
+}
+
+function TreasuryDrawer({
+    data,
+    footer,
+    insightTab,
+    section,
+    tab,
+    onInsightTabChange,
+    onRawTabChange,
+}: {
+    data: Data | null;
+    footer: ReactNode;
+    insightTab: InsightTab;
+    section: Section;
+    tab: Tab;
+    onInsightTabChange: (value: InsightTab) => void;
+    onRawTabChange: (value: Tab) => void;
+}) {
+    return (
+        <aside
+            data-theme="neutral"
+            className="flex min-h-0 flex-1 flex-col px-2 py-4 md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-60 md:border-r md:border-theme-text-strong/10"
+            aria-label="Treasury navigation"
+        >
+            <div className="hidden shrink-0 flex-col gap-1 border-b border-theme-text-strong/10 pb-4 pl-1 md:flex">
+                <Text
+                    size="micro"
+                    tone="soft"
+                    weight="bold"
+                    className="uppercase tracking-wide"
+                >
+                    Operations
+                </Text>
+                <Heading as="p" size="section">
+                    Treasury
+                </Heading>
+            </div>
+            <ScrollArea className="-mr-2 min-h-0 flex-1 pt-3">
+                <TreasuryNav
+                    data={data}
+                    section={section}
+                    tab={tab}
+                    insightTab={insightTab}
+                    onRawTabChange={onRawTabChange}
+                    onInsightTabChange={onInsightTabChange}
+                />
+            </ScrollArea>
+            <div className="flex shrink-0 flex-col gap-2 border-t border-theme-text-strong/10 px-1 pt-4">
+                {footer}
+            </div>
+        </aside>
+    );
+}
+
+function TreasuryShell({
+    children,
+    data,
+    footer,
+    insightTab,
+    section,
+    tab,
+    onInsightTabChange,
+    onRawTabChange,
+}: {
+    children: ReactNode;
+    data: Data | null;
+    footer: ReactNode;
+    insightTab: InsightTab;
+    section: Section;
+    tab: Tab;
+    onInsightTabChange: (value: InsightTab) => void;
+    onRawTabChange: (value: Tab) => void;
+}) {
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const drawerRef = useRef<HTMLDivElement>(null);
+    const menuButtonRef = useRef<HTMLButtonElement>(null);
+
+    useScrollLock(isDrawerOpen);
+
+    const closeDrawer = useCallback(() => {
+        const activeElement = document.activeElement;
+        if (
+            activeElement instanceof HTMLElement &&
+            drawerRef.current?.contains(activeElement)
+        ) {
+            menuButtonRef.current?.focus({ preventScroll: true });
+        }
+        setIsDrawerOpen(false);
+    }, []);
+
+    useEffect(() => {
+        if (!isDrawerOpen) return;
+
+        function handleKeyDown(event: KeyboardEvent) {
+            if (event.key === "Escape") closeDrawer();
+        }
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [closeDrawer, isDrawerOpen]);
+
+    const handleInsightTabChange = (value: InsightTab) => {
+        onInsightTabChange(value);
+        closeDrawer();
+    };
+    const handleRawTabChange = (value: Tab) => {
+        onRawTabChange(value);
+        closeDrawer();
+    };
+
+    const drawer = (
+        <TreasuryDrawer
+            data={data}
+            footer={footer}
+            section={section}
+            tab={tab}
+            insightTab={insightTab}
+            onRawTabChange={handleRawTabChange}
+            onInsightTabChange={handleInsightTabChange}
+        />
+    );
+
+    return (
+        <div
+            data-theme="amber"
+            className="flex h-dvh min-h-0 overflow-hidden bg-app-bg text-theme-text-strong"
+        >
+            <div className="hidden md:block">{drawer}</div>
+            <div
+                ref={drawerRef}
+                className={`fixed inset-0 z-40 transition-[visibility] md:hidden ${
+                    isDrawerOpen
+                        ? "pointer-events-auto visible delay-0"
+                        : "pointer-events-none invisible delay-[420ms]"
+                }`}
+                aria-hidden={!isDrawerOpen}
+                inert={!isDrawerOpen}
+            >
+                <button
+                    type="button"
+                    className={`absolute inset-0 bg-black/40 transition-opacity duration-[420ms] ease-out ${
+                        isDrawerOpen ? "opacity-100" : "opacity-0"
+                    }`}
+                    onClick={closeDrawer}
+                    aria-label="Close navigation"
+                />
+                <div
+                    className={`absolute inset-y-0 left-0 flex w-[min(20rem,86vw)] transform-gpu flex-col overflow-hidden border-r border-theme-text-strong/10 bg-app-bg shadow-xl transition-transform duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform ${
+                        isDrawerOpen ? "translate-x-0" : "-translate-x-full"
+                    }`}
+                >
+                    <div className="flex shrink-0 items-center justify-between gap-2 border-b border-theme-text-strong/10 px-4 py-3">
+                        <div>
+                            <Text
+                                size="micro"
+                                tone="soft"
+                                weight="bold"
+                                className="uppercase tracking-wide"
+                            >
+                                Operations
+                            </Text>
+                            <Heading as="p" size="section">
+                                Treasury
+                            </Heading>
+                        </div>
+                        <button
+                            type="button"
+                            className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
+                            onClick={closeDrawer}
+                            aria-label="Close navigation"
+                        >
+                            <XIcon className="h-5 w-5" />
+                        </button>
+                    </div>
+                    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                        {drawer}
+                    </div>
+                </div>
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col md:ml-60">
+                <MobileMenuButton
+                    buttonRef={menuButtonRef}
+                    onOpen={() => setIsDrawerOpen(true)}
+                />
+                <ScrollArea axis="y" className="min-h-0 flex-1">
+                    {children}
+                </ScrollArea>
+            </div>
+        </div>
+    );
+}
 
 function vendorOptionsForTab(data: Data | null, tab: Tab) {
     if (!data) return VENDOR_OPTIONS;
@@ -118,6 +449,7 @@ function vendorOptionsForTab(data: Data | null, tab: Tab) {
         for (const row of data.pollenMonthly) add(row.vendor);
     } else if (tab === "provider") {
         for (const row of data.providerMonthly) add(row.vendor);
+        for (const row of data.grants) add(row.vendor);
     }
 
     return ["all", ...[...vendors].sort((a, b) => a.localeCompare(b))];
@@ -347,259 +679,177 @@ export default function App() {
         );
     }
 
-    return (
-        <div
-            data-theme="amber"
-            className="flex h-dvh min-h-0 flex-col overflow-hidden bg-app-bg text-theme-text-strong"
-        >
-            <ScrollArea axis="y" className="min-h-0 flex-1">
-                <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 pb-32 sm:px-6 sm:py-10 sm:pb-32">
-                    <header className="flex flex-col gap-4 border-b border-theme-border/70 pb-5 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="min-w-0">
-                            <Text
-                                size="micro"
-                                tone="soft"
-                                weight="bold"
-                                className="mb-2 uppercase tracking-wide"
-                            >
-                                Operations
-                            </Text>
-                            <Heading as="h1" size="title">
-                                Treasury
-                            </Heading>
-                        </div>
-                        <div className="flex shrink-0 flex-wrap items-center gap-2">
-                            <TabButton
-                                active={section === "insights"}
-                                onClick={() => setSection("insights")}
-                                size="sm"
-                            >
-                                Insights
-                            </TabButton>
-                            <TabButton
-                                active={section === "raw"}
-                                onClick={() => setSection("raw")}
-                                size="sm"
-                            >
-                                Raw
-                            </TabButton>
-                            {fixtures && <Chip intent="alpha">fixtures</Chip>}
-                            {staleHours !== null &&
-                                staleHours <= STALE_AFTER_HOURS && (
-                                    <Chip
-                                        data-theme="neutral"
-                                        intent="neutral"
-                                        size="sm"
-                                    >
-                                        data {Math.round(staleHours)}h old
-                                    </Chip>
-                                )}
-                            {!fixtures && (
-                                <Button
-                                    intent="danger"
-                                    size="sm"
-                                    onClick={() => {
-                                        logout().finally(() => {
-                                            setAuthenticated(false);
-                                            setData(null);
-                                        });
-                                    }}
-                                >
-                                    Log out
-                                </Button>
-                            )}
-                            <ColorModeToggle />
-                        </div>
-                    </header>
-
-                    {staleHours !== null && staleHours > STALE_AFTER_HOURS && (
-                        <Alert intent="warning" title="Stale data">
-                            Last forager run was {Math.round(staleHours)}h ago.
-                            Run <code>python3 -m ingest.run</code> for fresh
-                            numbers.
-                        </Alert>
-                    )}
-
-                    {vendorIssues.length > 0 && (
-                        <Alert
-                            intent="warning"
-                            title="Vendor vocabulary mismatch"
-                        >
-                            <div className="flex flex-col gap-1">
-                                {vendorIssues.slice(0, 5).map((issue) => (
-                                    <span
-                                        key={`${issue.source}:${issue.vendor}:${issue.detail}`}
-                                    >
-                                        {issue.detail}
-                                    </span>
-                                ))}
-                                {vendorIssues.length > 5 && (
-                                    <span>+{vendorIssues.length - 5} more</span>
-                                )}
-                            </div>
-                        </Alert>
-                    )}
-
-                    <nav className="flex flex-wrap gap-2">
-                        {section === "raw" &&
-                            TABS.map((item) => (
-                                <Tooltip
-                                    key={item.id}
-                                    triggerAs="span"
-                                    content={
-                                        <span className="flex max-w-72 flex-col gap-1">
-                                            {item.codes.length > 0 && (
-                                                <span className="flex items-center gap-1.5">
-                                                    {item.codes.map((code) => (
-                                                        <SourceMark
-                                                            key={code}
-                                                            code={code}
-                                                        />
-                                                    ))}
-                                                </span>
-                                            )}
-                                            <span className="font-mono text-theme-text-soft">
-                                                {item.pipe}
-                                                {data
-                                                    ? ` · ${item.rows(data)} rows`
-                                                    : ""}
-                                            </span>
-                                            <span>{item.note}</span>
-                                        </span>
-                                    }
-                                >
-                                    <TabButton
-                                        active={tab === item.id}
-                                        onClick={() => setTab(item.id)}
-                                    >
-                                        {item.label}
-                                    </TabButton>
-                                </Tooltip>
-                            ))}
-                        {section === "insights" &&
-                            INSIGHT_TABS.map((item) => (
-                                <Tooltip
-                                    key={item.id}
-                                    triggerAs="span"
-                                    content={
-                                        <span className="flex max-w-72 flex-col gap-1">
-                                            <span className="font-mono text-theme-text-soft">
-                                                derived · client-side
-                                            </span>
-                                            <span>{item.note}</span>
-                                        </span>
-                                    }
-                                >
-                                    <TabButton
-                                        active={insightTab === item.id}
-                                        onClick={() => setInsightTab(item.id)}
-                                    >
-                                        {item.label}
-                                    </TabButton>
-                                </Tooltip>
-                            ))}
-                    </nav>
-
-                    <FilterBar>
-                        <MonthFilter
-                            months={months}
-                            value={activeMonth}
-                            onChange={setMonth}
-                        />
-                        {(showVendorFilter || showCategoryFilter) && (
-                            <div className="flex flex-wrap gap-3">
-                                {showVendorFilter && (
-                                    <FilterSelect
-                                        label="vendor"
-                                        value={vendor}
-                                        onChange={setVendor}
-                                        options={activeVendorOptions}
-                                    />
-                                )}
-                                {showCategoryFilter && (
-                                    <FilterSelect
-                                        label="category"
-                                        value={category}
-                                        onChange={setCategory}
-                                        options={categoryOptions}
-                                    />
-                                )}
-                            </div>
-                        )}
-                    </FilterBar>
-
-                    {error && (
-                        <Alert intent="warning" title="Load failed">
-                            <div className="flex flex-wrap items-center gap-2">
-                                <span>{error}</span>
-                                <Button
-                                    size="sm"
-                                    onClick={() => setAttempt((n) => n + 1)}
-                                >
-                                    Retry
-                                </Button>
-                            </div>
-                        </Alert>
-                    )}
-                    {!error && !data && (
-                        <Text tone="soft">Loading pipes...</Text>
-                    )}
-                    <ErrorBoundary
-                        resetKey={`${section}:${tab}:${insightTab}:${month}:${vendor}:${category}`}
+    const drawerFooter = (
+        <>
+            <div className="flex flex-wrap items-center gap-2">
+                {fixtures && <Chip intent="alpha">fixtures</Chip>}
+                {staleHours !== null && staleHours <= STALE_AFTER_HOURS && (
+                    <Chip
+                        data-theme="neutral"
+                        intent="neutral"
+                        size="sm"
+                        className="w-fit"
                     >
-                        {data &&
-                            section === "raw" &&
-                            tab === "transactions" && (
-                                <TransactionsTab
-                                    category={category}
-                                    data={data}
-                                    month={activeMonth}
-                                    vendor={vendor}
+                        data {Math.round(staleHours)}h old
+                    </Chip>
+                )}
+            </div>
+            <div className="flex items-center justify-between gap-2">
+                {!fixtures ? (
+                    <Button
+                        intent="danger"
+                        size="sm"
+                        onClick={() => {
+                            logout().finally(() => {
+                                setAuthenticated(false);
+                                setData(null);
+                            });
+                        }}
+                    >
+                        Log out
+                    </Button>
+                ) : (
+                    <span />
+                )}
+                <ColorModeToggle />
+            </div>
+        </>
+    );
+
+    return (
+        <TreasuryShell
+            data={data}
+            footer={drawerFooter}
+            section={section}
+            tab={tab}
+            insightTab={insightTab}
+            onRawTabChange={(value) => {
+                setSection("raw");
+                setTab(value);
+            }}
+            onInsightTabChange={(value) => {
+                setSection("insights");
+                setInsightTab(value);
+            }}
+        >
+            <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-14 pb-32 sm:px-6 sm:py-10 sm:pb-32 md:py-8">
+                {staleHours !== null && staleHours > STALE_AFTER_HOURS && (
+                    <Alert intent="warning" title="Stale data">
+                        Last forager run was {Math.round(staleHours)}h ago. Run{" "}
+                        <code>python3 -m ingest.run</code> for fresh numbers.
+                    </Alert>
+                )}
+
+                {vendorIssues.length > 0 && (
+                    <Alert intent="warning" title="Vendor vocabulary mismatch">
+                        <div className="flex flex-col gap-1">
+                            {vendorIssues.slice(0, 5).map((issue) => (
+                                <span
+                                    key={`${issue.source}:${issue.vendor}:${issue.detail}`}
+                                >
+                                    {issue.detail}
+                                </span>
+                            ))}
+                            {vendorIssues.length > 5 && (
+                                <span>+{vendorIssues.length - 5} more</span>
+                            )}
+                        </div>
+                    </Alert>
+                )}
+
+                <FilterBar>
+                    <MonthFilter
+                        months={months}
+                        value={activeMonth}
+                        onChange={setMonth}
+                    />
+                    {(showVendorFilter || showCategoryFilter) && (
+                        <div className="flex flex-wrap gap-3">
+                            {showVendorFilter && (
+                                <FilterSelect
+                                    label="vendor"
+                                    value={vendor}
+                                    onChange={setVendor}
+                                    options={activeVendorOptions}
                                 />
                             )}
-                        {data && section === "raw" && tab === "pollen" && (
-                            <PollenTab
+                            {showCategoryFilter && (
+                                <FilterSelect
+                                    label="category"
+                                    value={category}
+                                    onChange={setCategory}
+                                    options={categoryOptions}
+                                />
+                            )}
+                        </div>
+                    )}
+                </FilterBar>
+
+                {error && (
+                    <Alert intent="warning" title="Load failed">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span>{error}</span>
+                            <Button
+                                size="sm"
+                                onClick={() => setAttempt((n) => n + 1)}
+                            >
+                                Retry
+                            </Button>
+                        </div>
+                    </Alert>
+                )}
+                {!error && !data && <Text tone="soft">Loading pipes...</Text>}
+                <ErrorBoundary
+                    resetKey={`${section}:${tab}:${insightTab}:${month}:${vendor}:${category}`}
+                >
+                    {data && section === "raw" && tab === "transactions" && (
+                        <TransactionsTab
+                            category={category}
+                            data={data}
+                            month={activeMonth}
+                            vendor={vendor}
+                        />
+                    )}
+                    {data && section === "raw" && tab === "pollen" && (
+                        <PollenTab
+                            data={data}
+                            month={activeMonth}
+                            vendor={vendor}
+                        />
+                    )}
+                    {data && section === "raw" && tab === "provider" && (
+                        <ProviderTab
+                            data={data}
+                            month={activeMonth}
+                            vendor={vendor}
+                        />
+                    )}
+                    {data && section === "raw" && tab === "revenue" && (
+                        <RevenueTab data={data} />
+                    )}
+                    {data && section === "insights" && insightTab === "pnl" && (
+                        <PnlTab data={data} month={activeMonth} />
+                    )}
+                    {data &&
+                        section === "insights" &&
+                        insightTab === "vendors" && (
+                            <VendorsTab
                                 data={data}
                                 month={activeMonth}
                                 vendor={vendor}
                             />
                         )}
-                        {data && section === "raw" && tab === "provider" && (
-                            <ProviderTab
+                    {data &&
+                        section === "insights" &&
+                        insightTab === "models" && (
+                            <ModelsTab
                                 data={data}
                                 month={activeMonth}
                                 vendor={vendor}
                             />
                         )}
-                        {data && section === "raw" && tab === "revenue" && (
-                            <RevenueTab data={data} />
-                        )}
-                        {data &&
-                            section === "insights" &&
-                            insightTab === "pnl" && (
-                                <PnlTab data={data} month={activeMonth} />
-                            )}
-                        {data &&
-                            section === "insights" &&
-                            insightTab === "vendors" && (
-                                <VendorsTab
-                                    data={data}
-                                    month={activeMonth}
-                                    vendor={vendor}
-                                />
-                            )}
-                        {data &&
-                            section === "insights" &&
-                            insightTab === "models" && (
-                                <ModelsTab
-                                    data={data}
-                                    month={activeMonth}
-                                    vendor={vendor}
-                                />
-                            )}
-                    </ErrorBoundary>
-                </main>
-            </ScrollArea>
-        </div>
+                </ErrorBoundary>
+            </main>
+        </TreasuryShell>
     );
 }

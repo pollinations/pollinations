@@ -1,4 +1,4 @@
-import { Table, Tooltip } from "@pollinations/ui";
+import { Surface, Table, Tooltip } from "@pollinations/ui";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 
@@ -18,7 +18,13 @@ type SortState = {
 export type InitialSort = SortState;
 
 export function TableScroller({ children }: { children: ReactNode }) {
-    return <div className="w-full max-w-full overflow-x-auto">{children}</div>;
+    return (
+        <section className="w-full max-w-full">
+            <Surface className="overflow-hidden p-0">
+                <div className="overflow-x-auto">{children}</div>
+            </Surface>
+        </section>
+    );
 }
 
 export function DataTable({ children }: { children: ReactNode }) {

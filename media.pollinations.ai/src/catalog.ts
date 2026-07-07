@@ -203,105 +203,62 @@ export function decodeCursor(cursor: string): {
 export const DEFAULT_LIMIT = 20;
 export const MAX_LIMIT = 100;
 
-/** List catalog items owned by a user, newest first, optionally by tag. */
-export async function listUserMedia(
+/**
+ * List catalog items, newest first by upload time (createdAt). One of two
+ * modes, set by the caller:
+ *
+ *  - ownerUserId set, tag unset → the owner's whole library (all their items,
+ *    including untagged/private ones). This is the authenticated "my media"
+ *    listing.
+ *  - tag set, ownerUserId unset → the public gallery for a tag: any item
+ *    carrying that tag, regardless of owner. A tag is what makes an item
+ *    public, so this needs no auth.
+ *  - both set → the owner's items carrying that tag.
+ *
+ * Ordering is always (createdAt DESC, id DESC) — a single keyset cursor over
+ * the item table covers every mode.
+ */
+export async function listMedia(
     db: CatalogDb,
     params: {
-        ownerUserId: string;
+        ownerUserId?: string;
         tag?: string;
         limit: number;
         cursor?: { createdAt: Date; id: string };
     },
 ): Promise<CatalogPage> {
-    const conditions = [eq(mediaItem.ownerUserId, params.ownerUserId)];
+    const conditions: SQL[] = [];
+    if (params.ownerUserId) {
+        conditions.push(eq(mediaItem.ownerUserId, params.ownerUserId));
+    }
     if (params.cursor) {
         conditions.push(beforeCursor(params.cursor));
     }
 
-    if (params.tag) {
-        const rows = await db
-            .select({
-                id: mediaItem.id,
-                locator: mediaItem.locator,
-                contentType: mediaItem.contentType,
-                size: mediaItem.size,
-                createdAt: mediaItem.createdAt,
-            })
-            .from(mediaItem)
-            .innerJoin(mediaTag, eq(mediaTag.itemId, mediaItem.id))
-            .where(and(eq(mediaTag.tag, params.tag), ...conditions))
-            .orderBy(desc(mediaItem.createdAt), desc(mediaItem.id))
-            .limit(params.limit + 1);
-        return paginate(rows, params.limit);
-    }
-
-    const rows = await db
-        .select({
-            id: mediaItem.id,
-            locator: mediaItem.locator,
-            contentType: mediaItem.contentType,
-            size: mediaItem.size,
-            createdAt: mediaItem.createdAt,
-        })
-        .from(mediaItem)
-        .where(and(...conditions))
-        .orderBy(desc(mediaItem.createdAt), desc(mediaItem.id))
-        .limit(params.limit + 1);
-    return paginate(rows, params.limit);
-}
-
-/**
- * Public gallery: list catalog items for a tag, newest first by when each
- * item was tagged (media_tag.created_at is insert-only), not by the item's
- * own createdAt. Late-tagged items surface as freshly published, and
- * re-uploads can't bump themselves back to the top. The cursor rides on
- * (taggedAt, itemId).
- */
-export async function listByTag(
-    db: CatalogDb,
-    params: {
-        tag: string;
-        limit: number;
-        cursor?: { createdAt: Date; id: string };
-    },
-): Promise<CatalogPage> {
-    const conditions = [eq(mediaTag.tag, params.tag)];
-    if (params.cursor) {
-        conditions.push(
-            sql`${or(
-                lt(mediaTag.createdAt, params.cursor.createdAt),
-                and(
-                    eq(mediaTag.createdAt, params.cursor.createdAt),
-                    lt(mediaItem.id, params.cursor.id),
-                ),
-            )}`,
-        );
-    }
-
-    const rows = await db
-        .select({
-            id: mediaItem.id,
-            locator: mediaItem.locator,
-            contentType: mediaItem.contentType,
-            size: mediaItem.size,
-            createdAt: mediaItem.createdAt,
-            taggedAt: mediaTag.createdAt,
-        })
-        .from(mediaTag)
-        .innerJoin(mediaItem, eq(mediaItem.id, mediaTag.itemId))
-        .where(and(...conditions))
-        .orderBy(desc(mediaTag.createdAt), desc(mediaItem.id))
-        .limit(params.limit + 1);
-
-    const hasMore = rows.length > params.limit;
-    const page = hasMore ? rows.slice(0, params.limit) : rows;
-    const last = page[page.length - 1];
-    return {
-        items: page.map(({ taggedAt: _taggedAt, ...item }) => item),
-        nextCursor:
-            hasMore && last ? encodeCursor(last.taggedAt, last.id) : null,
-        hasMore,
+    const columns = {
+        id: mediaItem.id,
+        locator: mediaItem.locator,
+        contentType: mediaItem.contentType,
+        size: mediaItem.size,
+        createdAt: mediaItem.createdAt,
     };
+
+    const rows = params.tag
+        ? await db
+              .select(columns)
+              .from(mediaItem)
+              .innerJoin(mediaTag, eq(mediaTag.itemId, mediaItem.id))
+              .where(and(eq(mediaTag.tag, params.tag), ...conditions))
+              .orderBy(desc(mediaItem.createdAt), desc(mediaItem.id))
+              .limit(params.limit + 1)
+        : await db
+              .select(columns)
+              .from(mediaItem)
+              .where(and(...conditions))
+              .orderBy(desc(mediaItem.createdAt), desc(mediaItem.id))
+              .limit(params.limit + 1);
+
+    return paginate(rows, params.limit);
 }
 
 /** Fetch tags for a page of item ids in one query, grouped by item id. */

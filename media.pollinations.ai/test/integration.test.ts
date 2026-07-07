@@ -6,7 +6,7 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { user as userTable } from "@shared/db/better-auth.ts";
-import { mediaItem, mediaTag } from "@shared/db/media-catalog.ts";
+import { mediaItem } from "@shared/db/media-catalog.ts";
 import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -424,7 +424,7 @@ describe("media.pollinations.ai", () => {
         expect(res.status).toBe(404);
     });
 
-    it("tagged upload is visible in public tag gallery and in /me/media, without owner fields", async () => {
+    it("tagged upload is visible in public tag gallery and in your own library, without owner fields", async () => {
         const { status, body } = await uploadViaForm("pk_alice", {
             fileName: "gallery-a.png",
             bytes: variant(1),
@@ -435,7 +435,7 @@ describe("media.pollinations.ai", () => {
         expect(upload.tags).toEqual(["sunset"]);
 
         const galleryRes = await SELF.fetch(
-            "https://media.pollinations.ai/tags/sunset",
+            "https://media.pollinations.ai/media?tag=sunset",
         );
         expect(galleryRes.status).toBe(200);
         const gallery = (await galleryRes.json()) as MediaPageResponse;
@@ -445,12 +445,9 @@ describe("media.pollinations.ai", () => {
             expect(item).not.toHaveProperty("appKeyId");
         }
 
-        const meRes = await SELF.fetch(
-            "https://media.pollinations.ai/me/media",
-            {
-                headers: { Authorization: "Bearer pk_alice" },
-            },
-        );
+        const meRes = await SELF.fetch("https://media.pollinations.ai/media", {
+            headers: { Authorization: "Bearer pk_alice" },
+        });
         expect(meRes.status).toBe(200);
         const me = (await meRes.json()) as MediaPageResponse;
         expect(me.items.map((i) => i.url)).toContain(upload.url);
@@ -460,7 +457,7 @@ describe("media.pollinations.ai", () => {
         }
     });
 
-    it("untagged upload appears in /me/media but not in an unrelated tag gallery", async () => {
+    it("untagged upload appears in your own library but not in an unrelated tag gallery", async () => {
         const { status, body } = await uploadViaForm("pk_alice", {
             fileName: "untagged.png",
             bytes: variant(2),
@@ -469,17 +466,14 @@ describe("media.pollinations.ai", () => {
         const upload = body as UploadResponse;
         expect(upload.tags).toBeUndefined();
 
-        const meRes = await SELF.fetch(
-            "https://media.pollinations.ai/me/media",
-            {
-                headers: { Authorization: "Bearer pk_alice" },
-            },
-        );
+        const meRes = await SELF.fetch("https://media.pollinations.ai/media", {
+            headers: { Authorization: "Bearer pk_alice" },
+        });
         const me = (await meRes.json()) as MediaPageResponse;
         expect(me.items.map((i) => i.url)).toContain(upload.url);
 
         const galleryRes = await SELF.fetch(
-            "https://media.pollinations.ai/tags/some-other-tag",
+            "https://media.pollinations.ai/media?tag=some-other-tag",
         );
         const gallery = (await galleryRes.json()) as MediaPageResponse;
         expect(gallery.items.map((i) => i.url)).not.toContain(upload.url);
@@ -508,7 +502,7 @@ describe("media.pollinations.ai", () => {
         const bobUpload = bob.body as UploadResponse;
 
         const aliceMediaRes = await SELF.fetch(
-            "https://media.pollinations.ai/me/media",
+            "https://media.pollinations.ai/media",
             { headers: { Authorization: "Bearer pk_alice" } },
         );
         const aliceMedia = (await aliceMediaRes.json()) as MediaPageResponse;
@@ -517,7 +511,7 @@ describe("media.pollinations.ai", () => {
         expect(aliceUrls).not.toContain(bobUpload.url);
 
         const bobMediaRes = await SELF.fetch(
-            "https://media.pollinations.ai/me/media",
+            "https://media.pollinations.ai/media",
             { headers: { Authorization: "Bearer pk_bob" } },
         );
         const bobMedia = (await bobMediaRes.json()) as MediaPageResponse;
@@ -559,7 +553,7 @@ describe("media.pollinations.ai", () => {
         expect(upload.tags).toBeUndefined();
 
         const galleryRes = await SELF.fetch(
-            "https://media.pollinations.ai/tags/legacy",
+            "https://media.pollinations.ai/media?tag=legacy",
         );
         const gallery = (await galleryRes.json()) as MediaPageResponse;
         expect(gallery.items.map((i) => i.url)).not.toContain(upload.url);
@@ -614,19 +608,16 @@ describe("media.pollinations.ai", () => {
         expect(secondUpload.id).toBe(firstUpload.id);
         expect(secondUpload.duplicate).toBe(true);
 
-        const meRes = await SELF.fetch(
-            "https://media.pollinations.ai/me/media",
-            {
-                headers: { Authorization: "Bearer pk_alice" },
-            },
-        );
+        const meRes = await SELF.fetch("https://media.pollinations.ai/media", {
+            headers: { Authorization: "Bearer pk_alice" },
+        });
         const me = (await meRes.json()) as MediaPageResponse;
         const matches = me.items.filter((i) => i.url === firstUpload.url);
         expect(matches).toHaveLength(1);
         expect(matches[0].tags.sort()).toEqual(["first-tag", "second-tag"]);
     });
 
-    it("re-uploading does not bump feed position; late tagging publishes at tag time", async () => {
+    it("re-uploading does not bump gallery position; galleries order by upload time", async () => {
         const tag = "bump-tag";
         const first = await uploadViaForm("pk_alice", {
             fileName: "bump-a.png",
@@ -643,7 +634,9 @@ describe("media.pollinations.ai", () => {
         const a = first.body as UploadResponse;
         const b = second.body as UploadResponse;
 
-        // Backdate deterministically: a older than b, in both tables.
+        // Backdate deterministically on the item table: a older than b.
+        // Ordering is by mediaItem.createdAt now, so the tag table's
+        // timestamp is irrelevant to gallery position.
         const db = drizzle(env.DB);
         const backdate = async (locator: string, epochSeconds: number) => {
             const when = new Date(epochSeconds * 1000);
@@ -655,16 +648,12 @@ describe("media.pollinations.ai", () => {
                 .update(mediaItem)
                 .set({ createdAt: when })
                 .where(eq(mediaItem.id, item.id));
-            await db
-                .update(mediaTag)
-                .set({ createdAt: when })
-                .where(eq(mediaTag.itemId, item.id));
         };
         await backdate(a.id, 1000);
         await backdate(b.id, 2000);
 
-        // Re-upload a (same bytes, same tag): neither its createdAt nor its
-        // gallery position may change.
+        // Re-upload a (same bytes, same tag): createdAt is insert-only, so
+        // neither its timestamp nor its gallery position may change.
         const again = await uploadViaForm("pk_alice", {
             fileName: "bump-a.png",
             bytes: variant(60),
@@ -673,7 +662,7 @@ describe("media.pollinations.ai", () => {
         expect(again.status).toBe(200);
 
         const galleryRes = await SELF.fetch(
-            `https://media.pollinations.ai/tags/${tag}`,
+            `https://media.pollinations.ai/media?tag=${tag}`,
         );
         const gallery = (await galleryRes.json()) as MediaPageResponse;
         const urls = gallery.items.map((i) => i.url);
@@ -681,8 +670,8 @@ describe("media.pollinations.ai", () => {
         const aItem = gallery.items.find((i) => i.url === a.url);
         expect(new Date(aItem?.createdAt as string).getTime()).toBe(1000_000);
 
-        // Late publish: tagging a into a new tag now makes it that gallery's
-        // freshest entry while its createdAt still reflects first upload.
+        // Late tagging into a new tag surfaces the item at its original
+        // upload time (createdAt), not at tag time.
         const late = await uploadViaForm("pk_alice", {
             fileName: "bump-a.png",
             bytes: variant(60),
@@ -690,7 +679,7 @@ describe("media.pollinations.ai", () => {
         });
         expect(late.status).toBe(200);
         const lateRes = await SELF.fetch(
-            "https://media.pollinations.ai/tags/bump-late",
+            "https://media.pollinations.ai/media?tag=bump-late",
         );
         const lateGallery = (await lateRes.json()) as MediaPageResponse;
         expect(lateGallery.items).toHaveLength(1);
@@ -717,7 +706,7 @@ describe("media.pollinations.ai", () => {
         // second-resolution), which would make "newest first" ambiguous.
         // Force distinct, strictly increasing timestamps directly in D1 so
         // the ordering assertions below are deterministic. The gallery sorts
-        // by tag time (media_tag.created_at), so backdate both tables.
+        // by upload time (mediaItem.created_at).
         const db = drizzle(env.DB);
         for (let i = 0; i < uploads.length; i++) {
             const when = new Date((1000 + i) * 1000);
@@ -729,14 +718,10 @@ describe("media.pollinations.ai", () => {
                 .update(mediaItem)
                 .set({ createdAt: when })
                 .where(eq(mediaItem.id, item.id));
-            await db
-                .update(mediaTag)
-                .set({ createdAt: when })
-                .where(eq(mediaTag.itemId, item.id));
         }
 
         const page1Res = await SELF.fetch(
-            `https://media.pollinations.ai/tags/${tag}?limit=2`,
+            `https://media.pollinations.ai/media?tag=${tag}&limit=2`,
         );
         expect(page1Res.status).toBe(200);
         const page1 = (await page1Res.json()) as MediaPageResponse;
@@ -748,7 +733,7 @@ describe("media.pollinations.ai", () => {
         expect(page1.items[1].url).toBe(uploads[1].url);
 
         const page2Res = await SELF.fetch(
-            `https://media.pollinations.ai/tags/${tag}?limit=2&cursor=${encodeURIComponent(
+            `https://media.pollinations.ai/media?tag=${tag}&limit=2&cursor=${encodeURIComponent(
                 page1.nextCursor as string,
             )}`,
         );
@@ -763,7 +748,7 @@ describe("media.pollinations.ai", () => {
     it("validates the limit query param: valid passes, malformed 400s", async () => {
         // A well-formed integer limit is accepted.
         const ok = await SELF.fetch(
-            "https://media.pollinations.ai/me/media?limit=10",
+            "https://media.pollinations.ai/media?limit=10",
             { headers: { Authorization: "Bearer pk_alice" } },
         );
         expect(ok.status).toBe(200);
@@ -777,28 +762,52 @@ describe("media.pollinations.ai", () => {
             "limit=1&limit=2",
         ]) {
             const res = await SELF.fetch(
-                `https://media.pollinations.ai/me/media?${q}`,
+                `https://media.pollinations.ai/media?${q}`,
                 { headers: { Authorization: "Bearer pk_alice" } },
             );
             expect(res.status, q).toBe(400);
         }
 
-        // The public tag route validates limit the same way.
+        // The public tag gallery validates limit the same way.
         const tagBad = await SELF.fetch(
-            "https://media.pollinations.ai/tags/sunset?limit=abc",
+            "https://media.pollinations.ai/media?tag=sunset&limit=abc",
         );
         expect(tagBad.status).toBe(400);
     });
 
+    it("GET /media without a tag requires a user-attached key; with a tag it is public", async () => {
+        // No tag → listing your own library, which must be authenticated.
+        const noKey = await SELF.fetch("https://media.pollinations.ai/media");
+        expect(noKey.status).toBe(401);
+
+        const unknownKey = await SELF.fetch(
+            "https://media.pollinations.ai/media",
+            { headers: { Authorization: "Bearer pk_unknown" } },
+        );
+        expect(unknownKey.status).toBe(401);
+
+        // A valid key with no attached user can't have a "library" → 403.
+        const noUser = await SELF.fetch("https://media.pollinations.ai/media", {
+            headers: { Authorization: "Bearer pk_nouser" },
+        });
+        expect(noUser.status).toBe(403);
+
+        // A tag gallery, by contrast, is browsable with no key at all.
+        const publicGallery = await SELF.fetch(
+            "https://media.pollinations.ai/media?tag=sunset",
+        );
+        expect(publicGallery.status).toBe(200);
+    });
+
     describe("reactions", () => {
         // Upload response `id` is the content hash, not the catalog item id.
-        // Look the item up via /me/media (as the owner) to get its catalog id.
+        // Look the item up via GET /media (as the owner) to get its catalog id.
         async function catalogIdFor(
             ownerKey: string,
             uploadUrl: string,
         ): Promise<string> {
             const res = await SELF.fetch(
-                "https://media.pollinations.ai/me/media",
+                "https://media.pollinations.ai/media",
                 { headers: { Authorization: `Bearer ${ownerKey}` } },
             );
             const page = (await res.json()) as MediaPageResponse;
@@ -811,7 +820,7 @@ describe("media.pollinations.ai", () => {
             return `https://media.pollinations.ai/media/${itemId}/reactions/${reaction}`;
         }
 
-        it("like, repeat like, and visibility via /tags/:tag (anonymous vs authenticated)", async () => {
+        it("like, repeat like, and visibility via tag gallery (anonymous vs authenticated)", async () => {
             const { status, body } = await uploadViaForm("pk_alice", {
                 fileName: "like-flow.png",
                 bytes: variant(30),
@@ -846,7 +855,7 @@ describe("media.pollinations.ai", () => {
 
             // Anonymous tag browsing: reaction counts present, no myReactions.
             const anonRes = await SELF.fetch(
-                "https://media.pollinations.ai/tags/like-flow-tag",
+                "https://media.pollinations.ai/media?tag=like-flow-tag",
             );
             expect(anonRes.status).toBe(200);
             const anon = (await anonRes.json()) as MediaPageResponse;
@@ -856,7 +865,7 @@ describe("media.pollinations.ai", () => {
 
             // Bob (the reactor) sees "like" in myReactions.
             const bobRes = await SELF.fetch(
-                "https://media.pollinations.ai/tags/like-flow-tag",
+                "https://media.pollinations.ai/media?tag=like-flow-tag",
                 { headers: { Authorization: "Bearer pk_bob" } },
             );
             const bobPage = (await bobRes.json()) as MediaPageResponse;
@@ -866,7 +875,7 @@ describe("media.pollinations.ai", () => {
 
             // Alice (no reactions) gets an empty myReactions.
             const aliceRes = await SELF.fetch(
-                "https://media.pollinations.ai/tags/like-flow-tag",
+                "https://media.pollinations.ai/media?tag=like-flow-tag",
                 { headers: { Authorization: "Bearer pk_alice" } },
             );
             const alicePage = (await aliceRes.json()) as MediaPageResponse;
@@ -917,7 +926,7 @@ describe("media.pollinations.ai", () => {
             });
         });
 
-        it("two different likers accumulate to 2, reflected in owner's /me/media", async () => {
+        it("two different likers accumulate to 2, reflected in owner's library", async () => {
             const { status, body } = await uploadViaForm("pk_alice", {
                 fileName: "two-likers.png",
                 bytes: variant(32),
@@ -948,7 +957,7 @@ describe("media.pollinations.ai", () => {
             });
 
             const meRes = await SELF.fetch(
-                "https://media.pollinations.ai/me/media",
+                "https://media.pollinations.ai/media",
                 { headers: { Authorization: "Bearer pk_alice" } },
             );
             const me = (await meRes.json()) as MediaPageResponse;
@@ -984,7 +993,7 @@ describe("media.pollinations.ai", () => {
             });
 
             const bobRes = await SELF.fetch(
-                "https://media.pollinations.ai/tags/multi-kind-tag",
+                "https://media.pollinations.ai/media?tag=multi-kind-tag",
                 { headers: { Authorization: "Bearer pk_bob" } },
             );
             const bobPage = (await bobRes.json()) as MediaPageResponse;
@@ -1088,7 +1097,7 @@ describe("media.pollinations.ai", () => {
             expect(repeat.status).toBe(200);
         });
 
-        it("auth failures: missing/unknown/no-user keys on react, and unknown key on /tags/:tag", async () => {
+        it("auth failures: missing/unknown/no-user keys on react, and unknown key on tag gallery", async () => {
             const { status, body } = await uploadViaForm("pk_alice", {
                 fileName: "auth-fail.png",
                 bytes: variant(33),
@@ -1119,7 +1128,7 @@ describe("media.pollinations.ai", () => {
             expect(noUserRes.status).toBe(403);
 
             const tagUnknownKeyRes = await SELF.fetch(
-                "https://media.pollinations.ai/tags/auth-fail-tag",
+                "https://media.pollinations.ai/media?tag=auth-fail-tag",
                 { headers: { Authorization: "Bearer pk_unknown" } },
             );
             expect(tagUnknownKeyRes.status).toBe(401);

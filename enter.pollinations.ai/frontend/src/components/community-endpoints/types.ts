@@ -26,6 +26,9 @@ export type CommunityEndpoint = {
 export type EndpointFormState = {
     name: string;
     description: string;
+    // private → owner-only, unlisted, free; public → listed + billed to callers.
+    // Only editable by allowlisted owners; defaults private for everyone else.
+    visibility: CommunityEndpointVisibility;
     baseUrl: string;
     upstreamModel: string;
     bearerToken: string;
@@ -63,6 +66,7 @@ const emptyPriceForm = Object.fromEntries(
 export const emptyForm: EndpointFormState = {
     name: "",
     description: "",
+    visibility: "private",
     baseUrl: "",
     upstreamModel: "",
     bearerToken: "",
@@ -103,6 +107,7 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
     return {
         name: endpoint.name,
         description: endpoint.description ?? "",
+        visibility: endpoint.visibility,
         baseUrl: endpoint.baseUrl,
         upstreamModel: endpoint.upstreamModel,
         bearerToken: "",
@@ -162,28 +167,18 @@ export function observedUsageValue(
         : null;
 }
 
-// Publishing (or unpublishing) an existing endpoint only touches visibility
-// and pricing — never baseUrl or the bearer token. Sent to the update endpoint.
-export type PublishPayload = {
+// Reverting a public endpoint to private is a one-click card action with no
+// form: it only flips visibility, resending the endpoint's stored prices
+// unchanged (a private endpoint never applies them). Sent to the update
+// endpoint. The update json type requires every price field, hence the full
+// spread.
+export type VisibilityUpdatePayload = {
     visibility: CommunityEndpointVisibility;
 } & CommunityEndpointPrices;
 
-export function toPublishPayload(
-    visibility: CommunityEndpointVisibility,
-    form: EndpointFormState,
-): PublishPayload {
-    return {
-        visibility,
-        ...formPricesToPayload(form),
-    };
-}
-
-// A published endpoint reverts to private. Its stored prices are resent
-// unchanged (a private endpoint never applies them) so the update payload
-// matches the shared PublishPayload shape.
 export function toUnpublishPayload(
     endpoint: CommunityEndpoint,
-): PublishPayload {
+): VisibilityUpdatePayload {
     return {
         visibility: "private",
         ...(Object.fromEntries(
@@ -200,6 +195,7 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
     return {
         name: modelName,
         description: form.description.trim(),
+        visibility: form.visibility,
         baseUrl: form.baseUrl.trim(),
         upstreamModel: form.upstreamModel.trim() || modelName,
         ...formPricesToPayload(form),

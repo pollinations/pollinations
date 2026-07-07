@@ -123,7 +123,10 @@ function RouteComponent() {
     const [activePage, setActivePage] = usePageFromHash(pageFromHash);
     const [activityPeriod, setActivityPeriod] =
         useState<UsagePeriodSelection>(currentUsagePeriod);
-    const showCommunityEndpoints = communityEndpointsAllowed;
+    // Registering a private, owner-only model is open to every logged-in user;
+    // the allowlist only gates making a model public.
+    const showCommunityEndpoints = true;
+    const canPublishCommunityEndpoints = communityEndpointsAllowed;
 
     const selectableKeys = useMemo(
         () =>
@@ -304,7 +307,10 @@ function RouteComponent() {
                 />
             )}
             {activePage === "models" && (
-                <Models showCommunityEndpoints={showCommunityEndpoints} />
+                <Models
+                    showCommunityEndpoints={showCommunityEndpoints}
+                    canPublish={canPublishCommunityEndpoints}
+                />
             )}
         </DashboardShell>
     );

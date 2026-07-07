@@ -299,6 +299,14 @@ export function savedEndpointPriceKeys(
     );
 }
 
+// Base text tokens are always billed, so a public model must price them (public
+// callers are never billed zero). Mirrors the backend REQUIRED_SHARED_PRICE_KEYS.
+// Shown unconditionally once a model is being made public, before any test runs.
+export const REQUIRED_SHARED_PRICE_KEYS: PriceFieldKey[] = [
+    "promptTextPrice",
+    "completionTextPrice",
+];
+
 export function returnedPriceFields(testState: ActionState): PriceField[] {
     if (testState.status !== "success") return [];
     return COMMUNITY_ENDPOINT_PRICE_FIELDS.filter((field) =>
@@ -309,8 +317,13 @@ export function returnedPriceFields(testState: ActionState): PriceField[] {
 export function visiblePriceFieldKeys(
     savedPriceKeys: Set<PriceFieldKey>,
     returnedFields: PriceField[],
+    // Always-shown floor (e.g. the base text fields required to publish), so a
+    // fresh model going public still surfaces the fields the owner must price
+    // before any endpoint test has run.
+    alwaysVisible: PriceFieldKey[] = [],
 ): Set<PriceFieldKey> {
     return new Set([
+        ...alwaysVisible,
         ...savedPriceKeys,
         ...returnedFields.map((field) => field.key),
     ]);

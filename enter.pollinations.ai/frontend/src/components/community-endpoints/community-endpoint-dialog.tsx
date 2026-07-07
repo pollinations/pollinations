@@ -10,6 +10,10 @@ import {
     Input,
     ScrollArea,
 } from "@pollinations/ui";
+import {
+    COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    type CommunityEndpointVisibility,
+} from "@shared/community-endpoints.ts";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
@@ -18,6 +22,7 @@ import {
     hasPositivePriceInput,
     hasValidVisibleFormPrices,
     PriceGroups,
+    REQUIRED_SHARED_PRICE_KEYS,
     returnedPriceFields,
     savedEndpointPriceKeys,
     visiblePriceFieldKeys,
@@ -37,9 +42,35 @@ import {
     toEndpointPayload,
 } from "./types.ts";
 
+function ToggleButton({
+    active,
+    onClick,
+    children,
+}: {
+    active: boolean;
+    onClick: () => void;
+    children: ReactNode;
+}) {
+    return (
+        <Button
+            type="button"
+            size="sm"
+            intent={active ? "info" : undefined}
+            aria-pressed={active}
+            className={active ? "text-sm" : "text-sm opacity-70"}
+            onClick={onClick}
+        >
+            {children}
+        </Button>
+    );
+}
+
 type CommunityEndpointDialogProps = {
     /** Present in edit mode (prefills the form); omit to create. */
     endpoint?: CommunityEndpoint;
+    // Allowlisted owners see the Visibility control; everyone else creates and
+    // edits private-only models.
+    canPublish: boolean;
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSubmit: (payload: EndpointPayload, bearerToken: string) => Promise<void>;
@@ -49,6 +80,7 @@ type CommunityEndpointDialogProps = {
 
 export function CommunityEndpointDialog({
     endpoint,
+    canPublish,
     open,
     onOpenChange,
     onSubmit,
@@ -98,6 +130,11 @@ export function CommunityEndpointDialog({
         if (key === "upstreamModel" && modelOptions.length > 0) {
             setProviderModelMenuOpen(true);
         }
+    }
+
+    function updateVisibility(visibility: CommunityEndpointVisibility): void {
+        setForm((current) => ({ ...current, visibility }));
+        setError(null);
     }
 
     async function handleFetchModels(): Promise<void> {
@@ -193,30 +230,47 @@ export function CommunityEndpointDialog({
         }
     }
 
-    // Pricing lives in the publish flow, not here. This edit form only prices
-    // an endpoint that is already shared (editing a public/app model); creating
-    // and private-editing carry no pricing at all.
-    const isShared = isEdit && endpoint.visibility !== "private";
+    // Pricing is only meaningful when the model is (or is being made) public —
+    // keyed off the LIVE form value so flipping Visibility to Public in place
+    // reveals the test + pricing section immediately. Private models carry no
+    // pricing (owner is the only caller).
+    const isShared = form.visibility === "public";
     const returnedFields = isShared ? returnedPriceFields(testState) : [];
-    // Only shown for shared endpoints: reveal the fields the test observed (or
-    // the ones already saved), so a public model can be re-priced in place.
+    // Reveal the base text fields (always billed, and required to publish), plus
+    // whatever the test observed or the model already had saved.
     const visiblePriceKeys = new Set(
-        isShared ? visiblePriceFieldKeys(savedPriceKeys, returnedFields) : [],
+        isShared
+            ? visiblePriceFieldKeys(savedPriceKeys, returnedFields, [
+                  ...REQUIRED_SHARED_PRICE_KEYS,
+              ])
+            : [],
     );
     const hasValidVisiblePrices = hasValidVisibleFormPrices(
         form,
         visiblePriceKeys,
     );
-    const hasRequiredReturnedPrices = returnedFields.every((field) =>
-        hasPositivePriceInput(form, field),
-    );
+    // A public model must price the always-billed base text fields (public
+    // callers are never billed zero) plus every bucket a test observed.
+    const hasRequiredSharedPrices =
+        !isShared ||
+        [...REQUIRED_SHARED_PRICE_KEYS, ...returnedFields.map((f) => f.key)]
+            .map((key) =>
+                COMMUNITY_ENDPOINT_PRICE_FIELDS.find((f) => f.key === key),
+            )
+            .every(
+                (field) => field != null && hasPositivePriceInput(form, field),
+            );
+    // First-time publishing of an external endpoint re-observes its billed
+    // buckets, so it needs a successful test. A model already saved as public
+    // has server-validated pricing, so re-editing it (e.g. a price or
+    // description tweak) does not force another test. Private models defer
+    // pricing entirely. External endpoints always need a token to be callable
+    // at all.
+    const alreadyPublic = isEdit && endpoint?.visibility === "public";
+    const needsTest = isShared && !alreadyPublic;
     const testRequirementMet =
         testState.status === "success" && returnedFields.length > 0;
-    // A shared external edit re-observes pricing, so it needs a successful
-    // test. Private create/edit does not — the owner is the only caller and
-    // pricing is deferred to publish. External endpoints always need a token to
-    // be callable at all.
-    const saveRequirementMet = isShared
+    const saveRequirementMet = needsTest
         ? testRequirementMet && (isEdit || hasToken)
         : isEdit || hasToken;
     const providerModelQuery = form.upstreamModel.trim().toLowerCase();
@@ -231,7 +285,7 @@ export function CommunityEndpointDialog({
         form.name.trim() !== "" &&
         form.baseUrl.trim() !== "" &&
         hasValidVisiblePrices &&
-        hasRequiredReturnedPrices &&
+        hasRequiredSharedPrices &&
         saveRequirementMet;
 
     return (
@@ -301,6 +355,33 @@ export function CommunityEndpointDialog({
                             />
                         </FieldStack>
                     </div>
+
+                    {canPublish && (
+                        <FieldStack
+                            label="Visibility"
+                            helper={
+                                isShared
+                                    ? "Public: listed in /models and callable by anyone. Set your per-1M-token pricing below."
+                                    : "Private: callable only by you with your API key, and never listed."
+                            }
+                            alignLabelRow
+                        >
+                            <div className="flex gap-2">
+                                <ToggleButton
+                                    active={form.visibility === "private"}
+                                    onClick={() => updateVisibility("private")}
+                                >
+                                    Private
+                                </ToggleButton>
+                                <ToggleButton
+                                    active={form.visibility === "public"}
+                                    onClick={() => updateVisibility("public")}
+                                >
+                                    Public
+                                </ToggleButton>
+                            </div>
+                        </FieldStack>
+                    )}
 
                     <div className="grid gap-4 sm:grid-cols-2">
                         <FieldStack

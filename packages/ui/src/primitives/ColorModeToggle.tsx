@@ -154,7 +154,7 @@ export const ColorModeToggle: FC = () => {
             aria-checked={isDark}
             aria-label="Toggle dark mode"
             onClick={toggle}
-            className="polli-control polli:relative polli:inline-block polli:h-7 polli:w-[52px] polli:shrink-0 polli:cursor-pointer polli:rounded-full polli:border polli:border-theme-text-strong/10 polli:bg-surface-opaque polli:transition-colors"
+            className="polli-control polli:relative polli:inline-block polli:h-7 polli:w-[52px] polli:shrink-0 polli:cursor-pointer polli:rounded-full polli:border polli:border-theme-text-strong/25 polli:bg-surface-white/90 polli:shadow-sm polli:transition-colors"
         >
             {isDark ? (
                 <SunIcon className="polli:absolute polli:top-1/2 polli:left-[7px] polli:h-3.5 polli:w-3.5 polli:-translate-y-1/2 polli:text-theme-text-strong/40" />
@@ -163,7 +163,7 @@ export const ColorModeToggle: FC = () => {
             )}
             <span
                 className={cn(
-                    "polli:absolute polli:top-1/2 polli:left-0.5 polli:flex polli:h-5 polli:w-5 polli:-translate-y-1/2 polli:items-center polli:justify-center polli:rounded-full polli:bg-app-bg polli:text-theme-text-soft polli:shadow-sm polli:transition-transform",
+                    "polli:absolute polli:top-1/2 polli:left-0.5 polli:flex polli:h-5 polli:w-5 polli:-translate-y-1/2 polli:items-center polli:justify-center polli:rounded-full polli:bg-theme-bg-active polli:text-theme-text-strong polli:shadow-sm polli:transition-transform",
                     isDark ? "polli:translate-x-[26px]" : "polli:translate-x-0",
                 )}
             >

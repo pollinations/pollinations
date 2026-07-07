@@ -12,6 +12,7 @@ CANONICAL: frozenset = frozenset(VENDOR_ALIASES.keys())
 
 from .vendors import alibaba as _alibaba
 from .vendors import anthropic_ as _anthropic
+from .vendors import aws as _aws
 from .vendors import azure as _azure
 from .vendors import cloudflare as _cloudflare
 from .vendors import community as _community
@@ -30,6 +31,7 @@ from .vendors import gcp as _gcp
 METER: list = [
     ("alibaba", _alibaba.meter),
     ("anthropic", _anthropic.meter),
+    ("aws", _aws.meter),
     ("azure", _azure.meter),
     ("cloudflare", _cloudflare.meter),
     ("community", _community.meter),

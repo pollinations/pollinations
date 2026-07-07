@@ -4,6 +4,7 @@ from ...aliases import VENDOR_ALIASES
 
 ALLOWED_FUNDING = {"cash", "credit", "prepaid"}
 ALLOWED_METER_SOURCES = {"api", "bq", "cli", "manual"}
+ALLOWED_CATEGORIES = {"compute", "infra"}
 
 
 def _validate_meter_values(vendor, funding, source):
@@ -40,7 +41,8 @@ def _currency(value):
     return code
 
 
-def _mrow(month, vendor, amount, funding, source, today, currency="USD"):
+def _mrow(month, vendor, amount, funding, source, today, currency="USD",
+          category="compute"):
     """Build a provider_monthly datasource row.
 
     Args:
@@ -51,8 +53,12 @@ def _mrow(month, vendor, amount, funding, source, today, currency="USD"):
         funding:  "credit" | "prepaid" | "cash"; prepaid is stored as paid
         source:   "api" | "cli" | "bq" | "manual"
         today:    current ingest date (kept in the call signature for connector simplicity)
+        category: "compute" | "infra" — infra rows still fund pools and cash
+                  flows but stay out of the compute lenses (calib, recon)
     """
     _validate_meter_values(vendor, funding, source)
+    if category not in ALLOWED_CATEGORIES:
+        raise ValueError(f"unknown category for provider_monthly: {category}")
     amount = round(float(amount), 2)
     return {
         "month": month,
@@ -61,4 +67,5 @@ def _mrow(month, vendor, amount, funding, source, today, currency="USD"):
         "credit": amount if funding == "credit" else 0.0,
         "paid": amount if funding in {"cash", "prepaid"} else 0.0,
         "source": _source(source),
+        "category": category,
     }

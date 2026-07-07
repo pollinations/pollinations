@@ -24,6 +24,7 @@ def test_mrow_full():
         "month": "2026-06",
         "vendor": "deepinfra",
         "currency": "USD",
+        "category": "compute",
         "credit": 0.0,
         "paid": 8.77,
         "source": "api",
@@ -99,8 +100,8 @@ def test_meter_is_list():
 
 
 def test_meter_is_populated():
-    # 15 connectors: aws CE retired (manual invoice rows); azure/openrouter/elevenlabs/runpod/anthropic/xai/alibaba/community/cloudflare added.
-    assert len(registry.METER) == 15
+    # 16 connectors: aws is back via Umbrella Cost (the CE connector stayed retired); azure/openrouter/elevenlabs/runpod/anthropic/xai/alibaba/community/cloudflare added.
+    assert len(registry.METER) == 16
 
 
 class _FakeTB:

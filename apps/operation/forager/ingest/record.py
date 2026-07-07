@@ -85,6 +85,8 @@ def main(argv=None, tb_factory=None):
     mp.add_argument("--currency", required=True, help="source currency code, e.g. USD or EUR")
     mp.add_argument("--credit", type=float, default=0.0, help="credit burn amount")
     mp.add_argument("--paid", type=float, default=0.0, help="paid/prepaid amount")
+    mp.add_argument("--category", choices=["compute", "infra"], default="compute",
+                    help="infra rows fund pools/cash but stay out of compute lenses")
 
     # grant subcommand
     gp = sub.add_parser("grant", help="append a grants registration")
@@ -118,6 +120,7 @@ def main(argv=None, tb_factory=None):
             "month": args.month,
             "vendor": args.vendor,
             "currency": _currency(currency),
+            "category": args.category,
             "credit": round(float(args.credit), 2),
             "paid": round(float(args.paid), 2),
             "source": "manual",

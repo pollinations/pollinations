@@ -20,7 +20,7 @@ from . import backup, creds, tb, wise
 from .connectors import registry
 from .connectors import usage as _usage
 from .connectors.common import months_ytd
-from .connectors.vendors import _validate_meter_source
+from .connectors.vendors import ALLOWED_CATEGORIES, _validate_meter_source
 from .connectors.vendors import stripe as _stripe
 from .aliases import VENDOR_ALIASES
 
@@ -51,6 +51,10 @@ def _amount(row, field):
     return round(float(row.get(field) or 0), 2)
 
 
+def _category(row):
+    return row.get("category") or "compute"
+
+
 def _field_present(row, field):
     if row.get("source") == "manual":
         return field in row
@@ -66,6 +70,7 @@ def merge_meter_rows(rows):
             row.get("vendor", ""),
             row.get("month", ""),
             row.get("currency", ""),
+            _category(row),
         )
         current = grouped.setdefault(
             key,
@@ -73,6 +78,7 @@ def merge_meter_rows(rows):
                 "month": row.get("month", ""),
                 "vendor": row.get("vendor", ""),
                 "currency": row.get("currency", ""),
+                "category": _category(row),
                 "credit": 0.0,
                 "paid": 0.0,
                 "source": "",
@@ -104,6 +110,7 @@ def merge_meter_rows(rows):
                 "month": row["month"],
                 "vendor": row["vendor"],
                 "currency": row["currency"],
+                "category": row["category"],
                 "credit": row["credit"],
                 "paid": row["paid"],
                 "source": source,
@@ -149,6 +156,10 @@ def validate_meter_rows(rows):
                 f"unknown vendor slug for provider_monthly: {row.get('vendor', '')}"
             )
         _validate_meter_source(row.get("source", ""))
+        if _category(row) not in ALLOWED_CATEGORIES:
+            raise ValueError(
+                f"unknown category for provider_monthly: {row.get('category')}"
+            )
         if not str(row.get("currency") or "").strip():
             raise ValueError("provider_monthly row missing currency")
         for field in ("credit", "paid"):

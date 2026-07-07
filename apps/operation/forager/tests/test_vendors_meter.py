@@ -25,6 +25,7 @@ import ingest.connectors.vendors.fireworks as _fw
 import ingest.connectors.vendors.openai_ as _oai
 import ingest.connectors.vendors.alibaba as _ali
 import ingest.connectors.vendors.anthropic_ as _ant
+import ingest.connectors.vendors.aws as _aws
 import ingest.connectors.vendors.openrouter as _or
 import ingest.connectors.vendors.runpod as _rp
 import ingest.connectors.vendors.xai as _xai
@@ -149,6 +150,7 @@ def test_deepinfra_meter_has_no_freshness_timestamp(monkeypatch):
         "month",
         "vendor",
         "currency",
+        "category",
         "credit",
         "paid",
         "source",
@@ -1545,9 +1547,9 @@ def test_community_mirrors_pollen_as_credit():
     rows = _comm.meter({}, ["2026-06", "2026-07"], "2026-07-07", tb_client=tb)
     assert rows == [
         {"month": "2026-06", "vendor": "community", "currency": "USD",
-         "credit": 0.29, "paid": 0.0, "source": "api"},
+         "category": "compute", "credit": 0.29, "paid": 0.0, "source": "api"},
         {"month": "2026-07", "vendor": "community", "currency": "USD",
-         "credit": 44.71, "paid": 0.0, "source": "api"},
+         "category": "compute", "credit": 44.71, "paid": 0.0, "source": "api"},
     ]
 
 
@@ -1605,9 +1607,9 @@ def test_cloudflare_sums_invoices_across_both_accounts():
     rows = _cf.meter(_CF_CREDS, ["2026-01", "2026-02"], "2026-07-07", http=fake_http)
     assert rows == [
         {"month": "2026-01", "vendor": "cloudflare", "currency": "USD",
-         "credit": 0.0, "paid": 2522.76, "source": "api"},
+         "category": "infra", "credit": 0.0, "paid": 2522.76, "source": "api"},
         {"month": "2026-02", "vendor": "cloudflare", "currency": "USD",
-         "credit": 0.0, "paid": 1872.45, "source": "api"},
+         "category": "infra", "credit": 0.0, "paid": 1872.45, "source": "api"},
     ]
     assert tokens_seen == ["Bearer cfat_old", "Bearer cf_myceli"]
 
@@ -1622,7 +1624,7 @@ def test_cloudflare_credits_offset_invoices_and_zero_months_skip():
                      http=lambda *a, **k: responses.pop(0))
     assert rows == [
         {"month": "2026-06", "vendor": "cloudflare", "currency": "USD",
-         "credit": 0.0, "paid": 48.36, "source": "api"},
+         "category": "infra", "credit": 0.0, "paid": 48.36, "source": "api"},
     ]
 
 
@@ -1646,21 +1648,21 @@ def test_cloudflare_missing_tokens_raise():
 # ===========================================================================
 
 def test_meter_registry_populated():
-    """METER must contain 14 entries (aws retired 2026-07: billing moved to the
-    Automat-it reseller, whose credits/accounts Cost Explorer cannot see —
-    aws rows are manual from the monthly reseller invoice; azure added
-    2026-07: billing-profile invoice connector; openrouter + elevenlabs +
-    runpod + anthropic + xai + alibaba added 2026-07; community added
-    2026-07: pollen-ledger mirror for user-deployed models)."""
-    assert len(registry.METER) == 15
+    """METER must contain 16 entries (the CE-based aws connector was retired
+    2026-07 because Cost Explorer cannot see the Automat-it reseller's
+    pricing; aws RETURNED 2026-07 via Umbrella Cost, the reseller's own
+    meter, once AIT enabled tenant API access; azure added 2026-07:
+    billing-profile invoice connector; openrouter + elevenlabs + runpod +
+    anthropic + xai + alibaba added 2026-07; community added 2026-07:
+    pollen-ledger mirror for user-deployed models)."""
+    assert len(registry.METER) == 16
 
 
 def test_meter_registry_slugs():
-    """METER must contain all fourteen vendor slugs."""
+    """METER must contain all sixteen vendor slugs."""
     slugs = {slug for slug, _ in registry.METER}
-    for expected in ("alibaba", "anthropic", "azure", "cloudflare", "community", "deepinfra", "elevenlabs", "vast.ai", "ovhcloud", "fireworks", "google", "openai", "openrouter", "runpod", "xai"):
+    for expected in ("alibaba", "anthropic", "aws", "azure", "cloudflare", "community", "deepinfra", "elevenlabs", "vast.ai", "ovhcloud", "fireworks", "google", "openai", "openrouter", "runpod", "xai"):
         assert expected in slugs, f"METER missing: {expected}"
-    assert "aws" not in slugs, "aws CE connector was retired; rows are manual"
 
 
 def test_meter_slugs_in_canonical():
@@ -1714,3 +1716,125 @@ def test_gcp_meter_bq_fail_raises():
         return _fake_result(returncode=1)
     with pytest.raises(RuntimeError):
         _gcp.meter(_GCP_CREDS, ["2026-04"], TODAY, run_cmd=bq_fail_run)
+
+
+# ===========================================================================
+# aws.meter (Umbrella Cost / Automat-it)
+# ===========================================================================
+
+_AWS_CREDS = {"UMBRELLA_USERNAME": "elliot@test", "UMBRELLA_PASSWORD": "pw"}
+
+
+def _aws_responses(cue_by_call):
+    """Auth + users + the CUE responses in call order.
+
+    Call order: token/generate, /users, then per account (30366, 30365)
+    per cost type (cost, discount).
+    """
+    return [
+        {"Authorization": "raw-token", "apikey": "user-key-uuid:-1"},
+        {"accounts": [{"accountKey": 30366}, {"accountKey": 30365}]},
+        *cue_by_call,
+    ]
+
+
+def _cue(rows, next_token=None):
+    d = {"data": rows}
+    if next_token:
+        d["nextToken"] = next_token
+    return d
+
+
+def test_aws_meter_sums_accounts_and_cost_types(monkeypatch):
+    """Months sum across both accounts, discounts (negative) net in, and
+    funding flips at GRANT_FROM: April cash, May+ credit. Bedrock service
+    lines land in compute; everything else (incl. discounts) in infra."""
+    cap = Capture(_aws_responses([
+        _cue([{"usage_date": "2026-04", "service_name": "Amazon Bedrock", "total_cost": 4000.00},
+              {"usage_date": "2026-04", "service_name": "Amazon Elastic Compute Cloud", "total_cost": 777.60},
+              {"usage_date": "2026-05", "service_name": "Claude Opus 4.8 [Amazon Bedrock Edition]", "total_cost": 5797.53},
+              {"usage_date": "2026-06", "service_name": "Amazon Bedrock", "total_cost": 4798.54}]),  # 30366 cost
+        _cue([{"usage_date": "2026-04", "service_name": "Adjustment", "total_cost": -15.00}]),        # 30366 discount
+        _cue([{"usage_date": "2026-05", "service_name": "Amazon Virtual Private Cloud", "total_cost": 769.60},
+              {"usage_date": "2026-06", "service_name": "AWS CloudTrail", "total_cost": 801.18}]),    # 30365 cost
+        _cue([{"usage_date": "2026-06", "service_name": "Credits Usage", "total_cost": -858.28}]),    # 30365 discount
+    ]))
+    monkeypatch.setattr(_aws, "http_json", cap)
+    rows = _aws.meter(_AWS_CREDS, ["2026-04", "2026-05", "2026-06"], TODAY)
+    by_key = {(r["month"], r["category"]): r for r in rows}
+    assert by_key[("2026-04", "compute")]["paid"] == pytest.approx(4000.00)
+    assert by_key[("2026-04", "infra")]["paid"] == pytest.approx(762.60)
+    assert by_key[("2026-04", "compute")]["credit"] == 0.0
+    assert by_key[("2026-05", "compute")]["credit"] == pytest.approx(5797.53)
+    assert by_key[("2026-05", "infra")]["credit"] == pytest.approx(769.60)
+    assert by_key[("2026-06", "compute")]["credit"] == pytest.approx(4798.54)
+    assert by_key[("2026-06", "infra")]["credit"] == pytest.approx(-57.10)
+    for r in rows:
+        assert r["vendor"] == "aws"
+        assert r["source"] == "api"
+        assert r["currency"] == "USD"
+
+
+def test_aws_meter_auth_chain_and_url_params(monkeypatch):
+    """token/generate posts the creds; /users gets the raw apikey; CUE calls
+    carry userkey:accountKey: and the UM 2.0 query contract."""
+    cap = Capture(_aws_responses([_cue([]), _cue([]), _cue([]), _cue([])]))
+    monkeypatch.setattr(_aws, "http_json", cap)
+    _aws.meter(_AWS_CREDS, ["2026-06"], TODAY)
+    assert len(cap.calls) == 6
+    auth_call = cap.calls[0]
+    assert auth_call["data"] == {"username": "elliot@test", "password": "pw"}
+    users_call = cap.calls[1]
+    assert users_call["headers"]["apikey"] == "user-key-uuid:-1"
+    assert users_call["headers"]["authorization"] == "raw-token"
+    first_cue = cap.calls[2]
+    assert first_cue["headers"]["apikey"] == "user-key-uuid:30366:"
+    assert "groupBy=service" in first_cue["url"]
+    assert "periodGranLevel=month" in first_cue["url"]
+    assert "isNetUnblended=true" in first_cue["url"]
+    assert "costType=cost" in first_cue["url"]
+    assert "startDate=2026-04-01" in first_cue["url"]
+    assert f"endDate={TODAY}" in first_cue["url"]
+    assert "costType=discount" in cap.calls[3]["url"]
+    assert cap.calls[4]["headers"]["apikey"] == "user-key-uuid:30365:"
+
+
+def test_aws_meter_paginates_next_token(monkeypatch):
+    """CUE pages chained via nextToken are all consumed."""
+    cap = Capture([
+        {"Authorization": "raw-token", "apikey": "user-key-uuid:-1"},
+        {"accounts": [{"accountKey": 30366}]},
+        _cue([{"usage_date": "2026-06", "service_name": "Amazon Bedrock", "total_cost": 100.0}], next_token="t2"),
+        _cue([{"usage_date": "2026-06", "service_name": "Amazon Bedrock", "total_cost": 23.0}]),
+        _cue([]),
+    ])
+    monkeypatch.setattr(_aws, "http_json", cap)
+    rows = _aws.meter(_AWS_CREDS, ["2026-06"], TODAY)
+    assert rows[0]["credit"] == pytest.approx(123.0)
+    assert rows[0]["category"] == "compute"
+    assert "token=t2" in cap.calls[3]["url"]
+
+
+def test_aws_meter_zero_months_emit_nothing(monkeypatch):
+    """Months without Umbrella data (pre-onboarding) emit no rows."""
+    cap = Capture(_aws_responses([
+        _cue([{"usage_date": "2026-06", "service_name": "Amazon Bedrock", "total_cost": 10.0}]),
+        _cue([]), _cue([]), _cue([]),
+    ]))
+    monkeypatch.setattr(_aws, "http_json", cap)
+    assert _aws.meter(_AWS_CREDS, ["2026-01", "2026-02"], TODAY) == []
+
+
+def test_aws_meter_missing_creds_raise():
+    with pytest.raises(RuntimeError, match="UMBRELLA"):
+        _aws.meter({}, ["2026-06"], TODAY)
+
+
+def test_aws_meter_no_accounts_raises(monkeypatch):
+    cap = Capture([
+        {"Authorization": "raw-token", "apikey": "user-key-uuid:-1"},
+        {"accounts": []},
+    ])
+    monkeypatch.setattr(_aws, "http_json", cap)
+    with pytest.raises(RuntimeError, match="no accounts"):
+        _aws.meter(_AWS_CREDS, ["2026-06"], TODAY)

@@ -7,9 +7,10 @@ SQL >
         source,
         vendor,
         currency,
+        category,
         credit,
         paid
     FROM provider_monthly
-    ORDER BY vendor, month, source, currency
+    ORDER BY vendor, month, source, currency, category
 
 TYPE endpoint

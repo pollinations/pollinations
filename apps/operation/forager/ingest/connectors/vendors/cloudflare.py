@@ -11,7 +11,10 @@ Entry math per month (occurred_at month, USD): `invoice` amounts add,
 `credit` amounts subtract (billing corrections — e.g. myceli's 2026-06 charge
 was credited back to the account balance two days later, netting June to the
 $48 the old account billed). Zero/None amounts (free-tier invoices) are
-skipped. Months netting <= 0 emit no row. All cash.
+skipped. Months netting <= 0 emit no row. All cash, all category="infra"
+(Cloudflare serves no models — Elliot's ruling 2026-07: "cloudflare is all
+infra"), so these rows fund cash flow views but stay out of the compute
+lenses.
 
 Source: api
 """
@@ -72,5 +75,6 @@ def meter(creds, months, today, http=http_json):
                 funding="cash",
                 source="api",
                 today=today,
+                category="infra",
             ))
     return rows

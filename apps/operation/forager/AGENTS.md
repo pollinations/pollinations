@@ -72,13 +72,15 @@ python3 -m ingest.run --only provider --vendor fireworks
 ```
 
 `--vendor` requires `--only provider` and must be a meter-connector slug:
-`alibaba | anthropic | azure | cloudflare | community | deepinfra | elevenlabs | vast.ai | ovhcloud | fireworks | google | openai | openrouter | runpod | xai`.
+`alibaba | anthropic | aws | azure | cloudflare | community | deepinfra | elevenlabs | vast.ai | ovhcloud | fireworks | google | openai | openrouter | runpod | xai`.
 `community` mirrors our own pollen ledger (user-deployed models earn pollen,
 75/25 split, never cashed out) — all credit, no cash ever.
 Manual-only vendors are updated with `ingest.record`, not here.
-`aws` is manual-only: billing runs through the Automat-it reseller (two AWS
-accounts, reseller-side credits), which Cost Explorer cannot see — record one
-row per month from the Automat-it invoice when it arrives.
+`aws` meters through Umbrella Cost, the Automat-it reseller's own dashboard
+API (Cost Explorer cannot see reseller pricing/credits) — coverage starts
+2026-04 (AIT onboarding); Jan–Mar 2026 and the 2025 pre-window rows stay
+manual from `aws ce` credit records. The monthly AIT invoice remains the
+reconciliation witness in `invoices_ep`, no longer the meter source.
 
 ### Add a manual meter row
 

@@ -24,11 +24,13 @@ def _row(
     cash=0.0,
     source="api",
     currency="USD",
+    category="compute",
 ):
     return {
         "month": month,
         "vendor": vendor,
         "currency": currency,
+        "category": category,
         "credit": credit,
         "paid": cash,
         "source": source,
@@ -119,3 +121,24 @@ def test_existing_manual_meter_rows_drops_stale_automatic_rows():
     assert existing_manual_meter_rows(rows) == [
         _row("aws", "2026-06", cash=42.0, source="manual"),
     ]
+
+
+def test_categories_never_merge():
+    """compute and infra rows for the same vendor-month stay separate."""
+    rows = [
+        _row("aws", "2026-06", credit=3986.0, category="compute"),
+        _row("aws", "2026-06", credit=755.44, category="infra"),
+    ]
+    out = merge_meter_rows(rows)
+    assert sorted(out, key=lambda r: r["category"]) == [
+        _row("aws", "2026-06", credit=3986.0, category="compute"),
+        _row("aws", "2026-06", credit=755.44, category="infra"),
+    ]
+
+
+def test_legacy_rows_default_to_compute():
+    """Rows that predate the category column merge as compute."""
+    legacy = {"month": "2026-06", "vendor": "aws", "currency": "USD",
+              "credit": 10.0, "paid": 0.0, "source": "manual"}
+    out = merge_meter_rows([legacy])
+    assert out[0]["category"] == "compute"

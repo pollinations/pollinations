@@ -3,19 +3,23 @@ import {
     Button,
     Chip,
     ColorModeToggle,
+    cn,
     DatabaseIcon,
     Heading,
     Input,
     MenuIcon,
     NavItem,
     ScrollArea,
+    Section,
     Text,
     TrendUpIcon,
     useScrollLock,
     XIcon,
 } from "@pollinations/ui";
+import logoUrl from "@pollinations/ui/assets/logo.svg";
 import {
     type ComponentType,
+    type CSSProperties,
     type ReactNode,
     type RefObject,
     useCallback,
@@ -38,6 +42,7 @@ import {
     vendorVocabularyRunIssues,
 } from "./lib/vendor-vocabulary";
 import type { Data } from "./types";
+import { GrantsTab } from "./views/GrantsTab";
 import { ModelsTab } from "./views/ModelsTab";
 import { PnlTab } from "./views/PnlTab";
 import { PollenTab } from "./views/PollenTab";
@@ -46,9 +51,14 @@ import { RevenueTab } from "./views/RevenueTab";
 import { TransactionsTab } from "./views/TransactionsTab";
 import { VendorsTab } from "./views/VendorsTab";
 
-type Tab = "transactions" | "pollen" | "provider" | "revenue";
-type Section = "insights" | "raw";
+type Tab = "transactions" | "pollen" | "provider" | "grants" | "revenue";
+type TreasurySection = "insights" | "raw";
 type InsightTab = "pnl" | "vendors" | "models";
+
+const logoMask: CSSProperties = {
+    WebkitMask: `url(${logoUrl}) center / contain no-repeat`,
+    mask: `url(${logoUrl}) center / contain no-repeat`,
+};
 
 type DrawerItem<Id extends string> = {
     id: Id;
@@ -116,10 +126,19 @@ const TABS: {
         id: "provider",
         label: "Provider",
         codes: ["API", "CLI", "BQ", "HC"],
-        pipe: "provider_monthly_api + grants_api",
-        note: "Provider-reported monthly usage from vendor APIs, CLIs, BigQuery exports, and manual entries. Grants on top: credit start points per vendor.",
+        pipe: "provider_monthly_api",
+        note: "Provider-reported monthly usage from vendor APIs, CLIs, BigQuery exports, and manual entries.",
         icon: DatabaseIcon,
-        rows: (data) => data.providerMonthly.length + data.grants.length,
+        rows: (data) => data.providerMonthly.length,
+    },
+    {
+        id: "grants",
+        label: "Grants",
+        codes: ["HC"],
+        pipe: "grants_api",
+        note: "Credit start points, one row per grant (label splits multiple grants per vendor). Raw facts only - burn and remaining are derived elsewhere.",
+        icon: DatabaseIcon,
+        rows: (data) => data.grants.length,
     },
     {
         id: "revenue",
@@ -188,7 +207,7 @@ function TreasuryNav({
 }: {
     data: Data | null;
     insightTab: InsightTab;
-    section: Section;
+    section: TreasurySection;
     tab: Tab;
     onInsightTabChange: (value: InsightTab) => void;
     onRawTabChange: (value: Tab) => void;
@@ -255,7 +274,7 @@ function TreasuryDrawer({
     data: Data | null;
     footer: ReactNode;
     insightTab: InsightTab;
-    section: Section;
+    section: TreasurySection;
     tab: Tab;
     onInsightTabChange: (value: InsightTab) => void;
     onRawTabChange: (value: Tab) => void;
@@ -266,18 +285,8 @@ function TreasuryDrawer({
             className="flex min-h-0 flex-1 flex-col px-2 py-4 md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-60 md:border-r md:border-theme-text-strong/10"
             aria-label="Treasury navigation"
         >
-            <div className="hidden shrink-0 flex-col gap-1 border-b border-theme-text-strong/10 pb-4 pl-1 md:flex">
-                <Text
-                    size="micro"
-                    tone="soft"
-                    weight="bold"
-                    className="uppercase tracking-wide"
-                >
-                    Operations
-                </Text>
-                <Heading as="p" size="section">
-                    Treasury
-                </Heading>
+            <div className="hidden shrink-0 border-b border-theme-text-strong/10 px-1 pb-4 text-theme-text-strong md:block">
+                <TreezoryBrand size="desktop" />
             </div>
             <ScrollArea className="-mr-2 min-h-0 flex-1 pt-3">
                 <TreasuryNav
@@ -310,7 +319,7 @@ function TreasuryShell({
     data: Data | null;
     footer: ReactNode;
     insightTab: InsightTab;
-    section: Section;
+    section: TreasurySection;
     tab: Tab;
     onInsightTabChange: (value: InsightTab) => void;
     onRawTabChange: (value: Tab) => void;
@@ -393,23 +402,11 @@ function TreasuryShell({
                         isDrawerOpen ? "translate-x-0" : "-translate-x-full"
                     }`}
                 >
-                    <div className="flex shrink-0 items-center justify-between gap-2 border-b border-theme-text-strong/10 px-4 py-3">
-                        <div>
-                            <Text
-                                size="micro"
-                                tone="soft"
-                                weight="bold"
-                                className="uppercase tracking-wide"
-                            >
-                                Operations
-                            </Text>
-                            <Heading as="p" size="section">
-                                Treasury
-                            </Heading>
-                        </div>
+                    <div className="flex shrink-0 items-center justify-between gap-3 border-b border-theme-text-strong/10 px-4 py-3 text-theme-text-strong">
+                        <TreezoryBrand size="drawer" />
                         <button
                             type="button"
-                            className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
+                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
                             onClick={closeDrawer}
                             aria-label="Close navigation"
                         >
@@ -434,6 +431,47 @@ function TreasuryShell({
     );
 }
 
+function TreezoryBrand({ size }: { size: "desktop" | "drawer" }) {
+    return (
+        <div
+            className={cn(
+                "flex min-w-0 items-center",
+                size === "desktop" ? "gap-3" : "gap-2.5",
+            )}
+        >
+            <span className="sr-only">Treezory</span>
+            <span
+                aria-hidden="true"
+                className={cn(
+                    "block shrink-0 bg-current",
+                    size === "desktop" ? "h-8 w-8" : "h-7 w-7",
+                )}
+                style={logoMask}
+            />
+            <span
+                aria-hidden="true"
+                className={cn(
+                    "min-w-0 truncate font-subheading font-medium leading-none",
+                    size === "desktop" ? "text-2xl" : "text-xl",
+                )}
+            >
+                Treezory
+            </span>
+        </div>
+    );
+}
+
+function activeViewTitle(
+    section: TreasurySection,
+    tab: Tab,
+    insightTab: InsightTab,
+) {
+    if (section === "insights") {
+        return INSIGHT_TABS.find((item) => item.id === insightTab)?.label ?? "";
+    }
+    return TABS.find((item) => item.id === tab)?.label ?? "";
+}
+
 function vendorOptionsForTab(data: Data | null, tab: Tab) {
     if (!data) return VENDOR_OPTIONS;
 
@@ -449,6 +487,7 @@ function vendorOptionsForTab(data: Data | null, tab: Tab) {
         for (const row of data.pollenMonthly) add(row.vendor);
     } else if (tab === "provider") {
         for (const row of data.providerMonthly) add(row.vendor);
+    } else if (tab === "grants") {
         for (const row of data.grants) add(row.vendor);
     }
 
@@ -524,9 +563,9 @@ export default function App() {
     const [error, setError] = useState<string | null>(null);
     const [data, setData] = useState<Data | null>(null);
     const [tab, setTab] = useState<Tab>("transactions");
-    const [section, setSection] = useState<Section>("insights");
+    const [section, setSection] = useState<TreasurySection>("insights");
     const [insightTab, setInsightTab] = useState<InsightTab>("pnl");
-    // Default to All so the transactions page opens with the full Enty export.
+    // Default to All so the dashboard opens with the full export.
     const [month, setMonth] = useState("");
     // Keep the selection while it exists in the current tab's vendor set.
     const [vendor, setVendor] = useState("all");
@@ -610,10 +649,14 @@ export default function App() {
     const showVendorFilter =
         section === "insights"
             ? insightTab !== "pnl" && insightVendors.length > 1
-            : tab !== "revenue" && vendorOptions.length > 1;
+            : tab !== "revenue" && tab !== "grants" && vendorOptions.length > 1;
     const activeVendorOptions =
         section === "insights" ? insightVendors : vendorOptions;
+    const showPeriodFilter =
+        section === "insights" || (tab !== "revenue" && tab !== "grants");
     const showCategoryFilter = section === "raw" && tab === "transactions";
+    const hasFilters =
+        showPeriodFilter || showVendorFilter || showCategoryFilter;
     const vendorIssues = useMemo(
         () =>
             data
@@ -715,6 +758,7 @@ export default function App() {
             </div>
         </>
     );
+    const viewTitle = activeViewTitle(section, tab, insightTab);
 
     return (
         <TreasuryShell
@@ -732,7 +776,7 @@ export default function App() {
                 setInsightTab(value);
             }}
         >
-            <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-14 pb-32 sm:px-6 sm:py-10 sm:pb-32 md:py-8">
+            <main className="flex w-full flex-col gap-6 px-4 py-14 pb-32 sm:px-6 sm:py-10 sm:pb-32 md:py-8 lg:px-8">
                 {staleHours !== null && staleHours > STALE_AFTER_HOURS && (
                     <Alert intent="warning" title="Stale data">
                         Last forager run was {Math.round(staleHours)}h ago. Run{" "}
@@ -757,98 +801,111 @@ export default function App() {
                     </Alert>
                 )}
 
-                <FilterBar>
-                    <MonthFilter
-                        months={months}
-                        value={activeMonth}
-                        onChange={setMonth}
-                    />
-                    {(showVendorFilter || showCategoryFilter) && (
-                        <div className="flex flex-wrap gap-3">
-                            {showVendorFilter && (
-                                <FilterSelect
-                                    label="vendor"
-                                    value={vendor}
-                                    onChange={setVendor}
-                                    options={activeVendorOptions}
+                <Section title={viewTitle} framed panelClassName="gap-5">
+                    {hasFilters && (
+                        <FilterBar>
+                            {showPeriodFilter && (
+                                <MonthFilter
+                                    months={months}
+                                    value={activeMonth}
+                                    onChange={setMonth}
                                 />
                             )}
-                            {showCategoryFilter && (
-                                <FilterSelect
-                                    label="category"
-                                    value={category}
-                                    onChange={setCategory}
-                                    options={categoryOptions}
-                                />
-                            )}
-                        </div>
+                            <div className="flex flex-wrap gap-3">
+                                {showVendorFilter && (
+                                    <FilterSelect
+                                        label="vendor"
+                                        value={vendor}
+                                        onChange={setVendor}
+                                        options={activeVendorOptions}
+                                    />
+                                )}
+                                {showCategoryFilter && (
+                                    <FilterSelect
+                                        label="category"
+                                        value={category}
+                                        onChange={setCategory}
+                                        options={categoryOptions}
+                                    />
+                                )}
+                            </div>
+                        </FilterBar>
                     )}
-                </FilterBar>
 
-                {error && (
-                    <Alert intent="warning" title="Load failed">
-                        <div className="flex flex-wrap items-center gap-2">
-                            <span>{error}</span>
-                            <Button
-                                size="sm"
-                                onClick={() => setAttempt((n) => n + 1)}
-                            >
-                                Retry
-                            </Button>
-                        </div>
-                    </Alert>
-                )}
-                {!error && !data && <Text tone="soft">Loading pipes...</Text>}
-                <ErrorBoundary
-                    resetKey={`${section}:${tab}:${insightTab}:${month}:${vendor}:${category}`}
-                >
-                    {data && section === "raw" && tab === "transactions" && (
-                        <TransactionsTab
-                            category={category}
-                            data={data}
-                            month={activeMonth}
-                            vendor={vendor}
-                        />
+                    {error && (
+                        <Alert intent="warning" title="Load failed">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span>{error}</span>
+                                <Button
+                                    size="sm"
+                                    onClick={() => setAttempt((n) => n + 1)}
+                                >
+                                    Retry
+                                </Button>
+                            </div>
+                        </Alert>
                     )}
-                    {data && section === "raw" && tab === "pollen" && (
-                        <PollenTab
-                            data={data}
-                            month={activeMonth}
-                            vendor={vendor}
-                        />
+                    {!error && !data && (
+                        <Text tone="soft">Loading pipes...</Text>
                     )}
-                    {data && section === "raw" && tab === "provider" && (
-                        <ProviderTab
-                            data={data}
-                            month={activeMonth}
-                            vendor={vendor}
-                        />
-                    )}
-                    {data && section === "raw" && tab === "revenue" && (
-                        <RevenueTab data={data} />
-                    )}
-                    {data && section === "insights" && insightTab === "pnl" && (
-                        <PnlTab data={data} month={activeMonth} />
-                    )}
-                    {data &&
-                        section === "insights" &&
-                        insightTab === "vendors" && (
-                            <VendorsTab
+                    <ErrorBoundary
+                        resetKey={`${section}:${tab}:${insightTab}:${month}:${vendor}:${category}`}
+                    >
+                        {data &&
+                            section === "raw" &&
+                            tab === "transactions" && (
+                                <TransactionsTab
+                                    category={category}
+                                    data={data}
+                                    month={activeMonth}
+                                    vendor={vendor}
+                                />
+                            )}
+                        {data && section === "raw" && tab === "pollen" && (
+                            <PollenTab
                                 data={data}
                                 month={activeMonth}
                                 vendor={vendor}
                             />
                         )}
-                    {data &&
-                        section === "insights" &&
-                        insightTab === "models" && (
-                            <ModelsTab
+                        {data && section === "raw" && tab === "provider" && (
+                            <ProviderTab
                                 data={data}
                                 month={activeMonth}
                                 vendor={vendor}
                             />
                         )}
-                </ErrorBoundary>
+                        {data && section === "raw" && tab === "grants" && (
+                            <GrantsTab data={data} vendor={vendor} />
+                        )}
+                        {data && section === "raw" && tab === "revenue" && (
+                            <RevenueTab data={data} />
+                        )}
+                        {data &&
+                            section === "insights" &&
+                            insightTab === "pnl" && (
+                                <PnlTab data={data} month={activeMonth} />
+                            )}
+                        {data &&
+                            section === "insights" &&
+                            insightTab === "vendors" && (
+                                <VendorsTab
+                                    data={data}
+                                    month={activeMonth}
+                                    vendor={vendor}
+                                />
+                            )}
+                        {data &&
+                            section === "insights" &&
+                            insightTab === "models" && (
+                                <ModelsTab
+                                    data={data}
+                                    month={activeMonth}
+                                    vendor={vendor}
+                                />
+                            )}
+                    </ErrorBoundary>
+                </Section>
             </main>
         </TreasuryShell>
     );

@@ -36,6 +36,7 @@ export const user = sqliteTable("user", {
   banExpires: integer("ban_expires", { mode: "timestamp" }),
   githubId: integer("github_id"),
   githubUsername: text("github_username"),
+  handle: text("handle"),
   tier: text("tier").default("spore").notNull(),
   tierBalance: real("tier_balance"),
   packBalance: real("pack_balance"),
@@ -50,6 +51,9 @@ export const user = sqliteTable("user", {
   index("idx_user_auto_top_up_enabled").on(table.autoTopUpEnabled),
   // GitHub profile lookup for quest checks and account display.
   index("idx_user_github_id").on(table.githubId),
+  // Provider-neutral public handle: display name + community model-ID namespace.
+  // Case-insensitive uniqueness via a functional index on lower(handle).
+  uniqueIndex("idx_user_handle_lower").on(sql`lower(${table.handle})`),
 ]);
 
 export const session = sqliteTable("session", {
@@ -76,6 +80,7 @@ export const account = sqliteTable("account", {
   id: text("id").primaryKey(),
   accountId: text("account_id").notNull(),
   providerId: text("provider_id").notNull(),
+  username: text("username"),
   userId: text("user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
@@ -98,6 +103,11 @@ export const account = sqliteTable("account", {
     .notNull(),
 }, (table) => [
   index("idx_account_user_id").on(table.userId),
+  // One provider subject maps to exactly one account row (multi-provider invariant).
+  uniqueIndex("idx_account_provider_account").on(
+    table.providerId,
+    table.accountId,
+  ),
 ]);
 
 export const verification = sqliteTable("verification", {

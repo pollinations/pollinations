@@ -30,9 +30,6 @@
     animation: site-breathe 60s ease-in-out infinite;
     timeline-scope: --page-scroll;
 }
-:root[data-route="play"] {
-    --polli-hue: 300;
-}
 :root[data-route="apps"] {
     --polli-hue: 252;
 }
@@ -60,7 +57,7 @@
 
 /*
  * Signature: scrolling the homepage travels the site's own palette —
- * Hello amber → Play magenta → Apps blue → Community teal. #app-scroll
+ * Hello amber → Apps blue → Community teal. #app-scroll
  * (the <main> scroller) drives the timeline. Browsers without
  * scroll-driven animations simply keep the static amber field.
  */
@@ -89,9 +86,6 @@ main#app-scroll {
 @keyframes site-journey {
     0% {
         --polli-hue: 85;
-    }
-    38% {
-        --polli-hue: 300;
     }
     72% {
         --polli-hue: 252;

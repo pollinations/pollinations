@@ -3,7 +3,6 @@ import {
     ExternalLinkButton,
     InlineLink,
     Section,
-    Surface,
 } from "@pollinations/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -11,7 +10,6 @@ import {
     CTA,
     HELLO_META,
     HERO,
-    ROADMAP,
     STATS,
     type StatLiveKey,
     TOOLBOX,
@@ -168,38 +166,6 @@ function HelloPage() {
                     {TOOLBOX.map((item) => (
                         <ToolboxCard key={item.title} item={item} />
                     ))}
-                </div>
-            </Section>
-
-            {/* Next */}
-            <Section title="Next" framed>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    {ROADMAP.map((r) => {
-                        const Icon = r.icon;
-
-                        return (
-                            <Surface
-                                key={r.title}
-                                variant="card"
-                                className="rounded-lg bg-surface-white p-4 transition-colors hover:bg-surface-white"
-                            >
-                                <div className="flex items-center gap-2">
-                                    <span
-                                        aria-hidden="true"
-                                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-theme-bg-active text-theme-text-strong"
-                                    >
-                                        <Icon className="h-4 w-4" />
-                                    </span>
-                                    <h3 className="font-subheading text-base text-theme-text-strong">
-                                        {r.title}
-                                    </h3>
-                                </div>
-                                <p className="mt-1 text-sm text-theme-text-soft">
-                                    {r.description}
-                                </p>
-                            </Surface>
-                        );
-                    })}
                 </div>
             </Section>
 

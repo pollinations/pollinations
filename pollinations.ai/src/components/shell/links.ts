@@ -15,7 +15,6 @@ import { ENTER_URL } from "../../config.ts";
  */
 export const NAV_ITEMS = [
     { to: "/", label: "Hello", exact: true },
-    { to: "/play", label: "Play", exact: false },
     { to: "/apps", label: "Apps", exact: false },
     { to: "/community", label: "Community", exact: false },
 ] as const;

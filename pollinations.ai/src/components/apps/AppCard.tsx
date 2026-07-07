@@ -21,10 +21,10 @@ const BADGE_LABELS: Record<SignalFilterId, string> = {
     buzz: APPS_COPY.buzzBadge,
 };
 
-const BADGE_INTENTS: Record<SignalFilterId, "alpha" | "success" | "warning"> = {
+const BADGE_INTENTS: Record<SignalFilterId, "alpha" | "news" | "warning"> = {
     fresh: "alpha",
     pollen: "warning",
-    buzz: "success",
+    buzz: "news",
 };
 
 function appBadgeIds(app: App): SignalFilterId[] {

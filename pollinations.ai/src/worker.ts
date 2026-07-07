@@ -59,10 +59,6 @@ const ROUTE_META: Record<string, { title: string; description: string }> = {
         description:
             "Build AI apps with one API, user wallets, and developer earnings",
     },
-    "/play": {
-        title: "Play | pollinations.ai",
-        description: "Generate images, text, audio and video with AI models",
-    },
     "/apps": {
         title: "Apps | pollinations.ai",
         description: "Community-built apps powered by Pollinations AI",
@@ -100,18 +96,8 @@ const JSON_LD_HOME = JSON.stringify({
         "Build AI apps with one API, user wallets, and developer earnings",
 });
 
-const JSON_LD_PLAYGROUND = JSON.stringify({
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    name: "Pollinations Playground",
-    url: "https://pollinations.ai/play",
-    applicationCategory: "MultimediaApplication",
-    description: "Generate images, text, audio and video with AI models",
-});
-
 function getJsonLd(path: string): string | null {
     if (path === "/") return JSON_LD_HOME;
-    if (path === "/play") return JSON_LD_PLAYGROUND;
     return null;
 }
 

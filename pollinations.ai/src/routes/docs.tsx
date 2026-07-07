@@ -1,7 +1,14 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/docs")({
-    beforeLoad: () => {
-        throw redirect({ to: "/play" });
-    },
+    component: DocsRedirect,
 });
+
+function DocsRedirect() {
+    useEffect(() => {
+        window.location.replace("https://gen.pollinations.ai/docs");
+    }, []);
+
+    return null;
+}

@@ -1,11 +1,7 @@
 import {
-    CloudUploadIcon,
-    CompassIcon,
     GitHubIcon,
     type IconProps,
     ImageIcon,
-    LockIcon,
-    MegaphoneIcon,
     SparklesIcon,
     SproutIcon,
     TerminalIcon,
@@ -106,34 +102,6 @@ export const TOOLBOX: ToolboxItem[] = [
         title: "Open Source",
         desc: "- **Open and transparent** stack\n- Shaped by the **developer community**",
         link: { text: "Fork on GitHub", href: GITHUB_FORK },
-    },
-];
-
-export const ROADMAP: {
-    icon: IconComponent;
-    title: string;
-    description: string;
-}[] = [
-    {
-        icon: LockIcon,
-        title: "Pollinations Login",
-        description: "Drop-in sign-in for your users. Token handling included.",
-    },
-    {
-        icon: CloudUploadIcon,
-        title: "App Hosting",
-        description:
-            "Push your app to our infra. No deploy setup, no separate bill.",
-    },
-    {
-        icon: CompassIcon,
-        title: "App Discovery",
-        description: "Where users find your app.",
-    },
-    {
-        icon: MegaphoneIcon,
-        title: "Ads SDK",
-        description: "Optional ad slots. Earnings go to your wallet.",
     },
 ];
 

@@ -345,35 +345,6 @@ const REACTION_PATH_PARAMS = [
     },
 ] as const;
 
-// The JSON upload body, declared for the docs only. The handler parses
-// multipart and JSON by hand (a single validator can't span both content
-// types), so this schema describes the surface without gating requests. The
-// multipart shape is declared inline in the route's requestBody because its
-// `file` field needs OpenAPI's string/binary format that zod can't express.
-const UploadJsonBodySchema = z.object({
-    data: z
-        .string()
-        .describe(
-            "Base64-encoded file bytes (with or without a data: prefix).",
-        ),
-    contentType: z
-        .string()
-        .optional()
-        .describe("MIME type; defaults to application/octet-stream."),
-    name: z
-        .string()
-        .optional()
-        .describe("Filename; participates in the content hash."),
-    tags: z
-        .union([z.string(), z.array(z.string())])
-        .optional()
-        .describe(
-            "Catalog tags (makes the item public): a comma-separated string or an array of strings.",
-        ),
-    prompt: z.string().optional().describe("Prompt to store with the item."),
-    model: z.string().optional().describe("Model name to store with the item."),
-});
-
 const api = new Hono<{ Bindings: Env }>();
 
 // Shared preamble for the reaction routes: authenticate, validate the
@@ -466,7 +437,47 @@ api.post(
                     },
                 },
                 "application/json": {
-                    schema: resolver(UploadJsonBodySchema),
+                    schema: {
+                        type: "object",
+                        required: ["data"],
+                        properties: {
+                            data: {
+                                type: "string",
+                                description:
+                                    "Base64-encoded file bytes (with or without a data: prefix).",
+                            },
+                            contentType: {
+                                type: "string",
+                                description:
+                                    "MIME type; defaults to application/octet-stream.",
+                            },
+                            name: {
+                                type: "string",
+                                description:
+                                    "Filename; participates in the content hash.",
+                            },
+                            tags: {
+                                oneOf: [
+                                    { type: "string" },
+                                    {
+                                        type: "array",
+                                        items: { type: "string" },
+                                    },
+                                ],
+                                description:
+                                    "Catalog tags (makes the item public): a comma-separated string or an array of strings.",
+                            },
+                            prompt: {
+                                type: "string",
+                                description: "Prompt to store with the item.",
+                            },
+                            model: {
+                                type: "string",
+                                description:
+                                    "Model name to store with the item.",
+                            },
+                        },
+                    },
                 },
             },
         },

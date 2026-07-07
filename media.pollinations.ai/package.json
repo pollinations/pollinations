@@ -18,8 +18,7 @@
     "drizzle-orm": "^0.44.7",
     "hono": "^4.6.0",
     "hono-openapi": "^1.2.0",
-    "zod": "^3.25.76",
-    "zod-openapi": "^4.2.4"
+    "zod": "4.3.5"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.10.10",

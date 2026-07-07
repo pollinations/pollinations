@@ -16,6 +16,7 @@ async function resolveAttribution(
 ) {
     const meta = parseMetadata(keyRow.metadata);
     const user = await db.query.user.findFirst({
+        columns: { name: true, handle: true },
         where: eq(schema.user.id, keyRow.userId),
     });
     const redirectUris = getRedirectUris(meta);
@@ -24,7 +25,7 @@ async function resolveAttribution(
         clientId: keyRow.id,
         userId: keyRow.userId,
         userName: user?.name,
-        githubUsername: user?.githubUsername || undefined,
+        githubUsername: user?.handle || undefined, // deprecated field name; now sourced from handle
         appName: keyRow.name,
         redirectUris,
         earningsEnabled: meta.earningsEnabled === true,

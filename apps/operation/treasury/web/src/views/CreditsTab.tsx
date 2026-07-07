@@ -1,5 +1,4 @@
 import {
-    Chip,
     TableBody,
     TableCell,
     TableHead,
@@ -16,6 +15,7 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
+import { StatCards } from "../components/StatCards";
 import { fmtPeriod, fmtUnsignedPct, fmtUsd } from "../lib/format";
 import {
     creditRunway,
@@ -35,6 +35,17 @@ export function depletionTone(date: string | null, now: Date): string {
     if (days < 30) return "text-intent-danger-text";
     if (days < 90) return "text-intent-warning-text";
     return "text-theme-text-soft";
+}
+
+// Same 30/90-day urgency, mapped to a stat-card tone.
+function depletionStatTone(
+    date: string,
+    now: Date,
+): "base" | "pos" | "neg" | "warn" {
+    const days = (Date.parse(date) - now.getTime()) / 86_400_000;
+    if (days < 30) return "neg";
+    if (days < 90) return "warn";
+    return "base";
 }
 
 function remainingTone(value: number) {
@@ -111,20 +122,37 @@ export function CreditsTab({
         [data, now, vendor],
     );
 
-    const totals = useMemo(
-        () =>
-            rows.reduce(
-                (acc, row) => ({
-                    granted: acc.granted + row.grantedUsd,
-                    burned: acc.burned + row.burnedUsd,
-                    remaining: acc.remaining + row.remainingUsd,
-                    burning:
-                        acc.burning + (row.currentMonthBurnUsd > 0 ? 1 : 0),
-                }),
-                { granted: 0, burned: 0, remaining: 0, burning: 0 },
-            ),
-        [rows],
-    );
+    const totals = useMemo(() => {
+        let granted = 0;
+        let burned = 0;
+        let remaining = 0;
+        let vendors = 0;
+        let next: {
+            vendor: string;
+            date: string;
+            reason: string | null;
+        } | null = null;
+        for (const row of rows) {
+            granted += row.grantedUsd;
+            burned += row.burnedUsd;
+            remaining += row.remainingUsd;
+            vendors += 1;
+            if (
+                !row.finished &&
+                row.depletionDate != null &&
+                (next == null || row.depletionDate < next.date)
+            ) {
+                next = {
+                    vendor: row.vendor,
+                    date: row.depletionDate,
+                    reason: row.depletionReason,
+                };
+            }
+        }
+        return { granted, burned, remaining, vendors, next };
+    }, [rows]);
+    const burnedPctTotal =
+        totals.granted > 0 ? (totals.burned / totals.granted) * 100 : null;
 
     const sortColumns = useMemo<SortColumn<RunwayRow>[]>(
         () => [
@@ -145,26 +173,44 @@ export function CreditsTab({
     const { headerProps, rows: sorted } = useSortableRows(rows, sortColumns);
 
     return (
-        <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-                <Chip data-theme="neutral" intent="neutral" size="sm">
-                    granted {fmtUsd(totals.granted)}
-                </Chip>
-                <Chip data-theme="neutral" intent="neutral" size="sm">
-                    burned{" "}
-                    {fmtUnsignedPct(
-                        totals.granted > 0
-                            ? (totals.burned / totals.granted) * 100
-                            : null,
-                    )}
-                </Chip>
-                <Chip data-theme="neutral" intent="neutral" size="sm">
-                    remaining {fmtUsd(totals.remaining)} (naive)
-                </Chip>
-                <Chip data-theme="neutral" intent="neutral" size="sm">
-                    {totals.burning} burning this month
-                </Chip>
-            </div>
+        <div className="flex flex-col gap-4">
+            <StatCards
+                items={[
+                    {
+                        label: "Granted",
+                        value: fmtUsd(totals.granted),
+                        detail: `${totals.vendors} vendor${totals.vendors === 1 ? "" : "s"}`,
+                    },
+                    {
+                        label: "Burned",
+                        value: fmtUnsignedPct(burnedPctTotal),
+                        detail: fmtUsd(totals.burned),
+                    },
+                    {
+                        label: "Remaining",
+                        value: fmtUsd(totals.remaining),
+                        detail: "naive upper bound",
+                    },
+                    {
+                        label: "Next depletion",
+                        value: (
+                            <span className="text-xl leading-tight">
+                                {totals.next
+                                    ? `${totals.next.vendor} · ${fmtPeriod(totals.next.date)}`
+                                    : "–"}
+                            </span>
+                        ),
+                        tone: totals.next
+                            ? depletionStatTone(totals.next.date, now)
+                            : "base",
+                        detail: totals.next
+                            ? totals.next.reason === "expiry"
+                                ? "grant expiry"
+                                : "at current rate"
+                            : "no runway risk",
+                    },
+                ]}
+            />
             <TableScroller>
                 <DataTable>
                     <TableHead>

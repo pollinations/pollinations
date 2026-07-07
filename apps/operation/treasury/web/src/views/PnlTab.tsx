@@ -1,5 +1,4 @@
 import {
-    Chip,
     TableBody,
     TableCell,
     TableHead,
@@ -8,7 +7,8 @@ import {
 } from "@pollinations/ui";
 import { useMemo } from "react";
 import { DataTable, HeaderHint, TableScroller } from "../components/DataTable";
-import { fmtUnsignedPct, fmtUsd } from "../lib/format";
+import { StatCards, type StatItem } from "../components/StatCards";
+import { fmtPct, fmtUnsignedPct, fmtUsd } from "../lib/format";
 import {
     categoryColumns,
     monthSpendDetail,
@@ -46,6 +46,60 @@ export function totalsRow(rows: PnlMonth[], categories: string[]) {
     };
 }
 
+// The four P&L headline cards, from either the multi-month totals or a single
+// month's summary — both carry the same shape, so the cards read identically.
+function pnlStatItems(source: {
+    revenueNetUsd: number | null;
+    spendUsd: number | null;
+    cashPnlUsd: number | null;
+    creditBurnUsd: number;
+    categories: Record<string, number | null>;
+}): StatItem[] {
+    const topCategory = Object.entries(source.categories)
+        .filter(
+            (entry): entry is [string, number] =>
+                entry[1] != null && entry[1] > 0,
+        )
+        .sort((a, b) => b[1] - a[1])[0];
+    const netMargin =
+        source.revenueNetUsd != null &&
+        source.revenueNetUsd !== 0 &&
+        source.cashPnlUsd != null
+            ? (source.cashPnlUsd / source.revenueNetUsd) * 100
+            : null;
+    return [
+        {
+            label: "Revenue (net)",
+            value: fmtUsd(source.revenueNetUsd),
+            detail: "net of fees & refunds",
+        },
+        {
+            label: "Spend",
+            value: fmtUsd(source.spendUsd),
+            detail: topCategory
+                ? `${topCategory[0]} ${fmtUsd(topCategory[1])} top`
+                : "no cash out",
+        },
+        {
+            label: "Cash P&L",
+            value: fmtUsd(source.cashPnlUsd),
+            tone:
+                source.cashPnlUsd == null
+                    ? "base"
+                    : source.cashPnlUsd >= 0
+                      ? "pos"
+                      : "neg",
+            detail: netMargin != null ? `${fmtPct(netMargin)} net margin` : "—",
+        },
+        {
+            label: "Credit burn",
+            value:
+                source.creditBurnUsd > 0 ? fmtUsd(source.creditBurnUsd) : "–",
+            detail: "non-cash, grant-funded",
+        },
+    ];
+}
+
 // The matrix IS the yearly reading; one selected month flips to the
 // drill-down grain the matrix cannot show (category × vendor). Dispatch
 // before any hooks so the hook order stays stable across mode switches.
@@ -72,7 +126,8 @@ function PnlMatrix({ data, month = "" }: { data: Data; month?: string }) {
     );
 
     return (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
+            <StatCards items={pnlStatItems(totals)} />
             <TableScroller>
                 <DataTable>
                     <TableHead>
@@ -186,30 +241,22 @@ function PnlMonthDetail({ data, month }: { data: Data; month: string }) {
         [data, month],
     );
     const summary = detail.summary;
+    const source = summary ?? {
+        revenueNetUsd: null,
+        spendUsd: null,
+        cashPnlUsd: null,
+        creditBurnUsd: 0,
+        categories: {},
+    };
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-center gap-2">
-                <Chip data-theme="neutral" intent="neutral" size="sm">
-                    {monthLabel(month)}
-                    {summary?.monthInProgress ? " ⚠" : ""}
-                </Chip>
-                <Chip data-theme="neutral" intent="neutral" size="sm">
-                    revenue {fmtUsd(summary?.revenueNetUsd ?? null)}
-                </Chip>
-                <Chip data-theme="neutral" intent="neutral" size="sm">
-                    spend {fmtUsd(summary?.spendUsd ?? null)}
-                </Chip>
-                <Chip data-theme="neutral" intent="neutral" size="sm">
-                    cash P&L {fmtUsd(summary?.cashPnlUsd ?? null)}
-                </Chip>
-                <Chip data-theme="neutral" intent="neutral" size="sm">
-                    credit burn{" "}
-                    {summary && summary.creditBurnUsd > 0
-                        ? `(${fmtUsd(summary.creditBurnUsd)})`
-                        : "–"}
-                </Chip>
-            </div>
+            {summary?.monthInProgress && (
+                <span className="text-sm text-intent-danger-text">
+                    ⚠ {monthLabel(month)} in progress — cash is still landing
+                </span>
+            )}
+            <StatCards items={pnlStatItems(source)} />
             <TableScroller>
                 <DataTable>
                     <TableHead>

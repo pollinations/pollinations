@@ -15,6 +15,7 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
+import { StatCards } from "../components/StatCards";
 import { fmtMultiplier, fmtUsd } from "../lib/format";
 import {
     CALIB_DRIFT_ALARM,
@@ -72,6 +73,34 @@ export function problemsFirst(rows: VendorPlanes[]): VendorPlanes[] {
     );
 }
 
+function isGap(coverage: Coverage): boolean {
+    return coverage === "uncovered" || coverage === "paid unverified";
+}
+
+function planeSummary(rows: VendorPlanes[]) {
+    let cashUsd = 0;
+    let providerUsd = 0;
+    let creditUsd = 0;
+    let pollenUsd = 0;
+    let gaps = 0;
+    for (const row of rows) {
+        cashUsd += row.transactionsUsd ?? 0;
+        providerUsd += row.providerUsd ?? 0;
+        creditUsd += row.creditUsd ?? 0;
+        pollenUsd += row.pollenUsd ?? 0;
+        if (isGap(row.coverage)) gaps += 1;
+    }
+    return {
+        cashUsd,
+        providerUsd,
+        creditUsd,
+        pollenUsd,
+        gaps,
+        rowCount: rows.length,
+        calibX: pollenUsd > 0 ? providerUsd / pollenUsd : null,
+    };
+}
+
 export function ReconciliationTab({
     data,
     month = "",
@@ -102,9 +131,46 @@ export function ReconciliationTab({
     // No initial sort column: rows open in problems-first order; clicking a
     // header takes over from there.
     const { headerProps, rows } = useSortableRows(baseRows, sortColumns, null);
+    const stats = useMemo(() => planeSummary(baseRows), [baseRows]);
+    const calibDrift =
+        stats.calibX != null && Math.abs(stats.calibX - 1) > CALIB_DRIFT_ALARM;
 
     return (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-4">
+            <StatCards
+                items={[
+                    {
+                        label: "Cash sent",
+                        value: fmtUsd(stats.cashUsd),
+                        detail: "Wise compute outflows",
+                    },
+                    {
+                        label: "Provider",
+                        value: fmtUsd(stats.providerUsd),
+                        detail:
+                            stats.creditUsd > 0
+                                ? `${fmtUsd(stats.creditUsd)} credit`
+                                : "their billing meter",
+                    },
+                    {
+                        label: "Pollen",
+                        value: fmtUsd(stats.pollenUsd),
+                        detail: "our metering",
+                    },
+                    {
+                        label: "Blended calib ×",
+                        value: fmtMultiplier(stats.calibX),
+                        tone: calibDrift ? "neg" : "base",
+                        detail: "provider ÷ pollen",
+                    },
+                    {
+                        label: "Coverage gaps",
+                        value: String(stats.gaps),
+                        tone: stats.gaps > 0 ? "warn" : "pos",
+                        detail: `of ${stats.rowCount} vendor-months`,
+                    },
+                ]}
+            />
             <TableScroller>
                 <DataTable>
                     <TableHead>

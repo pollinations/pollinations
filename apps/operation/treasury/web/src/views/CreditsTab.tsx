@@ -50,10 +50,6 @@ export function isActiveCreditRow(row: Pick<RunwayRow, "finished">) {
     return !row.finished;
 }
 
-function visibleFlags(row: RunwayRow) {
-    return row.flags.filter((flag) => !flag.startsWith("lapsed "));
-}
-
 function ActiveDot({ active }: { active: boolean }) {
     return (
         <span
@@ -143,7 +139,6 @@ export function CreditsTab({
             },
             { key: "lastMonthBurnUsd", value: (row) => row.lastMonthBurnUsd },
             { key: "depletionDate", value: (row) => row.depletionDate },
-            { key: "flags", value: (row) => row.flags.join(", ") },
         ],
         [],
     );
@@ -196,7 +191,7 @@ export function CreditsTab({
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("remainingUsd")}>
-                                <HeaderHint hint="granted − witnessed burned dollars, naive. For grants that started before 2026 this is an upper bound (pre-window burn is unwitnessed) — see flags.">
+                                <HeaderHint hint="granted − witnessed burned dollars, naive. For grants that started before 2026 this is an upper bound because pre-window burn is unwitnessed.">
                                     remaining
                                 </HeaderHint>
                             </TableHeaderCell>
@@ -217,11 +212,6 @@ export function CreditsTab({
                             <TableHeaderCell {...headerProps("depletionDate")}>
                                 <HeaderHint hint="Active rows show the earlier of credit exhaustion and the next grant expiry. Burn depletion uses last full month as the base, deducts this month's consumed credit, then projects runway from this month's daily intensity. Finished rows show when the pool ended. Red < 30 days, amber < 90.">
                                     depletion
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("flags")}>
-                                <HeaderHint hint="pre-window burn unwitnessed = grant older than the data window, remaining is an upper bound · over-burn = burned more than granted (grant figure or credit rows need a look) · exhausted = pool fully consumed.">
-                                    flags
                                 </HeaderHint>
                             </TableHeaderCell>
                         </TableRow>
@@ -275,26 +265,6 @@ export function CreditsTab({
                                             : row.depletionDate
                                               ? `${fmtPeriod(row.depletionDate)}${row.depletionReason === "expiry" ? " (expiry)" : ""}`
                                               : "–"}
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex flex-wrap gap-1">
-                                            {visibleFlags(row).map((flag) => (
-                                                <Chip
-                                                    key={flag}
-                                                    intent={
-                                                        flag === "over-burn"
-                                                            ? "danger"
-                                                            : flag ===
-                                                                "exhausted"
-                                                              ? "neutral"
-                                                              : "warning"
-                                                    }
-                                                    size="sm"
-                                                >
-                                                    {flag}
-                                                </Chip>
-                                            ))}
-                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ),

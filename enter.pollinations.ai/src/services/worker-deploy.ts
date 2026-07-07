@@ -1,3 +1,8 @@
+import {
+    POLLINATIONS_AGENT_SDK_MODULE_NAME,
+    POLLINATIONS_AGENT_SDK_SOURCE,
+} from "./pollinations-agent-sdk.ts";
+
 const CF_API_BASE = "https://api.cloudflare.com/client/v4";
 const WORKER_COMPATIBILITY_DATE = "2026-01-01";
 
@@ -66,12 +71,18 @@ async function cfApi(
     return body.result;
 }
 
-// Uploads a single-ES-module worker with a BEE_AUTH_TOKEN secret binding,
-// exposes it on workers.dev, and returns the OpenAI-compatible base URL
-// callers should be routed to. The worker (and the community proxy) use the
-// token to reject direct public callers — the workers.dev URL is public, so
-// without it anyone with the URL could bypass the gateway's billing and, for
-// agents, spend the owner's key.
+// Uploads a worker with a BEE_AUTH_TOKEN secret binding, exposes it on
+// workers.dev, and returns the OpenAI-compatible base URL callers should be
+// routed to. The worker (and the community proxy) use the token to reject
+// direct public callers — the workers.dev URL is public, so without it anyone
+// with the URL could bypass the gateway's billing and, for agents, spend the
+// owner's key.
+//
+// The `@pollinations/agent` SDK is uploaded as a SECOND ES-module part on every
+// deploy, wired by relative-path name: an `index.mjs` can `import { defineAgent }
+// from "./pollinations-agent.mjs"` with no bundler (the raw script-upload API
+// does no npm resolution, but it does wire multiple module parts by name). An
+// index.mjs that doesn't import it just ignores the extra part.
 //
 // `extraBindings` are additional secret_text bindings injected alongside
 // BEE_AUTH_TOKEN — used by platform-authored templates (e.g. the prompt-agent
@@ -109,6 +120,16 @@ export async function deployCommunityWorker(
         new File([source], "index.mjs", {
             type: "application/javascript+module",
         }),
+    );
+    form.set(
+        POLLINATIONS_AGENT_SDK_MODULE_NAME,
+        new File(
+            [POLLINATIONS_AGENT_SDK_SOURCE],
+            POLLINATIONS_AGENT_SDK_MODULE_NAME,
+            {
+                type: "application/javascript+module",
+            },
+        ),
     );
     await cfApi(config, `/workers/scripts/${scriptName}`, {
         method: "PUT",

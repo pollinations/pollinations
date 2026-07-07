@@ -230,6 +230,37 @@ lands.
 - Rewrite `PROMPT_AGENT_TEMPLATE_SOURCE` on top of it (dogfood — collapses ~435 lines).
 - Keep the bare handler documented as the floor for power users.
 
+**Deploy mechanics (researched, decides how the import works).** The CF raw multipart
+`PUT /workers/scripts/{name}` API does **no bundling and no npm resolution** — a bare
+`import "@pollinations/agent"` in the uploaded `index.mjs` would fail at the edge (verified against
+CF's bundling + IaC docs; wrangler/Vercel/Workers-Builds all bundle *before* upload, either locally
+or on CI). But the same API **accepts multiple ES-module parts in one upload**, wired by
+**relative-path** part name (this is how `.wasm` / split modules already ship). So the chosen
+mechanism, no bundler / no CI in the path:
+1. Ship the SDK as a **second module part** — a pre-built, self-contained ESM string (`@pollinations/agent`
+   vendored once, exactly like `PROMPT_AGENT_TEMPLATE_SOURCE` is a string today).
+2. At submission, **rewrite the user's bare specifier** `@pollinations/agent` → the relative part
+   name (e.g. `./_pollinations_agent.mjs`) — a 2-line string transform, not bundling.
+3. `deployCommunityWorker` grows one more `form.set()` for the SDK part; `metadata.main_module`
+   stays `index.mjs`.
+**Decided:** users write a **relative import** — `import { defineAgent } from "./pollinations-agent.mjs"` —
+matching the SDK part name directly. No bare-specifier rewrite (one less transform; honest about the
+mechanism). It resolves **only our SDK part**, not arbitrary user npm — arbitrary deps are what the
+container tier (#46) is for. (Deno-based platforms like Val.town/Deno Deploy avoid bundling by
+resolving `npm:`/`jsr:`/URL specifiers at the runtime loader; CF isolates can't, so multi-part is the
+CF-appropriate equivalent.)
+
+**SDK surface (decided — full):** `defineAgent(fn)` owns the HTTP envelope, `BEE_AUTH_TOKEN` auth,
+SSE framing, and the zeroed-token `usage`/`tool_call_counts` shape. `fn` receives
+`(request, { gen, runTools })`:
+- `gen` — a keyless client bound to the injected scoped key: `gen.chat({model, messages, tools?})`,
+  `gen.image({prompt})`. Accumulates token usage internally.
+- `runTools({model, messages, tools, maxRounds})` — the opt-in tool-loop helper: the current
+  template's `MAX_TOOL_ROUNDS` loop + built-in tools (web_search, image) + MCP client, returning
+  `{content, toolCallCounts, finishReason}`. Agents that don't want a loop just call `gen.chat`.
+The prompt-agent template is rewritten to consume this SDK (dogfood — collapses ~435 lines to a thin
+config-driven `defineAgent` call).
+
 ### 4. Container-image deploy tier (Q3 Tier B)
 - **DB**: add an `image` column (registry ref) to `communityEndpoint`
   (`shared/db/better-auth.ts`) via a drizzle migration.

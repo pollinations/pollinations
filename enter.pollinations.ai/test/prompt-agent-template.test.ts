@@ -1,10 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { POLLINATIONS_AGENT_SDK_SOURCE } from "../src/services/pollinations-agent-sdk.ts";
 import { PROMPT_AGENT_TEMPLATE_SOURCE } from "../src/services/prompt-agent-template.ts";
 
-// Load the template (a self-contained ES module string) as a real module and
-// drive its default fetch handler, mocking global fetch so the base-model and
-// tool calls are controllable. This exercises the tool loop, streaming SSE
-// framing, and tool-error recovery for real rather than by string match.
+// Load the deployed template + its SDK module part and drive the default fetch
+// handler, mocking global fetch so the base-model and tool calls are
+// controllable. This exercises the SDK's tool loop, streaming SSE framing, and
+// tool-error recovery for real rather than by string match.
+//
+// At deploy the two are uploaded as separate ES-module parts and the template's
+// `import "./pollinations-agent.mjs"` is wired by Cloudflare. The Workers test
+// pool can't dynamically import data: URLs, so we simulate that wiring in one
+// function scope: strip the SDK's `export` keywords so its declarations become
+// locals, drop the template's `import` line, and rewrite `export default X` to
+// `return X`. defineAgent is then in scope for the template body.
 type AgentModule = {
     default: {
         fetch: (
@@ -15,15 +23,15 @@ type AgentModule = {
 };
 
 async function loadTemplate(): Promise<AgentModule["default"]> {
-    // The template is a single-file ES module string. The Workers test pool
-    // can't dynamically import a data: URL, so evaluate the body directly:
-    // rewrite `export default {` to `return {` and run it in a function scope.
-    // The template has no imports, so nothing else needs resolving.
-    const body = PROMPT_AGENT_TEMPLATE_SOURCE.replace(
-        /export default \{/,
-        "return {",
+    const sdkBody = POLLINATIONS_AGENT_SDK_SOURCE.replaceAll(
+        /export (function|const|async function) /g,
+        "$1 ",
     );
-    const factory = new Function(`${body}`);
+    const templateBody = PROMPT_AGENT_TEMPLATE_SOURCE.replace(
+        /^\s*import\s+\{[^}]*\}\s+from\s+["']\.\/pollinations-agent\.mjs["'];?/m,
+        "",
+    ).replace(/export default /, "return ");
+    const factory = new Function(`${sdkBody}\n${templateBody}`);
     return factory() as AgentModule["default"];
 }
 
@@ -234,5 +242,110 @@ describe("prompt-agent template", () => {
         expect(json.choices[0].message.content).toBe("sorry, image failed");
         // The (failed) tool call is still counted — the owner's tool ran.
         expect(json.usage.tool_call_counts).toEqual({ image: 1 });
+    });
+});
+
+// Loads the SDK and calls defineAgent with an ARBITRARY user function (the
+// "write one function" DX), not the prompt-agent template. `userFnBody` is the
+// body of `async (request, { gen, runTools, env }) => { ... }`.
+async function loadUserAgent(
+    userFnBody: string,
+): Promise<AgentModule["default"]> {
+    const sdkBody = POLLINATIONS_AGENT_SDK_SOURCE.replaceAll(
+        /export (function|const|async function) /g,
+        "$1 ",
+    );
+    const factory = new Function(
+        `${sdkBody}\nreturn defineAgent(async (request, { gen, runTools, env }) => {${userFnBody}});`,
+    );
+    return factory() as AgentModule["default"];
+}
+
+describe("defineAgent (SDK direct)", () => {
+    beforeEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it("wraps a plain-string return into a chat.completion with zeroed-but-present usage", async () => {
+        const fetchMock = vi.fn(async () =>
+            Response.json({
+                choices: [{ message: { role: "assistant", content: "hi!" } }],
+                usage: { prompt_tokens: 7, completion_tokens: 3 },
+            }),
+        );
+        vi.stubGlobal("fetch", fetchMock);
+
+        // A minimal agent: one gen.chat call, return the string.
+        const agent = await loadUserAgent(`
+            const r = await gen.chat({ model: "openai-fast", messages: request.messages });
+            return r.content;
+        `);
+        const res = await agent.fetch(
+            chatRequest({ messages: [{ role: "user", content: "yo" }] }),
+            BASE_ENV,
+        );
+        expect(res.status).toBe(200);
+        const json = (await res.json()) as {
+            choices: { message: { content: string }; finish_reason: string }[];
+            usage: {
+                prompt_tokens: number;
+                completion_tokens: number;
+                total_tokens: number;
+                tool_call_counts: Record<string, number>;
+            };
+        };
+        expect(json.choices[0].message.content).toBe("hi!");
+        expect(json.choices[0].finish_reason).toBe("stop");
+        // gen.chat's token usage accumulated into the response.
+        expect(json.usage.prompt_tokens).toBe(7);
+        expect(json.usage.total_tokens).toBe(10);
+        // The usage object is ALWAYS present with tool_call_counts — a missing
+        // usage would make the gateway leave the whole request unbilled.
+        expect(json.usage.tool_call_counts).toEqual({});
+    });
+
+    it("passes through an object return with explicit toolCallCounts", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => Response.json({ choices: [], usage: {} })),
+        );
+        // An agent that reports a tool fee without any gen call.
+        const agent = await loadUserAgent(`
+            return { content: "done", toolCallCounts: { my_tool: 2 } };
+        `);
+        const res = await agent.fetch(chatRequest({ messages: [] }), BASE_ENV);
+        expect(res.status).toBe(200);
+        const json = (await res.json()) as {
+            choices: { message: { content: string } }[];
+            usage: { tool_call_counts: Record<string, number> };
+        };
+        expect(json.choices[0].message.content).toBe("done");
+        expect(json.usage.tool_call_counts).toEqual({ my_tool: 2 });
+    });
+
+    it("rejects unauthorized callers before running the function", async () => {
+        const fetchMock = vi.fn();
+        vi.stubGlobal("fetch", fetchMock);
+        const agent = await loadUserAgent(`return "should not run";`);
+        const res = await agent.fetch(
+            new Request("https://bee.example.com/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({ messages: [] }),
+            }),
+            BASE_ENV,
+        );
+        expect(res.status).toBe(401);
+        // The user function never ran, so no upstream call was made.
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("surfaces a thrown error as a 502 without crashing the worker", async () => {
+        vi.stubGlobal("fetch", vi.fn());
+        const agent = await loadUserAgent(`throw new Error("kaboom");`);
+        const res = await agent.fetch(chatRequest({ messages: [] }), BASE_ENV);
+        expect(res.status).toBe(502);
+        const json = (await res.json()) as { error: { message: string } };
+        expect(json.error.message).toContain("kaboom");
     });
 });

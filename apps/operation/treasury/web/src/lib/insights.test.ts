@@ -1078,10 +1078,9 @@ describe("creditRunway", () => {
         ).toBeUndefined();
     });
 
-    it("excludes pollen-priced vendors and sorts soonest depletion first", () => {
+    it("sorts soonest depletion first", () => {
         const data = emptyData({
             grants: [
-                grant({ vendor: "community", granted: 100 }),
                 grant({ vendor: "lambda", granted: 100 }),
                 grant({
                     vendor: "digitalocean",
@@ -1105,6 +1104,37 @@ describe("creditRunway", () => {
             "digitalocean", // expiry Jul 22
             "fireworks", // no depletion → last
         ]);
+    });
+
+    it("features a pollen-priced gift pool as finished credits (pointsflyer)", () => {
+        const data = emptyData({
+            grants: [
+                grant({
+                    vendor: "pointsflyer",
+                    label: "gifted compute",
+                    granted: 100,
+                    start_date: "2025-12-01",
+                    expires: "2026-04-30",
+                }),
+            ],
+            providerMonthly: [
+                provider({
+                    month: "2026-01",
+                    vendor: "pointsflyer",
+                    credit: 60,
+                }),
+                provider({
+                    month: "2026-02",
+                    vendor: "pointsflyer",
+                    credit: 40,
+                }),
+            ],
+        });
+        const [row] = creditRunway(data, NOW);
+        expect(row.vendor).toBe("pointsflyer");
+        expect(row.burnedUsd).toBe(100);
+        expect(row.remainingUsd).toBe(0);
+        expect(row.finished).toBe(true);
     });
 });
 

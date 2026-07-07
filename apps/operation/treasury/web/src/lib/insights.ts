@@ -218,7 +218,7 @@ export function monthSpendDetail(
 // ------------------------------------------------------ vendor three-way
 
 // Vendors that never invoice us — community models. (self-hosted was a
-// mis-tagged lambda row, remapped at ingest 2026-07-07; airforce/bpai/
+// mis-tagged lambda row, remapped at ingest 2026-07-07; airforce/pointsflyer/
 // seraphyn/inferenceport are real vendors with pollen-basis provider rows.)
 export const INTERNAL_VENDORS = new Set(["community"]);
 
@@ -458,9 +458,9 @@ export function insightVendorOptions(data: Data): string[] {
 // construction, a definition rather than a measurement.
 export const POLLEN_PRICED_VENDORS = new Set([
     "airforce",
-    "bpai",
     "community",
     "inferenceport",
+    "pointsflyer",
     "seraphyn",
 ]);
 
@@ -722,9 +722,11 @@ export function allocateGrants(
 ): { grants: GrantStatus[]; unallocated: Map<string, number> } {
     const today = now.toISOString().slice(0, 10);
 
+    // Pollen-priced vendors' grants participate too (pointsflyer's gift):
+    // the pool is valued at our registry prices rather than a vendor-stated
+    // balance, but a finished gift belongs in the credits history.
     const byVendor = new Map<string, GrantStatus[]>();
     for (const grant of data.grants) {
-        if (POLLEN_PRICED_VENDORS.has(grant.vendor)) continue;
         const list = byVendor.get(grant.vendor) ?? [];
         list.push({
             vendor: grant.vendor,

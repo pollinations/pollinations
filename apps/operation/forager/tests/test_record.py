@@ -99,8 +99,8 @@ def test_meter_is_list():
 
 
 def test_meter_is_populated():
-    # 6 connectors since the aws CE connector was retired (manual invoice rows).
-    assert len(registry.METER) == 6
+    # 7 connectors: aws CE retired (manual invoice rows), azure invoices added.
+    assert len(registry.METER) == 7
 
 
 class _FakeTB:

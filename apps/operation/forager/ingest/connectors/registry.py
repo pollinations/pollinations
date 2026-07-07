@@ -10,6 +10,7 @@ from ..aliases import VENDOR_ALIASES
 
 CANONICAL: frozenset = frozenset(VENDOR_ALIASES.keys())
 
+from .vendors import azure as _azure
 from .vendors import deepinfra as _deepinfra
 from .vendors import ovh as _ovh
 from .vendors import vast as _vast
@@ -19,6 +20,7 @@ from .vendors import openai_ as _openai
 from .vendors import gcp as _gcp
 
 METER: list = [
+    ("azure", _azure.meter),
     ("deepinfra", _deepinfra.meter),
     ("vast.ai", _vast.meter),
     ("ovhcloud", _ovh.meter),

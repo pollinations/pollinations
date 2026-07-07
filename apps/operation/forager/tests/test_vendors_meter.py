@@ -1,6 +1,6 @@
 """Hermetic tests for meter connectors (B5).
 
-Connectors: deepinfra, ovh, vast, fireworks, gcp, openai_.
+Connectors: azure, deepinfra, ovh, vast, fireworks, gcp, openai_.
 All hermetic — http_json monkeypatched; run_cmd injected for CLI connectors.
 No network, no SOPS, no real credentials.
 
@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
 
+import ingest.connectors.vendors.azure as _az
 import ingest.connectors.vendors.deepinfra as _di
 import ingest.connectors.vendors.ovh as _ovh
 import ingest.connectors.vendors.vast as _vast
@@ -510,6 +511,128 @@ def test_fireworks_meter_cli_failure_raises():
 
 
 # ===========================================================================
+# azure.meter
+# ===========================================================================
+
+_AZ_CREDS = {
+    "AZURE_TENANT_ID": "tenant-guid",
+    "AZURE_CLIENT_ID": "client-guid",
+    "AZURE_CLIENT_SECRET": "sp-secret",
+    "AZURE_BILLING_ACCOUNT": "acct-guid:profile-guid_2019-05-31",
+    "AZURE_BILLING_PROFILE": "XXXX-YYYY-ZZZ-PGB",
+}
+
+_AZ_TOKEN = {"access_token": "az-tok", "expires_in": 3599}
+
+
+def _az_invoice(start, end, billed, credit):
+    """Invoice payload shaped like the live 2024-04-01 API response."""
+    return {
+        "name": "G000000000",
+        "properties": {
+            "invoicePeriodStartDate": f"{start}T00:00:00.0000000Z",
+            "invoicePeriodEndDate": f"{end}T23:59:59.9999999Z",
+            "billedAmount": {"value": billed, "currency": "EUR"},
+            "creditAmount": {"value": credit, "currency": "EUR"},
+        },
+    }
+
+
+def test_azure_meter_credit_and_cash_split(monkeypatch):
+    """Sponsored month: credit row = |creditAmount|, cash = billed + credit."""
+    invoices = {"value": [_az_invoice("2026-04-01", "2026-04-30", 1527.99, -1471.33)]}
+    cap = Capture([_AZ_TOKEN, invoices])
+    monkeypatch.setattr(_az, "http_json", cap)
+    rows = _az.meter(_AZ_CREDS, ["2026-04"], TODAY)
+    assert len(rows) == 2
+    credit = next(r for r in rows if r["credit"] > 0)
+    cash = next(r for r in rows if r["paid"] > 0)
+    assert credit["credit"] == pytest.approx(1471.33)
+    assert cash["paid"] == pytest.approx(56.66, abs=0.005)
+    for r in rows:
+        assert r["vendor"] == "azure"
+        assert r["currency"] == "EUR"
+        assert r["source"] == "api"
+        assert r["month"] == "2026-04"
+
+
+def test_azure_meter_precredit_month_cash_only(monkeypatch):
+    """Jan–Mar (no active credit lot): whole invoice is a card charge."""
+    invoices = {"value": [_az_invoice("2026-01-01", "2026-01-31", 10994.45, 0.0)]}
+    cap = Capture([_AZ_TOKEN, invoices])
+    monkeypatch.setattr(_az, "http_json", cap)
+    rows = _az.meter(_AZ_CREDS, ["2026-01"], TODAY)
+    assert len(rows) == 1
+    assert rows[0]["paid"] == pytest.approx(10994.45)
+    assert rows[0]["credit"] == 0.0
+
+
+def test_azure_meter_skips_partial_period_invoices(monkeypatch):
+    """Zero-billed one-day invoices (purchase receipts) must not emit rows."""
+    invoices = {"value": [
+        _az_invoice("2026-04-08", "2026-04-08", 0.0, 0.0),
+        _az_invoice("2026-04-11", "2026-04-11", 0.0, 0.0),
+    ]}
+    cap = Capture([_AZ_TOKEN, invoices])
+    monkeypatch.setattr(_az, "http_json", cap)
+    assert _az.meter(_AZ_CREDS, ["2026-04"], TODAY) == []
+
+
+def test_azure_meter_running_month_has_no_row(monkeypatch):
+    """No invoice for the running month yet → no row (arrives ~day 9 of m+1)."""
+    invoices = {"value": [_az_invoice("2026-05-01", "2026-05-31", 3362.45, -3200.76)]}
+    cap = Capture([_AZ_TOKEN, invoices])
+    monkeypatch.setattr(_az, "http_json", cap)
+    rows = _az.meter(_AZ_CREDS, ["2026-05", "2026-06", "2026-07"], TODAY)
+    assert {r["month"] for r in rows} == {"2026-05"}
+
+
+def test_azure_meter_out_of_scope_month_skipped(monkeypatch):
+    """Invoices outside the requested months must not emit rows."""
+    invoices = {"value": [
+        _az_invoice("2026-01-01", "2026-01-31", 10994.45, 0.0),
+        _az_invoice("2026-05-01", "2026-05-31", 3362.45, -3200.76),
+    ]}
+    cap = Capture([_AZ_TOKEN, invoices])
+    monkeypatch.setattr(_az, "http_json", cap)
+    rows = _az.meter(_AZ_CREDS, ["2026-05"], TODAY)
+    assert {r["month"] for r in rows} == {"2026-05"}
+
+
+def test_azure_meter_paginates_nextlink(monkeypatch):
+    """value pages joined via nextLink."""
+    page1 = {
+        "value": [_az_invoice("2026-01-01", "2026-01-31", 100.0, 0.0)],
+        "nextLink": "https://management.azure.com/next-page",
+    }
+    page2 = {"value": [_az_invoice("2026-02-01", "2026-02-28", 200.0, 0.0)]}
+    cap = Capture([_AZ_TOKEN, page1, page2])
+    monkeypatch.setattr(_az, "http_json", cap)
+    rows = _az.meter(_AZ_CREDS, ["2026-01", "2026-02"], TODAY)
+    assert {r["month"] for r in rows} == {"2026-01", "2026-02"}
+    assert cap.calls[2]["url"] == "https://management.azure.com/next-page"
+
+
+def test_azure_meter_token_then_invoices(monkeypatch):
+    """First call = client-credentials POST; second = invoices GET with bearer."""
+    invoices = {"value": []}
+    cap = Capture([_AZ_TOKEN, invoices])
+    monkeypatch.setattr(_az, "http_json", cap)
+    _az.meter(_AZ_CREDS, ["2026-04"], TODAY)
+    assert "login.microsoftonline.com/tenant-guid" in cap.calls[0]["url"]
+    assert b"client_credentials" in cap.calls[0]["data"]
+    assert cap.calls[1]["headers"]["Authorization"] == "Bearer az-tok"
+    # billing account contains ':' — must be percent-encoded in the path
+    assert "acct-guid%3Aprofile-guid_2019-05-31" in cap.calls[1]["url"]
+
+
+def test_azure_meter_missing_creds_raise():
+    with pytest.raises(RuntimeError, match="AZURE_CLIENT_SECRET"):
+        _az.meter({k: v for k, v in _AZ_CREDS.items() if k != "AZURE_CLIENT_SECRET"},
+                  ["2026-04"], TODAY)
+
+
+# ===========================================================================
 # gcp.meter
 # ===========================================================================
 
@@ -816,16 +939,17 @@ def test_openai_meter_vendor_slug(monkeypatch):
 # ===========================================================================
 
 def test_meter_registry_populated():
-    """METER must contain 6 entries (aws retired 2026-07: billing moved to the
-    Automat-it reseller, whose credits/accounts Cost Explorer cannot see;
-    aws rows are manual from the monthly reseller invoice)."""
-    assert len(registry.METER) == 6
+    """METER must contain 7 entries (aws retired 2026-07: billing moved to the
+    Automat-it reseller, whose credits/accounts Cost Explorer cannot see —
+    aws rows are manual from the monthly reseller invoice; azure added
+    2026-07: billing-profile invoice connector)."""
+    assert len(registry.METER) == 7
 
 
 def test_meter_registry_slugs():
-    """METER must contain all six vendor slugs."""
+    """METER must contain all seven vendor slugs."""
     slugs = {slug for slug, _ in registry.METER}
-    for expected in ("deepinfra", "vast.ai", "ovhcloud", "fireworks", "google", "openai"):
+    for expected in ("azure", "deepinfra", "vast.ai", "ovhcloud", "fireworks", "google", "openai"):
         assert expected in slugs, f"METER missing: {expected}"
     assert "aws" not in slugs, "aws CE connector was retired; rows are manual"
 

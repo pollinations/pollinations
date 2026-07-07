@@ -59,7 +59,7 @@ python3 -m ingest.run --only provider --vendor fireworks
 ```
 
 `--vendor` requires `--only provider` and must be a meter-connector slug:
-`deepinfra | vast.ai | ovhcloud | fireworks | google | openai`.
+`azure | deepinfra | vast.ai | ovhcloud | fireworks | google | openai`.
 Manual-only vendors are updated with `ingest.record`, not here.
 `aws` is manual-only: billing runs through the Automat-it reseller (two AWS
 accounts, reseller-side credits), which Cost Explorer cannot see — record one

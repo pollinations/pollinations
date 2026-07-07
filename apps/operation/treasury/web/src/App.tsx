@@ -666,12 +666,15 @@ export default function App() {
     );
     const showVendorFilter =
         section === "insights"
-            ? insightTab !== "pnl" && insightVendors.length > 1
+            ? insightTab !== "pnl" &&
+              insightTab !== "credits" &&
+              insightVendors.length > 1
             : tab !== "revenue" && tab !== "grants" && vendorOptions.length > 1;
     const activeVendorOptions =
         section === "insights" ? insightVendors : vendorOptions;
     const showPeriodFilter =
-        section === "insights" || (tab !== "revenue" && tab !== "grants");
+        (section === "insights" && insightTab !== "credits") ||
+        (section === "raw" && tab !== "revenue" && tab !== "grants");
     const showCategoryFilter = section === "raw" && tab === "transactions";
     const hasFilters =
         showPeriodFilter || showVendorFilter || showCategoryFilter;
@@ -934,7 +937,7 @@ export default function App() {
                         {data &&
                             section === "insights" &&
                             insightTab === "credits" && (
-                                <CreditsTab data={data} vendor={vendor} />
+                                <CreditsTab data={data} />
                             )}
                     </ErrorBoundary>
                 </Section>

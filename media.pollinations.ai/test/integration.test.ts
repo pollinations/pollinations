@@ -398,6 +398,34 @@ describe("media.pollinations.ai", () => {
         expect(res.status).toBe(404);
     });
 
+    it("retrieves a legacy content-hash-keyed object by its old URL", async () => {
+        // Before this change, blobs were stored under a 16-hex content hash and
+        // served at /:hash. Those objects still live in R2 under the hash key.
+        // Retrieval is now key-agnostic (R2.get(id)), so the old URL must still
+        // resolve. Seed such an object directly, bypassing upload.
+        const bucket = createTestR2Bucket();
+        const legacyHash = "a3f2b1c4d5e6f7a8";
+        await bucket.put(legacyHash, TINY_PNG, {
+            httpMetadata: { contentType: "image/png" },
+            customMetadata: { originalName: "legacy.png" },
+        });
+
+        const ctx = createExecutionContext();
+        const res = await app.fetch(
+            new Request(`https://media.pollinations.ai/${legacyHash}`),
+            createMediaEnv(bucket),
+            ctx,
+        );
+        const body = new Uint8Array(await res.arrayBuffer());
+        await waitOnExecutionContext(ctx);
+
+        expect(res.status).toBe(200);
+        expect(res.headers.get("content-type")).toBe("image/png");
+        expect(res.headers.get("x-content-id")).toBe(legacyHash);
+        expect(res.headers.get("content-disposition")).toContain("legacy.png");
+        expect(body.length).toBe(TINY_PNG.length);
+    });
+
     it("tagged upload is visible in public tag gallery and in your own library, without owner fields", async () => {
         const { status, body } = await uploadViaForm("pk_alice", {
             fileName: "gallery-a.png",

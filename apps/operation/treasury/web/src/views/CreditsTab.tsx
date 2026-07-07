@@ -137,11 +137,11 @@ export function CreditsTab({
             { key: "grantedUsd", value: (row) => row.grantedUsd },
             { key: "burnedPct", value: (row) => burnedPct(row) },
             { key: "remainingUsd", value: (row) => row.remainingUsd },
-            { key: "lastMonthBurnUsd", value: (row) => row.lastMonthBurnUsd },
             {
                 key: "currentMonthBurnUsd",
                 value: (row) => row.currentMonthBurnUsd,
             },
+            { key: "lastMonthBurnUsd", value: (row) => row.lastMonthBurnUsd },
             { key: "depletionDate", value: (row) => row.depletionDate },
             { key: "flags", value: (row) => row.flags.join(", ") },
         ],
@@ -201,17 +201,17 @@ export function CreditsTab({
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
-                                {...headerProps("lastMonthBurnUsd")}
+                                {...headerProps("currentMonthBurnUsd")}
                             >
-                                <HeaderHint hint="Credit burn in the last complete month.">
-                                    last month
+                                <HeaderHint hint="Credit burn so far in the running month. Depletion uses this as the live daily intensity when it is nonzero.">
+                                    this month
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
-                                {...headerProps("currentMonthBurnUsd")}
+                                {...headerProps("lastMonthBurnUsd")}
                             >
-                                <HeaderHint hint="Credit burn so far in the running month.">
-                                    this month
+                                <HeaderHint hint="Credit burn in the last complete month. Used as the fallback only when this month has no burn yet.">
+                                    last month
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("depletionDate")}>
@@ -257,10 +257,10 @@ export function CreditsTab({
                                         {fmtUsd(row.remainingUsd)}
                                     </TableCell>
                                     <TableCell className="text-theme-text-soft">
-                                        {fmtUsd(row.lastMonthBurnUsd)}
+                                        {fmtUsd(row.currentMonthBurnUsd)}
                                     </TableCell>
                                     <TableCell className="text-theme-text-soft">
-                                        {fmtUsd(row.currentMonthBurnUsd)}
+                                        {fmtUsd(row.lastMonthBurnUsd)}
                                     </TableCell>
                                     <TableCell
                                         className={depletionTone(
@@ -311,10 +311,10 @@ export function CreditsTab({
                                     <TableHeaderCell>vendor</TableHeaderCell>
                                     <TableHeaderCell>burned</TableHeaderCell>
                                     <TableHeaderCell>
-                                        last month
+                                        this month
                                     </TableHeaderCell>
                                     <TableHeaderCell>
-                                        this month
+                                        last month
                                     </TableHeaderCell>
                                 </TableRow>
                             </TableHead>
@@ -326,10 +326,10 @@ export function CreditsTab({
                                             {fmtUsd(row.burnedUsd)}
                                         </TableCell>
                                         <TableCell className="text-theme-text-soft">
-                                            {fmtUsd(row.lastMonthBurnUsd)}
+                                            {fmtUsd(row.currentMonthBurnUsd)}
                                         </TableCell>
                                         <TableCell className="text-theme-text-soft">
-                                            {fmtUsd(row.currentMonthBurnUsd)}
+                                            {fmtUsd(row.lastMonthBurnUsd)}
                                         </TableCell>
                                     </TableRow>
                                 ))}

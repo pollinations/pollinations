@@ -91,7 +91,7 @@ function EventKindChip({ kind }: { kind: LastEvent["kind"] }) {
     }
     return (
         <Chip intent="danger" size="sm">
-            Spent
+            Used
         </Chip>
     );
 }

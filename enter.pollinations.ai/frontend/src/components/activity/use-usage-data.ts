@@ -151,7 +151,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             if (r.meter_source === "tier") {
                 cur.tierRequests += r.requests || 0;
                 cur.tierPollen += r.cost_usd || 0;
-            } else {
+            } else if (r.meter_source === "pack") {
                 cur.paidRequests += r.requests || 0;
                 cur.paidPollen += r.cost_usd || 0;
             }

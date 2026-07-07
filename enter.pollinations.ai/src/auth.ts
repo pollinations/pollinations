@@ -5,7 +5,10 @@ import {
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
 import * as betterAuthSchema from "@shared/db/better-auth.ts";
-import { user as userTable } from "@shared/db/better-auth.ts";
+import {
+    account as accountTable,
+    user as userTable,
+} from "@shared/db/better-auth.ts";
 import { sendTierEventToTinybird } from "@shared/events.ts";
 import { AUTH_TRUSTED_ORIGINS } from "@shared/public-urls.ts";
 import { DEFAULT_TIER } from "@shared/tier-config.ts";
@@ -19,7 +22,7 @@ import {
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
 import { admin, openAPI } from "better-auth/plugins";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { drizzle } from "drizzle-orm/d1";
 
@@ -209,13 +212,17 @@ function tierPlugin(
 }
 
 /**
- * Sync github_username on every login.
+ * Sync github username on every login.
  * GitHub usernames are mutable — users can rename their account.
- * We fetch the current username from GitHub API using the immutable github_id
- * and update D1 if it changed. Non-blocking via waitUntil.
+ * We read the github `account` row (accountId = immutable GitHub numeric ID,
+ * username = last-known login), fetch the current login from GitHub API, and
+ * write back if it changed.
  *
- * GitHub is the only auth provider, so every user row has a github_id; we skip
- * the sync defensively if it is ever missing.
+ * Dual-write: updates both `account.username` (canonical, new) and
+ * `user.githubUsername` (legacy column) so a rollback stays lossless.
+ * `user.handle` is intentionally NOT touched — the handle is stable.
+ *
+ * Non-blocking via waitUntil.
  */
 function onAfterSessionCreate(
     env: Cloudflare.Env,
@@ -229,16 +236,24 @@ function onAfterSessionCreate(
             (async () => {
                 try {
                     const db = drizzle(env.DB);
-                    const [user] = await db
+
+                    // Read from the account row — accountId is the immutable
+                    // GitHub numeric user ID; username is the last-synced login.
+                    const [acct] = await db
                         .select({
-                            githubId: userTable.githubId,
-                            githubUsername: userTable.githubUsername,
+                            githubId: accountTable.accountId,
+                            username: accountTable.username,
                         })
-                        .from(userTable)
-                        .where(eq(userTable.id, session.userId))
+                        .from(accountTable)
+                        .where(
+                            and(
+                                eq(accountTable.userId, session.userId),
+                                eq(accountTable.providerId, "github"),
+                            ),
+                        )
                         .limit(1);
 
-                    const githubId = user?.githubId;
+                    const githubId = acct?.githubId;
                     if (!githubId) return;
 
                     const headers: Record<string, string> = {
@@ -261,10 +276,18 @@ function onAfterSessionCreate(
                     }
 
                     const profile = (await res.json()) as { login: string };
-                    if (
-                        profile.login &&
-                        profile.login !== user?.githubUsername
-                    ) {
+                    if (profile.login && profile.login !== acct?.username) {
+                        // Write account.username (canonical new column)
+                        await db
+                            .update(accountTable)
+                            .set({ username: profile.login })
+                            .where(
+                                and(
+                                    eq(accountTable.userId, session.userId),
+                                    eq(accountTable.providerId, "github"),
+                                ),
+                            );
+                        // Dual-write: keep legacy user.github_username in sync
                         await db
                             .update(userTable)
                             .set({ githubUsername: profile.login })

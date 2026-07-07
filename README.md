@@ -6,7 +6,7 @@
   
   <p><strong>Open-source AI for people who make things.</strong></p>
 
-[![Stars](https://img.shields.io/github/stars/pollinations/pollinations?style=flat-square&logo=github)](https://github.com/pollinations/pollinations)
+[![Stars](https://img.shields.io/github/stars/pollinations/pollinations?style=flat-square&logo=github)](https://github.com/pollinations/pollinations/stargazers)
 [![License](https://img.shields.io/github/license/pollinations/pollinations?style=flat-square)](LICENSE)
 [![Discord](https://img.shields.io/discord/885844321461485618?style=flat-square&logo=discord&label=Discord&color=5865F2)](https://discord.gg/pollinations-ai-885844321461485618)
 
@@ -34,7 +34,7 @@
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live
 
-We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video — all in one place.
+We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video, 3D, embeddings — all in one place.
 
 ### What's New
 
@@ -62,16 +62,19 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🌱 Introduction
 
-[pollinations.ai](https://pollinations.ai) is an open-source generative AI platform based in Berlin, powering 500+ community projects with accessible text, image, video, and audio generation APIs. We build in the open and keep AI accessible to everyone—thanks to our amazing supporters.
+[pollinations.ai](https://pollinations.ai) is an open-source generative AI platform based in Berlin, powering 500+ community projects with accessible text, image, video, audio, 3D and embeddings generation APIs. We build in the open and keep AI accessible to everyone—thanks to our amazing supporters.
 
 ## 🚀 Key Features
 
 - 🔓 **100% Open Source** — code, decisions, roadmap all public
 - 🤝 **Community-Built** — 500+ projects already using our APIs
 - 🌱 **Pollen Quests** — earn Pollen by completing Quests (in alpha)
-- 🖼️ **Image Generation** — Flux, GPT Image, Seedream, Kontext
-- 🎬 **Video Generation** — Seedance, Veo (alpha)
-- 🎵 **Audio** — Text-to-speech and speech-to-text
+- 🖼️ **Image Generation** — Flux, GPT Image, Seedream, Kontext...
+- 📝 **Text Generation** - GPT, Claude, Gemini, Grok, DeepSeek...
+- 🎬 **Video Generation** — Seedance, Veo, Grok Video...
+- 🎵 **Audio** — Text-to-speech and speech-to-text with Wisper, EvenLabs...
+- 💠 **3D Generation** - Trellis, Hyper3D
+- 🧪 **Embeddings creation** - OpenAI, Gemini, Qwen Embedding...
 - 🎣 **_Easy-to-use Packages_** ([Packages](packages/))
 
 <a href="https://star-history.com/#pollinations/pollinations&Date">
@@ -92,7 +95,9 @@ Pollinations supports:
 - 🖼 Images  
 - 📝 Text  
 - 🔊 Audio  
-- 🎬 Video  
+- 🎬 Video
+- 💠 3D
+- 🧪 Embeddings
 
 3️⃣ **Make your first request**  
 Use one of the examples below to generate your first AI output in seconds.
@@ -171,7 +176,7 @@ AI assistants can:
 - Access all pollinations.ai models and services
 - List available models, voices, and capabilities
 
-For more advanced usage, check out our [API documentation](APIDOCS.md).
+**For more advanced usage, check out our [API documentation](APIDOCS.md).**
 
 ## 🔐 Authentication
 
@@ -355,7 +360,7 @@ We believe in community-driven development. You can contribute to pollinations.a
 
 1. **Coding Assistant**: The easiest way to contribute! Just [create a GitHub issue](https://github.com/pollinations/pollinations/issues/new) describing the feature you'd like to see implemented. The [MentatBot AI assistant](https://mentat.ai/) will analyze and implement it directly! No coding required - just describe what you want.
 
-2. **Project Submissions**: Have you built something with pollinations.ai? [Use our project submission template](https://github.com/pollinations/pollinations/issues/new?template=project-submission.yml) (labeled as **APPS**) to share it with the community and get it featured in our README.
+2. **Project Submissions**: Have you built something with pollinations.ai? [Use our project submission template](https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml) (labeled as **APPS**) to share it with the community and get it featured in our README.
 
 3. **Feature Requests & Bug Reports**: Have an idea or found a bug? [Open an issue](https://github.com/pollinations/pollinations/issues/new) and let us know. Our team and the MentatBot assistant will review it.
 

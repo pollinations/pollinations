@@ -69,10 +69,48 @@ export function detectMimeType(buffer: Uint8Array): string {
     return "image/jpeg";
 }
 
+function isBlockedImageHost(hostname: string): boolean {
+    const host = hostname.toLowerCase();
+    if (host === "localhost" || host.endsWith(".localhost")) return true;
+    if (host === "::1" || host === "[::1]" || host.endsWith(".local"))
+        return true;
+    if (host.startsWith("127.") || host.startsWith("10.")) return true;
+    if (host.startsWith("192.168.")) return true;
+    const match172 = host.match(/^172\.(\d+)\./);
+    if (match172) {
+        const second = Number(match172[1]);
+        if (second >= 16 && second <= 31) return true;
+    }
+    if (host === "169.254.169.254" || host.endsWith(".internal")) return true;
+    return false;
+}
+
 export async function downloadUserImage(
     imageUrl: string,
     signal?: AbortSignal,
 ): Promise<{ buffer: Buffer; mimeType: string }> {
+    let imageUrlObj: URL;
+    try {
+        imageUrlObj = new URL(imageUrl);
+    } catch {
+        throw new HttpError(`Invalid image URL: ${imageUrl}`, 400, {
+            validation: true,
+        });
+    }
+    if (imageUrlObj.protocol !== "http:" && imageUrlObj.protocol !== "https:") {
+        throw new HttpError(
+            `Unsupported protocol: ${imageUrlObj.protocol}`,
+            400,
+            { validation: true },
+        );
+    }
+    if (isBlockedImageHost(imageUrlObj.hostname)) {
+        throw new HttpError(
+            "Private or internal image URLs are not allowed",
+            400,
+            { validation: true },
+        );
+    }
     let imageResponse: Response;
     try {
         imageResponse = await fetch(imageUrl, { signal });

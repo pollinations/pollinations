@@ -1,3 +1,4 @@
+import { isBlockedHostname } from "@shared/community-endpoints.ts";
 import { HTTPException } from "hono/http-exception";
 import { HttpError } from "@/image/httpError.ts";
 import { downloadImageAsBase64 } from "@/image/utils/imageDownload.ts";
@@ -25,6 +26,9 @@ async function fetchMedia(
     url: string,
 ): Promise<{ data: string; contentType: string }> {
     const parsed = parseRemoteMediaUrl(url);
+    if (isBlockedHostname(parsed.hostname)) {
+        badRequest("Private or internal URLs are not allowed");
+    }
     let response: Response;
     try {
         response = await fetch(parsed);

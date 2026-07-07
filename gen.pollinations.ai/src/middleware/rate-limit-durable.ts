@@ -47,11 +47,18 @@ export const frontendKeyRateLimit = createMiddleware<FrontendKeyRateLimitEnv>(
 
         const rateLimiter = c.env.POLLEN_RATE_LIMITER;
         if (!rateLimiter) {
-            log.warn(
-                "Skipping rate limit for publishable key, POLLEN_RATE_LIMITER binding is missing",
+            log.error(
+                "POLLEN_RATE_LIMITER binding is missing — publishable key rate limiting is DISABLED. Add binding to wrangler.toml.",
                 { keyId: apiKey.id, ip, identifier },
             );
-            return next();
+            return c.json(
+                {
+                    error: "rate_limiter_unavailable",
+                    message:
+                        "Rate limiting is not configured. Contact support.",
+                },
+                503,
+            );
         }
 
         const id = rateLimiter.idFromName(identifier);

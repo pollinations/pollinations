@@ -201,7 +201,7 @@ export function communityModelDefinition(
     };
 }
 
-function isBlockedHostname(hostname: string): boolean {
+export function isBlockedHostname(hostname: string): boolean {
     const host = hostname.toLowerCase();
     if (host === "localhost" || host.endsWith(".localhost")) return true;
     if (host.endsWith(".local")) return true;

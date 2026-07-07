@@ -184,7 +184,7 @@ export function extractApiKey(request: Request): string | null {
     const match = auth?.match(/^Bearer (.+)$/);
     if (match?.[1]) return match[1];
 
-    return new URL(request.url).searchParams.get("key");
+    return null;
 }
 
 export function assertNotBanned(user: {

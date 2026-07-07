@@ -40,8 +40,9 @@ const PERMISSIVE_CORS_OPTIONS = {
     allowMethods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     // Empty allowHeaders makes Hono reflect Access-Control-Request-Headers.
     allowHeaders: [],
-    // Public API responses are bearer-token based, not credentialed cookies.
-    exposeHeaders: ["*"],
+    // Only expose standard headers needed for API clients.
+    // Avoid exposing custom/internal headers cross-origin.
+    exposeHeaders: ["Content-Length", "Content-Type", "Content-Disposition"],
     maxAge: 600,
 };
 
@@ -54,6 +55,20 @@ function noIndex(response: Response): Response {
 
 function rewriteRequest(request: Request, url: URL): Request {
     return new Request(url.toString(), request);
+}
+
+const CSP_HEADER_VALUE =
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; base-uri 'self'";
+
+function addSecurityHeaders(response: Response): Response {
+    const res = new Response(response.body, response);
+    if (!res.headers.has("Content-Security-Policy")) {
+        res.headers.set("Content-Security-Policy", CSP_HEADER_VALUE);
+    }
+    if (!res.headers.has("X-Frame-Options")) {
+        res.headers.set("X-Frame-Options", "DENY");
+    }
+    return res;
 }
 
 function notFound(): Response {
@@ -107,6 +122,11 @@ function redirectLegacyDocs(c: Context<Env>): Response {
 app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .use("*", requestId())
     .use("*", logger)
+    .use("*", async (c, next) => {
+        await next();
+        if (!c.res.body) return;
+        c.res = addSecurityHeaders(c.res);
+    })
     .get("/robots.txt", () => robotsTxt())
     .get("/manifest.webmanifest", () => manifestResponse())
     .get("/", (c) => c.html(docsLandingHtml(c)))

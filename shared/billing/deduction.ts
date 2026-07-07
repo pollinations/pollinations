@@ -34,7 +34,7 @@ export async function atomicDeductUserBalance(
                 CASE
                     WHEN ${isPaidOnly ? 1 : 0} = 1 THEN 'pack'
                     WHEN COALESCE(tier_balance, 0) >= ${amount} THEN 'tier'
-                    WHEN COALESCE(pack_balance, 0) > 0 THEN 'pack'
+                    WHEN COALESCE(pack_balance, 0) >= ${amount} THEN 'pack'
                     ELSE 'tier'
                 END AS bucket
             FROM ${userTable}

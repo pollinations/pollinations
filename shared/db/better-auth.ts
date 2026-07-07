@@ -49,7 +49,7 @@ export const user = sqliteTable("user", {
   index("idx_user_email").on(table.email),
   index("idx_user_auto_top_up_enabled").on(table.autoTopUpEnabled),
   // GitHub profile lookup for quest checks and account display.
-  index("idx_user_github_id").on(table.githubId),
+  uniqueIndex("idx_user_github_id").on(table.githubId),
 ]);
 
 export const session = sqliteTable("session", {

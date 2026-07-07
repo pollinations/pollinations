@@ -45,6 +45,25 @@ function isBlockedImageHost(hostname: string): boolean {
         return true;
     }
 
+    if (normalized === "::1" || normalized.endsWith(".local")) {
+        return true;
+    }
+
+    if (normalized.startsWith("127.") || normalized.startsWith("10.")) {
+        return true;
+    }
+    if (normalized.startsWith("192.168.")) {
+        return true;
+    }
+    const match172 = normalized.match(/^172\.(\d+)\./);
+    if (match172) {
+        const second = Number(match172[1]);
+        if (second >= 16 && second <= 31) return true;
+    }
+    if (normalized === "169.254.169.254" || normalized.endsWith(".internal")) {
+        return true;
+    }
+
     const parts = normalized.split(".").map(Number);
     if (
         parts.length !== 4 ||

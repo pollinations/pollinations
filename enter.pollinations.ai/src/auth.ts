@@ -26,8 +26,13 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const db = drizzle(env.DB);
     const apiKeyPlugin = createApiKeyPlugin();
 
+    const adminUserIds = env.ADMIN_USER_IDS
+        ? env.ADMIN_USER_IDS.split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
+        : [];
     const adminPlugin = admin({
-        adminUserIds: ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv"],
+        adminUserIds: adminUserIds.length > 0 ? adminUserIds : ["__no_admin__"],
     });
 
     const openAPIPlugin = openAPI({
@@ -43,6 +48,9 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         basePath: "/api/auth",
         onAPIError: {
             errorURL: "/error",
+        },
+        csrf: {
+            enabled: true,
         },
         database: drizzleAdapter(db, {
             schema: betterAuthSchema,
@@ -66,11 +74,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                 : undefined,
         },
 
-        trustedOrigins: [
-            ...AUTH_TRUSTED_ORIGINS,
-            "http://localhost:3000",
-            "http://127.0.0.1:3000",
-        ],
+        trustedOrigins: AUTH_TRUSTED_ORIGINS,
         user: {
             additionalFields: authAdditionalFields.user,
         },

@@ -12,6 +12,20 @@ import { createDocsRoutes } from "./routes/docs.ts";
 import { wellKnownRoutes } from "./routes/well-known.ts";
 import { runScheduledTasks } from "./services/scheduled-tasks.ts";
 
+const CSP_HEADER_VALUE =
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; base-uri 'self'";
+
+function addSecurityHeaders(response: Response): Response {
+    const res = new Response(response.body, response);
+    if (!res.headers.has("Content-Security-Policy")) {
+        res.headers.set("Content-Security-Policy", CSP_HEADER_VALUE);
+    }
+    if (!res.headers.has("X-Frame-Options")) {
+        res.headers.set("X-Frame-Options", "DENY");
+    }
+    return res;
+}
+
 function stripTrailingSlash(path: string): string {
     return path.length > 1 ? path.replace(/\/+$/, "") : path;
 }
@@ -52,6 +66,11 @@ const app = new Hono<Env>()
     )
     .use("*", requestId())
     .use("*", logger)
+    .use("*", async (c, next) => {
+        await next();
+        if (!c.res.body) return;
+        c.res = addSecurityHeaders(c.res);
+    })
     // Prevent search engines from indexing API responses (except docs)
     .use("/api/*", async (c, next) => {
         await next();

@@ -37,6 +37,9 @@ export const ACTIVE_PUBLIC_URL_PROFILE =
     "pollinations" satisfies PublicUrlProfile;
 export const PUBLIC_URLS = PUBLIC_URL_PROFILES[ACTIVE_PUBLIC_URL_PROFILE];
 
-export const AUTH_TRUSTED_ORIGINS = Object.values(PUBLIC_URL_PROFILES).flatMap(
-    ({ root, wildcard }) => [root, wildcard],
-);
+export const AUTH_TRUSTED_ORIGINS = [
+    "https://pollinations.ai",
+    "https://*.pollinations.ai",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+];

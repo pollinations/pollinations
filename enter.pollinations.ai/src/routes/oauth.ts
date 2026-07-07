@@ -26,6 +26,7 @@ type StoredCode = {
     clientId: string;
     redirectUri: string;
     scope: string | null;
+    state: string | null;
     codeChallenge: string;
     expiresIn: number | null;
 };
@@ -62,6 +63,7 @@ const CreateCodeSchema = z.object({
     clientId: z.string().startsWith("pk_"),
     redirectUri: z.string().min(1),
     scope: z.string().optional(),
+    state: z.string().optional(),
     codeChallenge: z.string().regex(PKCE_S256_CHALLENGE_REGEX),
     codeChallengeMethod: z.literal("S256"),
     expiresIn: z.number().int().positive().nullish(),
@@ -120,6 +122,7 @@ export const oauthRoutes = new Hono<Env>()
                 // "" is meaningful: the user narrowed a requested scope to
                 // zero, and RFC 6749 §5.1 requires the token response to say so
                 scope: body.scope ?? null,
+                state: body.state ?? null,
                 codeChallenge: body.codeChallenge,
                 expiresIn: body.expiresIn ?? null,
             };
@@ -127,7 +130,10 @@ export const oauthRoutes = new Hono<Env>()
                 expirationTtl: KV_TTL,
             });
 
-            return c.json({ code });
+            return c.json({
+                code,
+                ...(stored.state && { state: stored.state }),
+            });
         },
     )
     .post("/token", async (c) => {

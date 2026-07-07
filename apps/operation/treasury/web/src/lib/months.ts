@@ -2,6 +2,12 @@ import type { Data } from "../types";
 import { fmtMonthYear } from "./format";
 
 const MONTH_RE = /^\d{4}-\d{2}$/;
+const YEAR_RE = /^\d{4}$/;
+
+export function isYearFilter(value: string): boolean {
+    return YEAR_RE.test(value);
+}
+
 export function monthLabel(month: string): string {
     if (!MONTH_RE.test(month)) return month;
     return fmtMonthYear(month.slice(0, 4), month.slice(5, 7));

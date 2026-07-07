@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { FIXTURES } from "../fixtures";
 import type { Data } from "../types";
-import { collectMonths, matchesMonth, monthLabel, yearsOf } from "./months";
+import {
+    collectMonths,
+    isYearFilter,
+    matchesMonth,
+    monthLabel,
+    yearsOf,
+} from "./months";
 
 const data: Data = {
     transactions: FIXTURES.transactions_api,
@@ -48,6 +54,14 @@ describe("matchesMonth", () => {
 
     it("undated rows are excluded from month drilldowns", () => {
         expect(matchesMonth("", "2026-03")).toBe(false);
+    });
+});
+
+describe("isYearFilter", () => {
+    it("only accepts bare four-digit years", () => {
+        expect(isYearFilter("2026")).toBe(true);
+        expect(isYearFilter("2026-07")).toBe(false);
+        expect(isYearFilter("")).toBe(false);
     });
 });
 

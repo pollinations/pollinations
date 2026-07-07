@@ -15,7 +15,7 @@ import {
     withUniqueRowKeys,
 } from "../components/DataTable";
 import { fmtPeriod } from "../lib/format";
-import { matchesMonth } from "../lib/months";
+import { isYearFilter, matchesMonth } from "../lib/months";
 import type { Data, TransactionRow } from "../types";
 
 function transactionKey(row: TransactionRow) {
@@ -26,6 +26,42 @@ function transactionKey(row: TransactionRow) {
         row.charged_amount,
         row.charged_currency,
     ].join("|");
+}
+
+export function aggregateTransactionsByYear({
+    category,
+    rows,
+    vendor,
+    year,
+}: {
+    category: string;
+    rows: TransactionRow[];
+    vendor: string;
+    year: string;
+}): TransactionRow[] {
+    const byKey = new Map<string, TransactionRow>();
+    for (const row of rows) {
+        if (!matchesMonth(row.date, year)) continue;
+        if (vendor !== "all" && row.vendor !== vendor) continue;
+        if (category !== "all" && row.category !== category) continue;
+
+        const key = `${row.vendor}|${row.category}|${row.charged_currency}`;
+        const entry = byKey.get(key) ?? {
+            date: year,
+            vendor: row.vendor,
+            category: row.category,
+            charged_amount: 0,
+            charged_currency: row.charged_currency,
+        };
+        entry.charged_amount += row.charged_amount;
+        byKey.set(key, entry);
+    }
+    return [...byKey.values()].sort(
+        (a, b) =>
+            a.vendor.localeCompare(b.vendor) ||
+            a.category.localeCompare(b.category) ||
+            a.charged_currency.localeCompare(b.charged_currency),
+    );
 }
 
 export function TransactionsTab({
@@ -39,16 +75,22 @@ export function TransactionsTab({
     month?: string;
     vendor?: string;
 }) {
-    const baseRows = useMemo(
-        () =>
-            data.transactions.filter(
-                (row) =>
-                    matchesMonth(row.date, month) &&
-                    (vendor === "all" || row.vendor === vendor) &&
-                    (category === "all" || row.category === category),
-            ),
-        [data.transactions, month, vendor, category],
-    );
+    const baseRows = useMemo(() => {
+        if (isYearFilter(month)) {
+            return aggregateTransactionsByYear({
+                category,
+                rows: data.transactions,
+                vendor,
+                year: month,
+            });
+        }
+        return data.transactions.filter(
+            (row) =>
+                matchesMonth(row.date, month) &&
+                (vendor === "all" || row.vendor === vendor) &&
+                (category === "all" || row.category === category),
+        );
+    }, [data.transactions, month, vendor, category]);
     const sortColumns = useMemo<SortColumn<TransactionRow>[]>(
         () => [
             { key: "date", value: (row) => row.date },

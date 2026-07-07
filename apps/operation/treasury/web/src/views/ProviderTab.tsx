@@ -15,7 +15,7 @@ import {
 } from "../components/DataTable";
 import { SourceCell } from "../components/Provenance";
 import { fmtPeriod } from "../lib/format";
-import { matchesMonth } from "../lib/months";
+import { isYearFilter, matchesMonth } from "../lib/months";
 import type { Data, ProviderMonthlyRow } from "../types";
 
 export function visibleProviderRows({
@@ -34,6 +34,50 @@ export function visibleProviderRows({
     );
 }
 
+export function aggregateProviderByYear({
+    providerRows,
+    vendor,
+    year,
+}: {
+    providerRows: ProviderMonthlyRow[];
+    vendor: string;
+    year: string;
+}): ProviderMonthlyRow[] {
+    const byKey = new Map<
+        string,
+        ProviderMonthlyRow & { sourceSet: Set<string> }
+    >();
+    for (const row of providerRows) {
+        if (!matchesMonth(row.month, year)) continue;
+        if (vendor !== "all" && row.vendor !== vendor) continue;
+
+        const key = `${row.vendor}|${row.currency}`;
+        const entry = byKey.get(key) ?? {
+            month: year,
+            source: "",
+            vendor: row.vendor,
+            credit: 0,
+            paid: 0,
+            currency: row.currency,
+            sourceSet: new Set<string>(),
+        };
+        entry.credit += row.credit;
+        entry.paid += row.paid;
+        entry.sourceSet.add(row.source);
+        byKey.set(key, entry);
+    }
+    return [...byKey.values()]
+        .map(({ sourceSet, ...row }) => ({
+            ...row,
+            source: [...sourceSet].sort().join(","),
+        }))
+        .sort(
+            (a, b) =>
+                a.vendor.localeCompare(b.vendor) ||
+                a.currency.localeCompare(b.currency),
+        );
+}
+
 export function ProviderTab({
     data,
     month = "",
@@ -43,15 +87,20 @@ export function ProviderTab({
     month?: string;
     vendor?: string;
 }) {
-    const baseRows = useMemo(
-        () =>
-            visibleProviderRows({
+    const baseRows = useMemo(() => {
+        if (isYearFilter(month)) {
+            return aggregateProviderByYear({
                 providerRows: data.providerMonthly,
-                month,
                 vendor,
-            }),
-        [data.providerMonthly, month, vendor],
-    );
+                year: month,
+            });
+        }
+        return visibleProviderRows({
+            providerRows: data.providerMonthly,
+            month,
+            vendor,
+        });
+    }, [data.providerMonthly, month, vendor]);
     const sortColumns = useMemo<SortColumn<ProviderMonthlyRow>[]>(
         () => [
             { key: "month", value: (row) => row.month },

@@ -114,6 +114,7 @@ type ResponseTrackingData = {
     // cache hits / not-billed paths, which return before cost calculation.
     adjustments?: BillingAdjustment[];
     contentFilterResults?: GenerationEventContentFilterParams;
+    streamDurationMs?: number;
 };
 
 export type TrackVariables = {
@@ -482,7 +483,7 @@ async function trackResponse(
         return notBilled();
     }
 
-    const { modelUsage, contentFilterResults } =
+    const { modelUsage, contentFilterResults, streamDurationMs } =
         await extractUsageAndContentFilterResults(
             eventType,
             requestTracking,
@@ -515,6 +516,7 @@ async function trackResponse(
         modelUsed: modelUsage.model,
         usage: modelUsage.usage,
         contentFilterResults,
+        streamDurationMs,
     };
 }
 
@@ -687,6 +689,7 @@ function createTrackingEvent({
         startTime,
         endTime,
         responseTime: endTime.getTime() - startTime.getTime(),
+        streamDurationMs: responseTracking.streamDurationMs,
         responseStatus: responseTracking.responseStatus,
         environment,
         eventType,
@@ -813,6 +816,7 @@ async function extractUsageAndContentFilterResultsStream(
 ): Promise<{
     modelUsage: ModelUsage | null;
     contentFilterResults: GenerationEventContentFilterParams;
+    streamDurationMs?: number;
 }> {
     const log = getLogger(["hono", "track", "stream"]);
     const EventSchema = z.object({
@@ -836,9 +840,13 @@ async function extractUsageAndContentFilterResultsStream(
     let usage: CompletionUsage | undefined;
     let promptFilterResults: ContentFilterResult = {};
     let completionFilterResults: ContentFilterResult = {};
+    let firstChunkAt: number | undefined;
+    let lastChunkAt: number | undefined;
     const streamEvents: unknown[] = [];
 
     for await (const event of events) {
+        lastChunkAt = Date.now();
+        firstChunkAt ??= lastChunkAt;
         const parseResult = EventSchema.safeParse(event);
         streamEvents.push(event);
 
@@ -873,12 +881,21 @@ async function extractUsageAndContentFilterResultsStream(
         promptFilterResults,
         completionFilterResults,
     });
+    // Pure generation window: first content chunk to last. Zero (single-chunk
+    // stream) is treated as unmeasurable rather than instantaneous.
+    const streamDurationMs =
+        firstChunkAt !== undefined &&
+        lastChunkAt !== undefined &&
+        lastChunkAt > firstChunkAt
+            ? lastChunkAt - firstChunkAt
+            : undefined;
 
     if (!model || !usage) {
         log.error("No usage object found in event stream");
         return {
             modelUsage: null,
             contentFilterResults,
+            streamDurationMs,
         };
     }
 
@@ -889,6 +906,7 @@ async function extractUsageAndContentFilterResultsStream(
             output: streamEvents.length > 0 ? { streamEvents } : undefined,
         },
         contentFilterResults,
+        streamDurationMs,
     };
 }
 
@@ -899,6 +917,7 @@ async function extractUsageAndContentFilterResults(
 ): Promise<{
     modelUsage: ModelUsage | null;
     contentFilterResults: GenerationEventContentFilterParams;
+    streamDurationMs?: number;
 }> {
     const contentType = response.headers.get("content-type") || "";
     if (

@@ -1,4 +1,5 @@
 import { getLogger } from "@logtape/logtape";
+import { getLinkedGithub } from "@shared/auth/github-account.ts";
 import { recordRewards } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
@@ -88,16 +89,20 @@ async function loadQuestUser(
     userId: string,
 ): Promise<QuestUser | null> {
     const rows = await db
-        .select({
-            id: schema.user.id,
-            githubId: schema.user.githubId,
-            githubUsername: schema.user.githubUsername,
-        })
+        .select({ id: schema.user.id })
         .from(schema.user)
         .where(eq(schema.user.id, userId))
         .limit(1);
 
-    return rows[0] ?? null;
+    const row = rows[0];
+    if (!row) return null;
+
+    const linked = await getLinkedGithub(db, userId);
+    return {
+        id: row.id,
+        githubId: linked?.githubId ?? null,
+        githubUsername: linked?.username ?? null,
+    };
 }
 
 async function findGroupRewardProposals(

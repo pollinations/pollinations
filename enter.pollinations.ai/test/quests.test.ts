@@ -1155,13 +1155,14 @@ test("quest check records elixpo intern easter egg once", async ({
 }) => {
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
+    // Update the account row so getLinkedGithub returns the elixpo identity.
     await db
-        .update(schema.user)
+        .update(schema.account)
         .set({
-            githubId: 161_109_909,
-            githubUsername: "elixpo",
+            accountId: String(161_109_909),
+            username: "elixpo",
         })
-        .where(eq(schema.user.id, user.id));
+        .where(eq(schema.account.userId, user.id));
 
     mocks.github.state.user = {
         ...mocks.github.state.user,
@@ -1310,6 +1311,16 @@ test("two lazy GitHub issue bounties each record independently", async ({
         tier: "spore",
         tierBalance: 0,
         packBalance: 0,
+    });
+    // Insert account row so getLinkedGithub resolves for this user.
+    await db.insert(schema.account).values({
+        id: "community-issue-second-user-account",
+        accountId: String(secondGithubId),
+        providerId: "github",
+        username: "second-dev",
+        userId: "community-issue-second-user",
+        createdAt: new Date(),
+        updatedAt: new Date(),
     });
 
     const issues = [
@@ -1474,4 +1485,69 @@ test("account quest history accepts account usage permission", async ({
     await expect(response.json()).resolves.toMatchObject({
         rewards: [],
     });
+});
+
+test("github quest resolves from account row when user columns are null", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    // Proves loadQuestUser reads githubId/githubUsername from the account table,
+    // not the legacy user.github_id / user.github_username columns.
+    const db = drizzle(env.DB, { schema });
+    await mocks.enable("github", "tinybird");
+
+    // Seed a second user whose user columns are null but who has a github account row.
+    const accountGithubId = 77777;
+    const accountGithubUsername = "account-only-user";
+    const userId = "account-github-identity-user";
+
+    await db.insert(schema.user).values({
+        id: userId,
+        name: "Account GitHub Identity User",
+        email: "account-github-identity@example.com",
+        emailVerified: false,
+        image: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        githubId: null,
+        githubUsername: null,
+        tier: "spore",
+        tierBalance: 0,
+        packBalance: 0,
+    });
+
+    // Insert the github account row: accountId is the GitHub numeric id as a string.
+    await db.insert(schema.account).values({
+        id: "account-github-identity-account",
+        accountId: String(accountGithubId),
+        providerId: "github",
+        username: accountGithubUsername,
+        userId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    });
+
+    // Seed a quest issue assigned to this github account.
+    const issueNumber = 4242;
+    seedQuestIssue(mocks.github.state, {
+        issueNumber,
+        title: "Account identity bounty",
+        goal: "Merge the linked PR.",
+        reward: 7,
+        assigneeGithubId: accountGithubId,
+        assigneeLogin: accountGithubUsername,
+        completedByPrNumber: issueNumber + 1000,
+    });
+
+    const result = await checkQuestsForUser(env, userId);
+    // The quest should resolve using the account row's github identity.
+    expect(result.recorded).toBeGreaterThanOrEqual(1);
+
+    const rewards = await db
+        .select({ questId: schema.rewards.questId })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.userId, userId));
+    expect(
+        rewards.some((r) => r.questId === `github:issue:${issueNumber}`),
+    ).toBe(true);
 });

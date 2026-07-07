@@ -37,7 +37,7 @@ async function main() {
                 "ISSUE_AUTHOR is required but was empty or undefined",
             );
         }
-        const cmd = `cd enter.pollinations.ai && npx wrangler d1 execute DB --remote --env production --command "SELECT id, tier FROM user WHERE LOWER(github_username) = LOWER('${safeUsername}');" --json`;
+        const cmd = `cd enter.pollinations.ai && npx wrangler d1 execute DB --remote --env production --command "SELECT u.id, u.tier FROM user u JOIN account a ON a.user_id = u.id AND a.provider_id = 'github' WHERE LOWER(a.username) = LOWER('${safeUsername}');" --json`;
         const output = execSync(cmd, {
             encoding: "utf-8",
             stdio: ["pipe", "pipe", "pipe"],

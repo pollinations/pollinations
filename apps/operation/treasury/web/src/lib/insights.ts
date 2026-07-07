@@ -669,6 +669,67 @@ export function economics(
         });
 }
 
+export type EconSummary = {
+    soldPaidUsd: number;
+    soldQuestsUsd: number;
+    trueCostPaidUsd: number;
+    retainedPaidUsd: number;
+    questBurnUsd: number;
+    marginUsd: number;
+    trueMultiplier: number | null; // blended Σ retained / Σ true cost
+    creditFundedPct: number | null; // true-cost-weighted credit share
+    underwaterCount: number; // rows losing cash on compute (margin < 0)
+    mostUnderpriced: EconRow | null; // lowest true × in scope
+};
+
+// Roll a set of EconRows up to the headline numbers behind the stat cards.
+// Blended true × is Σ/Σ, exactly how the table's own math composes, so the
+// card can never disagree with the rows under it.
+export function econSummary(rows: EconRow[]): EconSummary {
+    const acc: EconSummary = {
+        soldPaidUsd: 0,
+        soldQuestsUsd: 0,
+        trueCostPaidUsd: 0,
+        retainedPaidUsd: 0,
+        questBurnUsd: 0,
+        marginUsd: 0,
+        trueMultiplier: null,
+        creditFundedPct: null,
+        underwaterCount: 0,
+        mostUnderpriced: null,
+    };
+    let creditWeighted = 0;
+    let creditWeight = 0;
+    for (const row of rows) {
+        acc.soldPaidUsd += row.soldPaidUsd;
+        acc.soldQuestsUsd += row.soldQuestsUsd;
+        acc.trueCostPaidUsd += row.trueCostPaidUsd;
+        acc.retainedPaidUsd += row.retainedPaidUsd;
+        acc.questBurnUsd += row.questBurnUsd;
+        acc.marginUsd += row.marginUsd;
+        if (row.marginUsd < 0) acc.underwaterCount += 1;
+        if (row.creditSharePct != null && row.trueCostPaidUsd > 0) {
+            creditWeighted += row.creditSharePct * row.trueCostPaidUsd;
+            creditWeight += row.trueCostPaidUsd;
+        }
+        if (
+            row.trueMultiplier != null &&
+            (acc.mostUnderpriced == null ||
+                acc.mostUnderpriced.trueMultiplier == null ||
+                row.trueMultiplier < acc.mostUnderpriced.trueMultiplier)
+        ) {
+            acc.mostUnderpriced = row;
+        }
+    }
+    acc.trueMultiplier =
+        acc.trueCostPaidUsd > 0
+            ? acc.retainedPaidUsd / acc.trueCostPaidUsd
+            : null;
+    acc.creditFundedPct =
+        creditWeight > 0 ? creditWeighted / creditWeight : null;
+    return acc;
+}
+
 // --------------------------------------------------------- credit runway
 
 export type GrantStatus = {

@@ -38,7 +38,7 @@ export function gaugeParts(paid: number, quests: number) {
     };
 }
 
-function Gauge({ paid, quests }: { paid: number; quests: number }) {
+export function Gauge({ paid, quests }: { paid: number; quests: number }) {
     const parts = gaugeParts(paid, quests);
     if (!parts) return <span className="text-theme-text-soft">–</span>;
     const label = `paid ${fmtUnsignedPct(parts.paidPct)} · quests ${fmtUnsignedPct(parts.questsPct)}`;
@@ -112,6 +112,18 @@ function trueXTone(value: number | null, cashBreakEven: number | null) {
         return "text-intent-warning-text";
     }
     return "text-intent-success-text";
+}
+
+// Same thresholds as the true × cell above, mapped to a stat-card tone: red
+// loses cash on compute, amber loses after Stripe fees, green clears both.
+export function trueXStatTone(
+    value: number | null,
+    cashBreakEven: number | null,
+): "base" | "pos" | "neg" | "warn" {
+    if (value == null) return "base";
+    if (value < 1) return "neg";
+    if (cashBreakEven != null && value < cashBreakEven) return "warn";
+    return "pos";
 }
 
 function marginTone(value: number) {

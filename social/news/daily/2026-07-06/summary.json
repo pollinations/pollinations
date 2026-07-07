@@ -1,0 +1,15 @@
+{
+  "date": "2026-07-06",
+  "period_start": "2026-07-06",
+  "period_end": "2026-07-06",
+  "title": "Directory maintenance: Tomdacat for Roblox",
+  "summary": "A quiet day tending the community garden, updating the directory for a project bringing our models to Roblox developers.\n\nCleaned up the community app directory by deduplicating the Tomdacat entry and pointing it to their new home at ai.tomdacat.com. They are doing cool work wrapping our infrastructure into an OpenAI-compatible API specifically for Roblox creators. A good reminder of the weird and wonderful places this API ends up.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 12250,
+      "date": "2026-07-06"
+    }
+  ],
+  "generated_at": "2026-07-07T07:08:17.247415+00:00"
+}

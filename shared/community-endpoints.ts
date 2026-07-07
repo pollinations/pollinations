@@ -69,10 +69,6 @@ export function communityEndpointPrices(
     ) as CommunityEndpointPrices;
 }
 
-export const COMMUNITY_ENDPOINT_KINDS = ["model", "agent"] as const;
-
-export type CommunityEndpointKind = (typeof COMMUNITY_ENDPOINT_KINDS)[number];
-
 // Access/visibility of a registered endpoint. Owner-declared, but the jump out
 // of `private` (i.e. exposing to any other caller) is allowlist-gated.
 //   private → owner-only callable, unlisted, free (base cost billed to owner)
@@ -98,11 +94,9 @@ export function isSharedCommunityVisibility(
     return visibility !== "private";
 }
 
-// Owner-declared metadata: whether the endpoint is a plain model or an agent,
-// and which capabilities it supports. Declarative only — the proxy is
+// Owner-declared capability metadata. Declarative only — the proxy is
 // shape-agnostic and never enforces these.
 export type CommunityEndpointCapabilityFlags = {
-    kind: CommunityEndpointKind;
     tools: boolean;
     search: boolean;
     reasoning: boolean;
@@ -259,7 +253,6 @@ export function communityModelDefinition(
         provider: "community",
         brand: "Community",
         category: "text",
-        kind: endpoint.kind === "agent" ? "agent" : undefined,
         cost: communityPriceDefinition(endpoint),
         priceMultiplier: 1,
         billing: endpoint.toolPrices

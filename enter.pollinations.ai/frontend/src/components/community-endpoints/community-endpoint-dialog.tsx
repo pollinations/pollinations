@@ -16,7 +16,6 @@ import {
 } from "@pollinations/ui";
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
-    type CommunityEndpointKind,
     type CommunityEndpointVisibility,
 } from "@shared/community-endpoints.ts";
 import { COMMUNITY_TOOL_NAME_PATTERN } from "@shared/registry/community-billing.ts";
@@ -159,23 +158,13 @@ export function CommunityEndpointDialog({
     const hasToken = form.bearerToken.trim().length > 0;
     const tokenForRequest = { bearerToken: form.bearerToken.trim() };
 
-    function updateKind(kind: CommunityEndpointKind): void {
-        setForm((current) => ({ ...current, kind }));
-    }
-
     function updateVisibility(visibility: CommunityEndpointVisibility): void {
         setForm((current) => ({ ...current, visibility }));
         setError(null);
     }
 
-    // Switching to prompt-agent mode defaults the kind to agent (a no-code
-    // agent is an agent); switching back to external restores the model default.
     function updateMode(mode: EndpointMode): void {
-        setForm((current) => ({
-            ...current,
-            mode,
-            kind: mode === "prompt-agent" ? "agent" : "model",
-        }));
+        setForm((current) => ({ ...current, mode }));
         setTestState(idleAction);
         setError(null);
     }
@@ -564,26 +553,6 @@ export function CommunityEndpointDialog({
                     </div>
 
                     <div className="grid gap-4 sm:grid-cols-2">
-                        <FieldStack
-                            label="Type"
-                            helper="Agents run multi-step or tool-using logic behind the chat-completions shape."
-                            alignLabelRow
-                        >
-                            <div className="flex gap-2">
-                                <ToggleButton
-                                    active={form.kind === "model"}
-                                    onClick={() => updateKind("model")}
-                                >
-                                    Model
-                                </ToggleButton>
-                                <ToggleButton
-                                    active={form.kind === "agent"}
-                                    onClick={() => updateKind("agent")}
-                                >
-                                    Agent
-                                </ToggleButton>
-                            </div>
-                        </FieldStack>
                         <FieldStack
                             label="Capabilities"
                             helper="Declared metadata shown in the model catalog."

@@ -1,7 +1,6 @@
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointCapabilityFlags,
-    type CommunityEndpointKind,
     type CommunityEndpointPriceKey,
     type CommunityEndpointPrices,
     type CommunityEndpointVisibility,
@@ -73,7 +72,6 @@ export type EndpointFormState = {
     baseModel: string;
     builtinTools: PromptAgentBuiltinTool[];
     mcpServers: McpServerRow[];
-    kind: CommunityEndpointKind;
     tools: boolean;
     search: boolean;
     reasoning: boolean;
@@ -90,7 +88,6 @@ export type EndpointPayload = {
     upstreamModel: string;
     // Omitted on create (defaults private server-side); set by the publish flow.
     visibility?: CommunityEndpointVisibility;
-    kind: CommunityEndpointKind;
     tools: boolean;
     search: boolean;
     reasoning: boolean;
@@ -130,7 +127,6 @@ export const emptyForm: EndpointFormState = {
     baseModel: "",
     builtinTools: [],
     mcpServers: [],
-    kind: "model",
     tools: false,
     search: false,
     reasoning: false,
@@ -194,7 +190,6 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
             url: server.url,
             auth: server.auth ?? "",
         })),
-        kind: endpoint.kind,
         tools: endpoint.tools,
         search: endpoint.search,
         reasoning: endpoint.reasoning,
@@ -331,7 +326,6 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
         name: modelName,
         description: form.description.trim(),
         visibility: form.visibility,
-        kind: form.kind,
         tools: form.tools,
         search: form.search,
         reasoning: form.reasoning,

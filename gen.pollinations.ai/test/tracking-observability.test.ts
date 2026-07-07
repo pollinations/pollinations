@@ -107,7 +107,6 @@ function createCommunityEndpoint(
         upstreamModel: "upstream-test-model",
         bearerTokenCiphertext: "encrypted",
         visibility: "public",
-        kind: "model",
         tools: false,
         search: false,
         reasoning: false,

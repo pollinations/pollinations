@@ -59,11 +59,6 @@ export function CommunityEndpointCard({
                             )}
                             {VISIBILITY_LABELS[endpoint.visibility]}
                         </Chip>
-                        {endpoint.kind === "agent" && (
-                            <Chip intent="news" size="sm">
-                                Agent
-                            </Chip>
-                        )}
                         {capabilityLabels(endpoint).map((label) => (
                             <Chip key={label} intent="neutral" size="sm">
                                 {label}

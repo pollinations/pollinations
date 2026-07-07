@@ -46,7 +46,7 @@ interface MyModel {
     description: string | null;
     baseUrl: string;
     upstreamModel: string;
-    kind?: string;
+    visibility?: string;
     createdAt: string;
     updatedAt: string;
     [key: string]: unknown;
@@ -61,7 +61,6 @@ function addPriceOptions(command: Command): Command {
 
 function addCapabilityOptions(command: Command): Command {
     return command
-        .option("--kind <kind>", "Endpoint kind: model or agent")
         .option(
             "--tool-price <name=price>",
             "Per-call tool fee in Pollen, repeatable (e.g. --tool-price web_search=0.005). On update, replaces the whole map.",
@@ -132,13 +131,6 @@ function modelBody(opts: Record<string, unknown>, includeRequired: boolean) {
         }
     }
 
-    if (opts.kind !== undefined) {
-        if (opts.kind !== "model" && opts.kind !== "agent") {
-            printError("--kind must be 'model' or 'agent'");
-            process.exit(1);
-        }
-        body.kind = opts.kind;
-    }
     for (const flag of CAPABILITY_FLAG_KEYS) {
         if (opts[flag] !== undefined) body[flag] = opts[flag];
     }
@@ -195,12 +187,12 @@ function printModels(models: MyModel[]) {
         models.map((model) => ({
             id: chalk.dim(model.id),
             model: chalk.hex("#a78bfa").bold(model.modelId),
-            kind: model.kind ?? "model",
+            visibility: model.visibility ?? "private",
             upstream: model.upstreamModel,
             base_url: model.baseUrl,
             description: model.description ?? "-",
         })),
-        ["id", "model", "kind", "upstream", "base_url", "description"],
+        ["id", "model", "visibility", "upstream", "base_url", "description"],
     );
 }
 

@@ -245,13 +245,11 @@ describe("community endpoint helpers", () => {
         const agentDefinition = communityModelDefinition({
             modelId: "voodoohop/deep-research",
             description: "Agentic community endpoint",
-            kind: "agent",
             tools: true,
             search: true,
             reasoning: false,
             ...communityEndpointPrices({}),
         });
-        expect(agentDefinition.kind).toBe("agent");
         expect(agentDefinition.tools).toBe(true);
         expect(agentDefinition.search).toBe(true);
         expect(agentDefinition.reasoning).toBeUndefined();
@@ -261,7 +259,6 @@ describe("community endpoint helpers", () => {
             description: null,
             ...communityEndpointPrices({}),
         });
-        expect(modelDefinition.kind).toBeUndefined();
         expect(modelDefinition.tools).toBeUndefined();
         expect(modelDefinition.search).toBeUndefined();
         expect(modelDefinition.reasoning).toBeUndefined();
@@ -421,7 +418,6 @@ describe("community endpoint helpers", () => {
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
             visibility: "public",
-            kind: "model",
             tools: false,
             search: false,
             reasoning: false,
@@ -938,7 +934,6 @@ fixtureTest(
                 "sk_saved_token",
                 env.BETTER_AUTH_SECRET,
             ),
-            kind: "agent",
             tools: true,
             search: true,
             promptTextPrice: 0.1 / 1_000_000,
@@ -969,7 +964,6 @@ fixtureTest(
             alpha?: boolean;
             description?: string;
             pricing?: Record<string, string>;
-            kind?: string;
             tools?: boolean;
             capabilities?: string[];
             baseUrl?: string;
@@ -980,7 +974,6 @@ fixtureTest(
             data: {
                 id: string;
                 supported_endpoints?: string[];
-                kind?: string;
                 tools?: boolean;
             }[];
         };
@@ -1005,7 +998,6 @@ fixtureTest(
             });
             expect(listed).not.toHaveProperty("baseUrl");
             expect(listed).not.toHaveProperty("bearerTokenCiphertext");
-            expect(listed).not.toHaveProperty("kind");
 
             const listedAgent = models.find(
                 (model) => model.name === agentModelId,
@@ -1013,7 +1005,6 @@ fixtureTest(
             expect(listedAgent).toMatchObject({
                 name: agentModelId,
                 community: true,
-                kind: "agent",
                 tools: true,
                 capabilities: expect.arrayContaining([
                     "tool_calling",
@@ -1032,15 +1023,10 @@ fixtureTest(
                 }),
                 expect.objectContaining({
                     id: agentModelId,
-                    kind: "agent",
                     tools: true,
                 }),
             ]),
         );
-        const openaiPlainModel = openaiModels.data.find(
-            (model) => model.id === modelId,
-        );
-        expect(openaiPlainModel).not.toHaveProperty("kind");
     },
 );
 
@@ -1584,7 +1570,6 @@ fixtureTest(
                     baseUrl: "https://api.example.com/v1",
                     upstreamModel: "gpt-4.1-mini",
                     bearerToken: "sk_saved_token",
-                    kind: "agent",
                     tools: true,
                     toolPrices: { web_search: 0.005 },
                     promptTextPrice: 0.1,
@@ -1602,7 +1587,6 @@ fixtureTest(
             name: "my-test-model",
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
-            kind: "agent",
             tools: true,
             search: false,
             reasoning: false,
@@ -1648,7 +1632,6 @@ fixtureTest(
         expect(updateResponse.status).toBe(200);
         await expect(updateResponse.json()).resolves.toMatchObject({
             description: "Updated description",
-            kind: "agent",
             tools: false,
             search: true,
             reasoning: false,
@@ -2024,13 +2007,11 @@ fixtureTest(
         expect(createResponse.status).toBe(200);
         const created = (await createResponse.json()) as {
             id: string;
-            kind: string;
             source: string | null;
             promptAgent: typeof promptAgent | null;
         };
-        // Prompt agents default to the agent kind, never expose their raw
-        // source blob, and surface the config as promptAgent.
-        expect(created.kind).toBe("agent");
+        // Prompt agents never expose their raw source blob, and surface the
+        // config as promptAgent.
         expect(created.source).toBeNull();
         expect(created.promptAgent).toMatchObject({
             systemPrompt: "You are a terse SQL tutor.",

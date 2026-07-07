@@ -1,5 +1,4 @@
 import {
-    COMMUNITY_ENDPOINT_KINDS,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     COMMUNITY_ENDPOINT_VISIBILITIES,
     type CommunityEndpointPriceKey,
@@ -64,11 +63,6 @@ const UpdatePriceFieldsSchema = Object.fromEntries(
 >;
 
 const CAPABILITY_FLAG_KEYS = ["tools", "search", "reasoning"] as const;
-const KindSchema = z
-    .enum(COMMUNITY_ENDPOINT_KINDS)
-    .describe(
-        '"model" for a plain upstream model; "agent" for an endpoint that runs multi-step or tool-using logic behind the chat-completions shape.',
-    );
 const VisibilitySchema = z
     .enum(COMMUNITY_ENDPOINT_VISIBILITIES)
     .describe(
@@ -121,7 +115,6 @@ const CreateEndpointSchema = z
         source: SourceSchema.optional(),
         promptAgent: PromptAgentSchema.optional(),
         visibility: VisibilitySchema.optional().default("private"),
-        kind: KindSchema.optional().default("model"),
         tools: z
             .boolean()
             .optional()
@@ -169,7 +162,6 @@ const UpdateEndpointSchema = z
         upstreamModel: EndpointFieldsSchema.upstreamModel,
         bearerToken: EndpointFieldsSchema.bearerToken.optional(),
         visibility: VisibilitySchema.optional(),
-        kind: KindSchema.optional(),
         tools: z
             .boolean()
             .optional()
@@ -220,7 +212,6 @@ const CommunityEndpointResponseSchema = z.object({
     ),
     upstreamModel: z.string(),
     visibility: VisibilitySchema,
-    kind: KindSchema,
     tools: z.boolean(),
     search: z.boolean(),
     reasoning: z.boolean(),
@@ -333,7 +324,6 @@ function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
         promptAgent: storedPromptAgent?.promptAgent ?? null,
         upstreamModel: row.upstreamModel,
         visibility: row.visibility,
-        kind: row.kind,
         tools: row.tools,
         search: row.search,
         reasoning: row.reasoning,
@@ -592,10 +582,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 normalizeInputBearerToken(input.bearerToken ?? "");
             // Prompt agents default to the agent kind; source/baseUrl keep the
             // caller's choice (which itself defaults to "model").
-            const kind =
-                input.promptAgent !== undefined && input.kind === "model"
-                    ? "agent"
-                    : input.kind;
             // Prompt agents store their structured config (+ minted key id) in
             // the source column; source deploys store the raw worker source.
             const storedSource = promptAgentDeploy
@@ -617,7 +603,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
                             c.env.BETTER_AUTH_SECRET,
                         ),
                         visibility: input.visibility,
-                        kind,
                         tools: input.tools,
                         search: input.search,
                         reasoning: input.reasoning,
@@ -837,7 +822,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
             if (input.visibility !== undefined) {
                 update.visibility = input.visibility;
             }
-            if (input.kind !== undefined) update.kind = input.kind;
             for (const flag of CAPABILITY_FLAG_KEYS) {
                 if (input[flag] !== undefined) update[flag] = input[flag];
             }

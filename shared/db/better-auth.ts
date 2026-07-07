@@ -206,9 +206,6 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   source: text("source"),
   upstreamModel: text("upstream_model").notNull(),
   bearerTokenCiphertext: text("bearer_token_ciphertext").notNull(),
-  kind: text("kind", { enum: ["model", "agent"] })
-    .default("model")
-    .notNull(),
   tools: integer("tools", { mode: "boolean" }).default(false).notNull(),
   search: integer("search", { mode: "boolean" }).default(false).notNull(),
   reasoning: integer("reasoning", { mode: "boolean" }).default(false).notNull(),

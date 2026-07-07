@@ -58,7 +58,6 @@ export const ModelInfoSchema = z.object({
         "realtime",
     ]),
     brand: z.string(),
-    kind: z.enum(["model", "agent"]).optional(),
     community: z.boolean().optional(),
     pricing: z
         .record(z.string(), z.string())
@@ -159,7 +158,6 @@ export function modelInfoFromDefinition(
         aliases: service.aliases,
         category: service.category,
         brand: service.brand,
-        kind: service.kind,
         community: options.community || undefined,
         pricing: pricingInfoFromDefinition(getPriceDefinitionForModel(service)),
         fees: feesFromDefinition(service),

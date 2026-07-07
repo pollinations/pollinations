@@ -574,6 +574,9 @@ export interface AuthorizeOptions {
 
 /** User profile information */
 export interface AccountProfile {
+    /** Provider-neutral public handle. Always returned. */
+    handle: string | null;
+    /** @deprecated Use `handle`. Present only for github-linked accounts. */
     githubUsername: string | null;
     image: string | null;
     /** Current tier level (e.g. `"spore"`, `"seed"`, `"flower"`, `"nectar"`). */
@@ -875,6 +878,9 @@ export interface UserInfo {
     sub?: string;
     name?: string;
     email?: string;
+    /** Provider-neutral public handle. */
+    handle?: string;
+    /** @deprecated Use `handle`. */
     githubUsername?: string;
     tier?: string;
     [key: string]: unknown;

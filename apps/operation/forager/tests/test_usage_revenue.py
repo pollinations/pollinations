@@ -195,7 +195,7 @@ def test_usage_canonicalized_duplicates_are_summed():
             "model_quests": 0.01,
         },
         {
-            "vendor": "azure-2",
+            "vendor": "microsoft",
             "model": "gpt-4o",
             "price_paid": 0.7,
             "price_quests": 0.4,

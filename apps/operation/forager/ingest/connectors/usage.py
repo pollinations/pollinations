@@ -112,7 +112,8 @@ def monthly_rows(tb_prod, months, today):
     Returns:
         list of pollen_monthly row dicts, one per (month, vendor, model) tuple
         with nonzero data. vendor tags are canonicalized via vendor aliases
-        (bedrock/aws-bedrock → aws, azure-2 → azure, vastai → vast.ai).
+        (bedrock/aws-bedrock → aws, vastai → vast.ai, azure-2/bpai →
+        pointsflyer: the collaborator's gifted compute, all credit).
     """
     from ..aliases import VENDOR_ALIASES, canonical_vendor_tag
 

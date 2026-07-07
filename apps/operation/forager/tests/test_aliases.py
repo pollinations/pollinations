@@ -62,7 +62,10 @@ def test_same_alias_file_feeds_substring_and_exact_matching():
     assert aliases.VENDOR_TAG_ALIASES["automat-it"] == "aws"
     assert aliases.VENDOR_TAG_ALIASES["bedrock"] == "aws"
     assert aliases.VENDOR_TAG_ALIASES["vastai"] == "vast.ai"
-    assert aliases.VENDOR_TAG_ALIASES["azure-2"] == "azure"
+    # pointsflyer = gifted compute from the collaborator: OpenAI-on-Azure via
+    # his credits (azure-2) and his self-hosted Klein GPU (bpai).
+    assert aliases.VENDOR_TAG_ALIASES["azure-2"] == "pointsflyer"
+    assert aliases.VENDOR_TAG_ALIASES["bpai"] == "pointsflyer"
 
 
 def test_alias_file_is_registry_canonical_source():

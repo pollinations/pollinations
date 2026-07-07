@@ -35,8 +35,7 @@
   "azure": {
     "aliases": [
       "microsoft",
-      "azure",
-      "azure-2"
+      "azure"
     ],
     "category": "compute"
   },
@@ -448,8 +447,11 @@
     "aliases": [],
     "category": "compute"
   },
-  "bpai": {
-    "aliases": [],
+  "pointsflyer": {
+    "aliases": [
+      "azure-2",
+      "bpai"
+    ],
     "category": "compute"
   },
   "community": {

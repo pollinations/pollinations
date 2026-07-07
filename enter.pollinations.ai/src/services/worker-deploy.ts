@@ -51,7 +51,7 @@ export async function cfApi(
     );
     const body = (await response.json().catch(() => null)) as {
         success?: boolean;
-        errors?: { code?: number; message?: string }[];
+        errors?: { message?: string }[];
         result?: unknown;
     } | null;
     if (!response.ok || !body?.success) {

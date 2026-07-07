@@ -446,53 +446,20 @@ export async function detachAppDomain(
     );
 }
 
-// Minimal Cloudflare call against the PROXY account (a different account +
-// token than the origin), used only for the public custom-domain lifecycle.
-async function proxyApi(
-    proxy: ProxyDeployConfig,
-    path: string,
-    init: RequestInit,
-): Promise<unknown> {
-    const response = await fetch(
-        `${CF_API_BASE}/accounts/${proxy.accountId}${path}`,
-        {
-            ...init,
-            headers: {
-                ...init.headers,
-                Authorization: `Bearer ${proxy.apiToken}`,
-            },
-        },
-    );
-    const body = (await response.json().catch(() => null)) as {
-        success?: boolean;
-        errors?: { message?: string }[];
-        result?: unknown;
-    } | null;
-    if (!response.ok || !body?.success) {
-        const details = body?.errors
-            ?.map((error) => error.message)
-            .filter(Boolean)
-            .join("; ");
-        throw new Error(
-            `Cloudflare proxy API ${init.method ?? "GET"} ${path} failed (${response.status})${details ? `: ${details}` : ""}`,
-        );
-    }
-    return body.result;
-}
-
 // Attaches the public hostname <slug>.<publicDomain> to the proxy worker in
 // the public zone's account. The proxy's generic rule then forwards it to
 // <slug>.<originDomain> where the app worker serves. No-op when public
 // exposure is not configured (app stays reachable only at the origin host).
 // No override flags: an already-claimed public host (a core service, an
-// apps.json app) is rejected rather than stolen.
+// apps.json app) is rejected rather than stolen. The proxy account/token
+// stand in for the deploy config, so cfApi targets the public account.
 export async function attachPublicDomain(
     config: AppDeployConfig,
     hostname: string,
 ): Promise<void> {
     const { proxy } = config;
     if (!proxy) return;
-    await proxyApi(proxy, "/workers/domains", {
+    await cfApi(proxy, "/workers/domains", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -503,16 +470,23 @@ export async function attachPublicDomain(
     });
 }
 
-// Detaches the public hostname, but only when it points at the proxy service
-// (never touches a host owned by something else). Idempotent; no-op when
-// public exposure is not configured.
+// Detaches the public hostname when it points at the proxy service.
+// Idempotent; no-op when public exposure is not configured.
+//
+// CAUTION: every user-app public host attaches to the SAME shared proxy
+// service, so this is scoped by service but NOT by app — it cannot tell one
+// app's public host from another's, or from a core/apps.json route on the
+// same proxy. Only ever call it for a hostname whose public attach THIS app
+// performed and that succeeded (delete path, or insert-failure rollback).
+// Never call it after a public attach *threw*: a throw means the host was
+// already claimed by an incumbent, and this would delete that incumbent.
 export async function detachPublicDomain(
     config: AppDeployConfig,
     hostname: string,
 ): Promise<void> {
     const { proxy } = config;
     if (!proxy) return;
-    const attached = (await proxyApi(
+    const attached = (await cfApi(
         proxy,
         `/workers/domains?hostname=${encodeURIComponent(hostname)}&zone_id=${proxy.publicZoneId}`,
         { method: "GET" },

@@ -212,7 +212,12 @@ export const userAppsRoutes = new Hono<Env>()
                 // public host also blocks registration.
                 await attachPublicDomain(config, publicHostname);
             } catch (error) {
-                await detachPublicDomain(config, publicHostname);
+                // A thrown attach means the public host was already claimed by
+                // someone else (a core service, an apps.json route) — this app
+                // created no public record, so we must NOT detach it: the
+                // proxy detach is scoped only by the shared proxy service, so
+                // it would delete that live incumbent. Only unwind our own
+                // origin host + script.
                 await detachAppDomain(config, hostname, scriptName);
                 await deleteCommunityWorker(config, scriptName);
                 throw error;

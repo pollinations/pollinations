@@ -24,6 +24,9 @@ interface UserApp {
 // Recursively collect file paths under a directory. Dotfiles and node_modules
 // are skipped so a raw project dir (not just a built dist/) still deploys
 // sensibly; the caller normally points this at a build output folder.
+// Symlinks are resolved via statSync (not the withFileTypes Dirent, which
+// reports a symlink as neither file nor dir) so symlinked assets — common in
+// pnpm/monorepo builds — are not silently dropped.
 function walkFiles(root: string): string[] {
     const out: string[] = [];
     const walk = (dir: string) => {
@@ -32,8 +35,15 @@ function walkFiles(root: string): string[] {
                 continue;
             }
             const full = join(dir, entry.name);
-            if (entry.isDirectory()) walk(full);
-            else if (entry.isFile()) out.push(full);
+            let stat: ReturnType<typeof statSync>;
+            try {
+                stat = statSync(full);
+            } catch {
+                // Broken symlink or unreadable entry — skip it.
+                continue;
+            }
+            if (stat.isDirectory()) walk(full);
+            else if (stat.isFile()) out.push(full);
         }
     };
     walk(root);

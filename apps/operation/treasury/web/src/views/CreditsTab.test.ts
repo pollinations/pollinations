@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { RunwayRow } from "../lib/insights";
-import { burnedPct, depletionTone, visibleRunwayRows } from "./CreditsTab";
+import {
+    burnedPct,
+    depletionTone,
+    isActiveCreditRow,
+    visibleRunwayRows,
+} from "./CreditsTab";
 
 const row = (vendor: string): RunwayRow => ({
     vendor,
@@ -39,6 +44,13 @@ describe("burnedPct", () => {
 
     it("is null without a grant base", () => {
         expect(burnedPct({ grantedUsd: 0, burnedUsd: 50 })).toBeNull();
+    });
+});
+
+describe("isActiveCreditRow", () => {
+    it("tracks whether the credit pool is finished", () => {
+        expect(isActiveCreditRow({ finished: false })).toBe(true);
+        expect(isActiveCreditRow({ finished: true })).toBe(false);
     });
 });
 

@@ -46,6 +46,10 @@ export function burnedPct(row: Pick<RunwayRow, "burnedUsd" | "grantedUsd">) {
     return (row.burnedUsd / row.grantedUsd) * 100;
 }
 
+export function isActiveCreditRow(row: Pick<RunwayRow, "finished">) {
+    return !row.finished;
+}
+
 function visibleFlags(row: RunwayRow) {
     return row.flags.filter((flag) => !flag.startsWith("lapsed "));
 }
@@ -87,11 +91,7 @@ export function CreditsTab({
     const now = useMemo(() => new Date(), []);
     const allRows = useMemo(() => creditRunway(data, now), [data, now]);
     const rows = useMemo(
-        () => visibleRunwayRows(allRows, vendor).filter((row) => !row.finished),
-        [allRows, vendor],
-    );
-    const finished = useMemo(
-        () => visibleRunwayRows(allRows, vendor).filter((row) => row.finished),
+        () => visibleRunwayRows(allRows, vendor),
         [allRows, vendor],
     );
     const ungranted = useMemo(
@@ -130,6 +130,7 @@ export function CreditsTab({
             },
             { key: "monthlyRateUsd", value: (row) => row.monthlyRateUsd },
             { key: "depletionDate", value: (row) => row.depletionDate },
+            { key: "active", value: (row) => isActiveCreditRow(row) },
             { key: "flags", value: (row) => row.flags.join(", ") },
         ],
         [],
@@ -199,8 +200,13 @@ export function CreditsTab({
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("depletionDate")}>
-                                <HeaderHint hint="Earlier of credit exhaustion at the current rate and the next grant expiry. Red < 30 days, amber < 90.">
+                                <HeaderHint hint="Active rows show the earlier of credit exhaustion at the current rate and the next grant expiry. Finished rows show when the pool ended. Red < 30 days, amber < 90.">
                                     depletes
+                                </HeaderHint>
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("active")}>
+                                <HeaderHint hint="yes = credit remains in the pool. no = the pool is finished; rows are muted but kept in the same table for context.">
+                                    active
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("flags")}>
@@ -213,7 +219,12 @@ export function CreditsTab({
                     <TableBody>
                         {withUniqueRowKeys(sorted, (row) => row.vendor).map(
                             ({ key, row }) => (
-                                <TableRow key={key}>
+                                <TableRow
+                                    key={key}
+                                    className={
+                                        row.finished ? "opacity-60" : undefined
+                                    }
+                                >
                                     <TableCell>
                                         <GrantsHint row={row} />
                                     </TableCell>
@@ -272,9 +283,27 @@ export function CreditsTab({
                                             now,
                                         )}
                                     >
-                                        {row.depletionDate
-                                            ? `${fmtPeriod(row.depletionDate)}${row.depletionReason === "expiry" ? " (expiry)" : ""}`
-                                            : "–"}
+                                        {row.finished
+                                            ? row.finishedDate
+                                                ? fmtPeriod(row.finishedDate)
+                                                : "–"
+                                            : row.depletionDate
+                                              ? `${fmtPeriod(row.depletionDate)}${row.depletionReason === "expiry" ? " (expiry)" : ""}`
+                                              : "–"}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Chip
+                                            intent={
+                                                isActiveCreditRow(row)
+                                                    ? "alpha"
+                                                    : "neutral"
+                                            }
+                                            size="sm"
+                                        >
+                                            {isActiveCreditRow(row)
+                                                ? "yes"
+                                                : "no"}
+                                        </Chip>
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex flex-wrap gap-1">
@@ -302,76 +331,6 @@ export function CreditsTab({
                     </TableBody>
                 </DataTable>
             </TableScroller>
-            {finished.length > 0 && (
-                <div className="flex flex-col gap-2">
-                    <TableScroller>
-                        <DataTable>
-                            <TableHead>
-                                <TableRow>
-                                    <TableHeaderCell>vendor</TableHeaderCell>
-                                    <TableHeaderCell>granted</TableHeaderCell>
-                                    <TableHeaderCell>burned</TableHeaderCell>
-                                    <TableHeaderCell>
-                                        <HeaderHint hint="Cash paid to this vendor in the last complete month — the post-credit cost of keeping it.">
-                                            cash last mo
-                                        </HeaderHint>
-                                    </TableHeaderCell>
-                                    <TableHeaderCell>
-                                        cash this mo
-                                    </TableHeaderCell>
-                                    <TableHeaderCell>
-                                        <HeaderHint hint="When the pool ended: the month the last grant filled up, or its expiry date.">
-                                            finished
-                                        </HeaderHint>
-                                    </TableHeaderCell>
-                                    <TableHeaderCell>flags</TableHeaderCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {finished.map((row) => (
-                                    <TableRow key={row.vendor}>
-                                        <TableCell>
-                                            <GrantsHint row={row} />
-                                        </TableCell>
-                                        <TableCell>
-                                            {fmtUsd(row.grantedUsd)}
-                                        </TableCell>
-                                        <TableCell>
-                                            {fmtUnsignedPct(burnedPct(row))}
-                                        </TableCell>
-                                        <TableCell>
-                                            {fmtUsd(row.cashLastMonthUsd)}
-                                        </TableCell>
-                                        <TableCell>
-                                            {fmtUsd(row.cashCurrentMonthUsd)}
-                                        </TableCell>
-                                        <TableCell className="text-theme-text-soft">
-                                            {row.finishedDate
-                                                ? fmtPeriod(row.finishedDate)
-                                                : "–"}
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-wrap gap-1">
-                                                {visibleFlags(row).map(
-                                                    (flag) => (
-                                                        <Chip
-                                                            key={flag}
-                                                            intent="warning"
-                                                            size="sm"
-                                                        >
-                                                            {flag}
-                                                        </Chip>
-                                                    ),
-                                                )}
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </DataTable>
-                    </TableScroller>
-                </div>
-            )}
             {ungranted.length > 0 && (
                 <div className="flex flex-col gap-2">
                     <TableScroller>

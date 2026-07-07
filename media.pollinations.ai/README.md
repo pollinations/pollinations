@@ -122,6 +122,17 @@ Check if a file exists without downloading.
 - `200` with metadata headers if exists
 - `404` if not found
 
+### `GET /media` (alpha)
+
+List cataloged media, newest first. The `tag` query param picks the mode:
+
+- **No `tag`** — your own library (all items you own, including untagged). Requires a user-owned API key.
+- **`?tag=<tag>`** — public gallery for that tag (any owner). Auth optional; pass a key to get `myReactions`.
+
+**Query params:** `tag` (optional), `limit` (1–100, default 20), `cursor` (opaque, from a prior response's `nextCursor`).
+
+**Response:** `{ items, nextCursor, hasMore }`. Pass `nextCursor` back as `?cursor=` while `hasMore` is true.
+
 ### `GET /`
 
 Service info and health check.
@@ -182,7 +193,7 @@ Files are stored using a truncated SHA-256 hash (16 hex characters = 64 bits) as
 
 - **30-day retention:** Files are retained for 30 days after upload. Re-uploading the same file resets the timer.
 - **No delete endpoint:** Content-addressed storage is append-only. Files cannot be deleted via the API.
-- **No user file listing:** There is no endpoint to list or manage your uploaded files.
+- **Listing (alpha):** Tag uploads (via the `tags` field) to catalog them, then list with `GET /media`. See the API Reference.
 - **Abuse/copyright:** For takedown requests, contact the Pollinations team.
 
 ## 🔑 Authentication

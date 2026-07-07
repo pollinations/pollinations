@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "3da6cc19-0977-4ebb-895a-85779c1aa0f9",
+  "id": "7628dd16-886c-4646-9d4f-0081dfb84316",
   "prevId": "b06b2fc4-e749-4253-90ba-e8da6ee5f553",
   "tables": {
     "account": {
@@ -385,6 +385,13 @@
           "notNull": true,
           "autoincrement": false
         },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "upstream_model": {
           "name": "upstream_model",
           "type": "text",
@@ -398,14 +405,6 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
-        },
-        "kind": {
-          "name": "kind",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'model'"
         },
         "tools": {
           "name": "tools",
@@ -430,6 +429,21 @@
           "notNull": true,
           "autoincrement": false,
           "default": false
+        },
+        "visibility": {
+          "name": "visibility",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'private'"
+        },
+        "tool_prices": {
+          "name": "tool_prices",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         },
         "prompt_text_price": {
           "name": "prompt_text_price",

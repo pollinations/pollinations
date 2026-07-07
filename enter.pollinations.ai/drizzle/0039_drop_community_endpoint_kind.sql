@@ -1,1 +1,0 @@
-ALTER TABLE `community_endpoint` DROP COLUMN `kind`;

@@ -250,36 +250,8 @@
     {
       "idx": 35,
       "version": "6",
-      "when": 1783347820746,
-      "tag": "0035_community_endpoint_kind_capabilities",
-      "breakpoints": true
-    },
-    {
-      "idx": 36,
-      "version": "6",
-      "when": 1783353402566,
-      "tag": "0036_community_endpoint_tool_prices",
-      "breakpoints": true
-    },
-    {
-      "idx": 37,
-      "version": "6",
-      "when": 1783364754050,
-      "tag": "0037_community_endpoint_source",
-      "breakpoints": true
-    },
-    {
-      "idx": 38,
-      "version": "6",
-      "when": 1783425705425,
-      "tag": "0038_community_endpoint_visibility",
-      "breakpoints": true
-    },
-    {
-      "idx": 39,
-      "version": "6",
-      "when": 1783444511177,
-      "tag": "0039_drop_community_endpoint_kind",
+      "when": 1783445802319,
+      "tag": "0035_aspiring_romulus",
       "breakpoints": true
     }
   ]

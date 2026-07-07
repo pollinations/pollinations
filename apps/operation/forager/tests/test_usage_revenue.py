@@ -287,6 +287,76 @@ def test_usage_month_field_is_string():
 
 
 # ---------------------------------------------------------------------------
+# _other split (local:combined era — pre-bucket week 2026-01-01..08)
+# ---------------------------------------------------------------------------
+
+
+def test_usage_other_split_by_row_ratio():
+    """A row's *_other slice splits by its own classified paid/quest ratio."""
+    canned = [
+        {
+            "vendor": "azure",
+            "model": "gpt-4o",
+            "cost_paid": 30.0,
+            "cost_quests": 70.0,
+            "cost_other": 10.0,
+            "price_paid": 30.0,
+            "price_quests": 70.0,
+            "price_other": 20.0,
+        }
+    ]
+    tb = TBStub(canned_rows=canned)
+    [row] = _usage.monthly_rows(tb, ["2026-01"], TODAY)
+    assert row["cost_paid"] == pytest.approx(33.0)  # 30 + 10 × 0.3
+    assert row["cost_quests"] == pytest.approx(77.0)
+    assert row["price_paid"] == pytest.approx(36.0)  # 30 + 20 × 0.3
+    assert row["price_quests"] == pytest.approx(84.0)
+    assert "cost_other" not in row and "price_other" not in row
+
+
+def test_usage_other_split_falls_back_to_vendor_then_global_ratio():
+    """No classified usage on the row → vendor month ratio; none on the
+    vendor → month global ratio."""
+    canned = [
+        # azure/combined-only model: falls back to azure's month ratio (1.0 paid)
+        {"vendor": "azure", "model": "old-model", "cost_other": 10.0},
+        {"vendor": "azure", "model": "gpt-4o", "cost_paid": 5.0, "cost_quests": 0.0},
+        # google has no classified usage at all: falls back to global ratio
+        {"vendor": "google", "model": "gemini", "cost_other": 8.0},
+        # aws sets the rest of the global mix: global = 5 paid / 5 quests
+        {"vendor": "bedrock", "model": "claude", "cost_quests": 5.0},
+    ]
+    tb = TBStub(canned_rows=canned)
+    rows = _usage.monthly_rows(tb, ["2026-01"], TODAY)
+    by = {(r["vendor"], r["model"]): r for r in rows}
+    assert by[("azure", "old-model")]["cost_paid"] == pytest.approx(10.0)
+    assert by[("azure", "old-model")]["cost_quests"] == pytest.approx(0.0)
+    # global classified: 5 paid (azure) + 5 quests (aws) → ratio 0.5
+    assert by[("google", "gemini")]["cost_paid"] == pytest.approx(4.0)
+    assert by[("google", "gemini")]["cost_quests"] == pytest.approx(4.0)
+
+
+def test_usage_other_split_all_quests_when_nothing_classified():
+    """Nothing classified anywhere in the month → other lands in quests."""
+    canned = [{"vendor": "azure", "model": "gpt-4o", "cost_other": 12.0}]
+    tb = TBStub(canned_rows=canned)
+    [row] = _usage.monthly_rows(tb, ["2026-01"], TODAY)
+    assert row["cost_paid"] == 0.0
+    assert row["cost_quests"] == pytest.approx(12.0)
+
+
+def test_usage_query_includes_other_bucket():
+    """The SQL must sum the non-pack/non-tier slice so local:combined
+    (Jan 1–8 2026, $21.3k) is imported instead of silently dropped."""
+    tb = TBStub()
+    _usage.monthly_rows(tb, ["2026-01"], TODAY)
+    q = tb.queries[0]
+    assert "cost_other" in q
+    assert "NOT LIKE '%pack%'" in q
+    assert "NOT LIKE '%tier%'" in q
+
+
+# ---------------------------------------------------------------------------
 # Stripe Capture helper
 # ---------------------------------------------------------------------------
 

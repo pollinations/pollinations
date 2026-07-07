@@ -6,7 +6,7 @@
 // Recent feed with attribution.
 const FEED_SQL = `
   SELECT r.id, r.quest_id, r.title, r.pollen_amount, r.balance_bucket,
-         r.earned_at, r.claimed_at, u.github_username, u.name, u.image
+         r.earned_at, r.claimed_at, u.handle AS github_username, u.name, u.image
     FROM rewards r LEFT JOIN user u ON u.id = r.user_id
    ORDER BY CASE WHEN r.earned_at > 10000000000 THEN r.earned_at ELSE r.earned_at * 1000 END DESC
    LIMIT 40`;
@@ -28,7 +28,7 @@ const TOT_SQL = `
     FROM rewards`;
 
 const TOP_SQL = `
-  SELECT u.github_username, u.name, u.image, COUNT(*) AS quests,
+  SELECT u.handle AS github_username, u.name, u.image, COUNT(*) AS quests,
          SUM(r.pollen_amount) AS pollen
     FROM rewards r LEFT JOIN user u ON u.id = r.user_id
    GROUP BY r.user_id ORDER BY pollen DESC LIMIT 8`;

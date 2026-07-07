@@ -20,6 +20,12 @@ export const APPS_PAGE = {
     pollenCtaDescription:
         "Let users sign in with their own Pollinations account.",
     pollenCtaButton: "Learn More",
+    docsCtaTitle: "📖 Read the Docs",
+    docsCtaDescription: "Everything you need to build on the API.",
+    docsCtaButton: "View Docs",
+
+    // Search
+    searchPlaceholder: "Search apps…",
 
     // Badges & tooltips
     pollenBadge: "🏵️ POLLEN",
@@ -37,7 +43,6 @@ export const APPS_PAGE = {
 
     // Legend
     pollenLegendDesc: "In-app user sign in",
-    pollenDocsLink: "</> Docs",
     buzzLegendDesc: "100+ requests / 24h",
     newLegendDesc: "Recently added",
 

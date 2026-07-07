@@ -21,6 +21,7 @@ type LoginOptions = {
 };
 
 interface ProfileResponse {
+    handle?: string | null;
     githubUsername?: string | null;
     image?: string | null;
 }
@@ -123,7 +124,7 @@ async function fetchProfileLabel(key: string): Promise<string | null> {
         apiKey: key,
     }).catch(() => null);
     if (!profile) return null;
-    return `Logged in as ${profile.githubUsername ?? "unknown"}`;
+    return `Logged in as ${profile.handle ?? profile.githubUsername ?? "unknown"}`;
 }
 
 const login = new Command("login")
@@ -269,7 +270,7 @@ export async function showAuthStatus(): Promise<void> {
     printResult({
         authenticated: true,
         key: masked,
-        name: profile.githubUsername ?? "unknown",
+        name: profile.handle ?? profile.githubUsername ?? "unknown",
         pollen: balance?.balance ?? "unknown",
     });
 }

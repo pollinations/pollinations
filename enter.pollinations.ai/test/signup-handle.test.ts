@@ -140,11 +140,43 @@ describe("ensureUniqueHandle", () => {
         await db.insert(schema.user).values(rows);
 
         const result = await ensureUniqueHandle(db, "full");
-        // Should be "full-<6 hex chars>" — not one of the 5 taken values
-        expect(result).toMatch(/^full-[a-f0-9-]{6,}$/);
+        // Should be "full-<exactly 6 hex chars>" — not one of the 5 taken values
+        expect(result).toMatch(/^full-[a-f0-9-]{6}$/);
         expect(["full", "full-1", "full-2", "full-3", "full-4"]).not.toContain(
             result,
         );
+    });
+
+    it("caps suffixed handles at 39 chars for a 39-char base candidate", async () => {
+        const db = drizzle(env.DB, { schema });
+
+        const maxHandle = "a".repeat(39);
+
+        // Seed the base handle and its -1 variant to force random path
+        await db.insert(schema.user).values([
+            {
+                id: "seed-cap0",
+                name: "Cap0",
+                email: "cap0@example.com",
+                emailVerified: false,
+                handle: maxHandle,
+                tier: "spore",
+            },
+            {
+                id: "seed-cap1",
+                name: "Cap1",
+                email: "cap1@example.com",
+                emailVerified: false,
+                handle: `${maxHandle.slice(0, 37)}-1`,
+                tier: "spore",
+            },
+        ]);
+
+        const result = await ensureUniqueHandle(db, maxHandle);
+        // Result should be capped at 39 chars and not equal to either taken value
+        expect(result.length).toBeLessThanOrEqual(39);
+        expect(result).not.toBe(maxHandle);
+        expect(result).not.toBe(`${maxHandle.slice(0, 37)}-1`);
     });
 
     it("is case-insensitive: TAKEN clashes with taken", async () => {

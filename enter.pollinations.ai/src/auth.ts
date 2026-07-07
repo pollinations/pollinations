@@ -41,13 +41,14 @@ export function sanitizeHandle(raw: string): string {
 /**
  * Ensure a candidate handle is unique in the DB.
  * Tries candidate, candidate-1 … candidate-4 then falls back to candidate-<6 random chars>.
+ * All returned handles are capped at 39 chars (GitHub username max).
  */
 export async function ensureUniqueHandle(
     db: DrizzleD1Database<typeof betterAuthSchema>,
     candidate: string,
 ): Promise<string> {
     for (let i = 0; i < 5; i++) {
-        const attempt = i === 0 ? candidate : `${candidate}-${i}`;
+        const attempt = i === 0 ? candidate : `${candidate.slice(0, 37)}-${i}`;
         const clash = await db
             .select({ id: betterAuthSchema.user.id })
             .from(betterAuthSchema.user)
@@ -55,7 +56,10 @@ export async function ensureUniqueHandle(
             .get();
         if (!clash) return attempt;
     }
-    return `${candidate}-${crypto.randomUUID().slice(0, 6)}`;
+    return `${candidate.slice(0, 32)}-${crypto.randomUUID().slice(0, 6)}`.slice(
+        0,
+        39,
+    );
 }
 
 /**

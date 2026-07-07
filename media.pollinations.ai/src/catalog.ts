@@ -157,6 +157,7 @@ export interface CatalogItem {
 export interface CatalogPage {
     items: CatalogItem[];
     nextCursor: string | null;
+    hasMore: boolean;
 }
 
 /** base64url(JSON [createdAtEpochSeconds, id]) keyset cursor. */
@@ -299,6 +300,7 @@ export async function listByTag(
         items: page.map(({ taggedAt: _taggedAt, ...item }) => item),
         nextCursor:
             hasMore && last ? encodeCursor(last.taggedAt, last.id) : null,
+        hasMore,
     };
 }
 
@@ -509,5 +511,5 @@ function paginate(rows: CatalogItem[], limit: number): CatalogPage {
     const last = items[items.length - 1];
     const nextCursor =
         hasMore && last ? encodeCursor(last.createdAt, last.id) : null;
-    return { items, nextCursor };
+    return { items, nextCursor, hasMore };
 }

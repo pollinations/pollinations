@@ -161,7 +161,11 @@ async function toPageResponse(
     db: ReturnType<typeof getDb>,
     page: CatalogPage,
     myReactionsUserId: string | null,
-): Promise<{ items: MediaItemResponse[]; nextCursor: string | null }> {
+): Promise<{
+    items: MediaItemResponse[];
+    nextCursor: string | null;
+    hasMore: boolean;
+}> {
     const itemIds = page.items.map((item) => item.id);
     const [tagsByItem, reactionsByItem, myReactionsByItem] = await Promise.all([
         tagsForItems(db, itemIds),
@@ -180,6 +184,7 @@ async function toPageResponse(
             ),
         ),
         nextCursor: page.nextCursor,
+        hasMore: page.hasMore,
     };
 }
 
@@ -234,7 +239,14 @@ const MediaPageResponseSchema = z.object({
     nextCursor: z
         .string()
         .nullable()
-        .describe("Opaque cursor for the next page, null when exhausted"),
+        .describe(
+            "Opaque cursor for the next page, null when exhausted. Treat it as a token: pass it back verbatim as `?cursor=` to fetch the next page — do not parse or construct it.",
+        ),
+    hasMore: z
+        .boolean()
+        .describe(
+            "true when more pages exist (nextCursor is non-null). Loop while hasMore is true.",
+        ),
 });
 
 const ReactionResponseSchema = z.object({

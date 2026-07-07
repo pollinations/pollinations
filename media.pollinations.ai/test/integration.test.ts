@@ -46,6 +46,7 @@ interface MediaItemResponse {
 interface MediaPageResponse {
     items: MediaItemResponse[];
     nextCursor: string | null;
+    hasMore: boolean;
 }
 
 interface ReactionResponse {
@@ -741,6 +742,7 @@ describe("media.pollinations.ai", () => {
         const page1 = (await page1Res.json()) as MediaPageResponse;
         expect(page1.items).toHaveLength(2);
         expect(page1.nextCursor).not.toBeNull();
+        expect(page1.hasMore).toBe(true);
         // Newest first: the most recently uploaded item leads the page.
         expect(page1.items[0].url).toBe(uploads[2].url);
         expect(page1.items[1].url).toBe(uploads[1].url);
@@ -755,6 +757,7 @@ describe("media.pollinations.ai", () => {
         expect(page2.items).toHaveLength(1);
         expect(page2.items[0].url).toBe(uploads[0].url);
         expect(page2.nextCursor).toBeNull();
+        expect(page2.hasMore).toBe(false);
     });
 
     it("validates the limit query param: valid passes, malformed 400s", async () => {

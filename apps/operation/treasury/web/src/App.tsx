@@ -946,7 +946,7 @@ export default function App() {
                                     onChange={setMonth}
                                 />
                             )}
-                            <div className="flex flex-wrap gap-3">
+                            <div className="flex flex-wrap items-center gap-3">
                                 {showVendorFilter && (
                                     <FilterSelect
                                         label="vendor"

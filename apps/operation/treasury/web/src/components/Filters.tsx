@@ -12,7 +12,11 @@ import { monthLabel, yearsOf } from "../lib/months";
 // select for enums, a switch for boolean views.
 
 export function FilterBar({ children }: { children: ReactNode }) {
-    return <div className="flex flex-col items-start gap-2">{children}</div>;
+    return (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            {children}
+        </div>
+    );
 }
 
 function Pill({
@@ -50,7 +54,7 @@ export function MonthFilter({
     if (months.length === 0) return null;
     return (
         <fieldset
-            className="flex flex-wrap items-center gap-1.5 text-sm text-theme-text-soft"
+            className="flex min-w-0 flex-wrap items-center gap-1.5 text-sm text-theme-text-soft"
             aria-label="month filter"
         >
             <span className="mr-0.5">period</span>

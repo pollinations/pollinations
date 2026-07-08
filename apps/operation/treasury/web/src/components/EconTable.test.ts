@@ -4,6 +4,7 @@ import {
     driftFlag,
     gaugeParts,
     hasEconActivity,
+    isGpuVendor,
     visibleEconRows,
 } from "./EconTable";
 
@@ -73,5 +74,19 @@ describe("gaugeParts", () => {
 
     it("returns null when there is nothing to draw", () => {
         expect(gaugeParts(0, 0)).toBeNull();
+    });
+});
+
+describe("isGpuVendor", () => {
+    it("returns true for gpu vendors", () => {
+        expect(isGpuVendor("runpod")).toBe(true);
+        expect(isGpuVendor("lambda")).toBe(true);
+        expect(isGpuVendor("vast.ai")).toBe(true);
+    });
+
+    it("returns false for request-based vendors", () => {
+        expect(isGpuVendor("fireworks")).toBe(false);
+        expect(isGpuVendor("google")).toBe(false);
+        expect(isGpuVendor("openrouter")).toBe(false);
     });
 });

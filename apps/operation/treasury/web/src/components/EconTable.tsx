@@ -11,6 +11,7 @@ import {
 import { useMemo } from "react";
 import { fmtMultiplier, fmtUnsignedPct, fmtUsd } from "../lib/format";
 import { breakEvenMultiplier, type EconRow } from "../lib/insights";
+import { costBasis } from "../lib/vendor-vocabulary";
 import {
     DataTable,
     GROUP_BORDER,
@@ -20,6 +21,10 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "./DataTable";
+
+export function isGpuVendor(vendor: string): boolean {
+    return costBasis(vendor) === "gpu";
+}
 
 export function visibleEconRows(rows: EconRow[], vendor: string): EconRow[] {
     return rows.filter((row) => vendor === "all" || row.vendor === vendor);
@@ -381,7 +386,21 @@ export function EconTable({
                                 : row.flags;
                             return (
                                 <TableRow key={key}>
-                                    <TableCell>{row.vendor}</TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-2">
+                                            <span>{row.vendor}</span>
+                                            {isGpuVendor(row.vendor) && (
+                                                <Chip
+                                                    data-theme="neutral"
+                                                    intent="neutral"
+                                                    size="sm"
+                                                    title="time-based vendor — per-request margin here is allocation, not truth; see the GPU tab"
+                                                >
+                                                    gpu
+                                                </Chip>
+                                            )}
+                                        </div>
+                                    </TableCell>
                                     {showModel && (
                                         <TableCell>{row.model}</TableCell>
                                     )}

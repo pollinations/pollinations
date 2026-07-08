@@ -2,86 +2,14 @@ import type { Data, GpuFleetRow } from "../types";
 import { toUsd } from "./fx";
 import { creditRunway, globalNetRatio, isInfraRow } from "./insights";
 import { matchesMonth } from "./months";
-import { GPU_VENDORS } from "./vendor-vocabulary";
 
-// Deployment-name → model mapping, hardcoded (INTERNAL_VENDORS precedent).
-// A vendor-level entry (match /.*/ on an otherwise unmatched name) catches
-// single-purpose vendors; unmatched names surface as an "unmapped fleet" flag.
 // kind: "gpu" = rented box (idle risk, time-based); "serverless" = scales to
-// zero (per-run billing inside the same vendor bill). Hybrid vendors are
-// normal — coverage math is basis-agnostic at vendor grain; kind only drives
-// the verdict (serverless never "idle-candidate") and a row chip.
-// Witnessed 2026-07-08 (REST /v1/billing per surface): runpod serverless
-// endpoints burned $2.87 Mar + $115.36 Apr, $0 since — if serverless spend
-// returns materially, split the runpod bill by billing surface (deferred;
-// the API is per-podId, so a per-deployment witness exists).
+// zero (per-run billing inside the same vendor bill). It only drives the
+// verdict (serverless never "idle-candidate") and a row chip. The kind now
+// rides on each run (data.gpuRuns.kind, stamped from forager
+// config/gpu_models.json); a model is "serverless" only when EVERY run that
+// served it was serverless.
 export type DeploymentKind = "gpu" | "serverless";
-
-export const GPU_DEPLOYMENT_GROUPS: {
-    vendor: string;
-    match: RegExp;
-    group: string;
-    models: string[];
-    kind: DeploymentKind;
-}[] = [
-    {
-        vendor: "runpod",
-        match: /zimage/i,
-        group: "zimage pods",
-        models: ["zimage"],
-        kind: "gpu",
-    },
-    {
-        vendor: "runpod",
-        match: /klein/i,
-        group: "klein (A5000)",
-        models: ["klein"],
-        kind: "gpu",
-    },
-    // storage billing surface belongs to zimage pods (RunPod charges disk separately)
-    {
-        vendor: "runpod",
-        match: /^_storage$/,
-        group: "zimage pods",
-        models: ["zimage"],
-        kind: "gpu",
-    },
-    {
-        vendor: "lambda",
-        match: /gh200|sana|ltx|ace/i,
-        group: "GH200 (shared)",
-        models: ["ltx-2", "acestep", "sana"],
-        kind: "gpu",
-    },
-    {
-        vendor: "lambda",
-        match: /./,
-        group: "lambda other",
-        models: [],
-        kind: "gpu",
-    },
-    {
-        vendor: "vast.ai",
-        match: /./,
-        group: "vast.ai box",
-        models: ["flux"],
-        kind: "gpu",
-    },
-    {
-        vendor: "modal",
-        match: /./,
-        group: "modal serverless",
-        models: ["flux-klein", "klein", "klein-large"],
-        kind: "serverless",
-    },
-    {
-        vendor: "io.net",
-        match: /./,
-        group: "io.net (vendor)",
-        models: ["flux", "zimage"],
-        kind: "gpu",
-    },
-];
 
 // Registry unit prices for break-even (shared/registry/image.ts; hardcoded —
 // no registry ingestion this phase, PLAN-INSIGHTS ruling).
@@ -95,21 +23,33 @@ export const REGISTRY_UNIT_PRICES: Record<
 };
 
 export type GpuDeploymentRow = {
-    group: string; // "GH200 (shared)"
+    group: string; // model name, or "(unmapped)" / "(vendor total)"
     vendor: string;
     month: string;
     rentUsd: number | null; // null = no provider bill witnessed that month
     models: string[];
     requests: number;
-    paidUsd: number; // Σ price_paid over mapped models
+    paidUsd: number; // Σ price_paid over the model's pollen rows
     questUsd: number; // Σ price_quests
     retainedUsd: number; // Σ (price_paid − byop_paid − model_paid)
     coverage: number | null; // retained × netRatio ÷ rent
     effUsdPerReq: number | null;
     breakEven: { model: string; unit: string; volume: number }[];
     verdict: "keep" | "raise?" | "idle-candidate" | null;
-    flags: string[]; // "unmapped fleet", "no fleet visibility", …
+    flags: string[];
     kind: DeploymentKind;
+};
+
+// Per-GPU-type aggregation (additive; Task 11's per-GPU table consumes it).
+export type GpuTypeRow = {
+    vendor: string;
+    gpu: string; // "RTX 4090"; "" → "unknown GPU"
+    month: string;
+    hours: number | null; // Σ non-null run hours; null if ALL runs null-hours
+    costUsd: number; // Σ toUsd(run.cost)
+    impliedUsdPerHr: number | null; // costUsd / hours; null when hours null/0
+    models: string[]; // distinct models across the group's runs (CSV-split)
+    flags: string[]; // "hours unknown" if any run had null hours
 };
 
 export type RunwayChip = {
@@ -119,10 +59,25 @@ export type RunwayChip = {
     tone: "danger" | "warning" | "neutral";
 };
 
+const UNMAPPED = "(unmapped)";
+const NO_BILL_FLAG = "error: no provider bill this month — rent unwitnessed";
+const NO_RUNS_FLAG =
+    "error: no gpu runs this month — deployment split unavailable";
+const ZERO_COST_FLAG = "error: gpu runs have zero cost — cannot split bill";
+const UNMAPPED_FLAG =
+    "error: unmapped model — assign the deployment in forager config/gpu_models.json";
+
+// Split a comma-joined model column into trimmed, non-empty model names.
+function splitModels(model: string): string[] {
+    return model
+        .split(",")
+        .map((m) => m.trim())
+        .filter(Boolean);
+}
+
 // Group the fleet rows by vendor, keeping only the most recent snapshot per
 // vendor (all rows with recorded_at equal to that vendor's maximum).
 function latestFleet(rows: GpuFleetRow[]): GpuFleetRow[] {
-    // max recorded_at per vendor
     const maxAt = new Map<string, string>();
     for (const row of rows) {
         const cur = maxAt.get(row.vendor);
@@ -130,19 +85,6 @@ function latestFleet(rows: GpuFleetRow[]): GpuFleetRow[] {
             maxAt.set(row.vendor, row.recorded_at);
     }
     return rows.filter((row) => row.recorded_at === maxAt.get(row.vendor));
-}
-
-// Find the first group definition matching this vendor+deployment name.
-// null → unmatched (will surface as "unmapped fleet").
-function groupFor(
-    vendor: string,
-    deployment: string,
-): (typeof GPU_DEPLOYMENT_GROUPS)[number] | null {
-    return (
-        GPU_DEPLOYMENT_GROUPS.find(
-            (g) => g.vendor === vendor && g.match.test(deployment),
-        ) ?? null
-    );
 }
 
 // Σ usd_per_hr across the latest fleet snapshot. null when no fleet rows.
@@ -155,6 +97,18 @@ export function fleetRunRate(
     return { usdPerHr, usdPerMonth: usdPerHr * 730 };
 }
 
+// Derive per-model GPU economics from data.gpuRuns. The provider bill is the
+// rent witness; run costs are only allocation weights.
+//
+// Per vendor (vendors present in gpuRuns for the filter), per month (union of
+// bill-months and run-months):
+//   1. Expand runs → per-model cost. A run's cost is split across the models
+//      its box serves by each model's pollen request share (even split when no
+//      pollen), remainder-to-last so Σ splits == run cost exactly.
+//   2. Allocate the WITNESSED provider bill across models by their run-cost
+//      weight, remainder-to-last so Σ rentUsd == the bill EXACTLY. The bill is
+//      never derived from the run ledger — a missing bill is null + an error,
+//      never the run-ledger total substituted in.
 export function gpuEconomics(
     data: Data,
     monthFilter: string,
@@ -162,405 +116,52 @@ export function gpuEconomics(
     const netRatio = globalNetRatio(data.revenueMonthly);
     const result: GpuDeploymentRow[] = [];
 
-    for (const vendor of GPU_VENDORS) {
-        // Pre-compute the set of models claimed by ANY deployment group for
-        // this vendor (union of all groups' models arrays). Used at the end of
-        // each month loop to flag pollen models that are not claimed anywhere —
-        // their revenue/requests are NOT added to any group (the flag is the
-        // signal; the operator decides mappings). Models:[] groups (modal,
-        // lambda-other) claim nothing, so all their pollen rows will flag —
-        // that is correct and intended (it tells us the mapping is missing).
-        const claimedModels = new Set<string>(
-            GPU_DEPLOYMENT_GROUPS.filter((g) => g.vendor === vendor).flatMap(
-                (g) => g.models,
-            ),
-        );
+    const runsInScope = data.gpuRuns.filter((r) =>
+        matchesMonth(r.month, monthFilter),
+    );
+    const vendors = [...new Set(runsInScope.map((r) => r.vendor))].sort();
 
-        // Step 1: build a per-month rent map (month → Σ toUsd) so that each
-        // emitted month carries only its own bill, not the total across all
-        // matched months (the critical cross-month bug: summing all months then
-        // using that total inside every per-month iteration).
-        const vendorBills = data.providerMonthly.filter(
-            (r) =>
-                r.vendor === vendor &&
-                matchesMonth(r.month, monthFilter) &&
-                !isInfraRow(r),
-        );
-        // month → total rent for that month (only months present in bills)
+    for (const vendor of vendors) {
+        // Rent witness: month → Σ toUsd(credit+paid) over compute provider rows.
         const rentByMonth = new Map<string, number>();
-        for (const r of vendorBills) {
-            const prev = rentByMonth.get(r.month) ?? 0;
+        for (const r of data.providerMonthly) {
+            if (r.vendor !== vendor) continue;
+            if (!matchesMonth(r.month, monthFilter)) continue;
+            if (isInfraRow(r)) continue;
             rentByMonth.set(
                 r.month,
-                prev + toUsd(r.credit + r.paid, r.currency, r.month),
+                (rentByMonth.get(r.month) ?? 0) +
+                    toUsd(r.credit + r.paid, r.currency, r.month),
             );
         }
 
-        // Collect the unique months that matched (for row emission)
-        const matchedMonths = [...rentByMonth.keys()];
+        const vendorRuns = runsInScope.filter((r) => r.vendor === vendor);
+        const runMonths = new Set(vendorRuns.map((r) => r.month));
+        const months = [
+            ...new Set([...rentByMonth.keys(), ...runMonths]),
+        ].sort();
 
-        // Months that have gpu_billing rows but no provider bill (billing-only).
-        // These must be seeded here or the whole month is silently dropped.
-        const billingOnlyMonths = [
-            ...new Set(
-                data.gpuBilling
-                    .filter(
-                        (r) =>
-                            r.vendor === vendor &&
-                            matchesMonth(r.month, monthFilter) &&
-                            !rentByMonth.has(r.month),
-                    )
-                    .map((r) => r.month),
-            ),
-        ];
-
-        // When monthFilter is a specific month and no bills exist, still emit
-        // rows for that month using the fleet snapshot if present.
-        const allMonths =
-            matchedMonths.length > 0 || billingOnlyMonths.length > 0
-                ? [...new Set([...matchedMonths, ...billingOnlyMonths])]
-                : // no bills: try to emit a row for the filter month if it
-                  // is a concrete month or use fleet snapshot months
-                  (() => {
-                      const fleetMonths = [
-                          ...new Set(
-                              data.gpuFleet
-                                  .filter(
-                                      (r) =>
-                                          r.vendor === vendor &&
-                                          matchesMonth(
-                                              r.recorded_at.slice(0, 7),
-                                              monthFilter,
-                                          ),
-                                  )
-                                  .map((r) => r.recorded_at.slice(0, 7)),
-                          ),
-                      ];
-                      if (fleetMonths.length > 0) return fleetMonths;
-                      // Use pollenMonthly months so pollen rows show even w/o bills
-                      const pollenMonths = [
-                          ...new Set(
-                              data.pollenMonthly
-                                  .filter(
-                                      (r) =>
-                                          r.vendor === vendor &&
-                                          matchesMonth(r.month, monthFilter),
-                                  )
-                                  .map((r) => r.month),
-                          ),
-                      ];
-                      return pollenMonths;
-                  })();
-
-        // When there is genuinely no signal for this vendor in this month, skip.
-        if (allMonths.length === 0 && rentByMonth.size === 0) continue;
-
-        // Treat an empty month list as the filter month itself (may still have fleet).
-        const months: string[] =
-            allMonths.length > 0
-                ? allMonths
-                : typeof monthFilter === "string" &&
-                    /^\d{4}-\d{2}$/.test(monthFilter)
-                  ? [monthFilter]
-                  : [];
+        const vendorKind: DeploymentKind =
+            vendor === "modal" ? "serverless" : "gpu";
 
         for (const month of months) {
-            // Rent for this specific month only; null when no bill for this month.
-            const vendorRentUsd: number | null = rentByMonth.get(month) ?? null;
-
-            // Compute unattributed pollen models: models present in pollenMonthly
-            // for this vendor+month that are NOT in claimedModels (the union of
-            // all GPU_DEPLOYMENT_GROUPS[vendor].models). Their requests/revenue
-            // are NOT added to any group row — the flag is the only signal.
-            const pollenModelsThisMonth = new Set(
-                data.pollenMonthly
-                    .filter(
-                        (r) =>
-                            r.vendor === vendor &&
-                            r.month === month &&
-                            (r.requests > 0 || r.price_paid > 0),
-                    )
-                    .map((r) => r.model),
-            );
-            const unattributedModels = [...pollenModelsThisMonth]
-                .filter((m) => !claimedModels.has(m))
-                .sort();
-            const unattributedFlag =
-                unattributedModels.length > 0
-                    ? `unattributed: ${unattributedModels.join(", ")}`
-                    : null;
-            // Step 2: billing rows for this vendor+month (preferred source).
-            const billingRows = data.gpuBilling.filter(
+            const vendorRentUsd = rentByMonth.get(month) ?? null;
+            const monthRuns = vendorRuns.filter((r) => r.month === month);
+            const monthPollen = data.pollenMonthly.filter(
                 (r) => r.vendor === vendor && r.month === month,
             );
 
-            // Step 3: fleet snapshots for this vendor+month (fallback source).
-            const fleetInMonth = data.gpuFleet.filter(
-                (r) =>
-                    r.vendor === vendor && r.recorded_at.slice(0, 7) === month,
-            );
-
-            // --- Billing-preferred path ---
-            // When billing rows exist, use their amounts as weights for rent
-            // allocation. Multiple billing rows may map to the same group.
-            // Guard: if all amounts are zero the weights are undefined and we
-            // cannot allocate rent without breaking the Σ==bill invariant —
-            // fall through to the fleet/error path instead.
-            const billingTotal =
-                billingRows.length > 0
-                    ? billingRows.reduce(
-                          (acc, r) => acc + toUsd(r.amount, r.currency, month),
-                          0,
-                      )
-                    : 0;
-            if (billingRows.length > 0 && billingTotal > 0) {
-                // Accumulate amounts per group key.
-                const groupAmounts = new Map<
-                    string,
-                    {
-                        def: (typeof GPU_DEPLOYMENT_GROUPS)[number] | null;
-                        amountUsd: number;
-                    }
-                >();
-                for (const r of billingRows) {
-                    const def = groupFor(vendor, r.deployment);
-                    const key =
-                        def !== null
-                            ? def.group
-                            : `__unmapped__${r.deployment}`;
-                    const entry = groupAmounts.get(key) ?? {
-                        def: def ?? null,
-                        amountUsd: 0,
-                    };
-                    entry.amountUsd += toUsd(r.amount, r.currency, month);
-                    groupAmounts.set(key, entry);
-                }
-
-                // DUST FOLD: collapse unmapped deployments with billing amount <
-                // $10 into a single aggregate row. Unmapped entries ≥ $10 stay
-                // individual. Σ==bill invariant is preserved: the folded amounts
-                // are summed rather than dropped.
-                const DUST_THRESHOLD = 10;
-                const dustUnmapped: {
-                    key: string;
-                    amountUsd: number;
-                }[] = [];
-                const keptGroupAmounts = new Map<
-                    string,
-                    {
-                        def: (typeof GPU_DEPLOYMENT_GROUPS)[number] | null;
-                        amountUsd: number;
-                    }
-                >();
-                for (const [key, entry] of groupAmounts.entries()) {
-                    const isUnmapped = key.startsWith("__unmapped__");
-                    if (isUnmapped && entry.amountUsd < DUST_THRESHOLD) {
-                        dustUnmapped.push({ key, amountUsd: entry.amountUsd });
-                    } else {
-                        keptGroupAmounts.set(key, entry);
-                    }
-                }
-                if (dustUnmapped.length > 0) {
-                    const dustSum = dustUnmapped.reduce(
-                        (acc, d) => acc + d.amountUsd,
-                        0,
-                    );
-                    const foldKey = `__unmapped__(${dustUnmapped.length} small deployments)`;
-                    keptGroupAmounts.set(foldKey, {
-                        def: null,
-                        amountUsd: dustSum,
-                    });
-                }
-
-                const groupEntries = [...keptGroupAmounts.entries()].map(
-                    ([key, { def, amountUsd }]) => ({ key, def, amountUsd }),
-                );
-
-                // Drift flag: if billing total diverges from provider bill by >2%.
-                const driftFlag =
-                    vendorRentUsd != null &&
-                    vendorRentUsd > 0 &&
-                    Math.abs(billingTotal - vendorRentUsd) / vendorRentUsd >
-                        0.02
-                        ? `billing drift vs bill: $${Math.round(Math.abs(billingTotal - vendorRentUsd))}`
-                        : null;
-
-                // Remainder invariant: last group absorbs float.
-                let assigned = 0;
-                const rentShares: number[] = [];
-                if (vendorRentUsd !== null && billingTotal > 0) {
-                    for (let i = 0; i < groupEntries.length - 1; i++) {
-                        const share =
-                            vendorRentUsd *
-                            (groupEntries[i].amountUsd / billingTotal);
-                        rentShares.push(share);
-                        assigned += share;
-                    }
-                    rentShares.push(vendorRentUsd - assigned);
-                } else {
-                    for (const e of groupEntries) {
-                        rentShares.push(
-                            vendorRentUsd !== null && billingTotal > 0
-                                ? vendorRentUsd * (e.amountUsd / billingTotal)
-                                : (null as unknown as number),
-                        );
-                    }
-                }
-
-                // Vendor-month flag dedup: "unattributed" and "billing drift"
-                // are vendor-month facts — attach them only to the row with the
-                // highest rentShare (deterministic tie-break: group name asc).
-                // Per-row flags (split:billed, unmapped billing id, error:*)
-                // stay per-row.
-                const rentSharesForRank = rentShares.map((s, i) => ({
-                    i,
-                    rentShare: s ?? 0,
-                    groupName:
-                        groupEntries[i].def?.group ??
-                        groupEntries[i].key
-                            .replace("__unmapped__", "")
-                            .replace(/^\(/, "("),
-                }));
-                rentSharesForRank.sort((a, b) => {
-                    if (b.rentShare !== a.rentShare)
-                        return b.rentShare - a.rentShare;
-                    return a.groupName.localeCompare(b.groupName);
-                });
-                const maxRentIdx =
-                    rentSharesForRank.length > 0 ? rentSharesForRank[0].i : -1;
-
-                for (let i = 0; i < groupEntries.length; i++) {
-                    const { key, def } = groupEntries[i];
-                    const isUnmapped = key.startsWith("__unmapped__");
-                    // dust fold row: group name is already embedded in the key
-                    const isDustFold =
-                        isUnmapped &&
-                        key.startsWith("__unmapped__(") &&
-                        key.includes("small deployments)");
-                    let groupName: string;
-                    let foldedCount: number | null = null;
-                    if (isDustFold) {
-                        const m = key.match(/__unmapped__\((\d+) small/);
-                        foldedCount = m ? parseInt(m[1], 10) : null;
-                        groupName =
-                            foldedCount !== null
-                                ? `(${foldedCount} small deployments)`
-                                : "(small deployments)";
-                    } else if (isUnmapped) {
-                        groupName = key.slice("__unmapped__".length);
-                    } else {
-                        groupName = def?.group ?? key;
-                    }
-                    const models: string[] = isUnmapped
-                        ? []
-                        : (def?.models ?? []);
-                    const kind: DeploymentKind = isUnmapped
-                        ? "gpu"
-                        : (def?.kind ?? "gpu");
-                    const rentShare =
-                        vendorRentUsd !== null ? rentShares[i] : null;
-
-                    const pollenRows = data.pollenMonthly.filter(
-                        (r) =>
-                            r.vendor === vendor &&
-                            r.month === month &&
-                            models.includes(r.model),
-                    );
-                    const { requests, paidUsd, questUsd, retainedUsd } =
-                        aggregatePollen(pollenRows, month);
-
-                    const coverage = computeCoverage(
-                        retainedUsd,
-                        netRatio,
-                        rentShare,
-                    );
-                    const effUsdPerReq =
-                        rentShare != null && requests > 0
-                            ? rentShare / requests
-                            : null;
-
-                    const flags: string[] = ["split: billed"];
-                    if (isUnmapped) {
-                        if (isDustFold && foldedCount !== null) {
-                            flags.push(
-                                `unmapped billing ids: ${foldedCount} folded`,
-                            );
-                        } else {
-                            flags.push("unmapped billing id");
-                        }
-                    }
-                    // vendor-month flags: only on the max-rent row
-                    if (i === maxRentIdx) {
-                        if (unattributedFlag) flags.push(unattributedFlag);
-                        if (driftFlag) flags.push(driftFlag);
-                    }
-
-                    // dust verdict: non-null rentUsd < $5 → null verdict (noise)
-                    const baseVerdict = verdictFor(coverage, kind);
-                    const rowVerdict =
-                        rentShare !== null && rentShare < 5
-                            ? null
-                            : baseVerdict;
-
-                    result.push({
-                        group: groupName,
-                        vendor,
-                        month,
-                        rentUsd: rentShare,
-                        models,
-                        requests,
-                        paidUsd,
-                        questUsd,
-                        retainedUsd,
-                        coverage,
-                        effUsdPerReq,
-                        breakEven: computeBreakEven(
-                            models,
-                            rentShare,
-                            netRatio,
-                        ),
-                        verdict: rowVerdict,
-                        flags,
-                        kind,
-                    });
-                }
-                continue;
-            }
-
-            // --- No-fleet path ---
-            // No billing rows and no fleet snapshots → vendor-level group with
-            // 100% share + error flag (the deployment witness is MISSING — this
-            // is an error condition, not an alternative mode; the vendor-grain
-            // numbers are still witnessed at vendor grain from provider bills +
-            // metering).
-            if (fleetInMonth.length === 0) {
-                // Emit one vendor-total row.
-                const vendorKind: DeploymentKind =
-                    vendor === "modal" ? "serverless" : "gpu";
-                const flags: string[] = [
-                    "error: no fleet snapshot this month — deployment split unavailable",
-                ];
-                // Do NOT push unattributedFlag here: this path aggregates ALL
-                // pollen rows for the vendor (lines below), so no model is
-                // excluded — the flag would be contradictory.
-
-                const pollenRows = data.pollenMonthly.filter(
-                    (r) => r.vendor === vendor && r.month === month,
-                );
+            // Vendor-total error row: a bill exists but the split cannot be done
+            // (no runs, or every run has zero cost). Never fabricates a split.
+            const emitVendorTotal = (flag: string) => {
                 const { requests, paidUsd, questUsd, retainedUsd } =
-                    aggregatePollen(pollenRows, month);
-                const models = [...new Set(pollenRows.map((r) => r.model))];
-
+                    aggregatePollen(monthPollen, month);
+                const models = [...new Set(monthPollen.map((r) => r.model))];
                 const coverage = computeCoverage(
                     retainedUsd,
                     netRatio,
                     vendorRentUsd,
                 );
-                const effUsdPerReq =
-                    vendorRentUsd != null && requests > 0
-                        ? vendorRentUsd / requests
-                        : null;
-
                 result.push({
                     group: `(${vendor} total)`,
                     vendor,
@@ -572,179 +173,156 @@ export function gpuEconomics(
                     questUsd,
                     retainedUsd,
                     coverage,
-                    effUsdPerReq,
+                    effUsdPerReq:
+                        vendorRentUsd != null && requests > 0
+                            ? vendorRentUsd / requests
+                            : null,
                     breakEven: computeBreakEven(
                         models,
                         vendorRentUsd,
                         netRatio,
                     ),
                     verdict: verdictFor(coverage, vendorKind),
-                    flags,
+                    flags: [flag],
                     kind: vendorKind,
                 });
+            };
+
+            if (monthRuns.length === 0) {
+                // Bill-only month for a runs-vendor. vendorRentUsd is non-null
+                // here (month came from rentByMonth).
+                emitVendorTotal(NO_RUNS_FLAG);
                 continue;
             }
 
-            // --- Fleet $/hr path ---
-            // Assign each fleet deployment to a group, compute mean share of
-            // per-snapshot Σusd_per_hr. Snapshots may be multiple per month;
-            // group by recorded_at first.
-            const snapshotTimes = [
-                ...new Set(fleetInMonth.map((r) => r.recorded_at)),
-            ];
-
-            // group name → { def, totalRateShare } accumulated over snapshots
-            const groupShares = new Map<
-                string,
-                {
-                    def: (typeof GPU_DEPLOYMENT_GROUPS)[number] | null;
-                    totalShare: number;
-                }
-            >();
-
-            for (const snapshotTime of snapshotTimes) {
-                const snapshot = fleetInMonth.filter(
-                    (r) => r.recorded_at === snapshotTime,
+            // Request weight per model for the multi-model split.
+            const reqByModel = new Map<string, number>();
+            for (const r of monthPollen) {
+                reqByModel.set(
+                    r.model,
+                    (reqByModel.get(r.model) ?? 0) + r.requests,
                 );
-                const snapshotTotal = snapshot.reduce(
-                    (acc, r) => acc + r.usd_per_hr,
-                    0,
-                );
-                if (snapshotTotal === 0) continue;
-
-                for (const row of snapshot) {
-                    const def = groupFor(vendor, row.deployment);
-                    if (def === null) {
-                        // Unmatched deployment: one unmapped bucket per deployment name
-                        const key = `__unmapped__${row.deployment}`;
-                        const entry = groupShares.get(key) ?? {
-                            def: null,
-                            totalShare: 0,
-                        };
-                        entry.totalShare += row.usd_per_hr / snapshotTotal;
-                        groupShares.set(key, entry);
-                    } else {
-                        const key = def.group;
-                        const entry = groupShares.get(key) ?? {
-                            def,
-                            totalShare: 0,
-                        };
-                        entry.totalShare += row.usd_per_hr / snapshotTotal;
-                        groupShares.set(key, entry);
-                    }
-                }
             }
 
-            // Mean share per group across snapshots.
-            const groupEntries = [...groupShares.entries()].map(
-                ([key, { def, totalShare }]) => ({
-                    key,
-                    def,
-                    meanShare: totalShare / snapshotTimes.length,
-                }),
-            );
+            // Expand runs → per-model cost + kind.
+            const modelCost = new Map<string, number>();
+            const modelKind = new Map<string, Set<string>>();
+            let runLedgerTotal = 0;
+            for (const run of monthRuns) {
+                const costUsd = toUsd(run.cost, run.currency, month);
+                runLedgerTotal += costUsd;
+                const runModels = splitModels(run.model);
+                const models = runModels.length > 0 ? runModels : [UNMAPPED];
 
-            // Invariant: Σ group rents == vendor rent.
-            // Allocate all but the last group by their mean share; the last
-            // group gets the remainder to kill float drift.
-            if (vendorRentUsd !== null) {
+                // Split costUsd across models by request share, remainder-to-last
+                // so Σ contributions == costUsd exactly to the cent.
+                const weights = models.map((m) => reqByModel.get(m) ?? 0);
+                const totalWeight = weights.reduce((a, b) => a + b, 0);
                 let assigned = 0;
-                for (let i = 0; i < groupEntries.length - 1; i++) {
-                    const allocated = vendorRentUsd * groupEntries[i].meanShare;
-                    groupEntries[i] = {
-                        ...groupEntries[i],
-                        meanShare: allocated / vendorRentUsd,
-                    };
-                    assigned += allocated;
-                }
-                // Last entry: remainder
-                if (groupEntries.length > 0) {
-                    const last = groupEntries[groupEntries.length - 1];
-                    const remainder = vendorRentUsd - assigned;
-                    groupEntries[groupEntries.length - 1] = {
-                        ...last,
-                        meanShare: remainder / vendorRentUsd,
-                    };
+                for (let i = 0; i < models.length; i++) {
+                    const contribution =
+                        i === models.length - 1
+                            ? costUsd - assigned
+                            : totalWeight > 0
+                              ? costUsd * (weights[i] / totalWeight)
+                              : costUsd / models.length;
+                    assigned += contribution;
+                    modelCost.set(
+                        models[i],
+                        (modelCost.get(models[i]) ?? 0) + contribution,
+                    );
+                    const kinds = modelKind.get(models[i]) ?? new Set<string>();
+                    kinds.add(run.kind);
+                    modelKind.set(models[i], kinds);
                 }
             }
 
-            // Vendor-month flag dedup: compute which group entry has the
-            // highest rentShare so we can attach vendor-month flags there only.
-            const fleetRentForRank = groupEntries.map((e, i) => ({
-                i,
-                rentShare:
-                    vendorRentUsd !== null ? vendorRentUsd * e.meanShare : 0,
-                groupName: e.def?.group ?? e.key,
-            }));
-            fleetRentForRank.sort((a, b) => {
-                if (b.rentShare !== a.rentShare)
-                    return b.rentShare - a.rentShare;
-                return a.groupName.localeCompare(b.groupName);
-            });
-            const fleetMaxRentIdx =
-                fleetRentForRank.length > 0 ? fleetRentForRank[0].i : -1;
+            if (vendorRentUsd != null && runLedgerTotal === 0) {
+                // Bill exists but nothing to weight it by.
+                emitVendorTotal(ZERO_COST_FLAG);
+                continue;
+            }
 
-            for (let ei = 0; ei < groupEntries.length; ei++) {
-                const { key, def, meanShare } = groupEntries[ei];
-                const isUnmapped = key.startsWith("__unmapped__");
-                const deploymentName = isUnmapped
-                    ? key.slice("__unmapped__".length)
-                    : null;
-                const groupName = isUnmapped
-                    ? (deploymentName ?? key)
-                    : (def?.group ?? key);
-                const models: string[] = isUnmapped ? [] : (def?.models ?? []);
-                const kind: DeploymentKind = isUnmapped
-                    ? "gpu"
-                    : (def?.kind ?? "gpu");
+            // Allocate the bill across models by run-cost weight, remainder-to-
+            // last so Σ rentShare == vendorRentUsd EXACTLY.
+            const models = [...modelCost.keys()].sort();
+            const rentShare = new Map<string, number | null>();
+            if (vendorRentUsd != null && runLedgerTotal > 0) {
+                let assigned = 0;
+                for (let i = 0; i < models.length; i++) {
+                    const share =
+                        i === models.length - 1
+                            ? vendorRentUsd - assigned
+                            : vendorRentUsd *
+                              ((modelCost.get(models[i]) ?? 0) /
+                                  runLedgerTotal);
+                    assigned += share;
+                    rentShare.set(models[i], share);
+                }
+            } else {
+                // Run-only month (no witnessed bill): rent is unknown, not zero.
+                for (const m of models) rentShare.set(m, null);
+            }
 
-                const rentShare =
-                    vendorRentUsd !== null ? vendorRentUsd * meanShare : null;
+            // Drift: run ledger diverges from the witnessed bill by >2%. It is a
+            // vendor-month fact → attach only to the max-rent row (tie: model asc).
+            let driftFlag: string | null = null;
+            if (
+                vendorRentUsd != null &&
+                vendorRentUsd > 0 &&
+                Math.abs(runLedgerTotal - vendorRentUsd) / vendorRentUsd > 0.02
+            ) {
+                driftFlag = `gpu runs vs bill drift: $${Math.round(
+                    Math.abs(runLedgerTotal - vendorRentUsd),
+                )}`;
+            }
+            let maxRentIdx = -1;
+            let maxRent = -Infinity;
+            for (let i = 0; i < models.length; i++) {
+                const share = rentShare.get(models[i]) ?? 0;
+                if (share > maxRent) {
+                    maxRent = share;
+                    maxRentIdx = i;
+                }
+            }
 
-                const pollenRows = data.pollenMonthly.filter(
-                    (r) =>
-                        r.vendor === vendor &&
-                        r.month === month &&
-                        models.includes(r.model),
-                );
+            for (let i = 0; i < models.length; i++) {
+                const model = models[i];
+                const share = rentShare.get(model) ?? null;
+                const kinds = modelKind.get(model) ?? new Set<string>();
+                const kind: DeploymentKind =
+                    kinds.size === 1 && kinds.has("serverless")
+                        ? "serverless"
+                        : "gpu";
+
+                const pollenRows = monthPollen.filter((r) => r.model === model);
                 const { requests, paidUsd, questUsd, retainedUsd } =
                     aggregatePollen(pollenRows, month);
 
-                const coverage = computeCoverage(
-                    retainedUsd,
-                    netRatio,
-                    rentShare,
-                );
-                const effUsdPerReq =
-                    rentShare != null && requests > 0
-                        ? rentShare / requests
-                        : null;
-
-                const flags: string[] = ["split: fleet $/hr"];
-                if (isUnmapped) flags.push("unmapped fleet");
-                // vendor-month flags: only on the max-rent row
-                if (ei === fleetMaxRentIdx && unattributedFlag)
-                    flags.push(unattributedFlag);
-
-                // dust verdict: non-null rentUsd < $5 → null verdict (noise)
+                const coverage = computeCoverage(retainedUsd, netRatio, share);
                 const baseVerdict = verdictFor(coverage, kind);
-                const rowVerdict =
-                    rentShare !== null && rentShare < 5 ? null : baseVerdict;
+
+                const flags: string[] = [];
+                if (model === UNMAPPED) flags.push(UNMAPPED_FLAG);
+                if (vendorRentUsd == null) flags.push(NO_BILL_FLAG);
+                if (driftFlag && i === maxRentIdx) flags.push(driftFlag);
 
                 result.push({
-                    group: groupName,
+                    group: model,
                     vendor,
                     month,
-                    rentUsd: rentShare,
-                    models,
+                    rentUsd: share,
+                    models: [model],
                     requests,
                     paidUsd,
                     questUsd,
                     retainedUsd,
                     coverage,
-                    effUsdPerReq,
-                    breakEven: computeBreakEven(models, rentShare, netRatio),
-                    verdict: rowVerdict,
+                    effUsdPerReq:
+                        share != null && requests > 0 ? share / requests : null,
+                    breakEven: computeBreakEven([model], share, netRatio),
+                    // Dust: a sub-$5 rent is noise — no verdict.
+                    verdict: share != null && share < 5 ? null : baseVerdict,
                     flags,
                     kind,
                 });
@@ -753,6 +331,68 @@ export function gpuEconomics(
     }
 
     return result;
+}
+
+// Per-GPU-type aggregation over data.gpuRuns, grouped by (vendor, gpu, month).
+export function gpuByType(data: Data, monthFilter: string): GpuTypeRow[] {
+    type Acc = {
+        vendor: string;
+        gpu: string;
+        month: string;
+        hoursSum: number;
+        hasHours: boolean;
+        anyNullHours: boolean;
+        costUsd: number;
+        models: Set<string>;
+    };
+    const groups = new Map<string, Acc>();
+    for (const run of data.gpuRuns) {
+        if (!matchesMonth(run.month, monthFilter)) continue;
+        const gpu = run.gpu || "unknown GPU";
+        const key = `${run.vendor}|${gpu}|${run.month}`;
+        const acc = groups.get(key) ?? {
+            vendor: run.vendor,
+            gpu,
+            month: run.month,
+            hoursSum: 0,
+            hasHours: false,
+            anyNullHours: false,
+            costUsd: 0,
+            models: new Set<string>(),
+        };
+        acc.costUsd += toUsd(run.cost, run.currency, run.month);
+        if (run.hours == null) {
+            acc.anyNullHours = true;
+        } else {
+            acc.hoursSum += run.hours;
+            acc.hasHours = true;
+        }
+        for (const m of splitModels(run.model)) acc.models.add(m);
+        groups.set(key, acc);
+    }
+
+    return [...groups.values()]
+        .map((acc): GpuTypeRow => {
+            const hours = acc.hasHours ? acc.hoursSum : null;
+            return {
+                vendor: acc.vendor,
+                gpu: acc.gpu,
+                month: acc.month,
+                hours,
+                costUsd: acc.costUsd,
+                impliedUsdPerHr:
+                    hours != null && hours > 0 ? acc.costUsd / hours : null,
+                models: [...acc.models].sort(),
+                flags: acc.anyNullHours ? ["hours unknown"] : [],
+            };
+        })
+        .sort(
+            (a, b) =>
+                b.costUsd - a.costUsd ||
+                a.vendor.localeCompare(b.vendor) ||
+                a.gpu.localeCompare(b.gpu) ||
+                a.month.localeCompare(b.month),
+        );
 }
 
 // Aggregate pollen metrics over a set of matching rows.

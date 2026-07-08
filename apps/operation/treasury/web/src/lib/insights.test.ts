@@ -19,6 +19,7 @@ import {
     monthlyRevenue,
     monthSpendDetail,
     pnlByMonth,
+    pnlStatement,
     transactionCashUsd,
     ungrantedCreditBurn,
     vendorPlanes,
@@ -1160,6 +1161,286 @@ describe("ungrantedCreditBurn", () => {
                 currentMonthBurnUsd: 5,
             },
         ]);
+    });
+});
+
+describe("pnlStatement", () => {
+    const now = new Date("2026-07-06T12:00:00Z");
+
+    // Two closed months plus the in-progress current month. Revenue only in
+    // May and June, so July's cash P&L is null (spend-only).
+    const data = emptyData({
+        transactions: [
+            txn({
+                date: "2026-05-10",
+                vendor: "aws",
+                category: "compute",
+                charged_amount: 300,
+                charged_currency: "USD",
+            }),
+            txn({
+                date: "2026-05-11",
+                vendor: "runpod",
+                category: "compute",
+                charged_amount: 100,
+                charged_currency: "USD",
+            }),
+            txn({
+                date: "2026-05-25",
+                vendor: "deel",
+                category: "payroll",
+                charged_amount: 100,
+                charged_currency: "USD",
+            }),
+            txn({
+                date: "2026-06-05",
+                vendor: "aws",
+                category: "compute",
+                charged_amount: 500,
+                charged_currency: "USD",
+            }),
+            txn({
+                date: "2026-06-06",
+                vendor: "runpod",
+                category: "compute",
+                charged_amount: 100,
+                charged_currency: "USD",
+            }),
+            txn({
+                date: "2026-07-02",
+                vendor: "aws",
+                category: "compute",
+                charged_amount: 50,
+                charged_currency: "USD",
+            }),
+        ],
+        providerMonthly: [
+            provider({ month: "2026-05", vendor: "lambda", credit: 200 }),
+            provider({ month: "2026-06", vendor: "lambda", credit: 300 }),
+        ],
+        revenueMonthly: [
+            {
+                source: "stripe",
+                month: "2026-05",
+                currency: "USD",
+                gross_amount: 1000,
+                fees_amount: 0,
+                refunds_amount: 0,
+            },
+            {
+                source: "stripe",
+                month: "2026-06",
+                currency: "USD",
+                gross_amount: 2000,
+                fees_amount: 0,
+                refunds_amount: 0,
+            },
+        ],
+    });
+
+    const lineByKey = (result: ReturnType<typeof pnlStatement>) =>
+        new Map(result.lines.map((line) => [line.key, line]));
+
+    it("lays out every in-window month ascending plus a YTD total for year/all", () => {
+        const year = pnlStatement(data, "2026", now);
+        expect(year.periods.map((p) => p.key)).toEqual([
+            "2026-05",
+            "2026-06",
+            "2026-07",
+            "total",
+        ]);
+        expect(year.periods.map((p) => p.kind)).toEqual([
+            "month",
+            "month",
+            "month",
+            "total",
+        ]);
+        expect(year.primary).toBe("total");
+
+        const all = pnlStatement(data, "", now);
+        expect(all.periods.map((p) => p.key)).toEqual([
+            "2026-05",
+            "2026-06",
+            "2026-07",
+            "total",
+        ]);
+    });
+
+    it("lays out prior · selected · delta for a month filter", () => {
+        const month = pnlStatement(data, "2026-06", now);
+        expect(month.periods.map((p) => p.key)).toEqual([
+            "2026-05",
+            "2026-06",
+            "delta",
+        ]);
+        expect(month.periods.map((p) => p.kind)).toEqual([
+            "month",
+            "month",
+            "delta",
+        ]);
+        expect(month.primary).toBe("2026-06");
+    });
+
+    it("orders rows: revenue, categories (CATEGORY_ORDER + extras), spend, cash, margin, credit", () => {
+        const extra = emptyData({
+            transactions: [
+                txn({
+                    date: "2026-05-01",
+                    vendor: "x",
+                    category: "zulu",
+                    charged_amount: 1,
+                    charged_currency: "USD",
+                }),
+                txn({
+                    date: "2026-05-02",
+                    vendor: "aws",
+                    category: "compute",
+                    charged_amount: 1,
+                    charged_currency: "USD",
+                }),
+            ],
+        });
+        const result = pnlStatement(extra, "2026", now);
+        expect(result.lines.map((line) => line.key)).toEqual([
+            "revenue",
+            ...CATEGORY_ORDER,
+            "zulu",
+            "total-spend",
+            "cash-pnl",
+            "net-margin",
+            "credit-burn",
+        ]);
+        expect(result.lines.map((line) => line.kind)).toEqual([
+            "revenue",
+            ...CATEGORY_ORDER.map(() => "category"),
+            "category", // zulu
+            "total-spend",
+            "cash-pnl",
+            "net-margin",
+            "credit-burn",
+        ]);
+    });
+
+    it("computes %rev against revenue on the primary period", () => {
+        const year = pnlStatement(data, "2026", now);
+        const lines = lineByKey(year);
+        // YTD revenue = 1000 + 2000 = 3000; compute spend = 400 + 600 + 50.
+        expect(lines.get("revenue")?.values.total).toBe(3000);
+        expect(lines.get("revenue")?.pctOfRevenue).toBe(100);
+        expect(lines.get("compute")?.values.total).toBe(1050);
+        expect(lines.get("compute")?.pctOfRevenue).toBeCloseTo(
+            (1050 / 3000) * 100,
+            6,
+        );
+        // total-spend = 1050 compute + 100 payroll = 1150.
+        expect(lines.get("total-spend")?.values.total).toBe(1150);
+        expect(lines.get("total-spend")?.pctOfRevenue).toBeCloseTo(
+            (1150 / 3000) * 100,
+            6,
+        );
+    });
+
+    it("reports net margin as cashPnl/revenue*100 per period", () => {
+        const year = pnlStatement(data, "2026", now);
+        const margin = lineByKey(year).get("net-margin");
+        if (!margin) throw new Error("net-margin missing");
+        // May: rev 1000, spend 500 (400 compute + 100 payroll) → pnl 500 → 50%.
+        expect(margin.values["2026-05"]).toBeCloseTo(50, 6);
+        // June: rev 2000, spend 600 → pnl 1400 → 70%.
+        expect(margin.values["2026-06"]).toBeCloseTo(70, 6);
+        // July: spend-only, cashPnl null → margin null.
+        expect(margin.values["2026-07"]).toBeNull();
+        // YTD: rev 3000, cashPnl total = 500 + 1400 = 1900 → ~63.3%.
+        expect(margin.values.total).toBeCloseTo((1900 / 3000) * 100, 6);
+        // net-margin pctOfRevenue pins the primary period's value.
+        expect(margin.pctOfRevenue).toBeCloseTo((1900 / 3000) * 100, 6);
+    });
+
+    it("computes delta = selected − prior with the correct sign", () => {
+        const month = pnlStatement(data, "2026-06", now);
+        const lines = lineByKey(month);
+        // Revenue rose 1000 → 2000.
+        expect(lines.get("revenue")?.values.delta).toBe(1000);
+        // Compute spend rose 400 → 600.
+        expect(lines.get("compute")?.values.delta).toBe(200);
+        // Payroll fell 100 → 0 (present in May, absent in June) → -100.
+        expect(lines.get("payroll")?.values["2026-05"]).toBe(100);
+        expect(lines.get("payroll")?.values["2026-06"]).toBeNull();
+        expect(lines.get("payroll")?.values.delta).toBeNull();
+        // Cash P&L rose 500 → 1400.
+        expect(lines.get("cash-pnl")?.values.delta).toBe(900);
+        // Credit burn rose 200 → 300.
+        expect(lines.get("credit-burn")?.values.delta).toBe(100);
+    });
+
+    it("attaches vendor sub-rows that sum to their category for every period", () => {
+        const year = pnlStatement(data, "2026", now);
+        const compute = lineByKey(year).get("compute");
+        if (!compute?.vendors) throw new Error("compute vendors missing");
+        expect(compute.vendors.map((v) => v.vendor)).toContain("aws");
+        expect(compute.vendors.map((v) => v.vendor)).toContain("runpod");
+
+        for (const period of year.periods) {
+            const key = period.key;
+            const categoryValue = compute.values[key];
+            const vendorSum = compute.vendors.reduce(
+                (total, vendor) => total + (vendor.values[key] ?? 0),
+                0,
+            );
+            expect(vendorSum).toBeCloseTo(categoryValue ?? 0, 6);
+        }
+    });
+
+    it("keeps vendor sub-rows aligned to category deltas in month view", () => {
+        const month = pnlStatement(data, "2026-06", now);
+        const compute = lineByKey(month).get("compute");
+        if (!compute?.vendors) throw new Error("compute vendors missing");
+        const vendorDeltaSum = compute.vendors.reduce(
+            (total, vendor) => total + (vendor.values.delta ?? 0),
+            0,
+        );
+        expect(vendorDeltaSum).toBeCloseTo(compute.values.delta ?? 0, 6);
+    });
+
+    it("flags the in-progress month on its period header only", () => {
+        const year = pnlStatement(data, "2026", now);
+        const byKey = new Map(year.periods.map((p) => [p.key, p]));
+        expect(byKey.get("2026-05")?.inProgress).toBe(false);
+        expect(byKey.get("2026-06")?.inProgress).toBe(false);
+        expect(byKey.get("2026-07")?.inProgress).toBe(true);
+    });
+
+    it("nulls cash P&L for revenue-only and spend-only months", () => {
+        const sparse = emptyData({
+            transactions: [
+                txn({
+                    date: "2026-06-01",
+                    vendor: "aws",
+                    category: "compute",
+                    charged_amount: 100,
+                    charged_currency: "USD",
+                }),
+            ],
+            revenueMonthly: [
+                {
+                    source: "stripe",
+                    month: "2026-05",
+                    currency: "USD",
+                    gross_amount: 500,
+                    fees_amount: 0,
+                    refunds_amount: 0,
+                },
+            ],
+        });
+        const result = pnlStatement(sparse, "2026", now);
+        const cash = lineByKey(result).get("cash-pnl");
+        const margin = lineByKey(result).get("net-margin");
+        // May: revenue-only (no spend) → cashPnl null.
+        expect(cash?.values["2026-05"]).toBeNull();
+        expect(margin?.values["2026-05"]).toBeNull();
+        // June: spend-only (no revenue) → cashPnl null, margin null.
+        expect(cash?.values["2026-06"]).toBeNull();
+        expect(margin?.values["2026-06"]).toBeNull();
     });
 });
 

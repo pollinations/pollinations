@@ -215,6 +215,299 @@ export function monthSpendDetail(
     return { summary, spend, creditBurn };
 }
 
+// -------------------------------------------------------- P&L statement
+
+export type PnlPeriod = {
+    key: string; // 'YYYY-MM' | 'total' | 'delta'
+    label: string;
+    kind: "month" | "total" | "delta";
+    month?: string; // for kind==='month'
+    inProgress?: boolean;
+};
+
+export type PnlVendorLine = {
+    vendor: string;
+    values: Record<string, number | null>; // periodKey → usd
+};
+
+export type PnlLine = {
+    key: string; // 'revenue' | category | 'total-spend' | 'cash-pnl' | 'net-margin' | 'credit-burn'
+    label: string;
+    kind:
+        | "revenue"
+        | "category"
+        | "total-spend"
+        | "cash-pnl"
+        | "net-margin"
+        | "credit-burn";
+    values: Record<string, number | null>; // periodKey → usd (net-margin: ratio*100)
+    pctOfRevenue: number | null; // on the primary period
+    vendors?: PnlVendorLine[]; // category lines only
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+    compute: "Compute",
+    saas: "SaaS",
+    infra: "Infra",
+    office: "Office",
+    admin: "Admin",
+    payroll: "Payroll",
+    other: "Other",
+};
+
+function categoryLabel(category: string): string {
+    return (
+        CATEGORY_LABELS[category] ??
+        category.charAt(0).toUpperCase() + category.slice(1)
+    );
+}
+
+// net-margin as a percentage: cash P&L ÷ revenue. Null when either side is
+// missing or revenue is zero — a ratio against no revenue is meaningless.
+function netMarginPct(
+    cashPnl: number | null,
+    revenue: number | null,
+): number | null {
+    if (cashPnl == null || revenue == null || revenue === 0) return null;
+    return (cashPnl / revenue) * 100;
+}
+
+// One classic P&L statement: line items are rows, periods are columns. The
+// rows never change with the filter — only the period columns do. Year/all
+// lays out each in-window month ascending plus a YTD total; a month lays out
+// prior · selected · Δ (selected − prior). Reuses pnlByMonth for the per-month
+// facts, then pivots line × period.
+export function pnlStatement(
+    data: Data,
+    filter: string,
+    now: Date,
+): { periods: PnlPeriod[]; lines: PnlLine[]; primary: string } {
+    const byMonth = new Map(
+        pnlByMonth(data, now).map((row) => [row.month, row]),
+    );
+    const isMonth = MONTH_KEY_RE.test(filter);
+
+    // Period columns and the primary period key (%rev denominator).
+    let periods: PnlPeriod[];
+    let primary: string;
+    if (isMonth) {
+        const selected = filter;
+        const prior = monthShift(selected, -1);
+        periods = [
+            {
+                key: prior,
+                label: monthLabel(prior),
+                kind: "month",
+                month: prior,
+                inProgress: byMonth.get(prior)?.monthInProgress ?? false,
+            },
+            {
+                key: selected,
+                label: monthLabel(selected),
+                kind: "month",
+                month: selected,
+                inProgress: byMonth.get(selected)?.monthInProgress ?? false,
+            },
+            { key: "delta", label: "Δ MoM", kind: "delta" },
+        ];
+        primary = selected;
+    } else {
+        const months = [...byMonth.keys()]
+            .filter((month) => matchesMonth(month, filter))
+            .sort();
+        periods = [
+            ...months.map(
+                (month): PnlPeriod => ({
+                    key: month,
+                    label: monthLabel(month),
+                    kind: "month",
+                    month,
+                    inProgress: byMonth.get(month)?.monthInProgress ?? false,
+                }),
+            ),
+            { key: "total", label: "YTD", kind: "total" },
+        ];
+        primary = "total";
+    }
+
+    const monthKeys = periods
+        .filter((period) => period.kind === "month")
+        .map((period) => period.key);
+
+    // Fill a line's month values, then derive its synthetic column (total =
+    // sum across visible months; delta = selected − prior). sum() keeps null
+    // when every contributing month is null, mirroring cashPnl semantics.
+    const fill = (
+        pick: (row: PnlMonth) => number | null,
+    ): Record<string, number | null> => {
+        const values: Record<string, number | null> = {};
+        for (const month of monthKeys) {
+            const row = byMonth.get(month);
+            values[month] = row ? pick(row) : null;
+        }
+        if (isMonth) {
+            const [prior, selected] = monthKeys;
+            values.delta = subtract(values[selected], values[prior]);
+        } else {
+            values.total = sumValues(monthKeys.map((month) => values[month]));
+        }
+        return values;
+    };
+
+    const revenueLine = fill((row) => row.revenueNetUsd);
+    const spendLine = fill((row) => row.spendUsd);
+    const cashPnlLine = fill((row) => row.cashPnlUsd);
+    const creditBurnLine = fill((row) => row.creditBurnUsd);
+
+    const netMarginLine: Record<string, number | null> = {};
+    for (const period of periods) {
+        netMarginLine[period.key] = netMarginPct(
+            cashPnlLine[period.key],
+            revenueLine[period.key],
+        );
+    }
+
+    const pctOf = (values: Record<string, number | null>): number | null => {
+        const revenue = revenueLine[primary];
+        const value = values[primary];
+        if (value == null || revenue == null || revenue === 0) return null;
+        return (value / revenue) * 100;
+    };
+
+    // Category rows follow CATEGORY_ORDER then any extras sorted, same as
+    // categoryColumns. Each carries vendor sub-rows in the same period columns;
+    // vendor rows sum to the category row for every period by construction.
+    const categories = categoryColumns([...byMonth.values()]);
+    const vendorsByCategory = pnlVendorLines(data, monthKeys, isMonth);
+
+    const categoryLines: PnlLine[] = categories.map((category) => {
+        const values = fill((row) => row.categories[category] ?? null);
+        return {
+            key: category,
+            label: categoryLabel(category),
+            kind: "category",
+            values,
+            pctOfRevenue: pctOf(values),
+            vendors: vendorsByCategory.get(category) ?? [],
+        };
+    });
+
+    const lines: PnlLine[] = [
+        {
+            key: "revenue",
+            label: "Revenue (net)",
+            kind: "revenue",
+            values: revenueLine,
+            pctOfRevenue: pctOf(revenueLine),
+        },
+        ...categoryLines,
+        {
+            key: "total-spend",
+            label: "Total spend",
+            kind: "total-spend",
+            values: spendLine,
+            pctOfRevenue: pctOf(spendLine),
+        },
+        {
+            key: "cash-pnl",
+            label: "Cash P&L",
+            kind: "cash-pnl",
+            values: cashPnlLine,
+            pctOfRevenue: pctOf(cashPnlLine),
+        },
+        {
+            key: "net-margin",
+            label: "Net margin",
+            kind: "net-margin",
+            values: netMarginLine,
+            pctOfRevenue: netMarginLine[primary],
+        },
+        {
+            key: "credit-burn",
+            label: "Credit burn",
+            kind: "credit-burn",
+            values: creditBurnLine,
+            pctOfRevenue: pctOf(creditBurnLine),
+        },
+    ];
+
+    return { periods, lines, primary };
+}
+
+// Keeps null when every contributing month is null; otherwise sums the present
+// months (a partially-witnessed total still surfaces).
+function sumValues(values: (number | null)[]): number | null {
+    const present = values.filter((value): value is number => value != null);
+    if (present.length === 0) return null;
+    return present.reduce((a, b) => a + b, 0);
+}
+
+// Δ = selected − prior. Null when either side is missing — a delta against an
+// absent month is not zero.
+function subtract(a: number | null, b: number | null): number | null {
+    if (a == null || b == null) return null;
+    return a - b;
+}
+
+// Walk data.transactions once, bucketed by category | vendor then by month.
+// Emits, per category, vendor sub-rows carrying the same period keys (plus the
+// synthetic total/delta) as the category line, so they sum to it exactly.
+function pnlVendorLines(
+    data: Data,
+    monthKeys: string[],
+    isMonth: boolean,
+): Map<string, PnlVendorLine[]> {
+    const monthSet = new Set(monthKeys);
+    // category → vendor → month → usd
+    const byCategory = new Map<string, Map<string, Map<string, number>>>();
+    for (const row of data.transactions) {
+        const month = row.date.slice(0, 7);
+        if (!monthSet.has(month)) continue;
+        const category = row.category || "other";
+        let vendors = byCategory.get(category);
+        if (!vendors) {
+            vendors = new Map();
+            byCategory.set(category, vendors);
+        }
+        let months = vendors.get(row.vendor);
+        if (!months) {
+            months = new Map();
+            vendors.set(row.vendor, months);
+        }
+        months.set(month, (months.get(month) ?? 0) + transactionCashUsd(row));
+    }
+
+    const result = new Map<string, PnlVendorLine[]>();
+    for (const [category, vendors] of byCategory) {
+        const lines: PnlVendorLine[] = [...vendors.entries()].map(
+            ([vendor, months]) => {
+                const values: Record<string, number | null> = {};
+                for (const month of monthKeys) {
+                    values[month] = months.get(month) ?? null;
+                }
+                if (isMonth) {
+                    const [prior, selected] = monthKeys;
+                    values.delta = subtract(values[selected], values[prior]);
+                } else {
+                    values.total = sumValues(
+                        monthKeys.map((month) => values[month]),
+                    );
+                }
+                return { vendor, values };
+            },
+        );
+        // Largest vendor first on the primary column, then by name.
+        const primary = isMonth ? "delta" : "total";
+        lines.sort(
+            (a, b) =>
+                (b.values[primary] ?? 0) - (a.values[primary] ?? 0) ||
+                a.vendor.localeCompare(b.vendor),
+        );
+        result.set(category, lines);
+    }
+    return result;
+}
+
 // ------------------------------------------------------ vendor three-way
 
 // Vendors that never invoice us — community models. (self-hosted was a

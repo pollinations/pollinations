@@ -5,49 +5,46 @@ import {
     TableHeaderCell,
     TableRow,
 } from "@pollinations/ui";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { DataTable, HeaderHint, TableScroller } from "../components/DataTable";
 import { StatCards, type StatItem } from "../components/StatCards";
 import { fmtPct, fmtUnsignedPct, fmtUsd } from "../lib/format";
 import {
-    categoryColumns,
-    monthSpendDetail,
-    type PnlMonth,
-    pnlByMonth,
+    type PnlLine,
+    type PnlPeriod,
+    type PnlVendorLine,
+    pnlStatement,
 } from "../lib/insights";
-import { matchesMonth, monthLabel } from "../lib/months";
 import type { Data } from "../types";
 
-const MONTH_ONLY_RE = /^\d{4}-\d{2}$/;
-
-function pnlTone(value: number | null) {
+export function pnlTone(value: number | null) {
     if (value == null) return "";
     return value >= 0 ? "text-intent-success-text" : "text-intent-danger-text";
 }
 
-function sum(values: (number | null)[]): number | null {
-    const present = values.filter((value): value is number => value != null);
-    if (present.length === 0) return null;
-    return present.reduce((a, b) => a + b, 0);
-}
-
-export function totalsRow(rows: PnlMonth[], categories: string[]) {
+// One statement, one source of truth for the cards: the primary period's line
+// values. Same shape the cards always consumed, now read off the P&L lines so
+// the headline can never disagree with the table under it.
+export function statSourceFromLines(lines: PnlLine[], primary: string) {
+    const byKey = new Map(lines.map((line) => [line.key, line]));
+    const value = (key: string): number | null =>
+        byKey.get(key)?.values[primary] ?? null;
+    const categories: Record<string, number | null> = {};
+    for (const line of lines) {
+        if (line.kind === "category") {
+            categories[line.key] = line.values[primary] ?? null;
+        }
+    }
     return {
-        revenueNetUsd: sum(rows.map((row) => row.revenueNetUsd)),
-        spendUsd: sum(rows.map((row) => row.spendUsd)),
-        cashPnlUsd: sum(rows.map((row) => row.cashPnlUsd)),
-        creditBurnUsd: rows.reduce((a, row) => a + row.creditBurnUsd, 0),
-        categories: Object.fromEntries(
-            categories.map((category) => [
-                category,
-                sum(rows.map((row) => row.categories[category] ?? null)),
-            ]),
-        ),
+        revenueNetUsd: value("revenue"),
+        spendUsd: value("total-spend"),
+        cashPnlUsd: value("cash-pnl"),
+        creditBurnUsd: value("credit-burn") ?? 0,
+        categories,
     };
 }
 
-// The four P&L headline cards, from either the multi-month totals or a single
-// month's summary — both carry the same shape, so the cards read identically.
+// The four P&L headline cards, from the primary period's aggregate.
 function pnlStatItems(source: {
     revenueNetUsd: number | null;
     spendUsd: number | null;
@@ -100,73 +97,89 @@ function pnlStatItems(source: {
     ];
 }
 
-// The matrix IS the yearly reading; one selected month flips to the
-// drill-down grain the matrix cannot show (category × vendor). Dispatch
-// before any hooks so the hook order stays stable across mode switches.
-export function PnlTab({ data, month = "" }: { data: Data; month?: string }) {
-    if (MONTH_ONLY_RE.test(month)) {
-        return <PnlMonthDetail data={data} month={month} />;
+// The displayed text for one line×period cell. net-margin values are already
+// percentages; credit-burn is soft and parenthesized (non-cash); everything
+// else is money. Kept pure so the tests can assert formatting without a DOM.
+export function pnlCellText(line: PnlLine, period: PnlPeriod): string {
+    const value = line.values[period.key] ?? null;
+    if (line.kind === "net-margin") return fmtPct(value);
+    if (line.kind === "credit-burn") {
+        return value != null && value > 0 ? `(${fmtUsd(value)})` : "–";
     }
-    return <PnlMatrix data={data} month={month} />;
+    // Delta columns are signed USD swings; a percentage-shaped line still reads
+    // as a delta of its own unit — but only net-margin/credit-burn diverge, and
+    // both are handled above, so the delta of a money line is money.
+    return fmtUsd(value);
 }
 
-function PnlMatrix({ data, month = "" }: { data: Data; month?: string }) {
-    const allRows = useMemo(() => pnlByMonth(data, new Date()), [data]);
-    const rows = useMemo(
-        () =>
-            allRows
-                .filter((row) => matchesMonth(row.month, month))
-                .sort((a, b) => b.month.localeCompare(a.month)),
-        [allRows, month],
+// Cell tone: cash-pnl and net-margin follow their sign; delta columns of money
+// lines follow the swing's sign; credit-burn stays soft; the rest are neutral.
+function pnlCellClass(line: PnlLine, period: PnlPeriod): string {
+    const value = line.values[period.key] ?? null;
+    if (line.kind === "credit-burn") return "text-theme-text-soft";
+    if (line.kind === "cash-pnl" || line.kind === "net-margin") {
+        return pnlTone(value);
+    }
+    if (period.kind === "delta") return pnlTone(value);
+    return "";
+}
+
+const HINTS: Record<string, string> = {
+    revenue:
+        "Stripe net: gross − fees − refunds, EUR→USD at monthly ECB rates.",
+    "total-spend":
+        "Sum of all category rows: total cash out for the period, by transaction date.",
+    "cash-pnl": "revenue − spend. Only shown when both sides exist.",
+    "credit-burn":
+        "Provider-metered consumption covered by granted credits. No cash left the bank, so it is NOT in cash P&L.",
+};
+
+const SEPARATOR_BEFORE = new Set(["total-spend", "credit-burn"]);
+
+// One classic P&L statement: line items are rows, periods are columns. The
+// rows never change with the filter — only the period columns do (year/all:
+// months + YTD; month: prior · selected · Δ). Category rows expand inline to
+// their vendor sub-rows in the same columns. Nothing swaps report shape.
+export function PnlTab({ data, month = "" }: { data: Data; month?: string }) {
+    const { periods, lines, primary } = useMemo(
+        () => pnlStatement(data, month, new Date()),
+        [data, month],
     );
-    const categories = useMemo(() => categoryColumns(rows), [rows]);
-    const totals = useMemo(
-        () => totalsRow(rows, categories),
-        [rows, categories],
+    const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+
+    const statSource = useMemo(
+        () => statSourceFromLines(lines, primary),
+        [lines, primary],
     );
+    const primaryPeriod = periods.find((period) => period.key === primary);
+    const columnCount = 2 + periods.length;
+
+    const toggle = (key: string) =>
+        setExpanded((current) => {
+            const next = new Set(current);
+            if (next.has(key)) next.delete(key);
+            else next.add(key);
+            return next;
+        });
 
     return (
         <div className="flex flex-col gap-4">
-            <StatCards items={pnlStatItems(totals)} />
+            {primaryPeriod?.inProgress && (
+                <span className="text-sm text-intent-danger-text">
+                    ⚠ {primaryPeriod.label} in progress — cash is still landing
+                </span>
+            )}
+            <StatCards items={pnlStatItems(statSource)} />
             <TableScroller>
                 <DataTable>
                     <TableHead>
                         <TableRow>
-                            <TableHeaderCell>month</TableHeaderCell>
-                            <TableHeaderCell>
-                                <HeaderHint hint="Stripe net: gross − fees − refunds, EUR→USD at monthly ECB rates.">
-                                    revenue
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            {categories.map((category) => (
-                                <TableHeaderCell key={category}>
-                                    {category.toLowerCase()}
-                                </TableHeaderCell>
-                            ))}
-                            <TableHeaderCell>
-                                <HeaderHint hint="Sum of all category columns: total cash out for the month, by transaction date.">
-                                    spend
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell>
-                                <HeaderHint hint="revenue − spend. Only shown when both sides exist.">
-                                    cash p&l
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell>
-                                <HeaderHint hint="Provider-metered consumption covered by granted credits. No cash left the bank, so it is NOT in cash P&L.">
-                                    credit burn
-                                </HeaderHint>
-                            </TableHeaderCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {rows.map((row) => (
-                            <TableRow key={row.month}>
-                                <TableCell>
+                            <TableHeaderCell>line item</TableHeaderCell>
+                            {periods.map((period) => (
+                                <TableHeaderCell key={period.key}>
                                     <span className="inline-flex items-center gap-1.5">
-                                        {monthLabel(row.month)}
-                                        {row.monthInProgress && (
+                                        {period.label}
+                                        {period.inProgress && (
                                             <span
                                                 title="month in progress - cash is still landing"
                                                 className="text-intent-danger-text"
@@ -175,59 +188,43 @@ function PnlMatrix({ data, month = "" }: { data: Data; month?: string }) {
                                             </span>
                                         )}
                                     </span>
-                                </TableCell>
-                                <TableCell>
-                                    {fmtUsd(row.revenueNetUsd)}
-                                </TableCell>
-                                {categories.map((category) => (
-                                    <TableCell key={category}>
-                                        {fmtUsd(
-                                            row.categories[category] ?? null,
-                                        )}
-                                    </TableCell>
-                                ))}
-                                <TableCell>{fmtUsd(row.spendUsd)}</TableCell>
-                                <TableCell className={pnlTone(row.cashPnlUsd)}>
-                                    {fmtUsd(row.cashPnlUsd)}
-                                </TableCell>
-                                <TableCell className="text-theme-text-soft">
-                                    {row.creditBurnUsd > 0
-                                        ? `(${fmtUsd(row.creditBurnUsd)})`
-                                        : "–"}
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                        {rows.length > 1 && (
-                            <TableRow>
-                                <TableCell className="font-semibold">
-                                    total
-                                </TableCell>
-                                <TableCell className="font-semibold">
-                                    {fmtUsd(totals.revenueNetUsd)}
-                                </TableCell>
-                                {categories.map((category) => (
-                                    <TableCell
-                                        key={category}
-                                        className="font-semibold"
-                                    >
-                                        {fmtUsd(totals.categories[category])}
-                                    </TableCell>
-                                ))}
-                                <TableCell className="font-semibold">
-                                    {fmtUsd(totals.spendUsd)}
-                                </TableCell>
-                                <TableCell
-                                    className={`font-semibold ${pnlTone(totals.cashPnlUsd)}`}
-                                >
-                                    {fmtUsd(totals.cashPnlUsd)}
-                                </TableCell>
-                                <TableCell className="font-semibold text-theme-text-soft">
-                                    {totals.creditBurnUsd > 0
-                                        ? `(${fmtUsd(totals.creditBurnUsd)})`
-                                        : "–"}
-                                </TableCell>
-                            </TableRow>
-                        )}
+                                </TableHeaderCell>
+                            ))}
+                            <TableHeaderCell>%rev</TableHeaderCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {lines.map((line) => {
+                            const hint = HINTS[line.key];
+                            const isCategory = line.kind === "category";
+                            const isOpen = expanded.has(line.key);
+                            const emphasis =
+                                line.kind === "revenue" ||
+                                line.kind === "total-spend" ||
+                                line.kind === "cash-pnl"
+                                    ? "font-semibold"
+                                    : "";
+                            const vendors: PnlVendorLine[] = isCategory
+                                ? (line.vendors ?? [])
+                                : [];
+                            return (
+                                <PnlLineRows
+                                    key={line.key}
+                                    line={line}
+                                    periods={periods}
+                                    hint={hint}
+                                    emphasis={emphasis}
+                                    separator={SEPARATOR_BEFORE.has(line.key)}
+                                    columnCount={columnCount}
+                                    expandable={
+                                        isCategory && vendors.length > 0
+                                    }
+                                    isOpen={isOpen}
+                                    vendors={isOpen ? vendors : []}
+                                    onToggle={() => toggle(line.key)}
+                                />
+                            );
+                        })}
                     </TableBody>
                 </DataTable>
             </TableScroller>
@@ -235,80 +232,95 @@ function PnlMatrix({ data, month = "" }: { data: Data; month?: string }) {
     );
 }
 
-function PnlMonthDetail({ data, month }: { data: Data; month: string }) {
-    const detail = useMemo(
-        () => monthSpendDetail(data, month, new Date()),
-        [data, month],
+function PnlLineRows({
+    line,
+    periods,
+    hint,
+    emphasis,
+    separator,
+    columnCount,
+    expandable,
+    isOpen,
+    vendors,
+    onToggle,
+}: {
+    line: PnlLine;
+    periods: PnlPeriod[];
+    hint: string | undefined;
+    emphasis: string;
+    separator: boolean;
+    columnCount: number;
+    expandable: boolean;
+    isOpen: boolean;
+    vendors: PnlVendorLine[];
+    onToggle: () => void;
+}) {
+    const label = hint ? (
+        <HeaderHint hint={hint}>{line.label}</HeaderHint>
+    ) : (
+        line.label
     );
-    const summary = detail.summary;
-    const source = summary ?? {
-        revenueNetUsd: null,
-        spendUsd: null,
-        cashPnlUsd: null,
-        creditBurnUsd: 0,
-        categories: {},
-    };
-
     return (
-        <div className="flex flex-col gap-4">
-            {summary?.monthInProgress && (
-                <span className="text-sm text-intent-danger-text">
-                    ⚠ {monthLabel(month)} in progress — cash is still landing
-                </span>
+        <>
+            {separator && (
+                <TableRow>
+                    <TableCell
+                        colSpan={columnCount}
+                        className="border-t border-theme-border p-0"
+                    />
+                </TableRow>
             )}
-            <StatCards items={pnlStatItems(source)} />
-            <TableScroller>
-                <DataTable>
-                    <TableHead>
-                        <TableRow>
-                            <TableHeaderCell>category</TableHeaderCell>
-                            <TableHeaderCell>vendor</TableHeaderCell>
-                            <TableHeaderCell>
-                                <HeaderHint hint="Cash out for this category × vendor: the settled Wise bank amount.">
-                                    cash
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell>% of spend</TableHeaderCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {detail.spend.map((row) => (
-                            <TableRow key={`${row.category}|${row.vendor}`}>
-                                <TableCell>{row.category}</TableCell>
-                                <TableCell>{row.vendor}</TableCell>
-                                <TableCell>{fmtUsd(row.cashUsd)}</TableCell>
-                                <TableCell className="text-theme-text-soft">
-                                    {row.pctOfSpend == null
-                                        ? "–"
-                                        : fmtUnsignedPct(row.pctOfSpend)}
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </DataTable>
-            </TableScroller>
-            {detail.creditBurn.length > 0 && (
-                <TableScroller>
-                    <DataTable>
-                        <TableHead>
-                            <TableRow>
-                                <TableHeaderCell>vendor</TableHeaderCell>
-                                <TableHeaderCell>credit</TableHeaderCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {detail.creditBurn.map((row) => (
-                                <TableRow key={row.vendor}>
-                                    <TableCell>{row.vendor}</TableCell>
-                                    <TableCell className="text-theme-text-soft">
-                                        ({fmtUsd(row.creditUsd)})
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </DataTable>
-                </TableScroller>
-            )}
-        </div>
+            <TableRow>
+                <TableCell className={emphasis}>
+                    {expandable ? (
+                        <button
+                            type="button"
+                            onClick={onToggle}
+                            className="inline-flex items-center gap-1.5 text-left hover:text-theme-text"
+                        >
+                            <span className="text-theme-text-soft">
+                                {isOpen ? "▾" : "▸"}
+                            </span>
+                            {label}
+                        </button>
+                    ) : (
+                        label
+                    )}
+                </TableCell>
+                {periods.map((period) => (
+                    <TableCell
+                        key={period.key}
+                        className={`${emphasis} ${pnlCellClass(line, period)}`.trim()}
+                    >
+                        {pnlCellText(line, period)}
+                    </TableCell>
+                ))}
+                <TableCell className={emphasis}>
+                    {line.kind === "net-margin"
+                        ? "–"
+                        : fmtUnsignedPct(line.pctOfRevenue ?? null)}
+                </TableCell>
+            </TableRow>
+            {vendors.map((vendor) => (
+                <TableRow key={`${line.key}|${vendor.vendor}`}>
+                    <TableCell className="pl-6 text-theme-text-soft">
+                        {vendor.vendor}
+                    </TableCell>
+                    {periods.map((period) => (
+                        <TableCell
+                            key={period.key}
+                            className={
+                                period.kind === "delta"
+                                    ? pnlTone(vendor.values[period.key] ?? null)
+                                    : "text-theme-text-soft"
+                            }
+                        >
+                            {fmtUsd(vendor.values[period.key] ?? null)}
+                        </TableCell>
+                    ))}
+                    <TableCell />
+                </TableRow>
+            ))}
+        </>
     );
 }

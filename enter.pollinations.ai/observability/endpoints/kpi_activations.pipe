@@ -1,7 +1,8 @@
 DESCRIPTION >
     D7 activations: users who made their first API request within 7 days
-    of registration, grouped by registration week. Joins d1_user with
-    generation_event to replace the previous hybrid D1+Tinybird+JS approach.
+    of registration, grouped by registration week. Reads first activity from
+    user_first_activity_mv so dashboard requests do not scan raw
+    generation_event.
 
 TOKEN tinybird_read READ
 
@@ -22,11 +23,8 @@ SQL >
     %
     SELECT
         user_id,
-        min(start_time) AS first_activity_time
-    FROM generation_event
-    WHERE start_time >= fromUnixTimestamp({{Int64(min_created_at, 0)}})
-        AND user_id != 'undefined'
-        AND user_id != ''
+        minMerge(first_activity_time) AS first_activity_time
+    FROM user_first_activity_mv
     GROUP BY user_id
 
 NODE kpi_weekly_activations

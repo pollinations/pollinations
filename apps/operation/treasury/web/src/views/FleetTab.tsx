@@ -1,4 +1,5 @@
 import {
+    Alert,
     TableBody,
     TableCell,
     TableHead,
@@ -33,6 +34,23 @@ export function visibleFleetRows({
     );
 }
 
+export function fleetEmptyNotice(
+    fleetRows: GpuFleetRow[],
+    visibleRows: GpuFleetRow[],
+): string | null {
+    if (fleetRows.length === 0) {
+        return "No snapshots ingested yet — run python3 -m ingest.run --only fleet";
+    }
+    if (visibleRows.length === 0) {
+        const dates = fleetRows.map((r) => r.recorded_at.slice(0, 10));
+        const minDate = dates.sort()[0];
+        const maxDate = dates.sort().pop();
+        const rowCount = fleetRows.length;
+        return `No fleet snapshots match this period — snapshots exist from ${minDate} to ${maxDate} (${rowCount} rows). Switch the period filter.`;
+    }
+    return null;
+}
+
 export function FleetTab({
     data,
     month = "",
@@ -63,56 +81,63 @@ export function FleetTab({
         direction: "desc",
     });
 
+    const notice = fleetEmptyNotice(data.gpuFleet, baseRows);
+
     return (
-        <TableScroller>
-            <DataTable>
-                <TableHead>
-                    <TableRow>
-                        <TableHeaderCell {...headerProps("recorded at")}>
-                            recorded at
-                        </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("vendor")}>
-                            vendor
-                        </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("deployment")}>
-                            deployment
-                        </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("gpu")}>
-                            gpu
-                        </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("count")}>
-                            count
-                        </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("$/hr")}>
-                            $/hr
-                        </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("balance")}>
-                            balance
-                        </TableHeaderCell>
-                    </TableRow>
-                </TableHead>
-                <TableBody>
-                    {withUniqueRowKeys(
-                        rows,
-                        (row) =>
-                            `${row.recorded_at}|${row.vendor}|${row.deployment}`,
-                    ).map(({ key, row }) => (
-                        <TableRow key={key}>
-                            <TableCell>{row.recorded_at}</TableCell>
-                            <TableCell>{row.vendor}</TableCell>
-                            <TableCell>{row.deployment}</TableCell>
-                            <TableCell>{row.gpu}</TableCell>
-                            <TableCell>{row.gpu_count}</TableCell>
-                            <TableCell>{fmtNumber(row.usd_per_hr)}</TableCell>
-                            <TableCell>
-                                {row.balance_usd === null
-                                    ? "–"
-                                    : fmtUsd(row.balance_usd)}
-                            </TableCell>
+        <>
+            {notice && <Alert intent="warning">{notice}</Alert>}
+            <TableScroller>
+                <DataTable>
+                    <TableHead>
+                        <TableRow>
+                            <TableHeaderCell {...headerProps("recorded at")}>
+                                recorded at
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("vendor")}>
+                                vendor
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("deployment")}>
+                                deployment
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("gpu")}>
+                                gpu
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("count")}>
+                                count
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("$/hr")}>
+                                $/hr
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("balance")}>
+                                balance
+                            </TableHeaderCell>
                         </TableRow>
-                    ))}
-                </TableBody>
-            </DataTable>
-        </TableScroller>
+                    </TableHead>
+                    <TableBody>
+                        {withUniqueRowKeys(
+                            rows,
+                            (row) =>
+                                `${row.recorded_at}|${row.vendor}|${row.deployment}`,
+                        ).map(({ key, row }) => (
+                            <TableRow key={key}>
+                                <TableCell>{row.recorded_at}</TableCell>
+                                <TableCell>{row.vendor}</TableCell>
+                                <TableCell>{row.deployment}</TableCell>
+                                <TableCell>{row.gpu}</TableCell>
+                                <TableCell>{row.gpu_count}</TableCell>
+                                <TableCell>
+                                    {fmtNumber(row.usd_per_hr)}
+                                </TableCell>
+                                <TableCell>
+                                    {row.balance_usd === null
+                                        ? "–"
+                                        : fmtUsd(row.balance_usd)}
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </DataTable>
+            </TableScroller>
+        </>
     );
 }

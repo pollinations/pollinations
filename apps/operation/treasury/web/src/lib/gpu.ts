@@ -214,7 +214,7 @@ export function gpuEconomics(
                           ),
                       ];
                       if (fleetMonths.length > 0) return fleetMonths;
-                      // Fall back to pollenMonthly months so pollen rows show even w/o bills
+                      // Use pollenMonthly months so pollen rows show even w/o bills
                       const pollenMonths = [
                           ...new Set(
                               data.pollenMonthly
@@ -275,14 +275,21 @@ export function gpuEconomics(
             // ovhcloud never has fleet data
             const isOvhcloud = vendor === "ovhcloud";
 
-            // No snapshots → vendor-level group with 100% share + flag.
+            // No snapshots → vendor-level group with 100% share + error flag
+            // (the deployment witness is MISSING — this is an error condition,
+            // not an alternative mode; the vendor-grain numbers are still
+            // witnessed at vendor grain from provider bills + metering).
             if (fleetInMonth.length === 0 || isOvhcloud) {
                 // Emit one vendor-total row.
                 const vendorKind: DeploymentKind =
                     vendor === "modal" ? "serverless" : "gpu";
-                const flags: string[] = ["no fleet that month"];
+                const flags: string[] = [
+                    "error: no fleet snapshot this month — deployment split unavailable",
+                ];
                 if (isOvhcloud) {
-                    flags.push("no fleet visibility");
+                    flags.push(
+                        "error: fleet API blocked — consumer key lacks /cloud/project scope",
+                    );
                     flags.push("hybrid: AI Endpoints + instance");
                 }
                 // Do NOT push unattributedFlag here: this path aggregates ALL

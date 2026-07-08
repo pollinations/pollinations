@@ -256,8 +256,8 @@ describe("gpuEconomics — unattributed pollen flag", () => {
         }
     });
 
-    it("vendor-total fallback row (no fleet) does NOT carry unattributed flag even with unclaimed models", () => {
-        // ovhcloud has no fleet → goes through the fallback path which
+    it("vendor-total no-fleet row does NOT carry unattributed flag even with unclaimed models", () => {
+        // ovhcloud has no fleet → goes through the no-fleet path which
         // aggregates ALL pollen rows. "flux" is not in any ovhcloud group but
         // since all pollen is included in the row the flag is contradictory
         // and must NOT appear.
@@ -310,7 +310,7 @@ describe("gpuEconomics — unattributed pollen flag", () => {
         expect(rows[0].flags.some((f) => f.startsWith("unattributed:"))).toBe(
             false,
         );
-        // The pollen revenue and requests ARE included in the fallback row.
+        // The pollen revenue and requests ARE included in the vendor-total row.
         expect(rows[0].requests).toBe(50000);
         expect(rows[0].paidUsd).toBeCloseTo(200, 2);
     });

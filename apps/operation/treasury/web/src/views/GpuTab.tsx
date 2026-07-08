@@ -27,6 +27,16 @@ import {
 } from "../lib/gpu";
 import type { Data } from "../types";
 
+const NO_FLEET_ERROR =
+    "error: no fleet snapshot this month — deployment split unavailable";
+
+// Classify a flag string into a Chip intent.
+// Flags starting with "error:" are errors (missing deployment witness);
+// all others (e.g. "unmapped fleet", "unattributed: …") are warnings.
+export function flagIntent(flag: string): "danger" | "warning" {
+    return flag.startsWith("error:") ? "danger" : "warning";
+}
+
 export function visibleGpuRows({
     rows,
     vendor,
@@ -126,6 +136,16 @@ export function GpuTab({
         return times.reduce((a, b) => (a > b ? a : b));
     }, [data.gpuFleet]);
 
+    // True when every visible row carries the no-fleet-snapshot error (i.e. the
+    // fleet table was empty for the entire selected period — collection started
+    // 2026-07-08, so earlier months always hit this).
+    const allNoFleetError = useMemo(
+        () =>
+            rows.length > 0 &&
+            rows.every((r) => r.flags.includes(NO_FLEET_ERROR)),
+        [rows],
+    );
+
     if (allRows.length === 0 && data.gpuFleet.length === 0) {
         return (
             <Alert intent="warning">
@@ -137,6 +157,13 @@ export function GpuTab({
 
     return (
         <div className="flex flex-col gap-4">
+            {allNoFleetError && (
+                <Alert intent="warning">
+                    No fleet snapshots exist for this period (collection started
+                    2026-07-08). Rows show vendor totals; per-deployment split
+                    needs the fleet witness.
+                </Alert>
+            )}
             {/* header strip */}
             <div className="flex flex-wrap items-center gap-3">
                 {runRate ? (
@@ -313,7 +340,9 @@ export function GpuTab({
                                                 {row.flags.map((flag) => (
                                                     <Chip
                                                         key={flag}
-                                                        intent="warning"
+                                                        intent={flagIntent(
+                                                            flag,
+                                                        )}
                                                         size="sm"
                                                     >
                                                         ⚠ {flag}

@@ -1,0 +1,14 @@
+TOKEN "treasury_ingest" APPEND
+TOKEN "treasury_ingest" READ
+
+SCHEMA >
+    `month` String   `json:$.month`,
+    `vendor` String  `json:$.vendor`,
+    `deployment` String `json:$.deployment`,
+    `gpu` String     `json:$.gpu`,
+    `amount` Float64 `json:$.amount`,
+    `currency` String `json:$.currency`,
+    `source` String  `json:$.source`
+
+ENGINE "MergeTree"
+ENGINE_SORTING_KEY "vendor, month, deployment"

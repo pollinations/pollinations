@@ -34,6 +34,7 @@ def _load_vendor_file() -> tuple[
     dict[str, str],
     dict[str, list[tuple[str, str]]],
     dict[str, list[tuple[float, str]]],
+    frozenset[str],
 ]:
     allowed = _ALLOWED_CATEGORIES
     raw = json.loads(_ALIASES_PATH.read_text())
@@ -41,6 +42,7 @@ def _load_vendor_file() -> tuple[
     categories_out: dict[str, str] = {}
     rules_out: dict[str, list[tuple[str, str]]] = {}
     amount_rules_out: dict[str, list[tuple[float, str]]] = {}
+    gpu_vendors_out: set[str] = set()
     for vendor, entry in raw.items():
         if not isinstance(vendor, str) or not vendor.strip():
             continue
@@ -73,7 +75,9 @@ def _load_vendor_file() -> tuple[
             amount_rules.append((float(rule["equals"]), rule_category))
         if amount_rules:
             amount_rules_out[slug] = amount_rules
-    return aliases_out, categories_out, rules_out, amount_rules_out
+        if str(entry.get("cost_basis", "")).strip().lower() == "gpu":
+            gpu_vendors_out.add(slug)
+    return aliases_out, categories_out, rules_out, amount_rules_out, frozenset(gpu_vendors_out)
 
 
 # canonical vendor slug -> identifying strings, used for substring matching.
@@ -81,7 +85,8 @@ def _load_vendor_file() -> tuple[
 # canonical vendor slug -> ordered (keyword, category) rules for row-context overrides.
 # canonical vendor slug -> ordered (exact amount, category) rules for rows whose
 # text carries no signal (e.g. fixed-price subscription seats).
-VENDOR_ALIASES, VENDOR_CATEGORIES, VENDOR_CATEGORY_RULES, VENDOR_AMOUNT_RULES = (
+# frozenset of slugs with cost_basis == "gpu" (GPU rental vendors).
+VENDOR_ALIASES, VENDOR_CATEGORIES, VENDOR_CATEGORY_RULES, VENDOR_AMOUNT_RULES, GPU_VENDORS = (
     _load_vendor_file()
 )
 

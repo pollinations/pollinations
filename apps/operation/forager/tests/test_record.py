@@ -310,3 +310,107 @@ def test_record_grant_zero_granted_exits():
             tb_factory=_make_factory(_FakeTB()),
         )
     assert exc.value.code != 0
+
+
+# ---------------------------------------------------------------------------
+# record.main: gpu subcommand
+# ---------------------------------------------------------------------------
+
+def test_record_gpu_appends_row():
+    fake = _FakeTB()
+    record.main(
+        ["gpu", "runpod", "2026-06",
+         "--deployment", "pod-abc123",
+         "--amount", "312.50",
+         "--gpu", "A100 80GB",
+         "--currency", "USD"],
+        tb_factory=_make_factory(fake),
+    )
+    assert len(fake.appended) == 1
+    ds, rows = fake.appended[0]
+    assert ds == "gpu_billing"
+    assert len(rows) == 1
+    r = rows[0]
+    assert r["vendor"] == "runpod"
+    assert r["month"] == "2026-06"
+    assert r["deployment"] == "pod-abc123"
+    assert r["gpu"] == "A100 80GB"
+    assert r["amount"] == 312.50
+    assert r["currency"] == "USD"
+    assert r["source"] == "manual"
+
+
+def test_record_gpu_defaults_currency_and_gpu():
+    fake = _FakeTB()
+    record.main(
+        ["gpu", "lambda", "2026-05",
+         "--deployment", "inst-xyz",
+         "--amount", "750.0"],
+        tb_factory=_make_factory(fake),
+    )
+    r = fake.appended[0][1][0]
+    assert r["currency"] == "USD"
+    assert r["gpu"] == ""
+    assert r["source"] == "manual"
+
+
+def test_record_gpu_rounds_amount():
+    fake = _FakeTB()
+    record.main(
+        ["gpu", "vast.ai", "2026-06",
+         "--deployment", "node-99",
+         "--amount", "99.999"],
+        tb_factory=_make_factory(fake),
+    )
+    assert fake.appended[0][1][0]["amount"] == 100.0
+
+
+def test_record_gpu_unknown_vendor_exits():
+    with pytest.raises(SystemExit) as exc:
+        record.main(
+            ["gpu", "NOT_A_VENDOR", "2026-06",
+             "--deployment", "x", "--amount", "1.0"],
+            tb_factory=_make_factory(_FakeTB()),
+        )
+    assert exc.value.code != 0
+
+
+def test_record_gpu_non_gpu_vendor_exits():
+    """fireworks is in CANONICAL but not a GPU vendor."""
+    with pytest.raises(SystemExit) as exc:
+        record.main(
+            ["gpu", "fireworks", "2026-06",
+             "--deployment", "x", "--amount", "1.0"],
+            tb_factory=_make_factory(_FakeTB()),
+        )
+    assert exc.value.code != 0
+
+
+def test_record_gpu_zero_amount_exits():
+    with pytest.raises(SystemExit) as exc:
+        record.main(
+            ["gpu", "runpod", "2026-06",
+             "--deployment", "x", "--amount", "0"],
+            tb_factory=_make_factory(_FakeTB()),
+        )
+    assert exc.value.code != 0
+
+
+def test_record_gpu_negative_amount_exits():
+    with pytest.raises(SystemExit) as exc:
+        record.main(
+            ["gpu", "runpod", "2026-06",
+             "--deployment", "x", "--amount", "-5.0"],
+            tb_factory=_make_factory(_FakeTB()),
+        )
+    assert exc.value.code != 0
+
+
+def test_record_gpu_bad_month_exits():
+    with pytest.raises(SystemExit) as exc:
+        record.main(
+            ["gpu", "runpod", "26-06",
+             "--deployment", "x", "--amount", "1.0"],
+            tb_factory=_make_factory(_FakeTB()),
+        )
+    assert exc.value.code != 0

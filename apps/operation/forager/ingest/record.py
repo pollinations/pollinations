@@ -5,10 +5,13 @@ Usage:
                                    --currency USD|EUR [--credit N] [--paid N]
     python3 -m ingest.record grant <vendor> --granted N --currency USD|EUR
                                    --start YYYY-MM-DD [--label L] [--expires YYYY-MM-DD]
+    python3 -m ingest.record gpu <vendor> <YYYY-MM> --deployment <name>
+                                   --amount <usd> [--gpu <label>] [--currency USD]
 
 `provider` appends one row to `provider_monthly` with source="manual".
 `grant` appends one row to `grants` (raw grant facts; latest recorded_at wins
 per (vendor, label) at read time — a correction is just a re-record).
+`gpu` appends one row to `gpu_billing` with source="manual".
 Vendor must be in registry.CANONICAL.
 """
 import argparse
@@ -17,7 +20,7 @@ import json
 import re
 import sys
 
-from .aliases import VENDOR_CATEGORIES
+from .aliases import VENDOR_CATEGORIES, GPU_VENDORS
 from .connectors.vendors import _currency, _validate_meter_source
 from .connectors.registry import CANONICAL
 from . import creds as _creds
@@ -99,6 +102,15 @@ def main(argv=None, tb_factory=None):
     gp.add_argument("--label",    default="", help="distinguishes multiple grants per vendor")
     gp.add_argument("--expires",  default=_NO_EXPIRY, help="expiry date YYYY-MM-DD (omit = no expiry)")
 
+    # gpu subcommand
+    gup = sub.add_parser("gpu", help="append a gpu_billing row")
+    gup.add_argument("vendor",       help="canonical GPU vendor slug (must have cost_basis=gpu)")
+    gup.add_argument("month",        help="billing month YYYY-MM")
+    gup.add_argument("--deployment", required=True, help="pod/instance name or provider id")
+    gup.add_argument("--amount",     type=float, required=True, help="billed USD for that deployment")
+    gup.add_argument("--gpu",        default="", help="GPU display name (optional)")
+    gup.add_argument("--currency",   default="USD", help="currency code (default: USD)")
+
     args = parser.parse_args(argv)
 
     # Resolve TB client
@@ -156,6 +168,32 @@ def main(argv=None, tb_factory=None):
             "recorded_at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
         }
         client.append("grants", [row])
+        print(json.dumps(row))
+
+    elif args.cmd == "gpu":
+        _validate_vendor(args.vendor)
+        if args.vendor not in GPU_VENDORS:
+            print(
+                f"error: '{args.vendor}' is not a GPU vendor "
+                f"(cost_basis=gpu). known GPU vendors: {sorted(GPU_VENDORS)}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        _validate_month(args.month)
+        if args.amount <= 0:
+            print(f"error: --amount must be > 0, got '{args.amount}'", file=sys.stderr)
+            sys.exit(1)
+        currency = _validate_currency(args.currency)
+        row = {
+            "month": args.month,
+            "vendor": args.vendor,
+            "deployment": args.deployment,
+            "gpu": args.gpu,
+            "amount": round(float(args.amount), 2),
+            "currency": _currency(currency),
+            "source": "manual",
+        }
+        client.append("gpu_billing", [row])
         print(json.dumps(row))
 
 

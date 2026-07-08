@@ -43,7 +43,8 @@
     "aliases": [
       "runpod"
     ],
-    "category": "compute"
+    "category": "compute",
+    "cost_basis": "gpu"
   },
   "lambda": {
     "aliases": [
@@ -51,7 +52,8 @@
       "lambda labs",
       "self-hosted"
     ],
-    "category": "compute"
+    "category": "compute",
+    "cost_basis": "gpu"
   },
   "deepinfra": {
     "aliases": [
@@ -153,7 +155,8 @@
     "aliases": [
       "ovh"
     ],
-    "category": "compute"
+    "category": "compute",
+    "cost_basis": "gpu"
   },
   "elevenlabs": {
     "aliases": [
@@ -184,7 +187,8 @@
     "aliases": [
       "modal"
     ],
-    "category": "compute"
+    "category": "compute",
+    "cost_basis": "gpu"
   },
   "digitalocean": {
     "aliases": [
@@ -205,7 +209,8 @@
       "vast ai",
       "vastai"
     ],
-    "category": "compute"
+    "category": "compute",
+    "cost_basis": "gpu"
   },
   "daytona": {
     "aliases": [

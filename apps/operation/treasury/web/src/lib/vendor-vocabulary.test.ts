@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { Data, RunRow } from "../types";
 import {
+    costBasis,
     findVendorVocabularyIssues,
+    GPU_VENDORS,
     VENDOR_OPTIONS,
     vendorVocabularyRunIssues,
 } from "./vendor-vocabulary";
@@ -73,5 +75,22 @@ describe("vendor vocabulary", () => {
                 detail: "usage: err:ValueError: unknown vendor slug for pollen_monthly: 'new-vendor'",
             },
         ]);
+    });
+});
+
+describe("costBasis", () => {
+    it("flags the five GPU vendors", () => {
+        expect([...GPU_VENDORS].sort()).toEqual([
+            "lambda",
+            "modal",
+            "ovhcloud",
+            "runpod",
+            "vast.ai",
+        ]);
+    });
+    it("returns gpu for fleet vendors and request otherwise", () => {
+        expect(costBasis("runpod")).toBe("gpu");
+        expect(costBasis("fireworks")).toBe("request");
+        expect(costBasis("")).toBe("request");
     });
 });

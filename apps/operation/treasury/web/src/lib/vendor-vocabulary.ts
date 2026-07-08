@@ -9,6 +9,18 @@ export const VENDOR_OPTIONS = ["all", ...VENDOR_SLUGS];
 
 const VENDOR_SET = new Set(VENDOR_SLUGS);
 
+type VendorEntry = { cost_basis?: string };
+
+export const GPU_VENDORS = new Set(
+    Object.entries(vendorAliases as Record<string, VendorEntry>)
+        .filter(([, entry]) => entry.cost_basis === "gpu")
+        .map(([slug]) => slug),
+);
+
+export function costBasis(vendor: string): "gpu" | "request" {
+    return GPU_VENDORS.has(vendor) ? "gpu" : "request";
+}
+
 export type VendorVocabularyIssue = {
     source: string;
     vendor: string;

@@ -31,6 +31,7 @@ export type PollenMonthlyRow = {
     byop_quests: number;
     model_paid: number;
     model_quests: number;
+    requests: number;
 };
 
 export type GrantRow = {
@@ -59,6 +60,16 @@ export type RevenueMonthlyRow = {
     refunds_amount: number;
 };
 
+export type GpuFleetRow = {
+    recorded_at: string; // "YYYY-MM-DD HH:MM:SS"
+    vendor: string;
+    deployment: string;
+    gpu: string;
+    gpu_count: number;
+    usd_per_hr: number;
+    balance_usd: number | null;
+};
+
 export type Data = {
     transactions: TransactionRow[];
     providerMonthly: ProviderMonthlyRow[];
@@ -66,4 +77,5 @@ export type Data = {
     grants: GrantRow[];
     runs: RunRow[];
     revenueMonthly: RevenueMonthlyRow[];
+    gpuFleet: GpuFleetRow[];
 };

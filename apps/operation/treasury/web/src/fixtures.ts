@@ -1,4 +1,5 @@
 import type {
+    GpuFleetRow,
     GrantRow,
     PollenMonthlyRow,
     ProviderMonthlyRow,
@@ -67,6 +68,7 @@ const pollenMonthly: PollenMonthlyRow[] = [
         byop_quests: 1.86,
         model_paid: 0,
         model_quests: 0,
+        requests: 12400,
     },
     {
         source: "tinybird",
@@ -82,6 +84,7 @@ const pollenMonthly: PollenMonthlyRow[] = [
         byop_quests: 4.07,
         model_paid: 0,
         model_quests: 0,
+        requests: 9800,
     },
     {
         source: "tinybird",
@@ -97,6 +100,7 @@ const pollenMonthly: PollenMonthlyRow[] = [
         byop_quests: 0,
         model_paid: 0,
         model_quests: 0,
+        requests: 3200,
     },
     {
         source: "tinybird",
@@ -112,6 +116,7 @@ const pollenMonthly: PollenMonthlyRow[] = [
         byop_quests: 0,
         model_paid: 0,
         model_quests: 0,
+        requests: 5600,
     },
     // No elevenlabs provider row + the June elevenlabs compute transaction (299
     // USD paid) makes this model demo the `cash` cost basis in the Models tab.
@@ -129,6 +134,56 @@ const pollenMonthly: PollenMonthlyRow[] = [
         byop_quests: 0,
         model_paid: 0,
         model_quests: 0,
+        requests: 1800,
+    },
+    // GPU-hosted models — needed so Fleet tab fixture view has matching pollen rows.
+    {
+        source: "tinybird",
+        month: "2026-07",
+        vendor: "runpod",
+        model: "zimage",
+        currency: "POLLEN",
+        cost_paid: 55.2,
+        cost_quests: 12.4,
+        price_paid: 68.0,
+        price_quests: 14.0,
+        byop_paid: 0,
+        byop_quests: 0,
+        model_paid: 0,
+        model_quests: 0,
+        requests: 1200,
+    },
+    {
+        source: "tinybird",
+        month: "2026-07",
+        vendor: "runpod",
+        model: "klein",
+        currency: "POLLEN",
+        cost_paid: 18.9,
+        cost_quests: 4.1,
+        price_paid: 22.0,
+        price_quests: 5.0,
+        byop_paid: 0,
+        byop_quests: 0,
+        model_paid: 0,
+        model_quests: 0,
+        requests: 800,
+    },
+    {
+        source: "tinybird",
+        month: "2026-07",
+        vendor: "lambda",
+        model: "ltx-2",
+        currency: "POLLEN",
+        cost_paid: 310.5,
+        cost_quests: 0,
+        price_paid: 380.0,
+        price_quests: 0,
+        byop_paid: 0,
+        byop_quests: 0,
+        model_paid: 0,
+        model_quests: 0,
+        requests: 1200,
     },
 ];
 
@@ -239,6 +294,45 @@ const revenueMonthly: RevenueMonthlyRow[] = [
     },
 ];
 
+const gpuFleet: GpuFleetRow[] = [
+    {
+        recorded_at: "2026-07-08 10:00:00",
+        vendor: "runpod",
+        deployment: "zimage-4090-secure",
+        gpu: "RTX 4090",
+        gpu_count: 1,
+        usd_per_hr: 0.69,
+        balance_usd: 80.06,
+    },
+    {
+        recorded_at: "2026-07-08 10:00:00",
+        vendor: "runpod",
+        deployment: "klein-a5000-v4",
+        gpu: "RTX A5000",
+        gpu_count: 1,
+        usd_per_hr: 0.27,
+        balance_usd: 80.06,
+    },
+    {
+        recorded_at: "2026-07-08 10:00:00",
+        vendor: "lambda",
+        deployment: "Sana - LTX-2.3 - AceStep",
+        gpu: "1x GH200 (96 GB)",
+        gpu_count: 1,
+        usd_per_hr: 2.29,
+        balance_usd: null,
+    },
+    {
+        recorded_at: "2026-06-15 10:00:00",
+        vendor: "vast.ai",
+        deployment: "43575766",
+        gpu: "RTX 5090",
+        gpu_count: 1,
+        usd_per_hr: 0.4278,
+        balance_usd: 225.43,
+    },
+];
+
 export const FIXTURES: Record<string, unknown[]> = {
     transactions_api: transactions,
     provider_monthly_api: providerMonthly,
@@ -246,4 +340,5 @@ export const FIXTURES: Record<string, unknown[]> = {
     grants_api: grants,
     ingest_runs_api: runs,
     revenue_monthly_api: revenueMonthly,
+    gpu_fleet_api: gpuFleet,
 };

@@ -18,6 +18,7 @@ const READ_PIPES = new Set([
     "grants_api",
     "ingest_runs_api",
     "revenue_monthly_api",
+    "gpu_fleet_api",
 ]);
 
 type TreasurySecrets = {

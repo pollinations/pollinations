@@ -117,6 +117,7 @@ const emptyData = (over: Partial<Data>): Data => ({
     grants: [],
     runs: [],
     revenueMonthly: [],
+    gpuFleet: [],
     ...over,
 });
 
@@ -134,6 +135,7 @@ const usage = (over: Partial<PollenMonthlyRow>): PollenMonthlyRow => ({
     byop_quests: 0,
     model_paid: 0,
     model_quests: 0,
+    requests: 0,
     ...over,
 });
 

@@ -15,6 +15,7 @@ const baseData: Data = {
     grants: [],
     runs: [],
     revenueMonthly: [],
+    gpuFleet: [],
 };
 
 describe("vendor vocabulary", () => {
@@ -43,6 +44,7 @@ describe("vendor vocabulary", () => {
                     byop_quests: 0,
                     model_paid: 0,
                     model_quests: 0,
+                    requests: 0,
                 },
             ],
         });

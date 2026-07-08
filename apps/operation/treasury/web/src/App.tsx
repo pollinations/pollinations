@@ -48,6 +48,7 @@ import {
 } from "./lib/vendor-vocabulary";
 import type { Data } from "./types";
 import { CreditsTab } from "./views/CreditsTab";
+import { FleetTab } from "./views/FleetTab";
 import { GrantsTab } from "./views/GrantsTab";
 import { ModelsTab } from "./views/ModelsTab";
 import { PnlTab } from "./views/PnlTab";
@@ -58,7 +59,13 @@ import { RevenueTab } from "./views/RevenueTab";
 import { TransactionsTab } from "./views/TransactionsTab";
 import { VendorsTab } from "./views/VendorsTab";
 
-type Tab = "transactions" | "pollen" | "provider" | "grants" | "revenue";
+type Tab =
+    | "transactions"
+    | "pollen"
+    | "provider"
+    | "grants"
+    | "revenue"
+    | "fleet";
 type TreasurySection = "insights" | "raw";
 type InsightTab = "pnl" | "vendors" | "models" | "reconciliation" | "credits";
 
@@ -167,6 +174,15 @@ const TABS: {
         note: "Raw monthly revenue rows. Net revenue is intentionally not precomputed in the pipe.",
         icon: DatabaseIcon,
         rows: (data) => data.revenueMonthly.length,
+    },
+    {
+        id: "fleet",
+        label: "Fleet",
+        codes: ["API", "CLI"],
+        pipe: "gpu_fleet_api",
+        note: "GPU fleet snapshots: one row per running pod/instance per forager run, with $/hr and prepaid balance where the vendor exposes it. Rent truth stays in Provider - this is the allocation and runway witness.",
+        icon: DatabaseIcon,
+        rows: (data) => data.gpuFleet.length,
     },
 ];
 
@@ -607,6 +623,8 @@ function vendorOptionsForTab(data: Data | null, tab: Tab) {
         for (const row of data.providerMonthly) add(row.vendor);
     } else if (tab === "grants") {
         for (const row of data.grants) add(row.vendor);
+    } else if (tab === "fleet") {
+        for (const row of data.gpuFleet) add(row.vendor);
     }
 
     return ["all", ...[...vendors].sort((a, b) => a.localeCompare(b))];
@@ -996,6 +1014,13 @@ export default function App() {
                         )}
                         {data && section === "raw" && tab === "revenue" && (
                             <RevenueTab data={data} />
+                        )}
+                        {data && section === "raw" && tab === "fleet" && (
+                            <FleetTab
+                                data={data}
+                                month={activeMonth}
+                                vendor={vendor}
+                            />
                         )}
                         {data &&
                             section === "insights" &&

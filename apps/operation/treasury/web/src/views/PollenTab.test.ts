@@ -16,6 +16,7 @@ const row = (over: Partial<PollenMonthlyRow>): PollenMonthlyRow => ({
     byop_quests: 6,
     model_paid: 7,
     model_quests: 8,
+    requests: 100,
     ...over,
 });
 
@@ -36,6 +37,7 @@ describe("aggregatePollenByYear", () => {
                         byop_quests: 60,
                         model_paid: 70,
                         model_quests: 80,
+                        requests: 200,
                     }),
                     row({
                         month: "2025-12",
@@ -60,6 +62,7 @@ describe("aggregatePollenByYear", () => {
                 byop_quests: 66,
                 model_paid: 77,
                 model_quests: 88,
+                requests: 300,
             },
         ]);
     });

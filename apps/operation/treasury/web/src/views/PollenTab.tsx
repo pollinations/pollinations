@@ -28,6 +28,7 @@ type PollenTotals = Pick<
     | "byop_quests"
     | "model_paid"
     | "model_quests"
+    | "requests"
 >;
 
 const POLLEN_TOTAL_KEYS = [
@@ -39,6 +40,7 @@ const POLLEN_TOTAL_KEYS = [
     "byop_quests",
     "model_paid",
     "model_quests",
+    "requests",
 ] as const satisfies readonly (keyof PollenTotals)[];
 
 export function aggregatePollenByYear({
@@ -73,6 +75,7 @@ export function aggregatePollenByYear({
             byop_quests: 0,
             model_paid: 0,
             model_quests: 0,
+            requests: 0,
             sourceSet: new Set<string>(),
         };
         for (const key of POLLEN_TOTAL_KEYS) {
@@ -152,6 +155,7 @@ export function PollenTab({
                 key: "model_quests",
                 value: (row) => row.model_quests,
             },
+            { key: "requests", value: (row) => row.requests },
         ],
         [],
     );
@@ -205,6 +209,9 @@ export function PollenTab({
                             <TableHeaderCell {...headerProps("model_quests")}>
                                 model_quests
                             </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("requests")}>
+                                requests
+                            </TableHeaderCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -244,6 +251,7 @@ export function PollenTab({
                                 <TableCell>
                                     {fmtNumber(row.model_quests)}
                                 </TableCell>
+                                <TableCell>{fmtNumber(row.requests)}</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>

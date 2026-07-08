@@ -1,0 +1,35 @@
+{
+  "pr_number": 12293,
+  "title": "chore: update app metrics 2026-07-08",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/12293",
+  "merged_at": "2026-07-08T05:13:48Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "Daily automated update of app metrics, health checks, and greenhouse",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Daily Greenhouse Check",
+    "blurb": "Polly's daily rounds in the greenhouse are complete! App metrics and health checks have been freshly updated.",
+    "summary": "Automated daily update of app metrics, health checks, and greenhouse status in the repository.",
+    "impact": "Keeps the community app directory and greenhouse metrics accurate and up-to-date for developers browsing the ecosystem.",
+    "keywords": [
+      "metrics",
+      "apps",
+      "greenhouse",
+      "automated",
+      "chore"
+    ],
+    "visual_concept": "Polly the bee flying around a cozy greenhouse with pixelated plants (representing apps) and a tiny clipboard, checking on their health and growth metrics.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot with a tiny clipboard checking on glowing code-plants in a warm greenhouse. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-08/PR-12293.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot with a tiny clipboard checking on glowing code-plants in a warm greenhouse. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-07-08T05:14:45.436264+00:00"
+}

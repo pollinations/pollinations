@@ -70,6 +70,7 @@ def test_lambda_rows_price_from_cents():
 
 def test_vast_rows_running_only_with_balance():
     def http(url, headers=None, data=None):
+        assert (headers or {}).get("Authorization") == "Bearer k"
         return VAST_USER if "users/current" in url else VAST_INSTANCES
     rows = fleet.snapshot_vast({"VAST_API_KEY": "k"}, NOW, http=http)
     assert len(rows) == 1
@@ -97,6 +98,7 @@ def test_snapshot_all_isolates_vendor_failures():
          "MODAL_TOKEN_ID": "ak", "MODAL_TOKEN_SECRET": "as"},
         NOW, http=boom, run_cmd=boom)
     assert rows == []
+    assert len([k for k in statuses if k.startswith("fleet:")]) == 4
     assert all(v.startswith("err:") for k, v in statuses.items() if k.startswith("fleet:"))
 
 
@@ -104,3 +106,6 @@ def test_missing_key_is_an_error_status_not_a_crash():
     rows, statuses = fleet.snapshot_all({}, NOW,
                                         http=lambda *a, **k: {}, run_cmd=lambda *a, **k: None)
     assert statuses["fleet:runpod"].startswith("err:")
+    assert statuses["fleet:lambda"].startswith("err:")
+    assert statuses["fleet:vast.ai"].startswith("err:")
+    assert statuses["fleet:modal"].startswith("err:")

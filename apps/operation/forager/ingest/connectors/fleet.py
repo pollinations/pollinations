@@ -41,15 +41,18 @@ def snapshot_runpod(creds, now, http=http_json):
                 data={"query": _RUNPOD_QUERY})
     me = (resp.get("data") or {}).get("myself") or {}
     balance = me.get("clientBalance")
+    # compute pod sum from raw costPerHr before _row's rounding
+    pods = me.get("pods") or []
+    pod_sum_raw = sum(float(p.get("costPerHr") or 0) for p in pods
+                      if p.get("desiredStatus") == "RUNNING")
     rows = [
         _row(now, "runpod", p.get("name"), (p.get("machine") or {}).get("gpuDisplayName"),
              p.get("gpuCount"), p.get("costPerHr"), balance)
-        for p in me.get("pods") or []
+        for p in pods
         if p.get("desiredStatus") == "RUNNING"
     ]
     # account burn > pod sum: the delta is disk/storage — keep the vendor sum honest
-    delta = round(float(me.get("currentSpendPerHr") or 0)
-                  - sum(r["usd_per_hr"] for r in rows), 4)
+    delta = round(float(me.get("currentSpendPerHr") or 0) - pod_sum_raw, 4)
     if delta > 0.001:
         rows.append(_row(now, "runpod", "_storage", "", 0, delta, balance))
     # zero pods but a balance: keep the balance timeline unbroken (PLAN-GPU §2)
@@ -82,9 +85,9 @@ def snapshot_vast(creds, now, http=http_json):
     if not key:
         raise RuntimeError("VAST_API_KEY missing")
     headers = {"Authorization": f"Bearer {key}"}
-    balance = (http("https://console.vast.ai/api/v0/users/current/", headers)
+    balance = (http("https://console.vast.ai/api/v0/users/current/", headers=headers)
                or {}).get("credit")
-    resp = http("https://console.vast.ai/api/v0/instances/", headers) or {}
+    resp = http("https://console.vast.ai/api/v0/instances/", headers=headers) or {}
     rows = [
         _row(now, "vast.ai", inst.get("id"), inst.get("gpu_name"),
              inst.get("num_gpus"), inst.get("dph_total"), balance)

@@ -1,14 +1,63 @@
-"""gpu_runs connector — month-split helper.
+"""gpu_runs connector — month-split helper + model mapping.
 
 Exports:
     split_run_by_month(started_at, ended_at, cost, gpu_count=1)
         -> list[(month:'YYYY-MM', hours_in_month:float, cost_in_month:float)]
+
+    stamp(vendor, deployment) -> tuple[str, str]
+        Map a (vendor, deployment) pair to (models_csv, kind).
+        models_csv is a comma-joined list of models served by that deployment.
+        No hit -> ("", "gpu") — unmapped, caller must surface as an error.
 
 Later tasks (Task 3–5) will add per-vendor run row collectors here.
 """
 
 import calendar
 import datetime
+import json
+from pathlib import Path
+
+_GPU_MODELS_PATH = (
+    Path(__file__).resolve().parents[2] / "config" / "gpu_models.json"
+)
+
+# Load once at module import. Keyed by vendor slug; each value is an ordered
+# list of match entries. First hit wins (per brief). Match logic:
+#   - "exact": true  -> case-sensitive exact match only
+#   - match is a list -> case-insensitive substring match against any element
+#   - match is "" (empty string) -> catch-all (matches anything)
+#   - match is a str -> case-insensitive substring match
+_GPU_MODELS: dict = json.loads(_GPU_MODELS_PATH.read_text())
+
+
+def stamp(vendor: str, deployment: str) -> tuple[str, str]:
+    """Return (models_csv, kind) for a (vendor, deployment) pair.
+
+    models_csv is the comma-joined list of models the deployment serves.
+    kind is "gpu" or "serverless".
+    No matching entry -> ("", "gpu").
+    """
+    entries = _GPU_MODELS.get(vendor, [])
+    for entry in entries:
+        match = entry["match"]
+        exact = entry.get("exact", False)
+        if exact:
+            # exact string comparison (case-sensitive per brief)
+            if deployment == match:
+                return (entry["model"], entry["kind"])
+        elif isinstance(match, list):
+            # any-of: case-insensitive substring test against each element
+            dep_lower = deployment.lower()
+            if any(m.lower() in dep_lower for m in match):
+                return (entry["model"], entry["kind"])
+        elif match == "":
+            # catch-all
+            return (entry["model"], entry["kind"])
+        else:
+            # single substring, case-insensitive
+            if match.lower() in deployment.lower():
+                return (entry["model"], entry["kind"])
+    return ("", "gpu")
 
 
 def split_run_by_month(started_at, ended_at, cost, gpu_count=1):

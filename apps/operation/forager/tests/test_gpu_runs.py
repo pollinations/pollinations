@@ -1,4 +1,4 @@
-"""Tests for gpu_runs datasource foundations: split_run_by_month + validator.
+"""Tests for gpu_runs datasource foundations: split_run_by_month + validator + stamp.
 
 TDD: these tests are written first. Run failing before implementing.
 
@@ -7,8 +7,90 @@ TDD: these tests are written first. Run failing before implementing.
 import datetime
 import pytest
 
-from ingest.connectors.gpu_runs import split_run_by_month
+from ingest.connectors.gpu_runs import split_run_by_month, stamp
 from ingest import run as ingest_run
+
+
+# ---------------------------------------------------------------------------
+# stamp — deployment-to-model mapping
+# ---------------------------------------------------------------------------
+
+def test_stamp_runpod_zimage():
+    assert stamp("runpod", "zimage-4090-secure") == ("zimage", "gpu")
+
+def test_stamp_runpod_zimage_upper():
+    """Case-insensitive substring match."""
+    assert stamp("runpod", "ZIMAGE-A100") == ("zimage", "gpu")
+
+def test_stamp_runpod_klein():
+    assert stamp("runpod", "klein-A5000") == ("klein", "gpu")
+
+def test_stamp_runpod_klein_upper():
+    assert stamp("runpod", "KLEIN-box") == ("klein", "gpu")
+
+def test_stamp_runpod_storage_exact():
+    """_storage is an exact match — must map to zimage."""
+    assert stamp("runpod", "_storage") == ("zimage", "gpu")
+
+def test_stamp_runpod_storage_substring_no_match():
+    """_storage is exact — a name that merely contains '_storage' does NOT hit."""
+    # e.g. "my_storage_bucket" should fall through to unmapped
+    result = stamp("runpod", "my_storage_bucket")
+    assert result == ("", "gpu")
+
+def test_stamp_runpod_unknown():
+    """An unknown runpod deployment returns empty model."""
+    assert stamp("runpod", "randompod") == ("", "gpu")
+
+def test_stamp_lambda_gh200():
+    models_csv, kind = stamp("lambda", "gh200-cluster")
+    assert models_csv == "ltx-2,acestep,sana"
+    assert kind == "gpu"
+
+def test_stamp_lambda_sana():
+    assert stamp("lambda", "sana-inference")[0] == "ltx-2,acestep,sana"
+
+def test_stamp_lambda_ltx():
+    assert stamp("lambda", "ltx-node-01")[0] == "ltx-2,acestep,sana"
+
+def test_stamp_lambda_ace():
+    assert stamp("lambda", "ace-worker")[0] == "ltx-2,acestep,sana"
+
+def test_stamp_lambda_gh200_case_insensitive():
+    assert stamp("lambda", "GH200-large")[0] == "ltx-2,acestep,sana"
+
+def test_stamp_lambda_unmapped():
+    """Lambda deployment not matching any known pattern → empty model."""
+    assert stamp("lambda", "mystery-box") == ("", "gpu")
+
+def test_stamp_lambda_unmapped_kind_is_gpu():
+    _, kind = stamp("lambda", "other-lambda-box")
+    assert kind == "gpu"
+
+def test_stamp_vast():
+    """vast.ai catch-all → flux."""
+    assert stamp("vast.ai", "any-deployment-name") == ("flux", "gpu")
+
+def test_stamp_vast_empty_name():
+    assert stamp("vast.ai", "") == ("flux", "gpu")
+
+def test_stamp_modal_serverless():
+    """modal always returns serverless kind."""
+    models_csv, kind = stamp("modal", "any-modal-app")
+    assert models_csv == "flux-klein,klein,klein-large"
+    assert kind == "serverless"
+
+def test_stamp_modal_empty_name():
+    _, kind = stamp("modal", "")
+    assert kind == "serverless"
+
+def test_stamp_ionet():
+    """io.net catch-all → flux,zimage."""
+    assert stamp("io.net", "some-node") == ("flux,zimage", "gpu")
+
+def test_stamp_unknown_vendor():
+    """Completely unknown vendor returns unmapped."""
+    assert stamp("nonexistent-cloud", "some-deployment") == ("", "gpu")
 
 
 # ---------------------------------------------------------------------------

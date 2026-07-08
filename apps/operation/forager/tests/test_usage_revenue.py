@@ -129,6 +129,7 @@ def test_usage_vendor_canonicalized_at_ingest():
             "price_quests": 0.0,
             "cost_paid": 0.05,
             "cost_quests": 0.0,
+            "requests": 0,
         },
         {
             "vendor": "vastai",
@@ -137,6 +138,7 @@ def test_usage_vendor_canonicalized_at_ingest():
             "price_quests": 0.0,
             "cost_paid": 0.02,
             "cost_quests": 0.0,
+            "requests": 0,
         },
     ]
     tb = TBStub(canned_rows=canned)
@@ -156,6 +158,7 @@ def test_usage_vendor_canonicalized_at_ingest():
             "byop_quests",
             "model_paid",
             "model_quests",
+            "requests",
         }
         for r in rows
     )
@@ -354,6 +357,34 @@ def test_usage_query_includes_other_bucket():
     assert "cost_other" in q
     assert "NOT LIKE '%pack%'" in q
     assert "NOT LIKE '%tier%'" in q
+
+
+def test_usage_query_counts_only_noncached_requests():
+    query = _usage._SQL.format(month="2026-06", next_month="2026-07")
+    assert "countIf(cache_hit = false) AS requests" in query
+    # the WHERE already excludes failures + unbilled — requests inherits it
+    assert "response_status >= 200 AND response_status < 300" in query
+    assert "is_billed_usage = true" in query
+
+
+def test_usage_rows_carry_requests_and_sum_on_canonical_merge():
+    class FakeTB:
+        def sql(self, q):
+            return [
+                {"vendor": "bedrock", "model": "m", "requests": 5,
+                 "cost_paid": 1, "cost_quests": 0, "cost_other": 0,
+                 "price_paid": 2, "price_quests": 0, "price_other": 0,
+                 "byop_paid": 0, "byop_quests": 0, "byop_other": 0,
+                 "model_paid": 0, "model_quests": 0, "model_other": 0},
+                {"vendor": "aws-bedrock", "model": "m", "requests": 7,
+                 "cost_paid": 1, "cost_quests": 0, "cost_other": 0,
+                 "price_paid": 2, "price_quests": 0, "price_other": 0,
+                 "byop_paid": 0, "byop_quests": 0, "byop_other": 0,
+                 "model_paid": 0, "model_quests": 0, "model_other": 0},
+            ]
+    rows = _usage.monthly_rows(FakeTB(), ["2026-06"], "2026-07-08")
+    aws = [r for r in rows if r["vendor"] == "aws" and r["model"] == "m"]
+    assert len(aws) == 1 and aws[0]["requests"] == 12
 
 
 # ---------------------------------------------------------------------------

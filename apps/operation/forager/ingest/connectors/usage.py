@@ -43,7 +43,8 @@ SELECT '{month}' AS month, model_provider_used AS vendor, model_used AS model,
   round(sumIf(total_price - dev_price, selected_meter_slug NOT LIKE '%pack%' AND selected_meter_slug NOT LIKE '%tier%' AND markup_rate > 0), 4) AS byop_other,
   round(sumIf(community_model_reward_amount, selected_meter_slug LIKE '%pack%'), 4) AS model_paid,
   round(sumIf(community_model_reward_amount, selected_meter_slug LIKE '%tier%'), 4) AS model_quests,
-  round(sumIf(community_model_reward_amount, selected_meter_slug NOT LIKE '%pack%' AND selected_meter_slug NOT LIKE '%tier%'), 4) AS model_other
+  round(sumIf(community_model_reward_amount, selected_meter_slug NOT LIKE '%pack%' AND selected_meter_slug NOT LIKE '%tier%'), 4) AS model_other,
+  countIf(cache_hit = false) AS requests
 FROM generation_event
 WHERE environment = 'production'
   AND is_billed_usage = true
@@ -130,6 +131,7 @@ def monthly_rows(tb_prod, months, today):
         "model_paid",
         "model_quests",
         "model_other",
+        "requests",
     )
     by_key = {}
     for month in months:

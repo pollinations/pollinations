@@ -15,7 +15,8 @@ SQL >
         byop_paid,
         byop_quests,
         model_paid,
-        model_quests
+        model_quests,
+        requests
     FROM pollen_monthly
     ORDER BY month, vendor, model
 

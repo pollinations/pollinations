@@ -167,7 +167,11 @@ mirror — e.g. a reimbursement transfer covering Cloudflare + Scaleway +
 Workspace invoices). Each rule: `match` on `{date, amount, currency, text}`
 (text = lowercase counterparty substring) + `parts` of
 `{vendor, category, amount}`. Parts must sum to the matched amount to the
-cent or the run fails. Splits survive every rebuild because they are applied
+cent or the run fails. A part may add `"date"`: the invoice month it covered,
+when the transfer reimburses older bills — the P&L groups by row date, so
+this books each line to its consumption month (parts dated before 2026-01
+stay in the table but out of the window's calculations; Elliot's ruling
+2026-07-08). Splits survive every rebuild because they are applied
 by `wise.apply_splits` during the pull — never edit the table directly (the
 next run would wipe it). After editing, `--dry-run --only transactions`,
 then write.

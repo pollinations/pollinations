@@ -342,6 +342,75 @@ def test_fetch_month_follows_cursor(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
+# refunds (a refund inflow cancels its charge — neither becomes a row)
+# ---------------------------------------------------------------------------
+
+
+def _charge(date, vendor="cloudflare", amount=1399.04, currency="USD"):
+    row = {
+        "date": date,
+        "vendor": vendor,
+        "category": "infra",
+        "charged_amount": amount,
+        "charged_currency": currency,
+    }
+    return (row, f"{vendor} charge")
+
+
+def test_refund_for_detects_wise_refund_inflows():
+    refund = wise.refund_for(activity(
+        title="Cloudflare Refunded",
+        primaryAmount="<positive>+ 1,399.04 USD</positive>",
+        createdOn="2026-06-25T09:00:00Z",
+    ))
+    assert refund == {
+        "date": "2026-06-25",
+        "vendor": "cloudflare",
+        "amount": 1399.04,
+        "currency": "USD",
+    }
+    # plain outflows and non-refund inflows are not refunds
+    assert wise.refund_for(activity()) is None
+    assert wise.refund_for(activity(
+        title="Stripe", primaryAmount="<positive>+ 50 EUR</positive>",
+    )) is None
+
+
+def test_cancel_refunds_drops_the_nearest_prior_matching_charge():
+    charges = [
+        _charge("2026-05-22"),
+        _charge("2026-06-22"),
+        _charge("2026-06-23", vendor="runpod"),
+    ]
+    refund = {"date": "2026-06-25", "vendor": "cloudflare",
+              "amount": 1399.04, "currency": "USD"}
+    kept, notes = wise.cancel_refunds(charges, [refund])
+    assert [(r["date"], r["vendor"]) for r, _ in kept] == [
+        ("2026-05-22", "cloudflare"),
+        ("2026-06-23", "runpod"),
+    ]
+    assert len(notes) == 1 and "cancels 2026-06-22" in notes[0]
+
+
+def test_cancel_refunds_without_a_match_keeps_everything_and_warns():
+    charges = [_charge("2026-06-22", amount=500.0)]
+    refund = {"date": "2026-06-25", "vendor": "cloudflare",
+              "amount": 1399.04, "currency": "USD"}
+    kept, notes = wise.cancel_refunds(charges, [refund])
+    assert len(kept) == 1
+    assert len(notes) == 1 and "no matching charge" in notes[0]
+
+
+def test_cancel_refunds_respects_the_time_window():
+    charges = [_charge("2026-01-02")]
+    refund = {"date": "2026-06-25", "vendor": "cloudflare",
+              "amount": 1399.04, "currency": "USD"}
+    kept, notes = wise.cancel_refunds(charges, [refund])
+    assert len(kept) == 1
+    assert "no matching charge" in notes[0]
+
+
+# ---------------------------------------------------------------------------
 # transaction splits (bundled transfers → invoice-line rows)
 # ---------------------------------------------------------------------------
 
@@ -393,10 +462,29 @@ def test_apply_splits_rejects_parts_that_do_not_sum():
         wise.apply_splits(_bundle_row(), "haferlach", bad)
 
 
+def test_apply_splits_books_parts_to_their_consumption_date():
+    """A part's own "date" (the invoice month it covered) overrides the settle
+    date, so reimbursement batches land in the months they paid for."""
+    split = [{
+        "match": {"date": "2026-01-09", "amount": 4943.18, "currency": "EUR", "text": "haferlach"},
+        "parts": [
+            {"vendor": "cloudflare", "category": "infra", "amount": 3240.67, "date": "2025-12-09"},
+            {"vendor": "scaleway", "category": "compute", "amount": 1452.91, "date": "2025-11-30"},
+            {"vendor": "google-workspace", "category": "saas", "amount": 249.60},
+        ],
+    }]
+    parts = wise.apply_splits(_bundle_row(), "haferlach", split)
+    assert [p["date"] for p in parts] == ["2025-12-09", "2025-11-30", "2026-01-09"]
+    wise.validate_rows(parts)
+
+
 def test_shipped_split_config_is_coherent():
-    """Every configured split: parts sum to the match amount, vendors valid."""
+    """Every configured split: parts sum to the match amount, vendors valid,
+    any part dates well-formed."""
     for spec in wise.TRANSACTION_SPLITS:
         total = round(sum(p["amount"] for p in spec["parts"]), 2)
         assert abs(total - spec["match"]["amount"]) < 0.005, spec["match"]
         for p in spec["parts"]:
             assert p["vendor"] in wise.VENDOR_ALIASES, p["vendor"]
+            if "date" in p:
+                assert wise._DATE_RE.match(p["date"]), p

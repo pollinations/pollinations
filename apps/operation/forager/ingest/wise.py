@@ -46,22 +46,110 @@ _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
 def build_transactions(secrets, months):
-    rows = []
-    unmatched = []
+    charges = []
+    refunds = []
     for month in months:
         for activity in fetch_month(secrets, month):
+            text = activity_text(activity)
+            refund = refund_for(activity)
+            if refund is not None:
+                refunds.append(refund)
+                continue
             row = transaction_for(activity)
             if row is None:
                 continue
-            for part in apply_splits(row, activity_text(activity)):
-                rows.append(part)
-                if not part["vendor"]:
-                    unmatched.append((part, activity_text(activity).strip()))
+            charges.append((row, text))
+
+    kept, notes = cancel_refunds(charges, refunds)
+    for note in notes:
+        print(note)
+
+    rows = []
+    unmatched = []
+    for row, text in kept:
+        for part in apply_splits(row, text):
+            rows.append(part)
+            if not part["vendor"]:
+                unmatched.append((part, text.strip()))
     flag = unmatched_flag(unmatched)
     if flag:
         print(flag)
     validate_rows(rows)
     return rows
+
+
+_REFUND_WINDOW_DAYS = 45
+
+
+def refund_for(activity):
+    """A refund descriptor for an inflow that reverses a card charge, or None.
+
+    Wise titles these '<Vendor> Refunded' with the positive marker (e.g.
+    Cloudflare's mistaken 2026-06-22 billing, refunded three days later).
+    Inflows are otherwise skipped entirely, so without this the refunded
+    charge would silently overstate spend.
+    """
+    if activity.get("status") not in KEPT_STATUSES:
+        return None
+    if "positive" not in (activity.get("primaryAmount") or ""):
+        return None
+    text = activity_text(activity)
+    if "refund" not in text.lower():
+        return None
+    amount, currency = settled_amount(activity)
+    if amount <= 0:
+        return None
+    return {
+        "date": (activity.get("createdOn") or "")[:10],
+        "vendor": vendor_for(text),
+        "amount": round(amount, 2),
+        "currency": currency,
+    }
+
+
+def cancel_refunds(charges, refunds):
+    """Drop each charge that a refund inflow reverses; money out + money back
+    nets to zero, and inflows never become rows.
+
+    A refund matches the NEAREST PRIOR charge with the same vendor, amount,
+    and currency within _REFUND_WINDOW_DAYS. A refund that matches nothing
+    (charge before the ingest window, partial refund) keeps everything and
+    reports itself instead of guessing.
+    """
+    import datetime
+
+    def _day(value):
+        return datetime.date.fromisoformat(value)
+
+    kept = list(charges)
+    notes = []
+    for refund in refunds:
+        match = None
+        for index, (row, _text) in enumerate(kept):
+            if (
+                row["vendor"] == refund["vendor"]
+                and row["charged_currency"] == refund["currency"]
+                and abs(row["charged_amount"] - refund["amount"]) < 0.005
+                and row["date"] <= refund["date"]
+                and (_day(refund["date"]) - _day(row["date"])).days
+                <= _REFUND_WINDOW_DAYS
+            ):
+                if match is None or row["date"] > kept[match][0]["date"]:
+                    match = index
+        if match is None:
+            notes.append(
+                f"⚠ transactions: refund {refund['date']} {refund['amount']} "
+                f"{refund['currency']} ({refund['vendor'] or 'no vendor match'}) "
+                "has no matching charge — nothing dropped, check Wise"
+            )
+        else:
+            row, _text = kept.pop(match)
+            notes.append(
+                f"    transactions: refund cancels {row['date']} "
+                f"{row['vendor'] or '(no vendor)'} {row['charged_amount']} "
+                f"{row['charged_currency']} (refunded {refund['date']})"
+            )
+    return kept, notes
 
 
 def unmatched_flag(unmatched):
@@ -219,6 +307,13 @@ def apply_splits(row, text, splits=None):
     and replaces the row with one row per invoice line, each carrying an
     explicit vendor and category. Parts must sum to the original amount to the
     cent — a mismatch is a config error, not something to book.
+
+    A part may carry its own "date": the consumption (invoice) month, when the
+    settle date is a reimbursement for older bills. The P&L groups by row date,
+    so this books each invoice line to the month it covered — parts dated
+    before the analysis window stay visible in the transactions list but drop
+    out of the window's calculations (Elliot's ruling 2026-07-08 on Thomas's
+    reimbursement batches).
     """
     if splits is None:
         splits = TRANSACTION_SPLITS
@@ -232,7 +327,7 @@ def apply_splits(row, text, splits=None):
         ):
             parts = [
                 {
-                    "date": row["date"],
+                    "date": p.get("date", row["date"]),
                     "vendor": p["vendor"],
                     "category": p["category"],
                     "charged_amount": round(float(p["amount"]), 2),

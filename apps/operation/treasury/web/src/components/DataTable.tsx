@@ -17,6 +17,16 @@ type SortState = {
 
 export type InitialSort = SortState;
 
+export type ColumnHint = {
+    meaning: string;
+    tables?: string;
+    sources?: string;
+    formula?: string;
+};
+
+// First cell of a column group gets a hairline left rule.
+export const GROUP_BORDER = "border-l border-theme-border/60";
+
 export function TableScroller({ children }: { children: ReactNode }) {
     return (
         <section className="w-full max-w-full">
@@ -38,13 +48,42 @@ export function HeaderHint({
     hint,
 }: {
     children: ReactNode;
-    hint: string;
+    hint: string | ColumnHint;
 }) {
+    const content =
+        typeof hint === "string" ? (
+            <span className="block max-w-72">{hint}</span>
+        ) : (
+            <span className="block max-w-72">
+                <span className="block">{hint.meaning}</span>
+                {(
+                    [
+                        ["Tables", hint.tables],
+                        ["Sources", hint.sources],
+                        ["Formula", hint.formula],
+                    ] as const
+                )
+                    .filter(([, value]) => Boolean(value))
+                    .map(([label, value], index) => (
+                        <span
+                            key={label}
+                            className={
+                                index === 0
+                                    ? "mt-1 block text-theme-text-soft"
+                                    : "block text-theme-text-soft"
+                            }
+                        >
+                            <span className="font-semibold">{label}</span>{" "}
+                            {value}
+                        </span>
+                    ))}
+            </span>
+        );
     return (
         <Tooltip
             triggerAs="span"
             stopClickPropagation={false}
-            content={<span className="block max-w-72">{hint}</span>}
+            content={content}
         >
             <span className="underline decoration-dotted decoration-theme-border underline-offset-2">
                 {children}

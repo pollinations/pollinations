@@ -17,6 +17,7 @@ const baseData: Data = {
     revenueMonthly: [],
     gpuFleet: [],
     gpuBilling: [],
+    gpuRuns: [],
 };
 
 describe("vendor vocabulary", () => {

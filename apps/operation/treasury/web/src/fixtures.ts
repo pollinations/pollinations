@@ -1,6 +1,7 @@
 import type {
     GpuBillingRow,
     GpuFleetRow,
+    GpuRunRow,
     GrantRow,
     PollenMonthlyRow,
     ProviderMonthlyRow,
@@ -391,6 +392,57 @@ const gpuBilling: GpuBillingRow[] = [
     },
 ];
 
+const gpuRuns: GpuRunRow[] = [
+    {
+        month: "2026-06",
+        vendor: "runpod",
+        run_id: "hsl3ksl31lvrcc",
+        deployment: "zimage-4090-secure",
+        gpu: "RTX 4090",
+        gpu_count: 1,
+        started_at: "2026-06-04 08:12:00",
+        ended_at: "2026-06-04 14:47:00",
+        hours: 6.58,
+        cost: 4.54,
+        currency: "USD",
+        model: "zimage",
+        kind: "gpu",
+        source: "api",
+    },
+    {
+        month: "2026-06",
+        vendor: "io.net",
+        run_id: "ionet-run-2201",
+        deployment: "sana-h100-a",
+        gpu: "H100",
+        gpu_count: 1,
+        started_at: "2026-06-10 00:00:00",
+        ended_at: "2026-06-10 05:30:00",
+        hours: 5.5,
+        cost: 12.1,
+        currency: "EUR",
+        model: "sana",
+        kind: "gpu",
+        source: "manual",
+    },
+    {
+        month: "2026-06",
+        vendor: "modal",
+        run_id: "modal-fc-9938",
+        deployment: "klein-serverless",
+        gpu: "",
+        gpu_count: 1,
+        started_at: "",
+        ended_at: "",
+        hours: null,
+        cost: 0.87,
+        currency: "USD",
+        model: "klein",
+        kind: "serverless",
+        source: "api",
+    },
+];
+
 export const FIXTURES: Record<string, unknown[]> = {
     transactions_api: transactions,
     provider_monthly_api: providerMonthly,
@@ -400,4 +452,5 @@ export const FIXTURES: Record<string, unknown[]> = {
     revenue_monthly_api: revenueMonthly,
     gpu_fleet_api: gpuFleet,
     gpu_billing_api: gpuBilling,
+    gpu_runs_api: gpuRuns,
 };

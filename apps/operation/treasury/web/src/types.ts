@@ -80,6 +80,23 @@ export type GpuBillingRow = {
     source: string;
 };
 
+export type GpuRunRow = {
+    month: string; // "YYYY-MM"
+    vendor: string;
+    run_id: string;
+    deployment: string;
+    gpu: string; // "" when the provider hides it
+    gpu_count: number;
+    started_at: string; // "YYYY-MM-DD HH:MM:SS" or "" (unknown)
+    ended_at: string; // "" = still running / unknown
+    hours: number | null; // null = serverless / unknown
+    cost: number;
+    currency: string; // USD or EUR
+    model: string; // comma-joined model list; "" = unmapped
+    kind: string; // "gpu" | "serverless"
+    source: string; // "api" | "cli" | "manual"
+};
+
 export type Data = {
     transactions: TransactionRow[];
     providerMonthly: ProviderMonthlyRow[];
@@ -89,4 +106,5 @@ export type Data = {
     revenueMonthly: RevenueMonthlyRow[];
     gpuFleet: GpuFleetRow[];
     gpuBilling: GpuBillingRow[];
+    gpuRuns: GpuRunRow[];
 };

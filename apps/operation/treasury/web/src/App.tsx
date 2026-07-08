@@ -50,6 +50,7 @@ import type { Data } from "./types";
 import { BillingTab } from "./views/BillingTab";
 import { CreditsTab } from "./views/CreditsTab";
 import { FleetTab } from "./views/FleetTab";
+import { GpuRunsTab } from "./views/GpuRunsTab";
 import { GpuTab } from "./views/GpuTab";
 import { GrantsTab } from "./views/GrantsTab";
 import { ModelsTab } from "./views/ModelsTab";
@@ -68,7 +69,8 @@ type Tab =
     | "grants"
     | "revenue"
     | "fleet"
-    | "billing";
+    | "billing"
+    | "runs";
 type TreasurySection = "insights" | "raw";
 type InsightTab =
     | "pnl"
@@ -207,6 +209,15 @@ const TABS: {
         note: "GPU deployment audit ledger: one row per deployment per month with the billed amount — API/CLI-backfilled where the provider keeps history, manual rows recorded from invoices elsewhere.",
         icon: DatabaseIcon,
         rows: (data) => data.gpuBilling.length,
+    },
+    {
+        id: "runs",
+        label: "GPU Runs",
+        codes: ["API", "CLI", "HC"],
+        pipe: "gpu_runs_api",
+        note: "GPU run ledger: one row per GPU run per month — which GPU ran, when, for how long, at what cost, serving which model. API/CLI-backfilled where providers keep history; manual rows from invoices/dashboards.",
+        icon: DatabaseIcon,
+        rows: (data) => data.gpuRuns.length,
     },
 ];
 
@@ -670,6 +681,8 @@ function vendorOptionsForTab(data: Data | null, tab: Tab) {
         for (const row of data.gpuFleet) add(row.vendor);
     } else if (tab === "billing") {
         for (const row of data.gpuBilling) add(row.vendor);
+    } else if (tab === "runs") {
+        for (const row of data.gpuRuns) add(row.vendor);
     }
 
     return ["all", ...[...vendors].sort((a, b) => a.localeCompare(b))];
@@ -1069,6 +1082,13 @@ export default function App() {
                         )}
                         {data && section === "raw" && tab === "billing" && (
                             <BillingTab
+                                data={data}
+                                month={activeMonth}
+                                vendor={vendor}
+                            />
+                        )}
+                        {data && section === "raw" && tab === "runs" && (
+                            <GpuRunsTab
                                 data={data}
                                 month={activeMonth}
                                 vendor={vendor}

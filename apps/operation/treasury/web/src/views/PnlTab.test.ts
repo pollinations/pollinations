@@ -81,6 +81,7 @@ const data: Data = {
     revenueMonthly: [revenue("2026-05", 1000), revenue("2026-06", 2000)],
     gpuFleet: [],
     gpuBilling: [],
+    gpuRuns: [],
 };
 
 const lineKeys = (result: ReturnType<typeof pnlStatement>) =>

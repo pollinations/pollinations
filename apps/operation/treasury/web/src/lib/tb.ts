@@ -3,6 +3,7 @@ import type {
     Data,
     GpuBillingRow,
     GpuFleetRow,
+    GpuRunRow,
     GrantRow,
     PollenMonthlyRow,
     ProviderMonthlyRow,
@@ -50,6 +51,7 @@ export async function loadAll(): Promise<Data> {
         revenueMonthly,
         gpuFleet,
         gpuBilling,
+        gpuRuns,
     ] = await Promise.all([
         fetchPipe<TransactionRow>("transactions_api"),
         fetchPipe<ProviderMonthlyRow>("provider_monthly_api"),
@@ -59,6 +61,7 @@ export async function loadAll(): Promise<Data> {
         fetchPipe<RevenueMonthlyRow>("revenue_monthly_api"),
         fetchPipe<GpuFleetRow>("gpu_fleet_api"),
         fetchPipe<GpuBillingRow>("gpu_billing_api"),
+        fetchPipe<GpuRunRow>("gpu_runs_api"),
     ]);
 
     return {
@@ -70,5 +73,6 @@ export async function loadAll(): Promise<Data> {
         revenueMonthly,
         gpuFleet,
         gpuBilling,
+        gpuRuns,
     };
 }

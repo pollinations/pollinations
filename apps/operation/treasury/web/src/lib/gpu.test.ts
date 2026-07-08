@@ -11,6 +11,7 @@ const base: Data = {
     revenueMonthly: [],
     gpuFleet: [],
     gpuBilling: [],
+    gpuRuns: [],
 };
 
 const JUNE_FLEET = [

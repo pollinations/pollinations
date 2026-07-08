@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { flagIntent, visibleGpuRows, visibleGpuTypeRows } from "./GpuTab";
+import {
+    flagIntent,
+    showsModelSubtext,
+    visibleGpuRows,
+    visibleGpuTypeRows,
+} from "./GpuTab";
 
 const mk = (vendor: string, coverage: number | null) => ({
     group: vendor,
@@ -53,6 +58,22 @@ describe("flagIntent", () => {
         expect(flagIntent("unattributed: flux")).toBe("warning");
         expect(flagIntent("hybrid: AI Endpoints + instance")).toBe("warning");
         expect(flagIntent("hours unknown")).toBe("warning");
+    });
+});
+
+describe("showsModelSubtext", () => {
+    it("hides sub-text for a normal per-model row (models === [group])", () => {
+        expect(showsModelSubtext({ group: "flux", models: ["flux"] })).toBe(
+            false,
+        );
+    });
+    it("shows sub-text for a (vendor total) fallback row", () => {
+        expect(
+            showsModelSubtext({
+                group: "(vendor total)",
+                models: ["flux", "zimage"],
+            }),
+        ).toBe(true);
     });
 });
 

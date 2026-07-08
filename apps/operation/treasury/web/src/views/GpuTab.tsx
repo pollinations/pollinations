@@ -36,6 +36,15 @@ export function flagIntent(flag: string): "danger" | "warning" {
     return flag.startsWith("error:") ? "danger" : "warning";
 }
 
+// Normal per-model rows have models === [group], so the sub-text would just
+// repeat the title — skip it. Fallback rows (e.g. "(vendor total)") carry a
+// distinct model list that isn't shown anywhere else, so surface it.
+export function showsModelSubtext(
+    row: Pick<GpuDeploymentRow, "group" | "models">,
+): boolean {
+    return row.models.join(", ") !== row.group;
+}
+
 export function visibleGpuRows({
     rows,
     vendor,
@@ -353,6 +362,11 @@ export function GpuTab({
                                                 </Chip>
                                             )}
                                         </div>
+                                        {showsModelSubtext(row) && (
+                                            <Text size="micro" tone="soft">
+                                                {row.models.join(", ")}
+                                            </Text>
+                                        )}
                                         {row.flags.length > 0 && (
                                             <div className="flex flex-wrap gap-1 pt-0.5">
                                                 {row.flags.map((flag) => (

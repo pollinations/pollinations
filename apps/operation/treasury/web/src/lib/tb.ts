@@ -1,6 +1,7 @@
 import { FIXTURES } from "../fixtures";
 import type {
     Data,
+    GpuBillingRow,
     GpuFleetRow,
     GrantRow,
     PollenMonthlyRow,
@@ -48,6 +49,7 @@ export async function loadAll(): Promise<Data> {
         runs,
         revenueMonthly,
         gpuFleet,
+        gpuBilling,
     ] = await Promise.all([
         fetchPipe<TransactionRow>("transactions_api"),
         fetchPipe<ProviderMonthlyRow>("provider_monthly_api"),
@@ -56,6 +58,7 @@ export async function loadAll(): Promise<Data> {
         fetchPipe<RunRow>("ingest_runs_api"),
         fetchPipe<RevenueMonthlyRow>("revenue_monthly_api"),
         fetchPipe<GpuFleetRow>("gpu_fleet_api"),
+        fetchPipe<GpuBillingRow>("gpu_billing_api"),
     ]);
 
     return {
@@ -66,5 +69,6 @@ export async function loadAll(): Promise<Data> {
         runs,
         revenueMonthly,
         gpuFleet,
+        gpuBilling,
     };
 }

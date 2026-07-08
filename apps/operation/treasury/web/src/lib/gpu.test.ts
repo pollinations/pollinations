@@ -10,6 +10,7 @@ const base: Data = {
     runs: [],
     revenueMonthly: [],
     gpuFleet: [],
+    gpuBilling: [],
 };
 
 const JUNE_FLEET = [
@@ -257,8 +258,8 @@ describe("gpuEconomics — unattributed pollen flag", () => {
     });
 
     it("vendor-total no-fleet row does NOT carry unattributed flag even with unclaimed models", () => {
-        // ovhcloud has no fleet → goes through the no-fleet path which
-        // aggregates ALL pollen rows. "flux" is not in any ovhcloud group but
+        // io.net has no fleet → goes through the no-fleet path which
+        // aggregates ALL pollen rows. "flux" is not in any io.net group but
         // since all pollen is included in the row the flag is contradictory
         // and must NOT appear.
         const d: Data = {
@@ -267,7 +268,7 @@ describe("gpuEconomics — unattributed pollen flag", () => {
             providerMonthly: [
                 {
                     month: "2026-06",
-                    vendor: "ovhcloud",
+                    vendor: "io.net",
                     currency: "USD",
                     category: "compute",
                     credit: 500,
@@ -279,7 +280,7 @@ describe("gpuEconomics — unattributed pollen flag", () => {
                 {
                     source: "tinybird",
                     month: "2026-06",
-                    vendor: "ovhcloud",
+                    vendor: "io.net",
                     model: "flux",
                     currency: "POLLEN",
                     cost_paid: 0,
@@ -538,8 +539,8 @@ describe("gpuEconomics invariants", () => {
         expect(grandTotal).toBeCloseTo(300, 6);
     });
 
-    it("multi-month no-fleet vendor: cross-month rent does not leak (ovhcloud)", () => {
-        // ovhcloud has no fleet — emits one vendor-total row per month.
+    it("multi-month no-fleet vendor: cross-month rent does not leak (io.net)", () => {
+        // io.net has no fleet — emits one vendor-total row per month.
         // With bills in two months, each month row must carry only its own bill.
         const d: Data = {
             ...base,
@@ -547,7 +548,7 @@ describe("gpuEconomics invariants", () => {
             providerMonthly: [
                 {
                     month: "2026-05",
-                    vendor: "ovhcloud",
+                    vendor: "io.net",
                     currency: "USD",
                     category: "compute",
                     credit: 150,
@@ -556,7 +557,7 @@ describe("gpuEconomics invariants", () => {
                 },
                 {
                     month: "2026-06",
-                    vendor: "ovhcloud",
+                    vendor: "io.net",
                     currency: "USD",
                     category: "compute",
                     credit: 250,
@@ -569,15 +570,15 @@ describe("gpuEconomics invariants", () => {
         };
         const rows = gpuEconomics(d, "2026");
         const mayRow = rows.find(
-            (r) => r.vendor === "ovhcloud" && r.month === "2026-05",
+            (r) => r.vendor === "io.net" && r.month === "2026-05",
         );
         const juneRow = rows.find(
-            (r) => r.vendor === "ovhcloud" && r.month === "2026-06",
+            (r) => r.vendor === "io.net" && r.month === "2026-06",
         );
         expect(mayRow?.rentUsd).toBeCloseTo(150, 6);
         expect(juneRow?.rentUsd).toBeCloseTo(250, 6);
         const grandTotal = rows
-            .filter((r) => r.vendor === "ovhcloud")
+            .filter((r) => r.vendor === "io.net")
             .reduce((acc, r) => acc + (r.rentUsd ?? 0), 0);
         expect(grandTotal).toBeCloseTo(400, 6);
     });
@@ -613,5 +614,187 @@ describe("gpuEconomics invariants", () => {
         const total = rows.reduce((acc, r) => acc + (r.rentUsd ?? 0), 0);
         // infra row must not be counted
         expect(total).toBeCloseTo(1000, 2);
+    });
+});
+
+describe("gpuEconomics — billing-preferred allocation", () => {
+    const billingData: Data = {
+        ...data,
+        gpuBilling: [
+            {
+                month: "2026-06",
+                vendor: "runpod",
+                deployment: "zimage-4090-secure",
+                gpu: "RTX 4090",
+                amount: 750,
+                currency: "USD",
+                source: "api",
+            },
+            {
+                month: "2026-06",
+                vendor: "runpod",
+                deployment: "klein-a5000-v4",
+                gpu: "RTX A5000",
+                amount: 250,
+                currency: "USD",
+                source: "api",
+            },
+        ],
+    };
+
+    it("billing rows beat fleet when both exist", () => {
+        const rows = gpuEconomics(billingData, "2026-06");
+        const runpodRows = rows.filter((r) => r.vendor === "runpod");
+        expect(runpodRows.length).toBeGreaterThan(0);
+        expect(runpodRows.every((r) => r.flags.includes("split: billed"))).toBe(
+            true,
+        );
+        expect(
+            runpodRows.every((r) => !r.flags.includes("split: fleet $/hr")),
+        ).toBe(true);
+    });
+
+    it("grouped rents scale to provider bill with billing weights", () => {
+        const rows = gpuEconomics(billingData, "2026-06");
+        const total = rows
+            .filter((r) => r.vendor === "runpod")
+            .reduce((acc, r) => acc + (r.rentUsd ?? 0), 0);
+        expect(total).toBeCloseTo(1000, 2);
+        const zimage = rows.find((r) => r.models.includes("zimage"));
+        expect(zimage?.rentUsd).toBeCloseTo(750, 2);
+    });
+
+    it("unresolved podId row flagged 'unmapped billing id'", () => {
+        const withPodId: Data = {
+            ...billingData,
+            gpuBilling: [
+                ...billingData.gpuBilling,
+                {
+                    month: "2026-06",
+                    vendor: "runpod",
+                    deployment: "hsl3ksl31lvrcc",
+                    gpu: "",
+                    amount: 56.74,
+                    currency: "USD",
+                    source: "api",
+                },
+            ],
+        };
+        const rows = gpuEconomics(withPodId, "2026-06");
+        const podRow = rows.find((r) => r.group === "hsl3ksl31lvrcc");
+        expect(podRow).toBeDefined();
+        expect(podRow?.flags).toContain("unmapped billing id");
+    });
+
+    it("drift flag fires at >2% difference, not at <2%", () => {
+        // billing sum = 975, provider bill = 1000 → 2.5% drift → flag fires
+        const driftData: Data = {
+            ...billingData,
+            gpuBilling: [
+                {
+                    month: "2026-06",
+                    vendor: "runpod",
+                    deployment: "zimage-4090-secure",
+                    gpu: "RTX 4090",
+                    amount: 725,
+                    currency: "USD",
+                    source: "api",
+                },
+                {
+                    month: "2026-06",
+                    vendor: "runpod",
+                    deployment: "klein-a5000-v4",
+                    gpu: "RTX A5000",
+                    amount: 250,
+                    currency: "USD",
+                    source: "api",
+                },
+            ],
+        };
+        const rows = gpuEconomics(driftData, "2026-06");
+        const runpodRows = rows.filter((r) => r.vendor === "runpod");
+        expect(
+            runpodRows.some((r) =>
+                r.flags.some((f) => f.startsWith("billing drift")),
+            ),
+        ).toBe(true);
+
+        // billing sum = 985, provider bill = 1000 → 1.5% → no drift flag
+        const noDriftData: Data = {
+            ...billingData,
+            gpuBilling: [
+                {
+                    month: "2026-06",
+                    vendor: "runpod",
+                    deployment: "zimage-4090-secure",
+                    gpu: "RTX 4090",
+                    amount: 735,
+                    currency: "USD",
+                    source: "api",
+                },
+                {
+                    month: "2026-06",
+                    vendor: "runpod",
+                    deployment: "klein-a5000-v4",
+                    gpu: "RTX A5000",
+                    amount: 250,
+                    currency: "USD",
+                    source: "api",
+                },
+            ],
+        };
+        const noDriftRows = gpuEconomics(noDriftData, "2026-06");
+        const noDriftRunpod = noDriftRows.filter((r) => r.vendor === "runpod");
+        expect(
+            noDriftRunpod.every(
+                (r) => !r.flags.some((f) => f.startsWith("billing drift")),
+            ),
+        ).toBe(true);
+    });
+
+    it("manual and cli sources accepted same as api", () => {
+        const manualData: Data = {
+            ...base,
+            gpuBilling: [
+                {
+                    month: "2026-06",
+                    vendor: "lambda",
+                    deployment: "Sana - LTX-2.3 - AceStep",
+                    gpu: "1x GH200 (96 GB)",
+                    amount: 500,
+                    currency: "USD",
+                    source: "manual",
+                },
+            ],
+            providerMonthly: [
+                {
+                    month: "2026-06",
+                    vendor: "lambda",
+                    currency: "USD",
+                    category: "compute",
+                    credit: 500,
+                    paid: 0,
+                    source: "api",
+                },
+            ],
+            pollenMonthly: [],
+            revenueMonthly: [],
+            gpuFleet: [],
+        };
+        const rows = gpuEconomics(manualData, "2026-06");
+        const lambdaRows = rows.filter((r) => r.vendor === "lambda");
+        expect(lambdaRows.length).toBeGreaterThan(0);
+        expect(lambdaRows.every((r) => r.flags.includes("split: billed"))).toBe(
+            true,
+        );
+    });
+
+    it("fleet $/hr used when no billing rows", () => {
+        const fleetOnlyData: Data = { ...data, gpuBilling: [] };
+        const rows = gpuEconomics(fleetOnlyData, "2026-06");
+        const runpodRows = rows.filter((r) => r.vendor === "runpod");
+        expect(
+            runpodRows.every((r) => r.flags.includes("split: fleet $/hr")),
+        ).toBe(true);
     });
 });

@@ -70,6 +70,16 @@ export type GpuFleetRow = {
     balance_usd: number | null;
 };
 
+export type GpuBillingRow = {
+    month: string;
+    vendor: string;
+    deployment: string;
+    gpu: string;
+    amount: number;
+    currency: string;
+    source: string;
+};
+
 export type Data = {
     transactions: TransactionRow[];
     providerMonthly: ProviderMonthlyRow[];
@@ -78,4 +88,5 @@ export type Data = {
     runs: RunRow[];
     revenueMonthly: RevenueMonthlyRow[];
     gpuFleet: GpuFleetRow[];
+    gpuBilling: GpuBillingRow[];
 };

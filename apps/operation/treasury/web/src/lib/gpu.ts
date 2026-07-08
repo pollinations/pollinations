@@ -74,6 +74,13 @@ export const GPU_DEPLOYMENT_GROUPS: {
         models: [],
         kind: "serverless",
     },
+    {
+        vendor: "io.net",
+        match: /./,
+        group: "io.net (vendor)",
+        models: [],
+        kind: "gpu",
+    },
 ];
 
 // Registry unit prices for break-even (shared/registry/image.ts; hardcoded —
@@ -266,32 +273,160 @@ export function gpuEconomics(
                 unattributedModels.length > 0
                     ? `unattributed: ${unattributedModels.join(", ")}`
                     : null;
-            // Step 2: fleet shares for this month.
+            // Step 2: billing rows for this vendor+month (preferred source).
+            const billingRows = data.gpuBilling.filter(
+                (r) => r.vendor === vendor && r.month === month,
+            );
+
+            // Step 3: fleet snapshots for this vendor+month (fallback source).
             const fleetInMonth = data.gpuFleet.filter(
                 (r) =>
                     r.vendor === vendor && r.recorded_at.slice(0, 7) === month,
             );
 
-            // ovhcloud never has fleet data
-            const isOvhcloud = vendor === "ovhcloud";
+            // --- Billing-preferred path ---
+            // When billing rows exist, use their amounts as weights for rent
+            // allocation. Multiple billing rows may map to the same group.
+            if (billingRows.length > 0) {
+                const billingTotal = billingRows.reduce(
+                    (acc, r) => acc + toUsd(r.amount, r.currency, month),
+                    0,
+                );
 
-            // No snapshots → vendor-level group with 100% share + error flag
-            // (the deployment witness is MISSING — this is an error condition,
-            // not an alternative mode; the vendor-grain numbers are still
-            // witnessed at vendor grain from provider bills + metering).
-            if (fleetInMonth.length === 0 || isOvhcloud) {
+                // Accumulate amounts per group key.
+                const groupAmounts = new Map<
+                    string,
+                    {
+                        def: (typeof GPU_DEPLOYMENT_GROUPS)[number] | null;
+                        amountUsd: number;
+                    }
+                >();
+                for (const r of billingRows) {
+                    const def = groupFor(vendor, r.deployment);
+                    const key =
+                        def !== null
+                            ? def.group
+                            : `__unmapped__${r.deployment}`;
+                    const entry = groupAmounts.get(key) ?? {
+                        def: def ?? null,
+                        amountUsd: 0,
+                    };
+                    entry.amountUsd += toUsd(r.amount, r.currency, month);
+                    groupAmounts.set(key, entry);
+                }
+
+                const groupEntries = [...groupAmounts.entries()].map(
+                    ([key, { def, amountUsd }]) => ({ key, def, amountUsd }),
+                );
+
+                // Drift flag: if billing total diverges from provider bill by >2%.
+                const driftFlag =
+                    vendorRentUsd != null &&
+                    vendorRentUsd > 0 &&
+                    Math.abs(billingTotal - vendorRentUsd) / vendorRentUsd >
+                        0.02
+                        ? `billing drift vs bill: $${Math.round(Math.abs(billingTotal - vendorRentUsd))}`
+                        : null;
+
+                // Remainder invariant: last group absorbs float.
+                let assigned = 0;
+                const rentShares: number[] = [];
+                if (vendorRentUsd !== null && billingTotal > 0) {
+                    for (let i = 0; i < groupEntries.length - 1; i++) {
+                        const share =
+                            vendorRentUsd *
+                            (groupEntries[i].amountUsd / billingTotal);
+                        rentShares.push(share);
+                        assigned += share;
+                    }
+                    rentShares.push(vendorRentUsd - assigned);
+                } else {
+                    for (const e of groupEntries) {
+                        rentShares.push(
+                            vendorRentUsd !== null && billingTotal > 0
+                                ? vendorRentUsd * (e.amountUsd / billingTotal)
+                                : (null as unknown as number),
+                        );
+                    }
+                }
+
+                for (let i = 0; i < groupEntries.length; i++) {
+                    const { key, def } = groupEntries[i];
+                    const isUnmapped = key.startsWith("__unmapped__");
+                    const groupName = isUnmapped
+                        ? key.slice("__unmapped__".length)
+                        : (def?.group ?? key);
+                    const models: string[] = isUnmapped
+                        ? []
+                        : (def?.models ?? []);
+                    const kind: DeploymentKind = isUnmapped
+                        ? "gpu"
+                        : (def?.kind ?? "gpu");
+                    const rentShare =
+                        vendorRentUsd !== null ? rentShares[i] : null;
+
+                    const pollenRows = data.pollenMonthly.filter(
+                        (r) =>
+                            r.vendor === vendor &&
+                            r.month === month &&
+                            models.includes(r.model),
+                    );
+                    const { requests, paidUsd, questUsd, retainedUsd } =
+                        aggregatePollen(pollenRows, month);
+
+                    const coverage = computeCoverage(
+                        retainedUsd,
+                        netRatio,
+                        rentShare,
+                    );
+                    const effUsdPerReq =
+                        rentShare != null && requests > 0
+                            ? rentShare / requests
+                            : null;
+
+                    const flags: string[] = ["split: billed"];
+                    if (isUnmapped) flags.push("unmapped billing id");
+                    if (unattributedFlag) flags.push(unattributedFlag);
+                    if (driftFlag) flags.push(driftFlag);
+
+                    result.push({
+                        group: groupName,
+                        vendor,
+                        month,
+                        rentUsd: rentShare,
+                        models,
+                        requests,
+                        paidUsd,
+                        questUsd,
+                        retainedUsd,
+                        coverage,
+                        effUsdPerReq,
+                        breakEven: computeBreakEven(
+                            models,
+                            rentShare,
+                            netRatio,
+                        ),
+                        verdict: verdictFor(coverage, kind),
+                        flags,
+                        kind,
+                    });
+                }
+                continue;
+            }
+
+            // --- No-fleet path ---
+            // No billing rows and no fleet snapshots → vendor-level group with
+            // 100% share + error flag (the deployment witness is MISSING — this
+            // is an error condition, not an alternative mode; the vendor-grain
+            // numbers are still witnessed at vendor grain from provider bills +
+            // metering).
+            if (fleetInMonth.length === 0) {
                 // Emit one vendor-total row.
                 const vendorKind: DeploymentKind =
                     vendor === "modal" ? "serverless" : "gpu";
                 const flags: string[] = [
                     "error: no fleet snapshot this month — deployment split unavailable",
                 ];
-                if (isOvhcloud) {
-                    flags.push(
-                        "error: fleet API blocked — consumer key lacks /cloud/project scope",
-                    );
-                    flags.push("hybrid: AI Endpoints + instance");
-                }
                 // Do NOT push unattributedFlag here: this path aggregates ALL
                 // pollen rows for the vendor (lines below), so no model is
                 // excluded — the flag would be contradictory.
@@ -337,9 +472,10 @@ export function gpuEconomics(
                 continue;
             }
 
-            // Step 2 (continued): assign each fleet deployment to a group.
-            // Compute each group's mean share of the per-snapshot Σusd_per_hr.
-            // Snapshots may be multiple per month; group by recorded_at first.
+            // --- Fleet $/hr path ---
+            // Assign each fleet deployment to a group, compute mean share of
+            // per-snapshot Σusd_per_hr. Snapshots may be multiple per month;
+            // group by recorded_at first.
             const snapshotTimes = [
                 ...new Set(fleetInMonth.map((r) => r.recorded_at)),
             ];
@@ -454,7 +590,7 @@ export function gpuEconomics(
                         ? rentShare / requests
                         : null;
 
-                const flags: string[] = [];
+                const flags: string[] = ["split: fleet $/hr"];
                 if (isUnmapped) flags.push("unmapped fleet");
                 if (unattributedFlag) flags.push(unattributedFlag);
 
@@ -594,8 +730,8 @@ export function runwayChips(data: Data, now: Date): RunwayChip[] {
         });
     }
 
-    // Credit-runway chips (lambda, ovhcloud)
-    const creditVendors = ["lambda", "ovhcloud"] as const;
+    // Credit-runway chips (lambda)
+    const creditVendors = ["lambda"] as const;
     const runway = creditRunway(data, now);
     for (const vendor of creditVendors) {
         const row = runway.find((r) => r.vendor === vendor);

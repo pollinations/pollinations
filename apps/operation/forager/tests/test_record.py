@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import pytest
 
 from ingest.connectors.vendors import _mrow
+from ingest.connectors.gpu_runs import stamp as _stamp
 from ingest import record
 from ingest.connectors import registry
 
@@ -313,10 +314,12 @@ def test_record_grant_zero_granted_exits():
 
 
 # ---------------------------------------------------------------------------
-# record.main: gpu subcommand
+# record.main: gpu subcommand (writes gpu_runs — lump mode + run mode)
 # ---------------------------------------------------------------------------
 
-def test_record_gpu_appends_row():
+def test_record_gpu_lump_mode_appends_row():
+    """No --started/--ended: one row for the positional month, times empty,
+    hours None, cost = rounded amount, written to gpu_runs."""
     fake = _FakeTB()
     record.main(
         ["gpu", "runpod", "2026-06",
@@ -328,19 +331,35 @@ def test_record_gpu_appends_row():
     )
     assert len(fake.appended) == 1
     ds, rows = fake.appended[0]
-    assert ds == "gpu_billing"
+    assert ds == "gpu_runs"
     assert len(rows) == 1
     r = rows[0]
     assert r["vendor"] == "runpod"
     assert r["month"] == "2026-06"
+    assert r["run_id"] == "pod-abc123"
     assert r["deployment"] == "pod-abc123"
     assert r["gpu"] == "A100 80GB"
-    assert r["amount"] == 312.50
+    assert r["gpu_count"] == 1
+    assert r["started_at"] == ""
+    assert r["ended_at"] == ""
+    assert r["hours"] is None
+    assert r["cost"] == 312.50
     assert r["currency"] == "USD"
     assert r["source"] == "manual"
 
 
-def test_record_gpu_defaults_currency_and_gpu():
+def test_record_gpu_lump_mode_rounds_cost():
+    fake = _FakeTB()
+    record.main(
+        ["gpu", "vast.ai", "2026-06",
+         "--deployment", "node-99",
+         "--amount", "99.999"],
+        tb_factory=_make_factory(fake),
+    )
+    assert fake.appended[0][1][0]["cost"] == 100.0
+
+
+def test_record_gpu_defaults_currency_gpu_run_id_gpu_count():
     fake = _FakeTB()
     record.main(
         ["gpu", "lambda", "2026-05",
@@ -351,18 +370,71 @@ def test_record_gpu_defaults_currency_and_gpu():
     r = fake.appended[0][1][0]
     assert r["currency"] == "USD"
     assert r["gpu"] == ""
+    assert r["run_id"] == "inst-xyz"  # defaults to --deployment
+    assert r["gpu_count"] == 1
     assert r["source"] == "manual"
 
 
-def test_record_gpu_rounds_amount():
+def test_record_gpu_run_id_override():
     fake = _FakeTB()
     record.main(
-        ["gpu", "vast.ai", "2026-06",
-         "--deployment", "node-99",
-         "--amount", "99.999"],
+        ["gpu", "lambda", "2026-05",
+         "--deployment", "inst-xyz",
+         "--run-id", "run-custom-1",
+         "--amount", "750.0"],
         tb_factory=_make_factory(fake),
     )
-    assert fake.appended[0][1][0]["amount"] == 100.0
+    assert fake.appended[0][1][0]["run_id"] == "run-custom-1"
+
+
+def test_record_gpu_count_custom_value():
+    fake = _FakeTB()
+    record.main(
+        ["gpu", "runpod", "2026-06",
+         "--deployment", "pod-x", "--amount", "10.0", "--gpu-count", "4"],
+        tb_factory=_make_factory(fake),
+    )
+    assert fake.appended[0][1][0]["gpu_count"] == 4
+
+
+def test_record_gpu_model_kind_default_from_stamp():
+    """No --model/--kind: falls back to stamp(vendor, deployment)."""
+    fake = _FakeTB()
+    record.main(
+        ["gpu", "runpod", "2026-06",
+         "--deployment", "zimage-4090-secure",
+         "--amount", "10.0"],
+        tb_factory=_make_factory(fake),
+    )
+    r = fake.appended[0][1][0]
+    expected_model, expected_kind = _stamp("runpod", "zimage-4090-secure")
+    assert r["model"] == expected_model == "zimage"
+    assert r["kind"] == expected_kind == "gpu"
+
+
+def test_record_gpu_model_kind_explicit_override():
+    fake = _FakeTB()
+    record.main(
+        ["gpu", "runpod", "2026-06",
+         "--deployment", "zimage-4090-secure",
+         "--amount", "10.0",
+         "--model", "custom-model",
+         "--kind", "serverless"],
+        tb_factory=_make_factory(fake),
+    )
+    r = fake.appended[0][1][0]
+    assert r["model"] == "custom-model"
+    assert r["kind"] == "serverless"
+
+
+def test_record_gpu_kind_invalid_choice_exits():
+    with pytest.raises(SystemExit) as exc:
+        record.main(
+            ["gpu", "runpod", "2026-06",
+             "--deployment", "x", "--amount", "1.0", "--kind", "spot"],
+            tb_factory=_make_factory(_FakeTB()),
+        )
+    assert exc.value.code != 0
 
 
 def test_record_gpu_unknown_vendor_exits():
@@ -386,7 +458,7 @@ def test_record_gpu_accepts_canonical_vendor_even_if_not_roster_gpu():
     )
     assert len(fake.appended) == 1
     ds, rows = fake.appended[0]
-    assert ds == "gpu_billing"
+    assert ds == "gpu_runs"
     assert rows[0]["vendor"] == "fireworks"
 
 
@@ -400,9 +472,9 @@ def test_record_gpu_accepts_ovhcloud_gpu_deployment():
     )
     assert len(fake.appended) == 1
     ds, rows = fake.appended[0]
-    assert ds == "gpu_billing"
+    assert ds == "gpu_runs"
     assert rows[0]["vendor"] == "ovhcloud"
-    assert rows[0]["amount"] == 150.75
+    assert rows[0]["cost"] == 150.75
 
 
 def test_record_gpu_unknown_vendor_still_rejected():
@@ -441,6 +513,125 @@ def test_record_gpu_bad_month_exits():
         record.main(
             ["gpu", "runpod", "26-06",
              "--deployment", "x", "--amount", "1.0"],
+            tb_factory=_make_factory(_FakeTB()),
+        )
+    assert exc.value.code != 0
+
+
+# --- run mode (--started + --ended) ---
+
+def test_record_gpu_run_mode_two_months_split():
+    """--started/--ended spanning two months -> 2 rows, exact-cents split,
+    source manual, clipped timestamps at the month boundary."""
+    fake = _FakeTB()
+    record.main(
+        ["gpu", "io.net", "2025-12",
+         "--deployment", "vmaas-b72b6c49",
+         "--amount", "388.80",
+         "--started", "2025-12-29 15:52:19",
+         "--ended", "2026-01-25 15:56:43"],
+        tb_factory=_make_factory(fake),
+    )
+    ds, rows = fake.appended[0]
+    assert ds == "gpu_runs"
+    assert len(rows) == 2
+    months = {r["month"] for r in rows}
+    assert months == {"2025-12", "2026-01"}
+    assert all(r["source"] == "manual" for r in rows)
+    assert all(r["gpu_count"] == 1 for r in rows)
+    total = round(sum(r["cost"] for r in rows), 2)
+    assert total == 388.80
+
+    dec_row = next(r for r in rows if r["month"] == "2025-12")
+    jan_row = next(r for r in rows if r["month"] == "2026-01")
+    assert dec_row["started_at"] == "2025-12-29 15:52:19"
+    assert dec_row["ended_at"] == "2026-01-01 00:00:00"
+    assert jan_row["started_at"] == "2026-01-01 00:00:00"
+    assert jan_row["ended_at"] == "2026-01-25 15:56:43"
+    assert dec_row["hours"] is not None and jan_row["hours"] is not None
+
+
+def test_record_gpu_run_mode_prints_all_rows_as_json():
+    fake = _FakeTB()
+    import contextlib
+    import io
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        record.main(
+            ["gpu", "io.net", "2025-12",
+             "--deployment", "vmaas-b72b6c49",
+             "--amount", "388.80",
+             "--started", "2025-12-29 15:52:19",
+             "--ended", "2026-01-25 15:56:43"],
+            tb_factory=_make_factory(fake),
+        )
+    lines = [line for line in buf.getvalue().splitlines() if line.strip()]
+    assert len(lines) == 2
+    for line in lines:
+        json.loads(line)  # each row printed as its own JSON line
+
+
+def test_record_gpu_run_mode_single_month():
+    """A run entirely within one month -> 1 row, guard month matches."""
+    fake = _FakeTB()
+    record.main(
+        ["gpu", "lambda", "2026-06",
+         "--deployment", "gh200-cluster",
+         "--amount", "50.0",
+         "--started", "2026-06-01 00:00:00",
+         "--ended", "2026-06-02 00:00:00"],
+        tb_factory=_make_factory(fake),
+    )
+    ds, rows = fake.appended[0]
+    assert ds == "gpu_runs"
+    assert len(rows) == 1
+    assert rows[0]["month"] == "2026-06"
+    assert rows[0]["cost"] == 50.0
+
+
+def test_record_gpu_run_mode_guard_month_mismatch_exits():
+    """Positional month must match one of the split's produced months."""
+    with pytest.raises(SystemExit) as exc:
+        record.main(
+            ["gpu", "io.net", "2026-03",
+             "--deployment", "vmaas-b72b6c49",
+             "--amount", "388.80",
+             "--started", "2025-12-29 15:52:19",
+             "--ended", "2026-01-25 15:56:43"],
+            tb_factory=_make_factory(_FakeTB()),
+        )
+    assert exc.value.code != 0
+
+
+def test_record_gpu_one_of_started_ended_errors():
+    """Only one of --started/--ended given must error (both or neither)."""
+    with pytest.raises(SystemExit) as exc:
+        record.main(
+            ["gpu", "io.net", "2025-12",
+             "--deployment", "vmaas-b72b6c49",
+             "--amount", "100.0",
+             "--started", "2025-12-29 15:52:19"],
+            tb_factory=_make_factory(_FakeTB()),
+        )
+    assert exc.value.code != 0
+
+    with pytest.raises(SystemExit) as exc2:
+        record.main(
+            ["gpu", "io.net", "2025-12",
+             "--deployment", "vmaas-b72b6c49",
+             "--amount", "100.0",
+             "--ended", "2025-12-30 00:00:00"],
+            tb_factory=_make_factory(_FakeTB()),
+        )
+    assert exc2.value.code != 0
+
+
+def test_record_gpu_bad_started_format_exits():
+    with pytest.raises(SystemExit) as exc:
+        record.main(
+            ["gpu", "io.net", "2025-12",
+             "--deployment", "x", "--amount", "10.0",
+             "--started", "2025-12-29", "--ended", "2025-12-30 00:00:00"],
             tb_factory=_make_factory(_FakeTB()),
         )
     assert exc.value.code != 0

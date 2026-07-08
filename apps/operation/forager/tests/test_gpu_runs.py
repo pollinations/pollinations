@@ -7,7 +7,14 @@ TDD: these tests are written first. Run failing before implementing.
 import datetime
 import pytest
 
-from ingest.connectors.gpu_runs import split_run_by_month, stamp, runs_rows_runpod, runs_rows_vast, runs_rows_modal
+from ingest.connectors.gpu_runs import (
+    split_run_by_month,
+    split_run_rows,
+    stamp,
+    runs_rows_runpod,
+    runs_rows_vast,
+    runs_rows_modal,
+)
 from ingest import run as ingest_run
 
 
@@ -909,3 +916,419 @@ def test_runs_rows_modal_passes_validation():
     rows = runs_rows_modal(_MODAL_SECRETS, ["2026-06"], run_cmd=_modal_run_cmd_single)
     for row in rows:
         ingest_run._validate_gpu_runs_row(row)
+
+
+# ---------------------------------------------------------------------------
+# split_run_rows — shared clipping helper (record.py run mode + runs_rows_vast)
+# ---------------------------------------------------------------------------
+
+def test_split_run_rows_single_month():
+    """A run entirely within one month yields one row; clipped start/end == actual."""
+    started = _dt("2026-06-10 08:00:00")
+    ended = _dt("2026-06-15 08:00:00")
+    rows = split_run_rows(started, ended, cost=120.0)
+
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["month"] == "2026-06"
+    assert row["started_at"] == "2026-06-10 08:00:00"
+    assert row["ended_at"] == "2026-06-15 08:00:00"
+    assert row["hours"] == pytest.approx(120.0, abs=0.01)
+    assert row["cost"] == 120.0
+
+
+def test_split_run_rows_boundary_spanning_ionet_example():
+    """io.net vmaas-b72b6c49: Dec 29 15:52:19 -> Jan 25 15:56:43, $388.80.
+
+    Dec row must end exactly at the month boundary; Jan row must start there.
+    Costs must sum exactly to 388.80 (exact-cents, delegated to
+    split_run_by_month).
+    """
+    started = _dt("2025-12-29 15:52:19")
+    ended = _dt("2026-01-25 15:56:43")
+    rows = split_run_rows(started, ended, cost=388.80)
+
+    assert len(rows) == 2
+    dec_row = next(r for r in rows if r["month"] == "2025-12")
+    jan_row = next(r for r in rows if r["month"] == "2026-01")
+
+    assert dec_row["started_at"] == "2025-12-29 15:52:19"
+    assert dec_row["ended_at"] == "2026-01-01 00:00:00"
+    assert jan_row["started_at"] == "2026-01-01 00:00:00"
+    assert jan_row["ended_at"] == "2026-01-25 15:56:43"
+
+    total = round(dec_row["cost"] + jan_row["cost"], 2)
+    assert total == 388.80, f"sum {total!r} != 388.80 (exact-cents invariant broken)"
+    assert dec_row["cost"] > 0 and jan_row["cost"] > 0
+
+
+def test_split_run_rows_required_fields():
+    started = _dt("2026-03-01 00:00:00")
+    ended = _dt("2026-03-02 00:00:00")
+    rows = split_run_rows(started, ended, cost=24.0)
+    required = {"month", "started_at", "ended_at", "hours", "cost"}
+    for row in rows:
+        assert required <= row.keys()
+
+
+def test_split_run_rows_three_month_span_sums_exactly():
+    started = _dt("2025-12-15 00:00:00")
+    ended = _dt("2026-02-15 00:00:00")
+    rows = split_run_rows(started, ended, cost=300.00)
+
+    assert [r["month"] for r in rows] == ["2025-12", "2026-01", "2026-02"]
+    assert all(r["hours"] > 0 for r in rows)
+    assert all(r["cost"] > 0 for r in rows)
+    total = round(sum(r["cost"] for r in rows), 2)
+    assert total == 300.00
+
+
+def test_split_run_rows_ended_before_started_raises():
+    started = _dt("2026-06-10 12:00:00")
+    ended = _dt("2026-06-10 12:00:00")
+    with pytest.raises(ValueError):
+        split_run_rows(started, ended, cost=10.0)
+
+
+def test_split_run_rows_timestamps_within_month():
+    """Every row's [started_at, ended_at] lies within its own calendar month."""
+    started = _dt("2025-12-29 15:52:19")
+    ended = _dt("2026-01-25 15:56:43")
+    rows = split_run_rows(started, ended, cost=388.80)
+    for row in rows:
+        year, m = int(row["month"][:4]), int(row["month"][5:7])
+        month_start = datetime.datetime(year, m, 1)
+        month_end = (
+            datetime.datetime(year + 1, 1, 1)
+            if m == 12
+            else datetime.datetime(year, m + 1, 1)
+        )
+        started_at = datetime.datetime.strptime(row["started_at"], "%Y-%m-%d %H:%M:%S")
+        ended_at = datetime.datetime.strptime(row["ended_at"], "%Y-%m-%d %H:%M:%S")
+        assert month_start <= started_at
+        assert ended_at <= month_end
+
+
+# ---------------------------------------------------------------------------
+# runs_rows_vast regression guard — split_run_rows refactor must not change
+# any of the assertions above this marker (see the test class above).
+# The vast-specific tests already exist earlier in this file (grep
+# `runs_rows_vast`); rerunning the whole module is the regression guard.
+# ---------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+# refresh_gpu_runs — mirror of refresh_gpu_billing's tests, key = (vendor,
+# month, run_id) instead of (vendor, month, deployment)
+# ---------------------------------------------------------------------------
+
+class _FakeGpuRunsTB:
+    """Minimal TB stub: capture replaces; maintain state for guard snapshot."""
+
+    def __init__(self, existing_rows=None):
+        self.replaced = []
+        self._rows = existing_rows or {}
+
+    def replace(self, datasource, rows):
+        self.replaced.append((datasource, list(rows)))
+
+    def query(self, datasource, **kwargs):
+        return list(self._rows.get(datasource, []))
+
+
+def _make_gpu_runs_guard(existing_rows=None):
+    return {
+        "yes": False,
+        "dry_run": False,
+        "existing": {
+            "gpu_runs": list((existing_rows or {}).get("gpu_runs", [])),
+        },
+    }
+
+
+_RUNS_TODAY = "2026-07-08"
+
+_RUNPOD_RUN_ROW = {
+    "month": "2026-06",
+    "vendor": "runpod",
+    "run_id": "pod-aaa",
+    "deployment": "zimage-4090-secure",
+    "gpu": "",
+    "gpu_count": 1,
+    "started_at": "",
+    "ended_at": "",
+    "hours": None,
+    "cost": 274.45,
+    "currency": "USD",
+    "model": "zimage",
+    "kind": "gpu",
+    "source": "api",
+}
+_MANUAL_RUN_ROW = {
+    "month": "2026-06",
+    "vendor": "lambda",
+    "run_id": "gh200-shared",
+    "deployment": "GH200-shared",
+    "gpu": "1x GH200",
+    "gpu_count": 1,
+    "started_at": "",
+    "ended_at": "",
+    "hours": None,
+    "cost": 500.0,
+    "currency": "USD",
+    "model": "ltx-2,acestep,sana",
+    "kind": "gpu",
+    "source": "manual",
+}
+_MANUAL_RUN_ROW_OUT_OF_SCOPE = {
+    "month": "2025-12",
+    "vendor": "lambda",
+    "run_id": "old-box",
+    "deployment": "old-box",
+    "gpu": "",
+    "gpu_count": 1,
+    "started_at": "",
+    "ended_at": "",
+    "hours": None,
+    "cost": 100.0,
+    "currency": "USD",
+    "model": "",
+    "kind": "gpu",
+    "source": "manual",
+}
+
+
+def _make_run_connectors(runpod_rows=None, modal_rows=None, vast_rows=None,
+                          runpod_err=None, modal_err=None, vast_err=None):
+    """Return a connectors dict suitable for injection into refresh_gpu_runs."""
+    def mk(rows, err):
+        def fn(creds, months, **kw):
+            if err:
+                raise RuntimeError(err)
+            return rows or []
+        return fn
+    return {
+        "runpod": mk(runpod_rows, runpod_err),
+        "modal": mk(modal_rows, modal_err),
+        "vast": mk(vast_rows, vast_err),
+    }
+
+
+def test_refresh_gpu_runs_manual_survival():
+    """Manual rows in scope survive alongside fresh api rows (manual outranks api)."""
+    existing = [_MANUAL_RUN_ROW, _RUNPOD_RUN_ROW]
+    guard = _make_gpu_runs_guard({"gpu_runs": existing})
+    statuses = {}
+    ops_replace = _FakeGpuRunsTB()
+
+    ingest_run.refresh_gpu_runs(
+        ops_replace=ops_replace,
+        secrets={},
+        config={},
+        today=_RUNS_TODAY,
+        statuses=statuses,
+        guard=guard,
+        months=["2026-06"],
+        connectors=_make_run_connectors(runpod_rows=[_RUNPOD_RUN_ROW]),
+    )
+
+    assert ops_replace.replaced, "guarded_replace must be called"
+    _, final_rows = ops_replace.replaced[0]
+
+    manual_found = [r for r in final_rows if r["source"] == "manual" and r["vendor"] == "lambda"]
+    assert len(manual_found) == 1, "manual lambda row must survive"
+
+    runpod_found = [r for r in final_rows if r["vendor"] == "runpod"]
+    assert len(runpod_found) == 1
+
+
+def test_refresh_gpu_runs_manual_outranks_api_same_key():
+    """Manual row sharing (vendor, month, run_id) with a fresh api row wins."""
+    manual_same_key = dict(_RUNPOD_RUN_ROW, source="manual", cost=999.0)
+    existing = [manual_same_key]
+    guard = _make_gpu_runs_guard({"gpu_runs": existing})
+    statuses = {}
+    ops_replace = _FakeGpuRunsTB()
+
+    ingest_run.refresh_gpu_runs(
+        ops_replace=ops_replace,
+        secrets={},
+        config={},
+        today=_RUNS_TODAY,
+        statuses=statuses,
+        guard=guard,
+        months=["2026-06"],
+        connectors=_make_run_connectors(runpod_rows=[_RUNPOD_RUN_ROW]),
+    )
+
+    _, final_rows = ops_replace.replaced[0]
+    runpod_found = [r for r in final_rows if r["vendor"] == "runpod"]
+    assert len(runpod_found) == 1
+    assert runpod_found[0]["source"] == "manual"
+    assert runpod_found[0]["cost"] == 999.0
+
+
+def test_refresh_gpu_runs_out_of_scope_splice():
+    """Out-of-scope existing rows survive untouched; in-scope rows replaced."""
+    existing = [_MANUAL_RUN_ROW, _MANUAL_RUN_ROW_OUT_OF_SCOPE]
+    guard = _make_gpu_runs_guard({"gpu_runs": existing})
+    statuses = {}
+    ops_replace = _FakeGpuRunsTB()
+
+    ingest_run.refresh_gpu_runs(
+        ops_replace=ops_replace,
+        secrets={},
+        config={},
+        today=_RUNS_TODAY,
+        statuses=statuses,
+        guard=guard,
+        months=["2026-06"],
+        connectors=_make_run_connectors(runpod_rows=[_RUNPOD_RUN_ROW]),
+    )
+
+    _, final_rows = ops_replace.replaced[0]
+    out_of_scope = [r for r in final_rows if r["month"] == "2025-12"]
+    assert len(out_of_scope) == 1, "out-of-scope rows must be preserved"
+
+
+def test_refresh_gpu_runs_per_vendor_error_isolation():
+    """One vendor failing records err status; other vendor rows still land."""
+    guard = _make_gpu_runs_guard()
+    statuses = {}
+    ops_replace = _FakeGpuRunsTB()
+
+    ingest_run.refresh_gpu_runs(
+        ops_replace=ops_replace,
+        secrets={},
+        config={},
+        today=_RUNS_TODAY,
+        statuses=statuses,
+        guard=guard,
+        months=["2026-06"],
+        connectors=_make_run_connectors(
+            runpod_rows=[_RUNPOD_RUN_ROW],
+            modal_err="modal down",
+        ),
+    )
+
+    assert statuses.get("runs:modal", "").startswith("err:")
+    assert statuses.get("runs:runpod", "").startswith("ok:")
+
+
+def test_refresh_gpu_runs_all_fail_raises():
+    """If every vendor fails, refresh_gpu_runs raises so the caller knows."""
+    guard = _make_gpu_runs_guard()
+    statuses = {}
+    ops_replace = _FakeGpuRunsTB()
+
+    with pytest.raises(RuntimeError):
+        ingest_run.refresh_gpu_runs(
+            ops_replace=ops_replace,
+            secrets={},
+            config={},
+            today=_RUNS_TODAY,
+            statuses=statuses,
+            guard=guard,
+            months=["2026-06"],
+            connectors=_make_run_connectors(
+                runpod_err="down",
+                modal_err="down",
+                vast_err="down",
+            ),
+        )
+
+
+def test_refresh_gpu_runs_statuses_rows_count():
+    """statuses['gpu_runs_rows'] reflects the final row count."""
+    guard = _make_gpu_runs_guard()
+    statuses = {}
+    ops_replace = _FakeGpuRunsTB()
+
+    ingest_run.refresh_gpu_runs(
+        ops_replace=ops_replace,
+        secrets={},
+        config={},
+        today=_RUNS_TODAY,
+        statuses=statuses,
+        guard=guard,
+        months=["2026-06"],
+        connectors=_make_run_connectors(runpod_rows=[_RUNPOD_RUN_ROW]),
+    )
+
+    assert "gpu_runs_rows" in statuses
+
+
+def test_refresh_gpu_runs_vendor_scoping():
+    """vendors=['runpod'] restricts connector invocation + in_scope filter."""
+    guard = _make_gpu_runs_guard()
+    statuses = {}
+    ops_replace = _FakeGpuRunsTB()
+
+    vast_row = dict(_RUNPOD_RUN_ROW, vendor="vast.ai", run_id="vast-1", deployment="vast-1")
+    connectors = _make_run_connectors(
+        runpod_rows=[_RUNPOD_RUN_ROW],
+        vast_rows=[vast_row],
+    )
+
+    ingest_run.refresh_gpu_runs(
+        ops_replace=ops_replace,
+        secrets={},
+        config={},
+        today=_RUNS_TODAY,
+        statuses=statuses,
+        guard=guard,
+        vendors=["runpod"],
+        months=["2026-06"],
+        connectors=connectors,
+    )
+
+    assert "runs:runpod" in statuses
+    assert "runs:vast.ai" not in statuses
+    _, final_rows = ops_replace.replaced[0]
+    assert final_rows and all(r["vendor"] == "runpod" for r in final_rows)
+
+
+def test_refresh_gpu_runs_no_connector_for_lambda():
+    """Lambda has no connector; it's manual-only and unaffected by refresh."""
+    existing = [_MANUAL_RUN_ROW]
+    guard = _make_gpu_runs_guard({"gpu_runs": existing})
+    statuses = {}
+    ops_replace = _FakeGpuRunsTB()
+
+    ingest_run.refresh_gpu_runs(
+        ops_replace=ops_replace,
+        secrets={},
+        config={},
+        today=_RUNS_TODAY,
+        statuses=statuses,
+        guard=guard,
+        months=["2026-06"],
+        connectors=_make_run_connectors(runpod_rows=[_RUNPOD_RUN_ROW]),
+    )
+
+    assert not any(k.startswith("runs:lambda") for k in statuses)
+    _, final_rows = ops_replace.replaced[0]
+    lambda_found = [r for r in final_rows if r["vendor"] == "lambda"]
+    assert len(lambda_found) == 1
+    assert lambda_found[0]["source"] == "manual"
+
+
+# ---------------------------------------------------------------------------
+# CLI wiring sanity — --only runs / --vendor runs
+# ---------------------------------------------------------------------------
+
+def test_parse_args_only_accepts_runs():
+    args = ingest_run.parse_args(["--only", "runs"])
+    assert args.only == "runs"
+
+
+def test_parse_args_vendor_requires_only_provider_billing_or_runs():
+    with pytest.raises(SystemExit):
+        ingest_run.parse_args(["--vendor", "runpod", "--only", "pollen"])
+
+
+def test_parse_args_vendor_runs_validates_connector_slug():
+    with pytest.raises(SystemExit):
+        ingest_run.parse_args(["--vendor", "lambda", "--only", "runs"])
+    args = ingest_run.parse_args(["--vendor", "runpod", "--only", "runs"])
+    assert args.vendor == "runpod"

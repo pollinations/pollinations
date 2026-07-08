@@ -4,6 +4,12 @@ Exports:
     split_run_by_month(started_at, ended_at, cost, gpu_count=1)
         -> list[(month:'YYYY-MM', hours_in_month:float, cost_in_month:float)]
 
+    split_run_rows(started, ended, cost, gpu_count=1)
+        -> list of {month, started_at, ended_at, hours, cost} dicts — the
+        month-split cost from split_run_by_month plus clipped timestamps.
+        Shared by runs_rows_vast and ingest.record's `gpu` run mode so both
+        have exactly one clipping implementation.
+
     stamp(vendor, deployment) -> tuple[str, str]
         Map a (vendor, deployment) pair to (models_csv, kind).
         models_csv is a comma-joined list of models served by that deployment.
@@ -132,6 +138,36 @@ def split_run_by_month(started_at, ended_at, cost, gpu_count=1):
         parts.append((month_str, hours, month_cost))
 
     return parts
+
+
+def split_run_rows(started, ended, cost, gpu_count=1):
+    """started/ended: datetime. Returns list of dicts:
+    {month:'YYYY-MM', started_at:'YYYY-MM-DD HH:MM:SS' (clipped to month),
+     ended_at:'...' (clipped to month), hours:float, cost:float}
+    Cost split by split_run_by_month (exact-cents). Timestamps clipped so each
+    row's [started_at,ended_at] lies within its month and matches its hours.
+
+    Raises:
+        ValueError if ended <= started (propagated from split_run_by_month).
+    """
+    parts = split_run_by_month(started, ended, cost, gpu_count)
+
+    rows = []
+    cursor = started
+    for month_str, hours_in_month, cost_in_month in parts:
+        next_month_start = _next_month_start(cursor)
+        clipped_start = cursor
+        clipped_end = min(ended, next_month_start)
+        rows.append({
+            "month": month_str,
+            "started_at": clipped_start.strftime("%Y-%m-%d %H:%M:%S"),
+            "ended_at": clipped_end.strftime("%Y-%m-%d %H:%M:%S"),
+            "hours": round(hours_in_month, 4),
+            "cost": round(cost_in_month, 2),
+        })
+        cursor = clipped_end
+
+    return rows
 
 
 # ---------------------------------------------------------------------------
@@ -505,48 +541,34 @@ def runs_rows_vast(secrets, months, today, run_cmd=subprocess.run):
             continue
 
         try:
-            parts = split_run_by_month(started, ended, cost)
+            parts = split_run_rows(started, ended, cost)
         except ValueError:
             continue  # ended <= started — skip malformed rows
 
-        # Walk the calendar-month boundaries to compute clipped started_at/ended_at.
-        # We re-walk the same segments split_run_by_month used internally, clipping
-        # each segment to its month boundary so the row timestamps stay inside the month.
-        cursor = started
-        for month_str, hours_in_month, cost_in_month in parts:
-            if month_str not in month_set:
-                cursor = _advance_to_next_month(cursor)
-                continue
-            if hours_in_month <= 0 or cost_in_month <= 0:
-                cursor = _advance_to_next_month(cursor)
-                continue
+        model_csv, kind = stamp("vast.ai", instance_id)
 
-            # Clipped start = cursor (i.e. max(true_start, start_of_month))
-            # Clipped end   = min(ended, start_of_next_month)
-            clipped_start = cursor
-            next_month_start = _next_month_start(cursor)
-            clipped_end = min(ended, next_month_start)
-
-            model_csv, kind = stamp("vast.ai", instance_id)
+        for part in parts:
+            if part["month"] not in month_set:
+                continue
+            if part["hours"] <= 0 or part["cost"] <= 0:
+                continue
 
             rows.append({
-                "month": month_str,
+                "month": part["month"],
                 "vendor": "vast.ai",
                 "run_id": instance_id,
                 "deployment": instance_id,
                 "gpu": "",
                 "gpu_count": 1,
-                "started_at": clipped_start.strftime("%Y-%m-%d %H:%M:%S"),
-                "ended_at": clipped_end.strftime("%Y-%m-%d %H:%M:%S"),
-                "hours": round(hours_in_month, 4),
-                "cost": round(cost_in_month, 2),
+                "started_at": part["started_at"],
+                "ended_at": part["ended_at"],
+                "hours": part["hours"],
+                "cost": part["cost"],
                 "currency": "USD",
                 "model": model_csv,
                 "kind": kind,
                 "source": "cli",
             })
-
-            cursor = clipped_end
 
     return rows
 
@@ -557,8 +579,3 @@ def _next_month_start(dt):
     if month == 12:
         return datetime.datetime(year + 1, 1, 1)
     return datetime.datetime(year, month + 1, 1)
-
-
-def _advance_to_next_month(cursor):
-    """Move cursor to the start of the next calendar month (for skipped months)."""
-    return _next_month_start(cursor)

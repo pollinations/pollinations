@@ -17,6 +17,7 @@ TABLES = {
     "pollen_monthly": "month",
     "revenue_monthly": "month",
     "gpu_billing": "month",
+    "gpu_runs": "month",
     "grants": None,
     "ingest_runs": None,
     "gpu_fleet": None,

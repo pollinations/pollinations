@@ -22,3 +22,11 @@ def test_build_query_rejects_bad_slug_and_month():
         build_query("provider_monthly", None, "2026-13", 10)
     with pytest.raises(ValueError):
         build_query("revenue_monthly", "aws", None, 10)
+
+
+def test_build_query_gpu_runs_vendor_and_month():
+    """gpu_runs is registered the same way as gpu_billing: vendor + month filters."""
+    assert build_query("gpu_runs", "runpod", "2026-06", 100) == (
+        "SELECT * FROM gpu_runs WHERE vendor = 'runpod' "
+        "AND month = '2026-06' ORDER BY month DESC LIMIT 100"
+    )

@@ -135,7 +135,7 @@ Edit `config/vendor_aliases.json` — add the canonical slug mapped to an entry
 
 - `aliases`: identifying substrings (lowercased) that resolve rows to this slug.
 - `category`: the vendor's default category (one of `compute | infra | saas |
-  admin | office | payroll | other`).
+  admin | office | payroll`).
 - `category_rules` (optional): ordered `{"match": "...", "category": "..."}`
   keyword overrides, matched as lowercase substrings against the row's bank +
   invoice text. Use them when one vendor spans categories — e.g. an Anthropic
@@ -154,7 +154,8 @@ If the alias affects a meter vendor, also re-run `--only provider` to remap its
 
 Categories are fully deterministic (vendor keyword rules, then exact-amount
 rules for fixed-price rows the text cannot split, then the vendor's default
-category, then `other`) — there is no AI verify pass.
+category, then `admin` for unmatched rows that are also flagged) — there is no
+AI verify pass.
 
 The slug also becomes valid for `ingest.record` (it reads `registry.CANONICAL`,
 which is the alias keys).

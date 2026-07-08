@@ -26,7 +26,6 @@ _ALLOWED_CATEGORIES = {
     "admin",
     "office",
     "payroll",
-    "other",
 }
 
 

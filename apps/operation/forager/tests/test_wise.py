@@ -93,7 +93,7 @@ def test_row_shape_and_date():
 def test_unmatched_counterparty_keeps_empty_vendor():
     row = wise.transaction_for(activity(title="Some Unknown Shop"))
     assert row["vendor"] == ""
-    assert row["category"] == "other"
+    assert row["category"] == "admin"
 
 
 def test_category_rules_use_title_and_description():
@@ -160,7 +160,7 @@ def test_validate_rows_rejects_bad_rows():
     good = {
         "date": "2026-07-01",
         "vendor": "",
-        "category": "other",
+        "category": "admin",
         "charged_amount": 1.0,
         "charged_currency": "EUR",
     }
@@ -187,7 +187,7 @@ def test_unmatched_flag_gives_agent_ready_fix_instructions():
     row = {
         "date": "2026-06-08",
         "vendor": "",
-        "category": "other",
+        "category": "admin",
         "charged_amount": 4428.17,
         "charged_currency": "EUR",
     }
@@ -428,7 +428,7 @@ def _bundle_row():
     return {
         "date": "2026-01-09",
         "vendor": "",
-        "category": "other",
+        "category": "admin",
         "charged_amount": 4943.18,
         "charged_currency": "EUR",
     }

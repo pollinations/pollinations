@@ -37,7 +37,6 @@ ALLOWED_CATEGORIES = {
     "admin",
     "office",
     "payroll",
-    "other",
 }
 
 KEPT_STATUSES = {"COMPLETED", "IN_PROGRESS"}
@@ -431,7 +430,7 @@ def category_for(vendor, text, amount):
             return category
     if vendor:
         return VENDOR_CATEGORIES[vendor]
-    return "other"
+    return "admin"
 
 
 def validate_rows(rows):

@@ -32,7 +32,7 @@ const transactions: TransactionRow[] = [
     {
         date: "2026-06-27",
         vendor: "",
-        category: "other",
+        category: "admin",
         charged_amount: 45.2,
         charged_currency: "EUR",
     },

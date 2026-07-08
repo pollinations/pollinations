@@ -17,7 +17,7 @@ def test_vendor_aliases_are_lists():
 def test_every_vendor_has_valid_category():
     from ingest.aliases import VENDOR_ALIASES, VENDOR_CATEGORIES
 
-    allowed = {"compute", "infra", "saas", "admin", "office", "payroll", "other"}
+    allowed = {"compute", "infra", "saas", "admin", "office", "payroll"}
     assert set(VENDOR_CATEGORIES) == set(VENDOR_ALIASES)
     assert set(VENDOR_CATEGORIES.values()) <= allowed
 
@@ -36,7 +36,6 @@ def test_category_rules_are_lowercased_ordered_pairs():
                 "admin",
                 "office",
                 "payroll",
-                "other",
             }
 
 

@@ -61,7 +61,6 @@ export const CATEGORY_ORDER = [
     "office",
     "admin",
     "payroll",
-    "other",
 ] as const;
 
 // Cash that left the bank for this row: the settled Wise leg.
@@ -70,6 +69,10 @@ export function transactionCashUsd(row: TransactionRow): number {
 }
 
 const MONTH_KEY_RE = /^\d{4}-\d{2}$/;
+
+function transactionCategory(row: Pick<TransactionRow, "category">): string {
+    return row.category && row.category !== "other" ? row.category : "admin";
+}
 
 export type PnlMonth = {
     month: string;
@@ -104,7 +107,7 @@ export function pnlByMonth(data: Data, now: Date): PnlMonth[] {
             const categories: Record<string, number> = {};
             for (const row of data.transactions) {
                 if (row.date.slice(0, 7) !== month) continue;
-                const key = row.category || "other";
+                const key = transactionCategory(row);
                 categories[key] =
                     (categories[key] ?? 0) + transactionCashUsd(row);
             }
@@ -174,7 +177,7 @@ export function monthSpendDetail(
     const byKey = new Map<string, MonthSpendRow>();
     for (const row of data.transactions) {
         if (row.date.slice(0, 7) !== month) continue;
-        const category = row.category || "other";
+        const category = transactionCategory(row);
         const key = `${category}|${row.vendor}`;
         const entry = byKey.get(key) ?? {
             category,
@@ -252,7 +255,6 @@ const CATEGORY_LABELS: Record<string, string> = {
     office: "Office",
     admin: "Admin",
     payroll: "Payroll",
-    other: "Other",
 };
 
 function categoryLabel(category: string): string {
@@ -463,7 +465,7 @@ function pnlVendorLines(
     for (const row of data.transactions) {
         const month = row.date.slice(0, 7);
         if (!monthSet.has(month)) continue;
-        const category = row.category || "other";
+        const category = transactionCategory(row);
         let vendors = byCategory.get(category);
         if (!vendors) {
             vendors = new Map();

@@ -117,8 +117,6 @@ const emptyData = (over: Partial<Data>): Data => ({
     grants: [],
     runs: [],
     revenueMonthly: [],
-    gpuFleet: [],
-    gpuBilling: [],
     gpuRuns: [],
     ...over,
 });

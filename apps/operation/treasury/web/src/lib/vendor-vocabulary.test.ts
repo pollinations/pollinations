@@ -15,8 +15,6 @@ const baseData: Data = {
     grants: [],
     runs: [],
     revenueMonthly: [],
-    gpuFleet: [],
-    gpuBilling: [],
     gpuRuns: [],
 };
 

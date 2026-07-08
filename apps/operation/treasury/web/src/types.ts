@@ -60,26 +60,6 @@ export type RevenueMonthlyRow = {
     refunds_amount: number;
 };
 
-export type GpuFleetRow = {
-    recorded_at: string; // "YYYY-MM-DD HH:MM:SS"
-    vendor: string;
-    deployment: string;
-    gpu: string;
-    gpu_count: number;
-    usd_per_hr: number;
-    balance_usd: number | null;
-};
-
-export type GpuBillingRow = {
-    month: string;
-    vendor: string;
-    deployment: string;
-    gpu: string;
-    amount: number;
-    currency: string;
-    source: string;
-};
-
 export type GpuRunRow = {
     month: string; // "YYYY-MM"
     vendor: string;
@@ -104,7 +84,5 @@ export type Data = {
     grants: GrantRow[];
     runs: RunRow[];
     revenueMonthly: RevenueMonthlyRow[];
-    gpuFleet: GpuFleetRow[];
-    gpuBilling: GpuBillingRow[];
     gpuRuns: GpuRunRow[];
 };

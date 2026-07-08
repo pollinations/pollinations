@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Data, GpuRunRow, PollenMonthlyRow } from "../types";
-import { fleetRunRate, gpuByType, gpuEconomics, runwayChips } from "./gpu";
+import { gpuByType, gpuEconomics } from "./gpu";
 
 const base: Data = {
     transactions: [],
@@ -9,58 +9,7 @@ const base: Data = {
     grants: [],
     runs: [],
     revenueMonthly: [],
-    gpuFleet: [],
-    gpuBilling: [],
     gpuRuns: [],
-};
-
-const JUNE_FLEET = [
-    {
-        recorded_at: "2026-06-10 10:00:00",
-        vendor: "runpod",
-        deployment: "zimage-4090-secure",
-        gpu: "RTX 4090",
-        gpu_count: 1,
-        usd_per_hr: 0.75,
-        balance_usd: 500,
-    },
-    {
-        recorded_at: "2026-06-10 10:00:00",
-        vendor: "runpod",
-        deployment: "klein-a5000-v4",
-        gpu: "RTX A5000",
-        gpu_count: 1,
-        usd_per_hr: 0.25,
-        balance_usd: 500,
-    },
-];
-
-// Kept only for fleetRunRate / runwayChips (fleet witness stays live until
-// Task 13). gpuEconomics no longer reads gpuFleet.
-const data: Data = {
-    ...base,
-    gpuFleet: JUNE_FLEET,
-    providerMonthly: [
-        {
-            month: "2026-06",
-            vendor: "runpod",
-            currency: "USD",
-            category: "compute",
-            credit: 800,
-            paid: 200,
-            source: "api",
-        },
-    ],
-    revenueMonthly: [
-        {
-            source: "stripe",
-            month: "2026-06",
-            currency: "EUR",
-            gross_amount: 10000,
-            fees_amount: 500,
-            refunds_amount: 400,
-        },
-    ],
 };
 
 // ---- fixture helpers -----------------------------------------------------
@@ -782,28 +731,5 @@ describe("gpuByType", () => {
         expect(rows[0].hours).toBeNull();
         expect(rows[0].impliedUsdPerHr).toBeNull();
         expect(rows[0].flags).toContain("hours unknown");
-    });
-});
-
-// ---- untouched fleet helpers (fleet witness stays live until Task 13) -----
-
-describe("fleetRunRate", () => {
-    it("sums the latest snapshot only", () => {
-        const rate = fleetRunRate(data);
-        expect(rate?.usdPerHr).toBeCloseTo(1.0, 3);
-        expect(rate?.usdPerMonth).toBeCloseTo(730, 0);
-    });
-});
-
-describe("runwayChips", () => {
-    it("derives days from balance and burn, danger under 7d", () => {
-        const low = {
-            ...data,
-            gpuFleet: JUNE_FLEET.map((r) => ({ ...r, balance_usd: 50 })),
-        };
-        const chip = runwayChips(low, new Date("2026-06-11")).find(
-            (c) => c.vendor === "runpod",
-        );
-        expect(chip?.tone).toBe("danger"); // 50 / (1.0 $/hr × 24) ≈ 2.1d
     });
 });

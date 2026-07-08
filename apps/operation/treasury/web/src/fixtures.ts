@@ -1,6 +1,4 @@
 import type {
-    GpuBillingRow,
-    GpuFleetRow,
     GpuRunRow,
     GrantRow,
     PollenMonthlyRow,
@@ -296,102 +294,6 @@ const revenueMonthly: RevenueMonthlyRow[] = [
     },
 ];
 
-const gpuFleet: GpuFleetRow[] = [
-    {
-        recorded_at: "2026-07-08 10:00:00",
-        vendor: "runpod",
-        deployment: "zimage-4090-secure",
-        gpu: "RTX 4090",
-        gpu_count: 1,
-        usd_per_hr: 0.69,
-        balance_usd: 80.06,
-    },
-    {
-        recorded_at: "2026-07-08 10:00:00",
-        vendor: "runpod",
-        deployment: "klein-a5000-v4",
-        gpu: "RTX A5000",
-        gpu_count: 1,
-        usd_per_hr: 0.27,
-        balance_usd: 80.06,
-    },
-    {
-        recorded_at: "2026-07-08 10:00:00",
-        vendor: "lambda",
-        deployment: "Sana - LTX-2.3 - AceStep",
-        gpu: "1x GH200 (96 GB)",
-        gpu_count: 1,
-        usd_per_hr: 2.29,
-        balance_usd: null,
-    },
-    {
-        recorded_at: "2026-06-15 10:00:00",
-        vendor: "vast.ai",
-        deployment: "43575766",
-        gpu: "RTX 5090",
-        gpu_count: 1,
-        usd_per_hr: 0.4278,
-        balance_usd: 225.43,
-    },
-];
-
-const gpuBilling: GpuBillingRow[] = [
-    {
-        month: "2026-06",
-        vendor: "runpod",
-        deployment: "zimage-4090-secure",
-        gpu: "RTX 4090",
-        amount: 432.27,
-        currency: "USD",
-        source: "api",
-    },
-    {
-        month: "2026-06",
-        vendor: "runpod",
-        deployment: "klein-a5000-v4",
-        gpu: "RTX A5000",
-        amount: 144.85,
-        currency: "USD",
-        source: "api",
-    },
-    {
-        month: "2026-06",
-        vendor: "runpod",
-        deployment: "zimage-3090-a",
-        gpu: "RTX 3090",
-        amount: 141.86,
-        currency: "USD",
-        source: "api",
-    },
-    {
-        month: "2026-06",
-        vendor: "runpod",
-        deployment: "zimage-3090-c",
-        gpu: "RTX 3090",
-        amount: 112.31,
-        currency: "USD",
-        source: "api",
-    },
-    {
-        month: "2026-06",
-        vendor: "runpod",
-        deployment: "hsl3ksl31lvrcc",
-        gpu: "",
-        amount: 56.74,
-        currency: "USD",
-        source: "api",
-    },
-    {
-        month: "2026-06",
-        vendor: "runpod",
-        deployment: "_storage",
-        gpu: "",
-        amount: 6.99,
-        currency: "USD",
-        source: "api",
-    },
-];
-
 const gpuRuns: GpuRunRow[] = [
     {
         month: "2026-06",
@@ -450,7 +352,5 @@ export const FIXTURES: Record<string, unknown[]> = {
     grants_api: grants,
     ingest_runs_api: runs,
     revenue_monthly_api: revenueMonthly,
-    gpu_fleet_api: gpuFleet,
-    gpu_billing_api: gpuBilling,
     gpu_runs_api: gpuRuns,
 };

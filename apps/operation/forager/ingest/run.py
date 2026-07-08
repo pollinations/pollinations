@@ -23,7 +23,6 @@ from .connectors.common import months_ytd
 from .connectors.vendors import ALLOWED_CATEGORIES, _validate_meter_source
 from .connectors.vendors import stripe as _stripe
 from .connectors import fleet as _fleet
-from .connectors import gpu_billing as _gpu_billing
 from .connectors import gpu_runs as _gpu_runs
 from .connectors.registry import CANONICAL
 from .aliases import VENDOR_ALIASES, GPU_VENDORS
@@ -315,19 +314,16 @@ def refresh_transactions(
     )
 
 
-def refresh_gpu_fleet(ops_ingest, secrets, now, statuses,
-                      snapshot_all=None):
-    """Append a fleet snapshot (append-only — no replace guard needed)."""
-    snap = snapshot_all or _fleet.snapshot_all
-    rows, fleet_statuses = snap(secrets, now)
-    statuses.update(fleet_statuses)
-    if rows:
-        ops_ingest.append("gpu_fleet", rows)
-    statuses["gpu_fleet_rows"] = len(rows)
+def _runway_statuses(fleet_rows, statuses):
+    """Burn/balance → gpu_runway:<vendor> status, 🚨 print when < 7 days.
 
+    Extracted from the old (now-deleted) refresh_gpu_fleet — the runway
+    alarm is a live-probe side effect of refresh_gpu_runs now, not a
+    datasource write.
+    """
     burn = {}
     balance = {}
-    for row in rows:
+    for row in fleet_rows:
         burn[row["vendor"]] = burn.get(row["vendor"], 0.0) + row["usd_per_hr"]
         if row.get("balance_usd") is not None:
             balance[row["vendor"]] = row["balance_usd"]
@@ -339,34 +335,6 @@ def refresh_gpu_fleet(ops_ingest, secrets, now, statuses,
         statuses[f"gpu_runway:{vendor}"] = f"${bal:.2f} · {rate:.3f}/hr · ~{days:.1f}d"
         if days < 7:
             print(f"🚨 {vendor} runway {days:.1f} days (${bal:.2f} at {rate:.3f}/hr) — top up")
-
-
-_GPU_BILLING_ALLOWED_SOURCES = {"api", "cli", "manual"}
-_GPU_BILLING_MONTH_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
-
-
-def _validate_gpu_billing_row(row):
-    """Basic validation for gpu_billing rows."""
-    vendor = row.get("vendor", "")
-    # Vendor must be canonical, not just GPU_VENDORS.
-    # Real audit data includes GPU line items from non-roster-GPU vendors
-    # (e.g. ovhcloud rented GPU instances). gpu_billing is the audit ledger.
-    if vendor not in CANONICAL:
-        raise ValueError(
-            f"gpu_billing row vendor '{vendor}' is not canonical. known: {sorted(CANONICAL)}"
-        )
-    month = row.get("month", "")
-    if not _GPU_BILLING_MONTH_RE.match(str(month)):
-        raise ValueError(f"gpu_billing row has invalid month: {month!r}")
-    try:
-        amount = float(row.get("amount") or 0)
-    except (TypeError, ValueError):
-        raise ValueError(f"gpu_billing row has non-numeric amount: {row.get('amount')!r}")
-    if amount < 0:
-        raise ValueError(f"gpu_billing row has negative amount: {amount}")
-    source = row.get("source", "")
-    if source not in _GPU_BILLING_ALLOWED_SOURCES:
-        raise ValueError(f"gpu_billing row has invalid source: {source!r}")
 
 
 _GPU_RUNS_ALLOWED_SOURCES = {"api", "cli", "manual"}
@@ -415,122 +383,6 @@ def _validate_gpu_runs_row(row):
             )
 
 
-def _gpu_billing_key(row):
-    """Dedup key: (vendor, month, deployment)."""
-    return (row.get("vendor", ""), row.get("month", ""), row.get("deployment", ""))
-
-
-def refresh_gpu_billing(
-    ops_replace,
-    secrets,
-    config,
-    today,
-    statuses,
-    guard,
-    vendors=None,
-    months=None,
-    connectors=None,
-):
-    """Refresh gpu_billing: fresh api/cli rows + surviving manual rows.
-
-    provider_monthly-style: per-vendor error isolation; if ALL fail, raise.
-    Manual rows outrank api/cli rows per (vendor, month, deployment) key.
-
-    Args:
-        ops_replace:  TB client with .replace(datasource, rows)
-        secrets:      credentials dict
-        config:       config dict (months_start etc.)
-        today:        current ingest date "YYYY-MM-DD"
-        statuses:     dict to record per-vendor ok/err statuses
-        guard:        backup guard dict (existing, yes, dry_run)
-        vendors:      optional list of vendor slugs to restrict scope
-        months:       optional list of "YYYY-MM"; defaults to months_ytd
-        connectors:   injectable dict {vendor: fn(creds, months, **kw)} for tests
-    """
-    if months is None:
-        months = months_ytd(config.get("months_start", "2026-01"), today)
-    month_set = set(months)
-
-    if connectors is None:
-        connectors = {
-            "runpod": lambda creds, months, **kw: _gpu_billing.monthly_rows_runpod(
-                creds, months, **{k: v for k, v in kw.items() if k == "http"}
-            ),
-            "modal": lambda creds, months, **kw: _gpu_billing.monthly_rows_modal(
-                creds, months, **{k: v for k, v in kw.items() if k == "run_cmd"}
-            ),
-            "vast": lambda creds, months, **kw: _gpu_billing.monthly_rows_vast(
-                creds, months, today,
-                **{k: v for k, v in kw.items() if k == "run_cmd"}
-            ),
-        }
-
-    # Restrict to requested vendors if --vendor given.
-    _vendor_connector_map = {
-        "runpod":  "runpod",
-        "modal":   "modal",
-        "vast.ai": "vast",
-    }
-
-    fresh_rows = []
-    errors = []
-    all_slugs = []
-
-    for vendor_slug, connector_key in _vendor_connector_map.items():
-        if vendors is not None and vendor_slug not in vendors:
-            continue
-        if connector_key not in connectors:
-            continue
-        all_slugs.append(vendor_slug)
-        try:
-            rows = connectors[connector_key](secrets, months)
-            fresh_rows.extend(rows or [])
-            statuses[f"billing:{vendor_slug}"] = f"ok:{len(rows or [])} rows"
-        except Exception as e:
-            msg = _sanitize_err(e, secrets)
-            statuses[f"billing:{vendor_slug}"] = f"err:{msg}"
-            errors.append(f"{vendor_slug}: {msg}")
-
-    if errors and len(errors) == len(all_slugs):
-        raise RuntimeError("all gpu billing connectors failed: " + "; ".join(errors))
-
-    # Validate fresh rows.
-    for row in fresh_rows:
-        _validate_gpu_billing_row(row)
-
-    # Determine scope predicate.
-    def in_scope(row):
-        return (
-            (vendors is None or row.get("vendor") in vendors)
-            and row.get("month") in month_set
-        )
-
-    # Retrieve surviving manual rows from existing snapshot.
-    existing = guard["existing"].get("gpu_billing", [])
-    manual_rows = [
-        row for row in existing
-        if row.get("source") == "manual" and in_scope(row)
-    ]
-
-    # Manual outranks api/cli per (vendor, month, deployment) key.
-    manual_keys = {_gpu_billing_key(row) for row in manual_rows}
-    fresh_non_manual = [
-        row for row in fresh_rows
-        if _gpu_billing_key(row) not in manual_keys
-    ]
-
-    merged = fresh_non_manual + manual_rows
-
-    # Validate merged rows too.
-    for row in merged:
-        _validate_gpu_billing_row(row)
-
-    assert_fresh_in_scope("gpu_billing", merged, in_scope)
-    final_rows = splice_rows(existing, merged, in_scope)
-    guarded_replace(ops_replace, "gpu_billing", final_rows, guard, statuses)
-    statuses["gpu_billing_rows"] = len(final_rows)
-
-
 def _gpu_runs_key(row):
     """Dedup key: (vendor, month, run_id)."""
     return (row.get("vendor", ""), row.get("month", ""), row.get("run_id", ""))
@@ -549,11 +401,15 @@ def refresh_gpu_runs(
 ):
     """Refresh gpu_runs: fresh api/cli run rows + surviving manual rows.
 
-    Near-exact mirror of refresh_gpu_billing — same per-vendor error
-    isolation, same manual-outranks-fresh merge, same splice/guard machinery.
-    Only difference: the dedup key is (vendor, month, run_id) instead of
-    (vendor, month, deployment), via _gpu_runs_key. Lambda has no connector —
-    it's manual-only, so its rows only ever come from the existing snapshot.
+    Same per-vendor error isolation, manual-outranks-fresh merge, and
+    splice/guard machinery as the other refresh_* functions. Dedup key is
+    (vendor, month, run_id) via _gpu_runs_key. Lambda has no connector — it's
+    manual-only, so its rows only ever come from the existing snapshot.
+
+    After the datasource replace, probes live fleet balance/burn (via
+    connectors/fleet.py's snapshot_all — statuses only, no datasource write)
+    and raises the 🚨 runway alarm through _runway_statuses. A probe failure
+    is caught and recorded as a status, never allowed to fail the refresh.
 
     Args:
         ops_replace:  TB client with .replace(datasource, rows)
@@ -650,6 +506,16 @@ def refresh_gpu_runs(
     guarded_replace(ops_replace, "gpu_runs", final_rows, guard, statuses)
     statuses["gpu_runs_rows"] = len(final_rows)
 
+    # Runway probe: live fleet snapshot for balance/burn only — no
+    # datasource write. A probe failure must never break the runs refresh.
+    try:
+        now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+        fleet_rows, fleet_statuses = _fleet.snapshot_all(secrets, now)
+        statuses.update(fleet_statuses)
+        _runway_statuses(fleet_rows, statuses)
+    except Exception as e:
+        statuses["gpu_runway"] = f"err:{_sanitize_err(e, secrets)}"
+
 
 def append_run_log(ops_ingest, statuses, notes):
     now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
@@ -674,14 +540,14 @@ def parse_args(argv=None):
                         help="approve writes that would lose manual meter row data")
     parser.add_argument("--dry-run", action="store_true",
                         help="snapshot + diff only, write nothing")
-    parser.add_argument("--only", choices=["provider", "pollen", "revenue", "transactions", "fleet", "billing", "runs"])
-    parser.add_argument("--vendor", help="provider, billing, or runs: re-fetch one connector")
+    parser.add_argument("--only", choices=["provider", "pollen", "revenue", "transactions", "runs"])
+    parser.add_argument("--vendor", help="provider or runs: re-fetch one connector")
     parser.add_argument("--month", help="restrict to one YYYY-MM month")
     args = parser.parse_args(argv)
 
     if args.vendor is not None:
-        if args.only not in ("provider", "billing", "runs"):
-            parser.error("--vendor requires --only provider, --only billing, or --only runs")
+        if args.only not in ("provider", "runs"):
+            parser.error("--vendor requires --only provider or --only runs")
         if args.only == "provider":
             meter_slugs = [slug for slug, _ in registry.METER]
             if args.vendor not in meter_slugs:
@@ -689,13 +555,6 @@ def parse_args(argv=None):
                     "--vendor must be a meter connector slug "
                     f"({', '.join(meter_slugs)}); manual-only vendors are "
                     "updated with ingest.record"
-                )
-        elif args.only == "billing":
-            billing_slugs = ["runpod", "modal", "vast.ai"]
-            if args.vendor not in billing_slugs:
-                parser.error(
-                    "--vendor with --only billing must be a billing connector slug "
-                    f"({', '.join(billing_slugs)})"
                 )
         elif args.only == "runs":
             runs_slugs = ["runpod", "modal", "vast.ai"]
@@ -728,8 +587,7 @@ def main():
         "existing": {
             ds: backup.snapshot_table(ops_ingest, ds, backup_dir)
             for ds in ("provider_monthly", "pollen_monthly", "revenue_monthly",
-                       "transactions", "grants", "ingest_runs", "gpu_fleet",
-                       "gpu_billing", "gpu_runs")
+                       "transactions", "grants", "ingest_runs", "gpu_runs")
         },
     }
     print(f"backup: {backup_dir}")
@@ -761,20 +619,6 @@ def main():
         if args.only in (None, "transactions"):
             refresh_transactions(
                 ops_replace, secrets, config, today, statuses, guard, months=months
-            )
-        if args.only in (None, "fleet"):
-            now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-            refresh_gpu_fleet(ops_ingest, secrets, now, statuses)
-        if args.only in (None, "billing"):
-            refresh_gpu_billing(
-                ops_replace,
-                secrets,
-                config,
-                today,
-                statuses,
-                guard,
-                vendors=vendors,
-                months=months,
             )
         if args.only in (None, "runs"):
             refresh_gpu_runs(

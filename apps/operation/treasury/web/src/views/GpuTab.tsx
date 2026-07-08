@@ -20,7 +20,6 @@ import {
 } from "../components/DataTable";
 import { fmtNumber, fmtPct, fmtUsd, fmtUsd4 } from "../lib/format";
 import {
-    fleetRunRate,
     type GpuDeploymentRow,
     type GpuTypeRow,
     gpuByType,
@@ -119,7 +118,6 @@ export function GpuTab({
     vendor?: string;
 }) {
     const now = useMemo(() => new Date(), []);
-    const runRate = useMemo(() => fleetRunRate(data), [data]);
     const runway = useMemo(() => runwayChips(data, now), [data, now]);
     const allRows = useMemo(() => gpuEconomics(data, month), [data, month]);
     const rows = useMemo(
@@ -172,12 +170,6 @@ export function GpuTab({
     const { headerProps: typeHeaderProps, rows: sortedTypeRows } =
         useSortableRows(typeRows, typeSortColumns);
 
-    const latestSnapshotDate = useMemo(() => {
-        const times = data.gpuFleet.map((r) => r.recorded_at);
-        if (times.length === 0) return null;
-        return times.reduce((a, b) => (a > b ? a : b));
-    }, [data.gpuFleet]);
-
     if (allRows.length === 0 && data.gpuRuns.length === 0) {
         return (
             <Alert intent="warning">
@@ -191,20 +183,6 @@ export function GpuTab({
         <div className="flex flex-col gap-4">
             {/* header strip */}
             <div className="flex flex-wrap items-center gap-3">
-                {runRate ? (
-                    <Text size="sm" tone="soft">
-                        fleet run-rate{" "}
-                        <strong>{fmtUsd(runRate.usdPerHr)}/hr</strong> ≈{" "}
-                        <strong>{fmtUsd(runRate.usdPerMonth)}/mo</strong>
-                        {latestSnapshotDate && (
-                            <>
-                                {" "}
-                                · latest snapshot{" "}
-                                {latestSnapshotDate.slice(0, 10)}
-                            </>
-                        )}
-                    </Text>
-                ) : null}
                 {runway.map((chip) => (
                     <Chip
                         key={chip.vendor}

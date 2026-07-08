@@ -1,9 +1,0 @@
-TOKEN "treasury_web" READ
-
-NODE endpoint
-SQL >
-    SELECT month, vendor, deployment, gpu, amount, currency, source
-    FROM gpu_billing
-    ORDER BY month DESC, vendor, deployment
-
-TYPE endpoint

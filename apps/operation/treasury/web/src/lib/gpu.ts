@@ -1,4 +1,4 @@
-import type { Data, GpuFleetRow } from "../types";
+import type { Data } from "../types";
 import { toUsd } from "./fx";
 import { creditRunway, globalNetRatio, isInfraRow } from "./insights";
 import { matchesMonth } from "./months";
@@ -74,28 +74,6 @@ function splitModels(model: string): string[] {
         .split(",")
         .map((m) => m.trim())
         .filter(Boolean);
-}
-
-// Group the fleet rows by vendor, keeping only the most recent snapshot per
-// vendor (all rows with recorded_at equal to that vendor's maximum).
-function latestFleet(rows: GpuFleetRow[]): GpuFleetRow[] {
-    const maxAt = new Map<string, string>();
-    for (const row of rows) {
-        const cur = maxAt.get(row.vendor);
-        if (!cur || row.recorded_at > cur)
-            maxAt.set(row.vendor, row.recorded_at);
-    }
-    return rows.filter((row) => row.recorded_at === maxAt.get(row.vendor));
-}
-
-// Σ usd_per_hr across the latest fleet snapshot. null when no fleet rows.
-export function fleetRunRate(
-    data: Data,
-): { usdPerHr: number; usdPerMonth: number } | null {
-    const latest = latestFleet(data.gpuFleet);
-    if (latest.length === 0) return null;
-    const usdPerHr = latest.reduce((acc, r) => acc + r.usd_per_hr, 0);
-    return { usdPerHr, usdPerMonth: usdPerHr * 730 };
 }
 
 // Derive per-model GPU economics from data.gpuRuns. The provider bill is the
@@ -481,34 +459,13 @@ function verdictFor(
     return "keep";
 }
 
-// Runway chips for the fleet health panel.
-// runpod / vast.ai: latest fleet balance_usd ÷ (Σ usd_per_hr × 24) → days.
+// Runway chips for the fleet health panel — credit-depletion signal only.
+// Live prepaid-balance runway (runpod / vast.ai) is no longer a dashboard
+// chip: it moved to the forager ingest run (the gpu_runway:<vendor> statuses
+// + 🚨 print), since the gpu_fleet snapshot datasource was retired.
 // lambda: reuse creditRunway() depletion signal.
 export function runwayChips(data: Data, now: Date): RunwayChip[] {
     const chips: RunwayChip[] = [];
-
-    // Balance-based chips (runpod, vast.ai)
-    const balanceVendors = ["runpod", "vast.ai"] as const;
-    for (const vendor of balanceVendors) {
-        const latest = latestFleet(data.gpuFleet).filter(
-            (r) => r.vendor === vendor,
-        );
-        if (latest.length === 0) continue;
-
-        const totalRatePerHr = latest.reduce((acc, r) => acc + r.usd_per_hr, 0);
-        // balance_usd is a vendor-level value repeated on every fleet row of the
-        // same snapshot — take it from the first row, never sum across rows.
-        const balance = latest[0].balance_usd ?? 0;
-
-        const dailyBurn = totalRatePerHr * 24;
-        const days = dailyBurn > 0 ? balance / dailyBurn : null;
-        chips.push({
-            vendor,
-            label: `$${Math.round(balance)} balance`,
-            days,
-            tone: toneFor(days),
-        });
-    }
 
     // Credit-runway chips (lambda)
     const creditVendors = ["lambda"] as const;

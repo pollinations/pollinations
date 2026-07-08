@@ -394,30 +394,6 @@ def test_runs_rows_runpod_shape():
         assert not missing, f"row missing keys {missing}: {row}"
 
 
-def test_runs_rows_runpod_cost_parity():
-    """Per-(pod,month) cost equals what monthly_rows_runpod produces for same fixture.
-
-    The transform must not change billed amounts — only reshape the schema.
-    """
-    from ingest.connectors.gpu_billing import monthly_rows_runpod
-
-    billing_rows = monthly_rows_runpod(
-        {"RUNPOD_API_KEY": "k"}, MONTHS, http=_runpod_http
-    )
-    run_rows = runs_rows_runpod(
-        {"RUNPOD_API_KEY": "k"}, MONTHS, http=_runpod_http
-    )
-
-    # Build (month, deployment) → amount/cost maps for comparison.
-    billing_map = {(r["month"], r["deployment"]): r["amount"] for r in billing_rows}
-    runs_map    = {(r["month"], r["deployment"]): r["cost"]   for r in run_rows}
-
-    assert billing_map == runs_map, (
-        f"cost mismatch between billing and runs connectors:\n"
-        f"billing={billing_map}\nruns={runs_map}"
-    )
-
-
 def test_runs_rows_runpod_serverless_kind():
     """_serverless:<id> rows always have kind='serverless', regardless of stamp."""
     rows = runs_rows_runpod({"RUNPOD_API_KEY": "k"}, MONTHS, http=_runpod_http)
@@ -557,7 +533,6 @@ _VAST_INVOICES_SHARED = [
         "instance_id": 12345,
     },
 ]
-from ingest.connectors.gpu_billing import monthly_rows_vast as _monthly_rows_vast  # noqa: E402
 
 TODAY = "2026-07-08"
 _VAST_MONTHS = ["2026-05", "2026-06"]
@@ -573,25 +548,6 @@ class _Proc:
 def _vast_run_cmd_shared(cmd, **kwargs):
     import json
     return _Proc(stdout=json.dumps(_VAST_INVOICES_SHARED))
-
-
-def test_runs_rows_vast_total_cost_parity():
-    """Σ cost from runs_rows_vast == Σ amount from monthly_rows_vast (both ≈ $30.00).
-
-    The run-grain split must not change totals: same charge data, different grain.
-    """
-    run_rows = runs_rows_vast({}, _VAST_MONTHS, TODAY, run_cmd=_vast_run_cmd_shared)
-    billing_rows = _monthly_rows_vast({}, _VAST_MONTHS, TODAY, run_cmd=_vast_run_cmd_shared)
-
-    total_runs = sum(r["cost"] for r in run_rows)
-    total_billing = sum(r["amount"] for r in billing_rows)
-
-    assert total_runs == pytest.approx(30.0, abs=0.02), (
-        f"runs total {total_runs} != ~30.00"
-    )
-    assert total_runs == pytest.approx(total_billing, abs=0.02), (
-        f"runs total {total_runs} != billing total {total_billing}"
-    )
 
 
 def test_runs_rows_vast_both_instances_present():
@@ -751,10 +707,8 @@ def test_runs_rows_vast_missing_cli_raises():
 
 
 # ---------------------------------------------------------------------------
-# runs_rows_modal — serverless shape + cost parity vs monthly_rows_modal
+# runs_rows_modal — serverless shape
 # ---------------------------------------------------------------------------
-
-from ingest.connectors.gpu_billing import monthly_rows_modal as _monthly_rows_modal  # noqa: E402
 
 _MODAL_DAILY = [
     {"app": "image-gen-prod", "cost": "12.50"},
@@ -832,27 +786,6 @@ def test_runs_rows_modal_vendor_and_source():
         assert row["vendor"] == "modal"
         assert row["source"] == "cli"
         assert row["currency"] == "USD"
-
-
-def test_runs_rows_modal_cost_parity_vs_monthly_rows_modal():
-    """Per-(app, month) cost matches monthly_rows_modal on the same fixture.
-
-    The reshaping to gpu_runs schema must not change billed amounts.
-    """
-    billing_rows = _monthly_rows_modal(
-        _MODAL_SECRETS, ["2026-06"], run_cmd=_modal_run_cmd_single
-    )
-    run_rows = runs_rows_modal(
-        _MODAL_SECRETS, ["2026-06"], run_cmd=_modal_run_cmd_single
-    )
-
-    billing_map = {(r["month"], r["deployment"]): r["amount"] for r in billing_rows}
-    runs_map    = {(r["month"], r["deployment"]): r["cost"]   for r in run_rows}
-
-    assert billing_map == runs_map, (
-        f"cost mismatch between billing and runs connectors:\n"
-        f"billing={billing_map}\nruns={runs_map}"
-    )
 
 
 def test_runs_rows_modal_multiple_months():
@@ -1314,6 +1247,111 @@ def test_refresh_gpu_runs_no_connector_for_lambda():
 
 
 # ---------------------------------------------------------------------------
+# refresh_gpu_runs runway probe — moved from the old (deleted) refresh_gpu_fleet.
+# Injects a fake connectors/fleet.py snapshot_all via monkeypatch (run.py holds
+# a module reference: `from .connectors import fleet as _fleet`).
+# ---------------------------------------------------------------------------
+
+def test_refresh_gpu_runs_flags_runway(monkeypatch, capsys):
+    """After the gpu_runs replace, a live fleet probe flags low runway."""
+    guard = _make_gpu_runs_guard()
+    statuses = {}
+    ops_replace = _FakeGpuRunsTB()
+
+    def fake_snapshot_all(secrets, now):
+        return (
+            [{
+                "recorded_at": now, "vendor": "runpod", "deployment": "p",
+                "gpu": "RTX 4090", "gpu_count": 1, "usd_per_hr": 1.439,
+                "balance_usd": 80.06,
+            }],
+            {"fleet:runpod": "ok:1 rows"},
+        )
+
+    monkeypatch.setattr(ingest_run._fleet, "snapshot_all", fake_snapshot_all)
+
+    ingest_run.refresh_gpu_runs(
+        ops_replace=ops_replace,
+        secrets={},
+        config={},
+        today=_RUNS_TODAY,
+        statuses=statuses,
+        guard=guard,
+        months=["2026-06"],
+        connectors=_make_run_connectors(runpod_rows=[_RUNPOD_RUN_ROW]),
+    )
+
+    assert ops_replace.replaced, "gpu_runs replace must still happen"
+    assert statuses["fleet:runpod"] == "ok:1 rows"
+    # 80.06 / (1.439*24) ≈ 2.3 days → alarm
+    assert statuses["gpu_runway:runpod"].endswith("d")
+    assert "🚨" in capsys.readouterr().out
+
+
+def test_refresh_gpu_runs_no_runway_alarm_when_balance_healthy(
+    monkeypatch, capsys
+):
+    """Runway status is recorded but no 🚨 print when days >= 7."""
+    guard = _make_gpu_runs_guard()
+    statuses = {}
+    ops_replace = _FakeGpuRunsTB()
+
+    def fake_snapshot_all(secrets, now):
+        return (
+            [{
+                "recorded_at": now, "vendor": "runpod", "deployment": "p",
+                "gpu": "RTX 4090", "gpu_count": 1, "usd_per_hr": 1.0,
+                "balance_usd": 1000.0,
+            }],
+            {"fleet:runpod": "ok:1 rows"},
+        )
+
+    monkeypatch.setattr(ingest_run._fleet, "snapshot_all", fake_snapshot_all)
+
+    ingest_run.refresh_gpu_runs(
+        ops_replace=ops_replace,
+        secrets={},
+        config={},
+        today=_RUNS_TODAY,
+        statuses=statuses,
+        guard=guard,
+        months=["2026-06"],
+        connectors=_make_run_connectors(runpod_rows=[_RUNPOD_RUN_ROW]),
+    )
+
+    # 1000 / (1.0 * 24) ≈ 41.7 days — well above the 7-day alarm floor.
+    assert statuses["gpu_runway:runpod"].endswith("d")
+    assert "🚨" not in capsys.readouterr().out
+
+
+def test_refresh_gpu_runs_runway_probe_failure_does_not_break_refresh(monkeypatch):
+    """A fleet snapshot failure records an err status but never raises — the
+    gpu_runs replace must still land."""
+    guard = _make_gpu_runs_guard()
+    statuses = {}
+    ops_replace = _FakeGpuRunsTB()
+
+    def boom(secrets, now):
+        raise RuntimeError("fleet api down")
+
+    monkeypatch.setattr(ingest_run._fleet, "snapshot_all", boom)
+
+    ingest_run.refresh_gpu_runs(
+        ops_replace=ops_replace,
+        secrets={},
+        config={},
+        today=_RUNS_TODAY,
+        statuses=statuses,
+        guard=guard,
+        months=["2026-06"],
+        connectors=_make_run_connectors(runpod_rows=[_RUNPOD_RUN_ROW]),
+    )
+
+    assert ops_replace.replaced, "gpu_runs replace must still happen despite runway probe failure"
+    assert statuses["gpu_runway"].startswith("err:")
+
+
+# ---------------------------------------------------------------------------
 # CLI wiring sanity — --only runs / --vendor runs
 # ---------------------------------------------------------------------------
 
@@ -1322,7 +1360,7 @@ def test_parse_args_only_accepts_runs():
     assert args.only == "runs"
 
 
-def test_parse_args_vendor_requires_only_provider_billing_or_runs():
+def test_parse_args_vendor_requires_only_provider_or_runs():
     with pytest.raises(SystemExit):
         ingest_run.parse_args(["--vendor", "runpod", "--only", "pollen"])
 

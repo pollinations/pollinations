@@ -16,13 +16,11 @@ TABLES = {
     "provider_monthly": "month",
     "pollen_monthly": "month",
     "revenue_monthly": "month",
-    "gpu_billing": "month",
     "gpu_runs": "month",
     "grants": None,
     "ingest_runs": None,
-    "gpu_fleet": None,
 }
-_ORDER = {"grants": "recorded_at", "gpu_fleet": "recorded_at"}
+_ORDER = {"grants": "recorded_at"}
 _MONTH_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
 _VENDOR_RE = re.compile(r"^[a-z0-9._-]+$")
 

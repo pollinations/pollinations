@@ -130,34 +130,6 @@ def test_missing_key_is_an_error_status_not_a_crash():
     assert statuses["fleet:modal"].startswith("err:")
 
 
-from ingest import run as ingest_run
-
-
-class FakeTB:
-    def __init__(self):
-        self.appended = []
-    def append(self, table, rows):
-        self.appended.append((table, rows))
-
-
-def test_refresh_gpu_fleet_appends_and_flags_runway(capsys):
-    statuses = {}
-    def fake_all(creds, now, **kw):
-        return ([
-            {"recorded_at": NOW, "vendor": "runpod", "deployment": "p", "gpu": "RTX 4090",
-             "gpu_count": 1, "usd_per_hr": 1.439, "balance_usd": 80.06},
-        ], {"fleet:runpod": "ok:1 rows"})
-    tb = FakeTB()
-    ingest_run.refresh_gpu_fleet(tb, {}, NOW, statuses, snapshot_all=fake_all)
-    assert tb.appended[0][0] == "gpu_fleet"
-    assert statuses["fleet:runpod"] == "ok:1 rows"
-    # 80.06 / (1.439*24) ≈ 2.3 days → alarm
-    assert statuses["gpu_runway:runpod"].endswith("d")
-    assert "🚨" in capsys.readouterr().out
-
-
-def test_refresh_gpu_fleet_no_rows_appends_nothing():
-    tb = FakeTB()
-    ingest_run.refresh_gpu_fleet(tb, {}, NOW, {},
-                                 snapshot_all=lambda c, n, **kw: ([], {}))
-    assert tb.appended == []
+# refresh_gpu_fleet (append-only datasource write) was deleted in the gpu_fleet
+# cutover — fleet.snapshot_all is now only a live probe consumed by
+# refresh_gpu_runs's runway alarm (see tests/test_gpu_runs.py).

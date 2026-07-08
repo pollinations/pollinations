@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { VendorPlanes } from "../lib/insights";
-import { problemsFirst, visiblePlaneRows } from "./ReconciliationTab";
+import {
+    coverageLabel,
+    problemsFirst,
+    visiblePlaneRows,
+} from "./ReconciliationTab";
 
 const plane = (
     month: string,
@@ -76,5 +80,31 @@ describe("problemsFirst", () => {
             drifted,
             inTolerance,
         ]);
+    });
+});
+
+describe("coverageLabel", () => {
+    it("returns null for missing coverage", () => {
+        expect(coverageLabel(null)).toBeNull();
+    });
+
+    it("maps uncovered to the Unfunded warning bucket", () => {
+        expect(coverageLabel("uncovered")).toBe("⚠ Unfunded");
+    });
+
+    it("maps paid unverified to the Unverified warning bucket", () => {
+        expect(coverageLabel("paid unverified")).toBe("⚠ Unverified");
+    });
+
+    it("collapses every other raw reason to Funded", () => {
+        for (const reason of [
+            "ok cash",
+            "ok credit",
+            "cash ±1mo",
+            "prepaid",
+            "internal",
+        ] as const) {
+            expect(coverageLabel(reason)).toBe("Funded");
+        }
     });
 });

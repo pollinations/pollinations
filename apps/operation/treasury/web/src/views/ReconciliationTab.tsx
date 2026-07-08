@@ -5,10 +5,12 @@ import {
     TableHead,
     TableHeaderCell,
     TableRow,
+    Tooltip,
 } from "@pollinations/ui";
 import { useMemo } from "react";
 import {
     DataTable,
+    GROUP_BORDER,
     HeaderHint,
     type SortColumn,
     TableScroller,
@@ -26,16 +28,31 @@ import {
 import { matchesMonth, monthLabel } from "../lib/months";
 import type { Data } from "../types";
 
+// Collapse the 7-state coverage enum into 3 display buckets, keeping the exact
+// raw reason in a hover tooltip. Sort/rank logic still reads the raw value.
+export function coverageLabel(value: Coverage): string | null {
+    if (value == null) return null;
+    if (value === "uncovered") return "⚠ Unfunded";
+    if (value === "paid unverified") return "⚠ Unverified";
+    return "Funded";
+}
+
 function CoverageCell({ value }: { value: Coverage }) {
-    if (value == null) return <span className="text-theme-text-soft">–</span>;
-    if (value === "uncovered" || value === "paid unverified") {
-        return (
+    const label = coverageLabel(value);
+    if (label == null) return <span className="text-theme-text-soft">–</span>;
+    const chip =
+        value === "uncovered" || value === "paid unverified" ? (
             <Chip intent="warning" size="sm">
-                ⚠ {value}
+                {label}
             </Chip>
+        ) : (
+            <span className="text-theme-text-soft">{label}</span>
         );
-    }
-    return <span className="text-theme-text-soft">{value}</span>;
+    return (
+        <Tooltip triggerAs="span" content={value}>
+            {chip}
+        </Tooltip>
+    );
 }
 
 export function visiblePlaneRows({
@@ -142,7 +159,7 @@ export function ReconciliationTab({
                     {
                         label: "Cash sent",
                         value: fmtUsd(stats.cashUsd),
-                        detail: "Wise compute outflows",
+                        detail: "compute cash outflows",
                     },
                     {
                         label: "Provider",
@@ -153,7 +170,7 @@ export function ReconciliationTab({
                                 : "their billing meter",
                     },
                     {
-                        label: "Pollen",
+                        label: "Our Meter",
                         value: fmtUsd(stats.pollenUsd),
                         detail: "our metering",
                     },
@@ -164,7 +181,7 @@ export function ReconciliationTab({
                         detail: "provider ÷ pollen",
                     },
                     {
-                        label: "Coverage gaps",
+                        label: "Funding gaps",
                         value: String(stats.gaps),
                         tone: stats.gaps > 0 ? "warn" : "pos",
                         detail: `of ${stats.rowCount} vendor-months`,
@@ -175,6 +192,43 @@ export function ReconciliationTab({
                 <DataTable>
                     <TableHead>
                         <TableRow>
+                            <TableHeaderCell colSpan={2}>
+                                <span className="text-xs uppercase tracking-wide text-theme-text-soft" />
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                colSpan={1}
+                                className={GROUP_BORDER}
+                            >
+                                <span className="text-xs uppercase tracking-wide text-theme-text-soft">
+                                    Bank
+                                </span>
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                colSpan={2}
+                                className={GROUP_BORDER}
+                            >
+                                <span className="text-xs uppercase tracking-wide text-theme-text-soft">
+                                    Provider
+                                </span>
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                colSpan={1}
+                                className={GROUP_BORDER}
+                            >
+                                <span className="text-xs uppercase tracking-wide text-theme-text-soft">
+                                    Ours
+                                </span>
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                colSpan={2}
+                                className={GROUP_BORDER}
+                            >
+                                <span className="text-xs uppercase tracking-wide text-theme-text-soft">
+                                    Reconcile
+                                </span>
+                            </TableHeaderCell>
+                        </TableRow>
+                        <TableRow>
                             <TableHeaderCell {...headerProps("month")}>
                                 month
                             </TableHeaderCell>
@@ -183,36 +237,91 @@ export function ReconciliationTab({
                             </TableHeaderCell>
                             <TableHeaderCell
                                 {...headerProps("transactionsUsd")}
+                                align="right"
+                                className={GROUP_BORDER}
                             >
-                                <HeaderHint hint="Cash actually sent to the vendor: Wise compute outflows, by transaction month. Empty = no cash left the bank that month (credits, prepaid balance, or arrears billing).">
-                                    transactions
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("providerUsd")}>
-                                <HeaderHint hint="What the provider's own billing meter says we consumed that month (credit + paid parts). Compute rows only — infra (Cloudflare, the EC2 share of AWS) has no pollen plane and reconciles through cash directly.">
-                                    provider
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("creditUsd")}>
-                                <HeaderHint hint="The slice of provider consumption covered by granted credits - consumed, but no cash out.">
-                                    of it credit
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("pollenUsd")}>
-                                <HeaderHint hint="What our own metering registered as cost for this vendor's models: cost_paid + cost_quests (Pollen ≈ $).">
-                                    pollen
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("calibX")}>
                                 <HeaderHint
-                                    hint={`provider ÷ pollen for the single month — the raw calibration series, no smoothing. Red past ±${Math.round(CALIB_DRIFT_ALARM * 100)}%. Swings between months are the fingerprint of a billing-window mismatch.`}
+                                    hint={{
+                                        meaning:
+                                            "Cash actually sent to the vendor that month. Empty = no cash left the bank (credits, prepaid balance, or arrears billing).",
+                                        tables: "transactions_api",
+                                        sources: "EN",
+                                    }}
                                 >
-                                    calib ×
+                                    Cash
+                                </HeaderHint>
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                {...headerProps("providerUsd")}
+                                align="right"
+                                className={GROUP_BORDER}
+                            >
+                                <HeaderHint
+                                    hint={{
+                                        meaning:
+                                            "What the vendor's own bill says we consumed that month (credit + paid parts). Compute rows only.",
+                                        tables: "provider_monthly_api",
+                                        sources: "API/CLI/BQ",
+                                    }}
+                                >
+                                    Provider
+                                </HeaderHint>
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                {...headerProps("creditUsd")}
+                                align="right"
+                            >
+                                <HeaderHint
+                                    hint={{
+                                        meaning:
+                                            "The slice of Provider consumption covered by granted credits — consumed, but no cash out.",
+                                        tables: "provider_monthly_api",
+                                    }}
+                                >
+                                    Of It Credit
+                                </HeaderHint>
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                {...headerProps("pollenUsd")}
+                                align="right"
+                                className={GROUP_BORDER}
+                            >
+                                <HeaderHint
+                                    hint={{
+                                        meaning:
+                                            "What our own metering registered as cost for this vendor's models.",
+                                        tables: "pollen_monthly_api",
+                                        sources: "TB",
+                                        formula: "cost_paid + cost_quests",
+                                    }}
+                                >
+                                    Our Meter
+                                </HeaderHint>
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                {...headerProps("calibX")}
+                                align="right"
+                                className={GROUP_BORDER}
+                            >
+                                <HeaderHint
+                                    hint={{
+                                        meaning:
+                                            "Provider ÷ Our Meter for the single month. Red past drift = our registry unit price for this vendor is off.",
+                                        formula: "provider ÷ our meter",
+                                    }}
+                                >
+                                    Calib ×
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("coverage")}>
-                                <HeaderHint hint="Is this consumption funded? ok cash = Wise cash that month · ok credit = provider credit burn · cash ±1mo = cash lands in an adjacent month (arrears) · prepaid = balance-funded, cumulative top-ups cover cumulative burn · internal = no payment expected · ⚠ uncovered = active in pollen but no funding found · ⚠ paid unverified = provider says we paid cash the bank never saw.">
-                                    coverage
+                                <HeaderHint
+                                    hint={{
+                                        meaning:
+                                            "Is this consumption funded? Funded = cash, credit, prepaid balance, or internal covers it. ⚠ Unfunded = active in our meter but no funding found. ⚠ Unverified = provider says we paid cash the bank never saw.",
+                                        tables: "transactions_api + provider_monthly_api + pollen_monthly_api",
+                                    }}
+                                >
+                                    Funding
                                 </HeaderHint>
                             </TableHeaderCell>
                         </TableRow>
@@ -225,22 +334,32 @@ export function ReconciliationTab({
                             <TableRow key={key}>
                                 <TableCell>{monthLabel(row.month)}</TableCell>
                                 <TableCell>{row.vendor}</TableCell>
-                                <TableCell>
+                                <TableCell
+                                    className={`text-right ${GROUP_BORDER}`}
+                                >
                                     {fmtUsd(row.transactionsUsd)}
                                 </TableCell>
-                                <TableCell>{fmtUsd(row.providerUsd)}</TableCell>
-                                <TableCell className="text-theme-text-soft">
+                                <TableCell
+                                    className={`text-right ${GROUP_BORDER}`}
+                                >
+                                    {fmtUsd(row.providerUsd)}
+                                </TableCell>
+                                <TableCell className="text-right text-theme-text-soft">
                                     {fmtUsd(row.creditUsd)}
                                 </TableCell>
-                                <TableCell>{fmtUsd(row.pollenUsd)}</TableCell>
                                 <TableCell
-                                    className={
+                                    className={`text-right ${GROUP_BORDER}`}
+                                >
+                                    {fmtUsd(row.pollenUsd)}
+                                </TableCell>
+                                <TableCell
+                                    className={`text-right ${GROUP_BORDER} ${
                                         row.calibX != null &&
                                         Math.abs(row.calibX - 1) >
                                             CALIB_DRIFT_ALARM
                                             ? "text-intent-danger-text"
                                             : "text-theme-text-soft"
-                                    }
+                                    }`}
                                 >
                                     {fmtMultiplier(row.calibX)}
                                 </TableCell>

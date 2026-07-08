@@ -1,4 +1,5 @@
 import {
+    cn,
     TableBody,
     TableCell,
     TableHead,
@@ -9,6 +10,7 @@ import {
 import { useMemo } from "react";
 import {
     DataTable,
+    GROUP_BORDER,
     HeaderHint,
     type SortColumn,
     TableScroller,
@@ -192,7 +194,7 @@ export function CreditsTab({
                         detail: "naive upper bound",
                     },
                     {
-                        label: "Next depletion",
+                        label: "Next runs out",
                         value: (
                             <span className="text-xl leading-tight">
                                 {totals.next
@@ -226,38 +228,91 @@ export function CreditsTab({
                             <TableHeaderCell {...headerProps("vendor")}>
                                 vendor
                             </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("grantedUsd")}>
-                                <HeaderHint hint="Σ grants for the vendor (hover the vendor for the per-grant split). EUR converted at the grant's start month.">
-                                    granted
+                            <TableHeaderCell
+                                {...headerProps("grantedUsd")}
+                                align="right"
+                                className={GROUP_BORDER}
+                            >
+                                <HeaderHint
+                                    hint={{
+                                        meaning:
+                                            "Total grants for the vendor (hover the vendor for the per-grant split). EUR converted at the grant's start month.",
+                                        tables: "grants_api",
+                                        sources: "HC",
+                                    }}
+                                >
+                                    Granted
                                 </HeaderHint>
                             </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("burnedPct")}>
-                                <HeaderHint hint="Witnessed credit burn as a share of granted credit: burned ÷ granted. Burn is Σ provider_monthly.credit across the whole window (2026-01+).">
-                                    burned
+                            <TableHeaderCell
+                                {...headerProps("burnedPct")}
+                                align="right"
+                            >
+                                <HeaderHint
+                                    hint={{
+                                        meaning:
+                                            "Credit used as a share of granted credit.",
+                                        tables: "provider_monthly_api + grants_api",
+                                        formula: "burned ÷ granted",
+                                    }}
+                                >
+                                    Burned %
                                 </HeaderHint>
                             </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("remainingUsd")}>
-                                <HeaderHint hint="granted − witnessed burned dollars, naive. For grants that started before 2026 this is an upper bound because pre-window burn is unwitnessed.">
-                                    remaining
+                            <TableHeaderCell
+                                {...headerProps("remainingUsd")}
+                                align="right"
+                            >
+                                <HeaderHint
+                                    hint={{
+                                        meaning:
+                                            "Granted minus credit used. Upper bound for grants that started before 2026 (pre-window burn is unrecorded).",
+                                        formula: "granted − burned",
+                                    }}
+                                >
+                                    Remaining
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
                                 {...headerProps("currentMonthBurnUsd")}
+                                align="right"
+                                className={GROUP_BORDER}
                             >
-                                <HeaderHint hint="Credit burn so far in the running month. Depletion uses this as the live daily intensity when it is nonzero.">
-                                    this month
+                                <HeaderHint
+                                    hint={{
+                                        meaning:
+                                            "Credit burn so far in the running month.",
+                                        tables: "provider_monthly_api",
+                                    }}
+                                >
+                                    This Month
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
                                 {...headerProps("lastMonthBurnUsd")}
+                                align="right"
                             >
-                                <HeaderHint hint="Credit burn in the last complete month. Used as the fallback only when this month has no burn yet.">
-                                    last month
+                                <HeaderHint
+                                    hint={{
+                                        meaning:
+                                            "Credit burn in the last complete month.",
+                                        tables: "provider_monthly_api",
+                                    }}
+                                >
+                                    Last Month
                                 </HeaderHint>
                             </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("depletionDate")}>
-                                <HeaderHint hint="Active rows show the earlier of credit exhaustion and the next grant expiry. Burn depletion uses last full month as the base, deducts this month's consumed credit, then projects runway from this month's daily intensity. Finished rows show when the pool ended. Red < 30 days, amber < 90.">
-                                    depletion
+                            <TableHeaderCell
+                                {...headerProps("depletionDate")}
+                                className={GROUP_BORDER}
+                            >
+                                <HeaderHint
+                                    hint={{
+                                        meaning:
+                                            "Estimated date the credit runs out at the recent burn rate, or the grant's expiry — whichever is sooner. Red under 30 days, amber under 90.",
+                                    }}
+                                >
+                                    Runs Out
                                 </HeaderHint>
                             </TableHeaderCell>
                         </TableRow>
@@ -279,29 +334,43 @@ export function CreditsTab({
                                     <TableCell>
                                         <GrantsHint row={row} />
                                     </TableCell>
-                                    <TableCell>
+                                    <TableCell
+                                        className={cn(
+                                            GROUP_BORDER,
+                                            "text-right",
+                                        )}
+                                    >
                                         {fmtUsd(row.grantedUsd)}
                                     </TableCell>
-                                    <TableCell>
+                                    <TableCell className="text-right">
                                         {fmtUnsignedPct(burnedPct(row))}
                                     </TableCell>
                                     <TableCell
-                                        className={remainingTone(
-                                            row.remainingUsd,
+                                        className={cn(
+                                            "text-right",
+                                            remainingTone(row.remainingUsd),
                                         )}
                                     >
                                         {fmtUsd(row.remainingUsd)}
                                     </TableCell>
-                                    <TableCell className="text-theme-text-soft">
+                                    <TableCell
+                                        className={cn(
+                                            GROUP_BORDER,
+                                            "text-right text-theme-text-soft",
+                                        )}
+                                    >
                                         {fmtUsd(row.currentMonthBurnUsd)}
                                     </TableCell>
-                                    <TableCell className="text-theme-text-soft">
+                                    <TableCell className="text-right text-theme-text-soft">
                                         {fmtUsd(row.lastMonthBurnUsd)}
                                     </TableCell>
                                     <TableCell
-                                        className={depletionTone(
-                                            row.depletionDate,
-                                            now,
+                                        className={cn(
+                                            GROUP_BORDER,
+                                            depletionTone(
+                                                row.depletionDate,
+                                                now,
+                                            ),
                                         )}
                                     >
                                         {row.finished
@@ -325,7 +394,16 @@ export function CreditsTab({
                             <TableHead>
                                 <TableRow>
                                     <TableHeaderCell>vendor</TableHeaderCell>
-                                    <TableHeaderCell>burned</TableHeaderCell>
+                                    <TableHeaderCell>
+                                        <HeaderHint
+                                            hint={{
+                                                meaning:
+                                                    "Credit burn with no grant on file — add a grant, or reclassify the discount as paid/net cost.",
+                                            }}
+                                        >
+                                            Unregistered Burn
+                                        </HeaderHint>
+                                    </TableHeaderCell>
                                     <TableHeaderCell>
                                         this month
                                     </TableHeaderCell>

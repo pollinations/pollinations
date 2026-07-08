@@ -6,7 +6,12 @@ import {
     TableRow,
 } from "@pollinations/ui";
 import { useMemo, useState } from "react";
-import { DataTable, HeaderHint, TableScroller } from "../components/DataTable";
+import {
+    type ColumnHint,
+    DataTable,
+    HeaderHint,
+    TableScroller,
+} from "../components/DataTable";
 import { StatCards, type StatItem } from "../components/StatCards";
 import { fmtPct, fmtUnsignedPct, fmtUsd } from "../lib/format";
 import {
@@ -124,14 +129,30 @@ function pnlCellClass(line: PnlLine, period: PnlPeriod): string {
     return "";
 }
 
-const HINTS: Record<string, string> = {
-    revenue:
-        "Stripe net: gross − fees − refunds, EUR→USD at monthly ECB rates.",
-    "total-spend":
-        "Sum of all category rows: total cash out for the period, by transaction date.",
-    "cash-pnl": "revenue − spend. Only shown when both sides exist.",
-    "credit-burn":
-        "Provider-metered consumption covered by granted credits. No cash left the bank, so it is NOT in cash P&L.",
+const HINTS: Record<string, ColumnHint> = {
+    revenue: {
+        meaning:
+            "Stripe net revenue: gross minus fees and refunds, EUR→USD at monthly ECB rates.",
+        tables: "revenue_monthly_api",
+        sources: "ST",
+        formula: "gross − fees − refunds",
+    },
+    "total-spend": {
+        meaning:
+            "Total cash out for the period, summed across every category row, by transaction date.",
+        tables: "transactions_api",
+        sources: "EN",
+    },
+    "cash-pnl": {
+        meaning: "Revenue minus spend. Only shown when both sides exist.",
+        formula: "revenue − spend",
+    },
+    "credit-burn": {
+        meaning:
+            "Provider-metered consumption covered by granted credits. No cash left the bank, so it is NOT in cash P&L.",
+        tables: "provider_monthly_api",
+        sources: "API/CLI/BQ",
+    },
 };
 
 const SEPARATOR_BEFORE = new Set(["total-spend", "credit-burn"]);
@@ -190,7 +211,7 @@ export function PnlTab({ data, month = "" }: { data: Data; month?: string }) {
                                     </span>
                                 </TableHeaderCell>
                             ))}
-                            <TableHeaderCell>%rev</TableHeaderCell>
+                            <TableHeaderCell>% of Rev</TableHeaderCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -246,7 +267,7 @@ function PnlLineRows({
 }: {
     line: PnlLine;
     periods: PnlPeriod[];
-    hint: string | undefined;
+    hint: ColumnHint | undefined;
     emphasis: string;
     separator: boolean;
     columnCount: number;

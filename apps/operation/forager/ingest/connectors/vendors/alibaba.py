@@ -5,9 +5,9 @@ Witness = `aliyun bssopenapi QueryBillOverview --BillingCycle YYYY-MM
 USD, accruing in real time (the running month reads live). The CLI reads
 its locally configured profile — no key in argv (vast precedent).
 
-Funding per Elliot's standing ruling (finance-app precedent): money we
-didn't pay — `InvoiceDiscount` + `DeductedByCoupons` — is credit;
-`PretaxAmount` (post-discount, post-coupon) is our cash, booked paid.
+Funding per Elliot's standing ruling (2026-07-08): Alibaba discounts are not
+grant pools. They only lower the net model cost, so the connector books
+`PretaxAmount` (post-discount, post-coupon) as paid and ignores discount lines.
 Cross-checked 2026-07-07: Jan–Jul cash $5,167.28 vs Wise alibaba card
 charges $5,161.75 — FX noise only.
 
@@ -42,7 +42,7 @@ def _month_overview(month, run_cmd):
 
 
 def meter(creds, months, today, run_cmd=subprocess.run):
-    """Alibaba metered usage per month, split credit/paid per bill overview.
+    """Alibaba metered usage per month, net paid cost per bill overview.
 
     Args:
         creds:   dict (unused for auth — the CLI reads its own profile)
@@ -51,8 +51,7 @@ def meter(creds, months, today, run_cmd=subprocess.run):
         run_cmd: injectable subprocess.run replacement (for testing)
 
     Returns:
-        list of _mrow dicts — at most one credit and one cash row per month
-        (merge_meter_rows folds them into a single table row).
+        list of _mrow dicts — at most one paid row per month.
     """
     if not months:
         raise RuntimeError("alibaba meter requires at least one month")
@@ -60,19 +59,14 @@ def meter(creds, months, today, run_cmd=subprocess.run):
     rows = []
     for month in sorted(set(months)):
         items = _month_overview(month, run_cmd)
-        credit = round(sum(
-            float(i.get("InvoiceDiscount") or 0) + float(i.get("DeductedByCoupons") or 0)
-            for i in items
-        ), 2)
         cash = round(sum(float(i.get("PretaxAmount") or 0) for i in items), 2)
-        for funding, amount in (("credit", credit), ("cash", cash)):
-            if amount:
-                rows.append(_mrow(
-                    month=month,
-                    vendor="alibaba",
-                    amount=amount,
-                    funding=funding,
-                    source="cli",
-                    today=today,
-                ))
+        if cash:
+            rows.append(_mrow(
+                month=month,
+                vendor="alibaba",
+                amount=cash,
+                funding="cash",
+                source="cli",
+                today=today,
+            ))
     return rows

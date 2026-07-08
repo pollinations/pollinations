@@ -899,15 +899,15 @@ def _ali_runner(results):
     return run_cmd
 
 
-def test_alibaba_meter_splits_credit_and_cash(monkeypatch):
+def test_alibaba_meter_books_discounts_as_lower_paid_cost(monkeypatch):
     run_cmd = _ali_runner([_ali_overview([
         {"PretaxGrossAmount": 1509.19, "InvoiceDiscount": 285.10,
          "DeductedByCoupons": 1000.00, "PretaxAmount": 224.08},
     ])])
     rows = _ali.meter({}, ["2026-03"], TODAY, run_cmd=run_cmd)
-    by = {("credit" if r["credit"] else "paid"): r for r in rows}
-    assert by["credit"]["credit"] == 1285.1
-    assert by["paid"]["paid"] == 224.08
+    assert len(rows) == 1
+    assert rows[0]["credit"] == 0.0
+    assert rows[0]["paid"] == 224.08
     for r in rows:
         assert r["vendor"] == "alibaba"
         assert r["currency"] == "USD"

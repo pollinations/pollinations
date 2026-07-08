@@ -20,6 +20,7 @@ type TooltipProps = {
     clampToViewport?: boolean;
     className?: string;
     onClick?: () => void;
+    stopClickPropagation?: boolean;
     style?: CSSProperties;
     triggerAs?: "button" | "span";
     /**
@@ -38,6 +39,7 @@ export const Tooltip: FC<TooltipProps> = ({
     clampToViewport = true,
     className,
     onClick,
+    stopClickPropagation = true,
     style,
     triggerAs = "button",
     displayContents = false,
@@ -139,7 +141,7 @@ export const Tooltip: FC<TooltipProps> = ({
         },
         onMouseLeave: () => setShowTooltip(false),
         onClick: (e: MouseEvent) => {
-            e.stopPropagation();
+            if (stopClickPropagation) e.stopPropagation();
             if (onClick) {
                 onClick();
             }

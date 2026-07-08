@@ -43,6 +43,7 @@ export function HeaderHint({
     return (
         <Tooltip
             triggerAs="span"
+            stopClickPropagation={false}
             content={<span className="block max-w-72">{hint}</span>}
         >
             <span className="underline decoration-dotted decoration-theme-border underline-offset-2">

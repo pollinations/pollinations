@@ -56,16 +56,19 @@ def split_run_by_month(started_at, ended_at, cost, gpu_count=1):
         cursor = segment_end
 
     # Pro-rate cost by hours; last month gets the remainder for exact-cents sum.
+    # Accumulate in integer cents to avoid IEEE754 drift over long spans.
+    total_cents = round(cost * 100)
     parts = []
-    accumulated_cost = 0.0
+    accumulated_cents = 0
     for i, (month_str, hours) in enumerate(segments):
         if i < len(segments) - 1:
             raw = cost * (hours / total_hours)
-            month_cost = round(raw, 2)
-            accumulated_cost += month_cost
+            month_cents = round(raw * 100)
+            accumulated_cents += month_cents
         else:
-            # Last month: give it the exact remainder.
-            month_cost = round(cost - accumulated_cost, 2)
+            # Last month: exact remainder in cents — no float drift possible.
+            month_cents = total_cents - accumulated_cents
+        month_cost = month_cents / 100.0
         parts.append((month_str, hours, month_cost))
 
     return parts

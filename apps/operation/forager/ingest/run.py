@@ -383,8 +383,10 @@ def _validate_gpu_runs_row(row):
     month = row.get("month", "")
     if not _GPU_RUNS_MONTH_RE.match(str(month)):
         raise ValueError(f"gpu_runs row has invalid month: {month!r}")
+    if row.get("cost") is None:
+        raise ValueError("gpu_runs row is missing required field 'cost'")
     try:
-        cost = float(row.get("cost") if row.get("cost") is not None else 0)
+        cost = float(row["cost"])
     except (TypeError, ValueError):
         raise ValueError(f"gpu_runs row has non-numeric cost: {row.get('cost')!r}")
     if cost < 0:

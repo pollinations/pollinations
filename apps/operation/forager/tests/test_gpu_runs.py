@@ -202,3 +202,49 @@ def test_validate_gpu_runs_invalid_time_format_raises():
         ingest_run._validate_gpu_runs_row(_valid_row(started_at="2026-06-01"))
     with pytest.raises(ValueError, match="ended_at"):
         ingest_run._validate_gpu_runs_row(_valid_row(ended_at="bad-date"))
+
+
+def test_validate_gpu_runs_missing_cost_raises():
+    """A row with no 'cost' key must raise ValueError — absent cost is invalid."""
+    row = _valid_row()
+    del row["cost"]
+    with pytest.raises(ValueError, match="cost"):
+        ingest_run._validate_gpu_runs_row(row)
+
+
+def test_split_exact_cents_sum_six_month_span():
+    """Exact-cents invariant holds over a 6-month span with non-round cost.
+
+    The sum of parts, rounded to the nearest cent, must equal cost in cents.
+    We compare in integer cents to avoid IEEE754 accumulation errors.
+    """
+    started = _dt("2025-07-01 00:00:00")
+    ended   = _dt("2025-12-31 23:59:59")
+    cost = 100.01
+    parts = split_run_by_month(started, ended, cost=cost)
+
+    assert len(parts) == 6
+    total_cents = sum(round(p[2] * 100) for p in parts)
+    cost_cents = round(cost * 100)
+    assert total_cents == cost_cents, (
+        f"sum in cents {total_cents} != {cost_cents} (exact-cents invariant broken over 6 months)"
+    )
+
+
+def test_split_exact_cents_sum_twelve_months():
+    """Reviewer-found case: cost=100.01 over 12 months must sum exactly.
+
+    Sum compared in integer cents; the reviewer's original float sum drifted
+    to 100.00999999999999 — this test pins the integer-cents fix.
+    """
+    started = _dt("2025-01-01 00:00:00")
+    ended   = _dt("2025-12-31 23:59:59")
+    cost = 100.01
+    parts = split_run_by_month(started, ended, cost=cost)
+
+    assert len(parts) == 12
+    total_cents = sum(round(p[2] * 100) for p in parts)
+    cost_cents = round(cost * 100)
+    assert total_cents == cost_cents, (
+        f"sum in cents {total_cents} != {cost_cents} (exact-cents invariant broken over 12 months)"
+    )

@@ -368,6 +368,50 @@ def _validate_gpu_billing_row(row):
         raise ValueError(f"gpu_billing row has invalid source: {source!r}")
 
 
+_GPU_RUNS_ALLOWED_SOURCES = {"api", "cli", "manual"}
+_GPU_RUNS_MONTH_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
+_GPU_RUNS_TIME_RE = re.compile(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$")
+
+
+def _validate_gpu_runs_row(row):
+    """Validate a gpu_runs row before ingest."""
+    vendor = row.get("vendor", "")
+    if vendor not in CANONICAL:
+        raise ValueError(
+            f"gpu_runs row vendor '{vendor}' is not canonical. known: {sorted(CANONICAL)}"
+        )
+    month = row.get("month", "")
+    if not _GPU_RUNS_MONTH_RE.match(str(month)):
+        raise ValueError(f"gpu_runs row has invalid month: {month!r}")
+    try:
+        cost = float(row.get("cost") if row.get("cost") is not None else 0)
+    except (TypeError, ValueError):
+        raise ValueError(f"gpu_runs row has non-numeric cost: {row.get('cost')!r}")
+    if cost < 0:
+        raise ValueError(f"gpu_runs row has negative cost: {cost}")
+    kind = row.get("kind", "")
+    if kind not in {"gpu", "serverless"}:
+        raise ValueError(f"gpu_runs row has invalid kind: {kind!r}")
+    source = row.get("source", "")
+    if source not in _GPU_RUNS_ALLOWED_SOURCES:
+        raise ValueError(f"gpu_runs row has invalid source: {source!r}")
+    hours = row.get("hours")
+    if hours is not None:
+        try:
+            h = float(hours)
+        except (TypeError, ValueError):
+            raise ValueError(f"gpu_runs row has non-numeric hours: {hours!r}")
+        if h < 0:
+            raise ValueError(f"gpu_runs row has negative hours: {h}")
+    for time_field in ("started_at", "ended_at"):
+        val = row.get(time_field, "")
+        if val != "" and not _GPU_RUNS_TIME_RE.match(str(val)):
+            raise ValueError(
+                f"gpu_runs row has invalid {time_field}: {val!r} "
+                "(must be '' or 'YYYY-MM-DD HH:MM:SS')"
+            )
+
+
 def _gpu_billing_key(row):
     """Dedup key: (vendor, month, deployment)."""
     return (row.get("vendor", ""), row.get("month", ""), row.get("deployment", ""))

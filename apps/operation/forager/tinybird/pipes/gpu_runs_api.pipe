@@ -1,0 +1,10 @@
+TOKEN "treasury_web" READ
+
+NODE endpoint
+SQL >
+    SELECT month, vendor, run_id, deployment, gpu, gpu_count, started_at, ended_at,
+           hours, cost, currency, model, kind, source
+    FROM gpu_runs
+    ORDER BY month DESC, vendor, deployment
+
+TYPE endpoint

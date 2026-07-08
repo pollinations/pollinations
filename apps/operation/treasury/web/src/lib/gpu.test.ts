@@ -153,7 +153,7 @@ describe("runwayChips", () => {
         const chip = runwayChips(low, new Date("2026-06-11")).find(
             (c) => c.vendor === "runpod",
         );
-        expect(chip?.tone).toBe("danger"); // 50 / 24 ≈ 2.1d
+        expect(chip?.tone).toBe("danger"); // 50 / (1.0 $/hr × 24) ≈ 2.1d
     });
 });
 
@@ -306,6 +306,121 @@ describe("gpuEconomics invariants", () => {
             expect(row.rentUsd).toBeNull();
             expect(row.coverage).toBeNull();
         }
+    });
+
+    it("multi-month: each month carries only its own bill, grand total = sum of months", () => {
+        // runpod: May credit 100, June credit 200 → filter "2026" emits both months
+        const mayFleet = [
+            {
+                recorded_at: "2026-05-15 00:00:00",
+                vendor: "runpod",
+                deployment: "zimage-main",
+                gpu: "RTX 4090",
+                gpu_count: 1,
+                usd_per_hr: 0.75,
+                balance_usd: 400,
+            },
+            {
+                recorded_at: "2026-05-15 00:00:00",
+                vendor: "runpod",
+                deployment: "klein-primary",
+                gpu: "RTX A5000",
+                gpu_count: 1,
+                usd_per_hr: 0.25,
+                balance_usd: 400,
+            },
+        ];
+        const juneFleet = JUNE_FLEET;
+        const d: Data = {
+            ...base,
+            gpuFleet: [...mayFleet, ...juneFleet],
+            providerMonthly: [
+                {
+                    month: "2026-05",
+                    vendor: "runpod",
+                    currency: "USD",
+                    category: "compute",
+                    credit: 100,
+                    paid: 0,
+                    source: "api",
+                },
+                {
+                    month: "2026-06",
+                    vendor: "runpod",
+                    currency: "USD",
+                    category: "compute",
+                    credit: 200,
+                    paid: 0,
+                    source: "api",
+                },
+            ],
+            pollenMonthly: [],
+            revenueMonthly: [],
+        };
+        const rows = gpuEconomics(d, "2026");
+        const mayRows = rows.filter(
+            (r) => r.vendor === "runpod" && r.month === "2026-05",
+        );
+        const juneRows = rows.filter(
+            (r) => r.vendor === "runpod" && r.month === "2026-06",
+        );
+        const mayTotal = mayRows.reduce((acc, r) => acc + (r.rentUsd ?? 0), 0);
+        const juneTotal = juneRows.reduce(
+            (acc, r) => acc + (r.rentUsd ?? 0),
+            0,
+        );
+        const grandTotal = rows
+            .filter((r) => r.vendor === "runpod")
+            .reduce((acc, r) => acc + (r.rentUsd ?? 0), 0);
+        // each month's rows must sum to that month's bill exactly
+        expect(mayTotal).toBeCloseTo(100, 6);
+        expect(juneTotal).toBeCloseTo(200, 6);
+        // grand total must equal sum of the two months, not double-counted
+        expect(grandTotal).toBeCloseTo(300, 6);
+    });
+
+    it("multi-month no-fleet vendor: cross-month rent does not leak (ovhcloud)", () => {
+        // ovhcloud has no fleet — emits one vendor-total row per month.
+        // With bills in two months, each month row must carry only its own bill.
+        const d: Data = {
+            ...base,
+            gpuFleet: [],
+            providerMonthly: [
+                {
+                    month: "2026-05",
+                    vendor: "ovhcloud",
+                    currency: "USD",
+                    category: "compute",
+                    credit: 150,
+                    paid: 0,
+                    source: "api",
+                },
+                {
+                    month: "2026-06",
+                    vendor: "ovhcloud",
+                    currency: "USD",
+                    category: "compute",
+                    credit: 250,
+                    paid: 0,
+                    source: "api",
+                },
+            ],
+            pollenMonthly: [],
+            revenueMonthly: [],
+        };
+        const rows = gpuEconomics(d, "2026");
+        const mayRow = rows.find(
+            (r) => r.vendor === "ovhcloud" && r.month === "2026-05",
+        );
+        const juneRow = rows.find(
+            (r) => r.vendor === "ovhcloud" && r.month === "2026-06",
+        );
+        expect(mayRow?.rentUsd).toBeCloseTo(150, 6);
+        expect(juneRow?.rentUsd).toBeCloseTo(250, 6);
+        const grandTotal = rows
+            .filter((r) => r.vendor === "ovhcloud")
+            .reduce((acc, r) => acc + (r.rentUsd ?? 0), 0);
+        expect(grandTotal).toBeCloseTo(400, 6);
     });
 
     it("infra category rows excluded from rent", () => {

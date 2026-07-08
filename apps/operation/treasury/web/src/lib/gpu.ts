@@ -1,6 +1,6 @@
 import type { Data, GpuFleetRow } from "../types";
 import { toUsd } from "./fx";
-import { creditRunway, globalNetRatio } from "./insights";
+import { creditRunway, globalNetRatio, isInfraRow } from "./insights";
 import { matchesMonth } from "./months";
 import { GPU_VENDORS } from "./vendor-vocabulary";
 
@@ -148,12 +148,6 @@ export function fleetRunRate(
     return { usdPerHr, usdPerMonth: usdPerHr * 730 };
 }
 
-// Infra rows (Cloudflare, the EC2/CloudFront share of AWS) have no pollen
-// plane — excluded from rent exactly as insights.ts does.
-function isInfraRow(row: { category?: string }): boolean {
-    return row.category === "infra";
-}
-
 export function gpuEconomics(
     data: Data,
     monthFilter: string,
@@ -162,25 +156,28 @@ export function gpuEconomics(
     const result: GpuDeploymentRow[] = [];
 
     for (const vendor of GPU_VENDORS) {
-        // Step 1: vendor rent for this month.
+        // Step 1: build a per-month rent map (month → Σ toUsd) so that each
+        // emitted month carries only its own bill, not the total across all
+        // matched months (the critical cross-month bug: summing all months then
+        // using that total inside every per-month iteration).
         const vendorBills = data.providerMonthly.filter(
             (r) =>
                 r.vendor === vendor &&
                 matchesMonth(r.month, monthFilter) &&
                 !isInfraRow(r),
         );
-        // null when no provider rows at all for this vendor+month
-        const vendorRentUsd: number | null =
-            vendorBills.length === 0
-                ? null
-                : vendorBills.reduce(
-                      (acc, r) =>
-                          acc + toUsd(r.credit + r.paid, r.currency, r.month),
-                      0,
-                  );
+        // month → total rent for that month (only months present in bills)
+        const rentByMonth = new Map<string, number>();
+        for (const r of vendorBills) {
+            const prev = rentByMonth.get(r.month) ?? 0;
+            rentByMonth.set(
+                r.month,
+                prev + toUsd(r.credit + r.paid, r.currency, r.month),
+            );
+        }
 
         // Collect the unique months that matched (for row emission)
-        const matchedMonths = [...new Set(vendorBills.map((r) => r.month))];
+        const matchedMonths = [...rentByMonth.keys()];
         // When monthFilter is a specific month and no bills exist, still emit
         // rows for that month using the fleet snapshot if present.
         const allMonths =
@@ -220,7 +217,7 @@ export function gpuEconomics(
                   })();
 
         // When there is genuinely no signal for this vendor in this month, skip.
-        if (allMonths.length === 0 && vendorRentUsd === null) continue;
+        if (allMonths.length === 0 && rentByMonth.size === 0) continue;
 
         // Treat an empty month list as the filter month itself (may still have fleet).
         const months: string[] =
@@ -232,6 +229,8 @@ export function gpuEconomics(
                   : [];
 
         for (const month of months) {
+            // Rent for this specific month only; null when no bill for this month.
+            const vendorRentUsd: number | null = rentByMonth.get(month) ?? null;
             // Step 2: fleet shares for this month.
             const fleetInMonth = data.gpuFleet.filter(
                 (r) =>
@@ -535,16 +534,15 @@ export function runwayChips(data: Data, now: Date): RunwayChip[] {
         if (latest.length === 0) continue;
 
         const totalRatePerHr = latest.reduce((acc, r) => acc + r.usd_per_hr, 0);
-        const totalBalance = latest.reduce(
-            (acc, r) => acc + (r.balance_usd ?? 0),
-            0,
-        );
+        // balance_usd is a vendor-level value repeated on every fleet row of the
+        // same snapshot — take it from the first row, never sum across rows.
+        const balance = latest[0].balance_usd ?? 0;
 
         const dailyBurn = totalRatePerHr * 24;
-        const days = dailyBurn > 0 ? totalBalance / dailyBurn : null;
+        const days = dailyBurn > 0 ? balance / dailyBurn : null;
         chips.push({
             vendor,
-            label: `$${Math.round(totalBalance)} balance`,
+            label: `$${Math.round(balance)} balance`,
             days,
             tone: toneFor(days),
         });

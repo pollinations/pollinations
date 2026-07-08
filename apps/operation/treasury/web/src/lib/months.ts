@@ -44,3 +44,10 @@ export function yearsOf(months: string[]): string[] {
         a.localeCompare(b),
     );
 }
+
+export function lastFullMonth(now: Date = new Date()): string {
+    const year = now.getUTCFullYear();
+    const monthIndex = now.getUTCMonth();
+    const last = new Date(Date.UTC(year, monthIndex - 1, 1));
+    return `${last.getUTCFullYear()}-${String(last.getUTCMonth() + 1).padStart(2, "0")}`;
+}

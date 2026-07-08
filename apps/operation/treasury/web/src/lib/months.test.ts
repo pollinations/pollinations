@@ -4,6 +4,7 @@ import type { Data } from "../types";
 import {
     collectMonths,
     isYearFilter,
+    lastFullMonth,
     matchesMonth,
     monthLabel,
     yearsOf,
@@ -84,5 +85,15 @@ describe("yearsOf", () => {
             "2026",
             "2027",
         ]);
+    });
+});
+
+describe("lastFullMonth", () => {
+    it("returns the previous calendar month", () => {
+        expect(lastFullMonth(new Date("2026-07-08T12:00:00Z"))).toBe("2026-06");
+    });
+
+    it("handles January by rolling back to the previous year", () => {
+        expect(lastFullMonth(new Date("2026-01-01T00:00:00Z"))).toBe("2025-12");
     });
 });

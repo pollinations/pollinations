@@ -39,7 +39,7 @@ import type { ProvenanceCode } from "./components/Provenance";
 import { STALE_AFTER_HOURS } from "./config";
 import { hoursSince } from "./lib/format";
 import { insightVendorOptions } from "./lib/insights";
-import { collectMonths } from "./lib/months";
+import { collectMonths, lastFullMonth } from "./lib/months";
 import { fixturesMode, loadAll, TbError } from "./lib/tb";
 import {
     findVendorVocabularyIssues,
@@ -679,8 +679,8 @@ export default function App() {
     const [tab, setTab] = useState<Tab>("transactions");
     const [section, setSection] = useState<TreasurySection>("insights");
     const [insightTab, setInsightTab] = useState<InsightTab>("pnl");
-    // Default to All so the dashboard opens with the full export.
-    const [month, setMonth] = useState("");
+    // Open P&L on the last complete month by default.
+    const [month, setMonth] = useState(() => lastFullMonth());
     // Keep the selection while it exists in the current tab's vendor set.
     const [vendor, setVendor] = useState("all");
     const [attempt, setAttempt] = useState(0);

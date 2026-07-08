@@ -17,6 +17,7 @@ import json
 import re
 import sys
 
+from .aliases import VENDOR_CATEGORIES
 from .connectors.vendors import _currency, _validate_meter_source
 from .connectors.registry import CANONICAL
 from . import creds as _creds
@@ -85,8 +86,9 @@ def main(argv=None, tb_factory=None):
     mp.add_argument("--currency", required=True, help="source currency code, e.g. USD or EUR")
     mp.add_argument("--credit", type=float, default=0.0, help="credit burn amount")
     mp.add_argument("--paid", type=float, default=0.0, help="paid/prepaid amount")
-    mp.add_argument("--category", choices=["compute", "infra"], default="compute",
-                    help="infra rows fund pools/cash but stay out of compute lenses")
+    mp.add_argument("--category", choices=["compute", "infra"], default=None,
+                    help="infra rows fund pools/cash but stay out of compute lenses "
+                         "(default: the vendor's category from vendor_aliases.json)")
 
     # grant subcommand
     gp = sub.add_parser("grant", help="append a grants registration")
@@ -116,11 +118,18 @@ def main(argv=None, tb_factory=None):
             sys.exit(1)
         currency = _validate_currency(args.currency)
         _validate_meter_source("manual")
+        # provider_monthly only knows compute vs infra; vendors whose roster
+        # category is anything else (saas, admin, ...) still default compute.
+        category = args.category or (
+            VENDOR_CATEGORIES[args.vendor]
+            if VENDOR_CATEGORIES.get(args.vendor) in ("compute", "infra")
+            else "compute"
+        )
         row = {
             "month": args.month,
             "vendor": args.vendor,
             "currency": _currency(currency),
-            "category": args.category,
+            "category": category,
             "credit": round(float(args.credit), 2),
             "paid": round(float(args.paid), 2),
             "source": "manual",

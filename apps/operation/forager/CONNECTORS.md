@@ -76,6 +76,16 @@ Vendor must be in `registry.CANONICAL`; month must match `YYYY-MM`. Appends one 
   ```
   python3 -m ingest.record provider daytona <YYYY-MM> --currency USD --credit <amount>
   ```
+
+- [ ] **cloudflare (credit side only)** — the myceli account's consumption is
+  zeroed by the Cloudflare for Startups pool before it reaches the billing
+  history the API connector reads, so the burn is invisible programmatically.
+  Read the month's credit usage from [dash.cloudflare.com](https://dash.cloudflare.com)
+  (myceli account → Billing → credits); then:
+  ```
+  python3 -m ingest.record provider cloudflare <YYYY-MM> --currency USD --credit <amount>
+  ```
+  (category defaults to infra; the cash side stays with the API connector.)
 ---
 
 ## Settled questions (do not re-litigate)
@@ -91,5 +101,7 @@ These were decided during the PoC and are preserved here so they are not re-open
 **GCP connector works without gcloud login** — the `google` meter connector activates the service-account key from `GCP_BILLING_SA_JSON` (SOPS) at runtime via `gcloud auth activate-service-account`. No interactive `gcloud auth login` is needed; the SA has BigQuery read access to the billing export table. BQ billing export was fresh through 2026-07-02 as of last verification.
 
 **AWS CE paid meter is net of credits** — Cost Explorer returns gross usage and credit rows separately. Forager stores `credit` as the absolute Credit record amount and `paid` as `max(gross usage - credit, 0)`.
+
+**Cloudflare myceli runs on startup credits — INFRA only (Elliot, 2026-07-08)** — the myceli account holds a Cloudflare for Startups pool ($250k, since ~Feb 2026; grants label "startup program", exact start/expiry pending Elliot's dashboard read). The pool zeroes myceli invoices before they reach the billing-history API, so credit burn is recorded manually (see checklist). Everything cloudflare is category=infra by construction — connector hardcodes it, `ingest.record` defaults it from the roster — so the pool never touches compute lenses or calib. The 2026-06-22 $1,399.04 card charge was Cloudflare's mistake (consumption belonged on the credits): refunded 2026-06-25, cash leg auto-cancelled by `wise.cancel_refunds`, burn recorded as June credit.
 
 **pointsflyer is a closed gifted-compute vendor (Elliot's ruling 2026-07-08: full credit, used completely)** — a collaborator's donated capacity, live Dec 2025 → Apr 2026, tagged in generation_event as `azure-2` (OpenAI models on his Azure credits: gpt-5-mini/nano, gptimage, gpt-4.1) and `bpai` (his self-hosted Klein GPU). Both tags alias to `pointsflyer` in `vendor_aliases.json`. Provider rows are manual credit mirrors of the pollen witness (calib 1.00 by construction — listed in the web's `POLLEN_PRICED_VENDORS`), backed by one fully-burned grant. The 2025-12 slice is partial (generation_event retention starts 2025-12-21); never re-meter it. Klein's other hops stay where they ran: modal (Jan–Mar, our account) and runpod (Apr).

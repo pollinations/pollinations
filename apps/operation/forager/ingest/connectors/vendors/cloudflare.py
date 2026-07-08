@@ -8,13 +8,19 @@ reimbursed him — see config/transaction_splits.json), the myceli account uses
 our own token.
 
 Entry math per month (occurred_at month, USD): `invoice` amounts add,
-`credit` amounts subtract (billing corrections — e.g. myceli's 2026-06 charge
-was credited back to the account balance two days later, netting June to the
-$48 the old account billed). Zero/None amounts (free-tier invoices) are
-skipped. Months netting <= 0 emit no row. All cash, all category="infra"
-(Cloudflare serves no models — Elliot's ruling 2026-07: "cloudflare is all
-infra"), so these rows fund cash flow views but stay out of the compute
-lenses.
+`credit` amounts subtract (billing corrections — e.g. myceli's 2026-06
+$1,399.04 charge was a mistake: the consumption rode the startup credits and
+the card payment was refunded three days later, so June nets to the $48 the
+old account billed; wise.cancel_refunds drops the cash leg too). Zero/None
+amounts (free-tier invoices) are skipped. Months netting <= 0 emit no row.
+All cash, all category="infra" (Cloudflare serves no models — Elliot's
+ruling 2026-07: "cloudflare is all infra"), so these rows fund cash flow
+views but stay out of the compute lenses.
+
+The myceli account runs on Cloudflare for Startups credits ($250k pool,
+grants label "startup program") which zero its invoices BEFORE they reach
+this billing history — the credit burn is invisible here and is recorded
+manually each month from the dashboard (see CONNECTORS.md checklist).
 
 Source: api
 """

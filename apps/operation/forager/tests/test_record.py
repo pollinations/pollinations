@@ -163,6 +163,33 @@ def test_record_meter_defaults_missing_amount_side_to_zero():
     assert r["paid"] == 500.0
 
 
+def test_record_meter_category_defaults_from_vendor_roster():
+    """No --category → the vendor's vendor_aliases.json category, so infra
+    vendors (digitalocean, tinybird) stop silently landing as compute."""
+    fake = _FakeTB()
+    record.main(
+        ["provider", "digitalocean", "2026-06", "--currency", "USD", "--credit", "298"],
+        tb_factory=_make_factory(fake),
+    )
+    assert fake.appended[0][1][0]["category"] == "infra"
+
+    fake = _FakeTB()
+    record.main(
+        ["provider", "io.net", "2026-06", "--currency", "USD", "--credit", "10"],
+        tb_factory=_make_factory(fake),
+    )
+    assert fake.appended[0][1][0]["category"] == "compute"
+
+    # explicit flag still wins
+    fake = _FakeTB()
+    record.main(
+        ["provider", "digitalocean", "2026-06", "--currency", "USD",
+         "--credit", "10", "--category", "compute"],
+        tb_factory=_make_factory(fake),
+    )
+    assert fake.appended[0][1][0]["category"] == "compute"
+
+
 # ---------------------------------------------------------------------------
 # Validation: bad month exits non-zero
 # ---------------------------------------------------------------------------

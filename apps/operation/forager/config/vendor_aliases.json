@@ -153,7 +153,7 @@
     "aliases": [
       "ovh"
     ],
-    "category": "infra"
+    "category": "compute"
   },
   "elevenlabs": {
     "aliases": [
@@ -302,7 +302,7 @@
     "aliases": [
       "github"
     ],
-    "category": "saas"
+    "category": "infra"
   },
   "discord": {
     "aliases": [

@@ -104,7 +104,7 @@ def main(argv=None, tb_factory=None):
 
     # gpu subcommand
     gup = sub.add_parser("gpu", help="append a gpu_billing row")
-    gup.add_argument("vendor",       help="canonical GPU vendor slug (must have cost_basis=gpu)")
+    gup.add_argument("vendor",       help="canonical vendor slug")
     gup.add_argument("month",        help="billing month YYYY-MM")
     gup.add_argument("--deployment", required=True, help="pod/instance name or provider id")
     gup.add_argument("--amount",     type=float, required=True, help="billed USD for that deployment")
@@ -172,13 +172,10 @@ def main(argv=None, tb_factory=None):
 
     elif args.cmd == "gpu":
         _validate_vendor(args.vendor)
-        if args.vendor not in GPU_VENDORS:
-            print(
-                f"error: '{args.vendor}' is not a GPU vendor "
-                f"(cost_basis=gpu). known GPU vendors: {sorted(GPU_VENDORS)}",
-                file=sys.stderr,
-            )
-            sys.exit(1)
+        # Vendor must be canonical (already validated above), not just GPU_VENDORS.
+        # Real audit data includes GPU line items from non-roster-GPU vendors
+        # (e.g. ovhcloud rented GPU instances). gpu_billing is the audit ledger
+        # and must accept any canonical vendor.
         _validate_month(args.month)
         if args.amount <= 0:
             print(f"error: --amount must be > 0, got '{args.amount}'", file=sys.stderr)

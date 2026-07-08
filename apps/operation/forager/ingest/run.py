@@ -346,10 +346,12 @@ _GPU_BILLING_MONTH_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
 def _validate_gpu_billing_row(row):
     """Basic validation for gpu_billing rows."""
     vendor = row.get("vendor", "")
-    if vendor not in GPU_VENDORS:
+    # Vendor must be canonical, not just GPU_VENDORS.
+    # Real audit data includes GPU line items from non-roster-GPU vendors
+    # (e.g. ovhcloud rented GPU instances). gpu_billing is the audit ledger.
+    if vendor not in CANONICAL:
         raise ValueError(
-            f"gpu_billing row vendor '{vendor}' is not a GPU vendor "
-            f"(cost_basis=gpu). known: {sorted(GPU_VENDORS)}"
+            f"gpu_billing row vendor '{vendor}' is not canonical. known: {sorted(CANONICAL)}"
         )
     month = row.get("month", "")
     if not _GPU_BILLING_MONTH_RE.match(str(month)):

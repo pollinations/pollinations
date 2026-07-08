@@ -375,11 +375,41 @@ def test_record_gpu_unknown_vendor_exits():
     assert exc.value.code != 0
 
 
-def test_record_gpu_non_gpu_vendor_exits():
-    """fireworks is in CANONICAL but not a GPU vendor."""
+def test_record_gpu_accepts_canonical_vendor_even_if_not_roster_gpu():
+    """fireworks is in CANONICAL, so it should be accepted even though
+    it's not a cost_basis=gpu vendor in vendor_aliases.json."""
+    fake = _FakeTB()
+    record.main(
+        ["gpu", "fireworks", "2026-06",
+         "--deployment", "x", "--amount", "1.0"],
+        tb_factory=_make_factory(fake),
+    )
+    assert len(fake.appended) == 1
+    ds, rows = fake.appended[0]
+    assert ds == "gpu_billing"
+    assert rows[0]["vendor"] == "fireworks"
+
+
+def test_record_gpu_accepts_ovhcloud_gpu_deployment():
+    """ovhcloud is canonical but not roster-GPU; should accept GPU line items."""
+    fake = _FakeTB()
+    record.main(
+        ["gpu", "ovhcloud", "2026-02",
+         "--deployment", "gpu-instance-123", "--amount", "150.75"],
+        tb_factory=_make_factory(fake),
+    )
+    assert len(fake.appended) == 1
+    ds, rows = fake.appended[0]
+    assert ds == "gpu_billing"
+    assert rows[0]["vendor"] == "ovhcloud"
+    assert rows[0]["amount"] == 150.75
+
+
+def test_record_gpu_unknown_vendor_still_rejected():
+    """Unknown vendors (not in CANONICAL) should still be rejected."""
     with pytest.raises(SystemExit) as exc:
         record.main(
-            ["gpu", "fireworks", "2026-06",
+            ["gpu", "nonexistent-vendor", "2026-06",
              "--deployment", "x", "--amount", "1.0"],
             tb_factory=_make_factory(_FakeTB()),
         )

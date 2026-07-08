@@ -7,7 +7,7 @@ TDD: these tests are written first. Run failing before implementing.
 import datetime
 import pytest
 
-from ingest.connectors.gpu_runs import split_run_by_month, stamp
+from ingest.connectors.gpu_runs import split_run_by_month, stamp, runs_rows_runpod
 from ingest import run as ingest_run
 
 
@@ -330,3 +330,192 @@ def test_split_exact_cents_sum_twelve_months():
     assert total_cents == cost_cents, (
         f"sum in cents {total_cents} != {cost_cents} (exact-cents invariant broken over 12 months)"
     )
+
+
+# ---------------------------------------------------------------------------
+# runs_rows_runpod — reuse billing fixture from test_gpu_billing patterns
+# ---------------------------------------------------------------------------
+
+MONTHS = ["2026-05", "2026-06"]
+
+# Mirror of the fixtures used in test_gpu_billing for runpod — same data so we
+# can assert cost parity between the billing and runs connectors.
+_RUNPOD_BILLING_PODS = [
+    {"podId": "pod-aaa", "amount": 200.0, "time": "2026-06-01T00:00:00Z"},
+    {"podId": "pod-aaa", "amount": 74.45, "time": "2026-06-01T00:00:00Z"},
+    {"podId": "pod-bbb", "amount": 50.0,  "time": "2026-06-01T00:00:00Z"},
+    # Out-of-scope month
+    {"podId": "pod-ccc", "amount": 10.0,  "time": "2026-07-01T00:00:00Z"},
+    # Zero-amount — must be skipped
+    {"podId": "pod-ddd", "amount": 0.0,   "time": "2026-06-01T00:00:00Z"},
+]
+_RUNPOD_BILLING_VOLUMES = [
+    {"startDate": "2026-06-01T00:00:00Z", "amount": 6.99},
+]
+_RUNPOD_BILLING_ENDPOINTS = [
+    {"endpointId": "ep-123", "amount": 2.87, "time": "2026-05-01T00:00:00Z"},
+]
+_RUNPOD_GRAPHQL_RESP = {
+    "data": {"myself": {"pods": [
+        {"id": "pod-aaa", "name": "zimage-4090-secure"},
+        {"id": "pod-bbb", "name": "klein-a5000-v4"},
+    ]}}
+}
+
+
+def _runpod_http(url, headers=None, data=None):
+    if "graphql" in url:
+        return _RUNPOD_GRAPHQL_RESP
+    if "networkvolumes" in url:
+        return _RUNPOD_BILLING_VOLUMES
+    if "endpoints" in url:
+        return _RUNPOD_BILLING_ENDPOINTS
+    return _RUNPOD_BILLING_PODS
+
+
+def test_runs_rows_runpod_shape():
+    """Every row has all required gpu_runs fields."""
+    required = {
+        "month", "vendor", "run_id", "deployment", "gpu", "gpu_count",
+        "started_at", "ended_at", "hours", "cost", "currency",
+        "model", "kind", "source",
+    }
+    rows = runs_rows_runpod({"RUNPOD_API_KEY": "k"}, MONTHS, http=_runpod_http)
+    assert rows, "should produce at least one row"
+    for row in rows:
+        missing = required - row.keys()
+        assert not missing, f"row missing keys {missing}: {row}"
+
+
+def test_runs_rows_runpod_cost_parity():
+    """Per-(pod,month) cost equals what monthly_rows_runpod produces for same fixture.
+
+    The transform must not change billed amounts — only reshape the schema.
+    """
+    from ingest.connectors.gpu_billing import monthly_rows_runpod
+
+    billing_rows = monthly_rows_runpod(
+        {"RUNPOD_API_KEY": "k"}, MONTHS, http=_runpod_http
+    )
+    run_rows = runs_rows_runpod(
+        {"RUNPOD_API_KEY": "k"}, MONTHS, http=_runpod_http
+    )
+
+    # Build (month, deployment) → amount/cost maps for comparison.
+    billing_map = {(r["month"], r["deployment"]): r["amount"] for r in billing_rows}
+    runs_map    = {(r["month"], r["deployment"]): r["cost"]   for r in run_rows}
+
+    assert billing_map == runs_map, (
+        f"cost mismatch between billing and runs connectors:\n"
+        f"billing={billing_map}\nruns={runs_map}"
+    )
+
+
+def test_runs_rows_runpod_serverless_kind():
+    """_serverless:<id> rows always have kind='serverless', regardless of stamp."""
+    rows = runs_rows_runpod({"RUNPOD_API_KEY": "k"}, MONTHS, http=_runpod_http)
+    serverless = [r for r in rows if r["deployment"].startswith("_serverless")]
+    assert len(serverless) == 1
+    assert serverless[0]["kind"] == "serverless"
+    assert serverless[0]["deployment"] == "_serverless:ep-123"
+
+
+def test_runs_rows_runpod_zimage_model():
+    """zimage pod maps to model='zimage'."""
+    rows = runs_rows_runpod({"RUNPOD_API_KEY": "k"}, MONTHS, http=_runpod_http)
+    zimage = [r for r in rows if r["deployment"] == "zimage-4090-secure"]
+    assert len(zimage) == 1
+    assert zimage[0]["model"] == "zimage"
+    assert zimage[0]["kind"] == "gpu"
+
+
+def test_runs_rows_runpod_dead_pod_keeps_pod_id():
+    """A pod not in GraphQL keeps pod_id as deployment with empty times."""
+    billing_with_dead = _RUNPOD_BILLING_PODS + [
+        {"podId": "pod-dead", "amount": 9.99, "time": "2026-06-01T00:00:00Z"},
+    ]
+    def http(url, headers=None, data=None):
+        if "graphql" in url:
+            return _RUNPOD_GRAPHQL_RESP  # pod-dead not in name map
+        if "networkvolumes" in url:
+            return []
+        if "endpoints" in url:
+            return []
+        return billing_with_dead
+
+    rows = runs_rows_runpod({"RUNPOD_API_KEY": "k"}, MONTHS, http=http)
+    dead = [r for r in rows if r["run_id"] == "pod-dead"]
+    assert len(dead) == 1
+    assert dead[0]["deployment"] == "pod-dead", "dead pod must keep raw pod_id as deployment"
+    assert dead[0]["started_at"] == ""
+    assert dead[0]["hours"] is None
+
+
+def test_runs_rows_runpod_vendor_and_source():
+    """All rows have vendor='runpod' and source='api'."""
+    rows = runs_rows_runpod({"RUNPOD_API_KEY": "k"}, MONTHS, http=_runpod_http)
+    assert all(r["vendor"] == "runpod" for r in rows)
+    assert all(r["source"] == "api" for r in rows)
+
+
+def test_runs_rows_runpod_out_of_scope_excluded():
+    """July row is excluded because MONTHS only covers May + June."""
+    rows = runs_rows_runpod({"RUNPOD_API_KEY": "k"}, MONTHS, http=_runpod_http)
+    assert all(r["month"] in {"2026-05", "2026-06"} for r in rows)
+
+
+def test_runs_rows_runpod_zero_rows_skipped():
+    """Zero-amount rows do not appear in output."""
+    def http(url, headers=None, data=None):
+        if "graphql" in url:
+            return {"data": {"myself": {"pods": []}}}
+        return [{"podId": "x", "amount": 0.0, "time": "2026-06-01T00:00:00Z"}]
+    rows = runs_rows_runpod({"RUNPOD_API_KEY": "k"}, MONTHS, http=http)
+    assert rows == []
+
+
+def test_runs_rows_runpod_missing_key_raises():
+    with pytest.raises(RuntimeError, match="RUNPOD_API_KEY missing"):
+        runs_rows_runpod({}, MONTHS, http=lambda *a, **k: {})
+
+
+def test_runs_rows_runpod_graphql_key_in_url():
+    """GraphQL call puts key in URL query string, not Authorization header."""
+    seen = {}
+    def http(url, headers=None, data=None):
+        if "graphql" in url:
+            seen["url"] = url
+            seen["headers"] = headers or {}
+            return _RUNPOD_GRAPHQL_RESP
+        if "networkvolumes" in url or "endpoints" in url:
+            return []
+        return [{"podId": "pod-aaa", "amount": 100.0, "time": "2026-06-01T00:00:00Z"}]
+
+    runs_rows_runpod({"RUNPOD_API_KEY": "SEKRET"}, MONTHS, http=http)
+    assert "SEKRET" in seen.get("url", "")
+    assert "Authorization" not in seen.get("headers", {})
+
+
+def test_runs_rows_runpod_multi_row_summing():
+    """Two billing rows for the same podId in the same month are summed."""
+    rows = runs_rows_runpod({"RUNPOD_API_KEY": "k"}, MONTHS, http=_runpod_http)
+    zimage = [r for r in rows if r["deployment"] == "zimage-4090-secure"]
+    assert len(zimage) == 1
+    assert zimage[0]["cost"] == round(200.0 + 74.45, 2)
+
+
+def test_runs_rows_runpod_storage_row():
+    """Networkvolumes surface → deployment='_storage', model='zimage'."""
+    rows = runs_rows_runpod({"RUNPOD_API_KEY": "k"}, MONTHS, http=_runpod_http)
+    storage = [r for r in rows if r["deployment"] == "_storage"]
+    assert len(storage) == 1
+    assert storage[0]["month"] == "2026-06"
+    assert storage[0]["cost"] == 6.99
+    assert storage[0]["model"] == "zimage"
+
+
+def test_runs_rows_runpod_passes_validation():
+    """All produced rows pass _validate_gpu_runs_row."""
+    rows = runs_rows_runpod({"RUNPOD_API_KEY": "k"}, MONTHS, http=_runpod_http)
+    for row in rows:
+        ingest_run._validate_gpu_runs_row(row)  # must not raise

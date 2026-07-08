@@ -31,6 +31,7 @@ def test_no_data_files_tracked():
         f"{REL_FORAGER}/config.json",
         f"{REL_FORAGER}/config/vendor_aliases.json",
         f"{REL_FORAGER}/config/transaction_splits.json",
+        f"{REL_FORAGER}/config/gpu_models.json",
         f"{REL_TREASURY}/web/package.json",
         f"{REL_TREASURY}/web/package-lock.json",
         f"{REL_TREASURY}/web/tsconfig.json",

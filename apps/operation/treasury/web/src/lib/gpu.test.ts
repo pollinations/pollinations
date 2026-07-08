@@ -317,6 +317,94 @@ describe("gpuEconomics — unattributed pollen flag", () => {
     });
 });
 
+describe("gpuEconomics — billing-only month (no provider bill)", () => {
+    it("billing rows with no provider bill emit rows with rentUsd null and split:billed flag", () => {
+        // io.net 2026-02: $99.63 of billing rows, no provider row, no fleet, no pollen
+        const d: Data = {
+            ...base,
+            gpuBilling: [
+                {
+                    month: "2026-02",
+                    vendor: "io.net",
+                    deployment: "io-cluster-1",
+                    gpu: "A100",
+                    amount: 60.0,
+                    currency: "USD",
+                    source: "manual",
+                },
+                {
+                    month: "2026-02",
+                    vendor: "io.net",
+                    deployment: "io-cluster-2",
+                    gpu: "A100",
+                    amount: 39.63,
+                    currency: "USD",
+                    source: "manual",
+                },
+            ],
+            providerMonthly: [],
+            pollenMonthly: [],
+            gpuFleet: [],
+            revenueMonthly: [],
+        };
+        const rows = gpuEconomics(d, "2026-02");
+        // month must not be silently dropped
+        expect(rows.length).toBeGreaterThan(0);
+        // rentUsd must be null (no provider bill) and coverage null (never 0)
+        for (const row of rows) {
+            expect(row.rentUsd).toBeNull();
+            expect(row.coverage).toBeNull();
+            expect(row.flags).toContain("split: billed");
+        }
+        // both billing rows for io.net map to the same group via the catch-all
+        // io.net entry in GPU_DEPLOYMENT_GROUPS — one grouped row is expected
+        expect(rows[0].group).toBe("io.net (vendor)");
+    });
+});
+
+describe("gpuEconomics — zero-total billing falls through", () => {
+    it("all-zero billing amounts fall through to no-fleet path without breaking invariant", () => {
+        // billing rows exist but all amounts are 0 — must not silently emit nulls
+        // with split:billed and must not break Σ==bill invariant
+        const d: Data = {
+            ...base,
+            gpuBilling: [
+                {
+                    month: "2026-06",
+                    vendor: "runpod",
+                    deployment: "zimage-4090-secure",
+                    gpu: "RTX 4090",
+                    amount: 0,
+                    currency: "USD",
+                    source: "api",
+                },
+            ],
+            providerMonthly: [
+                {
+                    month: "2026-06",
+                    vendor: "runpod",
+                    currency: "USD",
+                    category: "compute",
+                    credit: 500,
+                    paid: 0,
+                    source: "api",
+                },
+            ],
+            gpuFleet: JUNE_FLEET,
+            pollenMonthly: [],
+            revenueMonthly: [],
+        };
+        const rows = gpuEconomics(d, "2026-06");
+        // must not use the billed path
+        expect(rows.every((r) => !r.flags.includes("split: billed"))).toBe(
+            true,
+        );
+        // rent sum must still equal provider bill (fleet path)
+        const total = rows.reduce((acc, r) => acc + (r.rentUsd ?? 0), 0);
+        expect(total).toBeCloseTo(500, 6);
+    });
+});
+
 // --- Additional invariant tests (not in brief) ---
 
 describe("gpuEconomics invariants", () => {

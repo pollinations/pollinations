@@ -198,11 +198,27 @@ export function gpuEconomics(
 
         // Collect the unique months that matched (for row emission)
         const matchedMonths = [...rentByMonth.keys()];
+
+        // Months that have gpu_billing rows but no provider bill (billing-only).
+        // These must be seeded here or the whole month is silently dropped.
+        const billingOnlyMonths = [
+            ...new Set(
+                data.gpuBilling
+                    .filter(
+                        (r) =>
+                            r.vendor === vendor &&
+                            matchesMonth(r.month, monthFilter) &&
+                            !rentByMonth.has(r.month),
+                    )
+                    .map((r) => r.month),
+            ),
+        ];
+
         // When monthFilter is a specific month and no bills exist, still emit
         // rows for that month using the fleet snapshot if present.
         const allMonths =
-            matchedMonths.length > 0
-                ? matchedMonths
+            matchedMonths.length > 0 || billingOnlyMonths.length > 0
+                ? [...new Set([...matchedMonths, ...billingOnlyMonths])]
                 : // no bills: try to emit a row for the filter month if it
                   // is a concrete month or use fleet snapshot months
                   (() => {
@@ -287,12 +303,17 @@ export function gpuEconomics(
             // --- Billing-preferred path ---
             // When billing rows exist, use their amounts as weights for rent
             // allocation. Multiple billing rows may map to the same group.
-            if (billingRows.length > 0) {
-                const billingTotal = billingRows.reduce(
-                    (acc, r) => acc + toUsd(r.amount, r.currency, month),
-                    0,
-                );
-
+            // Guard: if all amounts are zero the weights are undefined and we
+            // cannot allocate rent without breaking the Σ==bill invariant —
+            // fall through to the fleet/error path instead.
+            const billingTotal =
+                billingRows.length > 0
+                    ? billingRows.reduce(
+                          (acc, r) => acc + toUsd(r.amount, r.currency, month),
+                          0,
+                      )
+                    : 0;
+            if (billingRows.length > 0 && billingTotal > 0) {
                 // Accumulate amounts per group key.
                 const groupAmounts = new Map<
                     string,
@@ -703,7 +724,7 @@ function verdictFor(
 
 // Runway chips for the fleet health panel.
 // runpod / vast.ai: latest fleet balance_usd ÷ (Σ usd_per_hr × 24) → days.
-// lambda / ovhcloud: reuse creditRunway() depletion signal.
+// lambda: reuse creditRunway() depletion signal.
 export function runwayChips(data: Data, now: Date): RunwayChip[] {
     const chips: RunwayChip[] = [];
 

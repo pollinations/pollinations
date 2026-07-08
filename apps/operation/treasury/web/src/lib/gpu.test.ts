@@ -138,6 +138,7 @@ const NO_RUNS_FLAG =
     "error: no gpu runs this month — deployment split unavailable";
 const UNMAPPED_FLAG =
     "error: unmapped model — assign the deployment in forager config/gpu_models.json";
+const ZERO_COST_FLAG = "error: gpu runs have zero cost — cannot split bill";
 
 // ---- gpuEconomics --------------------------------------------------------
 
@@ -523,6 +524,184 @@ describe("gpuEconomics — verdict + isolation", () => {
         expect(mayTotal).toBeCloseTo(100, 4);
         expect(juneTotal).toBeCloseTo(200, 4);
         expect(mayTotal + juneTotal).toBeCloseTo(300, 4);
+    });
+
+    it("dust: rentUsd under $5 always gets null verdict, even when coverage would otherwise be 'keep'", () => {
+        const d: Data = {
+            ...base,
+            providerMonthly: [
+                {
+                    month: "2026-06",
+                    vendor: "runpod",
+                    currency: "USD",
+                    category: "compute",
+                    credit: 3,
+                    paid: 0,
+                    source: "api",
+                },
+            ],
+            gpuRuns: [
+                mkRun({
+                    vendor: "runpod",
+                    month: "2026-06",
+                    model: "alpha",
+                    cost: 3,
+                }),
+            ],
+            pollenMonthly: [
+                mkPollen({
+                    vendor: "runpod",
+                    month: "2026-06",
+                    model: "alpha",
+                    requests: 1000,
+                    price_paid: 1000, // retained 1000 → coverage ~316 (would be "keep")
+                }),
+            ],
+            revenueMonthly: REVENUE_JUNE,
+        };
+        const rows = gpuEconomics(d, "2026-06");
+        const alpha = rows.find((r) => r.group === "alpha");
+        expect(alpha).toBeDefined();
+        expect(alpha?.rentUsd).toBeCloseTo(3, 4);
+        expect(alpha?.coverage ?? 0).toBeGreaterThan(1.1); // would-be "keep"
+        expect(alpha?.verdict).toBeNull();
+    });
+
+    it("effUsdPerReq equals rentUsd / requests for a billed model with nonzero requests", () => {
+        const d: Data = {
+            ...base,
+            providerMonthly: [
+                {
+                    month: "2026-06",
+                    vendor: "runpod",
+                    currency: "USD",
+                    category: "compute",
+                    credit: 750,
+                    paid: 0,
+                    source: "api",
+                },
+            ],
+            gpuRuns: [
+                mkRun({
+                    vendor: "runpod",
+                    month: "2026-06",
+                    model: "beta",
+                    cost: 750,
+                }),
+            ],
+            pollenMonthly: [
+                mkPollen({
+                    vendor: "runpod",
+                    month: "2026-06",
+                    model: "beta",
+                    requests: 400000,
+                    price_paid: 5000,
+                }),
+            ],
+            revenueMonthly: REVENUE_JUNE,
+        };
+        const rows = gpuEconomics(d, "2026-06");
+        const beta = rows.find((r) => r.group === "beta");
+        expect(beta?.rentUsd).toBeCloseTo(750, 4);
+        expect(beta?.requests).toBe(400000);
+        expect(beta?.effUsdPerReq).toBeCloseTo(750 / 400000, 6);
+    });
+});
+
+describe("gpuEconomics — zero-cost runs", () => {
+    it("a bill with all-zero-cost runs → one (vendor total) error row, rentUsd == bill, no NaN", () => {
+        const d: Data = {
+            ...base,
+            providerMonthly: [
+                {
+                    month: "2026-06",
+                    vendor: "lambda",
+                    currency: "USD",
+                    category: "compute",
+                    credit: 200,
+                    paid: 0,
+                    source: "api",
+                },
+            ],
+            gpuRuns: [
+                mkRun({
+                    vendor: "lambda",
+                    month: "2026-06",
+                    model: "gamma",
+                    cost: 0,
+                    run_id: "lambda-1",
+                }),
+                mkRun({
+                    vendor: "lambda",
+                    month: "2026-06",
+                    model: "gamma",
+                    cost: 0,
+                    run_id: "lambda-2",
+                }),
+            ],
+            revenueMonthly: REVENUE_JUNE,
+        };
+        const rows = gpuEconomics(d, "2026-06");
+        const lambdaRows = rows.filter((r) => r.vendor === "lambda");
+        expect(lambdaRows).toHaveLength(1);
+        expect(lambdaRows[0].group).toBe("(lambda total)");
+        expect(lambdaRows[0].flags).toContain(ZERO_COST_FLAG);
+        expect(lambdaRows[0].rentUsd).toBeCloseTo(200, 4);
+        expect(Number.isNaN(lambdaRows[0].rentUsd)).toBe(false);
+        expect(Number.isNaN(lambdaRows[0].coverage ?? 0)).toBe(false);
+    });
+});
+
+describe("gpuEconomics — vendor scope (GPU_VENDORS only)", () => {
+    it("excludes ovhcloud (mixed GPU + inference + infra bill) from gpuEconomics but keeps it in gpuByType; a GPU_VENDORS vendor with a bill and no runs still surfaces a NO_RUNS row", () => {
+        const d: Data = {
+            ...base,
+            providerMonthly: [
+                {
+                    month: "2026-06",
+                    vendor: "ovhcloud",
+                    currency: "USD",
+                    category: "compute",
+                    credit: 500,
+                    paid: 0,
+                    source: "api",
+                },
+                {
+                    month: "2026-06",
+                    vendor: "lambda",
+                    currency: "USD",
+                    category: "compute",
+                    credit: 150,
+                    paid: 0,
+                    source: "api",
+                },
+            ],
+            gpuRuns: [
+                mkRun({
+                    vendor: "ovhcloud",
+                    month: "2026-06",
+                    model: "zimage",
+                    gpu: "RTX 4090",
+                    hours: 5,
+                    cost: 40,
+                }),
+            ],
+            revenueMonthly: REVENUE_JUNE,
+        };
+
+        const econRows = gpuEconomics(d, "2026-06");
+        expect(econRows.some((r) => r.vendor === "ovhcloud")).toBe(false);
+        const lambdaRow = econRows.find((r) => r.vendor === "lambda");
+        expect(lambdaRow).toBeDefined();
+        expect(lambdaRow?.group).toBe("(lambda total)");
+        expect(lambdaRow?.flags).toContain(NO_RUNS_FLAG);
+        expect(lambdaRow?.rentUsd).toBeCloseTo(150, 4);
+
+        const typeRows = gpuByType(d, "2026-06");
+        const ovhType = typeRows.find((r) => r.vendor === "ovhcloud");
+        expect(ovhType).toBeDefined();
+        expect(ovhType?.gpu).toBe("RTX 4090");
+        expect(ovhType?.costUsd).toBeCloseTo(40, 4);
     });
 });
 

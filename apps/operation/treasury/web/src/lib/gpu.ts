@@ -2,6 +2,7 @@ import type { Data, GpuFleetRow } from "../types";
 import { toUsd } from "./fx";
 import { creditRunway, globalNetRatio, isInfraRow } from "./insights";
 import { matchesMonth } from "./months";
+import { GPU_VENDORS } from "./vendor-vocabulary";
 
 // kind: "gpu" = rented box (idle risk, time-based); "serverless" = scales to
 // zero (per-run billing inside the same vendor bill). It only drives the
@@ -100,7 +101,9 @@ export function fleetRunRate(
 // Derive per-model GPU economics from data.gpuRuns. The provider bill is the
 // rent witness; run costs are only allocation weights.
 //
-// Per vendor (vendors present in gpuRuns for the filter), per month (union of
+// Per vendor (GPU_VENDORS only — vendors whose provider bill is a clean,
+// pure-GPU rent witness; e.g. ovhcloud is excluded because its bill mixes
+// GPU rent with AI-Endpoints inference and infra), per month (union of
 // bill-months and run-months):
 //   1. Expand runs → per-model cost. A run's cost is split across the models
 //      its box serves by each model's pollen request share (even split when no
@@ -119,7 +122,7 @@ export function gpuEconomics(
     const runsInScope = data.gpuRuns.filter((r) =>
         matchesMonth(r.month, monthFilter),
     );
-    const vendors = [...new Set(runsInScope.map((r) => r.vendor))].sort();
+    const vendors = [...GPU_VENDORS].sort();
 
     for (const vendor of vendors) {
         // Rent witness: month → Σ toUsd(credit+paid) over compute provider rows.

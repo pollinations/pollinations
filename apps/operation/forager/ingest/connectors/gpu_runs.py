@@ -18,9 +18,11 @@ import collections
 import datetime
 import json
 import re
+import subprocess
 from pathlib import Path
 
 from .common import http_json as _http_json
+from .vendors.vast import _window as _vast_window
 
 _GPU_MODELS_PATH = (
     Path(__file__).resolve().parents[2] / "config" / "gpu_models.json"
@@ -283,3 +285,162 @@ def runs_rows_runpod(secrets, months, http=None):
         })
 
     return rows
+
+
+# ---------------------------------------------------------------------------
+# Vast.ai run rows
+# ---------------------------------------------------------------------------
+
+def runs_rows_vast(secrets, months, today, run_cmd=subprocess.run):
+    """Vast.ai gpu_runs connector — per-run, per-month rows from invoice charges.
+
+    Reuses the same invoice source as gpu_billing.monthly_rows_vast (same CLI
+    call, same _window helper). KEY DIFFERENCE: instead of _spread (which just
+    pro-rates by month with no run identity), we derive real run boundaries from
+    the charge fields:
+
+        ended   = datetime.utcfromtimestamp(int(timestamp))
+        started = ended − timedelta(hours=float(quantity))
+
+    Then call split_run_by_month(started, ended, cost) to split across calendar
+    months. This preserves run identity (one row per (instance_id, month)) and
+    real wall-clock hours.
+
+    started_at / ended_at CLIPPING CHOICE:
+        Each emitted row's started_at and ended_at are CLIPPED to the month
+        boundary it belongs to — not the overall run's true start/end. This
+        ensures each row's [started_at, ended_at] lies within its own month and
+        is consistent with its hours value. For a charge entirely within one
+        month, started_at/ended_at equal the true run start/end.
+
+    Args:
+        secrets:  dict (unused — vastai CLI reads ~/.config/vastai/vast_api_key)
+        months:   list of "YYYY-MM" strings to emit
+        today:    current ingest date "YYYY-MM-DD"
+        run_cmd:  injectable subprocess.run replacement (for testing)
+
+    Returns:
+        list of gpu_runs row dicts; only rows for months in `months` are emitted.
+        Rows with zero hours or zero cost are skipped.
+
+    Row shape:
+        {"month", "vendor", "run_id", "deployment", "gpu", "gpu_count",
+         "started_at", "ended_at", "hours", "cost", "currency",
+         "model", "kind", "source"}
+    """
+    if not months:
+        return []
+
+    start, end = _vast_window(months, today)
+    try:
+        r = run_cmd(
+            ["vastai", "show", "invoices", "--raw", "-s", start, "-e", end],
+            capture_output=True, text=True, timeout=60,
+        )
+    except FileNotFoundError:
+        raise RuntimeError("vastai CLI not installed (pip install vastai)")
+
+    if r.returncode != 0:
+        raise RuntimeError(
+            f"vastai show invoices failed (rc={r.returncode}): "
+            f"{(r.stderr or '').strip()[:120]}"
+        )
+
+    try:
+        d = json.loads(r.stdout)
+    except (ValueError, TypeError):
+        raise RuntimeError("vastai show invoices returned non-JSON")
+
+    month_set = set(months)
+    rows = []
+
+    for row in (d or []):
+        if row.get("type") != "charge":
+            continue
+        ts = row.get("timestamp")
+        if not ts:
+            continue
+
+        # Resolve instance id: vast charge rows may carry instance_id, id, or machine_id.
+        instance_id = (
+            row.get("instance_id")
+            or row.get("id")
+            or row.get("machine_id")
+            or ""
+        )
+        instance_id = str(instance_id) if instance_id else ""
+
+        try:
+            quantity = float(row.get("quantity") or 0)
+        except (TypeError, ValueError):
+            quantity = 0.0
+
+        cost = float(row.get("amount") or 0)
+
+        # Derive true run boundaries from invoice fields.
+        ended = datetime.datetime.utcfromtimestamp(int(ts))
+        if quantity > 0:
+            started = ended - datetime.timedelta(hours=quantity)
+        else:
+            # No quantity — treat as a zero-duration point; skip (can't split).
+            continue
+
+        try:
+            parts = split_run_by_month(started, ended, cost)
+        except ValueError:
+            continue  # ended <= started — skip malformed rows
+
+        # Walk the calendar-month boundaries to compute clipped started_at/ended_at.
+        # We re-walk the same segments split_run_by_month used internally, clipping
+        # each segment to its month boundary so the row timestamps stay inside the month.
+        cursor = started
+        part_idx = 0
+        for month_str, hours_in_month, cost_in_month in parts:
+            if month_str not in month_set:
+                cursor = _advance_to_next_month(cursor)
+                continue
+            if hours_in_month <= 0 or cost_in_month <= 0:
+                cursor = _advance_to_next_month(cursor)
+                continue
+
+            # Clipped start = cursor (i.e. max(true_start, start_of_month))
+            # Clipped end   = min(ended, start_of_next_month)
+            clipped_start = cursor
+            next_month_start = _next_month_start(cursor)
+            clipped_end = min(ended, next_month_start)
+
+            model_csv, kind = stamp("vast.ai", instance_id)
+
+            rows.append({
+                "month": month_str,
+                "vendor": "vast.ai",
+                "run_id": instance_id,
+                "deployment": instance_id,
+                "gpu": "",
+                "gpu_count": 1,
+                "started_at": clipped_start.strftime("%Y-%m-%d %H:%M:%S"),
+                "ended_at": clipped_end.strftime("%Y-%m-%d %H:%M:%S"),
+                "hours": round(hours_in_month, 4),
+                "cost": round(cost_in_month, 2),
+                "currency": "USD",
+                "model": model_csv,
+                "kind": kind,
+                "source": "cli",
+            })
+
+            cursor = clipped_end
+
+    return rows
+
+
+def _next_month_start(dt):
+    """Return the first moment of the month after dt's month."""
+    year, month = dt.year, dt.month
+    if month == 12:
+        return datetime.datetime(year + 1, 1, 1)
+    return datetime.datetime(year, month + 1, 1)
+
+
+def _advance_to_next_month(cursor):
+    """Move cursor to the start of the next calendar month (for skipped months)."""
+    return _next_month_start(cursor)

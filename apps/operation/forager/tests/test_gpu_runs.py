@@ -7,7 +7,7 @@ TDD: these tests are written first. Run failing before implementing.
 import datetime
 import pytest
 
-from ingest.connectors.gpu_runs import split_run_by_month, stamp, runs_rows_runpod
+from ingest.connectors.gpu_runs import split_run_by_month, stamp, runs_rows_runpod, runs_rows_vast
 from ingest import run as ingest_run
 
 
@@ -519,3 +519,225 @@ def test_runs_rows_runpod_passes_validation():
     rows = runs_rows_runpod({"RUNPOD_API_KEY": "k"}, MONTHS, http=_runpod_http)
     for row in rows:
         ingest_run._validate_gpu_runs_row(row)  # must not raise
+
+
+# ---------------------------------------------------------------------------
+# runs_rows_vast — reuse _VAST_INVOICES fixture from test_gpu_billing
+# ---------------------------------------------------------------------------
+
+# Shared fixture (mirrors test_gpu_billing._VAST_INVOICES exactly — kept in sync).
+# Canonical: two charge rows ($20 + $10) + one credit ($5, must be excluded).
+_VAST_INVOICES_SHARED = [
+    {
+        "type": "charge",
+        "timestamp": "1781474400",
+        "quantity": 48,
+        "amount": 20.0,
+        "instance_id": 12345,
+    },
+    {
+        "type": "charge",
+        "timestamp": "1781474400",
+        "quantity": 24,
+        "amount": 10.0,
+        "instance_id": 67890,
+    },
+    {
+        "type": "credit",
+        "timestamp": "1781474400",
+        "quantity": 0,
+        "amount": 5.0,
+        "instance_id": 12345,
+    },
+]
+from ingest.connectors.gpu_billing import monthly_rows_vast as _monthly_rows_vast  # noqa: E402
+
+TODAY = "2026-07-08"
+_VAST_MONTHS = ["2026-05", "2026-06"]
+
+
+class _Proc:
+    def __init__(self, stdout="[]", returncode=0, stderr=""):
+        self.stdout = stdout
+        self.returncode = returncode
+        self.stderr = stderr
+
+
+def _vast_run_cmd_shared(cmd, **kwargs):
+    import json
+    return _Proc(stdout=json.dumps(_VAST_INVOICES_SHARED))
+
+
+def test_runs_rows_vast_total_cost_parity():
+    """Σ cost from runs_rows_vast == Σ amount from monthly_rows_vast (both ≈ $30.00).
+
+    The run-grain split must not change totals: same charge data, different grain.
+    """
+    run_rows = runs_rows_vast({}, _VAST_MONTHS, TODAY, run_cmd=_vast_run_cmd_shared)
+    billing_rows = _monthly_rows_vast({}, _VAST_MONTHS, TODAY, run_cmd=_vast_run_cmd_shared)
+
+    total_runs = sum(r["cost"] for r in run_rows)
+    total_billing = sum(r["amount"] for r in billing_rows)
+
+    assert total_runs == pytest.approx(30.0, abs=0.02), (
+        f"runs total {total_runs} != ~30.00"
+    )
+    assert total_runs == pytest.approx(total_billing, abs=0.02), (
+        f"runs total {total_runs} != billing total {total_billing}"
+    )
+
+
+def test_runs_rows_vast_both_instances_present():
+    """Per-instance presence: instance ids 12345 and 67890 both appear."""
+    rows = runs_rows_vast({}, _VAST_MONTHS, TODAY, run_cmd=_vast_run_cmd_shared)
+    run_ids = {r["run_id"] for r in rows}
+    assert "12345" in run_ids, f"instance 12345 missing from {run_ids}"
+    assert "67890" in run_ids, f"instance 67890 missing from {run_ids}"
+
+
+def test_runs_rows_vast_credit_row_excluded():
+    """Credit row ($5) is excluded — only 'charge' type rows are processed."""
+    rows = runs_rows_vast({}, _VAST_MONTHS, TODAY, run_cmd=_vast_run_cmd_shared)
+    # If credit was included, total would exceed 30.00 significantly.
+    total = sum(r["cost"] for r in rows)
+    assert total == pytest.approx(30.0, abs=0.02), (
+        f"credit appears to have been included: total={total}"
+    )
+    # No row should have a negative cost (credits would show up as negatives).
+    assert all(r["cost"] >= 0 for r in rows), "negative cost row found (credit included?)"
+
+
+def test_runs_rows_vast_started_before_ended():
+    """Each row has started_at < ended_at and hours > 0."""
+    rows = runs_rows_vast({}, _VAST_MONTHS, TODAY, run_cmd=_vast_run_cmd_shared)
+    for row in rows:
+        started = datetime.datetime.strptime(row["started_at"], "%Y-%m-%d %H:%M:%S")
+        ended = datetime.datetime.strptime(row["ended_at"], "%Y-%m-%d %H:%M:%S")
+        assert started < ended, f"started_at >= ended_at in row: {row}"
+        assert row["hours"] > 0, f"hours <= 0 in row: {row}"
+
+
+def test_runs_rows_vast_boundary_spanning_charge():
+    """A charge spanning two months produces rows in each month, summing to charge amount.
+
+    Fixture: charge ending 2026-06-02 02:00:00 (UTC) spanning 72h → covers
+    2026-05-30 02:00:00 (May) and 2026-06-02 02:00:00 (June).
+    Parts must both appear (one per month) and sum to the charge amount exactly.
+    """
+    import json
+    # 2026-06-02 02:00:00 UTC = 1780365600 (calendar.timegm verified)
+    ts_cross = 1780365600  # 2026-06-02 02:00:00 UTC
+    cross_invoice = [
+        {
+            "type": "charge",
+            "timestamp": str(ts_cross),
+            "quantity": 72,         # 3 days: spans May 30 → Jun 2
+            "amount": 9.99,
+            "instance_id": 11111,
+        }
+    ]
+
+    def run_cmd(cmd, **kwargs):
+        return _Proc(stdout=json.dumps(cross_invoice))
+
+    rows = runs_rows_vast({}, _VAST_MONTHS, TODAY, run_cmd=run_cmd)
+
+    months_emitted = {r["month"] for r in rows}
+    assert "2026-05" in months_emitted, f"2026-05 missing from {months_emitted}"
+    assert "2026-06" in months_emitted, f"2026-06 missing from {months_emitted}"
+
+    total = sum(r["cost"] for r in rows)
+    assert total == pytest.approx(9.99, abs=0.01), (
+        f"per-month parts do not sum to charge amount: {total} != 9.99"
+    )
+
+
+def test_runs_rows_vast_clipped_timestamps_within_month():
+    """Each row's [started_at, ended_at] lies within its own calendar month."""
+    import json
+    # Use cross-boundary charge so we can verify clipping.
+    ts_cross = 1780365600  # 2026-06-02 02:00:00 UTC
+    cross_invoice = [
+        {
+            "type": "charge",
+            "timestamp": str(ts_cross),
+            "quantity": 72,
+            "amount": 9.99,
+            "instance_id": 22222,
+        }
+    ]
+
+    def run_cmd(cmd, **kwargs):
+        return _Proc(stdout=json.dumps(cross_invoice))
+
+    rows = runs_rows_vast({}, _VAST_MONTHS, TODAY, run_cmd=run_cmd)
+    assert rows, "expected at least one row"
+
+    for row in rows:
+        month = row["month"]
+        year, m = int(month[:4]), int(month[5:7])
+        month_start = datetime.datetime(year, m, 1)
+        if m == 12:
+            month_end = datetime.datetime(year + 1, 1, 1)
+        else:
+            month_end = datetime.datetime(year, m + 1, 1)
+
+        started_at = datetime.datetime.strptime(row["started_at"], "%Y-%m-%d %H:%M:%S")
+        ended_at = datetime.datetime.strptime(row["ended_at"], "%Y-%m-%d %H:%M:%S")
+
+        assert started_at >= month_start, (
+            f"started_at {started_at} is before month start {month_start} "
+            f"for month {month}"
+        )
+        assert ended_at <= month_end, (
+            f"ended_at {ended_at} is after month end {month_end} "
+            f"for month {month}"
+        )
+
+
+def test_runs_rows_vast_shape():
+    """Every row has all required gpu_runs fields."""
+    required = {
+        "month", "vendor", "run_id", "deployment", "gpu", "gpu_count",
+        "started_at", "ended_at", "hours", "cost", "currency",
+        "model", "kind", "source",
+    }
+    rows = runs_rows_vast({}, _VAST_MONTHS, TODAY, run_cmd=_vast_run_cmd_shared)
+    assert rows, "should produce at least one row"
+    for row in rows:
+        missing = required - row.keys()
+        assert not missing, f"row missing keys {missing}: {row}"
+
+
+def test_runs_rows_vast_vendor_source_model_kind():
+    """All rows: vendor='vast.ai', source='cli', kind='gpu', model='flux'."""
+    rows = runs_rows_vast({}, _VAST_MONTHS, TODAY, run_cmd=_vast_run_cmd_shared)
+    for row in rows:
+        assert row["vendor"] == "vast.ai"
+        assert row["source"] == "cli"
+        assert row["kind"] == "gpu"
+        assert row["model"] == "flux"
+
+
+def test_runs_rows_vast_out_of_scope_months_excluded():
+    """Rows for months outside the requested set are not emitted."""
+    rows = runs_rows_vast({}, _VAST_MONTHS, TODAY, run_cmd=_vast_run_cmd_shared)
+    for row in rows:
+        assert row["month"] in set(_VAST_MONTHS), (
+            f"row month {row['month']} not in {_VAST_MONTHS}"
+        )
+
+
+def test_runs_rows_vast_passes_validation():
+    """All produced rows pass _validate_gpu_runs_row."""
+    rows = runs_rows_vast({}, _VAST_MONTHS, TODAY, run_cmd=_vast_run_cmd_shared)
+    for row in rows:
+        ingest_run._validate_gpu_runs_row(row)
+
+
+def test_runs_rows_vast_missing_cli_raises():
+    """FileNotFoundError from subprocess propagates as RuntimeError."""
+    def run_cmd(cmd, **kwargs):
+        raise FileNotFoundError("vastai not found")
+    with pytest.raises(RuntimeError, match="vastai CLI"):
+        runs_rows_vast({}, _VAST_MONTHS, TODAY, run_cmd=run_cmd)

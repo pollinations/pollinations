@@ -24,6 +24,7 @@ from .connectors.vendors import ALLOWED_CATEGORIES, _validate_meter_source
 from .connectors.vendors import stripe as _stripe
 from .connectors import fleet as _fleet
 from .connectors import gpu_billing as _gpu_billing
+from .connectors.registry import CANONICAL
 from .aliases import VENDOR_ALIASES, GPU_VENDORS
 
 

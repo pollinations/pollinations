@@ -559,3 +559,22 @@ def test_refresh_gpu_billing_statuses_rows_count():
     assert "gpu_billing_rows" in statuses
     assert isinstance(statuses["gpu_billing_rows"], int)
     assert statuses["gpu_billing_rows"] >= 1
+
+
+# ---------------------------------------------------------------------------
+# _validate_gpu_billing_row: unknown vendor raises ValueError (not NameError)
+# ---------------------------------------------------------------------------
+
+def test_validate_gpu_billing_row_unknown_vendor_raises_valueerror():
+    """Unknown vendor in gpu_billing row raises ValueError, not NameError."""
+    unknown_vendor_row = {
+        "month": "2026-06",
+        "vendor": "unknown-vendor-xyz",
+        "deployment": "some-box",
+        "gpu": "",
+        "amount": 100.0,
+        "currency": "USD",
+        "source": "manual",
+    }
+    with pytest.raises(ValueError, match="gpu_billing row vendor 'unknown-vendor-xyz' is not canonical"):
+        ingest_run._validate_gpu_billing_row(unknown_vendor_row)

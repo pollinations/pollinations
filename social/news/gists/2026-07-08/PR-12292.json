@@ -1,0 +1,34 @@
+{
+  "pr_number": 12292,
+  "title": "fix: disable gen edge rate limiter",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12292",
+  "merged_at": "2026-07-08T00:46:48Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "- Removes the production `EDGE_RATE_LIMITER` binding from `gen.pollinations.ai`.\n- Lets the existing middleware skip Cloudflare native rate limiting when the binding is absent.\n- Keeps staging/test rate limiter config unchanged.\n- Validated with `npm run build:production` in `gen.pollinations.ai`.\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Opening the floodgates",
+    "blurb": "We've disabled the edge rate limiter on our text generation API to keep the words flowing smoothly without interruption.",
+    "summary": "Removed the Cloudflare EDGE_RATE_LIMITER binding from the gen.pollinations.ai production environment in wrangler.toml.",
+    "impact": "Text generation API requests will bypass Cloudflare's native edge rate limiting, reducing unexpected throttling for high-volume traffic.",
+    "keywords": [
+      "infrastructure",
+      "cloudflare",
+      "rate-limiting",
+      "api"
+    ],
+    "visual_concept": "Polly the bee opening a valve to let data flow freely, representing the removal of the rate limiter. Monitor Robot cheering.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot turning a chunky valve on a retro pipe, releasing a glowing stream of lime green (#ecf874) data. A cute chunky pixel robot with a CRT monitor head cheers nearby. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-08/PR-12292.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot turning a chunky valve on a retro pipe, releasing a glowing stream of lime green (#ecf874) data. A cute chunky pixel robot with a CRT monitor head cheers nearby. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "generated_at": "2026-07-08T00:47:54.816541+00:00"
+}

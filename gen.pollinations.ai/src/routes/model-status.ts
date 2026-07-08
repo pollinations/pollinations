@@ -12,7 +12,7 @@ const TINYBIRD_PUBLIC_TOKEN =
 
 const CACHE_TTL_MS = 60_000;
 const DEFAULT_MINUTES = 60;
-const MAX_MINUTES = 24 * 60;
+const MAX_MINUTES = 7 * 24 * 60;
 
 type ModelHealthResponse = {
     data: unknown[];
@@ -42,7 +42,7 @@ export const modelStatusRoutes = new Hono<Env>().get(
         description: [
             "Returns raw model health rows from the public Tinybird `model_health` pipe.",
             "",
-            "The optional `minutes` query parameter controls the rolling window and must be an integer between 1 and 1440.",
+            "The optional `minutes` query parameter controls the rolling window and must be an integer between 1 and 10080.",
         ].join("\n"),
         responses: {
             200: {

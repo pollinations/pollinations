@@ -90,6 +90,25 @@ def test_modal_zero_containers_zero_rows():
     assert rows == []
 
 
+def test_modal_env_inherits_path_and_tokens():
+    import os
+    captured_env = {}
+    class Proc:
+        returncode = 0
+        stdout = json.dumps([])
+        stderr = ""
+    def capture_run_cmd(cmd, **kwargs):
+        captured_env.update(kwargs.get("env", {}))
+        return Proc()
+    fleet.snapshot_modal(
+        {"MODAL_TOKEN_ID": "tid123", "MODAL_TOKEN_SECRET": "sec456"}, NOW,
+        run_cmd=capture_run_cmd)
+    assert captured_env["MODAL_TOKEN_ID"] == "tid123"
+    assert captured_env["MODAL_TOKEN_SECRET"] == "sec456"
+    assert "PATH" in captured_env
+    assert captured_env["PATH"] == os.environ["PATH"]
+
+
 def test_snapshot_all_isolates_vendor_failures():
     def boom(*a, **k):
         raise RuntimeError("down")

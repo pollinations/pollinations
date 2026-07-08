@@ -12,6 +12,7 @@ its meter rows, never from fleet allocation).
 """
 import base64
 import json
+import os
 import subprocess
 
 from .common import http_json
@@ -106,8 +107,7 @@ def snapshot_modal(creds, now, run_cmd=subprocess.run):
         raise RuntimeError("MODAL_TOKEN_ID/MODAL_TOKEN_SECRET missing")
     proc = run_cmd(["modal", "container", "list", "--json"],
                    capture_output=True, text=True, timeout=60,
-                   env={"MODAL_TOKEN_ID": tid, "MODAL_TOKEN_SECRET": tsec,
-                        "PATH": "/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin"})
+                   env={**os.environ, "MODAL_TOKEN_ID": tid, "MODAL_TOKEN_SECRET": tsec})
     if proc.returncode != 0:
         raise RuntimeError(f"modal cli failed: {proc.stderr.strip()[:120]}")
     containers = json.loads(proc.stdout or "[]")

@@ -630,10 +630,6 @@ async function login(password: string) {
     }
 }
 
-async function logout() {
-    await fetch("/api/auth/logout", { method: "POST" });
-}
-
 function PasswordGate({
     error,
     onSubmit,
@@ -859,22 +855,7 @@ export default function App() {
                 )}
             </div>
             <div className="flex items-center justify-between gap-2">
-                {!fixtures ? (
-                    <Button
-                        intent="danger"
-                        size="sm"
-                        onClick={() => {
-                            logout().finally(() => {
-                                setAuthenticated(false);
-                                setData(null);
-                            });
-                        }}
-                    >
-                        Log out
-                    </Button>
-                ) : (
-                    <span />
-                )}
+                <span />
                 <ColorModeToggle />
             </div>
         </>

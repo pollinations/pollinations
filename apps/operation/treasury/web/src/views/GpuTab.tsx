@@ -22,13 +22,12 @@ import { fmtNumber, fmtPct, fmtUsd, fmtUsd4 } from "../lib/format";
 import {
     fleetRunRate,
     type GpuDeploymentRow,
+    type GpuTypeRow,
+    gpuByType,
     gpuEconomics,
     runwayChips,
 } from "../lib/gpu";
 import type { Data } from "../types";
-
-const NO_FLEET_ERROR =
-    "error: no fleet snapshot this month — deployment split unavailable";
 
 // Classify a flag string into a Chip intent.
 // Flags starting with "error:" are errors (missing deployment witness);
@@ -56,6 +55,18 @@ export function visibleGpuRows({
         if (bc === null) return -1;
         return ac - bc;
     });
+}
+
+export function visibleGpuTypeRows({
+    rows,
+    vendor,
+}: {
+    rows: GpuTypeRow[];
+    vendor: string;
+}): GpuTypeRow[] {
+    const filtered =
+        vendor === "all" ? rows : rows.filter((r) => r.vendor === vendor);
+    return [...filtered].sort((a, b) => b.costUsd - a.costUsd);
 }
 
 function coverageTone(value: number | null): string {
@@ -106,6 +117,11 @@ export function GpuTab({
         () => visibleGpuRows({ rows: allRows, vendor }),
         [allRows, vendor],
     );
+    const allTypeRows = useMemo(() => gpuByType(data, month), [data, month]);
+    const typeRows = useMemo(
+        () => visibleGpuTypeRows({ rows: allTypeRows, vendor }),
+        [allTypeRows, vendor],
+    );
 
     const sortColumns = useMemo(
         () => [
@@ -130,40 +146,40 @@ export function GpuTab({
 
     const { headerProps, rows: sorted } = useSortableRows(rows, sortColumns);
 
+    const typeSortColumns = useMemo(
+        () => [
+            { key: "gpu", value: (r: GpuTypeRow) => r.gpu },
+            { key: "vendor", value: (r: GpuTypeRow) => r.vendor },
+            { key: "hours", value: (r: GpuTypeRow) => r.hours },
+            { key: "costUsd", value: (r: GpuTypeRow) => r.costUsd },
+            {
+                key: "impliedUsdPerHr",
+                value: (r: GpuTypeRow) => r.impliedUsdPerHr,
+            },
+        ],
+        [],
+    );
+
+    const { headerProps: typeHeaderProps, rows: sortedTypeRows } =
+        useSortableRows(typeRows, typeSortColumns);
+
     const latestSnapshotDate = useMemo(() => {
         const times = data.gpuFleet.map((r) => r.recorded_at);
         if (times.length === 0) return null;
         return times.reduce((a, b) => (a > b ? a : b));
     }, [data.gpuFleet]);
 
-    // True when every visible row carries the no-fleet-snapshot error (i.e. the
-    // fleet table was empty for the entire selected period — collection started
-    // 2026-07-08, so earlier months always hit this).
-    const allNoFleetError = useMemo(
-        () =>
-            rows.length > 0 &&
-            rows.every((r) => r.flags.includes(NO_FLEET_ERROR)),
-        [rows],
-    );
-
-    if (allRows.length === 0 && data.gpuFleet.length === 0) {
+    if (allRows.length === 0 && data.gpuRuns.length === 0) {
         return (
             <Alert intent="warning">
-                No fleet snapshots yet — run{" "}
-                <code>python3 -m ingest.run --only fleet</code>
+                No GPU runs yet — run{" "}
+                <code>python3 -m ingest.run --only runs</code>
             </Alert>
         );
     }
 
     return (
         <div className="flex flex-col gap-4">
-            {allNoFleetError && (
-                <Alert intent="warning">
-                    No fleet snapshots exist for this period (collection started
-                    2026-07-08). Rows show vendor totals; per-deployment split
-                    needs the fleet witness.
-                </Alert>
-            )}
             {/* header strip */}
             <div className="flex flex-wrap items-center gap-3">
                 {runRate ? (
@@ -198,7 +214,14 @@ export function GpuTab({
                     <TableHead>
                         <TableRow>
                             <TableHeaderCell {...headerProps("group")}>
-                                deployment
+                                <HeaderHint
+                                    hint={{
+                                        meaning:
+                                            "the model(s) this GPU spend serves (from the run ledger's model attribution)",
+                                    }}
+                                >
+                                    model
+                                </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("vendor")}>
                                 vendor
@@ -211,7 +234,7 @@ export function GpuTab({
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "vendor's witnessed monthly bill (provider plane, credit+paid → USD) × this deployment's share of fleet $/hr that month. Sums to the bill — never imputed.",
+                                            "vendor's witnessed monthly bill (provider plane, credit+paid → USD) × this model's share of the run-ledger cost that month. Sums to the bill — never imputed.",
                                     }}
                                 >
                                     rent $
@@ -330,11 +353,6 @@ export function GpuTab({
                                                 </Chip>
                                             )}
                                         </div>
-                                        {row.models.length > 0 && (
-                                            <Text size="micro" tone="soft">
-                                                {row.models.join(", ")}
-                                            </Text>
-                                        )}
                                         {row.flags.length > 0 && (
                                             <div className="flex flex-wrap gap-1 pt-0.5">
                                                 {row.flags.map((flag) => (
@@ -419,6 +437,100 @@ export function GpuTab({
                     </TableBody>
                 </DataTable>
             </TableScroller>
+
+            <div className="flex flex-col gap-2">
+                <Text size="sm" tone="soft">
+                    By GPU type — hours, implied $/hr, models served
+                </Text>
+                <TableScroller>
+                    <DataTable>
+                        <TableHead>
+                            <TableRow>
+                                <TableHeaderCell {...typeHeaderProps("gpu")}>
+                                    gpu
+                                </TableHeaderCell>
+                                <TableHeaderCell {...typeHeaderProps("vendor")}>
+                                    vendor
+                                </TableHeaderCell>
+                                <TableHeaderCell
+                                    align="right"
+                                    className={GROUP_BORDER}
+                                    {...typeHeaderProps("hours")}
+                                >
+                                    hrs
+                                </TableHeaderCell>
+                                <TableHeaderCell
+                                    align="right"
+                                    {...typeHeaderProps("costUsd")}
+                                >
+                                    cost
+                                </TableHeaderCell>
+                                <TableHeaderCell
+                                    align="right"
+                                    {...typeHeaderProps("impliedUsdPerHr")}
+                                >
+                                    $/hr
+                                </TableHeaderCell>
+                                <TableHeaderCell className={GROUP_BORDER}>
+                                    models
+                                </TableHeaderCell>
+                                <TableHeaderCell>flags</TableHeaderCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {withUniqueRowKeys(
+                                sortedTypeRows,
+                                (r) => `${r.vendor}|${r.gpu}|${r.month}`,
+                            ).map(({ key, row }) => (
+                                <TableRow key={key}>
+                                    <TableCell>{row.gpu}</TableCell>
+                                    <TableCell>{row.vendor}</TableCell>
+                                    <TableCell
+                                        align="right"
+                                        className={GROUP_BORDER}
+                                    >
+                                        {row.hours == null
+                                            ? "–"
+                                            : fmtNumber(row.hours)}
+                                    </TableCell>
+                                    <TableCell align="right">
+                                        {fmtUsd(row.costUsd)}
+                                    </TableCell>
+                                    <TableCell align="right">
+                                        {row.impliedUsdPerHr == null
+                                            ? "–"
+                                            : fmtUsd4(row.impliedUsdPerHr)}
+                                    </TableCell>
+                                    <TableCell className={GROUP_BORDER}>
+                                        {row.models.join(", ") || "–"}
+                                    </TableCell>
+                                    <TableCell>
+                                        {row.flags.length > 0 ? (
+                                            <div className="flex flex-wrap gap-1">
+                                                {row.flags.map((flag) => (
+                                                    <Chip
+                                                        key={flag}
+                                                        intent={flagIntent(
+                                                            flag,
+                                                        )}
+                                                        size="sm"
+                                                    >
+                                                        ⚠ {flag}
+                                                    </Chip>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <span className="text-theme-text-soft">
+                                                –
+                                            </span>
+                                        )}
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </DataTable>
+                </TableScroller>
+            </div>
         </div>
     );
 }

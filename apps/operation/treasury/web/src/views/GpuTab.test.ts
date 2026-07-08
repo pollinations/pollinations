@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { flagIntent, visibleGpuRows } from "./GpuTab";
+import { flagIntent, visibleGpuRows, visibleGpuTypeRows } from "./GpuTab";
 
 const mk = (vendor: string, coverage: number | null) => ({
     group: vendor,
@@ -31,11 +31,28 @@ describe("flagIntent", () => {
                 "error: fleet API blocked — consumer key lacks /cloud/project scope",
             ),
         ).toBe("danger");
+        expect(
+            flagIntent("error: no provider bill this month — rent unwitnessed"),
+        ).toBe("danger");
+        expect(
+            flagIntent(
+                "error: no gpu runs this month — deployment split unavailable",
+            ),
+        ).toBe("danger");
+        expect(
+            flagIntent("error: gpu runs have zero cost — cannot split bill"),
+        ).toBe("danger");
+        expect(
+            flagIntent(
+                "error: unmapped model — assign the deployment in forager config/gpu_models.json",
+            ),
+        ).toBe("danger");
     });
     it("classifies non-error flags as warning", () => {
         expect(flagIntent("unmapped fleet")).toBe("warning");
         expect(flagIntent("unattributed: flux")).toBe("warning");
         expect(flagIntent("hybrid: AI Endpoints + instance")).toBe("warning");
+        expect(flagIntent("hours unknown")).toBe("warning");
     });
 });
 
@@ -53,5 +70,31 @@ describe("visibleGpuRows", () => {
             "ovhcloud",
         ]);
         expect(visibleGpuRows({ rows, vendor: "lambda" })).toHaveLength(1);
+    });
+});
+
+const mkType = (vendor: string, gpu: string, costUsd: number) => ({
+    vendor,
+    gpu,
+    month: "2026-06",
+    hours: null,
+    costUsd,
+    impliedUsdPerHr: null,
+    models: [],
+    flags: [],
+});
+
+describe("visibleGpuTypeRows", () => {
+    it("filters by vendor and sorts by costUsd desc", () => {
+        const rows = [
+            mkType("runpod", "RTX 4090", 100),
+            mkType("lambda", "A100", 400),
+            mkType("runpod", "H100", 250),
+        ];
+        const out = visibleGpuTypeRows({ rows, vendor: "all" });
+        expect(out.map((r) => r.gpu)).toEqual(["A100", "H100", "RTX 4090"]);
+        expect(
+            visibleGpuTypeRows({ rows, vendor: "runpod" }).map((r) => r.gpu),
+        ).toEqual(["H100", "RTX 4090"]);
     });
 });

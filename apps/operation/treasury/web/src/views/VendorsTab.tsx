@@ -40,7 +40,7 @@ export function VendorsTab({
             <StatCards
                 items={[
                     {
-                        label: "Sold (paid)",
+                        label: "Paid",
                         value: fmtUsd(stats.soldPaidUsd),
                         detail: (
                             <Gauge
@@ -50,7 +50,7 @@ export function VendorsTab({
                         ),
                     },
                     {
-                        label: "True cost",
+                        label: "Provider Cost",
                         value: fmtUsd(stats.trueCostPaidUsd),
                         detail:
                             stats.creditFundedPct != null
@@ -67,16 +67,16 @@ export function VendorsTab({
                                 : "all profitable",
                     },
                     {
-                        label: "Blended true ×",
+                        label: "Coverage ×",
                         value: fmtMultiplier(stats.trueMultiplier),
                         tone: trueXStatTone(
                             stats.trueMultiplier,
                             cashBreakEven,
                         ),
-                        detail: "retained ÷ true cost",
+                        detail: "retained ÷ Provider Cost",
                     },
                     {
-                        label: "Quest burn",
+                        label: "Quests",
                         value: fmtUsd(stats.questBurnUsd),
                         detail: "free-tier subsidy",
                     },

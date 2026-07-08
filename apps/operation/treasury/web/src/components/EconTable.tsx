@@ -1,5 +1,6 @@
 import {
     Chip,
+    cn,
     TableBody,
     TableCell,
     TableHead,
@@ -9,13 +10,10 @@ import {
 } from "@pollinations/ui";
 import { useMemo } from "react";
 import { fmtMultiplier, fmtUnsignedPct, fmtUsd } from "../lib/format";
-import {
-    breakEvenMultiplier,
-    CALIB_DRIFT_ALARM,
-    type EconRow,
-} from "../lib/insights";
+import { breakEvenMultiplier, type EconRow } from "../lib/insights";
 import {
     DataTable,
+    GROUP_BORDER,
     HeaderHint,
     type SortColumn,
     TableScroller,
@@ -27,8 +25,30 @@ export function visibleEconRows(rows: EconRow[], vendor: string): EconRow[] {
     return rows.filter((row) => vendor === "all" || row.vendor === vendor);
 }
 
-// Minimal two-segment mix: paid vs quests share of pollen sold. No volume
-// scaling — the dollar columns carry the amounts.
+export function hasEconActivity(row: EconRow): boolean {
+    return [
+        row.soldPaidUsd,
+        row.soldQuestsUsd,
+        row.trueCostPaidUsd,
+        row.questBurnUsd,
+        row.marginUsd,
+    ].some((value) => value !== 0);
+}
+
+// Registry mispricing shows up as calibration far from 1.0× — the provider
+// bills a multiple of what our own meter expected. Only severe drift (off by
+// 2× or more, either direction) becomes a flag, so healthy rows stay quiet.
+export const SEVERE_DRIFT = 2;
+export function driftFlag(calib: number | null): string | null {
+    if (calib == null) return null;
+    if (calib >= SEVERE_DRIFT || calib <= 1 / SEVERE_DRIFT) {
+        return `${fmtMultiplier(calib)} meter drift`;
+    }
+    return null;
+}
+
+// Minimal two-segment mix. No volume scaling — the dollar columns carry the
+// amounts.
 export function gaugeParts(paid: number, quests: number) {
     const total = paid + quests;
     if (total <= 0) return null;
@@ -38,10 +58,18 @@ export function gaugeParts(paid: number, quests: number) {
     };
 }
 
-export function Gauge({ paid, quests }: { paid: number; quests: number }) {
+export function Gauge({
+    paid,
+    quests,
+    questLabel = "quests",
+}: {
+    paid: number;
+    quests: number;
+    questLabel?: string;
+}) {
     const parts = gaugeParts(paid, quests);
     if (!parts) return <span className="text-theme-text-soft">–</span>;
-    const label = `paid ${fmtUnsignedPct(parts.paidPct)} · quests ${fmtUnsignedPct(parts.questsPct)}`;
+    const label = `paid ${fmtUnsignedPct(parts.paidPct)} · ${questLabel} ${fmtUnsignedPct(parts.questsPct)}`;
     return (
         <div
             className="flex h-2 w-24 overflow-hidden rounded-sm"
@@ -54,55 +82,11 @@ export function Gauge({ paid, quests }: { paid: number; quests: number }) {
                 style={{ width: `${parts.paidPct}%` }}
             />
             <div
-                className="h-full bg-theme-text-soft/40"
+                className="h-full bg-intent-warning-text/70"
                 style={{ width: `${parts.questsPct}%` }}
             />
         </div>
     );
-}
-
-function CalibCell({
-    calib,
-    pollenPriced,
-}: {
-    calib: number | null;
-    pollenPriced: boolean;
-}) {
-    if (pollenPriced) {
-        return (
-            <Tooltip
-                triggerAs="span"
-                content={
-                    <span className="block max-w-72">
-                        Pollen-priced — the provider rows are our own numbers
-                        booked back, so calib is 1.00 by construction, not a
-                        measurement.
-                    </span>
-                }
-            >
-                <span className="text-theme-text-soft">1.00× ·</span>
-            </Tooltip>
-        );
-    }
-    if (calib == null) {
-        return (
-            <span
-                className="text-theme-text-soft"
-                title="No provider rows in scope — true cost falls back to our metering."
-            >
-                –
-            </span>
-        );
-    }
-    const drift = calib - 1;
-    if (Math.abs(drift) > CALIB_DRIFT_ALARM) {
-        return (
-            <span className="text-intent-danger-text">
-                {fmtMultiplier(calib)} {drift > 0 ? "▲" : "▼"}
-            </span>
-        );
-    }
-    return <span>{fmtMultiplier(calib)}</span>;
 }
 
 function trueXTone(value: number | null, cashBreakEven: number | null) {
@@ -128,6 +112,17 @@ export function trueXStatTone(
 
 function marginTone(value: number) {
     return value >= 0 ? "text-intent-success-text" : "text-intent-danger-text";
+}
+
+function providerFunding(
+    row: EconRow,
+): { paid: number; grants: number } | null {
+    if (row.creditSharePct == null) return null;
+    const grants = row.trueCostPaidUsd * (row.creditSharePct / 100);
+    return {
+        paid: row.trueCostPaidUsd - grants,
+        grants,
+    };
 }
 
 // One economics table, two grains. The Vendors summary (grain "vendor") is
@@ -159,8 +154,19 @@ export function EconTable({
             },
             { key: "questBurnUsd", value: (row) => row.questBurnUsd },
             { key: "trueCostPaidUsd", value: (row) => row.trueCostPaidUsd },
-            { key: "calib", value: (row) => row.calib },
-            { key: "creditSharePct", value: (row) => row.creditSharePct },
+            {
+                key: "providerFundingMix",
+                value: (row) => {
+                    const funding = providerFunding(row);
+                    return funding && row.trueCostPaidUsd > 0
+                        ? funding.paid / row.trueCostPaidUsd
+                        : null;
+                },
+            },
+            {
+                key: "grantFundedUsd",
+                value: (row) => providerFunding(row)?.grants ?? null,
+            },
             { key: "trueMultiplier", value: (row) => row.trueMultiplier },
             { key: "marginUsd", value: (row) => row.marginUsd },
             { key: "flags", value: (row) => row.flags.join(", ") },
@@ -171,69 +177,195 @@ export function EconTable({
 
     return (
         <div className="flex flex-col gap-3">
+            <p className="text-xs text-theme-text-soft">
+                Costs are provider-rate usage costs. Cash sent is reconciled
+                separately.
+            </p>
             <TableScroller>
                 <DataTable>
                     <TableHead>
                         <TableRow>
-                            <TableHeaderCell {...headerProps("vendor")}>
+                            <TableHeaderCell
+                                rowSpan={2}
+                                {...headerProps("vendor")}
+                            >
                                 vendor
                             </TableHeaderCell>
                             {showModel && (
-                                <TableHeaderCell {...headerProps("model")}>
+                                <TableHeaderCell
+                                    rowSpan={2}
+                                    {...headerProps("model")}
+                                >
                                     model
                                 </TableHeaderCell>
                             )}
-                            <TableHeaderCell {...headerProps("soldPaidUsd")}>
-                                <HeaderHint hint="Pollen end users paid (price_paid). The retained/eco split is in the row tooltip.">
-                                    sold (paid)
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("mix")}>
-                                <HeaderHint hint="Mix of pollen sold: colored = paid, faded = quests.">
-                                    paid / quests
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("questBurnUsd")}>
-                                <HeaderHint hint="Free quest usage at true prices: cost_quests × calib. Pure subsidy — costs us, earns nothing.">
-                                    quest burn
-                                </HeaderHint>
+                            <TableHeaderCell
+                                colSpan={3}
+                                align="center"
+                                className={GROUP_BORDER}
+                            >
+                                Pollen
                             </TableHeaderCell>
                             <TableHeaderCell
-                                {...headerProps("trueCostPaidUsd")}
+                                colSpan={3}
+                                align="center"
+                                className={GROUP_BORDER}
                             >
-                                <HeaderHint hint="What the provider actually charges for the paid usage: cost_paid × calib. With no meter (calib –) this is our metering unadjusted.">
-                                    true cost
-                                </HeaderHint>
+                                Provider
                             </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("calib")}>
-                                <HeaderHint
-                                    hint={`Provider actual ÷ our metering, summed over the scope — a raw division, no smoothing. ▲/▼ past ±${Math.round(CALIB_DRIFT_ALARM * 100)}% = registry misprices this vendor. · = pollen-priced by construction.`}
-                                >
-                                    calib
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("creditSharePct")}>
-                                <HeaderHint hint="Share of the vendor actual funded by granted credits — burn that costs no cash today but ends with the grant.">
-                                    credit
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("trueMultiplier")}>
-                                <HeaderHint hint="retained_paid ÷ true cost. Red < 1.00× loses cash on compute alone; amber < cash break-even loses after Stripe fees.">
-                                    true ×
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("marginUsd")}>
-                                <HeaderHint hint="retained_paid − true cost, compute only. Quest burn is shown separately, not subtracted.">
-                                    margin
-                                </HeaderHint>
+                            <TableHeaderCell
+                                colSpan={2}
+                                align="center"
+                                className={GROUP_BORDER}
+                            >
+                                Economics
                             </TableHeaderCell>
                             {showFlags && (
-                                <TableHeaderCell {...headerProps("flags")}>
-                                    <HeaderHint hint="Likely issues in the raw data: unwitnessed = pollen active but no provider row that month (calib reads low) · unmetered = provider billed a month with no pollen (calib reads high) · no meter = no provider rows at all.">
-                                        flags
+                                <TableHeaderCell
+                                    rowSpan={2}
+                                    className={GROUP_BORDER}
+                                    {...headerProps("flags")}
+                                >
+                                    <HeaderHint
+                                        hint={{
+                                            meaning:
+                                                "Data-quality caveats: meter drift = provider bills a multiple of our meter (registry mispriced) · unwitnessed = pollen active but no provider row that month · unmetered = provider billed a month with no pollen · no meter = no provider rows at all.",
+                                        }}
+                                    >
+                                        Flags
                                     </HeaderHint>
                                 </TableHeaderCell>
                             )}
+                        </TableRow>
+                        <TableRow>
+                            <TableHeaderCell
+                                align="right"
+                                className={GROUP_BORDER}
+                                {...headerProps("soldPaidUsd")}
+                            >
+                                <HeaderHint
+                                    hint={{
+                                        meaning:
+                                            "Revenue from paid users (hover a row for retained vs ecosystem split).",
+                                        tables: "pollen_monthly_api",
+                                        sources: "TB",
+                                    }}
+                                >
+                                    Paid
+                                </HeaderHint>
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="center"
+                                {...headerProps("mix")}
+                            >
+                                <HeaderHint
+                                    hint={{
+                                        meaning:
+                                            "Usage mix — green is paid, amber is free quests.",
+                                        tables: "pollen_monthly_api",
+                                        sources: "TB",
+                                    }}
+                                >
+                                    Paid / Quests
+                                </HeaderHint>
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="left"
+                                {...headerProps("questBurnUsd")}
+                            >
+                                <HeaderHint
+                                    hint={{
+                                        meaning:
+                                            "What free quest usage cost us — pure subsidy, earns nothing.",
+                                        tables: "pollen_monthly_api",
+                                        sources: "TB",
+                                    }}
+                                >
+                                    Quests
+                                </HeaderHint>
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="right"
+                                className={GROUP_BORDER}
+                                {...headerProps("trueCostPaidUsd")}
+                            >
+                                <HeaderHint
+                                    hint={{
+                                        meaning:
+                                            "Provider-rate cost of paid-user usage, whether funded by cash or credits. This is not cash sent.",
+                                        tables: "pollen_monthly_api + provider_monthly_api",
+                                        sources: "TB · API/CLI/BQ/manual",
+                                        formula: "cost_paid × calibration",
+                                    }}
+                                >
+                                    Provider Cost
+                                </HeaderHint>
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="center"
+                                {...headerProps("providerFundingMix")}
+                            >
+                                <HeaderHint
+                                    hint={{
+                                        meaning:
+                                            "Provider funding mix — green is cash/prepaid paid, amber is grants.",
+                                        tables: "provider_monthly_api + grants_api",
+                                        sources: "API/CLI/BQ · HC",
+                                        formula:
+                                            "paid ÷ (paid + credit), credit ÷ (paid + credit)",
+                                    }}
+                                >
+                                    Paid / Grants
+                                </HeaderHint>
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="left"
+                                {...headerProps("grantFundedUsd")}
+                            >
+                                <HeaderHint
+                                    hint={{
+                                        meaning:
+                                            "Provider Cost covered by grants for this row's scope.",
+                                        tables: "provider_monthly_api + grants_api",
+                                        sources: "API/CLI/BQ · HC",
+                                        formula:
+                                            "Provider Cost × grant-funded share",
+                                    }}
+                                >
+                                    Grants
+                                </HeaderHint>
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="right"
+                                className={GROUP_BORDER}
+                                {...headerProps("trueMultiplier")}
+                            >
+                                <HeaderHint
+                                    hint={{
+                                        meaning:
+                                            "Paid ÷ Provider Cost. Above 1× paid revenue covers the paid compute; below 1× it doesn't.",
+                                        formula:
+                                            "retained paid ÷ Provider Cost",
+                                    }}
+                                >
+                                    Coverage ×
+                                </HeaderHint>
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="right"
+                                {...headerProps("marginUsd")}
+                            >
+                                <HeaderHint
+                                    hint={{
+                                        meaning:
+                                            "Paid − Provider Cost (compute only; Quests shown separately).",
+                                        formula:
+                                            "retained paid − Provider Cost",
+                                    }}
+                                >
+                                    Margin
+                                </HeaderHint>
+                            </TableHeaderCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -241,80 +373,118 @@ export function EconTable({
                             row.model == null
                                 ? row.vendor
                                 : `${row.vendor}|${row.model}`,
-                        ).map(({ key, row }) => (
-                            <TableRow key={key}>
-                                <TableCell>{row.vendor}</TableCell>
-                                {showModel && (
-                                    <TableCell>{row.model}</TableCell>
-                                )}
-                                <TableCell>
-                                    <Tooltip
-                                        triggerAs="span"
-                                        content={
-                                            <span className="block max-w-72">
-                                                retained{" "}
-                                                {fmtUsd(row.retainedPaidUsd)} ·
-                                                eco (byop + community model){" "}
-                                                {fmtUsd(row.ecoPaidUsd)}
-                                            </span>
-                                        }
-                                    >
-                                        <span>{fmtUsd(row.soldPaidUsd)}</span>
-                                    </Tooltip>
-                                </TableCell>
-                                <TableCell>
-                                    <Gauge
-                                        paid={row.soldPaidUsd}
-                                        quests={row.soldQuestsUsd}
-                                    />
-                                </TableCell>
-                                <TableCell className="text-theme-text-soft">
-                                    {fmtUsd(row.questBurnUsd)}
-                                </TableCell>
-                                <TableCell>
-                                    {fmtUsd(row.trueCostPaidUsd)}
-                                </TableCell>
-                                <TableCell>
-                                    <CalibCell
-                                        calib={row.calib}
-                                        pollenPriced={row.pollenPriced}
-                                    />
-                                </TableCell>
-                                <TableCell className="text-theme-text-soft">
-                                    {row.creditSharePct == null
-                                        ? "–"
-                                        : fmtUnsignedPct(row.creditSharePct)}
-                                </TableCell>
-                                <TableCell
-                                    className={trueXTone(
-                                        row.trueMultiplier,
-                                        cashBreakEven,
+                        ).map(({ key, row }) => {
+                            const funding = providerFunding(row);
+                            const drift = driftFlag(row.calib);
+                            const flags = drift
+                                ? [drift, ...row.flags]
+                                : row.flags;
+                            return (
+                                <TableRow key={key}>
+                                    <TableCell>{row.vendor}</TableCell>
+                                    {showModel && (
+                                        <TableCell>{row.model}</TableCell>
                                     )}
-                                >
-                                    {fmtMultiplier(row.trueMultiplier)}
-                                </TableCell>
-                                <TableCell
-                                    className={marginTone(row.marginUsd)}
-                                >
-                                    {fmtUsd(row.marginUsd)}
-                                </TableCell>
-                                {showFlags && (
+                                    <TableCell
+                                        className={cn(
+                                            "text-right text-intent-success-text",
+                                            GROUP_BORDER,
+                                        )}
+                                    >
+                                        <Tooltip
+                                            triggerAs="span"
+                                            content={
+                                                <span className="block max-w-72">
+                                                    retained{" "}
+                                                    {fmtUsd(
+                                                        row.retainedPaidUsd,
+                                                    )}{" "}
+                                                    · eco (byop + community
+                                                    model){" "}
+                                                    {fmtUsd(row.ecoPaidUsd)}
+                                                </span>
+                                            }
+                                        >
+                                            <span>
+                                                {fmtUsd(row.soldPaidUsd)}
+                                            </span>
+                                        </Tooltip>
+                                    </TableCell>
                                     <TableCell>
-                                        <div className="flex flex-wrap gap-1">
-                                            {row.flags.map((flag) => (
-                                                <Chip
-                                                    key={flag}
-                                                    intent="warning"
-                                                    size="sm"
-                                                >
-                                                    ⚠ {flag}
-                                                </Chip>
-                                            ))}
+                                        <div className="flex justify-center">
+                                            <Gauge
+                                                paid={row.soldPaidUsd}
+                                                quests={row.soldQuestsUsd}
+                                            />
                                         </div>
                                     </TableCell>
-                                )}
-                            </TableRow>
-                        ))}
+                                    <TableCell className="text-left text-intent-warning-text">
+                                        {fmtUsd(row.questBurnUsd)}
+                                    </TableCell>
+                                    <TableCell
+                                        className={cn(
+                                            "text-right",
+                                            GROUP_BORDER,
+                                        )}
+                                    >
+                                        {fmtUsd(row.trueCostPaidUsd)}
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex justify-center">
+                                            {funding ? (
+                                                <Gauge
+                                                    paid={funding.paid}
+                                                    quests={funding.grants}
+                                                    questLabel="grants"
+                                                />
+                                            ) : (
+                                                <span className="text-theme-text-soft">
+                                                    –
+                                                </span>
+                                            )}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-left text-intent-warning-text">
+                                        {funding ? fmtUsd(funding.grants) : "–"}
+                                    </TableCell>
+                                    <TableCell
+                                        className={cn(
+                                            "text-right",
+                                            trueXTone(
+                                                row.trueMultiplier,
+                                                cashBreakEven,
+                                            ),
+                                            GROUP_BORDER,
+                                        )}
+                                    >
+                                        {fmtMultiplier(row.trueMultiplier)}
+                                    </TableCell>
+                                    <TableCell
+                                        className={cn(
+                                            "text-right",
+                                            marginTone(row.marginUsd),
+                                        )}
+                                    >
+                                        {fmtUsd(row.marginUsd)}
+                                    </TableCell>
+                                    {showFlags && (
+                                        <TableCell className={GROUP_BORDER}>
+                                            <div className="flex flex-wrap gap-1">
+                                                {flags.map((flag) => (
+                                                    <Chip
+                                                        key={flag}
+                                                        intent="warning"
+                                                        size="sm"
+                                                    >
+                                                        ⚠ {flag}
+                                                    </Chip>
+                                                ))}
+                                            </div>
+                                        </TableCell>
+                                    )}
+                                </TableRow>
+                            );
+                        })}
                     </TableBody>
                 </DataTable>
             </TableScroller>

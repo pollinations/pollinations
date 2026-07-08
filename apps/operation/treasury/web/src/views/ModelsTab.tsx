@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import {
     EconTable,
     Gauge,
+    hasEconActivity,
     trueXStatTone,
     visibleEconRows,
 } from "../components/EconTable";
@@ -29,7 +30,10 @@ export function ModelsTab({
         [data.revenueMonthly],
     );
     const rows = useMemo(
-        () => visibleEconRows(economics(data, month, "model"), vendor),
+        () =>
+            visibleEconRows(economics(data, month, "model"), vendor).filter(
+                hasEconActivity,
+            ),
         [data, month, vendor],
     );
     const stats = useMemo(() => econSummary(rows), [rows]);
@@ -41,7 +45,7 @@ export function ModelsTab({
             <StatCards
                 items={[
                     {
-                        label: "Sold (paid)",
+                        label: "Paid",
                         value: fmtUsd(stats.soldPaidUsd),
                         detail: (
                             <Gauge
@@ -51,7 +55,7 @@ export function ModelsTab({
                         ),
                     },
                     {
-                        label: "True cost",
+                        label: "Provider Cost",
                         value: fmtUsd(stats.trueCostPaidUsd),
                         detail:
                             stats.creditFundedPct != null
@@ -68,13 +72,13 @@ export function ModelsTab({
                                 : "all profitable",
                     },
                     {
-                        label: "Blended true ×",
+                        label: "Coverage ×",
                         value: fmtMultiplier(stats.trueMultiplier),
                         tone: trueXStatTone(
                             stats.trueMultiplier,
                             cashBreakEven,
                         ),
-                        detail: "retained ÷ true cost",
+                        detail: "retained ÷ Provider Cost",
                     },
                     {
                         label: "Most underpriced",

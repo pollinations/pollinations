@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { EconRow } from "../lib/insights";
-import { gaugeParts, visibleEconRows } from "./EconTable";
+import {
+    driftFlag,
+    gaugeParts,
+    hasEconActivity,
+    visibleEconRows,
+} from "./EconTable";
 
 const row = (vendor: string, model: string | null): EconRow => ({
     vendor,
@@ -28,6 +33,36 @@ describe("visibleEconRows", () => {
 
     it("passes everything through for all", () => {
         expect(visibleEconRows(rows, "all")).toEqual(rows);
+    });
+});
+
+describe("hasEconActivity", () => {
+    it("hides rows with no economics to display", () => {
+        expect(hasEconActivity(row("community", "empty"))).toBe(false);
+    });
+
+    it("keeps tiny non-zero rows", () => {
+        expect(
+            hasEconActivity({
+                ...row("community", "tiny"),
+                questBurnUsd: 0.001,
+            }),
+        ).toBe(true);
+    });
+});
+
+describe("driftFlag", () => {
+    it("stays quiet for healthy calibration", () => {
+        expect(driftFlag(null)).toBeNull();
+        expect(driftFlag(1)).toBeNull();
+        expect(driftFlag(1.9)).toBeNull();
+        expect(driftFlag(0.6)).toBeNull();
+    });
+
+    it("flags severe over- and under-metering both ways", () => {
+        expect(driftFlag(7)).toBe("7× meter drift");
+        expect(driftFlag(2)).toBe("2× meter drift");
+        expect(driftFlag(0.5)).toBe("0.5× meter drift");
     });
 });
 

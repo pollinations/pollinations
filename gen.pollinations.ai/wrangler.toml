@@ -60,6 +60,10 @@ run_worker_first = ["/", "/manifest.webmanifest"]
 # Production routes
 [env.production]
 
+[env.production.observability]
+enabled = true
+head_sampling_rate = 1
+
 [env.production.images]
 binding = "IMAGES"
 

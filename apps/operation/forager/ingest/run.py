@@ -22,6 +22,7 @@ from .connectors import usage as _usage
 from .connectors.common import months_ytd
 from .connectors.vendors import ALLOWED_CATEGORIES, _validate_meter_source
 from .connectors.vendors import stripe as _stripe
+from .connectors import fleet as _fleet
 from .aliases import VENDOR_ALIASES
 
 
@@ -311,6 +312,32 @@ def refresh_transactions(
     )
 
 
+def refresh_gpu_fleet(ops_ingest, secrets, now, statuses,
+                      snapshot_all=None):
+    """Append a fleet snapshot (append-only — no replace guard needed)."""
+    snap = snapshot_all or _fleet.snapshot_all
+    rows, fleet_statuses = snap(secrets, now)
+    statuses.update(fleet_statuses)
+    if rows:
+        ops_ingest.append("gpu_fleet", rows)
+    statuses["gpu_fleet_rows"] = len(rows)
+
+    burn = {}
+    balance = {}
+    for row in rows:
+        burn[row["vendor"]] = burn.get(row["vendor"], 0.0) + row["usd_per_hr"]
+        if row.get("balance_usd") is not None:
+            balance[row["vendor"]] = row["balance_usd"]
+    for vendor, bal in balance.items():
+        rate = burn.get(vendor, 0.0)
+        if rate <= 0:
+            continue
+        days = bal / (rate * 24)
+        statuses[f"gpu_runway:{vendor}"] = f"${bal:.2f} · {rate:.3f}/hr · ~{days:.1f}d"
+        if days < 7:
+            print(f"🚨 {vendor} runway {days:.1f} days (${bal:.2f} at {rate:.3f}/hr) — top up")
+
+
 def append_run_log(ops_ingest, statuses, notes):
     now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     ops_ingest.append(
@@ -334,7 +361,7 @@ def parse_args(argv=None):
                         help="approve writes that would lose manual meter row data")
     parser.add_argument("--dry-run", action="store_true",
                         help="snapshot + diff only, write nothing")
-    parser.add_argument("--only", choices=["provider", "pollen", "revenue", "transactions"])
+    parser.add_argument("--only", choices=["provider", "pollen", "revenue", "transactions", "fleet"])
     parser.add_argument("--vendor", help="provider only: re-fetch one connector")
     parser.add_argument("--month", help="restrict to one YYYY-MM month")
     args = parser.parse_args(argv)
@@ -372,7 +399,7 @@ def main():
         "existing": {
             ds: backup.snapshot_table(ops_ingest, ds, backup_dir)
             for ds in ("provider_monthly", "pollen_monthly", "revenue_monthly",
-                       "transactions", "grants", "ingest_runs")
+                       "transactions", "grants", "ingest_runs", "gpu_fleet")
         },
     }
     print(f"backup: {backup_dir}")
@@ -405,6 +432,9 @@ def main():
             refresh_transactions(
                 ops_replace, secrets, config, today, statuses, guard, months=months
             )
+        if args.only in (None, "fleet"):
+            now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+            refresh_gpu_fleet(ops_ingest, secrets, now, statuses)
     except Exception as e:
         statuses["run"] = "err:" + _sanitize_err(e, secrets)
         notes.append(f"run failed: {statuses['run']}")

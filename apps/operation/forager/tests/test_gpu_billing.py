@@ -325,8 +325,8 @@ def test_vast_credit_rows_excluded():
     )
     # Sum of amounts should match only the charge rows (not the credit).
     total = sum(r["amount"] for r in rows)
-    # credit row ($5) must not appear
-    assert total <= 30.01  # 20 + 10 max (rounded)
+    # credit row ($5) must not appear: exactly 20 + 10 (per-month cents rounding)
+    assert total == pytest.approx(30.0, abs=0.02)
 
 
 def test_vast_source_is_cli():

@@ -815,6 +815,11 @@ describe("gpuEconomics — billing-preferred allocation", () => {
                 r.flags.some((f) => f.startsWith("billing drift")),
             ),
         ).toBe(true);
+        // Even under drift, rents pin to the witnessed bill ($1000), never
+        // to the diverging billing-ledger sum ($975).
+        expect(
+            runpodRows.reduce((acc, r) => acc + (r.rentUsd ?? 0), 0),
+        ).toBeCloseTo(1000, 4);
 
         // billing sum = 985, provider bill = 1000 → 1.5% → no drift flag
         const noDriftData: Data = {
@@ -1421,10 +1426,9 @@ describe("gpuEconomics — dust verdict", () => {
         // (It stays individual since amount is not < $10... wait it IS < $10 so it folds)
         // After fold, the fold row has rentShare ≈ $5 which is NOT < 5 → verdict not forced null
         const foldRow = rows.find((r) => r.group.includes("small deployments"));
-        if (foldRow) {
-            // rentShare is $5, not < 5 → dust verdict does not apply
-            expect(foldRow.rentUsd).toBeCloseTo(5, 4);
-            // verdict comes from coverage logic (coverage null → null; that's fine, not the dust rule)
-        }
+        expect(foldRow).toBeDefined();
+        // rentShare is $5, not < 5 → dust verdict does not apply
+        expect(foldRow?.rentUsd).toBeCloseTo(5, 4);
+        // verdict comes from coverage logic (coverage null → null; that's fine, not the dust rule)
     });
 });

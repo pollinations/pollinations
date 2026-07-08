@@ -11,12 +11,16 @@ Exports:
 
     runs_rows_runpod(secrets, months, http)
         -> list of gpu_runs row dicts for RunPod billing data.
+
+    runs_rows_modal(secrets, months, run_cmd)
+        -> list of gpu_runs row dicts for Modal serverless billing data.
 """
 
 import calendar
 import collections
 import datetime
 import json
+import os
 import re
 import subprocess
 from pathlib import Path
@@ -288,6 +292,121 @@ def runs_rows_runpod(secrets, months, http=None):
 
 
 # ---------------------------------------------------------------------------
+# Modal run rows
+# ---------------------------------------------------------------------------
+
+def runs_rows_modal(secrets, months, run_cmd=subprocess.run):
+    """Modal gpu_runs connector — per-(app, month) serverless billing rows.
+
+    Same CLI source as gpu_billing.monthly_rows_modal: `modal billing report
+    --json` invoked once per month. Full-env merge ({**os.environ, **tokens})
+    is preserved so the modal CLI can find its binary even when the caller's
+    PATH differs.
+
+    Args:
+        secrets:  dict with MODAL_TOKEN_ID and MODAL_TOKEN_SECRET
+        months:   list of "YYYY-MM" strings to emit
+        run_cmd:  injectable subprocess.run replacement (for testing)
+
+    Returns:
+        list of gpu_runs row dicts; zero-cost rows are skipped.
+
+    Row shape (serverless — no hours/times):
+        month      = "YYYY-MM"
+        vendor     = "modal"
+        run_id     = app_name
+        deployment = app_name
+        gpu        = ""
+        gpu_count  = 1
+        started_at = ""
+        ended_at   = ""
+        hours      = None
+        cost       = float (USD, rounded to 2dp)
+        currency   = "USD"
+        model      = stamp("modal", app_name)[0]
+        kind       = "serverless"  (forced; modal is always serverless)
+        source     = "cli"
+    """
+    if not months:
+        return []
+    tid = secrets.get("MODAL_TOKEN_ID")
+    tsec = secrets.get("MODAL_TOKEN_SECRET")
+    if not tid or not tsec:
+        raise RuntimeError("MODAL_TOKEN_ID/MODAL_TOKEN_SECRET missing")
+
+    tokens = {"MODAL_TOKEN_ID": tid, "MODAL_TOKEN_SECRET": tsec}
+    env = {**os.environ, **tokens}
+
+    rows = []
+    for month in months:
+        y, m = int(month[:4]), int(month[5:7])
+        start = f"{y:04d}-{m:02d}-01"
+        ny, nm = (y + 1, 1) if m == 12 else (y, m + 1)
+        end = f"{ny:04d}-{nm:02d}-01"
+
+        try:
+            proc = run_cmd(
+                ["modal", "billing", "report",
+                 "--start", start, "--end", end, "--json"],
+                capture_output=True, text=True, timeout=60, env=env,
+            )
+        except FileNotFoundError:
+            raise RuntimeError("modal CLI not installed")
+
+        if proc.returncode != 0:
+            raise RuntimeError(
+                f"modal billing report failed for {month} "
+                f"(rc={proc.returncode}): {(proc.stderr or '').strip()[:120]}"
+            )
+
+        try:
+            daily_rows = json.loads(proc.stdout or "[]") or []
+        except (ValueError, TypeError):
+            raise RuntimeError(f"modal billing report returned non-JSON for {month}")
+
+        # Sum per app for the month (same field-name fallbacks as monthly_rows_modal).
+        app_totals: dict[str, float] = collections.defaultdict(float)
+        for drow in daily_rows:
+            app = (
+                drow.get("app")
+                or drow.get("description")
+                or drow.get("app_name")
+                or ""
+            )
+            cost_raw = drow.get("cost") or drow.get("amount") or 0
+            try:
+                cost = float(cost_raw)
+            except (TypeError, ValueError):
+                cost = 0.0
+            if app and cost:
+                app_totals[app] += cost
+
+        for app_name, total in sorted(app_totals.items()):
+            amount_r = round(total, 2)
+            if not amount_r:
+                continue
+            model_csv, _ = stamp("modal", app_name)
+            rows.append({
+                "month": month,
+                "vendor": "modal",
+                "run_id": app_name,
+                "deployment": app_name,
+                "gpu": "",
+                "gpu_count": 1,
+                "started_at": "",
+                "ended_at": "",
+                "hours": None,
+                "cost": amount_r,
+                "currency": "USD",
+                "model": model_csv,
+                "kind": "serverless",
+                "source": "cli",
+            })
+
+    return rows
+
+
+# ---------------------------------------------------------------------------
 # Vast.ai run rows
 # ---------------------------------------------------------------------------
 
@@ -394,7 +513,6 @@ def runs_rows_vast(secrets, months, today, run_cmd=subprocess.run):
         # We re-walk the same segments split_run_by_month used internally, clipping
         # each segment to its month boundary so the row timestamps stay inside the month.
         cursor = started
-        part_idx = 0
         for month_str, hours_in_month, cost_in_month in parts:
             if month_str not in month_set:
                 cursor = _advance_to_next_month(cursor)

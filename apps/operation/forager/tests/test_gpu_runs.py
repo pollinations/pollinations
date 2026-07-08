@@ -7,7 +7,7 @@ TDD: these tests are written first. Run failing before implementing.
 import datetime
 import pytest
 
-from ingest.connectors.gpu_runs import split_run_by_month, stamp, runs_rows_runpod, runs_rows_vast
+from ingest.connectors.gpu_runs import split_run_by_month, stamp, runs_rows_runpod, runs_rows_vast, runs_rows_modal
 from ingest import run as ingest_run
 
 
@@ -647,7 +647,7 @@ def test_runs_rows_vast_boundary_spanning_charge():
     assert "2026-06" in months_emitted, f"2026-06 missing from {months_emitted}"
 
     total = sum(r["cost"] for r in rows)
-    assert total == pytest.approx(9.99, abs=0.01), (
+    assert total == pytest.approx(9.99, abs=0.001), (
         f"per-month parts do not sum to charge amount: {total} != 9.99"
     )
 
@@ -741,3 +741,171 @@ def test_runs_rows_vast_missing_cli_raises():
         raise FileNotFoundError("vastai not found")
     with pytest.raises(RuntimeError, match="vastai CLI"):
         runs_rows_vast({}, _VAST_MONTHS, TODAY, run_cmd=run_cmd)
+
+
+# ---------------------------------------------------------------------------
+# runs_rows_modal — serverless shape + cost parity vs monthly_rows_modal
+# ---------------------------------------------------------------------------
+
+from ingest.connectors.gpu_billing import monthly_rows_modal as _monthly_rows_modal  # noqa: E402
+
+_MODAL_DAILY = [
+    {"app": "image-gen-prod", "cost": "12.50"},
+    {"app": "image-gen-prod", "cost": "8.75"},
+    {"app": "video-gen-prod", "cost": "3.00"},
+]
+_MODAL_SECRETS = {"MODAL_TOKEN_ID": "tid", "MODAL_TOKEN_SECRET": "sec"}
+_MODAL_MONTHS = ["2026-05", "2026-06"]
+
+
+class _ModalProc:
+    def __init__(self, stdout="[]", returncode=0, stderr=""):
+        self.stdout = stdout
+        self.returncode = returncode
+        self.stderr = stderr
+
+
+def _modal_run_cmd_single(cmd, **kwargs):
+    """Returns _MODAL_DAILY for every month call."""
+    import json
+    return _ModalProc(stdout=json.dumps(_MODAL_DAILY))
+
+
+def test_runs_rows_modal_shape():
+    """Every row has all required gpu_runs fields."""
+    required = {
+        "month", "vendor", "run_id", "deployment", "gpu", "gpu_count",
+        "started_at", "ended_at", "hours", "cost", "currency",
+        "model", "kind", "source",
+    }
+    rows = runs_rows_modal(_MODAL_SECRETS, ["2026-06"], run_cmd=_modal_run_cmd_single)
+    assert rows, "should produce at least one row"
+    for row in rows:
+        missing = required - row.keys()
+        assert not missing, f"row missing keys {missing}: {row}"
+
+
+def test_runs_rows_modal_serverless_fields():
+    """Serverless rows: kind='serverless', hours=None, empty times."""
+    rows = runs_rows_modal(_MODAL_SECRETS, ["2026-06"], run_cmd=_modal_run_cmd_single)
+    for row in rows:
+        assert row["kind"] == "serverless", f"expected serverless kind, got {row['kind']}"
+        assert row["hours"] is None, f"expected hours=None, got {row['hours']}"
+        assert row["started_at"] == "", f"expected empty started_at, got {row['started_at']}"
+        assert row["ended_at"] == "", f"expected empty ended_at, got {row['ended_at']}"
+
+
+def test_runs_rows_modal_app_name_as_run_id_and_deployment():
+    """app name is used as both run_id and deployment."""
+    rows = runs_rows_modal(_MODAL_SECRETS, ["2026-06"], run_cmd=_modal_run_cmd_single)
+    for row in rows:
+        assert row["run_id"] == row["deployment"], (
+            f"run_id {row['run_id']!r} != deployment {row['deployment']!r}"
+        )
+        assert row["run_id"] in {"image-gen-prod", "video-gen-prod"}, (
+            f"unexpected run_id {row['run_id']!r}"
+        )
+
+
+def test_runs_rows_modal_model_from_stamp():
+    """model comes from stamp('modal', app_name) — should be the modal csv."""
+    expected_model, _ = stamp("modal", "image-gen-prod")
+    rows = runs_rows_modal(_MODAL_SECRETS, ["2026-06"], run_cmd=_modal_run_cmd_single)
+    image_rows = [r for r in rows if r["run_id"] == "image-gen-prod"]
+    assert len(image_rows) == 1
+    assert image_rows[0]["model"] == expected_model, (
+        f"model {image_rows[0]['model']!r} != stamp result {expected_model!r}"
+    )
+
+
+def test_runs_rows_modal_vendor_and_source():
+    """All rows: vendor='modal', source='cli', currency='USD'."""
+    rows = runs_rows_modal(_MODAL_SECRETS, ["2026-06"], run_cmd=_modal_run_cmd_single)
+    for row in rows:
+        assert row["vendor"] == "modal"
+        assert row["source"] == "cli"
+        assert row["currency"] == "USD"
+
+
+def test_runs_rows_modal_cost_parity_vs_monthly_rows_modal():
+    """Per-(app, month) cost matches monthly_rows_modal on the same fixture.
+
+    The reshaping to gpu_runs schema must not change billed amounts.
+    """
+    billing_rows = _monthly_rows_modal(
+        _MODAL_SECRETS, ["2026-06"], run_cmd=_modal_run_cmd_single
+    )
+    run_rows = runs_rows_modal(
+        _MODAL_SECRETS, ["2026-06"], run_cmd=_modal_run_cmd_single
+    )
+
+    billing_map = {(r["month"], r["deployment"]): r["amount"] for r in billing_rows}
+    runs_map    = {(r["month"], r["deployment"]): r["cost"]   for r in run_rows}
+
+    assert billing_map == runs_map, (
+        f"cost mismatch between billing and runs connectors:\n"
+        f"billing={billing_map}\nruns={runs_map}"
+    )
+
+
+def test_runs_rows_modal_multiple_months():
+    """One CLI call per month; rows emitted for each requested month."""
+    call_count = {"n": 0}
+
+    def run_cmd(cmd, **kwargs):
+        call_count["n"] += 1
+        import json
+        return _ModalProc(stdout=json.dumps([{"app": "my-app", "cost": "1.00"}]))
+
+    rows = runs_rows_modal(_MODAL_SECRETS, _MODAL_MONTHS, run_cmd=run_cmd)
+    assert call_count["n"] == len(_MODAL_MONTHS), (
+        f"expected {len(_MODAL_MONTHS)} CLI calls, got {call_count['n']}"
+    )
+    months_returned = {r["month"] for r in rows}
+    assert months_returned == set(_MODAL_MONTHS)
+
+
+def test_runs_rows_modal_zero_cost_skipped():
+    """A month with no non-zero rows produces no output rows."""
+    def run_cmd(cmd, **kwargs):
+        return _ModalProc(stdout="[]")
+
+    rows = runs_rows_modal(_MODAL_SECRETS, ["2026-04"], run_cmd=run_cmd)
+    assert rows == []
+
+
+def test_runs_rows_modal_missing_key_raises():
+    with pytest.raises(RuntimeError, match="MODAL_TOKEN"):
+        runs_rows_modal({}, ["2026-06"], run_cmd=_modal_run_cmd_single)
+
+
+def test_runs_rows_modal_cli_nonzero_rc_raises():
+    def run_cmd(cmd, **kwargs):
+        return _ModalProc(returncode=1, stderr="modal error")
+    with pytest.raises(RuntimeError, match="failed"):
+        runs_rows_modal(_MODAL_SECRETS, ["2026-06"], run_cmd=run_cmd)
+
+
+def test_runs_rows_modal_env_merge(monkeypatch):
+    """run_cmd receives env with MODAL_TOKEN_ID/SECRET merged into os.environ."""
+    captured_env = {}
+
+    def run_cmd(cmd, env=None, **kwargs):
+        captured_env.update(env or {})
+        return _ModalProc(stdout="[]")
+
+    monkeypatch.setenv("EXISTING_VAR", "existing_value")
+    runs_rows_modal(_MODAL_SECRETS, ["2026-06"], run_cmd=run_cmd)
+
+    assert captured_env.get("MODAL_TOKEN_ID") == "tid"
+    assert captured_env.get("MODAL_TOKEN_SECRET") == "sec"
+    assert captured_env.get("EXISTING_VAR") == "existing_value", (
+        "existing env vars must be preserved in the merged env"
+    )
+
+
+def test_runs_rows_modal_passes_validation():
+    """All produced rows pass _validate_gpu_runs_row."""
+    rows = runs_rows_modal(_MODAL_SECRETS, ["2026-06"], run_cmd=_modal_run_cmd_single)
+    for row in rows:
+        ingest_run._validate_gpu_runs_row(row)

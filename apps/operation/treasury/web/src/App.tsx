@@ -113,6 +113,12 @@ const INSIGHT_TABS: {
         icon: GenApiIcon,
     },
     {
+        id: "gpu",
+        label: "GPU",
+        note: "Time-based economics for rented GPU boxes: witnessed monthly rent allocated per deployment by fleet $/hr share, vs retained pollen on the models it serves - coverage, true unit cost, break-even volume, runway.",
+        icon: DatabaseIcon,
+    },
+    {
         id: "reconciliation",
         label: "Reconciliation",
         note: "One spend, three witnesses per vendor and month: transactions (bank cash), provider (their meter), pollen (our metering) - coverage flags unfunded months, calib exposes wrong registry unit costs.",
@@ -123,12 +129,6 @@ const INSIGHT_TABS: {
         label: "Credits",
         note: "Credit burn rate and runway per vendor: grants pooled vs witnessed credit burn, current burn rate, and the earlier of exhaustion or expiry - naive math, every caveat is a flag.",
         icon: ClockIcon,
-    },
-    {
-        id: "gpu",
-        label: "GPU",
-        note: "Time-based economics for rented GPU boxes: witnessed monthly rent allocated per deployment by fleet $/hr share, vs retained pollen on the models it serves - coverage, true unit cost, break-even volume, runway.",
-        icon: DatabaseIcon,
     },
 ] satisfies readonly DrawerItem<InsightTab>[];
 

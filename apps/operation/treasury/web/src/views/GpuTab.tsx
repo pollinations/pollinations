@@ -54,10 +54,7 @@ function coverageTone(value: number | null): string {
     return "";
 }
 
-function verdictChip(
-    verdict: GpuDeploymentRow["verdict"],
-    kind: GpuDeploymentRow["kind"],
-) {
+function verdictChip(verdict: GpuDeploymentRow["verdict"]) {
     if (!verdict) return null;
     if (verdict === "keep") {
         return (
@@ -74,10 +71,7 @@ function verdictChip(
         );
     }
     // idle-candidate
-    const title =
-        kind === "serverless"
-            ? "consider modal (serverless, $0 idle)"
-            : "consider modal (serverless, $0 idle)";
+    const title = "consider modal (serverless, $0 idle)";
     return (
         <Chip intent="danger" size="sm" title={title}>
             idle-candidate
@@ -214,7 +208,14 @@ export function GpuTab({
                                 className={GROUP_BORDER}
                                 {...headerProps("paidUsd")}
                             >
-                                paid ℗
+                                <HeaderHint
+                                    hint={{
+                                        meaning:
+                                            "pollen paid by users on this deployment's models (pack meter) — gross, before ecosystem shares. Source: pollen plane.",
+                                    }}
+                                >
+                                    paid ℗
+                                </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
@@ -382,7 +383,7 @@ export function GpuTab({
                                     )}
                                 </TableCell>
                                 <TableCell>
-                                    {verdictChip(row.verdict, row.kind)}
+                                    {verdictChip(row.verdict)}
                                 </TableCell>
                             </TableRow>
                         ))}

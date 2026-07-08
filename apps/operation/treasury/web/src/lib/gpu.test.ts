@@ -157,6 +157,106 @@ describe("runwayChips", () => {
     });
 });
 
+describe("gpuEconomics — unattributed pollen flag", () => {
+    // Vendor with groups claiming ["zimage"] + pollen rows for zimage AND flux.
+    // The group for zimage pods claims only "zimage"; "flux" is in no group's
+    // models list for runpod → it must appear in the unattributed flag on every
+    // row for that vendor+month, and flux's numbers must NOT appear in any row.
+    it("flags unclaimed pollen model on every row; its numbers stay out", () => {
+        const d: Data = {
+            ...base,
+            gpuFleet: JUNE_FLEET, // zimage + klein pods
+            providerMonthly: [
+                {
+                    month: "2026-06",
+                    vendor: "runpod",
+                    currency: "USD",
+                    category: "compute",
+                    credit: 0,
+                    paid: 1000,
+                    source: "api",
+                },
+            ],
+            pollenMonthly: [
+                {
+                    source: "tinybird",
+                    month: "2026-06",
+                    vendor: "runpod",
+                    model: "zimage",
+                    currency: "POLLEN",
+                    cost_paid: 0,
+                    cost_quests: 0,
+                    price_paid: 500,
+                    price_quests: 0,
+                    byop_paid: 0,
+                    byop_quests: 0,
+                    model_paid: 0,
+                    model_quests: 0,
+                    requests: 200000,
+                },
+                // flux: unclaimed model — 92 500 requests, ~$92 revenue
+                {
+                    source: "tinybird",
+                    month: "2026-06",
+                    vendor: "runpod",
+                    model: "flux",
+                    currency: "POLLEN",
+                    cost_paid: 0,
+                    cost_quests: 0,
+                    price_paid: 92,
+                    price_quests: 0,
+                    byop_paid: 0,
+                    byop_quests: 0,
+                    model_paid: 0,
+                    model_quests: 0,
+                    requests: 92500,
+                },
+            ],
+            revenueMonthly: [
+                {
+                    source: "stripe",
+                    month: "2026-06",
+                    currency: "USD",
+                    gross_amount: 10000,
+                    fees_amount: 500,
+                    refunds_amount: 0,
+                },
+            ],
+        };
+
+        const rows = gpuEconomics(d, "2026-06");
+
+        // Every row for runpod June must carry the unattributed flag for flux.
+        expect(rows.length).toBeGreaterThan(0);
+        for (const row of rows) {
+            expect(row.flags.some((f) => f.startsWith("unattributed:"))).toBe(
+                true,
+            );
+            expect(row.flags.find((f) => f.startsWith("unattributed:"))).toBe(
+                "unattributed: flux",
+            );
+        }
+
+        // flux's requests and paidUsd must NOT appear in any row's totals.
+        const totalRequests = rows.reduce((acc, r) => acc + r.requests, 0);
+        const totalPaidUsd = rows.reduce((acc, r) => acc + r.paidUsd, 0);
+        // Only zimage's 200 000 requests should be counted (klein has no pollen here)
+        expect(totalRequests).toBe(200000);
+        // Only zimage's $500 should be counted
+        expect(totalPaidUsd).toBeCloseTo(500, 2);
+    });
+
+    it("emits no unattributed flag when all pollen models are claimed", () => {
+        // All pollen models (zimage, klein) are in GPU_DEPLOYMENT_GROUPS for runpod.
+        const rows = gpuEconomics(data, "2026-06");
+        for (const row of rows) {
+            expect(row.flags.some((f) => f.startsWith("unattributed:"))).toBe(
+                false,
+            );
+        }
+    });
+});
+
 // --- Additional invariant tests (not in brief) ---
 
 describe("gpuEconomics invariants", () => {

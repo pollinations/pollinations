@@ -156,6 +156,19 @@ export function gpuEconomics(
     const result: GpuDeploymentRow[] = [];
 
     for (const vendor of GPU_VENDORS) {
+        // Pre-compute the set of models claimed by ANY deployment group for
+        // this vendor (union of all groups' models arrays). Used at the end of
+        // each month loop to flag pollen models that are not claimed anywhere —
+        // their revenue/requests are NOT added to any group (the flag is the
+        // signal; the operator decides mappings). Models:[] groups (modal,
+        // lambda-other) claim nothing, so all their pollen rows will flag —
+        // that is correct and intended (it tells us the mapping is missing).
+        const claimedModels = new Set<string>(
+            GPU_DEPLOYMENT_GROUPS.filter((g) => g.vendor === vendor).flatMap(
+                (g) => g.models,
+            ),
+        );
+
         // Step 1: build a per-month rent map (month → Σ toUsd) so that each
         // emitted month carries only its own bill, not the total across all
         // matched months (the critical cross-month bug: summing all months then
@@ -231,6 +244,28 @@ export function gpuEconomics(
         for (const month of months) {
             // Rent for this specific month only; null when no bill for this month.
             const vendorRentUsd: number | null = rentByMonth.get(month) ?? null;
+
+            // Compute unattributed pollen models: models present in pollenMonthly
+            // for this vendor+month that are NOT in claimedModels (the union of
+            // all GPU_DEPLOYMENT_GROUPS[vendor].models). Their requests/revenue
+            // are NOT added to any group row — the flag is the only signal.
+            const pollenModelsThisMonth = new Set(
+                data.pollenMonthly
+                    .filter(
+                        (r) =>
+                            r.vendor === vendor &&
+                            r.month === month &&
+                            (r.requests > 0 || r.price_paid > 0),
+                    )
+                    .map((r) => r.model),
+            );
+            const unattributedModels = [...pollenModelsThisMonth]
+                .filter((m) => !claimedModels.has(m))
+                .sort();
+            const unattributedFlag =
+                unattributedModels.length > 0
+                    ? `unattributed: ${unattributedModels.join(", ")}`
+                    : null;
             // Step 2: fleet shares for this month.
             const fleetInMonth = data.gpuFleet.filter(
                 (r) =>
@@ -250,6 +285,7 @@ export function gpuEconomics(
                     flags.push("no fleet visibility");
                     flags.push("hybrid: AI Endpoints + instance");
                 }
+                if (unattributedFlag) flags.push(unattributedFlag);
 
                 const pollenRows = data.pollenMonthly.filter(
                     (r) => r.vendor === vendor && r.month === month,
@@ -411,6 +447,7 @@ export function gpuEconomics(
 
                 const flags: string[] = [];
                 if (isUnmapped) flags.push("unmapped fleet");
+                if (unattributedFlag) flags.push(unattributedFlag);
 
                 result.push({
                     group: groupName,

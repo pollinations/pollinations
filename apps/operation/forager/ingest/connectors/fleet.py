@@ -1,7 +1,10 @@
-"""GPU fleet snapshot connectors → gpu_fleet (append-only).
+"""GPU fleet live-snapshot probe (runway witness only — no datasource).
 
-One row per RUNNING pod/instance per vendor per run. Snapshots are the
-allocation + runway witness only — rent truth stays in provider_monthly.
+One row per RUNNING pod/instance per vendor per probe. Consumed by
+`refresh_gpu_runs`, which calls `snapshot_all` purely to compute the
+`gpu_runway:<vendor>` statuses + 🚨 alarm — the rows are NOT written to any
+datasource (the old gpu_fleet datasource was retired in the gpu_runs
+cutover). Rent truth stays in provider_monthly; per-run cost in gpu_runs.
 balance_usd is the vendor prepaid balance at recorded_at, repeated on the
 vendor's rows (None where the provider has no balance API: lambda, modal).
 ovhcloud contributes no rows: the consumer key is scoped to /me/credit and

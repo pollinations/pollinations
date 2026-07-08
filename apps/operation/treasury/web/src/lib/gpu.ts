@@ -285,7 +285,9 @@ export function gpuEconomics(
                     flags.push("no fleet visibility");
                     flags.push("hybrid: AI Endpoints + instance");
                 }
-                if (unattributedFlag) flags.push(unattributedFlag);
+                // Do NOT push unattributedFlag here: this path aggregates ALL
+                // pollen rows for the vendor (lines below), so no model is
+                // excluded — the flag would be contradictory.
 
                 const pollenRows = data.pollenMonthly.filter(
                     (r) => r.vendor === vendor && r.month === month,

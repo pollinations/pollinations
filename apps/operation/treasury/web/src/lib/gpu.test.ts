@@ -255,6 +255,65 @@ describe("gpuEconomics — unattributed pollen flag", () => {
             );
         }
     });
+
+    it("vendor-total fallback row (no fleet) does NOT carry unattributed flag even with unclaimed models", () => {
+        // ovhcloud has no fleet → goes through the fallback path which
+        // aggregates ALL pollen rows. "flux" is not in any ovhcloud group but
+        // since all pollen is included in the row the flag is contradictory
+        // and must NOT appear.
+        const d: Data = {
+            ...base,
+            gpuFleet: [],
+            providerMonthly: [
+                {
+                    month: "2026-06",
+                    vendor: "ovhcloud",
+                    currency: "USD",
+                    category: "compute",
+                    credit: 500,
+                    paid: 0,
+                    source: "api",
+                },
+            ],
+            pollenMonthly: [
+                {
+                    source: "tinybird",
+                    month: "2026-06",
+                    vendor: "ovhcloud",
+                    model: "flux",
+                    currency: "POLLEN",
+                    cost_paid: 0,
+                    cost_quests: 0,
+                    price_paid: 200,
+                    price_quests: 0,
+                    byop_paid: 0,
+                    byop_quests: 0,
+                    model_paid: 0,
+                    model_quests: 0,
+                    requests: 50000,
+                },
+            ],
+            revenueMonthly: [
+                {
+                    source: "stripe",
+                    month: "2026-06",
+                    currency: "USD",
+                    gross_amount: 10000,
+                    fees_amount: 500,
+                    refunds_amount: 0,
+                },
+            ],
+        };
+        const rows = gpuEconomics(d, "2026-06");
+        expect(rows.length).toBe(1);
+        // Fallback row aggregates ALL pollen — no model is excluded, so no flag.
+        expect(rows[0].flags.some((f) => f.startsWith("unattributed:"))).toBe(
+            false,
+        );
+        // The pollen revenue and requests ARE included in the fallback row.
+        expect(rows[0].requests).toBe(50000);
+        expect(rows[0].paidUsd).toBeCloseTo(200, 2);
+    });
 });
 
 // --- Additional invariant tests (not in brief) ---

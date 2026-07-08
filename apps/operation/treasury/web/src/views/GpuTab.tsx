@@ -359,7 +359,7 @@ export function GpuTab({
                                 >
                                     {row.coverage == null
                                         ? "–"
-                                        : fmtPct(row.coverage)}
+                                        : fmtPct(row.coverage * 100)}
                                 </TableCell>
                                 <TableCell align="right">
                                     {row.effUsdPerReq == null

@@ -13,6 +13,7 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
+import { fmtNumber } from "../lib/format";
 import type { Data, GrantRow } from "../types";
 
 // Sentinel from the grants datasource: 1970-01-01 = no expiry.
@@ -91,7 +92,7 @@ export function GrantsTab({
                         <TableRow key={key}>
                             <TableCell>{row.vendor}</TableCell>
                             <TableCell>{row.label || "–"}</TableCell>
-                            <TableCell>{row.granted}</TableCell>
+                            <TableCell>{fmtNumber(row.granted)}</TableCell>
                             <TableCell>{row.currency}</TableCell>
                             <TableCell>{row.start_date}</TableCell>
                             <TableCell>

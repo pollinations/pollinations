@@ -14,7 +14,7 @@ import {
     withUniqueRowKeys,
 } from "../components/DataTable";
 import { SourceCell } from "../components/Provenance";
-import { fmtPeriod } from "../lib/format";
+import { fmtNumber, fmtPeriod } from "../lib/format";
 import type { Data, RevenueMonthlyRow } from "../types";
 
 export function RevenueTab({ data }: { data: Data }) {
@@ -74,9 +74,11 @@ export function RevenueTab({ data }: { data: Data }) {
                                 <SourceCell sources={[row.source]} />
                             </TableCell>
                             <TableCell>{row.currency}</TableCell>
-                            <TableCell>{row.gross_amount}</TableCell>
-                            <TableCell>{row.fees_amount}</TableCell>
-                            <TableCell>{row.refunds_amount}</TableCell>
+                            <TableCell>{fmtNumber(row.gross_amount)}</TableCell>
+                            <TableCell>{fmtNumber(row.fees_amount)}</TableCell>
+                            <TableCell>
+                                {fmtNumber(row.refunds_amount)}
+                            </TableCell>
                         </TableRow>
                     ))}
                 </TableBody>

@@ -14,7 +14,7 @@ import {
     withUniqueRowKeys,
 } from "../components/DataTable";
 import { SourceCell } from "../components/Provenance";
-import { fmtPeriod } from "../lib/format";
+import { fmtNumber, fmtPeriod } from "../lib/format";
 import { isYearFilter, matchesMonth } from "../lib/months";
 import type { Data, PollenMonthlyRow } from "../types";
 
@@ -220,14 +220,30 @@ export function PollenTab({
                                 <TableCell>{row.vendor}</TableCell>
                                 <TableCell>{row.model}</TableCell>
                                 <TableCell>{row.currency}</TableCell>
-                                <TableCell>{row.cost_paid}</TableCell>
-                                <TableCell>{row.cost_quests}</TableCell>
-                                <TableCell>{row.price_paid}</TableCell>
-                                <TableCell>{row.price_quests}</TableCell>
-                                <TableCell>{row.byop_paid}</TableCell>
-                                <TableCell>{row.byop_quests}</TableCell>
-                                <TableCell>{row.model_paid}</TableCell>
-                                <TableCell>{row.model_quests}</TableCell>
+                                <TableCell>
+                                    {fmtNumber(row.cost_paid)}
+                                </TableCell>
+                                <TableCell>
+                                    {fmtNumber(row.cost_quests)}
+                                </TableCell>
+                                <TableCell>
+                                    {fmtNumber(row.price_paid)}
+                                </TableCell>
+                                <TableCell>
+                                    {fmtNumber(row.price_quests)}
+                                </TableCell>
+                                <TableCell>
+                                    {fmtNumber(row.byop_paid)}
+                                </TableCell>
+                                <TableCell>
+                                    {fmtNumber(row.byop_quests)}
+                                </TableCell>
+                                <TableCell>
+                                    {fmtNumber(row.model_paid)}
+                                </TableCell>
+                                <TableCell>
+                                    {fmtNumber(row.model_quests)}
+                                </TableCell>
                             </TableRow>
                         ))}
                     </TableBody>

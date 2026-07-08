@@ -14,7 +14,7 @@ import {
     withUniqueRowKeys,
 } from "../components/DataTable";
 import { SourceCell } from "../components/Provenance";
-import { fmtPeriod } from "../lib/format";
+import { fmtNumber, fmtPeriod } from "../lib/format";
 import { isYearFilter, matchesMonth } from "../lib/months";
 import type { Data, ProviderMonthlyRow } from "../types";
 
@@ -153,8 +153,8 @@ export function ProviderTab({
                                 <SourceCell sources={[row.source]} />
                             </TableCell>
                             <TableCell>{row.vendor}</TableCell>
-                            <TableCell>{row.credit}</TableCell>
-                            <TableCell>{row.paid}</TableCell>
+                            <TableCell>{fmtNumber(row.credit)}</TableCell>
+                            <TableCell>{fmtNumber(row.paid)}</TableCell>
                             <TableCell>{row.currency}</TableCell>
                         </TableRow>
                     ))}

@@ -14,7 +14,7 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
-import { fmtPeriod } from "../lib/format";
+import { fmtNumber, fmtPeriod } from "../lib/format";
 import { isYearFilter, matchesMonth } from "../lib/months";
 import type { Data, TransactionRow } from "../types";
 
@@ -149,7 +149,9 @@ export function TransactionsTab({
                                     )}
                                 </TableCell>
                                 <TableCell>{row.category}</TableCell>
-                                <TableCell>{row.charged_amount}</TableCell>
+                                <TableCell>
+                                    {fmtNumber(row.charged_amount)}
+                                </TableCell>
                                 <TableCell>{row.charged_currency}</TableCell>
                             </TableRow>
                         ),

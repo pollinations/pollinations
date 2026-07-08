@@ -72,7 +72,7 @@ function formatFourDigits(value: number): string {
     if (value === 0) return "0";
 
     if (value < 1) {
-        const truncated = Math.trunc(value * 1000) / 1000;
+        const truncated = truncateDecimals(value, 3);
         return new Intl.NumberFormat("en-US", {
             maximumFractionDigits: 3,
         }).format(truncated);
@@ -80,11 +80,21 @@ function formatFourDigits(value: number): string {
 
     const integerDigits = Math.floor(value).toString().length;
     const decimals = Math.max(0, 4 - integerDigits);
-    const scale = 10 ** decimals;
-    const truncated = Math.trunc(value * scale) / scale;
+    const truncated = truncateDecimals(value, decimals);
     return new Intl.NumberFormat("en-US", {
         maximumFractionDigits: decimals,
     }).format(truncated);
+}
+
+function truncateDecimals(value: number, decimals: number): number {
+    if (decimals <= 0) return Math.trunc(value);
+    const text = String(value);
+    if (!text.includes(".") || text.includes("e")) {
+        const scale = 10 ** decimals;
+        return Math.trunc(value * scale) / scale;
+    }
+    const [integer, fraction = ""] = text.split(".");
+    return Number(`${integer}.${fraction.slice(0, decimals)}`);
 }
 
 // Insight money: adaptive precision, en dash for unknown. Uses U+2212 minus so
@@ -98,6 +108,12 @@ export function fmtUsd(value: number | null | undefined): string {
             : `<$${magnitude.slice(1)}`;
     }
     return value < 0 ? `−$${magnitude}` : `$${magnitude}`;
+}
+
+export function fmtNumber(value: number | null | undefined): string {
+    if (value == null || !Number.isFinite(value)) return "–";
+    const magnitude = fmtSmartNumber(Math.abs(value));
+    return value < 0 ? `−${magnitude}` : magnitude;
 }
 
 export function fmtPct(value: number | null): string {

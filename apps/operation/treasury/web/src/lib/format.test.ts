@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
     fmtMonthYear,
     fmtMultiplier,
+    fmtNumber,
     fmtPct,
     fmtPeriod,
     fmtSmartNumber,
@@ -86,6 +87,21 @@ describe("fmtUsd", () => {
         expect(fmtUsd(null)).toBe("–");
         expect(fmtUsd(undefined)).toBe("–");
         expect(fmtUsd(Number.NaN)).toBe("–");
+    });
+});
+
+describe("fmtNumber", () => {
+    it("renders plain numbers with the shared four-digit precision", () => {
+        expect(fmtNumber(60.629999999999995)).toBe("60.62");
+        expect(fmtNumber(1216.9900000000002)).toBe("1,216");
+        expect(fmtNumber(12000)).toBe("12k");
+        expect(fmtNumber(-738.1800000000001)).toBe("−738.1");
+    });
+
+    it("renders missing values as an en dash", () => {
+        expect(fmtNumber(null)).toBe("–");
+        expect(fmtNumber(undefined)).toBe("–");
+        expect(fmtNumber(Number.NaN)).toBe("–");
     });
 });
 

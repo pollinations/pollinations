@@ -51,7 +51,7 @@ export function fmtSmartNumber(
     value: number,
     {
         compactAt = 10_000,
-        tinyAt = 0.001,
+        tinyAt = 0.01,
     }: { compactAt?: number; tinyAt?: number } = {},
 ): string {
     const abs = Math.abs(value);
@@ -72,14 +72,14 @@ function formatFourDigits(value: number): string {
     if (value === 0) return "0";
 
     if (value < 1) {
-        const truncated = truncateDecimals(value, 3);
+        const truncated = truncateDecimals(value, 2);
         return new Intl.NumberFormat("en-US", {
-            maximumFractionDigits: 3,
+            maximumFractionDigits: 2,
         }).format(truncated);
     }
 
     const integerDigits = Math.floor(value).toString().length;
-    const decimals = Math.max(0, 4 - integerDigits);
+    const decimals = Math.min(2, Math.max(0, 4 - integerDigits));
     const truncated = truncateDecimals(value, decimals);
     return new Intl.NumberFormat("en-US", {
         maximumFractionDigits: decimals,

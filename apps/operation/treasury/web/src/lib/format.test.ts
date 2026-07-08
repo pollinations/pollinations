@@ -41,28 +41,28 @@ describe("fmtSmartNumber", () => {
         expect(fmtSmartNumber(20.7)).toBe("20.7");
         expect(fmtSmartNumber(20.74)).toBe("20.74");
         expect(fmtSmartNumber(20.725)).toBe("20.72");
-        expect(fmtSmartNumber(1.234567)).toBe("1.234");
-        expect(fmtSmartNumber(0.137)).toBe("0.137");
+        expect(fmtSmartNumber(1.234567)).toBe("1.23");
+        expect(fmtSmartNumber(0.137)).toBe("0.13");
         expect(fmtSmartNumber(0.06011)).toBe("0.06");
-        expect(fmtSmartNumber(0.05667)).toBe("0.056");
-        expect(fmtSmartNumber(0.03609)).toBe("0.036");
-        expect(fmtSmartNumber(0.005732)).toBe("0.005");
-        expect(fmtSmartNumber(0.00123456)).toBe("0.001");
-        expect(fmtSmartNumber(0.2061)).toBe("0.206");
-        expect(fmtSmartNumber(0.2499)).toBe("0.249");
-        expect(fmtSmartNumber(0.2515)).toBe("0.251");
+        expect(fmtSmartNumber(0.05667)).toBe("0.05");
+        expect(fmtSmartNumber(0.03609)).toBe("0.03");
+        expect(fmtSmartNumber(0.005732)).toBe("<0.01");
+        expect(fmtSmartNumber(0.00123456)).toBe("<0.01");
+        expect(fmtSmartNumber(0.2061)).toBe("0.2");
+        expect(fmtSmartNumber(0.2499)).toBe("0.24");
+        expect(fmtSmartNumber(0.2515)).toBe("0.25");
     });
 
     it("uses compact suffixes for large numbers", () => {
         expect(fmtSmartNumber(12409.6)).toBe("12.4k");
-        expect(fmtSmartNumber(1234567)).toBe("1.234M");
-        expect(fmtSmartNumber(1234567890)).toBe("1.234B");
-        expect(fmtSmartNumber(1234567890123)).toBe("1.234T");
+        expect(fmtSmartNumber(1234567)).toBe("1.23M");
+        expect(fmtSmartNumber(1234567890)).toBe("1.23B");
+        expect(fmtSmartNumber(1234567890123)).toBe("1.23T");
     });
 
     it("uses a readable floor for tiny nonzero values", () => {
-        expect(fmtSmartNumber(0.000000000000000444)).toBe("<0.001");
-        expect(fmtSmartNumber(0.0009)).toBe("<0.001");
+        expect(fmtSmartNumber(0.000000000000000444)).toBe("<0.01");
+        expect(fmtSmartNumber(0.0009)).toBe("<0.01");
     });
 });
 
@@ -77,10 +77,10 @@ describe("fmtUsd", () => {
     });
 
     it("renders tiny dollars with a less-than floor", () => {
-        expect(fmtUsd(0.000000000000000444)).toBe("<$0.001");
-        expect(fmtUsd(-0.0009)).toBe("−<$0.001");
-        expect(fmtUsd(-0.05667)).toBe("−$0.056");
-        expect(fmtUsd(-0.03609)).toBe("−$0.036");
+        expect(fmtUsd(0.000000000000000444)).toBe("<$0.01");
+        expect(fmtUsd(-0.0009)).toBe("−<$0.01");
+        expect(fmtUsd(-0.05667)).toBe("−$0.05");
+        expect(fmtUsd(-0.03609)).toBe("−$0.03");
     });
 
     it("renders missing values as an en dash", () => {
@@ -107,9 +107,9 @@ describe("fmtNumber", () => {
 
 describe("fmtPct", () => {
     it("renders signed adaptive percentages", () => {
-        expect(fmtPct(4.66666)).toBe("+4.666%");
+        expect(fmtPct(4.66666)).toBe("+4.66%");
         expect(fmtPct(-30.714)).toBe("−30.71%");
-        expect(fmtPct(0.0009)).toBe("+<0.001%");
+        expect(fmtPct(0.0009)).toBe("+<0.01%");
     });
 
     it("renders null as an en dash", () => {
@@ -121,7 +121,7 @@ describe("fmtUnsignedPct", () => {
     it("renders unsigned adaptive percentages", () => {
         expect(fmtUnsignedPct(99.999)).toBe("99.99%");
         expect(fmtUnsignedPct(12345.6)).toBe("12.34k%");
-        expect(fmtUnsignedPct(0.0009)).toBe("<0.001%");
+        expect(fmtUnsignedPct(0.0009)).toBe("<0.01%");
     });
 
     it("renders missing values as an en dash", () => {
@@ -132,8 +132,8 @@ describe("fmtUnsignedPct", () => {
 
 describe("fmtMultiplier", () => {
     it("renders adaptive multipliers", () => {
-        expect(fmtMultiplier(1.09876)).toBe("1.098×");
-        expect(fmtMultiplier(0.0009)).toBe("<0.001×");
+        expect(fmtMultiplier(1.09876)).toBe("1.09×");
+        expect(fmtMultiplier(0.0009)).toBe("<0.01×");
     });
 
     it("renders null and non-finite as an en dash", () => {

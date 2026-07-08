@@ -47,6 +47,7 @@ import {
     vendorVocabularyRunIssues,
 } from "./lib/vendor-vocabulary";
 import type { Data } from "./types";
+import { BillingTab } from "./views/BillingTab";
 import { CreditsTab } from "./views/CreditsTab";
 import { FleetTab } from "./views/FleetTab";
 import { GpuTab } from "./views/GpuTab";
@@ -66,7 +67,8 @@ type Tab =
     | "provider"
     | "grants"
     | "revenue"
-    | "fleet";
+    | "fleet"
+    | "billing";
 type TreasurySection = "insights" | "raw";
 type InsightTab =
     | "pnl"
@@ -196,6 +198,15 @@ const TABS: {
         note: "GPU fleet snapshots: one row per running pod/instance per forager run, with $/hr and prepaid balance where the vendor exposes it. Rent truth stays in Provider - this is the allocation and runway witness.",
         icon: DatabaseIcon,
         rows: (data) => data.gpuFleet.length,
+    },
+    {
+        id: "billing",
+        label: "Billing",
+        codes: ["API", "CLI", "HC"],
+        pipe: "gpu_billing_api",
+        note: "GPU deployment audit ledger: one row per deployment per month with the billed amount — API/CLI-backfilled where the provider keeps history, manual rows recorded from invoices elsewhere.",
+        icon: DatabaseIcon,
+        rows: (data) => data.gpuBilling.length,
     },
 ];
 
@@ -657,6 +668,8 @@ function vendorOptionsForTab(data: Data | null, tab: Tab) {
         for (const row of data.grants) add(row.vendor);
     } else if (tab === "fleet") {
         for (const row of data.gpuFleet) add(row.vendor);
+    } else if (tab === "billing") {
+        for (const row of data.gpuBilling) add(row.vendor);
     }
 
     return ["all", ...[...vendors].sort((a, b) => a.localeCompare(b))];
@@ -1049,6 +1062,13 @@ export default function App() {
                         )}
                         {data && section === "raw" && tab === "fleet" && (
                             <FleetTab
+                                data={data}
+                                month={activeMonth}
+                                vendor={vendor}
+                            />
+                        )}
+                        {data && section === "raw" && tab === "billing" && (
+                            <BillingTab
                                 data={data}
                                 month={activeMonth}
                                 vendor={vendor}

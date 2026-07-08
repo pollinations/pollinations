@@ -100,7 +100,7 @@ describe("gpuEconomics — bill allocation invariant", () => {
                     month: "2026-06",
                     vendor: "runpod",
                     currency: "USD",
-                    category: "compute",
+                    category: "compute-gpu",
                     credit: 1000,
                     paid: 0,
                     source: "api",
@@ -144,7 +144,7 @@ describe("gpuEconomics — bill allocation invariant", () => {
                     month: "2026-06",
                     vendor: "runpod",
                     currency: "USD",
-                    category: "compute",
+                    category: "compute-gpu",
                     credit: 100,
                     paid: 0,
                     source: "api",
@@ -193,7 +193,7 @@ describe("gpuEconomics — bill allocation invariant", () => {
                     month: "2026-06",
                     vendor: "runpod",
                     currency: "USD",
-                    category: "compute",
+                    category: "compute-gpu",
                     credit: 100,
                     paid: 0,
                     source: "api",
@@ -225,7 +225,7 @@ describe("gpuEconomics — bill allocation invariant", () => {
                     month: "2026-06",
                     vendor: "runpod",
                     currency: "USD",
-                    category: "compute",
+                    category: "compute-gpu",
                     credit: 1000,
                     paid: 0,
                     source: "api",
@@ -303,7 +303,7 @@ describe("gpuEconomics — no-fallback error states", () => {
                     month: "2026-05",
                     vendor: "runpod",
                     currency: "USD",
-                    category: "compute",
+                    category: "compute-gpu",
                     credit: 500,
                     paid: 0,
                     source: "api",
@@ -312,7 +312,7 @@ describe("gpuEconomics — no-fallback error states", () => {
                     month: "2026-06",
                     vendor: "runpod",
                     currency: "USD",
-                    category: "compute",
+                    category: "compute-gpu",
                     credit: 300,
                     paid: 0,
                     source: "api",
@@ -346,7 +346,7 @@ describe("gpuEconomics — no-fallback error states", () => {
                     month: "2026-06",
                     vendor: "runpod",
                     currency: "USD",
-                    category: "compute",
+                    category: "compute-gpu",
                     credit: 100,
                     paid: 0,
                     source: "api",
@@ -379,7 +379,7 @@ describe("gpuEconomics — verdict + isolation", () => {
                     month: "2026-06",
                     vendor: "modal",
                     currency: "USD",
-                    category: "compute",
+                    category: "compute-gpu",
                     credit: 100,
                     paid: 0,
                     source: "api",
@@ -420,7 +420,7 @@ describe("gpuEconomics — verdict + isolation", () => {
                     month: "2026-05",
                     vendor: "runpod",
                     currency: "USD",
-                    category: "compute",
+                    category: "compute-gpu",
                     credit: 100,
                     paid: 0,
                     source: "api",
@@ -429,7 +429,7 @@ describe("gpuEconomics — verdict + isolation", () => {
                     month: "2026-06",
                     vendor: "runpod",
                     currency: "USD",
-                    category: "compute",
+                    category: "compute-gpu",
                     credit: 200,
                     paid: 0,
                     source: "api",
@@ -483,7 +483,7 @@ describe("gpuEconomics — verdict + isolation", () => {
                     month: "2026-06",
                     vendor: "runpod",
                     currency: "USD",
-                    category: "compute",
+                    category: "compute-gpu",
                     credit: 3,
                     paid: 0,
                     source: "api",
@@ -524,7 +524,7 @@ describe("gpuEconomics — verdict + isolation", () => {
                     month: "2026-06",
                     vendor: "runpod",
                     currency: "USD",
-                    category: "compute",
+                    category: "compute-gpu",
                     credit: 750,
                     paid: 0,
                     source: "api",
@@ -566,7 +566,7 @@ describe("gpuEconomics — zero-cost runs", () => {
                     month: "2026-06",
                     vendor: "lambda",
                     currency: "USD",
-                    category: "compute",
+                    category: "compute-gpu",
                     credit: 200,
                     paid: 0,
                     source: "api",
@@ -601,8 +601,52 @@ describe("gpuEconomics — zero-cost runs", () => {
     });
 });
 
-describe("gpuEconomics — vendor scope (GPU_VENDORS only)", () => {
-    it("excludes ovhcloud (mixed GPU + inference + infra bill) from gpuEconomics but keeps it in gpuByType; a GPU_VENDORS vendor with a bill and no runs still surfaces a NO_RUNS row", () => {
+describe("gpuEconomics — vendor scope (compute-gpu witness)", () => {
+    it("a vendor whose only provider row is plain `compute` (not compute-gpu) and has no runs is not iterated", () => {
+        const d: Data = {
+            ...base,
+            providerMonthly: [
+                {
+                    month: "2026-06",
+                    vendor: "openai",
+                    currency: "USD",
+                    category: "compute",
+                    credit: 500,
+                    paid: 0,
+                    source: "api",
+                },
+            ],
+            revenueMonthly: REVENUE_JUNE,
+        };
+        const econRows = gpuEconomics(d, "2026-06");
+        expect(econRows.some((r) => r.vendor === "openai")).toBe(false);
+    });
+
+    it("a compute-gpu provider row is witnessed (lambda, no runs → (lambda total) + NO_RUNS_FLAG)", () => {
+        const d: Data = {
+            ...base,
+            providerMonthly: [
+                {
+                    month: "2026-06",
+                    vendor: "lambda",
+                    currency: "USD",
+                    category: "compute-gpu",
+                    credit: 150,
+                    paid: 0,
+                    source: "api",
+                },
+            ],
+            revenueMonthly: REVENUE_JUNE,
+        };
+        const econRows = gpuEconomics(d, "2026-06");
+        const lambdaRow = econRows.find((r) => r.vendor === "lambda");
+        expect(lambdaRow).toBeDefined();
+        expect(lambdaRow?.group).toBe("(lambda total)");
+        expect(lambdaRow?.flags).toContain(NO_RUNS_FLAG);
+        expect(lambdaRow?.rentUsd).toBeCloseTo(150, 4);
+    });
+
+    it("OVH (mixed bill) contributes only its compute-gpu slice; inference + infra rows are ignored; gpuByType is unaffected", () => {
         const d: Data = {
             ...base,
             providerMonthly: [
@@ -610,17 +654,26 @@ describe("gpuEconomics — vendor scope (GPU_VENDORS only)", () => {
                     month: "2026-06",
                     vendor: "ovhcloud",
                     currency: "USD",
-                    category: "compute",
-                    credit: 500,
+                    category: "compute-gpu",
+                    credit: 1856.8,
                     paid: 0,
                     source: "api",
                 },
                 {
                     month: "2026-06",
-                    vendor: "lambda",
+                    vendor: "ovhcloud",
                     currency: "USD",
                     category: "compute",
-                    credit: 150,
+                    credit: 962,
+                    paid: 0,
+                    source: "api",
+                },
+                {
+                    month: "2026-06",
+                    vendor: "ovhcloud",
+                    currency: "USD",
+                    category: "infra",
+                    credit: 59,
                     paid: 0,
                     source: "api",
                 },
@@ -629,7 +682,7 @@ describe("gpuEconomics — vendor scope (GPU_VENDORS only)", () => {
                 mkRun({
                     vendor: "ovhcloud",
                     month: "2026-06",
-                    model: "zimage",
+                    model: "",
                     gpu: "RTX 4090",
                     hours: 5,
                     cost: 40,
@@ -639,18 +692,38 @@ describe("gpuEconomics — vendor scope (GPU_VENDORS only)", () => {
         };
 
         const econRows = gpuEconomics(d, "2026-06");
-        expect(econRows.some((r) => r.vendor === "ovhcloud")).toBe(false);
-        const lambdaRow = econRows.find((r) => r.vendor === "lambda");
-        expect(lambdaRow).toBeDefined();
-        expect(lambdaRow?.group).toBe("(lambda total)");
-        expect(lambdaRow?.flags).toContain(NO_RUNS_FLAG);
-        expect(lambdaRow?.rentUsd).toBeCloseTo(150, 4);
+        const ovhRows = econRows.filter((r) => r.vendor === "ovhcloud");
+        expect(ovhRows.length).toBeGreaterThan(0);
+        expect(ovhRows.every((r) => r.group === "(unmapped)")).toBe(true);
+        expect(ovhRows.some((r) => r.flags.includes(UNMAPPED_FLAG))).toBe(true);
+        const totalRent = ovhRows.reduce((acc, r) => acc + (r.rentUsd ?? 0), 0);
+        expect(totalRent).toBe(1856.8); // not 1856.80+962+59
 
         const typeRows = gpuByType(d, "2026-06");
         const ovhType = typeRows.find((r) => r.vendor === "ovhcloud");
         expect(ovhType).toBeDefined();
         expect(ovhType?.gpu).toBe("RTX 4090");
         expect(ovhType?.costUsd).toBeCloseTo(40, 4);
+    });
+
+    it("a vendor with runs but no compute-gpu provider row surfaces null rent + NO_BILL_FLAG", () => {
+        const d: Data = {
+            ...base,
+            gpuRuns: [
+                mkRun({
+                    vendor: "runpod",
+                    month: "2026-06",
+                    model: "zimage",
+                    cost: 40,
+                }),
+            ],
+            revenueMonthly: REVENUE_JUNE,
+        };
+        const rows = gpuEconomics(d, "2026-06");
+        const zimage = rows.find((r) => r.group === "zimage");
+        expect(zimage).toBeDefined();
+        expect(zimage?.rentUsd).toBeNull();
+        expect(zimage?.flags).toContain(NO_BILL_FLAG);
     });
 });
 

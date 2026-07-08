@@ -1,8 +1,7 @@
 import type { Data } from "../types";
 import { toUsd } from "./fx";
-import { creditRunway, globalNetRatio, isInfraRow } from "./insights";
+import { creditRunway, globalNetRatio } from "./insights";
 import { matchesMonth } from "./months";
-import { GPU_VENDORS } from "./vendor-vocabulary";
 
 // kind: "gpu" = rented box (idle risk, time-based); "serverless" = scales to
 // zero (per-run billing inside the same vendor bill). It only drives the
@@ -79,10 +78,10 @@ function splitModels(model: string): string[] {
 // Derive per-model GPU economics from data.gpuRuns. The provider bill is the
 // rent witness; run costs are only allocation weights.
 //
-// Per vendor (GPU_VENDORS only — vendors whose provider bill is a clean,
-// pure-GPU rent witness; e.g. ovhcloud is excluded because its bill mixes
-// GPU rent with AI-Endpoints inference and infra), per month (union of
-// bill-months and run-months):
+// Per vendor (vendors with a compute-gpu provider row or a gpu_run in scope
+// — the rent witness is the vendor's compute-gpu provider slice; a mixed-bill
+// vendor like ovhcloud contributes only that slice, its inference/infra rows
+// excluded), per month (union of bill-months and run-months):
 //   1. Expand runs → per-model cost. A run's cost is split across the models
 //      its box serves by each model's pollen request share (even split when no
 //      pollen), remainder-to-last so Σ splits == run cost exactly.
@@ -100,15 +99,33 @@ export function gpuEconomics(
     const runsInScope = data.gpuRuns.filter((r) =>
         matchesMonth(r.month, monthFilter),
     );
-    const vendors = [...GPU_VENDORS].sort();
+
+    // Iterate vendors that either bill a GPU-rent slice (a compute-gpu
+    // provider row) or ran GPU boxes this filter. compute-gpu is written at
+    // ingest (forager remaps pure-GPU vendors' compute rows; OVH's GPU slice
+    // is a manual compute-gpu row). A vendor whose only provider rows are
+    // plain compute (API inference) or infra is NOT a GPU-economics vendor.
+    const vendorSet = new Set<string>();
+    for (const r of data.providerMonthly) {
+        if (
+            r.category === "compute-gpu" &&
+            matchesMonth(r.month, monthFilter)
+        ) {
+            vendorSet.add(r.vendor);
+        }
+    }
+    for (const r of runsInScope) vendorSet.add(r.vendor);
+    const vendors = [...vendorSet].sort();
 
     for (const vendor of vendors) {
-        // Rent witness: month → Σ toUsd(credit+paid) over compute provider rows.
+        // Rent witness: month → Σ toUsd(credit+paid) over compute-gpu provider
+        // rows (the GPU-rent slice; a vendor's plain-compute/infra rows are
+        // not GPU rent).
         const rentByMonth = new Map<string, number>();
         for (const r of data.providerMonthly) {
             if (r.vendor !== vendor) continue;
             if (!matchesMonth(r.month, monthFilter)) continue;
-            if (isInfraRow(r)) continue;
+            if (r.category !== "compute-gpu") continue;
             rentByMonth.set(
                 r.month,
                 (rentByMonth.get(r.month) ?? 0) +

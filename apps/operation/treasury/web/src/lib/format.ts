@@ -131,3 +131,14 @@ export function fmtMultiplier(value: number | null): string {
     if (value == null || !Number.isFinite(value)) return "–";
     return `${fmtSmartNumber(value)}×`;
 }
+
+// 4-decimal dollar format for tiny unit costs (e.g. eff $/req).
+export function fmtUsd4(value: number | null | undefined): string {
+    if (value == null || !Number.isFinite(value)) return "–";
+    const abs = Math.abs(value);
+    const formatted = new Intl.NumberFormat("en-US", {
+        minimumFractionDigits: 4,
+        maximumFractionDigits: 4,
+    }).format(abs);
+    return value < 0 ? `−$${formatted}` : `$${formatted}`;
+}

@@ -49,6 +49,7 @@ import {
 import type { Data } from "./types";
 import { CreditsTab } from "./views/CreditsTab";
 import { FleetTab } from "./views/FleetTab";
+import { GpuTab } from "./views/GpuTab";
 import { GrantsTab } from "./views/GrantsTab";
 import { ModelsTab } from "./views/ModelsTab";
 import { PnlTab } from "./views/PnlTab";
@@ -67,7 +68,13 @@ type Tab =
     | "revenue"
     | "fleet";
 type TreasurySection = "insights" | "raw";
-type InsightTab = "pnl" | "vendors" | "models" | "reconciliation" | "credits";
+type InsightTab =
+    | "pnl"
+    | "vendors"
+    | "models"
+    | "reconciliation"
+    | "credits"
+    | "gpu";
 
 const logoMask: CSSProperties = {
     WebkitMask: `url(${logoUrl}) center / contain no-repeat`,
@@ -116,6 +123,12 @@ const INSIGHT_TABS: {
         label: "Credits",
         note: "Credit burn rate and runway per vendor: grants pooled vs witnessed credit burn, current burn rate, and the earlier of exhaustion or expiry - naive math, every caveat is a flag.",
         icon: ClockIcon,
+    },
+    {
+        id: "gpu",
+        label: "GPU",
+        note: "Time-based economics for rented GPU boxes: witnessed monthly rent allocated per deployment by fleet $/hr share, vs retained pollen on the models it serves - coverage, true unit cost, break-even volume, runway.",
+        icon: DatabaseIcon,
     },
 ] satisfies readonly DrawerItem<InsightTab>[];
 
@@ -603,6 +616,25 @@ function viewInfoContent(
             </span>
         );
     }
+    if (insightTab === "gpu") {
+        return (
+            <span className="block max-w-72">
+                <strong>GPU Economics</strong>
+                <InfoLine>
+                    Rent is the witnessed provider bill allocated to each
+                    deployment by its share of fleet $/hr that month.
+                </InfoLine>
+                <InfoLine>
+                    Coverage = retained paid pollen × net ratio ÷ rent — above
+                    100% the box pays for itself.
+                </InfoLine>
+                <InfoLine>
+                    Requests are successful, non-cached generations (pollen
+                    events), not pod uptime hours.
+                </InfoLine>
+            </span>
+        );
+    }
     return null;
 }
 
@@ -1058,6 +1090,15 @@ export default function App() {
                             section === "insights" &&
                             insightTab === "credits" && (
                                 <CreditsTab data={data} />
+                            )}
+                        {data &&
+                            section === "insights" &&
+                            insightTab === "gpu" && (
+                                <GpuTab
+                                    data={data}
+                                    month={activeMonth}
+                                    vendor={vendor}
+                                />
                             )}
                     </ErrorBoundary>
                 </Section>

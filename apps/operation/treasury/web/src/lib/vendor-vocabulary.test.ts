@@ -83,9 +83,9 @@ describe("vendor vocabulary", () => {
 describe("costBasis", () => {
     it("flags the five GPU vendors", () => {
         expect([...GPU_VENDORS].sort()).toEqual([
+            "io.net",
             "lambda",
             "modal",
-            "ovhcloud",
             "runpod",
             "vast.ai",
         ]);

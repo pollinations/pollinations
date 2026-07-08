@@ -23,7 +23,8 @@ from .connectors.common import months_ytd
 from .connectors.vendors import ALLOWED_CATEGORIES, _validate_meter_source
 from .connectors.vendors import stripe as _stripe
 from .connectors import fleet as _fleet
-from .aliases import VENDOR_ALIASES
+from .connectors import gpu_billing as _gpu_billing
+from .aliases import VENDOR_ALIASES, GPU_VENDORS
 
 
 _SRC_RANK = {"manual": 0, "api": 1, "cli": 2, "bq": 3}
@@ -338,6 +339,148 @@ def refresh_gpu_fleet(ops_ingest, secrets, now, statuses,
             print(f"🚨 {vendor} runway {days:.1f} days (${bal:.2f} at {rate:.3f}/hr) — top up")
 
 
+_GPU_BILLING_ALLOWED_SOURCES = {"api", "cli", "manual"}
+_GPU_BILLING_MONTH_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
+
+
+def _validate_gpu_billing_row(row):
+    """Basic validation for gpu_billing rows."""
+    vendor = row.get("vendor", "")
+    if vendor not in GPU_VENDORS:
+        raise ValueError(
+            f"gpu_billing row vendor '{vendor}' is not a GPU vendor "
+            f"(cost_basis=gpu). known: {sorted(GPU_VENDORS)}"
+        )
+    month = row.get("month", "")
+    if not _GPU_BILLING_MONTH_RE.match(str(month)):
+        raise ValueError(f"gpu_billing row has invalid month: {month!r}")
+    try:
+        amount = float(row.get("amount") or 0)
+    except (TypeError, ValueError):
+        raise ValueError(f"gpu_billing row has non-numeric amount: {row.get('amount')!r}")
+    if amount < 0:
+        raise ValueError(f"gpu_billing row has negative amount: {amount}")
+    source = row.get("source", "")
+    if source not in _GPU_BILLING_ALLOWED_SOURCES:
+        raise ValueError(f"gpu_billing row has invalid source: {source!r}")
+
+
+def _gpu_billing_key(row):
+    """Dedup key: (vendor, month, deployment)."""
+    return (row.get("vendor", ""), row.get("month", ""), row.get("deployment", ""))
+
+
+def refresh_gpu_billing(
+    ops_replace,
+    secrets,
+    config,
+    today,
+    statuses,
+    guard,
+    vendors=None,
+    months=None,
+    connectors=None,
+):
+    """Refresh gpu_billing: fresh api/cli rows + surviving manual rows.
+
+    provider_monthly-style: per-vendor error isolation; if ALL fail, raise.
+    Manual rows outrank api/cli rows per (vendor, month, deployment) key.
+
+    Args:
+        ops_replace:  TB client with .replace(datasource, rows)
+        secrets:      credentials dict
+        config:       config dict (months_start etc.)
+        today:        current ingest date "YYYY-MM-DD"
+        statuses:     dict to record per-vendor ok/err statuses
+        guard:        backup guard dict (existing, yes, dry_run)
+        vendors:      optional list of vendor slugs to restrict scope
+        months:       optional list of "YYYY-MM"; defaults to months_ytd
+        connectors:   injectable dict {vendor: fn(creds, months, **kw)} for tests
+    """
+    if months is None:
+        months = months_ytd(config.get("months_start", "2026-01"), today)
+    month_set = set(months)
+
+    if connectors is None:
+        connectors = {
+            "runpod": lambda creds, months, **kw: _gpu_billing.monthly_rows_runpod(
+                creds, months, **{k: v for k, v in kw.items() if k == "http"}
+            ),
+            "modal": lambda creds, months, **kw: _gpu_billing.monthly_rows_modal(
+                creds, months, **{k: v for k, v in kw.items() if k == "run_cmd"}
+            ),
+            "vast": lambda creds, months, **kw: _gpu_billing.monthly_rows_vast(
+                creds, months, today,
+                **{k: v for k, v in kw.items() if k == "run_cmd"}
+            ),
+        }
+
+    # Restrict to requested vendors if --vendor given.
+    _vendor_connector_map = {
+        "runpod":  "runpod",
+        "modal":   "modal",
+        "vast.ai": "vast",
+    }
+
+    fresh_rows = []
+    errors = []
+    all_slugs = []
+
+    for vendor_slug, connector_key in _vendor_connector_map.items():
+        if vendors is not None and vendor_slug not in vendors:
+            continue
+        if connector_key not in connectors:
+            continue
+        all_slugs.append(vendor_slug)
+        try:
+            rows = connectors[connector_key](secrets, months)
+            fresh_rows.extend(rows or [])
+            statuses[f"billing:{vendor_slug}"] = f"ok:{len(rows or [])} rows"
+        except Exception as e:
+            msg = _sanitize_err(e, secrets)
+            statuses[f"billing:{vendor_slug}"] = f"err:{msg}"
+            errors.append(f"{vendor_slug}: {msg}")
+
+    if errors and len(errors) == len(all_slugs):
+        raise RuntimeError("all gpu billing connectors failed: " + "; ".join(errors))
+
+    # Validate fresh rows.
+    for row in fresh_rows:
+        _validate_gpu_billing_row(row)
+
+    # Determine scope predicate.
+    def in_scope(row):
+        return (
+            (vendors is None or row.get("vendor") in vendors)
+            and row.get("month") in month_set
+        )
+
+    # Retrieve surviving manual rows from existing snapshot.
+    existing = guard["existing"].get("gpu_billing", [])
+    manual_rows = [
+        row for row in existing
+        if row.get("source") == "manual" and in_scope(row)
+    ]
+
+    # Manual outranks api/cli per (vendor, month, deployment) key.
+    manual_keys = {_gpu_billing_key(row) for row in manual_rows}
+    fresh_non_manual = [
+        row for row in fresh_rows
+        if _gpu_billing_key(row) not in manual_keys
+    ]
+
+    merged = fresh_non_manual + manual_rows
+
+    # Validate merged rows too.
+    for row in merged:
+        _validate_gpu_billing_row(row)
+
+    assert_fresh_in_scope("gpu_billing", merged, in_scope)
+    final_rows = splice_rows(existing, merged, in_scope)
+    guarded_replace(ops_replace, "gpu_billing", final_rows, guard, statuses)
+    statuses["gpu_billing_rows"] = len(final_rows)
+
+
 def append_run_log(ops_ingest, statuses, notes):
     now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     ops_ingest.append(
@@ -361,21 +504,29 @@ def parse_args(argv=None):
                         help="approve writes that would lose manual meter row data")
     parser.add_argument("--dry-run", action="store_true",
                         help="snapshot + diff only, write nothing")
-    parser.add_argument("--only", choices=["provider", "pollen", "revenue", "transactions", "fleet"])
-    parser.add_argument("--vendor", help="provider only: re-fetch one connector")
+    parser.add_argument("--only", choices=["provider", "pollen", "revenue", "transactions", "fleet", "billing"])
+    parser.add_argument("--vendor", help="provider or billing: re-fetch one connector")
     parser.add_argument("--month", help="restrict to one YYYY-MM month")
     args = parser.parse_args(argv)
 
     if args.vendor is not None:
-        if args.only != "provider":
-            parser.error("--vendor requires --only provider")
-        meter_slugs = [slug for slug, _ in registry.METER]
-        if args.vendor not in meter_slugs:
-            parser.error(
-                "--vendor must be a meter connector slug "
-                f"({', '.join(meter_slugs)}); manual-only vendors are "
-                "updated with ingest.record"
-            )
+        if args.only not in ("provider", "billing"):
+            parser.error("--vendor requires --only provider or --only billing")
+        if args.only == "provider":
+            meter_slugs = [slug for slug, _ in registry.METER]
+            if args.vendor not in meter_slugs:
+                parser.error(
+                    "--vendor must be a meter connector slug "
+                    f"({', '.join(meter_slugs)}); manual-only vendors are "
+                    "updated with ingest.record"
+                )
+        elif args.only == "billing":
+            billing_slugs = ["runpod", "modal", "vast.ai"]
+            if args.vendor not in billing_slugs:
+                parser.error(
+                    "--vendor with --only billing must be a billing connector slug "
+                    f"({', '.join(billing_slugs)})"
+                )
     if args.month is not None and not _MONTH_RE.match(args.month):
         parser.error("--month must be YYYY-MM")
 
@@ -399,7 +550,8 @@ def main():
         "existing": {
             ds: backup.snapshot_table(ops_ingest, ds, backup_dir)
             for ds in ("provider_monthly", "pollen_monthly", "revenue_monthly",
-                       "transactions", "grants", "ingest_runs", "gpu_fleet")
+                       "transactions", "grants", "ingest_runs", "gpu_fleet",
+                       "gpu_billing")
         },
     }
     print(f"backup: {backup_dir}")
@@ -435,6 +587,17 @@ def main():
         if args.only in (None, "fleet"):
             now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
             refresh_gpu_fleet(ops_ingest, secrets, now, statuses)
+        if args.only in (None, "billing"):
+            refresh_gpu_billing(
+                ops_replace,
+                secrets,
+                config,
+                today,
+                statuses,
+                guard,
+                vendors=vendors,
+                months=months,
+            )
     except Exception as e:
         statuses["run"] = "err:" + _sanitize_err(e, secrets)
         notes.append(f"run failed: {statuses['run']}")

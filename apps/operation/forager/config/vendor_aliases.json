@@ -155,8 +155,7 @@
     "aliases": [
       "ovh"
     ],
-    "category": "compute",
-    "cost_basis": "gpu"
+    "category": "compute"
   },
   "elevenlabs": {
     "aliases": [
@@ -224,7 +223,8 @@
       "io net",
       "ionet"
     ],
-    "category": "compute"
+    "category": "compute",
+    "cost_basis": "gpu"
   },
   "bytedance": {
     "aliases": [

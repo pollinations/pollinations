@@ -191,6 +191,31 @@ def test_record_meter_category_defaults_from_vendor_roster():
     assert fake.appended[0][1][0]["category"] == "compute"
 
 
+def test_record_provider_accepts_compute_gpu_category():
+    """--category compute-gpu is accepted (OVH manual GPU-rent rows)."""
+    fake = _FakeTB()
+    record.main(
+        ["provider", "ovhcloud", "2026-01", "--currency", "EUR",
+         "--credit", "1856.80", "--category", "compute-gpu"],
+        tb_factory=_make_factory(fake),
+    )
+    ds, rows = fake.appended[0]
+    assert ds == "provider_monthly"
+    r = rows[0]
+    assert r["vendor"] == "ovhcloud"
+    assert r["category"] == "compute-gpu"
+    assert r["credit"] == 1856.80
+
+
+def test_record_provider_rejects_invalid_category():
+    with pytest.raises(SystemExit):
+        record.main(
+            ["provider", "ovhcloud", "2026-01", "--currency", "EUR",
+             "--credit", "1.0", "--category", "not-a-category"],
+            tb_factory=_make_factory(_FakeTB()),
+        )
+
+
 # ---------------------------------------------------------------------------
 # Validation: bad month exits non-zero
 # ---------------------------------------------------------------------------

@@ -4,7 +4,7 @@ from ...aliases import VENDOR_ALIASES
 
 ALLOWED_FUNDING = {"cash", "credit", "prepaid"}
 ALLOWED_METER_SOURCES = {"api", "bq", "cli", "manual"}
-ALLOWED_CATEGORIES = {"compute", "infra"}
+ALLOWED_CATEGORIES = {"compute", "infra", "compute-gpu"}
 
 
 def _validate_meter_values(vendor, funding, source):
@@ -53,8 +53,11 @@ def _mrow(month, vendor, amount, funding, source, today, currency="USD",
         funding:  "credit" | "prepaid" | "cash"; prepaid is stored as paid
         source:   "api" | "cli" | "bq" | "manual"
         today:    current ingest date (kept in the call signature for connector simplicity)
-        category: "compute" | "infra" — infra rows still fund pools and cash
-                  flows but stay out of the compute lenses (calib, recon)
+        category: "compute" | "infra" | "compute-gpu" — infra rows still fund
+                  pools and cash flows but stay out of the compute lenses
+                  (calib, recon); compute-gpu is the GPU-rent slice of
+                  compute, remapped at ingest for GPU-basis vendors
+                  (see run.py:remap_gpu_categories)
     """
     _validate_meter_values(vendor, funding, source)
     if category not in ALLOWED_CATEGORIES:

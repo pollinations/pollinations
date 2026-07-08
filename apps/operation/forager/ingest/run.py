@@ -30,6 +30,11 @@ from .aliases import VENDOR_ALIASES, GPU_VENDORS
 
 _SRC_RANK = {"manual": 0, "api": 1, "cli": 2, "bq": 3}
 
+# OVH's credit-burn connector understates the true bill (~€200/mo, movements
+# ledger doesn't capture the full invoice) — OVH is manual/invoice-based only
+# now (see ingest.record), never auto-fetched by refresh_provider_monthly.
+_PROVIDER_MANUAL_ONLY_VENDORS = {"ovhcloud"}
+
 
 def _meter_sources(source):
     normalized = str(source or "").replace("+", ",").replace("/", ",").replace(" ", ",")
@@ -120,6 +125,24 @@ def merge_meter_rows(rows):
             }
         )
     return merged
+
+
+def remap_gpu_categories(rows):
+    """Retag GPU-basis vendors' default "compute" rows as "compute-gpu".
+
+    GPU-basis vendors (aliases.GPU_VENDORS, cost_basis=='gpu': runpod,
+    lambda, modal, vast.ai, io.net) are pure compute — rent is their only
+    spend — so a merged row still carrying the default "compute" category
+    unambiguously means GPU rent. This lets gpuEconomics witness the
+    GPU-rent slice directly from provider_monthly.category instead of a
+    hardcoded vendor list. Rows that already carry an explicit/different
+    category (cloudflare "infra", aws's per-service split, a manual
+    override) are left untouched.
+    """
+    for row in rows:
+        if row.get("vendor") in GPU_VENDORS and row.get("category") == "compute":
+            row["category"] = "compute-gpu"
+    return rows
 
 
 def _has_manual_source(row):
@@ -221,6 +244,8 @@ def refresh_provider_monthly(
     errors = []
 
     for slug, fn in registry.METER:
+        if slug in _PROVIDER_MANUAL_ONLY_VENDORS:
+            continue
         if vendors is not None and slug not in vendors:
             continue
         try:
@@ -246,6 +271,7 @@ def refresh_provider_monthly(
     ]
     validate_meter_rows(meter_manual)
     meter_merged = merge_meter_rows(meter_new + meter_manual)
+    meter_merged = remap_gpu_categories(meter_merged)
     validate_meter_rows(meter_merged)
     assert_fresh_in_scope("provider_monthly", meter_merged, in_scope)
     final_rows = splice_rows(existing_meter, meter_merged, in_scope)
@@ -549,7 +575,10 @@ def parse_args(argv=None):
         if args.only not in ("provider", "runs"):
             parser.error("--vendor requires --only provider or --only runs")
         if args.only == "provider":
-            meter_slugs = [slug for slug, _ in registry.METER]
+            meter_slugs = [
+                slug for slug, _ in registry.METER
+                if slug not in _PROVIDER_MANUAL_ONLY_VENDORS
+            ]
             if args.vendor not in meter_slugs:
                 parser.error(
                     "--vendor must be a meter connector slug "

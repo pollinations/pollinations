@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from ingest.run import (
     existing_manual_meter_rows,
     merge_meter_rows,
+    remap_gpu_categories,
 )
 
 
@@ -142,3 +143,48 @@ def test_legacy_rows_default_to_compute():
               "credit": 10.0, "paid": 0.0, "source": "manual"}
     out = merge_meter_rows([legacy])
     assert out[0]["category"] == "compute"
+
+
+# ---------------------------------------------------------------------------
+# remap_gpu_categories — GPU-basis vendors' default "compute" rows become
+# "compute-gpu" so gpuEconomics can witness the GPU-rent slice directly.
+# ---------------------------------------------------------------------------
+
+def test_remap_gpu_vendor_default_compute_becomes_compute_gpu():
+    rows = [_row("runpod", "2026-06", credit=274.45, category="compute")]
+    out = remap_gpu_categories(rows)
+    assert out[0]["category"] == "compute-gpu"
+
+
+def test_remap_leaves_non_gpu_vendor_compute_untouched():
+    """A non-GPU-basis vendor's default compute row stays compute."""
+    rows = [_row("aws", "2026-06", credit=100.0, category="compute")]
+    out = remap_gpu_categories(rows)
+    assert out[0]["category"] == "compute"
+
+
+def test_remap_leaves_cloudflare_infra_untouched():
+    rows = [_row("cloudflare", "2026-06", credit=50.0, category="infra")]
+    out = remap_gpu_categories(rows)
+    assert out[0]["category"] == "infra"
+
+
+def test_remap_leaves_explicit_gpu_vendor_category_untouched():
+    """A GPU-basis vendor row that already carries a non-default explicit
+    category (e.g. a manual infra correction) is not remapped — only the
+    default "compute" bucket is ambiguous enough to mean GPU rent."""
+    rows = [_row("runpod", "2026-06", credit=5.0, category="infra")]
+    out = remap_gpu_categories(rows)
+    assert out[0]["category"] == "infra"
+
+
+def test_remap_all_five_gpu_vendors():
+    rows = [
+        _row("runpod", "2026-06", credit=1.0, category="compute"),
+        _row("lambda", "2026-06", credit=1.0, category="compute"),
+        _row("modal", "2026-06", credit=1.0, category="compute"),
+        _row("vast.ai", "2026-06", credit=1.0, category="compute"),
+        _row("io.net", "2026-06", credit=1.0, category="compute"),
+    ]
+    out = remap_gpu_categories(rows)
+    assert all(r["category"] == "compute-gpu" for r in out)

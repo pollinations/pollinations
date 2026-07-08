@@ -98,8 +98,9 @@ def main(argv=None, tb_factory=None):
     mp.add_argument("--currency", required=True, help="source currency code, e.g. USD or EUR")
     mp.add_argument("--credit", type=float, default=0.0, help="credit burn amount")
     mp.add_argument("--paid", type=float, default=0.0, help="paid/prepaid amount")
-    mp.add_argument("--category", choices=["compute", "infra"], default=None,
-                    help="infra rows fund pools/cash but stay out of compute lenses "
+    mp.add_argument("--category", choices=["compute", "infra", "compute-gpu"], default=None,
+                    help="infra rows fund pools/cash but stay out of compute lenses; "
+                         "compute-gpu is the GPU-rent slice of compute "
                          "(default: the vendor's category from vendor_aliases.json)")
 
     # grant subcommand
@@ -147,8 +148,10 @@ def main(argv=None, tb_factory=None):
             sys.exit(1)
         currency = _validate_currency(args.currency)
         _validate_meter_source("manual")
-        # provider_monthly only knows compute vs infra; vendors whose roster
-        # category is anything else (saas, admin, ...) still default compute.
+        # Roster default (vendor_aliases.json) is only ever compute or infra;
+        # vendors whose roster category is anything else (saas, admin, ...)
+        # still default compute. compute-gpu is never a roster default — it
+        # must be passed explicitly via --category for a manual GPU row.
         category = args.category or (
             VENDOR_CATEGORIES[args.vendor]
             if VENDOR_CATEGORIES.get(args.vendor) in ("compute", "infra")

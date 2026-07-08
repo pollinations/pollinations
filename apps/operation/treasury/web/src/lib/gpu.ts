@@ -71,14 +71,14 @@ export const GPU_DEPLOYMENT_GROUPS: {
         vendor: "modal",
         match: /./,
         group: "modal serverless",
-        models: [],
+        models: ["flux-klein", "klein", "klein-large"],
         kind: "serverless",
     },
     {
         vendor: "io.net",
         match: /./,
         group: "io.net (vendor)",
-        models: [],
+        models: ["flux", "zimage"],
         kind: "gpu",
     },
 ];
@@ -336,7 +336,43 @@ export function gpuEconomics(
                     groupAmounts.set(key, entry);
                 }
 
-                const groupEntries = [...groupAmounts.entries()].map(
+                // DUST FOLD: collapse unmapped deployments with billing amount <
+                // $10 into a single aggregate row. Unmapped entries ≥ $10 stay
+                // individual. Σ==bill invariant is preserved: the folded amounts
+                // are summed rather than dropped.
+                const DUST_THRESHOLD = 10;
+                const dustUnmapped: {
+                    key: string;
+                    amountUsd: number;
+                }[] = [];
+                const keptGroupAmounts = new Map<
+                    string,
+                    {
+                        def: (typeof GPU_DEPLOYMENT_GROUPS)[number] | null;
+                        amountUsd: number;
+                    }
+                >();
+                for (const [key, entry] of groupAmounts.entries()) {
+                    const isUnmapped = key.startsWith("__unmapped__");
+                    if (isUnmapped && entry.amountUsd < DUST_THRESHOLD) {
+                        dustUnmapped.push({ key, amountUsd: entry.amountUsd });
+                    } else {
+                        keptGroupAmounts.set(key, entry);
+                    }
+                }
+                if (dustUnmapped.length > 0) {
+                    const dustSum = dustUnmapped.reduce(
+                        (acc, d) => acc + d.amountUsd,
+                        0,
+                    );
+                    const foldKey = `__unmapped__(${dustUnmapped.length} small deployments)`;
+                    keptGroupAmounts.set(foldKey, {
+                        def: null,
+                        amountUsd: dustSum,
+                    });
+                }
+
+                const groupEntries = [...keptGroupAmounts.entries()].map(
                     ([key, { def, amountUsd }]) => ({ key, def, amountUsd }),
                 );
 
@@ -371,12 +407,50 @@ export function gpuEconomics(
                     }
                 }
 
+                // Vendor-month flag dedup: "unattributed" and "billing drift"
+                // are vendor-month facts — attach them only to the row with the
+                // highest rentShare (deterministic tie-break: group name asc).
+                // Per-row flags (split:billed, unmapped billing id, error:*)
+                // stay per-row.
+                const rentSharesForRank = rentShares.map((s, i) => ({
+                    i,
+                    rentShare: s ?? 0,
+                    groupName:
+                        groupEntries[i].def?.group ??
+                        groupEntries[i].key
+                            .replace("__unmapped__", "")
+                            .replace(/^\(/, "("),
+                }));
+                rentSharesForRank.sort((a, b) => {
+                    if (b.rentShare !== a.rentShare)
+                        return b.rentShare - a.rentShare;
+                    return a.groupName.localeCompare(b.groupName);
+                });
+                const maxRentIdx =
+                    rentSharesForRank.length > 0 ? rentSharesForRank[0].i : -1;
+
                 for (let i = 0; i < groupEntries.length; i++) {
                     const { key, def } = groupEntries[i];
                     const isUnmapped = key.startsWith("__unmapped__");
-                    const groupName = isUnmapped
-                        ? key.slice("__unmapped__".length)
-                        : (def?.group ?? key);
+                    // dust fold row: group name is already embedded in the key
+                    const isDustFold =
+                        isUnmapped &&
+                        key.startsWith("__unmapped__(") &&
+                        key.includes("small deployments)");
+                    let groupName: string;
+                    let foldedCount: number | null = null;
+                    if (isDustFold) {
+                        const m = key.match(/__unmapped__\((\d+) small/);
+                        foldedCount = m ? parseInt(m[1], 10) : null;
+                        groupName =
+                            foldedCount !== null
+                                ? `(${foldedCount} small deployments)`
+                                : "(small deployments)";
+                    } else if (isUnmapped) {
+                        groupName = key.slice("__unmapped__".length);
+                    } else {
+                        groupName = def?.group ?? key;
+                    }
                     const models: string[] = isUnmapped
                         ? []
                         : (def?.models ?? []);
@@ -406,9 +480,27 @@ export function gpuEconomics(
                             : null;
 
                     const flags: string[] = ["split: billed"];
-                    if (isUnmapped) flags.push("unmapped billing id");
-                    if (unattributedFlag) flags.push(unattributedFlag);
-                    if (driftFlag) flags.push(driftFlag);
+                    if (isUnmapped) {
+                        if (isDustFold && foldedCount !== null) {
+                            flags.push(
+                                `unmapped billing ids: ${foldedCount} folded`,
+                            );
+                        } else {
+                            flags.push("unmapped billing id");
+                        }
+                    }
+                    // vendor-month flags: only on the max-rent row
+                    if (i === maxRentIdx) {
+                        if (unattributedFlag) flags.push(unattributedFlag);
+                        if (driftFlag) flags.push(driftFlag);
+                    }
+
+                    // dust verdict: non-null rentUsd < $5 → null verdict (noise)
+                    const baseVerdict = verdictFor(coverage, kind);
+                    const rowVerdict =
+                        rentShare !== null && rentShare < 5
+                            ? null
+                            : baseVerdict;
 
                     result.push({
                         group: groupName,
@@ -427,7 +519,7 @@ export function gpuEconomics(
                             rentShare,
                             netRatio,
                         ),
-                        verdict: verdictFor(coverage, kind),
+                        verdict: rowVerdict,
                         flags,
                         kind,
                     });
@@ -576,7 +668,24 @@ export function gpuEconomics(
                 }
             }
 
-            for (const { key, def, meanShare } of groupEntries) {
+            // Vendor-month flag dedup: compute which group entry has the
+            // highest rentShare so we can attach vendor-month flags there only.
+            const fleetRentForRank = groupEntries.map((e, i) => ({
+                i,
+                rentShare:
+                    vendorRentUsd !== null ? vendorRentUsd * e.meanShare : 0,
+                groupName: e.def?.group ?? e.key,
+            }));
+            fleetRentForRank.sort((a, b) => {
+                if (b.rentShare !== a.rentShare)
+                    return b.rentShare - a.rentShare;
+                return a.groupName.localeCompare(b.groupName);
+            });
+            const fleetMaxRentIdx =
+                fleetRentForRank.length > 0 ? fleetRentForRank[0].i : -1;
+
+            for (let ei = 0; ei < groupEntries.length; ei++) {
+                const { key, def, meanShare } = groupEntries[ei];
                 const isUnmapped = key.startsWith("__unmapped__");
                 const deploymentName = isUnmapped
                     ? key.slice("__unmapped__".length)
@@ -613,7 +722,14 @@ export function gpuEconomics(
 
                 const flags: string[] = ["split: fleet $/hr"];
                 if (isUnmapped) flags.push("unmapped fleet");
-                if (unattributedFlag) flags.push(unattributedFlag);
+                // vendor-month flags: only on the max-rent row
+                if (ei === fleetMaxRentIdx && unattributedFlag)
+                    flags.push(unattributedFlag);
+
+                // dust verdict: non-null rentUsd < $5 → null verdict (noise)
+                const baseVerdict = verdictFor(coverage, kind);
+                const rowVerdict =
+                    rentShare !== null && rentShare < 5 ? null : baseVerdict;
 
                 result.push({
                     group: groupName,
@@ -628,7 +744,7 @@ export function gpuEconomics(
                     coverage,
                     effUsdPerReq,
                     breakEven: computeBreakEven(models, rentShare, netRatio),
-                    verdict: verdictFor(coverage, kind),
+                    verdict: rowVerdict,
                     flags,
                     kind,
                 });

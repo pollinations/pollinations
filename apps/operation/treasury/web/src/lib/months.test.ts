@@ -18,7 +18,7 @@ const data: Data = {
     opCloud: FIXTURES.op_cloud_api,
     opPollen: FIXTURES.op_pollen_api,
     grants: [],
-    runs: FIXTURES.ingest_runs_api,
+    runs: [],
     revenueMonthly: [],
     gpuRuns: [],
 } as Data;

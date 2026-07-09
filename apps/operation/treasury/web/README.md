@@ -27,8 +27,5 @@ and no network calls.
 Reads OP pipes from `apps/operation/treasury/tinybird/pipes/`:
 `op_transactions_api`, `op_cloud_api`, and `op_pollen_api`.
 
-It also reads `ingest_runs_api` for freshness status while that operational
-status pipe remains available.
-
 The app is a read-only mirror; all reads go through the local server
 proxy.

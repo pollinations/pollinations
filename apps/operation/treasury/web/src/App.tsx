@@ -37,8 +37,6 @@ import {
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { FilterBar, FilterSelect, MonthFilter } from "./components/Filters";
 import type { ProvenanceCode } from "./components/Provenance";
-import { STALE_AFTER_HOURS } from "./config";
-import { hoursSince } from "./lib/format";
 import { insightVendorOptions, vendorPlanes } from "./lib/insights";
 import { collectMonths } from "./lib/months";
 import { fixturesMode, loadAll, TbError } from "./lib/tb";
@@ -817,11 +815,6 @@ export default function App() {
         };
     }, [ready, attempt]);
 
-    const staleHours = useMemo(() => {
-        const latest = data?.runs[0]?.run_at;
-        return latest ? hoursSince(latest) : null;
-    }, [data]);
-
     const months = useMemo(() => (data ? collectMonths(data) : []), [data]);
     const activeMonth = month;
     const vendorOptions = useMemo(
@@ -927,16 +920,6 @@ export default function App() {
         <>
             <div className="flex flex-wrap items-center gap-2">
                 {fixtures && <Chip intent="alpha">fixtures</Chip>}
-                {staleHours !== null && staleHours <= STALE_AFTER_HOURS && (
-                    <Chip
-                        data-theme="neutral"
-                        intent="neutral"
-                        size="sm"
-                        className="w-fit"
-                    >
-                        data {Math.round(staleHours)}h old
-                    </Chip>
-                )}
             </div>
             <div className="flex items-center justify-between gap-2">
                 <span />
@@ -1085,13 +1068,6 @@ export default function App() {
                         : "gap-6 px-4 py-14 pb-32 sm:px-6 sm:py-10 sm:pb-32 md:py-8 lg:px-8",
                 )}
             >
-                {staleHours !== null && staleHours > STALE_AFTER_HOURS && (
-                    <Alert intent="warning" title="Stale data">
-                        Last ingest run was {Math.round(staleHours)}h ago. Run{" "}
-                        <code>python3 -m ingest.run</code> for fresh numbers.
-                    </Alert>
-                )}
-
                 {isOpTableView || isCompactInsight ? (
                     <section
                         className={cn(

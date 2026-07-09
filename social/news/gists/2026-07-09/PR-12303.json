@@ -1,0 +1,35 @@
+{
+  "pr_number": 12303,
+  "title": "chore: sync Myceli custom domains",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12303",
+  "merged_at": "2026-07-09T12:22:07Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "## Summary\n- add direct pollinations.ai custom-domain routes to the Myceli gen, enter, media, and main-site Worker configs\n- add staging public routes for gen, enter, and the main site to match the live Myceli Worker domains\n- add websim.pollinations.ai to the websim Worker config\n- preserve both portkey.myceli.ai and portkey.pollinations.ai in the Portkey deploy script/workflow\n\n## Live Cloudflare inventory checked\nAccount: b6ec751c0862027ba269faf7029b2501\n\nRepo-owned domains covered by this PR:\n- pollinations.ai, www.pollinations.ai, pollinations.myceli.ai\n- staging.pollinations.ai, staging.myceli.ai, staging.pollinations.myceli.ai\n- enter.pollinations.ai, enter.myceli.ai, staging.enter.pollinations.ai, staging.enter.myceli.ai\n- gen.pollinations.ai, gen.myceli.ai, staging.gen.pollinations.ai, staging.gen.myceli.ai\n- media.pollinations.ai, media.myceli.ai\n- websim.pollinations.ai, websim.myceli.ai\n- portkey.pollinations.ai, portkey.myceli.ai via deploy script\n- kpi.myceli.ai was already present and unchanged\n\nLive domains not covered because no tracked Wrangler config/source was found here:\n- image.pollinations.ai / image.myceli.ai on pollinations-image-cache\n- text.pollinations.ai / text.myceli.ai on pollinations-text-cache\n\n## Verification\n- Cloudflare Workers custom-domain API inventory for the Myceli account\n- git diff --check\n- bash -n gen.pollinations.ai/scripts/deploy-portkey.sh\n- gen: npx wrangler deploy --env production --dry-run\n- enter: npm run build:production --workspace pollinations-enter, then npx wrangler deploy --config dist/pollinations_enter/wrangler.json --dry-run\n- media: npx wrangler deploy --env production --dry-run\n- main site: npm run build:production, then npx wrangler deploy --config dist/pollinations_ai/wrangler.json --dry-run\n- websim: npm run build, then npx wrangler deploy worker.js --dry-run",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Mapping the mycelial network",
+    "blurb": "We've synced up our custom domain routes across the Myceli infrastructure to keep all our endpoints pointing exactly where they should.",
+    "summary": "Synchronized Cloudflare Worker custom domain routes in Wrangler configs for gen, enter, media, websim, and the main site to explicitly include both pollinations.ai and myceli.ai domains.",
+    "impact": "Ensures consistent routing and deployment across all production and staging environments for the Myceli infrastructure.",
+    "keywords": [
+      "infrastructure",
+      "cloudflare",
+      "domains",
+      "routing",
+      "myceli"
+    ],
+    "visual_concept": "The PR is about domains, routing, and 'Myceli' (mycelium/mushrooms). Visuals should include the bee (Polly) and mushroom/mycelium networks connecting different glowing nodes or signposts representing the different subdomains.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny hard hat, connecting glowing lime green (#ecf874) mycelium threads between retro server racks shaped like chunky mushrooms. Soft pastel lavender and cream gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-07-09/PR-12303.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny hard hat, connecting glowing lime green (#ecf874) mycelium threads between retro server racks shaped like chunky mushrooms. Soft pastel lavender and cream gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-07-09T12:23:08.824462+00:00"
+}

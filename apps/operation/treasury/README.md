@@ -22,13 +22,5 @@ browser bundle.
 
 Data contracts live in [`tinybird/README.md`](./tinybird/README.md).
 
-Current planning:
-
-- [`tinybird/`](./tinybird/) — current OP Tinybird datasource and pipe definitions.
-
-Audit/support notes:
-
-- `AUDIT-OVH-REGIME-2026-07-08.md`
-- `MANUAL-DASHBOARD-USAGE-AUDIT.md`
-
-Historical superseded plans live in `archive/`.
+Current OP Tinybird datasource and pipe definitions live in
+[`tinybird/`](./tinybird/).

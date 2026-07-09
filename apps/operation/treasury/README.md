@@ -21,3 +21,15 @@ Live mode uses a password gate. Tinybird read/write tokens live only in
 browser bundle.
 
 Data contracts live in `../forager/tinybird/README.md`.
+
+Current planning:
+
+- `../forager/PLAN-CLOUD.md` — current raw Operations data architecture.
+- `PLAN-GPU-RUNS.md` — current GPU runs implementation plan.
+
+Audit/support notes:
+
+- `AUDIT-OVH-REGIME-2026-07-08.md`
+- `MANUAL-DASHBOARD-USAGE-AUDIT.md`
+
+Historical superseded plans live in `archive/`.

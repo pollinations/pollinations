@@ -34,6 +34,7 @@ const TEXT_ENV_KEYS = [
     "OVHCLOUD_API_KEY",
     "PERPLEXITY_API_KEY",
     "PORTKEY_GATEWAY_URL",
+    "XAI_API_KEY",
 ] as const satisfies readonly (keyof CloudflareBindings)[];
 
 function syncTextEnvironment(env: CloudflareBindings): void {

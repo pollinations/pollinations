@@ -9,6 +9,7 @@ import {
     createOVHcloudModelConfig,
     createPerplexityModelConfig,
     createPollyConfig,
+    createXAIModelConfig,
 } from "./providerConfigs.js";
 
 // =============================================================================
@@ -71,6 +72,24 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-5.5/chat/completions?api-version=2024-12-01-preview",
             "gpt-5.5",
         ),
+    "gpt-5.6-sol": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
+            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-5.6-sol/chat/completions?api-version=2024-12-01-preview",
+            "gpt-5.6-sol",
+        ),
+    "gpt-5.6-terra": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
+            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-5.6-terra/chat/completions?api-version=2024-12-01-preview",
+            "gpt-5.6-terra",
+        ),
+    "gpt-5.6-luna": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
+            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-5.6-luna/chat/completions?api-version=2024-12-01-preview",
+            "gpt-5.6-luna",
+        ),
 
     // -- Azure (Myceli Prod — swedencentral, audio mini) ------------------------
     "gpt-audio-mini-2025-12-15": () =>
@@ -106,6 +125,10 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4.3/chat/completions?api-version=2024-12-01-preview",
             "grok-4.3",
         ),
+    "grok-4.5": () =>
+        createXAIModelConfig({
+            model: "grok-4.5",
+        }),
 
     // -- OpenRouter (Gemma) ---------------------------------------------------
     // Moved off DeepInfra: OpenRouter serves the same SKU ~cheaper ($0.06/$0.33

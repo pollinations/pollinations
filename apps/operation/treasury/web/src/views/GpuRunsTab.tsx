@@ -14,7 +14,8 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
-import { fmtNumber } from "../lib/format";
+import { SourceCell } from "../components/Provenance";
+import { fmtNumber, fmtPeriod } from "../lib/format";
 import { matchesMonth } from "../lib/months";
 import type { Data, GpuRunRow } from "../types";
 
@@ -67,6 +68,7 @@ export function GpuRunsTab({
     const sortColumns = useMemo<SortColumn<GpuRunRow>[]>(
         () => [
             { key: "month", value: (row) => row.month },
+            { key: "source", value: (row) => row.source },
             { key: "vendor", value: (row) => row.vendor },
             { key: "deployment", value: (row) => row.deployment },
             { key: "gpu", value: (row) => row.gpu },
@@ -77,8 +79,6 @@ export function GpuRunsTab({
             { key: "cost", value: (row) => row.cost },
             { key: "cur", value: (row) => row.currency },
             { key: "model", value: (row) => row.model },
-            { key: "kind", value: (row) => row.kind },
-            { key: "source", value: (row) => row.source },
         ],
         [],
     );
@@ -98,6 +98,9 @@ export function GpuRunsTab({
                         <TableRow>
                             <TableHeaderCell {...headerProps("month")}>
                                 month
+                            </TableHeaderCell>
+                            <TableHeaderCell {...headerProps("source")}>
+                                source
                             </TableHeaderCell>
                             <TableHeaderCell {...headerProps("vendor")}>
                                 vendor
@@ -129,12 +132,6 @@ export function GpuRunsTab({
                             <TableHeaderCell {...headerProps("model")}>
                                 model
                             </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("kind")}>
-                                kind
-                            </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("source")}>
-                                source
-                            </TableHeaderCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -143,7 +140,10 @@ export function GpuRunsTab({
                             (row) => `${row.run_id}|${row.month}|${row.source}`,
                         ).map(({ key, row }) => (
                             <TableRow key={key}>
-                                <TableCell>{row.month}</TableCell>
+                                <TableCell>{fmtPeriod(row.month)}</TableCell>
+                                <TableCell>
+                                    <SourceCell sources={[row.source]} />
+                                </TableCell>
                                 <TableCell>{row.vendor}</TableCell>
                                 <TableCell>{row.deployment}</TableCell>
                                 <TableCell>{row.gpu || "–"}</TableCell>
@@ -158,8 +158,6 @@ export function GpuRunsTab({
                                 </TableCell>
                                 <TableCell>{row.currency}</TableCell>
                                 <TableCell>{row.model || "–"}</TableCell>
-                                <TableCell>{row.kind}</TableCell>
-                                <TableCell>{row.source}</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>

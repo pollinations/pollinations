@@ -1,4 +1,4 @@
-import { Surface, Table, Tooltip } from "@pollinations/ui";
+import { cn, Surface, Table, Tooltip } from "@pollinations/ui";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 
@@ -37,9 +37,28 @@ export function TableScroller({ children }: { children: ReactNode }) {
     );
 }
 
-export function DataTable({ children }: { children: ReactNode }) {
-    return <Table className="min-w-full">{children}</Table>;
+export function RawOpTableScroller({ children }: { children: ReactNode }) {
+    return (
+        <section className="min-h-0 w-full max-w-full flex-1 px-4 pb-8 sm:px-6 lg:px-8">
+            <Surface className="flex h-full min-h-0 overflow-hidden bg-surface-opaque/95 p-0 shadow-container">
+                <div className="min-h-0 flex-1 overflow-auto">{children}</div>
+            </Surface>
+        </section>
+    );
 }
+
+export function DataTable({
+    children,
+    className,
+}: {
+    children: ReactNode;
+    className?: string;
+}) {
+    return <Table className={cn("min-w-full", className)}>{children}</Table>;
+}
+
+export const RAW_OP_STICKY_HEADER =
+    "[&_thead_th]:sticky [&_thead_th]:top-0 [&_thead_th]:z-20 [&_thead_th]:border-b [&_thead_th]:border-theme-border/70 [&_thead_th]:bg-surface-opaque/95 [&_thead_th]:backdrop-blur-xl";
 
 // Column-header label with a how-is-this-computed hover. Only calculated
 // columns get one — identity columns stay bare.

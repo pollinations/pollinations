@@ -4,6 +4,7 @@ import type { RunRow } from "./types";
 
 const EXPECTED_PIPES = [
     "transactions_api",
+    "op_transactions_api",
     "provider_monthly_api",
     "pollen_monthly_api",
     "grants_api",

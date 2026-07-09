@@ -40,6 +40,27 @@ export function fmtPeriod(value: string | null | undefined): string {
     return time ? `${dayLabel} ${time}` : dayLabel;
 }
 
+export function fmtUtcDateTime(value: string | null | undefined): string {
+    if (!value) return "-";
+    const trimmed = value.trim();
+    const match = trimmed.match(
+        /^(\d{4}-\d{2}-\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?/,
+    );
+    if (!match) return trimmed;
+
+    const [, date, hour, minute, second = "00"] = match;
+    if (!hour || (hour === "00" && minute === "00" && second === "00")) {
+        return date;
+    }
+    const time =
+        second === "00" ? `${hour}:${minute}` : `${hour}:${minute}:${second}`;
+    return `${date} ${time}`;
+}
+
+export function utcDateTimeTitle(value: string | null | undefined): string {
+    return value ?? "";
+}
+
 /** Tinybird DateTime strings ("YYYY-MM-DD HH:MM:SS") are UTC. */
 export function hoursSince(runAt: string, nowMs: number = Date.now()): number {
     const t = Date.parse(`${runAt.replace(" ", "T")}Z`);

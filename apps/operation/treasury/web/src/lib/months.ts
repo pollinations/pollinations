@@ -34,6 +34,10 @@ export function collectMonths(data: Data): string[] {
     for (const row of data.transactions) months.add(row.date.slice(0, 7));
     for (const row of data.providerMonthly) months.add(row.month);
     for (const row of data.pollenMonthly) months.add(row.month);
+    for (const row of data.opTransactions ?? [])
+        months.add(row.date.slice(0, 7));
+    for (const row of data.opCloud ?? []) months.add(row.start.slice(0, 7));
+    for (const row of data.opPollen ?? []) months.add(row.month);
     return [...months]
         .filter((month) => MONTH_RE.test(month) && month >= WINDOW_START)
         .sort((a, b) => a.localeCompare(b));

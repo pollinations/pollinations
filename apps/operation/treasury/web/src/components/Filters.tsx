@@ -35,7 +35,7 @@ function Pill({
             active={active}
             onClick={onClick}
             size={size === "year" ? "md" : "sm"}
-            variant="ghost"
+            variant="soft"
         >
             {children}
         </TabButton>
@@ -90,6 +90,7 @@ function filterOptionLabel(option: string, label: string) {
     if (option === "all") {
         if (label === "vendor") return "All Vendor";
         if (label === "category") return "All Category";
+        if (label === "type") return "All Type";
     }
     return option || "(blank)";
 }

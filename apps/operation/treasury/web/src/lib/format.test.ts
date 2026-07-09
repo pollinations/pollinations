@@ -8,7 +8,9 @@ import {
     fmtSmartNumber,
     fmtUnsignedPct,
     fmtUsd,
+    fmtUtcDateTime,
     hoursSince,
+    utcDateTimeTitle,
 } from "./format";
 
 describe("format", () => {
@@ -31,6 +33,24 @@ describe("format", () => {
         const now = Date.parse("2026-07-03T12:00:00Z");
         expect(hoursSince("2026-07-03 06:00:00", now)).toBeCloseTo(6, 5);
         expect(hoursSince("garbage", now)).toBe(Number.POSITIVE_INFINITY);
+    });
+
+    it("fmtUtcDateTime renders compact UTC labels", () => {
+        expect(fmtUtcDateTime("2026-07-01 00:00:00")).toBe("2026-07-01");
+        expect(fmtUtcDateTime("2026-07-08 16:38:12")).toBe(
+            "2026-07-08 16:38:12",
+        );
+        expect(fmtUtcDateTime("2026-07-08 16:38:00")).toBe("2026-07-08 16:38");
+        expect(fmtUtcDateTime("2026-07-01")).toBe("2026-07-01");
+        expect(fmtUtcDateTime("")).toBe("-");
+        expect(fmtUtcDateTime("unknown")).toBe("unknown");
+    });
+
+    it("utcDateTimeTitle keeps the full stored value visible", () => {
+        expect(utcDateTimeTitle("2026-07-08 16:38:12")).toBe(
+            "2026-07-08 16:38:12",
+        );
+        expect(utcDateTimeTitle("")).toBe("");
     });
 });
 

@@ -1,11 +1,22 @@
 import { Chip } from "@pollinations/ui";
 
-export type ProvenanceCode = "EN" | "TB" | "ST" | "API" | "CLI" | "BQ" | "HC";
+export type ProvenanceCode =
+    | "EN"
+    | "WISE"
+    | "TB"
+    | "ST"
+    | "API"
+    | "CLI"
+    | "BQ"
+    | "HC";
 
 const PROVENANCE: Record<ProvenanceCode, { title: string; display?: string }> =
     {
         EN: {
             title: "Enty - monthly transactions export",
+        },
+        WISE: {
+            title: "Wise - bank activity",
         },
         TB: {
             title: "Tinybird - generation event usage",
@@ -33,6 +44,7 @@ const SOURCE_META: Record<
 > = {
     enty: { code: "EN", display: "EN" },
     en: { code: "EN", display: "EN" },
+    wise: { code: "WISE", display: "WISE" },
     api: { code: "API", display: "API" },
     cli: { code: "CLI", display: "CLI" },
     bq: { code: "BQ", display: "BQ" },

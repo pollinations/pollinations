@@ -137,9 +137,17 @@ function buildRegistry(
 async function loadGenerationModelRegistry(
     dbBinding: CloudflareBindings["DB"] | undefined,
 ): Promise<GenerationModelRegistry> {
-    const communityEntries = (
-        await getCommunityModelRegistryEntries(dbBinding)
-    ).map(communityEntryToGenerationEntry);
+    let communityEntries: GenerationModelEntry[] = [];
+    try {
+        communityEntries = (
+            await getCommunityModelRegistryEntries(dbBinding)
+        ).map(communityEntryToGenerationEntry);
+    } catch (error) {
+        console.error(
+            "Failed to load community models from D1 database:",
+            error,
+        );
+    }
     return buildRegistry([...STATIC_ENTRIES, ...communityEntries]);
 }
 

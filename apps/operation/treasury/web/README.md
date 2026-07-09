@@ -1,7 +1,7 @@
 # Treasury Web
 
-Treasury local UI over raw Forager Tinybird pipe outputs in the `operations`
-workspace. Tabs: Transactions, Pollen, Provider, and Revenue.
+Treasury local UI over OP Tinybird pipe outputs in the `operations` workspace.
+Raw tabs: Data Quality, Transactions, Pollen, and Cloud.
 
 ## Run
 
@@ -24,9 +24,11 @@ and no network calls.
 
 ## Data Contract
 
-Reads exactly these pipes from `apps/operation/forager/tinybird/pipes/`:
-`transactions_api`, `provider_monthly_api`, `pollen_monthly_api`, `ingest_runs_api`, and
-`revenue_monthly_api`.
+Reads OP pipes from `apps/operation/treasury/tinybird/pipes/`:
+`op_transactions_api`, `op_cloud_api`, and `op_pollen_api`.
+
+It also reads `ingest_runs_api` for freshness status while that operational
+status pipe remains available.
 
 The app is a read-only mirror; all reads go through the local server
 proxy.

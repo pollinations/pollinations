@@ -1,0 +1,24 @@
+TOKEN "treasury_web" READ
+
+NODE endpoint
+SQL >
+    SELECT
+        source,
+        start,
+        end,
+        vendor,
+        type,
+        model,
+        credit,
+        paid,
+        currency,
+        evidence,
+        formatDateTime(recorded_at, '%F %T') AS recorded_at,
+        resource_sku,
+        resource_count,
+        resource_id,
+        resource_name
+    FROM op_cloud
+    ORDER BY start DESC, vendor, type, resource_name, resource_id
+
+TYPE endpoint

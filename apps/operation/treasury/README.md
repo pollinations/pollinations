@@ -1,6 +1,6 @@
 # Treasury
 
-Treasury is the raw operations viewer and editor for Forager data.
+Treasury is the raw operations viewer for OP data.
 
 Run locally from the web package:
 
@@ -20,12 +20,11 @@ Live mode uses a password gate. Tinybird read/write tokens live only in
 `secrets/web.json` and are used by the Vite server-side proxy, never by the
 browser bundle.
 
-Data contracts live in `../forager/tinybird/README.md`.
+Data contracts live in [`tinybird/README.md`](./tinybird/README.md).
 
 Current planning:
 
-- `../forager/PLAN-CLOUD.md` — current raw Operations data architecture.
-- `PLAN-GPU-RUNS.md` — current GPU runs implementation plan.
+- [`tinybird/`](./tinybird/) — current OP Tinybird datasource and pipe definitions.
 
 Audit/support notes:
 

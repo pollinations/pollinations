@@ -5,10 +5,9 @@ import { matchesMonth } from "./months";
 
 // kind: "gpu" = rented box (idle risk, time-based); "serverless" = scales to
 // zero (per-run billing inside the same vendor bill). It only drives the
-// verdict (serverless never "idle-candidate") and a row chip. The kind now
-// rides on each run (data.gpuRuns.kind, stamped from forager
-// config/gpu_models.json); a model is "serverless" only when EVERY run that
-// served it was serverless.
+// verdict (serverless never "idle-candidate") and a row chip. The kind rides
+// on each run (data.gpuRuns.kind); a model is "serverless" only when EVERY run
+// that served it was serverless.
 export type DeploymentKind = "gpu" | "serverless";
 
 // Registry unit prices for break-even (shared/registry/image.ts; hardcoded —
@@ -65,7 +64,7 @@ const NO_RUNS_FLAG =
     "error: no gpu runs this month — deployment split unavailable";
 const ZERO_COST_FLAG = "error: gpu runs have zero cost — cannot split bill";
 const UNMAPPED_FLAG =
-    "error: unmapped model — assign the deployment in forager config/gpu_models.json";
+    "error: unmapped model - assign the deployment in the GPU run source";
 
 // Split a comma-joined model column into trimmed, non-empty model names.
 function splitModels(model: string): string[] {
@@ -102,8 +101,8 @@ export function gpuEconomics(
 
     // Iterate vendors that either bill a GPU-rent slice (a compute-gpu
     // provider row) or ran GPU boxes this filter. compute-gpu is written at
-    // ingest (forager remaps pure-GPU vendors' compute rows; OVH's GPU slice
-    // is a manual compute-gpu row). A vendor whose only provider rows are
+    // ingest (pure-GPU vendors' compute rows are remapped; OVH's GPU slice is
+    // a manual compute-gpu row). A vendor whose only provider rows are
     // plain compute (API inference) or infra is NOT a GPU-economics vendor.
     const vendorSet = new Set<string>();
     for (const r of data.providerMonthly) {
@@ -478,8 +477,8 @@ function verdictFor(
 
 // Runway chips for the fleet health panel — credit-depletion signal only.
 // Live prepaid-balance runway (runpod / vast.ai) is no longer a dashboard
-// chip: it moved to the forager ingest run (the gpu_runway:<vendor> statuses
-// + 🚨 print), since the gpu_fleet snapshot datasource was retired.
+// chip: it moved to ingest-run status rows (the gpu_runway:<vendor> statuses),
+// since the gpu_fleet snapshot datasource was retired.
 // lambda: reuse creditRunway() depletion signal.
 export function runwayChips(data: Data, now: Date): RunwayChip[] {
     const chips: RunwayChip[] = [];

@@ -86,7 +86,7 @@ const NO_BILL_FLAG = "error: no provider bill this month — rent unwitnessed";
 const NO_RUNS_FLAG =
     "error: no gpu runs this month — deployment split unavailable";
 const UNMAPPED_FLAG =
-    "error: unmapped model — assign the deployment in forager config/gpu_models.json";
+    "error: unmapped model - assign the deployment in the GPU run source";
 const ZERO_COST_FLAG = "error: gpu runs have zero cost — cannot split bill";
 
 // ---- gpuEconomics --------------------------------------------------------

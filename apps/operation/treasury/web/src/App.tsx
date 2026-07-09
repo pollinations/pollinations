@@ -42,10 +42,6 @@ import { hoursSince } from "./lib/format";
 import { insightVendorOptions, vendorPlanes } from "./lib/insights";
 import { collectMonths } from "./lib/months";
 import { fixturesMode, loadAll, TbError } from "./lib/tb";
-import {
-    findVendorVocabularyIssues,
-    VENDOR_OPTIONS,
-} from "./lib/vendor-vocabulary";
 import type { Data } from "./types";
 import { CreditsTab } from "./views/CreditsTab";
 import { DataQualityTab } from "./views/DataQualityTab";
@@ -666,7 +662,7 @@ function viewInfoContent(
 }
 
 function vendorOptionsForTab(data: Data | null, tab: Tab) {
-    if (!data) return VENDOR_OPTIONS;
+    if (!data) return ["all"];
 
     const vendors = new Set<string>();
     const add = (value: string) => {
@@ -854,10 +850,6 @@ export default function App() {
         showVendorFilter ||
         showCategoryFilter ||
         showTypeFilter;
-    const vendorIssues = useMemo(
-        () => (data ? findVendorVocabularyIssues(data) : []),
-        [data],
-    );
     const categoryOptions = useMemo(() => {
         const categories = new Set<string>();
         for (const row of data?.opTransactions ?? []) {
@@ -1095,25 +1087,8 @@ export default function App() {
             >
                 {staleHours !== null && staleHours > STALE_AFTER_HOURS && (
                     <Alert intent="warning" title="Stale data">
-                        Last forager run was {Math.round(staleHours)}h ago. Run{" "}
+                        Last ingest run was {Math.round(staleHours)}h ago. Run{" "}
                         <code>python3 -m ingest.run</code> for fresh numbers.
-                    </Alert>
-                )}
-
-                {vendorIssues.length > 0 && (
-                    <Alert intent="warning" title="Vendor vocabulary mismatch">
-                        <div className="flex flex-col gap-1">
-                            {vendorIssues.slice(0, 5).map((issue) => (
-                                <span
-                                    key={`${issue.source}:${issue.vendor}:${issue.detail}`}
-                                >
-                                    {issue.detail}
-                                </span>
-                            ))}
-                            {vendorIssues.length > 5 && (
-                                <span>+{vendorIssues.length - 5} more</span>
-                            )}
-                        </div>
                     </Alert>
                 )}
 

@@ -141,7 +141,7 @@ export function TransactionsTab({
                                 <TableCell>{fmtPeriod(row.date)}</TableCell>
                                 <TableCell>
                                     {row.vendor || (
-                                        <span title="no vendor match — add an alias in forager config/vendor_aliases.json and re-run the ingest">
+                                        <span title="no vendor match - fix the OP transaction vendor and reload the data">
                                             <Chip intent="warning" size="sm">
                                                 unmatched
                                             </Chip>

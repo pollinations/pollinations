@@ -11,8 +11,8 @@ pollinations-myceli-proxy/wrangler.generated.toml
 /Design Audit.html
 /_local/
 
-# Local treasury billing evidence ingestion and reconciliation workspace
-/apps/operation/treasury/ingest/
+# Local treasury ingest source artifacts and generated data
+/apps/operation/treasury/ingest/data/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

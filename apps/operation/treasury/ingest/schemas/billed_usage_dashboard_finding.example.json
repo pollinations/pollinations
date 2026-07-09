@@ -1,0 +1,26 @@
+{
+  "schema_version": "billed_usage_ai_finding.v1",
+  "invoice_record_id": "dashboard-vast-ai-2026-01",
+  "source_file": "apps/operation/treasury/ingest/data/processed/vast-ai/raw/vast-ai-2026-01-dashboard.png",
+  "provider": "vast.ai",
+  "invoice_id": null,
+  "issued_at": "2026-07-09",
+  "period_start": "2026-01-01",
+  "period_end": "2026-01-31",
+  "amount": 8.17,
+  "currency": "USD",
+  "cost_category": "gpu",
+  "op_cloud_type": "gpu",
+  "op_transaction_category": null,
+  "should_match_op_transaction": false,
+  "should_match_op_cloud": true,
+  "usage_summary": "Vast.ai dashboard/export shows January 2026 GPU usage for flux workloads across multiple instance IDs.",
+  "cost_details": [
+    {
+      "label": "GPU usage slices for model flux; resources 30826995, 30822975, 30822967, 30826782, 30829281, 30829569, 30829719",
+      "amount": 8.17,
+      "currency": "USD"
+    }
+  ],
+  "reconciliation_notes": "Collected from provider dashboard or CLI export for January 2026. This usage evidence complements invoice/payment evidence and should reconcile to op_cloud, not directly to op_transactions."
+}

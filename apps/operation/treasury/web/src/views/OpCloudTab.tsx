@@ -16,6 +16,7 @@ import {
 } from "../components/DataTable";
 import { SourceCell } from "../components/Provenance";
 import { fmtNumber, fmtUtcDateTime, utcDateTimeTitle } from "../lib/format";
+import { isPreWindowGrantBurnRow } from "../lib/insights";
 import { matchesMonth } from "../lib/months";
 import type { Data, OpCloudRow } from "../types";
 
@@ -28,6 +29,7 @@ function opCloudKey(row: OpCloudRow) {
         row.resource_id,
         row.resource_name,
         row.resource_sku,
+        row.resource_count,
         row.model,
         row.credit,
         row.paid,
@@ -49,6 +51,7 @@ export function OpCloudTab({
     const baseRows = useMemo(() => {
         return (data.opCloud ?? []).filter(
             (row) =>
+                !isPreWindowGrantBurnRow(row) &&
                 matchesMonth(row.start, month) &&
                 (vendor === "all" || row.vendor === vendor) &&
                 (type === "all" || row.type === type),
@@ -68,6 +71,7 @@ export function OpCloudTab({
             { key: "evidence", value: (row) => row.evidence },
             { key: "recorded_at", value: (row) => row.recorded_at },
             { key: "resource_sku", value: (row) => row.resource_sku },
+            { key: "resource_count", value: (row) => row.resource_count },
             { key: "resource_id", value: (row) => row.resource_id },
             { key: "resource_name", value: (row) => row.resource_name },
         ],
@@ -119,6 +123,9 @@ export function OpCloudTab({
                         <TableHeaderCell {...headerProps("resource_sku")}>
                             resource_sku
                         </TableHeaderCell>
+                        <TableHeaderCell {...headerProps("resource_count")}>
+                            resource_count
+                        </TableHeaderCell>
                         <TableHeaderCell {...headerProps("resource_id")}>
                             resource_id
                         </TableHeaderCell>
@@ -159,6 +166,9 @@ export function OpCloudTab({
                                 {fmtUtcDateTime(row.recorded_at)}
                             </TableCell>
                             <TableCell>{row.resource_sku}</TableCell>
+                            <TableCell>
+                                {fmtNumber(row.resource_count)}
+                            </TableCell>
                             <TableCell>{row.resource_id}</TableCell>
                             <TableCell>{row.resource_name}</TableCell>
                         </TableRow>

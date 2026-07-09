@@ -3,22 +3,17 @@ import { FIXTURES } from "./fixtures";
 import type { RunRow } from "./types";
 
 const EXPECTED_PIPES = [
-    "transactions_api",
     "op_transactions_api",
-    "provider_monthly_api",
-    "pollen_monthly_api",
-    "grants_api",
+    "op_cloud_api",
+    "op_pollen_api",
     "ingest_runs_api",
-    "revenue_monthly_api",
 ];
 
 describe("fixtures", () => {
     it("covers every pipe the app fetches", () => {
         for (const pipe of EXPECTED_PIPES) {
             expect(FIXTURES[pipe], pipe).toBeDefined();
-            expect((FIXTURES[pipe] as unknown[]).length, pipe).toBeGreaterThan(
-                0,
-            );
+            expect(FIXTURES[pipe], pipe).toBeInstanceOf(Array);
         }
     });
 

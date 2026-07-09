@@ -125,32 +125,12 @@ function providerFunding(
     };
 }
 
-type EconSourceMode = "legacy" | "op";
-
-const ECON_SOURCE_HINTS: Record<
-    EconSourceMode,
-    {
-        pollenTables: string;
-        providerTables: string;
-        fundingTables: string;
-        providerSources: string;
-        fundingSources: string;
-    }
-> = {
-    legacy: {
-        pollenTables: "pollen_monthly_api",
-        providerTables: "pollen_monthly_api + provider_monthly_api",
-        fundingTables: "provider_monthly_api + grants_api",
-        providerSources: "TB · API/CLI/BQ/manual",
-        fundingSources: "API/CLI/BQ · HC",
-    },
-    op: {
-        pollenTables: "op_pollen_api",
-        providerTables: "op_pollen_api + op_cloud_api",
-        fundingTables: "op_cloud_api + grants_api",
-        providerSources: "TB · API/CLI/BQ/HC",
-        fundingSources: "API/CLI/BQ/HC",
-    },
+const ECON_SOURCE_HINTS = {
+    pollenTables: "op_pollen_api",
+    providerTables: "op_pollen_api + op_cloud_api",
+    fundingTables: "op_cloud_api",
+    providerSources: "TB · API/CLI/BQ/HC",
+    fundingSources: "API/CLI/BQ/HC",
 };
 
 // One economics table, two grains. The Vendors summary (grain "vendor") is
@@ -161,16 +141,14 @@ export function EconTable({
     rows,
     showFlags = false,
     showModel = false,
-    sourceMode = "legacy",
 }: {
     netRatio: number | null;
     rows: EconRow[];
     showFlags?: boolean;
     showModel?: boolean;
-    sourceMode?: EconSourceMode;
 }) {
     const cashBreakEven = breakEvenMultiplier(netRatio);
-    const sourceHints = ECON_SOURCE_HINTS[sourceMode];
+    const sourceHints = ECON_SOURCE_HINTS;
     const sortColumns = useMemo<SortColumn<EconRow>[]>(
         () => [
             { key: "vendor", value: (row) => row.vendor },

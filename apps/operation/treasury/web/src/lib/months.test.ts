@@ -11,16 +11,20 @@ import {
 } from "./months";
 
 const data: Data = {
-    transactions: FIXTURES.transactions_api,
-    providerMonthly: FIXTURES.provider_monthly_api,
-    pollenMonthly: FIXTURES.pollen_monthly_api,
-    grants: FIXTURES.grants_api,
+    transactions: [],
+    providerMonthly: [],
+    pollenMonthly: [],
+    opTransactions: FIXTURES.op_transactions_api,
+    opCloud: FIXTURES.op_cloud_api,
+    opPollen: FIXTURES.op_pollen_api,
+    grants: [],
     runs: FIXTURES.ingest_runs_api,
-    revenueMonthly: FIXTURES.revenue_monthly_api,
+    revenueMonthly: [],
+    gpuRuns: [],
 } as Data;
 
 describe("collectMonths", () => {
-    it("unions months across all month-grained tables, sorted", () => {
+    it("unions months across OP month-grained tables, sorted", () => {
         const months = collectMonths(data);
         expect(months).toEqual([...months].sort());
         expect(new Set(months).size).toBe(months.length);

@@ -29,7 +29,7 @@ describe("vendor vocabulary", () => {
     it("reports unknown row vendors without turning aliases into options", () => {
         const issues = findVendorVocabularyIssues({
             ...baseData,
-            pollenMonthly: [
+            opPollen: [
                 {
                     source: "tinybird",
                     month: "2026-06",
@@ -44,16 +44,17 @@ describe("vendor vocabulary", () => {
                     byop_quests: 0,
                     model_paid: 0,
                     model_quests: 0,
-                    requests: 0,
+                    requests_paid: 0,
+                    requests_quests: 0,
                 },
             ],
         });
 
         expect(issues).toEqual([
             {
-                source: "pollen_monthly",
+                source: "op_pollen",
                 vendor: "new-vendor",
-                detail: 'pollen_monthly: unknown vendor "new-vendor" - add an alias or canonical vendor in vendor_aliases.json',
+                detail: 'op_pollen: unknown vendor "new-vendor" - add an alias or canonical vendor in vendor_aliases.json',
             },
         ]);
     });

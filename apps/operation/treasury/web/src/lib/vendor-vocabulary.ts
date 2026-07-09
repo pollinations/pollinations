@@ -47,25 +47,19 @@ function addIssue(
 }
 
 export function findVendorVocabularyIssues(
-    data: Pick<
-        Data,
-        "transactions" | "providerMonthly" | "pollenMonthly" | "grants"
-    >,
+    data: Pick<Data, "opTransactions" | "opCloud" | "opPollen">,
 ): VendorVocabularyIssue[] {
     const issues: VendorVocabularyIssue[] = [];
     const seen = new Set<string>();
 
-    for (const row of data.transactions) {
-        addIssue(issues, seen, "transactions", row.vendor);
+    for (const row of data.opTransactions ?? []) {
+        addIssue(issues, seen, "op_transactions", row.vendor);
     }
-    for (const row of data.providerMonthly) {
-        addIssue(issues, seen, "provider_monthly", row.vendor);
+    for (const row of data.opCloud ?? []) {
+        addIssue(issues, seen, "op_cloud", row.vendor);
     }
-    for (const row of data.pollenMonthly) {
-        addIssue(issues, seen, "pollen_monthly", row.vendor);
-    }
-    for (const row of data.grants) {
-        addIssue(issues, seen, "grants", row.vendor);
+    for (const row of data.opPollen ?? []) {
+        addIssue(issues, seen, "op_pollen", row.vendor);
     }
 
     return issues.sort(

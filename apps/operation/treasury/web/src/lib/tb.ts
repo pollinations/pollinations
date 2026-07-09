@@ -1,16 +1,10 @@
 import { FIXTURES } from "../fixtures";
 import type {
     Data,
-    GpuRunRow,
-    GrantRow,
     OpCloudRow,
     OpPollenRow,
     OpTransactionRow,
-    PollenMonthlyRow,
-    ProviderMonthlyRow,
-    RevenueMonthlyRow,
     RunRow,
-    TransactionRow,
 } from "../types";
 
 export const fixturesMode = (): boolean =>
@@ -59,40 +53,23 @@ async function fetchOptionalPipe<T>(pipe: string): Promise<T[]> {
 }
 
 export async function loadAll(): Promise<Data> {
-    const [
-        transactions,
-        providerMonthly,
-        pollenMonthly,
-        opTransactions,
-        opCloud,
-        opPollen,
-        grants,
-        runs,
-        revenueMonthly,
-        gpuRuns,
-    ] = await Promise.all([
-        fetchPipe<TransactionRow>("transactions_api"),
-        fetchPipe<ProviderMonthlyRow>("provider_monthly_api"),
-        fetchPipe<PollenMonthlyRow>("pollen_monthly_api"),
+    const [opTransactions, opCloud, opPollen, runs] = await Promise.all([
         fetchOptionalPipe<OpTransactionRow>("op_transactions_api"),
         fetchOptionalPipe<OpCloudRow>("op_cloud_api"),
         fetchOptionalPipe<OpPollenRow>("op_pollen_api"),
-        fetchPipe<GrantRow>("grants_api"),
         fetchPipe<RunRow>("ingest_runs_api"),
-        fetchPipe<RevenueMonthlyRow>("revenue_monthly_api"),
-        fetchPipe<GpuRunRow>("gpu_runs_api"),
     ]);
 
     return {
-        transactions,
-        providerMonthly,
-        pollenMonthly,
+        transactions: [],
+        providerMonthly: [],
+        pollenMonthly: [],
         opTransactions,
         opCloud,
         opPollen,
-        grants,
+        grants: [],
         runs,
-        revenueMonthly,
-        gpuRuns,
+        revenueMonthly: [],
+        gpuRuns: [],
     };
 }

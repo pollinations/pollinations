@@ -69,7 +69,7 @@ export function VendorsTab({
                     },
                 ]}
             />
-            <EconTable netRatio={null} rows={econRows} sourceMode="op" />
+            <EconTable netRatio={null} rows={econRows} />
         </div>
     );
 }

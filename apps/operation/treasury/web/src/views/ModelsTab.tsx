@@ -69,12 +69,7 @@ export function ModelsTab({
                     },
                 ]}
             />
-            <EconTable
-                netRatio={null}
-                rows={econRows}
-                showModel
-                sourceMode="op"
-            />
+            <EconTable netRatio={null} rows={econRows} showModel />
         </div>
     );
 }

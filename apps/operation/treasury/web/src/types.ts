@@ -58,6 +58,7 @@ export type OpCloudRow = {
     resource_id: string;
     resource_name: string;
     resource_sku: string;
+    resource_count: number;
     model: string;
     evidence: string;
     recorded_at: string;

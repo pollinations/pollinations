@@ -39,49 +39,27 @@ import { FilterBar, FilterSelect, MonthFilter } from "./components/Filters";
 import type { ProvenanceCode } from "./components/Provenance";
 import { STALE_AFTER_HOURS } from "./config";
 import { hoursSince } from "./lib/format";
-import { insightVendorOptions } from "./lib/insights";
+import { insightVendorOptions, vendorPlanes } from "./lib/insights";
 import { collectMonths } from "./lib/months";
 import { fixturesMode, loadAll, TbError } from "./lib/tb";
 import {
     findVendorVocabularyIssues,
     VENDOR_OPTIONS,
-    vendorVocabularyRunIssues,
 } from "./lib/vendor-vocabulary";
 import type { Data } from "./types";
 import { CreditsTab } from "./views/CreditsTab";
-import { GpuRunsTab } from "./views/GpuRunsTab";
+import { DataQualityTab } from "./views/DataQualityTab";
 import { GpuTab } from "./views/GpuTab";
-import { GrantsTab } from "./views/GrantsTab";
 import { ModelsTab } from "./views/ModelsTab";
 import { OpCloudTab } from "./views/OpCloudTab";
 import { OpPollenTab } from "./views/OpPollenTab";
 import { OpTransactionsTab } from "./views/OpTransactionsTab";
 import { PnlTab } from "./views/PnlTab";
-import { PollenTab } from "./views/PollenTab";
-import { ProviderTab } from "./views/ProviderTab";
-import { ReconciliationTab } from "./views/ReconciliationTab";
-import { RevenueTab } from "./views/RevenueTab";
-import { TransactionsTab } from "./views/TransactionsTab";
 import { VendorsTab } from "./views/VendorsTab";
 
-type Tab =
-    | "transactions"
-    | "op-transactions"
-    | "pollen"
-    | "op-pollen"
-    | "provider"
-    | "op-cloud"
-    | "grants"
-    | "revenue"
-    | "runs";
+type Tab = "data-quality" | "op-transactions" | "op-pollen" | "op-cloud";
 type TreasurySection = "insights" | "raw";
-type InsightTab =
-    | "pnl"
-    | "vendors"
-    | "models"
-    | "reconciliation"
-    | "credits"
-    | "gpu";
+type InsightTab = "pnl" | "vendors" | "models" | "credits" | "gpu";
 
 function isOpRawTabId(section: TreasurySection, tab: Tab) {
     return (
@@ -90,24 +68,23 @@ function isOpRawTabId(section: TreasurySection, tab: Tab) {
     );
 }
 
-function isOpTableViewId(
-    section: TreasurySection,
-    tab: Tab,
-    insightTab: InsightTab,
-) {
-    return (
-        isOpRawTabId(section, tab) ||
-        (section === "insights" && insightTab === "reconciliation")
-    );
+function isOpTableViewId(section: TreasurySection, tab: Tab) {
+    return isOpRawTabId(section, tab);
 }
 
-function isCompactUnitEconomicsView(
+function isCompactInsightView(
     section: TreasurySection,
     insightTab: InsightTab,
+    tab: Tab,
 ) {
     return (
-        section === "insights" &&
-        (insightTab === "vendors" || insightTab === "models")
+        (section === "raw" && tab === "data-quality") ||
+        (section === "insights" &&
+            (insightTab === "pnl" ||
+                insightTab === "credits" ||
+                insightTab === "vendors" ||
+                insightTab === "models" ||
+                insightTab === "gpu"))
     );
 }
 
@@ -134,12 +111,6 @@ const INSIGHT_TABS: {
         label: "P&L",
         note: "Strict cash P&L from the signed Wise ledger: revenue inflows minus non-revenue outflows by category.",
         icon: TrendUpIcon,
-    },
-    {
-        id: "reconciliation",
-        label: "Data Quality",
-        note: "OP row quality by vendor and month: OP Transactions, OP Cloud burn, and OP Pollen metering - missing witnesses and calibration drift sort first.",
-        icon: EyeIcon,
     },
     {
         id: "credits",
@@ -170,7 +141,7 @@ const UNIT_ECONOMICS_TABS: {
     {
         id: "gpu",
         label: "GPUs",
-        note: "Time-based economics for rented GPU boxes: witnessed monthly rent allocated per deployment by fleet $/hr share, vs retained pollen on the models it serves - coverage, true unit cost, break-even volume, runway.",
+        note: "GPU unit economics from OP Cloud GPU burn and OP Pollen demand: rent, paid and quest Pollen, coverage, efficiency, and break-even.",
         icon: RocketIcon,
     },
 ] satisfies readonly DrawerItem<InsightTab>[];
@@ -192,17 +163,17 @@ const TABS: {
     rows: (data: Data) => number;
 }[] = [
     {
-        id: "transactions",
-        label: "Transactions",
-        codes: ["EN"],
-        pipe: "transactions_api",
-        note: "Enty monthly export: charged amount, paid amount, currencies, and match state.",
-        icon: DatabaseIcon,
-        rows: (data) => data.transactions.length,
+        id: "data-quality",
+        label: "Data Quality",
+        codes: ["WISE", "API", "CLI", "BQ", "HC", "TB"],
+        pipe: "op_transactions_api + op_cloud_api + op_pollen_api",
+        note: "OP row quality by vendor and month: OP Transactions, OP Cloud burn, and OP Pollen metering - missing witnesses and calibration drift sort first.",
+        icon: EyeIcon,
+        rows: (data) => vendorPlanes(data).length,
     },
     {
         id: "op-transactions",
-        label: "Transactions OP",
+        label: "Transactions",
         codes: ["WISE"],
         pipe: "op_transactions_api",
         note: "New signed Wise cash ledger: money in is positive, money out is negative. Construction comments mark unmatched vendors.",
@@ -210,17 +181,8 @@ const TABS: {
         rows: (data) => data.opTransactions?.length ?? 0,
     },
     {
-        id: "pollen",
-        label: "Pollen",
-        codes: ["TB"],
-        pipe: "pollen_monthly_api",
-        note: "Our own metering: Tinybird generation events → one model/month row, paid vs quest Pollen.",
-        icon: DatabaseIcon,
-        rows: (data) => data.pollenMonthly.length,
-    },
-    {
         id: "op-pollen",
-        label: "Pollen OP",
+        label: "Pollen",
         codes: ["TB"],
         pipe: "op_pollen_api",
         note: "New Pollen usage table with paid/quest money splits and paid/quest request counts.",
@@ -228,49 +190,13 @@ const TABS: {
         rows: (data) => data.opPollen?.length ?? 0,
     },
     {
-        id: "provider",
-        label: "Provider",
-        codes: ["API", "CLI", "BQ", "HC"],
-        pipe: "provider_monthly_api",
-        note: "Provider-reported monthly usage from vendor APIs, CLIs, BigQuery exports, and manual entries.",
-        icon: DatabaseIcon,
-        rows: (data) => data.providerMonthly.length,
-    },
-    {
         id: "op-cloud",
-        label: "Cloud OP",
+        label: "Cloud",
         codes: ["API", "CLI", "BQ", "HC"],
         pipe: "op_cloud_api",
         note: "New cloud ledger combining provider usage, GPU resources, infrastructure, and grants as signed cloud facts.",
         icon: DatabaseIcon,
         rows: (data) => data.opCloud?.length ?? 0,
-    },
-    {
-        id: "grants",
-        label: "Grants",
-        codes: ["HC"],
-        pipe: "grants_api",
-        note: "Credit start points, one row per grant (label splits multiple grants per vendor). Raw facts only - burn and remaining are derived elsewhere.",
-        icon: DatabaseIcon,
-        rows: (data) => data.grants.length,
-    },
-    {
-        id: "revenue",
-        label: "Revenue",
-        codes: ["ST"],
-        pipe: "revenue_monthly_api",
-        note: "Raw monthly revenue rows. Net revenue is intentionally not precomputed in the pipe.",
-        icon: DatabaseIcon,
-        rows: (data) => data.revenueMonthly.length,
-    },
-    {
-        id: "runs",
-        label: "GPU Runs",
-        codes: ["API", "CLI", "HC"],
-        pipe: "gpu_runs_api",
-        note: "GPU run ledger: one row per GPU run per month — which GPU ran, when, for how long, at what cost, serving which model. API/CLI-backfilled where providers keep history; manual rows from invoices/dashboards.",
-        icon: DatabaseIcon,
-        rows: (data) => data.gpuRuns.length,
     },
 ];
 
@@ -567,8 +493,7 @@ function TreasuryShell({
                     axis="y"
                     className={cn(
                         "min-h-0 flex-1",
-                        isOpTableViewId(section, tab, insightTab) &&
-                            "overflow-hidden",
+                        isOpTableViewId(section, tab) && "overflow-hidden",
                     )}
                 >
                     {children}
@@ -633,6 +558,21 @@ function viewInfoContent(
     insightTab: InsightTab,
 ) {
     if (section === "raw") {
+        if (tab === "data-quality") {
+            return (
+                <span className="block max-w-72">
+                    <strong>Data Quality</strong>
+                    <InfoLine>One row per vendor-month.</InfoLine>
+                    <InfoLine>
+                        Compares OP Transactions payment witnesses, OP Cloud
+                        burn, and OP Pollen metering directly.
+                    </InfoLine>
+                    <InfoLine>
+                        Missing witnesses and calibration drift sort first.
+                    </InfoLine>
+                </span>
+            );
+        }
         const active = TABS.find((item) => item.id === tab);
         if (!active) return null;
         return (
@@ -676,21 +616,6 @@ function viewInfoContent(
             </span>
         );
     }
-    if (insightTab === "reconciliation") {
-        return (
-            <span className="block max-w-72">
-                <strong>Data Quality</strong>
-                <InfoLine>One row per vendor-month.</InfoLine>
-                <InfoLine>
-                    Compares OP Transactions payment witnesses, OP Cloud burn,
-                    and OP Pollen metering directly.
-                </InfoLine>
-                <InfoLine>
-                    Missing witnesses and calibration drift sort first.
-                </InfoLine>
-            </span>
-        );
-    }
     if (insightTab === "credits") {
         return (
             <span className="block max-w-72">
@@ -724,16 +649,15 @@ function viewInfoContent(
             <span className="block max-w-72">
                 <strong>GPU Economics</strong>
                 <InfoLine>
-                    Rent is the witnessed provider bill allocated to each
-                    deployment by its share of fleet $/hr that month.
+                    One row per GPU, provider, and model from OP Cloud GPU burn.
                 </InfoLine>
                 <InfoLine>
-                    Coverage = retained paid pollen × net ratio ÷ rent — above
-                    100% the box pays for itself.
+                    OP Pollen adds requests, paid Pollen, and quest Pollen by
+                    vendor and model.
                 </InfoLine>
                 <InfoLine>
-                    Requests are successful, non-cached generations (pollen
-                    events), not pod uptime hours.
+                    Flags mark missing model, unknown GPU, or no matching
+                    Pollen.
                 </InfoLine>
             </span>
         );
@@ -750,22 +674,15 @@ function vendorOptionsForTab(data: Data | null, tab: Tab) {
         if (vendor) vendors.add(vendor);
     };
 
-    if (tab === "transactions") {
-        for (const row of data.transactions) add(row.vendor);
-    } else if (tab === "op-transactions") {
+    if (tab === "data-quality") {
+        return insightVendorOptions(data);
+    }
+    if (tab === "op-transactions") {
         for (const row of data.opTransactions ?? []) add(row.vendor);
-    } else if (tab === "pollen") {
-        for (const row of data.pollenMonthly) add(row.vendor);
     } else if (tab === "op-pollen") {
         for (const row of data.opPollen ?? []) add(row.vendor);
-    } else if (tab === "provider") {
-        for (const row of data.providerMonthly) add(row.vendor);
     } else if (tab === "op-cloud") {
         for (const row of data.opCloud ?? []) add(row.vendor);
-    } else if (tab === "grants") {
-        for (const row of data.grants) add(row.vendor);
-    } else if (tab === "runs") {
-        for (const row of data.gpuRuns) add(row.vendor);
     }
 
     return ["all", ...[...vendors].sort((a, b) => a.localeCompare(b))];
@@ -835,7 +752,7 @@ export default function App() {
     const [authError, setAuthError] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [data, setData] = useState<Data | null>(null);
-    const [tab, setTab] = useState<Tab>("transactions");
+    const [tab, setTab] = useState<Tab>("op-transactions");
     const [section, setSection] = useState<TreasurySection>("insights");
     const [insightTab, setInsightTab] = useState<InsightTab>("pnl");
     // Open on the full current audit year by default.
@@ -924,15 +841,13 @@ export default function App() {
             ? insightTab !== "pnl" &&
               insightTab !== "credits" &&
               insightVendors.length > 1
-            : tab !== "revenue" && tab !== "grants" && vendorOptions.length > 1;
+            : vendorOptions.length > 1;
     const activeVendorOptions =
         section === "insights" ? insightVendors : vendorOptions;
     const showPeriodFilter =
         (section === "insights" && insightTab !== "credits") ||
-        (section === "raw" && tab !== "revenue" && tab !== "grants");
-    const showCategoryFilter =
-        section === "raw" &&
-        (tab === "transactions" || tab === "op-transactions");
+        section === "raw";
+    const showCategoryFilter = section === "raw" && tab === "op-transactions";
     const showTypeFilter = section === "raw" && tab === "op-cloud";
     const hasFilters =
         showPeriodFilter ||
@@ -940,26 +855,16 @@ export default function App() {
         showCategoryFilter ||
         showTypeFilter;
     const vendorIssues = useMemo(
-        () =>
-            data
-                ? [
-                      ...vendorVocabularyRunIssues(data.runs),
-                      ...findVendorVocabularyIssues(data),
-                  ]
-                : [],
+        () => (data ? findVendorVocabularyIssues(data) : []),
         [data],
     );
     const categoryOptions = useMemo(() => {
         const categories = new Set<string>();
-        const rows =
-            tab === "op-transactions"
-                ? (data?.opTransactions ?? [])
-                : (data?.transactions ?? []);
-        for (const row of rows) {
+        for (const row of data?.opTransactions ?? []) {
             if (row.category) categories.add(row.category);
         }
         return ["all", ...[...categories].sort((a, b) => a.localeCompare(b))];
-    }, [data, tab]);
+    }, [data]);
     const typeOptions = useMemo(() => {
         const types = new Set<string>();
         for (const row of data?.opCloud ?? []) {
@@ -1049,11 +954,8 @@ export default function App() {
     );
     const viewTitle = activeViewTitle(section, tab, insightTab);
     const viewInfo = viewInfoContent(section, tab, insightTab);
-    const isOpTableView = isOpTableViewId(section, tab, insightTab);
-    const isCompactUnitEconomics = isCompactUnitEconomicsView(
-        section,
-        insightTab,
-    );
+    const isOpTableView = isOpTableViewId(section, tab);
+    const isCompactInsight = isCompactInsightView(section, insightTab, tab);
     const filters = hasFilters ? (
         <FilterBar>
             {showPeriodFilter && (
@@ -1110,9 +1012,8 @@ export default function App() {
             <ErrorBoundary
                 resetKey={`${section}:${tab}:${insightTab}:${month}:${vendor}:${category}:${cloudType}`}
             >
-                {data && section === "raw" && tab === "transactions" && (
-                    <TransactionsTab
-                        category={category}
+                {data && section === "raw" && tab === "data-quality" && (
+                    <DataQualityTab
                         data={data}
                         month={activeMonth}
                         vendor={vendor}
@@ -1126,22 +1027,8 @@ export default function App() {
                         vendor={vendor}
                     />
                 )}
-                {data && section === "raw" && tab === "pollen" && (
-                    <PollenTab
-                        data={data}
-                        month={activeMonth}
-                        vendor={vendor}
-                    />
-                )}
                 {data && section === "raw" && tab === "op-pollen" && (
                     <OpPollenTab
-                        data={data}
-                        month={activeMonth}
-                        vendor={vendor}
-                    />
-                )}
-                {data && section === "raw" && tab === "provider" && (
-                    <ProviderTab
                         data={data}
                         month={activeMonth}
                         vendor={vendor}
@@ -1152,19 +1039,6 @@ export default function App() {
                         data={data}
                         month={activeMonth}
                         type={cloudType}
-                        vendor={vendor}
-                    />
-                )}
-                {data && section === "raw" && tab === "grants" && (
-                    <GrantsTab data={data} vendor={vendor} />
-                )}
-                {data && section === "raw" && tab === "revenue" && (
-                    <RevenueTab data={data} />
-                )}
-                {data && section === "raw" && tab === "runs" && (
-                    <GpuRunsTab
-                        data={data}
-                        month={activeMonth}
                         vendor={vendor}
                     />
                 )}
@@ -1185,15 +1059,6 @@ export default function App() {
                         vendor={vendor}
                     />
                 )}
-                {data &&
-                    section === "insights" &&
-                    insightTab === "reconciliation" && (
-                        <ReconciliationTab
-                            data={data}
-                            month={activeMonth}
-                            vendor={vendor}
-                        />
-                    )}
                 {data && section === "insights" && insightTab === "credits" && (
                     <CreditsTab data={data} />
                 )}
@@ -1252,7 +1117,7 @@ export default function App() {
                     </Alert>
                 )}
 
-                {isOpTableView || isCompactUnitEconomics ? (
+                {isOpTableView || isCompactInsight ? (
                     <section
                         className={cn(
                             "flex flex-col",

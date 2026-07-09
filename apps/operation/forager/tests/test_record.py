@@ -686,6 +686,7 @@ def test_record_op_cloud_appends_signed_row_only_to_op_cloud():
             "--resource-id", "pod-1",
             "--resource-name", "flux-worker",
             "--resource-sku", "RTX 4090",
+            "--resource-count", "4",
             "--model", "flux",
             "--evidence", "manual dashboard export 2026-06",
         ],
@@ -704,6 +705,7 @@ def test_record_op_cloud_appends_signed_row_only_to_op_cloud():
     assert row["credit"] == 0.0
     assert row["resource_id"] == "pod-1"
     assert row["resource_sku"] == "RTX 4090"
+    assert row["resource_count"] == 4.0
     assert row["evidence"] == "manual dashboard export 2026-06"
 
 
@@ -745,6 +747,7 @@ def test_record_op_cloud_accepts_positive_credit_grant_row():
     assert row["credit"] == 7500.0
     assert row["paid"] == 0.0
     assert row["end"] == ""
+    assert row["resource_count"] == 1.0
 
 
 def test_record_op_cloud_normalizes_timezone_offsets_to_utc():

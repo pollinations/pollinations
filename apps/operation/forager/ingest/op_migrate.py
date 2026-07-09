@@ -149,7 +149,14 @@ def main(argv=None):
         rows = rows_by_table[table]
         if not rows:
             raise RuntimeError(f"refusing to replace {table} with 0 rows")
-        replace.replace(table, rows)
+        backup.replace_with_backup(
+            client,
+            replace,
+            table,
+            rows,
+            config,
+            backup_dir=backup_dir,
+        )
         print(f"replaced {table}: {len(rows)} rows")
 
 

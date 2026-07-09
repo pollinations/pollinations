@@ -45,9 +45,14 @@ def replace_op_pollen_month(ops_ingest, ops_replace, config, month, rows):
     """Backup op_pollen and replace only one month in the live datasource."""
     if not rows:
         raise ValueError(f"refusing to replace op_pollen {month} with 0 rows")
-    backup_dir = backup.run_directory(config)
-    backup.snapshot_table(ops_ingest, "op_pollen", backup_dir)
-    ops_replace.replace("op_pollen", rows, condition=_month_condition(month))
+    backup_dir, _ = backup.replace_with_backup(
+        ops_ingest,
+        ops_replace,
+        "op_pollen",
+        rows,
+        config,
+        condition=_month_condition(month),
+    )
     return backup_dir
 
 

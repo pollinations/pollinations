@@ -7,9 +7,28 @@ from ingest import backup
 class FakeTB:
     def __init__(self, rows):
         self.rows = rows
+        self.calls = []
 
     def sql(self, query):
+        self.calls.append(("sql", query))
         return self.rows
+
+    def append(self, datasource, rows):
+        self.calls.append(("append", datasource, rows))
+        return {"successful_rows": len(rows)}
+
+    def replace(self, datasource, rows, condition=None):
+        self.calls.append(("replace", datasource, rows, condition))
+        return {"successful_rows": len(rows)}
+
+
+class FailingRead:
+    def __init__(self):
+        self.calls = []
+
+    def sql(self, query):
+        self.calls.append(("sql", query))
+        raise RuntimeError("backup failed")
 
 
 def test_snapshot_writes_ndjson(tmp_path):
@@ -25,12 +44,83 @@ def test_snapshot_empty_table(tmp_path):
     assert (tmp_path / "provider_monthly.ndjson").read_text() == ""
 
 
+def test_relative_backup_root_lives_in_forager_folder():
+    root = backup.backup_root({"backup_dir": "backups"})
+    assert root.name == "backups"
+    assert root.parent.name == "forager"
+
+
+def test_prune_backup_runs_keeps_newest_20(tmp_path):
+    for day in range(25):
+        (tmp_path / f"202607{day + 1:02d}T000000Z").mkdir()
+    removed = backup.prune_backup_runs(
+        {"backup_dir": str(tmp_path), "backup_retention": 20}
+    )
+    remaining = sorted(path.name for path in tmp_path.iterdir())
+    assert len(removed) == 5
+    assert len(remaining) == 20
+    assert remaining[0] == "20260706T000000Z"
+
+
 def test_diff_rows_added_removed():
     old = [{"a": 1}, {"a": 2}]
     new = [{"a": 2}, {"a": 3}]
     added, removed = backup.diff_rows(old, new)
     assert added == [json.dumps({"a": 3}, sort_keys=True)]
     assert removed == [json.dumps({"a": 1}, sort_keys=True)]
+
+
+def test_append_with_backup_snapshots_before_write(tmp_path):
+    client = FakeTB([{"existing": 1}])
+    backup_dir, result = backup.append_with_backup(
+        client,
+        "op_cloud",
+        [{"new": 1}],
+        {"backup_dir": str(tmp_path)},
+    )
+    assert result == {"successful_rows": 1}
+    assert client.calls == [
+        ("sql", "SELECT * FROM op_cloud"),
+        ("append", "op_cloud", [{"new": 1}]),
+    ]
+    lines = (backup_dir / "op_cloud.ndjson").read_text().strip().splitlines()
+    assert [json.loads(line) for line in lines] == [{"existing": 1}]
+
+
+def test_replace_with_backup_snapshots_before_write(tmp_path):
+    read = FakeTB([{"existing": 1}])
+    write = FakeTB([])
+    rows = [{"new": 1}]
+    backup_dir, result = backup.replace_with_backup(
+        read,
+        write,
+        "op_pollen",
+        rows,
+        {"backup_dir": str(tmp_path)},
+        condition="month = '2026-07'",
+    )
+    assert result == {"successful_rows": 1}
+    assert read.calls == [("sql", "SELECT * FROM op_pollen")]
+    assert write.calls == [
+        ("replace", "op_pollen", rows, "month = '2026-07'"),
+    ]
+    lines = (backup_dir / "op_pollen.ndjson").read_text().strip().splitlines()
+    assert [json.loads(line) for line in lines] == [{"existing": 1}]
+
+
+def test_write_is_not_called_when_backup_fails(tmp_path):
+    write = FakeTB([])
+    import pytest
+
+    with pytest.raises(RuntimeError, match="backup failed"):
+        backup.replace_with_backup(
+            FailingRead(),
+            write,
+            "op_cloud",
+            [{"new": 1}],
+            {"backup_dir": str(tmp_path)},
+        )
+    assert write.calls == []
 
 
 def test_diff_rows_ignores_integral_float_representation():
@@ -109,7 +199,7 @@ def test_manual_meter_rows_lost_when_no_new_row_for_key():
     assert [row["vendor"] for row in lost] == ["replicate"]
 
 
-def test_guarded_replace_blocks_manual_loss_without_yes():
+def test_guarded_replace_blocks_manual_loss_without_yes(tmp_path):
     import pytest
     from ingest.run import guarded_replace
 
@@ -122,7 +212,15 @@ def test_guarded_replace_blocks_manual_loss_without_yes():
 
     existing = [{"month": "2026-07", "vendor": "replicate", "currency": "USD",
                  "credit": 200.0, "paid": 0.0, "source": "manual"}]
-    guard = {"yes": False, "dry_run": False, "existing": {"provider_monthly": existing}}
+    read = FakeTB(existing)
+    guard = {
+        "yes": False,
+        "dry_run": False,
+        "read": read,
+        "config": {"backup_dir": str(tmp_path)},
+        "backup_dir": tmp_path,
+        "existing": {"provider_monthly": existing},
+    }
     client = FakeReplace()
     with pytest.raises(RuntimeError, match="--yes"):
         guarded_replace(client, "provider_monthly", [], guard, {})

@@ -221,7 +221,14 @@ def guarded_replace(ops_replace, datasource, rows, guard, statuses):
     if guard["dry_run"]:
         print(f"dry-run: skipped replace of {datasource} ({len(rows)} rows)")
         return
-    ops_replace.replace(datasource, rows)
+    backup.replace_with_backup(
+        guard["read"],
+        ops_replace,
+        datasource,
+        rows,
+        guard["config"],
+        backup_dir=guard["backup_dir"],
+    )
 
 
 def refresh_provider_monthly(
@@ -547,9 +554,10 @@ def refresh_gpu_runs(
         statuses["gpu_runway"] = f"err:{_sanitize_err(e, secrets)}"
 
 
-def append_run_log(ops_ingest, statuses, notes):
+def append_run_log(ops_ingest, statuses, notes, config, backup_dir=None):
     now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-    ops_ingest.append(
+    backup.append_with_backup(
+        ops_ingest,
         "ingest_runs",
         [
             {
@@ -559,6 +567,8 @@ def append_run_log(ops_ingest, statuses, notes):
                 "notes": "; ".join(notes),
             }
         ],
+        config,
+        backup_dir=backup_dir,
     )
 
 
@@ -617,6 +627,9 @@ def main():
     guard = {
         "yes": args.yes,
         "dry_run": args.dry_run,
+        "read": ops_ingest,
+        "config": config,
+        "backup_dir": backup_dir,
         "existing": {
             ds: backup.snapshot_table(ops_ingest, ds, backup_dir)
             for ds in ("provider_monthly", "pollen_monthly", "revenue_monthly",
@@ -668,11 +681,11 @@ def main():
         statuses["run"] = "err:" + _sanitize_err(e, secrets)
         notes.append(f"run failed: {statuses['run']}")
         if not args.dry_run:
-            append_run_log(ops_ingest, statuses, notes)
+            append_run_log(ops_ingest, statuses, notes, config, backup_dir)
         raise
 
     if not args.dry_run:
-        append_run_log(ops_ingest, statuses, notes)
+        append_run_log(ops_ingest, statuses, notes, config, backup_dir)
     print(f"ingested: {statuses}" + (f"  NOTES: {notes}" if notes else ""))
 
 

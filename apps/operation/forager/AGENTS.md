@@ -16,10 +16,11 @@ totals. New reviewed cloud facts should be appended to `op_cloud`.
 
 ## Safety rules
 
-- Every `ingest.run` snapshots ALL six datasources (append-only `grants` and
-  `ingest_runs` included) to
-  `~/Documents/treasury-backups/<UTC stamp>/<table>.ndjson` BEFORE writing, then
-  prints a `+added/-removed` diff per replaced table.
+- Every Tinybird write snapshots the affected datasource first. `ingest.run`
+  also snapshots all read/write datasources (append-only `grants` and
+  `ingest_runs` included) to `backups/<UTC stamp>/<table>.ndjson` BEFORE
+  writing, then prints a `+added/-removed` diff per replaced table.
+- Backup retention keeps the newest 20 timestamp folders under `backups/`.
 - A write that would lose a manual `provider_monthly` row's data — no surviving
   manual-sourced row for that vendor/month/currency — aborts unless `--yes` is
   given (rows merged into a `manual,api` row are not lost).
@@ -243,8 +244,8 @@ fields in its `ingest_runs` status.
 
 ### Restore a table
 
-Every run leaves a snapshot at
-`~/Documents/treasury-backups/<UTC stamp>/<table>.ndjson`. To roll a table back,
+Every write leaves a snapshot at
+`backups/<UTC stamp>/<table>.ndjson`. To roll a table back,
 re-replace it with the rows from that file:
 
 ```bash
@@ -252,7 +253,7 @@ python3 - <<'EOF'
 import json
 from ingest import backup, creds, tb
 
-SNAPSHOT = "~/Documents/treasury-backups/20260706T101112Z/provider_monthly.ndjson"
+SNAPSHOT = "backups/20260706T101112Z/provider_monthly.ndjson"
 
 secrets, config = creds.load_creds(), creds.load_config()
 read = tb.TB(config["tb_ops_api"], secrets["TINYBIRD_OPS_INGEST_TOKEN"])

@@ -44,7 +44,7 @@ from .aliases import VENDOR_CATEGORIES, GPU_VENDORS
 from .connectors.gpu_runs import split_run_rows, stamp
 from .connectors.vendors import _currency, _validate_meter_source
 from .connectors.registry import CANONICAL
-from .op_rows import validate_cloud_rows
+from .op_rows import resource_count, validate_cloud_rows
 from . import backup as _backup
 from . import creds as _creds
 from . import tb as _tb
@@ -118,18 +118,12 @@ def _validate_date_time(name, value, *, blank=False):
     return dt.strftime(_TIME_FMT)
 
 
-def _backup_before_write(client, datasource, *, enabled):
-    if not enabled:
-        return None
-    cfg = _creds.load_config()
-    backup_dir = _backup.run_directory(cfg)
-    _backup.snapshot_table(client, datasource, backup_dir)
-    print(f"backup: {backup_dir}")
-    return backup_dir
-
-
 def _append(client, datasource, rows, *, backup_enabled):
-    _backup_before_write(client, datasource, enabled=backup_enabled)
+    if backup_enabled:
+        cfg = _creds.load_config()
+        backup_dir, result = _backup.append_with_backup(client, datasource, rows, cfg)
+        print(f"backup: {backup_dir}")
+        return result
     return client.append(datasource, rows)
 
 
@@ -157,6 +151,7 @@ def _append_op_cloud(client, args, *, backup_enabled):
         "resource_id": args.resource_id,
         "resource_name": args.resource_name,
         "resource_sku": args.resource_sku,
+        "resource_count": resource_count(args.resource_count),
         "model": args.model,
         "evidence": args.evidence,
         "recorded_at": datetime.datetime.now(datetime.timezone.utc).strftime(
@@ -242,6 +237,7 @@ def main(argv=None, tb_factory=None):
     ocp.add_argument("--resource-id", default="")
     ocp.add_argument("--resource-name", default="")
     ocp.add_argument("--resource-sku", default="")
+    ocp.add_argument("--resource-count", type=float, default=1.0)
     ocp.add_argument("--model", default="")
     ocp.add_argument("--evidence", default="")
 

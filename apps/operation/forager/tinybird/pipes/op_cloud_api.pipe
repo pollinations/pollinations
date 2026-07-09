@@ -15,6 +15,7 @@ SQL >
         evidence,
         formatDateTime(recorded_at, '%F %T') AS recorded_at,
         resource_sku,
+        resource_count,
         resource_id,
         resource_name
     FROM op_cloud

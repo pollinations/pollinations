@@ -19,7 +19,7 @@ flowchart LR
     subgraph LAPTOP [Laptop — manual invocation only, no cron/CI]
         RUN["ingest.run<br/>snapshot → connectors → merge/splice → guarded replace"]
         REC["ingest.record<br/>manual rows"]
-        BAK[("~/Documents/treasury-backups/&lt;stamp&gt;/<br/>pre-write snapshot, every run")]
+        BAK[("backups/&lt;stamp&gt;/<br/>pre-write snapshot, every write")]
     end
 
     subgraph OPS [Tinybird `operations` workspace]
@@ -62,10 +62,10 @@ delete, or drop exists anywhere.
 
 Every replace passes this guard chain, in order:
 
-1. **Snapshot before anything** — every datasource (the four replaced tables
-   plus append-only `grants` and `ingest_runs`) is dumped to
-   `~/Documents/treasury-backups/<UTC stamp>/<table>.ndjson` at the start of
-   `main()`, before any connector runs. Restore = re-replace with the file.
+1. **Snapshot before anything** — every Tinybird write snapshots the affected
+   datasource into `backups/<UTC stamp>/<table>.ndjson` before writing.
+   `ingest.run` snapshots every datasource it may read or write at the start
+   of `main()`, before any connector runs. Restore = re-replace with the file.
 2. **Connector failure aborts** — any meter-connector exception raises before
    the write; a broken pull never reaches Tinybird.
 3. **Zero rows refused, twice** — the run raises on 0 fresh rows per table,

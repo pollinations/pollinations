@@ -2,5 +2,6 @@
     "tb_ops_api": "https://api.europe-west2.gcp.tinybird.co",
     "tb_prod_api": "https://api.europe-west2.gcp.tinybird.co",
     "months_start": "2026-01",
-    "backup_dir": "~/Documents/treasury-backups"
+    "backup_dir": "backups",
+    "backup_retention": 20
 }

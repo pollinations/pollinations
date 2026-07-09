@@ -45,6 +45,13 @@ def signed_positive(value):
     return abs(value) if value else 0.0
 
 
+def resource_count(value=None):
+    count = float(value or 1)
+    if count <= 0:
+        raise ValueError(f"resource_count must be > 0, got {value!r}")
+    return count
+
+
 def cloud_type_for_provider_category(category):
     category = category or "compute"
     if category == "compute":
@@ -75,6 +82,7 @@ def provider_monthly_to_cloud(row, recorded_at):
         "resource_id": "",
         "resource_name": "",
         "resource_sku": "",
+        "resource_count": 1.0,
         "model": "",
         "evidence": _legacy_manual_evidence("provider_monthly") if manual else "",
         "recorded_at": recorded_at,
@@ -106,6 +114,8 @@ def gpu_run_to_cloud(row, recorded_at):
         end = row["ended_at"]
     elif row.get("started_at"):
         end = ""
+    elif row.get("hours") is None:
+        end = ""
 
     manual = row.get("source") == "manual"
     return {
@@ -120,6 +130,7 @@ def gpu_run_to_cloud(row, recorded_at):
         "resource_id": row.get("run_id", ""),
         "resource_name": row.get("deployment", ""),
         "resource_sku": row.get("gpu", ""),
+        "resource_count": resource_count(row.get("gpu_count")),
         "model": row.get("model", ""),
         "evidence": _legacy_manual_evidence("gpu_runs") if manual else "",
         "recorded_at": recorded_at,
@@ -148,6 +159,7 @@ def grant_to_cloud(row, recorded_at):
         "resource_id": "",
         "resource_name": row.get("label", ""),
         "resource_sku": "",
+        "resource_count": 1.0,
         "model": "",
         "evidence": f"legacy grants row: {row.get('label', '')}".strip(),
         "recorded_at": recorded_at,
@@ -247,6 +259,7 @@ def validate_cloud_rows(rows):
             raise ValueError("op_cloud row missing currency")
         float(row.get("credit", 0))
         float(row.get("paid", 0))
+        resource_count(row.get("resource_count"))
         if row.get("source") == "manual" and not row.get("evidence"):
             raise ValueError("manual op_cloud row missing evidence")
 

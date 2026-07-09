@@ -55,6 +55,7 @@ def test_gpu_runs_maps_serverless_to_inference_and_gpu_to_gpu():
             "run_id": "pod-1",
             "deployment": "sana",
             "gpu": "gpu_1x_gh200",
+            "gpu_count": 2,
             "started_at": "2026-06-01 00:00:00",
             "ended_at": "2026-07-01 00:00:00",
             "cost": 1648.8,
@@ -67,11 +68,13 @@ def test_gpu_runs_maps_serverless_to_inference_and_gpu_to_gpu():
     )
 
     assert serverless["type"] == "inference"
+    assert serverless["end"] == ""
     assert serverless["paid"] == -114.21
     assert serverless["evidence"]
     assert gpu["type"] == "gpu"
     assert gpu["start"] == "2026-06-01 00:00:00"
     assert gpu["paid"] == -1648.8
+    assert gpu["resource_count"] == 2.0
 
 
 def test_grants_become_positive_cloud_credit_events():
@@ -181,6 +184,7 @@ def test_cloud_validation_rejects_non_cloud_sources():
                 "resource_id": "",
                 "resource_name": "",
                 "resource_sku": "",
+                "resource_count": 1,
                 "model": "",
                 "evidence": "",
                 "recorded_at": RECORDED_AT,

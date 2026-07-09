@@ -13,6 +13,7 @@ SCHEMA >
     `resource_id` String `json:$.resource_id`,
     `resource_name` String `json:$.resource_name`,
     `resource_sku` String `json:$.resource_sku`,
+    `resource_count` Float64 `json:$.resource_count`,
     `model` String `json:$.model`,
     `evidence` String `json:$.evidence`,
     `recorded_at` DateTime `json:$.recorded_at`

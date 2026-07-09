@@ -4,3 +4,4 @@ dist/
 *.log
 .dev.vars
 __pycache__/
+backups/

@@ -1,4 +1,4 @@
-"""Table snapshots and row diffs — every run backs up every datasource.
+"""Table snapshots and guarded Tinybird writes.
 
 Snapshots land in <backup_dir>/<UTC run stamp>/<datasource>.ndjson so any
 table state can be restored by re-replacing with the snapshot file.
@@ -8,14 +8,63 @@ import json
 import os
 from pathlib import Path
 
+DEFAULT_RETENTION = 20
+
+
+def backup_root(config):
+    raw = Path(os.path.expanduser(config["backup_dir"]))
+    if raw.is_absolute():
+        return raw
+    return Path(__file__).resolve().parents[1] / raw
+
 
 def run_directory(config, now=None):
     stamp = (now or datetime.datetime.now(datetime.timezone.utc)).strftime(
         "%Y%m%dT%H%M%SZ"
     )
-    directory = Path(os.path.expanduser(config["backup_dir"])) / stamp
+    directory = backup_root(config) / stamp
     directory.mkdir(parents=True, exist_ok=True)
     return directory
+
+
+def prune_backup_runs(config):
+    keep = int(config.get("backup_retention", DEFAULT_RETENTION))
+    if keep <= 0:
+        return []
+    root = backup_root(config)
+    if not root.exists():
+        return []
+    runs = sorted(
+        [
+            path
+            for path in root.iterdir()
+            if path.is_dir() and _is_run_directory(path.name)
+        ],
+        key=lambda path: path.name,
+        reverse=True,
+    )
+    removed = []
+    for path in runs[keep:]:
+        _remove_tree(path)
+        removed.append(path)
+    return removed
+
+
+def _is_run_directory(name):
+    try:
+        datetime.datetime.strptime(name, "%Y%m%dT%H%M%SZ")
+    except ValueError:
+        return False
+    return True
+
+
+def _remove_tree(path):
+    for child in path.iterdir():
+        if child.is_dir():
+            _remove_tree(child)
+        else:
+            child.unlink()
+    path.rmdir()
 
 
 def snapshot_table(client, datasource, directory):
@@ -25,6 +74,34 @@ def snapshot_table(client, datasource, directory):
         lines + "\n" if rows else ""
     )
     return rows
+
+
+def backup_before_write(read_client, datasource, config, backup_dir=None):
+    directory = backup_dir or run_directory(config)
+    snapshot_table(read_client, datasource, directory)
+    prune_backup_runs(config)
+    return directory
+
+
+def append_with_backup(client, datasource, rows, config, backup_dir=None):
+    backup_dir = backup_before_write(client, datasource, config, backup_dir)
+    return backup_dir, client.append(datasource, rows)
+
+
+def replace_with_backup(
+    read_client,
+    write_client,
+    datasource,
+    rows,
+    config,
+    *,
+    condition=None,
+    backup_dir=None,
+):
+    directory = backup_before_write(read_client, datasource, config, backup_dir)
+    if condition is None:
+        return directory, write_client.replace(datasource, rows)
+    return directory, write_client.replace(datasource, rows, condition=condition)
 
 
 def _canonical(row):

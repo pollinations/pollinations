@@ -96,6 +96,11 @@ bucket_name = "pollinations-images"
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
 
+[[env.production.ratelimits]]
+name = "EDGE_RATE_LIMITER"
+namespace_id = "1001"
+simple = { limit = 10000, period = 10 }
+
 [[env.production.durable_objects.bindings]]
 name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"

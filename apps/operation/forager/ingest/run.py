@@ -1,11 +1,15 @@
 """Daily operations ingest.
 
     python3 -m ingest.run
-Forager owns the clean Treasury data path:
+Forager owns the legacy Treasury data path:
   - Wise activities -> transactions
   - vendor connectors/manual rows -> provider_monthly
   - generation_event -> pollen_monthly
   - Stripe balance transactions -> revenue_monthly
+
+The additive op_* raw model is populated separately while migration is active:
+  - ingest.op_migrate rebuilds op_transactions/op_cloud/op_pollen
+  - ingest.record op-cloud appends reviewed cloud facts directly to op_cloud
 
 The old Gmail/GOG invoice fetcher is local-only under
 _local/invoice_fetcher.

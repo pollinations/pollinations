@@ -158,6 +158,8 @@ def test_usage_vendor_canonicalized_at_ingest():
             "byop_quests",
             "model_paid",
             "model_quests",
+            "requests_paid",
+            "requests_quests",
             "requests",
         }
         for r in rows
@@ -361,6 +363,9 @@ def test_usage_query_includes_other_bucket():
 
 def test_usage_query_counts_only_noncached_requests():
     query = _usage._SQL.format(month="2026-06", next_month="2026-07")
+    assert "countIf(cache_hit = false AND selected_meter_slug LIKE '%pack%') AS requests_paid" in query
+    assert "countIf(cache_hit = false AND selected_meter_slug LIKE '%tier%') AS requests_quests" in query
+    assert "requests_other" in query
     assert "countIf(cache_hit = false) AS requests" in query
     # the WHERE already excludes failures + unbilled — requests inherits it
     assert "response_status >= 200 AND response_status < 300" in query
@@ -385,6 +390,27 @@ def test_usage_rows_carry_requests_and_sum_on_canonical_merge():
     rows = _usage.monthly_rows(FakeTB(), ["2026-06"], "2026-07-08")
     aws = [r for r in rows if r["vendor"] == "aws" and r["model"] == "m"]
     assert len(aws) == 1 and aws[0]["requests"] == 12
+    assert aws[0]["requests_paid"] == 12
+    assert aws[0]["requests_quests"] == 0
+
+
+def test_usage_rows_split_requests_by_paid_and_quests():
+    class FakeTB:
+        def sql(self, q):
+            return [
+                {"vendor": "openai", "model": "m", "requests_paid": 5,
+                 "requests_quests": 7, "requests_other": 2, "requests": 14,
+                 "cost_paid": 1, "cost_quests": 1, "cost_other": 0,
+                 "price_paid": 2, "price_quests": 2, "price_other": 0,
+                 "byop_paid": 0, "byop_quests": 0, "byop_other": 0,
+                 "model_paid": 0, "model_quests": 0, "model_other": 0},
+            ]
+
+    rows = _usage.monthly_rows(FakeTB(), ["2026-06"], "2026-07-08")
+    row = rows[0]
+    assert row["requests_paid"] == 6
+    assert row["requests_quests"] == 8
+    assert row["requests"] == 14
 
 
 # ---------------------------------------------------------------------------

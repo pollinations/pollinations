@@ -4,10 +4,15 @@ Forager is the ONLY writer to the Tinybird `operations` workspace. The treasury
 web app is a read-only mirror. Every correction happens here, via these
 workflows. Run everything from `apps/operation/forager/`.
 
-The workspace holds six datasources: `transactions`, `provider_monthly`,
-`pollen_monthly`, `revenue_monthly`, `grants`, `ingest_runs`. The first four
-are rebuilt by `ingest.run` (replace); `grants` and `ingest_runs` are
-append-only.
+The legacy workspace tables are `transactions`, `provider_monthly`,
+`pollen_monthly`, `revenue_monthly`, `grants`, `gpu_runs`, and `ingest_runs`.
+The new raw Operations tables are `op_transactions`, `op_cloud`, and
+`op_pollen`.
+
+During the migration, old tables remain read-only except for the existing
+legacy refresh/correction workflows. Do not add new provider-specific business
+logic to old connectors unless it is strictly needed to reconcile old UI
+totals. New reviewed cloud facts should be appended to `op_cloud`.
 
 ## Safety rules
 
@@ -91,6 +96,44 @@ python3 -m ingest.record provider io.net 2026-07 --currency USD --credit 123.45
 Appends one `source="manual"` row to `provider_monthly`. Vendor must be in
 `registry.CANONICAL`; at least one of `--credit`/`--paid` must be > 0. Manual
 rows survive every subsequent `ingest.run` (they are re-merged, not dropped).
+
+This is a legacy path. Prefer `op-cloud` for new reviewed cloud data:
+
+```bash
+python3 -m ingest.record op-cloud runpod gpu \
+  --start "2026-06-01" --end "2026-07-01" \
+  --currency USD --paid -123.45 \
+  --resource-id pod-1 --resource-name flux-worker --sku "RTX 4090" \
+  --model flux --evidence "manual dashboard export 2026-06"
+```
+
+Rules for `op-cloud`:
+
+- writes only `op_cloud`
+- `type` is `inference`, `gpu`, or `infrastructure`
+- `source` is `manual`, `api`, `cli`, or `bq`
+- spend/burn is negative; grants/credits/refunds are positive
+- `--evidence` is required for `source=manual`
+- `--start` and `--end` are stored as UTC `YYYY-MM-DD HH:MM:SS`; timezone
+  offsets are accepted and normalized, naive timestamps are interpreted as UTC
+
+Before switching frontend or insight reads, run the read-only OP reconciliation:
+
+```bash
+python3 -m ingest.op_reconcile
+```
+
+It compares expected grouped totals from migration inputs with live `op_cloud`,
+`op_transactions`, and `op_pollen`. It does not write.
+
+For the open month, `op_pollen` can move after the initial fill. Refresh only
+that month through:
+
+```bash
+python3 -m ingest.op_refresh pollen --month 2026-07 --write
+```
+
+This snapshots `op_pollen` and replaces only `month = '2026-07'`.
 
 **Month contract: `provider_monthly.month` is the USAGE month (the service
 period the charge covers), never the invoice or charge date.** An invoice

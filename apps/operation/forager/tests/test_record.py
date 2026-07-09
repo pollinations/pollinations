@@ -109,10 +109,15 @@ class _FakeTB:
     """Minimal TB stub that captures append calls."""
     def __init__(self):
         self.appended = []
+        self.queries = []
 
     def append(self, datasource, rows):
         self.appended.append((datasource, rows))
         return {"successful_rows": len(rows)}
+
+    def sql(self, query):
+        self.queries.append(query)
+        return []
 
 
 def _make_factory(fake_tb):
@@ -657,6 +662,157 @@ def test_record_gpu_bad_started_format_exits():
             ["gpu", "io.net", "2025-12",
              "--deployment", "x", "--amount", "10.0",
              "--started", "2025-12-29", "--ended", "2025-12-30 00:00:00"],
+            tb_factory=_make_factory(_FakeTB()),
+        )
+    assert exc.value.code != 0
+
+
+# ---------------------------------------------------------------------------
+# record.main: op-cloud subcommand (writes only op_cloud)
+# ---------------------------------------------------------------------------
+
+def test_record_op_cloud_appends_signed_row_only_to_op_cloud():
+    fake = _FakeTB()
+    record.main(
+        [
+            "op-cloud",
+            "runpod",
+            "gpu",
+            "--start", "2026-06-01",
+            "--end", "2026-07-01",
+            "--currency", "USD",
+            "--paid", "-123.45",
+            "--source", "manual",
+            "--resource-id", "pod-1",
+            "--resource-name", "flux-worker",
+            "--resource-sku", "RTX 4090",
+            "--model", "flux",
+            "--evidence", "manual dashboard export 2026-06",
+        ],
+        tb_factory=_make_factory(fake),
+    )
+
+    assert len(fake.appended) == 1
+    ds, rows = fake.appended[0]
+    assert ds == "op_cloud"
+    row = rows[0]
+    assert row["vendor"] == "runpod"
+    assert row["type"] == "gpu"
+    assert row["start"] == "2026-06-01 00:00:00"
+    assert row["end"] == "2026-07-01 00:00:00"
+    assert row["paid"] == -123.45
+    assert row["credit"] == 0.0
+    assert row["resource_id"] == "pod-1"
+    assert row["resource_sku"] == "RTX 4090"
+    assert row["evidence"] == "manual dashboard export 2026-06"
+
+
+def test_record_append_snapshots_before_write(tmp_path, monkeypatch):
+    fake = _FakeTB()
+    monkeypatch.setattr(record._creds, "load_config", lambda: {"backup_dir": str(tmp_path)})
+
+    record._append(
+        fake,
+        "op_cloud",
+        [{"source": "manual"}],
+        backup_enabled=True,
+    )
+
+    assert fake.queries == ["SELECT * FROM op_cloud"]
+    assert fake.appended == [("op_cloud", [{"source": "manual"}])]
+    backups = list(tmp_path.glob("*/op_cloud.ndjson"))
+    assert len(backups) == 1
+
+
+def test_record_op_cloud_accepts_positive_credit_grant_row():
+    fake = _FakeTB()
+    record.main(
+        [
+            "op-cloud",
+            "lambda",
+            "gpu",
+            "--start", "2026-03-30",
+            "--currency", "USD",
+            "--credit", "7500",
+            "--source", "manual",
+            "--resource-name", "startup credits",
+            "--evidence", "grant activation email",
+        ],
+        tb_factory=_make_factory(fake),
+    )
+
+    row = fake.appended[0][1][0]
+    assert row["credit"] == 7500.0
+    assert row["paid"] == 0.0
+    assert row["end"] == ""
+
+
+def test_record_op_cloud_normalizes_timezone_offsets_to_utc():
+    fake = _FakeTB()
+    record.main(
+        [
+            "op-cloud",
+            "runpod",
+            "gpu",
+            "--start", "2026-07-01T10:30:00-04:00",
+            "--end", "2026-07-01T16:30:00+02:00",
+            "--currency", "USD",
+            "--paid", "-12.34",
+            "--source", "manual",
+            "--evidence", "dashboard timezone offset test",
+        ],
+        tb_factory=_make_factory(fake),
+    )
+
+    row = fake.appended[0][1][0]
+    assert row["start"] == "2026-07-01 14:30:00"
+    assert row["end"] == "2026-07-01 14:30:00"
+
+
+def test_record_op_cloud_requires_evidence_for_manual_rows():
+    with pytest.raises(SystemExit) as exc:
+        record.main(
+            [
+                "op-cloud",
+                "runpod",
+                "gpu",
+                "--start", "2026-06-01",
+                "--currency", "USD",
+                "--paid", "-1",
+            ],
+            tb_factory=_make_factory(_FakeTB()),
+        )
+    assert exc.value.code != 0
+
+
+def test_record_op_cloud_requires_a_nonzero_amount():
+    with pytest.raises(SystemExit) as exc:
+        record.main(
+            [
+                "op-cloud",
+                "runpod",
+                "gpu",
+                "--start", "2026-06-01",
+                "--currency", "USD",
+                "--evidence", "dashboard",
+            ],
+            tb_factory=_make_factory(_FakeTB()),
+        )
+    assert exc.value.code != 0
+
+
+def test_record_op_cloud_rejects_unknown_vendor():
+    with pytest.raises(SystemExit) as exc:
+        record.main(
+            [
+                "op-cloud",
+                "not-a-vendor",
+                "gpu",
+                "--start", "2026-06-01",
+                "--currency", "USD",
+                "--paid", "-1",
+                "--evidence", "dashboard",
+            ],
             tb_factory=_make_factory(_FakeTB()),
         )
     assert exc.value.code != 0

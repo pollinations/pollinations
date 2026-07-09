@@ -1,4 +1,4 @@
-"""Manual entry CLI for meter readings and grant registrations.
+"""Manual entry CLI for legacy rows and reviewed op_cloud facts.
 
 Usage:
     python3 -m ingest.record provider <vendor> <YYYY-MM>
@@ -10,6 +10,14 @@ Usage:
                                    [--started 'YYYY-MM-DD HH:MM:SS' --ended '...']
                                    [--model <csv>] [--kind gpu|serverless]
                                    [--gpu <label>] [--currency USD]
+    python3 -m ingest.record op-cloud <vendor> <type>
+                                   --start 'UTC datetime or ISO datetime with offset'
+                                   [--end 'UTC datetime or ISO datetime with offset']
+                                   --currency USD|EUR [--credit N] [--paid N]
+                                   [--source manual|api|cli|bq]
+                                   [--resource-id ID] [--resource-name NAME]
+                                   [--resource-sku SKU] [--model MODEL]
+                                   --evidence TEXT
 
 `provider` appends one row to `provider_monthly` with source="manual".
 `grant` appends one row to `grants` (raw grant facts; latest recorded_at wins
@@ -20,6 +28,11 @@ with both, --amount is the full run cost and gets split across months via
 split_run_rows (e.g. io.net/lambda real runs) — the positional month then
 acts as a guard that must match one of the produced months.
 Vendor must be in registry.CANONICAL.
+
+`op-cloud` appends one reviewed row to the new `op_cloud` datasource. It never
+touches the old tables. Amounts are signed from our perspective: spend/burn is
+negative, grants/refunds/credit awards are positive. Date/time inputs are
+stored as UTC `YYYY-MM-DD HH:MM:SS`; naive inputs are interpreted as UTC.
 """
 import argparse
 import datetime
@@ -31,6 +44,8 @@ from .aliases import VENDOR_CATEGORIES, GPU_VENDORS
 from .connectors.gpu_runs import split_run_rows, stamp
 from .connectors.vendors import _currency, _validate_meter_source
 from .connectors.registry import CANONICAL
+from .op_rows import validate_cloud_rows
+from . import backup as _backup
 from . import creds as _creds
 from . import tb as _tb
 
@@ -77,6 +92,84 @@ def _validate_date(name, value):
     if not _DATE_RE.match(value):
         print(f"error: {name} must be YYYY-MM-DD, got '{value}'", file=sys.stderr)
         sys.exit(1)
+
+
+def _validate_date_time(name, value, *, blank=False):
+    if blank and value == "":
+        return value
+    raw = value.strip()
+    normalized = raw.replace(" ", "T")
+    if normalized.endswith("Z"):
+        normalized = f"{normalized[:-1]}+00:00"
+    try:
+        dt = datetime.datetime.fromisoformat(normalized)
+    except ValueError:
+        print(
+            "error: "
+            f"{name} must be YYYY-MM-DD, 'YYYY-MM-DD HH:MM:SS', or ISO datetime "
+            f"with timezone offset, got '{value}'",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=datetime.timezone.utc)
+    else:
+        dt = dt.astimezone(datetime.timezone.utc)
+    return dt.strftime(_TIME_FMT)
+
+
+def _backup_before_write(client, datasource, *, enabled):
+    if not enabled:
+        return None
+    cfg = _creds.load_config()
+    backup_dir = _backup.run_directory(cfg)
+    _backup.snapshot_table(client, datasource, backup_dir)
+    print(f"backup: {backup_dir}")
+    return backup_dir
+
+
+def _append(client, datasource, rows, *, backup_enabled):
+    _backup_before_write(client, datasource, enabled=backup_enabled)
+    return client.append(datasource, rows)
+
+
+def _append_op_cloud(client, args, *, backup_enabled):
+    _validate_vendor(args.vendor)
+    currency = _validate_currency(args.currency)
+    start = _validate_date_time("start", args.start)
+    end = _validate_date_time("end", args.end, blank=True)
+    if args.credit == 0 and args.paid == 0:
+        print("error: at least one of --credit or --paid must be non-zero", file=sys.stderr)
+        sys.exit(1)
+    if args.source == "manual" and not args.evidence.strip():
+        print("error: --evidence is required for source=manual", file=sys.stderr)
+        sys.exit(1)
+
+    row = {
+        "source": args.source,
+        "vendor": args.vendor,
+        "type": args.type,
+        "start": start,
+        "end": end,
+        "credit": round(float(args.credit), 2),
+        "paid": round(float(args.paid), 2),
+        "currency": _currency(currency),
+        "resource_id": args.resource_id,
+        "resource_name": args.resource_name,
+        "resource_sku": args.resource_sku,
+        "model": args.model,
+        "evidence": args.evidence,
+        "recorded_at": datetime.datetime.now(datetime.timezone.utc).strftime(
+            "%Y-%m-%d %H:%M:%S"
+        ),
+    }
+    try:
+        validate_cloud_rows([row])
+    except ValueError as error:
+        print(f"error: {error}", file=sys.stderr)
+        sys.exit(1)
+    _append(client, "op_cloud", [row], backup_enabled=backup_enabled)
+    print(json.dumps(row))
 
 
 def main(argv=None, tb_factory=None):
@@ -129,9 +222,33 @@ def main(argv=None, tb_factory=None):
     gup.add_argument("--kind",       default=None, choices=["gpu", "serverless"],
                      help="default: stamp(vendor, deployment)")
 
+    ocp = sub.add_parser("op-cloud", help="append a reviewed op_cloud row")
+    ocp.add_argument("vendor", help="canonical vendor slug")
+    ocp.add_argument("type", choices=["inference", "gpu", "infra"])
+    ocp.add_argument(
+        "--start",
+        required=True,
+        help="service start in UTC, or ISO datetime with offset",
+    )
+    ocp.add_argument(
+        "--end",
+        default="",
+        help="service end in UTC, or ISO datetime with offset",
+    )
+    ocp.add_argument("--currency", required=True, help="source currency code, e.g. USD or EUR")
+    ocp.add_argument("--credit", type=float, default=0.0, help="signed credit movement")
+    ocp.add_argument("--paid", type=float, default=0.0, help="signed paid/cash movement")
+    ocp.add_argument("--source", choices=["manual", "api", "cli", "bq"], default="manual")
+    ocp.add_argument("--resource-id", default="")
+    ocp.add_argument("--resource-name", default="")
+    ocp.add_argument("--resource-sku", default="")
+    ocp.add_argument("--model", default="")
+    ocp.add_argument("--evidence", default="")
+
     args = parser.parse_args(argv)
 
     # Resolve TB client
+    backup_enabled = tb_factory is None
     if tb_factory is not None:
         client = tb_factory(None)  # token injected by factory; None is placeholder in tests
     else:
@@ -166,7 +283,7 @@ def main(argv=None, tb_factory=None):
             "paid": round(float(args.paid), 2),
             "source": "manual",
         }
-        client.append("provider_monthly", [row])
+        _append(client, "provider_monthly", [row], backup_enabled=backup_enabled)
         print(json.dumps(row))
 
     elif args.cmd == "grant":
@@ -187,7 +304,7 @@ def main(argv=None, tb_factory=None):
             "expires": args.expires,
             "recorded_at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
         }
-        client.append("grants", [row])
+        _append(client, "grants", [row], backup_enabled=backup_enabled)
         print(json.dumps(row))
 
     elif args.cmd == "gpu":
@@ -274,9 +391,12 @@ def main(argv=None, tb_factory=None):
         else:
             rows = [_base_row(args.month, "", "", None, round(float(args.amount), 2))]
 
-        client.append("gpu_runs", rows)
+        _append(client, "gpu_runs", rows, backup_enabled=backup_enabled)
         for row in rows:
             print(json.dumps(row))
+
+    elif args.cmd == "op-cloud":
+        _append_op_cloud(client, args, backup_enabled=backup_enabled)
 
 
 if __name__ == "__main__":

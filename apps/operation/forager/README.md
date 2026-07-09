@@ -115,9 +115,46 @@ The daily run refreshes:
 | `revenue_monthly` | Stripe balance transactions |
 | `ingest_runs` | Forager run log |
 
+The legacy refresh remains in place while the Treasury app is being migrated.
+Do not add new provider-specific business logic to `provider_monthly` or
+`gpu_runs` unless it is needed to reconcile the old UI during the transition.
+New reviewed cloud facts should land in `op_cloud`.
+
 Manual corrections are entered here, not in the app: append a `provider_monthly`
 row with `ingest.record`, or run a scoped `ingest.run`. See
 [`AGENTS.md`](./AGENTS.md).
+
+New cloud rows use the additive Operations model:
+
+```bash
+python3 -m ingest.record op-cloud runpod gpu \
+  --start "2026-06-01" --end "2026-07-01" \
+  --currency USD --paid -123.45 \
+  --resource-id pod-1 --resource-name flux-worker --sku "RTX 4090" \
+  --model flux --evidence "manual dashboard export 2026-06"
+```
+
+`op-cloud` writes only `op_cloud`. It does not touch legacy tables.
+
+Reconcile the new raw tables against their source transforms without writing:
+
+```bash
+python3 -m ingest.op_reconcile
+python3 -m ingest.op_reconcile --month 2026-07
+```
+
+This compares expected grouped totals from the migration inputs with the live
+`op_cloud`, `op_transactions`, and `op_pollen` tables.
+
+Refresh the open product-usage month without touching old tables:
+
+```bash
+python3 -m ingest.op_refresh pollen --month 2026-07
+python3 -m ingest.op_refresh pollen --month 2026-07 --write
+```
+
+The write path snapshots `op_pollen` and replaces only rows matching that
+month.
 
 ## Local Invoice Fetcher
 

@@ -1,9 +1,11 @@
-"""Wise Activities ingestion for the Treasury transactions table.
+"""Wise Activities ingestion for the Treasury transactions tables.
 
 Wise is the cash source of truth: one transactions row per outgoing bank
 movement, classified against the vendor roster. The settled (EUR) leg is
 what left the bank; invoice linking is a later, separate step.
 """
+
+import datetime
 
 import base64
 import os
@@ -30,6 +32,18 @@ COLUMNS = [
     "charged_currency",
 ]
 
+OP_COLUMNS = [
+    "source",
+    "date",
+    "vendor",
+    "category",
+    "amount",
+    "currency",
+    "description",
+    "evidence",
+    "recorded_at",
+]
+
 ALLOWED_CATEGORIES = {
     "compute",
     "infra",
@@ -37,6 +51,15 @@ ALLOWED_CATEGORIES = {
     "admin",
     "office",
     "payroll",
+}
+
+OP_ALLOWED_CATEGORIES = {
+    "revenue",
+    "saas",
+    "payroll",
+    "admin",
+    "office",
+    "cloud",
 }
 
 KEPT_STATUSES = {"COMPLETED", "IN_PROGRESS"}
@@ -74,6 +97,57 @@ def build_transactions(secrets, months):
     if flag:
         print(flag)
     validate_rows(rows)
+    return rows
+
+
+def build_op_transactions(secrets, months, recorded_at=None):
+    """Build signed op_transactions rows from Wise inflows and outflows.
+
+    This is the new Operations raw model. Unlike build_transactions(), it keeps
+    cash inflows and does not net refund activity away before writing rows.
+    """
+    recorded_at = recorded_at or datetime.datetime.now(
+        datetime.timezone.utc
+    ).strftime("%Y-%m-%d %H:%M:%S")
+    rows = []
+    unmatched = []
+    for month in months:
+        for activity in fetch_month(secrets, month):
+            text = activity_text(activity)
+            row = op_transaction_for(activity, recorded_at=recorded_at)
+            if row is None:
+                continue
+            if row["amount"] < 0:
+                legacy_row = {
+                    "date": row["date"],
+                    "vendor": row["vendor"],
+                    "category": _op_legacy_category(row["category"]),
+                    "charged_amount": abs(row["amount"]),
+                    "charged_currency": row["currency"],
+                }
+                parts = apply_splits(legacy_row, text)
+                for part in parts:
+                    part_row = _op_row(
+                        date=part["date"],
+                        vendor=part["vendor"],
+                        category=_op_category(part["category"]),
+                        amount=-round(float(part["charged_amount"]), 2),
+                        currency=part["charged_currency"],
+                        description=text.strip(),
+                        recorded_at=recorded_at,
+                    )
+                    rows.append(part_row)
+                    if not part_row["vendor"]:
+                        unmatched.append((part_row, text.strip()))
+                continue
+            rows.append(row)
+            if not row["vendor"]:
+                unmatched.append((row, text.strip()))
+
+    flag = unmatched_flag(unmatched)
+    if flag:
+        print(flag)
+    validate_op_rows(rows)
     return rows
 
 
@@ -168,9 +242,11 @@ def unmatched_flag(unmatched):
     ]
     for text, entry in sorted(by_text.items()):
         row = entry["example"]
+        amount = row.get("charged_amount", row.get("amount"))
+        currency = row.get("charged_currency", row.get("currency"))
         lines.append(
             f'    "{text}" — {entry["n"]} row(s), e.g. {row["date"]} '
-            f'{row["charged_amount"]} {row["charged_currency"]}'
+            f"{amount} {currency}"
         )
     return "\n".join(lines)
 
@@ -372,6 +448,71 @@ def transaction_for(activity):
     }
 
 
+def op_transaction_for(activity, recorded_at=None):
+    """A signed op_transactions row for one settled Wise activity."""
+    if activity.get("status") not in KEPT_STATUSES:
+        return None
+    if activity.get("type") == "CARD_CHECK":
+        return None
+    amount, currency = settled_amount(activity)
+    if amount <= 0:
+        return None
+    text = activity_text(activity)
+    positive = "positive" in (activity.get("primaryAmount") or "")
+    vendor = vendor_for(text)
+    legacy_category = category_for(vendor, text, round(amount, 2))
+    if positive and "refund" not in text.lower():
+        category = "revenue"
+    else:
+        category = _op_category(legacy_category)
+    signed_amount = round(amount, 2) if positive else -round(amount, 2)
+    return _op_row(
+        date=(activity.get("createdOn") or "")[:10],
+        vendor=vendor,
+        category=category,
+        amount=signed_amount,
+        currency=currency,
+        description=text.strip(),
+        recorded_at=recorded_at,
+    )
+
+
+def _op_row(
+    date,
+    vendor,
+    category,
+    amount,
+    currency,
+    description,
+    recorded_at=None,
+):
+    return {
+        "source": "wise",
+        "date": date,
+        "vendor": vendor,
+        "category": category,
+        "amount": round(float(amount), 2),
+        "currency": currency,
+        "description": description,
+        "evidence": "",
+        "recorded_at": recorded_at or datetime.datetime.now(
+            datetime.timezone.utc
+        ).strftime("%Y-%m-%d %H:%M:%S"),
+    }
+
+
+def _op_category(category):
+    if category in ("compute", "compute-gpu", "infra"):
+        return "cloud"
+    return category
+
+
+def _op_legacy_category(category):
+    if category == "cloud":
+        return "compute"
+    return category
+
+
 def settled_amount(activity):
     """The leg that left the bank: the EUR side when either leg is EUR,
     otherwise the primary amount as-is."""
@@ -446,3 +587,23 @@ def validate_rows(rows):
             raise ValueError(f"unknown category in transactions: {row['category']}")
         if not row["charged_currency"]:
             raise ValueError("transactions row missing charged_currency")
+
+
+def validate_op_rows(rows):
+    for row in rows:
+        missing = [column for column in OP_COLUMNS if column not in row]
+        if missing:
+            raise ValueError(f"op_transactions row missing columns: {missing}")
+        if row["source"] != "wise":
+            raise ValueError(f"bad op_transactions source: {row['source']!r}")
+        if not _DATE_RE.match(row["date"]):
+            raise ValueError(f"bad op_transactions date: {row['date']!r}")
+        if row["vendor"] and row["vendor"] not in VENDOR_ALIASES:
+            raise ValueError(f"unknown vendor in op_transactions: {row['vendor']}")
+        if row["category"] not in OP_ALLOWED_CATEGORIES:
+            raise ValueError(
+                f"unknown category in op_transactions: {row['category']}"
+            )
+        float(row["amount"])
+        if not row["currency"]:
+            raise ValueError("op_transactions row missing currency")

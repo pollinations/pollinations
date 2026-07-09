@@ -1,0 +1,21 @@
+TOKEN "treasury_ingest" APPEND
+TOKEN "treasury_ingest" READ
+
+SCHEMA >
+    `source` String `json:$.source`,
+    `vendor` String `json:$.vendor`,
+    `type` String `json:$.type`,
+    `start` String `json:$.start`,
+    `end` String `json:$.end`,
+    `credit` Float64 `json:$.credit`,
+    `paid` Float64 `json:$.paid`,
+    `currency` String `json:$.currency`,
+    `resource_id` String `json:$.resource_id`,
+    `resource_name` String `json:$.resource_name`,
+    `resource_sku` String `json:$.resource_sku`,
+    `model` String `json:$.model`,
+    `evidence` String `json:$.evidence`,
+    `recorded_at` DateTime `json:$.recorded_at`
+
+ENGINE "MergeTree"
+ENGINE_SORTING_KEY "vendor, type, start, resource_id"

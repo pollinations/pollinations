@@ -71,6 +71,39 @@ def test_in_progress_kept():
     assert row["charged_amount"] == 100.0
 
 
+def test_op_transaction_keeps_wise_inflow_as_revenue():
+    row = wise.op_transaction_for(
+        activity(
+            title="Stripe",
+            primaryAmount="<positive>+ 200 EUR</positive>",
+        ),
+        recorded_at="2026-07-09 00:00:00",
+    )
+
+    assert row == {
+        "source": "wise",
+        "date": "2026-07-01",
+        "vendor": "stripe",
+        "category": "revenue",
+        "amount": 200.0,
+        "currency": "EUR",
+        "description": "Stripe",
+        "evidence": "",
+        "recorded_at": "2026-07-09 00:00:00",
+    }
+
+
+def test_op_transaction_keeps_outflow_as_negative_cloud_spend():
+    row = wise.op_transaction_for(
+        activity(title="RunPod"),
+        recorded_at="2026-07-09 00:00:00",
+    )
+
+    assert row["vendor"] == "runpod"
+    assert row["category"] == "cloud"
+    assert row["amount"] == -100.0
+
+
 def test_zero_amount_skipped():
     assert wise.transaction_for(activity(primaryAmount="- 0 EUR")) is None
 

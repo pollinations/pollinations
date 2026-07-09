@@ -19,6 +19,9 @@ TABLES = {
     "gpu_runs": "month",
     "grants": None,
     "ingest_runs": None,
+    "op_transactions": "date",
+    "op_cloud": "start",
+    "op_pollen": "month",
 }
 _ORDER = {"grants": "recorded_at"}
 _MONTH_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")

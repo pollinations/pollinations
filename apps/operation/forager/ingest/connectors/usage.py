@@ -44,6 +44,9 @@ SELECT '{month}' AS month, model_provider_used AS vendor, model_used AS model,
   round(sumIf(community_model_reward_amount, selected_meter_slug LIKE '%pack%'), 4) AS model_paid,
   round(sumIf(community_model_reward_amount, selected_meter_slug LIKE '%tier%'), 4) AS model_quests,
   round(sumIf(community_model_reward_amount, selected_meter_slug NOT LIKE '%pack%' AND selected_meter_slug NOT LIKE '%tier%'), 4) AS model_other,
+  countIf(cache_hit = false AND selected_meter_slug LIKE '%pack%') AS requests_paid,
+  countIf(cache_hit = false AND selected_meter_slug LIKE '%tier%') AS requests_quests,
+  countIf(cache_hit = false AND selected_meter_slug NOT LIKE '%pack%' AND selected_meter_slug NOT LIKE '%tier%') AS requests_other,
   countIf(cache_hit = false) AS requests
 FROM generation_event
 WHERE environment = 'production'
@@ -98,6 +101,17 @@ def _split_other(rows):
                 row[f"{field}_quests"] = round(
                     row[f"{field}_quests"] + other * (1 - ratio), 4
                 )
+        requests_other = int(row.pop("requests_other", 0) or 0)
+        classified_requests = row["requests_paid"] + row["requests_quests"] + requests_other
+        if requests_other:
+            requests_paid = int(round(requests_other * ratio))
+            row["requests_paid"] += requests_paid
+            row["requests_quests"] += requests_other - requests_paid
+        if classified_requests:
+            row["requests"] = row["requests_paid"] + row["requests_quests"]
+        else:
+            row["requests_paid"] = int(row.get("requests") or 0)
+            row["requests_quests"] = 0
     return rows
 
 
@@ -131,6 +145,9 @@ def monthly_rows(tb_prod, months, today):
         "model_paid",
         "model_quests",
         "model_other",
+        "requests_paid",
+        "requests_quests",
+        "requests_other",
         "requests",
     )
     by_key = {}

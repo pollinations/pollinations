@@ -44,17 +44,15 @@ export function statSourceFromLines(lines: PnlLine[], primary: string) {
         revenueNetUsd: value("revenue"),
         spendUsd: value("total-spend"),
         cashPnlUsd: value("cash-pnl"),
-        creditBurnUsd: value("credit-burn") ?? 0,
         categories,
     };
 }
 
-// The four P&L headline cards, from the primary period's aggregate.
+// The P&L headline cards, from the primary period's aggregate.
 function pnlStatItems(source: {
     revenueNetUsd: number | null;
     spendUsd: number | null;
     cashPnlUsd: number | null;
-    creditBurnUsd: number;
     categories: Record<string, number | null>;
 }): StatItem[] {
     const topCategory = Object.entries(source.categories)
@@ -93,35 +91,25 @@ function pnlStatItems(source: {
                       : "neg",
             detail: netMargin != null ? `${fmtPct(netMargin)} net margin` : "—",
         },
-        {
-            label: "Credit burn",
-            value:
-                source.creditBurnUsd > 0 ? fmtUsd(source.creditBurnUsd) : "–",
-            detail: "non-cash, grant-funded",
-        },
     ];
 }
 
 // The displayed text for one line×period cell. net-margin values are already
-// percentages; credit-burn is soft and parenthesized (non-cash); everything
-// else is money. Kept pure so the tests can assert formatting without a DOM.
+// percentages; everything else is money. Kept pure so the tests can assert
+// formatting without a DOM.
 export function pnlCellText(line: PnlLine, period: PnlPeriod): string {
     const value = line.values[period.key] ?? null;
     if (line.kind === "net-margin") return fmtPct(value);
-    if (line.kind === "credit-burn") {
-        return value != null && value > 0 ? `(${fmtUsd(value)})` : "–";
-    }
     // Delta columns are signed USD swings; a percentage-shaped line still reads
-    // as a delta of its own unit — but only net-margin/credit-burn diverge, and
-    // both are handled above, so the delta of a money line is money.
+    // as a delta of its own unit — but only net-margin diverges, and it is
+    // handled above, so the delta of a money line is money.
     return fmtUsd(value);
 }
 
 // Cell tone: cash-pnl and net-margin follow their sign; delta columns of money
-// lines follow the swing's sign; credit-burn stays soft; the rest are neutral.
+// lines follow the swing's sign; the rest are neutral.
 function pnlCellClass(line: PnlLine, period: PnlPeriod): string {
     const value = line.values[period.key] ?? null;
-    if (line.kind === "credit-burn") return "text-theme-text-soft";
     if (line.kind === "cash-pnl" || line.kind === "net-margin") {
         return pnlTone(value);
     }
@@ -132,30 +120,25 @@ function pnlCellClass(line: PnlLine, period: PnlPeriod): string {
 const HINTS: Record<string, ColumnHint> = {
     revenue: {
         meaning:
-            "Stripe net revenue: gross minus fees and refunds, EUR→USD at monthly ECB rates.",
-        tables: "revenue_monthly_api",
-        sources: "ST",
-        formula: "gross − fees − refunds",
+            "Revenue cash movements in the signed Wise ledger, converted to USD by transaction date.",
+        tables: "op_transactions_api",
+        sources: "WISE",
+        formula: "Σ amount where category = revenue",
     },
     "total-spend": {
         meaning:
             "Total cash out for the period, summed across every category row, by transaction date.",
-        tables: "transactions_api",
-        sources: "EN",
+        tables: "op_transactions_api",
+        sources: "WISE",
+        formula: "-Σ amount where category != revenue",
     },
     "cash-pnl": {
         meaning: "Revenue minus spend. Only shown when both sides exist.",
         formula: "revenue − spend",
     },
-    "credit-burn": {
-        meaning:
-            "Provider-metered consumption covered by granted credits. No cash left the bank, so it is NOT in cash P&L.",
-        tables: "provider_monthly_api",
-        sources: "API/CLI/BQ",
-    },
 };
 
-const SEPARATOR_BEFORE = new Set(["total-spend", "credit-burn"]);
+const SEPARATOR_BEFORE = new Set(["total-spend"]);
 
 // One classic P&L statement: line items are rows, periods are columns. The
 // rows never change with the filter — only the period columns do (year/all:

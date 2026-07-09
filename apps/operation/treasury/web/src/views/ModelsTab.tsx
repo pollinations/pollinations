@@ -2,18 +2,12 @@ import { useMemo } from "react";
 import {
     EconTable,
     Gauge,
-    hasEconActivity,
     trueXStatTone,
     visibleEconRows,
 } from "../components/EconTable";
 import { StatCards } from "../components/StatCards";
 import { fmtMultiplier, fmtUnsignedPct, fmtUsd } from "../lib/format";
-import {
-    breakEvenMultiplier,
-    economics,
-    econSummary,
-    globalNetRatio,
-} from "../lib/insights";
+import { econSummary, modelEconomics } from "../lib/insights";
 import type { Data } from "../types";
 
 export function ModelsTab({
@@ -25,20 +19,11 @@ export function ModelsTab({
     month?: string;
     vendor?: string;
 }) {
-    const netRatio = useMemo(
-        () => globalNetRatio(data.revenueMonthly),
-        [data.revenueMonthly],
-    );
-    const rows = useMemo(
-        () =>
-            visibleEconRows(economics(data, month, "model"), vendor).filter(
-                hasEconActivity,
-            ),
+    const econRows = useMemo(
+        () => visibleEconRows(modelEconomics(data, month), vendor),
         [data, month, vendor],
     );
-    const stats = useMemo(() => econSummary(rows), [rows]);
-    const cashBreakEven = breakEvenMultiplier(netRatio);
-    const worst = stats.mostUnderpriced;
+    const stats = useMemo(() => econSummary(econRows), [econRows]);
 
     return (
         <div className="flex flex-col gap-4">
@@ -55,7 +40,7 @@ export function ModelsTab({
                         ),
                     },
                     {
-                        label: "Provider Cost",
+                        label: "Costs",
                         value: fmtUsd(stats.trueCostPaidUsd),
                         detail:
                             stats.creditFundedPct != null
@@ -74,27 +59,22 @@ export function ModelsTab({
                     {
                         label: "Coverage ×",
                         value: fmtMultiplier(stats.trueMultiplier),
-                        tone: trueXStatTone(
-                            stats.trueMultiplier,
-                            cashBreakEven,
-                        ),
-                        detail: "retained ÷ Provider Cost",
+                        tone: trueXStatTone(stats.trueMultiplier, null),
+                        detail: "retained ÷ costs",
                     },
                     {
-                        label: "Most underpriced",
-                        value: (
-                            <span className="text-xl leading-tight">
-                                {worst?.model ?? "–"}
-                            </span>
-                        ),
-                        tone: worst ? "neg" : "base",
-                        detail: worst
-                            ? `${fmtMultiplier(worst.trueMultiplier)} · ${fmtUsd(worst.marginUsd)}`
-                            : "all profitable",
+                        label: "Quests",
+                        value: fmtUsd(stats.questBurnUsd),
+                        detail: "free-tier subsidy",
                     },
                 ]}
             />
-            <EconTable netRatio={netRatio} rows={rows} showModel />
+            <EconTable
+                netRatio={null}
+                rows={econRows}
+                showModel
+                sourceMode="op"
+            />
         </div>
     );
 }

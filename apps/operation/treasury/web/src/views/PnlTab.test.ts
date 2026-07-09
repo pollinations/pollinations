@@ -1,84 +1,76 @@
 import { describe, expect, it } from "vitest";
 import { pnlStatement } from "../lib/insights";
-import type {
-    Data,
-    ProviderMonthlyRow,
-    RevenueMonthlyRow,
-    TransactionRow,
-} from "../types";
+import type { Data, OpTransactionRow } from "../types";
 import { pnlCellText, pnlTone, statSourceFromLines } from "./PnlTab";
 
 const now = new Date("2026-07-06T12:00:00Z");
 
-const txn = (over: Partial<TransactionRow>): TransactionRow => ({
+const opTxn = (over: Partial<OpTransactionRow>): OpTransactionRow => ({
+    source: "wise",
     date: "2026-05-10",
     vendor: "aws",
-    category: "compute",
-    charged_amount: 0,
-    charged_currency: "USD",
-    ...over,
-});
-
-const provider = (over: Partial<ProviderMonthlyRow>): ProviderMonthlyRow => ({
-    month: "2026-05",
-    vendor: "lambda",
+    category: "cloud",
+    amount: 0,
     currency: "USD",
-    credit: 0,
-    paid: 0,
-    source: "api",
+    description: "",
+    evidence: "",
+    recorded_at: "2026-07-09 00:00:00",
     ...over,
-});
-
-const revenue = (month: string, gross: number): RevenueMonthlyRow => ({
-    source: "stripe",
-    month,
-    currency: "USD",
-    gross_amount: gross,
-    fees_amount: 0,
-    refunds_amount: 0,
 });
 
 const data: Data = {
-    transactions: [
-        txn({
+    transactions: [],
+    providerMonthly: [],
+    pollenMonthly: [],
+    opTransactions: [
+        opTxn({
+            date: "2026-05-10",
+            vendor: "stripe",
+            category: "revenue",
+            amount: 1000,
+        }),
+        opTxn({
             date: "2026-05-10",
             vendor: "aws",
-            category: "compute",
-            charged_amount: 400,
+            category: "cloud",
+            amount: -400,
         }),
-        txn({
+        opTxn({
             date: "2026-05-25",
             vendor: "deel",
             category: "payroll",
-            charged_amount: 100,
+            amount: -100,
         }),
-        txn({
+        opTxn({
+            date: "2026-06-05",
+            vendor: "stripe",
+            category: "revenue",
+            amount: 2000,
+        }),
+        opTxn({
             date: "2026-06-05",
             vendor: "aws",
-            category: "compute",
-            charged_amount: 500,
+            category: "cloud",
+            amount: -500,
         }),
-        txn({
+        opTxn({
             date: "2026-06-06",
             vendor: "runpod",
-            category: "compute",
-            charged_amount: 100,
+            category: "cloud",
+            amount: -100,
         }),
-        txn({
+        opTxn({
             date: "2026-07-02",
             vendor: "aws",
-            category: "compute",
-            charged_amount: 50,
+            category: "cloud",
+            amount: -50,
         }),
     ],
-    providerMonthly: [
-        provider({ month: "2026-05", credit: 200 }),
-        provider({ month: "2026-06", credit: 300 }),
-    ],
-    pollenMonthly: [],
+    opCloud: [],
+    opPollen: [],
     grants: [],
     runs: [],
-    revenueMonthly: [revenue("2026-05", 1000), revenue("2026-06", 2000)],
+    revenueMonthly: [],
     gpuRuns: [],
 };
 
@@ -93,11 +85,10 @@ describe("PnlTab statement shape", () => {
         // the rows never change with the filter.
         expect(lineKeys(year)).toEqual(lineKeys(month));
         expect(lineKeys(year)).toContain("revenue");
-        expect(lineKeys(year)).toContain("compute");
+        expect(lineKeys(year)).toContain("cloud");
         expect(lineKeys(year)).toContain("total-spend");
         expect(lineKeys(year)).toContain("cash-pnl");
         expect(lineKeys(year)).toContain("net-margin");
-        expect(lineKeys(year)).toContain("credit-burn");
     });
 
     it("differs only in period columns: year is months+YTD, month is prior·selected·Δ", () => {
@@ -146,18 +137,6 @@ describe("PnlTab cell rendering", () => {
         expect(text).toBe("+50%");
     });
 
-    it("parenthesizes credit burn and dashes when absent", () => {
-        const year = pnlStatement(data, "2026", now);
-        const burn = year.lines.find((l) => l.key === "credit-burn");
-        const may = year.periods.find((p) => p.key === "2026-05");
-        const july = year.periods.find((p) => p.key === "2026-07");
-        if (!burn || !may || !july) throw new Error("missing");
-        // May had 200 credit burn.
-        expect(pnlCellText(burn, may)).toBe("($200)");
-        // July had none.
-        expect(pnlCellText(burn, july)).toBe("–");
-    });
-
     it("signs the delta column of money lines", () => {
         const month = pnlStatement(data, "2026-06", now);
         const revenueLine = month.lines.find((l) => l.key === "revenue");
@@ -172,18 +151,18 @@ describe("PnlTab cell rendering", () => {
 describe("PnlTab vendor drill-down", () => {
     it("exposes category vendor sub-rows in the same period columns", () => {
         const year = pnlStatement(data, "2026", now);
-        const compute = year.lines.find((l) => l.key === "compute");
-        if (!compute?.vendors) throw new Error("compute vendors missing");
-        const vendorNames = compute.vendors.map((v) => v.vendor);
+        const cloud = year.lines.find((l) => l.key === "cloud");
+        if (!cloud?.vendors) throw new Error("cloud vendors missing");
+        const vendorNames = cloud.vendors.map((v) => v.vendor);
         expect(vendorNames).toContain("aws");
         expect(vendorNames).toContain("runpod");
         // Sub-rows carry the same period keys as the category row.
         for (const period of year.periods) {
-            const sum = compute.vendors.reduce(
+            const sum = cloud.vendors.reduce(
                 (total, v) => total + (v.values[period.key] ?? 0),
                 0,
             );
-            expect(sum).toBeCloseTo(compute.values[period.key] ?? 0, 6);
+            expect(sum).toBeCloseTo(cloud.values[period.key] ?? 0, 6);
         }
     });
 });
@@ -193,21 +172,13 @@ describe("statSourceFromLines", () => {
         const year = pnlStatement(data, "2026", now);
         const source = statSourceFromLines(year.lines, year.primary);
         expect(source.revenueNetUsd).toBe(3000);
-        // compute 1050 + payroll 100 = 1150 total spend.
+        // cloud 1050 + payroll 100 = 1150 total spend.
         expect(source.spendUsd).toBe(1150);
         // cash-pnl total sums per-month P&Ls where both sides exist: May
         // 1000−500=500, June 2000−600=1400; July is spend-only → excluded.
         expect(source.cashPnlUsd).toBe(1900);
-        expect(source.creditBurnUsd).toBe(500);
-        expect(source.categories.compute).toBe(1050);
+        expect(source.categories.cloud).toBe(1050);
         expect(source.categories.payroll).toBe(100);
-    });
-
-    it("falls back to 0 credit burn when the primary period has none", () => {
-        const noBurn: Data = { ...data, providerMonthly: [] };
-        const year = pnlStatement(noBurn, "2026", now);
-        const source = statSourceFromLines(year.lines, year.primary);
-        expect(source.creditBurnUsd).toBe(0);
     });
 });
 

@@ -7,12 +7,7 @@ import {
 } from "../components/EconTable";
 import { StatCards } from "../components/StatCards";
 import { fmtMultiplier, fmtUnsignedPct, fmtUsd } from "../lib/format";
-import {
-    breakEvenMultiplier,
-    economics,
-    econSummary,
-    globalNetRatio,
-} from "../lib/insights";
+import { econSummary, providerEconomics } from "../lib/insights";
 import type { Data } from "../types";
 
 export function VendorsTab({
@@ -24,16 +19,11 @@ export function VendorsTab({
     month?: string;
     vendor?: string;
 }) {
-    const netRatio = useMemo(
-        () => globalNetRatio(data.revenueMonthly),
-        [data.revenueMonthly],
-    );
     const econRows = useMemo(
-        () => visibleEconRows(economics(data, month, "vendor"), vendor),
+        () => visibleEconRows(providerEconomics(data, month), vendor),
         [data, month, vendor],
     );
     const stats = useMemo(() => econSummary(econRows), [econRows]);
-    const cashBreakEven = breakEvenMultiplier(netRatio);
 
     return (
         <div className="flex flex-col gap-4">
@@ -50,7 +40,7 @@ export function VendorsTab({
                         ),
                     },
                     {
-                        label: "Provider Cost",
+                        label: "Costs",
                         value: fmtUsd(stats.trueCostPaidUsd),
                         detail:
                             stats.creditFundedPct != null
@@ -69,11 +59,8 @@ export function VendorsTab({
                     {
                         label: "Coverage ×",
                         value: fmtMultiplier(stats.trueMultiplier),
-                        tone: trueXStatTone(
-                            stats.trueMultiplier,
-                            cashBreakEven,
-                        ),
-                        detail: "retained ÷ Provider Cost",
+                        tone: trueXStatTone(stats.trueMultiplier, null),
+                        detail: "retained ÷ costs",
                     },
                     {
                         label: "Quests",
@@ -82,7 +69,7 @@ export function VendorsTab({
                     },
                 ]}
             />
-            <EconTable netRatio={netRatio} rows={econRows} showFlags />
+            <EconTable netRatio={null} rows={econRows} sourceMode="op" />
         </div>
     );
 }

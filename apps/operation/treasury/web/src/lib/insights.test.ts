@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type {
     Data,
+    OpCloudRow,
+    OpPollenRow,
+    OpTransactionRow,
     PollenMonthlyRow,
     ProviderMonthlyRow,
     RevenueMonthlyRow,
@@ -16,10 +19,12 @@ import {
     ecosystemTotals,
     globalNetRatio,
     insightVendorOptions,
+    modelEconomics,
     monthlyRevenue,
     monthSpendDetail,
     pnlByMonth,
     pnlStatement,
+    providerEconomics,
     transactionCashUsd,
     ungrantedCreditBurn,
     vendorPlanes,
@@ -100,6 +105,56 @@ const txn = (over: Partial<TransactionRow>): TransactionRow => ({
     ...over,
 });
 
+const opTxn = (over: Partial<OpTransactionRow>): OpTransactionRow => ({
+    source: "wise",
+    date: "2026-05-10",
+    vendor: "aws",
+    category: "cloud",
+    amount: 0,
+    currency: "USD",
+    description: "",
+    evidence: "",
+    recorded_at: "2026-07-09 00:00:00",
+    ...over,
+});
+
+const opCloud = (over: Partial<OpCloudRow>): OpCloudRow => ({
+    source: "api",
+    vendor: "aws",
+    type: "inference",
+    start: "2026-05-01 00:00:00",
+    end: "2026-06-01 00:00:00",
+    credit: 0,
+    paid: 0,
+    currency: "USD",
+    resource_id: "",
+    resource_name: "",
+    resource_sku: "",
+    model: "",
+    evidence: "",
+    recorded_at: "2026-07-09 00:00:00",
+    ...over,
+});
+
+const opPollen = (over: Partial<OpPollenRow>): OpPollenRow => ({
+    source: "tinybird",
+    month: "2026-06",
+    vendor: "google",
+    model: "gemini-2.5-flash",
+    currency: "POLLEN",
+    cost_paid: 0,
+    cost_quests: 0,
+    price_paid: 0,
+    price_quests: 0,
+    byop_paid: 0,
+    byop_quests: 0,
+    model_paid: 0,
+    model_quests: 0,
+    requests_paid: 0,
+    requests_quests: 0,
+    ...over,
+});
+
 const provider = (over: Partial<ProviderMonthlyRow>): ProviderMonthlyRow => ({
     month: "2026-05",
     vendor: "aws",
@@ -114,6 +169,9 @@ const emptyData = (over: Partial<Data>): Data => ({
     transactions: [],
     providerMonthly: [],
     pollenMonthly: [],
+    opTransactions: [],
+    opCloud: [],
+    opPollen: [],
     grants: [],
     runs: [],
     revenueMonthly: [],
@@ -158,55 +216,60 @@ describe("transactionCashUsd", () => {
 describe("pnlByMonth", () => {
     const now = new Date("2026-07-06T12:00:00Z");
 
-    it("blends revenue, category spend, and credit shadow per month", () => {
+    it("blends revenue and category spend per month from op_transactions only", () => {
         const data = emptyData({
+            opTransactions: [
+                opTxn({
+                    date: "2026-05-01",
+                    vendor: "stripe",
+                    category: "revenue",
+                    amount: 1820,
+                    currency: "EUR",
+                }),
+                opTxn({
+                    date: "2026-05-10",
+                    category: "cloud",
+                    amount: -1000,
+                    currency: "USD",
+                }),
+                opTxn({
+                    date: "2026-05-25",
+                    category: "payroll",
+                    amount: -100,
+                    currency: "EUR",
+                }),
+                opTxn({
+                    date: "2026-06-01",
+                    category: "cloud",
+                    amount: -50,
+                    currency: "USD",
+                }),
+                opTxn({
+                    date: "2026-07-02",
+                    category: "cloud",
+                    amount: -10,
+                    currency: "USD",
+                }),
+            ],
             transactions: [
                 txn({
                     date: "2026-05-10",
                     category: "compute",
-                    charged_amount: 1000,
-                    charged_currency: "USD",
-                }),
-                txn({
-                    date: "2026-05-25",
-                    category: "payroll",
-                    charged_amount: 100,
-                    charged_currency: "EUR",
-                }),
-                txn({
-                    date: "2026-06-01",
-                    category: "compute",
-                    charged_amount: 50,
-                    charged_currency: "USD",
-                }),
-                txn({
-                    date: "2026-07-02",
-                    category: "compute",
-                    charged_amount: 10,
+                    charged_amount: 99999,
                     charged_currency: "USD",
                 }),
             ],
-            providerMonthly: [provider({ month: "2026-05", credit: 200 })],
-            revenueMonthly: [
-                {
-                    source: "stripe",
-                    month: "2026-05",
-                    currency: "EUR",
-                    gross_amount: 2000,
-                    fees_amount: 180,
-                    refunds_amount: 0,
-                },
-            ],
+            providerMonthly: [provider({ month: "2026-05", credit: 99999 })],
+            revenueMonthly: [revenueRow("2026-05", 99999, 0)],
         });
         const [may, june, july] = pnlByMonth(data, now);
 
         expect(may.month).toBe("2026-05");
-        expect(may.categories.compute).toBe(1000);
+        expect(may.categories.cloud).toBe(1000);
         expect(may.categories.payroll).toBeCloseTo(116.73, 2);
         expect(may.spendUsd).toBeCloseTo(1116.73, 2);
         expect(may.revenueNetUsd).toBeCloseTo(1820 * 1.1673, 1);
         expect(may.cashPnlUsd).toBeCloseTo(1820 * 1.1673 - 1116.73, 1);
-        expect(may.creditBurnUsd).toBe(200);
         expect(may.monthInProgress).toBe(false);
 
         // Wise cash is real time: a closed month is complete even before
@@ -223,20 +286,36 @@ describe("pnlByMonth", () => {
 
     it("reports null spend for a month with no transactions at all", () => {
         const data = emptyData({
-            providerMonthly: [provider({ month: "2026-04", credit: 10 })],
+            opTransactions: [
+                opTxn({
+                    date: "2026-04-01",
+                    vendor: "stripe",
+                    category: "revenue",
+                    amount: 10,
+                }),
+            ],
         });
         const [april] = pnlByMonth(data, now);
         expect(april.month).toBe("2026-04");
         expect(april.spendUsd).toBeNull();
         expect(april.cashPnlUsd).toBeNull();
-        expect(april.creditBurnUsd).toBe(10);
     });
 
-    it("ignores pre-window grant-burn rows entirely", () => {
+    it("ignores pre-window transaction rows entirely", () => {
         const data = emptyData({
-            providerMonthly: [
-                provider({ month: "2025-12", vendor: "aws", credit: 35000 }),
-                provider({ month: "2026-04", credit: 10 }),
+            opTransactions: [
+                opTxn({
+                    date: "2025-12-31",
+                    vendor: "aws",
+                    category: "cloud",
+                    amount: -35000,
+                }),
+                opTxn({
+                    date: "2026-04-01",
+                    vendor: "aws",
+                    category: "cloud",
+                    amount: -10,
+                }),
             ],
         });
         expect(pnlByMonth(data, now).map((row) => row.month)).toEqual([
@@ -250,43 +329,34 @@ describe("monthSpendDetail", () => {
 
     it("groups the month's cash by category and vendor with shares", () => {
         const data = emptyData({
-            transactions: [
-                txn({
+            opTransactions: [
+                opTxn({
                     date: "2026-05-10",
                     vendor: "aws",
-                    category: "compute",
-                    charged_amount: 300,
-                    charged_currency: "USD",
+                    category: "cloud",
+                    amount: -300,
+                    currency: "USD",
                 }),
-                txn({
+                opTxn({
                     date: "2026-05-12",
                     vendor: "aws",
-                    category: "compute",
-                    charged_amount: 100,
-                    charged_currency: "USD",
+                    category: "cloud",
+                    amount: -100,
+                    currency: "USD",
                 }),
-                txn({
+                opTxn({
                     date: "2026-05-25",
                     vendor: "deel",
                     category: "payroll",
-                    charged_amount: 100,
-                    charged_currency: "USD",
+                    amount: -100,
+                    currency: "USD",
                 }),
-                txn({
+                opTxn({
                     date: "2026-04-01",
                     vendor: "aws",
-                    category: "compute",
-                    charged_amount: 999,
-                    charged_currency: "USD",
-                }),
-            ],
-            providerMonthly: [
-                provider({ month: "2026-05", vendor: "azure", credit: 50 }),
-                provider({
-                    month: "2026-05",
-                    vendor: "aws",
-                    credit: 0,
-                    paid: 10,
+                    category: "cloud",
+                    amount: -999,
+                    currency: "USD",
                 }),
             ],
         });
@@ -294,7 +364,7 @@ describe("monthSpendDetail", () => {
 
         expect(detail.spend).toEqual([
             {
-                category: "compute",
+                category: "cloud",
                 vendor: "aws",
                 cashUsd: 400,
                 pctOfSpend: 80,
@@ -306,14 +376,12 @@ describe("monthSpendDetail", () => {
                 pctOfSpend: 20,
             },
         ]);
-        expect(detail.creditBurn).toEqual([{ vendor: "azure", creditUsd: 50 }]);
         expect(detail.summary?.month).toBe("2026-05");
     });
 
     it("returns empty structures for a month with no data", () => {
         const detail = monthSpendDetail(emptyData({}), "2026-05", now);
         expect(detail.spend).toEqual([]);
-        expect(detail.creditBurn).toEqual([]);
         expect(detail.summary).toBeNull();
     });
 });
@@ -322,18 +390,18 @@ describe("categoryColumns", () => {
     it("keeps the fixed order and appends unknown categories sorted", () => {
         const months = pnlByMonth(
             emptyData({
-                transactions: [
-                    txn({
+                opTransactions: [
+                    opTxn({
                         date: "2026-05-01",
                         category: "zulu",
-                        charged_amount: 1,
-                        charged_currency: "USD",
+                        amount: -1,
+                        currency: "USD",
                     }),
-                    txn({
+                    opTxn({
                         date: "2026-05-02",
-                        category: "compute",
-                        charged_amount: 1,
-                        charged_currency: "USD",
+                        category: "cloud",
+                        amount: -1,
+                        currency: "USD",
                     }),
                 ],
             }),
@@ -344,235 +412,387 @@ describe("categoryColumns", () => {
 });
 
 describe("vendorPlanes", () => {
-    it("aligns the three planes on (month, vendor) and converts currencies", () => {
+    it("aligns the OP planes on (month, vendor) and converts currencies", () => {
         const data = emptyData({
+            opTransactions: [
+                opTxn({
+                    date: "2026-06-13",
+                    vendor: "google",
+                    category: "cloud",
+                    amount: -5000,
+                    currency: "USD",
+                }),
+                opTxn({
+                    date: "2026-06-14",
+                    vendor: "google",
+                    category: "saas",
+                    amount: -999,
+                    currency: "USD",
+                }),
+            ],
+            opCloud: [
+                opCloud({
+                    start: "2026-06-01 00:00:00",
+                    end: "2026-07-01 00:00:00",
+                    vendor: "google",
+                    currency: "EUR",
+                    credit: -100,
+                    paid: -4389.35,
+                }),
+            ],
+            opPollen: [
+                opPollen({
+                    vendor: "google",
+                    cost_paid: 3000,
+                    cost_quests: 1940,
+                }),
+            ],
             transactions: [
                 txn({
                     date: "2026-06-13",
                     vendor: "google",
                     category: "compute",
-                    charged_amount: 5000,
-                    charged_currency: "USD",
-                }),
-                txn({
-                    date: "2026-06-14",
-                    vendor: "google",
-                    category: "saas",
-                    charged_amount: 999,
+                    charged_amount: 99999,
                     charged_currency: "USD",
                 }),
             ],
             providerMonthly: [
-                provider({
-                    month: "2026-06",
-                    vendor: "google",
-                    currency: "EUR",
-                    credit: 100,
-                    paid: 4389.35,
-                }),
+                provider({ month: "2026-06", vendor: "google", paid: 99999 }),
             ],
-            pollenMonthly: [
-                usage({ vendor: "google", cost_paid: 3000, cost_quests: 1940 }),
-            ],
+            pollenMonthly: [usage({ vendor: "google", cost_paid: 99999 })],
         });
         const [row] = vendorPlanes(data);
 
         expect(row.month).toBe("2026-06");
         expect(row.vendor).toBe("google");
-        expect(row.transactionsUsd).toBe(5000); // saas row excluded — compute only
-        expect(row.providerUsd).toBeCloseTo(4489.35 * 1.1518, 1);
-        expect(row.creditUsd).toBeCloseTo(100 * 1.1518, 2);
-        expect(row.pollenUsd).toBe(4940);
+        expect(row.cashUsd).toBe(5000); // SaaS row excluded - cloud only
+        expect(row.cloudPaidUsd).toBeCloseTo(4389.35 * 1.1518, 1);
+        expect(row.cloudCreditUsd).toBeCloseTo(100 * 1.1518, 2);
+        expect(row.cloudUsd).toBeCloseTo(4489.35 * 1.1518, 1);
+        expect(row.meterCloudUsd).toBeCloseTo(4489.35 * 1.1518, 1);
+        expect(row.pollenPaidCostUsd).toBe(3000);
+        expect(row.pollenQuestCostUsd).toBe(1940);
+        expect(row.pollenCostUsd).toBe(4940);
         expect(row.calibX).toBeCloseTo((4489.35 * 1.1518) / 4940, 5);
+        expect(row.cashCoverage).toBe("same month");
+        expect(row.meterCoverage).toBe("complete");
+        expect(row.status).toBe("ok");
     });
 
     it("keeps missing planes null instead of zero", () => {
         const data = emptyData({
-            pollenMonthly: [usage({ vendor: "runpod", cost_paid: 10 })],
+            opPollen: [opPollen({ vendor: "runpod", cost_paid: 10 })],
         });
         const [row] = vendorPlanes(data);
-        expect(row.transactionsUsd).toBeNull();
-        expect(row.providerUsd).toBeNull();
-        expect(row.creditUsd).toBeNull();
-        expect(row.pollenUsd).toBe(10);
+        expect(row.cashUsd).toBeNull();
+        expect(row.cloudPaidUsd).toBeNull();
+        expect(row.cloudCreditUsd).toBeNull();
+        expect(row.cloudUsd).toBeNull();
+        expect(row.meterCloudUsd).toBeNull();
+        expect(row.pollenPaidCostUsd).toBe(10);
+        expect(row.pollenQuestCostUsd).toBeNull();
+        expect(row.pollenCostUsd).toBe(10);
         expect(row.calibX).toBeNull();
+        expect(row.meterCoverage).toBe("missing cloud");
+        expect(row.status).toBe("missing cloud");
     });
 
-    it("skips transactions with a malformed month key", () => {
+    it("skips OP transactions with a malformed month key", () => {
         const data = emptyData({
-            transactions: [
-                txn({
+            opTransactions: [
+                opTxn({
                     date: "",
                     vendor: "aws",
-                    category: "compute",
-                    charged_amount: 500,
-                    charged_currency: "USD",
+                    category: "cloud",
+                    amount: -500,
+                    currency: "USD",
                 }),
             ],
         });
         expect(vendorPlanes(data)).toEqual([]);
     });
 
-    it("excludes pre-window grant-burn provider rows", () => {
+    it("excludes pre-window OP Cloud rows from display", () => {
         const data = emptyData({
-            providerMonthly: [
-                provider({ month: "2025-12", vendor: "aws", credit: 35000 }),
+            opCloud: [
+                opCloud({
+                    start: "2025-12-01 00:00:00",
+                    vendor: "aws",
+                    credit: -35000,
+                }),
             ],
         });
         expect(vendorPlanes(data)).toEqual([]);
     });
 
-    it("keeps infra rows out of the provider witness", () => {
+    it("keeps infra cloud burn out of the product-meter witness", () => {
         const data = emptyData({
-            providerMonthly: [
-                provider({
-                    month: "2026-06",
+            opTransactions: [
+                opTxn({
+                    date: "2026-06-13",
                     vendor: "cloudflare",
-                    category: "infra",
-                    paid: 1073,
+                    category: "cloud",
+                    amount: -1073,
                 }),
-                provider({
-                    month: "2026-06",
-                    vendor: "aws",
-                    category: "compute",
-                    credit: 3986.47,
-                }),
-                provider({
-                    month: "2026-06",
-                    vendor: "aws",
-                    category: "infra",
-                    credit: 754.97,
+            ],
+            opCloud: [
+                opCloud({
+                    start: "2026-06-01 00:00:00",
+                    vendor: "cloudflare",
+                    type: "infra",
+                    paid: -1073,
                 }),
             ],
         });
-        const rows = vendorPlanes(data);
-        // cloudflare is all infra — no row at all
-        expect(rows.map((row) => row.vendor)).toEqual(["aws"]);
-        // aws keeps only its compute slice
-        expect(rows[0].providerUsd).toBeCloseTo(3986.47, 2);
+        const [row] = vendorPlanes(data);
+        expect(row.vendor).toBe("cloudflare");
+        expect(row.cloudPaidUsd).toBe(1073);
+        expect(row.cloudUsd).toBe(1073);
+        expect(row.meterCloudUsd).toBeNull();
+        expect(row.cashCoverage).toBe("same month");
+        expect(row.meterCoverage).toBeNull();
+        expect(row.status).toBe("ok");
+    });
+
+    it("ignores positive OP Cloud grant awards as spend", () => {
+        const data = emptyData({
+            opCloud: [
+                opCloud({
+                    start: "2026-06-01 00:00:00",
+                    vendor: "aws",
+                    credit: 1000,
+                }),
+            ],
+        });
+        expect(vendorPlanes(data)).toEqual([]);
     });
 });
 
-describe("coverage", () => {
-    it("classifies funded, adjacent-cash, internal, and uncovered months", () => {
+describe("data quality status", () => {
+    it("classifies same-month, credit-funded, adjacent-cash, and missing-cloud rows", () => {
         const data = emptyData({
-            transactions: [
-                txn({
+            opTransactions: [
+                opTxn({
                     date: "2026-06-13",
                     vendor: "google",
-                    category: "compute",
-                    charged_amount: 5000,
-                    charged_currency: "USD",
+                    category: "cloud",
+                    amount: -5000,
                 }),
-                txn({
+                opTxn({
                     date: "2026-05-11",
                     vendor: "aws",
-                    category: "compute",
-                    charged_amount: 4044,
-                    charged_currency: "USD",
+                    category: "cloud",
+                    amount: -4044,
                 }),
             ],
-            providerMonthly: [
-                provider({ month: "2026-06", vendor: "azure", credit: 3000 }),
-                provider({ month: "2026-06", vendor: "aws", paid: 4698 }),
+            opCloud: [
+                opCloud({
+                    start: "2026-06-01 00:00:00",
+                    vendor: "google",
+                    paid: -4000,
+                }),
+                opCloud({
+                    start: "2026-06-01 00:00:00",
+                    vendor: "azure",
+                    credit: -3000,
+                }),
+                opCloud({
+                    start: "2026-06-01 00:00:00",
+                    vendor: "aws",
+                    paid: -4698,
+                }),
             ],
-            pollenMonthly: [
-                usage({ month: "2026-06", vendor: "google", cost_paid: 4000 }),
-                usage({ month: "2026-06", vendor: "azure", cost_paid: 4000 }),
-                usage({ month: "2026-06", vendor: "aws", cost_paid: 3500 }),
-                usage({
+            opPollen: [
+                opPollen({
+                    month: "2026-06",
+                    vendor: "google",
+                    cost_paid: 4000,
+                }),
+                opPollen({
+                    month: "2026-06",
+                    vendor: "azure",
+                    cost_paid: 4000,
+                }),
+                opPollen({
+                    month: "2026-06",
+                    vendor: "aws",
+                    cost_paid: 4698,
+                }),
+                opPollen({
                     month: "2026-06",
                     vendor: "openrouter",
                     cost_paid: 1000,
                 }),
-                usage({ month: "2026-06", vendor: "community", cost_paid: 50 }),
             ],
         });
         const byKey = new Map(
             vendorPlanes(data).map((row) => [
                 `${row.month}|${row.vendor}`,
-                row.coverage,
+                {
+                    cash: row.cashCoverage,
+                    meter: row.meterCoverage,
+                    status: row.status,
+                },
             ]),
         );
-        expect(byKey.get("2026-06|google")).toBe("ok cash");
-        expect(byKey.get("2026-06|azure")).toBe("ok credit");
-        // aws paid in May for June consumption — adjacent cash, no alarm
-        expect(byKey.get("2026-06|aws")).toBe("cash ±1mo");
-        expect(byKey.get("2026-06|openrouter")).toBe("uncovered");
-        expect(byKey.get("2026-06|community")).toBe("internal");
+        expect(byKey.get("2026-06|google")).toEqual({
+            cash: "same month",
+            meter: "complete",
+            status: "ok",
+        });
+        expect(byKey.get("2026-06|azure")).toEqual({
+            cash: "credit funded",
+            meter: "complete",
+            status: "ok",
+        });
+        expect(byKey.get("2026-06|aws")).toEqual({
+            cash: "cash ±1mo",
+            meter: "complete",
+            status: "timing",
+        });
+        expect(byKey.get("2026-06|openrouter")).toEqual({
+            cash: null,
+            meter: "missing cloud",
+            status: "missing cloud",
+        });
     });
 
-    it("flags provider cash the bank never saw", () => {
+    it("flags paid OP Cloud burn without cash", () => {
         const data = emptyData({
-            providerMonthly: [
-                provider({
-                    month: "2026-05",
+            opCloud: [
+                opCloud({
+                    start: "2026-05-01 00:00:00",
                     vendor: "replicate",
-                    paid: 36.26,
+                    paid: -36.26,
                 }),
             ],
         });
         const [row] = vendorPlanes(data);
-        expect(row.coverage).toBe("paid unverified");
+        expect(row.cashCoverage).toBe("missing cash");
+        expect(row.status).toBe("missing cash");
     });
 
-    it("never alarms on sub-dollar provider paid amounts", () => {
+    it("never alarms on sub-dollar OP Cloud paid amounts", () => {
         const data = emptyData({
-            providerMonthly: [
-                provider({
-                    month: "2026-01",
+            opCloud: [
+                opCloud({
+                    start: "2026-01-01 00:00:00",
                     vendor: "elevenlabs",
-                    paid: 0.49,
+                    paid: -0.49,
                 }),
             ],
         });
         const [row] = vendorPlanes(data);
-        expect(row.coverage).toBeNull();
+        expect(row.cashCoverage).toBeNull();
+        expect(row.meterCoverage).toBeNull();
+        expect(row.status).toBe("ok");
     });
 
     it("covers prepaid vendors while cumulative top-ups keep up with burn", () => {
         const data = emptyData({
-            transactions: [
-                txn({
+            opTransactions: [
+                opTxn({
                     date: "2026-04-02",
                     vendor: "vast.ai",
-                    category: "compute",
-                    charged_amount: 500,
-                    charged_currency: "USD",
+                    category: "cloud",
+                    amount: -500,
                 }),
             ],
-            providerMonthly: [
-                provider({ month: "2026-06", vendor: "vast.ai", paid: 66 }),
+            opCloud: [
+                opCloud({
+                    start: "2026-06-01 00:00:00",
+                    vendor: "vast.ai",
+                    paid: -66,
+                }),
+            ],
+            opPollen: [
+                opPollen({
+                    month: "2026-06",
+                    vendor: "vast.ai",
+                    cost_paid: 66,
+                }),
             ],
         });
         const rows = vendorPlanes(data);
         const june = rows.find((row) => row.month === "2026-06");
-        expect(june?.coverage).toBe("prepaid");
+        expect(june?.cashCoverage).toBe("prepaid");
+        expect(june?.status).toBe("timing");
     });
 
     it("still alarms when a prepaid balance is overdrawn", () => {
         const data = emptyData({
-            providerMonthly: [
-                provider({ month: "2026-06", vendor: "vast.ai", paid: 200 }),
+            opCloud: [
+                opCloud({
+                    start: "2026-06-01 00:00:00",
+                    vendor: "vast.ai",
+                    paid: -200,
+                }),
             ],
         });
         const [row] = vendorPlanes(data);
-        expect(row.coverage).toBe("paid unverified");
+        expect(row.cashCoverage).toBe("missing cash");
+        expect(row.status).toBe("missing cash");
     });
 
     it("ignores sub-dollar pollen noise", () => {
         const data = emptyData({
-            pollenMonthly: [
-                usage({ month: "2026-06", vendor: "fal", cost_paid: 0.5 }),
+            opPollen: [
+                opPollen({ month: "2026-06", vendor: "fal", cost_paid: 0.5 }),
             ],
         });
         const [row] = vendorPlanes(data);
-        expect(row.coverage).toBeNull();
+        expect(row.meterCoverage).toBeNull();
+        expect(row.status).toBe("ok");
+    });
+
+    it("treats cash-only tooling vendors as neutral data-quality rows", () => {
+        const data = emptyData({
+            opTransactions: [
+                opTxn({
+                    date: "2026-06-13",
+                    vendor: "tinybird",
+                    category: "cloud",
+                    amount: -225.25,
+                }),
+            ],
+        });
+        const [row] = vendorPlanes(data);
+        expect(row.cashUsd).toBe(225.25);
+        expect(row.cloudUsd).toBeNull();
+        expect(row.pollenCostUsd).toBeNull();
+        expect(row.cashCoverage).toBeNull();
+        expect(row.meterCoverage).toBeNull();
+        expect(row.status).toBe("cash only");
+    });
+
+    it("flags cash-only rows for vendors that normally have product cloud meters", () => {
+        const data = emptyData({
+            opTransactions: [
+                opTxn({
+                    date: "2026-06-13",
+                    vendor: "aws",
+                    category: "cloud",
+                    amount: -100,
+                }),
+            ],
+            opCloud: [
+                opCloud({
+                    start: "2026-05-01 00:00:00",
+                    vendor: "aws",
+                    paid: -80,
+                }),
+            ],
+        });
+        const row = vendorPlanes(data).find(
+            (entry) => entry.month === "2026-06",
+        );
+        expect(row?.meterCoverage).toBe("missing cloud");
+        expect(row?.status).toBe("missing cloud");
     });
 });
 
 describe("insightVendorOptions", () => {
-    it("unions vendors across planes, compute transactions only", () => {
+    it("unions vendors across legacy and OP planes, cloud transactions only", () => {
         const data = emptyData({
             transactions: [
                 txn({ vendor: "aws", category: "compute" }),
@@ -580,12 +800,21 @@ describe("insightVendorOptions", () => {
             ],
             providerMonthly: [provider({ vendor: "ovhcloud" })],
             pollenMonthly: [usage({ vendor: "google" })],
+            opTransactions: [
+                opTxn({ vendor: "runpod", category: "cloud" }),
+                opTxn({ vendor: "figma", category: "saas" }),
+            ],
+            opCloud: [opCloud({ vendor: "replicate" })],
+            opPollen: [opPollen({ vendor: "azure" })],
         });
         expect(insightVendorOptions(data)).toEqual([
             "all",
             "aws",
+            "azure",
             "google",
             "ovhcloud",
+            "replicate",
+            "runpod",
         ]);
     });
 });
@@ -824,6 +1053,229 @@ describe("economics", () => {
         expect(row.trueMultiplier).toBeNull();
         expect(row.questBurnUsd).toBeCloseTo(10, 5);
         expect(row.flags).toEqual(["no meter"]);
+    });
+});
+
+describe("providerEconomics", () => {
+    it("uses OP Cloud and OP Pollen only, preserving the existing EconRow math", () => {
+        const data = emptyData({
+            providerMonthly: [
+                provider({
+                    vendor: "google",
+                    paid: 99999,
+                }),
+            ],
+            pollenMonthly: [
+                usage({
+                    vendor: "google",
+                    cost_paid: 99999,
+                    price_paid: 99999,
+                }),
+            ],
+            opCloud: [
+                opCloud({
+                    start: "2026-06-01 00:00:00",
+                    vendor: "google",
+                    paid: -4000,
+                    credit: -1000,
+                }),
+                opCloud({
+                    start: "2026-06-01 00:00:00",
+                    vendor: "google",
+                    type: "infra",
+                    paid: -9999,
+                }),
+                opCloud({
+                    start: "2026-06-01 00:00:00",
+                    vendor: "google",
+                    credit: 5000,
+                }),
+            ],
+            opPollen: [
+                opPollen({
+                    month: "2026-06",
+                    vendor: "google",
+                    cost_paid: 600,
+                    cost_quests: 200,
+                    price_paid: 900,
+                    price_quests: 250,
+                    byop_paid: 50,
+                    model_paid: 100,
+                }),
+            ],
+        });
+
+        const [row] = providerEconomics(data, "2026-06");
+        expect(row.vendor).toBe("google");
+        expect(row.model).toBeNull();
+        expect(row.calib).toBeCloseTo(6.25, 5); // 5000 OP Cloud / 800 OP Pollen
+        expect(row.creditSharePct).toBeCloseTo(20, 5);
+        expect(row.trueCostPaidUsd).toBeCloseTo(3750, 5); // 600 × 6.25
+        expect(row.questBurnUsd).toBeCloseTo(1250, 5); // 200 × 6.25
+        expect(row.soldPaidUsd).toBe(900);
+        expect(row.ecoPaidUsd).toBe(150);
+        expect(row.retainedPaidUsd).toBe(750);
+        expect(row.soldQuestsUsd).toBe(250);
+        expect(row.trueMultiplier).toBeCloseTo(750 / 3750, 5);
+        expect(row.marginUsd).toBeCloseTo(750 - 3750, 5);
+        expect(row.flags).toEqual([]);
+    });
+
+    it("flags OP Pollen months that have no OP Cloud witness", () => {
+        const data = emptyData({
+            opCloud: [
+                opCloud({
+                    start: "2026-06-01 00:00:00",
+                    vendor: "google",
+                    paid: -500,
+                }),
+            ],
+            opPollen: [
+                opPollen({
+                    month: "2026-06",
+                    vendor: "google",
+                    cost_paid: 250,
+                    price_paid: 300,
+                }),
+                opPollen({
+                    month: "2026-07",
+                    vendor: "google",
+                    cost_paid: 250,
+                    price_paid: 300,
+                }),
+            ],
+        });
+
+        const [row] = providerEconomics(data, "");
+        expect(row.calib).toBeCloseTo(1, 5);
+        expect(row.flags).toEqual(["unwitnessed July 26"]);
+    });
+
+    it("flags OP Cloud months that have no OP Pollen meter", () => {
+        const data = emptyData({
+            opCloud: [
+                opCloud({
+                    start: "2026-05-01 00:00:00",
+                    vendor: "google",
+                    paid: -100,
+                }),
+                opCloud({
+                    start: "2026-06-01 00:00:00",
+                    vendor: "google",
+                    paid: -100,
+                }),
+            ],
+            opPollen: [
+                opPollen({
+                    month: "2026-06",
+                    vendor: "google",
+                    cost_paid: 100,
+                    price_paid: 120,
+                }),
+            ],
+        });
+
+        const [row] = providerEconomics(data, "");
+        expect(row.calib).toBeCloseTo(2, 5);
+        expect(row.flags).toEqual(["unmetered May 26"]);
+    });
+
+    it("falls back to OP Pollen cost when a provider has no OP Cloud meter", () => {
+        const data = emptyData({
+            opPollen: [
+                opPollen({
+                    month: "2026-06",
+                    vendor: "azure",
+                    cost_paid: 50,
+                    cost_quests: 50,
+                    price_paid: 40,
+                    price_quests: 45,
+                }),
+            ],
+        });
+
+        const [row] = providerEconomics(data, "2026-06");
+        expect(row.vendor).toBe("azure");
+        expect(row.calib).toBeNull();
+        expect(row.flags).toEqual(["no meter"]);
+        expect(row.trueCostPaidUsd).toBeCloseTo(50, 5);
+        expect(row.trueMultiplier).toBeCloseTo(0.8, 5);
+        expect(row.creditSharePct).toBeNull();
+    });
+});
+
+describe("modelEconomics", () => {
+    it("uses OP sources only and splits provider-calibrated economics by model", () => {
+        const data = emptyData({
+            providerMonthly: [
+                provider({
+                    vendor: "google",
+                    paid: 99999,
+                }),
+            ],
+            pollenMonthly: [
+                usage({
+                    vendor: "google",
+                    model: "legacy-model",
+                    cost_paid: 99999,
+                    price_paid: 99999,
+                }),
+            ],
+            opCloud: [
+                opCloud({
+                    start: "2026-06-01 00:00:00",
+                    vendor: "google",
+                    paid: -900,
+                    credit: -300,
+                }),
+            ],
+            opPollen: [
+                opPollen({
+                    month: "2026-06",
+                    vendor: "google",
+                    model: "gemini-flash",
+                    cost_paid: 200,
+                    price_paid: 500,
+                    byop_paid: 20,
+                    model_paid: 30,
+                }),
+                opPollen({
+                    month: "2026-06",
+                    vendor: "google",
+                    model: "gemini-pro",
+                    cost_paid: 300,
+                    cost_quests: 100,
+                    price_paid: 600,
+                    price_quests: 110,
+                }),
+            ],
+        });
+
+        const rows = modelEconomics(data, "2026-06");
+        expect(rows).toHaveLength(2);
+        expect(rows.map((row) => row.model).sort()).toEqual([
+            "gemini-flash",
+            "gemini-pro",
+        ]);
+        expect(rows.some((row) => row.model === "legacy-model")).toBe(false);
+
+        const flash = rows.find((row) => row.model === "gemini-flash");
+        const pro = rows.find((row) => row.model === "gemini-pro");
+        if (!flash || !pro) throw new Error("model rows missing");
+
+        expect(flash.vendor).toBe("google");
+        expect(flash.calib).toBeCloseTo(2, 5); // 1200 OP Cloud / 600 OP Pollen
+        expect(flash.creditSharePct).toBeCloseTo(25, 5);
+        expect(flash.trueCostPaidUsd).toBeCloseTo(400, 5);
+        expect(flash.questBurnUsd).toBeCloseTo(0, 5);
+        expect(flash.retainedPaidUsd).toBe(450);
+        expect(flash.trueMultiplier).toBeCloseTo(450 / 400, 5);
+
+        expect(pro.calib).toBeCloseTo(2, 5);
+        expect(pro.trueCostPaidUsd).toBeCloseTo(600, 5);
+        expect(pro.questBurnUsd).toBeCloseTo(200, 5);
+        expect(pro.retainedPaidUsd).toBe(600);
+        expect(pro.trueMultiplier).toBeCloseTo(1, 5);
     });
 });
 
@@ -1169,74 +1621,58 @@ describe("ungrantedCreditBurn", () => {
 describe("pnlStatement", () => {
     const now = new Date("2026-07-06T12:00:00Z");
 
-    // Two closed months plus the in-progress current month. Revenue only in
-    // May and June, so July's cash P&L is null (spend-only).
+    // Two closed months plus the in-progress current month. Revenue rows only
+    // in May and June, so July's cash P&L is null (spend-only).
     const data = emptyData({
-        transactions: [
-            txn({
+        opTransactions: [
+            opTxn({
+                date: "2026-05-01",
+                vendor: "stripe",
+                category: "revenue",
+                amount: 1000,
+            }),
+            opTxn({
                 date: "2026-05-10",
                 vendor: "aws",
-                category: "compute",
-                charged_amount: 300,
-                charged_currency: "USD",
+                category: "cloud",
+                amount: -300,
             }),
-            txn({
+            opTxn({
                 date: "2026-05-11",
                 vendor: "runpod",
-                category: "compute",
-                charged_amount: 100,
-                charged_currency: "USD",
+                category: "cloud",
+                amount: -100,
             }),
-            txn({
+            opTxn({
                 date: "2026-05-25",
                 vendor: "deel",
                 category: "payroll",
-                charged_amount: 100,
-                charged_currency: "USD",
+                amount: -100,
             }),
-            txn({
+            opTxn({
+                date: "2026-06-01",
+                vendor: "stripe",
+                category: "revenue",
+                amount: 2000,
+            }),
+            opTxn({
                 date: "2026-06-05",
                 vendor: "aws",
-                category: "compute",
-                charged_amount: 500,
-                charged_currency: "USD",
+                category: "cloud",
+                amount: -500,
             }),
-            txn({
+            opTxn({
                 date: "2026-06-06",
                 vendor: "runpod",
-                category: "compute",
-                charged_amount: 100,
-                charged_currency: "USD",
+                category: "cloud",
+                amount: -100,
             }),
-            txn({
+            opTxn({
                 date: "2026-07-02",
                 vendor: "aws",
-                category: "compute",
-                charged_amount: 50,
-                charged_currency: "USD",
+                category: "cloud",
+                amount: -50,
             }),
-        ],
-        providerMonthly: [
-            provider({ month: "2026-05", vendor: "lambda", credit: 200 }),
-            provider({ month: "2026-06", vendor: "lambda", credit: 300 }),
-        ],
-        revenueMonthly: [
-            {
-                source: "stripe",
-                month: "2026-05",
-                currency: "USD",
-                gross_amount: 1000,
-                fees_amount: 0,
-                refunds_amount: 0,
-            },
-            {
-                source: "stripe",
-                month: "2026-06",
-                currency: "USD",
-                gross_amount: 2000,
-                fees_amount: 0,
-                refunds_amount: 0,
-            },
         ],
     });
 
@@ -1283,22 +1719,20 @@ describe("pnlStatement", () => {
         expect(month.primary).toBe("2026-06");
     });
 
-    it("orders rows: revenue, categories (CATEGORY_ORDER + extras), spend, cash, margin, credit", () => {
+    it("orders rows: revenue, categories (CATEGORY_ORDER + extras), spend, cash, margin", () => {
         const extra = emptyData({
-            transactions: [
-                txn({
+            opTransactions: [
+                opTxn({
                     date: "2026-05-01",
                     vendor: "x",
                     category: "zulu",
-                    charged_amount: 1,
-                    charged_currency: "USD",
+                    amount: -1,
                 }),
-                txn({
+                opTxn({
                     date: "2026-05-02",
                     vendor: "aws",
-                    category: "compute",
-                    charged_amount: 1,
-                    charged_currency: "USD",
+                    category: "cloud",
+                    amount: -1,
                 }),
             ],
         });
@@ -1310,7 +1744,6 @@ describe("pnlStatement", () => {
             "total-spend",
             "cash-pnl",
             "net-margin",
-            "credit-burn",
         ]);
         expect(result.lines.map((line) => line.kind)).toEqual([
             "revenue",
@@ -1319,22 +1752,21 @@ describe("pnlStatement", () => {
             "total-spend",
             "cash-pnl",
             "net-margin",
-            "credit-burn",
         ]);
     });
 
     it("computes %rev against revenue on the primary period", () => {
         const year = pnlStatement(data, "2026", now);
         const lines = lineByKey(year);
-        // YTD revenue = 1000 + 2000 = 3000; compute spend = 400 + 600 + 50.
+        // YTD revenue = 1000 + 2000 = 3000; cloud spend = 400 + 600 + 50.
         expect(lines.get("revenue")?.values.total).toBe(3000);
         expect(lines.get("revenue")?.pctOfRevenue).toBe(100);
-        expect(lines.get("compute")?.values.total).toBe(1050);
-        expect(lines.get("compute")?.pctOfRevenue).toBeCloseTo(
+        expect(lines.get("cloud")?.values.total).toBe(1050);
+        expect(lines.get("cloud")?.pctOfRevenue).toBeCloseTo(
             (1050 / 3000) * 100,
             6,
         );
-        // total-spend = 1050 compute + 100 payroll = 1150.
+        // total-spend = 1050 cloud + 100 payroll = 1150.
         expect(lines.get("total-spend")?.values.total).toBe(1150);
         expect(lines.get("total-spend")?.pctOfRevenue).toBeCloseTo(
             (1150 / 3000) * 100,
@@ -1346,7 +1778,7 @@ describe("pnlStatement", () => {
         const year = pnlStatement(data, "2026", now);
         const margin = lineByKey(year).get("net-margin");
         if (!margin) throw new Error("net-margin missing");
-        // May: rev 1000, spend 500 (400 compute + 100 payroll) → pnl 500 → 50%.
+        // May: rev 1000, spend 500 (400 cloud + 100 payroll) → pnl 500 → 50%.
         expect(margin.values["2026-05"]).toBeCloseTo(50, 6);
         // June: rev 2000, spend 600 → pnl 1400 → 70%.
         expect(margin.values["2026-06"]).toBeCloseTo(70, 6);
@@ -1363,29 +1795,27 @@ describe("pnlStatement", () => {
         const lines = lineByKey(month);
         // Revenue rose 1000 → 2000.
         expect(lines.get("revenue")?.values.delta).toBe(1000);
-        // Compute spend rose 400 → 600.
-        expect(lines.get("compute")?.values.delta).toBe(200);
+        // Cloud spend rose 400 → 600.
+        expect(lines.get("cloud")?.values.delta).toBe(200);
         // Payroll fell 100 → 0 (present in May, absent in June) → -100.
         expect(lines.get("payroll")?.values["2026-05"]).toBe(100);
         expect(lines.get("payroll")?.values["2026-06"]).toBeNull();
         expect(lines.get("payroll")?.values.delta).toBeNull();
         // Cash P&L rose 500 → 1400.
         expect(lines.get("cash-pnl")?.values.delta).toBe(900);
-        // Credit burn rose 200 → 300.
-        expect(lines.get("credit-burn")?.values.delta).toBe(100);
     });
 
     it("attaches vendor sub-rows that sum to their category for every period", () => {
         const year = pnlStatement(data, "2026", now);
-        const compute = lineByKey(year).get("compute");
-        if (!compute?.vendors) throw new Error("compute vendors missing");
-        expect(compute.vendors.map((v) => v.vendor)).toContain("aws");
-        expect(compute.vendors.map((v) => v.vendor)).toContain("runpod");
+        const cloud = lineByKey(year).get("cloud");
+        if (!cloud?.vendors) throw new Error("cloud vendors missing");
+        expect(cloud.vendors.map((v) => v.vendor)).toContain("aws");
+        expect(cloud.vendors.map((v) => v.vendor)).toContain("runpod");
 
         for (const period of year.periods) {
             const key = period.key;
-            const categoryValue = compute.values[key];
-            const vendorSum = compute.vendors.reduce(
+            const categoryValue = cloud.values[key];
+            const vendorSum = cloud.vendors.reduce(
                 (total, vendor) => total + (vendor.values[key] ?? 0),
                 0,
             );
@@ -1395,13 +1825,13 @@ describe("pnlStatement", () => {
 
     it("keeps vendor sub-rows aligned to category deltas in month view", () => {
         const month = pnlStatement(data, "2026-06", now);
-        const compute = lineByKey(month).get("compute");
-        if (!compute?.vendors) throw new Error("compute vendors missing");
-        const vendorDeltaSum = compute.vendors.reduce(
+        const cloud = lineByKey(month).get("cloud");
+        if (!cloud?.vendors) throw new Error("cloud vendors missing");
+        const vendorDeltaSum = cloud.vendors.reduce(
             (total, vendor) => total + (vendor.values.delta ?? 0),
             0,
         );
-        expect(vendorDeltaSum).toBeCloseTo(compute.values.delta ?? 0, 6);
+        expect(vendorDeltaSum).toBeCloseTo(cloud.values.delta ?? 0, 6);
     });
 
     it("flags the in-progress month on its period header only", () => {
@@ -1414,24 +1844,19 @@ describe("pnlStatement", () => {
 
     it("nulls cash P&L for revenue-only and spend-only months", () => {
         const sparse = emptyData({
-            transactions: [
-                txn({
+            opTransactions: [
+                opTxn({
+                    date: "2026-05-01",
+                    vendor: "stripe",
+                    category: "revenue",
+                    amount: 500,
+                }),
+                opTxn({
                     date: "2026-06-01",
                     vendor: "aws",
-                    category: "compute",
-                    charged_amount: 100,
-                    charged_currency: "USD",
+                    category: "cloud",
+                    amount: -100,
                 }),
-            ],
-            revenueMonthly: [
-                {
-                    source: "stripe",
-                    month: "2026-05",
-                    currency: "USD",
-                    gross_amount: 500,
-                    fees_amount: 0,
-                    refunds_amount: 0,
-                },
             ],
         });
         const result = pnlStatement(sparse, "2026", now);

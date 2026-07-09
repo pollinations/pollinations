@@ -11,7 +11,6 @@ import {
 import { useMemo } from "react";
 import { fmtMultiplier, fmtUnsignedPct, fmtUsd } from "../lib/format";
 import { breakEvenMultiplier, type EconRow } from "../lib/insights";
-import { costBasis } from "../lib/vendor-vocabulary";
 import {
     DataTable,
     GROUP_BORDER,
@@ -21,10 +20,6 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "./DataTable";
-
-export function isGpuVendor(vendor: string): boolean {
-    return costBasis(vendor) === "gpu";
-}
 
 export function visibleEconRows(rows: EconRow[], vendor: string): EconRow[] {
     return rows.filter((row) => vendor === "all" || row.vendor === vendor);
@@ -122,13 +117,41 @@ function marginTone(value: number) {
 function providerFunding(
     row: EconRow,
 ): { paid: number; grants: number } | null {
-    if (row.creditSharePct == null) return null;
-    const grants = row.trueCostPaidUsd * (row.creditSharePct / 100);
+    if (row.trueCostPaidUsd <= 0) return null;
+    const grants = row.trueCostPaidUsd * ((row.creditSharePct ?? 0) / 100);
     return {
         paid: row.trueCostPaidUsd - grants,
         grants,
     };
 }
+
+type EconSourceMode = "legacy" | "op";
+
+const ECON_SOURCE_HINTS: Record<
+    EconSourceMode,
+    {
+        pollenTables: string;
+        providerTables: string;
+        fundingTables: string;
+        providerSources: string;
+        fundingSources: string;
+    }
+> = {
+    legacy: {
+        pollenTables: "pollen_monthly_api",
+        providerTables: "pollen_monthly_api + provider_monthly_api",
+        fundingTables: "provider_monthly_api + grants_api",
+        providerSources: "TB · API/CLI/BQ/manual",
+        fundingSources: "API/CLI/BQ · HC",
+    },
+    op: {
+        pollenTables: "op_pollen_api",
+        providerTables: "op_pollen_api + op_cloud_api",
+        fundingTables: "op_cloud_api + grants_api",
+        providerSources: "TB · API/CLI/BQ/HC",
+        fundingSources: "API/CLI/BQ/HC",
+    },
+};
 
 // One economics table, two grains. The Vendors summary (grain "vendor") is
 // exactly the Models table (grain "model") rolled up — same columns, same
@@ -138,17 +161,21 @@ export function EconTable({
     rows,
     showFlags = false,
     showModel = false,
+    sourceMode = "legacy",
 }: {
     netRatio: number | null;
     rows: EconRow[];
     showFlags?: boolean;
     showModel?: boolean;
+    sourceMode?: EconSourceMode;
 }) {
     const cashBreakEven = breakEvenMultiplier(netRatio);
+    const sourceHints = ECON_SOURCE_HINTS[sourceMode];
     const sortColumns = useMemo<SortColumn<EconRow>[]>(
         () => [
             { key: "vendor", value: (row) => row.vendor },
             { key: "model", value: (row) => row.model },
+            { key: "modelType", value: () => "" },
             { key: "soldPaidUsd", value: (row) => row.soldPaidUsd },
             {
                 key: "mix",
@@ -182,26 +209,30 @@ export function EconTable({
 
     return (
         <div className="flex flex-col gap-3">
-            <p className="text-xs text-theme-text-soft">
-                Costs are provider-rate usage costs. Cash sent is reconciled
-                separately.
-            </p>
             <TableScroller>
                 <DataTable>
                     <TableHead>
                         <TableRow>
-                            <TableHeaderCell
-                                rowSpan={2}
-                                {...headerProps("vendor")}
-                            >
-                                vendor
-                            </TableHeaderCell>
                             {showModel && (
                                 <TableHeaderCell
                                     rowSpan={2}
                                     {...headerProps("model")}
                                 >
                                     model
+                                </TableHeaderCell>
+                            )}
+                            <TableHeaderCell
+                                rowSpan={2}
+                                {...headerProps("vendor")}
+                            >
+                                {showModel ? "provider" : "vendor"}
+                            </TableHeaderCell>
+                            {showModel && (
+                                <TableHeaderCell
+                                    rowSpan={2}
+                                    {...headerProps("modelType")}
+                                >
+                                    type
                                 </TableHeaderCell>
                             )}
                             <TableHeaderCell
@@ -252,7 +283,7 @@ export function EconTable({
                                     hint={{
                                         meaning:
                                             "Revenue from paid users (hover a row for retained vs ecosystem split).",
-                                        tables: "pollen_monthly_api",
+                                        tables: sourceHints.pollenTables,
                                         sources: "TB",
                                     }}
                                 >
@@ -267,7 +298,7 @@ export function EconTable({
                                     hint={{
                                         meaning:
                                             "Usage mix — green is paid, amber is free quests.",
-                                        tables: "pollen_monthly_api",
+                                        tables: sourceHints.pollenTables,
                                         sources: "TB",
                                     }}
                                 >
@@ -282,7 +313,7 @@ export function EconTable({
                                     hint={{
                                         meaning:
                                             "What free quest usage cost us — pure subsidy, earns nothing.",
-                                        tables: "pollen_monthly_api",
+                                        tables: sourceHints.pollenTables,
                                         sources: "TB",
                                     }}
                                 >
@@ -297,13 +328,13 @@ export function EconTable({
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "Provider-rate cost of paid-user usage, whether funded by cash or credits. This is not cash sent.",
-                                        tables: "pollen_monthly_api + provider_monthly_api",
-                                        sources: "TB · API/CLI/BQ/manual",
+                                            "Provider-rate cost of paid-user usage. Grants can fund this cost, but they do not reduce the underlying cost.",
+                                        tables: sourceHints.providerTables,
+                                        sources: sourceHints.providerSources,
                                         formula: "cost_paid × calibration",
                                     }}
                                 >
-                                    Provider Cost
+                                    Costs
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
@@ -314,8 +345,8 @@ export function EconTable({
                                     hint={{
                                         meaning:
                                             "Provider funding mix — green is cash/prepaid paid, amber is grants.",
-                                        tables: "provider_monthly_api + grants_api",
-                                        sources: "API/CLI/BQ · HC",
+                                        tables: sourceHints.fundingTables,
+                                        sources: sourceHints.fundingSources,
                                         formula:
                                             "paid ÷ (paid + credit), credit ÷ (paid + credit)",
                                     }}
@@ -330,11 +361,10 @@ export function EconTable({
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "Provider Cost covered by grants for this row's scope.",
-                                        tables: "provider_monthly_api + grants_api",
-                                        sources: "API/CLI/BQ · HC",
-                                        formula:
-                                            "Provider Cost × grant-funded share",
+                                            "The part of Costs funded by grants or credits. $0 means costs are paid/prepaid, not grant-funded.",
+                                        tables: sourceHints.fundingTables,
+                                        sources: sourceHints.fundingSources,
+                                        formula: "Costs × grant-funded share",
                                     }}
                                 >
                                     Grants
@@ -348,9 +378,8 @@ export function EconTable({
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "Paid ÷ Provider Cost. Above 1× paid revenue covers the paid compute; below 1× it doesn't.",
-                                        formula:
-                                            "retained paid ÷ Provider Cost",
+                                            "Retained paid revenue divided by Costs. Quests are excluded from coverage and shown separately as subsidy.",
+                                        formula: "retained paid ÷ Costs",
                                     }}
                                 >
                                     Coverage ×
@@ -363,9 +392,8 @@ export function EconTable({
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "Paid − Provider Cost (compute only; Quests shown separately).",
-                                        formula:
-                                            "retained paid − Provider Cost",
+                                            "Retained paid revenue minus Costs. Grants explain funding mix; they do not make margin higher. Quests are shown separately.",
+                                        formula: "retained paid − Costs",
                                     }}
                                 >
                                     Margin
@@ -386,24 +414,11 @@ export function EconTable({
                                 : row.flags;
                             return (
                                 <TableRow key={key}>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            <span>{row.vendor}</span>
-                                            {isGpuVendor(row.vendor) && (
-                                                <Chip
-                                                    data-theme="neutral"
-                                                    intent="neutral"
-                                                    size="sm"
-                                                    title="time-based vendor — per-request margin here is allocation, not truth; see the GPU tab"
-                                                >
-                                                    gpu
-                                                </Chip>
-                                            )}
-                                        </div>
-                                    </TableCell>
                                     {showModel && (
                                         <TableCell>{row.model}</TableCell>
                                     )}
+                                    <TableCell>{row.vendor}</TableCell>
+                                    {showModel && <TableCell />}
                                     <TableCell
                                         className={cn(
                                             "text-right text-intent-success-text",

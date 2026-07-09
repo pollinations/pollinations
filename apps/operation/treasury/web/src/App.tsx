@@ -8,17 +8,18 @@ import {
     DatabaseIcon,
     EyeIcon,
     GenApiIcon,
+    GlobeIcon,
     Heading,
     InfoTip,
     Input,
     MenuIcon,
     NavItem,
+    RocketIcon,
     ScrollArea,
     Section,
     Text,
     TrendUpIcon,
     useScrollLock,
-    WalletIcon,
     XIcon,
 } from "@pollinations/ui";
 import logoUrl from "@pollinations/ui/assets/logo.svg";
@@ -39,7 +40,7 @@ import type { ProvenanceCode } from "./components/Provenance";
 import { STALE_AFTER_HOURS } from "./config";
 import { hoursSince } from "./lib/format";
 import { insightVendorOptions } from "./lib/insights";
-import { collectMonths, lastFullMonth } from "./lib/months";
+import { collectMonths } from "./lib/months";
 import { fixturesMode, loadAll, TbError } from "./lib/tb";
 import {
     findVendorVocabularyIssues,
@@ -52,6 +53,9 @@ import { GpuRunsTab } from "./views/GpuRunsTab";
 import { GpuTab } from "./views/GpuTab";
 import { GrantsTab } from "./views/GrantsTab";
 import { ModelsTab } from "./views/ModelsTab";
+import { OpCloudTab } from "./views/OpCloudTab";
+import { OpPollenTab } from "./views/OpPollenTab";
+import { OpTransactionsTab } from "./views/OpTransactionsTab";
 import { PnlTab } from "./views/PnlTab";
 import { PollenTab } from "./views/PollenTab";
 import { ProviderTab } from "./views/ProviderTab";
@@ -62,8 +66,11 @@ import { VendorsTab } from "./views/VendorsTab";
 
 type Tab =
     | "transactions"
+    | "op-transactions"
     | "pollen"
+    | "op-pollen"
     | "provider"
+    | "op-cloud"
     | "grants"
     | "revenue"
     | "runs";
@@ -75,6 +82,34 @@ type InsightTab =
     | "reconciliation"
     | "credits"
     | "gpu";
+
+function isOpRawTabId(section: TreasurySection, tab: Tab) {
+    return (
+        section === "raw" &&
+        (tab === "op-transactions" || tab === "op-pollen" || tab === "op-cloud")
+    );
+}
+
+function isOpTableViewId(
+    section: TreasurySection,
+    tab: Tab,
+    insightTab: InsightTab,
+) {
+    return (
+        isOpRawTabId(section, tab) ||
+        (section === "insights" && insightTab === "reconciliation")
+    );
+}
+
+function isCompactUnitEconomicsView(
+    section: TreasurySection,
+    insightTab: InsightTab,
+) {
+    return (
+        section === "insights" &&
+        (insightTab === "vendors" || insightTab === "models")
+    );
+}
 
 const logoMask: CSSProperties = {
     WebkitMask: `url(${logoUrl}) center / contain no-repeat`,
@@ -97,31 +132,13 @@ const INSIGHT_TABS: {
     {
         id: "pnl",
         label: "P&L",
-        note: "Monthly blend: Stripe net revenue minus cash spend per category, with credit burn as a shadow. Derived client-side from the transactions, provider, and revenue pipes.",
+        note: "Strict cash P&L from the signed Wise ledger: revenue inflows minus non-revenue outflows by category.",
         icon: TrendUpIcon,
     },
     {
-        id: "vendors",
-        label: "Vendors",
-        note: "Per-vendor unit economics: the Models table rolled up one grain - retained pollen vs true cost from provider actuals, with credit share, break-even, and data-quality flags.",
-        icon: WalletIcon,
-    },
-    {
-        id: "models",
-        label: "Models",
-        note: "Per-model unit economics: retained pollen (gross minus byop/model shares) vs true cost allocated from vendor actuals, with the break-even floor and ecosystem adoption totals.",
-        icon: GenApiIcon,
-    },
-    {
-        id: "gpu",
-        label: "GPU",
-        note: "Time-based economics for rented GPU boxes: witnessed monthly rent allocated per deployment by fleet $/hr share, vs retained pollen on the models it serves - coverage, true unit cost, break-even volume, runway.",
-        icon: DatabaseIcon,
-    },
-    {
         id: "reconciliation",
-        label: "Reconciliation",
-        note: "One spend, three witnesses per vendor and month: transactions (bank cash), provider (their meter), pollen (our metering) - coverage flags unfunded months, calib exposes wrong registry unit costs.",
+        label: "Data Quality",
+        note: "OP row quality by vendor and month: OP Transactions, OP Cloud burn, and OP Pollen metering - missing witnesses and calibration drift sort first.",
         icon: EyeIcon,
     },
     {
@@ -130,6 +147,37 @@ const INSIGHT_TABS: {
         note: "Credit burn rate and runway per vendor: grants pooled vs witnessed credit burn, current burn rate, and the earlier of exhaustion or expiry - naive math, every caveat is a flag.",
         icon: ClockIcon,
     },
+] satisfies readonly DrawerItem<InsightTab>[];
+
+const UNIT_ECONOMICS_TABS: {
+    id: InsightTab;
+    label: string;
+    note: string;
+    icon: ComponentType<{ className?: string }>;
+}[] = [
+    {
+        id: "vendors",
+        label: "Providers",
+        note: "Per-provider unit economics: the Models table rolled up one grain - retained pollen vs true cost from provider actuals, with credit share and break-even.",
+        icon: GlobeIcon,
+    },
+    {
+        id: "models",
+        label: "Models",
+        note: "Per-model economics: retained pollen (gross minus byop/model shares) vs true cost allocated from provider actuals.",
+        icon: GenApiIcon,
+    },
+    {
+        id: "gpu",
+        label: "GPUs",
+        note: "Time-based economics for rented GPU boxes: witnessed monthly rent allocated per deployment by fleet $/hr share, vs retained pollen on the models it serves - coverage, true unit cost, break-even volume, runway.",
+        icon: RocketIcon,
+    },
+] satisfies readonly DrawerItem<InsightTab>[];
+
+const ALL_INSIGHT_TABS = [
+    ...INSIGHT_TABS,
+    ...UNIT_ECONOMICS_TABS,
 ] satisfies readonly DrawerItem<InsightTab>[];
 
 // note + pipe surface as a hover tooltip on the tab button — the tab body
@@ -153,6 +201,15 @@ const TABS: {
         rows: (data) => data.transactions.length,
     },
     {
+        id: "op-transactions",
+        label: "Transactions OP",
+        codes: ["WISE"],
+        pipe: "op_transactions_api",
+        note: "New signed Wise cash ledger: money in is positive, money out is negative. Construction comments mark unmatched vendors.",
+        icon: DatabaseIcon,
+        rows: (data) => data.opTransactions?.length ?? 0,
+    },
+    {
         id: "pollen",
         label: "Pollen",
         codes: ["TB"],
@@ -162,6 +219,15 @@ const TABS: {
         rows: (data) => data.pollenMonthly.length,
     },
     {
+        id: "op-pollen",
+        label: "Pollen OP",
+        codes: ["TB"],
+        pipe: "op_pollen_api",
+        note: "New Pollen usage table with paid/quest money splits and paid/quest request counts.",
+        icon: DatabaseIcon,
+        rows: (data) => data.opPollen?.length ?? 0,
+    },
+    {
         id: "provider",
         label: "Provider",
         codes: ["API", "CLI", "BQ", "HC"],
@@ -169,6 +235,15 @@ const TABS: {
         note: "Provider-reported monthly usage from vendor APIs, CLIs, BigQuery exports, and manual entries.",
         icon: DatabaseIcon,
         rows: (data) => data.providerMonthly.length,
+    },
+    {
+        id: "op-cloud",
+        label: "Cloud OP",
+        codes: ["API", "CLI", "BQ", "HC"],
+        pipe: "op_cloud_api",
+        note: "New cloud ledger combining provider usage, GPU resources, infrastructure, and grants as signed cloud facts.",
+        icon: DatabaseIcon,
+        rows: (data) => data.opCloud?.length ?? 0,
     },
     {
         id: "grants",
@@ -264,6 +339,23 @@ function TreasuryNav({
         <nav className="flex flex-col gap-5 pr-2" aria-label="Treasury views">
             <DrawerGroup label="Insights">
                 {INSIGHT_TABS.map((item) => (
+                    <NavItem
+                        key={item.id}
+                        type="button"
+                        data-theme="accent"
+                        icon={item.icon}
+                        active={
+                            section === "insights" && insightTab === item.id
+                        }
+                        title={item.note}
+                        onClick={() => onInsightTabChange(item.id)}
+                    >
+                        {item.label}
+                    </NavItem>
+                ))}
+            </DrawerGroup>
+            <DrawerGroup label="Unit Economics">
+                {UNIT_ECONOMICS_TABS.map((item) => (
                     <NavItem
                         key={item.id}
                         type="button"
@@ -471,7 +563,14 @@ function TreasuryShell({
                     buttonRef={menuButtonRef}
                     onOpen={() => setIsDrawerOpen(true)}
                 />
-                <ScrollArea axis="y" className="min-h-0 flex-1">
+                <ScrollArea
+                    axis="y"
+                    className={cn(
+                        "min-h-0 flex-1",
+                        isOpTableViewId(section, tab, insightTab) &&
+                            "overflow-hidden",
+                    )}
+                >
                     {children}
                 </ScrollArea>
             </div>
@@ -515,9 +614,11 @@ function activeViewTitle(
     insightTab: InsightTab,
 ) {
     if (section === "insights") {
-        if (insightTab === "vendors") return "Vendor Economics";
-        if (insightTab === "models") return "Model Economics";
-        return INSIGHT_TABS.find((item) => item.id === insightTab)?.label ?? "";
+        if (insightTab === "vendors") return "Providers";
+        if (insightTab === "models") return "Models";
+        return (
+            ALL_INSIGHT_TABS.find((item) => item.id === insightTab)?.label ?? ""
+        );
     }
     return TABS.find((item) => item.id === tab)?.label ?? "";
 }
@@ -548,14 +649,14 @@ function viewInfoContent(
     if (insightTab === "vendors") {
         return (
             <span className="block max-w-72">
-                <strong>Vendor Economics</strong>
-                <InfoLine>Models rolled up by vendor.</InfoLine>
+                <strong>Providers</strong>
+                <InfoLine>Models rolled up by provider.</InfoLine>
                 <InfoLine>
                     Compare retained paid pollen against true provider cost.
                 </InfoLine>
                 <InfoLine>
-                    Open <strong>Model Economics</strong> to inspect each model
-                    per vendor.
+                    Open <strong>Models</strong> to inspect each model per
+                    provider.
                 </InfoLine>
             </span>
         );
@@ -563,8 +664,8 @@ function viewInfoContent(
     if (insightTab === "models") {
         return (
             <span className="block max-w-72">
-                <strong>Model Economics</strong>
-                <InfoLine>One row per model per vendor.</InfoLine>
+                <strong>Models</strong>
+                <InfoLine>One row per model per provider.</InfoLine>
                 <InfoLine>
                     True cost uses provider calibration, then compares against
                     retained paid pollen.
@@ -578,14 +679,14 @@ function viewInfoContent(
     if (insightTab === "reconciliation") {
         return (
             <span className="block max-w-72">
-                <strong>Reconciliation</strong>
+                <strong>Data Quality</strong>
                 <InfoLine>One row per vendor-month.</InfoLine>
                 <InfoLine>
-                    Compares bank transactions, provider billing, and Pollen
-                    metering.
+                    Compares OP Transactions payment witnesses, OP Cloud burn,
+                    and OP Pollen metering directly.
                 </InfoLine>
                 <InfoLine>
-                    Funding gaps and calibration drift sort first.
+                    Missing witnesses and calibration drift sort first.
                 </InfoLine>
             </span>
         );
@@ -608,10 +709,12 @@ function viewInfoContent(
         return (
             <span className="block max-w-72">
                 <strong>P&amp;L</strong>
-                <InfoLine>Stripe net revenue minus Wise cash spend.</InfoLine>
                 <InfoLine>
-                    Credit burn is shown separately because no cash left the
-                    bank.
+                    OP Transaction revenue minus non-revenue cash spend.
+                </InfoLine>
+                <InfoLine>
+                    Revenue is category=revenue; spend is the operational
+                    category set.
                 </InfoLine>
             </span>
         );
@@ -649,10 +752,16 @@ function vendorOptionsForTab(data: Data | null, tab: Tab) {
 
     if (tab === "transactions") {
         for (const row of data.transactions) add(row.vendor);
+    } else if (tab === "op-transactions") {
+        for (const row of data.opTransactions ?? []) add(row.vendor);
     } else if (tab === "pollen") {
         for (const row of data.pollenMonthly) add(row.vendor);
+    } else if (tab === "op-pollen") {
+        for (const row of data.opPollen ?? []) add(row.vendor);
     } else if (tab === "provider") {
         for (const row of data.providerMonthly) add(row.vendor);
+    } else if (tab === "op-cloud") {
+        for (const row of data.opCloud ?? []) add(row.vendor);
     } else if (tab === "grants") {
         for (const row of data.grants) add(row.vendor);
     } else if (tab === "runs") {
@@ -729,8 +838,8 @@ export default function App() {
     const [tab, setTab] = useState<Tab>("transactions");
     const [section, setSection] = useState<TreasurySection>("insights");
     const [insightTab, setInsightTab] = useState<InsightTab>("pnl");
-    // Open P&L on the last complete month by default.
-    const [month, setMonth] = useState(() => lastFullMonth());
+    // Open on the full current audit year by default.
+    const [month, setMonth] = useState("2026");
     // Keep the selection while it exists in the current tab's vendor set.
     const [vendor, setVendor] = useState("all");
     const [attempt, setAttempt] = useState(0);
@@ -821,9 +930,15 @@ export default function App() {
     const showPeriodFilter =
         (section === "insights" && insightTab !== "credits") ||
         (section === "raw" && tab !== "revenue" && tab !== "grants");
-    const showCategoryFilter = section === "raw" && tab === "transactions";
+    const showCategoryFilter =
+        section === "raw" &&
+        (tab === "transactions" || tab === "op-transactions");
+    const showTypeFilter = section === "raw" && tab === "op-cloud";
     const hasFilters =
-        showPeriodFilter || showVendorFilter || showCategoryFilter;
+        showPeriodFilter ||
+        showVendorFilter ||
+        showCategoryFilter ||
+        showTypeFilter;
     const vendorIssues = useMemo(
         () =>
             data
@@ -836,18 +951,40 @@ export default function App() {
     );
     const categoryOptions = useMemo(() => {
         const categories = new Set<string>();
-        for (const row of data?.transactions ?? []) {
+        const rows =
+            tab === "op-transactions"
+                ? (data?.opTransactions ?? [])
+                : (data?.transactions ?? []);
+        for (const row of rows) {
             if (row.category) categories.add(row.category);
         }
         return ["all", ...[...categories].sort((a, b) => a.localeCompare(b))];
+    }, [data, tab]);
+    const typeOptions = useMemo(() => {
+        const types = new Set<string>();
+        for (const row of data?.opCloud ?? []) {
+            if (row.type) types.add(row.type);
+        }
+        return ["all", ...[...types].sort((a, b) => a.localeCompare(b))];
     }, [data]);
     const [category, setCategory] = useState("all");
+    const [cloudType, setCloudType] = useState("all");
 
     useEffect(() => {
         if (vendor !== "all" && !activeVendorOptions.includes(vendor)) {
             setVendor("all");
         }
     }, [vendor, activeVendorOptions]);
+    useEffect(() => {
+        if (category !== "all" && !categoryOptions.includes(category)) {
+            setCategory("all");
+        }
+    }, [category, categoryOptions]);
+    useEffect(() => {
+        if (cloudType !== "all" && !typeOptions.includes(cloudType)) {
+            setCloudType("all");
+        }
+    }, [cloudType, typeOptions]);
 
     if (!sessionChecked) {
         return (
@@ -912,6 +1049,160 @@ export default function App() {
     );
     const viewTitle = activeViewTitle(section, tab, insightTab);
     const viewInfo = viewInfoContent(section, tab, insightTab);
+    const isOpTableView = isOpTableViewId(section, tab, insightTab);
+    const isCompactUnitEconomics = isCompactUnitEconomicsView(
+        section,
+        insightTab,
+    );
+    const filters = hasFilters ? (
+        <FilterBar>
+            {showPeriodFilter && (
+                <MonthFilter
+                    months={months}
+                    value={activeMonth}
+                    onChange={setMonth}
+                />
+            )}
+            <div className="flex flex-wrap items-center gap-3">
+                {showVendorFilter && (
+                    <FilterSelect
+                        label="vendor"
+                        value={vendor}
+                        onChange={setVendor}
+                        options={activeVendorOptions}
+                    />
+                )}
+                {showCategoryFilter && (
+                    <FilterSelect
+                        label="category"
+                        value={category}
+                        onChange={setCategory}
+                        options={categoryOptions}
+                    />
+                )}
+                {showTypeFilter && (
+                    <FilterSelect
+                        label="type"
+                        value={cloudType}
+                        onChange={setCloudType}
+                        options={typeOptions}
+                    />
+                )}
+            </div>
+        </FilterBar>
+    ) : null;
+    const content = (
+        <>
+            {error && (
+                <Alert intent="warning" title="Load failed">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span>{error}</span>
+                        <Button
+                            size="sm"
+                            onClick={() => setAttempt((n) => n + 1)}
+                        >
+                            Retry
+                        </Button>
+                    </div>
+                </Alert>
+            )}
+            {!error && !data && <Text tone="soft">Loading pipes...</Text>}
+            <ErrorBoundary
+                resetKey={`${section}:${tab}:${insightTab}:${month}:${vendor}:${category}:${cloudType}`}
+            >
+                {data && section === "raw" && tab === "transactions" && (
+                    <TransactionsTab
+                        category={category}
+                        data={data}
+                        month={activeMonth}
+                        vendor={vendor}
+                    />
+                )}
+                {data && section === "raw" && tab === "op-transactions" && (
+                    <OpTransactionsTab
+                        category={category}
+                        data={data}
+                        month={activeMonth}
+                        vendor={vendor}
+                    />
+                )}
+                {data && section === "raw" && tab === "pollen" && (
+                    <PollenTab
+                        data={data}
+                        month={activeMonth}
+                        vendor={vendor}
+                    />
+                )}
+                {data && section === "raw" && tab === "op-pollen" && (
+                    <OpPollenTab
+                        data={data}
+                        month={activeMonth}
+                        vendor={vendor}
+                    />
+                )}
+                {data && section === "raw" && tab === "provider" && (
+                    <ProviderTab
+                        data={data}
+                        month={activeMonth}
+                        vendor={vendor}
+                    />
+                )}
+                {data && section === "raw" && tab === "op-cloud" && (
+                    <OpCloudTab
+                        data={data}
+                        month={activeMonth}
+                        type={cloudType}
+                        vendor={vendor}
+                    />
+                )}
+                {data && section === "raw" && tab === "grants" && (
+                    <GrantsTab data={data} vendor={vendor} />
+                )}
+                {data && section === "raw" && tab === "revenue" && (
+                    <RevenueTab data={data} />
+                )}
+                {data && section === "raw" && tab === "runs" && (
+                    <GpuRunsTab
+                        data={data}
+                        month={activeMonth}
+                        vendor={vendor}
+                    />
+                )}
+                {data && section === "insights" && insightTab === "pnl" && (
+                    <PnlTab data={data} month={activeMonth} />
+                )}
+                {data && section === "insights" && insightTab === "vendors" && (
+                    <VendorsTab
+                        data={data}
+                        month={activeMonth}
+                        vendor={vendor}
+                    />
+                )}
+                {data && section === "insights" && insightTab === "models" && (
+                    <ModelsTab
+                        data={data}
+                        month={activeMonth}
+                        vendor={vendor}
+                    />
+                )}
+                {data &&
+                    section === "insights" &&
+                    insightTab === "reconciliation" && (
+                        <ReconciliationTab
+                            data={data}
+                            month={activeMonth}
+                            vendor={vendor}
+                        />
+                    )}
+                {data && section === "insights" && insightTab === "credits" && (
+                    <CreditsTab data={data} />
+                )}
+                {data && section === "insights" && insightTab === "gpu" && (
+                    <GpuTab data={data} month={activeMonth} vendor={vendor} />
+                )}
+            </ErrorBoundary>
+        </>
+    );
 
     return (
         <TreasuryShell
@@ -929,7 +1220,14 @@ export default function App() {
                 setInsightTab(value);
             }}
         >
-            <main className="flex w-full flex-col gap-6 px-4 py-14 pb-32 sm:px-6 sm:py-10 sm:pb-32 md:py-8 lg:px-8">
+            <main
+                className={cn(
+                    "flex w-full flex-col",
+                    isOpTableView
+                        ? "h-full min-h-0 gap-0 overflow-hidden px-0 py-0 pb-0"
+                        : "gap-6 px-4 py-14 pb-32 sm:px-6 sm:py-10 sm:pb-32 md:py-8 lg:px-8",
+                )}
+            >
                 {staleHours !== null && staleHours > STALE_AFTER_HOURS && (
                     <Alert intent="warning" title="Stale data">
                         Last forager run was {Math.round(staleHours)}h ago. Run{" "}
@@ -954,154 +1252,70 @@ export default function App() {
                     </Alert>
                 )}
 
-                <Section
-                    title={viewTitle}
-                    action={
-                        viewInfo ? (
-                            <InfoTip
-                                content={viewInfo}
-                                label={`${viewTitle} info`}
-                            />
-                        ) : null
-                    }
-                    actionClassName="mr-auto"
-                    framed
-                    panelClassName="gap-5"
-                >
-                    {hasFilters && (
-                        <FilterBar>
-                            {showPeriodFilter && (
-                                <MonthFilter
-                                    months={months}
-                                    value={activeMonth}
-                                    onChange={setMonth}
-                                />
-                            )}
-                            <div className="flex flex-wrap items-center gap-3">
-                                {showVendorFilter && (
-                                    <FilterSelect
-                                        label="vendor"
-                                        value={vendor}
-                                        onChange={setVendor}
-                                        options={activeVendorOptions}
-                                    />
-                                )}
-                                {showCategoryFilter && (
-                                    <FilterSelect
-                                        label="category"
-                                        value={category}
-                                        onChange={setCategory}
-                                        options={categoryOptions}
-                                    />
-                                )}
-                            </div>
-                        </FilterBar>
-                    )}
-
-                    {error && (
-                        <Alert intent="warning" title="Load failed">
-                            <div className="flex flex-wrap items-center gap-2">
-                                <span>{error}</span>
-                                <Button
-                                    size="sm"
-                                    onClick={() => setAttempt((n) => n + 1)}
-                                >
-                                    Retry
-                                </Button>
-                            </div>
-                        </Alert>
-                    )}
-                    {!error && !data && (
-                        <Text tone="soft">Loading pipes...</Text>
-                    )}
-                    <ErrorBoundary
-                        resetKey={`${section}:${tab}:${insightTab}:${month}:${vendor}:${category}`}
+                {isOpTableView || isCompactUnitEconomics ? (
+                    <section
+                        className={cn(
+                            "flex flex-col",
+                            isOpTableView
+                                ? "min-h-0 flex-1 overflow-hidden"
+                                : "gap-5",
+                        )}
                     >
-                        {data &&
-                            section === "raw" &&
-                            tab === "transactions" && (
-                                <TransactionsTab
-                                    category={category}
-                                    data={data}
-                                    month={activeMonth}
-                                    vendor={vendor}
+                        <header
+                            className={cn(
+                                "shrink-0",
+                                isOpTableView
+                                    ? "bg-app-bg/85 px-4 py-4 backdrop-blur-xl sm:px-6 lg:px-8"
+                                    : "px-1",
+                            )}
+                        >
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+                                <div className="min-w-0 flex-1">{filters}</div>
+                                <div className="ml-auto flex min-w-0 shrink-0 items-center gap-2">
+                                    <Heading
+                                        as="h2"
+                                        size="section"
+                                        className="truncate text-left"
+                                    >
+                                        {viewTitle}
+                                    </Heading>
+                                    {viewInfo && (
+                                        <InfoTip
+                                            content={viewInfo}
+                                            label={`${viewTitle} info`}
+                                        />
+                                    )}
+                                </div>
+                            </div>
+                        </header>
+                        <div
+                            className={cn(
+                                "flex flex-col",
+                                isOpTableView ? "min-h-0 flex-1" : "gap-5",
+                            )}
+                        >
+                            {content}
+                        </div>
+                    </section>
+                ) : (
+                    <Section
+                        title={viewTitle}
+                        action={
+                            viewInfo ? (
+                                <InfoTip
+                                    content={viewInfo}
+                                    label={`${viewTitle} info`}
                                 />
-                            )}
-                        {data && section === "raw" && tab === "pollen" && (
-                            <PollenTab
-                                data={data}
-                                month={activeMonth}
-                                vendor={vendor}
-                            />
-                        )}
-                        {data && section === "raw" && tab === "provider" && (
-                            <ProviderTab
-                                data={data}
-                                month={activeMonth}
-                                vendor={vendor}
-                            />
-                        )}
-                        {data && section === "raw" && tab === "grants" && (
-                            <GrantsTab data={data} vendor={vendor} />
-                        )}
-                        {data && section === "raw" && tab === "revenue" && (
-                            <RevenueTab data={data} />
-                        )}
-                        {data && section === "raw" && tab === "runs" && (
-                            <GpuRunsTab
-                                data={data}
-                                month={activeMonth}
-                                vendor={vendor}
-                            />
-                        )}
-                        {data &&
-                            section === "insights" &&
-                            insightTab === "pnl" && (
-                                <PnlTab data={data} month={activeMonth} />
-                            )}
-                        {data &&
-                            section === "insights" &&
-                            insightTab === "vendors" && (
-                                <VendorsTab
-                                    data={data}
-                                    month={activeMonth}
-                                    vendor={vendor}
-                                />
-                            )}
-                        {data &&
-                            section === "insights" &&
-                            insightTab === "models" && (
-                                <ModelsTab
-                                    data={data}
-                                    month={activeMonth}
-                                    vendor={vendor}
-                                />
-                            )}
-                        {data &&
-                            section === "insights" &&
-                            insightTab === "reconciliation" && (
-                                <ReconciliationTab
-                                    data={data}
-                                    month={activeMonth}
-                                    vendor={vendor}
-                                />
-                            )}
-                        {data &&
-                            section === "insights" &&
-                            insightTab === "credits" && (
-                                <CreditsTab data={data} />
-                            )}
-                        {data &&
-                            section === "insights" &&
-                            insightTab === "gpu" && (
-                                <GpuTab
-                                    data={data}
-                                    month={activeMonth}
-                                    vendor={vendor}
-                                />
-                            )}
-                    </ErrorBoundary>
-                </Section>
+                            ) : null
+                        }
+                        actionClassName="mr-auto"
+                        framed
+                        panelClassName="gap-5"
+                    >
+                        {filters}
+                        {content}
+                    </Section>
+                )}
             </main>
         </TreasuryShell>
     );

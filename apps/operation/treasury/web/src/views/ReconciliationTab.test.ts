@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { VendorPlanes } from "../lib/insights";
 import {
-    coverageLabel,
+    planeRank,
     problemsFirst,
     visiblePlaneRows,
 } from "./ReconciliationTab";
@@ -13,12 +13,18 @@ const plane = (
 ): VendorPlanes => ({
     month,
     vendor,
-    transactionsUsd: null,
-    providerUsd: null,
-    creditUsd: null,
-    pollenUsd: 1,
+    cashUsd: null,
+    cloudPaidUsd: null,
+    cloudCreditUsd: null,
+    cloudUsd: null,
+    meterCloudUsd: null,
+    pollenPaidCostUsd: 1,
+    pollenQuestCostUsd: null,
+    pollenCostUsd: 1,
     calibX: null,
-    coverage: null,
+    cashCoverage: null,
+    meterCoverage: null,
+    status: "ok",
     ...overrides,
 });
 
@@ -42,69 +48,62 @@ describe("visiblePlaneRows", () => {
     });
 });
 
+describe("planeRank", () => {
+    it("puts missing witnesses before drift, timing, and ok rows", () => {
+        expect(
+            planeRank(plane("2026-07", "aws", { status: "missing cash" })),
+        ).toBe(0);
+        expect(planeRank(plane("2026-07", "aws", { status: "drift" }))).toBe(1);
+        expect(planeRank(plane("2026-07", "aws", { status: "timing" }))).toBe(
+            2,
+        );
+        expect(planeRank(plane("2026-07", "aws", { status: "ok" }))).toBe(3);
+    });
+});
+
 describe("problemsFirst", () => {
-    it("orders funding gaps, then calib drift, then healthy by month desc", () => {
-        const healthyNew = plane("2026-07", "aws", { coverage: "ok cash" });
-        const healthyOld = plane("2026-06", "aws", { coverage: "ok cash" });
-        const drifted = plane("2026-05", "google", {
-            calibX: 1.5,
-            coverage: "ok credit",
+    it("orders missing witnesses, then drift, timing, and healthy rows by month desc", () => {
+        const healthyNew = plane("2026-07", "aws");
+        const healthyOld = plane("2026-06", "aws");
+        const timing = plane("2026-07", "vast.ai", { status: "timing" });
+        const drifted = plane("2026-05", "google", { status: "drift" });
+        const missingCash = plane("2026-04", "vast.ai", {
+            status: "missing cash",
         });
-        const uncovered = plane("2026-04", "vast", { coverage: "uncovered" });
-        const unverified = plane("2026-06", "xai", {
-            coverage: "paid unverified",
+        const missingCloud = plane("2026-06", "openrouter", {
+            status: "missing cloud",
         });
 
         expect(
             problemsFirst([
                 healthyOld,
                 healthyNew,
+                timing,
                 drifted,
-                uncovered,
-                unverified,
+                missingCash,
+                missingCloud,
             ]),
-        ).toEqual([unverified, uncovered, drifted, healthyNew, healthyOld]);
-    });
-
-    it("does not treat in-tolerance calib as a problem", () => {
-        const inTolerance = plane("2026-05", "aws", {
-            calibX: 1.1,
-            coverage: "ok cash",
-        });
-        const drifted = plane("2026-07", "google", {
-            calibX: 0.5,
-            coverage: "ok cash",
-        });
-
-        expect(problemsFirst([inTolerance, drifted])).toEqual([
+        ).toEqual([
+            missingCloud,
+            missingCash,
             drifted,
-            inTolerance,
+            timing,
+            healthyNew,
+            healthyOld,
         ]);
     });
-});
 
-describe("coverageLabel", () => {
-    it("returns null for missing coverage", () => {
-        expect(coverageLabel(null)).toBeNull();
-    });
+    it("orders same-rank rows by newest month then vendor", () => {
+        const aws = plane("2026-07", "aws", { status: "missing pollen" });
+        const google = plane("2026-07", "google", {
+            status: "missing cloud",
+        });
+        const older = plane("2026-06", "azure", { status: "missing cash" });
 
-    it("maps uncovered to the Unfunded warning bucket", () => {
-        expect(coverageLabel("uncovered")).toBe("⚠ Unfunded");
-    });
-
-    it("maps paid unverified to the Unverified warning bucket", () => {
-        expect(coverageLabel("paid unverified")).toBe("⚠ Unverified");
-    });
-
-    it("collapses every other raw reason to Funded", () => {
-        for (const reason of [
-            "ok cash",
-            "ok credit",
-            "cash ±1mo",
-            "prepaid",
-            "internal",
-        ] as const) {
-            expect(coverageLabel(reason)).toBe("Funded");
-        }
+        expect(problemsFirst([older, google, aws])).toEqual([
+            aws,
+            google,
+            older,
+        ]);
     });
 });

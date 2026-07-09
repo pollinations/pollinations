@@ -115,6 +115,16 @@ export function createInceptionModelConfig(
     );
 }
 
+export function createXAIModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://api.x.ai/v1",
+        process.env.XAI_API_KEY,
+        overrides,
+    );
+}
+
 export function createPerplexityModelConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {

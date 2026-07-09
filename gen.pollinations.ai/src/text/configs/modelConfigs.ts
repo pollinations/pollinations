@@ -9,6 +9,7 @@ import {
     createOVHcloudModelConfig,
     createPerplexityModelConfig,
     createPollyConfig,
+    createXAIModelConfig,
 } from "./providerConfigs.js";
 
 // =============================================================================
@@ -126,6 +127,10 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4.3/chat/completions?api-version=2024-12-01-preview",
             "grok-4.3",
         ),
+    "grok-4.5": () =>
+        createXAIModelConfig({
+            model: "grok-4.5",
+        }),
 
     // -- OpenRouter (Gemma) ---------------------------------------------------
     // Moved off DeepInfra: OpenRouter serves the same SKU ~cheaper ($0.06/$0.33

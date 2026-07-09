@@ -1,5 +1,4 @@
 import {
-    Alert,
     Chip,
     cn,
     TableBody,
@@ -7,105 +6,268 @@ import {
     TableHead,
     TableHeaderCell,
     TableRow,
-    Text,
 } from "@pollinations/ui";
 import { useMemo } from "react";
 import {
     DataTable,
     GROUP_BORDER,
     HeaderHint,
+    type SortColumn,
     TableScroller,
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
-import { fmtNumber, fmtPct, fmtUsd, fmtUsd4 } from "../lib/format";
+import { Gauge, trueXStatTone } from "../components/EconTable";
+import { StatCards } from "../components/StatCards";
 import {
-    type GpuDeploymentRow,
-    type GpuTypeRow,
-    gpuByType,
-    gpuEconomics,
-    runwayChips,
-} from "../lib/gpu";
-import type { Data } from "../types";
+    fmtMultiplier,
+    fmtNumber,
+    fmtUnsignedPct,
+    fmtUsd,
+    fmtUsd4,
+} from "../lib/format";
+import { toUsd } from "../lib/fx";
+import { matchesMonth, WINDOW_START } from "../lib/months";
+import type { Data, OpCloudRow } from "../types";
 
-// Classify a flag string into a Chip intent.
-// Flags starting with "error:" are errors (missing deployment witness);
-// all others (e.g. "unmapped fleet", "unattributed: …") are warnings.
-export function flagIntent(flag: string): "danger" | "warning" {
-    return flag.startsWith("error:") ? "danger" : "warning";
-}
+const REGISTRY_UNIT_PRICES: Record<string, { price: number; unit: string }> = {
+    zimage: { price: 0.002, unit: "img" },
+    klein: { price: 0.01, unit: "img" },
+    "ltx-2": { price: 0.005, unit: "s" },
+};
 
-// Normal per-model rows have models === [group], so the sub-text would just
-// repeat the title — skip it. Fallback rows (e.g. "(vendor total)") carry a
-// distinct model list that isn't shown anywhere else, so surface it.
-export function showsModelSubtext(
-    row: Pick<GpuDeploymentRow, "group" | "models">,
-): boolean {
-    return row.models.join(", ") !== row.group;
-}
-
-export function visibleGpuRows({
-    rows,
-    vendor,
-}: {
-    rows: GpuDeploymentRow[];
+export type GpuEconomicsRow = {
+    gpu: string;
     vendor: string;
-}): GpuDeploymentRow[] {
-    const filtered =
-        vendor === "all" ? rows : rows.filter((r) => r.vendor === vendor);
+    model: string;
+    month: string;
+    rentUsd: number;
+    paidRentUsd: number;
+    creditRentUsd: number;
+    requests: number;
+    paidUsd: number;
+    questUsd: number;
+    retainedUsd: number;
+    coverage: number | null;
+    effUsdPerReq: number | null;
+    breakEven: { model: string; unit: string; volume: number }[];
+    flags: string[];
+};
 
-    // coverage asc nulls-last (worst boxes first)
-    return [...filtered].sort((a, b) => {
-        const ac = a.coverage;
-        const bc = b.coverage;
-        if (ac === null && bc === null) return 0;
-        if (ac === null) return 1;
-        if (bc === null) return -1;
-        return ac - bc;
-    });
+type GpuSummary = {
+    paidUsd: number;
+    questUsd: number;
+    rentUsd: number;
+    creditRentUsd: number;
+    retainedUsd: number;
+    marginUsd: number;
+    coverage: number | null;
+    flaggedRows: number;
+};
+
+function splitModels(model: string): string[] {
+    return model
+        .split(",")
+        .map((part) => part.trim())
+        .filter(Boolean);
 }
 
-export function visibleGpuTypeRows({
-    rows,
-    vendor,
-}: {
-    rows: GpuTypeRow[];
-    vendor: string;
-}): GpuTypeRow[] {
-    const filtered =
-        vendor === "all" ? rows : rows.filter((r) => r.vendor === vendor);
-    return [...filtered].sort((a, b) => b.costUsd - a.costUsd);
+function opCloudMonth(row: Pick<OpCloudRow, "start">): string {
+    return row.start.slice(0, 7);
 }
 
-function coverageTone(value: number | null): string {
-    if (value == null) return "";
+function opCloudPaidBurnUsd(row: OpCloudRow): number {
+    return Math.max(0, -toUsd(row.paid, row.currency, row.start));
+}
+
+function opCloudCreditBurnUsd(row: OpCloudRow): number {
+    return Math.max(0, -toUsd(row.credit, row.currency, row.start));
+}
+
+function modelKey(model: string): string {
+    return model.trim() || "missing model";
+}
+
+function gpuKey(gpu: string): string {
+    return gpu.trim() || "unknown GPU";
+}
+
+function computeBreakEven(
+    models: string[],
+    rentUsd: number,
+): { model: string; unit: string; volume: number }[] {
+    if (rentUsd <= 0) return [];
+    const result: { model: string; unit: string; volume: number }[] = [];
+    for (const model of models) {
+        const entry = REGISTRY_UNIT_PRICES[model];
+        if (!entry) continue;
+        result.push({
+            model,
+            unit: entry.unit,
+            volume: rentUsd / entry.price,
+        });
+    }
+    return result;
+}
+
+export function gpuEconomics(data: Data, monthFilter: string) {
+    type Acc = GpuEconomicsRow & {
+        modelSet: Set<string>;
+        rawModel: string;
+    };
+    const groups = new Map<string, Acc>();
+
+    for (const row of data.opCloud ?? []) {
+        if (row.type !== "gpu") continue;
+        const month = opCloudMonth(row);
+        if (month < WINDOW_START || !matchesMonth(month, monthFilter)) {
+            continue;
+        }
+        const paidRentUsd = opCloudPaidBurnUsd(row);
+        const creditRentUsd = opCloudCreditBurnUsd(row);
+        const rentUsd = paidRentUsd + creditRentUsd;
+        if (rentUsd <= 0) continue;
+
+        const gpu = gpuKey(row.resource_sku);
+        const model = modelKey(row.model);
+        const key = `${month}|${row.vendor}|${gpu}|${model}`;
+        const acc = groups.get(key) ?? {
+            gpu,
+            vendor: row.vendor,
+            model,
+            month,
+            rentUsd: 0,
+            paidRentUsd: 0,
+            creditRentUsd: 0,
+            requests: 0,
+            paidUsd: 0,
+            questUsd: 0,
+            retainedUsd: 0,
+            coverage: null,
+            effUsdPerReq: null,
+            breakEven: [],
+            flags: [],
+            modelSet: new Set(splitModels(row.model)),
+            rawModel: row.model,
+        };
+        acc.rentUsd += rentUsd;
+        acc.paidRentUsd += paidRentUsd;
+        acc.creditRentUsd += creditRentUsd;
+        for (const modelName of splitModels(row.model)) {
+            acc.modelSet.add(modelName);
+        }
+        groups.set(key, acc);
+    }
+
+    const groupsByVendorMonthModel = new Map<string, Acc[]>();
+    for (const group of groups.values()) {
+        for (const model of group.modelSet) {
+            const key = `${group.month}|${group.vendor}|${model}`;
+            const entries = groupsByVendorMonthModel.get(key) ?? [];
+            entries.push(group);
+            groupsByVendorMonthModel.set(key, entries);
+        }
+    }
+
+    for (const pollen of data.opPollen ?? []) {
+        if (
+            pollen.month < WINDOW_START ||
+            !matchesMonth(pollen.month, monthFilter)
+        ) {
+            continue;
+        }
+        const candidates =
+            groupsByVendorMonthModel.get(
+                `${pollen.month}|${pollen.vendor}|${pollen.model}`,
+            ) ?? [];
+        if (candidates.length === 0) continue;
+
+        const totalRent = candidates.reduce((sum, row) => sum + row.rentUsd, 0);
+        for (const row of candidates) {
+            const share =
+                totalRent > 0 ? row.rentUsd / totalRent : 1 / candidates.length;
+            row.requests +=
+                (pollen.requests_paid + pollen.requests_quests) * share;
+            row.paidUsd +=
+                toUsd(pollen.price_paid, pollen.currency, pollen.month) * share;
+            row.questUsd +=
+                toUsd(pollen.price_quests, pollen.currency, pollen.month) *
+                share;
+            row.retainedUsd +=
+                toUsd(
+                    pollen.price_paid - pollen.byop_paid - pollen.model_paid,
+                    pollen.currency,
+                    pollen.month,
+                ) * share;
+        }
+    }
+
+    return [...groups.values()]
+        .map((row): GpuEconomicsRow => {
+            const models = [...row.modelSet].sort();
+            const flags: string[] = [];
+            if (row.gpu === "unknown GPU") flags.push("unknown GPU");
+            if (row.model === "missing model") flags.push("missing model");
+            if (models.length > 0 && row.requests <= 0) {
+                flags.push("no Pollen match");
+            }
+            return {
+                ...row,
+                coverage:
+                    row.rentUsd > 0 ? row.retainedUsd / row.rentUsd : null,
+                effUsdPerReq:
+                    row.requests > 0 ? row.rentUsd / row.requests : null,
+                breakEven: computeBreakEven(models, row.rentUsd),
+                flags,
+            };
+        })
+        .sort((a, b) => {
+            if (a.coverage == null && b.coverage == null) {
+                return b.rentUsd - a.rentUsd;
+            }
+            if (a.coverage == null) return 1;
+            if (b.coverage == null) return -1;
+            return a.coverage - b.coverage || b.rentUsd - a.rentUsd;
+        });
+}
+
+export function visibleGpuRows(rows: GpuEconomicsRow[], vendor: string) {
+    return rows.filter((row) => vendor === "all" || row.vendor === vendor);
+}
+
+export function gpuSummary(rows: GpuEconomicsRow[]): GpuSummary {
+    const summary: GpuSummary = {
+        paidUsd: 0,
+        questUsd: 0,
+        rentUsd: 0,
+        creditRentUsd: 0,
+        retainedUsd: 0,
+        marginUsd: 0,
+        coverage: null,
+        flaggedRows: 0,
+    };
+    for (const row of rows) {
+        summary.paidUsd += row.paidUsd;
+        summary.questUsd += row.questUsd;
+        summary.rentUsd += row.rentUsd;
+        summary.creditRentUsd += row.creditRentUsd;
+        summary.retainedUsd += row.retainedUsd;
+        if (row.flags.length > 0) summary.flaggedRows += 1;
+    }
+    summary.marginUsd = summary.retainedUsd - summary.rentUsd;
+    summary.coverage =
+        summary.rentUsd > 0 ? summary.retainedUsd / summary.rentUsd : null;
+    return summary;
+}
+
+function rowCoverageTone(value: number | null) {
+    if (value == null) return "text-theme-text-soft";
     if (value < 1) return "text-intent-danger-text";
-    return "";
+    return "text-intent-success-text";
 }
 
-function verdictChip(verdict: GpuDeploymentRow["verdict"]) {
-    if (!verdict) return null;
-    if (verdict === "keep") {
-        return (
-            <Chip intent="neutral" size="sm">
-                keep
-            </Chip>
-        );
-    }
-    if (verdict === "raise?") {
-        return (
-            <Chip intent="warning" size="sm">
-                raise?
-            </Chip>
-        );
-    }
-    // idle-candidate
-    const title = "consider modal (serverless, $0 idle)";
-    return (
-        <Chip intent="danger" size="sm" title={title}>
-            idle-candidate
-        </Chip>
-    );
+function marginTone(value: number) {
+    return value >= 0 ? "pos" : "neg";
 }
 
 export function GpuTab({
@@ -117,102 +279,135 @@ export function GpuTab({
     month?: string;
     vendor?: string;
 }) {
-    const now = useMemo(() => new Date(), []);
-    const runway = useMemo(() => runwayChips(data, now), [data, now]);
-    const allRows = useMemo(() => gpuEconomics(data, month), [data, month]);
     const rows = useMemo(
-        () => visibleGpuRows({ rows: allRows, vendor }),
-        [allRows, vendor],
+        () => visibleGpuRows(gpuEconomics(data, month), vendor),
+        [data, month, vendor],
     );
-    const allTypeRows = useMemo(() => gpuByType(data, month), [data, month]);
-    const typeRows = useMemo(
-        () => visibleGpuTypeRows({ rows: allTypeRows, vendor }),
-        [allTypeRows, vendor],
-    );
-
-    const sortColumns = useMemo(
+    const stats = useMemo(() => gpuSummary(rows), [rows]);
+    const sortColumns = useMemo<SortColumn<GpuEconomicsRow>[]>(
         () => [
-            { key: "group", value: (r: GpuDeploymentRow) => r.group },
-            { key: "vendor", value: (r: GpuDeploymentRow) => r.vendor },
+            { key: "gpu", value: (row) => row.gpu },
+            { key: "vendor", value: (row) => row.vendor },
+            { key: "model", value: (row) => row.model },
+            { key: "rentUsd", value: (row) => row.rentUsd },
+            { key: "requests", value: (row) => row.requests },
+            { key: "paidUsd", value: (row) => row.paidUsd },
             {
-                key: "rentUsd",
-                value: (r: GpuDeploymentRow) => r.rentUsd,
+                key: "mix",
+                value: (row) => {
+                    const total = row.paidUsd + row.questUsd;
+                    return total > 0 ? row.paidUsd / total : null;
+                },
             },
-            { key: "requests", value: (r: GpuDeploymentRow) => r.requests },
-            { key: "paidUsd", value: (r: GpuDeploymentRow) => r.paidUsd },
-            { key: "questUsd", value: (r: GpuDeploymentRow) => r.questUsd },
-            { key: "coverage", value: (r: GpuDeploymentRow) => r.coverage },
+            { key: "questUsd", value: (row) => row.questUsd },
+            { key: "coverage", value: (row) => row.coverage },
+            { key: "effUsdPerReq", value: (row) => row.effUsdPerReq },
             {
-                key: "effUsdPerReq",
-                value: (r: GpuDeploymentRow) => r.effUsdPerReq,
+                key: "breakEven",
+                value: (row) => row.breakEven[0]?.volume ?? null,
             },
-            { key: "verdict", value: (r: GpuDeploymentRow) => r.verdict },
+            { key: "flags", value: (row) => row.flags.join(", ") },
         ],
         [],
     );
-
     const { headerProps, rows: sorted } = useSortableRows(rows, sortColumns);
-
-    const typeSortColumns = useMemo(
-        () => [
-            { key: "gpu", value: (r: GpuTypeRow) => r.gpu },
-            { key: "vendor", value: (r: GpuTypeRow) => r.vendor },
-            { key: "hours", value: (r: GpuTypeRow) => r.hours },
-            { key: "costUsd", value: (r: GpuTypeRow) => r.costUsd },
-            {
-                key: "impliedUsdPerHr",
-                value: (r: GpuTypeRow) => r.impliedUsdPerHr,
-            },
-        ],
-        [],
-    );
-
-    const { headerProps: typeHeaderProps, rows: sortedTypeRows } =
-        useSortableRows(typeRows, typeSortColumns);
-
-    if (allRows.length === 0 && data.gpuRuns.length === 0) {
-        return (
-            <Alert intent="warning">
-                No GPU runs yet — run{" "}
-                <code>python3 -m ingest.run --only runs</code>
-            </Alert>
-        );
-    }
 
     return (
         <div className="flex flex-col gap-4">
-            {/* header strip */}
-            <div className="flex flex-wrap items-center gap-3">
-                {runway.map((chip) => (
-                    <Chip
-                        key={chip.vendor}
-                        intent={chip.tone}
-                        size="sm"
-                        title={`${chip.vendor}: ${chip.label}${chip.days != null ? ` · ~${chip.days.toFixed(1)}d` : ""}`}
-                    >
-                        {chip.vendor} {chip.label}
-                        {chip.days != null && ` · ~${chip.days.toFixed(1)}d`}
-                    </Chip>
-                ))}
-            </div>
-
+            <StatCards
+                items={[
+                    {
+                        label: "Paid",
+                        value: fmtUsd(stats.paidUsd),
+                        detail: (
+                            <Gauge
+                                paid={stats.paidUsd}
+                                quests={stats.questUsd}
+                            />
+                        ),
+                    },
+                    {
+                        label: "Rent",
+                        value: fmtUsd(stats.rentUsd),
+                        detail:
+                            stats.rentUsd > 0
+                                ? `${fmtUnsignedPct((stats.creditRentUsd / stats.rentUsd) * 100)} credit-funded`
+                                : "Cloud OP GPU burn",
+                    },
+                    {
+                        label: "Margin",
+                        value: fmtUsd(stats.marginUsd),
+                        tone: marginTone(stats.marginUsd),
+                        detail:
+                            stats.flaggedRows > 0
+                                ? `${stats.flaggedRows} flagged`
+                                : "all mapped",
+                    },
+                    {
+                        label: "Coverage ×",
+                        value: fmtMultiplier(stats.coverage),
+                        tone: trueXStatTone(stats.coverage, null),
+                        detail: "retained ÷ rent",
+                    },
+                    {
+                        label: "Quests",
+                        value: fmtUsd(stats.questUsd),
+                        detail: "free-tier demand",
+                    },
+                ]}
+            />
             <TableScroller>
                 <DataTable>
                     <TableHead>
                         <TableRow>
-                            <TableHeaderCell {...headerProps("group")}>
-                                <HeaderHint
-                                    hint={{
-                                        meaning:
-                                            "the model(s) this GPU spend serves (from the run ledger's model attribution)",
-                                    }}
-                                >
-                                    model
-                                </HeaderHint>
+                            <TableHeaderCell
+                                rowSpan={2}
+                                {...headerProps("gpu")}
+                            >
+                                GPU
                             </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("vendor")}>
+                            <TableHeaderCell
+                                rowSpan={2}
+                                {...headerProps("vendor")}
+                            >
                                 vendor
                             </TableHeaderCell>
+                            <TableHeaderCell
+                                rowSpan={2}
+                                {...headerProps("model")}
+                            >
+                                model
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                colSpan={1}
+                                align="center"
+                                className={GROUP_BORDER}
+                            >
+                                Cloud
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                colSpan={4}
+                                align="center"
+                                className={GROUP_BORDER}
+                            >
+                                Pollen
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                colSpan={3}
+                                align="center"
+                                className={GROUP_BORDER}
+                            >
+                                Economics
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                rowSpan={2}
+                                className={GROUP_BORDER}
+                                {...headerProps("flags")}
+                            >
+                                Flags
+                            </TableHeaderCell>
+                        </TableRow>
+                        <TableRow>
                             <TableHeaderCell
                                 align="right"
                                 className={GROUP_BORDER}
@@ -221,51 +416,47 @@ export function GpuTab({
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "vendor's witnessed monthly bill (provider plane, credit+paid → USD) × this model's share of the run-ledger cost that month. Sums to the bill — never imputed.",
+                                            "Cloud OP GPU burn: paid burn plus credit burn. Positive grant-received rows are excluded.",
+                                        tables: "op_cloud_api",
+                                        sources: "API/CLI/BQ/HC",
                                     }}
                                 >
-                                    rent $
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                align="right"
-                                {...headerProps("requests")}
-                            >
-                                <HeaderHint
-                                    hint={{
-                                        meaning:
-                                            "successful, non-cached generations (pollen requests)",
-                                    }}
-                                >
-                                    req
+                                    Rent
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
                                 className={GROUP_BORDER}
-                                {...headerProps("paidUsd")}
+                                {...headerProps("requests")}
                             >
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "pollen paid by users on this deployment's models (pack meter) — gross, before ecosystem shares. Source: pollen plane.",
+                                            "Paid plus quest requests from OP Pollen, matched by vendor, month, and model.",
+                                        tables: "op_pollen_api",
+                                        sources: "TB",
                                     }}
                                 >
-                                    paid ℗
+                                    Req
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
+                                {...headerProps("paidUsd")}
+                            >
+                                Paid
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="center"
+                                {...headerProps("mix")}
+                            >
+                                Paid / Quests
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="left"
                                 {...headerProps("questUsd")}
                             >
-                                <HeaderHint
-                                    hint={{
-                                        meaning:
-                                            "free usage occupying the box — earns $0",
-                                    }}
-                                >
-                                    quest ℗
-                                </HeaderHint>
+                                Quests
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
@@ -275,11 +466,11 @@ export function GpuTab({
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "retained paid pollen × net ratio ÷ rent — does money in pay this box's rent",
-                                        formula: "retained × netRatio ÷ rent",
+                                            "Retained paid Pollen divided by GPU rent. Quests are demand, not revenue.",
+                                        formula: "retained paid ÷ rent",
                                     }}
                                 >
-                                    coverage
+                                    Coverage ×
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
@@ -289,240 +480,112 @@ export function GpuTab({
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "rent ÷ requests served — the true unit cost",
+                                            "GPU rent divided by paid plus quest requests.",
                                         formula: "rent ÷ requests",
                                     }}
                                 >
-                                    eff $/req
+                                    Eff $/req
                                 </HeaderHint>
                             </TableHeaderCell>
-                            <TableHeaderCell className={GROUP_BORDER}>
-                                <HeaderHint
-                                    hint={{
-                                        meaning:
-                                            "volume of paid generations needed for this deployment to cover its rent at current registry prices",
-                                        formula:
-                                            "rent ÷ (registry price × netRatio)",
-                                    }}
-                                >
-                                    break-even
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("verdict")}>
-                                <HeaderHint
-                                    hint={{
-                                        meaning:
-                                            "keep = covered · raise? = below break-even · idle-candidate = severely undercovered GPU (consider switching to serverless)",
-                                    }}
-                                >
-                                    verdict
-                                </HeaderHint>
+                            <TableHeaderCell
+                                align="left"
+                                {...headerProps("breakEven")}
+                            >
+                                Break-even
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {withUniqueRowKeys(
                             sorted,
-                            (r) => `${r.vendor}|${r.group}|${r.month}`,
+                            (row) =>
+                                `${row.month}|${row.vendor}|${row.gpu}|${row.model}`,
                         ).map(({ key, row }) => (
                             <TableRow key={key}>
-                                <TableCell>
-                                    <div className="flex flex-col gap-0.5">
-                                        <div className="flex items-center gap-1.5">
-                                            <span>{row.group}</span>
-                                            {row.kind === "serverless" && (
-                                                <Chip
-                                                    intent="neutral"
-                                                    size="sm"
-                                                    data-theme="neutral"
-                                                >
-                                                    serverless
-                                                </Chip>
-                                            )}
-                                        </div>
-                                        {showsModelSubtext(row) && (
-                                            <Text size="micro" tone="soft">
-                                                {row.models.join(", ")}
-                                            </Text>
-                                        )}
-                                        {row.flags.length > 0 && (
-                                            <div className="flex flex-wrap gap-1 pt-0.5">
-                                                {row.flags.map((flag) => (
-                                                    <Chip
-                                                        key={flag}
-                                                        intent={flagIntent(
-                                                            flag,
-                                                        )}
-                                                        size="sm"
-                                                    >
-                                                        ⚠ {flag}
-                                                    </Chip>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                </TableCell>
+                                <TableCell>{row.gpu}</TableCell>
                                 <TableCell>{row.vendor}</TableCell>
+                                <TableCell>{row.model}</TableCell>
                                 <TableCell
                                     align="right"
                                     className={GROUP_BORDER}
                                 >
-                                    {row.rentUsd == null
-                                        ? "–"
-                                        : fmtUsd(row.rentUsd)}
+                                    {fmtUsd(row.rentUsd)}
                                 </TableCell>
-                                <TableCell align="right">
+                                <TableCell
+                                    align="right"
+                                    className={GROUP_BORDER}
+                                >
                                     {fmtNumber(row.requests)}
                                 </TableCell>
                                 <TableCell
                                     align="right"
-                                    className={cn(
-                                        "text-intent-success-text",
-                                        GROUP_BORDER,
-                                    )}
+                                    className="text-intent-success-text"
                                 >
                                     {fmtUsd(row.paidUsd)}
                                 </TableCell>
-                                <TableCell
-                                    align="right"
-                                    className="text-intent-warning-text"
-                                >
+                                <TableCell>
+                                    <div className="flex justify-center">
+                                        <Gauge
+                                            paid={row.paidUsd}
+                                            quests={row.questUsd}
+                                        />
+                                    </div>
+                                </TableCell>
+                                <TableCell className="text-left text-intent-warning-text">
                                     {fmtUsd(row.questUsd)}
                                 </TableCell>
                                 <TableCell
                                     align="right"
                                     className={cn(
-                                        coverageTone(row.coverage),
+                                        rowCoverageTone(row.coverage),
                                         GROUP_BORDER,
                                     )}
                                 >
-                                    {row.coverage == null
-                                        ? "–"
-                                        : fmtPct(row.coverage * 100)}
+                                    {fmtMultiplier(row.coverage)}
                                 </TableCell>
                                 <TableCell align="right">
-                                    {row.effUsdPerReq == null
-                                        ? "–"
-                                        : fmtUsd4(row.effUsdPerReq)}
+                                    {fmtUsd4(row.effUsdPerReq)}
                                 </TableCell>
-                                <TableCell className={GROUP_BORDER}>
+                                <TableCell>
                                     {row.breakEven.length === 0 ? (
                                         <span className="text-theme-text-soft">
-                                            –
+                                            -
                                         </span>
                                     ) : (
                                         <div className="flex flex-col gap-0.5">
-                                            {row.breakEven.map((be) => (
-                                                <span key={be.model}>
-                                                    {fmtNumber(be.volume)}{" "}
-                                                    {be.unit}/mo
+                                            {row.breakEven.map((item) => (
+                                                <span key={item.model}>
+                                                    {fmtNumber(item.volume)}{" "}
+                                                    {item.unit}
                                                 </span>
                                             ))}
                                         </div>
                                     )}
                                 </TableCell>
-                                <TableCell>
-                                    {verdictChip(row.verdict)}
+                                <TableCell className={GROUP_BORDER}>
+                                    {row.flags.length === 0 ? (
+                                        <span className="text-theme-text-soft">
+                                            -
+                                        </span>
+                                    ) : (
+                                        <div className="flex flex-wrap gap-1">
+                                            {row.flags.map((flag) => (
+                                                <Chip
+                                                    key={flag}
+                                                    intent="warning"
+                                                    size="sm"
+                                                >
+                                                    {flag}
+                                                </Chip>
+                                            ))}
+                                        </div>
+                                    )}
                                 </TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
                 </DataTable>
             </TableScroller>
-
-            <div className="flex flex-col gap-2">
-                <Text size="sm" tone="soft">
-                    By GPU type — hours, implied $/hr, models served
-                </Text>
-                <TableScroller>
-                    <DataTable>
-                        <TableHead>
-                            <TableRow>
-                                <TableHeaderCell {...typeHeaderProps("gpu")}>
-                                    gpu
-                                </TableHeaderCell>
-                                <TableHeaderCell {...typeHeaderProps("vendor")}>
-                                    vendor
-                                </TableHeaderCell>
-                                <TableHeaderCell
-                                    align="right"
-                                    className={GROUP_BORDER}
-                                    {...typeHeaderProps("hours")}
-                                >
-                                    hrs
-                                </TableHeaderCell>
-                                <TableHeaderCell
-                                    align="right"
-                                    {...typeHeaderProps("costUsd")}
-                                >
-                                    cost
-                                </TableHeaderCell>
-                                <TableHeaderCell
-                                    align="right"
-                                    {...typeHeaderProps("impliedUsdPerHr")}
-                                >
-                                    $/hr
-                                </TableHeaderCell>
-                                <TableHeaderCell className={GROUP_BORDER}>
-                                    models
-                                </TableHeaderCell>
-                                <TableHeaderCell>flags</TableHeaderCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {withUniqueRowKeys(
-                                sortedTypeRows,
-                                (r) => `${r.vendor}|${r.gpu}|${r.month}`,
-                            ).map(({ key, row }) => (
-                                <TableRow key={key}>
-                                    <TableCell>{row.gpu}</TableCell>
-                                    <TableCell>{row.vendor}</TableCell>
-                                    <TableCell
-                                        align="right"
-                                        className={GROUP_BORDER}
-                                    >
-                                        {row.hours == null
-                                            ? "–"
-                                            : fmtNumber(row.hours)}
-                                    </TableCell>
-                                    <TableCell align="right">
-                                        {fmtUsd(row.costUsd)}
-                                    </TableCell>
-                                    <TableCell align="right">
-                                        {row.impliedUsdPerHr == null
-                                            ? "–"
-                                            : fmtUsd4(row.impliedUsdPerHr)}
-                                    </TableCell>
-                                    <TableCell className={GROUP_BORDER}>
-                                        {row.models.join(", ") || "–"}
-                                    </TableCell>
-                                    <TableCell>
-                                        {row.flags.length > 0 ? (
-                                            <div className="flex flex-wrap gap-1">
-                                                {row.flags.map((flag) => (
-                                                    <Chip
-                                                        key={flag}
-                                                        intent={flagIntent(
-                                                            flag,
-                                                        )}
-                                                        size="sm"
-                                                    >
-                                                        ⚠ {flag}
-                                                    </Chip>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <span className="text-theme-text-soft">
-                                                –
-                                            </span>
-                                        )}
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </DataTable>
-                </TableScroller>
-            </div>
         </div>
     );
 }

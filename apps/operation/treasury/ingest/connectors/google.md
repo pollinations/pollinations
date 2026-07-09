@@ -57,8 +57,8 @@ Collection steps:
 
 7. Save raw query output to `data/inbox/google-<period>-billing-export.json`.
 8. Run:
-   - invoices: `prompts/billed_usage_01_ingest.system.txt`
-   - BigQuery/dashboard usage: `prompts/billed_usage_00_collect_dashboard.system.txt`
+   - invoices: `prompts/invoice.system.txt`
+   - BigQuery/dashboard usage: `prompts/usage.system.txt`
 
 Suggested bounded query shape:
 
@@ -98,7 +98,7 @@ GROUP BY month, service, sku
 ORDER BY month, service, sku
 ```
 
-Expected finding:
+Expected entry:
 
 - `cost_category`: `infrastructure`, `model`, `inference_serverless`, `storage`, `network`, or `credit`
 - `op_cloud_type`: `inference` for Vertex/model usage, `infra` for general GCP services
@@ -114,8 +114,8 @@ Known traps:
 - A pure billing export is usage/cost truth, not cash transaction truth.
 - BigQuery queries can be broad; always bound by period.
 - Avoid writing service-account JSON to repo paths. If a temp key file is needed, use a temp directory and delete it after collection.
-- For the main finding, use `amount = net_amount` when the source is a monthly aggregate. Put gross, net, absolute credits, row count, and latest usage in `cost_details`.
-- Prefer the service/SKU query when model/inference vs infra classification matters. If only aggregate data is available, use one aggregate infra/unknown finding and explain the missing service split.
+- For the main entry, use `amount = net_amount` when the source is a monthly aggregate. Put gross, net, absolute credits, row count, and latest usage in `cost_details`.
+- Prefer the service/SKU query when model/inference vs infra classification matters. If only aggregate data is available, use one aggregate infra/unknown entry and explain the missing service split.
 - Pure BigQuery exports use `op_transaction_category: null`, `should_match_op_transaction: false`, and `should_match_op_cloud: true`.
 
 Reconciliation notes:

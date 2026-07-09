@@ -7,7 +7,7 @@ from pathlib import Path
 
 
 ALLOWED_TABLES = {"op_transactions", "op_cloud"}
-ALLOWED_TYPES = {"billed_usage_match", "legacy_note", "source_note"}
+ALLOWED_TYPES = {"ingest_match", "legacy_note", "source_note"}
 ALLOWED_STATUSES = {"matched", "partial", "review", "unmatched", "ignored"}
 
 
@@ -35,7 +35,7 @@ def _validate_entry(entry, index):
     entry_type = entry.get("type")
     if entry_type not in ALLOWED_TYPES:
         raise ValueError(f"evidence_entries[{index}].type is invalid: {entry_type!r}")
-    if entry_type == "billed_usage_match":
+    if entry_type == "ingest_match":
         status = entry.get("status")
         if status not in ALLOWED_STATUSES:
             raise ValueError(f"evidence_entries[{index}].status is invalid: {status!r}")
@@ -78,7 +78,7 @@ def format_reconciliation(agent_output):
         new_entries = previous_entries + update["evidence_entries"]
         evidence = json.dumps(new_entries, ensure_ascii=False, separators=(",", ":"))
         for entry in update["evidence_entries"]:
-            if entry.get("type") == "billed_usage_match":
+            if entry.get("type") == "ingest_match":
                 summary[entry["status"]] += 1
         formatted_updates.append(
             {
@@ -92,7 +92,7 @@ def format_reconciliation(agent_output):
         )
 
     return {
-        "schema_version": "billed_usage_reconciliation_formatted.v1",
+        "schema_version": "ingest_reconciliation.v1",
         "formatted_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "updates": formatted_updates,
         "summary": summary,

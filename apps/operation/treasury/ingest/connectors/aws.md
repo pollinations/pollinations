@@ -70,10 +70,10 @@ Collection steps:
 
 7. Save raw API JSON to `data/inbox/aws-umbrella-<period>-cost-and-usage.json`.
 8. Run:
-   - invoices: `prompts/billed_usage_01_ingest.system.txt`
-   - API/dashboard usage: `prompts/billed_usage_00_collect_dashboard.system.txt`
+   - invoices: `prompts/invoice.system.txt`
+   - API/dashboard usage: `prompts/usage.system.txt`
 
-Expected finding:
+Expected entry:
 
 - `cost_category`: `model` or `infrastructure`
 - `op_cloud_type`: `inference` for Bedrock/model usage, `infra` for other AWS services

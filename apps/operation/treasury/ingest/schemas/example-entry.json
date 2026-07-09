@@ -1,6 +1,6 @@
 {
-  "schema_version": "billed_usage_ai_finding.v1",
-  "invoice_record_id": "dashboard-vast-ai-2026-01",
+  "schema_version": "ingest_entry.v1",
+  "entry_id": "dashboard-vast-ai-2026-01",
   "source_file": "apps/operation/treasury/ingest/data/processed/vast-ai/raw/vast-ai-2026-01-dashboard.png",
   "provider": "vast.ai",
   "invoice_id": null,

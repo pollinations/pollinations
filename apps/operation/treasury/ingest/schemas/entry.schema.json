@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://pollinations.ai/schemas/treasury/billed-usage-finding.v1.json",
-  "title": "BilledUsageFinding",
+  "$id": "https://pollinations.ai/schemas/treasury/ingest-entry.v1.json",
+  "title": "IngestEntry",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "schema_version",
-    "invoice_record_id",
+    "entry_id",
     "source_file",
     "provider",
     "invoice_id",
@@ -25,8 +25,8 @@
     "reconciliation_notes"
   ],
   "properties": {
-    "schema_version": { "const": "billed_usage_ai_finding.v1" },
-    "invoice_record_id": { "type": "string" },
+    "schema_version": { "const": "ingest_entry.v1" },
+    "entry_id": { "type": "string" },
     "source_file": { "type": "string" },
     "provider": { "type": ["string", "null"] },
     "invoice_id": { "type": ["string", "null"] },

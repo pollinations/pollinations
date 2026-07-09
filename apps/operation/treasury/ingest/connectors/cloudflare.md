@@ -40,10 +40,10 @@ Collection steps:
 3. The billing history endpoint is not period-scoped. Save the raw response, then filter locally to the requested provider period. If the target period is absent from the first page, stop and ask before paginating broadly.
 4. For startup credit consumption, use dashboard screenshots/exports from the relevant account billing credits page and save to `data/inbox/`.
 5. Run:
-   - invoices: `prompts/billed_usage_01_ingest.system.txt`
-   - API/dashboard usage or credit burn: `prompts/billed_usage_00_collect_dashboard.system.txt`
+   - invoices: `prompts/invoice.system.txt`
+   - API/dashboard usage or credit burn: `prompts/usage.system.txt`
 
-Expected finding:
+Expected entry:
 
 - `cost_category`: `infrastructure`, `network`, `storage`, or `credit`
 - `op_cloud_type`: `infra`

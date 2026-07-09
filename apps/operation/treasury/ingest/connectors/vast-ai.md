@@ -28,10 +28,10 @@ Collection steps:
 
 3. If using dashboard screenshots, save them under `data/inbox/`.
 4. Run:
-   - invoices: `prompts/billed_usage_01_ingest.system.txt`
-   - CLI/dashboard usage: `prompts/billed_usage_00_collect_dashboard.system.txt`
+   - invoices: `prompts/invoice.system.txt`
+   - CLI/dashboard usage: `prompts/usage.system.txt`
 
-Expected finding:
+Expected entry:
 
 - `cost_category`: `gpu`
 - `op_cloud_type`: `gpu`

@@ -32,10 +32,10 @@ Collection steps:
 4. If the response has `has_more: true`, repeat with `page=<next_page>` and append all buckets before extraction.
 5. For dashboard evidence, save screenshots or exports to `data/inbox/`.
 6. Run:
-   - invoices: `prompts/billed_usage_01_ingest.system.txt`
-   - API/dashboard usage: `prompts/billed_usage_00_collect_dashboard.system.txt`
+   - invoices: `prompts/invoice.system.txt`
+   - API/dashboard usage: `prompts/usage.system.txt`
 
-Expected finding:
+Expected entry:
 
 - `cost_category`: `model` or `inference_serverless`
 - `op_cloud_type`: `inference`

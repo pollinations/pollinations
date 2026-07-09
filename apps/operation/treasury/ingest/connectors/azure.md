@@ -56,10 +56,10 @@ Collection steps:
 
 6. Save raw API JSON to `data/inbox/azure-<period>-billing-invoices.json`.
 7. Run:
-   - invoices: `prompts/billed_usage_01_ingest.system.txt`
-   - API/dashboard usage: `prompts/billed_usage_00_collect_dashboard.system.txt`
+   - invoices: `prompts/invoice.system.txt`
+   - API/dashboard usage: `prompts/usage.system.txt`
 
-Expected finding:
+Expected entry:
 
 - `cost_category`: `infrastructure`, `model`, `inference_serverless`, or `credit` depending on the source detail
 - `op_cloud_type`: `infra` by default; `inference` if Azure OpenAI/model usage is explicit

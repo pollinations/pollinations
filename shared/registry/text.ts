@@ -215,7 +215,7 @@ export const TEXT_SERVICES = {
         maxReferenceImages: 10,
         tools: true,
         reasoning: true,
-        contextLength: 400000,
+        contextLength: 1050000,
         isSpecialized: false,
     },
     "mercury": {
@@ -662,7 +662,7 @@ export const TEXT_SERVICES = {
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(2.0),
-            promptCachedTokens: perMillion(0.2),
+            promptCachedTokens: perMillion(0.5),
             promptImageTokens: perMillion(2.0),
             completionTextTokens: perMillion(6.0),
         },

@@ -256,12 +256,14 @@ export const IMAGE_SERVICES = {
         brand: "OpenAI",
         category: "image",
         addedDate: new Date("2025-10-10").getTime(),
-        priceMultiplier: 0.75,
+        priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(2.0), // per 1M tokens
-            promptCachedTokens: perMillion(0.2), // per 1M tokens
-            promptImageTokens: perMillion(2.5), // per 1M tokens
-            completionImageTokens: perMillion(8), // per 1M tokens
+            // Azure Retail Prices API, Data Zone tier. Cached usage is reported
+            // without text/image split, so use the higher cached-image rate.
+            promptTextTokens: perMillion(2.2),
+            promptCachedTokens: perMillion(0.275),
+            promptImageTokens: perMillion(2.75),
+            completionImageTokens: perMillion(8.8),
         },
         title: "GPT Image 1 Mini",
         description: "GPT Image 1 Mini - Fast & affordable image generation",
@@ -278,12 +280,13 @@ export const IMAGE_SERVICES = {
         addedDate: new Date("2025-12-23").getTime(),
         priceMultiplier: 1,
         cost: {
-            // Official pricing: https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/introducing-openai%E2%80%99s-gpt-image-1-5-in-microsoft-foundry/4478139
-            promptTextTokens: perMillion(5), // per 1M tokens
-            promptCachedTokens: perMillion(1.25), // per 1M tokens
-            promptImageTokens: perMillion(8), // per 1M tokens
-            completionTextTokens: perMillion(10), // per 1M tokens
-            completionImageTokens: perMillion(32), // per 1M tokens
+            // Azure Retail Prices API, Data Zone tier. Cached usage is reported
+            // without text/image split, so use the higher cached-image rate.
+            promptTextTokens: perMillion(5.5),
+            promptCachedTokens: perMillion(2.2),
+            promptImageTokens: perMillion(8.8),
+            completionTextTokens: perMillion(11),
+            completionImageTokens: perMillion(35.2),
         },
         title: "GPT Image 1.5",
         description: "GPT Image 1.5 - High-fidelity image generation & editing",
